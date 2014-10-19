@@ -184,11 +184,13 @@ static Queue* NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThre
 static void   FreeQueue(Queue *queue)
     NS_GNUC_NONNULL(1);
 
-static Job*   NewJob(CONST char* server, CONST char* queueName,
-                     unsigned int type, char *script)
+static Job*   NewJob(const char* server, const char* queueName,
+                     unsigned int type, const char *script)
     NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4) NS_GNUC_RETURNS_NONNULL;
+
 static void   FreeJob(Job *jobPtr)
     NS_GNUC_NONNULL(1);
+
 static int    JobAbort(ClientData clientData, Tcl_Interp *interp, int code);
 
 static int    LookupQueue(Tcl_Interp *interp, CONST char *queueName,
@@ -1487,7 +1489,7 @@ FreeQueue(Queue *queue)
  */
 
 static Job*
-NewJob(CONST char* server, CONST char* queueName, unsigned int type, char *script)
+NewJob(const char* server, const char* queueName, unsigned int type, const char *script)
 {
     Job *jobPtr;
 

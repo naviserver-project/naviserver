@@ -126,7 +126,7 @@ UnsupProcId(char *name)
 }
 
 int
-Ns_DbRegisterDriver(char *driver, Ns_DbProc *procs)
+Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs)
 {
     Tcl_HashEntry *hPtr;
     DbDriver *driverPtr;

@@ -691,7 +691,7 @@ NsConfigRead(CONST char *file)
  */
 
 void
-NsConfigEval(CONST char *config, int argc, char **argv, int optind)
+NsConfigEval(const char *config, int argc, char *const *argv, int optind)
 {
     Tcl_Interp *interp;
     Ns_Set     *set;

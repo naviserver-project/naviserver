@@ -48,8 +48,8 @@ typedef struct Range {
 static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                              Range *ranges, int maxRanges);
 
-static void SetRangeHeader(Ns_Conn *conn, off_t start, off_t end, size_t objLength);
-static void SetMultipartRangeHeader(Ns_Conn *conn);
+static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength);
+static void SetMultipartRangeHeader(const Ns_Conn *conn);
 static int AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
                                       off_t start, off_t end, size_t objLength);
 static int AppendMultipartRangeTrailer(Ns_DString *dsPtr);
@@ -72,7 +72,7 @@ static int AppendMultipartRangeTrailer(Ns_DString *dsPtr);
  */
 
 int
-NsMatchRange(Ns_Conn *conn, time_t mtime)
+NsMatchRange(const Ns_Conn *conn, time_t mtime)
 {
     char *hdr;
         
@@ -425,7 +425,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
  */
 
 static void
-SetRangeHeader(Ns_Conn *conn, off_t start, off_t end, size_t objLength)
+SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength)
 {
     Ns_ConnPrintfHeaders(conn, "Content-range",
         "bytes %" PRIuMAX "-%" PRIuMAX "/%" PRIuMAX,
@@ -433,7 +433,7 @@ SetRangeHeader(Ns_Conn *conn, off_t start, off_t end, size_t objLength)
 }
 
 static void
-SetMultipartRangeHeader(Ns_Conn *conn)
+SetMultipartRangeHeader(const Ns_Conn *conn)
 {
     Ns_ConnSetTypeHeader(conn,
         "multipart/byteranges; boundary=NaviServerNaviServerNaviServer");

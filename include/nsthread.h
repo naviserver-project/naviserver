@@ -663,7 +663,7 @@ typedef struct Ns_Time {
 
 typedef void (Ns_ThreadProc) (void *arg);
 typedef void (Ns_TlsCleanup) (void *arg);
-typedef void (Ns_ThreadArgProc) (Tcl_DString *dsPtr, void *proc, void *arg);
+typedef void (Ns_ThreadArgProc) (Tcl_DString *dsPtr, const void *proc, void *arg);
 
 /*
  * pthread.c

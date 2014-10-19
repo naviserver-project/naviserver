@@ -560,7 +560,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 }
 
 void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, size_t length)
+Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, CONST char *type, size_t length)
 {
     /* 
      * Deprecated

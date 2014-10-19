@@ -63,7 +63,7 @@ typedef enum _runState {
 
 static Ns_ThreadProc CmdThread;
 
-static void UsageError(char *msg, ...);
+static void UsageError(const char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
 static char *MakePath(char *file);
@@ -958,7 +958,7 @@ LogTclVersion(void)
  */
 
 static void
-UsageError(char *msg, ...)
+UsageError(const char *msg, ...)
 {
     if (msg != NULL) {
     	va_list ap;
@@ -1041,7 +1041,7 @@ MakePath(char *file)
 
         Tcl_IncrRefCount(obj);
         if (Tcl_FSGetNormalizedPath(NULL, obj)) {
-            path = (char *)Tcl_FSGetTranslatedStringPath(NULL, obj);
+	  path = (char *)Tcl_FSGetTranslatedStringPath(NULL, obj);
         }
         Tcl_DecrRefCount(obj);
 

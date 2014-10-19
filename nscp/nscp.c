@@ -71,8 +71,8 @@ typedef struct Sess {
 
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
-static int Login(Sess *sessPtr, Tcl_DString *unameDSPtr);
-static int GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo);
+static int Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
+static int GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo);
 static Ns_ArgProc ArgProc;
 
 /*
@@ -430,7 +430,7 @@ done:
  */
 
 static int
-GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
+GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 {
     unsigned char buf[2048];
     int n, result = 0, retry = 0;
@@ -529,7 +529,7 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
  */
 
 static int
-Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
+Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 {
     Tcl_DString uds, pds, msgDs;
     char       *user = NULL;

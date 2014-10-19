@@ -37,13 +37,13 @@
 
 #ifdef _WIN32
 #include <process.h>
-static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *env);
+static char   **Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 #else
 #define ERR_DUP         (-1)
 #define ERR_CHDIR	(-2)
 #define ERR_EXEC	(-3)
 
-static int ExecProc(char *exec, char *dir, int fdin, int fdout,
+static int ExecProc(char *exec, const char *dir, int fdin, int fdout,
 		    char **argv, char **envp);
 #endif /* _WIN32 */
 
@@ -65,7 +65,7 @@ static int ExecProc(char *exec, char *dir, int fdin, int fdout,
  */
 
 pid_t
-Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout, char *args,
+Ns_ExecProcess(char *exec, const char *dir, int fdin, int fdout, char *args,
 	       Ns_Set *env)
 {
     return Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
@@ -218,7 +218,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
  */
 
 pid_t
-Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
+Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
 	      char *args, Ns_Set *env)
 {
 #ifndef _WIN32
@@ -366,7 +366,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
  */
 
 pid_t
-Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
+Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
 	    char **argv, Ns_Set *env)
 {
 #ifdef _WIN32
@@ -452,7 +452,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
  */
 
 static pid_t
-ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
+ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
     	 char **envp)
 {
     struct iovec iov[2];
@@ -585,7 +585,7 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
  */
 
 static char **
-Set2Argv(Ns_DString *dsPtr, Ns_Set *env)
+Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 {
     int        i;
 

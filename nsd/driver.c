@@ -800,7 +800,7 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
  */
 
 Request *
-NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr)
+NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     Request *reqPtr;
 

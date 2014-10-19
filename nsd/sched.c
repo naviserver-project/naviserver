@@ -75,7 +75,7 @@ static Ns_ThreadProc EventThread;       /* Proc for NS_SCHED_THREAD events. */
 static Event *DeQueueEvent(int qid);    /* Remove event from heap. */
 static void FreeEvent(Event *ePtr)      /* Free completed or cancelled event. */
     NS_GNUC_NONNULL(1);
-static void QueueEvent(Event *ePtr, time_t *nowPtr);    /* Queue event on heap. */
+static void QueueEvent(Event *ePtr, const time_t *nowPtr);    /* Queue event on heap. */
 /*
  * Static variables defined in this file.
  */
@@ -510,7 +510,7 @@ NsWaitSchedShutdown(Ns_Time *toPtr)
  */
 
 static void
-QueueEvent(Event *ePtr, time_t *nowPtr)
+QueueEvent(Event *ePtr, const time_t *nowPtr)
 {
     struct tm      *tp;
 

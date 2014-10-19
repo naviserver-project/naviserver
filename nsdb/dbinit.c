@@ -175,7 +175,7 @@ Ns_DbPoolDescription(const char *pool)
  */
 
 char *
-Ns_DbPoolDefault(char *server)
+Ns_DbPoolDefault(const char *server)
 {
     ServData *sdataPtr = GetServer(server);
 
@@ -200,7 +200,7 @@ Ns_DbPoolDefault(char *server)
  */
 
 char *
-Ns_DbPoolList(char *server)
+Ns_DbPoolList(const char *server)
 {
     ServData *sdataPtr = GetServer(server);
 

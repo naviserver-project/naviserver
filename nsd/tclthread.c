@@ -51,7 +51,7 @@ typedef struct TclThreadArg {
  * Local functions defined in this file
  */
 
-static void CreateTclThread(NsInterp *itPtr, char *script, int detached,
+static void CreateTclThread(const NsInterp *itPtr, const char *script, int detached,
                             Ns_Thread *thrPtr);
 static void *CreateSynchObject(NsInterp *itPtr,
                                Tcl_HashTable *typeTable, unsigned int *idPtr,
@@ -767,7 +767,7 @@ NsTclThreadArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static void
-CreateTclThread(NsInterp *itPtr, char *script, int detached, Ns_Thread *thrPtr)
+CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thread *thrPtr)
 {
     TclThreadArg *argPtr;
 

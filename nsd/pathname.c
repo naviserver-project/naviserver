@@ -51,7 +51,7 @@ static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1);
-static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawHost)
+static char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -941,7 +941,7 @@ MakePath(Ns_DString *dest, va_list *pap)
  *----------------------------------------------------------------------
  */
 static char *
-ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawHost)
+ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 {
     char       *safehost, *path;
     Ns_Conn    *conn;

@@ -195,7 +195,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
  */
 
 void
-Ns_EventCallback(Ns_Event *event, unsigned int when, Ns_Time *timeoutPtr)
+Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
 {
     Event *evPtr = (Event *) event;
     int    i;

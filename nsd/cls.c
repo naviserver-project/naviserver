@@ -41,7 +41,7 @@
  */
 
 static Ns_Callback *cleanupProcs[NS_CONN_MAXCLS];
-static void **GetSlot(Ns_Cls *clsPtr, Ns_Conn *conn);
+static void **GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn);
 
 
 /*
@@ -187,7 +187,7 @@ NsClsCleanup(Conn *connPtr)
  */
 
 static void **
-GetSlot(Ns_Cls *clsPtr, Ns_Conn *conn)
+GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
     uintptr_t idx = (uintptr_t) *clsPtr;
