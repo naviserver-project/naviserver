@@ -392,6 +392,7 @@ ns_section ns/server/${server}/module/nspam
 ns_section    "ns/server/${server}/module/nsssl"
        ns_param		address    	$address
        ns_param		port       	$httpsport
+       ns_param		hostname       	$hostname
        ns_param		ciphers		"RC4:HIGH:!aNULL:!MD5;"
        ns_param		protocols	"!SSLv2"
        ns_param		certificate	$serverroot/etc/certfile.pem
