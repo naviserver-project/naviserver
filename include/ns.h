@@ -398,7 +398,7 @@ typedef struct Ns_ObjvSpec {
  */
 
 typedef struct Ns_ObjvTable {
-    char            *key;
+    const char      *key;
     unsigned int     value;
 } Ns_ObjvTable;
 
@@ -409,7 +409,7 @@ typedef struct Ns_ObjvTable {
 
 typedef struct Ns_TclCallback {
     Ns_Callback    *cbProc;
-    CONST char     *server;
+    const char     *server;
     const char     *script;
     int             argc;
     char          **argv;
@@ -420,17 +420,17 @@ typedef struct Ns_TclCallback {
  */
 
 typedef struct Ns_Driver {
-    void    *arg;           /* Driver callback data. */
-    char    *server;        /* Virtual server name. */
-    char    *module;        /* Driver module. */
-    char    *name;          /* Driver name. */
-    char    *location;      /* Location, e.g, "http://foo:9090" */
-    char    *address;       /* Address in location, e.g. "foo" */
-    char    *protocol;      /* Protocol in location, e.g, "http" */
-    int      sendwait;      /* send() I/O timeout in seconds */
-    int      recvwait;      /* recv() I/O timeout in seconds */
-    int      bufsize;       /* Conn bufsize (0 for SSL) */
-    char    *extraHeaders;  /* Extra header fields added for every request */
+    void       *arg;           /* Driver callback data. */
+    const char *server;        /* Virtual server name. */
+    const char *module;        /* Driver module. */
+    const char *name;          /* Driver name. */
+    const char *location;      /* Location, e.g, "http://foo:9090" */
+    const char *address;       /* Address in location, e.g. "foo" */
+    const char *protocol;      /* Protocol in location, e.g, "http" */
+    long        sendwait;      /* send() I/O timeout in seconds */
+    long        recvwait;      /* recv() I/O timeout in seconds */
+    size_t      bufsize;       /* Conn bufsize (0 for SSL) */
+    const char *extraHeaders;  /* Extra header fields added for every request */
 } Ns_Driver;
 
 /*

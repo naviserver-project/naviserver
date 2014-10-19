@@ -154,7 +154,7 @@ static void  SockError(Sock *sockPtr, int reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code)
     NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
-static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, int timeout)
+static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
     NS_GNUC_NONNULL(1);
 static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
@@ -1026,7 +1026,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
     timeout.usec = 0;
 
     return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                        &timeout, 0);
+                                        &timeout, 0U);
 }
 
 
@@ -1746,7 +1746,7 @@ SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
  */
 
 static void
-SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, int timeout)
+SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
 {
     assert(sockPtr != NULL);
     sockPtr->timeout = *nowPtr;
