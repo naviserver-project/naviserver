@@ -267,13 +267,13 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
  */
 
 char *
-Ns_MakePath(Ns_DString *dest, ...)
+Ns_MakePath(Ns_DString *dsPtr, ...)
 {
     va_list  ap;
     char    *path;
 
-    va_start(ap, dest);
-    path = MakePath(dest, &ap);
+    va_start(ap, dsPtr);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
     return path;
 }
@@ -347,14 +347,14 @@ Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels)
  */
 
 char *
-Ns_LibPath(Ns_DString *dest, ...)
+Ns_LibPath(Ns_DString *dsPtr, ...)
 {
     va_list  ap;
     char    *path;
 
-    Ns_MakePath(dest, Ns_InfoHomePath(), "lib", NULL);
-    va_start(ap, dest);
-    path = MakePath(dest, &ap);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "lib", NULL);
+    va_start(ap, dsPtr);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
 
     return path;
@@ -380,14 +380,14 @@ Ns_LibPath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_BinPath(Ns_DString *dest, ...)
+Ns_BinPath(Ns_DString *dsPtr, ...)
 {
     va_list  ap;
     char    *path;
 
-    Ns_MakePath(dest, Ns_InfoHomePath(), "bin", NULL);
-    va_start(ap, dest);
-    path = MakePath(dest, &ap);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "bin", NULL);
+    va_start(ap, dsPtr);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
 
     return path;
@@ -411,14 +411,14 @@ Ns_BinPath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_HomePath(Ns_DString *dest, ...)
+Ns_HomePath(Ns_DString *dsPtr, ...)
 {
     va_list  ap;
     char    *path;
 
-    Ns_MakePath(dest, Ns_InfoHomePath(), NULL);
-    va_start(ap, dest);
-    path = MakePath(dest, &ap);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
+    va_start(ap, dsPtr);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
 
     return path;
@@ -559,20 +559,20 @@ Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
  */
 
 char *
-Ns_ModulePath(Ns_DString *dest, CONST char *server, CONST char *module, ...)
+Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...)
 {
     va_list         ap;
     char           *path;
 
-    Ns_MakePath(dest, Ns_InfoHomePath(), NULL);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
     if (server != NULL) {
-       Ns_MakePath(dest, "servers", server, NULL);
+       Ns_MakePath(dsPtr, "servers", server, NULL);
     }
     if (module != NULL) {
-       Ns_MakePath(dest, "modules", module, NULL);
+       Ns_MakePath(dsPtr, "modules", module, NULL);
     }
     va_start(ap, module);
-    path = MakePath(dest, &ap);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
     return path;
 }

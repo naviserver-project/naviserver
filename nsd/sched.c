@@ -264,7 +264,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
 
 int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
-    int interval, Ns_SchedProc *deleteProc)
+    int interval, Ns_SchedProc *cleanupProc)
 {
     Event          *ePtr;
     int             id, isNew;
@@ -281,7 +281,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
     ePtr->lastqueue = ePtr->laststart = ePtr->lastend = -1;
     ePtr->interval = interval;
     ePtr->proc = proc;
-    ePtr->deleteProc = deleteProc;
+    ePtr->deleteProc = cleanupProc;
     ePtr->arg = arg;
 
     Ns_MutexLock(&lock);

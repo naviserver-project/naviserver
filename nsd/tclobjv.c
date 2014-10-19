@@ -46,7 +46,7 @@ static Ns_ObjvProc ObjvTcl;
 static Ns_ObjvProc ObjvTclArgs;
 
 static void FreeSpecs(Ns_ObjvSpec *specPtr);
-static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valObj);
+static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj);
 static void WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
 static int GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr);
 

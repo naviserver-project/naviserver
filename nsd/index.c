@@ -45,8 +45,8 @@ static int BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc 
 static int BinSearchKey(const void *key, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static int CmpStr(const char **leftPtr, const char **rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int CmpKeyWithStr(const char *key, const char **elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpStr(const char *const*leftPtr, const char *const*rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpKeyWithStr(const char *key, const char *const*elPtr)       NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int CmpInts(const int *leftPtr, const int *rightPtr)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int CmpKeyWithInt(const int *keyPtr, const int *elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -534,7 +534,7 @@ Ns_IndexEl(const Ns_Index *indexPtr, int i)
  */
 
 static int
-CmpStr(const char **leftPtr, const char **rightPtr)
+CmpStr(const char *const*leftPtr, const char *const*rightPtr)
 {
     assert(leftPtr != NULL);
     assert(rightPtr != NULL);
@@ -560,7 +560,7 @@ CmpStr(const char **leftPtr, const char **rightPtr)
  */
 
 static int
-CmpKeyWithStr(const char *key, const char **elPtr)
+CmpKeyWithStr(const char *key, const char *const*elPtr)
 {
     assert(key != NULL);
     assert(elPtr != NULL);

@@ -162,7 +162,7 @@ Ns_InflateInit(Ns_CompressStream *stream)
 
 
 int
-Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *buffer, size_t inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *stream, const char *buffer, size_t inSize) 
 {
     z_stream *zPtr = &stream->z;
 
@@ -173,7 +173,7 @@ Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *buffer, size_t inSiz
 }
 
 int
-Ns_InflateBuffer(Ns_CompressStream *stream, CONST char *buffer, size_t outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, size_t outSize, int *nrBytes) 
 {
     z_stream *zPtr = &stream->z;
     int       status, result = TCL_OK;
@@ -436,12 +436,12 @@ Ns_InflateInit(Ns_CompressStream *stream)
 }
 
 int
-Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *buffer, int inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *stream, const char *buffer, int inSize) 
 {
     return NS_ERROR;
 }
 int
-Ns_InflateBuffer(Ns_CompressStream *stream, CONST char *buffer, int outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, int outSize, int *nrBytes) 
 {
     return NS_ERROR;
 }

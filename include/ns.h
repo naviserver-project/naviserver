@@ -819,11 +819,11 @@ Ns_InflateInit(Ns_CompressStream *stream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *buffer, size_t inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *stream, const char *buffer, size_t inSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_InflateBuffer(Ns_CompressStream *stream, CONST char *buffer, size_t outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, size_t outSize, int *nrBytes) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
@@ -2848,7 +2848,7 @@ NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, char *setId)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtrPtr)
+NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
