@@ -699,7 +699,7 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
      */
     length = strlen(string);
     if (encoding != NULL) {
-        copy = ns_malloc(length + 1);
+        copy = ns_malloc(length + 1U);
         q = copy;
     } else {
         /*

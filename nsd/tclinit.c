@@ -153,7 +153,7 @@ NsInitTcl(void)
 }
 
 static int
-ConfigServerTcl(CONST char *server)
+ConfigServerTcl(const char *server)
 {
     NsServer   *servPtr;
     Ns_DString  ds;

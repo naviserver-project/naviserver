@@ -286,7 +286,7 @@ typedef void  (Ns_ElemVoidProc) (void *elem);
 typedef void *(Ns_ElemValProc) (void *elem);
 typedef int   (Ns_ElemTestProc) (void *elem);
 typedef void  (Ns_Callback) (void *arg);
-typedef void  (Ns_ShutdownProc) (Ns_Time *toPtr, void *arg);
+typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
@@ -294,8 +294,8 @@ typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why);
 typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, unsigned int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
-typedef int   (Ns_ServerInitProc) (CONST char *server);
-typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
+typedef int   (Ns_ServerInitProc) (const char *server);
+typedef int   (Ns_ModuleInitProc) (const char *server, const char *module);
 typedef int   (Ns_RequestAuthorizeProc) (const char *server, const char *method,
 			const char *url, const char *user, const char *pass, const char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
@@ -1589,7 +1589,7 @@ NS_EXTERN void
 Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value);
 
 NS_EXTERN void
-Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length);
+Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length);
 
 NS_EXTERN int
 Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -1601,7 +1601,7 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, CONST char *type, void **addrPtrPtr)
+Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -1888,8 +1888,8 @@ Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST char *file,
-              CONST char *init)
+Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
+              const char *init)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
@@ -2058,7 +2058,7 @@ Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
+Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -2297,23 +2297,23 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
 
 NS_EXTERN int
 Ns_SetFindCmp(const Ns_Set *set, const char *key,
-                            int (*cmp) (const char *s1, const char *s2));
+	      int (*cmp) (const char *s1, const char *s2));
 
 NS_EXTERN char *
-Ns_SetGetCmp(Ns_Set *set, const char *key,
-                             int (*cmp) (const char *s1, const char *s2));
+Ns_SetGetCmp(const Ns_Set *set, const char *key,
+	     int (*cmp) (const char *s1, const char *s2));
 
 NS_EXTERN int
-Ns_SetUnique(Ns_Set *set, const char *key);
+Ns_SetUnique(const Ns_Set *set, const char *key);
 
 NS_EXTERN int
-Ns_SetIUnique(Ns_Set *set, const char *key);
+Ns_SetIUnique(const Ns_Set *set, const char *key);
 
 NS_EXTERN int
-Ns_SetFind(Ns_Set *set, const char *key);
+Ns_SetFind(const Ns_Set *set, const char *key);
 
 NS_EXTERN int
-Ns_SetIFind(Ns_Set *set, const char *key);
+Ns_SetIFind(const Ns_Set *set, const char *key);
 
 NS_EXTERN char *
 Ns_SetGet(Ns_Set *set, const char *key);
@@ -2488,22 +2488,22 @@ NS_EXTERN int
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr);
 
 NS_EXTERN ssize_t
-Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, Ns_Time *timeoutPtr);
+Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutPtr);
 
 NS_EXTERN int
-Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, Ns_Time *timeoutPtr);
+Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *timeoutPtr);
 
 NS_EXTERN ssize_t
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-		Ns_Time *timeoutPtr, unsigned int flags);
+		const Ns_Time *timeoutPtr, unsigned int flags);
 
 NS_EXTERN ssize_t
 Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
-		Ns_Time *timeoutPtr, unsigned int flags)
+		const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_BindSock(struct sockaddr_in *saPtr) 
+Ns_BindSock(const struct sockaddr_in *saPtr) 
     NS_GNUC_DEPRECATED_FOR(Ns_SockBind);
 
 NS_EXTERN NS_SOCKET
@@ -2528,11 +2528,11 @@ NS_EXTERN NS_SOCKET
 Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
 
 NS_EXTERN NS_SOCKET
-Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
+Ns_SockTimedConnect(char *host, int port, const Ns_Time *timeoutPtr);
 
 NS_EXTERN NS_SOCKET
 Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
-		     Ns_Time *timeoutPtr);
+		     const Ns_Time *timeoutPtr);
 
 NS_EXTERN int
 Ns_SockSetNonBlocking(NS_SOCKET sock);
@@ -2846,11 +2846,11 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
 
 NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, char *setId)
+NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtr)
+NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, const char *setId, Ns_Set **setPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
+NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

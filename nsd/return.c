@@ -228,7 +228,7 @@ Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
  */
 
 void
-Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
+Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
 {
     Ns_SetFree(conn->outputheaders);
     conn->outputheaders = Ns_SetCopy(newheaders);

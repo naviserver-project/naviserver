@@ -106,8 +106,8 @@ Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
  */
 
 int
-Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST char *file,
-              CONST char *init)
+Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
+              const char *init)
 {
     Tcl_PackageInitProc  *tclInitProc = NULL, *tclVerProc = NULL;
     Ns_ModuleInitProc    *initProc;

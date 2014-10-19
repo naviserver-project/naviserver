@@ -819,7 +819,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
     if (cPtr->maxEntry > 0 && length > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
-      char *value = ns_malloc(length + 1);
+      char *value = ns_malloc(length + 1U);
 
       memcpy(value, string, length);
         value[length] = '\0';

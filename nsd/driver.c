@@ -2320,7 +2320,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
          */
 
         if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
-            sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16);
+            sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16U);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = mkstemp(sockPtr->tfile);
 	    if (sockPtr->tfd == -1) {
@@ -4561,7 +4561,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     newWdPtr = ns_calloc(1U, sizeof(AsyncWriteData));
     newWdPtr->fd = fd;
     newWdPtr->bufsize = nbyte;
-    newWdPtr->data = ns_malloc(nbyte + 1);
+    newWdPtr->data = ns_malloc(nbyte + 1U);
     memcpy(newWdPtr->data, buffer, newWdPtr->bufsize);
     newWdPtr->buf  = newWdPtr->data;
     newWdPtr->size = newWdPtr->bufsize;

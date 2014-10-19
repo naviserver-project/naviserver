@@ -741,7 +741,7 @@ NS_EXTERN void Ns_CondSignal(Ns_Cond *condPtr);
 NS_EXTERN void Ns_CondBroadcast(Ns_Cond *condPtr);
 NS_EXTERN void Ns_CondWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr);
 NS_EXTERN int Ns_CondTimedWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr,
-                Ns_Time *timePtr);
+			       const Ns_Time *timePtr);
 
 /*
  * reentrant.c:

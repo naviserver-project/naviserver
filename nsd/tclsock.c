@@ -76,7 +76,7 @@ static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
 
-static int SockSetBlocking(char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+static int SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_SockProc SockListenCallback;
@@ -920,7 +920,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  */
 
 static int
-SockSetBlocking(char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Channel chan;
 

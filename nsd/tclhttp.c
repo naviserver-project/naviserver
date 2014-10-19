@@ -448,7 +448,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		     * in httpPtr->spoolFd to flag that later receives
 		     * will write there.
 		     */
-		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13);
+		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13U);
 		    sprintf(httpPtr->spoolFileName, "%s/http.XXXXXX", nsconf.tmpDir);
 		    fd = mkstemp(httpPtr->spoolFileName);
 		    

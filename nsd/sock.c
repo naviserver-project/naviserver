@@ -56,7 +56,7 @@
  * Local functions defined in this file
  */
 
-static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
+static NS_SOCKET SockConnect(const char *host, int port, const char *lhost, int lport,
 			     int async);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
@@ -178,7 +178,7 @@ Ns_SumVec(const struct iovec *bufs, int nbufs)
 
 ssize_t
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                Ns_Time *timeoutPtr, unsigned int flags)
+                const Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t n;
 
@@ -211,7 +211,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 
 ssize_t
 Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
-                Ns_Time *timeoutPtr, unsigned int flags)
+                const Ns_Time *timeoutPtr, unsigned int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     int           nwrote = 0, sent = -1;
@@ -306,7 +306,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
  */
 
 ssize_t
-Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, Ns_Time *timeoutPtr)
+Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutPtr)
 {
     ssize_t nread;
 
@@ -340,7 +340,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, Ns_Time *timeoutPtr)
+Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *timeoutPtr)
 {
     int nwrote;
 
@@ -504,7 +504,7 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, int *lenPtr)
  */
 
 NS_SOCKET
-Ns_BindSock(struct sockaddr_in *saPtr)
+Ns_BindSock(const struct sockaddr_in *saPtr)
 {
     return Ns_SockBind(saPtr);
 }
@@ -612,14 +612,14 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  */
 
 NS_SOCKET
-Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr)
+Ns_SockTimedConnect(char *host, int port, const Ns_Time *timeoutPtr)
 {
     return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr);
 }
 
 NS_SOCKET
 Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
-                     Ns_Time *timeoutPtr)
+                     const Ns_Time *timeoutPtr)
 {
     NS_SOCKET sock;
     int       err;
@@ -1017,7 +1017,7 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
  */
 
 static NS_SOCKET
-SockConnect(char *host, int port, char *lhost, int lport, int async)
+SockConnect(const char *host, int port, const char *lhost, int lport, int async)
 {
     NS_SOCKET          sock;
     struct sockaddr_in lsa;

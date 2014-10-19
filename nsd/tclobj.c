@@ -183,7 +183,7 @@ Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
  */
 
 void
-Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length)
+Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
 {
     if (length < 1) {
       length = (int)strlen(bytes);
@@ -301,7 +301,7 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
  */
 
 int
-Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, CONST char *type, void **addrPtrPtr)
+Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
 {
     if (objPtr->typePtr != &addrType
         || objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
@@ -358,7 +358,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
  */
 
 int
-NsTclObjIsByteArray(Tcl_Obj *objPtr)
+NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
     return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes==NULL));
 }

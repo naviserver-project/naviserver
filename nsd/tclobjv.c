@@ -48,7 +48,7 @@ static Ns_ObjvProc ObjvTclArgs;
 static void FreeSpecs(Ns_ObjvSpec *specPtr) 
     NS_GNUC_NONNULL(1);
 
-static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj) 
+static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(3);
 
 static void WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
@@ -230,7 +230,7 @@ GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
     }
 
     for (entryPtr = tablePtr, idx = 0; entryPtr->key != NULL;  entryPtr++, idx++) {
-	char *p1, *p2;
+	const char *p1, *p2;
 
         for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
             if (*p1 == '\0') {
@@ -942,7 +942,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         if ((key[0] != '-' && defObjPtr != NULL)
             || (i + 1 == numSpecs && STREQ(key, "args"))) {
 
-            specPtr->key = ns_malloc((size_t) keyLen + 2);
+            specPtr->key = ns_malloc((size_t) keyLen + 2U);
             specPtr->key[0] = '?';
             strcpy(specPtr->key + 1, key);
         } else {
@@ -1240,10 +1240,10 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST*
  */
 
 static int
-SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj)
+SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 {
-    size_t  len;
-    char   *name = key, *value;
+    size_t      len;
+    const char *name = key, *value;
 
     assert(interp != NULL);
     assert(key != NULL);

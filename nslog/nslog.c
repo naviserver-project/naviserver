@@ -923,7 +923,7 @@ LogCallback(int(proc)(Log *), void *arg, char *desc)
 }
 
 static void
-LogCloseCallback(Ns_Time *toPtr, void *arg)
+LogCloseCallback(const Ns_Time *toPtr, void *arg)
 {
     if (toPtr == NULL) {
         LogCallback(LogClose, arg, "close");

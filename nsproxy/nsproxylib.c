@@ -566,7 +566,7 @@ Ns_ProxyCleanup(Tcl_Interp *interp, void *ignored)
  */
 
 void
-Shutdown(Ns_Time *toutPtr, void *arg)
+Shutdown(const Ns_Time *toutPtr, void *arg)
 {
     Pool           *poolPtr;
     Proxy          *proxyPtr, *tmpPtr;

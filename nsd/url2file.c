@@ -104,7 +104,7 @@ NsInitUrl2File(void)
 }
 
 static int
-ConfigServerUrl2File(CONST char *server)
+ConfigServerUrl2File(const char *server)
 {
     NsServer *servPtr;
 

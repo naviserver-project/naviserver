@@ -298,7 +298,8 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      */
 
     text = adp;
-    streamDone = streamFlag = 0;
+    streamDone = 0;
+    streamFlag = 0U;
     level = 0;
     state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
@@ -662,7 +663,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
     assert(e != NULL);
 
     if (flagsPtr != NULL) {
-        *flagsPtr = 0;
+        *flagsPtr = 0U;
     }
     while (s < e) {
 	char asave, *ae;

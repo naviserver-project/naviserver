@@ -267,7 +267,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
  */
 
 char *
-Ns_SetGetCmp(Ns_Set *set, const char *key,
+Ns_SetGetCmp(const Ns_Set *set, const char *key,
              int (*cmp) (const char *s1, const char *s2))
 {
     int             i;
@@ -297,7 +297,7 @@ Ns_SetGetCmp(Ns_Set *set, const char *key,
  */
 
 int
-Ns_SetUnique(Ns_Set *set, const char *key)
+Ns_SetUnique(const Ns_Set *set, const char *key)
 {
     return Ns_SetUniqueCmp(set, key,
                            (int (*) (const char *left, const char *right)) strcmp);
@@ -321,7 +321,7 @@ Ns_SetUnique(Ns_Set *set, const char *key)
  */
 
 int
-Ns_SetIUnique(Ns_Set *set, const char *key)
+Ns_SetIUnique(const Ns_Set *set, const char *key)
 {
     return Ns_SetUniqueCmp(set, key,
                            (int (*) (const char *s1, const char *s2)) strcasecmp);
@@ -345,7 +345,7 @@ Ns_SetIUnique(Ns_Set *set, const char *key)
  */
 
 int
-Ns_SetFind(Ns_Set *set, const char *key)
+Ns_SetFind(const Ns_Set *set, const char *key)
 {
     return Ns_SetFindCmp(set, key,
                          (int (*) (const char *s1, const char *s2)) strcmp);
@@ -369,7 +369,7 @@ Ns_SetFind(Ns_Set *set, const char *key)
  */
 
 int
-Ns_SetIFind(Ns_Set *set, const char *key)
+Ns_SetIFind(const Ns_Set *set, const char *key)
 {
     return Ns_SetFindCmp(set, key,
                          (int (*) (const char *s1, const char *s2)) strcasecmp);

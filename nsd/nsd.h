@@ -1301,7 +1301,7 @@ NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
-NS_EXTERN char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
+NS_EXTERN char *NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host);
 
 /*
  * External callback functions.
@@ -1418,7 +1418,7 @@ NS_EXTERN void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
 NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) NS_GNUC_NONNULL(1);
-NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
+NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs);
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
@@ -1487,7 +1487,7 @@ NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
 
 NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth);
 
-NS_EXTERN int NsTclObjIsByteArray(Tcl_Obj *objPtr);
+NS_EXTERN int NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
 NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
 

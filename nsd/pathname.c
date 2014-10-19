@@ -79,7 +79,7 @@ NsConfigVhost(void)
 }
 
 static int
-ConfigServerVhost(CONST char *server)
+ConfigServerVhost(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
@@ -628,7 +628,7 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg)
  */
 
 char *
-NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
+NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host)
 {
     char *path;
 

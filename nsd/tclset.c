@@ -110,7 +110,7 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
  */
 
 Ns_Set *
-Ns_TclGetSet(Tcl_Interp *interp, char *setId)
+Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
 {
     Ns_Set *set = NULL;
 
@@ -141,7 +141,7 @@ Ns_TclGetSet(Tcl_Interp *interp, char *setId)
  */
 
 int
-Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtr)
+Ns_TclGetSet2(Tcl_Interp *interp, const char *setId, Ns_Set **setPtr)
 {
     assert(interp != NULL);
     assert(setId != NULL);
@@ -169,7 +169,7 @@ Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtr)
  */
 
 int
-Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
+Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
 {
     Ns_Set  *set = NULL;
 
