@@ -60,13 +60,13 @@ typedef struct ListenCallback {
  * Local functions defined in this file
  */
 
-static int GetSet(Tcl_Interp *interp, char *flist, int write, 
-                  fd_set **setPtrPtr, fd_set *setPtr, int *maxPtr)
+static int GetSet(Tcl_Interp *interp, const char *flist, int write, 
+                  fd_set **setPtrPtr, fd_set *setPtr, int *const maxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) 
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
 static void AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, 
-                             int write, char *flist, Tcl_DString *dsPtr)
+                             int write, const char *flist, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
@@ -450,7 +450,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     char     *host, *lhost = NULL, *opt, *val;
     int       lport = 0, port, first, async = 0, msec = -1;
     NS_SOCKET sock;
-    Ns_Time   timeout;
+    Ns_Time   timeout = {0,0};
 
     if (objc < 3 || objc > 9) {
     syntax:
@@ -961,7 +961,7 @@ SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 static void
-AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
+AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flist,
 		 Tcl_DString *dsPtr)
 {
     int           fargc;
@@ -1013,8 +1013,8 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
  */
 
 static int
-GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
-       fd_set *setPtr, int *maxPtr)
+GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
+       fd_set *setPtr, int *const maxPtr)
 {
     int          fargc, status;
     NS_SOCKET    sock;

@@ -79,13 +79,13 @@ typedef struct AtClose {
 
 static NsInterp *PopInterp(NsServer *servPtr, Tcl_Interp *interp);
 static void PushInterp(NsInterp *itPtr);
-static Tcl_HashEntry *GetCacheEntry(NsServer *servPtr);
+static Tcl_HashEntry *GetCacheEntry(const NsServer *servPtr);
 static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr);
 static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr);
 static int UpdateInterp(NsInterp *itPtr);
 static Tcl_InterpDeleteProc FreeInterpData;
 static void RunTraces(NsInterp *itPtr, unsigned int why);
-static void LogTrace(NsInterp *itPtr, TclTrace *tracePtr, unsigned int why);
+static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, unsigned int why);
 static int RegisterAt(Ns_TclTraceProc *proc, void *arg, unsigned int when);
 static Ns_TlsCleanup DeleteInterps;
 static Ns_ServerInitProc ConfigServerTcl;
@@ -1488,7 +1488,7 @@ PushInterp(NsInterp *itPtr)
  */
 
 static Tcl_HashEntry *
-GetCacheEntry(NsServer *servPtr)
+GetCacheEntry(const NsServer *servPtr)
 {
     Tcl_HashTable *tablePtr;
     int ignored;
@@ -1763,7 +1763,7 @@ RunTraces(NsInterp *itPtr, unsigned int why)
 }
 
 static void
-LogTrace(NsInterp *itPtr, TclTrace *tracePtr, unsigned int why)
+LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, unsigned int why)
 {
     Ns_DString  ds;
 

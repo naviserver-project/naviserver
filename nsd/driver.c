@@ -142,7 +142,7 @@ static void    DriverClose(Sock *sockPtr)
 
 static int   SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
+static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -168,7 +168,7 @@ static int  SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
     NS_GNUC_NONNULL(2);
-static void SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
+static void SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void PollCreate(PollData *pdata)
     NS_GNUC_NONNULL(1);
@@ -758,7 +758,7 @@ NsWakeupDriver(const Driver *drvPtr) {
  */
 
 void
-NsWaitDriversShutdown(Ns_Time *toPtr)
+NsWaitDriversShutdown(const Ns_Time *toPtr)
 {
     Driver *drvPtr = firstDrvPtr;
     int status = NS_OK;
@@ -1772,7 +1772,7 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
  */
 
 static int
-SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
+SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 {
     Sock    *sockPtr;
     int      status;
@@ -3052,7 +3052,7 @@ SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 }
 
 static void
-SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
+SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *name)
 {
 
     assert(timeoutPtr != NULL);
@@ -3956,7 +3956,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	Ns_DStringInit(&ds);
 	Ns_Log(DriverDebug, "add header (fd %d)\n", fd);
 	conn->flags |= NS_CONN_SENTHDRS;
-	Ns_CompleteHeaders(conn, nsend, 0, &ds);
+	Ns_CompleteHeaders(conn, nsend, 0U, &ds);
 
 	wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
 	headerSize = (size_t)Ns_DStringLength(&ds);
@@ -3979,7 +3979,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    wrSockPtr->c.file.maxsize = headerSize;
 	    wrSockPtr->c.file.bufsize = headerSize;
 	    wrSockPtr->headerString = NULL;
-	} else if (headerSize > 0) {
+	} else if (headerSize > 0U) {
 	    /* 
 	     * We have a header that fits into the bufsize; place it
 	     * as "leftover" at the end of the buffer.
@@ -3999,7 +3999,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	wrSockPtr->c.file.toread = nsend;
 
     } else if (bufs != NULL) {
-	int   i, j, headerbufs = headerSize > 0 ? 1 : 0;
+	int   i, j, headerbufs = headerSize > 0U ? 1 : 0;
 
 	wrSockPtr->fd = -1;
 	
@@ -4066,7 +4066,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      * Setup streaming context before sending potentially headers.
      */
 
-    if ((wrSockPtr->flags & NS_CONN_STREAM) != 0) { 
+    if ((wrSockPtr->flags & NS_CONN_STREAM) != 0U) { 
 	wrSockPtr->streaming = NS_WRITER_STREAM_ACTIVE;
 	assert(connPtr->streamWriter == NULL);
 	/*
@@ -4091,7 +4091,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;
     wrSockPtr->size = nsend;
     
-    if ((wrSockPtr->flags & NS_CONN_STREAM) == 0) { 
+    if ((wrSockPtr->flags & NS_CONN_STREAM) == 0U) { 
 	connPtr->sockPtr = NULL;
 	connPtr->nContentSent = nsend - headerSize;
     }

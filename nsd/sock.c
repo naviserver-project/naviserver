@@ -554,13 +554,13 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
  */
 
 NS_SOCKET
-Ns_SockConnect(char *host, int port)
+Ns_SockConnect(const char *host, int port)
 {
     return SockConnect(host, port, NULL, 0, 0);
 }
 
 NS_SOCKET
-Ns_SockConnect2(char *host, int port, char *lhost, int lport)
+Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 {
     return SockConnect(host, port, lhost, lport, 0);
 }
@@ -583,13 +583,13 @@ Ns_SockConnect2(char *host, int port, char *lhost, int lport)
  */
 
 NS_SOCKET
-Ns_SockAsyncConnect(char *host, int port)
+Ns_SockAsyncConnect(const char *host, int port)
 {
     return SockConnect(host, port, NULL, 0, 1);
 }
 
 NS_SOCKET
-Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
+Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 {
     return SockConnect(host, port, lhost, lport, 1);
 }
@@ -612,13 +612,13 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  */
 
 NS_SOCKET
-Ns_SockTimedConnect(char *host, int port, const Ns_Time *timeoutPtr)
+Ns_SockTimedConnect(const char *host, int port, const Ns_Time *timeoutPtr)
 {
     return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr);
 }
 
 NS_SOCKET
-Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
+Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
                      const Ns_Time *timeoutPtr)
 {
     NS_SOCKET sock;

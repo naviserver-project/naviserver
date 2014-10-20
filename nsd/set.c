@@ -393,7 +393,7 @@ Ns_SetIFind(const Ns_Set *set, const char *key)
  */
 
 char *
-Ns_SetGet(Ns_Set *set, const char *key)
+Ns_SetGet(const Ns_Set *set, const char *key)
 {
     return Ns_SetGetCmp(set, key,
                         (int (*) (const char *s1, const char *s2)) strcmp);
@@ -417,7 +417,7 @@ Ns_SetGet(Ns_Set *set, const char *key)
  */
 
 char *
-Ns_SetIGet(Ns_Set *set, const char *key)
+Ns_SetIGet(const Ns_Set *set, const char *key)
 {
     return Ns_SetGetCmp(set, key,
                         (int (*) (const char *s1, const char *s2)) strcasecmp);

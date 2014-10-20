@@ -263,7 +263,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
  */
 
 int
-Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
+Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     int interval, Ns_SchedProc *cleanupProc)
 {
     Event          *ePtr;
@@ -282,7 +282,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
     ePtr->interval = interval;
     ePtr->proc = proc;
     ePtr->deleteProc = cleanupProc;
-    ePtr->arg = arg;
+    ePtr->arg = clientData;
 
     Ns_MutexLock(&lock);
     if (shutdownPending) {
@@ -475,7 +475,7 @@ NsStartSchedShutdown(void)
 }
 
 void
-NsWaitSchedShutdown(Ns_Time *toPtr)
+NsWaitSchedShutdown(const Ns_Time *toPtr)
 {
     int status;
 
@@ -745,7 +745,7 @@ static void
 SchedThread(void *UNUSED(arg))
 {
     time_t          now;
-    Ns_Time         timeout;
+    Ns_Time         timeout = {0,0};
     int             elapsed;
     Event          *ePtr, *readyPtr = NULL;
 

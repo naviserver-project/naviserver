@@ -161,7 +161,7 @@ NsStartSockShutdown(void)
 }
 
 void
-NsWaitSockShutdown(Ns_Time *toPtr)
+NsWaitSockShutdown(const Ns_Time *toPtr)
 {
     int status;
 

@@ -42,7 +42,7 @@
 
 static Ns_Conn *GetConn(Tcl_Interp *interp);
 
-static int SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
+static int SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static int DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
@@ -68,7 +68,7 @@ static int DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
  */
 
 static int 
-SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
+SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
 {
     char    *p, *q;
     char     save;
@@ -165,7 +165,7 @@ DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
  */
 
 void
-Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
+Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, char *value, time_t maxage,
                    char *domain, char *path, unsigned int flags)
 {
     Ns_DString  cookie;
@@ -268,7 +268,7 @@ Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path)
 
 
 char *
-Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
+Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, char *name)
 {
     int idx = SearchFirstCookie(dest, Ns_ConnHeaders(conn), "cookie", name);
     

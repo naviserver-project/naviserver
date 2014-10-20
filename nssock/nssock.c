@@ -236,7 +236,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 
 static ssize_t
 Send(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
-     Ns_Time *timeoutPtr, unsigned int flags)
+     const Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t   n;
     int       decork;

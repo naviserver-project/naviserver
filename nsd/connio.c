@@ -55,9 +55,9 @@ static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
 static int ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
                     FILE *fp, int fd);
 
-static int CheckKeep(Conn *connPtr);
-static int CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, unsigned int ioflags);
-static int HdrEq(Ns_Set *set, char *name, char *value);
+static int CheckKeep(const Conn *connPtr);
+static int CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags);
+static int HdrEq(Ns_Set *set, const char *name, const char *value);
 
 
 
@@ -174,7 +174,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
  */
 
 static int
-CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, unsigned int ioflags)
+CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
 {
     Ns_Conn  *conn    = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->poolPtr->servPtr;
@@ -548,7 +548,7 @@ Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
  */
 
 int
-Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
+Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
 {
     struct iovec vbuf;
 
@@ -1139,7 +1139,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
  */
 
 static int
-CheckKeep(Conn *connPtr)
+CheckKeep(const Conn *connPtr)
 {
     if (connPtr->drvPtr->keepwait > 0) {
 
@@ -1228,7 +1228,7 @@ CheckKeep(Conn *connPtr)
  */
 
 static int
-HdrEq(Ns_Set *set, char *name, char *value)
+HdrEq(Ns_Set *set, const char *name, const char *value)
 {
     char *hdrvalue;
 

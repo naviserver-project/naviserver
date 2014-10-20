@@ -40,9 +40,9 @@
  * Local functions defined in this file
  */
 
-static int BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+static int BinSearch(void *const*elPtrPtr, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static int BinSearchKey(const void *key, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+static int BinSearchKey(const void *key, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static int CmpStr(const char *const*leftPtr, const char *const*rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -336,7 +336,7 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
  */
 
 static int
-BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+BinSearch(void *const*elPtrPtr, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 {
     int low = 0, high = n-1, mid = 0;
 
@@ -378,7 +378,7 @@ BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
  */
 
 static int
-BinSearchKey(const void *key, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+BinSearchKey(const void *key, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 {
     int low = 0, high = n-1, mid = 0;
 

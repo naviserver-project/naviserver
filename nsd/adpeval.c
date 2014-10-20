@@ -201,13 +201,13 @@ ConfigServerAdp(const char *server)
  */
 
 int
-NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar)
+NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
     return AdpEval(itPtr, objc, objv, resvar);
 }
 
 int
-NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar)
+NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
     itPtr->adp.flags |= ADP_ADPFILE;
     return AdpEval(itPtr, objc, objv, resvar);

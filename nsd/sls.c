@@ -128,7 +128,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
  */
 
 void
-Ns_SlsSet(Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
+Ns_SlsSet(const Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
 {
     void **slotPtr;
 
@@ -156,7 +156,7 @@ Ns_SlsSet(Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
  */
 
 void *
-Ns_SlsGet(Ns_Sls *slsPtr, Ns_Sock *sock)
+Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     void **slotPtr;
 

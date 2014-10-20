@@ -153,7 +153,7 @@ NS_EXTERN Ns_Set *Ns_DbSpGetParams(Ns_DbHandle *handle);
 NS_EXTERN char *Ns_DbPoolDescription(const char *pool);
 NS_EXTERN char *Ns_DbPoolDefault(const char *server);
 NS_EXTERN char *Ns_DbPoolList(const char *server);
-NS_EXTERN int Ns_DbPoolAllowable(char *server, const char *pool);
+NS_EXTERN int Ns_DbPoolAllowable(const char *server, const char *pool);
 NS_EXTERN void Ns_DbPoolPutHandle(Ns_DbHandle *handle);
 NS_EXTERN Ns_DbHandle *Ns_DbPoolTimedGetHandle(const char *pool, int wait);
 NS_EXTERN Ns_DbHandle *Ns_DbPoolGetHandle(const char *pool);

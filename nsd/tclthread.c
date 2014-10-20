@@ -53,7 +53,7 @@ typedef struct TclThreadArg {
 
 static void CreateTclThread(const NsInterp *itPtr, const char *script, int detached,
                             Ns_Thread *thrPtr);
-static void *CreateSynchObject(NsInterp *itPtr,
+static void *CreateSynchObject(const NsInterp *itPtr,
                                Tcl_HashTable *typeTable, unsigned int *idPtr,
                                Ns_Callback *initProc, CONST char *type,
                                Tcl_Obj *objPtr, int cnt);
@@ -87,7 +87,7 @@ static const char *threadType = "ns:thread";
  */
 
 int
-Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
+Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
 {
     NsInterp *itPtr = NsGetInterpData(interp);
 
@@ -802,7 +802,7 @@ CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thre
  */
 
 static void *
-CreateSynchObject(NsInterp *itPtr,
+CreateSynchObject(const NsInterp *itPtr,
                   Tcl_HashTable *typeTable, unsigned int *idPtr,
                   Ns_Callback *initProc, CONST char *type,
                   Tcl_Obj *objPtr, int cnt)

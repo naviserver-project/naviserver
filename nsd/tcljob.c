@@ -320,7 +320,7 @@ NsStartJobsShutdown(void)
  */
 
 void
-NsWaitJobsShutdown(Ns_Time *toPtr)
+NsWaitJobsShutdown(const Ns_Time *toPtr)
 {
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
@@ -640,7 +640,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              */
 
             int     timeoutFlag = 0;
-            Ns_Time timeout, delta_timeout;
+            Ns_Time timeout = {0,0}, delta_timeout;
 
             argIndex = 2;
             if (objc != 4 && objc != 6) {
@@ -831,7 +831,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              */
 
             int     timeoutFlag = 0;
-            Ns_Time timeout, delta_timeout;
+            Ns_Time timeout = {0,0}, delta_timeout;
 
             argIndex = 2;
             if (objc != 3 && objc != 5) {

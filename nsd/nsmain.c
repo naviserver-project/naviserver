@@ -95,7 +95,7 @@ extern void NsdInit();
  */
 
 int
-Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
+Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 {
     Args      cmd;
     int       i, sig, optind;

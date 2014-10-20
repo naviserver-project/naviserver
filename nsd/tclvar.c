@@ -70,8 +70,8 @@ static int IncrVar(Array *arrayPtr, CONST char *key, int incr,
 static int Unset(Array *arrayPtr, CONST char *key);
 static void Flush(Array *arrayPtr);
 
-static Array *LockArray(NsServer *servPtr, CONST char *array, int create);
-static void UnlockArray(Array *arrayPtr);
+static Array *LockArray(const NsServer *servPtr, const char *array, int create);
+static void UnlockArray(const Array *arrayPtr);
 
 static Array *LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create);
 
@@ -880,7 +880,7 @@ Ns_VarUnset(CONST char *server, CONST char *array, CONST char *key)
  */
 
 static Array *
-LockArray(NsServer *servPtr, CONST char *array, int create)
+LockArray(const NsServer *servPtr, const char *array, int create)
 {
     Bucket        *bucketPtr;
     Tcl_HashEntry *hPtr;
@@ -928,7 +928,7 @@ LockArray(NsServer *servPtr, CONST char *array, int create)
 }
 
 static void
-UnlockArray(Array *arrayPtr)
+UnlockArray(const Array *arrayPtr)
 {
     if (likely(arrayPtr != NULL)) {
         Ns_MutexUnlock(&((arrayPtr)->bucketPtr->lock));

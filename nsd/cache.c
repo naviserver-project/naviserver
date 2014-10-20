@@ -735,7 +735,7 @@ Ns_CacheWait(Ns_Cache *cache)
 }
 
 int
-Ns_CacheTimedWait(Ns_Cache *cache, Ns_Time *timePtr)
+Ns_CacheTimedWait(Ns_Cache *cache, const Ns_Time *timePtr)
 {
     Cache *cachePtr = (Cache *) cache;
 

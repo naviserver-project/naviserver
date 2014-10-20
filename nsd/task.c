@@ -583,7 +583,7 @@ NsStartTaskQueueShutdown(void)
  */
 
 void
-NsWaitTaskQueueShutdown(Ns_Time *toPtr)
+NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
 {
     TaskQueue *queuePtr, *nextPtr;
     int        status;

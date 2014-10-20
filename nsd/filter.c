@@ -78,7 +78,7 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
  */
 
 void *
-Ns_RegisterFilter(char *server, char *method, char *url,
+Ns_RegisterFilter(const char *server, const char *method, const char *url,
     Ns_FilterProc *proc, unsigned int when, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
@@ -179,7 +179,7 @@ NsRunFilters(Ns_Conn *conn, unsigned int why)
  */
 
 void *
-Ns_RegisterServerTrace(char *server, Ns_TraceProc * proc, void *arg)
+Ns_RegisterServerTrace(const char *server, Ns_TraceProc * proc, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
     Trace *tracePtr, **tPtrPtr;
@@ -218,7 +218,7 @@ Ns_RegisterServerTrace(char *server, Ns_TraceProc * proc, void *arg)
  */
 
 void *
-Ns_RegisterConnCleanup(char *server, Ns_TraceProc *proc, void *arg)
+Ns_RegisterConnCleanup(const char *server, Ns_TraceProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
 
