@@ -92,7 +92,7 @@ NsInitRequests(void)
 }
 
 static int
-ConfigServerProxy(CONST char *server)
+ConfigServerProxy(const char *server)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -176,7 +176,7 @@ Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
         *procPtr = NULL;
         *deletePtr = NULL;
         *argPtr = NULL;
-        *flagsPtr = 0;
+        *flagsPtr = 0U;
     }
     Ns_MutexUnlock(&ulock);
 }
@@ -203,7 +203,7 @@ void
 Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
                      int inherit)
 {
-    Ns_UnRegisterRequestEx(server, method, url, inherit ? 0 : NS_OP_NOINHERIT);
+    Ns_UnRegisterRequestEx(server, method, url, inherit ? 0U : NS_OP_NOINHERIT);
 }
 
 
@@ -399,7 +399,7 @@ Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *prot
     reqPtr->proc = proc;
     reqPtr->deleteCallback = deleteCallback;
     reqPtr->arg = arg;
-    reqPtr->flags = 0;
+    reqPtr->flags = 0U;
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
     if (!isNew) {

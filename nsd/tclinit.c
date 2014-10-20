@@ -420,7 +420,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
     if (connPtr->itPtr == NULL) {
         itPtr = PopInterp(connPtr->poolPtr->servPtr, NULL);
         itPtr->conn = conn;
-        itPtr->nsconn.flags = 0;
+        itPtr->nsconn.flags = 0U;
         connPtr->itPtr = itPtr;
         RunTraces(itPtr, NS_TCL_TRACE_GETCONN);
     }
@@ -1319,7 +1319,7 @@ NsFreeConnInterp(Conn *connPtr)
     if (itPtr != NULL) {
         RunTraces(itPtr, NS_TCL_TRACE_FREECONN);
         itPtr->conn = NULL;
-        itPtr->nsconn.flags = 0;
+        itPtr->nsconn.flags = 0U;
         PushInterp(itPtr);
         connPtr->itPtr = NULL;
     }

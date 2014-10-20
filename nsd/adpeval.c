@@ -137,7 +137,7 @@ NsConfigAdp(void)
 static int
 ConfigServerAdp(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr = NsGetServer(server); 
     CONST char *path;
 
     path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
@@ -164,7 +164,7 @@ ConfigServerAdp(const char *server)
     servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
     servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
 
-    servPtr->adp.flags = 0;
+    servPtr->adp.flags = 0U;
     Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "stream",       ADP_STREAM,    0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "enableexpire", ADP_EXPIRE,    0, &servPtr->adp.flags);
@@ -364,7 +364,7 @@ NsAdpReset(NsInterp *itPtr)
         itPtr->adp.flags = itPtr->servPtr->adp.flags;
     } else {
         itPtr->adp.bufsize = 1 * 1024 * 1000;
-        itPtr->adp.flags = 0;
+        itPtr->adp.flags = 0U;
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 }

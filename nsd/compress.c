@@ -72,7 +72,7 @@ Ns_CompressInit(Ns_CompressStream *stream)
     z_stream *z = &stream->z;
     int       status;
 
-    stream->flags = 0;
+    stream->flags = 0U;
     z->zalloc = ZAlloc;
     z->zfree = ZFree;
     z->opaque = Z_NULL;
@@ -297,7 +297,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
 
     if (flush) {
         (void) deflateReset(z);
-        stream->flags = 0;
+        stream->flags = 0U;
     }
 
     return NS_OK;

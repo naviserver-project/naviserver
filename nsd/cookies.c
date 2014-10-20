@@ -299,7 +299,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
     int       secure = 0, scriptable = 0, discard = 0, replace = 0;
-    unsigned int flags = 0;
+    unsigned int flags = 0U;
     time_t    maxage;
     Ns_Time  *expiresPtr = NULL;
 
