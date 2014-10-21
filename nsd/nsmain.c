@@ -470,6 +470,10 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     if (server != NULL) {
         i = Ns_SetFind(servers, server);
         if (i < 0) {
+            Ns_Log(Error, "nsmain: no such server '%s' in config file '%s'",
+                   server, nsconf.config);
+            Ns_Log(Warning, "nsmain: Writing the server names we DO have to stderr now:");
+            Ns_SetPrint(servers);
             Ns_Fatal("nsmain: no such server '%s'", server);
         }
         server = Ns_SetKey(servers, i);
