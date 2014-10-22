@@ -259,7 +259,7 @@ NsTclInitQueueType(void)
     Tcl_InitHashTable(&tp.queues, TCL_STRING_KEYS);
     Ns_MutexSetName(&tp.queuelock, "jobThreadPool");
     tp.nextThreadId = 0;
-    tp.nextQueueId = 0;
+    tp.nextQueueId = 0U;
     tp.maxThreads = 0;
     tp.nthreads = 0;
     tp.nidle = 0;
@@ -546,7 +546,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              */
 
             jobPtr = NewJob((itPtr->servPtr ? itPtr->servPtr->server : NULL),
-                            queue->name, jobType, script);
+                            queue->name, (unsigned)jobType, script);
             Ns_GetTime(&jobPtr->startTime);
             if (tp.req == THREADPOOL_REQ_STOP
                 || queue->req == QUEUE_REQ_DELETE) {
@@ -1425,7 +1425,7 @@ NewQueue(CONST char *queueName, CONST char *queueDesc, int maxThreads)
     assert(queueName != NULL);
     assert(queueDesc != NULL);
 
-    queue = ns_calloc(1, sizeof(Queue));
+    queue = ns_calloc(1U, sizeof(Queue));
     queue->req = QUEUE_REQ_NONE;
 
     queue->name = ns_strdup(queueName);
@@ -1462,7 +1462,7 @@ NewQueue(CONST char *queueName, CONST char *queueDesc, int maxThreads)
 static void
 FreeQueue(Queue *queue)
 {
-    assert(queue);
+    assert(queue != NULL);
 
     Ns_MutexDestroy(&queue->lock);
     Tcl_DeleteHashTable(&queue->jobs);
@@ -1496,7 +1496,7 @@ NewJob(const char* server, const char* queueName, unsigned int type, const char 
     assert(queueName != NULL);
     assert(script != NULL);
 
-    jobPtr = ns_calloc(1, sizeof(Job));
+    jobPtr = ns_calloc(1U, sizeof(Job));
 
     jobPtr->server = server;
     jobPtr->type   = type;
@@ -1695,7 +1695,7 @@ AnyDone(Queue *queue)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     
-    assert(queue);
+    assert(queue != NULL);
 
     hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
 

@@ -186,7 +186,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     char       *file;
     int         status = TCL_ERROR;
-    uint32_t    w = 0, h = 0;
+    uint32_t    w = 0U, h = 0U;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -210,7 +210,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     Tcl_Close(interp, chan);
 
     if (status != TCL_OK) {
-        SetObjDims(interp, 0, 0);
+        SetObjDims(interp, 0U, 0U);
         return TCL_ERROR;
     }
 
@@ -328,7 +328,7 @@ int
 NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char       *file;
-    uint32_t    w = 0, h = 0;
+    uint32_t    w = 0U, h = 0U;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -409,7 +409,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         if (Tcl_Read(chan, (char *) &count, 1) != 1) {
             return TCL_ERROR;
         }
-        if (count == 0) {
+        if (count == 0U) {
             goto outerloop;
         }
         if (Tcl_Read(chan, (char *)buf, count) != count) {
