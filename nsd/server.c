@@ -228,7 +228,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      * Create a new NsServer.
      */
 
-    servPtr = ns_calloc(1, sizeof(NsServer));
+    servPtr = ns_calloc(1U, sizeof(NsServer));
     servPtr->server = server;
 
     Tcl_SetHashValue(hPtr, servPtr);
@@ -367,7 +367,7 @@ CreatePool(NsServer *servPtr, char *pool)
     assert(servPtr != NULL);
     assert(pool != NULL);
 
-    poolPtr = ns_calloc(1, sizeof(ConnPool));
+    poolPtr = ns_calloc(1U, sizeof(ConnPool));
     poolPtr->pool = pool;
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {

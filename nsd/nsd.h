@@ -1331,8 +1331,8 @@ NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr);
-NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, char *server);
-NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, char *server);
+NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, const char *server);
+NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, const char *server);
 NS_EXTERN void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
 NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server);
 

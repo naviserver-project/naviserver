@@ -56,7 +56,7 @@ typedef struct Trace {
 } Trace;
 
 static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
-static void RunTraces(Ns_Conn *conn, Trace *tracePtr);
+static void RunTraces(Ns_Conn *conn, const Trace *tracePtr);
 static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
 			     void *arg);
 
@@ -280,7 +280,7 @@ NsRunCleanups(Ns_Conn *conn)
 }
 
 static void
-RunTraces(Ns_Conn *conn, Trace *tracePtr)
+RunTraces(Ns_Conn *conn, const Trace *tracePtr)
 {
     while (tracePtr != NULL) {
     	(*tracePtr->proc)(tracePtr->arg, conn);
@@ -333,7 +333,7 @@ NewTrace(Ns_TraceProc *proc, void *arg)
  */
 
 void
-NsGetFilters(Tcl_DString *dsPtr, char *server)
+NsGetFilters(Tcl_DString *dsPtr, const char *server)
 {
     Filter *fPtr;
     NsServer *servPtr;
@@ -366,7 +366,7 @@ NsGetFilters(Tcl_DString *dsPtr, char *server)
 }   
 
 void
-NsGetTraces(Tcl_DString *dsPtr, char *server)
+NsGetTraces(Tcl_DString *dsPtr, const char *server)
 {
     Trace  *tracePtr;
     NsServer *servPtr;

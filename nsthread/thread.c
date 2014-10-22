@@ -371,7 +371,7 @@ NewThread(void)
 {
     Thread *thrPtr;
 
-    thrPtr = ns_calloc(1, sizeof(Thread));
+    thrPtr = ns_calloc(1U, sizeof(Thread));
     thrPtr->ctime = time(NULL);
     Ns_MasterLock();
     thrPtr->nextPtr = firstThreadPtr;

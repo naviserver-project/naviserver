@@ -198,7 +198,7 @@ NsUpdateProgress(Ns_Sock *sock)
         Progress *pPtr = Ns_SlsGet(&slot, sock);
 
         if (pPtr == NULL) {
-            pPtr = ns_calloc(1, sizeof(Progress));
+            pPtr = ns_calloc(1U, sizeof(Progress));
             Ns_SlsSet(&slot, sock, pPtr);
         }
 

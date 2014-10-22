@@ -74,7 +74,7 @@ static Ns_Sls        kslot;        /* Sls slot for keyed data. */
 void
 NsInitSls(void)
 {
-    cleanupProcs = ns_calloc(1, sizeof(Ns_Callback *));
+    cleanupProcs = ns_calloc(1U, sizeof(Ns_Callback *));
     Ns_SlsAlloc(&kslot, CleanupKeyed);
 }
 

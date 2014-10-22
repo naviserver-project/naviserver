@@ -161,7 +161,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
         /* FALLTHROUGH */
 
     case DLL_THREAD_ATTACH:
-        wPtr = ns_calloc(1, sizeof(WinThread));
+        wPtr = ns_calloc(1U, sizeof(WinThread));
         wPtr->event = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (wPtr->event == NULL) {
             NsThreadFatal("DllMain", "CreateEvent", GetLastError());
@@ -271,7 +271,7 @@ NsLockAlloc(void)
 {
     CRITICAL_SECTION *csPtr;
 
-    csPtr = (CRITICAL_SECTION *)ns_calloc(1, sizeof(CRITICAL_SECTION));
+    csPtr = (CRITICAL_SECTION *)ns_calloc(1U, sizeof(CRITICAL_SECTION));
     InitializeCriticalSection(csPtr);
 
     return (void *)csPtr;
@@ -396,7 +396,7 @@ Ns_CondInit(Ns_Cond *cond)
 {
     Cond *condPtr;
 
-    condPtr = ns_calloc(1, sizeof(Cond));
+    condPtr = ns_calloc(1U, sizeof(Cond));
     InitializeCriticalSection(&condPtr->critsec);
     *cond = (Ns_Cond)condPtr;
 }

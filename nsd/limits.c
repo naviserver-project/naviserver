@@ -329,7 +329,7 @@ FindLimits(const char *limits, int create)
     } else {
         hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);
         if (isNew) {
-            limitsPtr = ns_calloc(1, sizeof(NsLimits));
+            limitsPtr = ns_calloc(1U, sizeof(NsLimits));
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);
             Ns_MutexSetName2(&limitsPtr->lock, "ns:limits", limits);

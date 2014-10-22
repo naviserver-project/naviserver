@@ -331,7 +331,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
       httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
 
       if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
-	  httpPtr->compress = ns_calloc(1, sizeof(Ns_CompressStream));
+	  httpPtr->compress = ns_calloc(1U, sizeof(Ns_CompressStream));
 	  Ns_InflateInit(httpPtr->compress);
       }
     }
@@ -728,7 +728,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
 	*file = '/';
     }
     
-    httpPtr = ns_calloc(1, sizeof(Ns_HttpTask));
+    httpPtr = ns_calloc(1U, sizeof(Ns_HttpTask));
     httpPtr->sock            = sock;
     httpPtr->spoolLimit      = -1;
     httpPtr->url             = url2;

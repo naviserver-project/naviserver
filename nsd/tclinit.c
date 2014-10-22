@@ -1289,7 +1289,7 @@ NsTclAppInit(Tcl_Interp *interp)
 NsInterp *
 NsGetInterpData(Tcl_Interp *interp)
 {
-    assert(interp);
+    assert(interp != NULL);
     return Tcl_GetAssocData(interp, "ns:data", NULL);
 }
 
@@ -1637,7 +1637,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
-        itPtr = ns_calloc(1, sizeof(NsInterp));
+        itPtr = ns_calloc(1U, sizeof(NsInterp));
         itPtr->interp = interp;
         itPtr->servPtr = servPtr;
         Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);

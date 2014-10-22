@@ -274,7 +274,8 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
              */
 
             if (bufIdx < nbufs - 1) {
-                memmove(sbufPtr, sbufPtr + sbufIdx, (size_t) sizeof(struct iovec) * nsbufs);
+		assert(nsbufs > 0);
+                memmove(sbufPtr, sbufPtr + sbufIdx, sizeof(struct iovec) * (size_t)nsbufs);
             } else {
                 sbufPtr = sbufPtr + sbufIdx;
                 sbufLen = nsbufs - sbufIdx;
@@ -899,7 +900,7 @@ void
 Ns_ClearSockErrno(void)
 {
 #ifdef _WIN32
-    SetLastError(0);
+    SetLastError(0U);
 #else
     errno = 0;
 #endif

@@ -69,7 +69,7 @@ static enum imgtype GetImageType(Tcl_Channel chan);
 static void SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h);
 
 static int ChanGetc(Tcl_Channel chan);
-static Tcl_Channel GetFileChan(Tcl_Interp *interp, char *path);
+static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path);
 
 
 /*
@@ -637,7 +637,7 @@ GetImageType(Tcl_Channel chan)
         Tcl_Seek(chan,  0, SEEK_END);
         Tcl_Seek(chan, -2, SEEK_CUR);
         Tcl_Read(chan, (char*)trail, 2);
-        if (!memcmp(trail, jpeg_trail, 2)) {
+        if (!memcmp(trail, jpeg_trail, 2U)) {
             type = jpeg;
         }
     } else if (   !memcmp(gif87_magic, buf, sizeof(gif87_magic))
@@ -726,7 +726,7 @@ SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
  */
 
 static Tcl_Channel
-GetFileChan(Tcl_Interp *interp, char *path)
+GetFileChan(Tcl_Interp *interp, const char *path)
 {
     Tcl_Channel chan;
 

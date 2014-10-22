@@ -274,7 +274,7 @@ RegisterPage(ClientData arg,
     assert(method != NULL);
     assert(url != NULL);
 
-    adp = ns_calloc(1, sizeof(AdpRequest) + (file ? strlen(file) : 0));
+    adp = ns_calloc(1U, sizeof(AdpRequest) + (file ? strlen(file) : 0));
     if (file != NULL) {
         strcpy(adp->file, file);
     }

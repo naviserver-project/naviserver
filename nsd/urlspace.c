@@ -788,7 +788,7 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
          */
 
         if (triePtr->node == NULL) {
-            triePtr->node = ns_calloc(1, sizeof(Node));
+            triePtr->node = ns_calloc(1U, sizeof(Node));
             nodePtr = triePtr->node;
         } else {
 

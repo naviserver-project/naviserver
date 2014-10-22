@@ -1213,22 +1213,22 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, unsigned int flags, Ns_DStr
  */
 
 NS_EXTERN void
-Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage);
+Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage);
 
 NS_EXTERN void
-Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage);
+Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage);
 
 NS_EXTERN void
 Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, char *value, time_t maxage,
 		   char *domain, char *path, unsigned int flags);
 NS_EXTERN void
-Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path);
+Ns_ConnDeleteCookie(const Ns_Conn *conn, char *name, char *domain, char *path);
 
 NS_EXTERN void
-Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path);
+Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, char *name, char *domain, char *path);
 
 NS_EXTERN char *
-Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, char *name);
+Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name);
 
 /*
  * crypt.c:

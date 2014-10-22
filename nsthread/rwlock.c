@@ -88,7 +88,7 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
     RwLock *lockPtr;
     static unsigned int nextid = 0;
     
-    lockPtr = ns_calloc(1, sizeof(RwLock));
+    lockPtr = ns_calloc(1U, sizeof(RwLock));
     NsMutexInitNext(&lockPtr->mutex, "rw", &nextid);
     Ns_CondInit(&lockPtr->rcond);
     Ns_CondInit(&lockPtr->wcond);

@@ -840,7 +840,7 @@ CreateSynchObject(const NsInterp *itPtr,
     }
 
     if (isNew) {
-        addr = ns_calloc(1, sizeof(void *));
+        addr = ns_calloc(1U, sizeof(void *));
         if (cnt > -1) {
             Ns_SemaInit((Ns_Sema *) addr, cnt);
         } else if (initProc != NULL) {

@@ -124,7 +124,7 @@ Ns_ModuleInit(char *server, char *module)
 
     Ns_DStringInit(&ds);
 
-    logPtr = ns_calloc(1,sizeof(Log));
+    logPtr = ns_calloc(1U, sizeof(Log));
     logPtr->module = module;
     logPtr->fd = -1;
     Ns_MutexInit(&logPtr->lock);
