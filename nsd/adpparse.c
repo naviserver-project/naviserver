@@ -77,7 +77,7 @@ typedef struct Parse {
  */
 
 static void AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
@@ -343,7 +343,9 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      * continue looking for next ADP tag.
                      */
 
-                    AppendBlock(&parse, text, s, 't', flags);
+		    if (s > text) {
+			AppendBlock(&parse, text, s, 't', flags);
+		    }
                     if (!(flags & ADP_SAFE)) {
                         if (s[2] != '=') {
                             AppendBlock(&parse, s + 2, e, 's', flags);
@@ -379,7 +381,9 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                          * and begin looking for required closing tag.
                          */
 
-                        AppendBlock(&parse, text, s, 't', flags);
+                        if (s > text) {
+			    AppendBlock(&parse, text, s, 't', flags);
+			}
                         tagPtr = Tcl_GetHashValue(hPtr);
                         if (tagPtr->endtag == NULL) {
                             AppendTag(&parse, tagPtr, a, e, NULL, flags);
@@ -416,12 +420,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 
                     if (!(flags & ADP_SAFE)) {
                         if (streamFlag && !streamDone) {
-			    /*
-			     * GN: when 3rd argument of AppendBlock()
-			     * is NULL, it does nothing.
-			     */
-			    fprintf(stderr, "########################## Switch to streaming? \n");
-                            AppendBlock(&parse, "ns_adp_ctl stream on", NULL, 's', flags);
+			    static char *buffer = "ns_adp_ctl stream on\0";
+			    char *end = buffer + strlen(buffer);
+
+                            AppendBlock(&parse, buffer, end, 's', flags);
                             streamDone = 1;
                         }
                         AppendBlock(&parse, script, s, 's', flags);
@@ -468,9 +470,12 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     /*
      * Append the remaining text block
      */
-
-    AppendBlock(&parse, text, text + strlen(text), 't', flags);
-
+    { 
+	size_t len = strlen(text);
+	if (len > 0U) {
+	    AppendBlock(&parse, text, text + len, 't', flags);
+	}
+    }
     /*
      * If requested, collapse blocks to a single Tcl script and
      * and complete the parse code structure.
@@ -540,11 +545,13 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flag
 
     assert(parsePtr != NULL);
     assert(s != NULL);
-
-    if (e == NULL || s >= e) {
-        return;
-    }
     assert(e != NULL);
+    assert(s <= e);
+
+    if (s == e) {
+	/* false alarm */
+	return;
+    }
 
     codePtr = parsePtr->codePtr;
 
