@@ -1173,8 +1173,9 @@ CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
         return 1;
     } else if (rcontainsl) {
         return -1;
+    } else {
+	return 0;
     }
-    return 0;
 }
 
 
@@ -1209,8 +1210,9 @@ CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
         return 1;
     } else if (rcontainsl) {
         return -1;
+    } else {
+	return 0;
     }
-    return 0;
 }
 #endif
 
