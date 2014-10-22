@@ -40,7 +40,7 @@
  * Local functions defined in this file
  */
 
-static int BinSearch(void *const*elPtrPtr, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+static int BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int BinSearchKey(const void *key, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
@@ -336,7 +336,7 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
  */
 
 static int
-BinSearch(void *const*elPtrPtr, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 {
     int low = 0, high = n-1, mid = 0;
 
@@ -348,7 +348,7 @@ BinSearch(void *const*elPtrPtr, void *const*listPtrPtr, int n, Ns_IndexCmpProc *
 	int cond;
 
         mid = (low + high) / 2;
-        if ((cond = (*cmpProc) (elPtrPtr, listPtrPtr + mid)) < 0) {
+        if ((cond = (*cmpProc) (elPtrPtr, ((unsigned char **)listPtrPtr) + mid)) < 0) {
             high = mid - 1;
         } else if (cond > 0) {
             low = mid + 1;
@@ -378,7 +378,7 @@ BinSearch(void *const*elPtrPtr, void *const*listPtrPtr, int n, Ns_IndexCmpProc *
  */
 
 static int
-BinSearchKey(const void *key, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+BinSearchKey(const void *key, void *const* listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 {
     int low = 0, high = n-1, mid = 0;
 
@@ -390,7 +390,7 @@ BinSearchKey(const void *key, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cm
 	int cond;
 
         mid = (low + high) / 2;
-        if ((cond = (*cmpProc) (key, listPtrPtr + mid)) < 0) {
+        if ((cond = (*cmpProc) (key, ((unsigned char **)listPtrPtr) + mid)) < 0) {
             high = mid - 1;
         } else if (cond > 0) {
             low = mid + 1;
