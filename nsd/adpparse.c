@@ -272,6 +272,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 
     if (flags & ADP_TCLFILE) {
         int size;
+
         if (!(flags & ADP_CACHE)) {
             Tcl_DStringAppend(&codePtr->text, adp, -1);
         } else {
@@ -415,6 +416,11 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 
                     if (!(flags & ADP_SAFE)) {
                         if (streamFlag && !streamDone) {
+			    /*
+			     * GN: when 3rd argument of AppendBlock()
+			     * is NULL, it does nothing.
+			     */
+			    fprintf(stderr, "########################## Switch to streaming? \n");
                             AppendBlock(&parse, "ns_adp_ctl stream on", NULL, 's', flags);
                             streamDone = 1;
                         }
@@ -529,22 +535,21 @@ NsAdpFreeCode(AdpCode *codePtr)
 static void
 AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
 {
-    AdpCode *codePtr;
-    ssize_t   len;
+    AdpCode   *codePtr;
+    ptrdiff_t  len;
 
     assert(parsePtr != NULL);
     assert(s != NULL);
 
-    codePtr = parsePtr->codePtr;
-
-    if (s >= e) {
+    if (e == NULL || s >= e) {
         return;
     }
+    assert(e != NULL);
+
+    codePtr = parsePtr->codePtr;
 
     if (flags & ADP_SINGLE) {
         char     save;
-
-	assert(e != NULL);
 
         switch (type) {
         case 'S':
@@ -561,8 +566,8 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flag
             break;
 
         default:
-
 	  Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
+
         }
         Tcl_DStringAppend(&codePtr->text, "\n", 1);
 
