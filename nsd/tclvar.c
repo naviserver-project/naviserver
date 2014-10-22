@@ -236,7 +236,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         char *value = Tcl_GetStringFromObj(objv[3], &len);
 
         arrayPtr = LockArrayObj(interp, objv[1], 1);
-	assert(arrayPtr);
+	assert(arrayPtr != NULL);
         SetVar(arrayPtr, key, value, (size_t)len);
         UnlockArray(arrayPtr);
 
@@ -291,7 +291,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         return TCL_ERROR;
     }
     arrayPtr = LockArrayObj(interp, objv[1], 1);
-    assert(arrayPtr);
+    assert(arrayPtr != NULL);
     result = IncrVar(arrayPtr, Tcl_GetString(objv[2]), count, &current);
     UnlockArray(arrayPtr);
 
@@ -385,7 +385,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         return TCL_ERROR;
     }
     arrayPtr = LockArrayObj(interp, objv[1], 1);
-    assert(arrayPtr);
+    assert(arrayPtr != NULL);
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
     if (!isNew) {
@@ -574,7 +574,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         }
 
         arrayPtr = LockArrayObj(interp, objv[2], 1);
-	assert(arrayPtr);
+	assert(arrayPtr != NULL);
 	
         if (opt == CResetIdx) {
             Flush(arrayPtr);
