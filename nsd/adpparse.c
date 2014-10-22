@@ -46,7 +46,7 @@
 #define APPEND      "ns_adp_append "
 #define APPEND_LEN  (int)(sizeof(APPEND)-1)
 
-#define LENSZ       (int)(sizeof(int))
+#define LENSZ       ((int)(sizeof(int)))
 
 /*
  * The following structure maintains proc and adp registered tags.
