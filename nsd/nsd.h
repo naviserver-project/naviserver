@@ -1239,7 +1239,7 @@ NS_EXTERN void NsConfigEncodings(void);
  */
 
 NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN NsServer *NsGetInitServer(void);

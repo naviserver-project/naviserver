@@ -217,7 +217,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     int                i, n;
 
     assert(server != NULL);
-    assert(initProc != NULL);
 
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (!n) {
