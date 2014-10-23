@@ -1621,6 +1621,7 @@ CreateConnThread(ConnPool *poolPtr)
       assert(strncmp("-driver:", threadName, 8) == 0 
 	     || strncmp("-main-", threadName, 6) == 0
 	     || strncmp("-spooler", threadName, 8) == 0
+	     || strncmp("-service-", threadName, 9) == 0
 	     );
     }
 #endif
