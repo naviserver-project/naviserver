@@ -94,7 +94,7 @@ Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc)
  */
 
 void
-Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *value)
+Ns_ClsSet(const Ns_Cls *clsPtr, Ns_Conn *conn, void *value)
 {
     void **slotPtr;
 
@@ -120,7 +120,7 @@ Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *value)
  */
 
 void *
-Ns_ClsGet(Ns_Cls *clsPtr, Ns_Conn *conn)
+Ns_ClsGet(const Ns_Cls *clsPtr, Ns_Conn *conn)
 {
     void **slotPtr;
 

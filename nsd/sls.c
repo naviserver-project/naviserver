@@ -74,7 +74,7 @@ static Ns_Sls        kslot;        /* Sls slot for keyed data. */
 void
 NsInitSls(void)
 {
-    cleanupProcs = ns_calloc(1, sizeof(Ns_Callback *));
+    cleanupProcs = ns_calloc(1U, sizeof(Ns_Callback *));
     Ns_SlsAlloc(&kslot, CleanupKeyed);
 }
 
@@ -128,7 +128,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
  */
 
 void
-Ns_SlsSet(Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
+Ns_SlsSet(const Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
 {
     void **slotPtr;
 
@@ -156,7 +156,7 @@ Ns_SlsSet(Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
  */
 
 void *
-Ns_SlsGet(Ns_Sls *slsPtr, Ns_Sock *sock)
+Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     void **slotPtr;
 

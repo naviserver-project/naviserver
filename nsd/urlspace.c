@@ -219,18 +219,18 @@ typedef struct Junction {
 
 static void  NodeDestroy(Node *nodePtr);
 static void  BranchDestroy(Branch *branchPtr);
-static int   CmpBranches(Branch **leftPtrPtr, Branch **rightPtrPtr);
-static int   CmpKeyWithBranch(CONST char *key, Branch **branchPtrPtr);
+static int   CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr);
+static int   CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr);
 
 /*
  * Utility functions
  */
 
-static void MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url);
-static void WalkTrie(Trie *triePtr, Ns_ArgProc func,
-                     Ns_DString *dsPtr, char **stack, CONST char *filter);
+static void MkSeq(Ns_DString *dsPtr, const char *method, const char *url);
+static void WalkTrie(const Trie *triePtr, Ns_ArgProc func,
+                     Ns_DString *dsPtr, char **stack, const char *filter);
 #ifdef DEBUG
-static void PrintSeq(CONST char *seq);
+static void PrintSeq(const char *seq);
 #endif
 
 /*
@@ -240,9 +240,9 @@ static void PrintSeq(CONST char *seq);
 static void  TrieInit(Trie *triePtr);
 static void  TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags, 
                      void (*deletefunc)(void *data));
-static void *TrieFind(Trie *triePtr, char *seq, int *depthPtr);
-static void *TrieFindExact(Trie *triePtr, char *seq, unsigned int flags);
-static void *TrieDelete(Trie *triePtr, char *seq, unsigned int flags);
+static void *TrieFind(const Trie *triePtr, char *seq, int *depthPtr);
+static void *TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags);
+static void *TrieDelete(const Trie *triePtr, char *seq, unsigned int flags);
 static void  TrieTrunc(Trie *triePtr);
 static int   TrieTruncBranch(Trie *triePtr, char *seq);
 static void  TrieDestroy(Trie *triePtr);
@@ -252,12 +252,12 @@ static void  TrieDestroy(Trie *triePtr);
  */
 
 #ifndef __URLSPACE_OPTIMIZE__
-static int CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr);
-static int CmpKeyWithChannel(CONST char *key, Channel **channelPtrPtr);
+static int CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr);
+static int CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr);
 #endif
 
-static int CmpChannelsAsStrings(Channel **leftPtrPtr, Channel **rightPtrPtr);
-static int CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr);
+static int CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr);
+static int CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr);
 
 /*
  * Juntion functions
@@ -268,13 +268,13 @@ static Junction *JunctionGet(NsServer *servPtr, int id)
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
                         unsigned int flags, void (*deletefunc)(void *data))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void *JunctionFind(Junction *juncPtr, char *seq, int fast)
+static void *JunctionFind(const Junction *juncPtr, char *seq, int fast)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void *JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags)
+static void *JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void *JunctionDeleteNode(Junction *juncPtr, char *seq, unsigned int flags)
+static void *JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void JunctionTruncBranch(Junction *juncPtr, char *seq)
+static void JunctionTruncBranch(const Junction *juncPtr, char *seq)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -525,8 +525,8 @@ Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsP
 }
     
 static void
-WalkTrie(Trie *triePtr, Ns_ArgProc func,
-         Ns_DString *dsPtr, char **stack, CONST char *filter)
+WalkTrie(const Trie *triePtr, Ns_ArgProc func,
+         Ns_DString *dsPtr, char **stack, const char *filter)
 {
     Branch      *branchPtr;
     Node        *nodePtr;
@@ -648,7 +648,7 @@ NodeDestroy(Node *nodePtr)
  */
 
 static int
-CmpBranches(Branch **leftPtrPtr, Branch **rightPtrPtr)
+CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
 {
     return strcmp((*leftPtrPtr)->word, (*rightPtrPtr)->word);
 }
@@ -672,7 +672,7 @@ CmpBranches(Branch **leftPtrPtr, Branch **rightPtrPtr)
  */
 
 static int
-CmpKeyWithBranch(CONST char *key, Branch **branchPtrPtr)
+CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr)
 {
     return strcmp(key, (*branchPtrPtr)->word);
 }
@@ -788,7 +788,7 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
          */
 
         if (triePtr->node == NULL) {
-            triePtr->node = ns_calloc(1, sizeof(Node));
+            triePtr->node = ns_calloc(1U, sizeof(Node));
             nodePtr = triePtr->node;
         } else {
 
@@ -973,7 +973,7 @@ TrieDestroy(Trie *triePtr)
  */
 
 static void *
-TrieFind(Trie *triePtr, char *seq, int *depthPtr)
+TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
 {
     Node   *nodePtr = triePtr->node;
     Branch *branchPtr;
@@ -1029,7 +1029,7 @@ TrieFind(Trie *triePtr, char *seq, int *depthPtr)
  */
 
 static void *
-TrieFindExact(Trie *triePtr, char *seq, unsigned int flags)
+TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 {
     Node   *nodePtr = triePtr->node;
     Branch *branchPtr;
@@ -1087,7 +1087,7 @@ TrieFindExact(Trie *triePtr, char *seq, unsigned int flags)
  */
 
 static void *
-TrieDelete(Trie *triePtr, char *seq, unsigned int flags)
+TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
 {
     Node   *nodePtr = triePtr->node;
     Branch *branchPtr;
@@ -1158,7 +1158,7 @@ TrieDelete(Trie *triePtr, char *seq, unsigned int flags)
  */
 
 static int
-CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
+CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
 {
     int lcontainsr, rcontainsl;
 
@@ -1173,8 +1173,9 @@ CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
         return 1;
     } else if (rcontainsl) {
         return -1;
+    } else {
+	return 0;
     }
-    return 0;
 }
 
 
@@ -1197,7 +1198,7 @@ CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
  */
 
 static int
-CmpKeyWithChannel(CONST char *key, Channel **channelPtrPtr)
+CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
 {
     int lcontainsr, rcontainsl;
 
@@ -1209,8 +1210,9 @@ CmpKeyWithChannel(CONST char *key, Channel **channelPtrPtr)
         return 1;
     } else if (rcontainsl) {
         return -1;
+    } else {
+	return 0;
     }
-    return 0;
 }
 #endif
 
@@ -1232,7 +1234,7 @@ CmpKeyWithChannel(CONST char *key, Channel **channelPtrPtr)
  */
 
 static int
-CmpChannelsAsStrings(Channel **leftPtrPtr, Channel **rightPtrPtr)
+CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
 {
     return strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter);
 }
@@ -1255,7 +1257,7 @@ CmpChannelsAsStrings(Channel **leftPtrPtr, Channel **rightPtrPtr)
  */
 
 static int
-CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr)
+CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr)
 {
     return strcmp(key, (*channelPtrPtr)->filter);
 }
@@ -1322,7 +1324,7 @@ JunctionGet(NsServer *servPtr, int id)
  */
 
 static void
-JunctionTruncBranch(Junction *juncPtr, char *seq)
+JunctionTruncBranch(const Junction *juncPtr, char *seq)
 {
     Channel *channelPtr;
     int      i;
@@ -1477,7 +1479,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
  */
 
 static void *
-JunctionFind(Junction *juncPtr, char *seq, int fast)
+JunctionFind(const Junction *juncPtr, char *seq, int fast)
 {
     Channel *channelPtr;
     char    *p;
@@ -1608,7 +1610,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
  */
 
 static void *
-JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags)
+JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
 {
     Channel *channelPtr;
     char    *p;
@@ -1697,7 +1699,7 @@ JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags)
  */
 
 static void *
-JunctionDeleteNode(Junction *juncPtr, char *seq, unsigned int flags)
+JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
 {
     Channel *channelPtr;
     char    *p;
@@ -1775,7 +1777,7 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, unsigned int flags)
  */
 
 static void
-MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url)
+MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
 {
     CONST char *p;
     int         done;
@@ -1793,7 +1795,7 @@ MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url)
         if (*url != '/') {
             p = strchr(url, '/');
             if (p != NULL) {
-                l = p - url;
+		l = (size_t)(p - url);
             } else {
                 l = strlen(url);
                 done = 1;
@@ -1834,9 +1836,9 @@ MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url)
  */
      
 static void
-PrintSeq(CONST char *seq)
+PrintSeq(const char *seq)
 {
-    CONST char *p;
+    const char *p;
 
     for (p = seq; *p != '\0'; p += strlen(p) + 1) {
         if (p != seq) {

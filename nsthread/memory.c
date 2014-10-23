@@ -107,7 +107,7 @@ ns_strncopy(const char *old, ssize_t size)
 
     if (likely(old != NULL)) {
         size = likely(size > 0) ? size : strlen(old);
-        new = ns_malloc(size + 1);
+        new = ns_malloc(size + 1U);
         strncpy(new, old, size);
         new[size] = 0;
     }
@@ -119,7 +119,7 @@ ns_strdup(const char *old)
 {
     char *new;
 
-    new = ns_malloc(strlen(old) + 1);
+    new = ns_malloc(strlen(old) + 1U);
     strcpy(new, old);
 
     return new;

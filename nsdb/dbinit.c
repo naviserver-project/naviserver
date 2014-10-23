@@ -225,7 +225,7 @@ Ns_DbPoolList(const char *server)
  */
 
 int
-Ns_DbPoolAllowable(char *server, const char *pool)
+Ns_DbPoolAllowable(const char *server, const char *pool)
 {
     register char *p;
 

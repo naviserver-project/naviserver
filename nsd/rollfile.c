@@ -86,7 +86,7 @@ Ns_RollFile(CONST char *file, int max)
         return NS_ERROR;
     }
 
-    first = ns_malloc(strlen(file) + 5);
+    first = ns_malloc(strlen(file) + 5U);
     sprintf(first, "%s.000", file);
     err = Exists(first);
 

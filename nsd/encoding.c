@@ -209,10 +209,10 @@ NsConfigEncodings(void)
 }
 
 static int
-ConfigServerEncodings(CONST char *server)
+ConfigServerEncodings(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
-    CONST char *path;
+    const char *path;
 
     /*
      * Configure the encoding used in the request URL.
@@ -447,7 +447,7 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
         if (*start++ == '=') {
             start += strspn(start, " ");
             end = start;
-            while (*end && !isspace(UCHAR(*end))) {
+            while (*end != '\0' && !isspace(UCHAR(*end))) {
                 ++end;
             }
             *lenPtr = end - start;

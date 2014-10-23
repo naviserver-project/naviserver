@@ -392,6 +392,7 @@ ns_section ns/server/${server}/module/nspam
 ns_section    "ns/server/${server}/module/nsssl"
        ns_param		address    	$address
        ns_param		port       	$httpsport
+       ns_param		hostname       	$hostname
        ns_param		ciphers		"RC4:HIGH:!aNULL:!MD5;"
        ns_param		protocols	"!SSLv2"
        ns_param		certificate	$serverroot/etc/certfile.pem
@@ -519,15 +520,12 @@ ns_section ns/server/${server}/modules
 	#
 	# Determine, if libthread is installed
 	#
-	set libthread [glob -nocomplain ${bindir}/../lib/thread*/libthread*[info sharedlibextension]]
-	if {[llength $libthread] == 0} {
-	  ns_log notice "No Tcl thread library installed in ${bindir}/../lib/"
+        set libthread [lindex [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]] end]
+	if {$libthread eq ""} {
+	  ns_log notice "No Tcl thread library installed in $homedir/lib/"
 	} else {
-	  if {[llength $libthread] > 1} {
-	    ns_log notice "Multiple Tcl thread libraries installed: $libthread"
-	  }
-	  ns_param	libthread [lindex $libthread end]
-	  ns_log notice "Use Tcl thread library [lindex $libthread end]"
+	  ns_param	libthread $libthread end
+	  ns_log notice "Use Tcl thread library $libthread"
 	}
 
 	# authorize-gateway package requires dqd_utils

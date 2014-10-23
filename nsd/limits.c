@@ -45,8 +45,8 @@
  */
 
 static Ns_ObjvProc ObjvLimits;
-static NsLimits *FindLimits(char *limits, int create);
-static void LimitsResult(Tcl_Interp *interp, NsLimits *limitsPtr);
+static NsLimits *FindLimits(const char *limits, int create);
+static void LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr);
 
 
 /*
@@ -104,7 +104,7 @@ NsInitLimits(void)
  */
 
 NsLimits *
-NsGetRequestLimits(NsServer *servPtr, char *method, char *url)
+NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
 {
     NsLimits *limitsPtr;
 
@@ -317,7 +317,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
  */
 
 static NsLimits *
-FindLimits(char *limits, int create)
+FindLimits(const char *limits, int create)
 {
     NsLimits      *limitsPtr;
     Tcl_HashEntry *hPtr;
@@ -329,7 +329,7 @@ FindLimits(char *limits, int create)
     } else {
         hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);
         if (isNew) {
-            limitsPtr = ns_calloc(1, sizeof(NsLimits));
+            limitsPtr = ns_calloc(1U, sizeof(NsLimits));
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);
             Ns_MutexSetName2(&limitsPtr->lock, "ns:limits", limits);
@@ -407,7 +407,7 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 static void
-LimitsResult(Tcl_Interp *interp, NsLimits *limitsPtr)
+LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
 {
     Ns_DString ds;
 

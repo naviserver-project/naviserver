@@ -56,7 +56,7 @@ typedef struct Trace {
 } Trace;
 
 static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
-static void RunTraces(Ns_Conn *conn, Trace *tracePtr);
+static void RunTraces(Ns_Conn *conn, const Trace *tracePtr);
 static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
 			     void *arg);
 
@@ -78,7 +78,7 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
  */
 
 void *
-Ns_RegisterFilter(char *server, char *method, char *url,
+Ns_RegisterFilter(const char *server, const char *method, const char *url,
     Ns_FilterProc *proc, unsigned int when, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
@@ -179,7 +179,7 @@ NsRunFilters(Ns_Conn *conn, unsigned int why)
  */
 
 void *
-Ns_RegisterServerTrace(char *server, Ns_TraceProc * proc, void *arg)
+Ns_RegisterServerTrace(const char *server, Ns_TraceProc * proc, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
     Trace *tracePtr, **tPtrPtr;
@@ -218,7 +218,7 @@ Ns_RegisterServerTrace(char *server, Ns_TraceProc * proc, void *arg)
  */
 
 void *
-Ns_RegisterConnCleanup(char *server, Ns_TraceProc *proc, void *arg)
+Ns_RegisterConnCleanup(const char *server, Ns_TraceProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -280,7 +280,7 @@ NsRunCleanups(Ns_Conn *conn)
 }
 
 static void
-RunTraces(Ns_Conn *conn, Trace *tracePtr)
+RunTraces(Ns_Conn *conn, const Trace *tracePtr)
 {
     while (tracePtr != NULL) {
     	(*tracePtr->proc)(tracePtr->arg, conn);
@@ -333,7 +333,7 @@ NewTrace(Ns_TraceProc *proc, void *arg)
  */
 
 void
-NsGetFilters(Tcl_DString *dsPtr, char *server)
+NsGetFilters(Tcl_DString *dsPtr, const char *server)
 {
     Filter *fPtr;
     NsServer *servPtr;
@@ -366,7 +366,7 @@ NsGetFilters(Tcl_DString *dsPtr, char *server)
 }   
 
 void
-NsGetTraces(Tcl_DString *dsPtr, char *server)
+NsGetTraces(Tcl_DString *dsPtr, const char *server)
 {
     Trace  *tracePtr;
     NsServer *servPtr;

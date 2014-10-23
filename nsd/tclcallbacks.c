@@ -338,7 +338,7 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 }
 
 static void
-ShutdownProc(Ns_Time *toPtr, void *arg)
+ShutdownProc(const Ns_Time *toPtr, void *arg)
 {
     if (toPtr == NULL) {
         Ns_TclCallbackProc(arg);

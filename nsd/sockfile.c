@@ -186,7 +186,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
             /*
              * Coalesce runs of memory bufs into fixed-sized iovec.
              */
-            Ns_SetVec(sbufs, nsbufs++, (void *) (intptr_t) offset, length);
+	    Ns_SetVec(sbufs, nsbufs++, INT2PTR(offset), length);
         }
 
         /* Flush pending memory bufs. */
@@ -507,7 +507,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
 
 static ssize_t
 SendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
-         Ns_Time *timeoutPtr, unsigned int flags)
+         const Ns_Time *timeoutPtr, unsigned int flags)
 {
     return Ns_SockSendBufs(sock, bufs, nbufs, timeoutPtr, flags);
 }

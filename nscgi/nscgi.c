@@ -178,7 +178,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
-    modPtr = ns_calloc(1, sizeof(Mod));
+    modPtr = ns_calloc(1U, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
     Ns_MutexInit(&modPtr->lock);

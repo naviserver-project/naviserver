@@ -79,7 +79,7 @@ NsConfigVhost(void)
 }
 
 static int
-ConfigServerVhost(CONST char *server)
+ConfigServerVhost(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
@@ -178,7 +178,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
 #ifdef _WIN32
     if (isalpha(UCHAR(*src)) && src[1] == ':') {
         if (isupper(UCHAR(*src))) {
-            *src = tolower(*src);
+	  *src = tolower(UCHAR(*src));
         }
         Ns_DStringNAppend(dsPtr, src, 2);
         src += 2;
@@ -208,7 +208,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
          * Move to next slash
          */
 
-        while (*src && !ISSLASH(*src)) {
+        while (*src != '\0' && !ISSLASH(*src)) {
             ++src;
         }
         end = *src;
@@ -628,7 +628,7 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg)
  */
 
 char *
-NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
+NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host)
 {
     char *path;
 
@@ -898,7 +898,7 @@ MakePath(Ns_DString *dest, va_list *pap)
     while ((s = va_arg(*pap, char *)) != NULL) {
         if (isalpha(UCHAR(*s)) && s[1] == ':') {
             char temp = *(s+2);
-            *(s + 2) = 0;
+            *(s + 2) = '\0';
             Ns_DStringNAppend(dest, s, 2);
             *(s + 2) = temp;
             s += 2;

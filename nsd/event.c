@@ -51,8 +51,8 @@ typedef struct Event {
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;
 
-#define EVENT_WAIT 1  /* Event callback has requested a wait. */
-#define EVENT_DONE 2  /* Event callback has signaled Event done. */
+#define EVENT_WAIT 1U  /* Event callback has requested a wait. */
+#define EVENT_DONE 2U  /* Event callback has signaled Event done. */
 
 /*
  * The following defines an event queue of sockets waiting for
@@ -116,7 +116,7 @@ Ns_CreateEventQueue(int maxevents)
 
     assert(maxevents > 0);
 
-    queuePtr = ns_calloc(1, sizeof(EventQueue) + (sizeof(Event) * maxevents));
+    queuePtr = ns_calloc(1U, sizeof(EventQueue) + (sizeof(Event) * maxevents));
     queuePtr->pfds = ns_calloc(maxevents + 1, sizeof(struct pollfd));
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
@@ -204,7 +204,7 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      * Map from sock when bits to poll event bits.
      */
 
-    evPtr->events = 0;
+    evPtr->events = 0U;
     for (i = 0; i < 3; ++i) {
         if (when & map[i].when) {
             evPtr->events |= map[i].event;
@@ -266,7 +266,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     while ((evPtr = queuePtr->firstInitPtr) != NULL) {
         queuePtr->firstInitPtr = evPtr->nextPtr;
         Call(evPtr, &now, NS_SOCK_INIT);
-        if (!evPtr->status) {
+        if (evPtr->status == 0U) {
             Ns_Log(Bug, "Ns_RunEventQueue: callback init failed");
             Push(evPtr, queuePtr->firstFreePtr);
         }

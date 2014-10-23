@@ -96,18 +96,18 @@ typedef struct InterpPage {
  * Local functions defined in this file.
  */
 
-static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags);
-static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
+static Page *ParseFile(const NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags);
+static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
 static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
-                   AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
-                   struct stat *stPtr);
+                   const AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
+                   const struct stat *stPtr);
 static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
                      const Ns_Time *expiresPtr, Tcl_DString *outputPtr);
-static int AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript);
+static int AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript);
 static void DecrCache(AdpCache *cachePtr);
 static Objs *AllocObjs(int nobjs);
 static void FreeObjs(Objs *objsPtr);
-static void AdpTrace(NsInterp *itPtr, char *ptr, int len);
+static void AdpTrace(const NsInterp *itPtr, char *ptr, int len);
 static Ns_Callback FreeInterpPage;
 static Ns_ServerInitProc ConfigServerAdp;
 
@@ -135,9 +135,9 @@ NsConfigAdp(void)
 }
 
 static int
-ConfigServerAdp(CONST char *server)
+ConfigServerAdp(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr = NsGetServer(server); 
     CONST char *path;
 
     path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
@@ -164,7 +164,7 @@ ConfigServerAdp(CONST char *server)
     servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
     servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
 
-    servPtr->adp.flags = 0;
+    servPtr->adp.flags = 0U;
     Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "stream",       ADP_STREAM,    0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "enableexpire", ADP_EXPIRE,    0, &servPtr->adp.flags);
@@ -201,20 +201,20 @@ ConfigServerAdp(CONST char *server)
  */
 
 int
-NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar)
+NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
     return AdpEval(itPtr, objc, objv, resvar);
 }
 
 int
-NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar)
+NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
     itPtr->adp.flags |= ADP_ADPFILE;
     return AdpEval(itPtr, objc, objv, resvar);
 }
 
 static int
-AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar)
+AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
     Tcl_Interp   *interp = itPtr->interp;
     AdpCode       code;
@@ -364,7 +364,7 @@ NsAdpReset(NsInterp *itPtr)
         itPtr->adp.flags = itPtr->servPtr->adp.flags;
     } else {
         itPtr->adp.bufsize = 1 * 1024 * 1000;
-        itPtr->adp.flags = 0;
+        itPtr->adp.flags = 0U;
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 }
@@ -686,7 +686,7 @@ done:
  */
 
 int
-NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
+NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
 {
     Tcl_Interp  *interp = itPtr->interp;
     Tcl_DString  ds;
@@ -795,7 +795,7 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 static Page *
-ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags)
+ParseFile(const NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags)
 {
     Tcl_Interp   *interp = itPtr->interp;
     Tcl_Encoding  encoding;
@@ -1009,8 +1009,8 @@ NsAdpLogError(NsInterp *itPtr)
 
 static int
 AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
-        AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
-        struct stat *stPtr)
+        const AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
+        const struct stat *stPtr)
 {
     Tcl_Interp *interp = itPtr->interp;
     AdpFrame    frame;
@@ -1159,7 +1159,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
  */
 
 static int
-AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
+AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
 {
     Tcl_Interp *interp = itPtr->interp;
     int         level  = itPtr->adp.debugLevel;
@@ -1264,7 +1264,7 @@ AllocObjs(int nobjs)
 {
     Objs *objsPtr;
 
-    objsPtr = ns_calloc(1, sizeof(Objs) + (nobjs * sizeof(Tcl_Obj *)));
+    objsPtr = ns_calloc(1U, sizeof(Objs) + (nobjs * sizeof(Tcl_Obj *)));
     objsPtr->nobjs = nobjs;
 
     return objsPtr;
@@ -1345,7 +1345,7 @@ DecrCache(AdpCache *cachePtr)
  */
 
 static void
-AdpTrace(NsInterp *itPtr, char *ptr, int len)
+AdpTrace(const NsInterp *itPtr, char *ptr, int len)
 {
     char type;
 

@@ -69,7 +69,7 @@ static enum imgtype GetImageType(Tcl_Channel chan);
 static void SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h);
 
 static int ChanGetc(Tcl_Channel chan);
-static Tcl_Channel GetFileChan(Tcl_Interp *interp, char *path);
+static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path);
 
 
 /*
@@ -186,7 +186,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     char       *file;
     int         status = TCL_ERROR;
-    uint32_t    w = 0, h = 0;
+    uint32_t    w = 0U, h = 0U;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -210,7 +210,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     Tcl_Close(interp, chan);
 
     if (status != TCL_OK) {
-        SetObjDims(interp, 0, 0);
+        SetObjDims(interp, 0U, 0U);
         return TCL_ERROR;
     }
 
@@ -328,7 +328,7 @@ int
 NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char       *file;
-    uint32_t    w = 0, h = 0;
+    uint32_t    w = 0U, h = 0U;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -372,7 +372,7 @@ static int
 GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned char count, buf[0x300];
-    int           depth, colormap;
+    unsigned int  depth, colormap;
 
     /*
      * Skip the magic as caller has already
@@ -409,7 +409,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         if (Tcl_Read(chan, (char *) &count, 1) != 1) {
             return TCL_ERROR;
         }
-        if (count == 0) {
+        if (count == 0U) {
             goto outerloop;
         }
         if (Tcl_Read(chan, (char *)buf, count) != count) {
@@ -637,7 +637,7 @@ GetImageType(Tcl_Channel chan)
         Tcl_Seek(chan,  0, SEEK_END);
         Tcl_Seek(chan, -2, SEEK_CUR);
         Tcl_Read(chan, (char*)trail, 2);
-        if (!memcmp(trail, jpeg_trail, 2)) {
+        if (!memcmp(trail, jpeg_trail, 2U)) {
             type = jpeg;
         }
     } else if (   !memcmp(gif87_magic, buf, sizeof(gif87_magic))
@@ -726,7 +726,7 @@ SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
  */
 
 static Tcl_Channel
-GetFileChan(Tcl_Interp *interp, char *path)
+GetFileChan(Tcl_Interp *interp, const char *path)
 {
     Tcl_Channel chan;
 

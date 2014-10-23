@@ -391,7 +391,7 @@ TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         return TCL_ERROR;
     }
     now = time(NULL);
-    if (isgmt) {
+    if (PTR2INT(isgmt)) {
         ptm = ns_gmtime(&now);
     } else {
         ptm = ns_localtime(&now);
@@ -413,7 +413,7 @@ TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 int
 NsTclGmTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return TmObjCmd((ClientData) 1, interp, objc, objv);
+    return TmObjCmd(INT2PTR(1), interp, objc, objv);
 }
 
 int
@@ -628,5 +628,5 @@ static void
 SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
-                         (void *) timePtr->sec, (void *) timePtr->usec);
+                         INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));
 }

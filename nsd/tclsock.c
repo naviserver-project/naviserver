@@ -60,13 +60,13 @@ typedef struct ListenCallback {
  * Local functions defined in this file
  */
 
-static int GetSet(Tcl_Interp *interp, char *flist, int write, 
-                  fd_set **setPtrPtr, fd_set *setPtr, int *maxPtr)
+static int GetSet(Tcl_Interp *interp, const char *flist, int write, 
+                  fd_set **setPtrPtr, fd_set *setPtr, int *const maxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) 
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
 static void AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, 
-                             int write, char *flist, Tcl_DString *dsPtr)
+                             int write, const char *flist, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
@@ -76,7 +76,7 @@ static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
 
-static int SockSetBlocking(char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+static int SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_SockProc SockListenCallback;
@@ -450,7 +450,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     char     *host, *lhost = NULL, *opt, *val;
     int       lport = 0, port, first, async = 0, msec = -1;
     NS_SOCKET sock;
-    Ns_Time   timeout;
+    Ns_Time   timeout = {0,0};
 
     if (objc < 3 || objc > 9) {
     syntax:
@@ -483,7 +483,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 goto syntax;
             }
             lhost = Tcl_GetString(objv[first]);
-            if (*lhost == 0) {
+            if (*lhost == '\0') {
                 Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                         "invalid hostname: must not be empty", NULL);
                 return TCL_ERROR;
@@ -526,7 +526,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
      */
 
     host = Tcl_GetString(objv[first]);
-    if (*host == 0) {
+    if (*host == '\0') {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "invalid hostname: must not be empty", NULL);
         return TCL_ERROR;
@@ -920,7 +920,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  */
 
 static int
-SockSetBlocking(char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Channel chan;
 
@@ -961,7 +961,7 @@ SockSetBlocking(char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
  */
 
 static void
-AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
+AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flist,
 		 Tcl_DString *dsPtr)
 {
     int           fargc;
@@ -1013,8 +1013,8 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
  */
 
 static int
-GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
-       fd_set *setPtr, int *maxPtr)
+GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
+       fd_set *setPtr, int *const maxPtr)
 {
     int          fargc, status;
     NS_SOCKET    sock;

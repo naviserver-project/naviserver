@@ -339,7 +339,7 @@ ShutdownThread(void *arg)
  */
 
 void
-NsWaitShutdownProcs(Ns_Time *toPtr)
+NsWaitShutdownProcs(const Ns_Time *toPtr)
 {
     Callback         *cbPtr;
     int               status = NS_OK;

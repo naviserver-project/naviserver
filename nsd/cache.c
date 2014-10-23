@@ -114,7 +114,7 @@ Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freePr
 {
     Cache *cachePtr;
 
-    cachePtr = ns_calloc(1, sizeof(Cache) + strlen(name));
+    cachePtr = ns_calloc(1U, sizeof(Cache) + strlen(name));
     strcpy(cachePtr->name, name);
     cachePtr->freeProc       = freeProc;
     cachePtr->maxSize        = maxSize;
@@ -246,7 +246,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
 
     hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, &isNew);
     if (isNew) {
-        ePtr = ns_calloc(1, sizeof(Entry));
+        ePtr = ns_calloc(1U, sizeof(Entry));
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
         Tcl_SetHashValue(hPtr, ePtr);
@@ -735,7 +735,7 @@ Ns_CacheWait(Ns_Cache *cache)
 }
 
 int
-Ns_CacheTimedWait(Ns_Cache *cache, Ns_Time *timePtr)
+Ns_CacheTimedWait(Ns_Cache *cache, const Ns_Time *timePtr)
 {
     Cache *cachePtr = (Cache *) cache;
 

@@ -1239,7 +1239,7 @@ NS_EXTERN void NsConfigEncodings(void);
  */
 
 NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN NsServer *NsGetInitServer(void);
@@ -1301,7 +1301,7 @@ NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
-NS_EXTERN char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
+NS_EXTERN char *NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host);
 
 /*
  * External callback functions.
@@ -1331,8 +1331,8 @@ NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr);
-NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, char *server);
-NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, char *server);
+NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, const char *server);
+NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, const char *server);
 NS_EXTERN void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
 NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server);
 
@@ -1360,17 +1360,17 @@ NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int 
 NS_EXTERN void NsConfUpdate(void);
 NS_EXTERN void NsEnableDNSCache(int maxsize, int ttl, int timeout);
 NS_EXTERN void NsStartDrivers(void);
-NS_EXTERN void NsWaitDriversShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsWaitDriversShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsStartSchedShutdown(void);
-NS_EXTERN void NsWaitSchedShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsWaitSchedShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsStartSockShutdown(void);
-NS_EXTERN void NsWaitSockShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsWaitSockShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsStartShutdownProcs(void);
-NS_EXTERN void NsWaitShutdownProcs(Ns_Time *toPtr);
+NS_EXTERN void NsWaitShutdownProcs(const Ns_Time *toPtr);
 NS_EXTERN void NsStartTaskQueueShutdown(void);
-NS_EXTERN void NsWaitTaskQueueShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsWaitTaskQueueShutdown(const Ns_Time *toPtr);
 NS_EXTERN void NsStartJobsShutdown(void);
-NS_EXTERN void NsWaitJobsShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsWaitJobsShutdown(const Ns_Time *toPtr);
 
 NS_EXTERN Tcl_AppInitProc NsTclAppInit;
 NS_EXTERN void NsTclInitServer(CONST char *server)
@@ -1396,7 +1396,7 @@ NS_EXTERN void NsSendSignal(int sig);
  * Conn routines.
  */
 
-NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *url);
+NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url);
 
 NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime);
 
@@ -1418,9 +1418,9 @@ NS_EXTERN void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
 NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) NS_GNUC_NONNULL(1);
-NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
-NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
-NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
+NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs);
+NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
+NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
 			   char *file, const Ns_Time *expiresPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
@@ -1487,7 +1487,7 @@ NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
 
 NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth);
 
-NS_EXTERN int NsTclObjIsByteArray(Tcl_Obj *objPtr);
+NS_EXTERN int NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
 NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
 

@@ -614,7 +614,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
         if (isNew) {
             regChan = ns_malloc(sizeof(NsRegChan));
-            regChan->name = ns_malloc(strlen(chanName)+1);
+            regChan->name = ns_malloc(strlen(chanName) + 1U);
             regChan->chan = chan;
             strcpy(regChan->name, chanName);
             Tcl_SetHashValue(hPtr, regChan);

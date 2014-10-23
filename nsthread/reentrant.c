@@ -103,7 +103,7 @@ GetTls(void)
 
     tlsPtr = Ns_TlsGet(&tls);
     if (tlsPtr == NULL) {
-	tlsPtr = ns_calloc(1, sizeof(Tls));
+	tlsPtr = ns_calloc(1U, sizeof(Tls));
 	Ns_TlsSet(&tls, tlsPtr);
     }
     return tlsPtr;

@@ -217,7 +217,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     int                i, n;
 
     assert(server != NULL);
-    assert(initProc != NULL);
 
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (!n) {
@@ -229,7 +228,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      * Create a new NsServer.
      */
 
-    servPtr = ns_calloc(1, sizeof(NsServer));
+    servPtr = ns_calloc(1U, sizeof(NsServer));
     servPtr->server = server;
 
     Tcl_SetHashValue(hPtr, servPtr);
@@ -368,7 +367,7 @@ CreatePool(NsServer *servPtr, char *pool)
     assert(servPtr != NULL);
     assert(pool != NULL);
 
-    poolPtr = ns_calloc(1, sizeof(ConnPool));
+    poolPtr = ns_calloc(1U, sizeof(ConnPool));
     poolPtr->pool = pool;
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
@@ -444,7 +443,7 @@ CreatePool(NsServer *servPtr, char *pool)
     {
 	char name[128] = "nsd:";
 	
-	if (*pool == 0) {
+	if (*pool == '\0') {
 	    pool = "default";
 	}
 	strncat(name, pool, 120);

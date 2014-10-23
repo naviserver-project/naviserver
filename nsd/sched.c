@@ -89,8 +89,8 @@ static Event *firstEventPtr = NULL; /* Pointer to the first event */
 static int nqueue = 0;              /* Number of events in queue. */
 static int maxqueue = 0;            /* Max queue events (dynamically re-sized). */
 
-static intptr_t nThreads = 0;       /* Total number of running threads */
-static intptr_t nIdleThreads = 0;   /* Number of idle threads */
+static int nThreads = 0;            /* Total number of running threads */
+static int nIdleThreads = 0;        /* Number of idle threads */
 
 static int running = 0;
 static int shutdownPending = 0;
@@ -263,7 +263,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
  */
 
 int
-Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
+Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     int interval, Ns_SchedProc *cleanupProc)
 {
     Event          *ePtr;
@@ -282,7 +282,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
     ePtr->interval = interval;
     ePtr->proc = proc;
     ePtr->deleteProc = cleanupProc;
-    ePtr->arg = arg;
+    ePtr->arg = clientData;
 
     Ns_MutexLock(&lock);
     if (shutdownPending) {
@@ -475,7 +475,7 @@ NsStartSchedShutdown(void)
 }
 
 void
-NsWaitSchedShutdown(Ns_Time *toPtr)
+NsWaitSchedShutdown(const Ns_Time *toPtr)
 {
     int status;
 
@@ -647,7 +647,7 @@ EventThread(void *arg)
 
     jpt = njobs = nsconf.sched.jobsperthread;
 
-    Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", (intptr_t)arg);
+    Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", arg);
     Ns_Log(Notice, "starting");
 
     Ns_MutexLock(&lock);
@@ -668,7 +668,7 @@ EventThread(void *arg)
 
         Ns_ThreadSetName("-sched:%d-", ePtr->id);
         (*ePtr->proc) (ePtr->arg, ePtr->id);
-        Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", (intptr_t)arg);
+        Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", arg);
         time(&now);
 
         Ns_MutexLock(&lock);
@@ -689,8 +689,7 @@ EventThread(void *arg)
     }
     --nThreads;
     --nIdleThreads;
-    Ns_Log(Notice, "exiting, %" PRIdPTR " threads, %" PRIdPTR " idle",
-           nThreads, nIdleThreads);
+    Ns_Log(Notice, "exiting, %d threads, %d idle", nThreads, nIdleThreads);
 
     Ns_CondSignal(&schedcond);
     Ns_MutexUnlock(&lock);
@@ -745,7 +744,7 @@ static void
 SchedThread(void *UNUSED(arg))
 {
     time_t          now;
-    Ns_Time         timeout;
+    Ns_Time         timeout = {0,0};
     int             elapsed;
     Event          *ePtr, *readyPtr = NULL;
 
@@ -787,7 +786,7 @@ SchedThread(void *UNUSED(arg))
 
         if (firstEventPtr != NULL) {
             if (nIdleThreads == 0) {
-                Ns_ThreadCreate(EventThread, (void *)nThreads, 0, NULL);
+		Ns_ThreadCreate(EventThread, INT2PTR(nThreads), 0, NULL);
                 ++nIdleThreads;
                 ++nThreads;
             }
@@ -845,7 +844,7 @@ SchedThread(void *UNUSED(arg))
 
     Ns_Log(Notice, "sched: shutdown started");
     if (nThreads > 0) {
-        Ns_Log(Notice, "sched: waiting for %" PRIdPTR "/%" PRIdPTR " event threads...",
+        Ns_Log(Notice, "sched: waiting for %d/%d event threads...",
                nThreads, nIdleThreads);
         Ns_CondBroadcast(&eventcond);
         while (nThreads > 0) {

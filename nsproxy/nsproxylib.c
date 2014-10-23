@@ -324,7 +324,7 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
 {
     InterpData *idataPtr;
 
-    idataPtr = ns_calloc(1, sizeof(InterpData));
+    idataPtr = ns_calloc(1U, sizeof(InterpData));
     Tcl_InitHashTable(&idataPtr->ids, TCL_STRING_KEYS);
     Tcl_InitHashTable(&idataPtr->cnts, TCL_ONE_WORD_KEYS);
     Tcl_SetAssocData(interp, ASSOC_DATA, DeleteData, idataPtr);
@@ -566,7 +566,7 @@ Ns_ProxyCleanup(Tcl_Interp *interp, void *ignored)
  */
 
 void
-Shutdown(Ns_Time *toutPtr, void *arg)
+Shutdown(const Ns_Time *toutPtr, void *arg)
 {
     Pool           *poolPtr;
     Proxy          *proxyPtr, *tmpPtr;
@@ -804,7 +804,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
         return NULL;
     }
 
-    slavePtr = ns_calloc(1, sizeof(Slave));
+    slavePtr = ns_calloc(1U, sizeof(Slave));
     slavePtr->poolPtr = proxyPtr->poolPtr;
     slavePtr->pid = pid;
     slavePtr->rfd = wpipe[0];
@@ -2190,7 +2190,7 @@ GetPool(char *poolName, InterpData *idataPtr)
         char *path = NULL, *exec = NULL;
         int i;
 
-        poolPtr = ns_calloc(1, sizeof(Pool));
+        poolPtr = ns_calloc(1U, sizeof(Pool));
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
         if (idataPtr && idataPtr->server && idataPtr->module) {
@@ -2257,8 +2257,8 @@ CreateProxy(Pool *poolPtr)
 
     sprintf(buf, "%d", poolPtr->nextid++);
 
-    proxyPtr = ns_calloc(1, sizeof(Proxy));
-    proxyPtr->id = ns_calloc(1, strlen(buf) + strlen(poolPtr->name) + 2);
+    proxyPtr = ns_calloc(1U, sizeof(Proxy));
+    proxyPtr->id = ns_calloc(1U, strlen(buf) + strlen(poolPtr->name) + 2);
 
     strcpy(proxyPtr->id, poolPtr->name);
     strcat(proxyPtr->id, "-");

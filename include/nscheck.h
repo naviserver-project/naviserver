@@ -96,7 +96,7 @@
 
 
 #if __GNUC_PREREQ(2,7)
-# define NS_GNUC_UNUSED __attribute__((__unused__))
+# define NS_GNUC_UNUSED __attribute__((unused))
 # define NS_GNUC_NORETURN __attribute__((__noreturn__))
 # define NS_GNUC_PRINTF(m, n) __attribute__((__format__ (__printf__, m, n))) NS_GNUC_NONNULL(m)
 # define NS_GNUC_SCANF(m, n) __attribute__((__format__ (__scanf__, m, n))) NS_GNUC_NONNULL(m)

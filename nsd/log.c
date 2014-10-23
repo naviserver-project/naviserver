@@ -503,7 +503,7 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
 void
 Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 {
-    LogFilter *filterPtr = ns_calloc(1, sizeof *filterPtr);
+    LogFilter *filterPtr = ns_calloc(1U, sizeof *filterPtr);
 
     Ns_MutexLock(&lock);
 
@@ -1350,7 +1350,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Tcl_DecrRefCount(stamp);
     c = *(msg + len);
-    *(msg + len) = 0;
+    *(msg + len) = '\0';
     Ns_DStringAppendElement(&ds, msg);
     *(msg + len) = c;
     for (ii = 0; ii < cbPtr->argc; ii++) {
@@ -1399,7 +1399,7 @@ GetCache(void)
 
     cachePtr = Ns_TlsGet(&tls);
     if (cachePtr == NULL) {
-        cachePtr = ns_calloc(1, sizeof(LogCache));
+        cachePtr = ns_calloc(1U, sizeof(LogCache));
         Ns_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
     }

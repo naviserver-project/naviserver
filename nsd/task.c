@@ -140,7 +140,7 @@ Ns_CreateTaskQueue(const char *name)
 {
     TaskQueue *queuePtr;
 
-    queuePtr = ns_calloc(1, sizeof(TaskQueue));
+    queuePtr = ns_calloc(1U, sizeof(TaskQueue));
     strncpy(queuePtr->name, name ? name : "", NAME_SIZE);
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
@@ -220,7 +220,7 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
 {
     Task *taskPtr;
 
-    taskPtr = ns_calloc(1, sizeof(Task));
+    taskPtr = ns_calloc(1U, sizeof(Task));
     taskPtr->sock = sock;
     taskPtr->proc = proc;
     taskPtr->arg = arg;
@@ -583,7 +583,7 @@ NsStartTaskQueueShutdown(void)
  */
 
 void
-NsWaitTaskQueueShutdown(Ns_Time *toPtr)
+NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
 {
     TaskQueue *queuePtr, *nextPtr;
     int        status;

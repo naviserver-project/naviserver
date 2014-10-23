@@ -738,7 +738,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
         return TCL_ERROR;
     }
 
-    userPtr = ns_calloc(1, sizeof(User));
+    userPtr = ns_calloc(1U, sizeof(User));
     if (clear) {
         userPtr->flags |= USER_CLEAR_TEXT;
     }
@@ -1251,7 +1251,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
         permPtr = NULL;
     }
     if (permPtr == NULL) {
-        permPtr = ns_calloc(1, sizeof(Perm));
+        permPtr = ns_calloc(1U, sizeof(Perm));
         permPtr->baseurl = Ns_DStringExport(&base);
         Tcl_InitHashTable(&permPtr->allowuser, TCL_STRING_KEYS);
         Tcl_InitHashTable(&permPtr->denyuser, TCL_STRING_KEYS);

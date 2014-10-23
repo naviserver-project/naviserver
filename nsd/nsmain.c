@@ -95,7 +95,7 @@ extern void NsdInit();
  */
 
 int
-Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
+Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 {
     Args      cmd;
     int       i, sig, optind;
@@ -105,7 +105,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
 #ifndef _WIN32
     int       debug = 0;
-    char      mode = 0;
+    char      mode = '\0';
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
     char     *bindargs = NULL, *bindfile = NULL;
     Ns_Set   *servers;
@@ -116,7 +116,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * preserve their values when Ns_Main is re-entered by
      * the Win32 service control manager.
      */
-    static char    mode = 0;
+    static char    mode = '\0';
     static Ns_Set *servers;
     static char   *procname, *server = NULL;
 #endif
@@ -173,7 +173,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         case 'i':
         case 'w':
 #endif
-            if (mode != 0) {
+            if (mode != '\0') {
 #ifdef _WIN32
                 UsageError("only one of -c, -f, -I, -R, or -S"
                            " options may be specified");
@@ -1053,7 +1053,7 @@ MakePath(char *file)
          * If file name was given, check if the file exists
          */
 
-        if (path != NULL && *file != 0 && access(path, F_OK) != 0) {
+        if (path != NULL && *file != '\0' && access(path, F_OK) != 0) {
             ns_free(path);
             return NULL;
         }

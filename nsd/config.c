@@ -625,7 +625,7 @@ NsConfigRead(CONST char *file)
     char        *call = "open", *data, *conf = NULL;
     int          length;
 
-    if (file == NULL || *file == 0) {
+    if (file == NULL || *file == '\0') {
         goto err;
     }
 
@@ -651,7 +651,7 @@ NsConfigRead(CONST char *file)
 
     Tcl_Close(NULL, chan);
     data = Tcl_GetStringFromObj(buf, &length);
-    conf = strcpy(ns_malloc(length + 1), data);
+    conf = strcpy(ns_malloc((size_t)length + 1U), data);
     Tcl_DecrRefCount(buf);
 
     return conf;

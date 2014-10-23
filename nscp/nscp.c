@@ -602,7 +602,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
+ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     int *stopPtr;
 

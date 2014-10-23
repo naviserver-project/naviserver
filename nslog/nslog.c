@@ -124,7 +124,7 @@ Ns_ModuleInit(char *server, char *module)
 
     Ns_DStringInit(&ds);
 
-    logPtr = ns_calloc(1,sizeof(Log));
+    logPtr = ns_calloc(1U, sizeof(Log));
     logPtr->module = module;
     logPtr->fd = -1;
     Ns_MutexInit(&logPtr->lock);
@@ -534,7 +534,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
-            quote = isspace((unsigned char)*p);
+	    quote = isspace(UCHAR(*p));
         }
         if (quote) {
             Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
@@ -923,7 +923,7 @@ LogCallback(int(proc)(Log *), void *arg, char *desc)
 }
 
 static void
-LogCloseCallback(Ns_Time *toPtr, void *arg)
+LogCloseCallback(const Ns_Time *toPtr, void *arg)
 {
     if (toPtr == NULL) {
         LogCallback(LogClose, arg, "close");

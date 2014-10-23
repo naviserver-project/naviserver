@@ -42,10 +42,10 @@
 
 static Ns_Conn *GetConn(Tcl_Interp *interp);
 
-static int SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
+static int SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static int DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
+static int DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
@@ -68,7 +68,7 @@ static int DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
  */
 
 static int 
-SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
+SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
 {
     char    *p, *q;
     char     save;
@@ -126,7 +126,7 @@ SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name)
  */
 
 static int
-DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
+DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
 {
     int success = 0;
 
@@ -165,7 +165,7 @@ DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
  */
 
 void
-Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
+Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, char *value, time_t maxage,
                    char *domain, char *path, unsigned int flags)
 {
     Ns_DString  cookie;
@@ -209,13 +209,13 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
 }
 
 void
-Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage)
+Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage)
 {
     Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, 0);
 }
 
 void
-Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage)
+Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage)
 {
     Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, NS_COOKIE_SECURE);
 }
@@ -238,13 +238,13 @@ Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage)
  */
 
 void
-Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path)
+Ns_ConnDeleteCookie(const Ns_Conn *conn, char *name, char *domain, char *path)
 {
     Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, 0);
 }
 
 void
-Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path)
+Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, char *name, char *domain, char *path)
 {
     Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, NS_COOKIE_SECURE);
 }
@@ -268,7 +268,7 @@ Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path)
 
 
 char *
-Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
+Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
 {
     int idx = SearchFirstCookie(dest, Ns_ConnHeaders(conn), "cookie", name);
     
@@ -299,7 +299,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
     int       secure = 0, scriptable = 0, discard = 0, replace = 0;
-    unsigned int flags = 0;
+    unsigned int flags = 0U;
     time_t    maxage;
     Ns_Time  *expiresPtr = NULL;
 

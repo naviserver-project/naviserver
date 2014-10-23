@@ -807,7 +807,7 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
 #ifdef HAVE_CMMSG
     msg.msg_control = (void *) data;
     msg.msg_controllen = sizeof(data);
-    msg.msg_flags = 0;
+    msg.msg_flags = 0U;
 #else
     msg.msg_accrights = (caddr_t) &sock;
     msg.msg_accrightslen = sizeof(sock);

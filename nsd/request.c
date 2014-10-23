@@ -226,7 +226,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
 
     request->protocol = NULL;
     request->host = NULL;
-    request->port = 0;
+    request->port = 0U;
 
     if (*url != '/') {
         p = url;
@@ -242,7 +242,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
             *p++ = '\0';
             request->protocol = ns_strdup(url);
             url = p;
-            if ((strlen(url) > 3) && (*p++ == '/')
+            if ((strlen(url) > 3U) && (*p++ == '/')
                 && (*p++ == '/') && (*p != '\0') && (*p != '/')) {
                 char *h;
 
@@ -300,9 +300,9 @@ Ns_SkipUrl(const Ns_Request *request, int n)
     if (n > request->urlc) {
         return NULL;
     }
-    skip = 0;
+    skip = 0U;
     while (--n >= 0) {
-        skip += strlen(request->urlv[n]) + 1;
+        skip += strlen(request->urlv[n]) + 1U;
     }
     return (request->url + skip);
 }
@@ -585,7 +585,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
         return NULL;
     }
     for (str ++; *str == ' '; str++);
-    if (!isdigit(*str)) {
+    if (!isdigit(UCHAR(*str))) {
         return NULL;
     }
 
@@ -597,11 +597,11 @@ GetQvalue(CONST char *str, int *lenPtr) {
 	 * three digits after the comma.
 	 */
       str ++;
-      if (isdigit(*str)) {
+      if (isdigit(UCHAR(*str))) {
 	  str++;
-	  if (isdigit(*str)) {
+	  if (isdigit(UCHAR(*str))) {
 	      str++;
-	      if (isdigit(*str)) {
+	      if (isdigit(UCHAR(*str))) {
 		  str++;
 	      }
 	  }

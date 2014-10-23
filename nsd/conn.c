@@ -135,7 +135,7 @@ Ns_ConnOutputHeaders(const Ns_Conn *conn)
 char *
 Ns_ConnAuthUser(const Ns_Conn *conn)
 {
-    return conn->auth ? Ns_SetIGet(conn->auth, "Username") : NULL;
+    return conn->auth != NULL ? Ns_SetIGet(conn->auth, "Username") : NULL;
 }
 
 
@@ -158,7 +158,7 @@ Ns_ConnAuthUser(const Ns_Conn *conn)
 char *
 Ns_ConnAuthPasswd(const Ns_Conn *conn)
 {
-    return conn->auth ? Ns_SetIGet(conn->auth, "Password") : NULL;
+    return conn->auth != NULL ? Ns_SetIGet(conn->auth, "Password") : NULL;
 }
 
 
@@ -743,7 +743,7 @@ Ns_ConnSock(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return (connPtr->sockPtr ? connPtr->sockPtr->sock : NS_INVALID_SOCKET);
+    return (connPtr->sockPtr != NULL ? connPtr->sockPtr->sock : NS_INVALID_SOCKET);
 }
 
 /*
@@ -948,7 +948,7 @@ Ns_ConnTimeStats(Ns_Conn *conn) {
     ConnPool  *poolPtr = connPtr->poolPtr;
     Ns_Time    now;
 
-    assert(poolPtr);
+    assert(poolPtr != NULL);
     Ns_GetTime(&now);
 
     Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
@@ -1384,7 +1384,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	}
 
         if (objc == 2) {
-            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length) {
+            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length > 0) {
                 Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
 							     (int)connPtr->reqPtr->length));
             }
@@ -1920,7 +1920,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     assert(conn != NULL);
     assert(itPtr != NULL);
 
-    if ((connPtr->flags & NS_CONN_CLOSED)) {
+    if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {
         Tcl_AppendResult(itPtr->interp, "connection closed", NULL);
         return NULL;
     }
@@ -1953,8 +1953,8 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
      * them now before the conn socket is dissociated.
      */
 
-    if (!(conn->flags & NS_CONN_SENTHDRS)) {
-        if (!(itPtr->nsconn.flags & CONN_TCLHTTP)) {
+    if ((conn->flags & NS_CONN_SENTHDRS) == 0U) {
+        if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0U) {
             conn->flags |= NS_CONN_SKIPHDRS;
         } else {
             Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);

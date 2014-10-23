@@ -234,7 +234,7 @@ Ns_IntPrint(int d)
  */
 
 void
-Ns_StringPrint(char *s)
+Ns_StringPrint(const char *s)
 {
     fputs(s, stdout);
 }
@@ -257,7 +257,7 @@ Ns_StringPrint(char *s)
  */
 
 void
-Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc)
+Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
 {
     Ns_StringPrint("(");
     for (; lPtr != NULL; lPtr = lPtr->rest) {
@@ -287,7 +287,7 @@ Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc)
  */
 
 Ns_List *
-Ns_ListCopy(Ns_List *lPtr)
+Ns_ListCopy(const Ns_List *lPtr)
 {
     Ns_List *curPtr, *newPtr = NULL, *headPtr;
 
@@ -325,7 +325,7 @@ Ns_ListCopy(Ns_List *lPtr)
  */
 
 int
-Ns_ListLength(Ns_List *lPtr)
+Ns_ListLength(const Ns_List *lPtr)
 {
     int i;
 
@@ -653,7 +653,7 @@ Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc)
  */
 
 Ns_List *
-Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc)
+Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc)
 {
     Ns_List *mPtr = NULL;
 

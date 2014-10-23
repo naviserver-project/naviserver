@@ -114,7 +114,7 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Ns_MutexLock(&servPtr->tcl.cachelock);
     hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &isNew);
     if (isNew) {
-        TclCache *cPtr = ns_calloc(1, sizeof(TclCache));
+        TclCache *cPtr = ns_calloc(1U, sizeof(TclCache));
 
         cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)iMaxSize, ns_free);
         cPtr->maxEntry = (size_t)iMaxEntry;
@@ -819,7 +819,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
     if (cPtr->maxEntry > 0 && length > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
-      char *value = ns_malloc(length + 1);
+      char *value = ns_malloc(length + 1U);
 
       memcpy(value, string, length);
         value[length] = '\0';

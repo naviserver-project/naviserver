@@ -161,7 +161,7 @@ NsStartSockShutdown(void)
 }
 
 void
-NsWaitSockShutdown(Ns_Time *toPtr)
+NsWaitSockShutdown(const Ns_Time *toPtr)
 {
     int status;
 
@@ -228,7 +228,7 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeo
     Callback   *cbPtr;
     int         status, trigger, create;
 
-    cbPtr = ns_calloc(1, sizeof(Callback));
+    cbPtr = ns_calloc(1U, sizeof(Callback));
     cbPtr->sock = sock;
     cbPtr->proc = proc;
     cbPtr->arg = arg;

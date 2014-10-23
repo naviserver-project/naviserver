@@ -118,7 +118,7 @@ NsConfigFastpath()
 }
 
 static int
-ConfigServerFastpath(CONST char *server)
+ConfigServerFastpath(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;

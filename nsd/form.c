@@ -404,7 +404,7 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
         CONST char *be;
         bs += 9;
         be = bs;
-        while (*be && !isspace(UCHAR(*be))) {
+        while (*be != '\0' && !isspace(UCHAR(*be))) {
             ++be;
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
@@ -485,14 +485,14 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
     e = s;
     if (*s != '"' && *s != '\'') {
         /* NB: End of unquoted att=value is next space. */
-        while (*e && !isspace(UCHAR(*e))) {
+        while (*e != '\0' && !isspace(UCHAR(*e))) {
             ++e;
         }
-	*uPtr = 0;
+	*uPtr = '\0';
     } else {
         int escaped = 0;
 
-	*uPtr = 0;
+	*uPtr = '\0';
         /* 
 	 * End of quoted att="value" is next quote.  A quote within
 	 * the quoted string could be escaped with a backslash. In
@@ -500,7 +500,7 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
 	 * character as result.
 	 */
         ++e;
-        while (*e && (escaped || *e != *s)) {
+        while (*e != '\0' && (escaped || *e != *s)) {
 	    if (escaped) {
 	        escaped = 0;
 	    } else if (*e == '\\') {
