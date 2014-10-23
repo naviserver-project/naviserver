@@ -372,7 +372,7 @@ static int
 GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned char count, buf[0x300];
-    int           depth, colormap;
+    unsigned int  depth, colormap;
 
     /*
      * Skip the magic as caller has already

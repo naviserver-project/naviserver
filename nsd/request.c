@@ -585,7 +585,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
         return NULL;
     }
     for (str ++; *str == ' '; str++);
-    if (!isdigit(*str)) {
+    if (!isdigit(UCHAR(*str))) {
         return NULL;
     }
 
@@ -597,11 +597,11 @@ GetQvalue(CONST char *str, int *lenPtr) {
 	 * three digits after the comma.
 	 */
       str ++;
-      if (isdigit(*str)) {
+      if (isdigit(UCHAR(*str))) {
 	  str++;
-	  if (isdigit(*str)) {
+	  if (isdigit(UCHAR(*str))) {
 	      str++;
-	      if (isdigit(*str)) {
+	      if (isdigit(UCHAR(*str))) {
 		  str++;
 	      }
 	  }
