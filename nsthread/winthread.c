@@ -575,7 +575,7 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
  */
 
 int
-Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
+Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 {
     int         status;
     Cond       *condPtr;
