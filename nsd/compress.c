@@ -436,12 +436,12 @@ Ns_InflateInit(Ns_CompressStream *stream)
 }
 
 int
-Ns_InflateBufferInit(Ns_CompressStream *stream, const char *buffer, int inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *stream, const char *buffer, size_t inSize) 
 {
     return NS_ERROR;
 }
 int
-Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, int outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, size_t outSize, int *nrBytes) 
 {
     return NS_ERROR;
 }
