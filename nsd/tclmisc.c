@@ -466,12 +466,12 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
             while (*s) {
                 if (!strncasecmp(s, "href", 4u)) {
                     s += 4;
-                    while (*s && isspace(UCHAR(*s))) {
+                    while (*s != '\0' && isspace(UCHAR(*s))) {
                         ++s;
                     }
                     if (*s == '=') {
                         ++s;
-                        while (*s && isspace(UCHAR(*s))) {
+                        while (*s != '\0' && isspace(UCHAR(*s))) {
                             ++s;
                         }
                         he = NULL;
@@ -481,7 +481,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                         }
                         if (he == NULL) {
                             he = s;
-                            while (!isspace(UCHAR(*he))) {
+                            while (isspace(UCHAR(*he)) == 0) {
                                 ++he;
                             }
                         }
@@ -493,7 +493,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                     }
                 }
                 if (*s == '\'' || *s == '\"') {
-                    while (*s && (*s != '\'' || *s != '\"')) {
+                    while (*s != '\0' && (*s != '\'' || *s != '\"')) {
                         ++s;
                     }
                     continue;

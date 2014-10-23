@@ -483,7 +483,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 goto syntax;
             }
             lhost = Tcl_GetString(objv[first]);
-            if (*lhost == 0) {
+            if (*lhost == '\0') {
                 Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                         "invalid hostname: must not be empty", NULL);
                 return TCL_ERROR;
@@ -526,7 +526,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
      */
 
     host = Tcl_GetString(objv[first]);
-    if (*host == 0) {
+    if (*host == '\0') {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "invalid hostname: must not be empty", NULL);
         return TCL_ERROR;

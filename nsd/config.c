@@ -625,7 +625,7 @@ NsConfigRead(CONST char *file)
     char        *call = "open", *data, *conf = NULL;
     int          length;
 
-    if (file == NULL || *file == 0) {
+    if (file == NULL || *file == '\0') {
         goto err;
     }
 

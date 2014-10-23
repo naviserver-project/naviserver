@@ -443,7 +443,7 @@ CreatePool(NsServer *servPtr, char *pool)
     {
 	char name[128] = "nsd:";
 	
-	if (*pool == 0) {
+	if (*pool == '\0') {
 	    pool = "default";
 	}
 	strncat(name, pool, 120);

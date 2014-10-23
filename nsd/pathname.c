@@ -208,7 +208,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
          * Move to next slash
          */
 
-        while (*src && !ISSLASH(*src)) {
+        while (*src != '\0' && !ISSLASH(*src)) {
             ++src;
         }
         end = *src;
@@ -898,7 +898,7 @@ MakePath(Ns_DString *dest, va_list *pap)
     while ((s = va_arg(*pap, char *)) != NULL) {
         if (isalpha(UCHAR(*s)) && s[1] == ':') {
             char temp = *(s+2);
-            *(s + 2) = 0;
+            *(s + 2) = '\0';
             Ns_DStringNAppend(dest, s, 2);
             *(s + 2) = temp;
             s += 2;

@@ -409,7 +409,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     struct sched    s;
 
     for (i = 0; i < 66; i++) {
-        block[i] = 0;
+        block[i] = '\0';
     }
     for (i = 0; (c = *pw) && i < 64; pw++) {
 	for (j = 0; j < 7; j++, i++) {
@@ -421,7 +421,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     setkey_private(&s, block);
 
     for (i = 0; i < 66; i++) {
-        block[i] = 0;
+        block[i] = '\0';
     }
 
     for (i = 0; i < 2; i++) {
@@ -462,8 +462,8 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 	}
         iobuf[i + 2] = c;
     }
-    iobuf[i + 2] = 0;
-    if (iobuf[1] == 0) {
+    iobuf[i + 2] = '\0';
+    if (iobuf[1] == '\0') {
         iobuf[1] = iobuf[0];
     }
 

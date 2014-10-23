@@ -1350,7 +1350,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Tcl_DecrRefCount(stamp);
     c = *(msg + len);
-    *(msg + len) = 0;
+    *(msg + len) = '\0';
     Ns_DStringAppendElement(&ds, msg);
     *(msg + len) = c;
     for (ii = 0; ii < cbPtr->argc; ii++) {

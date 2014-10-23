@@ -669,7 +669,7 @@ static void
 ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
 {
     char *vs = NULL, *as = NULL, *ve = NULL;
-    char end = 0, vsave = 0;
+    char end = '\0', vsave = '\0';
 
     assert(s != NULL);
     assert(e != NULL);
@@ -739,9 +739,9 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
             ve = s;
             end = *vs;
             if (end != '=' && end != '"' && end != '\'') {
-                end = 0;
+                end = '\0';
             }
-            if (end && ve > vs && ve[-1] == end) {
+            if (end != '\0' && ve > vs && ve[-1] == end) {
                 ++vs;
                 --ve;
             }
