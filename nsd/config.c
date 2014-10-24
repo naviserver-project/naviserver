@@ -782,11 +782,11 @@ SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *ar
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         (char*)argv[0], " sectionname", NULL);
+                         argv[0], " sectionname", NULL);
         return TCL_ERROR;
     }
     set = (Ns_Set **) clientData;
-    *set = GetSection((char*) argv[1], 1);
+    *set = GetSection(argv[1], 1);
 
     return TCL_OK;
 }

@@ -860,7 +860,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     if (unlikely(*objcPtr < 1)) {
         return TCL_ERROR;
     }
-    if (unlikely(Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **) cPtrPtr) != TCL_OK)) {
+    if (unlikely(Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **)cPtrPtr) != TCL_OK)) {
 	NsInterp      *itPtr   = spec->arg;
 	NsServer      *servPtr = itPtr->servPtr;
         Tcl_HashEntry *hPtr;

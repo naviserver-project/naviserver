@@ -123,7 +123,8 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     Conn         *connPtr = (Conn *) conn;
     Tcl_Interp   *interp;
     NsInterp     *itPtr;
-    char         *start, *type;
+    char         *type;
+    const char   *start;
     Ns_Set       *query;
     NsServer     *servPtr;
     Tcl_Obj      *objv[2];
@@ -171,7 +172,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
 
     itPtr->adp.flags |= aflags;
     itPtr->adp.conn = conn;
-    start = (char*)(servPtr->adp.startpage ? servPtr->adp.startpage : file);
+    start = (servPtr->adp.startpage ? servPtr->adp.startpage : file);
     objv[0] = Tcl_NewStringObj(start, -1);
     objv[1] = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(objv[0]);

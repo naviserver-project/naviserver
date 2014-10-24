@@ -1794,7 +1794,7 @@ Ns_StopServer(char *server);
  * info.c:
  */
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoHomePath(void);
 
 NS_EXTERN char *
@@ -1803,7 +1803,7 @@ Ns_InfoServerName(void);
 NS_EXTERN char *
 Ns_InfoServerVersion(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoConfigFile(void);
 
 NS_EXTERN pid_t

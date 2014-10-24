@@ -96,12 +96,12 @@ typedef struct InterpPage {
  * Local functions defined in this file.
  */
 
-static Page *ParseFile(const NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags);
+static Page *ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags);
 static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
-static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
+static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                    const AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
                    const struct stat *stPtr);
-static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
+static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                      const Ns_Time *expiresPtr, Tcl_DString *outputPtr);
 static int AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript);
 static void DecrCache(AdpCache *cachePtr);
@@ -280,7 +280,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
  */
 
 int
-NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file, const Ns_Time *expiresPtr)
+NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file, const Ns_Time *expiresPtr)
 {
     Ns_DString *outputPtr;
 
@@ -389,7 +389,7 @@ NsAdpReset(NsInterp *itPtr)
  */
 
 static int
-AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
+AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
           const Ns_Time *expiresPtr, Tcl_DString *outputPtr)
 {
     NsServer       *servPtr = itPtr->servPtr;
@@ -795,7 +795,7 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 static Page *
-ParseFile(const NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags)
+ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned int flags)
 {
     Tcl_Interp   *interp = itPtr->interp;
     Tcl_Encoding  encoding;
@@ -1008,7 +1008,7 @@ NsAdpLogError(NsInterp *itPtr)
  */
 
 static int
-AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
+AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
         const AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
         const struct stat *stPtr)
 {

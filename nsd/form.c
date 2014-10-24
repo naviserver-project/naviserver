@@ -475,7 +475,7 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
 static int
 GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr)
 {
-    CONST char *s, *e;
+    const char *s, *e;
 
     s = Ns_StrCaseFind(hdr, att);
     if (s == NULL) {

@@ -58,7 +58,7 @@ static Ns_ThreadArgProc ThreadArgProc;
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoHomePath(void)
 {
     return nsconf.home;
@@ -127,7 +127,7 @@ Ns_InfoServerVersion(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoConfigFile(void)
 {
     return nsconf.config;
@@ -534,7 +534,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IConfigIdx:
-        Tcl_SetResult(interp, Ns_InfoConfigFile(), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoConfigFile(), -1));
         return TCL_OK;
 
     case ICallbacksIdx:
@@ -621,7 +621,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IHomeIdx:
-        Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHomePath(), -1));
         return TCL_OK;
 
     case IWinntIdx:

@@ -116,9 +116,9 @@ struct _nsconf {
     char *nsd;
     char *name;
     char *version;
-    char *home;
+    const char *home;
     char *tmpDir;
-    char *config;
+    const char *config;
     char *build;
     pid_t pid;
     time_t boot_t;
@@ -277,7 +277,7 @@ typedef struct AdpFrame {
     Tcl_Obj	      *ident;
     Tcl_Obj          **objv;
     char	      *savecwd;
-    char	      *file;
+    const char	      *file;
     unsigned int       flags;
     Ns_DString         cwdbuf;
     Tcl_DString	      *outputPtr;
@@ -1422,7 +1422,7 @@ NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, co
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			   char *file, const Ns_Time *expiresPtr);
+			   const char *file, const Ns_Time *expiresPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 			  unsigned int flags, CONST char* file);
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
