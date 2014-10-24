@@ -53,7 +53,7 @@
 typedef struct LogEntry {
     Ns_LogSeverity   severity;  /* Entry's severity */
     Ns_Time          stamp;     /* Timestamp of the entry */
-    int              offset;    /* Offset into the text buffer */
+    size_t           offset;    /* Offset into the text buffer */
     size_t           length;    /* Length of the log message */
     struct LogEntry *nextPtr;   /* Next in the list of entries */
 } LogEntry;
@@ -428,7 +428,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
 void
 Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
 {
-    int       length, offset;
+    size_t    length, offset;
     LogCache *cachePtr;
     LogEntry *entryPtr = NULL;
 
@@ -465,9 +465,9 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     cachePtr->currEntry = entryPtr;
     cachePtr->count++;
 
-    offset = Ns_DStringLength(&cachePtr->buffer);
+    offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
     Ns_DStringVPrintf(&cachePtr->buffer, fmt, *vaPtr);
-    length = Ns_DStringLength(&cachePtr->buffer) - offset;
+    length = (size_t)Ns_DStringLength(&cachePtr->buffer) - offset;
 
     entryPtr->severity = severity;
     entryPtr->offset   = offset;
@@ -1373,7 +1373,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
         Ns_DStringAppend(&ds, "LogToTcl: ");
         Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
         LogToFile(logfile, Error, stampPtr, Ns_DStringValue(&ds),
-                  Ns_DStringLength(&ds));
+                  (size_t)Ns_DStringLength(&ds));
     }
     Ns_DStringFree(&ds);
     Ns_TclDeAllocateInterp(interp);

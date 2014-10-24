@@ -124,14 +124,14 @@ struct _nsconf {
     time_t boot_t;
     char hostname[255];
     char address[16];
-    int shutdowntimeout;
+    long shutdowntimeout;  /* same type as seconds in Ns_Time */
     int backlog;
 
     /*
      * Slot IDs for socket local storage.
      */
 
-    int nextSlsId;
+    intptr_t nextSlsId;
 
     /*
      * The following table holds the configured virtual servers.
@@ -388,8 +388,8 @@ typedef struct Driver {
     char  *location;                    /* Location, e.g, "http://foo:9090" */
     char  *address;                     /* Address in location, e.g. "foo" */
     char  *protocol;                    /* Protocol in location, e.g, "http" */
-    int    sendwait;                    /* send() I/O timeout */
-    int    recvwait;                    /* recv() I/O timeout */
+    long   sendwait;                    /* send() I/O timeout */
+    long   recvwait;                    /* recv() I/O timeout */
     size_t bufsize;                     /* Conn bufsize (0 for SSL) */
     char  *extraHeaders;                /* Extra header fields added for every request */
 
@@ -408,10 +408,10 @@ typedef struct Driver {
     Ns_DriverRequestProc  *requestProc;
     Ns_DriverCloseProc    *closeProc;
     unsigned int opts;                  /* NS_DRIVER_* options */
-    int closewait;                      /* Graceful close timeout */
-    int keepwait;                       /* Keepalive timeout */
-    int keepmaxdownloadsize;            /* When set, allow keepalive only for download requests up to this size */
-    int keepmaxuploadsize;              /* When set, allow keepalive only for upload requests up to this size */
+    long closewait;                     /* Graceful close timeout */
+    long keepwait;                      /* Keepalive timeout */
+    size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
+    size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     NS_SOCKET sock;                     /* Listening socket */
     int pidx;                           /* poll() index */
     char *bindaddr;                     /* Numerical listen address */

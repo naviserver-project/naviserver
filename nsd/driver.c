@@ -68,7 +68,6 @@
 /*
  * Managing streaming output via writer
  */
-#define NS_WRITER_STREAM_NONE         0
 #define NS_WRITER_STREAM_ACTIVE       1
 #define NS_WRITER_STREAM_FINISH       2
 
@@ -2040,7 +2039,7 @@ SockSendResponse(Sock *sockPtr, int code)
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4U;
-    sent = NsDriverSend(sockPtr, iov, 3, 0);
+    sent = NsDriverSend(sockPtr, iov, 3, 0U);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
 	Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
@@ -2767,7 +2766,7 @@ SockParse(Sock *sockPtr)
          * This happens from some browsers on POST requests.
          */
 
-        if (reqPtr->length > 0) {
+        if (reqPtr->length > 0U) {
             reqPtr->content[reqPtr->length] = '\0';
         }
 
@@ -3311,7 +3310,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 static int
 WriterReadFromSpool(WriterSock *curPtr) {
     int            streaming, status = NS_OK;
-    Tcl_WideInt    toRead, maxsize;
+    Tcl_WideInt    toRead;
+    size_t         maxsize;
     unsigned char *bufPtr;
 
     assert(curPtr != NULL);
@@ -3334,7 +3334,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
      * the buffer with new c.
      */
 	
-    if (curPtr->c.file.bufsize > 0) {
+    if (curPtr->c.file.bufsize > 0U) {
 	Ns_Log(DriverDebug, 
 	       "### Writer %p %.6x leftover %" PRIdz " offset %ld", 
 	       curPtr, curPtr->flags, 
@@ -3348,8 +3348,8 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
 	maxsize -= curPtr->c.file.bufsize;
     }
-    if (toRead > maxsize) {
-	toRead = maxsize;
+    if (toRead > (Tcl_WideInt)maxsize) {
+	toRead = (Tcl_WideInt)maxsize;
     }
     
     /*
@@ -3457,7 +3457,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	       curPtr->c.mem.sbufIdx < UIO_SMALLIOV) {
 	    struct iovec *vPtr = &curPtr->c.mem.bufs[curPtr->c.mem.bufIdx];
 	    
-	    if (vPtr->iov_len > 0 && vPtr->iov_base != NULL) {
+	    if (vPtr->iov_len > 0U && vPtr->iov_base != NULL) {
 
 		Ns_Log(DriverDebug, 
 		       "### Writer copies source %d to scratch %d len %" PRIiovlen,
@@ -3476,7 +3476,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	       nbufs, toWrite);
     }
     
-    n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0);
+    n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0U);
    
     if (n < 0) {
 	*err = errno;
@@ -3580,7 +3580,7 @@ WriterThread(void *arg)
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
 		Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d", 
 		       curPtr, curPtr->size, curPtr->streaming);
-		if (likely(curPtr->size > 0)) {
+		if (likely(curPtr->size > 0U)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
 		    pollto = -1;
 		} else if (unlikely(curPtr->streaming == NS_WRITER_STREAM_FINISH)) {
@@ -3630,9 +3630,9 @@ WriterThread(void *arg)
 		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
                        curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
                        curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
-		if (unlikely(curPtr->size < 1)) {
+		if (unlikely(curPtr->size < 1U)) {
 		    /*
-		     * Size < 0 means that verything was sent.
+		     * Size < 0 means that everything was sent.
 		     */
 		    if (streaming != NS_WRITER_STREAM_ACTIVE) {
 			if (streaming == NS_WRITER_STREAM_FINISH) {
@@ -3661,7 +3661,7 @@ WriterThread(void *arg)
                  *  for too long and we need to stop this socket
                  */
                 if (sockPtr->timeout.sec == 0) {
-		    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %d", 
+		    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld", 
 			   curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
                     SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
 		} else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
@@ -3678,7 +3678,7 @@ WriterThread(void *arg)
 
 	    Ns_MutexLock(&queuePtr->lock);
             if (status == NS_OK) {
-                if (curPtr->size > 0 || streaming == NS_WRITER_STREAM_ACTIVE) {
+                if (curPtr->size > 0U || streaming == NS_WRITER_STREAM_ACTIVE) {
 		    Ns_Log(DriverDebug, 
 			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
 			   curPtr, curPtr->size);
@@ -4753,7 +4753,7 @@ AsyncWriterThread(void *arg)
 		 * is some remaining data to write. If not we are done
 		 * with this request can can release the write buffer.
 		 */
-                if (curPtr->size > 0) {
+                if (curPtr->size > 0U) {
                     Push(curPtr, writePtr);
                 } else {
                     AsyncWriterRelease(curPtr);

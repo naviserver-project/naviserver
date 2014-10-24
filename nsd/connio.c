@@ -484,7 +484,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     }
 
     while (toWrite > 0) {
-        ssize_t sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0);
+        ssize_t sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0U);
 
         if (sent < 1) {
             break;
@@ -1176,14 +1176,17 @@ CheckKeep(const Conn *connPtr)
 
 		if (connPtr->drvPtr->keepmaxuploadsize
 		    && connPtr->contentLength > (size_t)connPtr->drvPtr->keepmaxuploadsize) {
-		    Ns_Log(Notice, "Disallow keep-alive, content-Length %" PRIdz " larger keepmaxuploadsize %d: %s",
+		    Ns_Log(Notice, 
+			   "Disallow keep-alive, content-Length %" PRIdz 
+			   " larger keepmaxuploadsize %" PRIdz ": %s",
 			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
 			   connPtr->request->line);
 		    return 0;
 		} else if (connPtr->drvPtr->keepmaxdownloadsize
 			   && connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
-		    Ns_Log(Notice, "Disallow keep-alive response length %" TCL_LL_MODIFIER
-			   "d larger keepmaxdownloadsize %d: %s",
+		    Ns_Log(Notice, 
+			   "Disallow keep-alive response length %" TCL_LL_MODIFIER
+			   "d larger keepmaxdownloadsize %" PRIdz ": %s",
 			   connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
 			   connPtr->request->line);
 		    return 0;
