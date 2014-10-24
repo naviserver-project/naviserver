@@ -1213,7 +1213,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
  */
 
 static int
-LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
+LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
@@ -1268,7 +1268,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  */
 
 static int
-LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
+LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
           const char *msg, size_t len)
 {
     int        fd = PTR2INT(arg);
@@ -1310,7 +1310,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  */
 
 static int
-LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
+LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
          const char *msg, size_t len)
 {
     int             ii, ret;

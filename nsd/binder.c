@@ -144,7 +144,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
  */
 
 NS_SOCKET
-Ns_SockListenUdp(char *address, int port)
+Ns_SockListenUdp(const char *address, int port)
 {
     NS_SOCKET          sock = NS_INVALID_SOCKET;
     struct sockaddr_in sa;

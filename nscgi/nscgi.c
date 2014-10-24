@@ -124,7 +124,7 @@ static int	CgiCopy(Cgi *cgiPtr, Ns_Conn *conn);
 static int	CgiRead(Cgi *cgiPtr);
 static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
-static void	SetAppend(Ns_Set *set, int index, const char *sep, char *value);
+static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, const char *key, const char *value);
 
 
@@ -1253,7 +1253,7 @@ CgiFreeMap(void *arg)
  */
 
 static void
-SetAppend(Ns_Set *set, int index, const char *sep, char *value)
+SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
 {
     Ns_DString ds;
 

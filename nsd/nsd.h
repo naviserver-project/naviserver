@@ -1245,7 +1245,7 @@ NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
 NS_EXTERN NsServer *NsGetInitServer(void);
 NS_EXTERN NsServer *NsGetServer(CONST char *server);
 NS_EXTERN void NsStartServers(void);
-NS_EXTERN void NsStopServers(Ns_Time *toPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStopServers(const Ns_Time *toPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStartServer(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStopServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1262,14 +1262,14 @@ NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
+NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
-NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                           Ns_Time *timeoutPtr, unsigned int flags,
+NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                           const Ns_Time *timeoutPtr, unsigned int flags,
                            Ns_DriverSendProc *sendProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 

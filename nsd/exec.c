@@ -66,7 +66,7 @@ static int ExecProc(char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecProcess(char *exec, const char *dir, int fdin, int fdout, char *args,
-	       Ns_Set *env)
+	       const Ns_Set *env)
 {
     return Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
 }
@@ -367,7 +367,7 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
-	    char **argv, const Ns_Set *env)
+	    char ** argv, const Ns_Set *env)
 {
 #ifdef _WIN32
     /*

@@ -75,7 +75,7 @@ static Ns_DriverSendProc SendBufs;
  */
 
 size_t
-Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, CONST void *data,
+Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, const void *data,
               off_t offset, size_t length)
 {
     bufs[i].fd = fd;
@@ -160,7 +160,7 @@ static ssize_t
 Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
 
 ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, unsigned int flags)
 {
 
@@ -255,7 +255,7 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr
 #else /* Default implementation */
 
 ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, unsigned int flags)
 {
     return NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
@@ -286,8 +286,8 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
  */
 
 ssize_t
-NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                           Ns_Time *timeoutPtr, unsigned int flags,
+NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                           const Ns_Time *timeoutPtr, unsigned int flags,
                            Ns_DriverSendProc *sendProc)
 {
     ssize_t       sent, nwrote;

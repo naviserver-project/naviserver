@@ -143,7 +143,7 @@ static int   SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
-static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr)
+static int   SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static void  SockPrepare(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -1046,7 +1046,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  */
 
 ssize_t
-NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
+NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Ns_Time timeout;
 
@@ -1679,7 +1679,7 @@ SockPrepare(Sock *sockPtr)
  */
 
 static int
-SockQueue(Sock *sockPtr, Ns_Time *timePtr)
+SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 {
     /*
      *  Verify the conditions, Request struct should exists already

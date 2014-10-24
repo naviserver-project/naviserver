@@ -166,7 +166,7 @@ NsStartServers(void)
  */
 
 void
-NsStopServers(Ns_Time *toPtr)
+NsStopServers(const Ns_Time *toPtr)
 {
     NsServer      *servPtr;
     Tcl_HashEntry *hPtr;

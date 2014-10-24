@@ -113,7 +113,7 @@ NsTclInitTimeType()
  */
 
 Tcl_Obj *
-Ns_TclNewTimeObj(Ns_Time *timePtr)
+Ns_TclNewTimeObj(const Ns_Time *timePtr)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
@@ -141,7 +141,7 @@ Ns_TclNewTimeObj(Ns_Time *timePtr)
  */
 
 void
-Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr)
+Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetTimeObj called with shared object");
