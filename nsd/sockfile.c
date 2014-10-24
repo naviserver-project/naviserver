@@ -50,7 +50,7 @@ ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
  */
 
 static ssize_t SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-                      Ns_Time *timeoutPtr, unsigned int flags,
+                      const Ns_Time *timeoutPtr, unsigned int flags,
                       Ns_DriverSendProc *sendProc);
 
 static Ns_DriverSendProc SendBufs;
@@ -446,7 +446,7 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 
 static ssize_t
 SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-       Ns_Time *timeoutPtr, unsigned int flags,
+       const Ns_Time *timeoutPtr, unsigned int flags,
        Ns_DriverSendProc *sendProc)
 {
     char          buf[16384];

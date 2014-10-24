@@ -226,7 +226,7 @@ static int AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list,
                              CONST char *name, double value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static double ComputeDelta(Ns_Time *start, Ns_Time *end)
+static double ComputeDelta(Ns_Time *start, const Ns_Time *end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -2091,7 +2091,7 @@ AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
  *----------------------------------------------------------------------
  */
 static double
-ComputeDelta(Ns_Time *start, Ns_Time *end)
+ComputeDelta(Ns_Time *start, const Ns_Time *end)
 {
     Ns_Time diff;
 

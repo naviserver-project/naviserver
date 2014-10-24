@@ -113,8 +113,11 @@ Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
  */
 
 int
-Ns_TclDetachedThread(Tcl_Interp *interp, char *script)
+Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
 {
+    assert(interp != NULL);
+    assert(script != NULL);
+
     return Ns_TclThread(interp, script, NULL);
 }
 

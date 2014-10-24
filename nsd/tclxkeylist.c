@@ -497,7 +497,7 @@ DeleteKeyedListEntry _ANSI_ARGS_((keylIntObj_t *keylIntPtr,
                                  int        entryIdx));
 
 static int
-FindKeyedListEntry _ANSI_ARGS_((keylIntObj_t *keylIntPtr,
+FindKeyedListEntry _ANSI_ARGS_((const keylIntObj_t *keylIntPtr,
                                 const char   *key,
                                 size_t       *keyLenPtr,
                                 char        **nextSubKeyPtr));
@@ -507,20 +507,11 @@ ObjToKeyedListEntry _ANSI_ARGS_((Tcl_Interp  *interp,
                                  Tcl_Obj     *objPtr,
                                  keylEntry_t *entryPtr));
 
-static void
-DupKeyedListInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
-                                     Tcl_Obj *copyPtr));
 
-static void
-FreeKeyedListInternalRep _ANSI_ARGS_((Tcl_Obj *keylPtr));
-
-static int
-SetKeyedListFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-                                 Tcl_Obj    *objPtr));
-
-static void
-UpdateStringOfKeyedList _ANSI_ARGS_((Tcl_Obj *keylPtr));
-
+static Tcl_FreeInternalRepProc FreeKeyedListInternalRep;
+static Tcl_DupInternalRepProc  DupKeyedListInternalRep;
+static Tcl_UpdateStringProc    UpdateStringOfKeyedList;
+static Tcl_SetFromAnyProc      SetKeyedListFromAny;
 
 /*
  * Type definition.
@@ -728,7 +719,7 @@ DeleteKeyedListEntry(keylIntObj_t *keylIntPtr, int entryIdx)
  *-----------------------------------------------------------------------------
  */
 static int
-FindKeyedListEntry(keylIntObj_t *keylIntPtr, const char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
+FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
 {
     char   *keySeparPtr;
     size_t keyLen;

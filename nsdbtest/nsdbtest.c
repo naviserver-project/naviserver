@@ -85,7 +85,7 @@ static char *dbName = "nsdbtest";
  */
 
 NS_EXPORT int
-Ns_DbDriverInit(char *driver, char *UNUSED(configPath))
+Ns_DbDriverInit(char *driver, const char *UNUSED(configPath))
 {
     return Ns_DbRegisterDriver(driver, &procs[0]);
 }

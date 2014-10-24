@@ -57,7 +57,7 @@ static Ns_ServerInitProc ServerInit;
  */
 
 int
-main(int argc, char **argv)
+main(int argc, char *const* argv)
 {
     return Ns_Main(argc, argv, ServerInit);
 }

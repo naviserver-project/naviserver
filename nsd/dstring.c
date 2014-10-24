@@ -404,7 +404,7 @@ Ns_DStringTrunc(Ns_DString *dsPtr, int length)
 #undef Ns_DStringNAppend
 
 char *
-Ns_DStringNAppend(Ns_DString *dsPtr, char *string, int length)
+Ns_DStringNAppend(Ns_DString *dsPtr, const char *string, int length)
 {
     return Tcl_DStringAppend(dsPtr, string, length);
 }
@@ -412,7 +412,7 @@ Ns_DStringNAppend(Ns_DString *dsPtr, char *string, int length)
 #undef Ns_DStringAppend
 
 char *
-Ns_DStringAppend(Ns_DString *dsPtr, char *string)
+Ns_DStringAppend(Ns_DString *dsPtr, const char *string)
 {
     return Tcl_DStringAppend(dsPtr, string, -1);
 }
@@ -420,7 +420,7 @@ Ns_DStringAppend(Ns_DString *dsPtr, char *string)
 #undef Ns_DStringAppendElement
 
 char *
-Ns_DStringAppendElement(Ns_DString *dsPtr, char *string)
+Ns_DStringAppendElement(Ns_DString *dsPtr, const char *string)
 {
     return Tcl_DStringAppendElement(dsPtr, string);
 }
@@ -428,7 +428,7 @@ Ns_DStringAppendElement(Ns_DString *dsPtr, char *string)
 #undef Ns_DStringLength
 
 int
-Ns_DStringLength(Ns_DString *dsPtr)
+Ns_DStringLength(const Ns_DString *dsPtr)
 {
     return dsPtr->length;
 }
@@ -436,7 +436,7 @@ Ns_DStringLength(Ns_DString *dsPtr)
 #undef Ns_DStringValue
 
 char *
-Ns_DStringValue(Ns_DString *dsPtr)
+Ns_DStringValue(const Ns_DString *dsPtr)
 {
     return dsPtr->string;
 }

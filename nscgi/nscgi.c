@@ -116,16 +116,16 @@ static Ns_OpProc CgiRequest;
 static void     CgiRegister(Mod *modPtr, char *map);
 static Ns_Callback CgiFreeMap;
 static Ns_DString *CgiDs(Cgi *cgiPtr);
-static int	CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn);
+static int	CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn);
 static void	CgiFree(Cgi *cgiPtr);
 static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn);
-static int	CgiSpool(Cgi *cgiPtr, Ns_Conn *conn);
+static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn);
 static int	CgiCopy(Cgi *cgiPtr, Ns_Conn *conn);
 static int	CgiRead(Cgi *cgiPtr);
 static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
-static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
-static void	SetUpdate(Ns_Set *set, char *key, char *value);
+static void	SetAppend(Ns_Set *set, int index, const char *sep, char *value);
+static void	SetUpdate(Ns_Set *set, const char *key, const char *value);
 
 
 /*
@@ -372,7 +372,7 @@ done:
  */
 
 static int
-CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
+CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 {
     Mod		   *modPtr;
     Ns_DString     *dsPtr;
@@ -555,7 +555,7 @@ err:
  */
 
 static int
-CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
+CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 {
     int     fd;
     size_t  len;
@@ -1253,7 +1253,7 @@ CgiFreeMap(void *arg)
  */
 
 static void
-SetAppend(Ns_Set *set, int index, char *sep, char *value)
+SetAppend(Ns_Set *set, int index, const char *sep, char *value)
 {
     Ns_DString ds;
 
@@ -1282,7 +1282,7 @@ SetAppend(Ns_Set *set, int index, char *sep, char *value)
  */
 
 static void
-SetUpdate(Ns_Set *set, char *key, char *value)
+SetUpdate(Ns_Set *set, const char *key, const char *value)
 {
     Ns_SetUpdate(set, key, value ? value : "");
 }

@@ -63,7 +63,7 @@ static int binderResponse[2] = { -1, -1 };
  * Local functions defined in this file
  */
 #ifndef _WIN32
-static void PreBind(char *line);
+static void PreBind(const char *line);
 static void Binder(void);
 #endif
 
@@ -247,7 +247,7 @@ Ns_SockListenRaw(int proto)
  */
 
 NS_SOCKET
-Ns_SockListenUnix(char *path, int backlog, int  mode)
+Ns_SockListenUnix(const char *path, int backlog, int  mode)
 {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
@@ -311,7 +311,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
  */
 
 NS_SOCKET
-Ns_SockBindUdp(struct sockaddr_in *saPtr)
+Ns_SockBindUdp(const struct sockaddr_in *saPtr)
 {
     NS_SOCKET sock;
     int       n = 1;
@@ -350,7 +350,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
  */
 
 NS_SOCKET
-Ns_SockBindUnix(char *path, int socktype, int mode)
+Ns_SockBindUnix(const char *path, int socktype, int mode)
 {
     NS_SOCKET sock;
 #ifdef _WIN32
@@ -456,7 +456,7 @@ NsInitBinder(void)
  */
 
 void
-NsPreBind(char *args, char *file)
+NsPreBind(const char *args, const char *file)
 {
 #ifndef _WIN32
     if (args != NULL) {
@@ -614,7 +614,7 @@ NsClosePreBound(void)
 #ifndef _WIN32
 
 static void
-PreBind(char *line)
+PreBind(const char *line)
 {
     Tcl_HashEntry      *hPtr;
     int                isNew, sock, port, mode;
@@ -622,7 +622,8 @@ PreBind(char *line)
     struct sockaddr_in sa;
 
     for (;line != NULL; line = next) {
-        char  *addr, *proto;
+        const char  *addr, *proto;
+
         next = strchr(line, ',');
         if (next) {
             *next++ = '\0';
@@ -767,7 +768,7 @@ PreBind(char *line)
  */
 
 NS_SOCKET
-Ns_SockBinderListen(int type, char *address, int port, int options)
+Ns_SockBinderListen(int type, const char *address, int port, int options)
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32

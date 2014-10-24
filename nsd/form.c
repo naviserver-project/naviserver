@@ -41,10 +41,10 @@
 
 static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding);
 static void ParseMultiInput(Conn *connPtr, char *start, char *end);
-static char *Ext2Utf(Tcl_DString *dsPtr, char *start, size_t len, Tcl_Encoding encoding, char unescape);
-static int GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn);
-static char *NextBoundry(Tcl_DString *dsPtr, char *s, char *e);
-static int GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr);
+static char *Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape);
+static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn);
+static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e);
+static int GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr);
 
 
 /*
@@ -393,7 +393,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
  */
 
 static int
-GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
+GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
 {
     CONST char *type, *bs;
 
@@ -432,7 +432,7 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
  */
 
 static char *
-NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
+NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
 {
     char c, sc, *find;
     size_t len;
@@ -473,7 +473,7 @@ NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
  */
 
 static int
-GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
+GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr)
 {
     CONST char *s, *e;
 
@@ -536,7 +536,7 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
  */
 
 static char *
-Ext2Utf(Tcl_DString *dsPtr, char *start, size_t len, Tcl_Encoding encoding, char unescape)
+Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
 {
 
     if (encoding == NULL) {

@@ -219,7 +219,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 
 pid_t
 Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
-	      char *args, Ns_Set *env)
+	      char *args, const Ns_Set *env)
 {
 #ifndef _WIN32
     pid_t  pid;
@@ -367,7 +367,7 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
-	    char **argv, Ns_Set *env)
+	    char **argv, const Ns_Set *env)
 {
 #ifdef _WIN32
     /*

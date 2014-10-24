@@ -64,7 +64,7 @@ static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
  */
 
 void
-Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
+Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
 {
     va_list     ap;
     Tcl_DString ds;
@@ -150,7 +150,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 CONST char *
-Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
+Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
     NsInterp    *itPtr = NsGetInterpData(interp);
     CONST char  *errorInfo, **logHeaders;
@@ -259,7 +259,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
  */
 
 void
-Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, char *alternative, char *explanation)
+Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const char *explanation)
 {
     Tcl_DString ds;
     int i;

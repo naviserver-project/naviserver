@@ -57,7 +57,7 @@ static int ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
 
 static int CheckKeep(const Conn *connPtr);
 static int CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags);
-static int HdrEq(Ns_Set *set, const char *name, const char *value);
+static int HdrEq(const Ns_Set *set, const char *name, const char *value);
 
 
 
@@ -1228,7 +1228,7 @@ CheckKeep(const Conn *connPtr)
  */
 
 static int
-HdrEq(Ns_Set *set, const char *name, const char *value)
+HdrEq(const Ns_Set *set, const char *name, const char *value)
 {
     char *hdrvalue;
 

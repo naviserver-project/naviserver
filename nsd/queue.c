@@ -41,7 +41,7 @@
  * Local functions defined in this file
  */
 
-static void ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
+static void ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void CreateConnThread(ConnPool *poolPtr)
@@ -53,6 +53,10 @@ static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+static int 
+neededAdditionalConnectionThreads(const ConnPool *poolPtr) 
+     NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -148,7 +152,7 @@ Ns_GetConn(void)
  */
 
 void
-NsMapPool(ConnPool *poolPtr, char *map)
+NsMapPool(ConnPool *poolPtr, const char *map)
 {
     CONST char **mv;
     char *server;
@@ -188,11 +192,7 @@ NsMapPool(ConnPool *poolPtr, char *map)
  *----------------------------------------------------------------------
  */
 static int 
-neededAdditionalConnectionThreads(ConnPool *poolPtr) 
-     NS_GNUC_NONNULL(1);
-
-static int 
-neededAdditionalConnectionThreads(ConnPool *poolPtr) {
+neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
     int wantCreate;
 
     assert(poolPtr != NULL);
@@ -270,7 +270,7 @@ neededAdditionalConnectionThreads(ConnPool *poolPtr) {
  */
 
 void
-NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr) {
+NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     int create;
 
     assert(servPtr != NULL);
@@ -323,7 +323,7 @@ NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr) {
  */
 
 int
-NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
+NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     ConnThreadArg *argPtr = NULL;
     NsServer *servPtr;
@@ -818,7 +818,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 void
-NsStartServer(NsServer *servPtr)
+NsStartServer(const NsServer *servPtr)
 {
     ConnPool *poolPtr;
     int       n;
@@ -913,7 +913,7 @@ NsStopServer(NsServer *servPtr)
 }
 
 void
-NsWaitServer(NsServer *servPtr, Ns_Time *toPtr)
+NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr)
 {
     ConnPool  *poolPtr;
     Ns_Thread  joinThread;
@@ -1391,7 +1391,7 @@ NsConnThread(void *arg)
  *----------------------------------------------------------------------
  */
 static void
-ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
+ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 {
     Ns_Conn  *conn = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->poolPtr->servPtr;

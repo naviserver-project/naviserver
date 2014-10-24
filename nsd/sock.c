@@ -955,7 +955,7 @@ Ns_SockStrError(int err)
  */
 
 int
-NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
+NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
 {
     Ns_Time now, diff;
     int     i, n, ms;

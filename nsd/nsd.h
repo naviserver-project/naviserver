@@ -1246,9 +1246,9 @@ NS_EXTERN NsServer *NsGetInitServer(void);
 NS_EXTERN NsServer *NsGetServer(CONST char *server);
 NS_EXTERN void NsStartServers(void);
 NS_EXTERN void NsStopServers(Ns_Time *toPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsStartServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStartServer(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStopServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
@@ -1275,15 +1275,15 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
 
 
-NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
+NS_EXTERN int  NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr)
+NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
      NS_GNUC_NONNULL(1);
-NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map)
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
-NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
+NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr);
 
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
@@ -1353,7 +1353,7 @@ NS_EXTERN void NsUnblockSignal(int sig);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
-NS_EXTERN void NsPreBind(char *args, char *file);
+NS_EXTERN void NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN char *NsConfigRead(CONST char *file);
 NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int optind);

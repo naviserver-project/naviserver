@@ -41,7 +41,7 @@
  * Local functions defined in this file
  */
 
-static void  SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr);
+static void  SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr);
 static int   SetTimeFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void  UpdateStringOfTime(Tcl_Obj *objPtr);
 static int TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
@@ -625,7 +625,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  */
 
 static void
-SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
+SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));

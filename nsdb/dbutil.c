@@ -61,7 +61,7 @@
  */
 
 void
-Ns_DbQuoteValue(Ns_DString *dsPtr, char *string)
+Ns_DbQuoteValue(Ns_DString *dsPtr, const char *string)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -193,7 +193,7 @@ Ns_Db1Row(Ns_DbHandle *handle, char *sql)
  */
 
 int
-Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
+Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
 {
     FILE           *fp;
     Ns_DString      dsSql;
@@ -308,7 +308,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
  */
 
 void
-Ns_DbSetException(Ns_DbHandle *handle, char *code, char *msg)
+Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
 {
     assert(handle != NULL);
     assert(code != NULL);

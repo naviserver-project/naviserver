@@ -441,7 +441,7 @@ Ns_SetIGet(const Ns_Set *set, const char *key)
  */
 
 const char *
-Ns_SetGetValue(Ns_Set *set, const char *key, const char *def)
+Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
 {
     const char *value = Ns_SetGet(set, key);
 
@@ -469,7 +469,7 @@ Ns_SetGetValue(Ns_Set *set, const char *key, const char *def)
  */
 
 const char *
-Ns_SetIGetValue(Ns_Set *set, const char *key, const char *def)
+Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
 {
     const char *value = Ns_SetIGet(set, key);
 

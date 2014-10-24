@@ -176,7 +176,7 @@ static void PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
+static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
@@ -1572,7 +1572,7 @@ PollReset(PollData *pdata)
 }
 
 static NS_POLL_NFDS_TYPE
-PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
 {
     assert(pdata != NULL);
     /*
