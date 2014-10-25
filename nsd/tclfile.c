@@ -82,11 +82,11 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
     if (check == 0) {
         return TCL_OK;
     }
-    if (( write && !(mode & TCL_WRITABLE)) 
+    if (( write != 0 && (mode & TCL_WRITABLE) == 0) 
         ||
-        (!write && !(mode & TCL_READABLE))) {
+        (write == 0 && (mode & TCL_READABLE) == 0)) {
         Tcl_AppendResult(interp, "channel \"", chanId, "\" not open for ",
-                         write ? "writing" : "reading", NULL);
+                         write != 0 ? "writing" : "reading", NULL);
         return TCL_ERROR;
     }
 
@@ -121,7 +121,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
     if (Ns_TclGetOpenChannel(interp, chanId, write, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Tcl_GetChannelHandle(chan, write ? TCL_WRITABLE : TCL_READABLE,
+    if (Tcl_GetChannelHandle(chan, write != 0 ? TCL_WRITABLE : TCL_READABLE,
                              &data) != TCL_OK) {
         Tcl_AppendResult(interp, "could not get handle for channel: ",
                          chanId, NULL);
@@ -216,7 +216,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
 {
 
     if (argc == 1) {
-        char buffer[PATH_MAX] = {0};
+        char buffer[PATH_MAX] = "";
 
         snprintf(buffer, PATH_MAX - 1, "%s/ns-XXXXXX", nsconf.tmpDir);
 	Tcl_SetResult(interp, mktemp(buffer), TCL_VOLATILE);
@@ -441,23 +441,23 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int length;
-    
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file ?length?");
-        return TCL_ERROR;
+    int length = 0;
+    char *fileString;
+
+    Ns_ObjvSpec args[] = {
+	{"file",      Ns_ObjvString, &fileString, NULL},
+	{"?length",   Ns_ObjvInt,    &length,  NULL},
+	{NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+	return TCL_ERROR;
     }
-    if (objc == 2) {
-        length = 0;
-    } else if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (truncate(Tcl_GetString(objv[1]), length) != 0) {
-        Tcl_AppendResult(interp, "truncate (\"", 
-                         Tcl_GetString(objv[1]), "\", ",
-                         Tcl_GetString(objv[2]) ? 
-                         Tcl_GetString(objv[2]) : "0", ") failed: ", 
-                         Tcl_PosixError(interp), NULL);
+
+    if (truncate(fileString, length) != 0) {
+        Tcl_AppendResult(interp, "truncate (\"", fileString, "\", ",
+                         length == 0 ? "0" : Tcl_GetString(objv[2]),
+                         ") failed: ", Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
 
@@ -484,26 +484,25 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 int
 NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int length, fd;
+    int length = 0, fd;
+    char *fileIdString;
     
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "fileId ?length?");
-        return TCL_ERROR;
+    Ns_ObjvSpec args[] = {
+	{"fileId",    Ns_ObjvString, &fileIdString, NULL},
+	{"?length",   Ns_ObjvInt,    &length,  NULL},
+	{NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+	return TCL_ERROR;
     }
-    if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 1, &fd) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (objc == 2) {
-        length = 0;
-    } else if (Tcl_GetInt(interp, Tcl_GetString(objv[2]), &length) != TCL_OK) {
+    if (Ns_TclGetOpenFd(interp, fileIdString, 1, &fd) != TCL_OK) {
         return TCL_ERROR;
     }
     if (ftruncate(fd, length) != 0) {
-        Tcl_AppendResult(interp, "ftruncate (\"", 
-                         Tcl_GetString(objv[1]), "\", ",
-                         Tcl_GetString(objv[2]) ? 
-                         Tcl_GetString(objv[2]) : "0", ") failed: ", 
-                         Tcl_PosixError(interp), NULL);
+        Tcl_AppendResult(interp, "ftruncate (\"", fileIdString, "\", ",
+                         length == 0 ? "0" : Tcl_GetString(objv[2]),
+                         ") failed: ", Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
 
@@ -612,7 +611,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         name = Tcl_GetString(objv[3]);
         Ns_MutexLock(&servPtr->chans.lock);
         hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
-        if (isNew) {
+        if (isNew != 0) {
             regChan = ns_malloc(sizeof(NsRegChan));
             regChan->name = ns_malloc(strlen(chanName) + 1U);
             regChan->chan = chan;
