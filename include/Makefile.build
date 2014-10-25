@@ -43,5 +43,5 @@ NSBUILD=1
 # For Windows using nmake, comment out the Makefile.module line below
 # and use the Makefile.win32 instead:
 
-include ../include/Makefile.module
-#include ../include/Makefile.win32
+#include ../include/Makefile.module
+include ../include/Makefile.win32

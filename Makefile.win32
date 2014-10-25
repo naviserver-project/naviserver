@@ -34,7 +34,7 @@ TCLPATH = $(tcl_64)
 # 2014/10/12 14:25 EDT
 
 TCLLIB  = tcl85.lib
-VC      = C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC
+VC      = C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC
 MSDK    = C:\Program Files\Microsoft SDKs\Windows\v7.1
 
 ## TODO: Why is it necessary to set these variables here?  Shouldn't
