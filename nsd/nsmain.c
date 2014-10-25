@@ -547,7 +547,8 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     if (mode == 'I' || mode == 'R' || mode == 'S') {
 	int status = TCL_OK;
 
-        Ns_ThreadSetName("-service-");
+        //Ns_ThreadSetName("-service-");
+
         switch (mode) {
         case 'I':
             status = NsInstallService(procname);
@@ -574,6 +575,16 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     if (mode != 'c' && mode != 'f') {
         NsLogOpen();
     }
+
+#ifdef _WIN32
+    if (mode == 'S') {
+	/*
+	 * When we are called via "contservice", the thread name is not
+	 * yet set.
+	 */
+	Ns_ThreadSetName("-service-");
+    }
+#endif
 
     /*
      * Log the first startup message which should be the first
