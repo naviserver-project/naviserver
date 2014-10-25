@@ -372,7 +372,7 @@ CreatePool(NsServer *servPtr, char *pool)
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-      path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
+	path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
 	Ns_Set *set;

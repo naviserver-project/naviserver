@@ -47,7 +47,7 @@ static Ns_ServerInitProc ConfigServerVhost;
 static int ConfigServerVhost(CONST char *server)
     NS_GNUC_NONNULL(1);
 
-static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
+static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1);
@@ -760,7 +760,7 @@ NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 }
 
 static int
-PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
+PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
     NsInterp    *itPtr = clientData;
     NsServer    *servPtr;

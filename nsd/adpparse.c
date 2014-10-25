@@ -76,7 +76,7 @@ typedef struct Parse {
  * Local functions defined in this file
  */
 
-static void AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
+static void AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
@@ -538,7 +538,7 @@ NsAdpFreeCode(AdpCode *codePtr)
  */
 
 static void
-AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
+AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int flags)
 {
     AdpCode   *codePtr;
     ptrdiff_t  len;

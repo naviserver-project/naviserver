@@ -484,15 +484,15 @@ int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString   ds;
-    int          i, part, nextArgIdx;
-    char        *charset  = NULL;
+    int          i, nextArgIdx;
+    char        *charset  = NULL, part;
     Tcl_Encoding encoding = NULL;
 
     static const char  *options[]           = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
-    static const int    optionPartValue[3]  = {'q', 'q', 'p'};
+    static const char   optionPartValue[3]  = {'q', 'q', 'p'};
 
     if (objc < 2) {
     usage_error:

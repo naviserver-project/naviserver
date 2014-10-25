@@ -41,7 +41,7 @@
  */
 
 static Ns_SchedProc FreeSched;
-static int SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, unsigned char cmd);
+static int SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd);
 static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr);
 
 
@@ -102,7 +102,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 static int
-SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, unsigned char cmd)
+SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
     int id, ok;
 

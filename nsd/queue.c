@@ -1009,7 +1009,7 @@ NsConnThread(void *arg)
     Ns_Time       wait, *timePtr = &wait;
     unsigned int  id, shutdown;
     int           status = NS_OK, cpt, ncons, timeout, current, fromQueue;
-    char         *p, *path, *exitMsg;
+    char         *path, *exitMsg;
     Ns_Mutex     *threadsLockPtr = &poolPtr->threads.lock;
     Ns_Mutex     *tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_Mutex     *wqueueLockPtr  = &poolPtr->wqueue.lock;
@@ -1030,10 +1030,14 @@ NsConnThread(void *arg)
     Ns_MutexUnlock(threadsLockPtr);
 
     /*
-     * Set the conn thread name.
+     * Set the conn thread name. The pool name is always non-null, but
+     * might have an empty string as "name".
      */
-    p = (poolPtr->pool != NULL && *poolPtr->pool ? poolPtr->pool : NULL);
-    Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, p ? ":" : "", p ? p : "", id);
+    assert(poolPtr->pool != NULL);
+    { 
+	char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
+	Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, p ? ":" : "", p ? p : "", id);
+    }
 
     /*
      * See how many connections this thread should run.  Setting

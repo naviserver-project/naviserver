@@ -401,7 +401,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    if (buf[0] == '!') {
+    if (buf[0] == UCHAR('!')) {
         if (Tcl_Read(chan, (char *)buf, 1) != 1) {
             return TCL_ERROR;
         }
@@ -416,7 +416,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
             return TCL_ERROR;
         }
         goto innerloop;
-    } else if (buf[0] != ',') {
+    } else if (buf[0] != UCHAR(',')) {
         return TCL_ERROR;
     }
 

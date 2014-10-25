@@ -261,7 +261,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     }
     rangestr += 6; /* Skip "bytes=" */
 
-    while (*rangestr && rangeCount < maxRanges) {
+    while (*rangestr != '\0' && rangeCount < maxRanges) {
 
         thisPtr = &ranges[rangeCount];
         if (isdigit(UCHAR(*rangestr))) {

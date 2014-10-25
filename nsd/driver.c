@@ -2408,10 +2408,10 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
-static char *strnchr(char *buffer, size_t len, int c)
+static char *strnchr(char *buffer, size_t len, char c)
     NS_GNUC_NONNULL(1);
 
-static char *strnchr(char *buffer, size_t len, int c) {
+static char *strnchr(char *buffer, size_t len, char c) {
     char *end;
 
     assert(buffer != NULL);
