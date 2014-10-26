@@ -520,7 +520,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (encoding == NULL) {
         return TCL_OK;
     }
-    Tcl_SetResult(interp, (char*) Tcl_GetEncodingName(encoding), TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetEncodingName(encoding), -1));
 
     return TCL_OK;
 }

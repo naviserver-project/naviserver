@@ -366,7 +366,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 break;
 
             case sINameIdx:
-                Tcl_SetResult(interp, set->name, TCL_VOLATILE);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, -1));
                 break;
 
             case SPrintIdx:
@@ -477,7 +477,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             switch (opt) {
             case SValueIdx:
                 val = Ns_SetValue(set, i);
-                Tcl_SetResult(interp, val, TCL_VOLATILE);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
                 break;
 
             case SIsNullIdx:
@@ -488,7 +488,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             case SKeyIdx:
                 key = Ns_SetKey(set, i);
-                Tcl_SetResult(interp, key, TCL_VOLATILE);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(key, -1));
                 break;
 
             case SDeleteIdx:

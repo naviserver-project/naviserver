@@ -391,7 +391,7 @@ TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         return TCL_ERROR;
     }
     now = time(NULL);
-    if (PTR2INT(isgmt)) {
+    if (PTR2INT(isgmt) != 0) {
         ptm = ns_gmtime(&now);
     } else {
         ptm = ns_localtime(&now);
@@ -507,7 +507,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
 
     return TCL_OK;
 }
@@ -541,10 +541,10 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
 
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
-        len = snprintf(buf, sizeof(buf), "%" PRIu64, (int64_t) timePtr->sec);
+        len = snprintf(buf, sizeof(buf), "%ld", timePtr->sec);
     } else {
-        len = snprintf(buf, sizeof(buf), "%" PRIu64 ":%ld",
-                       (int64_t) timePtr->sec, timePtr->usec);
+        len = snprintf(buf, sizeof(buf), "%ld:%ld",
+                       timePtr->sec, timePtr->usec);
     }
     Ns_TclSetStringRep(objPtr, buf, len);
 }

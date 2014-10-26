@@ -343,7 +343,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     } else {
         int i;
 
-        Tcl_SetResult(interp, Tcl_GetHashValue(hPtr), TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
         for (i = 3; i < objc; ++i) {
             Tcl_AppendElement(interp, Tcl_GetString(objv[i]));
         }
@@ -389,7 +389,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
     if (!isNew) {
-        Tcl_SetResult(interp, Tcl_GetHashValue(hPtr), TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
     }
     for (i = 3; i < objc; ++i) {
         Tcl_AppendResult(interp, Tcl_GetString(objv[i]), NULL);

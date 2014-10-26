@@ -240,7 +240,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         hPtr = Tcl_CreateHashEntry(&itPtr->https, buf, &isNew);
     } while (!isNew);
     Tcl_SetHashValue(hPtr, httpPtr);
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     return TCL_OK;
 }
 

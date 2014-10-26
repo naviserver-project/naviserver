@@ -385,7 +385,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
     /* null-terminator */
     *outPtr = '\0';
 
-    Tcl_SetResult(interp, inString, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
 
     ns_free(inString);
 

@@ -219,7 +219,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
         char buffer[PATH_MAX] = "";
 
         snprintf(buffer, PATH_MAX - 1, "%s/ns-XXXXXX", nsconf.tmpDir);
-	Tcl_SetResult(interp, mktemp(buffer), TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
 
     } else if (argc == 2) {
 	char *buffer = ns_strdup(argv[1]);
@@ -263,7 +263,7 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
         Tcl_SetResult(interp, "could not get temporary filename", TCL_STATIC);
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
 
     return TCL_OK;
 }
@@ -537,8 +537,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 
     Ns_DStringInit(&ds);
     Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds),
-                                              Ns_DStringLength(&ds)));
+    Tcl_DStringResult(interp, &ds);
     Ns_DStringFree(&ds);
     
     return TCL_OK;
@@ -646,7 +645,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         }
 	assert(regChan != NULL);
         SpliceChannel(interp, regChan->chan);
-        Tcl_SetResult(interp, regChan->name, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(regChan->name, -1));
         hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &isNew);
         Tcl_SetHashValue(hPtr, regChan);
         break;

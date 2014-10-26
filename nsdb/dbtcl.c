@@ -379,15 +379,15 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 
         switch (cmd) {
         case POOLNAME:
-            Tcl_SetResult(interp, handlePtr->poolname, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->poolname, -1));
             break;
 
         case PASSWORD:
-            Tcl_SetResult(interp, handlePtr->password, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->password, -1));
             break;
 
         case USER:
-            Tcl_SetResult(interp, handlePtr->user, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->user, -1));
             break;
 
         case DATASOURCE:
@@ -471,7 +471,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	    if (Ns_DbSpReturnCode(handlePtr, tmpbuf, 32) != NS_OK) {
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
       	    }
-	    Tcl_SetResult(interp, tmpbuf, TCL_VOLATILE);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(tmpbuf, -1));
             break;
         }
         break;
@@ -673,9 +673,9 @@ ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
         return TCL_ERROR;
     }
     if (cmd == 'c') {
-    	Tcl_SetResult(interp, handle->cExceptionCode, TCL_VOLATILE);
+    	Tcl_SetObjResult(interp, Tcl_NewStringObj(handle->cExceptionCode, -1));
     } else {
-    	Tcl_SetResult(interp, handle->dsExceptionMsg.string, TCL_VOLATILE);
+    	Tcl_DStringResult(interp, &handle->dsExceptionMsg);
     }
     return TCL_OK;
 }

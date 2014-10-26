@@ -971,7 +971,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             return TCL_ERROR;
         }
         Ns_RWLockRdLock(&servPtr->tcl.lock);
-        Tcl_SetResult(interp, servPtr->tcl.script, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.script, -1));
         Ns_RWLockUnlock(&servPtr->tcl.lock);
         break;
 

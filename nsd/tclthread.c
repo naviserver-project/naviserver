@@ -215,7 +215,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         if (objc > 2) {
             Ns_ThreadSetName(Tcl_GetString(objv[2]));
         }
-        Tcl_SetResult(interp, Ns_ThreadGetName(), TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ThreadGetName(), -1));
         break;
 
     case TStackinfoIdx: {

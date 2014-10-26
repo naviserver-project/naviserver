@@ -642,7 +642,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IServersIdx:
-        Tcl_SetResult(interp, nsconf.servers.string, TCL_STATIC);
+        Tcl_DStringResult(interp, &nsconf.servers);
         return TCL_OK;
     }
 
@@ -744,7 +744,7 @@ NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv
     }
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, lib, argv[2], NULL);
-    Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    Tcl_DStringResult(interp, &ds);
     Ns_DStringFree(&ds);
 
     return TCL_OK;

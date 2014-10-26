@@ -285,7 +285,7 @@ NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
             goto done;
         }
     }
-    Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    Tcl_DStringResult(interp, &ds);
     code = TCL_OK;
 done:
     Ns_DStringFree(&ds);

@@ -851,7 +851,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         filterPtr->arg  = &ds;
         Ns_DStringInit(&ds);
         LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), 0);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds), -1));
+        Tcl_DStringResult(interp, &ds);
         Ns_DStringFree(&ds);
         break;
 

@@ -627,7 +627,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             if (create) {
                 Ns_ThreadCreate(JobThread, 0, 0, NULL);
             }
-            Tcl_SetResult(interp, jobId, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(jobId, -1));
         }
         break;
 
@@ -1101,7 +1101,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             snprintf(buf, sizeof(buf), "queue_id_%lx_%" TCL_LL_MODIFIER "x",
                      tp.nextQueueId++, (Tcl_WideInt) currentTime.sec);
             Ns_MutexUnlock(&tp.queuelock);
-            Tcl_SetResult(interp, buf, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
         }
         break;
 

@@ -218,7 +218,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         if (opt == IUnsetIdx && PutEnv(interp, name, NULL) != NS_OK) {
             goto done;
         } else {
-            Tcl_SetResult(interp, value, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
         }
         break;
     }

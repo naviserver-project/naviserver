@@ -635,7 +635,7 @@ NsTclAdpDirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, itPtr->adp.cwd, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, -1));
 
     return TCL_OK;
 }
@@ -807,7 +807,7 @@ NsTclAdpDumpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     if (GetOutput(arg, &dsPtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
+    Tcl_DStringResult(interp, dsPtr);
 
     return TCL_OK;
 }
@@ -1170,7 +1170,7 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Ns_ConnSetEncodedTypeHeader(conn, Tcl_GetString(objv[1]));
         }
         type = Ns_SetIGet(conn->outputheaders, "Content-Type");
-        Tcl_SetResult(interp, type, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
     }
     return TCL_OK;
 }

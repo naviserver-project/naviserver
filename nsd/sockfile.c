@@ -304,7 +304,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 
         if (tosend > 0) {
             if (fd < 0) {
-                Ns_SetVec(&iov, 0, (void *) (intptr_t) offset, tosend);
+                Ns_SetVec(&iov, 0, INT2PTR(offset), tosend);
                 sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
             } else {
                 sent = SendFd(sock, fd, offset, tosend,

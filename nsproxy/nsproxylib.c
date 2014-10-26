@@ -1377,7 +1377,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
         str += ilen;
     }
     if (rlen > 0) {
-        Tcl_SetResult(interp, str, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
     }
     *resultPtr = ntohl(resPtr->code);
 

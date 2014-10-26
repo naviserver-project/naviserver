@@ -155,7 +155,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
         if (exitcodePtr != NULL) {
             *exitcodePtr = exitcode;
         }
-        if (nsconf.exec.checkexit && exitcode != 0) {
+        if (nsconf.exec.checkexit == TRUE && exitcode != 0) {
             Ns_Log(Error, "exec: process %d exited with non-zero status: %d",
                    pid, exitcode);
             status = NS_ERROR;
@@ -333,11 +333,11 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
     }
     if (CreateProcess(exec, cds.string, NULL, NULL, TRUE, 0, envp, dir, &si, &pi) != TRUE) {
         Ns_Log(Error, "exec: failed to create process: %s: %s",
-        exec ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
+        exec != NULL ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
         pid = NS_INVALID_PID;
     } else {
-        CloseHandle(pi.hThread);
-		pid = pi.dwProcessId;
+	CloseHandle(pi.hThread);
+	pid = pi.dwProcessId;
     }
     Ns_DStringFree(&cds);
     Ns_DStringFree(&xds);

@@ -453,7 +453,7 @@ typedef struct Ns_Sock {
 
 typedef struct Ns_FileVec {
     int        fd;      /* File descriptor of file to send, or < 0 for memory. */
-    off_t     offset;   /* Offset into file to begin sending, or void *. */
+    off_t      offset;  /* Offset into file to begin sending, or void *. */
     size_t     length;  /* Number of bytes to send from offset. */
 } Ns_FileVec;
 
