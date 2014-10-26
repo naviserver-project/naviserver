@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 	    case 'n':
 		break;
 	    case 'm':
-	    	nthreads = atoi(p + 1);
+	    	nthreads = strtol(p + 1, NULL, 10);
 		goto mem;
 		break;
 	}

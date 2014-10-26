@@ -634,11 +634,11 @@ PreBind(const char *line)
         str = strchr(line, ':');
         if (str) {
             *str++ = '\0';
-            port = atoi(str);
+            port = strtol(str, NULL, 10);
             addr = line;
             line = str;
         } else {
-            port = atoi(line);
+            port = strtol(line, NULL, 10);
         }
         /* Parse protocol */
         if (*line != '/' && (str = strchr(line,'/'))) {
@@ -698,7 +698,7 @@ PreBind(const char *line)
             str = strchr(str,'/');
             if (str) {
                 *(str++) = '\0';
-                count = atoi(str);
+                count = strtol(str, NULL, 10);
             }
             while(count--) {
                 sock = Ns_SockBindRaw(IPPROTO_ICMP);
@@ -723,7 +723,7 @@ PreBind(const char *line)
             str = strchr(str,'|');
             if (str) {
                 *(str++) = '\0';
-                mode = atoi(str);
+                mode = strtol(str, NULL, 10);
             }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
             if (!isNew) {

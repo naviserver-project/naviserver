@@ -840,7 +840,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     cbPtr->when = when;
     strcpy(cbPtr->script, Tcl_GetString(objv[2]));
     if (objc > 4) {
-        timeout = atoi(Tcl_GetString(objv[4]));
+	timeout = strtol(Tcl_GetString(objv[4]), NULL, 10);
     }
     if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
                         when | NS_SOCK_EXIT, timeout) != NS_OK) {

@@ -91,7 +91,7 @@ ConfigServerRedirects(CONST char *server)
 
         key = Ns_SetKey(set, i);
         map = Ns_SetValue(set, i);
-        status = atoi(key);
+        status = strtol(key, NULL, 10);
         if (status <= 0 || *map == '\0') {
             Ns_Log(Error, "redirects[%s]: invalid redirect '%s=%s'",
                    server, key, map);
