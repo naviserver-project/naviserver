@@ -204,6 +204,7 @@
  */
 
 #define UCHAR(c)                   ((unsigned char)(c))
+#define CHARTYPE(what,c)           is ## what ((int)((unsigned char)(c)))
 #define STREQ(a,b)                 (((*(a)) == (*(b))) && (strcmp((a),(b)) == 0))
 #define STRIEQ(a,b)                (strcasecmp((a),(b)) == 0)
 #define Ns_IndexCount(X)           ((X)->n)

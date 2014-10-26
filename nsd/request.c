@@ -174,14 +174,14 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
      */
     
     url = l;
-    while (*url != '\0' && !isspace(UCHAR(*url))) {
+    while (*url != '\0' && CHARTYPE(space, *url) == 0) {
         ++url;
     }
     if (*url == '\0') {
         goto done;
     }
     *url++ = '\0';
-    while (*url != '\0' && isspace(UCHAR(*url))) {
+    while (*url != '\0' && CHARTYPE(space, *url) != 0)  {
         ++url;
     }
     if (*url == '\0') {
@@ -196,7 +196,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
     request->version = 0.0;
     p = url + strlen(url);
     while (p-- > url) {
-        if (!isdigit(UCHAR(*p)) && *p != '.') {
+        if (CHARTYPE(digit, *p) == 0 && *p != '.') {
             break;
         }
     }
@@ -499,12 +499,12 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
      * they must be in well form key: value form.
      */
 
-    if (isspace(UCHAR(*line))) {
+    if (CHARTYPE(space, *line) != 0) {
         index = Ns_SetLast(set);
         if (index < 0) {
 	    return NS_ERROR;	/* Continue before first header. */
         }
-        while (isspace(UCHAR(*line))) {
+        while (CHARTYPE(space, *line) != 0) {
             ++line;
         }
         if (*line != '\0') {
@@ -522,21 +522,21 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 	}
         *sep = '\0';
         value = sep + 1;
-        while (*value != '\0' && isspace(UCHAR(*value))) {
+        while (*value != '\0' && CHARTYPE(space, *value) != 0) {
             ++value;
         }
         index = Ns_SetPut(set, line, value);
         key = Ns_SetKey(set, index);
 	if (disp == ToLower) {
             while (*key != '\0') {
-	        if (isupper(UCHAR(*key))) {
+	        if (CHARTYPE(upper, *key) != 0) {
             	    *key = tolower(UCHAR(*key));
 		}
             	++key;
 	    }
 	} else if (disp == ToUpper) {
             while (*key != '\0') {
-	        if (islower(UCHAR(*key))) {
+	        if (CHARTYPE(lower, *key) != 0) {
 		    *key = toupper(UCHAR(*key));
 		}
 		++key;
@@ -585,7 +585,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
         return NULL;
     }
     for (str ++; *str == ' '; str++);
-    if (!isdigit(UCHAR(*str))) {
+    if (CHARTYPE(digit,*str) == 0) {
         return NULL;
     }
 
@@ -597,11 +597,11 @@ GetQvalue(CONST char *str, int *lenPtr) {
 	 * three digits after the comma.
 	 */
       str ++;
-      if (isdigit(UCHAR(*str))) {
+      if (CHARTYPE(digit, *str) != 0) {
 	  str++;
-	  if (isdigit(UCHAR(*str))) {
+	  if (CHARTYPE(digit, *str) != 0) {
 	      str++;
-	      if (isdigit(UCHAR(*str))) {
+	      if (CHARTYPE(digit, *str) != 0) {
 		  str++;
 	      }
 	  }
