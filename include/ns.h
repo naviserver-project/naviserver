@@ -1108,7 +1108,7 @@ Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN int
-Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t toWrite, unsigned int flags)
+Ns_ConnWriteChars(Ns_Conn *conn, const char *buf, size_t toWrite, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1116,7 +1116,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t toWrite, unsigned int flags)
+Ns_ConnWriteData(Ns_Conn *conn, const void *buf, size_t toWrite, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1144,7 +1144,7 @@ Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
+Ns_ConnPuts(Ns_Conn *conn, const char *string)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN ssize_t
@@ -1194,15 +1194,15 @@ Ns_ConnCopyToChannel(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
 
 
 NS_EXTERN int
-Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t toWrite)
+Ns_ConnWrite(Ns_Conn *conn, const void *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN int
-Ns_WriteConn(Ns_Conn *conn, CONST char *buf, size_t toWrite)
+Ns_WriteConn(Ns_Conn *conn, const char *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVData);
 
 NS_EXTERN int
-Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t toWrite)
+Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVChars);
 
 NS_EXTERN int
@@ -2382,7 +2382,7 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def);
  */
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenEx(char *address, int port, int backlog);
+Ns_SockListenEx(const char *address, int port, int backlog);
 
 NS_EXTERN NS_SOCKET
 Ns_SockListenUdp(const char *address, int port);
@@ -2458,7 +2458,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 
 NS_EXTERN ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, unsigned int flags)
+                    const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int

@@ -385,13 +385,13 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 static void
 UpdateStringOfAddr(Tcl_Obj *objPtr)
 {
-    void   *type = objPtr->internalRep.twoPtrValue.ptr1;
+    char   *type = objPtr->internalRep.twoPtrValue.ptr1;
     void   *addr = objPtr->internalRep.twoPtrValue.ptr2;
     char    buf[128];
     size_t  len;
 
     len = snprintf(buf, sizeof(buf), "t%p-a%p-%s",
-                   type, addr, (char *) type);
+                   type, addr, type);
     Ns_TclSetStringRep(objPtr, buf, (int)len);
 }
 

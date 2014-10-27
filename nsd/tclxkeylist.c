@@ -815,9 +815,9 @@ ObjToKeyedListEntry(Tcl_Interp *interp, Tcl_Obj *objPtr, keylEntry_t *entryPtr)
  *-----------------------------------------------------------------------------
  */
 static void
-FreeKeyedListInternalRep(Tcl_Obj *keylPtr)
+FreeKeyedListInternalRep(Tcl_Obj *objPtr)
 {
-    FreeKeyedListData((keylIntObj_t *) keylPtr->internalRep.otherValuePtr);
+    FreeKeyedListData((keylIntObj_t *)objPtr->internalRep.otherValuePtr);
 }
 
 /*-----------------------------------------------------------------------------

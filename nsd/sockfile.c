@@ -161,7 +161,7 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, unsigned int flags)
+                    const Ns_Time *timeoutPtr, unsigned int flags)
 {
 
     ssize_t       sent, towrite, nwrote;
@@ -256,7 +256,7 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, unsigned int flags)
+                    const Ns_Time *timeoutPtr, unsigned int flags)
 {
     return NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
                                       SendBufs);
@@ -319,7 +319,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
         }
     }
 
-    return nwrote ? nwrote : sent;
+    return nwrote > 0 ? nwrote : sent;
 }
 
 
@@ -357,7 +357,7 @@ ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
     overlapped.Offset = (DWORD)offset;
     overlapped.OffsetHigh = (DWORD)((uint64_t)offset >> 32);
 
-    if (!ReadFile(fh, buf, c, &ret, &overlapped)) {
+    if (ReadFile(fh, buf, c, &ret, &overlapped) == FALSE) {
         return -1;
     }
 

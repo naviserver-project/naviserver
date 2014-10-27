@@ -87,7 +87,7 @@ static void Binder(void);
 
 #ifndef _WIN32
 NS_SOCKET
-Ns_SockListenEx(char *address, int port, int backlog)
+Ns_SockListenEx(const char *address, int port, int backlog)
 {
     NS_SOCKET          sock = NS_INVALID_SOCKET;
     struct sockaddr_in sa;

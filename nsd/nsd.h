@@ -1473,7 +1473,7 @@ NS_EXTERN int NsForkWatchedProcess(void);
 
 NS_EXTERN int NsCloseAllFiles(int errFd);
 NS_EXTERN int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
-NS_EXTERN void NsMemUmap(FileMap *mapPtr);
+NS_EXTERN void NsMemUmap(const FileMap *mapPtr);
 
 NS_EXTERN void NsStopSockCallbacks(void);
 NS_EXTERN void NsStopScheduledProcs(void);

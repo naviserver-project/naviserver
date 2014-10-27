@@ -620,7 +620,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
  */
 
 void
-NsMemUmap(FileMap *mapPtr)
+NsMemUmap(const FileMap *mapPtr)
 {
     UnmapViewOfFile((LPCVOID)mapPtr->addr);
     CloseHandle((HANDLE)mapPtr->mapobj);
@@ -849,7 +849,7 @@ ns_sockpair(NS_SOCKET socks[2])
  */
 
 NS_SOCKET
-Ns_SockListenEx(char *address, int port, int backlog)
+Ns_SockListenEx(const char *address, int port, int backlog)
 {
     NS_SOCKET sock;
     struct sockaddr_in sa;
