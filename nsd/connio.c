@@ -495,7 +495,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
         nwrote += sent;
         toWrite -= sent;
     }
-    if (nwrote > 0U) {
+    if (nwrote > 0) {
         connPtr->nContentSent += nwrote;
     }
 
@@ -613,7 +613,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
 	timeout.usec = 0;
       
-	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0U);
+	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0);
     }
     /*toWrite -= sent;*/
     nwrote += sent;

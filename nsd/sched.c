@@ -809,7 +809,7 @@ SchedThread(void *UNUSED(arg))
             time(&now);
             elapsed = (long) difftime(now, ePtr->laststart);
             if (elapsed > nsconf.sched.maxelapsed) {
-                Ns_Log(Warning, "sched: excessive time taken by proc %d (%d seconds)",
+                Ns_Log(Warning, "sched: excessive time taken by proc %d (%ld seconds)",
                        ePtr->id, elapsed);
             }
             if (ePtr->hPtr == NULL) {

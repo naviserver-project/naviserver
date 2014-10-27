@@ -2512,7 +2512,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockBind(const struct sockaddr_in *saPtr);
 
 NS_EXTERN NS_SOCKET
-Ns_SockListen(char *address, int port);
+Ns_SockListen(const char *address, int port);
 
 NS_EXTERN NS_SOCKET
 Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, int *lenPtr);

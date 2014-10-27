@@ -451,7 +451,7 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
  */
 
 NS_SOCKET
-Ns_SockListen(char *address, int port)
+Ns_SockListen(const char *address, int port)
 {
     return Ns_SockListenEx(address, port, nsconf.backlog);
 }

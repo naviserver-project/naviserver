@@ -257,7 +257,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
                 p = strchr(h, ':');
                 if (p != NULL) {
                     *p++ = '\0';
-                    request->port = strtol(p, NULL, 10);
+                    request->port = (int)strtol(p, NULL, 10);
                 }
                 request->host = ns_strdup(h);
             }
@@ -499,12 +499,12 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
      * they must be in well form key: value form.
      */
 
-    if (isspace(UCHAR(*line))) {
+    if (CHARTYPE(space, *line) != 0) {
         index = Ns_SetLast(set);
         if (index < 0) {
 	    return NS_ERROR;	/* Continue before first header. */
         }
-        while (isspace(UCHAR(*line))) {
+        while (CHARTYPE(space, *line) != 0) {
             ++line;
         }
         if (*line != '\0') {
@@ -522,21 +522,21 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 	}
         *sep = '\0';
         value = sep + 1;
-        while (*value != '\0' && isspace(UCHAR(*value))) {
+        while (*value != '\0' && CHARTYPE(space, *value) != 0) {
             ++value;
         }
         index = Ns_SetPut(set, line, value);
         key = Ns_SetKey(set, index);
 	if (disp == ToLower) {
             while (*key != '\0') {
-	        if (isupper(UCHAR(*key))) {
+	        if (CHARTYPE(upper, *key) != 0) {
             	    *key = tolower(UCHAR(*key));
 		}
             	++key;
 	    }
 	} else if (disp == ToUpper) {
             while (*key != '\0') {
-	        if (islower(UCHAR(*key))) {
+	        if (CHARTYPE(lower, *key) != 0) {
 		    *key = toupper(UCHAR(*key));
 		}
 		++key;
