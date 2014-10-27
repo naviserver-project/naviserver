@@ -476,14 +476,14 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     int          i;
     size_t      toWrite, nwrote;
 
-    nwrote = 0;
-    toWrite = 0;
+    nwrote = 0U;
+    toWrite = 0U;
 
     for (i = 0; i < nbufs; i++) {
         toWrite += bufs[i].length;
     }
 
-    while (toWrite > 0) {
+    while (toWrite > 0U) {
         ssize_t sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0U);
 
         if (sent < 1) {
@@ -495,7 +495,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
         nwrote += sent;
         toWrite -= sent;
     }
-    if (nwrote > 0) {
+    if (nwrote > 0U) {
         connPtr->nContentSent += nwrote;
     }
 
@@ -613,7 +613,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
 	timeout.usec = 0;
       
-	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0);
+	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0U);
     }
     /*toWrite -= sent;*/
     nwrote += sent;
@@ -803,7 +803,7 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
 
     p = buf;
     while (bufsize > 1U) {
-        if (Ns_ConnRead(conn, p, 1) != 0U) {
+        if (Ns_ConnRead(conn, p, 1U) != 0U) {
             return NULL;
         }
         if (*p++ == '\n') {

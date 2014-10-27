@@ -68,7 +68,7 @@ static int    poolid = 0;
 /*
  * Debugging stuff
  */
-#define ThreadNr(poolPtr, argPtr) (int)((argPtr) ? ((argPtr) - (poolPtr)->tqueue.args) : -1)
+#define ThreadNr(poolPtr, argPtr) ((int)((argPtr != NULL) ? ((argPtr) - (poolPtr)->tqueue.args) : -1))
 
 #if 0
 static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
@@ -533,7 +533,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     char        *pool, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
-    static const char *subcmds[] = {
+    static const char *const subcmds[] = {
         "active", "all", "connections", 
 	"filters",
 	"keepalive", 

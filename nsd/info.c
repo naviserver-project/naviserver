@@ -250,10 +250,10 @@ Ns_InfoPlatform(void)
  *----------------------------------------------------------------------
  */
 
-int
+long
 Ns_InfoUptime(void)
 {
-    return (int) difftime(time(NULL), nsconf.boot_t);
+    return (long)difftime(time(NULL), nsconf.boot_t);
 }
 
 
@@ -588,11 +588,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IUptimeIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoUptime()));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(Ns_InfoUptime()));
         return TCL_OK;
 
     case IBoottimeIdx:
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Ns_InfoBootTime()));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)Ns_InfoBootTime()));
         return TCL_OK;
 
     case IPidIdx:

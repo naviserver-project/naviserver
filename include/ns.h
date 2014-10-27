@@ -1816,7 +1816,7 @@ Ns_InfoNameOfExecutable(void);
 NS_EXTERN char *
 Ns_InfoPlatform(void);
 
-NS_EXTERN int
+NS_EXTERN long
 Ns_InfoUptime(void);
 
 NS_EXTERN time_t

@@ -488,7 +488,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *charset  = NULL, part;
     Tcl_Encoding encoding = NULL;
 
-    static const char  *options[]           = {"-charset", "-part", NULL};
+    static const char  *const options[]     = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
@@ -555,7 +555,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *charset = NULL;
     int          part, nextArgIdx;
     Tcl_Encoding encoding = NULL;
-    static const char  *options[]           = {"-charset", "-part", NULL};
+    static const char  *const options[]     = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};

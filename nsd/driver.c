@@ -4291,7 +4291,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	} else if (objc > 2) {
 
 	    int                 nextArgIdx;
-	    static const char  *options[]           = {"-server", NULL};
+	    static const char * const options[]     = {"-server", NULL};
 	    enum                                      {OServerIdx};
 	    ClientData          optionClientData[1] = {NULL};
 	    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};
