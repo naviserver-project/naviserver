@@ -572,7 +572,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
             isNew = 1;
         }
 
-        if (isNew) {
+        if (isNew != 0) {
 
             /*
              * Read and cache new or invalidated entries in one big chunk.

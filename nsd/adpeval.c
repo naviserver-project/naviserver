@@ -508,7 +508,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                 pagePtr->hPtr = NULL;
                 isNew = 1;
             }
-            if (isNew) {
+            if (isNew != 0) {
                 Ns_MutexUnlock(&servPtr->adp.pagelock);
                 pagePtr = ParseFile(itPtr, file, &st, itPtr->adp.flags);
                 Ns_MutexLock(&servPtr->adp.pagelock);
@@ -531,7 +531,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                 ipagePtr->objs = AllocObjs(pagePtr->code.nscripts);
                 ipagePtr->cacheObjs = NULL;
                 ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, file, &isNew);
-                if (!isNew) {
+                if (isNew == 0) {
                     Ns_CacheUnsetValue(ePtr);
                 }
                 Ns_CacheSetValueSz(ePtr, ipagePtr,

@@ -113,7 +113,7 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     Ns_MutexLock(&servPtr->tcl.cachelock);
     hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         TclCache *cPtr = ns_calloc(1U, sizeof(TclCache));
 
         cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)iMaxSize, ns_free);
@@ -128,7 +128,7 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     }
     Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
-    if (!isNew) {
+    if (isNew == 0) {
         Tcl_AppendResult(interp, "duplicate cache name: ", name, NULL);
         return TCL_ERROR;
     }
@@ -290,7 +290,7 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     if ((entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr)) == NULL) {
         return TCL_ERROR;
     }
-    if (isNew) {
+    if (isNew != 0) {
         cur = 0;
     } else if (Tcl_GetInt(interp, Ns_CacheGetValue(entry), &cur) != TCL_OK) {
         Ns_CacheUnlock(cPtr->cache);
@@ -365,7 +365,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         return TCL_ERROR;
     }
     valObj = Tcl_NewObj();
-    if (!isNew) {
+    if (isNew == 0) {
         Tcl_SetStringObj(valObj, Ns_CacheGetValue(entry), 
 			 (int)Ns_CacheGetSize(entry));
     }

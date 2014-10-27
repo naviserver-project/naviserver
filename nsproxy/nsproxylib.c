@@ -1993,7 +1993,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     proxyPtr = firstPtr;
     while (proxyPtr != NULL) {
         idPtr = Tcl_CreateHashEntry(&idataPtr->ids, proxyPtr->id, &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
             Ns_Fatal("nsproxy: duplicate proxy entry");
         }
         Tcl_SetHashValue(idPtr, proxyPtr);
@@ -2184,7 +2184,7 @@ GetPool(char *poolName, InterpData *idataPtr)
 
     Ns_MutexLock(&plock);
     hPtr = Tcl_CreateHashEntry(&pools, poolName, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
         char *path = NULL, *exec = NULL;

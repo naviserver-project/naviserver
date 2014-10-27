@@ -346,7 +346,7 @@ SockCallbackThread(void *UNUSED(arg))
                 ns_free(cbPtr);
             } else {
                 hPtr = Tcl_CreateHashEntry(&table, NSSOCK2PTR(cbPtr->sock), &isNew);
-                if (!isNew) {
+                if (isNew == 0) {
                     ns_free(Tcl_GetHashValue(hPtr));
                 }
                 Tcl_SetHashValue(hPtr, cbPtr);

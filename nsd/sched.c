@@ -297,7 +297,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
                 nextId = 0;
             }
             ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, INT2PTR(id), &isNew);
-        } while (!isNew);
+        } while (isNew == 0);
         Tcl_SetHashValue(ePtr->hPtr, ePtr);
         ePtr->id = id;
         QueueEvent(ePtr, &now);

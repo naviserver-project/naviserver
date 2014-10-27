@@ -197,7 +197,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
     Ns_RWLockWrLock(&servPtr->adp.taglock);
     hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         ns_free(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, tagPtr);

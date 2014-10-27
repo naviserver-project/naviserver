@@ -338,7 +338,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     assert(arrayPtr != NULL);
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
-    if (unlikely(isNew)) {
+    if (unlikely(isNew != 0)) {
         Tcl_SetListObj(Tcl_GetObjResult(interp), objc-3, objv+3);
     } else {
         int i;
@@ -388,7 +388,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     assert(arrayPtr != NULL);
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
     }
     for (i = 3; i < objc; ++i) {
@@ -904,7 +904,7 @@ LockArray(const NsServer *servPtr, const char *array, int create)
     Ns_MutexLock(&bucketPtr->lock);
     if (unlikely(create)) {
         hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, array, &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
             arrayPtr = Tcl_GetHashValue(hPtr);
         } else {
             arrayPtr = ns_malloc(sizeof(Array));
@@ -1020,7 +1020,7 @@ IncrVar(Array *arrayPtr, CONST char *key, int incr,
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
     oldString = Tcl_GetHashValue(hPtr);
 
-    if (isNew) {
+    if (isNew != 0) {
         counter = 0;
         status = TCL_OK;
     } else {

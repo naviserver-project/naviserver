@@ -188,7 +188,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
             Ns_Log(Notice, "dns: timeout waiting for concurrent update");
             return NS_FALSE;
         }
-        if (isNew) {
+        if (isNew != 0) {
             Ns_CacheUnlock(cache);
             status = (*getProc)(&ds, key);
             Ns_CacheLock(cache);

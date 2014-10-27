@@ -245,7 +245,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     int            isNew;
 
     hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         ePtr = ns_calloc(1U, sizeof(Entry));
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;

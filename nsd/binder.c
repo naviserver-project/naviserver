@@ -653,7 +653,7 @@ PreBind(const char *line)
                 continue;
             }
             hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &isNew);
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Error, "prebind: tcp: duplicate entry: %s:%d",
                        addr, port);
                 continue;
@@ -676,7 +676,7 @@ PreBind(const char *line)
                 continue;
             }
             hPtr = Tcl_CreateHashEntry(&preboundUdp, (char *) &sa, &isNew);
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Error, "prebind: udp: duplicate entry: %s:%d",
                        addr, port);
                 continue;
@@ -707,7 +707,7 @@ PreBind(const char *line)
                     continue;
                 }
                 hPtr = Tcl_CreateHashEntry(&preboundRaw, NSSOCK2PTR(sock), &isNew);
-                if (!isNew) {
+                if (isNew == 0) {
                     Ns_Log(Error, "prebind: icmp: duplicate entry");
                     close(sock);
                     continue;
@@ -726,7 +726,7 @@ PreBind(const char *line)
                 mode = strtol(str, NULL, 10);
             }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
                 continue;
             }

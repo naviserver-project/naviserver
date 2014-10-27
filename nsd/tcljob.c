@@ -467,13 +467,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             Ns_MutexLock(&tp.queuelock);
             hPtr = Tcl_CreateHashEntry(&tp.queues, Tcl_GetString(queueIdObj),
                                        &isNew);
-            if (isNew) {
+            if (isNew != 0) {
                 queue = NewQueue(Tcl_GetHashKey(&tp.queues, hPtr),
 				 queueDesc, max);
                 Tcl_SetHashValue(hPtr, queue);
             }
             Ns_MutexUnlock(&tp.queuelock);
-            if (!isNew) {
+            if (isNew == 0) {
                 Tcl_AppendResult(interp, "queue already exists: ", queueId, NULL);
                 return TCL_ERROR;
             }
@@ -566,7 +566,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             if (jobId != NULL && *jobId != '\0') {
                 hPtr = Tcl_CreateHashEntry(&queue->jobs, jobId, &isNew);
-                if (!isNew) {
+                if (isNew == 0) {
                     FreeJob(jobPtr);
                     ReleaseQueue(queue, 1);
                     Ns_MutexUnlock(&tp.queuelock);
@@ -583,7 +583,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 do {
                     snprintf(buf, sizeof(buf), "job%d", queue->nextid++);
                     hPtr = Tcl_CreateHashEntry(&queue->jobs, buf, &isNew);
-                } while (!isNew);
+                } while (isNew == 0);
 
                 jobId = buf;
             }

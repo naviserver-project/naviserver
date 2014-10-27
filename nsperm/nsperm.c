@@ -815,7 +815,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
             hPtr = Tcl_CreateHashEntry(&userPtr->nets, (char *) (intptr_t) ip.s_addr, &isNew);
             Tcl_SetHashValue(hPtr, (ClientData) (intptr_t) mask.s_addr);
         }
-        if (!isNew) {
+        if (isNew == 0) {
             Tcl_AppendResult(interp, "duplicate entry: ", net, NULL);
             goto fail;
         }
@@ -827,7 +827,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 
     Ns_RWLockWrLock(&servPtr->lock);
     hPtr = Tcl_CreateHashEntry(&servPtr->users, name, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         Tcl_AppendResult(interp, "duplicate user: ", name, NULL);
         goto fail0;
     }
@@ -1037,7 +1037,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
          */
 
         hPtr = Tcl_CreateHashEntry(&groupPtr->users, user, &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
           dupuser:
             Tcl_AppendResult(interp, "user \"", user, "\" already in group \"", name, "\"", NULL);
             goto fail;
@@ -1049,7 +1049,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
          */
 
         hPtr = Tcl_CreateHashEntry(&userPtr->groups, name, &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
             goto dupuser;
         }
         Tcl_SetHashValue(hPtr, groupPtr);
@@ -1061,7 +1061,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
 
     Ns_RWLockWrLock(&servPtr->lock);
     hPtr = Tcl_CreateHashEntry(&servPtr->groups, name, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         Tcl_AppendResult(interp, "duplicate group: ", name, NULL);
         goto fail0;
     }

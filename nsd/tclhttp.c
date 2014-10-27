@@ -238,7 +238,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     do {
         snprintf(buf, sizeof(buf), "http%d", i++);
         hPtr = Tcl_CreateHashEntry(&itPtr->https, buf, &isNew);
-    } while (!isNew);
+    } while (isNew == 0);
     Tcl_SetHashValue(hPtr, httpPtr);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     return TCL_OK;

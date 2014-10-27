@@ -1010,7 +1010,7 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle)
     do {
         snprintf(buf, sizeof(buf), "nsdb%x", next++);
         hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &isNew);
-    } while (!isNew);
+    } while (isNew == 0);
     Tcl_AppendElement(interp, buf);
     Tcl_SetHashValue(hPtr, handle);
 }

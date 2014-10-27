@@ -672,7 +672,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
         snprintf(buf, sizeof(buf), "%c%u", type, next);
         ++next;
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
-    } while (!isNew);
+    } while (isNew == 0);
 
     Tcl_SetHashValue(hPtr, set);
     Tcl_AppendElement(itPtr->interp, buf);

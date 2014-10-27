@@ -132,7 +132,7 @@ Ns_RegisterReturn(int status, CONST char *url)
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
 						  INT2PTR(status), &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
             ns_free(Tcl_GetHashValue(hPtr));
         }
         if (url == NULL) {

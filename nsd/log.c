@@ -317,7 +317,7 @@ Ns_CreateLogSeverity(const char *name)
     }
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&severityTable, name, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, INT2PTR(severity));
         severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);

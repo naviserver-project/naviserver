@@ -575,7 +575,7 @@ LoadEncoding(CONST char *name)
 
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&encodings, name, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         while ((encoding = Tcl_GetHashValue(hPtr)) == ENC_LOCKED) {
             Ns_CondWait(&cond, &lock);
         }
@@ -647,7 +647,7 @@ AddCharset(const char *charset, const char *name)
      */
 
     hPtr = Tcl_CreateHashEntry(&encnames, name, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         Tcl_SetHashValue(hPtr, ns_strdup(charset));
     }
 

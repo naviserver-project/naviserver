@@ -198,7 +198,7 @@ Ns_ModuleInit(char *server, char *module)
 	}
 	*pass = '\0';
 	hPtr = Tcl_CreateHashEntry(&modPtr->users, user, &isNew);
-	if (isNew) {
+	if (isNew != 0) {
 	    Ns_Log(Notice, "nscp: added user: %s", user);
 	} else {
 	    Ns_Log(Warning, "nscp: duplicate user: %s", user);

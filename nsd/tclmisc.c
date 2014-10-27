@@ -124,7 +124,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
                                &itPtr->servPtr->tcl.runTable, script, &isNew);
     Ns_MasterUnlock();
 
-    if (isNew) {
+    if (isNew != 0) {
         return Tcl_Eval(interp, script);
     }
 

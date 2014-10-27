@@ -897,7 +897,7 @@ GetSection(CONST char *section, int create)
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
         hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &isNew);
-        if (isNew) {
+        if (isNew != 0) {
             set = Ns_SetCreate(section);
 	    Tcl_SetHashValue(hPtr, set);
         }

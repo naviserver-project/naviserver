@@ -350,7 +350,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
             value = Ext2Utf(&vds, fs, (size_t)(fe-fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
-            if (isNew) {
+            if (isNew != 0) {
 	        FormFile *filePtr = ns_malloc(sizeof(FormFile));
 
                 filePtr->hdrs = set;

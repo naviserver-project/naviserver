@@ -831,7 +831,7 @@ CreateSynchObject(const NsInterp *itPtr,
             Ns_DStringTrunc(&ds, 0);
             Ns_DStringPrintf(&ds, "%s:tcl:%u", type, (*idPtr)++);
             hPtr = Tcl_CreateHashEntry(typeTable, ds.string, &isNew);
-        } while (!isNew);
+        } while (isNew == 0);
 
         objPtr = Tcl_NewStringObj(ds.string, ds.length);
         Tcl_SetObjResult(interp, objPtr);
@@ -842,7 +842,7 @@ CreateSynchObject(const NsInterp *itPtr,
         Tcl_SetObjResult(interp, objPtr);
     }
 
-    if (isNew) {
+    if (isNew != 0) {
         addr = ns_calloc(1U, sizeof(void *));
         if (cnt > -1) {
             Ns_SemaInit((Ns_Sema *) addr, cnt);

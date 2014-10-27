@@ -135,7 +135,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
      */
   
     hPtr = Tcl_CreateHashEntry(&portsTable, INT2PTR(port), &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         tablePtr = Tcl_GetHashValue(hPtr);
     } else {
         sock = Ns_SockListen(NULL, port);
@@ -156,7 +156,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 	assert(tablePtr != NULL);
         hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(sa.sin_addr.s_addr), &isNew);
 
-        if (!isNew) {
+        if (isNew == 0) {
             status = NS_ERROR;
         } else {
 	     ListenData *ldPtr;

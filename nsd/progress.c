@@ -238,13 +238,13 @@ NsUpdateProgress(Ns_Sock *sock)
 
             Ns_MutexLock(&lock);
             hPtr = Tcl_CreateHashEntry(&urlTable, key, &isNew);
-            if (isNew) {
+            if (isNew != 0) {
                 pPtr->hPtr = hPtr;
                 Tcl_SetHashValue(pPtr->hPtr, pPtr);
             }
             Ns_MutexUnlock(&lock);
 
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Warning, "ns:progress(%" PRIdz "/%" PRIdz "): ignoring duplicate URL: %s",
                        reqPtr->avail, reqPtr->length, key);
             }

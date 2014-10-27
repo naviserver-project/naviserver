@@ -618,7 +618,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetHashValue(hPtr, regChan);
         }
         Ns_MutexUnlock(&servPtr->chans.lock);
-        if (!isNew) {
+        if (isNew == 0) {
             Tcl_AppendResult(interp, "channel \"", Tcl_GetString(objv[3]), 
                              "\" already exists", NULL);
             return TCL_ERROR;

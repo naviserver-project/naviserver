@@ -588,7 +588,7 @@ NsDbInitPools(void)
 	const char    *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
-	if (!isNew) {
+	if (isNew == 0) {
 	    Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
 	    continue;	
 	}
@@ -1160,7 +1160,7 @@ IncrCount(const Pool *poolPtr, int incr)
 	Ns_TlsSet(&tls, tablePtr);
     }
     hPtr = Tcl_CreateHashEntry(tablePtr, (char *) poolPtr, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
 	prev = 0;
     } else {
 	prev = PTR2INT(Tcl_GetHashValue(hPtr));
