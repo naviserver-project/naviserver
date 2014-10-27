@@ -554,7 +554,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
      * Deprecated
      */
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteVData(conn, NULL, 0, 0);
+    Ns_ConnWriteVData(conn, NULL, 0, 0U);
 
     return connPtr->nContentSent;
 }
@@ -758,7 +758,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data,
     sbuf.iov_len = len < 0 ? (data != NULL ? strlen(data) : 0U) : (size_t)len;
 
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteVChars(conn, &sbuf, 1, 0);
+    Ns_ConnWriteVChars(conn, &sbuf, 1, 0U);
 
     return Ns_ConnClose(conn);
 }

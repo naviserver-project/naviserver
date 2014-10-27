@@ -44,7 +44,7 @@
 #define TAG_SCRIPT  3
 
 #define APPEND      "ns_adp_append "
-#define APPEND_LEN  (int)(sizeof(APPEND)-1)
+#define APPEND_LEN  (sizeof(APPEND)-1)
 
 #define LENSZ       ((int)(sizeof(int)))
 
@@ -420,7 +420,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 
                     if (!(flags & ADP_SAFE)) {
                         if (streamFlag && !streamDone) {
-			    static char *buffer = "ns_adp_ctl stream on\0";
+			    static char *buffer = "ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
                             AppendBlock(&parse, buffer, end, 's', flags);
@@ -560,14 +560,14 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
 
         switch (type) {
         case 'S':
-            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
             Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
             break;
 
         case 't':
             save = *e;
             *e = '\0';
-            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
             Tcl_DStringAppendElement(&codePtr->text, s);
             *e = save;
             break;
@@ -584,7 +584,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
         len = e - s;
         if (type == 'S') {
             len += APPEND_LEN;
-            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
         }
         Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
         if (type != 't') {
@@ -856,7 +856,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         /* NB: String was a procedure, append tag attributes. */
         ParseAtts(as, ae, NULL, &script, 0);
     }
-    if (se > ae) {
+    if (se != NULL && se > ae) {
         /* NB: Append enclosing text as argument to eval or proc. */
         char save = *se;
         *se = '\0';

@@ -96,6 +96,7 @@ Ns_ModuleInit(CONST char *server, CONST char *module)
 {
     SrvMod *smPtr;
     static  int once = 0;
+    int     result;
 
     if (!once) {
         once = 1;
@@ -108,10 +109,12 @@ Ns_ModuleInit(CONST char *server, CONST char *module)
     smPtr->server = ns_strdup(server);
     smPtr->module = ns_strdup(module);
 
-    Ns_TclRegisterTrace(server, InitInterp, smPtr, NS_TCL_TRACE_CREATE);
-    Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
+    result = Ns_TclRegisterTrace(server, InitInterp, smPtr, NS_TCL_TRACE_CREATE);
+    if (result == NS_OK) {
+      result = Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
+    }
 
-    return NS_OK;
+    return result;
 }
 
 static int

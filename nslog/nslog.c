@@ -108,6 +108,7 @@ Ns_ModuleInit(char *server, char *module)
     Log        *logPtr;
     Ns_DString  ds;
     static int  first = 1;
+    int         result;
 
     /*
      * Register the info callbacks just once. This assumes we are
@@ -233,9 +234,9 @@ Ns_ModuleInit(char *server, char *module)
 
     Ns_RegisterServerTrace(server, LogTrace, logPtr);
     Ns_RegisterAtShutdown(LogCloseCallback, logPtr);
-    Ns_TclRegisterTrace(server, AddCmds, logPtr, NS_TCL_TRACE_CREATE);
+    result = Ns_TclRegisterTrace(server, AddCmds, logPtr, NS_TCL_TRACE_CREATE);
 
-    return NS_OK;
+    return result;
 }
 
 static int

@@ -158,7 +158,7 @@ Ns_ModuleInit(char *server, char *module)
     Server *servPtr;
     /*char *path;*/
     Tcl_HashEntry *hPtr;
-    int isNew;
+    int isNew, result;
 
     if (uskey < 0) {
         double d;
@@ -188,10 +188,10 @@ Ns_ModuleInit(char *server, char *module)
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
     Ns_SetRequestAuthorizeProc(server, AuthProc);
-    Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
+    result = Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
     hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
     Tcl_SetHashValue(hPtr, servPtr);
-    return NS_OK;
+    return result;
 }
 
 

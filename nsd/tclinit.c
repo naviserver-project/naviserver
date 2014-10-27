@@ -1093,7 +1093,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         }
         cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclTraceProc, 
 				  scriptObj, remain, objv + (objc - remain));
-        (void) Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when);
+        result = Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when);
         break;
 
     case IGetTracesIdx:
