@@ -211,7 +211,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
 
             *p = '\0';
             p += sizeof(HTTP) - 1;
-            request->version = atof(p);
+            request->version = strtod(p, NULL);
         }
     }
 
