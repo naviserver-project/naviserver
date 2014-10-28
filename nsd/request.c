@@ -530,14 +530,14 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 	if (disp == ToLower) {
             while (*key != '\0') {
 	        if (CHARTYPE(upper, *key) != 0) {
-            	    *key = tolower(UCHAR(*key));
+            	    *key = CHARCONV(lower, *key);
 		}
             	++key;
 	    }
 	} else if (disp == ToUpper) {
             while (*key != '\0') {
 	        if (CHARTYPE(lower, *key) != 0) {
-		    *key = toupper(UCHAR(*key));
+		    *key = CHARCONV(upper, *key);
 		}
 		++key;
 	    }
