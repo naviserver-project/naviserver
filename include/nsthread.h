@@ -799,10 +799,10 @@ NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSiz
 
 NS_EXTERN void Ns_GetTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr)  NS_GNUC_NONNULL(1);
-NS_EXTERN int  Ns_DiffTime(const Ns_Time *t1, Ns_Time *t0, Ns_Time *resultPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)  NS_GNUC_NONNULL(1);
-
+NS_EXTERN int  Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)  
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 /*
  * tls.c:
  */
