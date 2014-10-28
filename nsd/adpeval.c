@@ -444,7 +444,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
         procs = Ns_SetIGet(hdrs, "dprocs");
         if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
             Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
-                                (char *) Tcl_GetStringResult(interp));
+                                Tcl_GetStringResult(interp));
             itPtr->adp.exception = ADP_ABORT;
             goto done;
         }
@@ -915,8 +915,9 @@ NsAdpLogError(NsInterp *itPtr)
     Ns_Conn     *conn = itPtr->conn;
     Ns_DString   ds;
     AdpFrame    *framePtr;
-    char        *adp, *inc, *dot, *err;
+    char        *inc, *dot;
     int          len;
+    const char  *err, *adp;
 
     framePtr = itPtr->adp.framePtr;
     Ns_DStringInit(&ds);
@@ -963,7 +964,7 @@ NsAdpLogError(NsInterp *itPtr)
         }
     }
     Tcl_AddErrorInfo(interp, ds.string);
-    err = (char*)Ns_TclLogError(interp);
+    err = Ns_TclLogError(interp);
     if (itPtr->adp.flags & ADP_DISPLAY) {
         Ns_DStringTrunc(&ds, 0);
         Ns_DStringAppend(&ds, "<br><pre>\n");
@@ -972,7 +973,7 @@ NsAdpLogError(NsInterp *itPtr)
         NsAdpAppend(itPtr, ds.string, ds.length);
     }
     Ns_DStringFree(&ds);
-    adp = (char*)itPtr->servPtr->adp.errorpage;
+    adp = itPtr->servPtr->adp.errorpage;
     if (adp != NULL && itPtr->adp.errorLevel == 0) {
 	Tcl_Obj *objv[2];
 
