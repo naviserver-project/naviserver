@@ -447,7 +447,7 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
         if (*start++ == '=') {
             start += strspn(start, " ");
             end = start;
-            while (*end != '\0' && !isspace(UCHAR(*end))) {
+            while (*end != '\0' && CHARTYPE(space, *end) == 0) {
                 ++end;
             }
             *lenPtr = end - start;

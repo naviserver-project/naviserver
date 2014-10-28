@@ -404,7 +404,7 @@ GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
         CONST char *be;
         bs += 9;
         be = bs;
-        while (*be != '\0' && !isspace(UCHAR(*be))) {
+        while (*be != '\0' && CHARTYPE(space, *be) == 0) {
             ++be;
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
@@ -485,7 +485,7 @@ GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPt
     e = s;
     if (*s != '"' && *s != '\'') {
         /* NB: End of unquoted att=value is next space. */
-        while (*e != '\0' && !isspace(UCHAR(*e))) {
+        while (*e != '\0' && CHARTYPE(space, *e) == 0) {
             ++e;
         }
 	*uPtr = '\0';

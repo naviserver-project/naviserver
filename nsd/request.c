@@ -49,11 +49,11 @@ static void SetUrl(Ns_Request *request, char *url)
 static void FreeUrl(Ns_Request *request)
     NS_GNUC_NONNULL(1);
 
-static CONST char *GetQvalue(CONST char *str, int *lenPtr)
+static const char *GetQvalue(const char *str, int *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static char *GetEncodingFormat(CONST char *encodingString, 
-			       CONST char *encodingFormat, double *qValue)
+static char *GetEncodingFormat(const char *encodingString, 
+			       const char *encodingFormat, double *qValue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
@@ -564,9 +564,9 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
  *
  *----------------------------------------------------------------------
  */
-static CONST char *
-GetQvalue(CONST char *str, int *lenPtr) {
-    CONST char *resultString;
+static const char *
+GetQvalue(const char *str, int *lenPtr) {
+    const char *resultString;
 
     assert(str != NULL);
     assert(lenPtr != NULL);
@@ -635,7 +635,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
  *----------------------------------------------------------------------
  */
 static char *
-GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
+GetEncodingFormat(const char *encodingString, const char *encodingFormat, double *qValue) {
     char *encodingStr;
 
     assert(encodingString != NULL);
@@ -646,7 +646,7 @@ GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double
 
     if (encodingStr) {
 	int len = 0;
-	CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+	const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
 
 	if (qValueString) {
 	    *qValue = strtod(qValueString, NULL);
@@ -665,7 +665,7 @@ GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double
 /*
  *----------------------------------------------------------------------
  *
- * NsParseAcceptEnconding --
+ * NsParseAcceptEncoding --
  *
  *      Parse the accept-encoding line and return whether gzip
  *      encoding is accepted or not.
@@ -679,7 +679,7 @@ GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double
  *----------------------------------------------------------------------
  */
 int
-NsParseAcceptEnconding(double version, CONST char *hdr) 
+NsParseAcceptEncoding(double version, const char *hdr) 
 {
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
     int gzip = 0;

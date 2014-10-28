@@ -2619,30 +2619,30 @@ Ns_StrToUpper(char *string)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_StrToInt(CONST char *string, int *intPtr)
+Ns_StrToInt(const char *string, int *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
+Ns_StrToWideInt(const char *string, Tcl_WideInt *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN CONST char *
-Ns_Match(CONST char *a, CONST char *b);
+NS_EXTERN const char *
+Ns_Match(const char *a, const char *b);
 
-NS_EXTERN CONST char *
-Ns_NextWord(CONST char *line)
+NS_EXTERN const char *
+Ns_NextWord(const char *line)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN CONST char *
-Ns_StrNStr(CONST char *string, CONST char *subString)
+NS_EXTERN const char *
+Ns_StrNStr(const char *string, const char *subString)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN CONST char *
-Ns_StrCaseFind(CONST char *string, CONST char *subString)
+NS_EXTERN const char *
+Ns_StrCaseFind(const char *string, const char *subString)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_StrIsHost(CONST char *string)
+Ns_StrIsHost(const char *string)
     NS_GNUC_NONNULL(1);
 
 /*

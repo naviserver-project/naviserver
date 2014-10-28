@@ -1406,7 +1406,7 @@ NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
 /*
  * request parsing
  */
-NS_EXTERN int NsParseAcceptEnconding(double version, CONST char *hdr);
+NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
 
 
 /*

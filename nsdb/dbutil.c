@@ -278,7 +278,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
         char *p;
 
         for (p = dsSql.string; *p != '\0'; p++) {
-            if (isspace(UCHAR(*p)) == 0) {
+            if (CHARTYPE(space, *p) == 0) {
                 Ns_DbSetException(handle, NS_SQLERRORCODE,
                     "File ends with unterminated SQL");
                 status = NS_ERROR;

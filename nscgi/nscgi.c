@@ -861,8 +861,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         while (*s != '\0') {
             if (*s == '-') {
                 *s = '_';
-            } else if (islower(UCHAR(*s))) {
-                *s = toupper(UCHAR(*s));
+            } else if (CHARTYPE(lower, *s) != 0) {
+                *s = CHARCONV(upper, *s);
             }
             ++s;
         }
@@ -996,7 +996,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 	    --cgiPtr->cnt;
 	    if (c == '\n') {
 		while (dsPtr->length > 0
-		    && isspace(UCHAR(dsPtr->string[dsPtr->length - 1]))) {
+		    && CHARTYPE(space, dsPtr->string[dsPtr->length - 1]) != 0) {
 		    Ns_DStringTrunc(dsPtr, dsPtr->length-1);
 		}
 		return dsPtr->length;
@@ -1049,7 +1049,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     httpstatus = 200;
     hdrs = conn->outputheaders;
     while ((n = CgiReadLine(cgiPtr, &ds)) > 0) {
-        if (isspace(UCHAR(*ds.string))) {   /* NB: Continued header. */
+        if (CHARTYPE(space, *ds.string) != 0) {   /* NB: Continued header. */
             if (last == -1) {
 		continue;	/* NB: Silently ignore bad header. */
             }
@@ -1060,7 +1060,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 		continue;	/* NB: Silently ignore bad header. */
             }
             *value++ = '\0';
-            while (isspace(UCHAR(*value))) {
+            while (CHARTYPE(space, *value) != 0) {
                 ++value;
             }
             if (STRIEQ(ds.string, "status")) {
@@ -1133,12 +1133,12 @@ copy:
 static char    *
 NextWord(char *s)
 {
-    while (*s != '\0' && !isspace(UCHAR(*s))) {
+    while (*s != '\0' && CHARTYPE(space, *s) == 0) {
         ++s;
     }
     if (*s != '\0') {
         *s++ = '\0';
-        while (isspace(UCHAR(*s))) {
+        while (CHARTYPE(space, *s) != 0) {
             ++s;
         }
     }

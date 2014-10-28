@@ -177,8 +177,8 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
     src = Ns_DStringAppend(&tmp, path);
 #ifdef _WIN32
     if (isalpha(UCHAR(*src)) && src[1] == ':') {
-        if (isupper(UCHAR(*src))) {
-	  *src = tolower(UCHAR(*src));
+        if (CHARTYPE(upper, *src) != 0) {
+	  *src = CHARCONV(lower, *src);
         }
         Ns_DStringNAppend(dsPtr, src, 2);
         src += 2;

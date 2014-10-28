@@ -463,7 +463,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      */
 
     if ((flags & ADP_TRIM) && !(flags & ADP_FLUSHED)) {
-        while (len > 0 && isspace(UCHAR(*buf))) {
+        while (len > 0 && CHARTYPE(space, *buf) != 0) {
             ++buf;
             --len;
         }

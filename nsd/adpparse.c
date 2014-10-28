@@ -628,17 +628,17 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     assert(e != NULL);
 
     ++s;
-    while (s < e && isspace(UCHAR(*s))) {
+    while (s < e && CHARTYPE(space, *s) != 0) {
         ++s;
     }
     t = s;
-    while (s < e  && !isspace(UCHAR(*s))) {
+    while (s < e  && CHARTYPE(space, *s) == 0) {
         ++s;
     }
     Tcl_DStringTrunc(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
-	while (s < e && isspace(UCHAR(*s))) {
+	while (s < e && CHARTYPE(space, *s) != 0) {
 	    ++s;
 	}
 	*aPtr = s;
@@ -684,7 +684,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
          * Trim attribute name.
          */
 
-        while (s < e && isspace(UCHAR(*s))) {
+        while (s < e && CHARTYPE(space, *s) != 0) {
             ++s;
         }
         if (s == e) {
@@ -693,7 +693,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
         as = s;
 
         if (*s != '\'' && *s != '"') {
-            while (s < e && !isspace(UCHAR(*s)) && *s != '=') {
+            while (s < e && CHARTYPE(space, *s) == 0 && *s != '=') {
                 ++s;
             }
         } else {
@@ -705,7 +705,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
         }
 
         ae = s;
-        while (s < e && isspace(UCHAR(*s))) {
+        while (s < e && CHARTYPE(space, *s) != 0) {
             ++s;
         }
         if (*s != '=') {
@@ -721,11 +721,11 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
 
             do {
                 ++s;
-            } while (s < e && isspace(UCHAR(*s)));
+            } while (s < e && CHARTYPE(space, *s) != 0);
             vs = s;
 
             if (*s != '"' && *s != '\'') {
-                while (s < e && !isspace(UCHAR(*s))) {
+                while (s < e && CHARTYPE(space, *s) == 0) {
                     ++s;
                 }
             } else {

@@ -535,7 +535,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
-	    quote = isspace(UCHAR(*p));
+	    quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote) {
             Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);

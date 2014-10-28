@@ -783,12 +783,12 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     inquotes = NS_FALSE;
     Ns_DStringInit(&ds);
     while (*quotelist != '\0') {
-        if (isspace(UCHAR(*quotelist)) && inquotes == NS_FALSE) {
+        if (CHARTYPE(space, *quotelist) != 0 && inquotes == NS_FALSE) {
             if (ds.length != 0) {
                 Tcl_AppendElement(interp, ds.string);
                 Ns_DStringTrunc(&ds, 0);
             }
-            while (isspace(UCHAR(*quotelist))) {
+            while (CHARTYPE(space, *quotelist) != 0) {
                 quotelist++;
             }
         } else if (*quotelist == '\\' && (*(quotelist + 1) != '\0')) {
@@ -913,7 +913,9 @@ loopstart:
                 inquote = 1;
                 quoted = 1;
                 blank = 0;
-            } else if ((c == '\r') || (elem.length == 0 && isspace(UCHAR(c)))) {
+            } else if ((c == '\r') 
+		       || ((elem.length == 0) && (CHARTYPE(space, c) != 0))
+		       ) {
                 continue;
             } else if (strchr(delimiter,c) != NULL) {
                 if (!quoted) {

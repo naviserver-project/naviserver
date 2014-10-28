@@ -2598,7 +2598,7 @@ SockParse(Sock *sockPtr)
 	    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
 	    if (s != NULL) {
 		/* get gzip from accept-encoding header */
-		gzip = NsParseAcceptEnconding(reqPtr->request.version, s);
+		gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
 	    } else {
 		/* no accept-encoding header; don't allow gzip */
 		gzip = 0;

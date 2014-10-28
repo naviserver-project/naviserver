@@ -216,7 +216,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     if (status == NS_TRUE) {
         if (getProc == GetAddr && !all) {
             char *p = ds.string;
-            while (*p != '\0' && !isspace(UCHAR(*p))) {
+            while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;
             }
             Ns_DStringSetLength(&ds, (int)(p - ds.string));

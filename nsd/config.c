@@ -870,7 +870,7 @@ GetSection(CONST char *section, int create)
 
     Ns_DStringInit(&ds);
     p = section;
-    while (isspace(UCHAR(*p))) {
+    while (CHARTYPE(space, *p) != 0) {
         ++p;
     }
     Ns_DStringAppend(&ds, p);
@@ -878,12 +878,12 @@ GetSection(CONST char *section, int create)
     while (unlikely(*s != '\0')) {
 	if (unlikely(*s == '\\')) {
             *s = '/';
-        } else if (unlikely(isupper(UCHAR(*s)))) {
-            *s = tolower(UCHAR(*s));
+        } else if (unlikely(CHARTYPE(upper, *s) != 0)) {
+            *s = CHARCONV(lower, *s);
         }
         ++s;
     }
-    while (--s > ds.string && (unlikely(isspace(UCHAR(*s))))) {
+    while (--s > ds.string && (unlikely(CHARTYPE(space, *s) != 0))) {
         *s = '\0';
     }
     section = ds.string;
