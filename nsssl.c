@@ -396,7 +396,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
  */
  
 static NS_DRIVER_ACCEPT_STATUS
-Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *socklenPtr)
+Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
