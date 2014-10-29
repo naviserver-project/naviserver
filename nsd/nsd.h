@@ -131,7 +131,7 @@ struct _nsconf {
      * Slot IDs for socket local storage.
      */
 
-    intptr_t nextSlsId;
+    uintptr_t nextSlsId;
 
     /*
      * The following table holds the configured virtual servers.

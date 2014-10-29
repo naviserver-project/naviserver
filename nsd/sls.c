@@ -98,7 +98,7 @@ NsInitSls(void)
 void
 Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
 {
-    int id;
+    uintptr_t id;
 
     if (Ns_InfoStarted()) {
         Ns_Log(Bug, "Ns_SlsAlloc: server already started");
@@ -107,7 +107,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
     cleanupProcs = ns_realloc(cleanupProcs, sizeof(Ns_Callback *) * nsconf.nextSlsId);
     cleanupProcs[id] = cleanup;
 
-    *slsPtr = INT2PTR(id);
+    *slsPtr = UINT2PTR(id);
 }
 
 
@@ -432,7 +432,7 @@ NsSlsCleanup(Sock *sockPtr)
 
     trys = 0;
     do {
-        intptr_t i = nsconf.nextSlsId;
+        uintptr_t i = nsconf.nextSlsId;
 
         retry = 0;
         while (i-- > 0) {
