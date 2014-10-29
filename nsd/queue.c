@@ -1211,7 +1211,7 @@ NsConnThread(void *arg)
 	}
 	
 	connPtr = argPtr->connPtr;
-	assert(connPtr);
+	assert(connPtr != NULL);
 
 	Ns_GetTime(&connPtr->requestDequeueTime);
 
@@ -1648,7 +1648,7 @@ CreateConnThread(ConnPool *poolPtr)
 	break;
       }
     }
-    assert(argPtr);
+    assert(argPtr != NULL);
     argPtr->state = connThread_initial;
     poolPtr->stats.connthreads++;
     Ns_MutexUnlock(&poolPtr->tqueue.lock);
