@@ -99,9 +99,22 @@ static int running = 0;
 static int shutdownPending = 0;
 static Ns_Thread schedThread;
 
+
 /*
- * helper function to exchange two events in the heap, used in
- * QueueEvent() and DeQueueEvent().
+ *----------------------------------------------------------------------
+ *
+ * Exchange --
+ *
+ *     Helper function to exchange two events in the global queue,
+ *     used in QueueEvent() and DeQueueEvent().
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Queue elements flipped.
+ *
+ *----------------------------------------------------------------------
  */
 
 static void Exchange(int i, int j) {
