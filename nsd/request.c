@@ -135,7 +135,7 @@ Ns_FreeRequest(Ns_Request * request)
  */
 
 int
-Ns_ParseRequest(Ns_Request *request, CONST char *line)
+Ns_ParseRequest(Ns_Request *request, const char *line)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
@@ -167,7 +167,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
      */
     
     request->line = ns_strdup(l);
-    //Ns_Log(Notice, "Ns_ParseRequest %p %s", request, request->line);
+    /*Ns_Log(Notice, "Ns_ParseRequest %p %s", request, request->line);*/
 
     /*
      * Look for the minimum of method and url.
@@ -257,7 +257,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
                 p = strchr(h, ':');
                 if (p != NULL) {
                     *p++ = '\0';
-                    request->port = (int)strtol(p, NULL, 10);
+                    request->port = (unsigned short)strtol(p, NULL, 10);
                 }
                 request->host = ns_strdup(h);
             }
@@ -325,7 +325,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
  */
 
 void
-Ns_SetRequestUrl(Ns_Request *request, CONST char *url)
+Ns_SetRequestUrl(Ns_Request *request, const char *url)
 {
     Ns_DString      ds;
 
@@ -392,14 +392,14 @@ FreeUrl(Ns_Request *request)
 static void
 SetUrl(Ns_Request *request, char *url)
 {
-    Ns_DString  ds1, ds2;
+    Tcl_DString  ds1, ds2;
     char       *p;
 
     assert(request != NULL);
     assert(url != NULL);
 
-    Ns_DStringInit(&ds1);
-    Ns_DStringInit(&ds2);
+    Tcl_DStringInit(&ds1);
+    Tcl_DStringInit(&ds2);
 
     /*
      * Look for a query string at the end of the URL.
@@ -422,8 +422,8 @@ SetUrl(Ns_Request *request, char *url)
     if (p == NULL) {
         p = url;
     }
-    Ns_NormalizePath(&ds2, p);
-    Ns_DStringSetLength(&ds1, 0);
+    (void)Ns_NormalizePath(&ds2, p);
+    Tcl_DStringSetLength(&ds1, 0);
 
     /*
      * Append a trailing slash to the normalized URL if the original URL
@@ -434,17 +434,20 @@ SetUrl(Ns_Request *request, char *url)
         ++url;
     }
     if (*url != '\0' && url[strlen(url) - 1] == '/') {
-        Ns_DStringAppend(&ds2, "/");
+      Tcl_DStringAppend(&ds2, "/", 1);
     }
     request->url = ns_strdup(ds2.string);
-    Ns_DStringFree(&ds2);
+    Tcl_DStringFree(&ds2);
 
     /*
-     * Build the urlv and set urlc.
+     * Build the urlv and set urlc. The following loop is somewhat an
+     * abuse of Tcl_DStringAppend, since we build here urlv (an array
+     * of (char *)) based on operations intended on strings. However,
+     * this way we can reuse the Tcl_DString infrastructure.
      */
 
     p = ns_strdup(request->url + 1);
-    Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
+    Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
     while (*p != '\0') {
         if (*p == '/') {
             *p++ = '\0';
@@ -455,16 +458,16 @@ SetUrl(Ns_Request *request, char *url)
 		
                 break;
             }
-            Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
+            Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
         }
         ++p;
     }
     request->urlc = ds1.length / (int)sizeof(char *);
     p = NULL;
-    Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
+    Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
     request->urlv = (char **) ns_malloc((size_t)ds1.length);
     memcpy(request->urlv, ds1.string, (size_t)ds1.length);
-    Ns_DStringFree(&ds1);
+    Tcl_DStringFree(&ds1);
 }
 
 

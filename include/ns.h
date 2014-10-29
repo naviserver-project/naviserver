@@ -205,7 +205,7 @@
 
 #define UCHAR(c)                   ((unsigned char)(c))
 #define CHARTYPE(what,c)           is ## what ((int)((unsigned char)(c)))
-#define CHARCONV(what,c)           ((unsigned char)to ## what ((int)((unsigned char)(c))))
+#define CHARCONV(what,c)           ((char)to ## what ((int)((unsigned char)(c))))
 #define STREQ(a,b)                 (((*(a)) == (*(b))) && (strcmp((a),(b)) == 0))
 #define STRIEQ(a,b)                (strcasecmp((a),(b)) == 0)
 #define Ns_IndexCount(X)           ((X)->n)
@@ -2033,7 +2033,7 @@ NS_EXTERN void
 Ns_ResetRequest(Ns_Request *request);
 
 NS_EXTERN int
-Ns_ParseRequest(Ns_Request *request, CONST char *line)
+Ns_ParseRequest(Ns_Request *request, const char *line)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
@@ -2041,7 +2041,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetRequestUrl(Ns_Request *request, CONST char *url)
+Ns_SetRequestUrl(Ns_Request *request, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
