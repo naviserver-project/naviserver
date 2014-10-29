@@ -440,7 +440,7 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
 
     find = dsPtr->string;
     c = *find++;
-    len = dsPtr->length-1;
+    len = (size_t)(dsPtr->length-1);
     e -= len;
     do {
         do {
