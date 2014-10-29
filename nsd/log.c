@@ -281,10 +281,10 @@ NsConfigLog(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoErrorLog(void)
 {
-    return (char*) file;
+    return file;
 }
 
 

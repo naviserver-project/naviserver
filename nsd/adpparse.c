@@ -181,7 +181,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
     tagPtr = ns_malloc(sizeof(Tag) + slen + elen);
     tagPtr->type = type;
-    tagPtr->string = (char *) tagPtr + sizeof(Tag);
+    tagPtr->string = (char *)tagPtr + sizeof(Tag);
     memcpy(tagPtr->string, string, (size_t) slen);
     Tcl_UtfToLower(tagPtr->string);
     if (end == NULL) {

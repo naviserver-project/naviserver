@@ -105,8 +105,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         Tcl_WrongNumArgs(interp, 1, objv, "option ?args ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            (int *) &opt) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 

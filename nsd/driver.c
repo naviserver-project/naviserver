@@ -988,7 +988,7 @@ DriverListen(Driver *drvPtr)
 static NS_DRIVER_ACCEPT_STATUS
 DriverAccept(Sock *sockPtr)
 {
-  int n = (int)sizeof(struct sockaddr_in);
+    socklen_t n = (socklen_t)sizeof(struct sockaddr_in);
 
     assert(sockPtr != NULL);
 
@@ -4172,7 +4172,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     switch (opt) {
     case cmdSubmitIdx: {
         int size;
-        char *data;
+        unsigned char *data;
 
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "data");
@@ -4182,7 +4182,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             Tcl_AppendResult(interp, "no connection", NULL);
             return TCL_ERROR;
         }
-        data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
+        data = Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data) {
 	    struct iovec vbuf;
 	    vbuf.iov_base = (void *)data;

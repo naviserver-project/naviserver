@@ -989,7 +989,7 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flis
      */
     
     Tcl_AppendElement(interp, dsPtr->string);
-    ckfree((char *) fargv);
+    Tcl_Free((char *) fargv);
     Tcl_DStringFree(&ds);
 }
 
@@ -1059,7 +1059,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
 #endif
         FD_SET(sock, setPtr);
     }
-    ckfree((char *) fargv);
+    Tcl_Free((char *) fargv);
 
     return status;
 }

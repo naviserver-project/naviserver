@@ -169,7 +169,7 @@ NsMapPool(ConnPool *poolPtr, const char *map)
             Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", 
 		   server, mv[0], mv[1], poolPtr->pool);
         }
-        ckfree((char *) mv);
+        Tcl_Free((char *) mv);
     }
 }
 

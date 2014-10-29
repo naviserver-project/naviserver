@@ -475,7 +475,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 {
     int         opt;
     NsInterp    *itPtr = arg;
-    char        *server, *elog;
+    char        *server;
+    const char  *elog;
     Tcl_DString ds;
 
     static const char *opts[] = {
@@ -571,7 +572,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case ILogIdx:
         elog = Ns_InfoErrorLog();
-        Tcl_SetResult(interp, elog == NULL ? "STDOUT" : elog, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, -1));
         return TCL_OK;
 
     case IPlatformIdx:

@@ -44,8 +44,8 @@
 
 typedef struct Mod {
     Tcl_HashTable users;
-    char *server;
-    char *addr;
+    const char *server;
+    const char *addr;
     int port;
     int echo;
     int commandLogging;
@@ -123,7 +123,8 @@ NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     Mod           *modPtr;
-    char          *path, *addr, *end;
+    char          *path, *end;
+    const char    *addr;
     int            i, isNew, port;
     NS_SOCKET      lsock;
     Tcl_HashEntry *hPtr;
@@ -134,7 +135,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
-    if (((addr = (char*)Ns_ConfigString(path, "address", "127.0.0.1")) == NULL)
+    if (((addr = Ns_ConfigString(path, "address", "127.0.0.1")) == NULL)
 	 || (port = Ns_ConfigInt(path, "port", 2080)) <= 0 )  {
 	Ns_Log(Error, "nscp: address and port must be specified in config");
 	return NS_ERROR;
@@ -271,9 +272,9 @@ ArgProc(Tcl_DString *dsPtr, void *arg)
 static int
 AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 {
-    Mod *modPtr = arg;
-    Sess *sessPtr;
-    int len;
+    Mod       *modPtr = arg;
+    Sess      *sessPtr;
+    socklen_t  len;
 
     if (why == NS_SOCK_EXIT) {
 	Ns_Log(Notice, "nscp: shutdown");
@@ -324,7 +325,7 @@ EvalThread(void *arg)
     int n, ncmd, stop;
     unsigned int len;
     Sess *sessPtr = arg;
-    char *server = sessPtr->modPtr->server;
+    const char *server = sessPtr->modPtr->server;
 
     /*
      * Initialize the thread and login the user.
@@ -608,7 +609,7 @@ ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 
     if (argc != 1) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
-	    (char*)argv[0], "\"", NULL);
+			 argv[0], "\"", NULL);
 	return TCL_ERROR;
     }
 

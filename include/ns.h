@@ -480,7 +480,7 @@ typedef NS_SOCKET
 
 typedef NS_DRIVER_ACCEPT_STATUS
 (Ns_DriverAcceptProc)(Ns_Sock *sock, NS_SOCKET listensock,
-                      struct sockaddr *sockaddr, int *socklen)
+                      struct sockaddr *sockaddr, socklen_t *socklen)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef ssize_t
@@ -1710,7 +1710,7 @@ Ns_SockPortBound(int port);
  * log.c:
  */
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoErrorLog(void);
 
 NS_EXTERN int
@@ -2516,7 +2516,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockListen(const char *address, int port);
 
 NS_EXTERN NS_SOCKET
-Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, int *lenPtr);
+Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr);
 
 NS_EXTERN NS_SOCKET
 Ns_SockConnect(const char *host, int port);

@@ -125,7 +125,7 @@ typedef struct Job {
     JobRequests       req;
     char             *errorCode;
     char             *errorInfo;
-    char             *queueId;
+    const char       *queueId;
     uintptr_t         tid;
     Tcl_AsyncHandler  async;
     Tcl_DString       id;
@@ -140,8 +140,8 @@ typedef struct Job {
  */
 
 typedef struct Queue {
-    char              *name;
-    char              *desc;
+    const char        *name;
+    const char        *desc;
     Ns_Mutex           lock;
     Ns_Cond            cond;
     unsigned int       nextid;
@@ -226,7 +226,7 @@ static int AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list,
                              CONST char *name, double value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static double ComputeDelta(Ns_Time *start, const Ns_Time *end)
+static double ComputeDelta(const Ns_Time *start, const Ns_Time *end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -1466,8 +1466,8 @@ FreeQueue(Queue *queue)
 
     Ns_MutexDestroy(&queue->lock);
     Tcl_DeleteHashTable(&queue->jobs);
-    ns_free(queue->desc);
-    ns_free(queue->name);
+    ns_free((char *)queue->desc);
+    ns_free((char *)queue->name);
     ns_free(queue);
 }
 
@@ -1540,7 +1540,7 @@ FreeJob(Job *jobPtr)
     Tcl_DStringFree(&jobPtr->script);
     Tcl_DStringFree(&jobPtr->id);
 
-    ns_free(jobPtr->queueId);
+    ns_free((char *)jobPtr->queueId);
 
     if (jobPtr->errorCode) {
         ns_free(jobPtr->errorCode);
@@ -2091,7 +2091,7 @@ AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
  *----------------------------------------------------------------------
  */
 static double
-ComputeDelta(Ns_Time *start, const Ns_Time *end)
+ComputeDelta(const Ns_Time *start, const Ns_Time *end)
 {
     Ns_Time diff;
 

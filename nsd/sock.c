@@ -474,9 +474,9 @@ Ns_SockListen(const char *address, int port)
  */
 
 NS_SOCKET
-Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, int *lenPtr)
+Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 {
-    sock = accept(sock, saPtr, (socklen_t *) lenPtr);
+    sock = accept(sock, saPtr, lenPtr);
 
     if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);

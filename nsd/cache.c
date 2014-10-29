@@ -88,7 +88,7 @@ typedef struct Cache {
  * Local functions defined in this file
  */
 
-static int  Expired(const Entry *ePtr, Ns_Time *nowPtr);
+static int  Expired(const Entry *ePtr, const Ns_Time *nowPtr);
 static void Delink(Entry *ePtr);
 static void Push(Entry *ePtr);
 
@@ -886,7 +886,7 @@ Ns_CacheResetStats(Ns_Cache *cache)
  */
 
 static int
-Expired(const Entry *ePtr, Ns_Time *nowPtr)
+Expired(const Entry *ePtr, const Ns_Time *nowPtr)
 {
     Ns_Time  now;
 

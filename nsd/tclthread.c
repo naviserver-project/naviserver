@@ -198,7 +198,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         }
         tid = tidArg;
         Ns_ThreadJoin(&tid, &result);
-        Tcl_SetResult(interp, (char *) result, (Tcl_FreeProc *) ns_free);
+        Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
         break;
 
     case TGetIdx:
