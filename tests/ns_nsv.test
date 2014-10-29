@@ -109,8 +109,8 @@ test ns_nsv-3.5 {nsv_unset array} -setup {
     nsv_set a k3 v3
 } -body {
     nsv_unset a
-    list [nsv_exists a k1] [nsv_exists a k2] [nsv_exists a k3]
-} -result {0 0 0}
+    list [nsv_exists a k1] [nsv_exists a k2] [nsv_exists a k3] [nsv_array exists a]
+} -result {0 0 0 0}
 
 test ns_nsv-3.6 {nsv_unset non-existing array} -body {
     nsv_unset non_existing_array
