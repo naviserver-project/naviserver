@@ -76,6 +76,9 @@ static Event *DeQueueEvent(int qid);    /* Remove event from heap. */
 static void FreeEvent(Event *ePtr)      /* Free completed or cancelled event. */
     NS_GNUC_NONNULL(1);
 static void QueueEvent(Event *ePtr, const time_t *nowPtr);    /* Queue event on heap. */
+static void Exchange(int i, int j);     /* Exchange elements in the global queue */
+
+
 /*
  * Static variables defined in this file.
  */
@@ -102,10 +105,12 @@ static Ns_Thread schedThread;
  */
 
 static void Exchange(int i, int j) {
-    Event *tmp = queue[(i)];
+    Event *tmp = queue[i];
 
-    queue[(i)] = queue[(j)], queue[(j)] = tmp;
-    queue[(i)]->qid = (i), queue[(j)]->qid = (j);
+    queue[i] = queue[j];
+    queue[j] = tmp;
+    queue[i]->qid = i;
+    queue[j]->qid = j;
 }
 
 
