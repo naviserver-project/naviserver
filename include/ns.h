@@ -334,12 +334,12 @@ typedef struct Ns_Set {
  */
 
 typedef struct Ns_Request {
-    char           *line;
-    char           *method;
-    char           *protocol;
-    char           *host;
+    const char     *line;
+    const char     *method;
+    const char     *protocol;
+    const char     *host;
     unsigned short  port;
-    char           *url;
+    const char     *url;
     char           *query;
     int             urlc;
     char          **urlv;
@@ -2036,7 +2036,7 @@ NS_EXTERN int
 Ns_ParseRequest(Ns_Request *request, const char *line)
     NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
     NS_GNUC_NONNULL(1);
 
@@ -2921,7 +2921,7 @@ Ns_UrlPathEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlPathDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *

@@ -77,10 +77,10 @@ void
 Ns_ResetRequest(Ns_Request * request)
 {
     if (request != NULL) {
-        ns_free(request->line);
-        ns_free(request->method);
-        ns_free(request->protocol);
-        ns_free(request->host);
+        ns_free((char *)request->line);
+        ns_free((char *)request->method);
+        ns_free((char *)request->protocol);
+        ns_free((char *)request->host);
         ns_free(request->query);
         FreeUrl(request);
         memset(request, 0, sizeof(Ns_Request));
@@ -107,10 +107,10 @@ void
 Ns_FreeRequest(Ns_Request * request)
 {
     if (request != NULL) {
-        ns_free(request->line);
-        ns_free(request->method);
-        ns_free(request->protocol);
-        ns_free(request->host);
+        ns_free((char *)request->line);
+        ns_free((char *)request->method);
+        ns_free((char *)request->protocol);
+        ns_free((char *)request->host);
         ns_free(request->query);
         FreeUrl(request);
         ns_free(request);
@@ -290,7 +290,7 @@ done:
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
 {
     size_t skip;
@@ -362,7 +362,7 @@ FreeUrl(Ns_Request *request)
     assert(request != NULL);
 
     if (request->url != NULL) {
-        ns_free(request->url);
+	ns_free((char *)request->url);
         request->url = NULL;
     }
     if (request->urlv != NULL) {

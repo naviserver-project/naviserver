@@ -53,7 +53,7 @@ typedef struct ByteKey {
 static char *UrlEncode(Ns_DString *dsPtr, char *string,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char *UrlDecode(Ns_DString *dsPtr, char *string,
+static char *UrlDecode(Ns_DString *dsPtr, const char *string,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -341,7 +341,7 @@ Ns_UrlPathEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 }
 
 char *
-Ns_UrlPathDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -681,10 +681,11 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
  */
 
 static char *
-UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
+UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char part)
 {
     register int   i, n;
-    register char *p, *q;
+    register char *q;
+    register const char *p;
     char          *copy = NULL;
     size_t         length;
     Tcl_DString    ds;

@@ -220,7 +220,7 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 {
     Conn        *connPtr = (Conn *) conn;
     NsServer    *servPtr = connPtr->poolPtr->servPtr;
-    char        *url = conn->request->url;
+    const char  *url = conn->request->url;
     Ns_DString   ds;
     int          result;
 

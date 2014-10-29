@@ -1746,7 +1746,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
          * admin command.
          */
         if (connPtr->request) {
-	    char *p;
+	    const char *p;
 	    p = connPtr->request->method ? connPtr->request->method : "?";
 	    (void)strncpy(buf, p, sizeof(buf));
 	    Tcl_DStringAppendElement(dsPtr, buf);

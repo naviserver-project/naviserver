@@ -561,7 +561,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (likely(conn->request != NULL)) {
-	char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ? 
+	const char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ? 
 	    conn->request->url : 
 	    conn->request->line;
 

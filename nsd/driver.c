@@ -2722,7 +2722,7 @@ SockParse(Sock *sockPtr)
             if (reqPtr->request.query != NULL) {
                 Tcl_DStringSetLength(bufPtr, 0);
                 Tcl_DStringAppend(bufPtr, reqPtr->request.query, -1);
-                ns_free(reqPtr->request.method);
+                ns_free((char *)reqPtr->request.method);
                 reqPtr->request.method = ns_strdup("GET");
                 reqPtr->content = bufPtr->string;
             }
@@ -2833,7 +2833,7 @@ SockSetServer(Sock *sockPtr)
     }
 
     if (!status && sockPtr->reqPtr) {
-        ns_free(sockPtr->reqPtr->request.method);
+        ns_free((char *)sockPtr->reqPtr->request.method);
         sockPtr->reqPtr->request.method = ns_strdup("BAD");
     }
 

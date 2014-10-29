@@ -84,7 +84,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
         char buf[1024];
         int  nread;
 
-        while ((nread = Tcl_Read(chan, buf, sizeof(buf))) > 0) {
+        while ((nread = Tcl_Read(chan, buf, (int)sizeof(buf))) > 0) {
             Ns_DStringNAppend(dsPtr, buf, nread);
         }
         Tcl_Close(NULL, chan);
@@ -141,10 +141,10 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         Ns_Log(Notice, "urlopen: invalid url '%s'", url);
         goto done;
     }
-    if (request.port == 0) {
-        request.port = 80;
+    if (request.port == 0U) {
+        request.port = 80U;
     }
-    sock = Ns_SockConnect(request.host, request.port);
+    sock = Ns_SockConnect(request.host, (int)request.port);
     if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
                url, ns_sockstrerror(ns_sockerrno));

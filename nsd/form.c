@@ -40,7 +40,7 @@
  */
 
 static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding);
-static void ParseMultiInput(Conn *connPtr, char *start, char *end);
+static void ParseMultiInput(Conn *connPtr, const char *start, char *end);
 static char *Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape);
 static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn);
 static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e);
@@ -69,7 +69,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
     Tcl_DString     bound;
-    char           *s, *e, *form;
+    char           *form, *s, *e;
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -90,7 +90,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
             if (!GetBoundary(&bound, conn)) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             } else {
-                char *formend = form + connPtr->reqPtr->length;
+		char *formend = form + connPtr->reqPtr->length;
 
                 s = NextBoundry(&bound, form, formend);
                 while (s != NULL) {
@@ -239,7 +239,7 @@ static void
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 {
     Tcl_DString  kds, vds;
-    char        *p;
+    char  *p;
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
@@ -292,7 +292,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
  */
 
 static void
-ParseMultiInput(Conn *connPtr, char *start, char *end)
+ParseMultiInput(Conn *connPtr, const char *start, char *end)
 {
     Tcl_Encoding encoding = connPtr->urlEncoding;
     Tcl_DString  kds, vds;
@@ -319,7 +319,8 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     ks = fs = NULL;
     while ((e = strchr(start, '\n')) != NULL) {
-	char save, *s = start;
+	char save;
+	const char *s = start;
 
         start = e + 1;
         if (e > s && e[-1] == '\r') {

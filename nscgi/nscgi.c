@@ -72,9 +72,9 @@ typedef struct Cgi {
     unsigned int    flags;
     pid_t     	    pid;
     Ns_Set	   *env;
-    char    	   *name;
+    const char 	   *name;
     char    	   *path;
-    char           *pathinfo;
+    const char     *pathinfo;
     char    	   *dir;
     char           *exec;
     char           *interp;
@@ -379,8 +379,8 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     int             i;
     size_t          ulen, plen;
     struct stat     st;
-    char           *s, *e;
-    char    	   *url = conn->request->url;
+    char           *e, *s;
+    const char     *url = conn->request->url;
     char	   *server = Ns_ConnServer(conn);
 
     modPtr = mapPtr->modPtr;
@@ -440,7 +440,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 		goto err;
             }
 
-            s = url + plen + 1;
+            s = (char *)url + plen + 1;
             e = strchr(s, '/');
 	    if (e != NULL) {
 		*e = '\0';
