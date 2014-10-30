@@ -88,7 +88,7 @@ typedef struct Cache {
  * Local functions defined in this file
  */
 
-static int  Expired(Entry *ePtr, Ns_Time *nowPtr);
+static int  Expired(const Entry *ePtr, const Ns_Time *nowPtr);
 static void Delink(Entry *ePtr);
 static void Push(Entry *ePtr);
 
@@ -245,7 +245,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     int            isNew;
 
     hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         ePtr = ns_calloc(1U, sizeof(Entry));
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
@@ -290,7 +290,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
 
 Ns_Entry *
 Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr,
-                        Ns_Time *timeoutPtr)
+                        const Ns_Time *timeoutPtr)
 {
     Ns_Entry      *entry;
     int            isNew, status = NS_OK;
@@ -886,7 +886,7 @@ Ns_CacheResetStats(Ns_Cache *cache)
  */
 
 static int
-Expired(Entry *ePtr, Ns_Time *nowPtr)
+Expired(const Entry *ePtr, const Ns_Time *nowPtr)
 {
     Ns_Time  now;
 

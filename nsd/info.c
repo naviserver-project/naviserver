@@ -58,7 +58,7 @@ static Ns_ThreadArgProc ThreadArgProc;
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoHomePath(void)
 {
     return nsconf.home;
@@ -127,7 +127,7 @@ Ns_InfoServerVersion(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoConfigFile(void)
 {
     return nsconf.config;
@@ -250,10 +250,10 @@ Ns_InfoPlatform(void)
  *----------------------------------------------------------------------
  */
 
-int
+long
 Ns_InfoUptime(void)
 {
-    return (int) difftime(time(NULL), nsconf.boot_t);
+    return (long)difftime(time(NULL), nsconf.boot_t);
 }
 
 
@@ -475,7 +475,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 {
     int         opt;
     NsInterp    *itPtr = arg;
-    char        *server, *elog;
+    char        *server;
+    const char  *elog;
     Tcl_DString ds;
 
     static const char *opts[] = {
@@ -534,7 +535,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IConfigIdx:
-        Tcl_SetResult(interp, Ns_InfoConfigFile(), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoConfigFile(), -1));
         return TCL_OK;
 
     case ICallbacksIdx:
@@ -571,7 +572,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case ILogIdx:
         elog = Ns_InfoErrorLog();
-        Tcl_SetResult(interp, elog == NULL ? "STDOUT" : elog, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, -1));
         return TCL_OK;
 
     case IPlatformIdx:
@@ -588,11 +589,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IUptimeIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoUptime()));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(Ns_InfoUptime()));
         return TCL_OK;
 
     case IBoottimeIdx:
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Ns_InfoBootTime()));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)Ns_InfoBootTime()));
         return TCL_OK;
 
     case IPidIdx:
@@ -621,7 +622,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IHomeIdx:
-        Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHomePath(), -1));
         return TCL_OK;
 
     case IWinntIdx:
@@ -642,7 +643,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IServersIdx:
-        Tcl_SetResult(interp, nsconf.servers.string, TCL_STATIC);
+        Tcl_DStringResult(interp, &nsconf.servers);
         return TCL_OK;
     }
 
@@ -744,7 +745,7 @@ NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv
     }
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, lib, argv[2], NULL);
-    Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    Tcl_DStringResult(interp, &ds);
     Ns_DStringFree(&ds);
 
     return TCL_OK;

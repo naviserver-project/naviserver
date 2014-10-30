@@ -176,7 +176,7 @@ NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, char *handleId,
  * dbutil.c:
  */
     
-NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, char *string) 
+NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, const char *string) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
@@ -185,10 +185,10 @@ NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
 NS_EXTERN Ns_Set *Ns_Db1Row(Ns_DbHandle *handle, char *sql)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
+NS_EXTERN int Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, char *code, char *msg) 
+NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #endif /* NSDB_H */

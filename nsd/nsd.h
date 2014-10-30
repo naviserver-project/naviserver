@@ -116,22 +116,22 @@ struct _nsconf {
     char *nsd;
     char *name;
     char *version;
-    char *home;
+    const char *home;
     char *tmpDir;
-    char *config;
+    const char *config;
     char *build;
     pid_t pid;
     time_t boot_t;
     char hostname[255];
     char address[16];
-    int shutdowntimeout;
+    long shutdowntimeout;  /* same type as seconds in Ns_Time */
     int backlog;
 
     /*
      * Slot IDs for socket local storage.
      */
 
-    int nextSlsId;
+    uintptr_t nextSlsId;
 
     /*
      * The following table holds the configured virtual servers.
@@ -277,7 +277,7 @@ typedef struct AdpFrame {
     Tcl_Obj	      *ident;
     Tcl_Obj          **objv;
     char	      *savecwd;
-    char	      *file;
+    const char	      *file;
     unsigned int       flags;
     Ns_DString         cwdbuf;
     Tcl_DString	      *outputPtr;
@@ -388,8 +388,8 @@ typedef struct Driver {
     char  *location;                    /* Location, e.g, "http://foo:9090" */
     char  *address;                     /* Address in location, e.g. "foo" */
     char  *protocol;                    /* Protocol in location, e.g, "http" */
-    int    sendwait;                    /* send() I/O timeout */
-    int    recvwait;                    /* recv() I/O timeout */
+    long   sendwait;                    /* send() I/O timeout */
+    long   recvwait;                    /* recv() I/O timeout */
     size_t bufsize;                     /* Conn bufsize (0 for SSL) */
     char  *extraHeaders;                /* Extra header fields added for every request */
 
@@ -408,10 +408,10 @@ typedef struct Driver {
     Ns_DriverRequestProc  *requestProc;
     Ns_DriverCloseProc    *closeProc;
     unsigned int opts;                  /* NS_DRIVER_* options */
-    int closewait;                      /* Graceful close timeout */
-    int keepwait;                       /* Keepalive timeout */
-    int keepmaxdownloadsize;            /* When set, allow keepalive only for download requests up to this size */
-    int keepmaxuploadsize;              /* When set, allow keepalive only for upload requests up to this size */
+    long closewait;                     /* Graceful close timeout */
+    long keepwait;                      /* Keepalive timeout */
+    size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
+    size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     NS_SOCKET sock;                     /* Listening socket */
     int pidx;                           /* poll() index */
     char *bindaddr;                     /* Numerical listen address */
@@ -826,7 +826,7 @@ typedef struct NsServer {
         const char *library;
         struct TclTrace *firstTracePtr;
         struct TclTrace *lastTracePtr;
-        char *initfile;
+        const char *initfile;
         Ns_RWLock lock;
         char *script;
         int length;
@@ -1245,10 +1245,10 @@ NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
 NS_EXTERN NsServer *NsGetInitServer(void);
 NS_EXTERN NsServer *NsGetServer(CONST char *server);
 NS_EXTERN void NsStartServers(void);
-NS_EXTERN void NsStopServers(Ns_Time *toPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsStartServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStopServers(const Ns_Time *toPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStartServer(const NsServer *servPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStopServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
@@ -1262,28 +1262,28 @@ NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
+NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
-NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                           Ns_Time *timeoutPtr, unsigned int flags,
+NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                           const Ns_Time *timeoutPtr, unsigned int flags,
                            Ns_DriverSendProc *sendProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 
 
-NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
+NS_EXTERN int  NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr)
+NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
      NS_GNUC_NONNULL(1);
-NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map)
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
-NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
+NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr);
 
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
@@ -1353,7 +1353,7 @@ NS_EXTERN void NsUnblockSignal(int sig);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
-NS_EXTERN void NsPreBind(char *args, char *file);
+NS_EXTERN void NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN char *NsConfigRead(CONST char *file);
 NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int optind);
@@ -1406,7 +1406,7 @@ NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
 /*
  * request parsing
  */
-NS_EXTERN int NsParseAcceptEnconding(double version, CONST char *hdr);
+NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
 
 
 /*
@@ -1422,7 +1422,7 @@ NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, co
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			   char *file, const Ns_Time *expiresPtr);
+			   const char *file, const Ns_Time *expiresPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 			  unsigned int flags, CONST char* file);
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
@@ -1473,7 +1473,7 @@ NS_EXTERN int NsForkWatchedProcess(void);
 
 NS_EXTERN int NsCloseAllFiles(int errFd);
 NS_EXTERN int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
-NS_EXTERN void NsMemUmap(FileMap *mapPtr);
+NS_EXTERN void NsMemUmap(const FileMap *mapPtr);
 
 NS_EXTERN void NsStopSockCallbacks(void);
 NS_EXTERN void NsStopScheduledProcs(void);

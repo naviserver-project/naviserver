@@ -47,7 +47,7 @@ static Ns_ServerInitProc ConfigServerVhost;
 static int ConfigServerVhost(CONST char *server)
     NS_GNUC_NONNULL(1);
 
-static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
+static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1);
@@ -177,8 +177,8 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
     src = Ns_DStringAppend(&tmp, path);
 #ifdef _WIN32
     if (isalpha(UCHAR(*src)) && src[1] == ':') {
-        if (isupper(UCHAR(*src))) {
-	  *src = tolower(UCHAR(*src));
+        if (CHARTYPE(upper, *src) != 0) {
+	  *src = CHARCONV(lower, *src);
         }
         Ns_DStringNAppend(dsPtr, src, 2);
         src += 2;
@@ -760,7 +760,7 @@ NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 }
 
 static int
-PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
+PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
     NsInterp    *itPtr = clientData;
     NsServer    *servPtr;

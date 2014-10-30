@@ -113,8 +113,11 @@ Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
  */
 
 int
-Ns_TclDetachedThread(Tcl_Interp *interp, char *script)
+Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
 {
+    assert(interp != NULL);
+    assert(script != NULL);
+
     return Ns_TclThread(interp, script, NULL);
 }
 
@@ -195,7 +198,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         }
         tid = tidArg;
         Ns_ThreadJoin(&tid, &result);
-        Tcl_SetResult(interp, (char *) result, (Tcl_FreeProc *) ns_free);
+        Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
         break;
 
     case TGetIdx:
@@ -212,7 +215,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         if (objc > 2) {
             Ns_ThreadSetName(Tcl_GetString(objv[2]));
         }
-        Tcl_SetResult(interp, Ns_ThreadGetName(), TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ThreadGetName(), -1));
         break;
 
     case TStackinfoIdx: {
@@ -828,7 +831,7 @@ CreateSynchObject(const NsInterp *itPtr,
             Ns_DStringTrunc(&ds, 0);
             Ns_DStringPrintf(&ds, "%s:tcl:%u", type, (*idPtr)++);
             hPtr = Tcl_CreateHashEntry(typeTable, ds.string, &isNew);
-        } while (!isNew);
+        } while (isNew == 0);
 
         objPtr = Tcl_NewStringObj(ds.string, ds.length);
         Tcl_SetObjResult(interp, objPtr);
@@ -839,7 +842,7 @@ CreateSynchObject(const NsInterp *itPtr,
         Tcl_SetObjResult(interp, objPtr);
     }
 
-    if (isNew) {
+    if (isNew != 0) {
         addr = ns_calloc(1U, sizeof(void *));
         if (cnt > -1) {
             Ns_SemaInit((Ns_Sema *) addr, cnt);

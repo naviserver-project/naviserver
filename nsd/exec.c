@@ -66,7 +66,7 @@ static int ExecProc(char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecProcess(char *exec, const char *dir, int fdin, int fdout, char *args,
-	       Ns_Set *env)
+	       const Ns_Set *env)
 {
     return Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
 }
@@ -155,7 +155,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
         if (exitcodePtr != NULL) {
             *exitcodePtr = exitcode;
         }
-        if (nsconf.exec.checkexit && exitcode != 0) {
+        if (nsconf.exec.checkexit == TRUE && exitcode != 0) {
             Ns_Log(Error, "exec: process %d exited with non-zero status: %d",
                    pid, exitcode);
             status = NS_ERROR;
@@ -219,7 +219,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 
 pid_t
 Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
-	      char *args, Ns_Set *env)
+	      char *args, const Ns_Set *env)
 {
 #ifndef _WIN32
     pid_t  pid;
@@ -333,11 +333,11 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
     }
     if (CreateProcess(exec, cds.string, NULL, NULL, TRUE, 0, envp, dir, &si, &pi) != TRUE) {
         Ns_Log(Error, "exec: failed to create process: %s: %s",
-        exec ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
+        exec != NULL ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
         pid = NS_INVALID_PID;
     } else {
-        CloseHandle(pi.hThread);
-		pid = pi.dwProcessId;
+	CloseHandle(pi.hThread);
+	pid = pi.dwProcessId;
     }
     Ns_DStringFree(&cds);
     Ns_DStringFree(&xds);
@@ -367,7 +367,7 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
-	    char **argv, Ns_Set *env)
+	    char ** argv, const Ns_Set *env)
 {
 #ifdef _WIN32
     /*

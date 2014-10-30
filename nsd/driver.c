@@ -68,7 +68,6 @@
 /*
  * Managing streaming output via writer
  */
-#define NS_WRITER_STREAM_NONE         0
 #define NS_WRITER_STREAM_ACTIVE       1
 #define NS_WRITER_STREAM_FINISH       2
 
@@ -144,7 +143,7 @@ static int   SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
-static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr)
+static int   SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static void  SockPrepare(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -176,7 +175,7 @@ static void PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
+static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
@@ -989,7 +988,7 @@ DriverListen(Driver *drvPtr)
 static NS_DRIVER_ACCEPT_STATUS
 DriverAccept(Sock *sockPtr)
 {
-  int n = (int)sizeof(struct sockaddr_in);
+    socklen_t n = (socklen_t)sizeof(struct sockaddr_in);
 
     assert(sockPtr != NULL);
 
@@ -1047,7 +1046,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  */
 
 ssize_t
-NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
+NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Ns_Time timeout;
 
@@ -1572,7 +1571,7 @@ PollReset(PollData *pdata)
 }
 
 static NS_POLL_NFDS_TYPE
-PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
 {
     assert(pdata != NULL);
     /*
@@ -1680,7 +1679,7 @@ SockPrepare(Sock *sockPtr)
  */
 
 static int
-SockQueue(Sock *sockPtr, Ns_Time *timePtr)
+SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 {
     /*
      *  Verify the conditions, Request struct should exists already
@@ -2040,7 +2039,7 @@ SockSendResponse(Sock *sockPtr, int code)
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4U;
-    sent = NsDriverSend(sockPtr, iov, 3, 0);
+    sent = NsDriverSend(sockPtr, iov, 3, 0U);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
 	Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
@@ -2409,10 +2408,10 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
-static char *strnchr(char *buffer, size_t len, int c)
+static char *strnchr(char *buffer, size_t len, char c)
     NS_GNUC_NONNULL(1);
 
-static char *strnchr(char *buffer, size_t len, int c) {
+static char *strnchr(char *buffer, size_t len, char c) {
     char *end;
 
     assert(buffer != NULL);
@@ -2599,7 +2598,7 @@ SockParse(Sock *sockPtr)
 	    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
 	    if (s != NULL) {
 		/* get gzip from accept-encoding header */
-		gzip = NsParseAcceptEnconding(reqPtr->request.version, s);
+		gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
 	    } else {
 		/* no accept-encoding header; don't allow gzip */
 		gzip = 0;
@@ -2723,7 +2722,7 @@ SockParse(Sock *sockPtr)
             if (reqPtr->request.query != NULL) {
                 Tcl_DStringSetLength(bufPtr, 0);
                 Tcl_DStringAppend(bufPtr, reqPtr->request.query, -1);
-                ns_free(reqPtr->request.method);
+                ns_free((char *)reqPtr->request.method);
                 reqPtr->request.method = ns_strdup("GET");
                 reqPtr->content = bufPtr->string;
             }
@@ -2767,7 +2766,7 @@ SockParse(Sock *sockPtr)
          * This happens from some browsers on POST requests.
          */
 
-        if (reqPtr->length > 0) {
+        if (reqPtr->length > 0U) {
             reqPtr->content[reqPtr->length] = '\0';
         }
 
@@ -2834,7 +2833,7 @@ SockSetServer(Sock *sockPtr)
     }
 
     if (!status && sockPtr->reqPtr) {
-        ns_free(sockPtr->reqPtr->request.method);
+        ns_free((char *)sockPtr->reqPtr->request.method);
         sockPtr->reqPtr->request.method = ns_strdup("BAD");
     }
 
@@ -3311,7 +3310,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 static int
 WriterReadFromSpool(WriterSock *curPtr) {
     int            streaming, status = NS_OK;
-    Tcl_WideInt    toRead, maxsize;
+    Tcl_WideInt    toRead;
+    size_t         maxsize;
     unsigned char *bufPtr;
 
     assert(curPtr != NULL);
@@ -3334,7 +3334,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
      * the buffer with new c.
      */
 	
-    if (curPtr->c.file.bufsize > 0) {
+    if (curPtr->c.file.bufsize > 0U) {
 	Ns_Log(DriverDebug, 
 	       "### Writer %p %.6x leftover %" PRIdz " offset %ld", 
 	       curPtr, curPtr->flags, 
@@ -3348,8 +3348,8 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
 	maxsize -= curPtr->c.file.bufsize;
     }
-    if (toRead > maxsize) {
-	toRead = maxsize;
+    if (toRead > (Tcl_WideInt)maxsize) {
+	toRead = (Tcl_WideInt)maxsize;
     }
     
     /*
@@ -3457,7 +3457,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	       curPtr->c.mem.sbufIdx < UIO_SMALLIOV) {
 	    struct iovec *vPtr = &curPtr->c.mem.bufs[curPtr->c.mem.bufIdx];
 	    
-	    if (vPtr->iov_len > 0 && vPtr->iov_base != NULL) {
+	    if (vPtr->iov_len > 0U && vPtr->iov_base != NULL) {
 
 		Ns_Log(DriverDebug, 
 		       "### Writer copies source %d to scratch %d len %" PRIiovlen,
@@ -3476,7 +3476,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	       nbufs, toWrite);
     }
     
-    n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0);
+    n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0U);
    
     if (n < 0) {
 	*err = errno;
@@ -3580,7 +3580,7 @@ WriterThread(void *arg)
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
 		Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d", 
 		       curPtr, curPtr->size, curPtr->streaming);
-		if (likely(curPtr->size > 0)) {
+		if (likely(curPtr->size > 0U)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
 		    pollto = -1;
 		} else if (unlikely(curPtr->streaming == NS_WRITER_STREAM_FINISH)) {
@@ -3630,9 +3630,9 @@ WriterThread(void *arg)
 		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
                        curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
                        curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
-		if (unlikely(curPtr->size < 1)) {
+		if (unlikely(curPtr->size < 1U)) {
 		    /*
-		     * Size < 0 means that verything was sent.
+		     * Size < 0 means that everything was sent.
 		     */
 		    if (streaming != NS_WRITER_STREAM_ACTIVE) {
 			if (streaming == NS_WRITER_STREAM_FINISH) {
@@ -3661,7 +3661,7 @@ WriterThread(void *arg)
                  *  for too long and we need to stop this socket
                  */
                 if (sockPtr->timeout.sec == 0) {
-		    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %d", 
+		    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld", 
 			   curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
                     SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
 		} else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
@@ -3678,7 +3678,7 @@ WriterThread(void *arg)
 
 	    Ns_MutexLock(&queuePtr->lock);
             if (status == NS_OK) {
-                if (curPtr->size > 0 || streaming == NS_WRITER_STREAM_ACTIVE) {
+                if (curPtr->size > 0U || streaming == NS_WRITER_STREAM_ACTIVE) {
 		    Ns_Log(DriverDebug, 
 			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
 			   curPtr, curPtr->size);
@@ -4172,7 +4172,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     switch (opt) {
     case cmdSubmitIdx: {
         int size;
-        char *data;
+        unsigned char *data;
 
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "data");
@@ -4182,7 +4182,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             Tcl_AppendResult(interp, "no connection", NULL);
             return TCL_ERROR;
         }
-        data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
+        data = Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data) {
 	    struct iovec vbuf;
 	    vbuf.iov_base = (void *)data;
@@ -4291,7 +4291,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	} else if (objc > 2) {
 
 	    int                 nextArgIdx;
-	    static const char  *options[]           = {"-server", NULL};
+	    static const char * const options[]     = {"-server", NULL};
 	    enum                                      {OServerIdx};
 	    ClientData          optionClientData[1] = {NULL};
 	    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};
@@ -4753,7 +4753,7 @@ AsyncWriterThread(void *arg)
 		 * is some remaining data to write. If not we are done
 		 * with this request can can release the write buffer.
 		 */
-                if (curPtr->size > 0) {
+                if (curPtr->size > 0U) {
                     Push(curPtr, writePtr);
                 } else {
                     AsyncWriterRelease(curPtr);

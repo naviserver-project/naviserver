@@ -63,7 +63,7 @@ static int binderResponse[2] = { -1, -1 };
  * Local functions defined in this file
  */
 #ifndef _WIN32
-static void PreBind(char *line);
+static void PreBind(const char *line);
 static void Binder(void);
 #endif
 
@@ -87,7 +87,7 @@ static void Binder(void);
 
 #ifndef _WIN32
 NS_SOCKET
-Ns_SockListenEx(char *address, int port, int backlog)
+Ns_SockListenEx(const char *address, int port, int backlog)
 {
     NS_SOCKET          sock = NS_INVALID_SOCKET;
     struct sockaddr_in sa;
@@ -144,7 +144,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
  */
 
 NS_SOCKET
-Ns_SockListenUdp(char *address, int port)
+Ns_SockListenUdp(const char *address, int port)
 {
     NS_SOCKET          sock = NS_INVALID_SOCKET;
     struct sockaddr_in sa;
@@ -247,7 +247,7 @@ Ns_SockListenRaw(int proto)
  */
 
 NS_SOCKET
-Ns_SockListenUnix(char *path, int backlog, int  mode)
+Ns_SockListenUnix(const char *path, int backlog, int  mode)
 {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
@@ -311,7 +311,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
  */
 
 NS_SOCKET
-Ns_SockBindUdp(struct sockaddr_in *saPtr)
+Ns_SockBindUdp(const struct sockaddr_in *saPtr)
 {
     NS_SOCKET sock;
     int       n = 1;
@@ -350,7 +350,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
  */
 
 NS_SOCKET
-Ns_SockBindUnix(char *path, int socktype, int mode)
+Ns_SockBindUnix(const char *path, int socktype, int mode)
 {
     NS_SOCKET sock;
 #ifdef _WIN32
@@ -456,7 +456,7 @@ NsInitBinder(void)
  */
 
 void
-NsPreBind(char *args, char *file)
+NsPreBind(const char *args, const char *file)
 {
 #ifndef _WIN32
     if (args != NULL) {
@@ -614,7 +614,7 @@ NsClosePreBound(void)
 #ifndef _WIN32
 
 static void
-PreBind(char *line)
+PreBind(const char *line)
 {
     Tcl_HashEntry      *hPtr;
     int                isNew, sock, port, mode;
@@ -622,7 +622,8 @@ PreBind(char *line)
     struct sockaddr_in sa;
 
     for (;line != NULL; line = next) {
-        char  *addr, *proto;
+        const char  *addr, *proto;
+
         next = strchr(line, ',');
         if (next) {
             *next++ = '\0';
@@ -633,11 +634,11 @@ PreBind(char *line)
         str = strchr(line, ':');
         if (str) {
             *str++ = '\0';
-            port = atoi(str);
+            port = strtol(str, NULL, 10);
             addr = line;
             line = str;
         } else {
-            port = atoi(line);
+            port = strtol(line, NULL, 10);
         }
         /* Parse protocol */
         if (*line != '/' && (str = strchr(line,'/'))) {
@@ -652,7 +653,7 @@ PreBind(char *line)
                 continue;
             }
             hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &isNew);
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Error, "prebind: tcp: duplicate entry: %s:%d",
                        addr, port);
                 continue;
@@ -675,7 +676,7 @@ PreBind(char *line)
                 continue;
             }
             hPtr = Tcl_CreateHashEntry(&preboundUdp, (char *) &sa, &isNew);
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Error, "prebind: udp: duplicate entry: %s:%d",
                        addr, port);
                 continue;
@@ -697,7 +698,7 @@ PreBind(char *line)
             str = strchr(str,'/');
             if (str) {
                 *(str++) = '\0';
-                count = atoi(str);
+                count = strtol(str, NULL, 10);
             }
             while(count--) {
                 sock = Ns_SockBindRaw(IPPROTO_ICMP);
@@ -706,7 +707,7 @@ PreBind(char *line)
                     continue;
                 }
                 hPtr = Tcl_CreateHashEntry(&preboundRaw, NSSOCK2PTR(sock), &isNew);
-                if (!isNew) {
+                if (isNew == 0) {
                     Ns_Log(Error, "prebind: icmp: duplicate entry");
                     close(sock);
                     continue;
@@ -722,10 +723,10 @@ PreBind(char *line)
             str = strchr(str,'|');
             if (str) {
                 *(str++) = '\0';
-                mode = atoi(str);
+                mode = strtol(str, NULL, 10);
             }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
-            if (!isNew) {
+            if (isNew == 0) {
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
                 continue;
             }
@@ -767,7 +768,7 @@ PreBind(char *line)
  */
 
 NS_SOCKET
-Ns_SockBinderListen(int type, char *address, int port, int options)
+Ns_SockBinderListen(int type, const char *address, int port, int options)
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32

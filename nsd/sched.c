@@ -76,6 +76,9 @@ static Event *DeQueueEvent(int qid);    /* Remove event from heap. */
 static void FreeEvent(Event *ePtr)      /* Free completed or cancelled event. */
     NS_GNUC_NONNULL(1);
 static void QueueEvent(Event *ePtr, const time_t *nowPtr);    /* Queue event on heap. */
+static void Exchange(int i, int j);     /* Exchange elements in the global queue */
+
+
 /*
  * Static variables defined in this file.
  */
@@ -96,15 +99,32 @@ static int running = 0;
 static int shutdownPending = 0;
 static Ns_Thread schedThread;
 
+
 /*
- * Macro to exchange two events in the heap, used in QueueEvent() and DeQueueEvent().
+ *----------------------------------------------------------------------
+ *
+ * Exchange --
+ *
+ *     Helper function to exchange two events in the global queue,
+ *     used in QueueEvent() and DeQueueEvent().
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Queue elements flipped.
+ *
+ *----------------------------------------------------------------------
  */
 
-#define EXCH(i,j) {\
-      Event *tmp = queue[(i)];\
-      queue[(i)] = queue[(j)], queue[(j)] = tmp;\
-      queue[(i)]->qid = (i), queue[(j)]->qid = (j);\
-    }
+static void Exchange(int i, int j) {
+    Event *tmp = queue[i];
+
+    queue[i] = queue[j];
+    queue[j] = tmp;
+    queue[i]->qid = i;
+    queue[j]->qid = j;
+}
 
 
 /*
@@ -297,7 +317,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
                 nextId = 0;
             }
             ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, INT2PTR(id), &isNew);
-        } while (!isNew);
+        } while (isNew == 0);
         Tcl_SetHashValue(ePtr->hPtr, ePtr);
         ePtr->id = id;
         QueueEvent(ePtr, &now);
@@ -557,7 +577,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
         k = nqueue;
         j = k / 2;
         while (k > 1 && queue[j]->nextqueue > queue[k]->nextqueue) {
-            EXCH(j, k);
+            Exchange(j, k);
             k = j;
             j = k / 2;
         }
@@ -603,7 +623,7 @@ DeQueueEvent(int qid)
      * order of events to be fired.
      */
 
-    EXCH(qid, nqueue);
+    Exchange(qid, nqueue);
     ePtr = queue[nqueue--];
     ePtr->qid = 0;
 
@@ -614,7 +634,7 @@ DeQueueEvent(int qid)
         if (queue[j]->nextqueue > queue[qid]->nextqueue) {
             break;
         }
-        EXCH(qid, j);
+        Exchange(qid, j);
         qid = j;
     }
 
@@ -745,7 +765,7 @@ SchedThread(void *UNUSED(arg))
 {
     time_t          now;
     Ns_Time         timeout = {0,0};
-    int             elapsed;
+    long            elapsed;
     Event          *ePtr, *readyPtr = NULL;
 
     Ns_WaitForStartup();
@@ -805,9 +825,9 @@ SchedThread(void *UNUSED(arg))
             (*ePtr->proc) (ePtr->arg, ePtr->id);
 
             time(&now);
-            elapsed = (int) difftime(now, ePtr->laststart);
+            elapsed = (long) difftime(now, ePtr->laststart);
             if (elapsed > nsconf.sched.maxelapsed) {
-                Ns_Log(Warning, "sched: excessive time taken by proc %d (%d seconds)",
+                Ns_Log(Warning, "sched: excessive time taken by proc %d (%ld seconds)",
                        ePtr->id, elapsed);
             }
             if (ePtr->hPtr == NULL) {

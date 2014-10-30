@@ -98,7 +98,7 @@ NsInitSls(void)
 void
 Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
 {
-    int id;
+    uintptr_t id;
 
     if (Ns_InfoStarted()) {
         Ns_Log(Bug, "Ns_SlsAlloc: server already started");
@@ -107,7 +107,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
     cleanupProcs = ns_realloc(cleanupProcs, sizeof(Ns_Callback *) * nsconf.nextSlsId);
     cleanupProcs[id] = cleanup;
 
-    *slsPtr = INT2PTR(id);
+    *slsPtr = UINT2PTR(id);
 }
 
 
@@ -432,7 +432,7 @@ NsSlsCleanup(Sock *sockPtr)
 
     trys = 0;
     do {
-        int i = nsconf.nextSlsId;
+        uintptr_t i = nsconf.nextSlsId;
 
         retry = 0;
         while (i-- > 0) {
@@ -467,10 +467,10 @@ static void **
 GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     Sock      *sockPtr = (Sock *) sock;
-    int        id      = PTR2INT(*slsPtr);
+    intptr_t   id      = (intptr_t)(*slsPtr);
 
     if (id >= nsconf.nextSlsId) {
-        Ns_Fatal("Ns_Sls: invalid key: %d: must be between 0 and %d",
+        Ns_Fatal("Ns_Sls: invalid key: %td: must be between 0 and %td",
                  id, nsconf.nextSlsId -1);
     }
     return &sockPtr->sls[id];

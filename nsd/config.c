@@ -782,11 +782,11 @@ SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *ar
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         (char*)argv[0], " sectionname", NULL);
+                         argv[0], " sectionname", NULL);
         return TCL_ERROR;
     }
     set = (Ns_Set **) clientData;
-    *set = GetSection((char*) argv[1], 1);
+    *set = GetSection(argv[1], 1);
 
     return TCL_OK;
 }
@@ -870,7 +870,7 @@ GetSection(CONST char *section, int create)
 
     Ns_DStringInit(&ds);
     p = section;
-    while (isspace(UCHAR(*p))) {
+    while (CHARTYPE(space, *p) != 0) {
         ++p;
     }
     Ns_DStringAppend(&ds, p);
@@ -878,12 +878,12 @@ GetSection(CONST char *section, int create)
     while (unlikely(*s != '\0')) {
 	if (unlikely(*s == '\\')) {
             *s = '/';
-        } else if (unlikely(isupper(UCHAR(*s)))) {
-            *s = tolower(UCHAR(*s));
+        } else if (unlikely(CHARTYPE(upper, *s) != 0)) {
+            *s = CHARCONV(lower, *s);
         }
         ++s;
     }
-    while (--s > ds.string && (unlikely(isspace(UCHAR(*s))))) {
+    while (--s > ds.string && (unlikely(CHARTYPE(space, *s) != 0))) {
         *s = '\0';
     }
     section = ds.string;
@@ -897,7 +897,7 @@ GetSection(CONST char *section, int create)
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
         hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &isNew);
-        if (isNew) {
+        if (isNew != 0) {
             set = Ns_SetCreate(section);
 	    Tcl_SetHashValue(hPtr, set);
         }

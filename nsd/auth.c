@@ -240,7 +240,7 @@ NsParseAuth(Conn *connPtr, char *auth)
     }
 
     p = auth;
-    while (*p != '\0' && !isspace(UCHAR(*p))) {
+    while (*p != '\0' && CHARTYPE(space, *p) == 0) {
         ++p;
     }
     if (*p != '\0') {
@@ -257,7 +257,7 @@ NsParseAuth(Conn *connPtr, char *auth)
 
             /* Skip spaces */
             q = p + 1;
-            while (*q != '\0' && isspace(UCHAR(*q))) {
+            while (*q != '\0' && CHARTYPE(space, *q) != 0) {
                 q++;
             }
 
@@ -279,7 +279,7 @@ NsParseAuth(Conn *connPtr, char *auth)
 
             /* Skip spaces */
             q = p + 1;
-            while (*q != '\0' && isspace(UCHAR(*q))) {
+            while (*q != '\0' && CHARTYPE(space, *q) != 0) {
                 q++;
             }
 
@@ -293,7 +293,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 }
                 v = p - 1;
                 /* Trim trailing spaces */
-                while (v > q && isspace(UCHAR(*v))) {
+                while (v > q && CHARTYPE(space, *v) != 0) {
                     v--;
                 }
                 /* Remember position */
@@ -304,7 +304,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 *v = save2;
                 /* Skip = and optional spaces */
                 p++;
-                while (*p != '\0' && isspace(UCHAR(*p))) {
+                while (*p != '\0' && CHARTYPE(space, *p) != 0) {
                     p++;
                 }
                 if (*p == '\0') {
@@ -314,7 +314,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 if (*p == '"') {
                     for (q = ++p; *q != '\0' && *q != '"'; q++);
                 } else {
-                    for (q = p; *q != '\0' && *q != ',' && !isspace(UCHAR(*q)); q++);
+                    for (q = p; *q != '\0' && *q != ',' && CHARTYPE(space, *q) == 0; q++);
                 }
                 save2 = *q;
                 *q = '\0';
@@ -322,7 +322,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 Ns_SetPutValue(connPtr->auth, idx, p);
                 *q = save2;
                 /* Advance to the end of the param value, can be end or next name*/
-                while (*q != '\0' && (*q == ',' || *q == '"' || isspace(UCHAR(*q)))) {
+                while (*q != '\0' && (*q == ',' || *q == '"' || CHARTYPE(space, *q) != 0)) {
                     q++;
                 }
             }

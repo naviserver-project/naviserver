@@ -83,7 +83,7 @@ char *
 Ns_StrTrimLeft(char *string)
 {
     if (string != NULL) {
-        while (isspace(UCHAR(*string))) {
+        while (CHARTYPE(space, *string) != 0) {
             ++string;
         }
     }
@@ -116,7 +116,7 @@ Ns_StrTrimRight(char *string)
         int len = (int)strlen(string);
 
         while ((--len >= 0)
-               && (isspace(UCHAR(string[len]))
+               && (CHARTYPE(space, string[len]) != 0
                    || string[len] == '\n')) {
             string[len] = '\0';
         }
@@ -148,8 +148,8 @@ Ns_StrToLower(char *string)
 
     s = string;
     while (*s != '\0') {
-        if (isupper(UCHAR(*s))) {
-            *s = tolower(UCHAR(*s));
+        if (CHARTYPE(upper, *s) != 0) {
+            *s = CHARCONV(lower, *s);
         }
         ++s;
     }
@@ -165,7 +165,7 @@ Ns_StrToLower(char *string)
  *      All alph. chars in a string will be made to be uppercase.
  *
  * Results:
- *      Same string as pssed in.
+ *      Same string as passed in.
  *
  * Side effects:
  *      Will modify string.
@@ -180,8 +180,8 @@ Ns_StrToUpper(char *string)
 
     s = string;
     while (*s != '\0') {
-        if (islower(UCHAR(*s))) {
-            *s = toupper(UCHAR(*s));
+        if (CHARTYPE(lower, *s) != 0) {
+            *s = CHARCONV(upper, *s);
         }
         ++s;
     }
@@ -209,7 +209,7 @@ Ns_StrToUpper(char *string)
  */
 
 int
-Ns_StrToInt(CONST char *string, int *intPtr)
+Ns_StrToInt(const char *string, int *intPtr)
 {
     long  lval;
     char *ep;
@@ -248,7 +248,7 @@ Ns_StrToInt(CONST char *string, int *intPtr)
  */
 
 int
-Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
+Ns_StrToWideInt(const char *string, Tcl_WideInt *intPtr)
 {
     Tcl_WideInt  lval;
     char *ep;
@@ -285,13 +285,13 @@ Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
-Ns_Match(CONST char *a, CONST char *b)
+const char *
+Ns_Match(const char *a, const char *b)
 {
     if (a != NULL && b != NULL) {
         while (*a != '\0' && *b != '\0') {
-            char c1 = islower(UCHAR(*a)) ? *a : tolower(UCHAR(*a));
-            char c2 = islower(UCHAR(*b)) ? *b : tolower(UCHAR(*b));
+            char c1 = CHARTYPE(lower, *a) != 0 ? *a : CHARCONV(lower, *a);
+            char c2 = CHARTYPE(lower, *b) != 0 ? *b : CHARCONV(lower, *b);
             if (c1 != c2) {
                 return NULL;
             }
@@ -299,7 +299,7 @@ Ns_Match(CONST char *a, CONST char *b)
             b++;
         }
     }
-    return (char *) b;
+    return b;
 }
 
 
@@ -320,13 +320,13 @@ Ns_Match(CONST char *a, CONST char *b)
  *----------------------------------------------------------------------
  */
 
-CONST char *
-Ns_NextWord(CONST char *line)
+const char *
+Ns_NextWord(const char *line)
 {
-    while (*line != '\0' && !isspace(UCHAR(*line))) {
+    while (*line != '\0' && CHARTYPE(space, *line) == 0) {
         ++line;
     }
-    while (*line != '\0' && isspace(UCHAR(*line))) {
+    while (*line != '\0' && CHARTYPE(space, *line) != 0) {
         ++line;
     }
     return line;
@@ -349,14 +349,14 @@ Ns_NextWord(CONST char *line)
  *----------------------------------------------------------------------
  */
 
-CONST char *
-Ns_StrNStr(CONST char *string, CONST char *subString)
+const char *
+Ns_StrNStr(const char *string, const char *subString)
 {
     return Ns_StrCaseFind(string, subString);
 }
 
-CONST char *
-Ns_StrCaseFind(CONST char *string, CONST char *subString)
+const char *
+Ns_StrCaseFind(const char *string, const char *subString)
 {
     if (strlen(string) > strlen(subString)) {
         while (*string != '\0') {
@@ -389,14 +389,14 @@ Ns_StrCaseFind(CONST char *string, CONST char *subString)
  */
 
 int
-Ns_StrIsHost(CONST char *string)
+Ns_StrIsHost(const char *string)
 {
-    register CONST char *p;
+    register const char *p;
 
     for (p = string; *p != '\0'; p++) {
-        if (!isalnum(UCHAR(*p)) && *p != ':'
+	if (!isalnum(UCHAR(*p)) && *p != ':'
             && (*p != '.' || (p[0] == '.' && p[1] == '.'))) {
-
+	    
             return NS_FALSE;
         }
     }

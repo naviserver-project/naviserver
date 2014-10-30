@@ -388,9 +388,9 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
     }
 
     depth = 1U << ((buf[4] & 0x7U) + 1U);
-    colormap = ((buf[4] & 0x80U) ? 1 : 0);
+    colormap = ((buf[4] & 0x80U) ? 1U : 0U);
 
-    if (colormap) {
+    if (colormap != 0) {
         if (Tcl_Read(chan, (char *)buf, (3*depth)) != (3*depth)) {
             return TCL_ERROR;
         }
@@ -401,7 +401,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    if (buf[0] == '!') {
+    if (buf[0] == UCHAR('!')) {
         if (Tcl_Read(chan, (char *)buf, 1) != 1) {
             return TCL_ERROR;
         }
@@ -416,7 +416,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
             return TCL_ERROR;
         }
         goto innerloop;
-    } else if (buf[0] != ',') {
+    } else if (buf[0] != UCHAR(',')) {
         return TCL_ERROR;
     }
 
@@ -703,8 +703,8 @@ SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
 {
     Tcl_Obj *objv[2];
 
-    objv[0] = Tcl_NewIntObj(w);
-    objv[1] = Tcl_NewIntObj(h);
+    objv[0] = Tcl_NewIntObj((int)w);
+    objv[1] = Tcl_NewIntObj((int)h);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, objv));
 }
 

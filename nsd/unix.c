@@ -353,7 +353,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
  */
 
 void
-NsMemUmap(FileMap *mapPtr)
+NsMemUmap(const FileMap *mapPtr)
 {
     munmap(mapPtr->addr, (size_t)mapPtr->size);
 }

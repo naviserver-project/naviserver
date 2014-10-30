@@ -105,8 +105,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         Tcl_WrongNumArgs(interp, 1, objv, "option ?args ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            (int *) &opt) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -238,9 +237,9 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     do {
         snprintf(buf, sizeof(buf), "http%d", i++);
         hPtr = Tcl_CreateHashEntry(&itPtr->https, buf, &isNew);
-    } while (!isNew);
+    } while (isNew == 0);
     Tcl_SetHashValue(hPtr, httpPtr);
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     return TCL_OK;
 }
 

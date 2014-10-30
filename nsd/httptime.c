@@ -401,9 +401,9 @@ MakeMonth(char *s)
      * "Jan"
      */
 
-    *s = toupper(UCHAR(*s));
-    *(s + 1) = tolower(UCHAR(*(s + 1)));
-    *(s + 2) = tolower(UCHAR(*(s + 2)));
+    *s = CHARCONV(upper, *s);
+    *(s + 1) = CHARCONV(lower, *(s + 1));
+    *(s + 2) = CHARCONV(lower, *(s + 2));
 
     for (i = 0; i < 12; i++) {
         if (!strncmp(month_names[i], s, 3)) {

@@ -188,7 +188,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
             Ns_Log(Notice, "dns: timeout waiting for concurrent update");
             return NS_FALSE;
         }
-        if (isNew) {
+        if (isNew != 0) {
             Ns_CacheUnlock(cache);
             status = (*getProc)(&ds, key);
             Ns_CacheLock(cache);
@@ -216,7 +216,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     if (status == NS_TRUE) {
         if (getProc == GetAddr && !all) {
             char *p = ds.string;
-            while (*p != '\0' && !isspace(UCHAR(*p))) {
+            while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;
             }
             Ns_DStringSetLength(&ds, (int)(p - ds.string));

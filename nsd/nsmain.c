@@ -66,8 +66,8 @@ static Ns_ThreadProc CmdThread;
 static void UsageError(const char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
-static char *MakePath(char *file);
-static char *SetCwd(char *path);
+static const char *MakePath(char *file);
+static const char *SetCwd(const char *path);
 
 #if (STATIC_BUILD == 1)
 extern void NsthreadsInit();
@@ -144,6 +144,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 
 #ifdef _WIN32
     if (mode == 'S') {
+	Ns_ThreadSetName("-service-");
         goto contservice;
     }
 #endif
@@ -552,6 +553,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 	int status = TCL_OK;
 
         Ns_ThreadSetName("-service-");
+
         switch (mode) {
         case 'I':
             status = NsInstallService(procname);
@@ -1021,12 +1023,13 @@ UsageError(const char *msg, ...)
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 MakePath(char *file)
 {
     if (Ns_PathIsAbsolute(nsconf.nsd)) {
-        char *str, *path = NULL;
-        Tcl_Obj *obj;
+	char *str;
+	const char *path = NULL;
+	Tcl_Obj *obj;
 
         str = strstr(nsconf.nsd, "/bin/");
         if (str == NULL) {
@@ -1045,7 +1048,7 @@ MakePath(char *file)
 
         Tcl_IncrRefCount(obj);
         if (Tcl_FSGetNormalizedPath(NULL, obj)) {
-	  path = (char *)Tcl_FSGetTranslatedStringPath(NULL, obj);
+	  path = Tcl_FSGetTranslatedStringPath(NULL, obj);
         }
         Tcl_DecrRefCount(obj);
 
@@ -1054,7 +1057,7 @@ MakePath(char *file)
          */
 
         if (path != NULL && *file != '\0' && access(path, F_OK) != 0) {
-            ns_free(path);
+            ns_free((void *)path);
             return NULL;
         }
         return path;
@@ -1082,8 +1085,8 @@ MakePath(char *file)
  *----------------------------------------------------------------------
  */
 
-static char *
-SetCwd(char *path)
+static const char *
+SetCwd(const char *path)
 {
     Tcl_Obj *pathObj;
 
@@ -1098,7 +1101,7 @@ SetCwd(char *path)
         Ns_Fatal("nsmain: can't resolve home directory path");
     }
 
-    return (char *)Tcl_FSGetTranslatedStringPath(NULL, pathObj);
+    return Tcl_FSGetTranslatedStringPath(NULL, pathObj);
 }
 
 

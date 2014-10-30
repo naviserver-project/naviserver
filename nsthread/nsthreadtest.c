@@ -70,7 +70,7 @@ static int      dstop = 0;
  *	Simple message logger with thread id and name.
  */
 
-void
+static void
 Msg(char *fmt,...)
 {
     va_list         ap;
@@ -98,7 +98,7 @@ Msg(char *fmt,...)
  *	Log and then free TLS slot data at thread exit.
  */
 
-void
+static void
 TlsLogArg(void *arg)
 {
     int            *ip = arg;
@@ -113,7 +113,7 @@ TlsLogArg(void *arg)
  *	Thread which recursively probes stack for max depth.
  */
 
-uintptr_t
+static uintptr_t
 RecursiveStackCheck(uintptr_t n)
 {
 #if 0
@@ -126,7 +126,7 @@ RecursiveStackCheck(uintptr_t n)
     return n;
 }
 
-void
+static void
 CheckStackThread(void *arg)
 {
     uintptr_t n;
@@ -141,7 +141,7 @@ CheckStackThread(void *arg)
  *	Thread which exercies a varity of sync objects and TLS.
  */
 
-void
+static void
 WorkThread(void *arg)
 {
     intptr_t        i = (intptr_t) arg;
@@ -261,7 +261,7 @@ MemThread(void *arg)
     }
 }
 
-void
+static void
 MemTime(int ns)
 {
     Ns_Time         start, end, diff;
@@ -297,7 +297,7 @@ MemTime(int ns)
 }
 
 
-void
+static void
 DumpString(Tcl_DString *dsPtr)
 {
     char **largv;
@@ -309,13 +309,13 @@ DumpString(Tcl_DString *dsPtr)
 	for (i = 0; i < largc; ++i) {
 	    printf("\t%s\n", largv[i]);
 	}
-	ckfree((char *) largv);
+	Tcl_Free((char *) largv);
     }
     Tcl_DStringTrunc(dsPtr, 0);
 }
 
 
-void
+static void
 DumperThread(void *arg)
 {
     Ns_Time         to;
@@ -356,14 +356,14 @@ static Ns_Mutex plock = NULL;
 static Ns_Cond pcond  = NULL;
 static int pgo = 0;
 
-void
+static void
 PthreadTlsCleanup(void *arg)
 {
     intptr_t i = (intptr_t) arg;
     printf("pthread[%" PRIxPTR "]: log: %" PRIdPTR"\n", (uintptr_t) pthread_self(), i);
 }
 
-void *
+static void *
 Pthread(void *arg)
 {
     static Ns_Tls tls;
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
 	    case 'n':
 		break;
 	    case 'm':
-	    	nthreads = atoi(p + 1);
+	    	nthreads = strtol(p + 1, NULL, 10);
 		goto mem;
 		break;
 	}

@@ -41,7 +41,7 @@
  * Local functions defined in this file
  */
 
-static void  SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr);
+static void  SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr);
 static int   SetTimeFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void  UpdateStringOfTime(Tcl_Obj *objPtr);
 static int TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
@@ -113,7 +113,7 @@ NsTclInitTimeType()
  */
 
 Tcl_Obj *
-Ns_TclNewTimeObj(Ns_Time *timePtr)
+Ns_TclNewTimeObj(const Ns_Time *timePtr)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
@@ -141,7 +141,7 @@ Ns_TclNewTimeObj(Ns_Time *timePtr)
  */
 
 void
-Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr)
+Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetTimeObj called with shared object");
@@ -391,7 +391,7 @@ TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         return TCL_ERROR;
     }
     now = time(NULL);
-    if (PTR2INT(isgmt)) {
+    if (PTR2INT(isgmt) != 0) {
         ptm = ns_gmtime(&now);
     } else {
         ptm = ns_localtime(&now);
@@ -507,7 +507,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
 
     return TCL_OK;
 }
@@ -541,10 +541,10 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
 
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
-        len = snprintf(buf, sizeof(buf), "%" PRIu64, (int64_t) timePtr->sec);
+        len = snprintf(buf, sizeof(buf), "%ld", timePtr->sec);
     } else {
-        len = snprintf(buf, sizeof(buf), "%" PRIu64 ":%ld",
-                       (int64_t) timePtr->sec, timePtr->usec);
+        len = snprintf(buf, sizeof(buf), "%ld:%ld",
+                       timePtr->sec, timePtr->usec);
     }
     Ns_TclSetStringRep(objPtr, buf, len);
 }
@@ -625,7 +625,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  */
 
 static void
-SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
+SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));

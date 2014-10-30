@@ -49,11 +49,11 @@ static void SetUrl(Ns_Request *request, char *url)
 static void FreeUrl(Ns_Request *request)
     NS_GNUC_NONNULL(1);
 
-static CONST char *GetQvalue(CONST char *str, int *lenPtr)
+static const char *GetQvalue(const char *str, int *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static char *GetEncodingFormat(CONST char *encodingString, 
-			       CONST char *encodingFormat, double *qValue)
+static char *GetEncodingFormat(const char *encodingString, 
+			       const char *encodingFormat, double *qValue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
@@ -77,10 +77,10 @@ void
 Ns_ResetRequest(Ns_Request * request)
 {
     if (request != NULL) {
-        ns_free(request->line);
-        ns_free(request->method);
-        ns_free(request->protocol);
-        ns_free(request->host);
+        ns_free((char *)request->line);
+        ns_free((char *)request->method);
+        ns_free((char *)request->protocol);
+        ns_free((char *)request->host);
         ns_free(request->query);
         FreeUrl(request);
         memset(request, 0, sizeof(Ns_Request));
@@ -107,10 +107,10 @@ void
 Ns_FreeRequest(Ns_Request * request)
 {
     if (request != NULL) {
-        ns_free(request->line);
-        ns_free(request->method);
-        ns_free(request->protocol);
-        ns_free(request->host);
+        ns_free((char *)request->line);
+        ns_free((char *)request->method);
+        ns_free((char *)request->protocol);
+        ns_free((char *)request->host);
         ns_free(request->query);
         FreeUrl(request);
         ns_free(request);
@@ -135,7 +135,7 @@ Ns_FreeRequest(Ns_Request * request)
  */
 
 int
-Ns_ParseRequest(Ns_Request *request, CONST char *line)
+Ns_ParseRequest(Ns_Request *request, const char *line)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
@@ -167,21 +167,21 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
      */
     
     request->line = ns_strdup(l);
-    //Ns_Log(Notice, "Ns_ParseRequest %p %s", request, request->line);
+    /*Ns_Log(Notice, "Ns_ParseRequest %p %s", request, request->line);*/
 
     /*
      * Look for the minimum of method and url.
      */
     
     url = l;
-    while (*url != '\0' && !isspace(UCHAR(*url))) {
+    while (*url != '\0' && CHARTYPE(space, *url) == 0) {
         ++url;
     }
     if (*url == '\0') {
         goto done;
     }
     *url++ = '\0';
-    while (*url != '\0' && isspace(UCHAR(*url))) {
+    while (*url != '\0' && CHARTYPE(space, *url) != 0)  {
         ++url;
     }
     if (*url == '\0') {
@@ -196,7 +196,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
     request->version = 0.0;
     p = url + strlen(url);
     while (p-- > url) {
-        if (!isdigit(UCHAR(*p)) && *p != '.') {
+        if (CHARTYPE(digit, *p) == 0 && *p != '.') {
             break;
         }
     }
@@ -211,7 +211,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
 
             *p = '\0';
             p += sizeof(HTTP) - 1;
-            request->version = atof(p);
+            request->version = strtod(p, NULL);
         }
     }
 
@@ -257,7 +257,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
                 p = strchr(h, ':');
                 if (p != NULL) {
                     *p++ = '\0';
-                    request->port = atoi(p);
+                    request->port = (unsigned short)strtol(p, NULL, 10);
                 }
                 request->host = ns_strdup(h);
             }
@@ -290,7 +290,7 @@ done:
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
 {
     size_t skip;
@@ -325,7 +325,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
  */
 
 void
-Ns_SetRequestUrl(Ns_Request *request, CONST char *url)
+Ns_SetRequestUrl(Ns_Request *request, const char *url)
 {
     Ns_DString      ds;
 
@@ -362,7 +362,7 @@ FreeUrl(Ns_Request *request)
     assert(request != NULL);
 
     if (request->url != NULL) {
-        ns_free(request->url);
+	ns_free((char *)request->url);
         request->url = NULL;
     }
     if (request->urlv != NULL) {
@@ -392,14 +392,14 @@ FreeUrl(Ns_Request *request)
 static void
 SetUrl(Ns_Request *request, char *url)
 {
-    Ns_DString  ds1, ds2;
+    Tcl_DString  ds1, ds2;
     char       *p;
 
     assert(request != NULL);
     assert(url != NULL);
 
-    Ns_DStringInit(&ds1);
-    Ns_DStringInit(&ds2);
+    Tcl_DStringInit(&ds1);
+    Tcl_DStringInit(&ds2);
 
     /*
      * Look for a query string at the end of the URL.
@@ -422,8 +422,8 @@ SetUrl(Ns_Request *request, char *url)
     if (p == NULL) {
         p = url;
     }
-    Ns_NormalizePath(&ds2, p);
-    Ns_DStringSetLength(&ds1, 0);
+    (void)Ns_NormalizePath(&ds2, p);
+    Tcl_DStringSetLength(&ds1, 0);
 
     /*
      * Append a trailing slash to the normalized URL if the original URL
@@ -434,17 +434,20 @@ SetUrl(Ns_Request *request, char *url)
         ++url;
     }
     if (*url != '\0' && url[strlen(url) - 1] == '/') {
-        Ns_DStringAppend(&ds2, "/");
+      Tcl_DStringAppend(&ds2, "/", 1);
     }
     request->url = ns_strdup(ds2.string);
-    Ns_DStringFree(&ds2);
+    Tcl_DStringFree(&ds2);
 
     /*
-     * Build the urlv and set urlc.
+     * Build the urlv and set urlc. The following loop is somewhat an
+     * abuse of Tcl_DStringAppend, since we build here urlv (an array
+     * of (char *)) based on operations intended on strings. However,
+     * this way we can reuse the Tcl_DString infrastructure.
      */
 
     p = ns_strdup(request->url + 1);
-    Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
+    Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
     while (*p != '\0') {
         if (*p == '/') {
             *p++ = '\0';
@@ -455,16 +458,16 @@ SetUrl(Ns_Request *request, char *url)
 		
                 break;
             }
-            Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
+            Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
         }
         ++p;
     }
     request->urlc = ds1.length / (int)sizeof(char *);
     p = NULL;
-    Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
+    Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
     request->urlv = (char **) ns_malloc((size_t)ds1.length);
     memcpy(request->urlv, ds1.string, (size_t)ds1.length);
-    Ns_DStringFree(&ds1);
+    Tcl_DStringFree(&ds1);
 }
 
 
@@ -499,12 +502,12 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
      * they must be in well form key: value form.
      */
 
-    if (isspace(UCHAR(*line))) {
+    if (CHARTYPE(space, *line) != 0) {
         index = Ns_SetLast(set);
         if (index < 0) {
 	    return NS_ERROR;	/* Continue before first header. */
         }
-        while (isspace(UCHAR(*line))) {
+        while (CHARTYPE(space, *line) != 0) {
             ++line;
         }
         if (*line != '\0') {
@@ -522,22 +525,22 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 	}
         *sep = '\0';
         value = sep + 1;
-        while (*value != '\0' && isspace(UCHAR(*value))) {
+        while (*value != '\0' && CHARTYPE(space, *value) != 0) {
             ++value;
         }
         index = Ns_SetPut(set, line, value);
         key = Ns_SetKey(set, index);
 	if (disp == ToLower) {
             while (*key != '\0') {
-	        if (isupper(UCHAR(*key))) {
-            	    *key = tolower(UCHAR(*key));
+	        if (CHARTYPE(upper, *key) != 0) {
+            	    *key = CHARCONV(lower, *key);
 		}
             	++key;
 	    }
 	} else if (disp == ToUpper) {
             while (*key != '\0') {
-	        if (islower(UCHAR(*key))) {
-		    *key = toupper(UCHAR(*key));
+	        if (CHARTYPE(lower, *key) != 0) {
+		    *key = CHARCONV(upper, *key);
 		}
 		++key;
 	    }
@@ -564,9 +567,9 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
  *
  *----------------------------------------------------------------------
  */
-static CONST char *
-GetQvalue(CONST char *str, int *lenPtr) {
-    CONST char *resultString;
+static const char *
+GetQvalue(const char *str, int *lenPtr) {
+    const char *resultString;
 
     assert(str != NULL);
     assert(lenPtr != NULL);
@@ -585,7 +588,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
         return NULL;
     }
     for (str ++; *str == ' '; str++);
-    if (!isdigit(UCHAR(*str))) {
+    if (CHARTYPE(digit,*str) == 0) {
         return NULL;
     }
 
@@ -597,11 +600,11 @@ GetQvalue(CONST char *str, int *lenPtr) {
 	 * three digits after the comma.
 	 */
       str ++;
-      if (isdigit(UCHAR(*str))) {
+      if (CHARTYPE(digit, *str) != 0) {
 	  str++;
-	  if (isdigit(UCHAR(*str))) {
+	  if (CHARTYPE(digit, *str) != 0) {
 	      str++;
-	      if (isdigit(UCHAR(*str))) {
+	      if (CHARTYPE(digit, *str) != 0) {
 		  str++;
 	      }
 	  }
@@ -635,7 +638,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
  *----------------------------------------------------------------------
  */
 static char *
-GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
+GetEncodingFormat(const char *encodingString, const char *encodingFormat, double *qValue) {
     char *encodingStr;
 
     assert(encodingString != NULL);
@@ -646,7 +649,7 @@ GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double
 
     if (encodingStr) {
 	int len = 0;
-	CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+	const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
 
 	if (qValueString) {
 	    *qValue = strtod(qValueString, NULL);
@@ -665,7 +668,7 @@ GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double
 /*
  *----------------------------------------------------------------------
  *
- * NsParseAcceptEnconding --
+ * NsParseAcceptEncoding --
  *
  *      Parse the accept-encoding line and return whether gzip
  *      encoding is accepted or not.
@@ -679,7 +682,7 @@ GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double
  *----------------------------------------------------------------------
  */
 int
-NsParseAcceptEnconding(double version, CONST char *hdr) 
+NsParseAcceptEncoding(double version, const char *hdr) 
 {
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
     int gzip = 0;

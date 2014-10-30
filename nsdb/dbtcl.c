@@ -379,15 +379,15 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 
         switch (cmd) {
         case POOLNAME:
-            Tcl_SetResult(interp, handlePtr->poolname, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->poolname, -1));
             break;
 
         case PASSWORD:
-            Tcl_SetResult(interp, handlePtr->password, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->password, -1));
             break;
 
         case USER:
-            Tcl_SetResult(interp, handlePtr->user, TCL_VOLATILE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->user, -1));
             break;
 
         case DATASOURCE:
@@ -471,7 +471,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	    if (Ns_DbSpReturnCode(handlePtr, tmpbuf, 32) != NS_OK) {
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
       	    }
-	    Tcl_SetResult(interp, tmpbuf, TCL_VOLATILE);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(tmpbuf, -1));
             break;
         }
         break;
@@ -673,9 +673,9 @@ ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
         return TCL_ERROR;
     }
     if (cmd == 'c') {
-    	Tcl_SetResult(interp, handle->cExceptionCode, TCL_VOLATILE);
+    	Tcl_SetObjResult(interp, Tcl_NewStringObj(handle->cExceptionCode, -1));
     } else {
-    	Tcl_SetResult(interp, handle->dsExceptionMsg.string, TCL_VOLATILE);
+    	Tcl_DStringResult(interp, &handle->dsExceptionMsg);
     }
     return TCL_OK;
 }
@@ -783,12 +783,12 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     inquotes = NS_FALSE;
     Ns_DStringInit(&ds);
     while (*quotelist != '\0') {
-        if (isspace(UCHAR(*quotelist)) && inquotes == NS_FALSE) {
+        if (CHARTYPE(space, *quotelist) != 0 && inquotes == NS_FALSE) {
             if (ds.length != 0) {
                 Tcl_AppendElement(interp, ds.string);
                 Ns_DStringTrunc(&ds, 0);
             }
-            while (isspace(UCHAR(*quotelist))) {
+            while (CHARTYPE(space, *quotelist) != 0) {
                 quotelist++;
             }
         } else if (*quotelist == '\\' && (*(quotelist + 1) != '\0')) {
@@ -913,7 +913,9 @@ loopstart:
                 inquote = 1;
                 quoted = 1;
                 blank = 0;
-            } else if ((c == '\r') || (elem.length == 0 && isspace(UCHAR(c)))) {
+            } else if ((c == '\r') 
+		       || ((elem.length == 0) && (CHARTYPE(space, c) != 0))
+		       ) {
                 continue;
             } else if (strchr(delimiter,c) != NULL) {
                 if (!quoted) {
@@ -1010,7 +1012,7 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle)
     do {
         snprintf(buf, sizeof(buf), "nsdb%x", next++);
         hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &isNew);
-    } while (!isNew);
+    } while (isNew == 0);
     Tcl_AppendElement(interp, buf);
     Tcl_SetHashValue(hPtr, handle);
 }

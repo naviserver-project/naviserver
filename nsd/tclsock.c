@@ -143,7 +143,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     status = Ns_GetHostByAddr(&ds, addr);
 
     if (status == NS_TRUE) {
-    	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    	Tcl_DStringResult(interp, &ds);
     } else {
         Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
 	result = TCL_ERROR;
@@ -196,7 +196,7 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 	status = Ns_GetAddrByHost(&ds, host);
     }
     if (status == NS_TRUE) {
-    	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    	Tcl_DStringResult(interp, &ds);
     } else {
         Tcl_AppendResult(interp, "could not lookup ", host, NULL);
 	result = TCL_ERROR;
@@ -489,7 +489,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 return TCL_ERROR;
             }
         } else if (STREQ(opt, "-timeout")) {
-            if (++first >= objc || async) {
+            if (++first >= objc || async != 0) {
                 goto syntax;
             }
             if (Ns_TclGetTimeFromObj(interp, objv[first], &timeout) != TCL_OK) {
@@ -549,7 +549,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
      * Perform the connection.
      */
 
-    if (async) {
+    if (async != 0) {
         sock = Ns_SockAsyncConnect2(host, port, lhost, lport);
     } else if (msec < 0) {
         sock = Ns_SockConnect2(host, port, lhost, lport);
@@ -668,7 +668,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         != TCL_OK) {
         goto done;
     }    
-    if (dsNbuf.length == 0 && !rPtr && !wPtr && !ePtr && !tvPtr ) {
+    if (dsNbuf.length == 0 && rPtr == NULL && wPtr == NULL && ePtr == NULL && tvPtr == NULL) {
 
         /*
          * We're not doing a select on anything.
@@ -792,7 +792,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         return TCL_ERROR;
     }
     s = Tcl_GetString(objv[3]);
-    when = 0;
+    when = 0U;
     while (*s != '\0') {
         if (*s == 'r') {
             when |= NS_SOCK_READ;
@@ -812,7 +812,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         }
         ++s;
     }
-    if (when == 0) {
+    if (when == 0U) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "invalid when specification \"",
                                Tcl_GetString(objv[3]), 
@@ -834,13 +834,13 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
      */
 
     sock = ns_sockdup(sock);
-    cbPtr = ns_malloc(sizeof(Callback) + Tcl_GetCharLength(objv[2]));
-    cbPtr->server = (itPtr->servPtr ? itPtr->servPtr->server : NULL);
+    cbPtr = ns_malloc(sizeof(Callback) + (size_t)Tcl_GetCharLength(objv[2]));
+    cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
     cbPtr->chan = NULL;
     cbPtr->when = when;
     strcpy(cbPtr->script, Tcl_GetString(objv[2]));
     if (objc > 4) {
-        timeout = atoi(Tcl_GetString(objv[4]));
+	timeout = strtol(Tcl_GetString(objv[4]), NULL, 10);
     }
     if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
                         when | NS_SOCK_EXIT, timeout) != NS_OK) {
@@ -890,8 +890,8 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
     if (STREQ(addr, "*")) {
         addr = NULL;
     }
-    lcbPtr = ns_malloc(sizeof(ListenCallback) + Tcl_GetCharLength(objv[3]));
-    lcbPtr->server = (itPtr->servPtr ? itPtr->servPtr->server : NULL);
+    lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)Tcl_GetCharLength(objv[3]));
+    lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
     strcpy(lcbPtr->script, Tcl_GetString(objv[3]));
     if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr)!= NS_OK) {
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
@@ -989,7 +989,7 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flis
      */
     
     Tcl_AppendElement(interp, dsPtr->string);
-    ckfree((char *) fargv);
+    Tcl_Free((char *) fargv);
     Tcl_DStringFree(&ds);
 }
 
@@ -1059,7 +1059,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
 #endif
         FD_SET(sock, setPtr);
     }
-    ckfree((char *) fargv);
+    Tcl_Free((char *) fargv);
 
     return status;
 }
@@ -1202,7 +1202,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 
             objPtr = Tcl_GetObjResult(interp);
             result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
-            if (result != TCL_OK || !ok) {
+            if (result != TCL_OK || ok == 0) {
                 why = NS_SOCK_EXIT;
             }
         }

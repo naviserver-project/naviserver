@@ -933,8 +933,8 @@ LowerDString(Ns_DString *dsPtr, CONST char *ext)
     Ns_DStringAppend(dsPtr, ext);
     p = dsPtr->string;
     while (*p != '\0') {
-        if (isupper(UCHAR(*p))) {
-            *p = tolower(UCHAR(*p));
+        if (CHARTYPE(upper, *p) != 0) {
+            *p = CHARCONV(lower, *p);
         }
         ++p;
     }

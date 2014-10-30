@@ -180,13 +180,18 @@ char *
 NsWin32ErrMsg(DWORD err)
 {
     char *msg;
+    int len;
 
     msg = Ns_TlsGet(&tls);
     if (msg == NULL) {
-        msg = ns_malloc(100);
+        msg = ns_malloc(1000);
         Ns_TlsSet(&tls, msg);
     }
-    snprintf(msg, 100, "win32 error code: %lu", err);
+    snprintf(msg, 1000, "win32 error code: %lu: ", err);
+    len = strlen(msg);
+    
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 
+		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), msg+len, 1000 - len, NULL);
 
     return msg;
 }
@@ -342,11 +347,10 @@ int
 NsInstallService(char *service)
 {
     SC_HANDLE hmgr, hsrv;
-    BOOL ok;
+    bool ok = FALSE;
     char nsd[PATH_MAX], config[PATH_MAX];
     Ns_DString name, cmd;
 
-    ok = FALSE;
     if (_fullpath(config, nsconf.config, sizeof(config)) == NULL) {
         Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.config);
     } else if (!GetModuleFileName(NULL, nsd, sizeof(nsd))) {
@@ -357,8 +361,6 @@ NsInstallService(char *service)
         Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
                             " -S -s ", service, " -t \"", config, "\"", NULL);
         GetServiceName(&name, service);
-        Ns_Log(Notice, "nswin32: installing %s service: %s",
-               name.string, cmd.string);
         hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
         if (hmgr != NULL) {
             hsrv = CreateService(hmgr, name.string, name.string,
@@ -368,13 +370,14 @@ NsInstallService(char *service)
             if (hsrv != NULL) {
                 CloseServiceHandle(hsrv);
                 ok = TRUE;
-            }
+            } else {
+		Ns_Log(Error, "nswin32: failed to install service '%s': '%s'",
+		       name.string, SysErrMsg());
+	    }
             CloseServiceHandle(hmgr);
-        }
-        if (!ok) {
-            Ns_Log(Error, "nswin32: failed to install service '%s': '%s'",
-                   name.string, SysErrMsg());
-        }
+        } else {
+            Ns_Log(Error, "nswin32: failed to connect to service manager: %s", SysErrMsg());
+	}
         Ns_DStringFree(&name);
         Ns_DStringFree(&cmd);
     }
@@ -617,7 +620,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
  */
 
 void
-NsMemUmap(FileMap *mapPtr)
+NsMemUmap(const FileMap *mapPtr)
 {
     UnmapViewOfFile((LPCVOID)mapPtr->addr);
     CloseHandle((HANDLE)mapPtr->mapobj);
@@ -846,7 +849,7 @@ ns_sockpair(NS_SOCKET socks[2])
  */
 
 NS_SOCKET
-Ns_SockListenEx(char *address, int port, int backlog)
+Ns_SockListenEx(const char *address, int port, int backlog)
 {
     NS_SOCKET sock;
     struct sockaddr_in sa;

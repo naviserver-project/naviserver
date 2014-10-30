@@ -53,7 +53,7 @@
 typedef struct LogEntry {
     Ns_LogSeverity   severity;  /* Entry's severity */
     Ns_Time          stamp;     /* Timestamp of the entry */
-    int              offset;    /* Offset into the text buffer */
+    size_t           offset;    /* Offset into the text buffer */
     size_t           length;    /* Length of the log message */
     struct LogEntry *nextPtr;   /* Next in the list of entries */
 } LogEntry;
@@ -99,7 +99,7 @@ typedef struct LogCache {
 static int   LogOpen(void);
 static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
                       int trunc, int locked) NS_GNUC_NONNULL(1);
-static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
+static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt);
 
 static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                               void **addrPtrPtr);
@@ -232,7 +232,7 @@ void
 NsConfigLog(void)
 {
     Ns_DString  ds;
-    CONST char *path = NS_CONFIG_PARAMETERS;
+    const char *path = NS_CONFIG_PARAMETERS;
     Ns_Set *set = Ns_ConfigCreateSection(path);
 
     severityConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
@@ -281,10 +281,10 @@ NsConfigLog(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoErrorLog(void)
 {
-    return (char*) file;
+    return file;
 }
 
 
@@ -306,7 +306,7 @@ Ns_InfoErrorLog(void)
  */
 
 Ns_LogSeverity
-Ns_CreateLogSeverity(CONST char *name)
+Ns_CreateLogSeverity(const char *name)
 {
     Ns_LogSeverity  severity;
     Tcl_HashEntry  *hPtr;
@@ -317,7 +317,7 @@ Ns_CreateLogSeverity(CONST char *name)
     }
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&severityTable, name, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, INT2PTR(severity));
         severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
@@ -399,7 +399,7 @@ Ns_LogSeverityEnabled(Ns_LogSeverity severity)
  */
 
 void
-Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
+Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
 {
     va_list ap;
 
@@ -426,9 +426,9 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
  */
 
 void
-Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
+Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
 {
-    int       length, offset;
+    size_t    length, offset;
     LogCache *cachePtr;
     LogEntry *entryPtr = NULL;
 
@@ -465,9 +465,9 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
     cachePtr->currEntry = entryPtr;
     cachePtr->count++;
 
-    offset = Ns_DStringLength(&cachePtr->buffer);
+    offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
     Ns_DStringVPrintf(&cachePtr->buffer, fmt, *vaPtr);
-    length = Ns_DStringLength(&cachePtr->buffer) - offset;
+    length = (size_t)Ns_DStringLength(&cachePtr->buffer) - offset;
 
     entryPtr->severity = severity;
     entryPtr->offset   = offset;
@@ -542,7 +542,7 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
  */
 
 void
-Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg)
+Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
 {
     LogFilter *filterPtr;
 
@@ -593,7 +593,7 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg)
  */
 
 void
-Ns_Fatal(CONST char *fmt, ...)
+Ns_Fatal(const char *fmt, ...)
 {
     va_list ap;
 
@@ -669,7 +669,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
  */
 
 static char *
-LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
+LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
 {
     time_t    *tp;
     char      *bp;
@@ -851,7 +851,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         filterPtr->arg  = &ds;
         Ns_DStringInit(&ds);
         LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), 0);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds), -1));
+        Tcl_DStringResult(interp, &ds);
         Ns_DStringFree(&ds);
         break;
 
@@ -1213,8 +1213,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
  */
 
 static int
-LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
-            char *msg, size_t len)
+LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
+            const char *msg, size_t len)
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
 
@@ -1268,8 +1268,8 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  */
 
 static int
-LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
-          char *msg, size_t len)
+LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
+          const char *msg, size_t len)
 {
     int        fd = PTR2INT(arg);
     Ns_DString ds;
@@ -1310,14 +1310,13 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  */
 
 static int
-LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
-         char *msg, size_t len)
+LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
+         const char *msg, size_t len)
 {
     int             ii, ret;
-    char            c;
     void           *logfile = INT2PTR(STDERR_FILENO);
     Tcl_Obj        *stamp;
-    Ns_DString      ds;
+    Ns_DString      ds, ds2;
     Tcl_Interp     *interp;
     Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
@@ -1349,10 +1348,17 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Tcl_DecrRefCount(stamp);
-    c = *(msg + len);
-    *(msg + len) = '\0';
-    Ns_DStringAppendElement(&ds, msg);
-    *(msg + len) = c;
+
+    /*
+     * Append n bytes of msg as proper list element to ds. Since
+     * Tcl_DStringAppendElement has no length parameter, we have to
+     * use a temporary DString here.
+     */
+    Ns_DStringInit(&ds2);
+    Ns_DStringNAppend(&ds2, msg, (int)len);
+    Ns_DStringAppendElement(&ds, ds2.string);
+    Ns_DStringFree(&ds2);
+
     for (ii = 0; ii < cbPtr->argc; ii++) {
         Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
     }
@@ -1367,7 +1373,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
         Ns_DStringAppend(&ds, "LogToTcl: ");
         Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
         LogToFile(logfile, Error, stampPtr, Ns_DStringValue(&ds),
-                  Ns_DStringLength(&ds));
+                  (size_t)Ns_DStringLength(&ds));
     }
     Ns_DStringFree(&ds);
     Ns_TclDeAllocateInterp(interp);

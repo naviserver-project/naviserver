@@ -1377,7 +1377,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
         str += ilen;
     }
     if (rlen > 0) {
-        Tcl_SetResult(interp, str, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
     }
     *resultPtr = ntohl(resPtr->code);
 
@@ -1936,7 +1936,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         return TCL_ERROR;
     }
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-    assert(idataPtr);
+    assert(idataPtr != NULL);
     cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &isNew);
     if ((intptr_t) Tcl_GetHashValue(cntPtr) > 0) {
         err = EDeadlock;
@@ -1993,7 +1993,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     proxyPtr = firstPtr;
     while (proxyPtr != NULL) {
         idPtr = Tcl_CreateHashEntry(&idataPtr->ids, proxyPtr->id, &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
             Ns_Fatal("nsproxy: duplicate proxy entry");
         }
         Tcl_SetHashValue(idPtr, proxyPtr);
@@ -2184,7 +2184,7 @@ GetPool(char *poolName, InterpData *idataPtr)
 
     Ns_MutexLock(&plock);
     hPtr = Tcl_CreateHashEntry(&pools, poolName, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
         char *path = NULL, *exec = NULL;

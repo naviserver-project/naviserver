@@ -1546,19 +1546,19 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CRequestIdx:
-        Tcl_SetResult(interp, request->line, TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->line, -1));
         break;
 
     case CMethodIdx:
-        Tcl_SetResult(interp, request->method, TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->method, -1));
         break;
 
     case CProtocolIdx:
-        Tcl_SetResult(interp, request->protocol, TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->protocol, -1));
         break;
 
     case CHostIdx:
-        Tcl_SetResult(interp, request->host, TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->host, -1));
         break;
 
     case CPortIdx:
@@ -1566,11 +1566,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CUrlIdx:
-        Tcl_SetResult(interp, request->url, TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->url, -1));
         break;
 
     case CQueryIdx:
-        Tcl_SetResult(interp, request->query, TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->query, -1));
         break;
 
     case CUrlcIdx:

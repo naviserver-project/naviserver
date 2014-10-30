@@ -53,7 +53,7 @@ typedef struct ByteKey {
 static char *UrlEncode(Ns_DString *dsPtr, char *string,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char *UrlDecode(Ns_DString *dsPtr, char *string,
+static char *UrlDecode(Ns_DString *dsPtr, const char *string,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -341,7 +341,7 @@ Ns_UrlPathEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 }
 
 char *
-Ns_UrlPathDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -484,15 +484,15 @@ int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString   ds;
-    int          i, part, nextArgIdx;
-    char        *charset  = NULL;
+    int          i, nextArgIdx;
+    char        *charset  = NULL, part;
     Tcl_Encoding encoding = NULL;
 
-    static const char  *options[]           = {"-charset", "-part", NULL};
+    static const char  *const options[]     = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
-    static const int    optionPartValue[3]  = {'q', 'q', 'p'};
+    static const char   optionPartValue[3]  = {'q', 'q', 'p'};
 
     if (objc < 2) {
     usage_error:
@@ -555,7 +555,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *charset = NULL;
     int          part, nextArgIdx;
     Tcl_Encoding encoding = NULL;
-    static const char  *options[]           = {"-charset", "-part", NULL};
+    static const char  *const options[]     = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
@@ -681,10 +681,11 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
  */
 
 static char *
-UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
+UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char part)
 {
     register int   i, n;
-    register char *p, *q;
+    register char *q;
+    register const char *p;
     char          *copy = NULL;
     size_t         length;
     Tcl_DString    ds;

@@ -119,7 +119,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 	 * Make sure we can bind to the specified interface.
 	 */
 	
-        sa.sin_port = 0;
+        sa.sin_port = 0U;
         sock = Ns_SockBind(&sa);
         if (sock == NS_INVALID_SOCKET) {
             return NS_ERROR;
@@ -135,7 +135,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
      */
   
     hPtr = Tcl_CreateHashEntry(&portsTable, INT2PTR(port), &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         tablePtr = Tcl_GetHashValue(hPtr);
     } else {
         sock = Ns_SockListen(NULL, port);
@@ -143,12 +143,14 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
             Tcl_DeleteHashEntry(hPtr);
             status = NS_ERROR;
         } else {
-            Ns_SockSetNonBlocking(sock);
-            tablePtr = ns_malloc(sizeof(Tcl_HashTable));
+	    status = Ns_SockSetNonBlocking(sock);
+	}
+	if (status == NS_OK) {
+	    tablePtr = ns_malloc(sizeof(Tcl_HashTable));
             Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
             Tcl_SetHashValue(hPtr, tablePtr);
-            Ns_SockCallback(sock, ListenCallback, tablePtr,
-			    NS_SOCK_READ | NS_SOCK_EXIT);
+            status = Ns_SockCallback(sock, ListenCallback, tablePtr,
+				     NS_SOCK_READ | NS_SOCK_EXIT);
         }
     }
     if (status == NS_OK) {
@@ -156,7 +158,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 	assert(tablePtr != NULL);
         hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(sa.sin_addr.s_addr), &isNew);
 
-        if (!isNew) {
+        if (isNew == 0) {
             status = NS_ERROR;
         } else {
 	     ListenData *ldPtr;
@@ -238,7 +240,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         ListenData    *ldPtr;
 
         Ns_SockSetBlocking(newSock);
-        len = sizeof(sa);
+        len = (socklen_t)sizeof(sa);
         getsockname(newSock, (struct sockaddr *) &sa, &len);
         ldPtr = NULL;
         Ns_MutexLock(&lock);

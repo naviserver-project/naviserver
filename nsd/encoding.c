@@ -447,7 +447,7 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
         if (*start++ == '=') {
             start += strspn(start, " ");
             end = start;
-            while (*end != '\0' && !isspace(UCHAR(*end))) {
+            while (*end != '\0' && CHARTYPE(space, *end) == 0) {
                 ++end;
             }
             *lenPtr = end - start;
@@ -520,7 +520,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (encoding == NULL) {
         return TCL_OK;
     }
-    Tcl_SetResult(interp, (char*) Tcl_GetEncodingName(encoding), TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetEncodingName(encoding), -1));
 
     return TCL_OK;
 }
@@ -575,7 +575,7 @@ LoadEncoding(CONST char *name)
 
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&encodings, name, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         while ((encoding = Tcl_GetHashValue(hPtr)) == ENC_LOCKED) {
             Ns_CondWait(&cond, &lock);
         }
@@ -647,7 +647,7 @@ AddCharset(const char *charset, const char *name)
      */
 
     hPtr = Tcl_CreateHashEntry(&encnames, name, &isNew);
-    if (isNew) {
+    if (isNew != 0) {
         Tcl_SetHashValue(hPtr, ns_strdup(charset));
     }
 

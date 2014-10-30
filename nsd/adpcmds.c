@@ -87,7 +87,7 @@ NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len)
     }
     Ns_DStringNAppend(bufPtr, buf, len);
     if (
-	((itPtr->adp.flags & ADP_STREAM) 
+	((itPtr->adp.flags & ADP_STREAM) != 0U
 	 || (size_t)bufPtr->length > itPtr->adp.bufsize
 	 ) 
 	&& NsAdpFlush(itPtr, 1) != TCL_OK) {
@@ -127,7 +127,7 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
         return TCL_ERROR;
     }
     if (streamPtr != NULL) {
-        *streamPtr = (itPtr->adp.flags & ADP_STREAM) ? 1 : 0;
+        *streamPtr = (itPtr->adp.flags & ADP_STREAM) != 0U ? 1 : 0;
     }
     if (maxBufferPtr != NULL) {
         *maxBufferPtr = itPtr->adp.bufsize;
@@ -238,8 +238,9 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
-                                  sizeof(adpCtlOpts[0]), "option",
-                                  TCL_EXACT, &opt) != TCL_OK) {
+                                  (int)sizeof(adpCtlOpts[0]), 
+				  "option", TCL_EXACT, &opt
+				  ) != TCL_OK) {
         return TCL_ERROR;
     }
     flag = adpCtlOpts[opt].flag;
@@ -410,7 +411,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     objc = nargs;
 
     flags = itPtr->adp.flags;
-    if (nocache) {
+    if (nocache != 0) {
         itPtr->adp.flags &= ~ADP_CACHE;
     }
     if (tcl) {
@@ -422,13 +423,13 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
      * buffer. It will be compiled into the cached result.
      */
 
-    if (nocache && itPtr->adp.refresh > 0) {
+    if (nocache != 0 && itPtr->adp.refresh > 0) {
         int i;
         if (GetOutput(arg, &dsPtr) != TCL_OK) {
             return TCL_ERROR;
         }
         Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
-        if (itPtr->adp.flags & ADP_TCLFILE) {
+        if ((itPtr->adp.flags & ADP_TCLFILE) != 0U) {
             Tcl_DStringAppendElement(dsPtr, "-tcl");
         }
         for (i = 0; i < objc; ++i) {
@@ -602,7 +603,7 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     if (NsAdpAppend(itPtr, string, length) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (!nonewline && NsAdpAppend(itPtr, "\n", 1) != TCL_OK) {
+    if (nonewline == 0 && NsAdpAppend(itPtr, "\n", 1) != TCL_OK) {
         return TCL_ERROR;
     }
     return TCL_OK;
@@ -635,7 +636,7 @@ NsTclAdpDirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, itPtr->adp.cwd, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, -1));
 
     return TCL_OK;
 }
@@ -807,7 +808,7 @@ NsTclAdpDumpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     if (GetOutput(arg, &dsPtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
+    Tcl_DStringResult(interp, dsPtr);
 
     return TCL_OK;
 }
@@ -1170,7 +1171,7 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Ns_ConnSetEncodedTypeHeader(conn, Tcl_GetString(objv[1]));
         }
         type = Ns_SetIGet(conn->outputheaders, "Content-Type");
-        Tcl_SetResult(interp, type, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
     }
     return TCL_OK;
 }

@@ -451,7 +451,7 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
  */
 
 NS_SOCKET
-Ns_SockListen(char *address, int port)
+Ns_SockListen(const char *address, int port)
 {
     return Ns_SockListenEx(address, port, nsconf.backlog);
 }
@@ -474,9 +474,9 @@ Ns_SockListen(char *address, int port)
  */
 
 NS_SOCKET
-Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, int *lenPtr)
+Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 {
-    sock = accept(sock, saPtr, (socklen_t *) lenPtr);
+    sock = accept(sock, saPtr, lenPtr);
 
     if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);
@@ -955,7 +955,7 @@ Ns_SockStrError(int err)
  */
 
 int
-NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
+NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
 {
     Ns_Time now, diff;
     int     i, n, ms;

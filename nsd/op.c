@@ -402,7 +402,7 @@ Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *prot
     reqPtr->flags = 0U;
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         FreeReq(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, reqPtr);

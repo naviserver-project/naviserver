@@ -72,9 +72,9 @@ typedef struct Cgi {
     unsigned int    flags;
     pid_t     	    pid;
     Ns_Set	   *env;
-    char    	   *name;
+    const char 	   *name;
     char    	   *path;
-    char           *pathinfo;
+    const char     *pathinfo;
     char    	   *dir;
     char           *exec;
     char           *interp;
@@ -116,16 +116,16 @@ static Ns_OpProc CgiRequest;
 static void     CgiRegister(Mod *modPtr, char *map);
 static Ns_Callback CgiFreeMap;
 static Ns_DString *CgiDs(Cgi *cgiPtr);
-static int	CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn);
+static int	CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn);
 static void	CgiFree(Cgi *cgiPtr);
 static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn);
-static int	CgiSpool(Cgi *cgiPtr, Ns_Conn *conn);
+static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn);
 static int	CgiCopy(Cgi *cgiPtr, Ns_Conn *conn);
 static int	CgiRead(Cgi *cgiPtr);
 static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
-static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
-static void	SetUpdate(Ns_Set *set, char *key, char *value);
+static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value);
+static void	SetUpdate(Ns_Set *set, const char *key, const char *value);
 
 
 /*
@@ -372,15 +372,15 @@ done:
  */
 
 static int
-CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
+CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 {
     Mod		   *modPtr;
     Ns_DString     *dsPtr;
     int             i;
     size_t          ulen, plen;
     struct stat     st;
-    char           *s, *e;
-    char    	   *url = conn->request->url;
+    char           *e, *s;
+    const char     *url = conn->request->url;
     char	   *server = Ns_ConnServer(conn);
 
     modPtr = mapPtr->modPtr;
@@ -440,7 +440,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
 		goto err;
             }
 
-            s = url + plen + 1;
+            s = (char *)url + plen + 1;
             e = strchr(s, '/');
 	    if (e != NULL) {
 		*e = '\0';
@@ -555,7 +555,7 @@ err:
  */
 
 static int
-CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
+CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 {
     int     fd;
     size_t  len;
@@ -861,8 +861,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         while (*s != '\0') {
             if (*s == '-') {
                 *s = '_';
-            } else if (islower(UCHAR(*s))) {
-                *s = toupper(UCHAR(*s));
+            } else if (CHARTYPE(lower, *s) != 0) {
+                *s = CHARCONV(upper, *s);
             }
             ++s;
         }
@@ -996,7 +996,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 	    --cgiPtr->cnt;
 	    if (c == '\n') {
 		while (dsPtr->length > 0
-		    && isspace(UCHAR(dsPtr->string[dsPtr->length - 1]))) {
+		    && CHARTYPE(space, dsPtr->string[dsPtr->length - 1]) != 0) {
 		    Ns_DStringTrunc(dsPtr, dsPtr->length-1);
 		}
 		return dsPtr->length;
@@ -1049,7 +1049,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     httpstatus = 200;
     hdrs = conn->outputheaders;
     while ((n = CgiReadLine(cgiPtr, &ds)) > 0) {
-        if (isspace(UCHAR(*ds.string))) {   /* NB: Continued header. */
+        if (CHARTYPE(space, *ds.string) != 0) {   /* NB: Continued header. */
             if (last == -1) {
 		continue;	/* NB: Silently ignore bad header. */
             }
@@ -1060,11 +1060,11 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 		continue;	/* NB: Silently ignore bad header. */
             }
             *value++ = '\0';
-            while (isspace(UCHAR(*value))) {
+            while (CHARTYPE(space, *value) != 0) {
                 ++value;
             }
             if (STRIEQ(ds.string, "status")) {
-                httpstatus = atoi(value);
+                httpstatus = strtol(value, NULL, 10);
             } else if (STRIEQ(ds.string, "location")) {
                 httpstatus = 302;
                 if (*value == '/') {
@@ -1133,12 +1133,12 @@ copy:
 static char    *
 NextWord(char *s)
 {
-    while (*s != '\0' && !isspace(UCHAR(*s))) {
+    while (*s != '\0' && CHARTYPE(space, *s) == 0) {
         ++s;
     }
     if (*s != '\0') {
         *s++ = '\0';
-        while (isspace(UCHAR(*s))) {
+        while (CHARTYPE(space, *s) != 0) {
             ++s;
         }
     }
@@ -1253,7 +1253,7 @@ CgiFreeMap(void *arg)
  */
 
 static void
-SetAppend(Ns_Set *set, int index, char *sep, char *value)
+SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
 {
     Ns_DString ds;
 
@@ -1282,7 +1282,7 @@ SetAppend(Ns_Set *set, int index, char *sep, char *value)
  */
 
 static void
-SetUpdate(Ns_Set *set, char *key, char *value)
+SetUpdate(Ns_Set *set, const char *key, const char *value)
 {
     Ns_SetUpdate(set, key, value ? value : "");
 }

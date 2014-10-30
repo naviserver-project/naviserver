@@ -44,7 +44,7 @@
 #define TAG_SCRIPT  3
 
 #define APPEND      "ns_adp_append "
-#define APPEND_LEN  (int)(sizeof(APPEND)-1)
+#define APPEND_LEN  (sizeof(APPEND)-1)
 
 #define LENSZ       ((int)(sizeof(int)))
 
@@ -76,7 +76,7 @@ typedef struct Parse {
  * Local functions defined in this file
  */
 
-static void AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
+static void AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
@@ -181,7 +181,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
     tagPtr = ns_malloc(sizeof(Tag) + slen + elen);
     tagPtr->type = type;
-    tagPtr->string = (char *) tagPtr + sizeof(Tag);
+    tagPtr->string = (char *)tagPtr + sizeof(Tag);
     memcpy(tagPtr->string, string, (size_t) slen);
     Tcl_UtfToLower(tagPtr->string);
     if (end == NULL) {
@@ -197,7 +197,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
     Ns_RWLockWrLock(&servPtr->adp.taglock);
     hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
-    if (!isNew) {
+    if (isNew == 0) {
         ns_free(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, tagPtr);
@@ -420,7 +420,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 
                     if (!(flags & ADP_SAFE)) {
                         if (streamFlag && !streamDone) {
-			    static char *buffer = "ns_adp_ctl stream on\0";
+			    static char *buffer = "ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
                             AppendBlock(&parse, buffer, end, 's', flags);
@@ -538,7 +538,7 @@ NsAdpFreeCode(AdpCode *codePtr)
  */
 
 static void
-AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
+AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int flags)
 {
     AdpCode   *codePtr;
     ptrdiff_t  len;
@@ -560,14 +560,14 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flag
 
         switch (type) {
         case 'S':
-            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
             Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
             break;
 
         case 't':
             save = *e;
             *e = '\0';
-            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
             Tcl_DStringAppendElement(&codePtr->text, s);
             *e = save;
             break;
@@ -584,7 +584,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flag
         len = e - s;
         if (type == 'S') {
             len += APPEND_LEN;
-            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
         }
         Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
         if (type != 't') {
@@ -628,17 +628,17 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     assert(e != NULL);
 
     ++s;
-    while (s < e && isspace(UCHAR(*s))) {
+    while (s < e && CHARTYPE(space, *s) != 0) {
         ++s;
     }
     t = s;
-    while (s < e  && !isspace(UCHAR(*s))) {
+    while (s < e  && CHARTYPE(space, *s) == 0) {
         ++s;
     }
     Tcl_DStringTrunc(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
-	while (s < e && isspace(UCHAR(*s))) {
+	while (s < e && CHARTYPE(space, *s) != 0) {
 	    ++s;
 	}
 	*aPtr = s;
@@ -684,7 +684,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
          * Trim attribute name.
          */
 
-        while (s < e && isspace(UCHAR(*s))) {
+        while (s < e && CHARTYPE(space, *s) != 0) {
             ++s;
         }
         if (s == e) {
@@ -693,7 +693,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
         as = s;
 
         if (*s != '\'' && *s != '"') {
-            while (s < e && !isspace(UCHAR(*s)) && *s != '=') {
+            while (s < e && CHARTYPE(space, *s) == 0 && *s != '=') {
                 ++s;
             }
         } else {
@@ -705,7 +705,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
         }
 
         ae = s;
-        while (s < e && isspace(UCHAR(*s))) {
+        while (s < e && CHARTYPE(space, *s) != 0) {
             ++s;
         }
         if (*s != '=') {
@@ -721,11 +721,11 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
 
             do {
                 ++s;
-            } while (s < e && isspace(UCHAR(*s)));
+            } while (s < e && CHARTYPE(space, *s) != 0);
             vs = s;
 
             if (*s != '"' && *s != '\'') {
-                while (s < e && !isspace(UCHAR(*s))) {
+                while (s < e && CHARTYPE(space, *s) == 0) {
                     ++s;
                 }
             } else {
@@ -856,7 +856,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         /* NB: String was a procedure, append tag attributes. */
         ParseAtts(as, ae, NULL, &script, 0);
     }
-    if (se > ae) {
+    if (se != NULL && se > ae) {
         /* NB: Append enclosing text as argument to eval or proc. */
         char save = *se;
         *se = '\0';

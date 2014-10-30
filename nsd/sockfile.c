@@ -50,7 +50,7 @@ ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
  */
 
 static ssize_t SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-                      Ns_Time *timeoutPtr, unsigned int flags,
+                      const Ns_Time *timeoutPtr, unsigned int flags,
                       Ns_DriverSendProc *sendProc);
 
 static Ns_DriverSendProc SendBufs;
@@ -75,7 +75,7 @@ static Ns_DriverSendProc SendBufs;
  */
 
 size_t
-Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, CONST void *data,
+Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, const void *data,
               off_t offset, size_t length)
 {
     bufs[i].fd = fd;
@@ -160,8 +160,8 @@ static ssize_t
 Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
 
 ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, unsigned int flags)
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                    const Ns_Time *timeoutPtr, unsigned int flags)
 {
 
     ssize_t       sent, towrite, nwrote;
@@ -196,7 +196,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-	    sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0);
+	    sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0U);
 
             nsbufs = 0;
             if (sent > 0) {
@@ -255,8 +255,8 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr
 #else /* Default implementation */
 
 ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, unsigned int flags)
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                    const Ns_Time *timeoutPtr, unsigned int flags)
 {
     return NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
                                       SendBufs);
@@ -286,8 +286,8 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
  */
 
 ssize_t
-NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                           Ns_Time *timeoutPtr, unsigned int flags,
+NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                           const Ns_Time *timeoutPtr, unsigned int flags,
                            Ns_DriverSendProc *sendProc)
 {
     ssize_t       sent, nwrote;
@@ -304,7 +304,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
         if (tosend > 0) {
             if (fd < 0) {
-                Ns_SetVec(&iov, 0, (void *) (intptr_t) offset, tosend);
+                Ns_SetVec(&iov, 0, INT2PTR(offset), tosend);
                 sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
             } else {
                 sent = SendFd(sock, fd, offset, tosend,
@@ -319,7 +319,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
         }
     }
 
-    return nwrote ? nwrote : sent;
+    return nwrote > 0 ? nwrote : sent;
 }
 
 
@@ -357,7 +357,7 @@ ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
     overlapped.Offset = (DWORD)offset;
     overlapped.OffsetHigh = (DWORD)((uint64_t)offset >> 32);
 
-    if (!ReadFile(fh, buf, c, &ret, &overlapped)) {
+    if (ReadFile(fh, buf, c, &ret, &overlapped) == FALSE) {
         return -1;
     }
 
@@ -446,7 +446,7 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 
 static ssize_t
 SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-       Ns_Time *timeoutPtr, unsigned int flags,
+       const Ns_Time *timeoutPtr, unsigned int flags,
        Ns_DriverSendProc *sendProc)
 {
     char          buf[16384];

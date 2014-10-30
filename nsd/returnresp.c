@@ -91,7 +91,7 @@ ConfigServerRedirects(CONST char *server)
 
         key = Ns_SetKey(set, i);
         map = Ns_SetValue(set, i);
-        status = atoi(key);
+        status = strtol(key, NULL, 10);
         if (status <= 0 || *map == '\0') {
             Ns_Log(Error, "redirects[%s]: invalid redirect '%s=%s'",
                    server, key, map);
@@ -132,7 +132,7 @@ Ns_RegisterReturn(int status, CONST char *url)
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
 						  INT2PTR(status), &isNew);
-        if (!isNew) {
+        if (isNew == 0) {
             ns_free(Tcl_GetHashValue(hPtr));
         }
         if (url == NULL) {
@@ -169,7 +169,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
         return result;
     }
     Ns_ConnSetResponseStatus(conn, status);
-    return Ns_ConnWriteVData(conn, NULL, 0, 0);
+    return Ns_ConnWriteVData(conn, NULL, 0, 0U);
 }
 
 

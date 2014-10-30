@@ -40,11 +40,11 @@
  */
 
 static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding);
-static void ParseMultiInput(Conn *connPtr, char *start, char *end);
-static char *Ext2Utf(Tcl_DString *dsPtr, char *start, size_t len, Tcl_Encoding encoding, char unescape);
-static int GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn);
-static char *NextBoundry(Tcl_DString *dsPtr, char *s, char *e);
-static int GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr);
+static void ParseMultiInput(Conn *connPtr, const char *start, char *end);
+static char *Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape);
+static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn);
+static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e);
+static int GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr);
 
 
 /*
@@ -69,7 +69,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
     Tcl_DString     bound;
-    char           *s, *e, *form;
+    char           *form, *s, *e;
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -90,7 +90,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
             if (!GetBoundary(&bound, conn)) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             } else {
-                char *formend = form + connPtr->reqPtr->length;
+		char *formend = form + connPtr->reqPtr->length;
 
                 s = NextBoundry(&bound, form, formend);
                 while (s != NULL) {
@@ -239,7 +239,7 @@ static void
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 {
     Tcl_DString  kds, vds;
-    char        *p;
+    char  *p;
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
@@ -292,7 +292,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
  */
 
 static void
-ParseMultiInput(Conn *connPtr, char *start, char *end)
+ParseMultiInput(Conn *connPtr, const char *start, char *end)
 {
     Tcl_Encoding encoding = connPtr->urlEncoding;
     Tcl_DString  kds, vds;
@@ -319,7 +319,8 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     ks = fs = NULL;
     while ((e = strchr(start, '\n')) != NULL) {
-	char save, *s = start;
+	char save;
+	const char *s = start;
 
         start = e + 1;
         if (e > s && e[-1] == '\r') {
@@ -350,7 +351,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
             value = Ext2Utf(&vds, fs, (size_t)(fe-fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
-            if (isNew) {
+            if (isNew != 0) {
 	        FormFile *filePtr = ns_malloc(sizeof(FormFile));
 
                 filePtr->hdrs = set;
@@ -393,7 +394,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
  */
 
 static int
-GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
+GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
 {
     CONST char *type, *bs;
 
@@ -404,7 +405,7 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
         CONST char *be;
         bs += 9;
         be = bs;
-        while (*be != '\0' && !isspace(UCHAR(*be))) {
+        while (*be != '\0' && CHARTYPE(space, *be) == 0) {
             ++be;
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
@@ -432,14 +433,14 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
  */
 
 static char *
-NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
+NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
 {
     char c, sc, *find;
     size_t len;
 
     find = dsPtr->string;
     c = *find++;
-    len = dsPtr->length-1;
+    len = (size_t)(dsPtr->length-1);
     e -= len;
     do {
         do {
@@ -473,9 +474,9 @@ NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
  */
 
 static int
-GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
+GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr)
 {
-    CONST char *s, *e;
+    const char *s, *e;
 
     s = Ns_StrCaseFind(hdr, att);
     if (s == NULL) {
@@ -485,7 +486,7 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
     e = s;
     if (*s != '"' && *s != '\'') {
         /* NB: End of unquoted att=value is next space. */
-        while (*e != '\0' && !isspace(UCHAR(*e))) {
+        while (*e != '\0' && CHARTYPE(space, *e) == 0) {
             ++e;
         }
 	*uPtr = '\0';
@@ -536,7 +537,7 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
  */
 
 static char *
-Ext2Utf(Tcl_DString *dsPtr, char *start, size_t len, Tcl_Encoding encoding, char unescape)
+Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
 {
 
     if (encoding == NULL) {

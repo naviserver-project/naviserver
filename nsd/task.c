@@ -92,7 +92,7 @@ static void JoinQueue(TaskQueue *queuePtr);
 static void StopQueue(TaskQueue *queuePtr);
 static int SignalQueue(Task *taskPtr, unsigned int bit);
 static Ns_ThreadProc TaskThread;
-static void RunTask(Task *taskPtr, unsigned int revents, Ns_Time *nowPtr);
+static void RunTask(Task *taskPtr, unsigned int revents, const Ns_Time *nowPtr);
 
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
 
@@ -638,7 +638,7 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
  */
 
 static void
-RunTask(Task *taskPtr, unsigned int revents, Ns_Time *nowPtr)
+RunTask(Task *taskPtr, unsigned int revents, const Ns_Time *nowPtr)
 {
 
     /*

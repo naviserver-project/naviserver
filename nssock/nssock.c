@@ -159,7 +159,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
  
 static NS_DRIVER_ACCEPT_STATUS
 Accept(Ns_Sock *sock, NS_SOCKET listensock,
-       struct sockaddr *sockaddrPtr, int *socklenPtr)
+       struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
     Config *cfg    = sock->driver->arg;
     int     status = NS_DRIVER_ACCEPT_ERROR;

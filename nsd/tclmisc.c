@@ -64,7 +64,7 @@ static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
  */
 
 void
-Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
+Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
 {
     va_list     ap;
     Tcl_DString ds;
@@ -124,7 +124,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
                                &itPtr->servPtr->tcl.runTable, script, &isNew);
     Ns_MasterUnlock();
 
-    if (isNew) {
+    if (isNew != 0) {
         return Tcl_Eval(interp, script);
     }
 
@@ -150,7 +150,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 CONST char *
-Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
+Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
     NsInterp    *itPtr = NsGetInterpData(interp);
     CONST char  *errorInfo, **logHeaders;
@@ -259,7 +259,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
  */
 
 void
-Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, char *alternative, char *explanation)
+Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const char *explanation)
 {
     Tcl_DString ds;
     int i;
@@ -385,7 +385,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
     /* null-terminator */
     *outPtr = '\0';
 
-    Tcl_SetResult(interp, inString, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
 
     ns_free(inString);
 
@@ -458,20 +458,20 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
     while (((s = strchr(p, '<')) != NULL) && ((e = strchr(s, '>')) != NULL)) {
         ++s;
         *e = '\0';
-        while (*s != '\0' && isspace(UCHAR(*s))) {
+        while (*s != '\0' && CHARTYPE(space, *s) != 0) {
             ++s;
         }
-        if ((*s == 'a' || *s == 'A') && isspace(UCHAR(s[1]))) {
+        if ((*s == 'a' || *s == 'A') && CHARTYPE(space, s[1]) != 0) {
             ++s;
             while (*s) {
                 if (!strncasecmp(s, "href", 4u)) {
                     s += 4;
-                    while (*s != '\0' && isspace(UCHAR(*s))) {
+                    while (*s != '\0' && CHARTYPE(space, *s) != 0) {
                         ++s;
                     }
                     if (*s == '=') {
                         ++s;
-                        while (*s != '\0' && isspace(UCHAR(*s))) {
+                        while (*s != '\0' && CHARTYPE(space, *s) != 0) {
                             ++s;
                         }
                         he = NULL;
@@ -481,7 +481,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                         }
                         if (he == NULL) {
                             he = s;
-                            while (isspace(UCHAR(*he)) == 0) {
+                            while (CHARTYPE(space, *he) == 0) {
                                 ++he;
                             }
                         }
