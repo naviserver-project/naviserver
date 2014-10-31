@@ -123,7 +123,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
                                                 utfBytes, (int)utfLen, &encDs);
             }
         }
-        Ns_SetVec(&iov, 0, encDs.string, (size_t)encDs.length);
+        (void)Ns_SetVec(&iov, 0, encDs.string, (size_t)encDs.length);
         bufs = &iov;
         nbufs = 1;
     }
@@ -141,7 +141,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
         if (Ns_CompressBufsGzip(&connPtr->stream, bufs, nbufs, &gzDs,
                                 connPtr->compress, flush) == NS_OK) {
             /* NB: Compression will always succeed. */
-            Ns_SetVec(&iov, 0, gzDs.string, (size_t)gzDs.length);
+            (void)Ns_SetVec(&iov, 0, gzDs.string, (size_t)gzDs.length);
             bufs = &iov;
             nbufs = 1;
         }
@@ -269,7 +269,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
      * Work out the body length for non-chunking case.
      */
 
-    bodyLength = bufs ? Ns_SumVec(bufs, nbufs) : 0U;
+    bodyLength = (bufs != NULL) ? Ns_SumVec(bufs, nbufs) : 0U;
     toWrite = 0U;
 
     if (flags & NS_CONN_STREAM) {
@@ -427,7 +427,7 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
         if (chan != NULL) {
 	    nread = Tcl_Read(chan, buf, (int)toRead);
         } else if (fp != NULL) {
-            nread = fread(buf, 1U, toRead, fp);
+	    nread = (int)fread(buf, 1U, toRead, fp);
             if (ferror(fp)) {
                 nread = -1;
             }
@@ -474,7 +474,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
 {
     Conn        *connPtr = (Conn *) conn;
     int          i;
-    size_t      toWrite, nwrote;
+    size_t       toWrite, nwrote;
 
     nwrote = 0U;
     toWrite = 0U;
@@ -489,8 +489,8 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
         if (sent < 1) {
             break;
         }
-        if (sent < toWrite) {
-            Ns_ResetFileVec(bufs, nbufs, sent);
+        if ((size_t)sent < toWrite) {
+            (void)Ns_ResetFileVec(bufs, nbufs, sent);
         }
         nwrote += sent;
         toWrite -= sent;
@@ -622,7 +622,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	connPtr->nContentSent += nwrote;
     }
 
-    return (nwrote ? nwrote : sent);
+    return (nwrote > 0) ? nwrote : sent;
 }
 
 

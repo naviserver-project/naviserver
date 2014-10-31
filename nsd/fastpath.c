@@ -796,7 +796,7 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_DStringInit(&ds);
     Ns_CacheLock(cache);
 
-    if (contents) {
+    if (contents != 0) {
         Ns_Entry       *entry;
 
         Tcl_DStringStartSublist(&ds);
@@ -818,7 +818,7 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         (void)Ns_CacheStats(cache, &ds);
     }
-    if (reset) {
+    if (reset != 0) {
         Ns_CacheResetStats(cache);
     }
     Ns_CacheUnlock(cache);

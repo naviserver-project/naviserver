@@ -684,7 +684,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
         shared = (objc == 3);
-        if (shared) {
+        if (shared != 0) {
             Ns_MutexLock(&servPtr->chans.lock);
             tabPtr = &servPtr->chans.table; 
         } else {
@@ -695,7 +695,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_AppendElement(interp, Tcl_GetHashKey(tabPtr, hPtr));
             hPtr = Tcl_NextHashEntry(&search);
         }
-        if (shared) {
+        if (shared != 0) {
             Ns_MutexUnlock(&servPtr->chans.lock);
         }
         break;
@@ -706,7 +706,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
         shared = (objc == 3);
-        if (shared) {
+        if (shared != 0) {
             Ns_MutexLock(&servPtr->chans.lock);
             tabPtr = &servPtr->chans.table;
         } else {
@@ -716,7 +716,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         while (hPtr != NULL) {
 	    regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
 	    assert(regChan != NULL);
-            if (shared) {
+            if (shared != 0) {
                 Tcl_SpliceChannel(regChan->chan);
                 Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);
             } else {
@@ -727,7 +727,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_DeleteHashEntry(hPtr);
             hPtr = Tcl_NextHashEntry(&search);
         }
-        if (shared) {
+        if (shared != 0) {
             Ns_MutexUnlock(&servPtr->chans.lock);
         }
         break;
@@ -798,7 +798,7 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
      * on our memory and eventually badly hurt us...
      */
 
-    if (watchProc) {
+    if (watchProc != NULL) {
         (*watchProc)(Tcl_GetChannelInstanceData(chan), 0);
     }
 

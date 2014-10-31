@@ -1910,20 +1910,20 @@ Ns_GetThreadServer(void);
  */
 
 NS_EXTERN void
-Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
+Ns_RegisterRequest(const char *server, const char *method, const char *url,
                    Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, 
 		   int unsigned flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *protocol,
+Ns_RegisterProxyRequest(const char *server, const char *method, const char *protocol,
                         Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
+Ns_GetRequest(const char *server, const char *method, const char *url,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
               unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
@@ -1931,17 +1931,17 @@ Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
     NS_GNUC_NONNULL(7);
 
 NS_EXTERN void
-Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
+Ns_UnRegisterRequest(const char *server, const char *method, const char *url,
                      int inherit)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_UnRegisterProxyRequest(CONST char *server, CONST char *method,
-                          CONST char *protocol)
+Ns_UnRegisterProxyRequest(const char *server, const char *method,
+                          const char *protocol)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
+Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
                        unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -1950,7 +1950,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
+Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -2220,25 +2220,31 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  */
 
 NS_EXTERN int
-Ns_VarGet(CONST char *server, CONST char *array, CONST char *key,
-          Ns_DString *dsPtr);
+Ns_VarGet(const char *server, const char *array, const char *key, Ns_DString *dsPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_VarExists(CONST char *server, CONST char *array, CONST char *key);
+Ns_VarExists(const char *server, const char *array, const char *key)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_VarSet(CONST char *server, CONST char *array, CONST char *key,
-          CONST char *value, ssize_t len);
+Ns_VarSet(const char *server, const char *array, const char *key,
+          const char *value, ssize_t len)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_VarUnset(CONST char *server, CONST char *array, CONST char *key);
+Ns_VarUnset(const char *server, const char *array, const char *key)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Tcl_WideInt
-Ns_VarIncr(CONST char *server, CONST char *array, CONST char *key, int incr);
+Ns_VarIncr(const char *server, const char *array, const char *key, int incr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
-             CONST char *value, ssize_t len);
+Ns_VarAppend(const char *server, const char *array, const char *key,
+             const char *value, ssize_t len)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 
 /*
  * sched.c:
@@ -2914,10 +2920,10 @@ NS_EXTERN Ns_Url2FileProc Ns_FastUrl2FileProc;
  */
 
 NS_EXTERN Tcl_Encoding
-Ns_GetUrlEncoding(char *charset);
+Ns_GetUrlEncoding(const char *charset);
 
 NS_EXTERN char *
-Ns_UrlPathEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlPathEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
@@ -2925,32 +2931,32 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlQueryEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
-			 Tcl_Encoding encoding) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
+Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding) 
+    NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
-			 Tcl_Encoding encoding) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding) 
+     NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string,
-		    char *charset) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset) 
+     NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string,
-		    char *charset) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset) 
+     NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * urlopen.c:

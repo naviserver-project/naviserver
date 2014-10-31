@@ -442,7 +442,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    if (config) {
+    if (config != NULL) {
 	/*
 	 * Evaluate the config file.
 	 */

@@ -625,14 +625,14 @@ PreBind(const char *line)
         const char  *addr, *proto;
 
         next = strchr(line, ',');
-        if (next) {
+        if (next != NULL) {
             *next++ = '\0';
         }
         proto = "tcp";
         addr = "0.0.0.0";
         /* Parse port */
         str = strchr(line, ':');
-        if (str) {
+        if (str != NULL) {
             *str++ = '\0';
             port = strtol(str, NULL, 10);
             addr = line;
@@ -696,7 +696,7 @@ PreBind(const char *line)
             int count = 1;
             /* Parse count */
             str = strchr(str,'/');
-            if (str) {
+            if (str != NULL) {
                 *(str++) = '\0';
                 count = strtol(str, NULL, 10);
             }
@@ -721,7 +721,7 @@ PreBind(const char *line)
             /* Parse mode */
             mode = 0;
             str = strchr(str,'|');
-            if (str) {
+            if (str != NULL) {
                 *(str++) = '\0';
                 mode = strtol(str, NULL, 10);
             }
@@ -943,7 +943,7 @@ NsForkBinder(void)
 void
 NsStopBinder(void)
 {
-    if (binderRunning) {
+    if (binderRunning != 0) {
         close(binderRequest[1]);
         close(binderResponse[0]);
         close(binderRequest[0]);

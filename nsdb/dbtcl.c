@@ -795,7 +795,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             Ns_DStringNAppend(&ds, quotelist + 1, 1);
             quotelist += 2;
         } else if (*quotelist == '\'') {
-            if (inquotes) {
+            if (inquotes != 0) {
                 /* Finish element */
                 Tcl_AppendElement(interp, ds.string);
                 Ns_DStringTrunc(&ds, 0);
@@ -884,7 +884,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
     while (*p != '\0') {
         c = *p++;
 loopstart:
-        if (inquote) {
+        if (inquote != 0) {
             if (c == '"') {
 		c = *p++;
 		if (c == '\0') {
@@ -918,7 +918,7 @@ loopstart:
 		       ) {
                 continue;
             } else if (strchr(delimiter,c) != NULL) {
-                if (!quoted) {
+                if (quoted == 0) {
                     Ns_StrTrimRight(elem.string);
                 }
 		Tcl_DStringAppendElement(&cols, elem.string);
@@ -931,10 +931,10 @@ loopstart:
             }
         }
     }
-    if (!quoted) {
+    if (quoted == 0) {
         Ns_StrTrimRight(elem.string);
     }
-    if (!blank) {
+    if (blank == 0) {
 	Tcl_DStringAppendElement(&cols, elem.string);
         ncols++;
     }

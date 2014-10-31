@@ -149,7 +149,7 @@ Ns_ConfigFlag(CONST char *section, CONST char *key, unsigned int flag, int def,
            value ? flag : 0,
            def ? flag : 0);
 
-    if (value) {
+    if (value != 0) {
         *flagsPtr |= flag;
     }
     return found;
@@ -657,10 +657,10 @@ NsConfigRead(CONST char *file)
     return conf;
 
  err:
-    if (chan) {
+    if (chan != NULL) {
         Tcl_Close(NULL, chan);
     }
-    if (buf) {
+    if (buf != NULL) {
         Tcl_DecrRefCount(buf);
     }
     Ns_Fatal("config: can't %s config file '%s': '%s' %s",
@@ -818,7 +818,7 @@ ConfigGet(CONST char *section, CONST char *key, int exact, CONST char *defstr)
 	Ns_Set  *set = GetSection(section, 0);
         if (set != NULL) {
             int  i;
-            if (exact) {
+            if (exact != 0) {
                 i = Ns_SetFind(set, key);
             } else {
                 i = Ns_SetIFind(set, key);
@@ -827,7 +827,7 @@ ConfigGet(CONST char *section, CONST char *key, int exact, CONST char *defstr)
                 s = Ns_SetValue(set, i);
             } else {
                 i = Ns_SetPut(set, key, defstr);
-                if (defstr) {
+                if (defstr != 0) {
                     s = Ns_SetValue(set, i);
                 }
             }

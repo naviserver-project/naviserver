@@ -200,10 +200,10 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    if (once) {
+    if (once != 0) {
         flags |= NS_SCHED_ONCE;
     }
-    if (thread) {
+    if (thread != 0) {
         flags |= NS_SCHED_THREAD;
     }
     if (hour < 0 || hour > 23) {
@@ -267,10 +267,10 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         return TCL_ERROR;
     }
 
-    if (once) {
+    if (once != 0) {
         flags |= NS_SCHED_ONCE;
     }
-    if (thread) {
+    if (thread != 0) {
         flags |= NS_SCHED_THREAD;
     }
     if (day < 0 || day > 6) {
@@ -336,10 +336,10 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         return TCL_ERROR;
     }
 
-    if (once) {
+    if (once != 0) {
         flags |= NS_SCHED_ONCE;
     }
-    if (thread) {
+    if (thread != 0) {
         flags |= NS_SCHED_THREAD;
     }
     if (interval < 0) {

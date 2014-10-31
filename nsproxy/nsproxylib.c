@@ -288,7 +288,7 @@ Nsproxy_LibInit(void)
 {
     static int once = 0;
 
-    if (!once) {
+    if (once == 0) {
         once = 1;
 
         Nsd_LibInit();
@@ -508,7 +508,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         Tcl_DStringTrunc(&out, 0);
     }
 
-    if (uarg) {
+    if (uarg != NULL) {
         ns_free(uarg);
     }
     Tcl_DStringFree(&in);
@@ -618,7 +618,7 @@ Shutdown(const Ns_Time *toutPtr, void *arg)
     reap = firstClosePtr != NULL || reaperState != Stopped;
     Ns_MutexUnlock(&plock);
 
-    if (!reap) {
+    if (reap == 0) {
         return;
     }
 
@@ -674,7 +674,7 @@ Ns_ProxyGet(Tcl_Interp *interp, char *poolName, PROXY* handlePtr, int ms)
 
     poolPtr = GetPool(poolName, NULL);
     err = PopProxy(poolPtr, &proxyPtr, 1, ms);
-    if (err) {
+    if (err != 0) {
         Tcl_AppendResult(interp, "could not allocate from pool \"",
                          poolPtr->name, "\": ", ProxyError(interp, err), NULL);
         return TCL_ERROR;
@@ -1629,7 +1629,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             hPtr = Tcl_NextHashEntry(&search);
         }
         Ns_MutexUnlock(&plock);
-        if (reap) {
+        if (reap != 0) {
             ReapProxies();
         }
         break;
@@ -1855,7 +1855,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      * enforce pool size constraints.
      */
 
-    if (reap) {
+    if (reap != 0) {
         ReapProxies();
     }
 
@@ -1978,7 +1978,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
      */
 
     err = PopProxy(poolPtr, &firstPtr, nwant, ms);
-    if (err) {
+    if (err != 0) {
     errout:
         Tcl_AppendResult(interp, "could not allocate from pool \"",
                          poolPtr->name, "\": ", ProxyError(interp, err), NULL);
@@ -2294,7 +2294,7 @@ GetProxy(Tcl_Interp *interp, char *proxyId, InterpData *idataPtr)
     Tcl_HashEntry *hPtr;
 
     hPtr = Tcl_FindHashEntry(&idataPtr->ids, proxyId);
-    if (hPtr) {
+    if (hPtr != NULL) {
         return (Proxy *)Tcl_GetHashValue(hPtr);
     }
 
@@ -2363,7 +2363,7 @@ CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     Tcl_DStringInit(&ds);
     Ns_MutexLock(&poolPtr->lock);
     init = proxyPtr->poolPtr->init != NULL;
-    if (init) {
+    if (init != 0) {
         Tcl_DStringAppend(&ds, poolPtr->init, -1);
     }
     Ns_MutexUnlock(&poolPtr->lock);
@@ -2632,7 +2632,7 @@ ReaperThread(void *ignored)
                 nextPtr = proxyPtr->nextPtr;
                 slavePtr = proxyPtr->slavePtr;
                 ntotal  = poolPtr->nfree + poolPtr->nused;
-                if (slavePtr) {
+                if (slavePtr != NULL) {
                     if (Ns_DiffTime(&slavePtr->expire, &tout, NULL) <= 0) {
                         tout = slavePtr->expire;
                     }
@@ -2650,13 +2650,13 @@ ReaperThread(void *ignored)
                     if (proxyPtr == poolPtr->firstPtr) {
                         poolPtr->firstPtr = proxyPtr->nextPtr;
                     }
-                    if (slavePtr) {
+                    if (slavePtr != NULL) {
                         CloseSlave(slavePtr, proxyPtr->conf.twait);
                     }
                     FreeProxy(proxyPtr);
                     proxyPtr = NULL;
                     poolPtr->nfree--;
-                } else if (expire) {
+                } else if (expire != 0) {
                     /*
                      * Close the slave but leave the proxy
                      */
@@ -2940,11 +2940,11 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
         Tcl_DStringInit(&ds);
         Ns_MutexLock(&proxyPtr->poolPtr->lock);
         reinit = proxyPtr->poolPtr->reinit != NULL;
-        if (reinit) {
+        if (reinit != 0) {
             Tcl_DStringAppend(&ds, proxyPtr->poolPtr->reinit, -1);
         }
         Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
-        if (reinit) {
+        if (reinit != 0) {
             result = Eval(interp, proxyPtr, Tcl_DStringValue(&ds), -1);
         }
         Tcl_DStringFree(&ds);

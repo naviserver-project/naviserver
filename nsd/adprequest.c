@@ -234,7 +234,7 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) {rflags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {rflags |= NS_OP_NOINHERIT;}
     return RegisterPage(arg, method, url, file, expiresPtr, rflags, aflags);
 }
 
@@ -259,7 +259,7 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) {rflags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {rflags |= NS_OP_NOINHERIT;}
     return RegisterPage(arg, method, url, file, NULL, rflags, ADP_TCLFILE);
 }
 
@@ -452,7 +452,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      */
 
     if (len < 1 && (flags & ADP_FLUSHED)) {
-        if (!stream) {
+        if (stream == 0) {
             NsAdpReset(itPtr);
         }
         return NS_OK;
@@ -544,7 +544,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 
-    if (!stream) {
+    if (stream == 0) {
         NsAdpReset(itPtr);
     }
     return result;

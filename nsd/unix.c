@@ -144,7 +144,7 @@ NsBlockSignals(int debug)
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGHUP);
     sigaddset(&set, SIGQUIT);
-    if (!debugMode) {
+    if (debugMode == 0) {
         /* NB: Don't block SIGINT in debug mode for Solaris dbx. */
         sigaddset(&set, SIGINT);
     }
@@ -224,7 +224,7 @@ NsHandleSignals(void)
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGHUP);
     sigaddset(&set, SIGQUIT);
-    if (!debugMode) {
+    if (debugMode == 0) {
         sigaddset(&set, SIGINT);
     }
     do {
@@ -391,12 +391,12 @@ Pipe(int *fds, int sockpair)
 {
     int err;
 
-    if (sockpair) {
+    if (sockpair != 0) {
         err = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
     } else {
         err = pipe(fds);
     }
-    if (!err) {
+    if (err == 0) {
         fcntl(fds[0], F_SETFD, 1);
         fcntl(fds[1], F_SETFD, 1);
     }
@@ -428,7 +428,7 @@ ns_sock_set_blocking(NS_SOCKET fd, int blocking)
 #else
     unsigned int flags = fcntl(fd, F_GETFD, 0);
 
-    if (blocking) {
+    if (blocking != 0) {
 	return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
     } else {
 	return fcntl(fd, F_SETFL, flags|O_NONBLOCK);

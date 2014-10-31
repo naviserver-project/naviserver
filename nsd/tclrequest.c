@@ -121,7 +121,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
         return TCL_ERROR;
     }
 
-    if (noinherit) {flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc, scriptObj,
                               remain, objv + (objc - remain));
@@ -219,7 +219,7 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
         return TCL_ERROR;
     }
 
-    if (noinherit) {
+    if (noinherit != 0) {
 	flags |= NS_OP_NOINHERIT;
     }
 

@@ -840,7 +840,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     specPtr = opts;
     while (1) {
         if (specPtr->key == NULL) {
-            if (doneOpts) {
+            if (doneOpts != 0) {
                 break;
             }
             doneOpts = 1;
@@ -996,7 +996,7 @@ FreeSpecs(Ns_ObjvSpec *specPtr)
 
     while(1) {
         if (specPtr->key == NULL) {
-            if (doneOpts) {
+            if (doneOpts != 0) {
                 break;
             }
             doneOpts = 1;
@@ -1071,7 +1071,7 @@ UpdateStringOfSpec(Tcl_Obj *objPtr)
     specPtr = (Ns_ObjvSpec *) objPtr->internalRep.twoPtrValue.ptr1;
     while (1) {
         if (specPtr->key == NULL) {
-            if (doneOpts) {
+            if (doneOpts != 0) {
                 break;
             }
             doneOpts = 1;
@@ -1134,7 +1134,7 @@ DupSpec(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
     argSpec = NULL;
     while (1) {
         if (specPtr->key == NULL) {
-            if (argSpec) {
+            if (argSpec != NULL) {
                 break;
             }
             argSpec = ++specPtr;

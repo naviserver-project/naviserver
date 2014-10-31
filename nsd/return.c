@@ -477,7 +477,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
             if (key != NULL && value != NULL) {
 		char *lineBreak = strchr(value, '\n');
 
-		if (!lineBreak) {
+		if (lineBreak == NULL) {
 		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
 		} else {
 		    Ns_DString sanitize, *sPtr = &sanitize;

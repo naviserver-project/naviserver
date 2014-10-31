@@ -401,7 +401,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) { flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) { flags |= NS_OP_NOINHERIT;}
 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclUrl2FileProc, 
 			      scriptObj, remain, objv + (objc - remain));
@@ -449,8 +449,8 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) { flags |= NS_OP_NOINHERIT;}
-    if (recurse)   { flags |= NS_OP_RECURSE;}
+    if (noinherit != 0) { flags |= NS_OP_NOINHERIT;}
+    if (recurse != 0)   { flags |= NS_OP_RECURSE;}
 
     Ns_UnRegisterUrl2FileProc(itPtr->servPtr->server, url, flags);
 
@@ -496,7 +496,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) { flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) { flags |= NS_OP_NOINHERIT;}
 
     if (basepath == NULL) {
         Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,

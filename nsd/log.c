@@ -674,7 +674,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     time_t    *tp;
     char      *bp;
 
-    if (gmt) {
+    if (gmt != 0) {
         tp = &cachePtr->gtime;
         bp = cachePtr->gbuf;
     } else {
@@ -692,7 +692,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
         ptm = ns_localtime(&secs);
 
         n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
-        if (!gmt) {
+        if (gmt == 0) {
             bp[n++] = ']';
             bp[n] = '\0';
         } else {
@@ -1127,19 +1127,19 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
     while (ePtr != NULL && cachePtr->currEntry) {
         char *log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
-        if (locked) {
+        if (locked != 0) {
             Ns_MutexLock(&lock);
         }
         cPtr = listPtr;
         while (cPtr != NULL) {
             if (cPtr->proc != NULL) {
-                if (locked) {
+                if (locked != 0) {
                     cPtr->refcnt++;
                     Ns_MutexUnlock(&lock);
                 }
                 status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
                                        &ePtr->stamp, log, ePtr->length);
-                if (locked) {
+                if (locked != 0) {
                     Ns_MutexLock(&lock);
                     cPtr->refcnt--;
                     Ns_CondBroadcast(&cond);
@@ -1159,7 +1159,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
             }
             cPtr = cPtr->prevPtr;
         }
-        if (locked) {
+        if (locked != 0) {
             Ns_MutexUnlock(&lock);
         }
         nentry++;
@@ -1169,7 +1169,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
         ePtr = ePtr->nextPtr;
     }
 
-    if (trunc) {
+    if (trunc != 0) {
         if (count > 0) {
             int length = ePtr ? ePtr->offset + ePtr->length : 0;
             cachePtr->count = length ? nentry : 0;

@@ -594,7 +594,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * new job to the end
              */
 
-            if (head) {
+            if (head != 0) {
                 jobPtr->nextPtr = tp.firstPtr;
                 tp.firstPtr = jobPtr;
             } else {
@@ -624,7 +624,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             ReleaseQueue(queue, 1);
             Ns_MutexUnlock(&tp.queuelock);
-            if (create) {
+            if (create != 0) {
                 Ns_ThreadCreate(JobThread, 0, 0, NULL);
             }
             Tcl_SetObjResult(interp, Tcl_NewStringObj(jobId, -1));
@@ -697,7 +697,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             jobPtr->req = JOB_WAIT;
 
-            if (timeoutFlag) {
+            if (timeoutFlag != 0) {
                 while (jobPtr->state != JOB_DONE) {
                     int timedOut = Ns_CondTimedWait(&queue->cond,
 						    &queue->lock, &timeout);
@@ -866,7 +866,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * on the queue condition variable.
              */
 
-            if (timeoutFlag) {
+            if (timeoutFlag != 0) {
                 while ((Tcl_FirstHashEntry(&queue->jobs, &search) != NULL)
                        && !AnyDone(queue)) {
                     int timedOut = Ns_CondTimedWait(&queue->cond,
@@ -1582,7 +1582,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueName, Queue **queuePtr,
     assert(queuePtr != NULL);
     assert(queueName != NULL);
 
-    if (!locked) {
+    if (locked == 0) {
         Ns_MutexLock(&tp.queuelock);
     }
 
@@ -1595,7 +1595,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueName, Queue **queuePtr,
         ++(*queuePtr)->refCount;
     }
 
-    if (!locked) {
+    if (locked == 0) {
         Ns_MutexUnlock(&tp.queuelock);
     }
 
@@ -1647,7 +1647,7 @@ ReleaseQueue(Queue *queue, int locked)
         && (Tcl_FirstHashEntry(&queue->jobs, &search) == NULL)) {
         Tcl_HashEntry *qPtr;
 
-        if (!locked) {
+        if (locked == 0) {
             Ns_MutexLock(&tp.queuelock);
         }
 
@@ -1661,7 +1661,7 @@ ReleaseQueue(Queue *queue, int locked)
         Ns_MutexUnlock(&queue->lock);
         FreeQueue(queue);
 
-        if (!locked) {
+        if (locked == 0) {
             Ns_MutexUnlock(&tp.queuelock);
         }
     } else {

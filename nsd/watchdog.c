@@ -109,10 +109,10 @@ NsForkWatchedProcess()
 
     SysLog(LOG_NOTICE, "watchdog: started.");
 
-    while (!watchdogExit) {
+    while (watchdogExit == 0) {
         unsigned int startTime;
 
-        if (restartWait) {
+        if (restartWait != 0) {
             SysLog(LOG_WARNING,
                    "watchdog: waiting %d seconds before restart %d.",
                    restartWait, numRestarts);
@@ -123,7 +123,7 @@ NsForkWatchedProcess()
          * Reset the interval timer  (see below)
          */
 
-        if (WAKEUP_IN_SECONDS) {
+        if (WAKEUP_IN_SECONDS != 0) {
             memset(&timer, 0, sizeof(struct itimerval));
             setitimer(ITIMER_REAL, &timer, NULL);
             ns_signal(SIGALRM, SIG_DFL);
@@ -157,7 +157,7 @@ NsForkWatchedProcess()
          * process exitus (i.e. just stuck, although the process is gone).
          */
 
-        if (WAKEUP_IN_SECONDS) {
+        if (WAKEUP_IN_SECONDS != 0) {
             timer.it_interval.tv_sec = WAKEUP_IN_SECONDS;
             timer.it_value.tv_sec  = timer.it_interval.tv_sec;
             setitimer(ITIMER_REAL, &timer, NULL);
@@ -234,7 +234,7 @@ WaitForServer()
         pid = waitpid(watchedPid, &status, 0);
     } while (pid == NS_INVALID_PID && errno == EINTR && watchedPid);
 
-    if (processDied) {
+    if (processDied != 0) {
         msg = "terminated";
         ret = -1; /* Alarm handler found no server present? */
     } else if (WIFEXITED(status)) {
@@ -274,7 +274,7 @@ WaitForServer()
 static void
 WatchdogSIGTERMHandler(int sig)
 {
-    if (watchedPid) {
+    if (watchedPid != 0) {
         kill((pid_t) watchedPid, sig);
     }
     watchdogExit = 1;

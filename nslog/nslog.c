@@ -115,7 +115,7 @@ Ns_ModuleInit(char *server, char *module)
      * called w/o locking from within the server startup.
      */
 
-    if (first) {
+    if (first != 0) {
         first = 0;
         Ns_RegisterProcInfo((Ns_Callback *)LogRollCallback, "nslog:roll", LogArg);
         Ns_RegisterProcInfo((Ns_Callback *)LogCloseCallback, "nslog:close", LogArg);
@@ -537,7 +537,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         for (p = user; *p && !quote; p++) {
 	    quote = (CHARTYPE(space, *p) != 0);
         }
-        if (quote) {
+        if (quote != 0) {
             Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
         } else {
             Ns_DStringVarAppend(&ds," - ", user, " ", NULL);
@@ -585,12 +585,12 @@ LogTrace(void *arg, Ns_Conn *conn)
     if ((logPtr->flags & LOG_COMBINED)) {
         Ns_DStringAppend(&ds, " \"");
         p = Ns_SetIGet(conn->headers, "referer");
-        if (p) {
+        if (p != NULL) {
             Ns_DStringAppend(&ds, p);
         }
         Ns_DStringAppend(&ds, "\" \"");
         p = Ns_SetIGet(conn->headers, "user-agent");
-        if (p) {
+        if (p != NULL) {
             Ns_DStringAppend(&ds, p);
         }
         Ns_DStringAppend(&ds, "\"");

@@ -190,7 +190,7 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
 
     Ns_DStringInit(&ds);
-    if (all) {
+    if (all != 0) {
 	status = Ns_GetAllAddrByHost(&ds, host);
     } else {
 	status = Ns_GetAddrByHost(&ds, host);

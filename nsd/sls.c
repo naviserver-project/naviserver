@@ -133,7 +133,7 @@ Ns_SlsSet(const Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
     void **slotPtr;
 
     slotPtr = GetSlot(slsPtr, sock);
-    if (slotPtr) {
+    if (slotPtr != NULL) {
         *slotPtr = data;
     }
 }
@@ -161,7 +161,7 @@ Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
     void **slotPtr;
 
     slotPtr = GetSlot(slsPtr, sock);
-    if (slotPtr) {
+    if (slotPtr != NULL) {
         return *slotPtr;
     }
     return NULL;
@@ -234,7 +234,7 @@ Ns_SlsGetKeyed(Ns_Sock *sock, CONST char *key)
         return NULL;
     }
     hPtr = Tcl_FindHashEntry(tblPtr, key);
-    if (hPtr) {
+    if (hPtr != NULL) {
         value = Tcl_GetHashValue(hPtr);
     }
     return value;
@@ -302,7 +302,7 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
     if ((tblPtr = Ns_SlsGet(&kslot, sock)) != NULL) {
         Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tblPtr, key);
 
-        if (hPtr) {
+        if (hPtr != NULL) {
             ns_free(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
@@ -467,7 +467,7 @@ static void **
 GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     Sock      *sockPtr = (Sock *) sock;
-    intptr_t   id      = (intptr_t)(*slsPtr);
+    uintptr_t  id      = (uintptr_t)(*slsPtr);
 
     if (id >= nsconf.nextSlsId) {
         Ns_Fatal("Ns_Sls: invalid key: %td: must be between 0 and %td",

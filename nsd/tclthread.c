@@ -702,7 +702,7 @@ NsTclThread(void *arg)
     Ns_DString    ds, *dsPtr;
     int           detached = argPtr->detached;
 
-    if (detached) {
+    if (detached != 0) {
         dsPtr = NULL;
     } else {
         Ns_DStringInit(&ds);
@@ -718,7 +718,7 @@ NsTclThread(void *arg)
 
     (void) Ns_TclEval(dsPtr, argPtr->server, argPtr->script);
     ns_free(argPtr);
-    if (!detached) {
+    if (detached == 0) {
         Ns_ThreadExit(Ns_DStringExport(&ds));
     }
 }

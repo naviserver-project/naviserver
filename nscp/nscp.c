@@ -358,7 +358,7 @@ EvalThread(void *arg)
     Tcl_CreateCommand(interp, "exit", ExitCmd, (ClientData) &stop, NULL);
 
     ncmd = 0;
-    while (!stop) {
+    while (stop == 0) {
 	Tcl_DStringTrunc(&ds, 0);
 	++ncmd;
 retry:
@@ -440,7 +440,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
      * Suppress output on things like password prompts.
      */
 
-    if (!echo) {
+    if (echo == 0) {
 	send(sock, will_echo, 3U, 0);
 	send(sock, dont_echo, 3U, 0);
 	recv(sock, (char *)buf, sizeof(buf), 0); /* flush client ack thingies */
@@ -504,7 +504,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
     } while (buf[n-1] != '\n');
 
  bail:
-    if (!echo) {
+    if (echo == 0) {
 	send(sock, wont_echo, 3, 0);
 	send(sock, do_echo, 3, 0);
 	recv(sock, (char *)buf, sizeof(buf), 0); /* flush client ack thingies */
@@ -562,7 +562,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
      */
 
     Ns_DStringInit(&msgDs);
-    if (ok) {
+    if (ok != 0) {
         Ns_Log(Notice, "nscp: %s logged in", user);
         Tcl_DStringAppend(unameDSPtr, user, -1);
         Ns_DStringPrintf(&msgDs,

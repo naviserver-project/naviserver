@@ -287,7 +287,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     Ns_MutexLock(&poolPtr->threads.lock);
     create = neededAdditionalConnectionThreads(poolPtr);
 
-    if (create) {
+    if (create != 0) {
 	poolPtr->threads.current ++;
 	poolPtr->threads.creating ++;
     }
@@ -295,7 +295,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     Ns_MutexUnlock(&poolPtr->threads.lock);
     Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
-    if (create) {
+    if (create != 0) {
         Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d waiting %d idle %d current %d", 
 	       create,
 	       poolPtr->wqueue.wait.num,
@@ -405,7 +405,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	        Ns_MutexUnlock(&poolPtr->tqueue.lock);
 	    }
 
-	    if (argPtr) {
+	    if (argPtr != NULL) {
 		/* 
 		 * We could obtain an idle thread. Dequeue the entry,
 		 * such that noone else might grab it, and fill in the
@@ -452,7 +452,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	return 0;
     }
 
-    if (argPtr) {
+    if (argPtr != NULL) {
 	/*
 	 * We have a connection thread ready.
 	 *
@@ -483,7 +483,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	}
     }
 
-    if (create) {
+    if (create != 0) {
 	int idle, current;
 
 	Ns_MutexLock(&poolPtr->threads.lock);
@@ -606,7 +606,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	/*
 	 * just for backwards compatibility
 	 */
-	if (optArg) {
+	if (optArg != NULL) {
 	    Ns_LogDeprecated(objv, nextArgIdx + 2, "ns_server ?-pool p? ...", 
 			     "Passing pool as second argument is deprected.");
 	    pool = optArg;
@@ -617,7 +617,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	servPtr = itPtr->servPtr;
     }
 
-    if (pool) {
+    if (pool != NULL) {
         poolPtr = servPtr->pools.firstPtr;
         while (poolPtr != NULL && !STREQ(poolPtr->pool, pool)) {
             poolPtr = poolPtr->nextPtr;
@@ -696,7 +696,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         break;
 
     case SMaxthreadsIdx:
-	if (optArg) {
+	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
 		Tcl_AppendResult(interp, "argument is not an integer in valid range: ", optArg, NULL);
 		return TCL_ERROR;
@@ -709,7 +709,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	break;
 
     case SMinthreadsIdx:
-	if (optArg) {
+	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < 1 || value > poolPtr->threads.max) {
 		Tcl_AppendResult(interp, "argument is not a integer in the valid range: ", optArg, NULL);
 		return TCL_ERROR;
@@ -1252,7 +1252,7 @@ NsConnThread(void *arg)
 	argPtr->state = connThread_ready;
 	Ns_MutexUnlock(tqueueLockPtr);
 
-	if (cpt) {
+	if (cpt != 0) {
 	    int waiting, idle, lowwater;
 
 	    --ncons;
@@ -1358,7 +1358,7 @@ NsConnThread(void *arg)
      * condition variable to check whether all threads have terminated
      * already.
      */
-    if (shutdown) {
+    if (shutdown != 0) {
 	Ns_CondSignal(&poolPtr->wqueue.cond); 
     }
 
@@ -1409,7 +1409,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Re-initialize and run the connection. 
      */
-    if (sockPtr) {
+    if (sockPtr != NULL) {
 	connPtr->reqPtr = NsGetRequest(sockPtr, &connPtr->requestDequeueTime);
     } else {
 	connPtr->reqPtr = NULL;
@@ -1573,7 +1573,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 
 	NsWriterLock();
 	wrPtr = connPtr->streamWriter;
-	if (wrPtr) {
+	if (wrPtr != NULL) {
 	    NsWriterFinish(wrPtr);
 	    connPtr->streamWriter = NULL;
 	}

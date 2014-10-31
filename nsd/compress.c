@@ -256,7 +256,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
                              MIN(MAX(level, 1), 9),
                              Z_DEFAULT_STRATEGY);
     }
-    if (flush) {
+    if (flush != 0) {
         compressLen += 4; /* Gzip footer. */
     }
     Ns_DStringSetLength(dsPtr, compressLen);
@@ -295,7 +295,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
     }
     Ns_DStringSetLength(dsPtr, dsPtr->length - z->avail_out);
 
-    if (flush) {
+    if (flush != 0) {
         (void) deflateReset(z);
         stream->flags = 0U;
     }

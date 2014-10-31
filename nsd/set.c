@@ -196,7 +196,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
         if ((key == NULL && name == NULL) ||
             (key != NULL && name != NULL && ((*cmp) (key, name)) == 0)) {
 
-            if (found) {
+            if (found != 0) {
                 return NS_FALSE;
             }
             found = 1;

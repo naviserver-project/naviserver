@@ -447,17 +447,17 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
     cbPtr->arg = arg;
 
     Ns_MutexLock(&lock);
-    if (first) {
+    if (first != 0) {
         first = 0;
         Ns_MutexSetName(&lock, "ns:callbacks");
     }
-    if (shutdownPending) {
+    if (shutdownPending != 0) {
         ns_free(cbPtr);
         cbPtr = NULL;
     } else if (*firstPtrPtr == NULL) {
         *firstPtrPtr = cbPtr;
         cbPtr->nextPtr = NULL;
-    } else if (fifo) {
+    } else if (fifo != 0) {
         nextPtr = *firstPtrPtr;
         while (nextPtr->nextPtr != NULL) {
             nextPtr = nextPtr->nextPtr;

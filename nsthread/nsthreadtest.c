@@ -80,7 +80,7 @@ Msg(char *fmt,...)
     time(&now);
     s = ns_ctime(&now);
     r = strchr(s, '\n');
-    if (r) {
+    if (r != NULL) {
 	*r = '\0';
     }
     va_start(ap, fmt);
@@ -241,7 +241,7 @@ MemThread(void *arg)
     Ns_MutexLock(&lock);
     ++nrunning;
     Ns_CondBroadcast(&cond);
-    while (!memstart) {
+    while (memstart == 0) {
 	Ns_CondWait(&cond, &lock);
     }
     Ns_MutexUnlock(&lock);
@@ -249,12 +249,12 @@ MemThread(void *arg)
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
 	int n = rand() % BS;
-	if (arg) {
-	    if (ptr)
+	if (arg != NULL) {
+	    if (ptr != NULL)
 		ns_free(ptr);
 	    ptr = ns_malloc(n);
 	} else {
-	    if (ptr)
+	    if (ptr != NULL)
 		free(ptr);
 	    ptr = malloc(n);
 	}
@@ -325,7 +325,7 @@ DumperThread(void *arg)
     Ns_ThreadSetName("-dumper-");
     Ns_MutexLock(&block);
     Ns_MutexLock(&dlock);
-    while (!dstop) {
+    while (dstop == 0) {
 	Ns_GetTime(&to);
 	Ns_IncrTime(&to, 1, 0);
 	Ns_CondTimedWait(&dcond, &dlock, &to);
@@ -388,7 +388,7 @@ Pthread(void *arg)
      */
 
     Ns_MutexLock(&plock);
-    while (!pgo) {
+    while (pgo == 0) {
 	Ns_CondWait(&pcond, &plock);
     }
     Ns_MutexUnlock(&plock);

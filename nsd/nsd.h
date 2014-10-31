@@ -1243,7 +1243,7 @@ NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN NsServer *NsGetInitServer(void);
-NS_EXTERN NsServer *NsGetServer(CONST char *server);
+NS_EXTERN NsServer *NsGetServer(const char *server);
 NS_EXTERN void NsStartServers(void);
 NS_EXTERN void NsStopServers(const Ns_Time *toPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStartServer(const NsServer *servPtr) NS_GNUC_NONNULL(1);
@@ -1382,7 +1382,8 @@ NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-NS_EXTERN struct Bucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
+NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets)
+     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsSlsCleanup(Sock *sockPtr);
 NS_EXTERN void NsClsCleanup(Conn *connPtr);

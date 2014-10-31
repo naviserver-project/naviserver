@@ -218,7 +218,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
         lastc = c;
         c = (char) i;
  loopstart:
-        if (inquote) {
+        if (inquote != 0) {
             if (c != '\'') {
                 Ns_DStringNAppend(&dsSql, &c, 1);
             } else {

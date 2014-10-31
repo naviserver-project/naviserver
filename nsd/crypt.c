@@ -323,7 +323,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
         /*
          * Set direction
          */
-	if (edflag) {
+	if (edflag != 0) {
             i = 15 - ii;
 	} else {
             i = ii;

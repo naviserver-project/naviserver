@@ -86,7 +86,7 @@ Nsthreads_LibInit(void)
 {
     static int once = 0;
 
-    if (!once) {
+    if (once == 0) {
         int err;
         once = 1;
         err = pthread_key_create(&key, CleanupTls);

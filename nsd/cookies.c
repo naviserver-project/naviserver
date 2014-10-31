@@ -86,7 +86,7 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
             && (p = strstr(hdrs->fields[i].value, name)) != NULL) {
 
             if (*(p += nameLen) == '=') {
-		if (dest) {
+		if (dest != 0) {
 		    ++p; /* advance past equals sign */
 		    if (*p == '"') {
 			++p; /* advance past optional quote mark */
@@ -323,16 +323,16 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         return TCL_ERROR;
     }
 
-    if (secure) {
+    if (secure != 0) {
         flags |= NS_COOKIE_SECURE;
     }
-    if (scriptable) {
+    if (scriptable != 0) {
         flags |= NS_COOKIE_SCRIPTABLE;
     }
-    if (discard) {
+    if (discard != 0) {
         flags |= NS_COOKIE_DISCARD;
     }
-    if (replace) {
+    if (replace != 0) {
         flags |= NS_COOKIE_REPLACE;
     }
 
@@ -473,10 +473,10 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         return TCL_ERROR;
     }
 
-    if (replace) {
+    if (replace != 0) {
         flags |= NS_COOKIE_REPLACE;
     }
-    if (secure) {
+    if (secure != 0) {
         flags |= NS_COOKIE_SECURE;
     }
 

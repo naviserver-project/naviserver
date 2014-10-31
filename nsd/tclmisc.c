@@ -116,7 +116,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     }
 
     Ns_MasterLock();
-    if (!initialized) {
+    if (initialized == 0) {
         Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
         initialized = NS_TRUE;
     }
@@ -374,7 +374,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
 		intspec=WordEndsInSemi(inPtr);
 	    }
 
-            if (!intspec) {
+            if (intspec == 0) {
 		/* incr pointer only if we're not in something htmlish */
                 *outPtr++ = *inPtr;
 	    }
@@ -941,7 +941,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
         return;
     }
 
-    if (i) {				/* First chunk is an odd size */
+    if (i != 0) {				/* First chunk is an odd size */
         memcpy((uint8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
         shaByteSwap(ctx->key, (uint8_t *) ctx->key, SHA_BLOCKWORDS);
         SHATransform(ctx);
@@ -958,7 +958,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
     }
 
     /* Handle any remaining bytes of data. */
-    if (len) {
+    if (len != 0) {
        memcpy(ctx->key, buf, len);
     }
 }
@@ -1222,7 +1222,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
 
     /* Handle any leading odd-sized chunks */
 
-    if (t) {
+    if (t != 0U) {
 	unsigned char *p = (unsigned char *) ctx->in + t;
 
 	t = 64U - t;

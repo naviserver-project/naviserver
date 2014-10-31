@@ -1030,7 +1030,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, int async)
     }
     sock = Ns_SockBind(&lsa);
     if (sock != NS_INVALID_SOCKET) {
-        if (async) {
+        if (async != 0) {
             Ns_SockSetNonBlocking(sock);
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {

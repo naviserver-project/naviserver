@@ -50,7 +50,7 @@ typedef struct ByteKey {
  * Local functions defined in this file.
  */
 
-static char *UrlEncode(Ns_DString *dsPtr, char *string,
+static char *UrlEncode(Ns_DString *dsPtr, const char *string,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static char *UrlDecode(Ns_DString *dsPtr, const char *string,
@@ -249,7 +249,7 @@ static ByteKey pathenc[] = {
  */
 
 Tcl_Encoding
-Ns_GetUrlEncoding(char *charset)
+Ns_GetUrlEncoding(const char *charset)
 {
     Tcl_Encoding  encoding = NULL;
 
@@ -332,7 +332,7 @@ Ns_GetUrlEncoding(char *charset)
  */
 
 char *
-Ns_UrlPathEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlPathEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -370,7 +370,7 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
  */
 
 char *
-Ns_UrlQueryEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -379,7 +379,7 @@ Ns_UrlQueryEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 }
 
 char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -407,7 +407,7 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
  */
 
 char *
-Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -416,7 +416,7 @@ Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 }
 
 char *
-Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
+Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
@@ -428,7 +428,7 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 }
 
 char *
-Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
+Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
     assert(string != NULL);
@@ -437,7 +437,7 @@ Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 }
 
 char *
-Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
+Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
@@ -511,7 +511,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     charset = optionClientData[OCharsetIdx];
     part    = optionPartValue[PTR2INT(optionClientData[OPartIdx])];
 
-    if (charset) {
+    if (charset != NULL) {
         encoding = Ns_GetCharsetEncoding(charset);
     }
     Ns_DStringInit(&ds);
@@ -559,7 +559,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
-    static const int    optionPartValue[3]  = {'q', 'q', 'p'};
+    static char         optionPartValue[3]  = {'q', 'q', 'p'};
 
     if (objc < 2) {
     usage_error:
@@ -579,7 +579,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     part    = optionPartValue[PTR2INT(optionClientData[OPartIdx])];
 
     Ns_DStringInit(&ds);
-    if (charset) {
+    if (charset != NULL) {
         encoding = Ns_GetCharsetEncoding(charset);
     }
 
@@ -608,10 +608,11 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 static char *
-UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
+UrlEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char part)
 {
     register int   i, n;
-    register char *p, *q;
+    register char *q;
+    const char    *p;
     Tcl_DString    ds;
     ByteKey       *enc;
 
@@ -627,11 +628,9 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
      */
 
     enc = (part == 'q') ? queryenc : pathenc;
-    p = string;
     n = 0;
-    while ((i = UCHAR(*p)) != 0) {
-        n += enc[i].len;
-        ++p;
+    for (p = string; *p != '\0'; p++) {
+	n += enc[UCHAR(*p)].len;
     }
     i = dsPtr->length;
     Ns_DStringSetLength(dsPtr, dsPtr->length + n);
@@ -641,18 +640,16 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, char part)
      */
 
     q = dsPtr->string + i;
-    p = string;
-    while ((i = UCHAR(*p)) != 0) {
-        if (enc[i].str == NULL) {
+    for (p = string; *p != '\0'; p++) {
+        if (enc[UCHAR(*p)].str == NULL) {
             *q++ = *p;
         } else if (*p == ' ' && part == 'q') {
             *q++ = '+';
         } else {
             *q++ = '%';
-            *q++ = enc[i].str[0];
-            *q++ = enc[i].str[1];
+            *q++ = enc[UCHAR(*p)].str[0];
+            *q++ = enc[UCHAR(*p)].str[1];
         }
-        ++p;
     }
 
     if (encoding != NULL) {
@@ -708,22 +705,22 @@ UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
          * string which will be the largest size required.
          */
         i = dsPtr->length;
-        Ns_DStringSetLength(dsPtr, (int)(i + length));
+        Ns_DStringSetLength(dsPtr, i + (int)length);
         q = dsPtr->string + i;
     }
 
     enc = (part == 'q') ? queryenc : pathenc;
     p = string;
     n = 0;
-    while (likely(UCHAR(*p) != '\0')) {
+    while (likely(*p != '\0')) {
 	int j;
 
-	if (unlikely(UCHAR(p[0]) == '%') &&
+	if (unlikely(p[0] == '%') &&
             (i = enc[UCHAR(p[1])].hex) >= 0 &&
             (j = enc[UCHAR(p[2])].hex) >= 0) {
             *q++ = (unsigned char) ((i << 4) + j);
             p += 3;
-        } else if (unlikely(UCHAR(p[0]) == '+') && part == 'q') {
+        } else if (unlikely(p[0] == '+') && part == 'q') {
             *q++ = ' ';
             ++p;
         } else {
@@ -738,7 +735,7 @@ UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
         Tcl_ExternalToUtfDString(encoding, copy, n, &ds);
         Ns_DStringAppend(dsPtr, Tcl_DStringValue(&ds));
         Tcl_DStringFree(&ds);
-        if (copy) {
+        if (copy != 0) {
             ns_free(copy);
         }
     } else {

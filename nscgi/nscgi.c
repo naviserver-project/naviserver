@@ -161,7 +161,7 @@ Ns_ModuleInit(char *server, char *module)
      * for requests without content data.
      */
 
-    if (!initialized) {
+    if (initialized == 0) {
 	devNull = open(DEVNULL, O_RDONLY);
 	if (devNull < 0) {
 	    Ns_Log(Error, "nscgi: open(%s) failed: %s",

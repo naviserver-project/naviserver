@@ -95,12 +95,12 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     status = TCL_OK;
 
-    if (isbool) {
+    if (isbool != 0) {
         if (value && ((status = Tcl_GetBoolean(interp, value, &i)) == TCL_OK)) {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
             return TCL_OK;
         }
-    } else if (isint) {
+    } else if (isint != 0) {
         if (value != NULL) { 
             /*
              * There is no Tcl_GetWideInt so we put same error message as Tcl_GetInt
@@ -129,12 +129,12 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     if (defObj != NULL) {
 
-        if (isbool) {
+        if (isbool != 0) {
             if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
                 return TCL_ERROR;
             }
             defObj = Tcl_NewIntObj(i);
-        } else if (isint) {
+        } else if (isint != 0) {
             if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
                 return TCL_ERROR;
             }
@@ -144,11 +144,11 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
         }
 
-	if (doSet) {
+	if (doSet != 0) {
 	    /* make setting queryable */
 
 	    Ns_Set *set = Ns_ConfigCreateSection(section);
-	    if (set) {
+	    if (set != NULL) {
 		Ns_SetUpdate(set, key, Tcl_GetString(defObj));
 	    }
 	}

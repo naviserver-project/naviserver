@@ -120,7 +120,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
     Ns_Log(Notice, "modload: loading module %s from file %s", module, file);
 
     Ns_DStringInit(&ds);
-    if (!Ns_PathIsAbsolute(file)) {
+    if (Ns_PathIsAbsolute(file) == 0) {
         file = Ns_HomePath(&ds, "bin", file, NULL);
     }
     pathObj = Tcl_NewStringObj(file, -1);
@@ -133,7 +133,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
         return NS_ERROR;
     }
 
-    if (privateInterp) {
+    if (privateInterp != 0) {
       interp = NsTclCreateInterp();
     }
     status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
@@ -141,13 +141,13 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
     Tcl_DecrRefCount(pathObj);
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
-	if (privateInterp) {
+	if (privateInterp != 0) {
 	  Tcl_DeleteInterp(interp);
 	}
         Ns_DStringFree(&ds);
         return NS_ERROR;
     }
-    if (privateInterp) {
+    if (privateInterp != 0) {
       Tcl_DeleteInterp(interp);
     }
 
@@ -216,7 +216,7 @@ NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         Tcl_SetResult(interp, "server already started", TCL_STATIC);
         return TCL_ERROR;
     }
-    if (global) {
+    if (global != 0) {
         server = NULL;
     } else {
         server = itPtr->servPtr->server;

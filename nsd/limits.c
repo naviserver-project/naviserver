@@ -290,7 +290,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) {flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
     Ns_MutexLock(&lock);
     Ns_UrlSpecificSet(server, method, url,
                       limid, limitsPtr, flags, NULL);
@@ -324,7 +324,7 @@ FindLimits(const char *limits, int create)
     int            isNew;
 
     Ns_MutexLock(&lock);
-    if (!create) {
+    if (create == 0) {
         hPtr = Tcl_FindHashEntry(&limtable, limits);
     } else {
         hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);

@@ -80,7 +80,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
     Ns_UrlToFile(&ds, server, url);
     chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
     Ns_DStringFree(&ds);
-    if (chan) {
+    if (chan != NULL) {
         char buf[1024];
         int  nread;
 

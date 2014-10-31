@@ -248,8 +248,8 @@ NsUpdateProgress(Ns_Sock *sock)
                 Ns_Log(Warning, "ns:progress(%" PRIdz "/%" PRIdz "): ignoring duplicate URL: %s",
                        reqPtr->avail, reqPtr->length, key);
             }
-	    if (set) {Ns_SetFree(set);}
-            if (dsPtr) {Ns_DStringFree(dsPtr);}
+	    if (set != NULL)   {Ns_SetFree(set);}
+            if (dsPtr != NULL) {Ns_DStringFree(dsPtr);}
 
         } else {
 

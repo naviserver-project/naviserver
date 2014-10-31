@@ -412,7 +412,7 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 		   ns_sockstrerror(ns_sockerrno));
 	} else {
 	    success = 1;
-	    if (cork) {
+	    if (cork != 0) {
 		sockPtr->flags |= NS_CONN_SOCK_CORKED;
 	    } else {
 		sockPtr->flags &= ~NS_CONN_SOCK_CORKED;
@@ -476,7 +476,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
         }
     }
 
-    if (decork) {
+    if (decork != 0) {
 	Ns_SockCork(sock, 0);
     }
 

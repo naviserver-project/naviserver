@@ -1169,9 +1169,9 @@ CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
 
     if (lcontainsr != 0 && rcontainsl != 0) {
         return 0;
-    } else if (lcontainsr) {
+    } else if (lcontainsr != 0) {
         return 1;
-    } else if (rcontainsl) {
+    } else if (rcontainsl != 0) {
         return -1;
     } else {
 	return 0;
@@ -1206,9 +1206,9 @@ CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
     rcontainsl = Tcl_StringMatch(key, (*channelPtrPtr)->filter);
     if (lcontainsr != 0 && rcontainsl != 0) {
         return 0;
-    } else if (lcontainsr) {
+    } else if (lcontainsr != 0) {
         return 1;
-    } else if (rcontainsl) {
+    } else if (rcontainsl != 0) {
         return -1;
     } else {
 	return 0;
@@ -1532,12 +1532,12 @@ JunctionFind(const Junction *juncPtr, char *seq, int fast)
     for (i = (l - 1); i >= 0; i--) {
       channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
 #endif
-        if (fast) {
+        if (fast != 0) {
             doit = STREQ(p, channelPtr->filter);
         } else {
             doit = Tcl_StringMatch(p, channelPtr->filter);
         }
-        if (doit) {
+        if (doit != 0) {
             /*
              * We got here because this url matches the filter
              * (for example, it's *.adp).

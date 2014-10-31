@@ -338,7 +338,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         if (revents & POLLHUP) {
             revents |= POLLIN;
         }
-        if (revents) {
+        if (revents != 0U) {
             for (i = 0; i < 3; ++i) {
                 if (revents & map[i].event) {
                     Call(evPtr, &now, map[i].when);

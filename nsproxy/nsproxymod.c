@@ -98,7 +98,7 @@ Ns_ModuleInit(CONST char *server, CONST char *module)
     static  int once = 0;
     int     result;
 
-    if (!once) {
+    if (once == 0) {
         once = 1;
         Nsproxy_LibInit();
         Ns_RegisterProcInfo((Ns_Callback *)InitInterp, "nsproxy:initinterp", NULL);

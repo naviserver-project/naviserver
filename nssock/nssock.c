@@ -268,7 +268,7 @@ Send(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 #endif
     }
 
-    if (decork) {
+    if (decork != 0) {
       Ns_SockCork(sockPtr, 0);
     }
     return n;

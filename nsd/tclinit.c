@@ -1619,9 +1619,9 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
      * Tcl is not fully initialized at libnsd load time.
      */
 
-    if (!initialized) {
+    if (initialized == 0) {
         Ns_MasterLock();
-        if (!initialized) {
+        if (initialized == 0) {
             NsTclInitQueueType();
             NsTclInitAddrType();
             NsTclInitTimeType();

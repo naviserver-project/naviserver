@@ -268,7 +268,7 @@ NsConnectService(void)
 
     ok = StartServiceCtrlDispatcher(table);
 
-    if (!ok) {
+    if (ok == 0) {
         Ns_Log(Error, "nswin32: StartServiceCtrlDispatcher(): '%s'",
                SysErrMsg());
     }
@@ -315,7 +315,7 @@ NsRemoveService(char *service)
         }
         CloseServiceHandle(hmgr);
     }
-    if (ok) {
+    if (ok != 0) {
         Ns_Log(Notice, "nswin32: removed service: %s", name.string);
     } else {
         Ns_Log(Error, "nswin32: failed to remove %s service: %s",
@@ -436,7 +436,7 @@ NsHandleSignals(void)
      * initiate an orderly shutdown on Ctrl-C.
      */
 
-    if (!serviceRunning) {
+    if (serviceRunning == 0) {
         SetConsoleCtrlHandler(ConsoleHandler, TRUE);
     } else {
         StopTicker();
@@ -470,7 +470,7 @@ NsHandleSignals(void)
      * to keep updating status until shutdown is complete.
      */
 
-    if (serviceRunning) {
+    if (serviceRunning != 0) {
         StartTicker(SERVICE_STOP_PENDING);
     }
 
@@ -1024,7 +1024,7 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     Ns_Main((int)argc, argv, NULL);
     StopTicker();
     ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
-    if (!serviceFailed) {
+    if (serviceFailed == 0) {
         Ns_Log(Notice, "nswin32: noitifying SCM about exit");
         ReportStatus(SERVICE_STOPPED, 0, 0);
     }
