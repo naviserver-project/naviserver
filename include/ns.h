@@ -867,69 +867,71 @@ typedef struct {
  * config.c:
  */
 
-NS_EXTERN CONST char *
-Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
+NS_EXTERN const char *
+Ns_ConfigString(const char *section, const char *key, const char *def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigBool(CONST char *section, CONST char *key, int def)
+Ns_ConfigBool(const char *section, const char *key, int def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigFlag(CONST char *section, CONST char *key, unsigned int flag, int def,
+Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
               unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int
-Ns_ConfigInt(CONST char *section, CONST char *key, int def)
+Ns_ConfigInt(const char *section, const char *key, int def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
+Ns_ConfigIntRange(const char *section, const char *key, int def,
                   int min, int max)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_ConfigWideInt(CONST char *section, CONST char *key, Tcl_WideInt def)
+Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_ConfigWideIntRange(CONST char *section, CONST char *key, Tcl_WideInt def,
+Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt def,
                   Tcl_WideInt min, Tcl_WideInt max)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
-Ns_ConfigGetValue(CONST char *section, CONST char *key)
+NS_EXTERN const char *
+Ns_ConfigGetValue(const char *section, const char *key)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
-Ns_ConfigGetValueExact(CONST char *section, CONST char *key)
+NS_EXTERN const char *
+Ns_ConfigGetValueExact(const char *section, const char *key)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr)
+Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConfigGetInt64(CONST char *section, CONST char *key, int64_t *valuePtr)
+Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr)
+Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
-Ns_ConfigGetPath(CONST char *server, CONST char *module, ...)
+Ns_ConfigGetPath(const char *server, const char *module, ...)
      NS_GNUC_SENTINEL;
 
 NS_EXTERN Ns_Set **
 Ns_ConfigGetSections(void);
 
 NS_EXTERN Ns_Set *
-Ns_ConfigGetSection(CONST char *section);
+Ns_ConfigGetSection(const char *section)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Set *
-Ns_ConfigCreateSection(CONST char *section);
+Ns_ConfigCreateSection(const char *section)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
@@ -1034,8 +1036,9 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr);
 NS_EXTERN int
 Ns_ConnPeerPort(Ns_Conn *conn);
 
-NS_EXTERN char *
-Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
+NS_EXTERN const char *
+Ns_ConnLocation(Ns_Conn *conn) 
+NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
 
 NS_EXTERN char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);

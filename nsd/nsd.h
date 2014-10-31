@@ -117,7 +117,7 @@ struct _nsconf {
     char *name;
     char *version;
     const char *home;
-    char *tmpDir;
+    const char *tmpDir;
     const char *config;
     char *build;
     pid_t pid;
@@ -385,13 +385,13 @@ typedef struct Driver {
     char  *server;                      /* Virtual server name */
     char  *module;                      /* Driver module */
     char  *name;                        /* Driver name */
-    char  *location;                    /* Location, e.g, "http://foo:9090" */
+    const char  *location;              /* Location, e.g, "http://foo:9090" */
     char  *address;                     /* Address in location, e.g. "foo" */
     char  *protocol;                    /* Protocol in location, e.g, "http" */
     long   sendwait;                    /* send() I/O timeout */
     long   recvwait;                    /* recv() I/O timeout */
     size_t bufsize;                     /* Conn bufsize (0 for SSL) */
-    char  *extraHeaders;                /* Extra header fields added for every request */
+    const char  *extraHeaders;          /* Extra header fields added for every request */
 
     /*
      * Private to Driver.
@@ -414,7 +414,7 @@ typedef struct Driver {
     size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     NS_SOCKET sock;                     /* Listening socket */
     int pidx;                           /* poll() index */
-    char *bindaddr;                     /* Numerical listen address */
+    const char *bindaddr;               /* Numerical listen address */
     int port;                           /* Port in location */
     int backlog;                        /* listen() backlog */
     Tcl_WideInt maxinput;               /* Maximum request bytes to read */
@@ -468,7 +468,7 @@ typedef struct Sock {
     struct Sock        *nextPtr;
     struct NsServer    *servPtr;
 
-    char               *location;
+    const char         *location;
     int                 keep;
     int                 pidx;            /* poll() index */
     unsigned int        flags;           /* state flags used by driver */
@@ -560,7 +560,7 @@ typedef struct Conn {
      */
 
     char *server;
-    char *location;
+    const char *location;
     char *clientData;
 
     struct Request  *reqPtr;

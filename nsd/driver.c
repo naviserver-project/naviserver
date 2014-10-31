@@ -253,7 +253,8 @@ NsInitDrivers(void)
 int
 Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 {
-    char           *path,*address, *host, *bindaddr, *defproto, *defserver;
+    char           *path, *defproto;
+    const char     *host, *address, *bindaddr, *defserver;
     int             i, n, defport, noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;
@@ -478,7 +479,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
      */
 
     {
-	char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
+	const char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
 
 	if (extraHeaders != NULL) {
 	    int objc;

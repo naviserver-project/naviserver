@@ -204,7 +204,8 @@ static int
 DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData	   *idataPtr = data;
-    char            tmpbuf[32], *pool = NULL;
+    char            tmpbuf[32];
+    const char     *pool = NULL;
     int             cmd, nrows;
     Ns_DbHandle    *handlePtr = NULL;
     Ns_Set         *rowPtr;
@@ -747,7 +748,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         Tcl_WrongNumArgs(interp, 1, objv, "poolname");
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, Ns_DbPoolDescription(Tcl_GetString(objv[1])),TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), -1));
     return TCL_OK;
 }
 

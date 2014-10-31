@@ -148,7 +148,7 @@ static void	SetUpdate(Ns_Set *set, const char *key, const char *value);
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
-    char           *path, *section;
+    const char     *path, *section;
     int             i;
     Ns_Set         *set;
     Ns_DString      ds;

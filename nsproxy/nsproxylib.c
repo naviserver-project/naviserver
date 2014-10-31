@@ -242,7 +242,7 @@ static int    Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr);
 static void   Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr);
 
 static void   UpdateIov(struct iovec *iov, int n);
-static void   SetOpt(char *str, char **optPtr);
+static void   SetOpt(const char *str, char **optPtr);
 static void   ReaperThread(void *ignored);
 static void   CloseSlave(Slave *slavePtr, int ms);
 static void   ReapProxies(void);
@@ -1864,7 +1864,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 
 
 static void
-SetOpt(char *str, char **optPtr)
+SetOpt(const char *str, char **optPtr)
 {
     if (*optPtr != NULL) {
         ns_free(*optPtr);
@@ -2187,7 +2187,8 @@ GetPool(char *poolName, InterpData *idataPtr)
     if (isNew == 0) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
-        char *path = NULL, *exec = NULL;
+        const char *path = NULL;
+        const char *exec = NULL;
         int i;
 
         poolPtr = ns_calloc(1U, sizeof(Pool));

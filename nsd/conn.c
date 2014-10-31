@@ -575,12 +575,12 @@ Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnLocation(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
     NsServer *servPtr = connPtr->poolPtr->servPtr;
-    char *location = NULL;
+    const char *location = NULL;
 
     if (servPtr->vhost.locationProc != NULL) {
         location = (*servPtr->vhost.locationProc)(conn);

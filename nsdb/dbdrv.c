@@ -662,7 +662,7 @@ Ns_DbResetHandle (Ns_DbHandle *handle)
  */
 
 struct DbDriver *
-NsDbLoadDriver(char *driver)
+NsDbLoadDriver(const char *driver)
 {
     Tcl_HashEntry  *hPtr;
     int             isNew;
@@ -678,7 +678,7 @@ NsDbLoadDriver(char *driver)
     if (isNew == 0) {
 	driverPtr = (DbDriver *) Tcl_GetHashValue(hPtr);
     } else {
-        char *module;
+        const char *module;
 
 	driverPtr = ns_malloc(sizeof(DbDriver));
 	memset(driverPtr, 0, sizeof(DbDriver));
@@ -688,7 +688,7 @@ NsDbLoadDriver(char *driver)
         if (module == NULL) {
 	    Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
 	} else {
-	    char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
+	    const char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
 
             if (Ns_ModuleLoad(NULL, driver, path, module, "Ns_DbDriverInit")
 		    != NS_OK) {

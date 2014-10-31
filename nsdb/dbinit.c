@@ -45,14 +45,14 @@ struct Handle;
 
 typedef struct Pool {
     const char     *name;
-    char           *desc;
-    char           *source;
-    char           *user;
-    char           *pass;
+    const char     *desc;
+    const char     *source;
+    const char     *user;
+    const char     *pass;
     Ns_Mutex	    lock;
     Ns_Cond	    waitCond;
     Ns_Cond	    getCond;
-    char	   *driver;
+    const char	   *driver;
     struct DbDriver  *driverPtr;
     int		    waiting;
     int             nhandles;
@@ -71,10 +71,10 @@ typedef struct Pool {
  */
 
 typedef struct Handle {
-    char           *driver;
-    char           *datasource;
-    char           *user;
-    char           *password;
+    const char     *driver;
+    const char     *datasource;
+    const char     *user;
+    const char     *password;
     void           *connection;
     const char     *poolname;
     int             connected;
@@ -99,7 +99,7 @@ typedef struct Handle {
  */
 
 typedef struct ServData {
-    char *defpool;
+    const char *defpool;
     char *allowed;
 } ServData;
 
@@ -111,7 +111,7 @@ static Pool     *GetPool(const char *pool)                    NS_GNUC_NONNULL(1)
 static void      ReturnHandle(Handle *handlePtr)              NS_GNUC_NONNULL(1);
 static int       IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
 static int	 Connect(Handle *handlePtr)                   NS_GNUC_NONNULL(1);
-static Pool     *CreatePool(const char *pool, const char *path, char *driver)
+static Pool     *CreatePool(const char *pool, const char *path, const char *driver)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static int	 IncrCount(const Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
 static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1);
@@ -145,7 +145,7 @@ static Ns_Tls tls;
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_DbPoolDescription(const char *pool)
 {
     Pool         *poolPtr;
@@ -174,7 +174,7 @@ Ns_DbPoolDescription(const char *pool)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_DbPoolDefault(const char *server)
 {
     ServData *sdataPtr = GetServer(server);
@@ -569,10 +569,10 @@ Ns_DbBouncePool(const char *pool)
 void
 NsDbInitPools(void)
 {
-    Pool     *poolPtr;
-    Ns_Set   *pools;
-    char     *path, *driver;
-    int	      isNew, i;
+    Pool        *poolPtr;
+    Ns_Set      *pools;
+    const char  *path, *driver;
+    int	         isNew, i;
 
     Ns_TlsAlloc(&tls, FreeTable);
 
@@ -627,7 +627,8 @@ NsDbInitServer(char *server)
     ServData	   *sdataPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    char           *path, *pool, *p;
+    char           *path;
+    const char     *pool;
     Ns_DString	    ds;
     int		    isNew;
 
@@ -666,7 +667,8 @@ NsDbInitServer(char *server)
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
 	} else {
-	    p = pool;
+	    char *p, *toDelete;
+	    toDelete = p = ns_strdup(pool);
 	    while (p != NULL && *p != '\0') {
 		p = strchr(pool, ',');
 		if (p != NULL) {
@@ -683,6 +685,7 @@ NsDbInitServer(char *server)
 		}
 		pool = p;
 	    }
+	    ns_free(toDelete);
 	}
     	sdataPtr->allowed = ns_malloc((size_t)(ds.length + 1));
     	memcpy(sdataPtr->allowed, ds.string, (size_t)(ds.length + 1));
@@ -1010,13 +1013,13 @@ CheckPool(void *arg)
  */
 
 static Pool  *
-CreatePool(const char *pool, const char *path, char *driver)
+CreatePool(const char *pool, const char *path, const char *driver)
 {
     Pool            *poolPtr;
     Handle          *handlePtr;
     struct DbDriver *driverPtr;
     int              i;
-    char	    *source;
+    const char	    *source;
 
     assert(pool != NULL);
     assert(path != NULL);
