@@ -142,7 +142,7 @@ Ns_ModuleInit(char *server, char *module)
 {
     Ns_DString ds;
     int num, n;
-    char *path, *value;
+    const char *path, *value;
     SSLDriver *drvPtr;
     Ns_DriverInitData init = {0};
 
