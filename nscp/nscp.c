@@ -321,11 +321,11 @@ EvalThread(void *arg)
     Tcl_Interp *interp;
     Tcl_DString ds;
     Tcl_DString unameDS;
-    char buf[64], *res;
+    char buf[64];
     int n, ncmd, stop;
     unsigned int len;
     Sess *sessPtr = arg;
-    const char *server = sessPtr->modPtr->server;
+    const char *res, *server = sessPtr->modPtr->server;
 
     /*
      * Initialize the thread and login the user.
@@ -337,7 +337,7 @@ EvalThread(void *arg)
     snprintf(buf, sizeof(buf), "-nscp:%d-", sessPtr->id);
     Ns_ThreadSetName(buf);
     Ns_Log(Notice, "nscp: %s connected", ns_inet_ntoa(sessPtr->sa.sin_addr));
-    if (!Login(sessPtr, &unameDS)) {
+    if (Login(sessPtr, &unameDS) == 0) {
 	goto done;
     }
 
@@ -364,7 +364,7 @@ EvalThread(void *arg)
 retry:
 	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
 	while (1) {
-	    if (!GetLine(sessPtr->sock, buf, &ds, 1)) {
+	    if (GetLine(sessPtr->sock, buf, &ds, 1) == 0) {
 		goto done;
 	    }
 	    if (Tcl_CommandComplete(ds.string)) {
@@ -387,7 +387,7 @@ retry:
 	    Ns_TclLogError(interp);
 	}
 	Tcl_AppendResult(interp, "\r\n", NULL);
-	res = (char*)Tcl_GetStringResult(interp);;
+	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
 	while (len > 0) {
 	    if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
@@ -433,7 +433,7 @@ done:
 static int
 GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 {
-    unsigned char buf[2048];
+    char buf[2048];
     int n, result = 0, retry = 0;
 
     /*
@@ -443,7 +443,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
     if (echo == 0) {
 	send(sock, will_echo, 3U, 0);
 	send(sock, dont_echo, 3U, 0);
-	recv(sock, (char *)buf, sizeof(buf), 0); /* flush client ack thingies */
+	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);
     if (send(sock, prompt, (size_t)n, 0) != n) {
@@ -452,7 +452,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
     }
 
     do {
-	if ((n = recv(sock, (char *)buf, sizeof(buf), 0)) <= 0) {
+	if ((n = recv(sock, buf, sizeof(buf), 0)) <= 0) {
 	    result = 0;
 	    goto bail;
 	}
@@ -464,7 +464,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	/*
 	 * This EOT checker cannot happen in the context of telnet.
 	 */
-	if (n == 1 && buf[0] == 4) {
+	if (n == 1 && buf[0] == '\x04') {
 	    result = 0;
 	    goto bail;
 	}
@@ -473,14 +473,14 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	 * Deal with telnet IAC commands in some sane way.
 	 */
 
-	if (n > 1 && buf[0] == TN_IAC) {
-	    if ( buf[1] == TN_EOF) {
+	if (n > 1 && UCHAR(buf[0]) == TN_IAC) {
+	    if ( UCHAR(buf[1]) == TN_EOF) {
 		result = 0;
 		goto bail;
-	    } else if (buf[1] == TN_IP) {
+	    } else if (UCHAR(buf[1]) == TN_IP) {
 		result = 0;
 		goto bail;
-            } else if ((buf[1] == TN_WONT) && (retry < 2)) {
+            } else if ((UCHAR(buf[1]) == TN_WONT) && (retry < 2)) {
                 /*
                  * It seems like the flush at the bottom of this func
                  * does not always get all the acks, thus an echo ack
@@ -538,8 +538,8 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 
     Tcl_DStringInit(&uds);
     Tcl_DStringInit(&pds);
-    if (GetLine(sessPtr->sock, "login: ", &uds, 1) &&
-	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
+    if (GetLine(sessPtr->sock, "login: ", &uds, 1) != 0 &&
+	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo) != 0) {
         Tcl_HashEntry  *hPtr;
 	char           *pass;
 
@@ -573,7 +573,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
             Ns_InfoServerName(), Ns_InfoServerVersion(),
             Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
     } else {
-        Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");
+	Ns_Log(Warning, "nscp: login failed: '%s'", (user != NULL) ? user : "?");
         Ns_DStringAppend(&msgDs, "Access denied!\n");
     }
     (void) send(sessPtr->sock, msgDs.string, msgDs.length, 0);
