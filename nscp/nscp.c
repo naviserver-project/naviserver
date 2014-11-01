@@ -498,7 +498,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	    }
 	}
 
-	Tcl_DStringAppend(dsPtr, (char *) buf, n);
+	Tcl_DStringAppend(dsPtr, buf, n);
 	result = 1;
 
     } while (buf[n-1] != '\n');
@@ -507,7 +507,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
     if (echo == 0) {
 	send(sock, wont_echo, 3, 0);
 	send(sock, do_echo, 3, 0);
-	recv(sock, (char *)buf, sizeof(buf), 0); /* flush client ack thingies */
+	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     return result;
 }

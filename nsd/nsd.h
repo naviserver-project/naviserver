@@ -1480,7 +1480,7 @@ NS_EXTERN void NsStopSockCallbacks(void);
 NS_EXTERN void NsStopScheduledProcs(void);
 NS_EXTERN void NsGetBuf(char **bufPtr, int *sizePtr);
 
-NS_EXTERN char *NsFindCharset(CONST char *mimetype, size_t *lenPtr);
+NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr);
 NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 
 NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,

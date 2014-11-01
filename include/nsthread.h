@@ -404,7 +404,6 @@ typedef struct DIR_ *DIR;
 #include <ctype.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <sys/stat.h>

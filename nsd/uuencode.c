@@ -117,7 +117,7 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
          * extra newline character
          */
         if (line >= 60) {
-            *q++ = '\n'; 
+	    *q++ = UCHAR('\n'); 
 	    line = 0;
         }       
 	*q++ = ENC(p[0] >> 2);
@@ -137,15 +137,15 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
 	*q++ = ENC(p[0] >> 2);
 	if (n == 1) {
 	    *q++ = ENC((p[0] << 4) & 0x30U);
-	    *q++ = '=';
+	    *q++ = UCHAR('=');
 	} else {
 	    *q++ = ENC(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
 	    *q++ = ENC(( p[1] << 2) & 0x3CU);
 	}
-	*q++ = '=';
+	*q++ = UCHAR('=');
     }
-    *q = '\0';
-    return (q - (unsigned char *) buf);
+    *q = UCHAR('\0');
+    return ((char *)q - buf);
 }
 
 
@@ -214,7 +214,7 @@ Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
 	*q++ = DEC(chars[1]) << 4 | DEC(chars[2]) >> 2;
     }
     if ((size_t)(q - buf) < bufSize) {
-	*q = '\0';
+	*q = UCHAR('\0');
     }
     return (q - buf);
 }

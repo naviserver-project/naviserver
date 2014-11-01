@@ -530,7 +530,7 @@ NsSendSignal(int sig)
  */
 
 int
-NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
+NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
 {
     HANDLE hndl, mobj;
     LPCVOID addr;
