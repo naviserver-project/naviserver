@@ -179,7 +179,7 @@ Ns_DbPoolDefault(const char *server)
 {
     ServData *sdataPtr = GetServer(server);
 
-    return (sdataPtr ? sdataPtr->defpool : NULL);
+    return ((sdataPtr != NULL) ? sdataPtr->defpool : NULL);
 }
 
 
@@ -204,7 +204,7 @@ Ns_DbPoolList(const char *server)
 {
     ServData *sdataPtr = GetServer(server);
 
-    return (sdataPtr ? sdataPtr->allowed : NULL);
+    return ((sdataPtr != NULL) ? sdataPtr->allowed : NULL);
 }
 
 

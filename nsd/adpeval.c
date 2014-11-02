@@ -697,9 +697,9 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
         itPtr->deleteInterp = 1;
         Tcl_DStringInit(&ds);
         Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
-        Tcl_DStringAppendElement(&ds, procs ? procs : "");
-        Tcl_DStringAppendElement(&ds, host ? host : "");
-        Tcl_DStringAppendElement(&ds, port ? port : "");
+        Tcl_DStringAppendElement(&ds, (procs != NULL) ? procs : "");
+        Tcl_DStringAppendElement(&ds, (host  != NULL) ? host : "");
+        Tcl_DStringAppendElement(&ds, (port  != NULL) ? port : "");
         code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         Tcl_DStringFree(&ds);
         if (code != TCL_OK) {

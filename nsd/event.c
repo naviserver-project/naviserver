@@ -171,7 +171,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
         evPtr->arg = arg;
         Push(evPtr, queuePtr->firstInitPtr);
     }
-    return evPtr ? NS_OK : NS_ERROR;
+    return (evPtr != NULL) ? NS_OK : NS_ERROR;
 }
 
 

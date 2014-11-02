@@ -1986,8 +1986,7 @@ SockError(Sock *sockPtr, int reason, int err)
     if (errMsg != NULL) {
         Ns_Log(DriverDebug, "SockError: %s (%d: %s), sock: %d, peer: %s:%d, request: %.99s",
                errMsg,
-               err,
-               err ? strerror(err) : "",
+               err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
                ns_inet_ntoa(sockPtr->sa.sin_addr),
                ntohs(sockPtr->sa.sin_port),
@@ -3243,7 +3242,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	queuePtr->queuesize--;
     } else {
 	WriterSock *curPtr, *lastPtr = queuePtr->curPtr;
-	for (curPtr = lastPtr ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
+	for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
 	    if (curPtr == wrSockPtr) {
 		lastPtr->nextPtr = wrSockPtr->nextPtr;
 		queuePtr->queuesize--;

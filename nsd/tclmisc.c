@@ -120,7 +120,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
         initialized = NS_TRUE;
     }
-    (void) Tcl_CreateHashEntry(global ? &runTable :
+    (void) Tcl_CreateHashEntry((global != NS_FALSE) ? &runTable :
                                &itPtr->servPtr->tcl.runTable, script, &isNew);
     Ns_MasterUnlock();
 

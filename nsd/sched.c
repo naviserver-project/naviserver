@@ -200,7 +200,7 @@ Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
     if (interval < 0) {
         return NS_ERROR;
     }
-    return Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, thread ? NS_SCHED_THREAD : 0, interval, NULL);
+    return Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0, interval, NULL);
 }
 
 

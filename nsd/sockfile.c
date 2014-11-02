@@ -221,7 +221,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
         }
     }
 
-    return nwrote ? nwrote : sent;
+    return (nwrote != 0) ? nwrote : sent;
 }
 
 static ssize_t

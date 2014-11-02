@@ -1198,8 +1198,9 @@ CgiRegister(Mod *modPtr, char *map)
     mapPtr->modPtr = modPtr;
     mapPtr->url = ns_strdup(url);
     mapPtr->path = ns_strcopy(path);
-    Ns_Log(Notice, "nscgi: %s %s%s%s",
-	   method, url, path ? " -> " : "", path ? path : "");
+    Ns_Log(Notice, "nscgi: %s %s%s%s", method, url, 
+	   (path != NULL) ? " -> " : "", 
+	   (path != NULL) ? path : "");
     Ns_RegisterRequest(modPtr->server, method, url,
 		       CgiRequest, CgiFreeMap, mapPtr, 0);
 
@@ -1284,6 +1285,6 @@ SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
 static void
 SetUpdate(Ns_Set *set, const char *key, const char *value)
 {
-    Ns_SetUpdate(set, key, value ? value : "");
+    Ns_SetUpdate(set, key, (value != NULL) ? value : "");
 }
 

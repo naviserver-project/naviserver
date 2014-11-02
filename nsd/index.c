@@ -200,7 +200,7 @@ Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
     pPtrPtr = (void **) bsearch(key, indexPtr->el, (size_t)indexPtr->n, 
                                 sizeof(void *), indexPtr->CmpKeyWithEl);
 
-    return pPtrPtr ? *pPtrPtr : NULL;
+    return (pPtrPtr != NULL) ? *pPtrPtr : NULL;
 }
 
 

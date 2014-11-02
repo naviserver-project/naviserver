@@ -286,7 +286,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         sbufIdx = 0;
     }
 
-    return nwrote ? nwrote : sent;
+    return (nwrote != 0) ? nwrote : sent;
 }
 
 

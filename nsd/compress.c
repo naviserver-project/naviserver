@@ -271,7 +271,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
     nCompressed = 0;
 
     if (nbufs == 0) {
-	flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
+	flushFlags = (flush != 0) ? Z_FINISH : Z_SYNC_FLUSH;
         DeflateOrAbort(z, flushFlags);
     } else {
 	int i;
@@ -285,7 +285,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
 		continue;
 	    }
 	    if (nCompressed == toCompress) {
-		flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
+		flushFlags = (flush != 0) ? Z_FINISH : Z_SYNC_FLUSH;
 	    } else {
 		flushFlags = Z_NO_FLUSH;
 	    }

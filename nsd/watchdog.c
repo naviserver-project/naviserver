@@ -250,7 +250,7 @@ WaitForServer()
 
     SysLog(LOG_NOTICE, "watchdog: server %d %s (%d).", watchedPid, msg, ret);
 
-    return ret ? NS_ERROR : NS_OK;
+    return (ret != 0) ? NS_ERROR : NS_OK;
 }
 
 

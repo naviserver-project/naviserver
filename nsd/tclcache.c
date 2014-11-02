@@ -642,7 +642,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 
     Ns_CacheLock(cPtr->cache);
     entry = Ns_CacheFindEntry(cPtr->cache, key);
-    resultObj = entry ? Tcl_NewStringObj(Ns_CacheGetValue(entry), -1) : NULL;
+    resultObj = (entry != NULL) ? Tcl_NewStringObj(Ns_CacheGetValue(entry), -1) : NULL;
     Ns_CacheUnlock(cPtr->cache);
 
     if (varNameObj != NULL) {

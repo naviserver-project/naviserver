@@ -1280,7 +1280,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
      */
 
     if (unlikely(opt == CIsConnectedIdx)) {
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connPtr ? 1 : 0));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
         return TCL_OK;
     }
     if (unlikely(connPtr == NULL)) {

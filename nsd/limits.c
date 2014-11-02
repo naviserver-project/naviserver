@@ -112,7 +112,7 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
     limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0);
     Ns_MutexUnlock(&lock);
 
-    return (limitsPtr ? limitsPtr : defLimitsPtr);
+    return ((limitsPtr != NULL) ? limitsPtr : defLimitsPtr);
 }
 
 
@@ -341,7 +341,7 @@ FindLimits(const char *limits, int create)
     }
     Ns_MutexUnlock(&lock);
 
-    return (hPtr ? Tcl_GetHashValue(hPtr) : NULL);
+    return ((hPtr != NULL) ? Tcl_GetHashValue(hPtr) : NULL);
 }
 
 

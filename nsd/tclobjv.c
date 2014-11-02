@@ -98,7 +98,7 @@ int
 Ns_OptionServer(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     NsServer *servPtr = NsGetServer(Tcl_GetString(objPtr));
     *clientData = servPtr;
-    return servPtr ? TCL_OK : TCL_ERROR;
+    return (servPtr != NULL) ? TCL_OK : TCL_ERROR;
 }
 
 int 

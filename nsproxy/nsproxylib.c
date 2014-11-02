@@ -367,7 +367,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     if (argc > 4 || argc < 3) {
         char *pgm = strrchr(argv[0], '/');
-        Ns_Fatal("usage: %s pool id ?command?", pgm ? ++pgm : argv[0]);
+        Ns_Fatal("usage: %s pool id ?command?", (pgm != NULL) ? ++pgm : argv[0]);
     }
     if (argc < 4) {
         active = NULL;
@@ -916,14 +916,14 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
             err = CreateSlave(interp, proxyPtr);
         }
         if (err == ENone) {
-            int len = script ? strlen(script) : 0;
-            req.len   = htonl(len);
+	    size_t len = (script != NULL) ? strlen(script) : 0U;
+            req.len   = htonl((uint32_t)len);
             req.major = htons(MAJOR_VERSION);
             req.minor = htons(MINOR_VERSION);
             Tcl_DStringTrunc(&proxyPtr->in, 0);
             Tcl_DStringAppend(&proxyPtr->in, (char *) &req, sizeof(req));
-            if (len > 0) {
-                Tcl_DStringAppend(&proxyPtr->in, script, len);
+            if (len > 0U) {
+                Tcl_DStringAppend(&proxyPtr->in, script, (int)len);
             }
             proxyPtr->state = Busy;
 
@@ -947,8 +947,8 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
     }
 
     if (err != ENone) {
-        Tcl_AppendResult(interp, "could not send script \"",
-                         script ? script : "<empty>",
+        Tcl_AppendResult(interp, "could not send script \"", 
+			 (script != NULL) ? script : "<empty>",
                          "\" to proxy \"", proxyPtr->id, "\": ",
                          ProxyError(interp, err), NULL);
     }
@@ -1302,9 +1302,9 @@ UpdateIov(struct iovec *iov, int n)
 static void
 Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
 {
-    Res   hdr;
-    char *einfo = NULL, *ecode = NULL, *result = NULL;
-    int   clen = 0, ilen = 0, rlen = 0;
+    Res    hdr;
+    char  *einfo = NULL, *ecode = NULL, *result = NULL;
+    size_t clen = 0, ilen = 0, rlen = 0;
 
     if (interp != NULL) {
         if (code == TCL_OK) {
@@ -1314,8 +1314,8 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
             ecode = (char *)Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
             einfo = (char *)Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
         }
-        clen = ecode ? (strlen(ecode) + 1) : 0;
-        ilen = einfo ? (strlen(einfo) + 1) : 0;
+        clen = (ecode != NULL) ? (strlen(ecode) + 1) : 0;
+        ilen = (einfo != NULL) ? (strlen(einfo) + 1) : 0;
         result = (char *)Tcl_GetStringResult(interp);
         rlen = strlen(result);
     }
@@ -1890,9 +1890,9 @@ AppendStr(Tcl_Interp *interp, CONST char *flag, char *val)
 {
     if (flag != NULL) {
         Tcl_AppendElement(interp, (char *)flag);
-        Tcl_AppendElement(interp, val ? val : "");
+        Tcl_AppendElement(interp, (val != NULL) ? val : "");
     } else {
-        Tcl_AppendResult(interp, val ? val : "", NULL);
+        Tcl_AppendResult(interp, (val != NULL) ? val : "", NULL);
     }
 }
 

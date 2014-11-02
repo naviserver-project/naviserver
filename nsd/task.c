@@ -141,7 +141,7 @@ Ns_CreateTaskQueue(const char *name)
     TaskQueue *queuePtr;
 
     queuePtr = ns_calloc(1U, sizeof(TaskQueue));
-    strncpy(queuePtr->name, name ? name : "", NAME_SIZE);
+    strncpy(queuePtr->name, (name != NULL) ? name : "", NAME_SIZE);
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
                  ns_sockstrerror(ns_sockerrno));

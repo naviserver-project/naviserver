@@ -482,7 +482,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             case SIsNullIdx:
                 val = Ns_SetValue(set, i);
-                objPtr = Tcl_NewBooleanObj(val ? 0 : 1);
+                objPtr = Tcl_NewBooleanObj((val != NULL) ? 0 : 1);
                 Tcl_SetObjResult(interp, objPtr);
                 break;
 

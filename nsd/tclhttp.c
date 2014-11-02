@@ -739,7 +739,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
     Ns_StrToUpper(Ns_DStringValue(&httpPtr->ds));
 
     Ns_DStringVarAppend(&httpPtr->ds, " ", 
-			file ? file : "/",
+			(file != NULL) ? file : "/",
 			" HTTP/1.0\r\n", NULL);
 
     /*

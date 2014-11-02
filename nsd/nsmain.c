@@ -538,7 +538,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     /*
      * Set the procname used for the pid file.
      */
-    procname = (server ? server : Ns_SetKey(servers, 0));
+    procname = ((server != NULL) ? server : Ns_SetKey(servers, 0));
 
     /*
      * Connect to the service control manager if running
@@ -1000,7 +1000,7 @@ UsageError(const char *msg, ...)
         "  -s  use server named <server> in config file\n"
         "  -t  read config from <file>\n"
         "\n", nsconf.argv0);
-    exit(msg ? 1 : 0);
+    exit ((msg != NULL) ? 1 : 0);
 }
 
 /*

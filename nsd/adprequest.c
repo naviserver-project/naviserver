@@ -275,7 +275,7 @@ RegisterPage(ClientData arg,
     assert(method != NULL);
     assert(url != NULL);
 
-    adp = ns_calloc(1U, sizeof(AdpRequest) + (file ? strlen(file) : 0));
+    adp = ns_calloc(1U, sizeof(AdpRequest) + ((file != NULL) ? strlen(file) : 0));
     if (file != NULL) {
         strcpy(adp->file, file);
     }
@@ -483,7 +483,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) || (len == 0 && stream)) {
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) || (len == 0 && stream != 0)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {
@@ -519,8 +519,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 		
 		sbuf.iov_base = buf;
 		sbuf.iov_len  = len;
-                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1,
-				       stream ? NS_CONN_STREAM : 0) == NS_OK) {
+                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, (stream != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
                     result = TCL_OK;
                 }
                 if (result != TCL_OK) {

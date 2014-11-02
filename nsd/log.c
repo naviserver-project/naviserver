@@ -1171,8 +1171,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
 
     if (trunc != 0) {
         if (count > 0) {
-            int length = ePtr ? ePtr->offset + ePtr->length : 0;
-            cachePtr->count = length ? nentry : 0;
+            int length = (ePtr != NULL) ? ePtr->offset + ePtr->length : 0;
+            cachePtr->count = (length != 0) ? nentry : 0;
             cachePtr->currEntry = ePtr;
             Ns_DStringSetLength(&cachePtr->buffer, length);
         } else {

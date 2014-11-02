@@ -85,7 +85,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         isint = 1;
     }
 
-    value = exact ?
+    value = (exact != 0) ?
         Ns_ConfigGetValueExact(section, key) :
         Ns_ConfigGetValue(section, key);
 

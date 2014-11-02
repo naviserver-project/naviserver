@@ -472,7 +472,7 @@ Ns_TclGetConn(Tcl_Interp *interp)
 {
     NsInterp *itPtr = NsGetInterpData(interp);
 
-    return (itPtr ? itPtr->conn : NULL);
+    return ((itPtr != NULL) ? itPtr->conn : NULL);
 }
 
 
@@ -518,7 +518,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
        * that the thread local cache table might contain as well
        * entries with itPtr->servPtr == NULL.
        */
-      hPtr = tablePtr ? Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, NULL) : NULL;
+      hPtr = (tablePtr != NULL) ? Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, NULL) : NULL;
       
       /*
        * Make sure to delete the entry in the thread local cache to
@@ -783,7 +783,7 @@ Ns_TclLibrary(CONST char *server)
 {
     NsServer *servPtr = NsGetServer(server);
 
-    return (servPtr ? servPtr->tcl.library : nsconf.tcl.sharedlibrary);
+    return ((servPtr != NULL) ? servPtr->tcl.library : nsconf.tcl.sharedlibrary);
 }
 
 
