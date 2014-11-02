@@ -180,7 +180,9 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, const char *value, time_t m
         Ns_UrlQueryEncode(&cookie, value, NULL);
     }
     Ns_DStringAppend(&cookie, "\"");
-    if (maxage == TIME_T_MAX) {
+    if ((flags & NS_COOKIE_EXPIRENOW) != NULL) {
+        Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT");
+    } else if (maxage == TIME_T_MAX) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT");
     } else if (maxage > 0) {
         Ns_DStringPrintf(&cookie, "; Max-Age=%ld", maxage);
@@ -242,13 +244,13 @@ Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, char *value, time_t max
 void
 Ns_ConnDeleteCookie(const Ns_Conn *conn, char *name, char *domain, char *path)
 {
-    Ns_ConnSetCookieEx(conn, name, NULL, 0, domain, path, 0U);
+    Ns_ConnSetCookieEx(conn, name, NULL, 0, domain, path, NS_COOKIE_EXPIRENOW);
 }
 
 void
 Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, char *name, char *domain, char *path)
 {
-    Ns_ConnSetCookieEx(conn, name, NULL, 0, domain, path, NS_COOKIE_SECURE);
+    Ns_ConnSetCookieEx(conn, name, NULL, 0, domain, path, NS_COOKIE_EXPIRENOW|NS_COOKIE_SECURE);
 }
 
 
@@ -482,7 +484,7 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         flags |= NS_COOKIE_SECURE;
     }
 
-    Ns_ConnSetCookieEx(conn, name, NULL, 0, domain, path, flags);
+    Ns_ConnSetCookieEx(conn, name, NULL, 0, domain, path, NS_COOKIE_EXPIRENOW|flags);
 
     return TCL_OK;
 }

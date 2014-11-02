@@ -180,10 +180,11 @@
 #define NS_TCL_SET_STATIC          0U /* Ns_Set managed elsewhere, maintain a Tcl reference */
 #define NS_TCL_SET_DYNAMIC         1U /* Tcl owns the Ns_Set and will free when finished */
 
-#define NS_COOKIE_SECURE           1U  /* The cookie should only be sent using HTTPS */
-#define NS_COOKIE_SCRIPTABLE       2U  /* Available to javascript on the client. */
-#define NS_COOKIE_DISCARD          4U  /* Discard the cookie at the end of the current session. */
-#define NS_COOKIE_REPLACE          8U  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_SECURE        0x01U  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE    0x02U  /* Available to javascript on the client. */
+#define NS_COOKIE_DISCARD       0x04U  /* Discard the cookie at the end of the current session. */
+#define NS_COOKIE_REPLACE       0x08U  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_EXPIRENOW     0x10U  /* Replace the cookie in the output headers. */
 
 #ifdef _WIN32
 #define ns_sockclose               closesocket
