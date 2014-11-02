@@ -50,7 +50,7 @@
  * Local functions defined in this file
  */
 
-static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
+static int ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
                     FILE *fp, int fd);
 static int ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
                     FILE *fp, int fd);
@@ -112,7 +112,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
         int i;
 
         for (i = 0; i < nbufs; i++) {
-	    CONST char *utfBytes;
+	    const char *utfBytes;
 	    size_t      utfLen;
 
             utfBytes = bufs[i].iov_base;
@@ -381,25 +381,25 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
  */
 
 int
-Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
+Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, size_t nsend)
 {
     return ConnSend(conn, nsend, chan, NULL, -1);
 }
 
 int
-Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
+Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, size_t nsend)
 {
     return ConnSend(conn, nsend, NULL, fp, -1);
 }
 
 int
-Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
+Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
 {
     return ConnSend(conn, nsend, NULL, NULL, fd);
 }
 
 static int
-ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
+ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     int          status;
     int          nread;
@@ -419,7 +419,7 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 
     status = NS_OK;
     while (status == NS_OK && nsend > 0) {
-        size_t toRead = (size_t)nsend;
+        size_t toRead = nsend;
 
         if (toRead > sizeof(buf)) {
             toRead = sizeof(buf);

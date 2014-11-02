@@ -1129,15 +1129,15 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
+Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
+Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, size_t nsend)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
+Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, size_t nsend)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -2077,7 +2077,7 @@ Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mimeType)
+Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -2097,41 +2097,41 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnReturnNotice(Ns_Conn *conn, int status, CONST char *title,
-                    CONST char *notice)
+Ns_ConnReturnNotice(Ns_Conn *conn, int status, const char *title,
+                    const char *notice)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, CONST char *title,
-                         CONST char *notice)
+Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, const char *title,
+                         const char *notice)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, ssize_t len)
+Ns_ConnReturnHtml(Ns_Conn *conn, int status, const char *html, ssize_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, 
-		      ssize_t len, CONST char *type)
+Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data, 
+		      ssize_t len, const char *type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, 
-		  ssize_t len, CONST char *type)
+Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data, 
+		  ssize_t len, const char *type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
+Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *type,
                          Tcl_Channel chan, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
+Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *type,
                       FILE *fp, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type, int fd, size_t len)
+Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *type, int fd, size_t len)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -2141,7 +2141,7 @@ NS_EXTERN int
 Ns_ConnReturnRequestURITooLong(Ns_Conn *conn);
 
 NS_EXTERN void
-Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, CONST char *type, size_t length)
+Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, const char *type, size_t length)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
