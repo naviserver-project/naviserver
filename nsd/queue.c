@@ -355,7 +355,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     * available, ...)
     */
   
-    if (!servPtr->pools.shutdown) {
+    if (servPtr->pools.shutdown == 0) {
 
 	Ns_MutexLock(&poolPtr->wqueue.lock);
 	if (poolPtr->wqueue.freePtr != NULL) {
@@ -396,9 +396,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	     * Try to get an entry from the connection thread queue,
 	     * and dequeue it when possible.
 	     */
-	    if (poolPtr->tqueue.nextPtr) {
+	    if (poolPtr->tqueue.nextPtr != NULL) {
 	        Ns_MutexLock(&poolPtr->tqueue.lock);
-		if (poolPtr->tqueue.nextPtr) {
+		if (poolPtr->tqueue.nextPtr != NULL) {
 		  argPtr = poolPtr->tqueue.nextPtr;
 		  poolPtr->tqueue.nextPtr = argPtr->nextPtr;
 		}
@@ -783,7 +783,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	    Ns_MutexLock(&poolPtr->tqueue.lock);
 	    for (i=0; i < poolPtr->threads.max; i++) {
 	        ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
-		if (argPtr->connPtr) {
+		if (argPtr->connPtr != NULL) {
 		    AppendConnList(dsPtr, argPtr->connPtr, "running");
 		}
 	    }
@@ -1093,10 +1093,10 @@ NsConnThread(void *arg)
 	assert(argPtr->connPtr == NULL);
 	assert(argPtr->state == connThread_ready);
 
-	if (poolPtr->wqueue.wait.firstPtr) {
+	if (poolPtr->wqueue.wait.firstPtr != NULL) {
 	    connPtr = NULL;	
 	    Ns_MutexLock(wqueueLockPtr);
-	    if (poolPtr->wqueue.wait.firstPtr) {
+	    if (poolPtr->wqueue.wait.firstPtr != NULL) {
 		/* 
 		 * There are waiting requests.  Pull the first connection of
 		 * the waiting list and assign it to the ConnThreadArg.
@@ -1146,7 +1146,7 @@ NsConnThread(void *arg)
 	     */
 	    while (1) {
 
-		if (servPtr->pools.shutdown) {break;}
+		if (servPtr->pools.shutdown != 0) {break;}
 		
 		Ns_GetTime(timePtr);
 		Ns_IncrTime(timePtr, timeout, 0);
@@ -1154,7 +1154,7 @@ NsConnThread(void *arg)
 		status = Ns_CondTimedWait(&argPtr->cond, &argPtr->lock, timePtr);
 		
 		if (status == NS_TIMEOUT) {
-		    if (argPtr->connPtr) {
+		    if (argPtr->connPtr != NULL) {
 			/* this should not happen; probably a signal was lost */
 			Ns_Log(Warning, "signal lost, resuming after timeout");
 			status = NS_OK;
@@ -1165,7 +1165,7 @@ NsConnThread(void *arg)
 		     */
 		    break;
 		}
-		if (argPtr->connPtr) {break;}
+		if (argPtr->connPtr != NULL) {break;}
 		
 		Ns_Log(Debug, "CondTimedWait returned an unexpected result, maybe shutdown?");
 	    }
@@ -1203,7 +1203,7 @@ NsConnThread(void *arg)
 	    poolPtr->threads.idle --;
 	    Ns_MutexUnlock(threadsLockPtr);
 	    
-	    if (servPtr->pools.shutdown) {
+	    if (servPtr->pools.shutdown != 0) {
 		exitMsg = "shutdown pending";
 		break;
 	    } else if (status == NS_TIMEOUT) {
@@ -1446,7 +1446,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 
     connPtr->keep = -1;                   /* Default keep-alive rules apply */
 
-    Ns_ConnSetCompression(conn, servPtr->compress.enable ? servPtr->compress.level : 0);
+    Ns_ConnSetCompression(conn, (servPtr->compress.enable != 0) ? servPtr->compress.level : 0);
     connPtr->compress = -1;
 
     connPtr->outputEncoding = servPtr->encoding.outputEncoding;
@@ -1567,10 +1567,10 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Deactivate stream writer, if defined
      */
-    if (connPtr->fd) {
+    if (connPtr->fd != 0) {
 	connPtr->fd = 0;
     }
-    if (connPtr->streamWriter) {
+    if (connPtr->streamWriter != NULL) {
 	WriterSock *wrPtr;
 
 	NsWriterLock();
@@ -1592,7 +1592,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->outputheaders = NULL;
     NsFreeRequest(connPtr->reqPtr);
     connPtr->reqPtr = NULL;
-    if (connPtr->clientData) {
+    if (connPtr->clientData != NULL) {
       ns_free(connPtr->clientData);
       connPtr->clientData = NULL;
     }
@@ -1747,7 +1747,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
          * is not entirely safe but acceptible for a seldom-used
          * admin command.
          */
-        if (connPtr->request) {
+        if (connPtr->request != NULL) {
 	    const char *p;
 	    p = (connPtr->request->method != NULL) ? connPtr->request->method : "?";
 	    (void)strncpy(buf, p, sizeof(buf));

@@ -276,7 +276,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
         return NS_ERROR;
     }
 
-    path = (init->path ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
+    path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
     set = Ns_ConfigCreateSection(path);
 
     /*
@@ -869,7 +869,7 @@ NsFreeRequest(Request *reqPtr)
         Tcl_DStringFree(&reqPtr->buffer);
         Ns_SetTrunc(reqPtr->headers, 0);
 
-        if (reqPtr->auth) {
+        if (reqPtr->auth != NULL) {
 	  Ns_SetFree(reqPtr->auth);
 	  reqPtr->auth = NULL;
 	}
@@ -1281,7 +1281,7 @@ DriverThread(void *arg)
 	 * just for safety reasons) or on explicit wakeup calls.
 	 */
 	if (n == 0 || PollIn(&pdata, 0)) {
-	    if (drvPtr->servPtr) {
+	    if (drvPtr->servPtr != NULL) {
 		NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
 	    } else {
 		Tcl_HashSearch search;
@@ -1513,7 +1513,7 @@ DriverThread(void *arg)
          */
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
-            if (sockPtr->keep) {
+            if (sockPtr->keep != 0) {
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
@@ -1989,8 +1989,8 @@ SockError(Sock *sockPtr, int reason, int err)
                err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
                ns_inet_ntoa(sockPtr->sa.sin_addr),
-               ntohs(sockPtr->sa.sin_port),
-               sockPtr->reqPtr ? sockPtr->reqPtr->buffer.string : "");
+               ntohs(sockPtr->sa.sin_port), 
+	       (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
     }
 }
 
@@ -2661,7 +2661,7 @@ SockParse(Sock *sockPtr)
     /*
      * Set up request length for spooling and further read operations
      */
-    if (reqPtr->contentLength) {
+    if (reqPtr->contentLength != 0U) {
       /* 
        * Content-Length was provided, use it 
        */
@@ -2672,7 +2672,7 @@ SockParse(Sock *sockPtr)
      * Check if all content has arrived.
      */
 
-    if (reqPtr->chunkStartOff) {
+    if (reqPtr->chunkStartOff != 0) {
         /* Chunked encoding was provided */
         int complete;
         Tcl_WideInt currentContentLength;
@@ -3074,7 +3074,7 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
 	    Ns_Log(Warning, "%s%d: timeout waiting for shutdown", name, queuePtr->id);
         } else {
             /*Ns_Log(Notice, "%s%d: shutdown complete", name, queuePtr->id);*/
-	    if (queuePtr->thread) {
+	    if (queuePtr->thread != NULL) {
 		Ns_ThreadJoin(&queuePtr->thread, NULL);
 		queuePtr->thread = NULL;
 	    } else {
@@ -3223,7 +3223,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	   wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
-    if (wrSockPtr->streaming) {
+    if (wrSockPtr->streaming != 0) {
 	Conn *connPtr;
 	NsWriterLock();
 	connPtr = wrSockPtr->connPtr;
@@ -3257,7 +3257,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     } else {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
     }
-    if (wrSockPtr->clientData) {
+    if (wrSockPtr->clientData != NULL) {
 	ns_free(wrSockPtr->clientData);
     }
     if (wrSockPtr->fd > -1) {
@@ -3265,8 +3265,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	    close(wrSockPtr->fd);
 	}
         ns_free(wrSockPtr->c.file.buf);
-    } else if (wrSockPtr->c.mem.bufs) {
-	if (wrSockPtr->c.mem.fmap.addr) {
+    } else if (wrSockPtr->c.mem.bufs != NULL) {
+	if (wrSockPtr->c.mem.fmap.addr != NULL) {
 	    NsMemUmap(&wrSockPtr->c.mem.fmap);
 
 	} else {
@@ -3279,7 +3279,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	    ns_free(wrSockPtr->c.mem.bufs);
 	}
     }
-    if (wrSockPtr->headerString) {
+    if (wrSockPtr->headerString != NULL) {
 	ns_free(wrSockPtr->headerString);
     }
 
@@ -3485,7 +3485,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	/* 
 	 * We have sent something.
 	*/
-	if (curPtr->streaming) {
+	if (curPtr->streaming != 0) {
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
 	    curPtr->size -= n;
 	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
@@ -3708,9 +3708,9 @@ WriterThread(void *arg)
          * Add more sockets to the writer queue
          */
 
-	if (queuePtr->sockPtr) {
+	if (queuePtr->sockPtr != NULL) {
 	    Ns_MutexLock(&queuePtr->lock);
-	    if (queuePtr->sockPtr) {
+	    if (queuePtr->sockPtr != NULL) {
 		curPtr = queuePtr->sockPtr;
 		queuePtr->sockPtr = NULL;
 		while (curPtr != NULL) {
@@ -4057,7 +4057,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     nsend += headerSize;
 
 
-    if (connPtr->clientData) {
+    if (connPtr->clientData != NULL) {
 	wrSockPtr->clientData = ns_strdup(connPtr->clientData);
     }
     wrSockPtr->startTime = *Ns_ConnStartTime(conn);
@@ -4695,7 +4695,7 @@ AsyncWriterThread(void *arg)
 		Ns_Fatal("asynclogwriter: trigger recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }
-	    if (queuePtr->stopped) {
+	    if (queuePtr->stopped != 0) {
 		/*
 		 * Drain the queue from everything
 		 */
@@ -4739,7 +4739,7 @@ AsyncWriterThread(void *arg)
 		curPtr->size -= n;
 		curPtr->nsent += n;
 		curPtr->bufsize -= n;
-		if (curPtr->data) {
+		if (curPtr->data != NULL) {
 		    curPtr->buf += n;
 		}
 	    }

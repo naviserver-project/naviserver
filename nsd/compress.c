@@ -114,7 +114,7 @@ Ns_CompressFree(Ns_CompressStream *stream)
 {
     z_stream *z = &stream->z;
 
-    if (z->zalloc) {
+    if (z->zalloc != NULL) {
 	int status = deflateEnd(z);
 	if (status != Z_OK && status != Z_DATA_ERROR) {
 	    Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",

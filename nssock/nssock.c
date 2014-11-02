@@ -131,7 +131,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 	Config *cfg = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
-	if (cfg->deferaccept) {
+	if (cfg->deferaccept != 0) {
 	    Ns_SockSetDeferAccept(sock, driver->recvwait);
 	}
     }
@@ -355,7 +355,7 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 #ifdef TCP_NODELAY
     Config *cfg = driver->arg;
 
-    if (cfg->nodelay) {
+    if (cfg->nodelay != 0) {
 	int value = 1;
 
         if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,

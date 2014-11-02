@@ -746,7 +746,7 @@ NsTclThreadArgProc(Tcl_DString *dsPtr, void *arg)
     TclThreadArg *argPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, argPtr->server);
-    if (argPtr->detached) {
+    if (argPtr->detached != 0) {
         Tcl_DStringAppendElement(dsPtr, "detached");
     }
     Tcl_DStringAppendElement(dsPtr, argPtr->script);

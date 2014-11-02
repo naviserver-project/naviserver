@@ -359,7 +359,7 @@ NsAdpReset(NsInterp *itPtr)
     itPtr->adp.debugFile = NULL;
     itPtr->adp.chan = NULL;
     itPtr->adp.conn = NULL;
-    if (itPtr->servPtr) {
+    if (itPtr->servPtr != NULL) {
         itPtr->adp.bufsize = itPtr->servPtr->adp.bufsize;
         itPtr->adp.flags = itPtr->servPtr->adp.flags;
     } else {
@@ -693,7 +693,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
     int          code;
 
     code = TCL_OK;
-    if (!itPtr->adp.debugInit) {
+    if (itPtr->adp.debugInit == 0) {
         itPtr->deleteInterp = 1;
         Tcl_DStringInit(&ds);
         Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);

@@ -379,7 +379,7 @@ retry:
 	    goto retry; /* Empty command - try again. */
 	}
 
-        if (sessPtr->modPtr->commandLogging) {
+        if (sessPtr->modPtr->commandLogging != 0) {
             Ns_Log(Notice, "nscp: %s %d: %s", sessPtr->user, ncmd, ds.string);
         }
 
@@ -397,7 +397,7 @@ retry:
 	    res += n;
 	}
 
-        if (sessPtr->modPtr->commandLogging) {
+        if (sessPtr->modPtr->commandLogging != 0) {
             Ns_Log(Notice, "nscp: %s %d: done", sessPtr->user, ncmd);
         }
     }

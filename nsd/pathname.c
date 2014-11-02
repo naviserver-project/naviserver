@@ -106,7 +106,7 @@ ConfigServerVhost(const char *server)
     servPtr->vhost.hosthashlevel =
         Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
 
-    if (servPtr->vhost.enabled) {
+    if (servPtr->vhost.enabled != 0) {
         Ns_DStringInit(&ds);
         NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);

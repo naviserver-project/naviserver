@@ -297,7 +297,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         Ns_MutexLock(&logPtr->lock);
         if (objc > 2) {
             strarg = ns_strdup(Tcl_GetString(objv[2]));
-            if (logPtr->rollfmt) {
+            if (logPtr->rollfmt != NULL) {
                 ns_free(logPtr->rollfmt);
             }
             logPtr->rollfmt = strarg;
@@ -356,7 +356,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         }
         Ns_MutexLock(&logPtr->lock);
         if (objc > 2) {
-            if (logPtr->extheaders) {
+            if (logPtr->extheaders != NULL) {
                 Tcl_Free((char*)logPtr->extheaders);
             }
             logPtr->extheaders = hdrs;

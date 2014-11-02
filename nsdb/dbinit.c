@@ -292,7 +292,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     IncrCount(poolPtr, -1);
     Ns_MutexLock(&poolPtr->lock);
     ReturnHandle(handlePtr);
-    if (poolPtr->waiting) {
+    if (poolPtr->waiting != 0) {
 	Ns_CondSignal(&poolPtr->getCond);
     }
     Ns_MutexUnlock(&poolPtr->lock);
@@ -497,7 +497,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 	while (ngot > 0) {
 	    ReturnHandle(handlesPtrPtr[--ngot]);
 	}
-	if (poolPtr->waiting) {
+	if (poolPtr->waiting != 0) {
 	    Ns_CondSignal(&poolPtr->getCond);
 	}
 	Ns_MutexUnlock(&poolPtr->lock);
@@ -537,7 +537,7 @@ Ns_DbBouncePool(const char *pool)
     poolPtr->stale_on_close++;
     handlePtr = poolPtr->firstPtr;
     while (handlePtr != NULL) {
-	if (handlePtr->connected) {
+	if (handlePtr->connected != 0) {
 	    handlePtr->stale = 1;
 	}
 	handlePtr->stale_on_close = poolPtr->stale_on_close;
@@ -750,7 +750,7 @@ NsDbLogSql(Ns_DbHandle *handle, char *sql)
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
-    } else if (handle->verbose) {
+    } else if (handle->verbose != 0) {
         Ns_Log(Notice, "dbinit: sql(%s): '%s'", handle->datasource, sql);
     }
 }
@@ -848,7 +848,7 @@ ReturnHandle(Handle *handlePtr)
     if (poolPtr->firstPtr == NULL) {
 	poolPtr->firstPtr = poolPtr->lastPtr = handlePtr;
     	handlePtr->nextPtr = NULL;
-    } else if (handlePtr->connected) {
+    } else if (handlePtr->connected != 0) {
 	handlePtr->nextPtr = poolPtr->firstPtr;
 	poolPtr->firstPtr = handlePtr;
     } else {
@@ -880,7 +880,7 @@ IsStale(const Handle *handlePtr, time_t now)
 {
     assert(handlePtr != NULL);
 
-    if (handlePtr->connected) {
+    if (handlePtr->connected != 0) {
         time_t    minAccess, minOpen;
 
 	minAccess = now - handlePtr->poolPtr->maxidle;
@@ -890,7 +890,7 @@ IsStale(const Handle *handlePtr, time_t now)
 	    (handlePtr->stale == NS_TRUE) ||
 	    (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
-	    if (handlePtr->poolPtr->fVerbose) {
+	    if (handlePtr->poolPtr->fVerbose != 0) {
 		Ns_Log(Notice, "dbinit: closing %s handle in pool '%s'",
 		       handlePtr->atime < minAccess ? "idle" : "old",
 		       handlePtr->poolname);
@@ -988,7 +988,7 @@ CheckPool(void *arg)
 	    ReturnHandle(handlePtr);
 	    handlePtr = nextPtr;
 	}
-	if (poolPtr->waiting) {
+	if (poolPtr->waiting != 0) {
 	    Ns_CondSignal(&poolPtr->getCond);
 	}
 	Ns_MutexUnlock(&poolPtr->lock);

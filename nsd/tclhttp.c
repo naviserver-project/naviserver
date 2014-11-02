@@ -578,7 +578,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 	}
     }
 
-    if (httpPtr->error) {
+    if (httpPtr->error != NULL) {
 	Tcl_AppendResult(interp, "ns_http failed: ", httpPtr->error, NULL);
 	goto err;
     }
@@ -906,11 +906,11 @@ HttpClose(Ns_HttpTask *httpPtr)
 {
     assert(httpPtr != NULL);
 
-    if (httpPtr->task != NULL)  {Ns_TaskFree(httpPtr->task);}
-    if (httpPtr->sock > 0)      {ns_sockclose(httpPtr->sock);}
-    if (httpPtr->spoolFileName) {ns_free(httpPtr->spoolFileName);}
-    if (httpPtr->spoolFd > 0)   {close(httpPtr->spoolFd);}
-    if (httpPtr->compress)      {
+    if (httpPtr->task != NULL)          {Ns_TaskFree(httpPtr->task);}
+    if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
+    if (httpPtr->spoolFileName != NULL) {ns_free(httpPtr->spoolFileName);}
+    if (httpPtr->spoolFd > 0)           {close(httpPtr->spoolFd);}
+    if (httpPtr->compress != NULL)      {
 	Ns_InflateEnd(httpPtr->compress);
 	ns_free(httpPtr->compress);
     }

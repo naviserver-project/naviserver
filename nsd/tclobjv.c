@@ -420,7 +420,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST*
 {
     int *dest = spec->dest;
 
-    if (spec->arg) {
+    if (spec->arg != NULL) {
 	*dest = PTR2INT(spec->arg);
         return TCL_OK;
     }

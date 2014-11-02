@@ -592,7 +592,7 @@ Shutdown(const Ns_Time *toutPtr, void *arg)
             poolPtr->maxslaves = 0; /* Disable creation of new slaves */
             proxyPtr = poolPtr->firstPtr;
             while (proxyPtr != NULL) {
-                if (proxyPtr->slavePtr) {
+                if (proxyPtr->slavePtr != NULL) {
                     CloseSlave(proxyPtr->slavePtr, proxyPtr->conf.twait);
                 }
                 tmpPtr = proxyPtr->nextPtr;
@@ -1612,7 +1612,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                 }
                 while (proxyPtr != NULL) {
                     if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
-                        if (proxyPtr->slavePtr) {
+                        if (proxyPtr->slavePtr != NULL) {
                             CloseSlave(proxyPtr->slavePtr,proxyPtr->conf.twait);
                             proxyPtr->slavePtr = NULL;
                             reap++;
@@ -1755,7 +1755,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
                     }
                     proxyPtr = poolPtr->firstPtr;
                     while (proxyPtr != NULL) {
-                        if (proxyPtr->slavePtr) {
+                        if (proxyPtr->slavePtr != NULL) {
                             SetExpire(proxyPtr->slavePtr, proxyPtr->conf.tidle);
                         }
                         proxyPtr = proxyPtr->nextPtr;
@@ -2148,7 +2148,7 @@ FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     Tcl_DStringStartSublist(&ds);
     Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRIu64 ":%ld script",
                      proxyPtr->id,
-                     (long) (proxyPtr->slavePtr ? proxyPtr->slavePtr->pid : 0),
+                     (long) ((proxyPtr->slavePtr != NULL) ? proxyPtr->slavePtr->pid : 0),
                      (int64_t) proxyPtr->when.sec, proxyPtr->when.usec);
 
     Tcl_DStringAppendElement(&ds, Tcl_DStringValue(&proxyPtr->in) + sizeof(Req));
@@ -2612,7 +2612,7 @@ ReaperThread(void *ignored)
 
             poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
             Ns_MutexLock(&poolPtr->lock);
-            if (poolPtr->conf.tidle) {
+            if (poolPtr->conf.tidle != 0) {
                 diff = now;
                 ms = poolPtr->conf.tidle;
                 Ns_IncrTime(&diff, ms/1000, (ms%1000) * 1000);
@@ -2822,13 +2822,13 @@ FreeProxy(Proxy *proxyPtr)
 static void
 FreePool(Pool *poolPtr)
 {
-    if (poolPtr->exec) {
+    if (poolPtr->exec != NULL) {
         ns_free(poolPtr->exec);
     }
-    if (poolPtr->init) {
+    if (poolPtr->init != NULL) {
         ns_free(poolPtr->init);
     }
-    if (poolPtr->reinit) {
+    if (poolPtr->reinit != NULL) {
         ns_free(poolPtr->reinit);
     }
 
@@ -2870,12 +2870,12 @@ PushProxy(Proxy *proxyPtr)
      * Divorce from the per-interpreter tables
      */
 
-    if (proxyPtr->cntPtr) {
+    if (proxyPtr->cntPtr != NULL) {
         intptr_t  nhave = (intptr_t) Tcl_GetHashValue(proxyPtr->cntPtr);
 
         nhave--;
         Tcl_SetHashValue(proxyPtr->cntPtr, (ClientData) nhave);
-        if (proxyPtr->idPtr) {
+        if (proxyPtr->idPtr != NULL) {
             Tcl_DeleteHashEntry(proxyPtr->idPtr);
             proxyPtr->idPtr = NULL;
         }
@@ -2892,7 +2892,7 @@ PushProxy(Proxy *proxyPtr)
     if ((poolPtr->nused + poolPtr->nfree) <= poolPtr->maxslaves) {
         proxyPtr->nextPtr = poolPtr->firstPtr;
         poolPtr->firstPtr = proxyPtr;
-        if (proxyPtr->slavePtr) {
+        if (proxyPtr->slavePtr != NULL) {
             SetExpire(proxyPtr->slavePtr, proxyPtr->conf.tidle);
         }
         proxyPtr->conf = poolPtr->conf;

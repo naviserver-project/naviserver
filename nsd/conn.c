@@ -1042,7 +1042,7 @@ Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (connPtr->poolPtr->servPtr->opts.modsince) {
+    if (connPtr->poolPtr->servPtr->opts.modsince != 0) {
 	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
         if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
             return NS_FALSE;
@@ -1306,7 +1306,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CClientdataIdx:
         if (objc > 2) {
 	    char *value = Tcl_GetString(objv[2]);
-	    if (connPtr->clientData) {
+	    if (connPtr->clientData != NULL) {
 		ns_free(connPtr->clientData);
 	    }
 	    connPtr->clientData = ns_strdup(value);

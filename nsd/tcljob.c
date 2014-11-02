@@ -180,13 +180,16 @@ static void   JobThread(void *arg);
 static Job*   GetNextJob(void);
 
 static Queue* NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThreads)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2) 
+    NS_GNUC_RETURNS_NONNULL;
+
 static void   FreeQueue(Queue *queue)
     NS_GNUC_NONNULL(1);
 
 static Job*   NewJob(const char* server, const char *queueName,
                      JobTypes type, const char *script)
-    NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4) NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4) 
+    NS_GNUC_RETURNS_NONNULL;
 
 static void   FreeJob(Job *jobPtr)
     NS_GNUC_NONNULL(1);
@@ -196,10 +199,13 @@ static int    JobAbort(ClientData clientData, Tcl_Interp *interp, int code);
 static int    LookupQueue(Tcl_Interp *interp, CONST char *queueName,
                           Queue **queuePtr, int locked)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 static int    ReleaseQueue(Queue *queue, int locked)
     NS_GNUC_NONNULL(1);
+
 static int    AnyDone(Queue *queue)
     NS_GNUC_NONNULL(1);
+
 static void   SetupJobDefaults(void);
 
 static const char* GetJobCodeStr(int code);
@@ -1225,7 +1231,7 @@ JobThread(void *UNUSED(arg))
         jobPtr->state = JOB_RUNNING;
         jobPtr->async = async;
 
-        if (jobPtr->cancel) {
+        if (jobPtr->cancel != 0) {
             Tcl_AsyncMark(jobPtr->async);
         }
 
@@ -1542,10 +1548,10 @@ FreeJob(Job *jobPtr)
 
     ns_free((char *)jobPtr->queueId);
 
-    if (jobPtr->errorCode) {
+    if (jobPtr->errorCode != NULL) {
         ns_free(jobPtr->errorCode);
     }
-    if (jobPtr->errorInfo) {
+    if (jobPtr->errorInfo != NULL) {
         ns_free(jobPtr->errorInfo);
     }
 

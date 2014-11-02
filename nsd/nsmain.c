@@ -776,12 +776,12 @@ Ns_WaitForStartup(void)
     /*
      * This dirty-read is worth the effort.
      */
-    if (nsconf.state.started) {
+    if (nsconf.state.started != 0) {
         return NS_OK;
     }
 
     Ns_MutexLock(&nsconf.state.lock);
-    while (!nsconf.state.started) {
+    while (nsconf.state.started == 0) {
         Ns_CondWait(&nsconf.state.cond, &nsconf.state.lock);
     }
     Ns_MutexUnlock(&nsconf.state.lock);

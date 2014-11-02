@@ -137,7 +137,7 @@ Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs)
 	return NS_ERROR;
     }
     driverPtr = (DbDriver *) Tcl_GetHashValue(hPtr);
-    if (driverPtr->registered) {
+    if (driverPtr->registered != 0) {
         Ns_Log(Error, "dbdrv: a driver is already registered as '%s'",
 	       driver);
         return NS_ERROR;
@@ -390,7 +390,7 @@ Ns_DbSelect(Ns_DbHandle *handle, char *sql)
     	    if (Ns_DbExec(handle, sql) == NS_ROWS) {
     		setPtr = Ns_DbBindRow(handle);
 	    } else {
-		if(!handle->dsExceptionMsg.length) {
+		if(handle->dsExceptionMsg.length == 0) {
 		    Ns_DbSetException(handle, "NSDB",
 				      "Query was not a statement returning rows.");
 		}

@@ -1391,7 +1391,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
     hPtr = GetCacheEntry(servPtr);
     itPtr = Tcl_GetHashValue(hPtr);
     if (itPtr == NULL) {
-        if (nsconf.tcl.lockoninit) {
+        if (nsconf.tcl.lockoninit != 0) {
             Ns_CsEnter(&lock);
         }
         if (interp != NULL) {
@@ -1409,7 +1409,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
         } else {
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
         }
-        if (nsconf.tcl.lockoninit) {
+        if (nsconf.tcl.lockoninit != 0) {
             Ns_CsLeave(&lock);
         }
         Tcl_SetHashValue(hPtr, itPtr);
@@ -1457,7 +1457,7 @@ PushInterp(NsInterp *itPtr)
 
     if (itPtr->refcnt == 1) {
         RunTraces(itPtr, NS_TCL_TRACE_DEALLOCATE);
-        if (itPtr->deleteInterp) {
+        if (itPtr->deleteInterp != 0) {
             Ns_Log(Debug, "ns:markfordelete: true");
             Ns_TclDestroyInterp(interp);
             return;
@@ -1857,7 +1857,7 @@ DeleteInterps(void *arg)
         NsInterp  *itPtr;
 
         if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
-	    if (itPtr->interp) {
+	    if (itPtr->interp != NULL) {
 	        Ns_TclDestroyInterp(itPtr->interp);
 	    }
         }

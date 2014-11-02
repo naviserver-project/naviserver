@@ -210,7 +210,7 @@ NsUpdateProgress(Ns_Sock *sock)
             pPtr->size = reqPtr->length;
             pPtr->current = reqPtr->avail;
 
-	    if (request->query) {
+	    if (request->query != NULL) {
 	      set = Ns_SetCreate(NULL);
 	      if (Ns_QueryToSet(request->query, set) == NS_OK) {
 		key = Ns_SetGet(set, "X-Progress-ID");
@@ -292,7 +292,7 @@ ResetProgress(void *arg)
 {
     Progress *pPtr = arg;
 
-    if (pPtr->hPtr) {
+    if (pPtr->hPtr != NULL) {
         Ns_MutexLock(&lock);
         Tcl_DeleteHashEntry(pPtr->hPtr);
         pPtr->hPtr = NULL;
