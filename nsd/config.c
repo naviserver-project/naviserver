@@ -108,7 +108,7 @@ Ns_ConfigBool(const char *section, const char *key, int def)
     const char *s;
     int value = NS_FALSE, found = NS_FALSE;
 
-    s = ConfigGet(section, key, 0, (def != NULL) ? "true" : "false");
+    s = ConfigGet(section, key, 0, (def != NS_FALSE) ? "true" : "false");
     if (s != NULL && ToBool(s, &value)) {
         found = NS_TRUE;
     }

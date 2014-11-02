@@ -513,9 +513,8 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 	    result = ERR_EXEC;
 	}
 	errnum = errno;
-	{ 
-	    int UNUSED(len) = writev(errpipe[1], iov, 2);
-	}
+	(void) writev(errpipe[1], iov, 2);
+
 	_exit(1);
 	
     } else {
