@@ -131,7 +131,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 	Config *cfg = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
-	if (cfg->deferaccept) {
+	if (cfg->deferaccept != 0) {
 	    Ns_SockSetDeferAccept(sock, driver->recvwait);
 	}
     }
@@ -178,8 +178,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
 #endif
         Ns_SockSetNonBlocking(sock->sock);
 	SetNodelay(sock->driver, sock->sock);
-        status = cfg->deferaccept
-            ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
+        status = (cfg->deferaccept != 0) ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
     }
     return status;
 }
@@ -268,7 +267,7 @@ Send(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 #endif
     }
 
-    if (decork) {
+    if (decork != 0) {
       Ns_SockCork(sockPtr, 0);
     }
     return n;
@@ -356,7 +355,7 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 #ifdef TCP_NODELAY
     Config *cfg = driver->arg;
 
-    if (cfg->nodelay) {
+    if (cfg->nodelay != 0) {
 	int value = 1;
 
         if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,

@@ -78,7 +78,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbProc, Tcl_Obj *scriptObjPtr
     cbPtr->argc   = objc;
     cbPtr->argv   = (char **)((char *)cbPtr + sizeof(Ns_TclCallback));
 
-    if (objc) {
+    if (objc != 0) {
         int ii;
         for (ii = 0; ii < objc; ii++) {
             cbPtr->argv[ii] = ns_strdup(Tcl_GetString(objv[ii]));
@@ -171,14 +171,14 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
             Ns_DStringAppend(&ds, "\n    while executing callback\n");
             Ns_GetProcInfo(&ds, (Ns_Callback *)cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
-            if (deallocInterp) {
+            if (deallocInterp != 0) {
                 Ns_TclLogError(interp);
             }
         } else if (result != NULL) {
             Ns_DStringAppend(result, Tcl_GetStringResult(interp));
         }
         Ns_DStringFree(&ds);
-        if (deallocInterp) {
+        if (deallocInterp != 0) {
             Ns_TclDeAllocateInterp(interp);
         }
     }
@@ -321,7 +321,7 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     Ns_TclCallback *cbPtr;
     static int      once = 0;
 
-    if (!once) {
+    if (once == 0) {
       Ns_RegisterProcInfo((Ns_Callback *)ShutdownProc, "ns:tclshutdown",
 			  Ns_TclCallbackArgProc);
         once = 1;

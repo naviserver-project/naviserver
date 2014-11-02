@@ -286,7 +286,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         sbufIdx = 0;
     }
 
-    return nwrote ? nwrote : sent;
+    return (nwrote != 0) ? nwrote : sent;
 }
 
 
@@ -1030,7 +1030,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, int async)
     }
     sock = Ns_SockBind(&lsa);
     if (sock != NS_INVALID_SOCKET) {
-        if (async) {
+        if (async != 0) {
             Ns_SockSetNonBlocking(sock);
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {

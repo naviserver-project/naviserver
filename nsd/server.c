@@ -81,7 +81,7 @@ static ServerInit *lastInitPtr;  /* Last in list of server config callbacks. */
  */
 
 NsServer *
-NsGetServer(CONST char *server)
+NsGetServer(const char *server)
 {
     if (server != NULL) {
         Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
@@ -219,7 +219,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     assert(server != NULL);
 
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
-    if (!n) {
+    if (n == 0) {
         Ns_Log(Error, "duplicate server: %s", server);
         return;
     }

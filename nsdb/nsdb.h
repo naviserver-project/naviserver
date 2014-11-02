@@ -150,8 +150,8 @@ NS_EXTERN Ns_Set *Ns_DbSpGetParams(Ns_DbHandle *handle);
  * dbinit.c:
  */
 
-NS_EXTERN char *Ns_DbPoolDescription(const char *pool);
-NS_EXTERN char *Ns_DbPoolDefault(const char *server);
+NS_EXTERN const char *Ns_DbPoolDescription(const char *pool);
+NS_EXTERN const char *Ns_DbPoolDefault(const char *server);
 NS_EXTERN char *Ns_DbPoolList(const char *server);
 NS_EXTERN int Ns_DbPoolAllowable(const char *server, const char *pool);
 NS_EXTERN void Ns_DbPoolPutHandle(Ns_DbHandle *handle);

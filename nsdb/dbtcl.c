@@ -204,7 +204,8 @@ static int
 DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData	   *idataPtr = data;
-    char            tmpbuf[32], *pool = NULL;
+    char            tmpbuf[32];
+    const char     *pool = NULL;
     int             cmd, nrows;
     Ns_DbHandle    *handlePtr = NULL;
     Ns_Set         *rowPtr;
@@ -747,7 +748,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         Tcl_WrongNumArgs(interp, 1, objv, "poolname");
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, Ns_DbPoolDescription(Tcl_GetString(objv[1])),TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), -1));
     return TCL_OK;
 }
 
@@ -795,7 +796,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             Ns_DStringNAppend(&ds, quotelist + 1, 1);
             quotelist += 2;
         } else if (*quotelist == '\'') {
-            if (inquotes) {
+            if (inquotes != 0) {
                 /* Finish element */
                 Tcl_AppendElement(interp, ds.string);
                 Ns_DStringTrunc(&ds, 0);
@@ -884,7 +885,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
     while (*p != '\0') {
         c = *p++;
 loopstart:
-        if (inquote) {
+        if (inquote != 0) {
             if (c == '"') {
 		c = *p++;
 		if (c == '\0') {
@@ -918,7 +919,7 @@ loopstart:
 		       ) {
                 continue;
             } else if (strchr(delimiter,c) != NULL) {
-                if (!quoted) {
+                if (quoted == 0) {
                     Ns_StrTrimRight(elem.string);
                 }
 		Tcl_DStringAppendElement(&cols, elem.string);
@@ -931,10 +932,10 @@ loopstart:
             }
         }
     }
-    if (!quoted) {
+    if (quoted == 0) {
         Ns_StrTrimRight(elem.string);
     }
-    if (!blank) {
+    if (blank == 0) {
 	Tcl_DStringAppendElement(&cols, elem.string);
         ncols++;
     }

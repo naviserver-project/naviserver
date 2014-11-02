@@ -756,7 +756,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
          */
 
         if (attsPtr != NULL) {
-            if (atts) {
+            if (atts != 0) {
                 Tcl_DStringAppendElement(attsPtr, as);
             }
             Tcl_DStringAppendElement(attsPtr, vs);

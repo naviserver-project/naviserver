@@ -92,9 +92,9 @@ typedef struct PollData {
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
 
-#define PollIn(ppd,i)           ((ppd)->pfds[(i)].revents & POLLIN)
-#define PollOut(ppd,i)          ((ppd)->pfds[(i)].revents & POLLOUT)
-#define PollHup(ppd,i)          ((ppd)->pfds[(i)].revents & POLLHUP)
+#define PollIn(ppd,i)           (((ppd)->pfds[(i)].revents & POLLIN)  == POLLIN )
+#define PollOut(ppd,i)          (((ppd)->pfds[(i)].revents & POLLOUT) == POLLOUT)
+#define PollHup(ppd,i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
  * Async writer definitons
@@ -161,7 +161,7 @@ static int   SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static void SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
+static void SockPoll(Sock *sockPtr, unsigned short type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int  SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -175,7 +175,7 @@ static void PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
+static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned short type, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
@@ -253,7 +253,8 @@ NsInitDrivers(void)
 int
 Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 {
-    char           *path,*address, *host, *bindaddr, *defproto, *defserver;
+    char           *path, *defproto;
+    const char     *host, *address, *bindaddr, *defserver;
     int             i, n, defport, noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;
@@ -275,7 +276,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
         return NS_ERROR;
     }
 
-    path = (init->path ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
+    path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
     set = Ns_ConfigCreateSection(path);
 
     /*
@@ -478,7 +479,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
      */
 
     {
-	char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
+	const char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
 
 	if (extraHeaders != NULL) {
 	    int objc;
@@ -580,7 +581,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
                 Ns_Log(Error, "%s: no such server: %s", module, server);
             } else {
 		Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
-                if (!n) {
+                if (n == 0) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
                     Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://",host,NULL);
@@ -868,7 +869,7 @@ NsFreeRequest(Request *reqPtr)
         Tcl_DStringFree(&reqPtr->buffer);
         Ns_SetTrunc(reqPtr->headers, 0);
 
-        if (reqPtr->auth) {
+        if (reqPtr->auth != NULL) {
 	  Ns_SetFree(reqPtr->auth);
 	  reqPtr->auth = NULL;
 	}
@@ -920,7 +921,7 @@ NsSockClose(Sock *sockPtr, int keep)
     drvPtr->closePtr = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
 
-    if (trigger) {
+    if (trigger != 0) {
         SockTrigger(drvPtr->trigger[1]);
     }
 }
@@ -1220,7 +1221,7 @@ DriverThread(void *arg)
     closePtr = waitPtr = readPtr = NULL;
     stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
 
-    while (!stopping) {
+    while (stopping == 0) {
 	int n;
 
         /*
@@ -1280,7 +1281,7 @@ DriverThread(void *arg)
 	 * just for safety reasons) or on explicit wakeup calls.
 	 */
 	if (n == 0 || PollIn(&pdata, 0)) {
-	    if (drvPtr->servPtr) {
+	    if (drvPtr->servPtr != NULL) {
 		NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
 	    } else {
 		Tcl_HashSearch search;
@@ -1512,7 +1513,7 @@ DriverThread(void *arg)
          */
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
-            if (sockPtr->keep) {
+            if (sockPtr->keep != 0) {
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
@@ -1530,7 +1531,7 @@ DriverThread(void *arg)
          * Close the active drivers if shutdown is pending.
          */
 
-        if (stopping) {
+        if (stopping != 0) {
             ns_sockclose(drvPtr->sock);
             drvPtr->sock = NS_INVALID_SOCKET;
         }
@@ -1571,7 +1572,7 @@ PollReset(PollData *pdata)
 }
 
 static NS_POLL_NFDS_TYPE
-PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, unsigned short type, const Ns_Time *timeoutPtr)
 {
     assert(pdata != NULL);
     /*
@@ -1721,7 +1722,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
  */
 
 static void
-SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
+SockPoll(Sock *sockPtr, unsigned short type, PollData *pdata)
 {
     assert(sockPtr != NULL);
     assert(pdata != NULL);
@@ -1941,7 +1942,7 @@ SockError(Sock *sockPtr, int reason, int err)
          * depends upon whether this sock was a keep-alive
          * that we were allowing to 'linger'.
          */
-        if (!sockPtr->keep) {
+        if (sockPtr->keep == 0) {
             errMsg = "Timeout during read";
         }
         break;
@@ -1985,12 +1986,11 @@ SockError(Sock *sockPtr, int reason, int err)
     if (errMsg != NULL) {
         Ns_Log(DriverDebug, "SockError: %s (%d: %s), sock: %d, peer: %s:%d, request: %.99s",
                errMsg,
-               err,
-               err ? strerror(err) : "",
+               err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
                ns_inet_ntoa(sockPtr->sa.sin_addr),
-               ntohs(sockPtr->sa.sin_port),
-               sockPtr->reqPtr ? sockPtr->reqPtr->buffer.string : "");
+               ntohs(sockPtr->sa.sin_port), 
+	       (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
     }
 }
 
@@ -2093,10 +2093,10 @@ SockClose(Sock *sockPtr, int keep)
 {
     assert(sockPtr != NULL);
 
-    if (keep) {
+    if (keep != 0) {
         keep = DriverKeep(sockPtr);
     }
-    if (!keep) {
+    if (keep == 0) {
 	DriverClose(sockPtr);
     }
     sockPtr->keep = keep;
@@ -2166,7 +2166,7 @@ ChunkedDecode(Request *reqPtr, int update)
       char *p = strstr(chunkStart, "\r\n");
       long chunk_length;
 
-      if (!p) {
+      if (p == NULL) {
         Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
         return -1;
       }
@@ -2179,7 +2179,7 @@ ChunkedDecode(Request *reqPtr, int update)
         Ns_Log(DriverDebug,"ChunkedDecode: chunk length past end of buffer");
         return -1;
       }
-      if (update) {
+      if (update != 0) {
         char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
         memmove(writeBuffer, p + 2, (size_t)chunk_length);
         reqPtr->chunkWriteOff += chunk_length;
@@ -2603,7 +2603,7 @@ SockParse(Sock *sockPtr)
 		/* no accept-encoding header; don't allow gzip */
 		gzip = 0;
 	    }
-	    if (gzip) {
+	    if (gzip != 0) {
 		/*
 		 * Don't allow gzip results for Range requests.
 		 */
@@ -2661,7 +2661,7 @@ SockParse(Sock *sockPtr)
     /*
      * Set up request length for spooling and further read operations
      */
-    if (reqPtr->contentLength) {
+    if (reqPtr->contentLength != 0U) {
       /* 
        * Content-Length was provided, use it 
        */
@@ -2672,7 +2672,7 @@ SockParse(Sock *sockPtr)
      * Check if all content has arrived.
      */
 
-    if (reqPtr->chunkStartOff) {
+    if (reqPtr->chunkStartOff != 0) {
         /* Chunked encoding was provided */
         int complete;
         Tcl_WideInt currentContentLength;
@@ -2814,16 +2814,16 @@ SockSetServer(Sock *sockPtr)
         }
     }
     if (sockPtr->servPtr == NULL) {
-        if (host) {
+        if (host != NULL) {
             Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&hosts, host);
             if (hPtr != NULL) {
                 mapPtr = Tcl_GetHashValue(hPtr);
             }
         }
-        if (!mapPtr) {
+        if (mapPtr == NULL) {
             mapPtr = defMapPtr;
         }
-        if (mapPtr) {
+        if (mapPtr != NULL) {
             sockPtr->servPtr  = mapPtr->servPtr;
             sockPtr->location = mapPtr->location;
         }
@@ -2891,7 +2891,7 @@ SpoolerThread(void *arg)
     waitPtr = readPtr = NULL;
     stopping = 0;
 
-    while (!stopping) {
+    while (stopping == 0) {
 
         /*
          * If there are any read sockets, set the bits
@@ -3074,7 +3074,7 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
 	    Ns_Log(Warning, "%s%d: timeout waiting for shutdown", name, queuePtr->id);
         } else {
             /*Ns_Log(Notice, "%s%d: shutdown complete", name, queuePtr->id);*/
-	    if (queuePtr->thread) {
+	    if (queuePtr->thread != NULL) {
 		Ns_ThreadJoin(&queuePtr->thread, NULL);
 		queuePtr->thread = NULL;
 	    } else {
@@ -3123,7 +3123,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
      * Wake up spooler thread
      */
 
-    if (trigger) {
+    if (trigger != 0) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -3194,7 +3194,7 @@ WriterSockRequire(const Conn *connPtr) {
 
     NsWriterLock();
     wrSockPtr = connPtr->streamWriter;
-    if (wrSockPtr) {
+    if (wrSockPtr != NULL) {
 	wrSockPtr->refCount ++;
     }
     NsWriterUnlock();
@@ -3223,7 +3223,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	   wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
-    if (wrSockPtr->streaming) {
+    if (wrSockPtr->streaming != 0) {
 	Conn *connPtr;
 	NsWriterLock();
 	connPtr = wrSockPtr->connPtr;
@@ -3242,7 +3242,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	queuePtr->queuesize--;
     } else {
 	WriterSock *curPtr, *lastPtr = queuePtr->curPtr;
-	for (curPtr = lastPtr ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
+	for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
 	    if (curPtr == wrSockPtr) {
 		lastPtr->nextPtr = wrSockPtr->nextPtr;
 		queuePtr->queuesize--;
@@ -3257,7 +3257,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     } else {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
     }
-    if (wrSockPtr->clientData) {
+    if (wrSockPtr->clientData != NULL) {
 	ns_free(wrSockPtr->clientData);
     }
     if (wrSockPtr->fd > -1) {
@@ -3265,8 +3265,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	    close(wrSockPtr->fd);
 	}
         ns_free(wrSockPtr->c.file.buf);
-    } else if (wrSockPtr->c.mem.bufs) {
-	if (wrSockPtr->c.mem.fmap.addr) {
+    } else if (wrSockPtr->c.mem.bufs != NULL) {
+	if (wrSockPtr->c.mem.fmap.addr != NULL) {
 	    NsMemUmap(&wrSockPtr->c.mem.fmap);
 
 	} else {
@@ -3279,7 +3279,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	    ns_free(wrSockPtr->c.mem.bufs);
 	}
     }
-    if (wrSockPtr->headerString) {
+    if (wrSockPtr->headerString != NULL) {
 	ns_free(wrSockPtr->headerString);
     }
 
@@ -3317,7 +3317,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     assert(curPtr != NULL);
 
     streaming = curPtr->streaming;
-    if (streaming) {
+    if (streaming != 0) {
 	Ns_MutexLock(&curPtr->c.file.fdlock);
 	toRead = curPtr->c.file.toread;
 	Ns_MutexUnlock(&curPtr->c.file.fdlock);
@@ -3358,7 +3358,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     if (toRead > 0) {
 	int n;
 
-	if (streaming) {
+	if (streaming != 0) {
 	    /* 
 	     * In streaming mode, the connection thread writes to the
 	     * spool file and the writer thread reads from the same
@@ -3386,7 +3386,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	    curPtr->c.file.bufsize += n;
 	}
 	
-	if (streaming) {
+	if (streaming != 0) {
 	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
 	}
     }
@@ -3485,7 +3485,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	/* 
 	 * We have sent something.
 	*/
-	if (curPtr->streaming) {
+	if (curPtr->streaming != 0) {
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
 	    curPtr->size -= n;
 	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
@@ -3563,7 +3563,7 @@ WriterThread(void *arg)
     writePtr = NULL;
     stopping = 0;
 
-    while (!stopping) {
+    while (stopping == 0) {
 	unsigned char c;
 
         /*
@@ -3708,9 +3708,9 @@ WriterThread(void *arg)
          * Add more sockets to the writer queue
          */
 
-	if (queuePtr->sockPtr) {
+	if (queuePtr->sockPtr != NULL) {
 	    Ns_MutexLock(&queuePtr->lock);
-	    if (queuePtr->sockPtr) {
+	    if (queuePtr->sockPtr != NULL) {
 		curPtr = queuePtr->sockPtr;
 		queuePtr->sockPtr = NULL;
 		while (curPtr != NULL) {
@@ -3877,7 +3877,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    }
 	}
 
-	if (first) {
+	if (first != 0) {
 	    bufs = NULL;
 	    connPtr->nContentSent = wrote;
 	    ns_sock_set_blocking(connPtr->fd, 0);
@@ -4010,7 +4010,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    wrSockPtr->c.mem.bufs = ns_calloc(nbufs+headerbufs, sizeof(struct iovec));
 	}
 	wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
-	if (headerbufs) {
+	if (headerbufs != 0) {
 	    wrSockPtr->c.mem.bufs[0].iov_base = wrSockPtr->headerString;
 	    wrSockPtr->c.mem.bufs[0].iov_len  = headerSize;
 	}
@@ -4057,7 +4057,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     nsend += headerSize;
 
 
-    if (connPtr->clientData) {
+    if (connPtr->clientData != NULL) {
 	wrSockPtr->clientData = ns_strdup(connPtr->clientData);
     }
     wrSockPtr->startTime = *Ns_ConnStartTime(conn);
@@ -4131,7 +4131,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      * Wake up writer thread
      */
 
-    if (trigger) {
+    if (trigger != 0) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -4183,7 +4183,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             return TCL_ERROR;
         }
         data = Tcl_GetByteArrayFromObj(objv[2], &size);
-        if (data) {
+        if (data != NULL) {
 	    struct iovec vbuf;
 	    vbuf.iov_base = (void *)data;
 	    vbuf.iov_len = (size_t)size;
@@ -4266,7 +4266,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
          *  The caller requested that we build required headers
          */
 
-        if (headers) {
+        if (headers != 0) {
             Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
         }
 
@@ -4329,7 +4329,8 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                                      drvPtr->name,
                                      ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
                                      wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
-                    Ns_DStringAppendElement(dsPtr, wrSockPtr->clientData ? wrSockPtr->clientData : "");
+                    Ns_DStringAppendElement(dsPtr, 
+					    (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
                     Ns_DStringAppend(dsPtr, "} ");
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
@@ -4484,7 +4485,7 @@ NsAsyncWriterQueueEnable(void)
 void 
 NsAsyncWriterQueueDisable(int shutdown) 
 {
-    if (asyncWriter) {
+    if (asyncWriter != NULL) {
 	SpoolerQueue *queuePtr = asyncWriter->firstPtr;
 	Ns_Time timeout;
 
@@ -4505,7 +4506,7 @@ NsAsyncWriterQueueDisable(int shutdown)
 
 	Ns_MutexUnlock(&queuePtr->lock);
 	
-	if (shutdown) {
+	if (shutdown != 0) {
 	    ns_free(queuePtr);
 	    ns_free(asyncWriter);
 	    asyncWriter = NULL;
@@ -4547,7 +4548,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
-	int UNUSED(len) = write(fd, buffer, nbyte);
+	(void) write(fd, buffer, nbyte);
         return NS_ERROR;
     }
 
@@ -4575,7 +4576,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 
     Ns_MutexLock(&queuePtr->lock);
     wdPtr = queuePtr->sockPtr;
-    if (wdPtr) {
+    if (wdPtr != NULL) {
 	newWdPtr->nextPtr = queuePtr->sockPtr;
 	queuePtr->sockPtr = newWdPtr;
     } else {
@@ -4587,7 +4588,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     /*
      * Wake up writer thread if desired
      */
-    if (trigger) { 
+    if (trigger != 0) { 
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -4662,7 +4663,7 @@ AsyncWriterThread(void *arg)
      * connections are complete and gracefully closed.
      */
 
-    while (!stopping) {
+    while (stopping == 0) {
 
         /*
          * Always listen to the trigger pipe. We could as well perform
@@ -4694,17 +4695,17 @@ AsyncWriterThread(void *arg)
 		Ns_Fatal("asynclogwriter: trigger recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }
-	    if (queuePtr->stopped) {
+	    if (queuePtr->stopped != 0) {
 		/*
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    int UNUSED(len) = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    (void) write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    int UNUSED(len) = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    (void) write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		queuePtr->sockPtr = NULL;
 
@@ -4738,7 +4739,7 @@ AsyncWriterThread(void *arg)
 		curPtr->size -= n;
 		curPtr->nsent += n;
 		curPtr->bufsize -= n;
-		if (curPtr->data) {
+		if (curPtr->data != NULL) {
 		    curPtr->buf += n;
 		}
 	    }
@@ -4769,11 +4770,11 @@ AsyncWriterThread(void *arg)
 	 * Check for shutdown
 	 */
         stopping = queuePtr->shutdown;
-	if (stopping) {
+	if (stopping != 0) {
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-		int UNUSED(len) = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		(void) write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		curPtr = curPtr->nextPtr;
 	    }
 	} else {

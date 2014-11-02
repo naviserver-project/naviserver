@@ -153,7 +153,7 @@ void
 NsStartSockShutdown(void)
 {
     Ns_MutexLock(&lock);
-    if (running) {
+    if (running != 0) {
 	shutdownPending = 1;
 	CallbackTrigger();
     }
@@ -236,11 +236,11 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeo
     cbPtr->timeout = timeout;
     trigger = create = 0;
     Ns_MutexLock(&lock);
-    if (shutdownPending) {
+    if (shutdownPending != 0) {
 	ns_free(cbPtr);
     	status = NS_ERROR;
     } else {
-	if (!running) {
+	if (running == 0) {
     	    Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
 	    Ns_MutexSetName(&lock, "ns:sockcallbacks");
 	    create = 1;
@@ -258,9 +258,9 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeo
     	status = NS_OK;
     }
     Ns_MutexUnlock(&lock);
-    if (trigger) {
+    if (trigger != 0) {
 	CallbackTrigger();
-    } else if (create) {
+    } else if (create != 0) {
     	if (ns_sockpair(trigPipe) != 0) {
 	    Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
     	}
@@ -414,7 +414,7 @@ SockCallbackThread(void *UNUSED(arg))
 	 * necessary.
 	 */
 
-	if (stop) {
+	if (stop != 0) {
 	    break;
 	}
 	pfds[0].revents = 0;
@@ -484,7 +484,7 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
     Tcl_HashSearch  search;
 
     Ns_MutexLock(&lock);
-    if (running) {
+    if (running != 0) {
         Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&table, &search);
 
         while (hPtr != NULL) {

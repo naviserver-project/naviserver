@@ -472,7 +472,7 @@ Ns_TclGetConn(Tcl_Interp *interp)
 {
     NsInterp *itPtr = NsGetInterpData(interp);
 
-    return (itPtr ? itPtr->conn : NULL);
+    return ((itPtr != NULL) ? itPtr->conn : NULL);
 }
 
 
@@ -518,7 +518,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
        * that the thread local cache table might contain as well
        * entries with itPtr->servPtr == NULL.
        */
-      hPtr = tablePtr ? Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, NULL) : NULL;
+      hPtr = (tablePtr != NULL) ? Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, NULL) : NULL;
       
       /*
        * Make sure to delete the entry in the thread local cache to
@@ -783,7 +783,7 @@ Ns_TclLibrary(CONST char *server)
 {
     NsServer *servPtr = NsGetServer(server);
 
-    return (servPtr ? servPtr->tcl.library : nsconf.tcl.sharedlibrary);
+    return ((servPtr != NULL) ? servPtr->tcl.library : nsconf.tcl.sharedlibrary);
 }
 
 
@@ -1391,7 +1391,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
     hPtr = GetCacheEntry(servPtr);
     itPtr = Tcl_GetHashValue(hPtr);
     if (itPtr == NULL) {
-        if (nsconf.tcl.lockoninit) {
+        if (nsconf.tcl.lockoninit != 0) {
             Ns_CsEnter(&lock);
         }
         if (interp != NULL) {
@@ -1409,7 +1409,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
         } else {
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
         }
-        if (nsconf.tcl.lockoninit) {
+        if (nsconf.tcl.lockoninit != 0) {
             Ns_CsLeave(&lock);
         }
         Tcl_SetHashValue(hPtr, itPtr);
@@ -1457,7 +1457,7 @@ PushInterp(NsInterp *itPtr)
 
     if (itPtr->refcnt == 1) {
         RunTraces(itPtr, NS_TCL_TRACE_DEALLOCATE);
-        if (itPtr->deleteInterp) {
+        if (itPtr->deleteInterp != 0) {
             Ns_Log(Debug, "ns:markfordelete: true");
             Ns_TclDestroyInterp(interp);
             return;
@@ -1619,9 +1619,9 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
      * Tcl is not fully initialized at libnsd load time.
      */
 
-    if (!initialized) {
+    if (initialized == 0) {
         Ns_MasterLock();
-        if (!initialized) {
+        if (initialized == 0) {
             NsTclInitQueueType();
             NsTclInitAddrType();
             NsTclInitTimeType();
@@ -1857,7 +1857,7 @@ DeleteInterps(void *arg)
         NsInterp  *itPtr;
 
         if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
-	    if (itPtr->interp) {
+	    if (itPtr->interp != NULL) {
 	        Ns_TclDestroyInterp(itPtr->interp);
 	    }
         }

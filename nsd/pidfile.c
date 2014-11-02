@@ -122,7 +122,7 @@ NsRemovePidFile(void)
 static Tcl_Obj *
 GetFile(void)
 {
-    char *file;
+    const char *file;
     Tcl_Obj *path;
 
     file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");

@@ -115,7 +115,7 @@ Ns_ModuleInit(char *server, char *module)
      * called w/o locking from within the server startup.
      */
 
-    if (first) {
+    if (first != 0) {
         first = 0;
         Ns_RegisterProcInfo((Ns_Callback *)LogRollCallback, "nslog:roll", LogArg);
         Ns_RegisterProcInfo((Ns_Callback *)LogCloseCallback, "nslog:close", LogArg);
@@ -297,7 +297,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         Ns_MutexLock(&logPtr->lock);
         if (objc > 2) {
             strarg = ns_strdup(Tcl_GetString(objv[2]));
-            if (logPtr->rollfmt) {
+            if (logPtr->rollfmt != NULL) {
                 ns_free(logPtr->rollfmt);
             }
             logPtr->rollfmt = strarg;
@@ -356,7 +356,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         }
         Ns_MutexLock(&logPtr->lock);
         if (objc > 2) {
-            if (logPtr->extheaders) {
+            if (logPtr->extheaders != NULL) {
                 Tcl_Free((char*)logPtr->extheaders);
             }
             logPtr->extheaders = hdrs;
@@ -537,7 +537,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         for (p = user; *p && !quote; p++) {
 	    quote = (CHARTYPE(space, *p) != 0);
         }
-        if (quote) {
+        if (quote != 0) {
             Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
         } else {
             Ns_DStringVarAppend(&ds," - ", user, " ", NULL);
@@ -575,8 +575,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     n = Ns_ConnResponseStatus(conn);
-    Ns_DStringPrintf(&ds, "%d %" TCL_LL_MODIFIER "d",
-                     n ? n : 200, Ns_ConnContentSent(conn));
+    Ns_DStringPrintf(&ds, "%d %" TCL_LL_MODIFIER "d", (n != 0) ? n : 200, Ns_ConnContentSent(conn));
 
     /*
      * Append the referer and user-agent headers (if any)
@@ -585,12 +584,12 @@ LogTrace(void *arg, Ns_Conn *conn)
     if ((logPtr->flags & LOG_COMBINED)) {
         Ns_DStringAppend(&ds, " \"");
         p = Ns_SetIGet(conn->headers, "referer");
-        if (p) {
+        if (p != NULL) {
             Ns_DStringAppend(&ds, p);
         }
         Ns_DStringAppend(&ds, "\" \"");
         p = Ns_SetIGet(conn->headers, "user-agent");
-        if (p) {
+        if (p != NULL) {
             Ns_DStringAppend(&ds, p);
         }
         Ns_DStringAppend(&ds, "\"");

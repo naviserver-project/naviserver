@@ -300,7 +300,7 @@ Ns_ListCopy(const Ns_List *lPtr)
         curPtr->rest = newPtr;
         curPtr = newPtr;
     }
-    if (newPtr) {
+    if (newPtr != NULL) {
         newPtr->rest = NULL;
     }
     

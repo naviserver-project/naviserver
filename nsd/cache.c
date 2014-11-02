@@ -824,7 +824,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     double          savedCost = 0.0;
 
     total = cachePtr->stats.nhit + cachePtr->stats.nmiss;
-    hitrate = (total ? (cachePtr->stats.nhit * 100) / total : 0);
+    hitrate = ((total != 0) ? (cachePtr->stats.nhit * 100) / total : 0);
 
     ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
     while (ePtr != NULL) {

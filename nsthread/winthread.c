@@ -121,7 +121,7 @@ Nsthreads_LibInit(void)
 {
     static int once = 0;
 
-    if (!once) {
+    if (once == 0) {
         once = 1;
         tlskey = TlsAlloc();
         if (tlskey == 0xFFFFFFFF) {
@@ -179,7 +179,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
          */
 
         wPtr = TlsGetValue(tlskey);
-        if (wPtr) {
+        if (wPtr != NULL) {
             NsCleanupTls(wPtr->slots);
             if (!CloseHandle(wPtr->event)) {
                 NsThreadFatal("DllMain", "CloseHandle", GetLastError());
@@ -631,7 +631,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      */
 
     EnterCriticalSection(&condPtr->critsec);
-    if (!wPtr->condwait) {
+    if (wPtr->condwait == 0) {
         status = NS_OK;
     } else {
         WinThread  **waitPtrPtr;
@@ -694,12 +694,12 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
     unsigned   tid, flags;
     uintptr_t  hdl;
 
-    flags = (resultPtr ? CREATE_SUSPENDED : 0);
+    flags = ((resultPtr != NULL) ? CREATE_SUSPENDED : 0U);
     argPtr = ns_malloc(sizeof(ThreadArg));
     argPtr->arg = arg;
     argPtr->self = NULL;
     hdl = _beginthreadex(NULL, stacksize, ThreadMain, argPtr, flags, &tid);
-    if (hdl == 0) {
+    if (hdl == 0U) {
         NsThreadFatal("NsCreateThread", "_beginthreadex", errno);
     }
     if (resultPtr == NULL) {
@@ -1132,10 +1132,10 @@ kill(pid_t pid, int sig)
     case SIGKILL:
         handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_TERMINATE,
                              FALSE, pid);
-        if (handle) {
+        if (handle != NULL) {
             rv = TerminateProcess(handle, 0);
             CloseHandle(handle);
-            if (rv) {
+            if (rv != 0) {
                 break;
             }
         }

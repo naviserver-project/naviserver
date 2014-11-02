@@ -229,9 +229,9 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
     if (--lockPtr->lockcnt < 0) {
 	lockPtr->lockcnt = 0;
     }
-    if (lockPtr->nwriters) {
+    if (lockPtr->nwriters != 0) {
 	Ns_CondSignal(&lockPtr->wcond);
-    } else if (lockPtr->nreaders) {
+    } else if (lockPtr->nreaders != 0) {
 	Ns_CondBroadcast(&lockPtr->rcond);
     }
     Ns_MutexUnlock (&lockPtr->mutex);

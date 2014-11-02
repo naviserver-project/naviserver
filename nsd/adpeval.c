@@ -359,7 +359,7 @@ NsAdpReset(NsInterp *itPtr)
     itPtr->adp.debugFile = NULL;
     itPtr->adp.chan = NULL;
     itPtr->adp.conn = NULL;
-    if (itPtr->servPtr) {
+    if (itPtr->servPtr != NULL) {
         itPtr->adp.bufsize = itPtr->servPtr->adp.bufsize;
         itPtr->adp.flags = itPtr->servPtr->adp.flags;
     } else {
@@ -693,13 +693,13 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
     int          code;
 
     code = TCL_OK;
-    if (!itPtr->adp.debugInit) {
+    if (itPtr->adp.debugInit == 0) {
         itPtr->deleteInterp = 1;
         Tcl_DStringInit(&ds);
         Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
-        Tcl_DStringAppendElement(&ds, procs ? procs : "");
-        Tcl_DStringAppendElement(&ds, host ? host : "");
-        Tcl_DStringAppendElement(&ds, port ? port : "");
+        Tcl_DStringAppendElement(&ds, (procs != NULL) ? procs : "");
+        Tcl_DStringAppendElement(&ds, (host  != NULL) ? host : "");
+        Tcl_DStringAppendElement(&ds, (port  != NULL) ? port : "");
         code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         Tcl_DStringFree(&ds);
         if (code != TCL_OK) {
@@ -801,7 +801,8 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
     Tcl_Encoding  encoding;
     Tcl_DString   utf;
     char         *buf;
-    int           fd, n, trys;
+    int           fd, trys;
+    ssize_t       n;
     size_t        size;
     Page         *pagePtr;
 
@@ -839,7 +840,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
                              "\": ", Tcl_PosixError(interp), NULL);
             goto done;
         }
-        if (n != size) {
+        if ((size_t)n != size) {
             /*
              * File is not expected size, rewind and fstat/read again.
              */
@@ -851,9 +852,9 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
             }
             Ns_ThreadYield();
         }
-    } while (n != size && ++trys < 10);
+    } while ((size_t)n != size && ++trys < 10);
 
-    if (n != size) {
+    if ((size_t)n != size) {
         Tcl_AppendResult(interp, "inconsistant file: ", file, NULL);
     } else {
         char *page;
@@ -1265,7 +1266,7 @@ AllocObjs(int nobjs)
 {
     Objs *objsPtr;
 
-    objsPtr = ns_calloc(1U, sizeof(Objs) + (nobjs * sizeof(Tcl_Obj *)));
+    objsPtr = ns_calloc(1U, sizeof(Objs) + ((size_t)nobjs * sizeof(Tcl_Obj *)));
     objsPtr->nobjs = nobjs;
 
     return objsPtr;

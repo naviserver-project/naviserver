@@ -442,7 +442,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    if (config) {
+    if (config != NULL) {
 	/*
 	 * Evaluate the config file.
 	 */
@@ -542,7 +542,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     /*
      * Set the procname used for the pid file.
      */
-    procname = (server ? server : Ns_SetKey(servers, 0));
+    procname = ((server != NULL) ? server : Ns_SetKey(servers, 0));
 
     /*
      * Connect to the service control manager if running
@@ -780,12 +780,12 @@ Ns_WaitForStartup(void)
     /*
      * This dirty-read is worth the effort.
      */
-    if (nsconf.state.started) {
+    if (nsconf.state.started != 0) {
         return NS_OK;
     }
 
     Ns_MutexLock(&nsconf.state.lock);
-    while (!nsconf.state.started) {
+    while (nsconf.state.started == 0) {
         Ns_CondWait(&nsconf.state.cond, &nsconf.state.lock);
     }
     Ns_MutexUnlock(&nsconf.state.lock);
@@ -1004,7 +1004,7 @@ UsageError(const char *msg, ...)
         "  -s  use server named <server> in config file\n"
         "  -t  read config from <file>\n"
         "\n", nsconf.argv0);
-    exit(msg ? 1 : 0);
+    exit ((msg != NULL) ? 1 : 0);
 }
 
 /*

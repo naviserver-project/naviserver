@@ -112,7 +112,7 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
     limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0);
     Ns_MutexUnlock(&lock);
 
-    return (limitsPtr ? limitsPtr : defLimitsPtr);
+    return ((limitsPtr != NULL) ? limitsPtr : defLimitsPtr);
 }
 
 
@@ -290,7 +290,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) {flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
     Ns_MutexLock(&lock);
     Ns_UrlSpecificSet(server, method, url,
                       limid, limitsPtr, flags, NULL);
@@ -324,7 +324,7 @@ FindLimits(const char *limits, int create)
     int            isNew;
 
     Ns_MutexLock(&lock);
-    if (!create) {
+    if (create == 0) {
         hPtr = Tcl_FindHashEntry(&limtable, limits);
     } else {
         hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);
@@ -341,7 +341,7 @@ FindLimits(const char *limits, int create)
     }
     Ns_MutexUnlock(&lock);
 
-    return (hPtr ? Tcl_GetHashValue(hPtr) : NULL);
+    return ((hPtr != NULL) ? Tcl_GetHashValue(hPtr) : NULL);
 }
 
 
@@ -368,7 +368,7 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *CONST* objv)
 {
     NsLimits          **limitsPtrPtr = spec->dest;
-    int                 create = spec->arg ? 1 : 0;
+    int                 create = (spec->arg != NULL) ? 1 : 0;
     static const char  *limitsType = "ns:limits";
 
     if (*objcPtr < 1) {

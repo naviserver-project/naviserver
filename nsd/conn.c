@@ -575,12 +575,12 @@ Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnLocation(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
     NsServer *servPtr = connPtr->poolPtr->servPtr;
-    char *location = NULL;
+    const char *location = NULL;
 
     if (servPtr->vhost.locationProc != NULL) {
         location = (*servPtr->vhost.locationProc)(conn);
@@ -1042,7 +1042,7 @@ Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (connPtr->poolPtr->servPtr->opts.modsince) {
+    if (connPtr->poolPtr->servPtr->opts.modsince != 0) {
 	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
         if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
             return NS_FALSE;
@@ -1280,7 +1280,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
      */
 
     if (unlikely(opt == CIsConnectedIdx)) {
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connPtr ? 1 : 0));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
         return TCL_OK;
     }
     if (unlikely(connPtr == NULL)) {
@@ -1306,7 +1306,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CClientdataIdx:
         if (objc > 2) {
 	    char *value = Tcl_GetString(objv[2]);
-	    if (connPtr->clientData) {
+	    if (connPtr->clientData != NULL) {
 		ns_free(connPtr->clientData);
 	    }
 	    connPtr->clientData = ns_strdup(value);

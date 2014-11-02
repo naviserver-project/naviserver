@@ -137,7 +137,7 @@ Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs)
 	return NS_ERROR;
     }
     driverPtr = (DbDriver *) Tcl_GetHashValue(hPtr);
-    if (driverPtr->registered) {
+    if (driverPtr->registered != 0) {
         Ns_Log(Error, "dbdrv: a driver is already registered as '%s'",
 	       driver);
         return NS_ERROR;
@@ -390,7 +390,7 @@ Ns_DbSelect(Ns_DbHandle *handle, char *sql)
     	    if (Ns_DbExec(handle, sql) == NS_ROWS) {
     		setPtr = Ns_DbBindRow(handle);
 	    } else {
-		if(!handle->dsExceptionMsg.length) {
+		if(handle->dsExceptionMsg.length == 0) {
 		    Ns_DbSetException(handle, "NSDB",
 				      "Query was not a statement returning rows.");
 		}
@@ -662,7 +662,7 @@ Ns_DbResetHandle (Ns_DbHandle *handle)
  */
 
 struct DbDriver *
-NsDbLoadDriver(char *driver)
+NsDbLoadDriver(const char *driver)
 {
     Tcl_HashEntry  *hPtr;
     int             isNew;
@@ -678,7 +678,7 @@ NsDbLoadDriver(char *driver)
     if (isNew == 0) {
 	driverPtr = (DbDriver *) Tcl_GetHashValue(hPtr);
     } else {
-        char *module;
+        const char *module;
 
 	driverPtr = ns_malloc(sizeof(DbDriver));
 	memset(driverPtr, 0, sizeof(DbDriver));
@@ -688,7 +688,7 @@ NsDbLoadDriver(char *driver)
         if (module == NULL) {
 	    Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
 	} else {
-	    char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
+	    const char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
 
             if (Ns_ModuleLoad(NULL, driver, path, module, "Ns_DbDriverInit")
 		    != NS_OK) {

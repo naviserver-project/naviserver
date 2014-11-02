@@ -526,7 +526,7 @@ LogError(char *func, int h_errnop)
         h = buf;
     }
 
-    Ns_Log(Error, "dns: %s failed: %s%s", func, h, e ? e : "");
+    Ns_Log(Error, "dns: %s failed: %s%s", func, h, (e != 0) ? e : "");
 }
 
 #endif

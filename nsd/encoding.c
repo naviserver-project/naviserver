@@ -41,7 +41,7 @@
 
 static void AddCharset(const char *charset, const char *name);
 static void AddExtension(const char *ext, const char *name);
-static Tcl_Encoding LoadEncoding(CONST char *name);
+static Tcl_Encoding LoadEncoding(const char *name);
 static Ns_ServerInitProc ConfigServerEncodings;
 
 /*
@@ -322,11 +322,11 @@ Ns_GetFileEncoding(CONST char *file)
 Tcl_Encoding
 Ns_GetTypeEncoding(CONST char *mimeType)
 {
-    char    *charset;
+    const char    *charset;
     size_t   len;
 
     charset = NsFindCharset(mimeType, &len);
-    return (charset ? Ns_GetCharsetEncodingEx(charset, (int)len) : NULL);
+    return (charset != NULL) ? Ns_GetCharsetEncodingEx(charset, (int)len) : NULL;
 }
 
 
@@ -415,7 +415,7 @@ Ns_GetEncodingCharset(Tcl_Encoding encoding)
     if (hPtr != NULL) {
         charset = Tcl_GetHashValue(hPtr);
     }
-    return charset ? charset : encname;
+    return (charset != NULL) ? charset : encname;
 }
 
 
@@ -435,10 +435,10 @@ Ns_GetEncodingCharset(Tcl_Encoding encoding)
  *----------------------------------------------------------------------
  */
 
-char *
-NsFindCharset(CONST char *mimetype, size_t *lenPtr)
+const char *
+NsFindCharset(const char *mimetype, size_t *lenPtr)
 {
-    CONST char *start, *end;
+    const char *start, *end;
 
     start = Ns_StrCaseFind(mimetype, "charset");
     if (start != NULL) {
@@ -451,7 +451,7 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
                 ++end;
             }
             *lenPtr = end - start;
-            return (char *) start;
+            return start;
         }
     }
     return NULL;
@@ -567,7 +567,7 @@ NsEncodingIsUtf8(const Tcl_Encoding encoding)
  */
 
 static Tcl_Encoding
-LoadEncoding(CONST char *name)
+LoadEncoding(const char *name)
 {
     Tcl_HashEntry *hPtr;
     Tcl_Encoding   encoding;
@@ -580,7 +580,7 @@ LoadEncoding(CONST char *name)
             Ns_CondWait(&cond, &lock);
         }
     } else {
-        Tcl_SetHashValue(hPtr, ENC_LOCKED);
+	Tcl_SetHashValue(hPtr, INT2PTR(ENC_LOCKED));
         Ns_MutexUnlock(&lock);
         encoding = Tcl_GetEncoding(NULL, name);
         if (encoding == NULL) {

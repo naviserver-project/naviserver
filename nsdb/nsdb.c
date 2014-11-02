@@ -59,7 +59,7 @@ Ns_ModuleInit(char *server, char *module)
 {
     static int once = 0;
 
-    if (!once) {
+    if (once == 0) {
 	NsDbInitPools();
 	once = 1;
     }

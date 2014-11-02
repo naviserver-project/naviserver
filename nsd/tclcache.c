@@ -370,7 +370,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 			 (int)Ns_CacheGetSize(entry));
     }
     for (i = objc - nelements; i < objc; i++) {
-        if (append) {
+        if (append != 0) {
             Tcl_AppendObjToObj(valObj, objv[i]);
         } else if (Tcl_ListObjAppendElement(interp, valObj, objv[i])
                    != TCL_OK) {
@@ -568,7 +568,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_CacheLock(cache);
     if (npatterns == 0) {
         nflushed = Ns_CacheFlush(cache);
-    } else if (!glob) {
+    } else if (glob == 0) {
         for (i = npatterns; i > 0; i--) {
             entry = Ns_CacheFindEntry(cache, Tcl_GetString(objv[objc-i]));
             if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {
@@ -642,16 +642,16 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 
     Ns_CacheLock(cPtr->cache);
     entry = Ns_CacheFindEntry(cPtr->cache, key);
-    resultObj = entry ? Tcl_NewStringObj(Ns_CacheGetValue(entry), -1) : NULL;
+    resultObj = (entry != NULL) ? Tcl_NewStringObj(Ns_CacheGetValue(entry), -1) : NULL;
     Ns_CacheUnlock(cPtr->cache);
 
-    if (varNameObj) {
+    if (varNameObj != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(resultObj != NULL));
-	if (resultObj) {
+	if (resultObj != NULL) {
 	    Tcl_ObjSetVar2(interp, varNameObj, NULL, resultObj, 0);
 	}
     } else {
-	if (resultObj) {
+	if (resultObj != NULL) {
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
 	    Tcl_AppendResult(interp, "no such key: ",
@@ -711,7 +711,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_DStringInit(&ds);
 
     Ns_CacheLock(cache);
-    if (contents) {
+    if (contents != 0) {
         Ns_Entry *entry;
 
         Tcl_DStringStartSublist(&ds);
@@ -733,7 +733,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     } else {
         Ns_CacheStats(cache, &ds);
     }
-    if (reset) {
+    if (reset != 0) {
         Ns_CacheResetStats(cache);
     }
     Ns_CacheUnlock(cache);

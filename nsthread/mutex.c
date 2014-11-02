@@ -67,7 +67,7 @@ typedef struct Mutex {
     char	     name[NS_THREAD_NAMESIZE+1];
 } Mutex;
 
-#define GETMUTEX(mutex) (*(mutex) ? ((Mutex *)*(mutex)) : GetMutex((mutex)))
+#define GETMUTEX(mutex) (*(mutex) != NULL ? ((Mutex *)*(mutex)) : GetMutex((mutex)))
 static Mutex *GetMutex(Ns_Mutex *mutex);
 static Mutex *firstMutexPtr;
 
@@ -141,17 +141,17 @@ Ns_MutexSetName2(Ns_Mutex *mutex, CONST char *prefix, CONST char *name)
 	prefixLength = NS_THREAD_NAMESIZE;
 	nameLength = 0;
     } else {
-	nameLength = name ? strlen(name) : 0;
+	nameLength = (name != NULL) ? strlen(name) : 0U;
 	if ((nameLength + prefixLength + 1) > NS_THREAD_NAMESIZE) {
 	    nameLength = NS_THREAD_NAMESIZE - prefixLength - 1;
 	}
     }
     Ns_MasterLock();
     p = strncpy(mutexPtr->name, prefix, (size_t)prefixLength) + prefixLength;
-    if (nameLength > 0) {
+    if (nameLength > 0U) {
 	*p++ = ':';
 	assert(name != NULL);
-	p = strncpy(p, name, (size_t)nameLength) + nameLength;
+	p = strncpy(p, name, nameLength) + nameLength;
     }
     *p = '\0';
     Ns_MasterUnlock();

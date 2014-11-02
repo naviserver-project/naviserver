@@ -196,7 +196,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
         if ((key == NULL && name == NULL) ||
             (key != NULL && name != NULL && ((*cmp) (key, name)) == 0)) {
 
-            if (found) {
+            if (found != 0) {
                 return NS_FALSE;
             }
             found = 1;
@@ -863,7 +863,7 @@ Ns_SetPrint(const Ns_Set *set)
 {
     int             i;
 
-    fprintf(stderr, "%s:\n", set->name ? set->name : "<Unamed set>");
+    fprintf(stderr, "%s:\n", (set->name != NULL) ? set->name : "<Unamed set>");
     for (i = 0; i < set->size; ++i) {
         if (set->fields[i].name == NULL) {
             fprintf(stderr, "\t(null) = ");

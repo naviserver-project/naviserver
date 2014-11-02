@@ -502,7 +502,7 @@ GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPt
 	 */
         ++e;
         while (*e != '\0' && (escaped || *e != *s)) {
-	    if (escaped) {
+	    if (escaped != 0) {
 	        escaped = 0;
 	    } else if (*e == '\\') {
 	        *uPtr = *s;
@@ -554,7 +554,7 @@ Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * backslashes have to be removed. This will shorten the resulting
      * string.
      */
-    if (unescape) {
+    if (unescape != '\0') {
       int i, j, l = (int)len;
       char *buffer = dsPtr->string;
 

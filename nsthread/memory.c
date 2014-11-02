@@ -57,13 +57,13 @@
 #if defined(SYSTEM_MALLOC)
 void *ns_realloc(void *ptr, size_t size)  { return realloc(ptr, size); }
 void *ns_malloc(size_t size)              { return malloc(size); }
-void ns_free(void *ptr)                   { /*fprintf(stderr, "free %p\n", ptr); if (ptr) */ {free(ptr);} }
+void ns_free(void *ptr)                   { /*fprintf(stderr, "free %p\n", ptr); if (ptr != NULL) */ {free(ptr);} }
 void *ns_calloc(size_t num, size_t esize) { return calloc(num, esize); }
 #else
 void *
 ns_realloc(void *ptr, size_t size)
 {
-  return (ptr ? ckrealloc(ptr, (int)size) : ckalloc((int)size));
+  return ((ptr != NULL) ? ckrealloc(ptr, (int)size) : ckalloc((int)size));
 }
 
 void *

@@ -117,7 +117,7 @@ struct _nsconf {
     char *name;
     char *version;
     const char *home;
-    char *tmpDir;
+    const char *tmpDir;
     const char *config;
     char *build;
     pid_t pid;
@@ -385,13 +385,13 @@ typedef struct Driver {
     char  *server;                      /* Virtual server name */
     char  *module;                      /* Driver module */
     char  *name;                        /* Driver name */
-    char  *location;                    /* Location, e.g, "http://foo:9090" */
+    const char  *location;              /* Location, e.g, "http://foo:9090" */
     char  *address;                     /* Address in location, e.g. "foo" */
     char  *protocol;                    /* Protocol in location, e.g, "http" */
     long   sendwait;                    /* send() I/O timeout */
     long   recvwait;                    /* recv() I/O timeout */
     size_t bufsize;                     /* Conn bufsize (0 for SSL) */
-    char  *extraHeaders;                /* Extra header fields added for every request */
+    const char  *extraHeaders;          /* Extra header fields added for every request */
 
     /*
      * Private to Driver.
@@ -413,8 +413,8 @@ typedef struct Driver {
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
     size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     NS_SOCKET sock;                     /* Listening socket */
-    int pidx;                           /* poll() index */
-    char *bindaddr;                     /* Numerical listen address */
+    NS_POLL_NFDS_TYPE pidx;             /* poll() index */
+    const char *bindaddr;               /* Numerical listen address */
     int port;                           /* Port in location */
     int backlog;                        /* listen() backlog */
     Tcl_WideInt maxinput;               /* Maximum request bytes to read */
@@ -468,7 +468,7 @@ typedef struct Sock {
     struct Sock        *nextPtr;
     struct NsServer    *servPtr;
 
-    char               *location;
+    const char         *location;
     int                 keep;
     int                 pidx;            /* poll() index */
     unsigned int        flags;           /* state flags used by driver */
@@ -560,7 +560,7 @@ typedef struct Conn {
      */
 
     char *server;
-    char *location;
+    const char *location;
     char *clientData;
 
     struct Request  *reqPtr;
@@ -1243,7 +1243,7 @@ NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN NsServer *NsGetInitServer(void);
-NS_EXTERN NsServer *NsGetServer(CONST char *server);
+NS_EXTERN NsServer *NsGetServer(const char *server);
 NS_EXTERN void NsStartServers(void);
 NS_EXTERN void NsStopServers(const Ns_Time *toPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStartServer(const NsServer *servPtr) NS_GNUC_NONNULL(1);
@@ -1382,7 +1382,8 @@ NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-NS_EXTERN struct Bucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
+NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets)
+     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsSlsCleanup(Sock *sockPtr);
 NS_EXTERN void NsClsCleanup(Conn *connPtr);
@@ -1472,14 +1473,14 @@ NS_EXTERN int NsForkWatchedProcess(void);
  */
 
 NS_EXTERN int NsCloseAllFiles(int errFd);
-NS_EXTERN int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
+NS_EXTERN int NsMemMap(const char *path, int size, int mode, FileMap *mapPtr);
 NS_EXTERN void NsMemUmap(const FileMap *mapPtr);
 
 NS_EXTERN void NsStopSockCallbacks(void);
 NS_EXTERN void NsStopScheduledProcs(void);
 NS_EXTERN void NsGetBuf(char **bufPtr, int *sizePtr);
 
-NS_EXTERN char *NsFindCharset(CONST char *mimetype, size_t *lenPtr);
+NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr);
 NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 
 NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,

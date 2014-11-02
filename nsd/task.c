@@ -141,7 +141,7 @@ Ns_CreateTaskQueue(const char *name)
     TaskQueue *queuePtr;
 
     queuePtr = ns_calloc(1U, sizeof(TaskQueue));
-    strncpy(queuePtr->name, name ? name : "", NAME_SIZE);
+    strncpy(queuePtr->name, (name != NULL) ? name : "", NAME_SIZE);
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -648,7 +648,7 @@ RunTask(Task *taskPtr, unsigned int revents, const Ns_Time *nowPtr)
     if (revents & POLLHUP) {
         revents |= POLLIN;
     }
-    if (revents) {
+    if (revents != 0U) {
         int i;
 
         for (i = 0; i < 3; ++i) {
@@ -688,7 +688,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 
     Ns_MutexLock(&queuePtr->lock);
     shutdown = queuePtr->shutdown;
-    if (!shutdown) {
+    if (shutdown == 0) {
 
         /*
          * Mark the signal and add event to signal list if not
@@ -697,17 +697,17 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 
         taskPtr->signal |= bit;
         pending = (taskPtr->signal & TASK_PENDING);
-        if (!pending) {
+        if (pending == 0) {
             taskPtr->signal |= TASK_PENDING;
             taskPtr->nextSignalPtr = queuePtr->firstSignalPtr;
             queuePtr->firstSignalPtr = taskPtr;
         }
     }
     Ns_MutexUnlock(&queuePtr->lock);
-    if (shutdown) {
+    if (shutdown != 0) {
         return 0;
     }
-    if (!pending) {
+    if (pending == 0) {
         TriggerQueue(queuePtr);
     }
     return 1;
@@ -922,7 +922,7 @@ TaskThread(void *arg)
          * Signal other threads which may be waiting on tasks to complete.
          */
 
-        if (broadcast) {
+        if (broadcast != 0) {
             Ns_CondBroadcast(&queuePtr->cond);
         }
 
@@ -930,7 +930,7 @@ TaskThread(void *arg)
          * Break now if shutting down now that all signals have been processed.
          */
 
-        if (shutdown) {
+        if (shutdown != 0) {
             break;
         }
 

@@ -137,9 +137,9 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 double
 Ns_DRand(void)
 {
-    if (!initialized) {
+    if (initialized == 0) {
 	Ns_CsEnter(&lock);
-	if (!initialized) {
+	if (initialized == 0) {
 	    unsigned long seed;
 	    Ns_GenSeeds(&seed, 1);
 #ifdef HAVE_DRAND48
@@ -226,7 +226,7 @@ CounterThread(void *UNUSED(arg))
 {
     while (fRun) {
         Ns_SemaWait(&sema);
-        if (fRun) {
+        if (fRun != 0) {
 	    while (fCount) {
 		counter++;
             }

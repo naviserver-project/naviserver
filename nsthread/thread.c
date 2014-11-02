@@ -98,7 +98,7 @@ NsInitThreads(void)
 {
     static int once = 0;
 
-    if (!once) {
+    if (once == 0) {
 	once = 1;
     	NsInitMaster();
     	NsInitReentrant();

@@ -739,7 +739,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     }
 
     userPtr = ns_calloc(1U, sizeof(User));
-    if (clear) {
+    if (clear != 0) {
         userPtr->flags |= USER_CLEAR_TEXT;
     }
     if (salt != NULL) {
@@ -1122,7 +1122,7 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
 
     Ns_RWLockWrLock(&servPtr->lock);
     hPtr = Tcl_FindHashEntry(&servPtr->groups, name);
-    if (hPtr) {
+    if (hPtr != NULL) {
         groupPtr = Tcl_GetHashValue(hPtr);
         Tcl_DeleteHashEntry(hPtr);
     }
@@ -1231,7 +1231,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) {flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
 
     /*
      * Construct the base url.
@@ -1259,21 +1259,21 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
         Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
         Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
     }
-    if (!allow) {
+    if (allow == 0) {
         permPtr->flags |= PERM_IMPLICIT_ALLOW;
     }
 
     for (i = objc - nargs; i < objc; i++) {
         char *key = Tcl_GetString(objv[i]);
 
-        if (user) {
-            if (allow) {
+        if (user != 0) {
+            if (allow != 0) {
                 (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &isNew);
             } else {
                 (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &isNew);
             }
         } else {
-            if (allow) {
+            if (allow != 0) {
                 (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &isNew);
             } else {
                 (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &isNew);
@@ -1324,7 +1324,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit) {flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
 
     /*
      * Construct the base url.
@@ -1558,7 +1558,7 @@ static int CreateNonce(const char *privatekey, char **nonce, char *uri)
     char buf[33];
     char bufcoded[1 + (4 * 48) / 2];
 
-    if (!privatekey) {
+    if (privatekey == 0) {
         return NS_ERROR;
     }
 
@@ -1617,7 +1617,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
     unsigned char sig[16];
     time_t now, nonce_time;
 
-    if (!privatekey) {
+    if (privatekey == 0) {
         return NS_ERROR;
     }
 

@@ -217,7 +217,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         Ns_IncrTime(&httpPtr->timeout, 2, 0);
     }
     httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpProc, httpPtr);
-    if (run) {
+    if (run != 0) {
 	Ns_TaskRun(httpPtr->task);
     } else {
 	if (queue == NULL) {
@@ -285,7 +285,7 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
 	if (len > 0 && p[len-1] == '\r') {
 	    p[len-1] = '\0';
 	}
-	if (firsthdr) {
+	if (firsthdr != 0) {
 	    if (hdrPtr->name != NULL) {
 		ns_free(hdrPtr->name);
 	    }
@@ -456,7 +456,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 			     httpPtr->spoolFileName, strerror(errno));
 		    }
 		    
-		    if (fd) {
+		    if (fd != 0) {
 		      /*Ns_Log(Notice, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
 			httpPtr->spoolFd = fd;
 			Ns_HttpAppendBuffer(httpPtr, 
@@ -546,7 +546,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     if (!HttpGet(itPtr, id, &httpPtr, 1)) {
 	return TCL_ERROR;
     }
-    if (decompress) {
+    if (decompress != 0) {
       httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
     }
 
@@ -578,7 +578,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 	}
     }
 
-    if (httpPtr->error) {
+    if (httpPtr->error != NULL) {
 	Tcl_AppendResult(interp, "ns_http failed: ", httpPtr->error, NULL);
 	goto err;
     }
@@ -653,7 +653,7 @@ HttpGet(NsInterp *itPtr, CONST char *id, Ns_HttpTask **httpPtrPtr, int remove)
         return 0;
     }
     *httpPtrPtr = Tcl_GetHashValue(hPtr);
-    if (remove) {
+    if (remove != 0) {
         Tcl_DeleteHashEntry(hPtr);
     }
     return 1;
@@ -739,7 +739,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
     Ns_StrToUpper(Ns_DStringValue(&httpPtr->ds));
 
     Ns_DStringVarAppend(&httpPtr->ds, " ", 
-			file ? file : "/",
+			(file != NULL) ? file : "/",
 			" HTTP/1.0\r\n", NULL);
 
     /*
@@ -757,7 +757,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
 
 	for (i = 0; i < Ns_SetSize(hdrPtr); i++) {
 	    char *key = Ns_SetKey(hdrPtr, i);
-	    if (uaFlag) {
+	    if (uaFlag != 0) {
 		uaFlag = strcasecmp(key, "User-Agent");
 	    }
 	    Ns_DStringPrintf(&httpPtr->ds, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
@@ -772,7 +772,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
     /*
      * User-Agent header was not supplied, add our own header
      */
-    if (uaFlag) {
+    if (uaFlag != 0) {
 	Ns_DStringPrintf(&httpPtr->ds, "User-Agent: %s/%s\r\n",
 			 Ns_InfoServerName(),
 			 Ns_InfoServerVersion());
@@ -906,11 +906,11 @@ HttpClose(Ns_HttpTask *httpPtr)
 {
     assert(httpPtr != NULL);
 
-    if (httpPtr->task != NULL)  {Ns_TaskFree(httpPtr->task);}
-    if (httpPtr->sock > 0)      {ns_sockclose(httpPtr->sock);}
-    if (httpPtr->spoolFileName) {ns_free(httpPtr->spoolFileName);}
-    if (httpPtr->spoolFd > 0)   {close(httpPtr->spoolFd);}
-    if (httpPtr->compress)      {
+    if (httpPtr->task != NULL)          {Ns_TaskFree(httpPtr->task);}
+    if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
+    if (httpPtr->spoolFileName != NULL) {ns_free(httpPtr->spoolFileName);}
+    if (httpPtr->spoolFd > 0)           {close(httpPtr->spoolFd);}
+    if (httpPtr->compress != NULL)      {
 	Ns_InflateEnd(httpPtr->compress);
 	ns_free(httpPtr->compress);
     }

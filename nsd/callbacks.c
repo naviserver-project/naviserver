@@ -62,12 +62,12 @@ static void AppendList(Tcl_DString *dsPtr, CONST char *list, const Callback *cbP
  * Static variables defined in this file
  */
 
-static Callback *firstPreStartup;
-static Callback *firstStartup;
-static Callback *firstSignal;
-static Callback *firstShutdown;
-static Callback *firstExit;
-static Callback *firstReady;
+static Callback *firstPreStartup = NULL;
+static Callback *firstStartup = NULL;
+static Callback *firstSignal = NULL;
+static Callback *firstShutdown = NULL;
+static Callback *firstExit = NULL;
+static Callback *firstReady = NULL;
 
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
@@ -447,17 +447,17 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
     cbPtr->arg = arg;
 
     Ns_MutexLock(&lock);
-    if (first) {
+    if (first != 0) {
         first = 0;
         Ns_MutexSetName(&lock, "ns:callbacks");
     }
-    if (shutdownPending) {
+    if (shutdownPending != 0) {
         ns_free(cbPtr);
         cbPtr = NULL;
     } else if (*firstPtrPtr == NULL) {
         *firstPtrPtr = cbPtr;
         cbPtr->nextPtr = NULL;
-    } else if (fifo) {
+    } else if (fifo != 0) {
         nextPtr = *firstPtrPtr;
         while (nextPtr->nextPtr != NULL) {
             nextPtr = nextPtr->nextPtr;

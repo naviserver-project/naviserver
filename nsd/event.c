@@ -171,7 +171,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
         evPtr->arg = arg;
         Push(evPtr, queuePtr->firstInitPtr);
     }
-    return evPtr ? NS_OK : NS_ERROR;
+    return (evPtr != NULL) ? NS_OK : NS_ERROR;
 }
 
 
@@ -338,7 +338,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         if (revents & POLLHUP) {
             revents |= POLLIN;
         }
-        if (revents) {
+        if (revents != 0U) {
             for (i = 0; i < 3; ++i) {
                 if (revents & map[i].event) {
                     Call(evPtr, &now, map[i].when);
@@ -357,7 +357,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         evPtr = nextPtr;
     }
 
-    return queuePtr->firstWaitPtr ? NS_TRUE : NS_FALSE;
+    return (queuePtr->firstWaitPtr != NULL) ? NS_TRUE : NS_FALSE;
 }
 
 

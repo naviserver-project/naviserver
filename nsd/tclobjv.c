@@ -98,7 +98,7 @@ int
 Ns_OptionServer(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     NsServer *servPtr = NsGetServer(Tcl_GetString(objPtr));
     *clientData = servPtr;
-    return servPtr ? TCL_OK : TCL_ERROR;
+    return (servPtr != NULL) ? TCL_OK : TCL_ERROR;
 }
 
 int 
@@ -420,7 +420,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST*
 {
     int *dest = spec->dest;
 
-    if (spec->arg) {
+    if (spec->arg != NULL) {
 	*dest = PTR2INT(spec->arg);
         return TCL_OK;
     }
@@ -840,7 +840,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     specPtr = opts;
     while (1) {
         if (specPtr->key == NULL) {
-            if (doneOpts) {
+            if (doneOpts != 0) {
                 break;
             }
             doneOpts = 1;
@@ -996,7 +996,7 @@ FreeSpecs(Ns_ObjvSpec *specPtr)
 
     while(1) {
         if (specPtr->key == NULL) {
-            if (doneOpts) {
+            if (doneOpts != 0) {
                 break;
             }
             doneOpts = 1;
@@ -1071,7 +1071,7 @@ UpdateStringOfSpec(Tcl_Obj *objPtr)
     specPtr = (Ns_ObjvSpec *) objPtr->internalRep.twoPtrValue.ptr1;
     while (1) {
         if (specPtr->key == NULL) {
-            if (doneOpts) {
+            if (doneOpts != 0) {
                 break;
             }
             doneOpts = 1;
@@ -1134,7 +1134,7 @@ DupSpec(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
     argSpec = NULL;
     while (1) {
         if (specPtr->key == NULL) {
-            if (argSpec) {
+            if (argSpec != NULL) {
                 break;
             }
             argSpec = ++specPtr;

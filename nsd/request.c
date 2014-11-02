@@ -647,11 +647,11 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
 
     encodingStr = strstr(encodingString, encodingFormat);
 
-    if (encodingStr) {
+    if (encodingStr != NULL) {
 	int len = 0;
 	const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
 
-	if (qValueString) {
+	if (qValueString != NULL) {
 	    *qValue = strtod(qValueString, NULL);
 	} else {
 	    *qValue = 1.0;

@@ -216,7 +216,7 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
 {
     char *str = arg;
 
-    Tcl_DStringAppendElement(dsPtr, str ? str : "");
+    Tcl_DStringAppendElement(dsPtr, (str != 0) ? str : "");
 }
 
 
@@ -241,7 +241,7 @@ ServerArgProc(Tcl_DString *dsPtr, void *arg)
 {
     NsServer *servPtr = arg;
 
-    Tcl_DStringAppendElement(dsPtr, servPtr ? servPtr->server : "");
+    Tcl_DStringAppendElement(dsPtr, (servPtr != NULL) ? servPtr->server : "");
 }
 
 

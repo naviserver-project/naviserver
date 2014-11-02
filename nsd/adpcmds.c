@@ -304,7 +304,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
             if (Tcl_GetBooleanFromObj(interp, objv[2], &boolVal) != TCL_OK) {
                 return TCL_ERROR;
             }
-            if (boolVal) {
+            if (boolVal != 0) {
                 itPtr->adp.flags |= flag;
             } else {
                 itPtr->adp.flags &= ~flag;
@@ -414,7 +414,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (nocache != 0) {
         itPtr->adp.flags &= ~ADP_CACHE;
     }
-    if (tcl) {
+    if (tcl != 0) {
         itPtr->adp.flags |= ADP_TCLFILE;
     }
     
@@ -505,17 +505,17 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
      */
     itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
 
-    if (file) {
+    if (file != 0) {
 	/* file mode */
         itPtr->adp.flags |= ADP_ADPFILE;
     } else {
 	/* string mode */
     }
-    if (tcl) {
+    if (tcl != 0) {
         /* tcl script */
         itPtr->adp.flags |= ADP_TCLFILE;
     }
-    if (safe) {
+    if (safe != 0) {
         itPtr->adp.flags |= ADP_SAFE;
     }
 
@@ -528,7 +528,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         savedCwd = itPtr->adp.cwd;
         itPtr->adp.cwd = cwd;
     }
-    if (file) {
+    if (file != 0) {
         result = NsAdpSource(arg, objc, objv, resvar);
     } else {
         result = NsAdpEval(arg, objc, objv, resvar);

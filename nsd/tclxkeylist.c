@@ -216,10 +216,10 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
     status = TclX_KeyedListGetKeys(interp, keylistPtr, keylistKey, &objValPtr);
 
     if (status == TCL_BREAK) {
-        if (keysArgcPtr) {
+        if (keysArgcPtr != NULL) {
             *keysArgcPtr = 0;
         }
-        if (keysArgvPtr) {
+        if (keysArgvPtr != NULL) {
             *keysArgvPtr = NULL;
         }
     } else if (status == TCL_OK) {
@@ -297,11 +297,11 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, CONST char *fieldName,
     status = TclX_KeyedListGet(interp, keylistPtr, keylistKey, &objValPtr);
 
     if (status == TCL_BREAK) {
-        if (fieldValuePtr) {
+        if (fieldValuePtr != NULL) {
             *fieldValuePtr = NULL;
         }
     } else if (status == TCL_OK) {
-        if (fieldValuePtr) {
+        if (fieldValuePtr != NULL) {
             size_t valueLen;
             char *keyValue = Tcl_GetStringFromObj(objValPtr, (int*)&valueLen);
             char *newValue = strncpy(ckalloc((size_t)(valueLen + 1)), keyValue, valueLen);
@@ -588,7 +588,7 @@ ValidateKey(Tcl_Interp *interp, const char *key, int keyLen, int isPath)
         return TCL_ERROR;
     }
     for (keyp = key; *keyp != '\0'; keyp++) {
-        if ((!isPath) && (*keyp == '.')) {
+        if ((isPath == 0) && (*keyp == '.')) {
             Tcl_AppendResult(interp,
                              "keyed list key may not contain a \".\"; ",
 			     "it is used as a separator in key paths",

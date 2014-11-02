@@ -55,7 +55,7 @@ typedef struct {
 
 static Ns_ServerInitProc ConfigServerProxy;
 static void WalkCallback(Tcl_DString *dsPtr, void *arg);
-static void FreeReq(void *arg);
+static void FreeReq(void *arg) NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -123,7 +123,7 @@ ConfigServerProxy(const char *server)
  */
 
 void
-Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
+Ns_RegisterRequest(const char *server, const char *method, const char *url,
                    Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, 
 		   unsigned int flags)
 {
@@ -159,7 +159,7 @@ Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void
-Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
+Ns_GetRequest(const char *server, const char *method, const char *url,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr, 
 	      unsigned int *flagsPtr)
 {
@@ -200,10 +200,10 @@ Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void
-Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
+Ns_UnRegisterRequest(const char *server, const char *method, const char *url,
                      int inherit)
 {
-    Ns_UnRegisterRequestEx(server, method, url, inherit ? 0U : NS_OP_NOINHERIT);
+    Ns_UnRegisterRequestEx(server, method, url, (inherit != 0) ? 0U : NS_OP_NOINHERIT);
 }
 
 
@@ -225,11 +225,11 @@ Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void
-Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
+Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
                        unsigned int flags)
 {
     Ns_MutexLock(&ulock);
-    Ns_UrlSpecificDestroy(server, method, url, uid, flags);
+    (void)Ns_UrlSpecificDestroy(server, method, url, uid, flags);
     Ns_MutexUnlock(&ulock);
 }
 
@@ -320,7 +320,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
  */
 
 int
-Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
+Ns_ConnRedirect(Ns_Conn *conn, const char *url)
 {
     int status;
 
@@ -378,7 +378,7 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
  */
 
 void
-Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *protocol,
+Ns_RegisterProxyRequest(const char *server, const char *method, const char *protocol,
                         Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg)
 {
     NsServer      *servPtr;
@@ -429,8 +429,8 @@ Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *prot
  */
 
 void
-Ns_UnRegisterProxyRequest(CONST char *server, CONST char *method,
-                          CONST char *protocol)
+Ns_UnRegisterProxyRequest(const char *server, const char *method,
+                          const char *protocol)
 {
     NsServer      *servPtr;
 
@@ -563,6 +563,8 @@ static void
 FreeReq(void *arg)
 {
     Req *reqPtr = (Req *) arg;
+
+    assert(arg != NULL);
 
     if (--reqPtr->refcnt == 0) {
         if (reqPtr->deleteCallback != NULL) {

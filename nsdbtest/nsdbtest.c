@@ -205,7 +205,7 @@ BindRow(Ns_DbHandle *handle)
 static int
 Exec(const Ns_DbHandle *handle, char *sql)
 {
-    if (handle->verbose) {
+    if (handle->verbose != 0) {
         Ns_Log(Notice, "nsdbtest(%s): Querying '%s'", handle->driver, sql);
     }
 

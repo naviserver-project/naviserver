@@ -80,7 +80,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
     Ns_UrlToFile(&ds, server, url);
     chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
     Ns_DStringFree(&ds);
-    if (chan) {
+    if (chan != NULL) {
         char buf[1024];
         int  nread;
 
@@ -211,7 +211,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     do {
       Ns_DStringNAppend(dsPtr, stream.ptr, (int)stream.cnt);
     } while (FillBuf(&stream));
-    if (!stream.error) {
+    if (stream.error == 0) {
         status = NS_OK;
     }
 

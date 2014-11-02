@@ -65,7 +65,7 @@ NsInitMaster(void)
 void
 Ns_MasterLock(void)
 {
-    if (initialized) {
+    if (initialized != 0) {
         Ns_CsEnter(&master);
     }
 }
@@ -73,7 +73,7 @@ Ns_MasterLock(void)
 void
 Ns_MasterUnlock(void)
 {
-    if (initialized) {
+    if (initialized != 0) {
         Ns_CsLeave(&master);
     }
 }

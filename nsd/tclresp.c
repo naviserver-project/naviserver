@@ -98,12 +98,12 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     Ns_ConnSetResponseStatus(conn, status);
 
     if (type != NULL) {
-        if (binary) {
+        if (binary != 0) {
             Ns_ConnSetTypeHeader(conn, type);
         } else {
             Ns_ConnSetEncodedTypeHeader(conn, type);
         }
-    } else if (binary) {
+    } else if (binary != 0) {
         conn->flags |= NS_CONN_WRITE_ENCODED;
     }
 
@@ -279,7 +279,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         flags |= NS_CONN_STREAM;
     }
 
-    if (binary) {
+    if (binary != 0) {
         status = Ns_ConnWriteVData(conn, sbufs, n, flags);
     } else {
         status = Ns_ConnWriteVChars(conn, sbufs, n, flags);
