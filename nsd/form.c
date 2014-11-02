@@ -554,7 +554,7 @@ Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * backslashes have to be removed. This will shorten the resulting
      * string.
      */
-    if (unescape != 0) {
+    if (unescape != '\0') {
       int i, j, l = (int)len;
       char *buffer = dsPtr->string;
 
