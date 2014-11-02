@@ -947,7 +947,7 @@ BucketIndex(const char* arrayName) {
 
     while (1) {
 	register unsigned int i = UCHAR(*(arrayName++));
-	if (unlikely(i == 0)) {
+	if (unlikely(i == 0U)) {
             break;
         }
         index += (index << 3U) + i;
