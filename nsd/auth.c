@@ -253,7 +253,7 @@ NsParseAuth(Conn *connPtr, char *auth)
         if (STRIEQ(auth, "Basic")) {
 	    size_t size;
 
-            Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
+            (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
 
             /* Skip spaces */
             q = p + 1;
@@ -261,21 +261,21 @@ NsParseAuth(Conn *connPtr, char *auth)
                 q++;
             }
 
-            size = strlen(q) + 3;
+            size = strlen(q) + 3U;
             v = ns_malloc(size);
             size = Ns_HtuuDecode(q, (unsigned char *) v, size);
             v[size] = '\0';
             q = strchr(v, ':');
             if (q != NULL) {
                 *q++ = '\0';
-                Ns_SetPut(connPtr->auth, "Password", q);
+                (void)Ns_SetPut(connPtr->auth, "Password", q);
             }
-            Ns_SetPut(connPtr->auth, "Username", v);
+            (void)Ns_SetPut(connPtr->auth, "Username", v);
             ns_free(v);
         } else
 
         if (STRIEQ(auth, "Digest")) {
-            Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
+	    (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
 
             /* Skip spaces */
             q = p + 1;
@@ -319,7 +319,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 save2 = *q;
                 *q = '\0';
                 /* Update with current value */
-                Ns_SetPutValue(connPtr->auth, idx, p);
+                (void)Ns_SetPutValue(connPtr->auth, idx, p);
                 *q = save2;
                 /* Advance to the end of the param value, can be end or next name*/
                 while (*q != '\0' && (*q == ',' || *q == '"' || CHARTYPE(space, *q) != 0)) {

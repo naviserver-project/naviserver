@@ -113,7 +113,7 @@ NsTclCreateBuckets(const char *server, int nbuckets)
 
     assert(server != NULL);
 
-    buckets = ns_malloc(sizeof(Bucket) * nbuckets);
+    buckets = ns_malloc(sizeof(Bucket) * (size_t)nbuckets);
     while (--nbuckets >= 0) {
         snprintf(buf, sizeof(buf), "nsv:%d", nbuckets);
         Tcl_InitHashTable(&buckets[nbuckets].arrays, TCL_STRING_KEYS);
@@ -410,7 +410,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Tcl_AppendResult(interp, Tcl_GetString(objv[i]), NULL);
     }
     value = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
-    UpdateVar(hPtr, value, len);
+    UpdateVar(hPtr, value, (size_t)len);
     UnlockArray(arrayPtr);
 
     return TCL_OK;
@@ -874,9 +874,9 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
         oldString = Tcl_GetHashValue(hPtr);
         oldLen = (oldString != NULL) ? strlen(oldString) : 0U;
 
-        newLen = oldLen + ((len > -1) ? (size_t)len : strlen(value)) + 1;
-        newString = ns_realloc(oldString, newLen + 1);
-        memcpy(newString + oldLen, value, newLen + 1);
+        newLen = oldLen + ((len > -1) ? (size_t)len : strlen(value)) + 1U;
+        newString = ns_realloc(oldString, newLen + 1U);
+        memcpy(newString + oldLen, value, newLen + 1U);
 
         Tcl_SetHashValue(hPtr, newString);
 
