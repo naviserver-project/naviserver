@@ -62,12 +62,12 @@ static void AppendList(Tcl_DString *dsPtr, CONST char *list, const Callback *cbP
  * Static variables defined in this file
  */
 
-static Callback *firstPreStartup;
-static Callback *firstStartup;
-static Callback *firstSignal;
-static Callback *firstShutdown;
-static Callback *firstExit;
-static Callback *firstReady;
+static Callback *firstPreStartup = NULL;
+static Callback *firstStartup = NULL;
+static Callback *firstSignal = NULL;
+static Callback *firstShutdown = NULL;
+static Callback *firstExit = NULL;
+static Callback *firstReady = NULL;
 
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
