@@ -857,7 +857,6 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
 {
     NsServer      *servPtr;
     Array         *arrayPtr;
-    char          *oldString;
     int            isNew, status = NS_ERROR;
 
     assert(array != NULL);
@@ -868,7 +867,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
         && (arrayPtr = LockArray(servPtr, array, 1)) != NULL) {
 	Tcl_HashEntry *hPtr;
         size_t         oldLen, newLen;
-	char          *newString;
+	char          *oldString, *newString;
 
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
 
