@@ -1224,7 +1224,7 @@ NS_EXTERN void
 Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage);
 
 NS_EXTERN void
-Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, char *value, time_t maxage,
+Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, const char *value, time_t maxage,
 		   char *domain, char *path, unsigned int flags);
 NS_EXTERN void
 Ns_ConnDeleteCookie(const Ns_Conn *conn, char *name, char *domain, char *path);
