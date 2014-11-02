@@ -464,7 +464,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	/*
 	 * This EOT checker cannot happen in the context of telnet.
 	 */
-	if (n == 1 && buf[0] == '\x04') {
+	if (n == 1 && buf[0] == '\4') {
 	    result = 0;
 	    goto bail;
 	}
