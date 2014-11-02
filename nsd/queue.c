@@ -1749,10 +1749,10 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
          */
         if (connPtr->request) {
 	    const char *p;
-	    p = connPtr->request->method ? connPtr->request->method : "?";
+	    p = (connPtr->request->method != NULL) ? connPtr->request->method : "?";
 	    (void)strncpy(buf, p, sizeof(buf));
 	    Tcl_DStringAppendElement(dsPtr, buf);
-	    p = connPtr->request->url ? connPtr->request->url : "?";
+	    p = (connPtr->request->url != NULL) ? connPtr->request->url : "?";
 	    (void)strncpy(buf, p, sizeof(buf));
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	} else {

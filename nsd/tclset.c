@@ -661,7 +661,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
     assert(set != NULL);
 
     tablePtr = &itPtr->sets;
-    type = (flags & NS_TCL_SET_DYNAMIC) ? SET_DYNAMIC : SET_STATIC;
+    type = (flags & NS_TCL_SET_DYNAMIC) != 0U ? SET_DYNAMIC : SET_STATIC;
 
     /*
      * Allocate a new set IDs until we find an unused one.

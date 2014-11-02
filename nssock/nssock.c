@@ -178,8 +178,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
 #endif
         Ns_SockSetNonBlocking(sock->sock);
 	SetNodelay(sock->driver, sock->sock);
-        status = cfg->deferaccept
-            ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
+        status = (cfg->deferaccept != 0) ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
     }
     return status;
 }

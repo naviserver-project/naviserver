@@ -357,7 +357,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         evPtr = nextPtr;
     }
 
-    return queuePtr->firstWaitPtr ? NS_TRUE : NS_FALSE;
+    return (queuePtr->firstWaitPtr != NULL) ? NS_TRUE : NS_FALSE;
 }
 
 

@@ -98,11 +98,11 @@ Ns_CompressInit(Ns_CompressStream *stream)
        */
       if (status == Z_STREAM_ERROR) {
         Ns_Log(Notice, "Ns_CompressInit: zlib error: %d (%s): %s",
-                 status, zError(status), z->msg ? z->msg : "(none)");
+                 status, zError(status), (z->msg != NULL) ? z->msg : "(none)");
 	return NS_ERROR;
       } else {
         Ns_Fatal("Ns_CompressInit: zlib error: %d (%s): %s",
-                 status, zError(status), z->msg ? z->msg : "(none)");
+                 status, zError(status), (z->msg != NULL) ? z->msg : "(none)");
       }
     }
 
@@ -118,7 +118,7 @@ Ns_CompressFree(Ns_CompressStream *stream)
 	int status = deflateEnd(z);
 	if (status != Z_OK && status != Z_DATA_ERROR) {
 	    Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",
-		   status, zError(status), z->msg ? z->msg : "(unknown)");
+		   status, zError(status), (z->msg != NULL) ? z->msg : "(unknown)");
 	}
     }
 }
@@ -154,7 +154,7 @@ Ns_InflateInit(Ns_CompressStream *stream)
     status = inflateInit2(zPtr, 15 + 16); /* windowBits: 15 (max), +16 (Gzip header/footer). */
     if (status != Z_OK) {
 	Ns_Log(Bug, "Ns_Compress: inflateInit: %d (%s): %s",
-	       status, zError(status), zPtr->msg ? zPtr->msg : "(unknown)");
+	       status, zError(status), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
 	result = NS_ERROR;
     }
     return result;
@@ -184,7 +184,7 @@ Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, size_t outSize, 
 
     if (status != Z_OK && status != Z_PARTIAL_FLUSH) {
 	Ns_Log(Bug, "Ns_Compress: inflateBuffer: %d (%s); %s",
-	       status, zError(status), zPtr->msg ? zPtr->msg : "(unknown)");
+	       status, zError(status), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
 	result = TCL_ERROR;
     } else if (zPtr->avail_out == 0) {
 	result = TCL_CONTINUE;
@@ -204,7 +204,7 @@ Ns_InflateEnd(Ns_CompressStream *stream)
     status = inflateEnd(zPtr);
     if (status != Z_OK) {
 	Ns_Log(Bug, "Ns_Compress: inflateEnd: %d (%s); %s",
-	       status, zError(status), zPtr->msg ? zPtr->msg : "(unknown)");
+	       status, zError(status), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
 	result = TCL_ERROR;
     }
     return result;
@@ -368,7 +368,7 @@ DeflateOrAbort(z_stream *z, int flushFlags)
 
         Ns_Fatal("Ns_CompressBufsGzip: zlib error: %d (%s): %s:"
                  " avail_in: %d, avail_out: %d",
-                 status, zError(status), z->msg ? z->msg : "(unknown)",
+                 status, zError(status), (z->msg != NULL) ? z->msg : "(unknown)",
                  z->avail_in, z->avail_out);
     }
 }

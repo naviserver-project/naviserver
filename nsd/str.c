@@ -394,7 +394,7 @@ Ns_StrIsHost(const char *string)
     register const char *p;
 
     for (p = string; *p != '\0'; p++) {
-	if (!isalnum(UCHAR(*p)) && *p != ':'
+	if (CHARTYPE(alnum, *p) == 0 && *p != ':'
             && (*p != '.' || (p[0] == '.' && p[1] == '.'))) {
 	    
             return NS_FALSE;

@@ -92,9 +92,9 @@ typedef struct PollData {
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
 
-#define PollIn(ppd,i)           ((ppd)->pfds[(i)].revents & POLLIN)
-#define PollOut(ppd,i)          ((ppd)->pfds[(i)].revents & POLLOUT)
-#define PollHup(ppd,i)          ((ppd)->pfds[(i)].revents & POLLHUP)
+#define PollIn(ppd,i)           (((ppd)->pfds[(i)].revents & POLLIN)  == POLLIN )
+#define PollOut(ppd,i)          (((ppd)->pfds[(i)].revents & POLLOUT) == POLLOUT)
+#define PollHup(ppd,i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
  * Async writer definitons
@@ -161,7 +161,7 @@ static int   SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static void SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
+static void SockPoll(Sock *sockPtr, unsigned short type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int  SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -175,7 +175,7 @@ static void PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
+static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned short type, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
@@ -1572,7 +1572,7 @@ PollReset(PollData *pdata)
 }
 
 static NS_POLL_NFDS_TYPE
-PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, const Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, unsigned short type, const Ns_Time *timeoutPtr)
 {
     assert(pdata != NULL);
     /*
@@ -1722,7 +1722,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
  */
 
 static void
-SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
+SockPoll(Sock *sockPtr, unsigned short type, PollData *pdata)
 {
     assert(sockPtr != NULL);
     assert(pdata != NULL);
@@ -1942,7 +1942,7 @@ SockError(Sock *sockPtr, int reason, int err)
          * depends upon whether this sock was a keep-alive
          * that we were allowing to 'linger'.
          */
-        if (!sockPtr->keep) {
+        if (sockPtr->keep == 0) {
             errMsg = "Timeout during read";
         }
         break;
@@ -4329,7 +4329,8 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                                      drvPtr->name,
                                      ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
                                      wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
-                    Ns_DStringAppendElement(dsPtr, wrSockPtr->clientData ? wrSockPtr->clientData : "");
+                    Ns_DStringAppendElement(dsPtr, 
+					    (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
                     Ns_DStringAppend(dsPtr, "} ");
                     wrSockPtr = wrSockPtr->nextPtr;
                 }

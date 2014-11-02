@@ -631,7 +631,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      */
 
     EnterCriticalSection(&condPtr->critsec);
-    if (!wPtr->condwait) {
+    if (wPtr->condwait == 0) {
         status = NS_OK;
     } else {
         WinThread  **waitPtrPtr;

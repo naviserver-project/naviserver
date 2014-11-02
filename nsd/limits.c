@@ -368,7 +368,7 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *CONST* objv)
 {
     NsLimits          **limitsPtrPtr = spec->dest;
-    int                 create = spec->arg ? 1 : 0;
+    int                 create = (spec->arg != NULL) ? 1 : 0;
     static const char  *limitsType = "ns:limits";
 
     if (*objcPtr < 1) {

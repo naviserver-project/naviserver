@@ -180,7 +180,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, const char *value, time_t m
         Ns_UrlQueryEncode(&cookie, value, NULL);
     }
     Ns_DStringAppend(&cookie, "\"");
-    if ((flags & NS_COOKIE_EXPIRENOW) != NULL) {
+    if ((flags & NS_COOKIE_EXPIRENOW) != 0U) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT");
     } else if (maxage == TIME_T_MAX) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT");

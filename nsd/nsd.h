@@ -413,7 +413,7 @@ typedef struct Driver {
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
     size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     NS_SOCKET sock;                     /* Listening socket */
-    int pidx;                           /* poll() index */
+    NS_POLL_NFDS_TYPE pidx;             /* poll() index */
     const char *bindaddr;               /* Numerical listen address */
     int port;                           /* Port in location */
     int backlog;                        /* listen() backlog */
@@ -1473,7 +1473,7 @@ NS_EXTERN int NsForkWatchedProcess(void);
  */
 
 NS_EXTERN int NsCloseAllFiles(int errFd);
-NS_EXTERN int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
+NS_EXTERN int NsMemMap(const char *path, int size, int mode, FileMap *mapPtr);
 NS_EXTERN void NsMemUmap(const FileMap *mapPtr);
 
 NS_EXTERN void NsStopSockCallbacks(void);

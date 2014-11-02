@@ -863,7 +863,7 @@ Ns_SetPrint(const Ns_Set *set)
 {
     int             i;
 
-    fprintf(stderr, "%s:\n", set->name ? set->name : "<Unamed set>");
+    fprintf(stderr, "%s:\n", (set->name != NULL) ? set->name : "<Unamed set>");
     for (i = 0; i < set->size; ++i) {
         if (set->fields[i].name == NULL) {
             fprintf(stderr, "\t(null) = ");
