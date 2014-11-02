@@ -2926,38 +2926,38 @@ NS_EXTERN Tcl_Encoding
 Ns_GetUrlEncoding(const char *charset);
 
 NS_EXTERN char *
-Ns_UrlPathEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlPathEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding) 
+Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding) 
     NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding) 
+Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding) 
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset) 
+Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset) 
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset) 
+Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset) 
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

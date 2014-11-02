@@ -50,10 +50,10 @@ typedef struct ByteKey {
  * Local functions defined in this file.
  */
 
-static char *UrlEncode(Ns_DString *dsPtr, const char *string,
+static char *UrlEncode(Ns_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char *UrlDecode(Ns_DString *dsPtr, const char *string,
+static char *UrlDecode(Ns_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -332,21 +332,21 @@ Ns_GetUrlEncoding(const char *charset)
  */
 
 char *
-Ns_UrlPathEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlPathEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return UrlEncode(dsPtr, string, encoding, 'p');
+    return UrlEncode(dsPtr, urlSegment, encoding, 'p');
 }
 
 char *
-Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return UrlDecode(dsPtr, string, encoding, 'p');
+    return UrlDecode(dsPtr, urlSegment, encoding, 'p');
 }
 
 
@@ -370,21 +370,21 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
  */
 
 char *
-Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return UrlEncode(dsPtr, string, encoding, 'q');
+    return UrlEncode(dsPtr, urlSegment, encoding, 'q');
 }
 
 char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return UrlDecode(dsPtr, string, encoding, 'q');
+    return UrlDecode(dsPtr, urlSegment, encoding, 'q');
 }
 
 
@@ -397,7 +397,7 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
  *      Deprecated.
  *
  * Results:
- *      A pointer to the transformed string (which is part of the 
+ *      A pointer to the transformed urlSegment (which is part of the 
  *      passed-in DString's memory) 
  *
  * Side effects:
@@ -407,44 +407,44 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
  */
 
 char *
-Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return Ns_UrlQueryEncode(dsPtr, string, encoding);
+    return Ns_UrlQueryEncode(dsPtr, urlSegment, encoding);
 }
 
 char *
-Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset)
+Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return Ns_UrlQueryEncode(dsPtr, string, encoding);
+    return Ns_UrlQueryEncode(dsPtr, urlSegment, encoding);
 
 }
 
 char *
-Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding)
+Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return Ns_UrlQueryDecode(dsPtr, string, encoding);
+    return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding);
 }
 
 char *
-Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *string, const char *charset)
+Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
-    return Ns_UrlQueryDecode(dsPtr, string, encoding);
+    return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding);
 }
 
 
@@ -608,7 +608,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 static char *
-UrlEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char part)
+UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char part)
 {
     register int   i, n;
     register char *q;
@@ -617,10 +617,10 @@ UrlEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
     ByteKey       *enc;
 
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
     if (encoding != NULL) {
-        string = Tcl_UtfToExternalDString(encoding, string, -1, &ds);
+        urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, -1, &ds);
     }
 
     /*
@@ -629,7 +629,7 @@ UrlEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
 
     enc = (part == 'q') ? queryenc : pathenc;
     n = 0;
-    for (p = string; *p != '\0'; p++) {
+    for (p = urlSegment; *p != '\0'; p++) {
 	n += enc[UCHAR(*p)].len;
     }
     i = dsPtr->length;
@@ -640,7 +640,7 @@ UrlEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
      */
 
     q = dsPtr->string + i;
-    for (p = string; *p != '\0'; p++) {
+    for (p = urlSegment; *p != '\0'; p++) {
         if (enc[UCHAR(*p)].str == NULL) {
             *q++ = *p;
         } else if (*p == ' ' && part == 'q') {
@@ -678,7 +678,7 @@ UrlEncode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
  */
 
 static char *
-UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char part)
+UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char part)
 {
     register int   i, n;
     register char *q;
@@ -689,13 +689,13 @@ UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
     ByteKey       *enc;
 
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(urlSegment != NULL);
 
     /*
      * Copy the decoded characters directly to the dstring,
      * unless we need to do encoding.
      */
-    length = strlen(string);
+    length = strlen(urlSegment);
     if (encoding != NULL) {
         copy = ns_malloc(length + 1U);
         q = copy;
@@ -710,7 +710,7 @@ UrlDecode(Ns_DString *dsPtr, const char *string, Tcl_Encoding encoding, char par
     }
 
     enc = (part == 'q') ? queryenc : pathenc;
-    p = string;
+    p = urlSegment;
     n = 0;
     while (likely(*p != '\0')) {
 	int j;
