@@ -50,9 +50,9 @@ static unsigned long Roulette(void);
  */
 
 static volatile unsigned long counter;  /* Counter in counting thread */
-static volatile char fRun; /* Flag for counting thread outer loop. */
-static volatile char fCount; /* Flag for counting thread inner loop. */
-static Ns_Sema sema;	/* Semaphore that controls counting threads. */
+static volatile int fRun; 	/* Flag for counting thread outer loop. */
+static volatile int fCount; 	/* Flag for counting thread inner loop. */
+static Ns_Sema       sema;	/* Semaphore that controls counting threads. */
 
 /*
  * Critical section around initial and subsequent seed generation.
@@ -224,10 +224,10 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
 static void
 CounterThread(void *UNUSED(arg))
 {
-    while (fRun) {
+    while (fRun != 0) {
         Ns_SemaWait(&sema);
         if (fRun != 0) {
-	    while (fCount) {
+	    while (fCount != 0) {
 		counter++;
             }
         }
