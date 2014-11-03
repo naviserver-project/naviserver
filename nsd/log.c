@@ -987,8 +987,10 @@ Ns_LogRoll(void)
         if (access(file, F_OK) == 0) {
             Ns_RollFile(file, maxback);
         }
-        Ns_Log(Notice, "log: re-opening log file '%s'", file);
 	rc = LogOpen();
+        /* On Windows, calling Ns_Log() BEFORE LogOpen() crashes the server
+           with a Microsoft assertion failure:  (_osfile(fh) & FOPEN) */
+        Ns_Log(Notice, "log: re-opened log file '%s'", file);
 
 	NsAsyncWriterQueueEnable();
     }
