@@ -329,7 +329,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
         memcpy(&ia.s_addr, he->h_addr_list[0], sizeof(ia.s_addr));
         address = ns_inet_ntoa(ia);
 
-	if (address && path) {
+	if (address != NULL && path != NULL) {
 	    Ns_SetUpdate(set, "address", address);
 	}
 
@@ -352,7 +352,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
         host = address;
     }
 
-    if (noHostNameGiven && host != NULL && path != NULL) {
+    if (noHostNameGiven != 0 && host != NULL && path != NULL) {
 	Ns_SetUpdate(set, "hostname", host);
     }
 
@@ -459,7 +459,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
     drvPtr->port     = Ns_ConfigIntRange(path, "port", defport, 0, 65535);
     drvPtr->location = Ns_ConfigGetValue(path, "location");
 
-    if (drvPtr->location != NULL && strstr(drvPtr->location, "://")) {
+    if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
         drvPtr->location = ns_strdup(drvPtr->location);
     } else {
         Ns_DStringInit(dsPtr);
@@ -639,7 +639,7 @@ NsStartDrivers(void)
         Ns_Log(Notice, "driver: starting: %s", drvPtr->name);
         Ns_ThreadCreate(DriverThread, drvPtr, 0, &drvPtr->thread);
         Ns_MutexLock(&drvPtr->lock);
-        while (!(drvPtr->flags & DRIVER_STARTED)) {
+        while ((drvPtr->flags & DRIVER_STARTED) == 0U) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
         }
         /*if ((drvPtr->flags & DRIVER_FAILED)) {
@@ -765,7 +765,7 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
 
     while (drvPtr != NULL) {
         Ns_MutexLock(&drvPtr->lock);
-        while (!(drvPtr->flags & DRIVER_STOPPED) && status == NS_OK) {
+        while ((drvPtr->flags & DRIVER_STOPPED) == 0U && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
         }
         Ns_MutexUnlock(&drvPtr->lock);
@@ -2537,8 +2537,10 @@ SockParse(Sock *sockPtr)
 
                         s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
 
-                        if (s && Ns_StrToWideInt(s, &expected) == NS_OK && expected > 0) {
-                            reqPtr->expectedLength = expected;
+                        if ((s != NULL)
+			    && (Ns_StrToWideInt(s, &expected) == NS_OK)
+			    && (expected > 0) ) {
+			    reqPtr->expectedLength = expected;
                         }
                         s = NULL;
                     } 
@@ -2687,8 +2689,8 @@ SockParse(Sock *sockPtr)
          * expectedLength was provided by the client, we terminate
          * depending on that information
          */
-        if (!complete 
-            || (reqPtr->expectedLength && currentContentLength < reqPtr->expectedLength)) {
+        if ((complete == 0)
+            || (reqPtr->expectedLength != 0 && currentContentLength < reqPtr->expectedLength)) {
             /* ChunkedDecode wants more data */
             return SOCK_MORE;
         }
@@ -2809,7 +2811,7 @@ SockSetServer(Sock *sockPtr)
 
     if (sockPtr->reqPtr != NULL) {
         host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
-        if (!host && sockPtr->reqPtr->request.version >= 1.1) {
+        if (host == NULL && sockPtr->reqPtr->request.version >= 1.1) {
             status = 0;
         }
     }
@@ -2832,7 +2834,7 @@ SockSetServer(Sock *sockPtr)
         }
     }
 
-    if (!status && sockPtr->reqPtr) {
+    if (status == 0 && sockPtr->reqPtr != NULL) {
         ns_free((char *)sockPtr->reqPtr->request.method);
         sockPtr->reqPtr->request.method = ns_strdup("BAD");
     }
@@ -3824,7 +3826,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    if (connPtr->flags & NS_CONN_STREAM || connPtr->fd > 0) {
+    if (((connPtr->flags & NS_CONN_STREAM) != 0U) || connPtr->fd > 0) {
 	int         first = 0, wrote = 0;
 	WriterSock *wrSockPtr1 = NULL;
 
@@ -3950,7 +3952,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      * Flush the headers
      */
 
-    if (!(conn->flags & NS_CONN_SENTHDRS)) {
+    if ((conn->flags & NS_CONN_SENTHDRS) == 0U) {
 	Tcl_DString    ds;
 
 	Ns_DStringInit(&ds);

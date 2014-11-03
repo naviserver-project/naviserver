@@ -213,13 +213,13 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, const char *value, time_t m
 }
 
 void
-Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage)
+Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, const char *value, time_t maxage)
 {
     Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, 0U);
 }
 
 void
-Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage)
+Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, const char *value, time_t maxage)
 {
     Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, NS_COOKIE_SECURE);
 }

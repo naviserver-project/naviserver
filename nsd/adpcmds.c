@@ -470,16 +470,16 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     int          result, nargs = 0;
     unsigned int savedFlags;
     char        *resvar = NULL;
-    int          file = 0, safe = 0, string = 0, tcl = 0;
+    int          asFile = 0, safe = 0, asString = 0, tcl = 0;
     char        *cwd = NULL, *savedCwd = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,    NULL},
-        {"-file",        Ns_ObjvBool,   &file,   INT2PTR(NS_TRUE)},
-        {"-safe",        Ns_ObjvBool,   &safe,   INT2PTR(NS_TRUE)},
-        {"-string",      Ns_ObjvBool,   &string, INT2PTR(NS_TRUE)},
-        {"-tcl",         Ns_ObjvBool,   &tcl,    INT2PTR(NS_TRUE)},
-        {"--",           Ns_ObjvBreak,  NULL,    NULL},
+        {"-file",        Ns_ObjvBool,   &asFile,     INT2PTR(NS_TRUE)},
+        {"-safe",        Ns_ObjvBool,   &safe,     INT2PTR(NS_TRUE)},
+        {"-string",      Ns_ObjvBool,   &asString, INT2PTR(NS_TRUE)},
+        {"-tcl",         Ns_ObjvBool,   &tcl,      INT2PTR(NS_TRUE)},
+        {"--",           Ns_ObjvBreak,  NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -492,7 +492,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     objv = objv + (objc - nargs);
     objc = nargs;
 
-    if (string && file) {
+    if (asString != 0 && asFile != 0) {
       Tcl_AppendResult(interp, "specify either '-string' or '-file', but not both.", NULL);
       return TCL_ERROR;
     }
@@ -505,7 +505,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
      */
     itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
 
-    if (file != 0) {
+    if (asFile != 0) {
 	/* file mode */
         itPtr->adp.flags |= ADP_ADPFILE;
     } else {
@@ -528,7 +528,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         savedCwd = itPtr->adp.cwd;
         itPtr->adp.cwd = cwd;
     }
-    if (file != 0) {
+    if (asFile != 0) {
         result = NsAdpSource(arg, objc, objv, resvar);
     } else {
         result = NsAdpEval(arg, objc, objv, resvar);

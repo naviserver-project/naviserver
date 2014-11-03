@@ -270,10 +270,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      * just execute the Tcl code in case of cache disabled
      */
 
-    if (flags & ADP_TCLFILE) {
+    if ((flags & ADP_TCLFILE) != 0U) {
         int size;
 
-        if (!(flags & ADP_CACHE)) {
+        if ((flags & ADP_CACHE) == 0u) {
             Tcl_DStringAppend(&codePtr->text, adp, -1);
         } else {
             Ns_DStringPrintf(&codePtr->text,
@@ -346,7 +346,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 		    if (s > text) {
 			AppendBlock(&parse, text, s, 't', flags);
 		    }
-                    if (!(flags & ADP_SAFE)) {
+                    if ((flags & ADP_SAFE) == 0U) {
                         if (s[2] != '=') {
                             AppendBlock(&parse, s + 2, e, 's', flags);
                         } else {
@@ -418,8 +418,8 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      * for next ADP tag.
                      */
 
-                    if (!(flags & ADP_SAFE)) {
-                        if (streamFlag && !streamDone) {
+                    if ((flags & ADP_SAFE) == 0U) {
+                        if ((streamFlag != 0U) && (streamDone == 0)) {
 			    static char *buffer = "ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
@@ -481,7 +481,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      * and complete the parse code structure.
      */
 
-    if (flags & ADP_SINGLE) {
+    if ((flags & ADP_SINGLE) != 0U) {
         int line = 0, len = -codePtr->text.length;
         codePtr->nscripts = codePtr->nblocks = 1;
         AppendLengths(codePtr, &len, &line);
@@ -555,7 +555,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
 
     codePtr = parsePtr->codePtr;
 
-    if (flags & ADP_SINGLE) {
+    if ((flags & ADP_SINGLE) != 0U) {
         char     save;
 
         switch (type) {
@@ -811,7 +811,7 @@ GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr)
 
     if (a < e && STRIEQ(tag, "script")) {
         ParseAtts(a, e, &flags, NULL, 1);
-        if ((flags & SERV_RUNAT) && !(flags & SERV_NOTTCL)) {
+        if ((flags & SERV_RUNAT) != 0U && (flags & SERV_NOTTCL) == 0U) {
             *streamFlagPtr = (flags & SERV_STREAM);
             return (e + 1);
         }

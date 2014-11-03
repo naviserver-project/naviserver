@@ -1219,10 +1219,10 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, unsigned int flags, Ns_DStr
  */
 
 NS_EXTERN void
-Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage);
+Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, const char *value, time_t maxage);
 
 NS_EXTERN void
-Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, char *value, time_t maxage);
+Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, const char *value, time_t maxage);
 
 NS_EXTERN void
 Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, const char *value, time_t maxage,

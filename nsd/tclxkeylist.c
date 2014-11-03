@@ -223,7 +223,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
             *keysArgvPtr = NULL;
         }
     } else if (status == TCL_OK) {
-        if (keysArgcPtr && keysArgvPtr) {
+        if (keysArgcPtr != NULL && keysArgvPtr != NULL) {
             size_t    keySize = 0, totalKeySize = 0;
             int       ii, keyCount;
             char    **keyArgv, *nextByte;
@@ -1339,7 +1339,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     /*
      * Variable (or empty variable name) specified.
      */
-    if (!TclX_IsNullObj(objv[3])) {
+    if (TclX_IsNullObj(objv[3]) == 0) {
         if (Tcl_SetVar2Ex(interp, Tcl_GetStringFromObj(objv[3], NULL), NULL,
                           valuePtr, TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG) == NULL) {
             return TCL_ERROR;

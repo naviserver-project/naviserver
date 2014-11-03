@@ -383,7 +383,7 @@ CreatePool(NsServer *servPtr, char *pool)
         path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, NULL);
         set = Ns_ConfigGetSection(path);
         for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-            if (!strcasecmp(Ns_SetKey(set, i), "map")) {
+            if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
                 NsMapPool(poolPtr, Ns_SetValue(set, i));
             }
         }

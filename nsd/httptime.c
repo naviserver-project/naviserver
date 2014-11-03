@@ -386,7 +386,7 @@ MakeNum(const char *s)
  *      An integral month number.
  *
  * Side effects:
- *      None.
+ *      Changes passed string to camel case.
  *
  *----------------------------------------------------------------------
  */
@@ -406,7 +406,7 @@ MakeMonth(char *s)
     *(s + 2) = CHARCONV(lower, *(s + 2));
 
     for (i = 0; i < 12; i++) {
-        if (!strncmp(month_names[i], s, 3)) {
+        if (strncmp(month_names[i], s, 3) == 0) {
             return i;
         }
     }

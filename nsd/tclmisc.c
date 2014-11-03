@@ -358,15 +358,15 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
         if (*inPtr == '<') {
             intag = 1;
 
-        } else if (intag && (*inPtr == '>')) {
+        } else if ((intag != 0) && (*inPtr == '>')) {
 	    /* inside a tag that closes */
             intag = 0;
 
-        } else if (intspec && (*inPtr == ';')) {
+        } else if ((intspec != 0) && (*inPtr == ';')) {
 	    /* inside a special character that closes */
             intspec = 0;
 
-        } else if (!intag && !intspec) {
+        } else if ((intag == 0) && (intspec == 0)) {
 	    /* regular text */
 
             if (*inPtr == '&') {
@@ -464,7 +464,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
         if ((*s == 'a' || *s == 'A') && CHARTYPE(space, s[1]) != 0) {
             ++s;
             while (*s) {
-                if (!strncasecmp(s, "href", 4u)) {
+                if (strncasecmp(s, "href", 4u) == 0) {
                     s += 4;
                     while (*s != '\0' && CHARTYPE(space, *s) != 0) {
                         ++s;
@@ -530,7 +530,7 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     unsigned char *string;
     char          *result;
-    int            nbytes;
+    int            nbytes = 0;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -538,7 +538,7 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     }
 
     string = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
-    result = ns_malloc((size_t) 1 + (4 * MAX(nbytes,2)) / 2);
+    result = ns_malloc(1U + (4U * MAX(nbytes,2U)) / 2U);
     Ns_HtuuEncode(string, (size_t)nbytes, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
 
@@ -579,7 +579,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     size = (size_t)len + 3U;
     decoded = (unsigned char *)ns_malloc(size);
     size = Ns_HtuuDecode(string, decoded, size);
-    decoded[size] = '\0';
+    decoded[size] = UCHAR('\0');
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
     ns_free(decoded);
 
@@ -743,10 +743,10 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 #define f4(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 60-79 */
 
 /* The SHA Mysterious Constants. */
-#define K2  0x5A827999UL	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
-#define K3  0x6ED9EBA1UL	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
-#define K5  0x8F1BBCDCUL	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
-#define K10 0xCA62C1D6UL	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
+#define K2  (0x5A827999UL)	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
+#define K3  (0x6ED9EBA1UL)	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
+#define K5  (0x8F1BBCDCUL)	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
+#define K10 (0xCA62C1D6UL)	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
 
 /* 32-bit rotate left - kludged with shifts */
 #define ROTL(n,X) ( ((X) << (n)) | ((X) >> (32-(n))) )
@@ -941,7 +941,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
         return;
     }
 
-    if (i != 0) {				/* First chunk is an odd size */
+    if (i != 0U) {				/* First chunk is an odd size */
         memcpy((uint8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
         shaByteSwap(ctx->key, (uint8_t *) ctx->key, SHA_BLOCKWORDS);
         SHATransform(ctx);
@@ -958,7 +958,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
     }
 
     /* Handle any remaining bytes of data. */
-    if (len != 0) {
+    if (len != 0U) {
        memcpy(ctx->key, buf, len);
     }
 }
@@ -990,7 +990,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
         p = (uint8_t *) ctx->key;
         i = 64U;
     }
-    memset(p, 0, i - 8);
+    memset(p, 0, i - 8U);
     shaByteSwap(ctx->key, (uint8_t *) ctx->key, 14U);
 
     /* Append length in bits and transform */

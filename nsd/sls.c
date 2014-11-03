@@ -443,7 +443,7 @@ NsSlsCleanup(Sock *sockPtr)
                 retry = 1;
             }
         }
-    } while (retry && trys++ < 5);
+    } while ((retry != 0) && trys++ < 5);
 }
 
 

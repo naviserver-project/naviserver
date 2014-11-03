@@ -160,7 +160,7 @@ Ns_ModuleInit(char *server, char *module)
             Tcl_IncrRefCount(dirpath);
             status = Tcl_FSCreateDirectory(dirpath);
             Tcl_DecrRefCount(dirpath);
-            if (status && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
+            if (status != 0 && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
                 Ns_Log(Error,"nslog: create directory (%s) failed: '%s'",
                        ds.string, strerror(Tcl_GetErrno()));
                 Ns_DStringFree(&ds);

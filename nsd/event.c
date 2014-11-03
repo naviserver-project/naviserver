@@ -223,7 +223,7 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      * Add to the waiting list if there are events or a timeout.
      */
 
-    if (evPtr->events || timeoutPtr) {
+    if (evPtr->events != 0U || timeoutPtr != NULL) {
         evPtr->status = EVENT_WAIT;
     } else {
         evPtr->status = EVENT_DONE;
@@ -311,10 +311,11 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      */
     ((void)(n)); /* ignore n */
 
-    if (queuePtr->pfds[0].revents & POLLIN
-        && recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1) {
-        Ns_Fatal("event queue: trigger read() failed: %s",
-                 ns_sockstrerror(ns_sockerrno));
+    if (((queuePtr->pfds[0].revents & POLLIN) != 0U)
+        && (recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1)
+	) {
+	Ns_Fatal("event queue: trigger read() failed: %s",
+		 ns_sockstrerror(ns_sockerrno));
     }
 
     /*

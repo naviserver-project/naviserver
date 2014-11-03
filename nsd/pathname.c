@@ -139,7 +139,7 @@ Ns_PathIsAbsolute(CONST char *path)
     assert(path != NULL);
 
 #ifdef _WIN32
-    if (isalpha(UCHAR(*path)) && path[1] == ':') {
+    if (CHARTYPE(alpha, *path) != 0 && path[1] == ':') {
         path += 2;
     }
 #endif
@@ -176,7 +176,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
     Ns_DStringInit(&tmp);
     src = Ns_DStringAppend(&tmp, path);
 #ifdef _WIN32
-    if (isalpha(UCHAR(*src)) && src[1] == ':') {
+    if (CHARTYPE(alpha, *src) != 0 && src[1] == ':') {
         if (CHARTYPE(upper, *src) != 0) {
 	  *src = CHARCONV(lower, *src);
         }
@@ -896,7 +896,7 @@ MakePath(Ns_DString *dest, va_list *pap)
     assert(dest != NULL);
 
     while ((s = va_arg(*pap, char *)) != NULL) {
-        if (isalpha(UCHAR(*s)) && s[1] == ':') {
+        if (CHARTYPE(alpha, *s) != 0 && s[1] == ':') {
             char temp = *(s+2);
             *(s + 2) = '\0';
             Ns_DStringNAppend(dest, s, 2);
