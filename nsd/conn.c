@@ -298,7 +298,7 @@ Ns_ConnContentFd(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnServer(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -1346,7 +1346,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 connPtr->auth = Ns_SetCreate(NULL);
             }
             Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC);
-            strcpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp));
+            strncpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp), 16U);
             itPtr->nsconn.flags |= CONN_TCLAUTH;
         }
         break;
@@ -1461,7 +1461,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
-            strcpy(itPtr->nsconn.hdrs, Tcl_GetStringResult(interp));
+            strncpy(itPtr->nsconn.hdrs, Tcl_GetStringResult(interp), 16U);
             itPtr->nsconn.flags |= CONN_TCLHDRS;
         }
         break;
@@ -1471,7 +1471,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
-            strcpy(itPtr->nsconn.outhdrs, Tcl_GetStringResult(interp));
+            strncpy(itPtr->nsconn.outhdrs, Tcl_GetStringResult(interp), 16U);
             itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
         }
         break;
@@ -1486,7 +1486,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 itPtr->nsconn.form[0] = '\0';
             } else {
                 Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC);
-                strcpy(itPtr->nsconn.form, Tcl_GetStringResult(interp));
+                strncpy(itPtr->nsconn.form, Tcl_GetStringResult(interp), 16U);
             }
             itPtr->nsconn.flags |= CONN_TCLFORM;
         }
@@ -1592,7 +1592,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CServerIdx:
-        Tcl_SetResult(interp, Ns_ConnServer(conn), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnServer(conn), -1));
         break;
 
     case CPoolIdx:

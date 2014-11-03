@@ -1010,7 +1010,7 @@ Ns_ConnContentLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 NS_EXTERN char *
 Ns_ConnContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_ConnServer(Ns_Conn *conn);
 
 NS_EXTERN int

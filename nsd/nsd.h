@@ -502,7 +502,7 @@ typedef struct FormFile {
  */
 
 typedef struct NsLimits {
-    char            *name;
+    const char      *name;
     unsigned int     maxrun;    /* Max conns to run at once */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped */
     size_t	     maxupload; /* Max data accepted */
@@ -559,7 +559,7 @@ typedef struct Conn {
      * after the connection is closed (e.g., within traces).
      */
 
-    char *server;
+    const char *server;
     const char *location;
     char *clientData;
 
@@ -965,7 +965,7 @@ typedef struct NsInterp {
 	char              *debugFile;
 	Ns_Cache	  *cache;
 	int                depth;
-	char		  *cwd;
+	const char	  *cwd;
 	struct AdpFrame	  *framePtr;
 	Ns_Conn		  *conn;
 	Tcl_Channel	   chan;

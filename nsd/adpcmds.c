@@ -471,7 +471,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     unsigned int savedFlags;
     char        *resvar = NULL;
     int          asFile = 0, safe = 0, asString = 0, tcl = 0;
-    char        *cwd = NULL, *savedCwd = NULL;
+    const char  *cwd = NULL, *savedCwd = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,    NULL},

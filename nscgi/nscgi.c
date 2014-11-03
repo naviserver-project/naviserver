@@ -381,7 +381,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     struct stat     st;
     char           *e, *s;
     const char     *url = conn->request->url;
-    char	   *server = Ns_ConnServer(conn);
+    const char	   *server = Ns_ConnServer(conn);
 
     modPtr = mapPtr->modPtr;
     memset(cgiPtr, 0, ((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);

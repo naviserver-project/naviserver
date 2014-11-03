@@ -254,9 +254,9 @@ Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
 int
 Ns_ConnRunRequest(Ns_Conn *conn)
 {
-    int   status = NS_OK;
-    Conn *connPtr = (Conn *) conn;
-    char *server = Ns_ConnServer(conn);
+    int         status  = NS_OK;
+    Conn       *connPtr = (Conn *) conn;
+    const char *server  = Ns_ConnServer(conn);
 
     /*
      * Return error messages for invalid headers and 

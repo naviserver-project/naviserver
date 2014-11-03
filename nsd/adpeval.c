@@ -1019,7 +1019,8 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     Ns_DString  cwd;
     Tcl_Obj    *objPtr;
     int         nscript, nblocks, result, i;
-    char       *ptr, *slash, *savecwd;
+    char       *ptr, *slash;
+    const char *savecwd;
 
     /*
      * Setup the new call frame.
