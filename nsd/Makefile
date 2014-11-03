@@ -28,8 +28,13 @@
 #
 #
 
+# IMPORTANT: Do NOT use the exact same base file name for both nsd.exe
+# an nsd.dll.  If you do, NaviServer runs just fine, but the nsd.pdb
+# file for nsd.exe OVERWRITES the nsd.pdb for nsd.dll!  The easiest
+# fix is to simply name the DLL libnsd.dll instead.
+
 INSTALL	= install-init
-LIBNM	= nsd
+LIBNM	= libnsd
 DLL	= $(LIBNM)
 PGM	= nsd
 PGMOBJS	= main.o

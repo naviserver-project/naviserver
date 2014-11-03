@@ -90,18 +90,22 @@ DLL = $(MOD:.so=)
 #
 
 !ifndef NSBUILD
+# We are linking a module against an already-installed Naviserver:
 INCDIR = $(NAVISERVER)\include
-LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" nsd.lib nsthread.lib
+LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" libnsd.lib nsthread.lib
 !else
 INCDIR = ..\include
+
+# Ok to link everything can against nsthread EXCEPT for nsthread itself:
 !if "$(DLL)" != "nsthread"
 LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
-!if "$(DLL)" != "nsd"
-LIBS = $(LIBS) /LIBPATH:"..\nsd" nsd.lib
-!endif
-!endif
-!endif
 
+# Same sort of thing for nsd:
+!if ("$(PGM)" != "nsd" && "$(DLL)" != "nsd" && "$(DLL)" != "libnsd")
+LIBS = $(LIBS) /LIBPATH:"..\nsd" libnsd.lib
+!endif
+!endif
+!endif
 
 
 #
@@ -164,10 +168,11 @@ INSTALL = $(INSTALL) install-dll
 CLEAN	= $(CLEAN) clean-dll
 OBJS	= $(OBJS) $(WINOBJS) $(DLLOBJS) $(MODOBJS) $(LIBOBJS)
 HDRS	= $(HDRS) $(INCDIR)\ns.h $(INCDIR)\nsthread.h
+!message Library names are:  DLLBIN: $(DLLBIN)  DLLLIB: $(DLLLIB)
 
 !ifdef DLLINIT
 DLLOPTS	= /EXPORT:$(DLLINIT)
-!elseif "$(DLL)" == "nsthread" || "$(DLL)" == "nsd"
+!elseif "$(DLL)" == "nsthread" || "$(DLL)" == "nsd" || "$(DLL)" == "libnsd"
 # nsthread and nsd do NOT define Ns_ModuleInit functions.
 DLLOPTS	= 
 !else
