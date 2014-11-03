@@ -512,12 +512,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * Add a new job the specified queue.
              */
 
-	    int   create = 0, head = 0, jobType = JOB_NON_DETACHED;
+	    int         create = 0, head = 0, detached = 0;
+	    JobTypes    jobType = JOB_NON_DETACHED;
             const char *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
 
             Ns_ObjvSpec lopts[] = {
-                {"-head",      Ns_ObjvBool,    &head,     INT2PTR(1)},
-                {"-detached",  Ns_ObjvBool,    &jobType,  INT2PTR(JOB_DETACHED)},
+                {"-head",      Ns_ObjvBool,    &head,        INT2PTR(1)},
+                {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(1)},
                 {"-jobid",     Ns_ObjvString,  &jobIdString, NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -530,6 +531,9 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
+	    if (detached != 0) {
+		jobType = JOB_DETACHED;
+	    }
 
             Ns_MutexLock(&tp.queuelock);
 
