@@ -324,9 +324,9 @@ typedef struct Ns_SetField {
  */
 
 typedef struct Ns_Set {
-    char        *name;
-    int          size;
-    int          maxSize;
+    const char  *name;
+    size_t       size;
+    size_t       maxSize;
     Ns_SetField *fields;
 } Ns_Set;
 
@@ -919,7 +919,7 @@ NS_EXTERN int
 Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_ConfigGetPath(const char *server, const char *module, ...)
      NS_GNUC_SENTINEL;
 
@@ -1149,7 +1149,7 @@ Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnPuts(Ns_Conn *conn, const char *string)
+Ns_ConnPuts(Ns_Conn *conn, const char *s)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN ssize_t
@@ -2290,76 +2290,98 @@ Ns_UnscheduleProc(int id);
  */
 
 NS_EXTERN void
-Ns_SetUpdate(Ns_Set *set, const char *key, const char *value);
+Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_Set *
-Ns_SetCreate(const char *name);
+Ns_SetCreate(const char *name)
+    NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN void
 Ns_SetFree(Ns_Set *set);
 
 NS_EXTERN int
-Ns_SetPut(Ns_Set *set, const char *key, const char *value);
+Ns_SetPut(Ns_Set *set, const char *key, const char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, int size);
+Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, int size)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
-                              int (*cmp) (CONST char *s1, CONST char *s2));
+                              int (*cmp) (CONST char *s1, CONST char *s2))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
 Ns_SetFindCmp(const Ns_Set *set, const char *key,
-	      int (*cmp) (const char *s1, const char *s2));
+	      int (*cmp) (const char *s1, const char *s2))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
 Ns_SetGetCmp(const Ns_Set *set, const char *key,
-	     int (*cmp) (const char *s1, const char *s2));
+	     int (*cmp) (const char *s1, const char *s2))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_SetUnique(const Ns_Set *set, const char *key);
+Ns_SetUnique(const Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_SetIUnique(const Ns_Set *set, const char *key);
+Ns_SetIUnique(const Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_SetFind(const Ns_Set *set, const char *key);
+Ns_SetFind(const Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_SetIFind(const Ns_Set *set, const char *key);
+Ns_SetIFind(const Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_SetGet(const Ns_Set *set, const char *key);
+Ns_SetGet(const Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_SetIGet(const Ns_Set *set, const char *key);
+Ns_SetIGet(const Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SetTrunc(Ns_Set *set, int size);
+Ns_SetTrunc(Ns_Set *set, int size)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetDelete(Ns_Set *set, int index);
+Ns_SetDelete(Ns_Set *set, int index)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetPutValue(const Ns_Set *set, int index, const char *value);
+Ns_SetPutValue(const Ns_Set *set, int index, const char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_SetDeleteKey(Ns_Set *set, const char *key);
+Ns_SetDeleteKey(Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SetIDeleteKey(Ns_Set *set, const char *key);
+Ns_SetIDeleteKey(Ns_Set *set, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *
-Ns_SetListFind(Ns_Set *const*sets, const char *name);
+Ns_SetListFind(Ns_Set *const*sets, const char *name)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Set **
-Ns_SetSplit(const Ns_Set *set, char sep);
+Ns_SetSplit(const Ns_Set *set, char sep)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetListFree(Ns_Set **sets);
+Ns_SetListFree(Ns_Set **sets)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetMerge(Ns_Set *high, const Ns_Set *low);
+Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *
 Ns_SetCopy(const Ns_Set *old);
@@ -2369,13 +2391,16 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SetPrint(const Ns_Set *set);
+Ns_SetPrint(const Ns_Set *set)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
-Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def);
+Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
-Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def);
+Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
