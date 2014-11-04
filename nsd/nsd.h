@@ -78,6 +78,7 @@
 #define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
 #define CONN_TCLHTTP                   0x16U  /* HTTP headers requested by ns_headers */
 
+#define NS_SET_SIZE                    (TCL_INTEGER_SPACE + 2U)
 
 /*
  * For the time being, don't try to be very clever
@@ -568,7 +569,7 @@ typedef struct Conn {
     struct Driver   *drvPtr;
 
     int id;
-    char idstr[16];
+    char idstr[TCL_INTEGER_SPACE + 4];
 
     Ns_Time acceptTime;          /* time stamp, when the request was accepted */
     Ns_Time requestQueueTime;    /* time stamp, when the request was queued */
@@ -943,10 +944,10 @@ typedef struct NsInterp {
 
     struct {
         unsigned int  flags;
-        char auth[16];
-        char form[16];
-        char hdrs[16];
-        char outhdrs[16];
+        char auth[NS_SET_SIZE];
+        char form[NS_SET_SIZE];
+        char hdrs[NS_SET_SIZE];
+        char outhdrs[NS_SET_SIZE];
     } nsconn;
 
     /*

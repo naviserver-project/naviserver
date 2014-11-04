@@ -122,9 +122,9 @@ NsInitInfo(void)
     }
     Ns_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
-        strcpy(nsconf.address, addr.string);
+        strncpy(nsconf.address, addr.string, sizeof(nsconf.address));
     } else {
-        strcpy(nsconf.address, "0.0.0.0");
+        strncpy(nsconf.address, "0.0.0.0", sizeof(nsconf.address));
     }
     Ns_DStringFree(&addr);
 }

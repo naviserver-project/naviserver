@@ -1346,7 +1346,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 connPtr->auth = Ns_SetCreate(NULL);
             }
             Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC);
-            strncpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp), 16U);
+            strncpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp), NS_SET_SIZE);
             itPtr->nsconn.flags |= CONN_TCLAUTH;
         }
         break;
@@ -1461,7 +1461,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
-            strncpy(itPtr->nsconn.hdrs, Tcl_GetStringResult(interp), 16U);
+            strncpy(itPtr->nsconn.hdrs, Tcl_GetStringResult(interp), NS_SET_SIZE);
             itPtr->nsconn.flags |= CONN_TCLHDRS;
         }
         break;
@@ -1471,7 +1471,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
-            strncpy(itPtr->nsconn.outhdrs, Tcl_GetStringResult(interp), 16U);
+            strncpy(itPtr->nsconn.outhdrs, Tcl_GetStringResult(interp), NS_SET_SIZE);
             itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
         }
         break;
@@ -1486,7 +1486,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 itPtr->nsconn.form[0] = '\0';
             } else {
                 Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC);
-                strncpy(itPtr->nsconn.form, Tcl_GetStringResult(interp), 16U);
+                strncpy(itPtr->nsconn.form, Tcl_GetStringResult(interp), NS_SET_SIZE);
             }
             itPtr->nsconn.flags |= CONN_TCLFORM;
         }
