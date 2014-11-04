@@ -123,8 +123,8 @@ NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     Mod           *modPtr;
-    char          *path, *end;
-    const char    *addr;
+    char          *end;
+    const char    *addr, *path;
     int            i, isNew, port;
     NS_SOCKET      lsock;
     Tcl_HashEntry *hPtr;
@@ -168,7 +168,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     Tcl_InitHashTable(&modPtr->users, TCL_STRING_KEYS);
-    path = Ns_ConfigGetPath(server, module, "users", NULL);
+    path = Ns_ConfigGetPath(server, module, "users", (char *)0);
     set = Ns_ConfigGetSection(path);
 
     /*

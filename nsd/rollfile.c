@@ -296,7 +296,7 @@ MatchFiles(CONST char *fileName, File **files)
 	    File *fiPtr;
 	    int   ii;
 
-            *files = ns_malloc(sizeof(File) * numElems);
+            *files = ns_malloc(sizeof(File) * (size_t)numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
                 if (Tcl_FSStat(matchElems[ii], &st) != 0) {
 		    int jj;

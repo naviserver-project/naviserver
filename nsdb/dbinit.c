@@ -627,8 +627,7 @@ NsDbInitServer(char *server)
     ServData	   *sdataPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    char           *path;
-    const char     *pool;
+    const char     *path, *pool;
     Ns_DString	    ds;
     int		    isNew;
 

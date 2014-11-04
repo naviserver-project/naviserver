@@ -587,8 +587,8 @@ typedef struct Conn {
     Tcl_Encoding outputEncoding;
     Tcl_Encoding urlEncoding;
 
-    Tcl_WideInt nContentSent;
-    Tcl_WideInt responseLength;
+    size_t nContentSent;
+    ssize_t responseLength;
     int responseStatus;
     int recursionCount;
     int keep;

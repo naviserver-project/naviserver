@@ -287,7 +287,7 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
 	}
 	if (firsthdr != 0) {
 	    if (hdrPtr->name != NULL) {
-		ns_free(hdrPtr->name);
+		ns_free((char *)hdrPtr->name);
 	    }
 	    hdrPtr->name = ns_strdup(p);
 	    firsthdr = 0;

@@ -253,8 +253,8 @@ NsInitDrivers(void)
 int
 Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 {
-    char           *path, *defproto;
-    const char     *host, *address, *bindaddr, *defserver;
+    char           *defproto;
+    const char     *host, *address, *bindaddr, *defserver, *path;
     int             i, n, defport, noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;

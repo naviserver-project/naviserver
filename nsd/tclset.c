@@ -653,8 +653,8 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;
     int             isNew;
-    unsigned int    next;
-    unsigned char   type;
+    int             next;
+    char            type;
     char            buf[TCL_INTEGER_SPACE + 1];
 
     assert(itPtr != NULL);
@@ -669,7 +669,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
 
     next = tablePtr->numEntries;
     do {
-        snprintf(buf, sizeof(buf), "%c%u", type, next);
+        snprintf(buf, sizeof(buf), "%c%d", type, next);
         ++next;
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
     } while (isNew == 0);

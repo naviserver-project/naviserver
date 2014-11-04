@@ -388,11 +388,10 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
     char   *type = objPtr->internalRep.twoPtrValue.ptr1;
     void   *addr = objPtr->internalRep.twoPtrValue.ptr2;
     char    buf[128];
-    size_t  len;
+    int     len;
 
-    len = snprintf(buf, sizeof(buf), "t%p-a%p-%s",
-                   type, addr, type);
-    Ns_TclSetStringRep(objPtr, buf, (int)len);
+    len = snprintf(buf, sizeof(buf), "t%p-a%p-%s", type, addr, type);
+    Ns_TclSetStringRep(objPtr, buf, len);
 }
 
 

@@ -714,13 +714,13 @@ static int
 DbConfigPathObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData *idataPtr = data;
-    char *section;
+    const char *section;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 0, objv, NULL);
     }
     section = Ns_ConfigGetPath(idataPtr->server, NULL, "db", NULL);
-    Tcl_SetResult(interp, section, TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(section, -1));
     return TCL_OK;
 }
 

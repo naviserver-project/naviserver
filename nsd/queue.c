@@ -1009,7 +1009,7 @@ NsConnThread(void *arg)
     Ns_Time        wait, *timePtr = &wait;
     unsigned int   id, shutdown;
     int            status = NS_OK, cpt, ncons, timeout, current, fromQueue;
-    char          *path, *exitMsg;
+    const char    *path, *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
     Ns_Mutex      *tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_Mutex      *wqueueLockPtr  = &poolPtr->wqueue.lock;

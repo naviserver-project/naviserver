@@ -359,10 +359,10 @@ NsRegisterServerInit(Ns_ServerInitProc *proc)
 static void
 CreatePool(NsServer *servPtr, char *pool)
 {
-    ConnPool *poolPtr;
-    Conn     *connBufPtr, *connPtr;
-    int       i, n, maxconns, lowwatermark, highwatermark, queueLength;
-    char     *path;
+    ConnPool   *poolPtr;
+    Conn       *connBufPtr, *connPtr;
+    int         i, n, maxconns, lowwatermark, highwatermark, queueLength;
+    const char *path;
 
     assert(servPtr != NULL);
     assert(pool != NULL);

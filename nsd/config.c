@@ -454,7 +454,7 @@ Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConfigGetPath(const char *server, const char *module, ...)
 {
     va_list         ap;
