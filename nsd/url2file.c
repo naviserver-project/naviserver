@@ -575,12 +575,12 @@ NsMountUrl2FileProc(Ns_DString *dsPtr, CONST char *url, void *arg)
         Ns_MakePath(dsPtr, mPtr->basepath, url, NULL);
         return NS_OK;
     }
-    fprintf(stderr, "NsMountUrl2FileProc base <%s> url <%s>\n",  mPtr->basepath, url);
+
     if (Ns_PagePath(dsPtr, mPtr->server, mPtr->basepath, url, NULL) == NULL) {
-      fprintf(stderr, "NsMountUrl2FileProc base <%s> url <%s> => NOT FOUND\n",  mPtr->basepath, url);
+
         return NS_ERROR;
     }
-    fprintf(stderr, "NsMountUrl2FileProc base <%s> url <%s> => FOUND\n",  mPtr->basepath, url);
+
     return NS_OK;
 }
 
