@@ -61,7 +61,7 @@ Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
     assert(value != NULL);
 
     Ns_SetDeleteKey(set, key);
-    Ns_SetPut(set, key, value);
+    (void)Ns_SetPut(set, key, value);
 }
 
 
@@ -773,7 +773,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
             *sp = next;
             Ns_DStringNAppend(&ds, (char *) &end, sizeof(Ns_Set *));
         }
-        Ns_SetPut(next, key, set->fields[i].value);
+        (void)Ns_SetPut(next, key, set->fields[i].value);
         if (name != NULL) {
             *--key = sep;
         }
@@ -841,7 +841,7 @@ Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
     for (i = 0; i < low->size; ++i) {
         int j = Ns_SetFind(high, low->fields[i].name);
         if (j == -1) {
-            Ns_SetPut(high, low->fields[i].name, low->fields[i].value);
+            (void)Ns_SetPut(high, low->fields[i].name, low->fields[i].value);
         }
     }
 }
@@ -874,7 +874,7 @@ Ns_SetCopy(const Ns_Set *old)
     }
     new = Ns_SetCreate(old->name);
     for (i = 0; i < old->size; ++i) {
-        Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
+        (void)Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
     }
 
     return new;
@@ -907,7 +907,7 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
     assert(to != NULL);
 
     for (i = 0; i < from->size; i++) {
-	Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
+	(void)Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
     }
     Ns_SetTrunc(from, 0);
 }
