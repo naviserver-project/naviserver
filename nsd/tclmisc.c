@@ -267,7 +267,11 @@ Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const 
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, "'", 1);
     for (i = 0; i < objc; i++) {
-	Tcl_DStringAppend(&ds, Tcl_GetString(objv[i]), -1);
+	const char *s;
+	int len;
+
+	s = Tcl_GetStringFromObj(objv[i], &len);
+	Tcl_DStringAppend(&ds, s, len);
 	Tcl_DStringAppend(&ds, " ", 1);
     }
     Tcl_DStringAppend(&ds, "' is deprecated. ", -1);
@@ -1066,7 +1070,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         return TCL_ERROR;
     }
 
-    str = Tcl_GetStringFromObj(objv[1],&strLen);
+    str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxSHAInit(&ctx);
     Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (unsigned int) strLen);
     Ns_CtxSHAFinal(&ctx, digest);
@@ -1429,7 +1433,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         return TCL_ERROR;
     }
 
-    str = Tcl_GetStringFromObj(objv[1],&strLen);
+    str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxMD5Init(&ctx);
     Ns_CtxMD5Update(&ctx, (unsigned char *) str, (unsigned int) strLen);
     Ns_CtxMD5Final(&ctx, digest);

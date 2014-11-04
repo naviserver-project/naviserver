@@ -511,12 +511,15 @@ int
 NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Encoding encoding;
+    const char *encodingName;
+    int encodingNameLen;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "charset");
         return TCL_ERROR;
     }
-    encoding = Ns_GetCharsetEncoding(Tcl_GetString(objv[1]));
+    encodingName = Tcl_GetStringFromObj(objv[1], &encodingNameLen);
+    encoding = Ns_GetCharsetEncodingEx(encodingName, encodingNameLen);
     if (encoding == NULL) {
         return TCL_OK;
     }

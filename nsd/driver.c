@@ -4345,16 +4345,18 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         break;
 
     case cmdSizeIdx:
-    case cmdStreamingIdx:
+    case cmdStreamingIdx: {
+	int driverNameLen;
+
 	if (objc < 3 || objc > 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "driver ?value?");
 	    return TCL_ERROR;
 	}
-	driverName = Tcl_GetString(objv[2]);
+	driverName = Tcl_GetStringFromObj(objv[2], &driverNameLen);
 	
 	/* look up driver with the specified name */
         for (drvPtr = firstDrvPtr; drvPtr; drvPtr = drvPtr->nextPtr) {
-	    if (strncmp(driverName, drvPtr->name, strlen(driverName)) == 0) {
+	    if (strncmp(driverName, drvPtr->name, driverNameLen) == 0) {
 		if (drvPtr->writer.firstPtr != NULL) {wrPtr = &drvPtr->writer;}
 		break;
 	    }
@@ -4390,6 +4392,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wrPtr->streaming));
 	}
 	break;
+    }
     }
 
     return NS_OK;

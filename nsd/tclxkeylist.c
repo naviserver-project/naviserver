@@ -131,21 +131,19 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string)
 static int
 TclX_IsNullObj(Tcl_Obj *objPtr)
 {
-    int length;
-
     if (objPtr->typePtr == NULL) {
         return (objPtr->length == 0);
     } else {
         if (objPtr->typePtr == listType) {
+	    int length;
+
             Tcl_ListObjLength(NULL, objPtr, &length);
             return (length == 0);
         } else if (objPtr->typePtr == stringType) {
-            Tcl_GetStringFromObj(objPtr, &length);
-            return (length == 0);
+            return (Tcl_GetCharLength(objPtr) == 0);
         }
     }
-    Tcl_GetStringFromObj(objPtr, &length);
-    return (length == 0);
+    return (Tcl_GetCharLength(objPtr) == 0);
 }
 
 
@@ -235,8 +233,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
                 return TCL_ERROR;
             }
             for (ii = 0; ii < keyCount; ii++) {
-	        (void) Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
-                totalKeySize += keySize + 1;
+                totalKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
             }
             keyArgv = (char **)ckalloc((size_t)(((keyCount+1)*sizeof(char *)) + totalKeySize));
             keyArgv[keyCount] = NULL;

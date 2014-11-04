@@ -817,7 +817,7 @@ Ns_GetMimeType(CONST char *file)
 int
 NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    CONST char *type;
+    const char *type;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "filename");
