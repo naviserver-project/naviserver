@@ -1457,7 +1457,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CHeadersIdx:
-        if (likely(itPtr->nsconn.flags & CONN_TCLHDRS) != 0U) {
+        if (likely((itPtr->nsconn.flags & CONN_TCLHDRS) != 0U)) {
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
@@ -1467,7 +1467,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case COutputHeadersIdx:
-        if (likely(itPtr->nsconn.flags & CONN_TCLOUTHDRS) != 0U) {
+        if (likely((itPtr->nsconn.flags & CONN_TCLOUTHDRS) != 0U)) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
