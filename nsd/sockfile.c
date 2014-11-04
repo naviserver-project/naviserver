@@ -40,7 +40,6 @@
 
 #ifdef _WIN32
 #include <io.h>
-#include <stdio.h>
 
 ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
 #endif
