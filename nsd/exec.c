@@ -513,7 +513,13 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 	    result = ERR_EXEC;
 	}
 	errnum = errno;
-	(void) writev(errpipe[1], iov, 2);
+	{ 
+	    size_t written = writev(errpipe[1], iov, 2);
+	    if (written != 2) {
+		/* just ignore the attempt to write */
+		;
+	    }
+	}
 
 	_exit(1);
 	

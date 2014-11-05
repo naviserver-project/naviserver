@@ -1279,7 +1279,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
      * Only the "isconnected" option operates without a conn.
      */
 
-    if (unlikely(opt == CIsConnectedIdx)) {
+    if (unlikely(opt == (int)CIsConnectedIdx)) {
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
         return TCL_OK;
     }
