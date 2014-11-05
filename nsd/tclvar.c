@@ -626,6 +626,20 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         break;
 
     case CSizeIdx:
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "array");
+            return TCL_ERROR;
+        }
+        arrayPtr = LockArrayObj(interp, objv[2], 0);
+        if (arrayPtr == NULL) {
+            size = 0;
+        } else {
+            size = arrayPtr->vars.numEntries;
+            UnlockArray(arrayPtr);
+        }
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+        break;
+
     case CExistsIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "array");
@@ -635,14 +649,10 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         if (arrayPtr == NULL) {
             size = 0;
         } else {
-            size = (opt == CSizeIdx) ? arrayPtr->vars.numEntries : 1;
+            size = 1;
             UnlockArray(arrayPtr);
         }
-        if (opt == CExistsIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
-        } else {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
-        }
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
         break;
 
     case CGetIdx:
