@@ -275,7 +275,7 @@ RegisterPage(ClientData arg,
     assert(method != NULL);
     assert(url != NULL);
 
-    adp = ns_calloc(1U, sizeof(AdpRequest) + ((file != NULL) ? strlen(file) : 0));
+    adp = ns_calloc(1U, sizeof(AdpRequest) + ((file != NULL) ? strlen(file) : 0U));
     if (file != NULL) {
         strcpy(adp->file, file);
     }
@@ -325,7 +325,7 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
         } else {
             file = ds.string;
         }
-    } else if (!Ns_PathIsAbsolute(adp->file)) {
+    } else if (Ns_PathIsAbsolute(adp->file) == 0) {
         file = Ns_PagePath(&ds, server, adp->file, NULL);
     } else {
         file = adp->file;

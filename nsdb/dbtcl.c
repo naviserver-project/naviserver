@@ -872,7 +872,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
     Tcl_DStringInit(&line);
     if (Tcl_Gets(chan, &line) < 0) {
 	Tcl_DStringFree(&line);
-    	if (!Tcl_Eof(chan)) {
+    	if (Tcl_Eof(chan) == 0) {
 	    Tcl_AppendResult(interp, "could not read from ", fileId, ": ", Tcl_PosixError(interp), NULL);
 	    return TCL_ERROR;
 	}

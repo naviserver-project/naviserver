@@ -172,7 +172,7 @@ void
 NsConfigEncodings(void)
 {
     Ns_Set *set;
-    int     i;
+    size_t  i;
 
     Ns_MutexSetName(&lock, "ns:encodings");
     Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);

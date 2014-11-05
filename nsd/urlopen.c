@@ -183,7 +183,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     stream.error = 0;
     stream.ptr = stream.buf;
     stream.sock = sock;
-    if (!GetLine(&stream, &ds)) {
+    if (GetLine(&stream, &ds) == 0) {
         goto done;
     }
     if (headers != NULL && strncmp(ds.string, "HTTP", 4) == 0) {
@@ -193,7 +193,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         headers->name = Ns_DStringExport(&ds);
     }
     do {
-        if (!GetLine(&stream, &ds)) {
+        if (GetLine(&stream, &ds) == 0) {
             goto done;
         }
         if (ds.length > 0

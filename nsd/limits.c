@@ -183,7 +183,7 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     while (hPtr != NULL) {
         char *limits = Tcl_GetHashKey(&limtable, hPtr);
 
-        if (pattern == NULL || Tcl_StringMatch(limits, pattern)) {
+        if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
             Tcl_AppendElement(interp, limits);
         }
         hPtr = Tcl_NextHashEntry(&search);

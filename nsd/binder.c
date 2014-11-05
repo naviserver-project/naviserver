@@ -120,7 +120,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning) {
+    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
     return sock;
@@ -169,7 +169,7 @@ Ns_SockListenUdp(const char *address, int port)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning) {
+    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
 
@@ -221,7 +221,7 @@ Ns_SockListenRaw(int proto)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning) {
+    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
         sock = Ns_SockBinderListen('R', 0, proto, proto);
     }
 
@@ -286,7 +286,7 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning) {
+    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
         sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
 #endif /* _WIN32 */

@@ -201,7 +201,7 @@ CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int i
          */
 
         if (((ioflags & NS_CONN_STREAM) != 0U)
-            || (bufs && Ns_SumVec(bufs, nbufs) >= (size_t)servPtr->compress.minsize)
+            || (bufs != NULL && Ns_SumVec(bufs, nbufs) >= (size_t)servPtr->compress.minsize)
             || connPtr->responseLength >= servPtr->compress.minsize) {
 
             /* We won't be compressing if there are no headers or body. */
@@ -255,8 +255,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     Conn         *connPtr = (Conn *) conn;
     Ns_DString    ds;
     int           nsbufs, sbufIdx;
-    size_t        bodyLength, toWrite;
-    ssize_t       nwrote, neededBufs;
+    size_t        bodyLength, toWrite, neededBufs;
+    ssize_t       nwrote;
     struct iovec  sbufs[32], *sbufPtr;
 
     assert(connPtr != NULL);
@@ -1135,7 +1135,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     }
     Ns_ConnSetHeaders(conn, "Connection", keep);
 
-    if (conn->flags & NS_CONN_CHUNK) {
+    if ((conn->flags & NS_CONN_CHUNK) != 0U) {
         Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
     }
     Ns_ConnConstructHeaders(conn, dsPtr);
@@ -1199,16 +1199,17 @@ CheckKeep(const Conn *connPtr)
                     return 0;
                 }
 
-		if (connPtr->drvPtr->keepmaxuploadsize
-		    && connPtr->contentLength > (size_t)connPtr->drvPtr->keepmaxuploadsize) {
+		if (connPtr->drvPtr->keepmaxuploadsize > 0U
+		    && connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) {
 		    Ns_Log(Notice, 
 			   "Disallow keep-alive, content-Length %" PRIdz 
 			   " larger keepmaxuploadsize %" PRIdz ": %s",
 			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
 			   connPtr->request->line);
 		    return 0;
-		} else if (connPtr->drvPtr->keepmaxdownloadsize
-			   && connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
+		} else if (connPtr->drvPtr->keepmaxdownloadsize > 0U
+			   && connPtr->responseLength > 0U
+			   && (size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
 		    Ns_Log(Notice, 
 			   "Disallow keep-alive response length %ld "
 			   "larger keepmaxdownloadsize %" PRIdz ": %s",
@@ -1221,10 +1222,9 @@ CheckKeep(const Conn *connPtr)
                  * We allow keep-alive for chunked encoding variants or a valid
                  * content-length header.
                  */
-		if ((connPtr->flags & NS_CONN_CHUNK)
+		if (((connPtr->flags & NS_CONN_CHUNK) != 0U)
                         || Ns_SetIGet(connPtr->outputheaders, "Content-Length")
-                        || HdrEq(connPtr->outputheaders, "Content-Type",
-                                 "multipart/byteranges") != 0) {
+                        || HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") != 0) {
 		    return 1;
                 }
             }
@@ -1264,8 +1264,9 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
     assert(name != NULL);
     assert(value != NULL);
 
-    if ((hdrvalue = Ns_SetIGet(set, name)) != NULL
-        && strncasecmp(hdrvalue, value, strlen(value)) == 0) {
+    hdrvalue = Ns_SetIGet(set, name);
+
+    if ((hdrvalue != NULL) && strncasecmp(hdrvalue, value, strlen(value)) == 0) {
         return 1;
     }
     return 0;

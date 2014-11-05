@@ -411,10 +411,10 @@ Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
     if (env == NULL) {
 	envp = Ns_CopyEnviron(&eds);
     } else {
-        int i;
-	for (i = 0; i < Ns_SetSize(env); ++i) {
+	size_t i;
+	for (i = 0I; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
-		Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
+				Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
             Ns_DStringNAppend(&eds, "", 1);
 	}
 	Ns_DStringNAppend(&eds, "", 1);
@@ -586,9 +586,9 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 static char **
 Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 {
-    int        i;
+    size_t i;
 
-    for (i = 0; i < Ns_SetSize(env); ++i) {
+    for (i = 0U; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
         Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
         Ns_DStringNAppend(dsPtr, "", 1);

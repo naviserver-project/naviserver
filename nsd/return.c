@@ -109,7 +109,7 @@ static struct {
  * Static variables defined in this file.
  */
 
-static const int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
+static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 
 
 
@@ -418,7 +418,7 @@ void
 Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
-    int         i;
+    size_t      i;
     const char *reason, *value;
 
     /*
@@ -426,7 +426,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     reason = "Unknown Reason";
-    for (i = 0; i < nreasons; i++) {
+    for (i = 0U; i < nreasons; i++) {
         if (reasons[i].status == connPtr->responseStatus) {
             reason = reasons[i].reason;
             break;
@@ -472,13 +472,13 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     if (conn->outputheaders != NULL) {
-        for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
+        for (i = 0U; i < Ns_SetSize(conn->outputheaders); i++) {
 	    const char *key;
 
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-		char *lineBreak = strchr(value, UCHAR('\n'));
+		const char *lineBreak = strchr(value, UCHAR('\n'));
 
 		if (lineBreak == NULL) {
 		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
@@ -549,7 +549,7 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     Ns_ConnSetResponseStatus(conn, status);
 }
 
-Tcl_WideInt
+size_t
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
     Conn *connPtr = (Conn *) conn;
@@ -895,7 +895,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 {
     Ns_DString  ds;
     Ns_FileVec  bufs[32];
-    int         nbufs = sizeof(bufs) / sizeof(bufs[0]);
+    int         nbufs = (int)(sizeof(bufs) / sizeof(bufs[0]));
     int         rangeCount, result = NS_ERROR;
 
     assert(conn != NULL);
@@ -908,7 +908,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
     /*
      * Don't use writer when only headers are returned
      */
-    if ((conn->flags & NS_CONN_SKIPBODY) == 0) {
+    if ((conn->flags & NS_CONN_SKIPBODY) == 0U) {
 
 	/*
 	 * We are able to handle the following cases via writer:
@@ -927,7 +927,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 		int i;
 
 		nvbufs = rangeCount;
-		len = 0;
+		len = 0U;
 		for (i = 0; i < rangeCount; i++) {
 		    vbuf[i].iov_base = INT2PTR(bufs[i].offset);
 		    vbuf[i].iov_len  = bufs[i].length;
@@ -955,8 +955,8 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	if (rangeCount == 0) {
             Ns_ConnSetLengthHeader(conn, len, 0);
 
-	    if ((conn->flags & NS_CONN_SKIPBODY)) {
-	      len = 0;
+	    if ((conn->flags & NS_CONN_SKIPBODY) != 0U) {
+	      len = 0U;
 	    }
 
             (void) Ns_SetFileVec(bufs, 0, fd, data, 0, len);

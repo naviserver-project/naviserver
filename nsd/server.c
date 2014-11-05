@@ -212,9 +212,10 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Ns_DString         ds;
     NsServer          *servPtr;
     ServerInit        *initPtr;
-    CONST char        *path, *p;
+    const char        *path, *p;
     Ns_Set            *set;
-    int                i, n;
+    size_t             i;
+    int                n;
 
     assert(server != NULL);
 
@@ -294,7 +295,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     CreatePool(servPtr, "");
     path = Ns_ConfigGetPath(server, NULL, "pools", NULL);
     set = Ns_ConfigGetSection(path);
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
     NsTclInitServer(server);
@@ -361,7 +362,8 @@ CreatePool(NsServer *servPtr, char *pool)
 {
     ConnPool   *poolPtr;
     Conn       *connBufPtr, *connPtr;
-    int         i, n, maxconns, lowwatermark, highwatermark, queueLength;
+    int         n, maxconns, lowwatermark, highwatermark, queueLength;
+    size_t      i;
     const char *path;
 
     assert(servPtr != NULL);
@@ -382,7 +384,7 @@ CreatePool(NsServer *servPtr, char *pool)
 
         path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, NULL);
         set = Ns_ConfigGetSection(path);
-        for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+        for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
             if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
                 NsMapPool(poolPtr, Ns_SetValue(set, i));
             }
@@ -442,17 +444,18 @@ CreatePool(NsServer *servPtr, char *pool)
      */
     {
 	char name[128] = "nsd:";
+	int  j;
 	
 	if (*pool == '\0') {
 	    pool = "default";
 	}
-	strncat(name, pool, 120);
+	strncat(name, pool, 120U);
 	
-	for (i = 0; i < maxconns; i++) {
+	for (j = 0; j < maxconns; j++) {
 	    char buffer[64];
-	    sprintf(buffer, "connthread:%d", i);
-	    Ns_MutexInit(&poolPtr->tqueue.args[i].lock);
-	    Ns_MutexSetName2(&poolPtr->tqueue.args[i].lock, name, buffer);
+	    sprintf(buffer, "connthread:%d", j);
+	    Ns_MutexInit(&poolPtr->tqueue.args[j].lock);
+	    Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, name, buffer);
 	}
 	Ns_MutexInit(&poolPtr->tqueue.lock);
 	Ns_MutexSetName2(&poolPtr->tqueue.lock, name, "tqueue");

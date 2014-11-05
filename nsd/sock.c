@@ -639,7 +639,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
         switch (err) {
         case NS_OK:
             len = sizeof(err);
-            if (!getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len)) {
+            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) == -1) {
                 return sock;
             }
             break;
@@ -1035,12 +1035,12 @@ SockConnect(const char *host, int port, const char *lhost, int lport, int async)
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
             unsigned int err = ns_sockerrno;
-            if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
+            if (async == 0 || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
                 sock = NS_INVALID_SOCKET;
             }
         }
-        if (async && sock != NS_INVALID_SOCKET) {
+        if (async != 0 && sock != NS_INVALID_SOCKET) {
             Ns_SockSetBlocking(sock);
         }
     }

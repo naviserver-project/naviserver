@@ -562,6 +562,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 
     if (server == NULL) {
 	Ns_Set *lset;
+	size_t  j;
 
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
@@ -573,9 +574,9 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
         lset  = Ns_ConfigGetSection(path);
         Ns_DStringInit(dsPtr);
-        for (i = 0; lset != NULL && i < Ns_SetSize(lset); ++i) {
-            server  = Ns_SetKey(lset, i);
-            host    = Ns_SetValue(lset, i);
+        for (j = 0; lset != NULL && j < Ns_SetSize(lset); ++j) {
+            server  = Ns_SetKey(lset, j);
+            host    = Ns_SetValue(lset, j);
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", module, server);
@@ -2642,7 +2643,7 @@ SockParse(Sock *sockPtr)
              * Check for max number of headers
              */
 
-            if (unlikely(Ns_SetSize(reqPtr->headers) > drvPtr->maxheaders)) {
+            if (unlikely(Ns_SetSize(reqPtr->headers) > (size_t)drvPtr->maxheaders)) {
                 Ns_Log(DriverDebug, "SockParse: maxheaders reached of %d bytes",
                        drvPtr->maxheaders);
                 return SOCK_TOOMANYHEADERS;

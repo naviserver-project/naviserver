@@ -125,7 +125,8 @@ Ns_ModuleInit(char *server, char *module)
     Mod           *modPtr;
     char          *end;
     const char    *addr, *path;
-    int            i, isNew, port;
+    int            isNew, port;
+    size_t         i;
     NS_SOCKET      lsock;
     Tcl_HashEntry *hPtr;
     Ns_Set        *set;
@@ -189,10 +190,10 @@ Ns_ModuleInit(char *server, char *module)
      * Process the setup ns_set
      */
 
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
 	char *pass;
-	char *key = Ns_SetKey(set, i);
-	char *user = Ns_SetValue(set, i);
+	const char *key  = Ns_SetKey(set, i);
+	const char *user = Ns_SetValue(set, i);
 
 	if (!STRIEQ(key, "user") || (pass = strchr(user, ':')) == NULL) {
 	    continue;

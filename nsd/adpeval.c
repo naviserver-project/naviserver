@@ -229,7 +229,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 
     Tcl_DStringInit(&output);
     obj0 = Tcl_GetString(objv[0]);
-    if (itPtr->adp.flags & ADP_ADPFILE) {
+    if ((itPtr->adp.flags & ADP_ADPFILE) != 0U) {
         result = AdpSource(itPtr, objc, objv, obj0, NULL, &output);
     } else {
         NsAdpParse(&code, itPtr->servPtr, obj0, itPtr->adp.flags, NULL);
@@ -431,7 +431,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 
     if (itPtr->adp.debugLevel > 0) {
         ++itPtr->adp.debugLevel;
-    } else if ((itPtr->adp.flags & ADP_DEBUG)
+    } else if (((itPtr->adp.flags & ADP_DEBUG) != 0U)
                    && itPtr->adp.debugFile != NULL
                    && (p = strrchr(file, '/')) != NULL
                    && Tcl_StringMatch(p+1, itPtr->adp.debugFile)) {
@@ -550,7 +550,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 	int   cacheGen = 0;
 
         pagePtr = ipagePtr->pagePtr;
-        if (expiresPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
+        if (expiresPtr == NULL || (itPtr->adp.flags & ADP_CACHE) == 0U) {
             cachePtr = NULL;
         } else {
 
@@ -593,7 +593,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                  * inside the script
                  */
 
-                if (result == TCL_OK && (itPtr->adp.flags & ADP_CACHE)) {
+                if (result == TCL_OK && (itPtr->adp.flags & ADP_CACHE) != 0U) {
                     cachePtr = ns_malloc(sizeof(AdpCache));
 
                     /*
@@ -952,13 +952,13 @@ NsAdpLogError(NsInterp *itPtr)
         framePtr = framePtr->prevPtr;
         inc = "\n    included from ";
     }
-    if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL)) {
-	int i;
+    if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL) != 0U) {
+	size_t i;
 
         Ns_DStringPrintf(&ds, "\n    while processing connection #%d:\n%8s%s",
                          Ns_ConnId(conn), "",
                          conn->request->line);
-        for (i = 0; i < Ns_SetSize(conn->headers); ++i) {
+        for (i = 0U; i < Ns_SetSize(conn->headers); ++i) {
             Ns_DStringPrintf(&ds, "\n        %s: %s",
                              Ns_SetKey(conn->headers, i),
                              Ns_SetValue(conn->headers, i));
@@ -966,7 +966,7 @@ NsAdpLogError(NsInterp *itPtr)
     }
     Tcl_AddErrorInfo(interp, ds.string);
     err = Ns_TclLogError(interp);
-    if (itPtr->adp.flags & ADP_DISPLAY) {
+    if ((itPtr->adp.flags & ADP_DISPLAY) != 0U) {
         Ns_DStringTrunc(&ds, 0);
         Ns_DStringAppend(&ds, "<br><pre>\n");
         Ns_QuoteHtml(&ds, err);
@@ -1062,7 +1062,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 
         frame.line = AdpCodeLine(codePtr, i);
         len = AdpCodeLen(codePtr, i);
-        if (itPtr->adp.flags & ADP_TRACE) {
+        if ((itPtr->adp.flags & ADP_TRACE) != 0U) {
             AdpTrace(itPtr, ptr, len);
         }
         if (len > 0) {
@@ -1102,10 +1102,10 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
          */
 
         if (result != TCL_OK && itPtr->adp.exception == ADP_OK) {
-            if (!(itPtr->adp.flags & ADP_ERRLOGGED)) {
+            if ((itPtr->adp.flags & ADP_ERRLOGGED) == 0U) {
                 NsAdpLogError(itPtr);
             }
-            if (itPtr->adp.flags & ADP_STRICT) {
+            if ((itPtr->adp.flags & ADP_STRICT) != 0U) {
                 itPtr->adp.flags |= ADP_ERRLOGGED;
                 break;
             }

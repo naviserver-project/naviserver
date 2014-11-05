@@ -642,16 +642,16 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         }
         location = Ns_DStringAppend(dest, location);
 
-    } else if (servPtr->vhost.enabled
-               && (headers = Ns_ConnHeaders(conn))
-               && (host = Ns_SetIGet(headers, "Host"))
+    } else if (servPtr->vhost.enabled != 0
+               && (headers = Ns_ConnHeaders(conn)) != NULL
+               && (host = Ns_SetIGet(headers, "Host")) != NULL
                && *host != '\0') {
 
         /*
          * Construct a location string from the HTTP host header.
          */
 
-        if (!Ns_StrIsHost(host)) {
+        if (Ns_StrIsHost(host) == 0) {
             goto deflocation;
         }
 

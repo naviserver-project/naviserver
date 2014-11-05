@@ -718,7 +718,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 	if (unlikely(p[0] == '%') &&
             (i = enc[UCHAR(p[1])].hex) >= 0 &&
             (j = enc[UCHAR(p[2])].hex) >= 0) {
-	    *q++ = ((UCHAR(i) << 4) + UCHAR(j));
+	    *q++ = UCHAR((UCHAR(i) << 4U) + UCHAR(j));
             p += 3;
         } else if (unlikely(p[0] == '+') && part == 'q') {
             *q++ = ' ';

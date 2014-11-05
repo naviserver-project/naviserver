@@ -110,7 +110,7 @@ NsConfigDNS(void)
     int         max;
     CONST char *path = NS_CONFIG_PARAMETERS;
 
-    if (Ns_ConfigBool(path, "dnscache", NS_TRUE)
+    if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE
         && (max = Ns_ConfigIntRange(path, "dnscachemaxsize",
                                     1024*500, 0, INT_MAX)) > 0) {
 
@@ -214,7 +214,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     }
 
     if (status == NS_TRUE) {
-        if (getProc == GetAddr && !all) {
+        if (getProc == GetAddr && all == 0) {
             char *p = ds.string;
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;

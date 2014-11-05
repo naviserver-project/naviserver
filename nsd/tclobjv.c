@@ -308,7 +308,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         }
         return NS_OK;
     }
-    for (specPtr = argSpec; specPtr && specPtr->key != NULL; specPtr++) {
+    for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
 	if (unlikely(remain == 0)) {
             if (unlikely(specPtr->key[0] != '?')) {
                 goto badargs; /* Too few args. */
@@ -1258,7 +1258,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     len = strlen(value);
     if (value[0] == '[' && value[len - 1] == ']') {
         value++;
-        len -=2;
+        len -= 2U;
 
         if (Tcl_EvalEx(interp, value, (int)len, 0) == TCL_ERROR) {
             return TCL_ERROR;

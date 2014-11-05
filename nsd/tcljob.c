@@ -761,7 +761,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              *
              * Cancel the specified job.
              */
-	    const char *jobIdString = NULL;
+	    const char *jobIdString;
 
             if (objc != 4) {
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId jobId");
@@ -809,7 +809,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              *
              * Returns 1 if job is running otherwise 0
              */
-	    const char *jobIdString = NULL;
+	    const char *jobIdString;
 
             if (objc != 4) {
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId jobId");

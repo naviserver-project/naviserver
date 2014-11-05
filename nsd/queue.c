@@ -596,7 +596,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	 || subcmd == SPagedirIdx
 	 || subcmd == SRequestprocsIdx
 	 || subcmd == SUrl2fileIdx)
-	&& pool) {	
+	&& pool != NULL) {	
 	    Tcl_AppendResult(interp, 
 			     "option -pool is not allowed for this subcommand", NULL);
 	    return TCL_ERROR;
@@ -1350,7 +1350,7 @@ NsConnThread(void *arg)
 	 * During shutdown, we do not want to restart connection
 	 * threads. The driver pointer might be already invalid. 
 	 */
-	if (wakeup && connPtr && !shutdown) { 
+	if (wakeup != 0 && connPtr != NULL && shutdown == 0) { 
 	    NsWakeupDriver(connPtr->drvPtr); 
 	} 
     }
@@ -1459,9 +1459,9 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
         conn->flags |= NS_CONN_SKIPHDRS;
     }
     if (servPtr->opts.hdrcase != Preserve) {
-        int i;
+	size_t i;
 
-        for (i = 0; i < Ns_SetSize(connPtr->headers); ++i) {
+        for (i = 0U; i < Ns_SetSize(connPtr->headers); ++i) {
             if (servPtr->opts.hdrcase == ToLower) {
                 Ns_StrToLower(Ns_SetKey(connPtr->headers, i));
             } else {

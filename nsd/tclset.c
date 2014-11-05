@@ -352,13 +352,17 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             switch (opt) {
             case SArrayIdx:
-                Tcl_DStringInit(&ds);
-                for (i = 0; i < Ns_SetSize(set); ++i) {
-                    Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
-                    Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
-                }
-                Tcl_DStringResult(interp, &ds);
-                break;
+		{
+		    size_t i;
+
+		    Tcl_DStringInit(&ds);
+		    for (i = 0; i < Ns_SetSize(set); ++i) {
+			Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
+			Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
+		    }
+		    Tcl_DStringResult(interp, &ds);
+		    break;
+		}
 
             case SSizeIdx:
                 objPtr = Tcl_NewIntObj(Ns_SetSize(set));
@@ -468,7 +472,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                                  Tcl_GetString(objv[3]), "\": must be >= 0", NULL);
                 return TCL_ERROR;
             }
-            if (unlikely(i >= Ns_SetSize(set))) {
+            if (unlikely((size_t)i >= Ns_SetSize(set))) {
                 Tcl_AppendResult(interp, "invalid index \"",
                                  Tcl_GetString(objv[3]),
                                  "\": beyond range of set fields", NULL);

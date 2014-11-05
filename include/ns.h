@@ -1853,8 +1853,9 @@ Ns_InfoTag(void);
  */
 
 NS_EXTERN char *
-Ns_GetMimeType(CONST char *file)
-    NS_GNUC_NONNULL(1);
+Ns_GetMimeType(const char *file)
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_RETURNS_NONNULL;
 
 /*
  * encoding.c:
@@ -2148,7 +2149,7 @@ NS_EXTERN void
 Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
-NS_EXTERN Tcl_WideInt
+NS_EXTERN size_t
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
@@ -2304,8 +2305,8 @@ NS_EXTERN int
 Ns_SetPut(Ns_Set *set, const char *key, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
-Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, int size)
+NS_EXTERN size_t
+Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -2348,7 +2349,7 @@ Ns_SetIGet(const Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SetTrunc(Ns_Set *set, int size)
+Ns_SetTrunc(Ns_Set *set, size_t size)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void

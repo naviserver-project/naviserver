@@ -114,8 +114,8 @@ NsMatchRange(const Ns_Conn *conn, time_t mtime)
  */
 
 int
-NsConnParseRange(Ns_Conn *conn, CONST char *type,
-                 int fd, CONST void *data, size_t objLength,
+NsConnParseRange(Ns_Conn *conn, const char *type,
+                 int fd, const void *data, size_t objLength,
                  Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
     Conn   *connPtr = (Conn *) conn;

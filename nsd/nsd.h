@@ -1402,8 +1402,8 @@ NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, co
 
 NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime);
 
-NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
-			       int fd, CONST void *data, size_t objLength,
+NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
+			       int fd, const void *data, size_t objLength,
 			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
 /*
  * request parsing

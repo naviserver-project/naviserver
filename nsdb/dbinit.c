@@ -446,7 +446,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     }
     status = NS_OK;
     Ns_MutexLock(&poolPtr->lock);
-    while (status == NS_OK && poolPtr->waiting) {
+    while (status == NS_OK && poolPtr->waiting != 0) {
 	status = Ns_CondTimedWait(&poolPtr->waitCond, &poolPtr->lock, timePtr);
     }
     if (status == NS_OK) {
@@ -572,7 +572,8 @@ NsDbInitPools(void)
     Pool        *poolPtr;
     Ns_Set      *pools;
     const char  *path, *driver;
-    int	         isNew, i;
+    int	         isNew;
+    size_t       i;
 
     Ns_TlsAlloc(&tls, FreeTable);
 
@@ -584,7 +585,7 @@ NsDbInitPools(void)
     Tcl_InitHashTable(&poolsTable, TCL_STRING_KEYS);
     pools = Ns_ConfigGetSection("ns/db/pools");
 
-    for (i = 0; pools != NULL && i < Ns_SetSize(pools); ++i) {
+    for (i = 0U; pools != NULL && i < Ns_SetSize(pools); ++i) {
 	const char    *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
@@ -666,14 +667,14 @@ NsDbInitServer(char *server)
 		hPtr = Tcl_NextHashEntry(&search);
 	    }
 	} else {
-	    char *p, *toDelete;
-	    toDelete = p = ns_strdup(pool);
+	    char *p, *toDelete, *pool2;
+	    toDelete = p = pool2 = ns_strdup(pool);
 	    while (p != NULL && *p != '\0') {
-		p = strchr(pool, ',');
+		p = strchr(pool2, ',');
 		if (p != NULL) {
 		    *p = '\0';
 		}
-		hPtr = Tcl_FindHashEntry(&poolsTable, pool);
+		hPtr = Tcl_FindHashEntry(&poolsTable, pool2);
 		if (hPtr != NULL) {
 		    poolPtr = Tcl_GetHashValue(hPtr);
 	    	    NsDbDriverInit(server, poolPtr->driverPtr);
@@ -682,7 +683,7 @@ NsDbInitServer(char *server)
 		if (p != NULL) {
 		    *p++ = ',';
 		}
-		pool = p;
+		pool2 = p;
 	    }
 	    ns_free(toDelete);
 	}
@@ -744,12 +745,12 @@ NsDbLogSql(Ns_DbHandle *handle, char *sql)
     Handle *handlePtr = (Handle *) handle;
 
     if (handle->dsExceptionMsg.length > 0) {
-        if (handlePtr->poolPtr->fVerboseError || handle->verbose) {
+        if (handlePtr->poolPtr->fVerboseError == NS_TRUE || handle->verbose == NS_TRUE) {
 	    
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
-    } else if (handle->verbose != 0) {
+    } else if (handle->verbose == NS_TRUE) {
         Ns_Log(Notice, "dbinit: sql(%s): '%s'", handle->datasource, sql);
     }
 }
@@ -884,12 +885,12 @@ IsStale(const Handle *handlePtr, time_t now)
 
 	minAccess = now - handlePtr->poolPtr->maxidle;
 	minOpen   = now - handlePtr->poolPtr->maxopen;
-	if ((handlePtr->poolPtr->maxidle && handlePtr->atime < minAccess) || 
-	    (handlePtr->poolPtr->maxopen && (handlePtr->otime < minOpen)) ||
+	if ((handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) || 
+	    (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen)) ||
 	    (handlePtr->stale == NS_TRUE) ||
 	    (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
-	    if (handlePtr->poolPtr->fVerbose != 0) {
+	    if (handlePtr->poolPtr->fVerbose == NS_TRUE) {
 		Ns_Log(Notice, "dbinit: closing %s handle in pool '%s'",
 		       handlePtr->atime < minAccess ? "idle" : "old",
 		       handlePtr->poolname);

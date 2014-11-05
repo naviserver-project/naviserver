@@ -87,7 +87,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 		   && (form = connPtr->reqPtr->content) != NULL
 		   ) {
   	    Tcl_DStringInit(&bound);
-            if (!GetBoundary(&bound, conn)) {
+            if (GetBoundary(&bound, conn) == 0) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             } else {
 		char *formend = form + connPtr->reqPtr->length;
@@ -340,11 +340,11 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
      */
 
     disp = Ns_SetGet(set, "content-disposition");
-    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape)) {
+    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == 1) {
 	char *key = Ext2Utf(&kds, ks, (size_t)(ke-ks), encoding, unescape);
 	char *value;
 
-        if (!GetValue(disp, "filename=", &fs, &fe, &unescape)) {
+        if (GetValue(disp, "filename=", &fs, &fe, &unescape) == 0) {
 	    value = Ext2Utf(&vds, start, (size_t)(end-start), encoding, unescape);
         } else {
 	    Tcl_HashEntry *hPtr;
@@ -396,7 +396,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 static int
 GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
 {
-    CONST char *type, *bs;
+    const char *type, *bs;
 
     type = Ns_SetIGet(conn->headers, "content-type");
     if (type != NULL
@@ -501,7 +501,7 @@ GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPt
 	 * character as result.
 	 */
         ++e;
-        while (*e != '\0' && (escaped || *e != *s)) {
+        while (*e != '\0' && (escaped != 0 || *e != *s)) {
 	    if (escaped != 0) {
 	        escaped = 0;
 	    } else if (*e == '\\') {
