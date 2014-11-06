@@ -363,7 +363,6 @@ CreatePool(NsServer *servPtr, char *pool)
     ConnPool   *poolPtr;
     Conn       *connBufPtr, *connPtr;
     int         n, maxconns, lowwatermark, highwatermark, queueLength;
-    size_t      i;
     const char *path;
 
     assert(servPtr != NULL);
@@ -378,6 +377,7 @@ CreatePool(NsServer *servPtr, char *pool)
         servPtr->pools.defaultPtr = poolPtr;
     } else {
 	Ns_Set *set;
+	size_t  i;
         /*
          * Map requested method/URL's to this pool.
          */

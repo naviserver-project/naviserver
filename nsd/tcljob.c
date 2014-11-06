@@ -899,32 +899,29 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         break;
 
     case JJobsIdx:
-        {
-            /*
-             * ns_job jobs
-             *
-             * Returns a list of job IDs in arbitrary order.
-             */
-	    const char *jobIdString = NULL;
+	/*
+	 * ns_job jobs
+	 *
+	 * Returns a list of job IDs in arbitrary order.
+	 */
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "queueId");
+	    return TCL_ERROR;
+	}
+	if (LookupQueue(interp, Tcl_GetString(objv[2]),
+			&queue, 0) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	assert(queue != NULL);
 
-            if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "queueId");
-                return TCL_ERROR;
-            }
-            if (LookupQueue(interp, Tcl_GetString(objv[2]),
-                            &queue, 0) != TCL_OK) {
-                return TCL_ERROR;
-            }
-	    assert(queue != NULL);
+	hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
+	while (hPtr != NULL) {
+	    const char *jobIdString = Tcl_GetHashKey(&queue->jobs, hPtr);
+	    Tcl_AppendElement(interp, jobIdString);
+	    hPtr = Tcl_NextHashEntry(&search);
+	}
+	(void)ReleaseQueue(queue, 0);
 
-            hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
-            while (hPtr != NULL) {
-                jobIdString = Tcl_GetHashKey(&queue->jobs, hPtr);
-                Tcl_AppendElement(interp, jobIdString);
-                hPtr = Tcl_NextHashEntry(&search);
-            }
-            (void)ReleaseQueue(queue, 0);
-        }
         break;
 
     case JQueuesIdx:
