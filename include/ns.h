@@ -259,15 +259,17 @@ typedef struct _Ns_Event        *Ns_Event;
  * This is used for logging messages.
  */
 
-typedef enum {
+enum {
     Notice,
     Warning,
     Error,
     Fatal,
     Bug,
     Debug,
-    Dev
-} Ns_LogSeverity;
+    Dev,
+    PredefinedLogSeveritiesCount
+};
+typedef unsigned int Ns_LogSeverity;
 
 /*
  * The following enum lists the possible HTTP headers
@@ -1757,7 +1759,7 @@ NS_EXTERN Ns_LogSeverity
 Ns_CreateLogSeverity(const char *name)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN CONST char *
+NS_EXTERN const char *
 Ns_LogSeverityName(Ns_LogSeverity severity);
 
 NS_EXTERN int
