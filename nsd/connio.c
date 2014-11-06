@@ -700,11 +700,11 @@ Ns_ConnClose(Ns_Conn *conn)
     assert(conn != NULL);
     
     Ns_Log(Debug, "Ns_ConnClose %p stream %.6x chunk %.6x via writer %.6x sockPtr %p", 
-	   connPtr, 
+	   (void *)connPtr, 
 	   connPtr->flags & NS_CONN_STREAM, 
 	   connPtr->flags & NS_CONN_CHUNK, 
 	   connPtr->flags & NS_CONN_SENT_VIA_WRITER, 
-	   connPtr->sockPtr);
+	   (void *)connPtr->sockPtr);
 
     if (connPtr->sockPtr != NULL) {
 

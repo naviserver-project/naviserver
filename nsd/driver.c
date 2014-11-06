@@ -922,7 +922,7 @@ NsSockClose(Sock *sockPtr, int keep)
     assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
-    Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", sockPtr, keep);
+    Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", (void *)sockPtr, keep);
 
     SockClose(sockPtr, keep);
 
@@ -3225,7 +3225,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     wrSockPtr->refCount --;
 
     Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d", 
-	   wrSockPtr, wrSockPtr->refCount);
+	   (void *)wrSockPtr, wrSockPtr->refCount);
 
     if (wrSockPtr->refCount > 0) {
 	return;
@@ -3352,7 +3352,8 @@ WriterReadFromSpool(WriterSock *curPtr) {
     if (curPtr->c.file.bufsize > 0U) {
 	Ns_Log(DriverDebug, 
 	       "### Writer %p %.6x leftover %" PRIdz " offset %ld", 
-	       curPtr, curPtr->flags, 
+	       (void *)curPtr, 
+	       curPtr->flags, 
 	       curPtr->c.file.bufsize, 
 	       (long)curPtr->c.file.bufoffset);
 	if (likely(curPtr->c.file.bufoffset > 0)) {
@@ -3594,7 +3595,7 @@ WriterThread(void *arg)
 	    pollto = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
 		Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d", 
-		       curPtr, curPtr->size, curPtr->streaming);
+		       (void *)curPtr, curPtr->size, curPtr->streaming);
 		if (likely(curPtr->size > 0U)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
 		    pollto = -1;
@@ -3635,7 +3636,7 @@ WriterThread(void *arg)
 	    streaming = curPtr->streaming; 
 
 	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
-		Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", curPtr, sockPtr->sock);
+		Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
 		status = SOCK_CLOSE;
 		err = 0;
 
@@ -3643,7 +3644,7 @@ WriterThread(void *arg)
 		Ns_Log(DriverDebug, 
                        "### Writer %p can write to client fd %d (trigger %d) streaming %.6x"
 		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
-                       curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
+                       (void *)curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
                        curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
 		if (unlikely(curPtr->size < 1U)) {
 		    /*
@@ -3677,10 +3678,10 @@ WriterThread(void *arg)
                  */
                 if (sockPtr->timeout.sec == 0) {
 		    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld", 
-			   curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
+			   (void *)curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
                     SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
 		} else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
-		    Ns_Log(DriverDebug, "Writer %p fd %d timeout", curPtr, sockPtr->sock);
+		    Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
 		    err    = ETIMEDOUT;
 		    status = SOCK_CLOSETIMEOUT;
                 }
@@ -3696,12 +3697,12 @@ WriterThread(void *arg)
                 if (curPtr->size > 0U || streaming == NS_WRITER_STREAM_ACTIVE) {
 		    Ns_Log(DriverDebug, 
 			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
-			   curPtr, curPtr->size);
+			   (void *)curPtr, curPtr->size);
                     Push(curPtr, writePtr);
 		} else {
 		    Ns_Log(DriverDebug, 
 			   "Writer %p done OK (size %" PRIdz ") => RELEASE", 
-			   curPtr, curPtr->size);
+			   (void *)curPtr, curPtr->size);
 		    WriterSockRelease(curPtr);
 		}
 	    } else {
@@ -3710,7 +3711,7 @@ WriterThread(void *arg)
 		 */ 
 		Ns_Log(DriverDebug, 
 		       "Writer %p fd %d release, not OK (status %d) => RELEASE", 
-		       curPtr, curPtr->sockPtr->sock, status);
+		       (void *)curPtr, curPtr->sockPtr->sock, status);
 		curPtr->status = status;
 		curPtr->err    = err;
 		WriterSockRelease(curPtr);
@@ -3781,7 +3782,7 @@ WriterThread(void *arg)
 
 void 
 NsWriterFinish(WriterSock *wrSockPtr) {
-    Ns_Log(DriverDebug, "NsWriterFinish: %p", wrSockPtr);
+    Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)wrSockPtr);
     wrSockPtr->streaming = NS_WRITER_STREAM_FINISH;
     SockTrigger(wrSockPtr->queuePtr->pipe[1]);
 }
@@ -3826,7 +3827,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     Ns_Log(DriverDebug, 
 	   "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d thread %d", 
-	   nsend, bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM, chan, fd, wrPtr->threads);
+	   nsend, (void *)bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM, 
+	   (void *)chan, fd, wrPtr->threads);
 
     if (wrPtr->threads == 0) {
         Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");

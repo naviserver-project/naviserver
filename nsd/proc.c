@@ -140,7 +140,7 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
     Info          *iPtr;
     int            isNew;
 
-    hPtr = Tcl_CreateHashEntry(&info, (CONST char *)procAddr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&info, (char *)procAddr, &isNew);
     if (isNew == 0) {
         iPtr = Tcl_GetHashValue(hPtr);
     } else {
@@ -176,7 +176,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, void *arg)
     Info                   *iPtr;
     static Info nullInfo =  {NULL, NULL};
 
-    hPtr = Tcl_FindHashEntry(&info, (CONST char *) procAddr);
+    hPtr = Tcl_FindHashEntry(&info, (char *) procAddr);
     if (hPtr != NULL) {
         iPtr = Tcl_GetHashValue(hPtr);
     } else {

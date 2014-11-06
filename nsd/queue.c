@@ -466,7 +466,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	    Ns_MutexUnlock(&poolPtr->threads.lock);
 
 	    Ns_Log(Debug, "[%d] dequeue thread connPtr %p idle %d state %d create %d", 
-		   ThreadNr(poolPtr, argPtr), connPtr, idle, argPtr->state, create);
+		   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, create);
 	}
 
 	/*
@@ -479,7 +479,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     } else {
 	if (Ns_LogSeverityEnabled(Debug)) {
 	    Ns_Log(Debug, "[%d] add waiting connPtr %p => waiting %d create %d", 
-		   ThreadNr(poolPtr, argPtr), connPtr, poolPtr->wqueue.wait.num, create);
+		   ThreadNr(poolPtr, argPtr), (void *)connPtr, poolPtr->wqueue.wait.num, create);
 	}
     }
 
@@ -1418,7 +1418,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     }
 
     if (connPtr->reqPtr == NULL) {
-	Ns_Log(Notice, "=== *********** connPtr %p has no reqPtr, calling close ======", connPtr);
+	Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
         Ns_ConnClose(conn);
         return;
     }

@@ -322,7 +322,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
     assert(httpPtr != NULL);
 
-    Ns_Log(Debug, "ProcessReplyHeaderFields %p", httpPtr->replyHeaders);
+    Ns_Log(Debug, "ProcessReplyHeaderFields %p", (void *)httpPtr->replyHeaders);
 
     encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
 

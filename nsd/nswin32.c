@@ -680,7 +680,7 @@ ns_sockdup(NS_SOCKET sock)
 
     src = (HANDLE) sock;
     hp = GetCurrentProcess();
-    if (!DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+    if (DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS) == 0) {
         return NS_INVALID_SOCKET;
     }
 

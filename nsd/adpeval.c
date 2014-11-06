@@ -451,7 +451,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     }
 
     if (itPtr->adp.cache == NULL) {
-        Ns_DStringPrintf(&tmp, "nsadp:%p", itPtr);
+	Ns_DStringPrintf(&tmp, "nsadp:%p", (void *)itPtr);
         itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
                                itPtr->servPtr->adp.cachesize, FreeInterpPage);
         Ns_DStringTrunc(&tmp, 0);
