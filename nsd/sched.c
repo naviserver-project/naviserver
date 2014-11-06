@@ -409,7 +409,7 @@ Ns_Pause(int id)
 
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
-            if (!(ePtr->flags & NS_SCHED_PAUSED)) {
+            if ((ePtr->flags & NS_SCHED_PAUSED) == 0U) {
                 ePtr->flags |= NS_SCHED_PAUSED;
                 if (ePtr->qid > 0) {
                     DeQueueEvent(ePtr->qid);
@@ -453,7 +453,7 @@ Ns_Resume(int id)
 
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
-            if ((ePtr->flags & NS_SCHED_PAUSED)) {
+            if ((ePtr->flags & NS_SCHED_PAUSED) != 0U) {
                 ePtr->flags &= ~NS_SCHED_PAUSED;
                 time(&now);
                 QueueEvent(ePtr, &now);
@@ -534,7 +534,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
 {
     struct tm      *tp;
 
-    if (ePtr->flags & NS_SCHED_PAUSED) {
+    if ((ePtr->flags & NS_SCHED_PAUSED) != 0U) {
         return;
     }
 
@@ -542,17 +542,17 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
      * Calculate the time from now in seconds this event should run.
      */
 
-    if (ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) {
+    if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0U) {
         tp = ns_localtime(nowPtr);
         tp->tm_sec = ePtr->interval;
         tp->tm_hour = 0;
         tp->tm_min = 0;
-        if (ePtr->flags & NS_SCHED_WEEKLY) {
+        if ((ePtr->flags & NS_SCHED_WEEKLY) != 0U) {
             tp->tm_mday -= tp->tm_wday;
         }
         ePtr->nextqueue = mktime(tp);
         if (ePtr->nextqueue <= *nowPtr) {
-            tp->tm_mday += (ePtr->flags & NS_SCHED_WEEKLY) ? 7 : 1;
+            tp->tm_mday += (ePtr->flags & NS_SCHED_WEEKLY) != 0U ? 7 : 1;
             ePtr->nextqueue = mktime(tp);
         }
     } else {
@@ -784,12 +784,12 @@ SchedThread(void *UNUSED(arg))
         time(&now);
         while (nqueue > 0 && queue[1]->nextqueue <= now) {
             ePtr = DeQueueEvent(1);
-            if (ePtr->flags & NS_SCHED_ONCE) {
+            if ((ePtr->flags & NS_SCHED_ONCE) != 0U) {
                 Tcl_DeleteHashEntry(ePtr->hPtr);
                 ePtr->hPtr = NULL;
             }
             ePtr->lastqueue = now;
-            if (ePtr->flags & NS_SCHED_THREAD) {
+            if ((ePtr->flags & NS_SCHED_THREAD) != 0U) {
                 ePtr->flags |= NS_SCHED_RUNNING;
                 ePtr->laststart = now;
                 ePtr->nextPtr = firstEventPtr;

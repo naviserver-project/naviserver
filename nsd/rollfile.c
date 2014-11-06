@@ -343,8 +343,8 @@ MatchFiles(CONST char *fileName, File **files)
 static int
 CmpFile(const void *arg1, const void *arg2)
 {
-    File *f1Ptr = (File *) arg1;
-    File *f2Ptr = (File *) arg2;
+    const File *f1Ptr = (const File *) arg1;
+    const File *f2Ptr = (const File *) arg2;
 
     if (f1Ptr->mtime < f2Ptr->mtime) {
         return 1;

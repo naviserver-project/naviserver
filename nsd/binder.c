@@ -470,7 +470,7 @@ NsPreBind(const char *args, const char *file)
         } else {
             Tcl_DString line;
             Tcl_DStringInit(&line);
-            while(!Tcl_Eof(chan)) {
+            while(Tcl_Eof(chan) == 0) {
                 Tcl_DStringSetLength(&line, 0);
                 if (Tcl_Gets(chan, &line) > 0) {
                     PreBind(Tcl_DStringValue(&line));

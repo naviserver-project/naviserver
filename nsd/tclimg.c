@@ -462,7 +462,7 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned int w, h;
 
-    if (Tcl_Seek(chan, 16LL, SEEK_SET) == -1 || Tcl_Eof(chan)) {
+    if (Tcl_Seek(chan, 16LL, SEEK_SET) == -1 || Tcl_Eof(chan) == 1) {
         return TCL_ERROR;
     }
 
@@ -506,14 +506,14 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
             }
             if (0xC0 <= i && i <= 0xC3) {
 	        uint32_t first;
-                if (JpegRead2Bytes(chan, &first) && ChanGetc(chan) != EOF
-                    && JpegRead2Bytes(chan, hPtr)
-                    && JpegRead2Bytes(chan, wPtr)) {
+                if (JpegRead2Bytes(chan, &first) == 1 && ChanGetc(chan) != EOF
+                    && JpegRead2Bytes(chan, hPtr) == 1
+                    && JpegRead2Bytes(chan, wPtr) == 1) {
                     return TCL_OK;
                 }
                 break;
             }
-            JpegRead2Bytes(chan, &numBytes);
+            (void) JpegRead2Bytes(chan, &numBytes);
             if (numBytes < 2 || Tcl_Seek(chan, (Tcl_WideInt)numBytes - 2, SEEK_CUR) == -1) {
                 break;
             }
@@ -640,20 +640,20 @@ GetImageType(Tcl_Channel chan)
         return type;
     }
 
-    if (!memcmp(buf, jpeg_magic, sizeof(jpeg_magic))) {
+    if (memcmp(buf, jpeg_magic, sizeof(jpeg_magic)) == 0) {
         unsigned char trail[] = {0x00, 0x00};
 	static const unsigned char jpeg_trail  [] = {0xff, 0xd9};
 
         Tcl_Seek(chan,  0LL, SEEK_END);
         Tcl_Seek(chan, -2LL, SEEK_CUR);
         Tcl_Read(chan, (char*)trail, 2);
-        if (!memcmp(trail, jpeg_trail, 2U)) {
+        if (memcmp(trail, jpeg_trail, 2U) == 0) {
             type = jpeg;
         }
-    } else if (   !memcmp(gif87_magic, buf, sizeof(gif87_magic))
-               || !memcmp(gif89_magic, buf, sizeof(gif89_magic))) {
+    } else if (   memcmp(gif87_magic, buf, sizeof(gif87_magic)) == 0
+               || memcmp(gif89_magic, buf, sizeof(gif89_magic)) == 0) {
         type = gif;
-    } else if (!memcmp(png_magic, buf, sizeof(png_magic))) {
+    } else if (memcmp(png_magic, buf, sizeof(png_magic)) == 0) {
         type = png;
     }
 

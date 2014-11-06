@@ -106,7 +106,7 @@ ConfigServerVhost(const char *server)
     servPtr->vhost.hosthashlevel =
         Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
 
-    if (servPtr->vhost.enabled != 0) {
+    if (servPtr->vhost.enabled == NS_TRUE) {
         Ns_DStringInit(&ds);
         NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
@@ -962,7 +962,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             goto defpath;
         }
 
-    } else if (servPtr->vhost.enabled
+    } else if (servPtr->vhost.enabled == NS_TRUE
                && (rawHost != NULL
                    || ((conn = Ns_GetConn()) != NULL
                        && (headers = Ns_ConnHeaders(conn)) != NULL
@@ -974,7 +974,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
          * Bail out if there are suspicious characters in the unprocessed Host.
          */
 
-        if (!Ns_StrIsHost(rawHost)) {
+        if (Ns_StrIsHost(rawHost) == 0) {
             goto defpath;
         }
 
@@ -986,7 +986,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         safehost = Ns_DStringAppend(&ds, rawHost);
 
         Ns_StrToLower(safehost);
-        if ((servPtr->vhost.opts & NSD_STRIP_WWW)
+        if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0U
             && strncmp(safehost, "www.", 4) == 0) {
             safehost = &safehost[4];
         }

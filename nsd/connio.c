@@ -1223,7 +1223,7 @@ CheckKeep(const Conn *connPtr)
                  * content-length header.
                  */
 		if (((connPtr->flags & NS_CONN_CHUNK) != 0U)
-                        || Ns_SetIGet(connPtr->outputheaders, "Content-Length")
+                        || Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL
                         || HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") != 0) {
 		    return 1;
                 }

@@ -624,7 +624,7 @@ Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
      * already initialised interp which loads the modules.
      */
 
-    if (when & NS_TCL_TRACE_CREATE || when & NS_TCL_TRACE_ALLOCATE) {
+    if ((when & (NS_TCL_TRACE_CREATE|NS_TCL_TRACE_ALLOCATE)) != 0U) {
 	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
 
         if ((*proc)(interp, arg) != TCL_OK) {
@@ -1107,7 +1107,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             Ns_DStringInit(&ds);
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-                if (tracePtr->when & when) {
+	      if ((tracePtr->when & when) != 0U) {
 		  Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
                 }
                 tracePtr = tracePtr->nextPtr;
@@ -1728,15 +1728,13 @@ RunTraces(NsInterp *itPtr, unsigned int why)
 
     if (servPtr != NULL) {
 
-        if ((why & NS_TCL_TRACE_FREECONN)
-            || (why & NS_TCL_TRACE_DEALLOCATE)
-            || (why & NS_TCL_TRACE_DELETE)) {
+	if ((why & (NS_TCL_TRACE_FREECONN|NS_TCL_TRACE_DEALLOCATE|NS_TCL_TRACE_DELETE)) != 0U) {
 
             /* Run finalisation traces in LIFO order. */
 
             tracePtr = servPtr->tcl.lastTracePtr;
             while (tracePtr != NULL) {
-                if ((tracePtr->when & why)) {
+                if ((tracePtr->when & why) != 0U) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
                         Ns_TclLogError(itPtr->interp);
@@ -1750,7 +1748,7 @@ RunTraces(NsInterp *itPtr, unsigned int why)
 
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-                if ((tracePtr->when & why)) {
+                if ((tracePtr->when & why) != 0U) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
                         Ns_TclLogError(itPtr->interp);

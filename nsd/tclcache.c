@@ -446,7 +446,7 @@ noGlobChars(const char *pattern)
 
     assert(pattern != NULL);
 
-    for (c = *p; likely(c); c = *++p) {
+    for (c = *p; likely(c != '\0'); c = *++p) {
 	if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {
             return 0;
         }
