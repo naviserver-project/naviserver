@@ -87,27 +87,32 @@
 typedef enum JobStates {
     JOB_SCHEDULED = 0,
     JOB_RUNNING,
-    JOB_DONE
+    JOB_DONE,
+    JobStatesMax
 } JobStates;
 
 typedef enum JobTypes {
     JOB_NON_DETACHED = 0,
-    JOB_DETACHED
+    JOB_DETACHED,
+    JobTypesMax
 } JobTypes;
 
 typedef enum JobRequests {
     JOB_NONE = 0,
-    JOB_WAIT
+    JOB_WAIT,
+    JobRequestsMax
 } JobRequests;
 
 typedef enum QueueRequests {
     QUEUE_REQ_NONE = 0,
-    QUEUE_REQ_DELETE
+    QUEUE_REQ_DELETE,
+    QueueRequestsMax
 } QueueRequests;
 
 typedef enum ThreadPoolRequests {
     THREADPOOL_REQ_NONE = 0,
-    THREADPOOL_REQ_STOP
+    THREADPOOL_REQ_STOP,
+    ThreadPoolRequestsMax
 } ThreadPoolRequests;
 
 
@@ -117,7 +122,7 @@ typedef enum ThreadPoolRequests {
 
 typedef struct Job {
     struct Job       *nextPtr;
-    CONST char       *server;
+    const char       *server;
     JobStates         state;
     int               code;
     int               cancel;
@@ -179,7 +184,7 @@ typedef struct ThreadPool {
 static void   JobThread(void *arg);
 static Job*   GetNextJob(void);
 
-static Queue* NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThreads)
+static Queue* NewQueue(const char* queueName, const char* queueDesc, int maxThreads)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2) 
     NS_GNUC_RETURNS_NONNULL;
 
@@ -196,7 +201,7 @@ static void   FreeJob(Job *jobPtr)
 
 static int    JobAbort(ClientData clientData, Tcl_Interp *interp, int code);
 
-static int    LookupQueue(Tcl_Interp *interp, CONST char *queueName,
+static int    LookupQueue(Tcl_Interp *interp, const char *queueName,
                           Queue **queuePtr, int locked)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -216,20 +221,20 @@ static const char* GetQueueReqStr(QueueRequests req);
 static const char* GetTpReqStr(ThreadPoolRequests req);
 
 static int AppendField(Tcl_Interp *interp, Tcl_Obj *list,
-                       CONST char *name, CONST char *value)
+                       const char *name, const char *value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
 static int AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list,
-                          CONST char *name, int value)
+                          const char *name, int value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static int AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list,
-                           CONST char *name, long value)
+                           const char *name, long value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static int AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list,
-                             CONST char *name, double value)
+                             const char *name, double value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static double ComputeDelta(const Ns_Time *start, const Ns_Time *end)
@@ -372,7 +377,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     int             code, isNew, opt;
     char            buf[100];
     Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch search;
+    Tcl_HashSearch  search;
 
     static const char *opts[] = {
         "cancel", "create", "delete", "genid", "jobs", "joblist",
@@ -511,7 +516,6 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              *
              * Add a new job the specified queue.
              */
-
 	    int         create = 0, head = 0, detached = 0;
 	    JobTypes    jobType = JOB_NON_DETACHED;
             const char *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
@@ -973,17 +977,17 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             jobList = Tcl_NewListObj(0, NULL);
             hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
             while (hPtr != NULL) {
-		CONST char *jobId1, *jobState, *jobCode, *jobType, *jobReq;
+		const char *jobId1, *jobState, *jobCode, *jobType, *jobReq;
 		char       *jobResults, *jobScript;
 		Tcl_Obj    *jobFieldList;
 		double      delta;
 
                 jobPtr = (Job *)Tcl_GetHashValue(hPtr);
                 jobId1     = Tcl_GetHashKey(&queue->jobs, hPtr);
-                jobCode    = GetJobCodeStr(jobPtr->code);
+                jobCode    = GetJobCodeStr( jobPtr->code);
                 jobState   = GetJobStateStr(jobPtr->state);
-                jobType    = GetJobTypeStr(jobPtr->type);
-                jobReq     = GetJobReqStr(jobPtr->req);
+                jobType    = GetJobTypeStr( jobPtr->type);
+                jobReq     = GetJobReqStr(  jobPtr->req);
                 jobResults = Tcl_DStringValue(&jobPtr->results);
                 jobScript  = Tcl_DStringValue(&jobPtr->script);
                 if (   jobPtr->state == JOB_SCHEDULED
@@ -1054,7 +1058,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             hPtr = Tcl_FirstHashEntry(&tp.queues, &search);
 
             while (hPtr != NULL) {
-	        CONST char *queueReq;
+	        const char *queueReq;
 		Tcl_Obj    *queueFieldList;
 
                 queue = Tcl_GetHashValue(hPtr);
@@ -1122,7 +1126,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              */
 
             Tcl_Obj    *tpFieldList;
-            CONST char *tpReq;
+            const char *tpReq;
 
             /* Create a Tcl List to hold the list of thread fields. */
             tpFieldList = Tcl_NewListObj(0, NULL);
@@ -1167,7 +1171,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 static void
 JobThread(void *UNUSED(arg))
 {
-    CONST char        *err;
+    const char        *err;
     Queue             *queue;
     Tcl_HashEntry     *hPtr;
     Tcl_AsyncHandler  async;
@@ -1425,7 +1429,7 @@ GetNextJob(void)
  */
 
 static Queue*
-NewQueue(CONST char *queueName, CONST char *queueDesc, int maxThreads)
+NewQueue(const char *queueName, const char *queueDesc, int maxThreads)
 {
     Queue *queue;
 
@@ -1581,7 +1585,7 @@ FreeJob(Job *jobPtr)
  *----------------------------------------------------------------------
  */
 static int
-LookupQueue(Tcl_Interp *interp, CONST char *queueName, Queue **queuePtr,
+LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
             int locked)
 {
     Tcl_HashEntry *hPtr;
@@ -1750,7 +1754,7 @@ GetJobCodeStr(int code)
     };
 
     /* Check the caller's input. */
-    if (code > (max_code_index)) {
+    if (code > max_code_index) {
         code = max_code_index;
     }
 
@@ -1777,7 +1781,6 @@ GetJobCodeStr(int code)
 static const char*
 GetJobStateStr(JobStates state)
 {
-    static const int max_state_index = 3;
     static const char *stateArr[] = {
         "scheduled",        /* 0 */
         "running",          /* 1 */
@@ -1785,9 +1788,8 @@ GetJobStateStr(JobStates state)
         "unknown"           /* 3 */
     };
 
-    if (state > max_state_index) {
-        state = max_state_index;
-    }
+    assert((int)JobStatesMax == Ns_NrElements(stateArr) - 1);
+    assert((int)JobStatesMax > (int)state);
 
     return stateArr[state];
 }
@@ -1811,17 +1813,15 @@ GetJobStateStr(JobStates state)
 static const char*
 GetJobTypeStr(JobTypes type)
 {
-    static const int max_type_index = 2;
     static const char *typeArr[] = {
         "nondetached",     /* 0 */
         "detached",        /* 1 */
         "unknown"          /* 2 */
     };
 
-    if (type > max_type_index) {
-        type = max_type_index;
-    }
-
+    assert((int)JobTypesMax == Ns_NrElements(typeArr) - 1);
+    assert((int)JobTypesMax > (int)type);
+    
     return typeArr[type];
 }
 
@@ -1844,16 +1844,14 @@ GetJobTypeStr(JobTypes type)
 static const char*
 GetJobReqStr(JobRequests req)
 {
-    static const int req_max_index = 2;
     static const char *reqArr[] = {
         "none",     /* 0 */
         "wait",     /* 1 */
         "unknown"   /* 2 */
     };
 
-    if (req > req_max_index) {
-        req = req_max_index;
-    }
+    assert((int)JobRequestsMax == Ns_NrElements(reqArr) - 1);
+    assert((int)JobRequestsMax > (int)req);
 
     return reqArr[req];
 }
@@ -1877,15 +1875,14 @@ GetJobReqStr(JobRequests req)
 static const char*
 GetQueueReqStr(QueueRequests req)
 {
-    static const int req_max_index = 1;
     static const char *reqArr[] = {
-        "none",     /* 0 */
-        "delete"    /* 1 */
+        "none",      /* 0 */
+        "delete",    /* 1 */
+        "unknown"    /* 2 */
     };
 
-    if (req > req_max_index) {
-        req = req_max_index;
-    }
+    assert((int)QueueRequestsMax == Ns_NrElements(reqArr) - 1);
+    assert((int)QueueRequestsMax > (int)req);
 
     return reqArr[req];
 }
@@ -1909,15 +1906,14 @@ GetQueueReqStr(QueueRequests req)
 static const char*
 GetTpReqStr(ThreadPoolRequests req)
 {
-    static const int req_max_index = 1;
     static const char *reqArr[] = {
-        "none",     /* 0 */
-        "stop"      /* 1 */
+        "none",      /* 0 */
+        "stop",      /* 1 */
+        "unknown"    /* 2 */
     };
 
-    if (req > req_max_index) {
-        req = req_max_index;
-    }
+    assert((int)ThreadPoolRequestsMax == Ns_NrElements(reqArr) - 1);
+    assert((int)ThreadPoolRequestsMax > (int)req);
 
     return reqArr[req];
 }
@@ -1939,8 +1935,8 @@ GetTpReqStr(ThreadPoolRequests req)
  *----------------------------------------------------------------------
  */
 static int
-AppendField(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
-            CONST char *value)
+AppendField(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
+            const char *value)
 {
     Tcl_Obj *elObj;
 
@@ -1981,7 +1977,7 @@ AppendField(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
  *----------------------------------------------------------------------
  */
 static int
-AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name, int value)
+AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, const char *name, int value)
 {
     Tcl_Obj *elObj;
 
@@ -2023,7 +2019,7 @@ AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name, int value)
  *----------------------------------------------------------------------
  */
 static int
-AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
+AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
                 long value)
 {
     Tcl_Obj *elObj;
@@ -2061,7 +2057,7 @@ AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
  *----------------------------------------------------------------------
  */
 static int
-AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
+AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
                   double value)
 {
     Tcl_Obj *elObj;
