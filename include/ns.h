@@ -269,7 +269,7 @@ enum {
     Dev,
     PredefinedLogSeveritiesCount
 };
-typedef unsigned int Ns_LogSeverity;
+typedef int Ns_LogSeverity;
 
 /*
  * The following enum lists the possible HTTP headers
@@ -2657,7 +2657,7 @@ Ns_StrToUpper(char *string)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_StrToInt(const char *string, int *intPtr)
+Ns_StrToInt(const char *s, int *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
