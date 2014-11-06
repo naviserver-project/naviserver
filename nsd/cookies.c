@@ -100,7 +100,7 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
 		    Ns_UrlQueryDecode(dest, p, NULL);
 		    *q = save;
 		}
-		index = i;
+		index = (int) i;
                 break;
             }
         }
