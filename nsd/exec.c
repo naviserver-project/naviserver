@@ -412,7 +412,8 @@ Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
 	envp = Ns_CopyEnviron(&eds);
     } else {
 	size_t i;
-	for (i = 0I; i < Ns_SetSize(env); ++i) {
+
+	for (i = 0U; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
 				Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
             Ns_DStringNAppend(&eds, "", 1);
