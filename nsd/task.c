@@ -77,7 +77,7 @@ typedef struct Task {
     Ns_TaskProc       *proc;          /* Queue callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
-    unsigned int       events;        /* Poll events. */
+    short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     unsigned int       signal;        /* Signal bits sent to/from queue thread. */
     unsigned int       flags;         /* Flags private to queue. */
@@ -92,7 +92,7 @@ static void JoinQueue(TaskQueue *queuePtr);
 static void StopQueue(TaskQueue *queuePtr);
 static int SignalQueue(Task *taskPtr, unsigned int bit);
 static Ns_ThreadProc TaskThread;
-static void RunTask(Task *taskPtr, unsigned int revents, const Ns_Time *nowPtr);
+static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr);
 
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
 
@@ -111,7 +111,7 @@ static Ns_Mutex   lock;          /* Lock for queue list. */
 
 static const struct {
     unsigned int when;           /* SOCK when bit. */
-    unsigned int event;          /* Poll event bit. */
+    short        event;          /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -466,7 +466,7 @@ Ns_TaskCallback(Ns_Task *task, unsigned int when, const Ns_Time *timeoutPtr)
      * Mark as waiting if there are events or a timeout.
      */
 
-    if (taskPtr->events || timeoutPtr) {
+    if ((taskPtr->events) != 0 || (timeoutPtr != NULL)) {
         taskPtr->flags |= TASK_WAIT;
     } else {
         taskPtr->flags &= ~TASK_WAIT;
@@ -638,21 +638,21 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
  */
 
 static void
-RunTask(Task *taskPtr, unsigned int revents, const Ns_Time *nowPtr)
+RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 {
 
     /*
      * NB: Treat POLLHUP as POLLIN on systems which return it.
      */
 
-    if (revents & POLLHUP) {
+  if ((revents & POLLHUP) != 0) {
         revents |= POLLIN;
     }
-    if (revents != 0U) {
+    if (revents != 0) {
         int i;
 
         for (i = 0; i < 3; ++i) {
-            if (revents & map[i].event) {
+	  if ((revents & map[i].event) != 0) {
                 Call(taskPtr, map[i].when);
             }
         }
@@ -945,7 +945,8 @@ TaskThread(void *arg)
 	 */
 	((void)(n)); /* ignore n */
 
-        if ((pfds[0].revents & POLLIN) && recv(pfds[0].fd, &c, 1, 0) != 1) {
+        if ((pfds[0].revents & POLLIN) != 0
+	    && recv(pfds[0].fd, &c, 1, 0) != 1) {
             Ns_Fatal("queue: trigger read() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }

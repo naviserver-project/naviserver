@@ -397,7 +397,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 
     pfd.revents = 0;
     do {
-        n = ns_poll(&pfd, 1, msec);
+	n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
     } while (n < 0 && errno == EINTR);
 
     if (n > 0) {
@@ -523,7 +523,7 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
     }
     if (sock != NS_INVALID_SOCKET) {
         n = 1;
-        if (saPtr->sin_port != 0) {
+        if (saPtr->sin_port != 0U) {
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                        (char *) &n, sizeof(n));
         }
@@ -634,7 +634,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
     sock = SockConnect(host, port, lhost, lport, 1);
 
     if (sock != NS_INVALID_SOCKET) {
-        len = sizeof(err);
+        len = (socklen_t)sizeof(err);
         err = Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr);
         switch (err) {
         case NS_OK:

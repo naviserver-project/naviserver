@@ -237,16 +237,16 @@ struct iovec {
  * The following is for supporting our own poll() emulation.
  */
 # ifndef POLLIN
-#  define POLLIN                      0x0001U
-#  define POLLPRI                     0x0002U
-#  define POLLOUT                     0x0004U
-#  define POLLERR                     0x0008U
-#  define POLLHUP                     0x0010U
+#  define POLLIN                      0x0001
+#  define POLLPRI                     0x0002
+#  define POLLOUT                     0x0004
+#  define POLLERR                     0x0008
+#  define POLLHUP                     0x0010
 
 struct pollfd {
-    NS_SOCKET      fd;
-    unsigned short events;
-    unsigned short revents;
+    NS_SOCKET fd;
+    short     events;
+    short     revents;
 };
 # endif
 

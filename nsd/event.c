@@ -46,7 +46,7 @@ typedef struct Event {
     Ns_EventProc      *proc;          /* Event callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
-    unsigned int       events;        /* Poll events. */
+    short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;
@@ -83,7 +83,7 @@ typedef struct EventQueue {
 
 static const struct {
     unsigned const int when;  /* Event when bit. */
-    unsigned const int event; /* Poll event bit. */
+    const short event;        /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -204,9 +204,9 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      * Map from sock when bits to poll event bits.
      */
 
-    evPtr->events = 0U;
+    evPtr->events = 0;
     for (i = 0; i < 3; ++i) {
-        if (when & map[i].when) {
+        if ((when & map[i].when) != 0U) {
             evPtr->events |= map[i].event;
         }
     }
@@ -327,7 +327,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     queuePtr->firstWaitPtr = NULL;
 
     while (evPtr != NULL) {
-	unsigned int revents;
+	short revents;
 
         nextPtr = evPtr->nextPtr;
 
@@ -339,9 +339,9 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         if (revents & POLLHUP) {
             revents |= POLLIN;
         }
-        if (revents != 0U) {
+        if (revents != 0) {
             for (i = 0; i < 3; ++i) {
-                if (revents & map[i].event) {
+                if ((revents & map[i].event) != 0) {
                     Call(evPtr, &now, map[i].when);
                 }
             }
