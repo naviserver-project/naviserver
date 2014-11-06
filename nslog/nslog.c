@@ -504,7 +504,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     CONST char **h;
     char        *p, *user, buffer[PIPE_BUF], *bufferPtr = NULL;
     int          n, status, i, fd;
-    size_t	 bufferSize = 0;
+    size_t	 bufferSize = 0U;
     Ns_DString   ds;
 
     Ns_DStringInit(&ds);
@@ -651,11 +651,11 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_DStringAppend(&ds, "\n");
 
     if (logPtr->maxlines == 0) {
-        bufferSize = ds.length ;
+        bufferSize = ds.length;
 	if (bufferSize < PIPE_BUF) {
 	  /* only those write() operations are guaranteed to be atomic */
 	    bufferPtr = ds.string;
-            status = NS_OK;
+           status = NS_OK;
 	} else {
 	    status = LogFlush(logPtr, &ds);
 	}
@@ -684,7 +684,17 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_MutexUnlock(&logPtr->lock);
 
     if (likely(bufferPtr != NULL) && likely(fd >= 0) && likely(bufferSize > 0)) {
+#ifdef _MSC_VER
+      size_t written;
+
+      written = _write(fd, bufferPtr, bufferSize);
+
+      if (written != bufferSize) {
+	  fprintf(stderr, "Warning: write operation to access.log failed\n");
+      }
+#else
       NsAsyncWrite(fd, bufferPtr, bufferSize);
+#endif
     }
 
     Ns_DStringFree(&ds);

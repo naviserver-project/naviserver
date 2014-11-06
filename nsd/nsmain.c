@@ -1126,7 +1126,7 @@ CmdThread(void *arg)
 
     Ns_ThreadSetName("-command-");
 
-    Ns_WaitForStartup();
+    (void)Ns_WaitForStartup();
 
     NsRestoreSignals();
     NsBlockSignal(NS_SIGPIPE);

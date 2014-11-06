@@ -768,7 +768,7 @@ SchedThread(void *UNUSED(arg))
     long            elapsed;
     Event          *ePtr, *readyPtr = NULL;
 
-    Ns_WaitForStartup();
+    (void) Ns_WaitForStartup();
 
     Ns_ThreadSetName("-sched-");
     Ns_Log(Notice, "sched: starting");

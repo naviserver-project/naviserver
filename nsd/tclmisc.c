@@ -545,7 +545,7 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     string = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
     size = (size_t)nbytes;
     result = ns_malloc(1U + (4U * MAX(size,2U)) / 2U);
-    Ns_HtuuEncode(string, size, result);
+    (void)Ns_HtuuEncode(string, size, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
 
     return TCL_OK;

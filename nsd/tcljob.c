@@ -1174,7 +1174,7 @@ JobThread(void *UNUSED(arg))
     Ns_Time           *timePtr, wait;
     int               jpt, njobs, tid;
 
-    Ns_WaitForStartup();
+    (void)Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
     tid = tp.nextThreadId++;
     Ns_ThreadSetName("-ns_job_%x-", tid);

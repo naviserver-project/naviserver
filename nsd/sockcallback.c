@@ -298,7 +298,7 @@ SockCallbackThread(void *UNUSED(arg))
     struct pollfd *pfds;
 
     Ns_ThreadSetName("-socks-");
-    Ns_WaitForStartup();
+    (void)Ns_WaitForStartup();
     Ns_Log(Notice, "socks: starting");
 
     events[0] = POLLIN;
