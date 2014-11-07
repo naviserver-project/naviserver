@@ -40,7 +40,6 @@
 
 #ifdef _WIN32
 #include <io.h>
-#include <stdio.h>
 
 ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
 #endif
@@ -157,7 +156,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 #include <sys/sendfile.h>
 
 static ssize_t
-Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
+Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, const Ns_Time *timeoutPtr);
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
@@ -225,7 +224,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 }
 
 static ssize_t
-Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
+Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, const Ns_Time *timeoutPtr)
 {
     ssize_t sent;
 

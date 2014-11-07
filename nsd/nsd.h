@@ -76,8 +76,9 @@
 #define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
 #define CONN_TCLOUTHDRS                0x04U  /* Output headers set is registered for interp */
 #define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
-#define CONN_TCLHTTP                   0x16U  /* HTTP headers requested by ns_headers */
+#define CONN_TCLHTTP                   0x10U  /* HTTP headers requested by ns_headers */
 
+#define NS_SET_SIZE                    (TCL_INTEGER_SPACE + 2U)
 
 /*
  * For the time being, don't try to be very clever
@@ -502,7 +503,7 @@ typedef struct FormFile {
  */
 
 typedef struct NsLimits {
-    char            *name;
+    const char      *name;
     unsigned int     maxrun;    /* Max conns to run at once */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped */
     size_t	     maxupload; /* Max data accepted */
@@ -559,7 +560,7 @@ typedef struct Conn {
      * after the connection is closed (e.g., within traces).
      */
 
-    char *server;
+    const char *server;
     const char *location;
     char *clientData;
 
@@ -568,7 +569,7 @@ typedef struct Conn {
     struct Driver   *drvPtr;
 
     int id;
-    char idstr[16];
+    char idstr[TCL_INTEGER_SPACE + 4];
 
     Ns_Time acceptTime;          /* time stamp, when the request was accepted */
     Ns_Time requestQueueTime;    /* time stamp, when the request was queued */
@@ -587,8 +588,8 @@ typedef struct Conn {
     Tcl_Encoding outputEncoding;
     Tcl_Encoding urlEncoding;
 
-    Tcl_WideInt nContentSent;
-    Tcl_WideInt responseLength;
+    size_t nContentSent;
+    ssize_t responseLength;
     int responseStatus;
     int recursionCount;
     int keep;
@@ -943,10 +944,10 @@ typedef struct NsInterp {
 
     struct {
         unsigned int  flags;
-        char auth[16];
-        char form[16];
-        char hdrs[16];
-        char outhdrs[16];
+        char auth[NS_SET_SIZE];
+        char form[NS_SET_SIZE];
+        char hdrs[NS_SET_SIZE];
+        char outhdrs[NS_SET_SIZE];
     } nsconn;
 
     /*
@@ -965,7 +966,7 @@ typedef struct NsInterp {
 	char              *debugFile;
 	Ns_Cache	  *cache;
 	int                depth;
-	char		  *cwd;
+	const char	  *cwd;
 	struct AdpFrame	  *framePtr;
 	Ns_Conn		  *conn;
 	Tcl_Channel	   chan;
@@ -1401,8 +1402,8 @@ NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, co
 
 NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime);
 
-NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
-			       int fd, CONST void *data, size_t objLength,
+NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
+			       int fd, const void *data, size_t objLength,
 			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
 /*
  * request parsing

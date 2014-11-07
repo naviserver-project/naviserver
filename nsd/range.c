@@ -114,8 +114,8 @@ NsMatchRange(const Ns_Conn *conn, time_t mtime)
  */
 
 int
-NsConnParseRange(Ns_Conn *conn, CONST char *type,
-                 int fd, CONST void *data, size_t objLength,
+NsConnParseRange(Ns_Conn *conn, const char *type,
+                 int fd, const void *data, size_t objLength,
                  Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
     Conn   *connPtr = (Conn *) conn;
@@ -264,14 +264,14 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     while (*rangestr != '\0' && rangeCount < maxRanges) {
 
         thisPtr = &ranges[rangeCount];
-        if (isdigit(UCHAR(*rangestr))) {
+        if (CHARTYPE(digit, *rangestr) != 0) {
 
             /*
              * Parse: first-byte-pos "-" last-byte-pos
              */
 
 	    start = (off_t)atoll(rangestr);
-            while (isdigit(UCHAR(*rangestr))) {
+            while (CHARTYPE(digit, *rangestr) != 0) {
                 rangestr++;
             }
 
@@ -280,9 +280,9 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
             }
             rangestr++; /* Skip '-' */
 
-            if (isdigit(UCHAR(*rangestr))) {
+            if (CHARTYPE(digit, *rangestr) != 0) {
 	        end = (off_t)atoll(rangestr);
-                while (isdigit(UCHAR(*rangestr))) {
+                while (CHARTYPE(digit, *rangestr) != 0) {
                     rangestr++;
                 }
                 if (end >= (off_t)objLength) {
@@ -299,12 +299,12 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              */
 
             rangestr++; /* Skip '-' */
-            if (!isdigit(UCHAR(*rangestr))) {
+            if (CHARTYPE(digit, *rangestr) == 0) {
                 return 0; /* Invalid syntax? */
             }
 
             end = (off_t)atoll(rangestr);
-            while (isdigit(UCHAR(*rangestr))) {
+            while (CHARTYPE(digit, *rangestr) != 0) {
                 rangestr++;
             }
 
@@ -391,9 +391,9 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
          *  b. for overlapping ranges: collapse into one
          */
 
-        if (prevPtr == NULL
+        if ((prevPtr == NULL)
             || (thisPtr->start > (prevPtr->end + 1))
-            || (prevPtr->start && thisPtr->end < (prevPtr->start - 1))) {
+            || (prevPtr->start != 0 && thisPtr->end < (prevPtr->start - 1))) {
             /* a. */
             prevPtr = thisPtr;
             rangeCount++; /* One more valid range */

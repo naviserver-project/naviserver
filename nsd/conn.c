@@ -298,7 +298,7 @@ Ns_ConnContentFd(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnServer(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -642,16 +642,16 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         }
         location = Ns_DStringAppend(dest, location);
 
-    } else if (servPtr->vhost.enabled
-               && (headers = Ns_ConnHeaders(conn))
-               && (host = Ns_SetIGet(headers, "Host"))
+    } else if (servPtr->vhost.enabled != 0
+               && (headers = Ns_ConnHeaders(conn)) != NULL
+               && (host = Ns_SetIGet(headers, "Host")) != NULL
                && *host != '\0') {
 
         /*
          * Construct a location string from the HTTP host header.
          */
 
-        if (!Ns_StrIsHost(host)) {
+        if (Ns_StrIsHost(host) == 0) {
             goto deflocation;
         }
 
@@ -1279,7 +1279,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
      * Only the "isconnected" option operates without a conn.
      */
 
-    if (unlikely(opt == CIsConnectedIdx)) {
+    if (unlikely(opt == (int)CIsConnectedIdx)) {
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
         return TCL_OK;
     }
@@ -1339,14 +1339,14 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CAuthIdx:
-        if (itPtr->nsconn.flags & CONN_TCLAUTH) {
+        if ((itPtr->nsconn.flags & CONN_TCLAUTH) != 0U) {
             Tcl_SetResult(interp, itPtr->nsconn.auth, TCL_STATIC);
         } else {
             if (connPtr->auth == NULL) {
                 connPtr->auth = Ns_SetCreate(NULL);
             }
             Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC);
-            strcpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp));
+            strncpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp), NS_SET_SIZE);
             itPtr->nsconn.flags |= CONN_TCLAUTH;
         }
         break;
@@ -1369,7 +1369,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
 
-        if ((connPtr->flags & NS_CONN_CLOSED)) {
+        if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {
 	  /* 
 	   * In cases, the content is allocated via mmap, the content
 	   * is unmapped when the socket is closed. Accessing the
@@ -1435,7 +1435,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
              * the previous form data.
              */
             if ((connPtr->urlEncoding != encoding)
-                && (itPtr->nsconn.flags & CONN_TCLFORM)) {
+                && (itPtr->nsconn.flags & CONN_TCLFORM) != 0U) {
 
                 Ns_ConnClearQuery(conn);
                 itPtr->nsconn.flags ^= CONN_TCLFORM;
@@ -1457,27 +1457,27 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CHeadersIdx:
-        if (likely(itPtr->nsconn.flags & CONN_TCLHDRS)) {
+        if (likely((itPtr->nsconn.flags & CONN_TCLHDRS) != 0U)) {
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
-            strcpy(itPtr->nsconn.hdrs, Tcl_GetStringResult(interp));
+            strncpy(itPtr->nsconn.hdrs, Tcl_GetStringResult(interp), NS_SET_SIZE);
             itPtr->nsconn.flags |= CONN_TCLHDRS;
         }
         break;
 
     case COutputHeadersIdx:
-        if (likely(itPtr->nsconn.flags & CONN_TCLOUTHDRS)) {
+        if (likely((itPtr->nsconn.flags & CONN_TCLOUTHDRS) != 0U)) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
-            strcpy(itPtr->nsconn.outhdrs, Tcl_GetStringResult(interp));
+            strncpy(itPtr->nsconn.outhdrs, Tcl_GetStringResult(interp), NS_SET_SIZE);
             itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
         }
         break;
 
     case CFormIdx:
-        if (itPtr->nsconn.flags & CONN_TCLFORM) {
+	if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0U) {
             Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
         } else {
 	    Ns_Set *form = Ns_ConnGetQuery(conn);
@@ -1486,7 +1486,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 itPtr->nsconn.form[0] = '\0';
             } else {
                 Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC);
-                strcpy(itPtr->nsconn.form, Tcl_GetStringResult(interp));
+                strncpy(itPtr->nsconn.form, Tcl_GetStringResult(interp), NS_SET_SIZE);
             }
             itPtr->nsconn.flags |= CONN_TCLFORM;
         }
@@ -1592,7 +1592,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CServerIdx:
-        Tcl_SetResult(interp, Ns_ConnServer(conn), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnServer(conn), -1));
         break;
 
     case CPoolIdx:
@@ -1652,10 +1652,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (objc == 2) {
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj(connPtr->nContentSent));
         } else if (objc == 3) {
-            if (Tcl_GetWideIntFromObj(interp, objv[2], &connPtr->nContentSent)
-                != TCL_OK) {
+	    Tcl_WideInt sent;
+            if (Tcl_GetWideIntFromObj(interp, objv[2], &sent) != TCL_OK) {
                 return TCL_ERROR;
             }
+	    connPtr->nContentSent = (size_t)sent;
         } else {
             Tcl_WrongNumArgs(interp, 2, objv, "?value?");
             return TCL_ERROR;

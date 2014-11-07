@@ -56,7 +56,7 @@ static int CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_O
 static Ns_Entry *CreateEntry(const NsInterp *itPtr, TclCache *cPtr, char *key,
                              int *newPtr, Ns_Time *timeoutPtr);
 static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost);
-static int noGlobChars(CONST char *pattern) 
+static int noGlobChars(const char *pattern) 
     NS_GNUC_NONNULL(1);
 
 static Ns_ObjvProc ObjvCache;
@@ -190,7 +190,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     if ((entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr)) == NULL) {
         return TCL_ERROR;
     }
-    if (!isNew && !force) {
+    if (isNew == 0 && force == 0) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_CacheGetValue(entry),
                                                   (int)Ns_CacheGetSize(entry)));
     } else {
@@ -439,14 +439,14 @@ NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_
  *----------------------------------------------------------------------
  */
 static int
-noGlobChars(CONST char *pattern) 
+noGlobChars(const char *pattern) 
 {
     register char c;
-    CONST char *p = pattern;
+    const char *p = pattern;
 
     assert(pattern != NULL);
 
-    for (c = *p; likely(c); c = *++p) {
+    for (c = *p; likely(c != '\0'); c = *++p) {
 	if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {
             return 0;
         }
@@ -487,7 +487,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
      * cases, or when the option "-exact" is specified, a single hash
      * lookup is sufficient.
      */
-    if (pattern && (exact || noGlobChars(pattern))) {
+    if (pattern != NULL && (exact != 0 || noGlobChars(pattern) != 0)) {
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFindEntry(cPtr->cache, pattern);
         if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {
@@ -507,7 +507,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         while (entry != NULL) {
             char *key = Ns_CacheKey(entry);
 
-            if (pattern == NULL || Tcl_StringMatch(key, pattern)) {
+            if (pattern == NULL || Tcl_StringMatch(key, pattern) == 1) {
                 Tcl_AppendElement(interp, key);
             }
             entry = Ns_CacheNextEntry(&search);

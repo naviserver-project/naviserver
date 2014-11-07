@@ -159,7 +159,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
      */
 
     servPtr = connPtr->poolPtr->servPtr;
-    if ((servPtr->adp.flags & ADP_DEBUG) &&
+    if ((servPtr->adp.flags & ADP_DEBUG) != 0U &&
         conn->request->method != NULL &&
         STREQ(conn->request->method, "GET") &&
         (query = Ns_ConnGetQuery(conn)) != NULL) {
@@ -275,7 +275,7 @@ RegisterPage(ClientData arg,
     assert(method != NULL);
     assert(url != NULL);
 
-    adp = ns_calloc(1U, sizeof(AdpRequest) + ((file != NULL) ? strlen(file) : 0));
+    adp = ns_calloc(1U, sizeof(AdpRequest) + ((file != NULL) ? strlen(file) : 0U));
     if (file != NULL) {
         strcpy(adp->file, file);
     }
@@ -314,7 +314,7 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
     AdpRequest *adp = arg;
     Ns_Time    *expiresPtr;
     Ns_DString  ds;
-    char       *file = NULL, *server = Ns_ConnServer(conn);
+    const char *file = NULL, *server = Ns_ConnServer(conn);
     int         status;
 
     Ns_DStringInit(&ds);
@@ -325,7 +325,7 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
         } else {
             file = ds.string;
         }
-    } else if (!Ns_PathIsAbsolute(adp->file)) {
+    } else if (Ns_PathIsAbsolute(adp->file) == 0) {
         file = Ns_PagePath(&ds, server, adp->file, NULL);
     } else {
         file = adp->file;
@@ -374,11 +374,11 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
     Tcl_DStringAppendElement(dsPtr, adp->file);
 
     Tcl_DStringStartSublist(dsPtr);
-    if (adp->flags & ADP_TCLFILE) {
+    if ((adp->flags & ADP_TCLFILE) != 0U) {
         Tcl_DStringAppendElement(dsPtr, "tcl");
     }
     for (i = 0; i < (sizeof(adpOpts) / sizeof(adpOpts[0])); i++) {
-        if (adp->flags & adpOpts[i].value) {
+	if ((adp->flags & adpOpts[i].value) != 0U) {
             Tcl_DStringAppendElement(dsPtr, adpOpts[i].key);
         }
     }
@@ -451,7 +451,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      * if this is the last flush.
      */
 
-    if (len < 1 && (flags & ADP_FLUSHED)) {
+    if (len < 1 && (flags & ADP_FLUSHED) != 0U) {
         if (stream == 0) {
             NsAdpReset(itPtr);
         }
@@ -462,7 +462,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      * If enabled, trim leading whitespace if no content has been sent yet.
      */
 
-    if ((flags & ADP_TRIM) && !(flags & ADP_FLUSHED)) {
+    if ((flags & ADP_TRIM) != 0U && (flags & ADP_FLUSHED) == 0U) {
         while (len > 0 && CHARTYPE(space, *buf) != 0) {
             ++buf;
             --len;
@@ -483,7 +483,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) || (len == 0 && stream != 0)) {
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0U || (len == 0 && stream != 0)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {
@@ -501,24 +501,24 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                 result = TCL_OK;
             }
         } else {
-            if (conn->flags & NS_CONN_CLOSED) {
+            if ((conn->flags & NS_CONN_CLOSED) != 0U) {
                 result = TCL_OK;
                 Tcl_SetResult(interp, "adp flush failed: connection closed",
                               TCL_STATIC);
             } else {
 		struct iovec sbuf;
 
-                if (!(flags & ADP_FLUSHED) && (flags & ADP_EXPIRE)) {
+                if ((flags & ADP_FLUSHED) == 0U && (flags & ADP_EXPIRE) != 0U) {
                     Ns_ConnCondSetHeaders(conn, "Expires", "now");
                 }
 
-                if (conn->flags & NS_CONN_SKIPBODY) {
+                if ((conn->flags & NS_CONN_SKIPBODY) != 0U) {
                     buf = NULL;
                     len = 0;
                 }
 		
 		sbuf.iov_base = buf;
-		sbuf.iov_len  = len;
+		sbuf.iov_len  = (size_t)len;
                 if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, (stream != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
                     result = TCL_OK;
                 }
@@ -535,7 +535,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
          * Raise an abort exception if autoabort is enabled.
          */
 
-        if (result != TCL_OK && (flags & ADP_AUTOABORT)) {
+        if (result != TCL_OK && (flags & ADP_AUTOABORT) != 0U) {
             Tcl_AddErrorInfo(interp, "\n    abort exception raised");
             NsAdpLogError(itPtr);
             itPtr->adp.exception = ADP_ABORT;

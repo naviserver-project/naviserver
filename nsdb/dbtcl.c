@@ -605,17 +605,22 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case SETEXCEPTION:
-        if (objc != 5) {
-            Tcl_WrongNumArgs(interp, 2, objv, "dbId code message");
-        }
-        if (strlen(Tcl_GetString(objv[3])) > 5) {
-            Tcl_AppendResult(interp, "code \"", Tcl_GetString(objv[3]),
-	        "\" more than 5 characters", NULL);
-            return TCL_ERROR;
-        }
-        Ns_DbSetException(handlePtr, Tcl_GetString(objv[3]), Tcl_GetString(objv[4]));
-        break;
+	{
+	    const char *code;
+	    int codeLen;
 
+	    if (objc != 5) {
+		Tcl_WrongNumArgs(interp, 2, objv, "dbId code message");
+	    }
+	    code = Tcl_GetStringFromObj(objv[3], &codeLen);
+	    if (codeLen > 5) {
+		Tcl_AppendResult(interp, "code \"", code,
+				 "\" more than 5 characters", NULL);
+		return TCL_ERROR;
+	    }
+	    Ns_DbSetException(handlePtr, code, Tcl_GetString(objv[4]));
+	    break;
+	}
     case SP_SETPARAM:
 	{
 	    char *arg5;
@@ -714,13 +719,13 @@ static int
 DbConfigPathObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData *idataPtr = data;
-    char *section;
+    const char *section;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 0, objv, NULL);
     }
     section = Ns_ConfigGetPath(idataPtr->server, NULL, "db", NULL);
-    Tcl_SetResult(interp, section, TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(section, -1));
     return TCL_OK;
 }
 
@@ -867,7 +872,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
     Tcl_DStringInit(&line);
     if (Tcl_Gets(chan, &line) < 0) {
 	Tcl_DStringFree(&line);
-    	if (!Tcl_Eof(chan)) {
+    	if (Tcl_Eof(chan) == 0) {
 	    Tcl_AppendResult(interp, "could not read from ", fileId, ": ", Tcl_PosixError(interp), NULL);
 	    return TCL_ERROR;
 	}

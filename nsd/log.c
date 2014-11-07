@@ -96,21 +96,29 @@ typedef struct LogCache {
  * Local functions defined in this file
  */
 
-static int   LogOpen(void);
-static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
-                      int trunc, int locked) NS_GNUC_NONNULL(1);
-static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt);
-
-static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                              void **addrPtrPtr);
-
-static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
 static Tcl_PanicProc Panic;
 
 static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
 static Ns_LogFilter LogToDString;
+
+static LogCache* GetCache(void)
+    NS_GNUC_RETURNS_NONNULL;
+
+static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+                              void **addrPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
+                      int trunc, int locked) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int   LogOpen(void);
+
+static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  * Static variables defined in this file
@@ -137,8 +145,8 @@ static const char  *severityType = "ns:logseverity";
  */
 
 static struct {
-    char   *string;
-    int     enabled;
+    const char *string;
+    int         enabled;
 } severityConfig[640] = {
     { "Notice",  NS_TRUE  },
     { "Warning", NS_TRUE  },
@@ -149,8 +157,8 @@ static struct {
     { "Dev",     NS_FALSE }
 };
 
-static const int severityCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
-static int severityIdx = 0;
+static const Ns_LogSeverity severityMaxCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
+static Ns_LogSeverity severityIdx = 0;
 
 static Tcl_HashTable severityTable; /* Map severity names to indexes for Tcl. */
 
@@ -177,7 +185,8 @@ NsInitLog(void)
 {
     Tcl_HashEntry *hPtr;
     char           buf[20];
-    int            i, isNew;
+    int            isNew;
+    Ns_LogSeverity i;
 
     Ns_MutexSetName(&lock, "ns:log");
     Ns_TlsAlloc(&tls, FreeCache);
@@ -190,7 +199,7 @@ NsInitLog(void)
      * Initialise the entire space with backwards-compatible integer keys.
      */
 
-    for (i = Dev +1; i < severityCount; i++) {
+    for (i = PredefinedLogSeveritiesCount; i < severityMaxCount; i++) {
         snprintf(buf, sizeof(buf), "%d", i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
@@ -202,7 +211,7 @@ NsInitLog(void)
      * Initialise the built-in severities and lower-case aliases.
      */
 
-    for (i = 0; i < Dev +1; i++) {
+    for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
         (void) Ns_CreateLogSeverity(severityConfig[i].string);
 
         strcpy(buf, severityConfig[i].string);
@@ -312,7 +321,7 @@ Ns_CreateLogSeverity(const char *name)
     Tcl_HashEntry  *hPtr;
     int             isNew;
 
-    if (severityIdx >= severityCount) {
+    if (severityIdx >= severityMaxCount) {
         Ns_Fatal("max log severities exceeded");
     }
     Ns_MutexLock(&lock);
@@ -346,10 +355,10 @@ Ns_CreateLogSeverity(const char *name)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_LogSeverityName(Ns_LogSeverity severity)
 {
-    if (severity < severityCount) {
+    if (severity < severityMaxCount) {
         return severityConfig[severity].string;
     }
     return "Unknown";
@@ -375,7 +384,7 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
 int
 Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
-    if (likely(severity < severityCount)) {
+    if (likely(severity < severityMaxCount)) {
         return severityConfig[severity].enabled;
     }
     return NS_TRUE;
@@ -674,6 +683,9 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     time_t    *tp;
     char      *bp;
 
+    assert(cachePtr != NULL);
+    assert(timePtr != NULL);
+
     if (gmt != 0) {
         tp = &cachePtr->gtime;
         bp = cachePtr->gbuf;
@@ -896,7 +908,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
 	}
 
-	if (severity >= severityCount) {
+	if (severity >= severityMaxCount) {
 	    Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
 	    return TCL_ERROR;
 	}
@@ -1125,6 +1137,9 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
     int        status, nentry = 0;
     LogFilter *cPtr;
     LogEntry  *ePtr = cachePtr->firstEntry;
+
+    assert(cachePtr != NULL);
+    assert(listPtr != NULL);
 
     while (ePtr != NULL && cachePtr->currEntry) {
         char *log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
@@ -1471,6 +1486,10 @@ static int
 GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
 {
     int            i;
+
+    assert(interp != NULL);
+    assert(objPtr != NULL);
+    assert(addrPtrPtr != NULL);
     
     if (Ns_TclGetOpaqueFromObj(objPtr, severityType, addrPtrPtr) != TCL_OK) {
 	Tcl_HashEntry *hPtr;
@@ -1486,7 +1505,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
              * Check for a legacy integer severity.
              */
             if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
-		&& i < severityCount) {
+		&& i < severityMaxCount) {
 		*addrPtrPtr = INT2PTR(i);
             } else {
                 Tcl_AppendResult(interp, "unknown severity: \"",

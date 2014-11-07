@@ -73,12 +73,12 @@ NsConfigRedirects(void)
 }
 
 static int
-ConfigServerRedirects(CONST char *server)
+ConfigServerRedirects(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_Set     *set;
-    CONST char *path;
-    int         i;
+    const char *path;
+    size_t      i;
 
     Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
 
@@ -86,7 +86,7 @@ ConfigServerRedirects(CONST char *server)
     set = Ns_ConfigGetSection(path);
 
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        CONST char *key, *map;
+        const char *key, *map;
 	int status;
 
         key = Ns_SetKey(set, i);

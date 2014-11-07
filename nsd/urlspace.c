@@ -472,7 +472,7 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
-    if (flags & NS_OP_RECURSE) {
+    if ((flags & NS_OP_RECURSE) != 0U) {
         JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
         data = NULL;
     } else {
@@ -798,8 +798,8 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
              */
 
             nodePtr = triePtr->node;
-            if ((flags & NS_OP_NODELETE) == 0) {
-                if ((flags & NS_OP_NOINHERIT) != 0) {
+            if ((flags & NS_OP_NODELETE) == 0U) {
+                if ((flags & NS_OP_NOINHERIT) != 0U) {
                     if (nodePtr->deletefuncNoInherit != NULL) {
                         (*nodePtr->deletefuncNoInherit)
                             (nodePtr->dataNoInherit);
@@ -813,7 +813,7 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
             }
         }
 
-        if (flags & NS_OP_NOINHERIT) {
+        if ((flags & NS_OP_NOINHERIT) != 0U) {
             nodePtr->dataNoInherit = data;
             nodePtr->deletefuncNoInherit = deletefunc;
         } else {
@@ -1055,7 +1055,7 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
          * data.
          */
 
-        if (flags & NS_OP_NOINHERIT) {
+	if ((flags & NS_OP_NOINHERIT) != 0U) {
             data = nodePtr->dataNoInherit;
         } else {
             data = nodePtr->dataInherit;
@@ -1113,7 +1113,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
          * The data will be set to null either way.
          */
 
-        if (flags & NS_OP_NOINHERIT) {
+        if ((flags & NS_OP_NOINHERIT) != 0U) {
             data = nodePtr->dataNoInherit;
             nodePtr->dataNoInherit = NULL;
             if (nodePtr->deletefuncNoInherit != NULL) {
@@ -1416,7 +1416,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
      * dsWord will eventually be used to set or find&reuse a channel filter.
      */
     assert(p != NULL);
-    if ((depth > 0) && (strchr(p, '*') || strchr(p, '?'))) {
+    if ((depth > 0) && (strchr(p, '*') != NULL || strchr(p, '?') != NULL )) {
         Ns_DStringAppend(&dsFilter, p);
         *p = '\0';
     } else {
@@ -1791,7 +1791,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
      */
 
     done = 0;
-    while (!done && *url != '\0') {
+    while (done == 0 && *url != '\0') {
         if (*url != '/') {
             p = strchr(url, '/');
             if (p != NULL) {

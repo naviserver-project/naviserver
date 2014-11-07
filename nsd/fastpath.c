@@ -101,7 +101,7 @@ static int         useGzipRefresh; /* Update outdated gzip files automatically v
 void
 NsConfigFastpath()
 {
-    char  *path;
+    const char  *path;
 
     path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", NULL);
     usemmap = Ns_ConfigBool(path, "mmap", NS_FALSE);

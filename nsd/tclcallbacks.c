@@ -71,7 +71,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbProc, Tcl_Obj *scriptObjPtr
 {
     Ns_TclCallback *cbPtr;
     
-    cbPtr = ns_malloc(sizeof(Ns_TclCallback) + objc * sizeof(char *));
+    cbPtr = ns_malloc(sizeof(Ns_TclCallback) + (size_t)objc * sizeof(char *));
     cbPtr->cbProc = cbProc;
     cbPtr->server = Ns_TclInterpServer(interp);
     cbPtr->script = ns_strdup(Tcl_GetString(scriptObjPtr));

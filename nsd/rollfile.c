@@ -296,7 +296,7 @@ MatchFiles(CONST char *fileName, File **files)
 	    File *fiPtr;
 	    int   ii;
 
-            *files = ns_malloc(sizeof(File) * numElems);
+            *files = ns_malloc(sizeof(File) * (size_t)numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
                 if (Tcl_FSStat(matchElems[ii], &st) != 0) {
 		    int jj;
@@ -343,8 +343,8 @@ MatchFiles(CONST char *fileName, File **files)
 static int
 CmpFile(const void *arg1, const void *arg2)
 {
-    File *f1Ptr = (File *) arg1;
-    File *f2Ptr = (File *) arg2;
+    const File *f1Ptr = (const File *) arg1;
+    const File *f2Ptr = (const File *) arg2;
 
     if (f1Ptr->mtime < f2Ptr->mtime) {
         return 1;

@@ -714,7 +714,7 @@ NsTclThread(void *arg)
      * prior to initiating TclEval.
      */
 
-    Ns_WaitForStartup();
+    (void) Ns_WaitForStartup();
 
     (void) Ns_TclEval(dsPtr, argPtr->server, argPtr->script);
     ns_free(argPtr);

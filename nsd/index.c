@@ -470,15 +470,13 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 void
 Ns_IndexDel(Ns_Index *indexPtr, const void *el)
 {
-    int i;
-    int done;
-    int j;
+    int i, j, done;
 
     assert(indexPtr != NULL);
     assert(el != NULL);
 
     done = 0;
-    for (i = 0; i < indexPtr->n && !done; i++) {
+    for (i = 0; i < indexPtr->n && done == 0; i++) {
         if (indexPtr->el[i] == el) {
             indexPtr->n--;
             if (i < indexPtr->n) {

@@ -712,7 +712,7 @@ void
 NsConfigMimeTypes(void)
 {
     Ns_Set     *set;
-    int         i;
+    size_t      i;
     static int  once = 0;
 
     if (once == 0) {
@@ -728,7 +728,7 @@ NsConfigMimeTypes(void)
          * Add default system types first from above
          */
 
-        for (i = 0; typetab[i].ext != NULL; ++i) {
+        for (i = 0U; typetab[i].ext != NULL; ++i) {
             AddType(typetab[i].ext, typetab[i].type);
         }
     }
@@ -748,7 +748,7 @@ NsConfigMimeTypes(void)
         noextType = defaultType;
     }
 
-    for (i=0; i < Ns_SetSize(set); i++) {
+    for (i = 0U; i < Ns_SetSize(set); i++) {
         AddType(Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
 }
@@ -772,9 +772,9 @@ NsConfigMimeTypes(void)
  */
 
 char *
-Ns_GetMimeType(CONST char *file)
+Ns_GetMimeType(const char *file)
 {
-    CONST char    *start, *ext;
+    const char    *start, *ext;
     Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 
@@ -817,7 +817,7 @@ Ns_GetMimeType(CONST char *file)
 int
 NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    CONST char *type;
+    const char *type;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "filename");

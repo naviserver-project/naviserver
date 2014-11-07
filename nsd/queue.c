@@ -466,7 +466,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	    Ns_MutexUnlock(&poolPtr->threads.lock);
 
 	    Ns_Log(Debug, "[%d] dequeue thread connPtr %p idle %d state %d create %d", 
-		   ThreadNr(poolPtr, argPtr), connPtr, idle, argPtr->state, create);
+		   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, create);
 	}
 
 	/*
@@ -479,7 +479,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     } else {
 	if (Ns_LogSeverityEnabled(Debug)) {
 	    Ns_Log(Debug, "[%d] add waiting connPtr %p => waiting %d create %d", 
-		   ThreadNr(poolPtr, argPtr), connPtr, poolPtr->wqueue.wait.num, create);
+		   ThreadNr(poolPtr, argPtr), (void *)connPtr, poolPtr->wqueue.wait.num, create);
 	}
     }
 
@@ -533,7 +533,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     char        *pool, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
-    static const char *const subcmds[] = {
+    static const char * subcmds[] = {
         "active", "all", "connections", 
 	"filters",
 	"keepalive", 
@@ -558,7 +558,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	SUrl2fileIdx, SWaitingIdx
     };
 
-    static CONST char  *options[]           = {"-server", "-pool", NULL};
+    static const char  *options[]           = {"-server", "-pool", NULL};
     enum                                      {OServerIdx, OPoolIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionServer, Ns_OptionString};
@@ -596,7 +596,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	 || subcmd == SPagedirIdx
 	 || subcmd == SRequestprocsIdx
 	 || subcmd == SUrl2fileIdx)
-	&& pool) {	
+	&& pool != NULL) {	
 	    Tcl_AppendResult(interp, 
 			     "option -pool is not allowed for this subcommand", NULL);
 	    return TCL_ERROR;
@@ -1009,7 +1009,7 @@ NsConnThread(void *arg)
     Ns_Time        wait, *timePtr = &wait;
     unsigned int   id, shutdown;
     int            status = NS_OK, cpt, ncons, timeout, current, fromQueue;
-    char          *path, *exitMsg;
+    const char    *path, *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
     Ns_Mutex      *tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_Mutex      *wqueueLockPtr  = &poolPtr->wqueue.lock;
@@ -1350,7 +1350,7 @@ NsConnThread(void *arg)
 	 * During shutdown, we do not want to restart connection
 	 * threads. The driver pointer might be already invalid. 
 	 */
-	if (wakeup && connPtr && !shutdown) { 
+	if (wakeup != 0 && connPtr != NULL && shutdown == 0) { 
 	    NsWakeupDriver(connPtr->drvPtr); 
 	} 
     }
@@ -1418,7 +1418,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     }
 
     if (connPtr->reqPtr == NULL) {
-	Ns_Log(Notice, "=== *********** connPtr %p has no reqPtr, calling close ======", connPtr);
+	Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
         Ns_ConnClose(conn);
         return;
     }
@@ -1459,9 +1459,9 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
         conn->flags |= NS_CONN_SKIPHDRS;
     }
     if (servPtr->opts.hdrcase != Preserve) {
-        int i;
+	size_t i;
 
-        for (i = 0; i < Ns_SetSize(connPtr->headers); ++i) {
+        for (i = 0U; i < Ns_SetSize(connPtr->headers); ++i) {
             if (servPtr->opts.hdrcase == ToLower) {
                 Ns_StrToLower(Ns_SetKey(connPtr->headers, i));
             } else {
@@ -1766,7 +1766,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
         Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
         snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
-        snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", connPtr->nContentSent);
+        snprintf(buf, sizeof(buf), "%" PRIdz, connPtr->nContentSent);
         Tcl_DStringAppendElement(dsPtr, buf);
     }
     Tcl_DStringEndSublist(dsPtr);

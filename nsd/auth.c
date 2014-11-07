@@ -319,7 +319,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 save2 = *q;
                 *q = '\0';
                 /* Update with current value */
-                (void)Ns_SetPutValue(connPtr->auth, idx, p);
+                Ns_SetPutValue(connPtr->auth, idx, p);
                 *q = save2;
                 /* Advance to the end of the param value, can be end or next name*/
                 while (*q != '\0' && (*q == ',' || *q == '"' || CHARTYPE(space, *q) != 0)) {

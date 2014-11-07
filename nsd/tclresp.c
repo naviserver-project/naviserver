@@ -258,8 +258,11 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     binary = (conn->flags & NS_CONN_WRITE_ENCODED) ? 0 : 1;
 
     for (i = 0, n = 0; i < objc; i++) {
-        if (binary || (binary = NsTclObjIsByteArray(objv[i]))) {
-            sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
+	if (binary == 0) {
+	    binary = NsTclObjIsByteArray(objv[i]);
+	}
+	if (binary != 0) {
+	    sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
         } else {
             sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
         }

@@ -209,14 +209,17 @@ Ns_StrToUpper(char *string)
  */
 
 int
-Ns_StrToInt(const char *string, int *intPtr)
+Ns_StrToInt(const char *s, int *intPtr)
 {
     long  lval;
     char *ep;
 
+    assert(s != NULL);
+    assert(intPtr != NULL);
+
     errno = 0;
-    lval = strtol(string, &ep, string[0] == '0' && string[1] == 'x' ? 16 : 10);
-    if (string[0] == '\0' || *ep != '\0') {
+    lval = strtol(s, &ep, s[0] == '0' && s[1] == 'x' ? 16 : 10);
+    if (s[0] == '\0' || *ep != '\0') {
         return NS_ERROR;
     }
     if ((errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN))

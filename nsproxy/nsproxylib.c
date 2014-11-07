@@ -236,7 +236,7 @@ static Err    CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr);
 static void   SetExpire(Slave *slavePtr, int ms);
 static int    SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr);
 static int    RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr);
-static int    WaitFd(int fd, int events, int ms);
+static int    WaitFd(int fd, short events, int ms);
 
 static int    Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr);
 static void   Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr);
@@ -1229,13 +1229,13 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
  */
 
 static int
-WaitFd(int fd, int event, int ms)
+WaitFd(int fd, short events, int ms)
 {
     struct pollfd pfd;
     int n;
 
     pfd.fd = fd;
-    pfd.events = event | POLLPRI | POLLERR;
+    pfd.events = events | POLLPRI | POLLERR;
     pfd.revents = pfd.events;
     do {
         n = ns_poll(&pfd, 1, ms);

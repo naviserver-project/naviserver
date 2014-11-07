@@ -287,7 +287,7 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
 	}
 	if (firsthdr != 0) {
 	    if (hdrPtr->name != NULL) {
-		ns_free(hdrPtr->name);
+		ns_free((char *)hdrPtr->name);
 	    }
 	    hdrPtr->name = ns_strdup(p);
 	    firsthdr = 0;
@@ -322,7 +322,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
     assert(httpPtr != NULL);
 
-    Ns_Log(Debug, "ProcessReplyHeaderFields %p", httpPtr->replyHeaders);
+    Ns_Log(Debug, "ProcessReplyHeaderFields %p", (void *)httpPtr->replyHeaders);
 
     encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
 
@@ -588,7 +588,8 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     }
     Ns_HttpCheckSpool(httpPtr);
 
-    if (statusVarPtr && !Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status))) {
+    if (statusVarPtr != NULL 
+	&& Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status)) == 0) {
 	goto err;
     }
 
@@ -600,8 +601,9 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 				     (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
     }
 
-    if (fileVarPtr && httpPtr->spoolFd > 0 
-	&& !Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1))) {
+    if (fileVarPtr != NULL 
+	&& httpPtr->spoolFd > 0 
+	&& Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1)) == 0) {
 	goto err;
     }
 
@@ -746,7 +748,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
      * Submit provided headers
      */
     if (hdrPtr != NULL) {
-	int i;
+	size_t i;
 
 	/*
 	 * Remove the header fields, we are providing
@@ -755,7 +757,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
 	Ns_SetIDeleteKey(hdrPtr, "Connection");
 	Ns_SetIDeleteKey(hdrPtr, "Content-Length");
 
-	for (i = 0; i < Ns_SetSize(hdrPtr); i++) {
+	for (i = 0U; i < Ns_SetSize(hdrPtr); i++) {
 	    char *key = Ns_SetKey(hdrPtr, i);
 	    if (uaFlag != 0) {
 		uaFlag = strcasecmp(key, "User-Agent");

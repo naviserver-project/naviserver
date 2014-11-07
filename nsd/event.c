@@ -46,7 +46,7 @@ typedef struct Event {
     Ns_EventProc      *proc;          /* Event callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
-    unsigned int       events;        /* Poll events. */
+    short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;
@@ -83,7 +83,7 @@ typedef struct EventQueue {
 
 static const struct {
     unsigned const int when;  /* Event when bit. */
-    unsigned const int event; /* Poll event bit. */
+    const short event;        /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -204,9 +204,9 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      * Map from sock when bits to poll event bits.
      */
 
-    evPtr->events = 0U;
+    evPtr->events = 0;
     for (i = 0; i < 3; ++i) {
-        if (when & map[i].when) {
+        if ((when & map[i].when) != 0U) {
             evPtr->events |= map[i].event;
         }
     }
@@ -223,7 +223,7 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      * Add to the waiting list if there are events or a timeout.
      */
 
-    if (evPtr->events || timeoutPtr) {
+    if (evPtr->events != 0U || timeoutPtr != NULL) {
         evPtr->status = EVENT_WAIT;
     } else {
         evPtr->status = EVENT_DONE;
@@ -311,10 +311,11 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      */
     ((void)(n)); /* ignore n */
 
-    if (queuePtr->pfds[0].revents & POLLIN
-        && recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1) {
-        Ns_Fatal("event queue: trigger read() failed: %s",
-                 ns_sockstrerror(ns_sockerrno));
+    if (((queuePtr->pfds[0].revents & POLLIN) != 0U)
+        && (recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1)
+	) {
+	Ns_Fatal("event queue: trigger read() failed: %s",
+		 ns_sockstrerror(ns_sockerrno));
     }
 
     /*
@@ -326,7 +327,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     queuePtr->firstWaitPtr = NULL;
 
     while (evPtr != NULL) {
-	unsigned int revents;
+	short revents;
 
         nextPtr = evPtr->nextPtr;
 
@@ -338,9 +339,9 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         if (revents & POLLHUP) {
             revents |= POLLIN;
         }
-        if (revents != 0U) {
+        if (revents != 0) {
             for (i = 0; i < 3; ++i) {
-                if (revents & map[i].event) {
+                if ((revents & map[i].event) != 0) {
                     Call(evPtr, &now, map[i].when);
                 }
             }

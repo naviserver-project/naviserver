@@ -488,7 +488,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *charset  = NULL, part;
     Tcl_Encoding encoding = NULL;
 
-    static const char  *const options[]     = {"-charset", "-part", NULL};
+    static const char  *options[]           = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
@@ -555,7 +555,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *charset = NULL, part;
     int          nextArgIdx;
     Tcl_Encoding encoding = NULL;
-    static const char  *const options[]     = {"-charset", "-part", NULL};
+    static const char  *options[]           = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
@@ -718,15 +718,15 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 	if (unlikely(p[0] == '%') &&
             (i = enc[UCHAR(p[1])].hex) >= 0 &&
             (j = enc[UCHAR(p[2])].hex) >= 0) {
-            *q++ = (unsigned char) ((i << 4) + j);
+	    *q++ = UCHAR((UCHAR(i) << 4U) + UCHAR(j));
             p += 3;
         } else if (unlikely(p[0] == '+') && part == 'q') {
             *q++ = ' ';
-            ++p;
+            p++;
         } else {
             *q++ = *p++;
         }
-        ++n;
+        n++;
     }
     /* Ensure our new string is terminated */
     *q = '\0';

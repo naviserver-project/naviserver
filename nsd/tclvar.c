@@ -434,10 +434,9 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclNsvUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = clientData;
-     Tcl_Obj  *arrayObj;
+    Tcl_Obj  *arrayObj;
     Array    *arrayPtr;
     char     *key = NULL;
     int       nocomplain = 0, result = TCL_OK;
@@ -463,36 +462,34 @@ NsTclNsvUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         }
         return TCL_ERROR;
     }
+    assert(arrayPtr != NULL);
 
     if (Unset(arrayPtr, key) != NS_OK && key != NULL) {
         Tcl_AppendResult(interp, "no such key: ", key, NULL);
         result = TCL_ERROR;
     }
-    UnlockArray(arrayPtr);
 
     /*
-     * If everything went well, delete the array entry, free the hash
-     * table and invalidate the Tcl_Obj.
+     * If everything went well and we have no key specified, delete
+     * the array entry.
      */
     if (result == TCL_OK && key == NULL) {
-	NsServer       *servPtr = itPtr->servPtr;
-	Bucket         *bucketPtr;
-	const char     *arrayString = Tcl_GetString(arrayObj);
-	unsigned int    index = BucketIndex(arrayString);
-	Tcl_HashEntry  *hPtr;
+	/*
+	 * Delete the hash-table of this array and the entry in the
+	 * table of array names.
+	 */
+	Tcl_DeleteHashTable(&arrayPtr->vars);
+	Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+    }
+    UnlockArray(arrayPtr);
 
-	bucketPtr = &servPtr->nsv.buckets[index % (unsigned int)servPtr->nsv.nbuckets];
-
-	Ns_MutexLock(&bucketPtr->lock);
-	hPtr = Tcl_FindHashEntry(&bucketPtr->arrays, arrayString);
-	    
-	if (hPtr != NULL) {
-	    Tcl_DeleteHashTable(&arrayPtr->vars);
-	    ns_free(arrayPtr);
-	    Tcl_DeleteHashEntry(hPtr);
-	    Ns_TclSetTwoPtrValue(arrayObj, NULL, NULL, NULL);
-	}
-	Ns_MutexUnlock(&bucketPtr->lock);
+    if (result == TCL_OK && key == NULL) {
+	/*
+	 * Free the actual array data strucure and invalidate the
+	 * Tcl_Obj.
+	 */
+	ns_free(arrayPtr);
+	Ns_TclSetTwoPtrValue(arrayObj, NULL, NULL, NULL);
     }
 
     return result;
@@ -629,6 +626,20 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         break;
 
     case CSizeIdx:
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "array");
+            return TCL_ERROR;
+        }
+        arrayPtr = LockArrayObj(interp, objv[2], 0);
+        if (arrayPtr == NULL) {
+            size = 0;
+        } else {
+            size = arrayPtr->vars.numEntries;
+            UnlockArray(arrayPtr);
+        }
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+        break;
+
     case CExistsIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "array");
@@ -638,14 +649,10 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         if (arrayPtr == NULL) {
             size = 0;
         } else {
-            size = (opt == CSizeIdx) ? arrayPtr->vars.numEntries : 1;
+            size = 1;
             UnlockArray(arrayPtr);
         }
-        if (opt == CExistsIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
-        } else {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
-        }
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
         break;
 
     case CGetIdx:

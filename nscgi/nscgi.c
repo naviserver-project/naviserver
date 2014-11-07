@@ -113,7 +113,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  * Functions defined in this file.
  */
 static Ns_OpProc CgiRequest;
-static void     CgiRegister(Mod *modPtr, char *map);
+static void     CgiRegister(Mod *modPtr, const char *map);
 static Ns_Callback CgiFreeMap;
 static Ns_DString *CgiDs(Cgi *cgiPtr);
 static int	CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn);
@@ -149,7 +149,7 @@ NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     const char     *path, *section;
-    int             i;
+    size_t          i;
     Ns_Set         *set;
     Ns_DString      ds;
     Mod		   *modPtr;
@@ -224,9 +224,9 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     set = Ns_ConfigGetSection(path);
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        char *key   = Ns_SetKey(set, i);
-        char *value = Ns_SetValue(set, i);
+    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+        const char *key   = Ns_SetKey(set, i);
+        const char *value = Ns_SetValue(set, i);
         if (STRIEQ(key, "map")) {
             CgiRegister(modPtr, value);
         }
@@ -381,7 +381,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     struct stat     st;
     char           *e, *s;
     const char     *url = conn->request->url;
-    char	   *server = Ns_ConnServer(conn);
+    const char	   *server = Ns_ConnServer(conn);
 
     modPtr = mapPtr->modPtr;
     memset(cgiPtr, 0, ((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
@@ -788,8 +788,10 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     s += 3;               /* Get past the protocol://  */
     p = strchr(s, ':');   /* Get to the port number    */
     if (p != NULL) {
+	size_t i;
+
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
-        for (i = 0; *p != '\0'; ++p) {
+        for (i = 0U; *p != '\0'; ++p) {
             ++i;
         }
         Ns_DStringTrunc(dsPtr, i);
@@ -851,7 +853,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Ns_DStringAppend(dsPtr, "HTTP_");
-    for (i = 0; i < Ns_SetSize(conn->headers); ++i) {
+    for (i = 0; (size_t)i < Ns_SetSize(conn->headers); ++i) {
 	int index;
 
         s = Ns_SetKey(conn->headers, i);
@@ -1163,7 +1165,7 @@ NextWord(char *s)
  */
 
 static void
-CgiRegister(Mod *modPtr, char *map)
+CgiRegister(Mod *modPtr, const char *map)
 {
     char           *method;
     char           *url;
@@ -1188,7 +1190,7 @@ CgiRegister(Mod *modPtr, char *map)
     } else {
     	Ns_NormalizePath(&ds2, path);
     	path = ds2.string;
-    	if (!Ns_PathIsAbsolute(path) || access(path, R_OK) != 0) {
+    	if (Ns_PathIsAbsolute(path) == 0 || access(path, R_OK) != 0) {
             Ns_Log(Error, "nscgi: invalid directory: %s", path);
 	    goto done;
 	}

@@ -96,7 +96,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     status = TCL_OK;
 
     if (isbool != 0) {
-        if (value && ((status = Tcl_GetBoolean(interp, value, &i)) == TCL_OK)) {
+        if (value != NULL && ((status = Tcl_GetBoolean(interp, value, &i)) == TCL_OK)) {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
             return TCL_OK;
         }

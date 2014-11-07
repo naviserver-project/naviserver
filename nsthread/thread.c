@@ -334,7 +334,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
         if (proc != NULL) {
 	    (*proc)(dsPtr, (void *)thrPtr->proc, thrPtr->arg);
         } else {
-            snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
+	    snprintf(buf, sizeof(buf), " %p %p", (void *)thrPtr->proc, (void *)thrPtr->arg);
             Tcl_DStringAppend(dsPtr, buf, -1);
         }
         snprintf(buf, sizeof(buf), " %" PRIuMAX , (uintmax_t) thrPtr->ostid);

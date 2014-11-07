@@ -183,7 +183,7 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     while (hPtr != NULL) {
         char *limits = Tcl_GetHashKey(&limtable, hPtr);
 
-        if (pattern == NULL || Tcl_StringMatch(limits, pattern)) {
+        if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
             Tcl_AppendElement(interp, limits);
         }
         hPtr = Tcl_NextHashEntry(&search);
@@ -233,10 +233,10 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         return TCL_ERROR;
     }
     if (maxrun > -1) {
-        limitsPtr->maxrun = maxrun;
+	limitsPtr->maxrun = (unsigned int)maxrun;
     }
     if (maxwait > -1) {
-        limitsPtr->maxwait = maxwait;
+        limitsPtr->maxwait = (unsigned int)maxwait;
     }
     if (maxupload > -1) {
 	limitsPtr->maxupload = (size_t)maxupload;
@@ -333,8 +333,8 @@ FindLimits(const char *limits, int create)
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);
             Ns_MutexSetName2(&limitsPtr->lock, "ns:limits", limits);
-            limitsPtr->maxrun = limitsPtr->maxwait = 100;
-            limitsPtr->maxupload = 10 * 1024 * 1000; /* NB: 10meg limit. */
+            limitsPtr->maxrun = limitsPtr->maxwait = 100U;
+            limitsPtr->maxupload = 10U * 1024U * 1000U; /* NB: 10meg limit. */
             limitsPtr->timeout = 60;
             Tcl_SetHashValue(hPtr, limitsPtr);
         }

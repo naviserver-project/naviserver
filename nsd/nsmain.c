@@ -457,7 +457,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      */
 
     servers = Ns_ConfigCreateSection("ns/servers");
-    if (Ns_SetSize(servers) == 0) {
+    if (Ns_SetSize(servers) == 0U) {
         Ns_SetPut(servers, "default", "Default NaviServer");
     }
 
@@ -629,7 +629,9 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     if (server != NULL) {
         NsInitServer(server, initProc);
     } else {
-        for (i = 0; i < Ns_SetSize(servers); ++i) {
+	size_t i;
+
+        for (i = 0U; i < Ns_SetSize(servers); ++i) {
             server = Ns_SetKey(servers, i);
             NsInitServer(server, initProc);
         }
@@ -1128,7 +1130,7 @@ CmdThread(void *arg)
 
     Ns_ThreadSetName("-command-");
 
-    Ns_WaitForStartup();
+    (void)Ns_WaitForStartup();
 
     NsRestoreSignals();
     NsBlockSignal(NS_SIGPIPE);

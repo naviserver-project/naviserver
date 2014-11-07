@@ -353,7 +353,7 @@ NsInstallService(char *service)
 
     if (_fullpath(config, nsconf.config, sizeof(config)) == NULL) {
         Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.config);
-    } else if (!GetModuleFileName(NULL, nsd, sizeof(nsd))) {
+    } else if (GetModuleFileName(NULL, nsd, sizeof(nsd)) == 0) {
         Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
     } else {
         Ns_DStringInit(&name);
@@ -680,7 +680,7 @@ ns_sockdup(NS_SOCKET sock)
 
     src = (HANDLE) sock;
     hp = GetCurrentProcess();
-    if (!DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+    if (DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS) == 0) {
         return NS_INVALID_SOCKET;
     }
 

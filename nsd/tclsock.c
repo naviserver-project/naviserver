@@ -561,8 +561,8 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "can't connect to \"", host, ":",
                                Tcl_GetString(objv[first+1]), "\"; ",
-                               Tcl_GetErrno() ? 
-                               Tcl_PosixError(interp):"reason unknown", NULL);
+                               (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown", 
+			       NULL);
         return TCL_ERROR;
     }
     
@@ -1155,7 +1155,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
     int          ok;
     Callback    *cbPtr = arg;
 
-    if (why != NS_SOCK_EXIT || (cbPtr->when & NS_SOCK_EXIT)) {
+    if (why != NS_SOCK_EXIT || ((cbPtr->when & NS_SOCK_EXIT) != 0U)) {
         Tcl_Interp  *interp;
 	char        *w;
         int          result;
