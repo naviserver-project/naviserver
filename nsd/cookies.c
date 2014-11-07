@@ -390,7 +390,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *name;
     int          status = TCL_OK, nextArgIdx, idx = -1;
 
-    static const char  *const options[]     = {"-include_set_cookies", NULL};
+    static const char  *options[]           = {"-include_set_cookies", NULL};
     enum                                      {OSetCookiesIdx};
     ClientData          optionClientData[2] = {NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionBoolean};

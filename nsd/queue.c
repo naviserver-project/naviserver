@@ -533,7 +533,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     char        *pool, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
-    static const char *const subcmds[] = {
+    static const char * subcmds[] = {
         "active", "all", "connections", 
 	"filters",
 	"keepalive", 
@@ -558,7 +558,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	SUrl2fileIdx, SWaitingIdx
     };
 
-    static CONST char  *options[]           = {"-server", "-pool", NULL};
+    static const char  *options[]           = {"-server", "-pool", NULL};
     enum                                      {OServerIdx, OPoolIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionServer, Ns_OptionString};
@@ -1764,7 +1764,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
         Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
         snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
-        snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", connPtr->nContentSent);
+        snprintf(buf, sizeof(buf), "%" PRIdz, connPtr->nContentSent);
         Tcl_DStringAppendElement(dsPtr, buf);
     }
     Tcl_DStringEndSublist(dsPtr);

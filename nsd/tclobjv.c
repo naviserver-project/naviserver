@@ -102,7 +102,7 @@ Ns_OptionServer(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *
 }
 
 int 
-Ns_ParseOptions(const char *const options[], Ns_OptionConverter *const converter[], 
+Ns_ParseOptions(const char *options[], Ns_OptionConverter *const converter[], 
 		ClientData clientData[], Tcl_Interp *interp, int offset, 
 		int max, int *nextArg, int objc, Tcl_Obj *CONST* objv) {
     int i = offset, opt;

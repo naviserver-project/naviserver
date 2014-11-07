@@ -1650,7 +1650,7 @@ NS_EXTERN Ns_OptionConverter Ns_OptionServer;
 #define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof((arr)[0])))
 
 NS_EXTERN int
-Ns_ParseOptions(const char *const options[], Ns_OptionConverter *const converter[], 
+Ns_ParseOptions(const char *options[], Ns_OptionConverter *const converter[], 
 		ClientData clientData[], Tcl_Interp *interp, int offset, 
 		int max, int *nextArg, int objc, Tcl_Obj *CONST* objv);
 
