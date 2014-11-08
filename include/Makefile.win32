@@ -139,7 +139,7 @@ LIBS	= $(LIBS) tcl84t.lib
 # Common compiler and linker options.
 #
 
-COPTS	= /W3 /nologo /c
+COPTS	= /W1 /nologo /c
 
 DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
 		  /D "FD_SETSIZE=128" /D "_MBCS" \
