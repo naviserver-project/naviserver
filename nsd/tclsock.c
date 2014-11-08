@@ -1196,7 +1196,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
         Tcl_DStringAppendElement(&script, w);
         result = Tcl_EvalEx(interp, script.string, script.length, 0);
         if (result != TCL_OK) {
-            Ns_TclLogError(interp);
+	  (void) Ns_TclLogErrorInfo(interp, "\n(context: sock proc)");
         } else {
 	    Tcl_Obj *objPtr;
 
@@ -1268,7 +1268,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
     }
 
     if (result != TCL_OK) {
-        Ns_TclLogError(interp);
+	(void) Ns_TclLogErrorInfo(interp, "\n(context: listen callback)");
     }
 
     Ns_TclDeAllocateInterp(interp);

@@ -385,7 +385,7 @@ retry:
         }
 
 	if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
-	    Ns_TclLogError(interp);
+	    (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
 	}
 	Tcl_AppendResult(interp, "\r\n", NULL);
 	res = Tcl_GetStringResult(interp);

@@ -172,7 +172,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
             Ns_GetProcInfo(&ds, (Ns_Callback *)cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
             if (deallocInterp != 0) {
-                Ns_TclLogError(interp);
+		(void) Ns_TclLogErrorInfo(interp, NULL);
             }
         } else if (result != NULL) {
             Ns_DStringAppend(result, Tcl_GetStringResult(interp));

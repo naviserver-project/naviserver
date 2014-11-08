@@ -725,7 +725,7 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
     Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optind), TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
-        Ns_TclLogError(interp);
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: config eval)");
         Ns_Fatal("config error");
     }
     Ns_TclDestroyInterp(interp);

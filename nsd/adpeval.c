@@ -964,8 +964,7 @@ NsAdpLogError(NsInterp *itPtr)
                              Ns_SetValue(conn->headers, i));
         }
     }
-    Tcl_AddErrorInfo(interp, ds.string);
-    err = Ns_TclLogError(interp);
+    err = Ns_TclLogErrorInfo(interp, ds.string);
     if ((itPtr->adp.flags & ADP_DISPLAY) != 0U) {
         Ns_DStringTrunc(&ds, 0);
         Ns_DStringAppend(&ds, "<br><pre>\n");

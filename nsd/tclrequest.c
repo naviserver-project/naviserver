@@ -446,7 +446,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
             Ns_DStringFree(&ds);
             status = Ns_ConnReturnUnavailable(conn);
         } else {
-	    (void)Ns_TclLogError(interp);
+	    (void) Ns_TclLogErrorInfo(interp, "\n(context: request proc)");
             status = Ns_ConnReturnInternalError(conn);
         }
     }
@@ -534,10 +534,10 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
         if (NsTclTimeoutException(interp)) {
 	    Ns_GetProcInfo(&ds, (Ns_Callback *)NsTclFilterProc, arg);
 	    Ns_Log(Dev, "%s: %s", ds.string, result);
-            (void)Ns_ConnReturnUnavailable(conn);
+            (void) Ns_ConnReturnUnavailable(conn);
             status = NS_FILTER_RETURN;
         } else {
-            (void)Ns_TclLogError(interp);
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: filter proc)");
             status = NS_ERROR;
         }
     } else {

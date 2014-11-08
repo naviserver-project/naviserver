@@ -149,11 +149,11 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
     NsInterp    *itPtr = NsGetInterpData(interp);
-    CONST char  *errorInfo, **logHeaders;
+    const char  *errorInfo, **logHeaders;
     Ns_DString   ds;
 
     if (extraInfo != NULL) {
@@ -212,7 +212,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_TclLogError(Tcl_Interp *interp)
 {
     return Ns_TclLogErrorInfo(interp, NULL);
@@ -235,7 +235,7 @@ Ns_TclLogError(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
 {
     return Ns_TclLogErrorInfo(interp, NULL);

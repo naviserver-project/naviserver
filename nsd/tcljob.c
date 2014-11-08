@@ -1267,7 +1267,7 @@ JobThread(void *UNUSED(arg))
          */
 
         if (jobPtr->type == JOB_DETACHED && jobPtr->code != TCL_OK) {
-            Ns_TclLogError(interp);
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: detached job)");
         }
 
         /*

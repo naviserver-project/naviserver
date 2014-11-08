@@ -2829,17 +2829,19 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
      NS_GNUC_PRINTF(2, 3);
 
-NS_EXTERN CONST char *
+NS_EXTERN const char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN CONST char *
+NS_EXTERN const char *
 Ns_TclLogError(Tcl_Interp *interp)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_DEPRECATED_FOR(Ns_TclLoggErrorInfo);
 
-NS_EXTERN CONST char *
+NS_EXTERN const char *
 Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
-    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_TclLoggErrorInfo);
+    NS_GNUC_NONNULL(1) 
+    NS_GNUC_DEPRECATED_FOR(Ns_TclLoggErrorInfo);
 
 NS_EXTERN void
 Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const char *explanation)

@@ -1208,7 +1208,7 @@ CheckKeep(const Conn *connPtr)
 			   connPtr->request->line);
 		    return 0;
 		} else if (connPtr->drvPtr->keepmaxdownloadsize > 0U
-			   && connPtr->responseLength > 0U
+			   && connPtr->responseLength > 0
 			   && (size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
 		    Ns_Log(Notice, 
 			   "Disallow keep-alive response length %" PRIdz " "
