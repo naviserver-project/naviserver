@@ -156,11 +156,11 @@ typedef int32_t ssize_t;
 #  define mktemp                      _mktemp
 #  define open                        _open
 #  define putenv                      _putenv
-#  define read                        _read
+#  define read(fd,buf,nbyte)          _read((fd),(buf),(unsigned int)(nbyte))
 #  define snprintf                    _snprintf
 #  define unlink                      _unlink
 #  define vsnprintf                   _vsnprintf
-#  define write                       _write
+#  define write(fd,buf,nbyte)         _write((fd),(buf),(unsigned int)(nbyte))
 
 #  define ftruncate(f,s)              chsize((f),(s))
 
@@ -185,15 +185,19 @@ typedef int32_t ssize_t;
 # define NS_SIGPIPE                13
 # define NS_SIGTERM                15
 
-# define DEVNULL	             "nul:"
+# define DEVNULL	           "nul:"
 
-# define sleep(n)                    (Sleep((n)*1000))
-# define mkdir(d,m)                  _mkdir((d))
-# define strcasecmp                  _stricmp
-# define strncasecmp                 _strnicmp
+# define sleep(n)                  (Sleep((n)*1000))
+# define mkdir(d,m)                _mkdir((d))
+# define strcasecmp                _stricmp
+# define strncasecmp               _strnicmp
 
-
-# define mkstemp		     ns_mkstemp
+# define ns_sockclose              closesocket
+# define ns_sockioctl              ioctlsocket
+# define ns_sockerrno              GetLastError()
+# define ns_sockstrerror           NsWin32ErrMsg
+# define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),flgs)
+# define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),flgs)
 
 /*
  * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
@@ -374,7 +378,17 @@ typedef struct DIR_ *DIR;
 # define NS_SIGPIPE                  SIGPIPE
 # define NS_SIGTERM                  SIGTERM
 
-# define DEVNULL	                    "/dev/null"
+# define DEVNULL	            "/dev/null"
+
+# define ns_mkstemp	 	    mkstemp
+# define ns_recv                    recv
+# define ns_send                    send
+# define ns_sockclose               close
+# define ns_sockdup                 dup
+# define ns_sockerrno               errno
+# define ns_sockioctl               ioctl
+# define ns_socknbclose             close
+# define ns_sockstrerror            strerror
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))

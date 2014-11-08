@@ -370,14 +370,14 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 	if (httpPtr->replyHeaderSize == 0) {
 	    eoh = strstr(httpPtr->ds.string, "\r\n\r\n");
 	    if (eoh != NULL) {
-		httpPtr->replyHeaderSize = (eoh - httpPtr->ds.string) + 4;
+		httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 4;
 		eoh += 2;
 		*eoh = '\0';
 	    } else {
 		eoh = strstr(httpPtr->ds.string, "\n\n");
 		if (eoh != NULL) {
 		    Ns_Log(Warning, "HttpCheckHeader: http client reply contains no crlf, this should not happen");
-		    httpPtr->replyHeaderSize = (eoh - httpPtr->ds.string) + 2;
+		    httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 2U;
 		    eoh += 1;
 		    *eoh = '\0';
 		}
@@ -449,7 +449,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		     */
 		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13U);
 		    sprintf(httpPtr->spoolFileName, "%s/http.XXXXXX", nsconf.tmpDir);
-		    fd = mkstemp(httpPtr->spoolFileName);
+		    fd = ns_mkstemp(httpPtr->spoolFileName);
 		    
 		    if (fd == -1) {
 		      Ns_Log(Error, "ns_http: cannot create spool file with template '%s': %s", 

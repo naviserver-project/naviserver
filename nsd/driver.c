@@ -2336,7 +2336,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16U);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
-            sockPtr->tfd = mkstemp(sockPtr->tfile);
+            sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
 	    if (sockPtr->tfd == -1) {
 	      Ns_Log(Error, "nssock: cannot create spool file with template '%s': %s", 
 		     sockPtr->tfile, strerror(errno));
@@ -2379,7 +2379,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
     
     if (sockPtr->tfd > 0) {
-        if (write(sockPtr->tfd, tbuf, n) != n) {
+	if (write(sockPtr->tfd, tbuf, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
     } else {
@@ -3515,7 +3515,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 
 	if (curPtr->fd > -1) {
 	    curPtr->c.file.bufsize -= n;
-	    curPtr->c.file.bufoffset = n;
+	    curPtr->c.file.bufoffset = (off_t)n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
 	    if (n < (ssize_t)toWrite) {
@@ -4395,7 +4395,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 		}
 		wrPtr->maxsize = (size_t)value;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->maxsize));
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
 
 	} else {
 	    if (objc == 4) {

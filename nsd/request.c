@@ -493,7 +493,7 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 {
     char           *sep;
     char           *value;
-    int             index;
+    size_t          index;
     Ns_DString	    ds;
 
     /* 

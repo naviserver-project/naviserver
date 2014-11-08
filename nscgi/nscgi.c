@@ -413,7 +413,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 	     * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
              */
 
-            cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, plen);
+	    cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
 	    dsPtr = CgiDs(cgiPtr);
             Ns_UrlToFile(dsPtr, server, cgiPtr->name);
 	    cgiPtr->path = dsPtr->string;
@@ -794,7 +794,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         for (i = 0U; *p != '\0'; ++p) {
             ++i;
         }
-        Ns_DStringTrunc(dsPtr, i);
+        Ns_DStringTrunc(dsPtr, (int)i);
     }
     SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
@@ -1073,13 +1073,13 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                     Ns_DStringInit(&redir);
                     Ns_ConnLocationAppend(conn, &redir);
                     Ns_DStringAppend(&redir, value);
-                    last = Ns_SetPut(hdrs, ds.string, redir.string);
+                    last = (int)Ns_SetPut(hdrs, ds.string, redir.string);
                     Ns_DStringFree(&redir);
                 } else {
-                    last = Ns_SetPut(hdrs, ds.string, value);
+                    last = (int)Ns_SetPut(hdrs, ds.string, value);
                 }
             } else {
-                last = Ns_SetPut(hdrs, ds.string, value);
+                last = (int)Ns_SetPut(hdrs, ds.string, value);
             }
         }
         Ns_DStringTrunc(&ds, 0);

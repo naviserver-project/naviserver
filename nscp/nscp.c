@@ -324,7 +324,7 @@ EvalThread(void *arg)
     Tcl_DString unameDS;
     char buf[64];
     int n, ncmd, stop;
-    unsigned int len;
+    size_t len;
     Sess *sessPtr = arg;
     const char *res, *server = sessPtr->modPtr->server;
 
@@ -391,7 +391,7 @@ retry:
 	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
 	while (len > 0) {
-	    if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
+	    if ((n = ns_send(sessPtr->sock, res, len, 0)) <= 0) {
 		goto done;
 	    }
 	    len -= n;
@@ -434,26 +434,27 @@ done:
 static int
 GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 {
-    char buf[2048];
-    int n, result = 0, retry = 0;
+    char   buf[2048];
+    int    result = 0, retry = 0;
+    size_t n;
 
     /*
      * Suppress output on things like password prompts.
      */
 
     if (echo == 0) {
-	send(sock, will_echo, 3U, 0);
-	send(sock, dont_echo, 3U, 0);
-	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+	ns_send(sock, will_echo, 3U, 0);
+	ns_send(sock, dont_echo, 3U, 0);
+	ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);
-    if (send(sock, prompt, (size_t)n, 0) != n) {
+    if (ns_send(sock, prompt, n, 0) != n) {
 	result = 0;
 	goto bail;
     }
 
     do {
-	if ((n = recv(sock, buf, sizeof(buf), 0)) <= 0) {
+	if ((n = ns_recv(sock, buf, sizeof(buf), 0)) <= 0) {
 	    result = 0;
 	    goto bail;
 	}
@@ -499,16 +500,16 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	    }
 	}
 
-	Tcl_DStringAppend(dsPtr, buf, n);
+	Tcl_DStringAppend(dsPtr, buf, (int)n);
 	result = 1;
 
     } while (buf[n-1] != '\n');
 
  bail:
     if (echo == 0) {
-	send(sock, wont_echo, 3, 0);
-	send(sock, do_echo, 3, 0);
-	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+	ns_send(sock, wont_echo, 3, 0);
+	ns_send(sock, do_echo, 3, 0);
+	ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     return result;
 }
@@ -577,7 +578,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 	Ns_Log(Warning, "nscp: login failed: '%s'", (user != NULL) ? user : "?");
         Ns_DStringAppend(&msgDs, "Access denied!\n");
     }
-    (void) send(sessPtr->sock, msgDs.string, msgDs.length, 0);
+    (void) ns_send(sessPtr->sock, msgDs.string, msgDs.length, 0);
 
     Tcl_DStringFree(&msgDs);
     Tcl_DStringFree(&uds);

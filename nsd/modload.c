@@ -195,7 +195,7 @@ int
 NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp   *itPtr = (NsInterp *) arg;
-    CONST char *server, *module, *file, *init = "Ns_ModuleInit";
+    const char *server, *module, *file, *init = "Ns_ModuleInit";
     int         global = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {

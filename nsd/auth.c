@@ -284,8 +284,8 @@ NsParseAuth(Conn *connPtr, char *auth)
             }
 
             while (q != NULL && *q != '\0') {
-		int  idx;
-		char save2;
+		size_t idx;
+		char   save2;
 
                 p = strchr(q, '=');
                 if (p == NULL) {

@@ -186,19 +186,6 @@
 #define NS_COOKIE_REPLACE       0x08U  /* Replace the cookie in the output headers. */
 #define NS_COOKIE_EXPIRENOW     0x10U  /* Replace the cookie in the output headers. */
 
-#ifdef _WIN32
-#define ns_sockclose               closesocket
-#define ns_sockioctl               ioctlsocket
-#define ns_sockerrno               GetLastError()
-#define ns_sockstrerror            NsWin32ErrMsg
-#else
-#define ns_sockclose               close
-#define ns_socknbclose             close
-#define ns_sockioctl               ioctl
-#define ns_sockerrno               errno
-#define ns_sockstrerror            strerror
-#define ns_sockdup                 dup
-#endif
 
 /*
  * C API macros.
@@ -2303,7 +2290,7 @@ Ns_SetCreate(const char *name)
 NS_EXTERN void
 Ns_SetFree(Ns_Set *set);
 
-NS_EXTERN int
+NS_EXTERN size_t
 Ns_SetPut(Ns_Set *set, const char *key, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -2359,7 +2346,7 @@ Ns_SetDelete(Ns_Set *set, int index)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetPutValue(const Ns_Set *set, int index, const char *value)
+Ns_SetPutValue(const Ns_Set *set, size_t index, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -2852,7 +2839,7 @@ Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2864,7 +2851,7 @@ Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
+Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void

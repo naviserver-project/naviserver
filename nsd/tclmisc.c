@@ -923,7 +923,7 @@ SHATransform(Ns_CtxSHA1 *sha)
 }
 
 /* Update SHA for a block of data. */
-void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
+void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 {
     unsigned i;
 
@@ -934,7 +934,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
     ctx->bytes += len;
 #else
     uint32_t t = ctx->bytesLo;
-    if ((ctx->bytesLo = t + len) < t) {
+    if ((ctx->bytesLo = (uint32_t)(t + len)) < t) {
        ctx->bytesHi++;		/* Carry from low to high */
     }
 
@@ -1072,7 +1072,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxSHAInit(&ctx);
-    Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (unsigned int) strLen);
+    Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (size_t) strLen);
     Ns_CtxSHAFinal(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 20);
@@ -1212,7 +1212,7 @@ void Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
 {
     uint32_t t;
 
@@ -1222,7 +1222,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
     if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t) {
 	ctx->bits[1]++;		/* Carry from low to high */
     }
-    ctx->bits[1] += len >> 29;
+    ctx->bits[1] += (uint32_t)(len >> 29);
 
     t = (t >> 3) & 0x3FU;	/* Bytes already in shsInfo->data */
 
@@ -1435,7 +1435,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
     str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxMD5Init(&ctx);
-    Ns_CtxMD5Update(&ctx, (unsigned char *) str, (unsigned int) strLen);
+    Ns_CtxMD5Update(&ctx, (unsigned char *) str, (size_t)strLen);
     Ns_CtxMD5Final(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 16);

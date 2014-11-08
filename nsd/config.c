@@ -844,7 +844,7 @@ ConfigGet(const char *section, const char *key, int exact, const char *defstr)
 	if (i >= 0) {
 	    s = Ns_SetValue(set, i);
 	} else {
-	    i = Ns_SetPut(set, key, defstr);
+	    i = (int)Ns_SetPut(set, key, defstr);
 	    if (defstr != NULL) {
 		s = Ns_SetValue(set, i);
             }

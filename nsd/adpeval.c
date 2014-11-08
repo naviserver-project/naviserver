@@ -865,7 +865,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         if (encoding == NULL) {
             page = buf;
         } else {
-            Tcl_ExternalToUtfDString(encoding, buf, n, &utf);
+	    Tcl_ExternalToUtfDString(encoding, buf, (int)n, &utf);
             page = utf.string;
         }
         pagePtr = ns_malloc(sizeof(Page));
@@ -1183,7 +1183,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
     snprintf(debugfile, sizeof(debugfile),
              P_tmpdir "/adp%d.%d.XXXXXX",
              level, nscript);
-    fd = mkstemp(debugfile);
+    fd = ns_mkstemp(debugfile);
     if (fd < 0) {
         Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
     } else {

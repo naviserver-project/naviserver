@@ -365,7 +365,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 		}
 
             case SSizeIdx:
-                objPtr = Tcl_NewIntObj(Ns_SetSize(set));
+		objPtr = Tcl_NewLongObj((long)Ns_SetSize(set));
                 Tcl_SetObjResult(interp, objPtr);
                 break;
 
@@ -524,25 +524,25 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             switch (opt) {
             case SUpdateIdx:
                 Ns_SetDeleteKey(set, key);
-                i = Ns_SetPut(set, key, val);
+                i = (int)Ns_SetPut(set, key, val);
                 break;
 
             case SICPutIdx:
                 i = Ns_SetIFind(set, key);
                 if (i < 0) {
-                    i = Ns_SetPut(set, key, val);
+                    i = (int)Ns_SetPut(set, key, val);
                 }
                 break;
 
             case SCPutIdx:
                 i = Ns_SetFind(set, key);
                 if (i < 0) {
-                    i = Ns_SetPut(set, key, val);
+                    i = (int)Ns_SetPut(set, key, val);
                 }
                 break;
 
             case SPutIdx:
-                i = Ns_SetPut(set, key, val);
+                i = (int)Ns_SetPut(set, key, val);
                 break;
             }
             objPtr = Tcl_NewIntObj(i);

@@ -147,7 +147,7 @@ Ns_SetFree(Ns_Set *set)
 size_t
 Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 {
-    int index;
+    size_t index;
 
     assert(set != NULL);
     assert(key != NULL);
@@ -165,7 +165,7 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
     return index;
 }
 
-int
+size_t
 Ns_SetPut(Ns_Set *set, const char *key, const char *value)
 {
     assert(set != NULL);
@@ -252,13 +252,13 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
 	    const char *name = set->fields[i].name;
 
 	    if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
-		return i;
+	      return (int)i;
 	    }
 	}
     } else {
 	for (i = 0U; i < set->size; ++i) {
 	    if (unlikely(set->fields[i].name == NULL)) {
-		return i;
+	      return (int)i;
 	    }
 	}
     }
@@ -616,12 +616,12 @@ Ns_SetDelete(Ns_Set *set, int index)
  */
 
 void
-Ns_SetPutValue(const Ns_Set *set, int index, const char *value)
+Ns_SetPutValue(const Ns_Set *set, size_t index, const char *value)
 {
     assert(set != NULL);
     assert(value != NULL);
 
-    if ((index != -1) && ((size_t)index < set->size)) {
+    if (index < set->size) {
         ns_free(set->fields[index].value);
         set->fields[index].value = ns_strcopy(value);
     }

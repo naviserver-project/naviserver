@@ -214,11 +214,11 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
-    int           nwrote = 0, sent = -1;
-    void         *data;
+    ssize_t       sent = -1, nWrote = 0;
     size_t        len, toWrite = 0U;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
-    Sock          *sock = (Sock *)sockPtr;
+    Sock         *sock = (Sock *)sockPtr;
+    void         *data;
 
     assert(sockPtr != NULL);
     assert(nbufs < 1 || bufs != NULL);
@@ -260,7 +260,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         }
 
         toWrite -= sent;
-        nwrote  += sent;
+        nWrote  += sent;
 
         if (toWrite > 0U) {
 
@@ -286,7 +286,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         sbufIdx = 0;
     }
 
-    return (nwrote != 0) ? nwrote : sent;
+    return (nWrote != 0) ? nWrote : sent;
 }
 
 
@@ -311,12 +311,12 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
 {
     ssize_t nread;
 
-    nread = recv(sock, buffer, length, 0);
+    nread = ns_recv(sock, buffer, length, 0);
 
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_READ, timeoutPtr) == NS_OK) {
-        nread = recv(sock, buffer, length, 0);
+        nread = ns_recv(sock, buffer, length, 0);
     }
 
     return nread;
@@ -345,12 +345,12 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 {
     int nwrote;
 
-    nwrote = send(sock, buffer, length, 0);
+    nwrote = ns_send(sock, buffer, length, 0);
 
     if (nwrote == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-        nwrote = send(sock, buffer, length, 0);
+        nwrote = ns_send(sock, buffer, length, 0);
     }
 
     return nwrote;
