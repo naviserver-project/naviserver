@@ -1107,10 +1107,10 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             Ns_DStringInit(&ds);
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-	      if ((tracePtr->when & when) != 0U) {
-		  Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+		if ((tracePtr->when & when) != 0U) {
+		    Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
                 }
-                tracePtr = tracePtr->nextPtr;
+		tracePtr = tracePtr->nextPtr;
             }
             Tcl_DStringResult(interp, &ds);
         }

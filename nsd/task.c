@@ -645,21 +645,21 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
      * NB: Treat POLLHUP as POLLIN on systems which return it.
      */
 
-  if ((revents & POLLHUP) != 0) {
+    if ((revents & POLLHUP) != 0) {
         revents |= POLLIN;
     }
     if (revents != 0) {
-        int i;
+	int i;
 
-        for (i = 0; i < 3; ++i) {
-	  if ((revents & map[i].event) != 0) {
-                Call(taskPtr, map[i].when);
-            }
-        }
+	for (i = 0; i < 3; ++i) {
+	    if ((revents & map[i].event) != 0) {
+		Call(taskPtr, map[i].when);
+	    }
+	}
     } else if ((taskPtr->flags & TASK_TIMEOUT)
-               && Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0) {
-        taskPtr->flags &= ~ TASK_WAIT;
-        Call(taskPtr, NS_SOCK_TIMEOUT);
+	       && Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0) {
+	taskPtr->flags &= ~ TASK_WAIT;
+	Call(taskPtr, NS_SOCK_TIMEOUT);
     }
 }
 
