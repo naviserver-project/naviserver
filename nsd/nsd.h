@@ -78,7 +78,7 @@
 #define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
 #define CONN_TCLHTTP                   0x10U  /* HTTP headers requested by ns_headers */
 
-#define NS_SET_SIZE                    (TCL_INTEGER_SPACE + 2U)
+#define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
 
 /*
  * For the time being, don't try to be very clever

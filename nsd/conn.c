@@ -359,7 +359,7 @@ Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+size_t
 Ns_ConnContentSent(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -384,7 +384,7 @@ Ns_ConnContentSent(Ns_Conn *conn)
  */
 
 void
-Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length)
+Ns_ConnSetContentSent(Ns_Conn *conn, size_t length)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -408,7 +408,7 @@ Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+ssize_t
 Ns_ConnResponseLength(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -1518,9 +1518,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
         filePtr = Tcl_GetHashValue(hPtr);
-        if (opt == CFileOffIdx) {
+        if (opt == (int)CFileOffIdx) {
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->off));
-        } else if (opt == CFileLenIdx) {
+        } else if (opt == (int)CFileLenIdx) {
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->len));
         } else {
             Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
@@ -1664,7 +1664,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	break;
 
     case CZipacceptedIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0U));
 	break;
 
     }
@@ -1883,7 +1883,7 @@ GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *o
                          NULL);
         return TCL_ERROR;
     }
-    if (len < 0 || (size_t)len > (connPtr->reqPtr->length - off)) {
+    if (len < 0 || (size_t)len > (connPtr->reqPtr->length - (size_t)off)) {
         Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[1]),
                          NULL);
         return TCL_ERROR;

@@ -1789,7 +1789,8 @@ static int
 SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 {
     Sock    *sockPtr;
-    int      status;
+    int      returnStatus;
+    NS_DRIVER_ACCEPT_STATUS status;
 
     assert(drvPtr != NULL);
 
@@ -1823,7 +1824,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     status = DriverAccept(sockPtr);
 
     if (status == NS_DRIVER_ACCEPT_ERROR) {
-        status = SOCK_ERROR;
+        returnStatus = SOCK_ERROR;
 
         Ns_MutexLock(&drvPtr->lock);
         sockPtr->nextPtr = drvPtr->sockPtr;
@@ -1843,10 +1844,10 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
              */
 
             if (drvPtr->opts & NS_DRIVER_ASYNC) {
-                status = SockRead(sockPtr, 0, nowPtr);
-                if (status < 0) {
-                    SockRelease(sockPtr, status, errno);
-                    status = SOCK_ERROR;
+                returnStatus = SockRead(sockPtr, 0, nowPtr);
+                if (returnStatus < 0) {
+                    SockRelease(sockPtr, returnStatus, errno);
+                    returnStatus = SOCK_ERROR;
                     sockPtr = NULL;
                 }
             } else {
@@ -1855,7 +1856,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
                  * Queue this socket without reading, NsGetRequest in
                  * the connection thread will perform actual reading of the request
                  */
-                status = SOCK_READY;
+                returnStatus = SOCK_READY;
             }
         } else
         if (status == NS_DRIVER_ACCEPT_QUEUE) {
@@ -1866,15 +1867,15 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
              */
 
 	    SockPrepare(sockPtr);
-            status = SOCK_READY;
+            returnStatus = SOCK_READY;
         } else {
-            status = SOCK_MORE;
+            returnStatus = SOCK_MORE;
         }
     }
 
     *sockPtrPtr = sockPtr;
 
-    return status;
+    return returnStatus;
 }
 
 

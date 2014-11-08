@@ -1021,13 +1021,13 @@ Ns_ConnResponseStatus(Ns_Conn *conn);
 NS_EXTERN void
 Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
 
-NS_EXTERN Tcl_WideInt
+NS_EXTERN size_t
 Ns_ConnContentSent(Ns_Conn *conn);
 
 NS_EXTERN void
-Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length);
+Ns_ConnSetContentSent(Ns_Conn *conn, size_t length);
 
-NS_EXTERN Tcl_WideInt
+NS_EXTERN ssize_t
 Ns_ConnResponseLength(Ns_Conn *conn);
 
 NS_EXTERN char *
