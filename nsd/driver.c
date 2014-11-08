@@ -2932,7 +2932,7 @@ SpoolerThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
 
-        /*n =*/ PollWait(&pdata, pollto);
+        /*n =*/ (void) PollWait(&pdata, pollto);
 
         if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
             Ns_Fatal("spooler: trigger recv() failed: %s",
@@ -3609,7 +3609,7 @@ WriterThread(void *arg)
         /*
          * Select and drain the trigger pipe if necessary.
          */
-        PollWait(&pdata, pollto);
+        (void) PollWait(&pdata, pollto);
 
         if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
 	    Ns_Fatal("writer: trigger recv() failed: %s",
@@ -4710,7 +4710,7 @@ AsyncWriterThread(void *arg)
         /*
          * wait for data
          */
-        /*n =*/ PollWait(&pdata, pollto);
+        /*n =*/ (void) PollWait(&pdata, pollto);
 
         /*
          * Select and drain the trigger pipe if necessary.

@@ -135,10 +135,11 @@ TclX_IsNullObj(Tcl_Obj *objPtr)
         return (objPtr->length == 0);
     } else {
         if (objPtr->typePtr == listType) {
-	    int length;
+	    int length = 0;
 
-            Tcl_ListObjLength(NULL, objPtr, &length);
+            (void) Tcl_ListObjLength(NULL, objPtr, &length);
             return (length == 0);
+
         } else if (objPtr->typePtr == stringType) {
             return (Tcl_GetCharLength(objPtr) == 0);
         }
