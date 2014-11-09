@@ -132,7 +132,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
     }
 
     maxranges = (*nbufsPtr / 2) - 1;
-    ranges = alloca(sizeof(Range) * maxranges);
+    ranges = alloca(sizeof(Range) * (size_t)maxranges);
 
     rangeCount = ParseRangeOffsets(conn, objLength, ranges, maxranges);
     if (rangeCount < 1) {

@@ -338,9 +338,9 @@ typedef struct Request {
    /*
     * The following block is for chunked encodings
     */
-    Tcl_WideInt expectedLength; /* Provided expected length */
-    Tcl_WideInt chunkStartOff;  /* Offset pointing to start of chunk to be parsed */
-    Tcl_WideInt chunkWriteOff;  /* Offset pointing to position were to write chunk */
+    size_t expectedLength; /* Provided expected length */
+    size_t chunkStartOff;  /* Offset pointing to start of chunk to be parsed */
+    size_t chunkWriteOff;  /* Offset pointing to position were to write chunk */
 
     /*
      * The following offsets are used to manage

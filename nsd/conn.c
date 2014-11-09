@@ -1583,7 +1583,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CLocationIdx:
         Ns_DStringInit(&ds);
-        Ns_ConnLocationAppend(conn, &ds);
+        (void) Ns_ConnLocationAppend(conn, &ds);
         Tcl_DStringResult(interp, &ds);
         break;
 
@@ -1636,7 +1636,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CCloseIdx:
-	Ns_ConnClose(conn);
+	(void) Ns_ConnClose(conn);
         break;
 
     case CChannelIdx:
@@ -1694,6 +1694,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
+    int result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
@@ -1705,9 +1706,9 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
 			      objv[1], objc - 2, objv + 2);
-    Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
+    result = Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1760,7 +1761,10 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     if (GetChan(interp, chanName, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_Flush(chan);
+    if (Tcl_Flush(chan) != TCL_OK) {
+	Ns_TclPrintfResult(interp, "flush returned error: %s", strerror(Tcl_GetErrno()));
+	return TCL_ERROR;
+    }
     reqPtr = ((Conn *)itPtr->conn)->reqPtr;
     if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
         toCopy = (int)reqPtr->avail;
@@ -1958,11 +1962,16 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
         if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0U) {
             conn->flags |= NS_CONN_SKIPHDRS;
         } else {
-            Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
+            if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != TCL_OK) {
+		Ns_Log(Error, "make channel: error writing headers");
+	    }
         }
     }
 
-    Ns_SockSetBlocking(connPtr->sockPtr->sock);
+    if (Ns_SockSetBlocking(connPtr->sockPtr->sock) != TCL_OK) {
+	Ns_Log(Error, "make channel: error while making channel blocking");
+    }
+
     connPtr->sockPtr->sock = NS_INVALID_SOCKET;
 
     return chan;

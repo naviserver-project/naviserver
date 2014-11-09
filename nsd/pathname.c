@@ -108,7 +108,7 @@ ConfigServerVhost(const char *server)
 
     if (servPtr->vhost.enabled == NS_TRUE) {
         Ns_DStringInit(&ds);
-        NsPageRoot(&ds, servPtr, "www.example.com:80");
+        (void) NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
         Ns_DStringFree(&ds);
     }
@@ -495,7 +495,7 @@ Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
     if (servPtr == NULL) {
         return NULL;
     }
-    ServerRoot(dest, servPtr, NULL);
+    (void) ServerRoot(dest, servPtr, NULL);
     va_start(ap, server);
     path = MakePath(dest, &ap);
     va_end(ap);
@@ -531,7 +531,7 @@ Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
     if (servPtr == NULL) {
         return NULL;
     }
-    NsPageRoot(dest, servPtr, NULL);
+    (void) NsPageRoot(dest, servPtr, NULL);
     va_start(ap, server);
     path = MakePath(dest, &ap);
     va_end(ap);
@@ -587,7 +587,7 @@ Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...)
  *      for a server.
  *
  * Results:
- *      None.
+ *      Result code.
  *
  * Side effects:
  *      None.
@@ -635,7 +635,7 @@ NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host)
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
         path = Ns_DStringAppend(dest, servPtr->fastpath.pagedir);
     } else {
-        ServerRoot(dest, servPtr, host);
+	(void) ServerRoot(dest, servPtr, host);
         path = Ns_MakePath(dest, servPtr->fastpath.pagedir, NULL);
     }
 
@@ -826,6 +826,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
 {
     NsServer       *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
+    int             result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
@@ -837,9 +838,9 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclServerRoot, objv[1],
                               objc - 2, objv + 2);
-    Ns_SetServerRootProc(NsTclServerRoot, cbPtr);
+    result = Ns_SetServerRootProc(NsTclServerRoot, cbPtr);
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -985,7 +986,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         Ns_DStringInit(&ds);
         safehost = Ns_DStringAppend(&ds, rawHost);
 
-        Ns_StrToLower(safehost);
+        (void) Ns_StrToLower(safehost);
         if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0U
             && strncmp(safehost, "www.", 4) == 0) {
             safehost = &safehost[4];

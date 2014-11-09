@@ -871,9 +871,9 @@ NsFreeRequest(Request *reqPtr)
         reqPtr->avail          = 0U;
         reqPtr->leadblanks     = 0;
 
-        reqPtr->expectedLength = 0;
-        reqPtr->chunkStartOff  = 0;
-        reqPtr->chunkWriteOff  = 0;
+        reqPtr->expectedLength = 0U;
+        reqPtr->chunkStartOff  = 0U;
+        reqPtr->chunkWriteOff  = 0U;
 
         reqPtr->woff           = 0;
         reqPtr->roff           = 0;
@@ -2177,9 +2177,9 @@ ChunkedDecode(Request *reqPtr, int update)
       *end = bufPtr->string + bufPtr->length, 
       *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
-    while (reqPtr->chunkStartOff <  bufPtr->length) {
+    while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
       char *p = strstr(chunkStart, "\r\n");
-      long chunk_length;
+      size_t chunk_length;
 
       if (p == NULL) {
         Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
@@ -2187,7 +2187,7 @@ ChunkedDecode(Request *reqPtr, int update)
       }
 
       *p = '\0';
-      chunk_length = strtol(chunkStart, NULL, 16);
+      chunk_length = (size_t)strtol(chunkStart, NULL, 16);
       *p = '\r';
 
       if (p + 2 + chunk_length > end) {
@@ -2196,7 +2196,7 @@ ChunkedDecode(Request *reqPtr, int update)
       }
       if (update != 0) {
         char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
-        memmove(writeBuffer, p + 2, (size_t)chunk_length);
+        memmove(writeBuffer, p + 2, chunk_length);
         reqPtr->chunkWriteOff += chunk_length;
         *(writeBuffer + chunk_length) = '\0';
       }
@@ -2533,7 +2533,7 @@ SockParse(Sock *sockPtr)
             }
 
             reqPtr->coff = reqPtr->roff;
-            reqPtr->chunkStartOff = 0;
+            reqPtr->chunkStartOff = 0U;
 
             s = Ns_SetIGet(reqPtr->headers, "content-length");
             if (s == NULL) {
@@ -2555,7 +2555,7 @@ SockParse(Sock *sockPtr)
                         if ((s != NULL)
 			    && (Ns_StrToWideInt(s, &expected) == NS_OK)
 			    && (expected > 0) ) {
-			    reqPtr->expectedLength = expected;
+			    reqPtr->expectedLength = (size_t)expected;
                         }
                         s = NULL;
                     } 
@@ -2689,10 +2689,10 @@ SockParse(Sock *sockPtr)
      * Check if all content has arrived.
      */
 
-    if (reqPtr->chunkStartOff != 0) {
+    if (reqPtr->chunkStartOff != 0U) {
         /* Chunked encoding was provided */
         int complete;
-        Tcl_WideInt currentContentLength;
+        size_t currentContentLength;
 
         complete = ChunkedDecode(reqPtr, 1);
         currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
@@ -2705,7 +2705,7 @@ SockParse(Sock *sockPtr)
          * depending on that information
          */
         if ((complete == 0)
-            || (reqPtr->expectedLength != 0 && currentContentLength < reqPtr->expectedLength)) {
+            || (reqPtr->expectedLength != 0U && currentContentLength < reqPtr->expectedLength)) {
             /* ChunkedDecode wants more data */
             return SOCK_MORE;
         }

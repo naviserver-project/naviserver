@@ -264,7 +264,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     }
 
     if (mode == 'c') {
-        cmd.argv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
+        cmd.argv = ns_calloc((size_t)(argc - optind + 2), sizeof(char *));
         cmd.argc = 0;
         cmd.argv[cmd.argc++] = argv[0];
         for (i = optind; i < argc; i++) {
