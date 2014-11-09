@@ -278,8 +278,14 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
     NsServer       *servPtr = NULL;
     Ns_Set         *set;
 
-    if (server != NULL && (servPtr = NsGetServer(server)) == NULL) {
-        return NS_ERROR;
+    /*
+     * If a server is provided, servPtr must be set.
+     */
+    if (server != NULL) {
+	servPtr = NsGetServer(server);
+	if (servPtr == NULL) {
+	    return NS_ERROR;
+	}
     }
 
     if (init->version != NS_DRIVER_VERSION_2) {
@@ -598,7 +604,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
                     Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://",host,NULL);
-                    mapPtr = ns_malloc(sizeof(ServerMap) + ds.length);
+                    mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
                     mapPtr->servPtr  = servPtr;
                     strcpy(mapPtr->location, ds.string);
                     Ns_DStringSetLength(&ds, 0);
@@ -1392,7 +1398,7 @@ DriverThread(void *arg)
 		    
 		    switch (n) {
 		    case SOCK_SPOOL:
-			if (!SockSpoolerQueue(sockPtr->drvPtr, sockPtr)) {
+			if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
 			    Push(sockPtr, readPtr);
 			}
 			break;
@@ -1472,7 +1478,7 @@ DriverThread(void *arg)
 
                 switch (n) {
                 case SOCK_SPOOL:
-                    if (!SockSpoolerQueue(sockPtr->drvPtr, sockPtr)) {
+                    if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
                         Push(sockPtr, readPtr);
                     }
                     break;
@@ -1700,7 +1706,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
      */
     assert(sockPtr != NULL);
 
-    if (!SockSetServer(sockPtr)) {
+    if (SockSetServer(sockPtr) == 0) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
         return NS_ERROR;
     }
@@ -1709,7 +1715,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
      *  Actual queueing, if not ready spool to the waiting list
      */
 
-    if (!NsQueueConn(sockPtr, timePtr)) {
+    if (NsQueueConn(sockPtr, timePtr) == 0) {
         return NS_TIMEOUT;
     }
 
@@ -2300,7 +2306,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     n = (ssize_t)(len + nread);
     if (n > drvPtr->maxinput) {
 	n = (ssize_t)drvPtr->maxinput;
-        nread = n - len;
+        nread = (size_t)(n - len);
         if (nread == 0U) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
                    drvPtr->maxinput);
@@ -2387,7 +2393,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     reqPtr->woff  += (off_t)n;
-    reqPtr->avail += n;
+    reqPtr->avail += (size_t)n;
 
     /*
      * This driver needs raw buffer, it is binary or non-HTTP request
@@ -2506,7 +2512,7 @@ SockParse(Sock *sockPtr)
          */
         cnt = (int)(e - s) + 1;
         reqPtr->roff  += cnt;
-        reqPtr->avail -= cnt;
+        reqPtr->avail -= (size_t)cnt;
         if (likely(e > s) && likely(e[-1] == '\r')) {
             --e;
         }

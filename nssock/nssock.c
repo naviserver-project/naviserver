@@ -80,7 +80,7 @@ Ns_ModuleInit(char *server, char *module)
 {
     Ns_DriverInitData  init = {0};
     Config            *cfg;
-    CONST char        *path;
+    const char        *path;
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
     cfg = ns_malloc(sizeof(Config));
