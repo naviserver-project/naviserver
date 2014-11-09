@@ -753,7 +753,7 @@ NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv
 
 
 static void
-ThreadArgProc(Tcl_DString *dsPtr, const void *proc, void *arg)
+ThreadArgProc(Tcl_DString *dsPtr, Ns_ThreadProc proc, void *arg)
 {
     Ns_GetProcInfo(dsPtr, (Ns_Callback *)proc, arg);
 }
