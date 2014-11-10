@@ -838,7 +838,7 @@ HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, size_t outSize)
     assert(buffer != NULL);
 
     if (httpPtr->spoolFd > 0) {
-	int result = write(httpPtr->spoolFd, buffer, outSize);
+	int result = ns_write(httpPtr->spoolFd, buffer, outSize);
 	if (result == -1) {
 	    Ns_Log(Error, "task: spooling of received content failed");
 	    status = TCL_ERROR;

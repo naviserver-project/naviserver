@@ -575,7 +575,7 @@ Ns_ConfigGetSection(const char *section)
 Ns_Set *
 Ns_ConfigCreateSection(const char *section)
 {
-    int create = Ns_InfoStarted() ? 0 : 1;
+    int create = (Ns_InfoStarted() != 0) ? 0 : 1;
     return GetSection(section, create);
 }
 
@@ -978,3 +978,12 @@ ToBool(const char *value, int *valuePtr)
 
     return NS_TRUE;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

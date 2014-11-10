@@ -910,7 +910,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         {"deallocate", NS_TCL_TRACE_DEALLOCATE},
         {"getconn",    NS_TCL_TRACE_GETCONN},
         {"freeconn",   NS_TCL_TRACE_FREECONN},
-        {NULL, 0}
+        {NULL, 0U}
     };
     Ns_ObjvSpec addTraceArgs[] = {
         {"when",       Ns_ObjvFlags,  &when,      traceWhen},

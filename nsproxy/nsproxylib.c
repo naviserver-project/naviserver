@@ -1183,7 +1183,7 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     ptr  = dsPtr->string + n;
     while (len > 0) {
         do {
-            n = read(slavePtr->rfd, ptr, len);
+            n = ns_read(slavePtr->rfd, ptr, len);
         } while (n == -1 && errno == EINTR);
         if (n == 0) {
             return 0; /* EOF */

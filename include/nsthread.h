@@ -156,11 +156,9 @@ typedef int32_t ssize_t;
 #  define mktemp                      _mktemp
 #  define open                        _open
 #  define putenv                      _putenv
-#  define read(fd,buf,nbyte)          _read((fd),(buf),(unsigned int)(nbyte))
 #  define snprintf                    _snprintf
 #  define unlink                      _unlink
 #  define vsnprintf                   _vsnprintf
-#  define write(fd,buf,nbyte)         _write((fd),(buf),(unsigned int)(nbyte))
 
 #  define ftruncate(f,s)              chsize((f),(s))
 
@@ -192,12 +190,15 @@ typedef int32_t ssize_t;
 # define strcasecmp                _stricmp
 # define strncasecmp               _strnicmp
 
-# define ns_sockclose              closesocket
-# define ns_sockioctl              ioctlsocket
-# define ns_sockerrno              GetLastError()
-# define ns_sockstrerror           NsWin32ErrMsg
+# define ns_read(fd,buf,nbyte)     _read((fd),(buf),(unsigned int)(nbyte))
 # define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),flgs)
 # define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),flgs)
+# define ns_sockclose              closesocket
+# define ns_sockerrno              GetLastError()
+# define ns_sockioctl              ioctlsocket
+# define ns_sockstrerror           NsWin32ErrMsg
+# define ns_write(fd,buf,nbyte)    _write((fd),(buf),(unsigned int)(nbyte))
+
 
 /*
  * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
@@ -381,6 +382,7 @@ typedef struct DIR_ *DIR;
 # define DEVNULL	            "/dev/null"
 
 # define ns_mkstemp	 	    mkstemp
+# define ns_read                    read
 # define ns_recv                    recv
 # define ns_send                    send
 # define ns_sockclose               close
@@ -389,6 +391,7 @@ typedef struct DIR_ *DIR;
 # define ns_sockioctl               ioctl
 # define ns_socknbclose             close
 # define ns_sockstrerror            strerror
+# define ns_write                   write
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))
@@ -846,7 +849,7 @@ NS_EXTERN int truncate(char *file, off_t size);
  */
 
 #if (TCL_MAJOR_VERSION < 8) || (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6)
-#define Tcl_GetErrorLine(interp) (interp->errorLine)
+#define Tcl_GetErrorLine(interp) ((interp)->errorLine)
 #endif
 
 #endif /* NSTHREAD_H */

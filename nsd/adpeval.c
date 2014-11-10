@@ -834,7 +834,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
          * Attempt to read +1 byte to catch the file growing.
          */
 
-        n = read(fd, buf, size + 1);
+        n = ns_read(fd, buf, size + 1);
         if (n < 0) {
             Tcl_AppendResult(interp, "could not read \"", file,
                              "\": ", Tcl_PosixError(interp), NULL);
@@ -1187,7 +1187,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
     if (fd < 0) {
         Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
     } else {
-        if (write(fd, ds.string, (size_t)ds.length) < 0) {
+        if (ns_write(fd, ds.string, (size_t)ds.length) < 0) {
 	    Tcl_AppendResult(interp, "write to \"", debugfile,
 			     "\" failed: ", Tcl_PosixError(interp), NULL);
 	} else {

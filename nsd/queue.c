@@ -1419,7 +1419,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 
     if (connPtr->reqPtr == NULL) {
 	Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
-        Ns_ConnClose(conn);
+        (void) Ns_ConnClose(conn);
         return;
     }
     assert(sockPtr != NULL);
@@ -1593,8 +1593,8 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     NsFreeRequest(connPtr->reqPtr);
     connPtr->reqPtr = NULL;
     if (connPtr->clientData != NULL) {
-      ns_free(connPtr->clientData);
-      connPtr->clientData = NULL;
+        ns_free(connPtr->clientData);
+        connPtr->clientData = NULL;
     }
 }
 
@@ -1798,3 +1798,12 @@ AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state)
         firstPtr = firstPtr->nextPtr;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

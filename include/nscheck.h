@@ -115,9 +115,9 @@
 #elif __GNUC_PREREQ(2, 7)
 # define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
 #elif defined(__LCLINT__)
-# define UNUSED(x) /*@unused@*/ x
+# define UNUSED(x) /*@unused@*/ (x)
 #else
-# define UNUSED(x) x
+# define UNUSED(x) (x)
 #endif
 
 #if __GNUC_PREREQ(2,96)

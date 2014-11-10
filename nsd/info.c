@@ -757,3 +757,12 @@ ThreadArgProc(Tcl_DString *dsPtr, Ns_ThreadProc proc, void *arg)
 {
     Ns_GetProcInfo(dsPtr, (Ns_Callback *)proc, arg);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

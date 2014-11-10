@@ -223,7 +223,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
         }
     } else if (status == TCL_OK) {
         if (keysArgcPtr != NULL && keysArgvPtr != NULL) {
-            size_t    keySize = 0U, totalKeySize = 0U;
+            size_t    keySize, totalKeySize = 0U;
             int       ii, keyCount;
             char    **keyArgv, *nextByte;
             Tcl_Obj **objValues;

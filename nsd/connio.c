@@ -448,7 +448,7 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
                 nread = -1;
             }
         } else {
-            nread = read(fd, buf, toRead);
+            nread = ns_read(fd, buf, toRead);
         }
 
         if (nread == -1 || nread == 0 /* NB: truncated file */) {
@@ -1060,7 +1060,7 @@ ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
                 nwrote = -1;
             }
         } else {
-            nwrote = write(fd, reqPtr->next, ncopy);
+            nwrote = ns_write(fd, reqPtr->next, ncopy);
         }
         if (nwrote < 0) {
             return NS_ERROR;

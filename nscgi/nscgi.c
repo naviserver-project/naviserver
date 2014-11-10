@@ -567,7 +567,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     fd = Ns_GetTemp();
     if (fd < 0) {
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
-    } else if (write(fd, content, len) != len) {
+    } else if (ns_write(fd, content, len) != len) {
 	err = "write";
     } else if (lseek(fd, 0, SEEK_SET) != 0) {
 	err = "lseek";
@@ -957,7 +957,7 @@ CgiRead(Cgi *cgiPtr)
 
     cgiPtr->ptr = cgiPtr->buf;
     do {
-    	n = read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
+    	n = ns_read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
     } while (n < 0 && errno == EINTR);
     if (n > 0) {
 	cgiPtr->cnt = n;

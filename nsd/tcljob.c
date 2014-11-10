@@ -552,7 +552,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              */
 
             jobPtr = NewJob((itPtr->servPtr != NULL) ? itPtr->servPtr->server : NULL,
-                            queue->name, (unsigned)jobType, script);
+                            queue->name, jobType, script);
             Ns_GetTime(&jobPtr->startTime);
             if (tp.req == THREADPOOL_REQ_STOP
                 || queue->req == QUEUE_REQ_DELETE) {

@@ -486,7 +486,7 @@ void
 NsStartSchedShutdown(void)
 {
     Ns_MutexLock(&lock);
-    if (running != 0) {
+    if (running == 1) {
         Ns_Log(Notice, "sched: shutdown pending");
         shutdownPending = 1;
         Ns_CondSignal(&schedcond);
@@ -501,7 +501,7 @@ NsWaitSchedShutdown(const Ns_Time *toPtr)
 
     Ns_MutexLock(&lock);
     status = NS_OK;
-    while (status == NS_OK && running) {
+    while (status == NS_OK && running == 1) {
         status = Ns_CondTimedWait(&schedcond, &lock, toPtr);
     }
     Ns_MutexUnlock(&lock);
@@ -587,7 +587,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
      * Signal or create the SchedThread if necessary.
      */
 
-    if (running != 0) {
+    if (running == 1) {
         Ns_CondSignal(&schedcond);
     } else {
         running = 1;
@@ -672,7 +672,7 @@ EventThread(void *arg)
 
     Ns_MutexLock(&lock);
     while (jpt == 0 || njobs > 0) {
-        while (firstEventPtr == NULL && !shutdownPending) {
+        while (firstEventPtr == NULL && shutdownPending == 0) {
             Ns_CondWait(&eventcond, &lock);
         }
         if (firstEventPtr == NULL) {
@@ -703,7 +703,7 @@ EventThread(void *arg)
             QueueEvent(ePtr, &now);
         }
         /* Served given # of jobs in this thread */
-        if (jpt && --njobs <= 0) {
+        if (jpt != 0 && --njobs <= 0) {
             break;
         }
     }

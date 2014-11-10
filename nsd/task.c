@@ -251,7 +251,7 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     TaskQueue *queuePtr = (TaskQueue *) queue;
 
     taskPtr->queuePtr = queuePtr;
-    if (!SignalQueue(taskPtr, TASK_INIT)) {
+    if (SignalQueue(taskPtr, TASK_INIT) == 0) {
         return NS_ERROR;
     }
     return NS_OK;
@@ -283,7 +283,7 @@ Ns_TaskRun(Ns_Task *task)
 
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
-    while (!(taskPtr->flags & TASK_DONE)) {
+    while ((taskPtr->flags & TASK_DONE) == 0U) {
         if (taskPtr->flags & TASK_TIMEOUT) {
             timeoutPtr = &taskPtr->timeout;
         } else {
@@ -326,7 +326,7 @@ Ns_TaskCancel(Ns_Task *task)
 
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signal |= TASK_CANCEL;
-    } else if (!SignalQueue(taskPtr, TASK_CANCEL)) {
+    } else if (SignalQueue(taskPtr, TASK_CANCEL) == 0) {
         return NS_ERROR;
     }
     return NS_OK;
@@ -360,7 +360,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     Ns_Time    atime;
 
     if (queuePtr == NULL) {
-        if (!(taskPtr->signal & TASK_DONE)) {
+        if ((taskPtr->signal & TASK_DONE) == 0U) {
             status = NS_TIMEOUT;
         }
     } else {
@@ -368,7 +368,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
             timeoutPtr = Ns_AbsoluteTime(&atime, timeoutPtr);
         }
         Ns_MutexLock(&queuePtr->lock);
-        while (status == NS_OK && !(taskPtr->signal & TASK_DONE)) {
+        while (status == NS_OK && (taskPtr->signal & TASK_DONE) == 0U) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock,
                                       timeoutPtr);
         }
@@ -980,10 +980,10 @@ TaskThread(void *arg)
      */
 
     Ns_MutexLock(&queuePtr->lock);
-    while ((taskPtr = firstWaitPtr) != NULL) {
-        firstWaitPtr = taskPtr->nextWaitPtr;
+    for (taskPtr = firstWaitPtr; taskPtr != NULL; taskPtr = taskPtr->nextWaitPtr) {
         taskPtr->signal |= TASK_DONE;
     }
+    firstWaitPtr = NULL;
     queuePtr->stopped = 1;
     Ns_MutexUnlock(&queuePtr->lock);
     Ns_CondBroadcast(&queuePtr->cond);

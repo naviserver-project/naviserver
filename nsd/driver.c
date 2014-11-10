@@ -2357,7 +2357,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         }
         n = bufPtr->length - reqPtr->coff;
 	assert(n >= 0);
-        if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
+        if (ns_write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
         Tcl_DStringSetLength(bufPtr, 0);
@@ -2385,7 +2385,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
     
     if (sockPtr->tfd > 0) {
-	if (write(sockPtr->tfd, tbuf, (size_t)n) != n) {
+	if (ns_write(sockPtr->tfd, tbuf, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
     } else {
@@ -2761,7 +2761,7 @@ SockParse(Sock *sockPtr)
 	     * always into the mmapped area. Might lead to crashes
 	     * when we hitting page boundaries.
 	     */
-	    int result = write(sockPtr->tfd, "\0", 1); 
+	    int result = ns_write(sockPtr->tfd, "\0", 1); 
 	    if (result == -1) {
 		Ns_Log(Error, "socket: could not append terminating 0-byte");
 	    }
@@ -3397,7 +3397,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	    lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
-	n = read(curPtr->fd, bufPtr, (size_t)toRead);
+	n = ns_read(curPtr->fd, bufPtr, (size_t)toRead);
 	
 	if (n <= 0) {
 	    status = SOCK_ERROR;
@@ -3895,7 +3895,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    int i;
 	    assert(bufs != NULL);
 	    for (i = 0; i < nbufs; i++) {
-		int j = write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
+		int j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
 		wrote += j;
 		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIiovlen " OK %d", 
 		       connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
@@ -4576,7 +4576,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
-	size_t written = write(fd, buffer, nbyte);
+	size_t written = ns_write(fd, buffer, nbyte);
 
 	if (unlikely(written != nbyte)) {
 	    WriteError("sync write", fd, nbyte, written);
@@ -4732,7 +4732,7 @@ AsyncWriterThread(void *arg)
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    size_t written = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    size_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		    if (unlikely(written != curPtr->bufsize)) { 
 			WriteError("drain writer", curPtr->fd, curPtr->bufsize, written);
 		    }
@@ -4740,7 +4740,7 @@ AsyncWriterThread(void *arg)
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    size_t written = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    size_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		    if (unlikely(written != curPtr->bufsize)) { 
 			WriteError("drain queue", curPtr->fd, curPtr->bufsize, written);
 		    }
@@ -4770,7 +4770,7 @@ AsyncWriterThread(void *arg)
 	    /*
 	     * write the actual data and allow for partial write operations.
 	     */
-	    n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+	    n = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 	    if (n < 0) {
 		status = NS_ERROR;
 	    } else {
@@ -4812,7 +4812,7 @@ AsyncWriterThread(void *arg)
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-		size_t written = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		size_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		if (unlikely(written != curPtr->bufsize)) { 
 		    WriteError("shutdown", curPtr->fd, curPtr->bufsize, written);
 		}

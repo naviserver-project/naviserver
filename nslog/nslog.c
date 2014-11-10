@@ -653,7 +653,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     if (logPtr->maxlines == 0) {
         bufferSize = ds.length;
 	if (bufferSize < PIPE_BUF) {
-	  /* only those write() operations are guaranteed to be atomic */
+	  /* only those ns_write() operations are guaranteed to be atomic */
 	    bufferPtr = ds.string;
            status = NS_OK;
 	} else {
@@ -664,7 +664,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         if (++logPtr->curlines > logPtr->maxlines) {
 	    bufferSize = logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {
-              /* only those write() are guaranteed to be atomic */
+              /* only those ns_write() are guaranteed to be atomic */
               /* in most cases, we will fall into the other branch */
 	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
 	      bufferPtr = buffer;
@@ -798,7 +798,7 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
     char *buf = dsPtr->string;
 
     if (len > 0) {
-        if (logPtr->fd >= 0 && write(logPtr->fd, buf, len) != len) {
+        if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, len) != len) {
             Ns_Log(Error, "nslog: logging disabled: write() failed: '%s'",
                    strerror(errno));
             close(logPtr->fd);

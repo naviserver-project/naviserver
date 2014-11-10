@@ -94,7 +94,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     fPtr->url = ns_strdup(url);
     fPtr->when = when;
     fPtr->arg = arg;
-    if (when & NS_FILTER_FIRST) {
+    if ((when & NS_FILTER_FIRST) != 0U) {
         fPtr->nextPtr = servPtr->filter.firstFilterPtr;
         servPtr->filter.firstFilterPtr = fPtr;
     } else {
@@ -135,6 +135,8 @@ NsRunFilters(Ns_Conn *conn, unsigned int why)
     Filter *fPtr;
     int status;
 
+    assert(conn != NULL);
+
     status = NS_OK;
     if (conn->request->method != NULL && conn->request->url != NULL) {
         Ns_MutexLock(&servPtr->filter.lock);
@@ -155,6 +157,18 @@ NsRunFilters(Ns_Conn *conn, unsigned int why)
 	    status = NS_OK;
 	}
     }
+
+    /*
+     * We can get 
+     *
+     *    status == NS_FILTER_RETURN 
+     *
+     * for e.g.    why == NS_FILTER_PRE_AUTH 
+     * but not for why == NS_FILTER_TRACE
+     */
+
+    assert(status == NS_OK || status == NS_ERROR || status == NS_FILTER_RETURN || status == NS_FILTER_BREAK);
+
     return status;
 }
 
@@ -394,3 +408,11 @@ NsGetTraces(Tcl_DString *dsPtr, const char *server)
     }
 }   
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

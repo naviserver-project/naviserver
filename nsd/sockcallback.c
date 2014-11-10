@@ -442,7 +442,7 @@ SockCallbackThread(void *UNUSED(arg))
             for (i = 0; i < 3; ++i) {
                 if (((cbPtr->when & when[i]) != 0U) 
 		    && (pfds[cbPtr->idx].revents & events[i]) != 0) {
-                    if (!((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]))) {
+                    if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == 0) {
 			cbPtr->when = 0U;
 		    }
                     cbPtr->expires = 0;
