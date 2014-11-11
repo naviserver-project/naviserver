@@ -80,14 +80,14 @@ static Ns_ArgProc ArgProc;
  * and disable password prompt echo.
  */
 
-#define TN_IAC  255
-#define TN_WILL 251
-#define TN_WONT 252
-#define TN_DO   253
-#define TN_DONT 254
-#define TN_EOF  236
-#define TN_IP   244
-#define TN_ECHO   1
+#define TN_IAC  255U
+#define TN_WILL 251U
+#define TN_WONT 252U
+#define TN_DO   253U
+#define TN_DONT 254U
+#define TN_EOF  236U
+#define TN_IP   244U
+#define TN_ECHO   1U
 
 static const unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
 static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
@@ -189,34 +189,59 @@ Ns_ModuleInit(char *server, char *module)
     /*
      * Process the setup ns_set
      */
-
     for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
-	char *pass;
 	const char *key  = Ns_SetKey(set, i);
 	const char *user = Ns_SetValue(set, i);
-
-	if (!STRIEQ(key, "user") || (pass = strchr(user, ':')) == NULL) {
+        const char *passPart;
+        char *scratch, *p;
+        size_t userLength;
+ 
+        if (!STRIEQ(key, "user")) {
+            continue;
+        }
+        passPart = strchr(user, ':');
+        if (passPart == NULL) {
+            Ns_Log(Warning, "nscp: user entry '%s' contains no colon; ignored.", user);
 	    continue;
-	}
-	*pass = '\0';
-	hPtr = Tcl_CreateHashEntry(&modPtr->users, user, &isNew);
+        }
+
+        /*
+         * Copy string to avoid conflicts with const property.
+         */
+        p = scratch = ns_strdup(user);
+
+        /*
+         * Terminate user part.
+         */
+        userLength = passPart - user;
+	*(p + userLength) = '\0';
+
+	hPtr = Tcl_CreateHashEntry(&modPtr->users, p, &isNew);
 	if (isNew != 0) {
-	    Ns_Log(Notice, "nscp: added user: %s", user);
+	    Ns_Log(Notice, "nscp: added user: %s", p);
 	} else {
-	    Ns_Log(Warning, "nscp: duplicate user: %s", user);
+	    Ns_Log(Warning, "nscp: duplicate user: %s", p);
 	    ns_free(Tcl_GetHashValue(hPtr));
 	}
-	*pass = ':';
-	pass += 1;
-	end = strchr(pass, ':');
+        /*
+         * Advance to password part in scratch copy.
+         */
+	p += userLength + 1;
+
+        /* 
+         * look for end of password.
+         */
+	end = strchr(p, ':');
 	if (end != NULL) {
 	    *end = '\0';
 	}
-	pass = ns_strdup(pass);
-	if (end != NULL) {
-	    *end = ':';
-	}
-	Tcl_SetHashValue(hPtr, pass);
+
+        /*
+         * Save the password.
+         */
+	Tcl_SetHashValue(hPtr, ns_strdup(p));
+
+        ns_free(scratch);
     }
     if (modPtr->users.numEntries == 0) {
 	Ns_Log(Warning, "nscp: no authorized users");
@@ -284,7 +309,7 @@ AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
     }
     sessPtr = ns_malloc(sizeof(Sess));
     sessPtr->modPtr = modPtr;
-    len = sizeof(struct sockaddr_in);
+    len = (socklen_t)sizeof(struct sockaddr_in);
     sessPtr->sock = Ns_SockAccept(lsock, (struct sockaddr *) &sessPtr->sa, &len);
     if (sessPtr->sock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: accept() failed: %s",
@@ -390,11 +415,11 @@ retry:
 	Tcl_AppendResult(interp, "\r\n", NULL);
 	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
-	while (len > 0) {
+	while (len > 0U) {
 	    if ((n = ns_send(sessPtr->sock, res, len, 0)) <= 0) {
 		goto done;
 	    }
-	    len -= n;
+	    len -= (size_t)n;
 	    res += n;
 	}
 
@@ -436,7 +461,8 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 {
     char   buf[2048];
     int    result = 0, retry = 0;
-    size_t n;
+    ssize_t n;
+    size_t promptLength;
 
     /*
      * Suppress output on things like password prompts.
@@ -447,8 +473,8 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	ns_send(sock, dont_echo, 3U, 0);
 	ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
-    n = strlen(prompt);
-    if (ns_send(sock, prompt, n, 0) != n) {
+    promptLength = strlen(prompt);
+    if (ns_send(sock, prompt, promptLength, 0) != promptLength) {
 	result = 0;
 	goto bail;
     }
@@ -458,6 +484,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	    result = 0;
 	    goto bail;
 	}
+
 	if (n > 1 && buf[n-1] == '\n' && buf[n-2] == '\r') {
 	    buf[n-2] = '\n';
 	    --n;
@@ -503,7 +530,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	Tcl_DStringAppend(dsPtr, buf, (int)n);
 	result = 1;
 
-    } while (buf[n-1] != '\n');
+    } while (buf[n-1] != UCHAR('\n'));
 
  bail:
     if (echo == 0) {
@@ -620,3 +647,12 @@ ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
     Tcl_SetResult(interp, "\nGoodbye!", TCL_STATIC);
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
