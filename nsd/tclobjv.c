@@ -1243,7 +1243,7 @@ static int
 SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 {
     size_t      len;
-    const char *name = key, *value;
+    const char *value;
 
     assert(interp != NULL);
     assert(key != NULL);
@@ -1251,8 +1251,8 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 
     value = Tcl_GetString(valueObj);
 
-    if (name[0] == '-' || name[0] == '?') {
-        name++;
+    if (key[0] == '-' || key[0] == '?') {
+        key++;
     }
 
     len = strlen(value);
@@ -1266,7 +1266,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
         valueObj = Tcl_GetObjResult(interp);
     }
 
-    if (Tcl_SetVar2Ex(interp, name, NULL, valueObj,
+    if (Tcl_SetVar2Ex(interp, key, NULL, valueObj,
                       TCL_LEAVE_ERR_MSG) == NULL) {
         return TCL_ERROR;
     }
