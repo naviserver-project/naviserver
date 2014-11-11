@@ -170,7 +170,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	    return TCL_ERROR;
 	}
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(resultObj != NULL));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(resultObj != NULL));
 	if (resultObj != NULL) {
 	    Tcl_ObjSetVar2(interp, objv[3], NULL, resultObj, 0);
 	}

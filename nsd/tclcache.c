@@ -646,7 +646,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     Ns_CacheUnlock(cPtr->cache);
 
     if (varNameObj != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(resultObj != NULL));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(resultObj != NULL));
 	if (resultObj != NULL) {
 	    Tcl_ObjSetVar2(interp, varNameObj, NULL, resultObj, 0);
 	}
