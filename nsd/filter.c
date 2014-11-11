@@ -131,11 +131,12 @@ int
 NsRunFilters(Ns_Conn *conn, unsigned int why)
 {
     Conn *connPtr = (Conn *) conn;
-    NsServer *servPtr = connPtr->poolPtr->servPtr;
+    NsServer *servPtr;
     Filter *fPtr;
     int status;
 
     assert(conn != NULL);
+    servPtr = connPtr->poolPtr->servPtr;
 
     status = NS_OK;
     if (conn->request->method != NULL && conn->request->url != NULL) {
@@ -358,10 +359,12 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
     }
     fPtr = servPtr->filter.firstFilterPtr;
     while (fPtr != NULL) {
+        unsigned int when = (fPtr->when &~ NS_FILTER_FIRST);
+
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, fPtr->method);
         Tcl_DStringAppendElement(dsPtr, fPtr->url);
-        switch (fPtr->when) {
+        switch (when) {
         case NS_FILTER_PRE_AUTH:
             Tcl_DStringAppendElement(dsPtr, "preauth");
             break;
@@ -371,6 +374,10 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
         case NS_FILTER_VOID_TRACE: 
         case NS_FILTER_TRACE:
             Tcl_DStringAppendElement(dsPtr, "trace");
+            break;
+        default:
+            /* unexpected value */
+            assert(when && 0);
             break;
         }
         Ns_GetProcInfo(dsPtr, (Ns_Callback *)fPtr->proc, fPtr->arg);
