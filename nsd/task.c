@@ -983,7 +983,7 @@ TaskThread(void *arg)
     for (taskPtr = firstWaitPtr; taskPtr != NULL; taskPtr = taskPtr->nextWaitPtr) {
         taskPtr->signal |= TASK_DONE;
     }
-    firstWaitPtr = NULL;
+
     queuePtr->stopped = 1;
     Ns_MutexUnlock(&queuePtr->lock);
     Ns_CondBroadcast(&queuePtr->cond);
