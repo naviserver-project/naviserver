@@ -446,10 +446,10 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
     drvPtr->keepwait     = Ns_ConfigIntRange(path, "keepwait",
                                              5,            0, INT_MAX);
 
-    drvPtr->keepmaxuploadsize = Ns_ConfigIntRange(path, "keepalivemaxuploadsize",
+    drvPtr->keepmaxuploadsize = (size_t)Ns_ConfigIntRange(path, "keepalivemaxuploadsize",
                                              0,            0, INT_MAX);
 
-    drvPtr->keepmaxdownloadsize = Ns_ConfigIntRange(path, "keepalivemaxdownloadsize",
+    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigIntRange(path, "keepalivemaxdownloadsize",
                                              0,            0, INT_MAX);
 
     drvPtr->backlog      = Ns_ConfigIntRange(path, "backlog",
@@ -592,7 +592,7 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
         lset  = Ns_ConfigGetSection(path);
         Ns_DStringInit(dsPtr);
-        for (j = 0; lset != NULL && j < Ns_SetSize(lset); ++j) {
+        for (j = 0U; lset != NULL && j < Ns_SetSize(lset); ++j) {
             server  = Ns_SetKey(lset, j);
             host    = Ns_SetValue(lset, j);
             servPtr = NsGetServer(server);
@@ -886,7 +886,7 @@ NsFreeRequest(Request *reqPtr)
         reqPtr->coff           = 0;
 
         Tcl_DStringFree(&reqPtr->buffer);
-        Ns_SetTrunc(reqPtr->headers, 0);
+        Ns_SetTrunc(reqPtr->headers, 0U);
 
         if (reqPtr->auth != NULL) {
 	  Ns_SetFree(reqPtr->auth);

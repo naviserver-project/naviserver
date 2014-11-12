@@ -100,7 +100,7 @@ static Ns_ObjvTable adpOpts[] = {
  */
 
 int
-Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
+Ns_AdpRequest(Ns_Conn *conn, const char *file)
 {
     assert(conn != NULL);
     assert(file != NULL);
@@ -109,7 +109,7 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 }
 
 int
-Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, const Ns_Time *expiresPtr)
+Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
 {
     assert(conn != NULL);
     assert(file != NULL);
@@ -548,3 +548,12 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     }
     return result;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

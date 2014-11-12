@@ -1415,23 +1415,43 @@ NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
  * ADP routines.
  */
 
-NS_EXTERN void NsAdpSetMimeType(NsInterp *itPtr, char *type);
-NS_EXTERN void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
-NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
-NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) NS_GNUC_NONNULL(1);
-NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs);
-NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
-NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar);
+NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len) 
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) 
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
+  NS_GNUC_NONNULL(1);
+
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			   const char *file, const Ns_Time *expiresPtr);
+			   const char *file, const Ns_Time *expiresPtr)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
-			  unsigned int flags, CONST char* file);
-NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
-NS_EXTERN void NsAdpLogError(NsInterp *itPtr);
-NS_EXTERN void NsAdpInit(NsInterp *itPtr);
-NS_EXTERN void NsAdpReset(NsInterp *itPtr);
-NS_EXTERN void NsAdpFree(NsInterp *itPtr);
+			  unsigned int flags, const char* file)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr)
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsAdpLogError(NsInterp *itPtr)
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsAdpInit(NsInterp *itPtr)
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsAdpReset(NsInterp *itPtr)
+  NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsAdpFree(NsInterp *itPtr)
+  NS_GNUC_NONNULL(1);
 
 /*
  * Tcl support routines.

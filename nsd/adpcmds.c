@@ -67,9 +67,12 @@ static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1)
  */
 
 int
-Ns_AdpAppend(Tcl_Interp *interp, CONST char *buf, int len)
+Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
 {
     NsInterp *itPtr;
+
+    assert(interp != NULL);
+    assert(buf != NULL);
 
     if (GetInterp(interp, &itPtr) != TCL_OK) {
         return TCL_ERROR;
@@ -78,9 +81,12 @@ Ns_AdpAppend(Tcl_Interp *interp, CONST char *buf, int len)
 }
 
 int
-NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len)
+NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
 {
     Tcl_DString *bufPtr;
+
+    assert(itPtr != NULL);
+    assert(buf != NULL);
 
     if (GetOutput(itPtr, &bufPtr) != TCL_OK) {
         return TCL_ERROR;
@@ -206,8 +212,8 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     unsigned int flag, oldFlag;
 
     enum {
-        CBufSizeIdx = ADP_OPTIONMAX + 1,
-        CChanIdx    = ADP_OPTIONMAX + 2
+        CBufSizeIdx = ADP_OPTIONMAX + 1U,
+        CChanIdx    = ADP_OPTIONMAX + 2U
     };
 
     static const struct {
@@ -229,7 +235,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         { "stricterror",  ADP_STRICT },
         { "trace",        ADP_TRACE },
         { "trimspace",    ADP_TRIM },
-        { NULL, 0}
+        { NULL, 0U}
     };
 
 
@@ -262,9 +268,9 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
             if (intVal < 0) {
                 intVal = 0;
             }
-            itPtr->adp.bufsize = intVal;
+            itPtr->adp.bufsize = (size_t)intVal;
         }
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)size));
         break;
 
     case CChanIdx:
@@ -310,7 +316,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
                 itPtr->adp.flags &= ~flag;
             }
         }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag != 0U));
         break;
     }
 
@@ -474,8 +480,8 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     const char  *cwd = NULL, *savedCwd = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-cwd",         Ns_ObjvString, &cwd,    NULL},
-        {"-file",        Ns_ObjvBool,   &asFile,     INT2PTR(NS_TRUE)},
+        {"-cwd",         Ns_ObjvString, &cwd,      NULL},
+        {"-file",        Ns_ObjvBool,   &asFile,   INT2PTR(NS_TRUE)},
         {"-safe",        Ns_ObjvBool,   &safe,     INT2PTR(NS_TRUE)},
         {"-string",      Ns_ObjvBool,   &asString, INT2PTR(NS_TRUE)},
         {"-tcl",         Ns_ObjvBool,   &tcl,      INT2PTR(NS_TRUE)},
@@ -846,7 +852,7 @@ NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     }
     result = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(framePtr->file, -1));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->size));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->mtime));
     Tcl_SetObjResult(interp, result);
 
@@ -882,7 +888,7 @@ NsTclAdpArgcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(framePtr->objc));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)framePtr->objc));
 
     return TCL_OK;
 }
@@ -919,13 +925,13 @@ NsTclAdpArgvObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         return TCL_ERROR;
     }
     if (objc == 1) {
-        Tcl_SetListObj(Tcl_GetObjResult(interp), framePtr->objc,
+        Tcl_SetListObj(Tcl_GetObjResult(interp), (int)framePtr->objc,
                        framePtr->objv);
     } else {
         if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK) {
             return TCL_ERROR;
         }
-        if ((i + 1) <= framePtr->objc) {
+        if ((i + 1) <= (int)framePtr->objc) {
             Tcl_SetObjResult(interp, framePtr->objv[i]);
         } else {
             if (objc == 3) {
@@ -967,7 +973,7 @@ NsTclAdpBindArgsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (objc != framePtr->objc) {
+    if (objc != (int)framePtr->objc) {
         Tcl_AppendResult(interp, "invalid #variables", NULL);
         return TCL_ERROR;
     }
@@ -1277,3 +1283,12 @@ GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

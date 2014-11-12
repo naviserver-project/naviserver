@@ -795,6 +795,10 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	    Ns_MutexUnlock(&poolPtr->wqueue.lock);
         }
         Tcl_DStringResult(interp, dsPtr);
+        break;
+    default:
+        /* should never happen */
+        assert(subcmd && 0);
     }
 
     return TCL_OK;

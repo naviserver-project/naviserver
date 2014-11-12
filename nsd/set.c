@@ -952,3 +952,12 @@ Ns_SetPrint(const Ns_Set *set)
         }
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -396,7 +396,7 @@ Ns_DbSelect(Ns_DbHandle *handle, char *sql)
 		}
 	    }
 	} else if (driverPtr->selectProc != NULL) {
-    	    Ns_SetTrunc(handle->row, 0);
+    	    Ns_SetTrunc(handle->row, 0U);
     	    setPtr = (*driverPtr->selectProc)(handle, sql);	
 	    NsDbLogSql(handle, sql);
 	}
@@ -468,7 +468,7 @@ Ns_DbBindRow(Ns_DbHandle *handle)
 	driverPtr != NULL &&
 	driverPtr->bindProc != NULL) {
 
-    	Ns_SetTrunc(handle->row, 0);
+    	Ns_SetTrunc(handle->row, 0U);
     	setPtr = (*driverPtr->bindProc)(handle);
     }
     
@@ -967,7 +967,7 @@ Ns_DbSpGetParams(Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     Ns_Set   *aset = NULL;
 
-    Ns_SetTrunc(handle->row, 0);
+    Ns_SetTrunc(handle->row, 0U);
     if (handle->connected == NS_TRUE &&
 	driverPtr != NULL &&
 	driverPtr->spgetparamsProc != NULL) {
