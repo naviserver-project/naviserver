@@ -1855,28 +1855,27 @@ Ns_GetMimeType(const char *file)
  */
 
 NS_EXTERN Tcl_Encoding
-Ns_GetCharsetEncoding(CONST char *charset)
+Ns_GetCharsetEncoding(const char *charset)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Encoding
-Ns_GetCharsetEncodingEx(CONST char *charset, int len)
+Ns_GetCharsetEncodingEx(const char *charset, int len)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN CONST char *
+NS_EXTERN const char *
 Ns_GetEncodingCharset(Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Encoding
-Ns_GetTypeEncoding(CONST char *mimeType)
+Ns_GetTypeEncoding(const char *mimeType)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Encoding
-Ns_GetFileEncoding(CONST char *file)
+Ns_GetFileEncoding(const char *file)
     NS_GNUC_NONNULL(1);
 
-
 NS_EXTERN Tcl_Encoding
-Ns_GetEncoding(CONST char *name)
+Ns_GetEncoding(const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_GetCharsetEncodingEx);
 
 
