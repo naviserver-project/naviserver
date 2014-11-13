@@ -156,7 +156,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 #include <sys/sendfile.h>
 
 static ssize_t
-Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, const Ns_Time *timeoutPtr);
+Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *timeoutPtr);
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
@@ -224,25 +224,25 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 }
 
 static ssize_t
-Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, const Ns_Time *timeoutPtr)
+Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *timeoutPtr)
 {
     ssize_t sent;
 
-    sent = sendfile(sock->sock, fd, &offset, tosend);
+    sent = sendfile(sock->sock, fd, &offset, toSend);
 
     if (sent == -1) {
         switch (errno) {
 
         case EAGAIN:
             if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                sent = sendfile(sock->sock, fd, &offset, tosend);
+                sent = sendfile(sock->sock, fd, &offset, toSend);
             }
             break;
 
         case EINVAL:
         case ENOSYS:
             /* File system does not support sendfile? */
-            sent = SendFd(sock, fd, offset, tosend, timeoutPtr, 0,
+            sent = SendFd(sock, fd, offset, toSend, timeoutPtr, 0,
                           SendBufs);
             break;
         }
@@ -297,22 +297,22 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
     sent = -1;
 
     for (i = 0; i < nbufs; i++) {
-	size_t  tosend = bufs[i].length;
+	size_t  toSend = bufs[i].length;
         int     fd     = bufs[i].fd;
 	off_t   offset = bufs[i].offset;
 
-        if (tosend > 0) {
+        if (toSend > 0) {
             if (fd < 0) {
-                Ns_SetVec(&iov, 0, INT2PTR(offset), tosend);
+                Ns_SetVec(&iov, 0, INT2PTR(offset), toSend);
                 sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
             } else {
-                sent = SendFd(sock, fd, offset, tosend,
+                sent = SendFd(sock, fd, offset, toSend,
                               timeoutPtr, flags, sendProc);
             }
             if (sent > 0) {
                 nwrote += sent;
             }
-            if (sent != tosend) {
+            if (sent != toSend) {
                 break;
             }
         }
@@ -450,18 +450,18 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
 {
     char          buf[16384];
     struct iovec  iov;
-    ssize_t       nwrote = 0, toread = length;
+    ssize_t       nwrote = 0, toRead = length;
     int           decork;
 
     decork = Ns_SockCork(sock, 1);
-    while (toread > 0) {
+    while (toRead > 0) {
 	ssize_t sent, nread;
 
-        nread = pread(fd, buf, MIN((size_t)toread, sizeof(buf)), offset);
+        nread = pread(fd, buf, MIN((size_t)toRead, sizeof(buf)), offset);
         if (nread <= 0) {
             break;
         }
-        toread -= nread;
+        toRead -= nread;
         offset += (off_t)nread;
 
         Ns_SetVec(&iov, 0, buf, nread);
@@ -510,3 +510,12 @@ SendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 {
     return Ns_SockSendBufs(sock, bufs, nbufs, timeoutPtr, flags);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
