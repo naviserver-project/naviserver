@@ -191,21 +191,22 @@ CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int i
 
     servPtr = connPtr->poolPtr->servPtr;
 
-    /* Check the default setting and explicit overide. */
+    /* 
+     * Check the default setting and explicit overide. 
+     */
+    level = Ns_ConnGetCompression(conn);
 
-    if ((level = Ns_ConnGetCompression(conn)) > 0) {
-
+    if (level > 0) {
         /*
          * Make sure the length is above the minimum threshold, or
          * we're streaming (assume length is long enough for streams).
          */
-
         if (((ioflags & NS_CONN_STREAM) != 0U)
             || (bufs != NULL && Ns_SumVec(bufs, nbufs) >= (size_t)servPtr->compress.minsize)
             || connPtr->responseLength >= servPtr->compress.minsize) {
-
-            /* We won't be compressing if there are no headers or body. */
-
+            /* 
+	     * We won't be compressing if there are no headers or body. 
+	     */
             if (((connPtr->flags & NS_CONN_SENTHDRS) == 0U)
 		&& ((connPtr->flags & NS_CONN_SKIPBODY) == 0U)) {
 	        Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
@@ -320,7 +321,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
                 nsbufs = nbufs;
             } else if (nbufs > 0) {
 		assert(bufs != NULL);
-                (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
+                (void) memcpy(sbufPtr + sbufIdx, bufs, (size_t)nbufs * sizeof(struct iovec));
                 nsbufs += nbufs;
             }
             toWrite += bodyLength;
@@ -340,7 +341,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 		len = sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength);
                 toWrite += Ns_SetVec(sbufPtr, sbufIdx++, hdr, len);
 
-                (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
+                (void) memcpy(sbufPtr + sbufIdx, bufs, (size_t)nbufs * sizeof(struct iovec));
                 sbufIdx += nbufs;
                 toWrite += bodyLength;
 
@@ -458,7 +459,8 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 
 	    vbuf.iov_base = (void *)buf;
 	    vbuf.iov_len  = (size_t)nread;
-	    if ((status = Ns_ConnWriteVData(conn, &vbuf, 1, 0U)) == NS_OK) {
+	    status = Ns_ConnWriteVData(conn, &vbuf, 1, 0U);
+	    if (status == NS_OK) {
 		nsend -= (size_t)nread;
 	    }
 	}
@@ -622,7 +624,10 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	Ns_Log(Debug, "==== writer sent %" PRIdz " bytes\n", toWrite);
 	return (ssize_t)toWrite;
     }
-
+    
+    /*
+     * Perform the actual send operation.
+     */
     {
 	Ns_Time timeout;
 	
@@ -631,9 +636,11 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
       
 	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0U);
     }
-    /*toWrite -= sent;*/
-    nwrote += sent;
 
+    /*
+     * Update counters;
+     */
+    nwrote += sent;
     if (nwrote > 0) {
 	connPtr->nContentSent += (size_t)nwrote;
     }
@@ -1128,7 +1135,8 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
      * Set and construct the headers.
      */
 
-    if ((connPtr->keep = CheckKeep(connPtr))) {
+    connPtr->keep = CheckKeep(connPtr);
+    if (connPtr->keep != 0) {
         keep = "keep-alive";
     } else {
         keep = "close";
@@ -1163,7 +1171,6 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
 static int
 CheckKeep(const Conn *connPtr)
 {
-
     assert(connPtr != NULL);
 
     if (connPtr->drvPtr->keepwait > 0) {
@@ -1271,3 +1278,12 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
     }
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
