@@ -123,7 +123,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     Stream          stream;
     Ns_Request      request;
     int             status, n;
-    unsigned int    tosend;
+    unsigned int    toSend;
 
     sock = NS_INVALID_SOCKET;
     Ns_DStringInit(&ds);
@@ -162,15 +162,15 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     }
     Ns_DStringAppend(&ds, " HTTP/1.0\r\nAccept: */*\r\n\r\n");
     p = ds.string;
-    tosend = ds.length;
-    while (tosend > 0) {
-        n = send(sock, p, tosend, 0);
+    toSend = ds.length;
+    while (toSend > 0) {
+        n = send(sock, p, toSend, 0);
         if (n == SOCKET_ERROR) {
             Ns_Log(Error, "urlopen: failed to send data to '%s': '%s'",
                    url, ns_sockstrerror(ns_sockerrno));
             goto done;
         }
-        tosend -= n;
+        toSend -= n;
         p += n;
     }
 
