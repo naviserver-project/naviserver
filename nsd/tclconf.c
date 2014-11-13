@@ -59,12 +59,12 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     char       *section, *key;
     CONST char *value;
     Tcl_Obj    *defObj = NULL;
-    int         status, i, isbool = 0, isint = 0, exact = 0, doSet = 0;
+    int         status, i, isBool = 0, isInt = 0, exact = 0, doSet = 0;
     Tcl_WideInt v, min = LLONG_MIN, max = LLONG_MAX;
 
     Ns_ObjvSpec opts[] = {
-        {"-bool",  Ns_ObjvBool,      &isbool, INT2PTR(NS_TRUE)},
-        {"-int",   Ns_ObjvBool,      &isint,  INT2PTR(NS_TRUE)},
+        {"-bool",  Ns_ObjvBool,      &isBool, INT2PTR(NS_TRUE)},
+        {"-int",   Ns_ObjvBool,      &isInt,  INT2PTR(NS_TRUE)},
         {"-min",   Ns_ObjvWideInt,   &min,    NULL},
         {"-max",   Ns_ObjvWideInt,   &max,    NULL},
         {"-exact", Ns_ObjvBool,      &exact,  INT2PTR(NS_TRUE)},
@@ -82,7 +82,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         return TCL_ERROR;
     }
     if (min > LLONG_MIN || max < LLONG_MAX) {
-        isint = 1;
+        isInt = 1;
     }
 
     value = (exact != 0) ?
@@ -95,12 +95,12 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     status = TCL_OK;
 
-    if (isbool != 0) {
+    if (isBool != 0) {
         if (value != NULL && ((status = Tcl_GetBoolean(interp, value, &i)) == TCL_OK)) {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
             return TCL_OK;
         }
-    } else if (isint != 0) {
+    } else if (isInt != 0) {
         if (value != NULL) { 
             /*
              * There is no Tcl_GetWideInt so we put same error message as Tcl_GetInt
@@ -129,12 +129,12 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     if (defObj != NULL) {
 
-        if (isbool != 0) {
+        if (isBool != 0) {
             if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
                 return TCL_ERROR;
             }
             defObj = Tcl_NewIntObj(i);
-        } else if (isint != 0) {
+        } else if (isInt != 0) {
             if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
                 return TCL_ERROR;
             }
@@ -233,3 +233,12 @@ NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
