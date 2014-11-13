@@ -275,6 +275,8 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     Ns_ObjvSpec *specPtr = NULL;
     int          optIndex, status, remain = (objc - offset);
 
+    assert(interp != NULL);
+
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
         while (remain > 0) {

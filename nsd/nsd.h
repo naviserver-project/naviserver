@@ -1256,8 +1256,9 @@ NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
  * Url-specific data routines.
  */
 
-NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
-				 CONST char *url, int id, int fast);
+NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
+				 const char *url, int id, int fast)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * Socket driver callbacks.

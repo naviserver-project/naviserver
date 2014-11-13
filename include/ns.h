@@ -1614,7 +1614,8 @@ NS_EXTERN Tcl_SetFromAnyProc Ns_TclSetFromAnyError;
 
 NS_EXTERN int
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
-                           Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST* objv);
+             Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST* objv)
+    NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
@@ -1677,20 +1678,20 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
  */
 
 NS_EXTERN char *
-Tcl_DeleteKeyedListField(Tcl_Interp  *interp, CONST char *fieldName,
-			 CONST char *keyedList);
+Tcl_DeleteKeyedListField(Tcl_Interp  *interp, const char *fieldName,
+			 const char *keyedList);
 
 NS_EXTERN int
-Tcl_GetKeyedListField(Tcl_Interp  *interp, CONST char *fieldName,
-		      CONST char *keyedList, char **fieldValuePtr);
+Tcl_GetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
+		      const char *keyedList, char **fieldValuePtr);
 
 NS_EXTERN int
-Tcl_GetKeyedListKeys(Tcl_Interp  *interp, char CONST *subFieldName,
-		     CONST char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
+Tcl_GetKeyedListKeys(Tcl_Interp  *interp, char const *subFieldName,
+		     const char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
 
 NS_EXTERN char *
-Tcl_SetKeyedListField(Tcl_Interp  *interp, CONST char *fieldName,
-		      CONST char *fieldValue, CONST char *keyedList);
+Tcl_SetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
+		      const char *fieldValue, const char *keyedList);
 
 /*
  * listen.c:
@@ -3000,29 +3001,29 @@ NS_EXTERN int
 Ns_UrlSpecificAlloc(void);
 
 NS_EXTERN void
-Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
+Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
                   void *data, unsigned int flags, void (*deletefunc)(void *data))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url, int id)
+Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
-Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, int id)
+Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
-Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
+Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
                        int id, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
-Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
+Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
                       int id, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

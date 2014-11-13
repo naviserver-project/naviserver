@@ -335,15 +335,18 @@ Ns_UrlSpecificAlloc(void)
  */
 
 void
-Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
+Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
                   void *data, unsigned int flags, void (*deletefunc) (void *data))
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr;
     Ns_DString  ds;
 
-    if (method == NULL || url == NULL) {
-        return;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+    assert(data != NULL);
+
+    servPtr = NsGetServer(server);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -372,27 +375,34 @@ Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int i
  */
 
 void *
-Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url, int id)
+Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
 {
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0);
 }
 
 void *
-Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, int id)
+Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
 {
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, 1);
 }
 
 void *
-NsUrlSpecificGet(NsServer *servPtr, CONST char *method, CONST char *url, int id,
-                 int fast)
+NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id, int fast)
 {
     Ns_DString  ds;
     void       *data;
 
-    if (method == NULL || url == NULL) {
-        return NULL;
-    }
+    assert(servPtr != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -421,16 +431,18 @@ NsUrlSpecificGet(NsServer *servPtr, CONST char *method, CONST char *url, int id,
  */
 
 void *
-Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
+Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
                        int id, unsigned int flags)
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr;
     Ns_DString  ds;
     void       *data;
 
-    if (method == NULL || url == NULL) {
-        return NULL;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
+    servPtr = NsGetServer(server);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -459,16 +471,18 @@ Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void *
-Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
+Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
                       int id, unsigned int flags)
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr;
     Ns_DString  ds;
     void       *data = NULL;
 
-    if (method == NULL || url == NULL) {
-        return NULL;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
+    servPtr = NsGetServer(server);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -501,12 +515,16 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void
-Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
 {
     Junction *juncPtr;
     Channel  *channelPtr;
     int       n, i;
     char     *stack[STACK_SIZE];
+
+    assert(server != NULL);
+    assert(func != NULL);
+    assert(dsPtr != NULL);
 
     juncPtr = JunctionGet(NsGetServer(server), id);
     memset(stack, 0, sizeof(stack));
@@ -1848,3 +1866,12 @@ PrintSeq(const char *seq)
     }
 }
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -1068,8 +1068,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     Ns_DString  cwd;
     Tcl_Obj    *objPtr;
     int         nscript, nblocks, result, i;
-    const char       *ptr, *slash;
-    const char *savecwd;
+    const char *ptr, *slash, *savecwd;
 
     assert(itPtr != NULL);
     assert(codePtr != NULL);

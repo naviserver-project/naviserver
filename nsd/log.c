@@ -487,7 +487,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      * Flush it out if not held
      */
 
-    if (!cachePtr->hold || severity == Fatal) {
+    if (cachePtr->hold == 0 || severity == Fatal) {
         LogFlush(cachePtr, filters, -1, 1, 1);
     }
 }
@@ -937,14 +937,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     default:
         /* unexpected value */
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * indent-tabs-mode: nil
- * End:
- */
+        assert(opt && 0);
         break;
     }
 
@@ -1152,7 +1145,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
     assert(listPtr != NULL);
 
     while (ePtr != NULL && cachePtr->currEntry) {
-        char *log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
+        const char *log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
         if (locked != 0) {
             Ns_MutexLock(&lock);
