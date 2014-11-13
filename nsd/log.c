@@ -1145,7 +1145,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
     assert(listPtr != NULL);
 
     while (ePtr != NULL && cachePtr->currEntry) {
-        const char *log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
+        const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
         if (locked != 0) {
             Ns_MutexLock(&lock);
@@ -1158,7 +1158,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                     Ns_MutexUnlock(&lock);
                 }
                 status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
-                                       &ePtr->stamp, log, ePtr->length);
+                                       &ePtr->stamp, logString, ePtr->length);
                 if (locked != 0) {
                     Ns_MutexLock(&lock);
                     cPtr->refcnt--;
@@ -1173,7 +1173,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                      * use the default logfile sink.
                      */
                     LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
-                              &ePtr->stamp, log, ePtr->length);
+                              &ePtr->stamp, logString, ePtr->length);
                     break;
                 }
             }
