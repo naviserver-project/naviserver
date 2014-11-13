@@ -154,15 +154,18 @@
 #define NS_DRIVER_VERSION_2        2    /* Current version. */
 
 /*
- * The following are valid Tcl interp traces.
+ * The following are valid Tcl interp traces types.
  */
 
-#define NS_TCL_TRACE_CREATE        0x01U /* New interp created */
-#define NS_TCL_TRACE_DELETE        0x02U /* Interp destroyed */
-#define NS_TCL_TRACE_ALLOCATE      0x04U /* Interp allocated, possibly from thread cache */
-#define NS_TCL_TRACE_DEALLOCATE    0x08U /* Interp de-allocated, returned to thread-cache */
-#define NS_TCL_TRACE_GETCONN       0x10U /* Interp allocated for connection processing (filter, proc) */
-#define NS_TCL_TRACE_FREECONN      0x20U /* Interp finished connection processing */
+typedef enum {
+    NS_TCL_TRACE_NONE         = 0x00U, /* No trace */
+    NS_TCL_TRACE_CREATE       = 0x01U, /* New interp created */
+    NS_TCL_TRACE_DELETE       = 0x02U, /* Interp destroyed */
+    NS_TCL_TRACE_ALLOCATE     = 0x04U, /* Interp allocated, possibly from thread cache */
+    NS_TCL_TRACE_DEALLOCATE   = 0x08U, /* Interp de-allocated, returned to thread-cache */
+    NS_TCL_TRACE_GETCONN      = 0x10U, /* Interp allocated for connection processing (filter, proc) */
+    NS_TCL_TRACE_FREECONN     = 0x20U /* Interp finished connection processing */
+} Ns_TclTraceType;
 
 /*
  * The following define some buffer sizes and limits.
@@ -1264,7 +1267,7 @@ Ns_DStringExport(Ns_DString *dsPtr)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *string)
+Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *bytes)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
@@ -2723,11 +2726,11 @@ Ns_TclInit(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
+Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
      NS_GNUC_NONNULL(3);
 
 NS_EXTERN Tcl_Interp *
-Ns_TclAllocateInterp(CONST char *server);
+Ns_TclAllocateInterp(const char *server);
 
 NS_EXTERN void
 Ns_TclDeAllocateInterp(Tcl_Interp *interp)
@@ -2750,7 +2753,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc, void *arg, unsigned int when)
+Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
@@ -2761,7 +2764,7 @@ Ns_TclInterpServer(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_TclInitModule(CONST char *server, CONST char *module)
+Ns_TclInitModule(const char *server, const char *module)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -3094,3 +3097,12 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 #endif /* NS_H */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

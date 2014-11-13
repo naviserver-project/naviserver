@@ -138,7 +138,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 #ifdef _WIN32
     HANDLE process = (HANDLE) pid;
     int status = NS_OK;
-    DWORD exitcode = 0;
+    DWORD exitcode = 0U;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
         (GetExitCodeProcess(process, &exitcode) != TRUE)) {
@@ -597,7 +597,7 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 
     for (i = 0U; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
-        Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
+                            Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
         Ns_DStringNAppend(dsPtr, "", 1);
     }
     Ns_DStringNAppend(dsPtr, "", 1);
@@ -605,3 +605,12 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 }
 
 #endif /* _WIN32 */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
