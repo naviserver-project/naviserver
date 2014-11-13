@@ -484,6 +484,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     /*
      * Append the remaining text block
      */
+    assert(text != NULL);
     { 
 	size_t len = strlen(text);
 	if (len > 0U) {
@@ -872,7 +873,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         /* NB: String was a procedure, append tag attributes. */
         ParseAtts(as, ae, NULL, &script, 0);
     }
-    if (se > ae) {
+    if (se != NULL && se > ae) {
         /* NB: Append enclosing text as argument to eval or proc. */
         char save = *se;
         *se = '\0';

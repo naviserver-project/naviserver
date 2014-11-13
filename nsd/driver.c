@@ -4846,3 +4846,12 @@ AsyncWriterThread(void *arg)
     Ns_Log(Notice, "exiting");
 
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

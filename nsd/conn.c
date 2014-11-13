@@ -204,7 +204,7 @@ Ns_ConnContentLength(const Ns_Conn *conn)
 char *
 Ns_ConnContent(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (Conn *) conn;
 
     return connPtr->reqPtr->content;
 }
@@ -1667,6 +1667,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0U));
 	break;
 
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
+
     }
 
     return TCL_OK;
@@ -1976,3 +1981,12 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 
     return chan;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

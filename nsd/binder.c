@@ -692,7 +692,7 @@ PreBind(const char *line)
             Ns_Log(Notice, "prebind: udp: %s:%d = %d", addr, port, sock);
         }
 
-        if (!strncmp(proto,"icmp",4)) {
+        if (strncmp(proto, "icmp", 4U) == 0) {
             int count = 1;
             /* Parse count */
             str = strchr(str,'/');
@@ -1083,3 +1083,12 @@ Binder(void)
     Ns_Log(Notice, "binder: stopped");
 }
 #endif /* _WIN32 */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

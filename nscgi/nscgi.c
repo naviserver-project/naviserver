@@ -503,7 +503,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     *s = '\0';
     cgiPtr->dir = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->path);
     *s++ = '/';
-    if (strncmp(s, "nph-", 4) == 0) {
+    if (strncmp(s, "nph-", 4U) == 0) {
         cgiPtr->flags |= CGI_NPH;
     }
 
@@ -1290,3 +1290,11 @@ SetUpdate(Ns_Set *set, const char *key, const char *value)
     Ns_SetUpdate(set, key, (value != NULL) ? value : "");
 }
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

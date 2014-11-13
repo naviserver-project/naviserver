@@ -186,7 +186,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     if (GetLine(&stream, &ds) == 0) {
         goto done;
     }
-    if (headers != NULL && strncmp(ds.string, "HTTP", 4) == 0) {
+    if (headers != NULL && strncmp(ds.string, "HTTP", 4U) == 0) {
         if (headers->name != NULL) {
 	    ns_free((char *)headers->name);
         }
@@ -382,3 +382,12 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
 
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -934,6 +934,18 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
         }
         break;
+
+    default:
+        /* unexpected value */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
+        break;
     }
 
     return TCL_OK;
@@ -1552,3 +1564,12 @@ Ns_SetNsLogProc(Ns_LogProc *UNUSED(procPtr))
 {
     Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

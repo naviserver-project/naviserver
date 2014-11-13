@@ -98,7 +98,7 @@ int
 Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 {
     Args      cmd;
-    int       i, sig, optind;
+    int       sig, optind;
     char     *config = NULL;
     Ns_Time   timeout;
     Ns_Set   *set;
@@ -264,6 +264,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     }
 
     if (mode == 'c') {
+	int i;
         cmd.argv = ns_calloc((size_t)(argc - optind + 2), sizeof(char *));
         cmd.argc = 0;
         cmd.argv[cmd.argc++] = argv[0];
@@ -300,7 +301,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 0 || mode == 'w') {
-        i = ns_fork();
+	int i = ns_fork();
         if (i == -1) {
             Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
         }
@@ -469,7 +470,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      */
 
     if (server != NULL) {
-        i = Ns_SetFind(servers, server);
+        int i = Ns_SetFind(servers, server);
         if (i < 0) {
             Ns_Fatal("nsmain: no such server '%s'", server);
         }
@@ -560,6 +561,10 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
         case 'S':
             status = NsConnectService();
             break;
+	default:
+	    /* cannot happen */
+	    assert(0);
+	    break;
         }
         return (status == NS_OK ? 0 : 1);
     }

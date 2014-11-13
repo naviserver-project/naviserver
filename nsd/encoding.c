@@ -276,10 +276,12 @@ ConfigServerEncodings(const char *server)
  */
 
 Tcl_Encoding
-Ns_GetFileEncoding(CONST char *file)
+Ns_GetFileEncoding(const char *file)
 {
-    CONST char    *ext;
+    const char    *ext;
     Tcl_Encoding   encoding = NULL;
+
+    assert(file != NULL);
 
     ext = strrchr(file, '.');
     if (ext != NULL) {

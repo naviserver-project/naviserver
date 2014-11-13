@@ -1628,10 +1628,10 @@ CreateConnThread(ConnPool *poolPtr)
 
 #if !defined(NDEBUG)
     { char *threadName = Ns_ThreadGetName();
-      assert(strncmp("-driver:", threadName, 8) == 0 
-	     || strncmp("-main-", threadName, 6) == 0
-	     || strncmp("-spooler", threadName, 8) == 0
-	     || strncmp("-service-", threadName, 9) == 0
+      assert(strncmp("-driver:", threadName, 8U) == 0 
+	     || strncmp("-main-", threadName, 6U) == 0
+	     || strncmp("-spooler", threadName, 8U) == 0
+	     || strncmp("-service-", threadName, 9U) == 0
 	     );
     }
 #endif

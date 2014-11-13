@@ -1147,7 +1147,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             Tcl_SetObjResult(interp, tpFieldList);
         }
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
+
     return code;
 }
 
@@ -2132,3 +2138,12 @@ SetupJobDefaults(void)
         tp.timeout = nsconf.job.timeout;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

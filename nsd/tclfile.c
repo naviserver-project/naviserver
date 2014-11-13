@@ -567,7 +567,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsServer       *servPtr = itPtr->servPtr;
     NsRegChan      *regChan = NULL;
 
-    char           *name = NULL, *chanName = NULL;
+    const char     *name = NULL, *chanName = NULL;
     int             isNew, shared, opt, chanNameLength;
     Tcl_Channel     chan = NULL;
 
@@ -731,6 +731,10 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Ns_MutexUnlock(&servPtr->chans.lock);
         }
         break;
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     return TCL_OK;
@@ -813,3 +817,12 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 
     Tcl_CutChannel(chan);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

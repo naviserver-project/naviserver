@@ -209,7 +209,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Ns_Set          *set = NULL, *set2Ptr, **sets;
     int              i, opt;
     unsigned int     flags;
-    char            *key, *val, *def, *name, *split;
+    const char            *key, *val, *def, *name, *split;
     Tcl_DString      ds;
     Tcl_HashTable   *tablePtr;
     Tcl_HashEntry   *hPtr;
@@ -319,6 +319,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             }
             ns_free(sets);
             break;
+            
+        default:
+            /* unexpected value */
+            assert(opt && 0);
+            break;
         }
         break;
 
@@ -380,6 +385,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             case SFreeIdx:
                 Ns_TclFreeSet(interp, Tcl_GetString(objv[2]));
                 break;
+
+            default:
+                /* unexpected value */
+                assert(opt && 0);
+                break;
             }
             break;
 
@@ -398,6 +408,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             case SIGetIdx:
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), -1));
+                break;
+
+            default:
+                /* unexpected value */
+                assert(opt && 0);
                 break;
             }
             break;
@@ -447,6 +462,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             case SIUniqueIdx:
                 objPtr = Tcl_NewIntObj(Ns_SetIUnique(set, key));
                 Tcl_SetObjResult(interp, objPtr);
+                break;
+
+            default:
+                /* unexpected value */
+                assert(opt && 0);
                 break;
             }
             break;
@@ -501,6 +521,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             case STruncateIdx:
                 Ns_SetTrunc(set, i);
+                break;
+
+            default:
+                /* unexpected value */
+                assert(opt && 0);
                 break;
             }
             break;
@@ -570,6 +595,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 Ns_SetMove(set, set2Ptr);
             }
             Tcl_SetObjResult(interp, objv[2]);
+            break;
+
+        default:
+            /* unexpected value */
+            assert(opt && 0);
             break;
         }
     }
@@ -754,3 +784,12 @@ LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr)
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

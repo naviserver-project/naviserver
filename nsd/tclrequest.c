@@ -506,6 +506,10 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
     case NS_FILTER_VOID_TRACE:
         /* Registered with ns_register_trace; always type VOID TRACE, so don't append. */
         break;
+    default:
+        /* unexpected value */
+        assert(why && 0);
+        break;
     }
 
     /*
@@ -616,3 +620,12 @@ NsTclTimeoutException(Tcl_Interp *interp)
     }
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

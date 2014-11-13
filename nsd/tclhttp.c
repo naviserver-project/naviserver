@@ -326,7 +326,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
     encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
 
-    if (encString != NULL && strncmp("gzip", encString, 4) == 0) {
+    if (encString != NULL && strncmp("gzip", encString, 4U) == 0) {
       httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
 
       if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
@@ -377,7 +377,7 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 		eoh = strstr(httpPtr->ds.string, "\n\n");
 		if (eoh != NULL) {
 		    Ns_Log(Warning, "HttpCheckHeader: http client reply contains no crlf, this should not happen");
-		    httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 2U;
+		    httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 2;
 		    eoh += 1;
 		    *eoh = '\0';
 		}
@@ -694,7 +694,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
     assert(url != NULL);
     assert(httpPtrPtr != NULL);
 
-    if (strncmp(url, "http://", 7) != 0 || url[7] == '\0') {
+    if (strncmp(url, "http://", 7U) != 0 || url[7] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
         return TCL_ERROR;
     }
@@ -1046,3 +1046,12 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why)
     Ns_GetTime(&httpPtr->etime);
     Ns_TaskDone(httpPtr->task);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

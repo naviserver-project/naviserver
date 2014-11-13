@@ -686,6 +686,11 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             UnlockArray(arrayPtr);
         }
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     return TCL_OK;
@@ -1350,3 +1355,11 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
     return TCL_OK;
 }
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

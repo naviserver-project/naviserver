@@ -193,7 +193,8 @@ Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
     size_t        len;
     int           created;
 
-    if ((tblPtr = Ns_SlsGet(&kslot, sock)) == NULL) {
+    tblPtr = Ns_SlsGet(&kslot, sock);
+    if (tblPtr == NULL) {
         tblPtr = ns_malloc(sizeof(Tcl_HashTable));
         Tcl_InitHashTable(tblPtr, TCL_STRING_KEYS);
         Ns_SlsSet(&kslot, sock, tblPtr);
@@ -230,7 +231,8 @@ Ns_SlsGetKeyed(Ns_Sock *sock, CONST char *key)
     Tcl_HashEntry *hPtr;
     char          *value = NULL;
 
-    if ((tblPtr = Ns_SlsGet(&kslot, sock)) == NULL) {
+    tblPtr = Ns_SlsGet(&kslot, sock);
+    if (tblPtr == NULL) {
         return NULL;
     }
     hPtr = Tcl_FindHashEntry(tblPtr, key);
@@ -265,7 +267,8 @@ Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
 
-    if ((tblPtr = Ns_SlsGet(&kslot, sock)) == NULL) {
+    tblPtr = Ns_SlsGet(&kslot, sock);
+    if (tblPtr == NULL) {
         return NULL;
     }
     hPtr = Tcl_FirstHashEntry(tblPtr, &search);
@@ -299,7 +302,8 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
 {
     Tcl_HashTable *tblPtr;
 
-    if ((tblPtr = Ns_SlsGet(&kslot, sock)) != NULL) {
+    tblPtr = Ns_SlsGet(&kslot, sock);
+    if (tblPtr != NULL) {
         Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tblPtr, key);
 
         if (hPtr != NULL) {
@@ -400,6 +404,10 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         Ns_SlsUnsetKeyed(sock, Tcl_GetString(objv[2]));
         break;
 
+    default:
+        /* unexpected value */
+        assert(cmd && 0);
+        break;
     }
 
     return TCL_OK;
@@ -508,3 +516,12 @@ CleanupKeyed(void *arg)
     Tcl_DeleteHashTable(tblPtr);
     ns_free(tblPtr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -988,7 +988,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 
         (void) Ns_StrToLower(safehost);
         if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0U
-            && strncmp(safehost, "www.", 4) == 0) {
+            && strncmp(safehost, "www.", 4U) == 0) {
             safehost = &safehost[4];
         }
         if ((servPtr->vhost.opts & NSD_STRIP_PORT)
@@ -1020,3 +1020,12 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 
     return path;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

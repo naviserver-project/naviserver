@@ -355,6 +355,11 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 	  Tcl_DStringResult(interp, dsPtr);
 	}
 	return TCL_OK;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&result));
@@ -630,3 +635,12 @@ SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -221,6 +221,11 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
             Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
         }
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
     status = TCL_OK;
 
@@ -307,3 +312,12 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

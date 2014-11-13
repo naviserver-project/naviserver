@@ -406,10 +406,19 @@ MakeMonth(char *s)
     *(s + 2) = CHARCONV(lower, *(s + 2));
 
     for (i = 0; i < 12; i++) {
-        if (strncmp(month_names[i], s, 3) == 0) {
+        if (strncmp(month_names[i], s, 3U) == 0) {
             return i;
         }
     }
 
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
