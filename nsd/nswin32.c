@@ -144,14 +144,14 @@ DllMain(HANDLE hModule, DWORD why, LPVOID UNUSED(lpReserved))
 {
     WSADATA wsd;
 
-    if (why == DLL_PROCESS_ATTACH) {
+    if (why == (DWORD)DLL_PROCESS_ATTACH) {
         Ns_TlsAlloc(&tls, ns_free);
-        if (WSAStartup(MAKEWORD(1, 1), &wsd) != 0) {
+        if (WSAStartup((WORD)MAKEWORD(1, 1), &wsd) != 0) {
             return FALSE;
         }
         DisableThreadLibraryCalls(hModule);
         Nsd_LibInit();
-    } else if (why == DLL_PROCESS_DETACH) {
+    } else if (why == (DWORD)DLL_PROCESS_DETACH) {
         WSACleanup();
     }
 
@@ -179,19 +179,19 @@ DllMain(HANDLE hModule, DWORD why, LPVOID UNUSED(lpReserved))
 char *
 NsWin32ErrMsg(DWORD err)
 {
-    char *msg;
-    int len;
+    char  *msg;
+    size_t len;
 
     msg = Ns_TlsGet(&tls);
     if (msg == NULL) {
-        msg = ns_malloc(1000);
+        msg = ns_malloc(1000u);
         Ns_TlsSet(&tls, msg);
     }
-    snprintf(msg, 1000, "win32 error code: %lu: ", err);
+    snprintf(msg, 1000u, "win32 error code: %lu: ", err);
     len = strlen(msg);
     
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 
-		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), msg+len, 1000 - len, NULL);
+		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), msg+len, 1000u - len, NULL);
 
     return msg;
 }
@@ -305,11 +305,11 @@ NsRemoveService(char *service)
     Ns_DStringInit(&name);
     GetServiceName(&name, service);
     ok = FALSE;
-    hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
     if (hmgr != NULL) {
-        SC_HANDLE hsrv = OpenService(hmgr, name.string, SERVICE_ALL_ACCESS);
+        SC_HANDLE hsrv = OpenService(hmgr, name.string, (DWORD)SERVICE_ALL_ACCESS);
         if (hsrv != NULL) {
-            ControlService(hsrv, SERVICE_CONTROL_STOP, &status);
+            ControlService(hsrv, (DWORD)SERVICE_CONTROL_STOP, &status);
             ok = DeleteService(hsrv);
             CloseServiceHandle(hsrv);
         }
@@ -353,7 +353,7 @@ NsInstallService(char *service)
 
     if (_fullpath(config, nsconf.config, sizeof(config)) == NULL) {
         Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.config);
-    } else if (GetModuleFileName(NULL, nsd, sizeof(nsd)) == 0) {
+    } else if (GetModuleFileName(NULL, nsd, sizeof(nsd)) == 0u) {
         Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
     } else {
         Ns_DStringInit(&name);
@@ -361,11 +361,13 @@ NsInstallService(char *service)
         Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
                             " -S -s ", service, " -t \"", config, "\"", NULL);
         GetServiceName(&name, service);
-        hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+        hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
         if (hmgr != NULL) {
             hsrv = CreateService(hmgr, name.string, name.string,
-                                 SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
-                                 SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
+				 (DWORD)SERVICE_ALL_ACCESS,  
+				 (DWORD)SERVICE_WIN32_OWN_PROCESS,
+				 (DWORD)SERVICE_AUTO_START, 
+				 (DWORD)SERVICE_ERROR_NORMAL,
                                  cmd.string, NULL, NULL, "TcpIp\0", NULL, NULL);
             if (hsrv != NULL) {
                 CloseServiceHandle(hsrv);
@@ -440,7 +442,7 @@ NsHandleSignals(void)
         SetConsoleCtrlHandler(ConsoleHandler, TRUE);
     } else {
         StopTicker();
-        ReportStatus(SERVICE_RUNNING, NO_ERROR, 0);
+        ReportStatus((DWORD)SERVICE_RUNNING, NO_ERROR, 0u);
     }
     Ns_MutexSetName2(&lock, "ns", "signal");
     do {
@@ -471,7 +473,7 @@ NsHandleSignals(void)
      */
 
     if (serviceRunning != 0) {
-        StartTicker(SERVICE_STOP_PENDING);
+        StartTicker((DWORD)SERVICE_STOP_PENDING);
     }
 
     return (int)sig;
@@ -539,20 +541,20 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
     switch (mode) {
     case NS_MMAP_WRITE:
         hndl = CreateFile(path,
-                          GENERIC_READ|GENERIC_WRITE,
-                          FILE_SHARE_READ|FILE_SHARE_WRITE,
+                          (DWORD)(GENERIC_READ|GENERIC_WRITE),
+                          (DWORD)(FILE_SHARE_READ|FILE_SHARE_WRITE),
                           NULL,
-                          OPEN_EXISTING,
-                          FILE_FLAG_WRITE_THROUGH,
+                          (DWORD)OPEN_EXISTING,
+                          (DWORD)FILE_FLAG_WRITE_THROUGH,
                           NULL);
         break;
     case NS_MMAP_READ:
         hndl = CreateFile(path,
                           GENERIC_READ,
-                          FILE_SHARE_READ,
+                          (DWORD)FILE_SHARE_READ,
                           NULL,
-                          OPEN_EXISTING,
-                          0,
+                          (DWORD)OPEN_EXISTING,
+                          0u,
                           NULL);
         break;
     default:
@@ -568,10 +570,9 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
 
     mobj = CreateFileMapping(hndl,
                              NULL,
-                             mode == NS_MMAP_WRITE ?
-                             PAGE_READWRITE : PAGE_READONLY,
-                             0,
-                             0,
+                             mode == NS_MMAP_WRITE ? (DWORD)PAGE_READWRITE : (DWORD)PAGE_READONLY,
+                             0u,
+                             0u,
                              name);
 
     if (mobj == NULL || mobj == INVALID_HANDLE_VALUE) {
@@ -581,10 +582,9 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
     }
 
     addr = MapViewOfFile(mobj,
-                         mode == NS_MMAP_WRITE ?
-                         FILE_MAP_WRITE : FILE_MAP_READ,
-                         0,
-                         0,
+                         mode == NS_MMAP_WRITE ? (DWORD)FILE_MAP_WRITE : (DWORD)FILE_MAP_READ,
+                         0u,
+                         0u,
                          size);
 
     if (addr == NULL) {
@@ -680,7 +680,7 @@ ns_sockdup(NS_SOCKET sock)
 
     src = (HANDLE) sock;
     hp = GetCurrentProcess();
-    if (DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS) == 0) {
+    if (DuplicateHandle(hp, src, hp, &dup, 0u, FALSE, (DWORD)DUPLICATE_SAME_ACCESS) == 0) {
         return NS_INVALID_SOCKET;
     }
 
@@ -706,9 +706,9 @@ ns_sockdup(NS_SOCKET sock)
 int
 ns_sock_set_blocking(NS_SOCKET fd, int blocking) 
 {
-    long state = (blocking == 0);
+    long state = (long)(blocking == 0);
 
-    return ioctlsocket(fd, FIONBIO, &state);
+    return ioctlsocket(fd, (long)FIONBIO, &state);
 }
 
 
@@ -731,7 +731,7 @@ ns_sock_set_blocking(NS_SOCKET fd, int blocking)
 int
 ns_pipe(int *fds)
 {
-    return _pipe(fds, 4096, _O_NOINHERIT|_O_BINARY);
+    return _pipe(fds, 4096u, _O_NOINHERIT|_O_BINARY);
 }
 
 
@@ -800,20 +800,20 @@ ns_sockpair(NS_SOCKET socks[2])
     struct sockaddr_in ia[2];
     int size;
 
-    size = sizeof(struct sockaddr_in);
+    size = (int)sizeof(struct sockaddr_in);
     sock = Ns_SockListen("127.0.0.1", 0);
     if (sock == NS_INVALID_SOCKET ||
         getsockname(sock, (struct sockaddr *) &ia[0], &size) != 0) {
         return -1;
     }
-    size = sizeof(struct sockaddr_in);
+    size = (int)sizeof(struct sockaddr_in);
     socks[1] = Ns_SockConnect("127.0.0.1", (int) ntohs(ia[0].sin_port));
     if (socks[1] == NS_INVALID_SOCKET ||
         getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
         ns_sockclose(sock);
         return -1;
     }
-    size = sizeof(struct sockaddr_in);
+    size = (int)sizeof(struct sockaddr_in);
     socks[0] = accept(sock, (struct sockaddr *) &ia[0], &size);
     ns_sockclose(sock);
     if (socks[0] == NS_INVALID_SOCKET) {
@@ -982,7 +982,7 @@ ServiceTicker(void *arg)
 
     Ns_MutexLock(&lock);
     do {
-        ReportStatus(pending, NO_ERROR, 2000);
+        ReportStatus(pending, NO_ERROR, 2000u);
         Ns_GetTime(&timeout);
         Ns_IncrTime(&timeout, 1, 0);
         Ns_CondTimedWait(&cond, &lock, &timeout);
@@ -1018,15 +1018,15 @@ ServiceMain(DWORD argc, LPTSTR *argv)
         Ns_Fatal("nswin32: RegisterServiceCtrlHandler() failed: '%s'",
                  SysErrMsg());
     }
-    curStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
-    curStatus.dwServiceSpecificExitCode = 0;
-    StartTicker(SERVICE_START_PENDING);
+    curStatus.dwServiceType = (DWORD)SERVICE_WIN32_OWN_PROCESS;
+    curStatus.dwServiceSpecificExitCode = 0u;
+    StartTicker((DWORD)SERVICE_START_PENDING);
     Ns_Main((int)argc, argv, NULL);
     StopTicker();
-    ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
+    ReportStatus((DWORD)SERVICE_STOP_PENDING, NO_ERROR, 100u);
     if (serviceFailed == 0) {
         Ns_Log(Notice, "nswin32: noitifying SCM about exit");
-        ReportStatus(SERVICE_STOPPED, 0, 0);
+        ReportStatus((DWORD)SERVICE_STOPPED, 0u, 0u);
     }
     Ns_Log(Notice, "nswin32: service exiting");
     if(serviceFailed) {
@@ -1056,10 +1056,10 @@ ServiceMain(DWORD argc, LPTSTR *argv)
 static VOID WINAPI
 ServiceHandler(DWORD code)
 {
-    if (code == SERVICE_CONTROL_STOP || code == SERVICE_CONTROL_SHUTDOWN) {
+    if (code == (DWORD)SERVICE_CONTROL_STOP || code == (DWORD)SERVICE_CONTROL_SHUTDOWN) {
         NsSendSignal(NS_SIGTERM);
     } else {
-        ReportStatus(code, NO_ERROR, 0);
+        ReportStatus(code, NO_ERROR, 0u);
     }
 }
 
@@ -1083,22 +1083,22 @@ ServiceHandler(DWORD code)
 static void
 ReportStatus(DWORD state, DWORD code, DWORD hint)
 {
-    if (state == SERVICE_START_PENDING) {
-        curStatus.dwControlsAccepted = 0;
+    if (state == (DWORD)SERVICE_START_PENDING) {
+        curStatus.dwControlsAccepted = 0u;
     } else {
         curStatus.dwControlsAccepted =
-            SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+            (DWORD)SERVICE_ACCEPT_STOP | (DWORD)SERVICE_ACCEPT_SHUTDOWN;
     }
     curStatus.dwCurrentState = state;
     curStatus.dwWin32ExitCode = code;
-    if (code == ERROR_SERVICE_SPECIFIC_ERROR) {
+    if (code == (DWORD)ERROR_SERVICE_SPECIFIC_ERROR) {
         curStatus.dwServiceSpecificExitCode = code;
     }
     curStatus.dwWaitHint = hint;
-    if (state == SERVICE_RUNNING || state == SERVICE_STOPPED) {
-        curStatus.dwCheckPoint = 0;
+    if (state == (DWORD)SERVICE_RUNNING || state == (DWORD)SERVICE_STOPPED) {
+        curStatus.dwCheckPoint = 0u;
     } else {
-        static DWORD check = 1;
+        static DWORD check = 1u;
         curStatus.dwCheckPoint = check++;
     }
     if (hStatus != 0 && SetServiceStatus(hStatus, &curStatus) != TRUE) {
@@ -1134,7 +1134,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     FD_ZERO(&ofds);
     FD_ZERO(&efds);
 
-    for (i = 0; i < nfds; ++i) {
+    for (i = 0i; i < nfds; ++i) {
         if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
         }
@@ -1165,7 +1165,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     if (rc <= 0) {
         return rc;
     }
-    for (i = 0; i < nfds; ++i) {
+    for (i = 0u; i < nfds; ++i) {
         fds[i].revents = 0;
         if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
@@ -1186,3 +1186,11 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 
 #endif
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
