@@ -133,7 +133,7 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
     default:
         key = drvPtr->dhKey1024;
     }
-    Ns_Log(Debug, "SSL_dhCB: returns %p\n", key);
+    Ns_Log(Debug, "SSL_dhCB: returns %p\n", (void *)key);
     return key;
 }
 
@@ -141,7 +141,7 @@ NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     Ns_DString ds;
-    int num, n;
+    int num;
     const char *path, *value;
     SSLDriver *drvPtr;
     Ns_DriverInitData init = {0};
@@ -176,10 +176,12 @@ Ns_ModuleInit(char *server, char *module)
 
     num = CRYPTO_num_locks();
     driver_locks = ns_calloc(num, sizeof(*driver_locks));
-    for (n = 0; n < num; n++) {
-        Ns_DStringPrintf(&ds, "nsssl:%d", n);
-        Ns_MutexSetName(driver_locks + n, ds.string);
-        Ns_DStringTrunc(&ds, 0);
+    {   int n;
+        for (n = 0; n < num; n++) {
+            Ns_DStringPrintf(&ds, "nsssl:%d", n);
+            Ns_MutexSetName(driver_locks + n, ds.string);
+            Ns_DStringTrunc(&ds, 0);
+        }
     }
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
@@ -263,23 +265,25 @@ Ns_ModuleInit(char *server, char *module)
     /*
      * Parse SSL protocols
      */
-    n = SSL_OP_ALL;
-    value = Ns_ConfigGetValue(path, "protocols");
-    if (value != NULL) {
-      if (strstr(value, "!SSLv2") != NULL) {
-          n |= SSL_OP_NO_SSLv2;
-          Ns_Log(Notice, "nsssl: disabling SSLv2");
-      }
-      if (strstr(value, "!SSLv3") != NULL) {
-          n |= SSL_OP_NO_SSLv3;
-          Ns_Log(Notice, "nsssl: disabling SSLv3");
-      }
-      if (strstr(value, "!TLSv1") != NULL) {
-          n |= SSL_OP_NO_TLSv1;
-          Ns_Log(Notice, "nsssl: disabling TLSv1");
-      }
+    {
+        long n = SSL_OP_ALL;
+        value = Ns_ConfigGetValue(path, "protocols");
+        if (value != NULL) {
+            if (strstr(value, "!SSLv2") != NULL) {
+                n |= SSL_OP_NO_SSLv2;
+                Ns_Log(Notice, "nsssl: disabling SSLv2");
+            }
+            if (strstr(value, "!SSLv3") != NULL) {
+                n |= SSL_OP_NO_SSLv3;
+                Ns_Log(Notice, "nsssl: disabling SSLv3");
+            }
+            if (strstr(value, "!TLSv1") != NULL) {
+                n |= SSL_OP_NO_TLSv1;
+                Ns_Log(Notice, "nsssl: disabling TLSv1");
+            }
+        }
+        SSL_CTX_set_options(drvPtr->ctx, n);
     }
-    SSL_CTX_set_options(drvPtr->ctx, n);
 
     /*
      * Set info callback to prevent client-initiated renegotiation
@@ -327,6 +331,7 @@ Ns_ModuleInit(char *server, char *module)
      */
     Ns_DStringSetLength(&ds, 1024);
     for (num = 0; !RAND_status() && num < 3; num++) {
+        int n;
         Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
         for (n = 0; n < 1024; n++) {
             ds.string[n] = Ns_DRand();
@@ -1286,7 +1291,7 @@ HttpsAbort(Https *httpsPtr)
  */
 
 static void
-HttpsProc(Ns_Task *task, SOCKET sock, void *arg, unsigned int why)
+HttpsProc(Ns_Task *task, SOCKET sock, void *arg, Ns_SockState why)
 {
     Https       *httpsPtr = arg;
     Ns_HttpTask *httpPtr  = &httpsPtr->http;
@@ -1396,6 +1401,10 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, unsigned int why)
     case NS_SOCK_CANCEL:
         httpPtr->error = "cancelled";
         break;
+
+    case NS_SOCK_EXCEPTION:
+	httpPtr->error = "exception";
+	break;
     }
 
     /*
@@ -1406,3 +1415,11 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, unsigned int why)
     Ns_TaskDone(httpPtr->task);
 }
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
