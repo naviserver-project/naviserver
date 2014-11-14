@@ -1042,11 +1042,9 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 	httpPtr->error = "cancelled";
 	break;
 
-    default:
-        /* unexpected value */
-        assert(why && 0);
-        break;
-
+    case NS_SOCK_EXCEPTION:
+	httpPtr->error = "exception";
+	break;
     }
 
     /*
