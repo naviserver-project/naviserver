@@ -41,9 +41,9 @@
  */
 
 static Ns_ObjvTable filters[] = {
-    {"preauth",  NS_FILTER_PRE_AUTH},
-    {"postauth", NS_FILTER_POST_AUTH},
-    {"trace",    NS_FILTER_TRACE},
+    {"preauth",  (unsigned int)NS_FILTER_PRE_AUTH},
+    {"postauth", (unsigned int)NS_FILTER_POST_AUTH},
+    {"trace",    (unsigned int)NS_FILTER_TRACE},
     {NULL, 0U}
 };
 
@@ -297,11 +297,11 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     Ns_TclCallback  *cbPtr;
     char            *method, *urlPattern;
     Tcl_Obj         *scriptObj;
-    int              remain = 0;
+    int              remain = 0, first = 0;
     unsigned int     when = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-first", Ns_ObjvBool,  &when, INT2PTR(NS_FILTER_FIRST)},
+        {"-first", Ns_ObjvBool,  &first, INT2PTR(1)},
         {"--",     Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -320,7 +320,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc, 
 			      scriptObj, remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                      NsTclFilterProc, when, cbPtr);
+                      NsTclFilterProc, (Ns_FilterType)when, cbPtr, first);
 
     return TCL_OK;
 }
@@ -348,7 +348,7 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     NsInterp    *itPtr = arg;
     char        *server = itPtr->servPtr->server;
     char        *method, *urlPattern;
-    unsigned int when = NS_FILTER_FIRST;
+    unsigned int when = 0U;
 
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
@@ -361,7 +361,7 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     }
 
     Ns_RegisterFilter(server, method, urlPattern,
-                      NsShortcutFilterProc, when, NULL);
+                      NsShortcutFilterProc, (Ns_FilterType)when, NULL, 0);
 
     return TCL_OK;
 }
@@ -406,7 +406,7 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc, 
 			      scriptObj, remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                      NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr);
+                      NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, 0);
 
     return TCL_OK;
 }
@@ -472,13 +472,13 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
  */
 
 int
-NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
+NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
 {
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          ds;
     Tcl_Interp          *interp;
     int                  ii, status;
-    CONST char          *result;
+    const char          *result;
 
     interp = Ns_GetConnInterp(conn);
     Tcl_DStringInit(&ds);
@@ -587,7 +587,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
  */
 
 int
-NsShortcutFilterProc(void *UNUSED(arg), Ns_Conn *UNUSED(conn), unsigned int UNUSED(why))
+NsShortcutFilterProc(void *UNUSED(arg), Ns_Conn *UNUSED(conn), Ns_FilterType UNUSED(why))
 {
     return NS_FILTER_BREAK;
 }

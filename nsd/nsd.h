@@ -1465,9 +1465,9 @@ NS_EXTERN void NsTclInitSpecType(void);
  * Callback routines.
  */
 
-NS_EXTERN int NsRunFilters(Ns_Conn *conn, unsigned int why) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsRunCleanups(Ns_Conn *conn);
-NS_EXTERN void NsRunTraces(Ns_Conn *conn);
+NS_EXTERN int  NsRunFilters(Ns_Conn *conn, Ns_FilterType why) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsRunCleanups(Ns_Conn *conn)                   NS_GNUC_NONNULL(1);
+NS_EXTERN void NsRunTraces(Ns_Conn *conn)                     NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunPreStartupProcs(void);
 NS_EXTERN void NsRunSignalProcs(void);
 NS_EXTERN void NsRunStartupProcs(void);

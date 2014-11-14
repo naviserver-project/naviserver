@@ -45,7 +45,7 @@ typedef struct Filter {
     Ns_FilterProc *proc;
     char          *method;
     char          *url;
-    unsigned int   when;
+    Ns_FilterType  when;
     void          *arg;
 } Filter;
 
@@ -55,10 +55,14 @@ typedef struct Trace {
     void            *arg;
 } Trace;
 
-static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
-static void RunTraces(Ns_Conn *conn, const Trace *tracePtr);
-static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
-			     void *arg);
+static Trace *NewTrace(Ns_TraceProc *proc, void *arg)
+    NS_GNUC_NONNULL(1);
+
+static void RunTraces(Ns_Conn *conn, const Trace *tracePtr)
+    NS_GNUC_NONNULL(1);
+
+static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
+    NS_GNUC_NONNULL(2);
 
 
 /*
@@ -79,14 +83,19 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
 
 void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
-    Ns_FilterProc *proc, unsigned int when, void *arg)
+                  Ns_FilterProc *proc, Ns_FilterType when, void *arg, int first)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
     Filter *fPtr;
 
-    if (servPtr == NULL) {
-	return NULL;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+    assert(proc != NULL);
+
+    servPtr = NsGetServer(server);
+    assert(servPtr != NULL);
+
     fPtr = ns_malloc(sizeof(Filter));
     Ns_MutexLock(&servPtr->filter.lock);
     fPtr->proc = proc;
@@ -94,7 +103,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     fPtr->url = ns_strdup(url);
     fPtr->when = when;
     fPtr->arg = arg;
-    if ((when & NS_FILTER_FIRST) != 0U) {
+    if (first != 0) {
         fPtr->nextPtr = servPtr->filter.firstFilterPtr;
         servPtr->filter.firstFilterPtr = fPtr;
     } else {
@@ -128,7 +137,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
  */
 
 int
-NsRunFilters(Ns_Conn *conn, unsigned int why)
+NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 {
     Conn *connPtr = (Conn *) conn;
     NsServer *servPtr;
@@ -194,14 +203,17 @@ NsRunFilters(Ns_Conn *conn, unsigned int why)
  */
 
 void *
-Ns_RegisterServerTrace(const char *server, Ns_TraceProc * proc, void *arg)
+Ns_RegisterServerTrace(const char *server, Ns_TraceProc *proc, void *arg)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
     Trace *tracePtr, **tPtrPtr;
 
-    if (servPtr == NULL) {
-	return NULL;
-    }
+    assert(server != NULL);
+    assert(proc != NULL);
+
+    servPtr = NsGetServer(server);
+    assert(servPtr != NULL);
+
     tracePtr = NewTrace(proc, arg);
     tPtrPtr = &servPtr->filter.firstTracePtr;
     while (*tPtrPtr != NULL) {
@@ -209,6 +221,7 @@ Ns_RegisterServerTrace(const char *server, Ns_TraceProc * proc, void *arg)
     }
     *tPtrPtr = tracePtr;
     tracePtr->nextPtr = NULL;
+
     return (void *) tracePtr;
 }
 
@@ -235,8 +248,12 @@ Ns_RegisterServerTrace(const char *server, Ns_TraceProc * proc, void *arg)
 void *
 Ns_RegisterConnCleanup(const char *server, Ns_TraceProc *proc, void *arg)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
 
+    assert(server != NULL);
+    assert(proc != NULL);
+
+    servPtr = NsGetServer(server);
     return RegisterCleanup(servPtr, proc, arg);
 }
 
@@ -245,6 +262,8 @@ Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetInitServer();
 
+    assert(proc != NULL);
+
     return RegisterCleanup(servPtr, proc, arg);
 }
 
@@ -252,6 +271,8 @@ static void *
 RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
 {
     Trace *tracePtr;
+
+    assert(proc != NULL);
 
     if (servPtr == NULL) {
 	return NULL;
@@ -283,6 +304,8 @@ NsRunTraces(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
+
     RunTraces(conn, connPtr->poolPtr->servPtr->filter.firstTracePtr);
 }
 
@@ -291,12 +314,16 @@ NsRunCleanups(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
+
     RunTraces(conn, connPtr->poolPtr->servPtr->filter.firstCleanupPtr);
 }
 
 static void
 RunTraces(Ns_Conn *conn, const Trace *tracePtr)
 {
+    assert(conn != NULL);
+
     while (tracePtr != NULL) {
     	(*tracePtr->proc)(tracePtr->arg, conn);
 	tracePtr = tracePtr->nextPtr;
@@ -324,6 +351,8 @@ static Trace *
 NewTrace(Ns_TraceProc *proc, void *arg)
 {
     Trace *tracePtr;
+
+    assert(proc != NULL);
 
     tracePtr = ns_malloc(sizeof(Trace));
     tracePtr->proc = proc;
@@ -359,12 +388,10 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
     }
     fPtr = servPtr->filter.firstFilterPtr;
     while (fPtr != NULL) {
-        unsigned int when = (fPtr->when &~ NS_FILTER_FIRST);
-
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, fPtr->method);
         Tcl_DStringAppendElement(dsPtr, fPtr->url);
-        switch (when) {
+        switch (fPtr->when) {
         case NS_FILTER_PRE_AUTH:
             Tcl_DStringAppendElement(dsPtr, "preauth");
             break;
@@ -374,10 +401,6 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
         case NS_FILTER_VOID_TRACE: 
         case NS_FILTER_TRACE:
             Tcl_DStringAppendElement(dsPtr, "trace");
-            break;
-        default:
-            /* unexpected value */
-            assert(when && 0);
             break;
         }
         Ns_GetProcInfo(dsPtr, (Ns_Callback *)fPtr->proc, fPtr->arg);

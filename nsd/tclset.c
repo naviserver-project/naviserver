@@ -580,7 +580,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             default:
                 /* should not happen */
-                assert(opts && 0);
+                assert(opt && 0);
             }
             objPtr = Tcl_NewIntObj(i);
             Tcl_SetObjResult(interp, objPtr);

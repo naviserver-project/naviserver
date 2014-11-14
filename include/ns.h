@@ -102,12 +102,13 @@
 /*
  * The following types of filters may be registered.
  */
+typedef enum {
+    NS_FILTER_PRE_AUTH =        0x01U, /* Runs before any Ns_UserAuthProc */
+    NS_FILTER_POST_AUTH =       0x02U, /* Runs after any Ns_UserAuthProc */
+    NS_FILTER_TRACE =           0x04U, /* Runs after Ns_OpProc completes successfully */
+    NS_FILTER_VOID_TRACE =      0x08U  /* Run ns_register_trace procs after previous traces */
+} Ns_FilterType;
 
-#define NS_FILTER_PRE_AUTH         0x01U /* Runs before any Ns_UserAuthProc */
-#define NS_FILTER_POST_AUTH        0x02U /* Runs after any Ns_UserAuthProc */
-#define NS_FILTER_TRACE            0x04U /* Runs after Ns_OpProc completes successfully */
-#define NS_FILTER_VOID_TRACE       0x08U /* Run ns_register_trace procs after previous traces */
-#define NS_FILTER_FIRST            0x10U /* Register filter at head of queue. */
 
 /*
  * The following are valid return codes from an Ns_FilterProc.
@@ -569,7 +570,7 @@ typedef void (Ns_TraceProc)
     (void *arg, Ns_Conn *conn);
 
 typedef int (Ns_FilterProc)
-    (void *arg, Ns_Conn *conn, unsigned int why);
+    (void *arg, Ns_Conn *conn, Ns_FilterType why);
 
 typedef int (Ns_LogFilter)
     (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len);
@@ -1370,16 +1371,22 @@ NS_EXTERN Ns_OpProc Ns_FastPathProc;
 
 NS_EXTERN void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
-		  Ns_FilterProc *proc, unsigned int when, void *arg);
+		  Ns_FilterProc *proc, unsigned int when, void *arg, int first)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
+    NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN void *
-Ns_RegisterServerTrace(const char *server, Ns_TraceProc *proc, void *arg);
+Ns_RegisterServerTrace(const char *server, Ns_TraceProc *proc, void *arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN void *
-Ns_RegisterConnCleanup(const char *server, Ns_TraceProc *proc, void *arg);
+Ns_RegisterConnCleanup(const char *server, Ns_TraceProc *proc, void *arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void *
-Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg);
+Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg)
+    NS_GNUC_NONNULL(1);
 
 /*
  * htuu.c
