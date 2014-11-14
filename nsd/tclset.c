@@ -207,7 +207,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 {
     NsInterp        *itPtr = arg;
     Ns_Set          *set = NULL, *set2Ptr, **sets;
-    int              i, opt;
+    int              opt;
     unsigned int     flags;
     const char            *key, *val, *def, *name, *split;
     Tcl_DString      ds;
@@ -273,52 +273,55 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
     case SNewIdx:
     case SCopyIdx:
-    case SSplitIdx:
+    case SSplitIdx: {
+        int offset = 2;
+
         /*
          * The following commands create new sets.
          */
 
         flags = NS_TCL_SET_DYNAMIC;
-        i = 2;
 
         switch (opt) {
         case SNewIdx:
-            name = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
+            name = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
             set = Ns_SetCreate(name);
-            while (i < objc) {
-                key = Tcl_GetString(objv[i++]);
-                val = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
+            while (offset < objc) {
+                key = Tcl_GetString(objv[offset++]);
+                val = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
                 Ns_SetPut(set, key, val);
             }
             EnterSet(itPtr, set, flags);
             break;
 
         case SCopyIdx:
-            if (unlikely(i >= objc)) {
+            if (unlikely(offset >= objc)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId");
                 return TCL_ERROR;
             }
-            if (LookupObjSet(itPtr, objv[i], 0, &set) != TCL_OK) {
+            if (LookupObjSet(itPtr, objv[offset], 0, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
             EnterSet(itPtr, Ns_SetCopy(set), flags);
             break;
 
-        case SSplitIdx:
-            if (unlikely((objc - i) < 1)) {
+        case SSplitIdx: {
+            int i;
+            if (unlikely((objc - offset) < 1)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
                 return TCL_ERROR;
             }
-            if (LookupObjSet(itPtr, objv[i++], 0, &set) != TCL_OK) {
+            if (LookupObjSet(itPtr, objv[offset++], 0, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
-            split = (i < objc) ? Tcl_GetString(objv[i]) : ".";
+            split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
             sets = Ns_SetSplit(set, *split);
             for (i = 0; sets[i] != NULL; i++) {
                 EnterSet(itPtr, sets[i], flags);
             }
             ns_free(sets);
             break;
+        }
             
         default:
             /* unexpected value */
@@ -326,6 +329,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             break;
         }
         break;
+    }
 
     default:
         /*
@@ -383,7 +387,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 break;
 
             case SFreeIdx:
-                Ns_TclFreeSet(interp, Tcl_GetString(objv[2]));
+                (void) Ns_TclFreeSet(interp, Tcl_GetString(objv[2]));
                 break;
 
             default:
@@ -475,10 +479,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         case SIsNullIdx:
         case SKeyIdx:
         case SDeleteIdx:
-        case STruncateIdx:
+        case STruncateIdx: {
             /*
              * These commands require a set and key/value index.
              */
+            int i;
 
             if (unlikely(objc != 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId index");
@@ -516,7 +521,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 break;
 
             case SDeleteIdx:
-                Ns_SetDelete(set, i);
+                Ns_SetDelete(set, (int)i);
                 break;
 
             case STruncateIdx:
@@ -529,11 +534,14 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 break;
             }
             break;
+        }
 
         case SPutIdx:
         case SUpdateIdx:
         case SCPutIdx:
-        case SICPutIdx:
+        case SICPutIdx: {
+            int i;
+
             /*
              * These commands require a set, key, and value.
              */
@@ -569,10 +577,15 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             case SPutIdx:
                 i = (int)Ns_SetPut(set, key, val);
                 break;
+
+            default:
+                /* should not happen */
+                assert(opts && 0);
             }
             objPtr = Tcl_NewIntObj(i);
             Tcl_SetObjResult(interp, objPtr);
             break;
+        }
 
         case SMergeIdx:
         case SMoveIdx:

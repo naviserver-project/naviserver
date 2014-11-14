@@ -645,6 +645,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     case IServersIdx:
         Tcl_DStringResult(interp, &nsconf.servers);
         return TCL_OK;
+
+    default:
+        /* cases handled below */
+        break;
     }
 
     /*
@@ -698,9 +702,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         NsGetUrl2FileProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-    }
 
-    Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
+    default:
+        Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
+        return TCL_ERROR;
+    }
 
     return TCL_ERROR;
 }
