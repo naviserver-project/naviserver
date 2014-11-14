@@ -484,6 +484,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                             ++s;
                         }
                         if (he == NULL) {
+                            assert(s != NULL);
                             he = s;
                             while (CHARTYPE(space, *he) == 0) {
                                 ++he;
@@ -532,7 +533,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
 int
 NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char *string;
+    unsigned char *bytes;
     char          *result;
     int            nbytes = 0;
     size_t         size;
@@ -542,10 +543,10 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    string = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
+    bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
     size = (size_t)nbytes;
     result = ns_malloc(1U + (4U * MAX(size,2U)) / 2U);
-    (void)Ns_HtuuEncode(string, size, result);
+    (void)Ns_HtuuEncode(bytes, size, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
 
     return TCL_OK;
@@ -573,7 +574,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     int            len;
     size_t         size;
-    char          *string;
+    char          *chars;
     unsigned char *decoded;
 
     if (objc != 2) {
@@ -581,10 +582,10 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    string = Tcl_GetStringFromObj(objv[1], &len);
+    chars = Tcl_GetStringFromObj(objv[1], &len);
     size = (size_t)len + 3U;
     decoded = (unsigned char *)ns_malloc(size);
-    size = Ns_HtuuDecode(string, decoded, size);
+    size = Ns_HtuuDecode(chars, decoded, size);
     decoded[size] = UCHAR('\0');
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
     ns_free(decoded);
@@ -1484,3 +1485,12 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     return TCL_OK;
 }
 
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -82,8 +82,8 @@ typedef struct EventQueue {
  */
 
 static const struct {
-    unsigned const int when;  /* Event when bit. */
-    const short event;        /* Poll event bit. */
+    Ns_SockState when;  /* Event when bit. */
+    const short  event;        /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -205,7 +205,7 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      */
 
     evPtr->events = 0;
-    for (i = 0; i < 3; ++i) {
+    for (i = 0; i < Ns_NrElements(map); ++i) {
         if ((when & map[i].when) != 0U) {
             evPtr->events |= map[i].event;
         }
@@ -340,7 +340,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
             revents |= POLLIN;
         }
         if (revents != 0) {
-            for (i = 0; i < 3; ++i) {
+            for (i = 0; i < Ns_NrElements(map); ++i) {
                 if ((revents & map[i].event) != 0) {
                     Call(evPtr, &now, map[i].when);
                 }
@@ -421,3 +421,12 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
         evPtr = evPtr->nextPtr;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

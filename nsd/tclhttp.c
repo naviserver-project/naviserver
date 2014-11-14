@@ -154,6 +154,11 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             hPtr = Tcl_NextHashEntry(&search);
         }
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
     return TCL_OK;
 }
@@ -961,7 +966,7 @@ HttpAbort(Ns_HttpTask *httpPtr)
  */
 
 static void
-HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why)
+HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 {
     Ns_HttpTask *httpPtr = arg;
     char buf[16384];
@@ -1036,6 +1041,11 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why)
     case NS_SOCK_CANCEL:
 	httpPtr->error = "cancelled";
 	break;
+
+    default:
+        /* unexpected value */
+        assert(why && 0);
+        break;
 
     }
 

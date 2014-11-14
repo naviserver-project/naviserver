@@ -110,7 +110,7 @@ static Ns_Mutex   lock;          /* Lock for queue list. */
  */
 
 static const struct {
-    unsigned int when;           /* SOCK when bit. */
+    Ns_SockState when;           /* SOCK when bit. */
     short        event;          /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
@@ -445,7 +445,7 @@ Ns_TaskCallback(Ns_Task *task, unsigned int when, const Ns_Time *timeoutPtr)
      */
 
     taskPtr->events = 0;
-    for (i = 0; i < 3; ++i) {
+    for (i = 0; i < Ns_NrElements(map); ++i) {
         if (when & map[i].when) {
             taskPtr->events |= map[i].event;
         }
@@ -651,7 +651,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
     if (revents != 0) {
 	int i;
 
-	for (i = 0; i < 3; ++i) {
+	for (i = 0; i < Ns_NrElements(map); ++i) {
 	    if ((revents & map[i].event) != 0) {
 		Call(taskPtr, map[i].when);
 	    }

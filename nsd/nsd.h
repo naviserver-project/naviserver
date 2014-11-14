@@ -1375,17 +1375,14 @@ NS_EXTERN void NsStartJobsShutdown(void);
 NS_EXTERN void NsWaitJobsShutdown(const Ns_Time *toPtr);
 
 NS_EXTERN Tcl_AppInitProc NsTclAppInit;
-NS_EXTERN void NsTclInitServer(CONST char *server)
-     NS_GNUC_NONNULL(1);
-NS_EXTERN void NsInitStaticModules(CONST char *server);
-NS_EXTERN Tcl_Interp *NsTclCreateInterp(void);
-NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)
-     NS_GNUC_NONNULL(1);
-NS_EXTERN void NsFreeConnInterp(Conn *connPtr)
-     NS_GNUC_NONNULL(1);
+NS_EXTERN void NsTclInitServer(const char *server)       NS_GNUC_NONNULL(1);
+NS_EXTERN void NsInitStaticModules(const char *server);
 
-NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets)
-     NS_GNUC_NONNULL(1);
+NS_EXTERN Tcl_Interp *NsTclCreateInterp(void)            NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)  NS_GNUC_NONNULL(1);
+NS_EXTERN void NsFreeConnInterp(Conn *connPtr)           NS_GNUC_NONNULL(1);
+
+NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsSlsCleanup(Sock *sockPtr);
 NS_EXTERN void NsClsCleanup(Conn *connPtr);

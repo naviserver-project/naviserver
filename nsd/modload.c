@@ -249,7 +249,7 @@ NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 void 
-NsInitStaticModules(CONST char *server)
+NsInitStaticModules(const char *server)
 {
     Module *modPtr, *nextPtr;
 

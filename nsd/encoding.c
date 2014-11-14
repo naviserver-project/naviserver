@@ -454,13 +454,15 @@ Ns_GetEncodingCharset(Tcl_Encoding encoding)
 const char *
 NsFindCharset(const char *mimetype, size_t *lenPtr)
 {
-    const char *start, *end;
+    const char *start;
 
     start = Ns_StrCaseFind(mimetype, "charset");
     if (start != NULL) {
         start += 7;
         start += strspn(start, " ");
         if (*start++ == '=') {
+            const char *end;
+
             start += strspn(start, " ");
             end = start;
             while (*end != '\0' && CHARTYPE(space, *end) == 0) {

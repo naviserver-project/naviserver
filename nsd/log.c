@@ -145,7 +145,7 @@ static const char  *severityType = "ns:logseverity";
  */
 
 static struct {
-    const char *string;
+    const char *label;
     int         enabled;
 } severityConfig[640] = {
     { "Notice",  NS_TRUE  },
@@ -203,7 +203,7 @@ NsInitLog(void)
         snprintf(buf, sizeof(buf), "%d", i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
-        severityConfig[i].string = Tcl_GetHashKey(&severityTable, hPtr);
+        severityConfig[i].label = Tcl_GetHashKey(&severityTable, hPtr);
         severityConfig[i].enabled = 0;
     }
 
@@ -212,9 +212,9 @@ NsInitLog(void)
      */
 
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
-        (void) Ns_CreateLogSeverity(severityConfig[i].string);
+        (void) Ns_CreateLogSeverity(severityConfig[i].label);
 
-        strcpy(buf, severityConfig[i].string);
+        strcpy(buf, severityConfig[i].label);
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
     }
@@ -261,7 +261,7 @@ NsConfigLog(void)
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
     file = Ns_ConfigString(path, "serverlog", "nsd.log");
-    if (!Ns_PathIsAbsolute(file)) {
+    if (Ns_PathIsAbsolute(file) == 0) {
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0)) {
             Ns_HomePath(&ds, "logs", file, NULL);
@@ -329,7 +329,7 @@ Ns_CreateLogSeverity(const char *name)
     if (isNew != 0) {
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, INT2PTR(severity));
-        severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
+        severityConfig[severity].label = Tcl_GetHashKey(&severityTable, hPtr);
     } else {
 	severity = PTR2INT(Tcl_GetHashValue(hPtr));
     }
@@ -359,7 +359,7 @@ const char *
 Ns_LogSeverityName(Ns_LogSeverity severity)
 {
     if (severity < severityMaxCount) {
-        return severityConfig[severity].string;
+        return severityConfig[severity].label;
     }
     return "Unknown";
 }
@@ -446,7 +446,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      * or if severity level out of range(s).
      */
 
-    if (!Ns_LogSeverityEnabled(severity)) {
+    if (Ns_LogSeverityEnabled(severity) == 0) {
         return;
     }
 
@@ -713,7 +713,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
             gmtoff = ptm->tm_gmtoff / 60;
 #else
             gmtoff = -timezone / 60;
-            if (daylight && ptm->tm_isdst) {
+            if (daylight != 0 && ptm->tm_isdst != 0) {
                 gmtoff += 60;
             }
 #endif
@@ -929,7 +929,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         objPtr = Tcl_GetObjResult(interp);
         for (i = 0; i < severityIdx; i++) {
             if (Tcl_ListObjAppendElement(interp, objPtr,
-                    Tcl_NewStringObj(severityConfig[i].string, -1)) != TCL_OK) {
+                    Tcl_NewStringObj(severityConfig[i].label, -1)) != TCL_OK) {
                 return TCL_ERROR;
             }
         }
@@ -1144,7 +1144,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
     assert(cachePtr != NULL);
     assert(listPtr != NULL);
 
-    while (ePtr != NULL && cachePtr->currEntry) {
+    while (ePtr != NULL && cachePtr->currEntry != NULL) {
         const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
         if (locked != 0) {
@@ -1515,7 +1515,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
                                  Tcl_GetString(objPtr),
                                  "\": should be one of: ", NULL);
                 for (i = 0; i < severityIdx; i++) {
-                    Tcl_AppendResult(interp, severityConfig[i].string, " ", NULL);
+                    Tcl_AppendResult(interp, severityConfig[i].label, " ", NULL);
                 }
                 return TCL_ERROR;
             }

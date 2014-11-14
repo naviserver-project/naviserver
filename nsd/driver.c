@@ -36,25 +36,38 @@
 #include "nsd.h"
 
 /*
- * Defines for SockRead return and reason codes.
+ * constants for SockState return and reason codes.
  */
 
-#define SOCK_READY                  0
-#define SOCK_MORE                   1
-#define SOCK_SPOOL                  2
-#define SOCK_ERROR                (-1)
-#define SOCK_CLOSE                (-2)
-#define SOCK_CLOSETIMEOUT         (-3)
-#define SOCK_READTIMEOUT          (-4)
-#define SOCK_WRITETIMEOUT         (-5)
-#define SOCK_SERVERREJECT         (-6)
-#define SOCK_READERROR            (-7)
-#define SOCK_WRITEERROR           (-8)
-#define SOCK_SHUTERROR            (-9)
-#define SOCK_BADREQUEST          (-11)
-#define SOCK_ENTITYTOOLARGE      (-12)
-#define SOCK_BADHEADER           (-13)
-#define SOCK_TOOMANYHEADERS      (-14)
+typedef enum {
+    SOCK_READY =               0,
+    SOCK_MORE =                1,
+    SOCK_SPOOL =               2,
+    SOCK_ERROR =              -1,
+    SOCK_CLOSE =              -2,
+    SOCK_CLOSETIMEOUT =       -3,
+    SOCK_READTIMEOUT =        -4,
+    SOCK_WRITETIMEOUT =       -5,
+    SOCK_SERVERREJECT =       -6,
+    SOCK_READERROR =          -7,
+    SOCK_WRITEERROR =         -8,
+    SOCK_SHUTERROR =          -9,
+    SOCK_BADREQUEST =         -11,
+    SOCK_ENTITYTOOLARGE =     -12,
+    SOCK_BADHEADER =          -13,
+    SOCK_TOOMANYHEADERS =     -14
+} SockState;
+
+/*
+ * subset for spooler states
+ */
+typedef enum {
+    SPOOLER_CLOSE =             SOCK_CLOSE,
+    SPOOLER_OK =                SOCK_READY,
+    SPOOLER_READERROR =         SOCK_READERROR,
+    SPOOLER_WRITEERROR =        SOCK_WRITEERROR,
+    SPOOLER_CLOSETIMEOUT =      SOCK_CLOSETIMEOUT
+} SpoolerState;
 
 /*
  * The following are valid driver state flags.
@@ -141,7 +154,7 @@ static void    DriverClose(Sock *sockPtr)
 
 static int   SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+static SockState SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 static int   SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -157,9 +170,9 @@ static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
     NS_GNUC_NONNULL(1);
 static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
-static int   SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
+static SockState SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
-static int   SockParse(Sock *sockPtr)
+static SockState SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockPoll(Sock *sockPtr, short type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
@@ -185,9 +198,9 @@ static WriterSock *WriterSockRequire(const Conn *connPtr)
     NS_GNUC_NONNULL(1);
 static void WriterSockRelease(WriterSock *wrSockPtr) 
     NS_GNUC_NONNULL(1);
-static int WriterReadFromSpool(WriterSock *curPtr)
+static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
-static int WriterSend(WriterSock *curPtr, int *err) 
+static SpoolerState WriterSend(WriterSock *curPtr, int *err) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
@@ -826,7 +839,7 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     assert(sockPtr != NULL);
 
     if (sockPtr->reqPtr == NULL) {
-        int status;
+        SockState status;
 
         do {
             status = SockRead(sockPtr, 0, nowPtr);
@@ -1390,7 +1403,7 @@ DriverThread(void *arg)
                  * If enabled, perform read-ahead now.
                  */
                 if (likely(sockPtr->drvPtr->opts & NS_DRIVER_ASYNC)) {
-                    n = SockRead(sockPtr, 0, &now);
+                    SockState n = SockRead(sockPtr, 0, &now);
 
 		    /*
 		     * Queue for connection processing if ready.
@@ -1469,6 +1482,7 @@ DriverThread(void *arg)
              * If configured, try to accept more than one request, under heavy load
              * this helps to process more requests
              */
+	    SockState n;
 
             accepted = 0;
             while (accepted < drvPtr->acceptsize
@@ -1791,11 +1805,11 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
  *----------------------------------------------------------------------
  */
 
-static int
+static SockState
 SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 {
     Sock    *sockPtr;
-    int      returnStatus;
+    SockState sockStatus;
     NS_DRIVER_ACCEPT_STATUS status;
 
     assert(drvPtr != NULL);
@@ -1830,7 +1844,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     status = DriverAccept(sockPtr);
 
     if (status == NS_DRIVER_ACCEPT_ERROR) {
-        returnStatus = SOCK_ERROR;
+        sockStatus = SOCK_ERROR;
 
         Ns_MutexLock(&drvPtr->lock);
         sockPtr->nextPtr = drvPtr->sockPtr;
@@ -1850,10 +1864,10 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
              */
 
             if (drvPtr->opts & NS_DRIVER_ASYNC) {
-                returnStatus = SockRead(sockPtr, 0, nowPtr);
-                if (returnStatus < 0) {
-                    SockRelease(sockPtr, returnStatus, errno);
-                    returnStatus = SOCK_ERROR;
+                sockStatus = SockRead(sockPtr, 0, nowPtr);
+                if (sockStatus < 0) {
+                    SockRelease(sockPtr, sockStatus, errno);
+                    sockStatus = SOCK_ERROR;
                     sockPtr = NULL;
                 }
             } else {
@@ -1862,7 +1876,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
                  * Queue this socket without reading, NsGetRequest in
                  * the connection thread will perform actual reading of the request
                  */
-                returnStatus = SOCK_READY;
+                sockStatus = SOCK_READY;
             }
         } else
         if (status == NS_DRIVER_ACCEPT_QUEUE) {
@@ -1873,15 +1887,15 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
              */
 
 	    SockPrepare(sockPtr);
-            returnStatus = SOCK_READY;
+            sockStatus = SOCK_READY;
         } else {
-            returnStatus = SOCK_MORE;
+            sockStatus = SOCK_MORE;
         }
     }
 
     *sockPtrPtr = sockPtr;
 
-    return returnStatus;
+    return sockStatus;
 }
 
 
@@ -1957,7 +1971,6 @@ SockError(Sock *sockPtr, int reason, int err)
         break;
 
     case SOCK_READTIMEOUT:
-    case SOCK_WRITETIMEOUT:
         /*
          * For this case, whether this is acceptable or not
          * depends upon whether this sock was a keep-alive
@@ -1967,6 +1980,10 @@ SockError(Sock *sockPtr, int reason, int err)
             errMsg = "Timeout during read";
         }
         break;
+
+    case SOCK_WRITETIMEOUT:
+	errMsg = "Timeout during write";
+	break;
 
     case SOCK_SERVERREJECT:
         errMsg = "No Server found for request";
@@ -2246,7 +2263,7 @@ ChunkedDecode(Request *reqPtr, int update)
  *----------------------------------------------------------------------
  */
 
-static int
+static SockState
 SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 {
     Driver       *drvPtr;
@@ -2256,6 +2273,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     char          tbuf[16384];
     size_t        len, nread;
     ssize_t       n;
+    SockState     resultState;
 
     assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
@@ -2403,9 +2421,9 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         return SOCK_READY;
     }
 
-    n = SockParse(sockPtr);
+    resultState = SockParse(sockPtr);
 
-    return (int)n;
+    return resultState;
 }
 
 /*----------------------------------------------------------------------
@@ -2445,7 +2463,7 @@ static char *strnchr(char *buffer, size_t len, char c) {
     return NULL;
 }
 
-static int
+static SockState
 SockParse(Sock *sockPtr)
 {
     Request      *reqPtr;
@@ -2893,7 +2911,7 @@ SpoolerThread(void *arg)
 {
     SpoolerQueue  *queuePtr = (SpoolerQueue*)arg;
     char           c;
-    int            n, stopping, pollto;
+    int            stopping, pollto;
     Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
     Ns_Time        now, diff;
     Driver        *drvPtr;
@@ -2977,7 +2995,7 @@ SpoolerThread(void *arg)
 	        /*
 		 * Got some data
 		 */
-                n = SockRead(sockPtr, 1, &now);
+                SockState n = SockRead(sockPtr, 1, &now);
                 switch (n) {
                 case SOCK_MORE:
                     SockTimeout(sockPtr, &now, drvPtr->recvwait);
@@ -3274,7 +3292,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	}
     }
 
-    if (wrSockPtr->err || wrSockPtr->status) {
+    if (wrSockPtr->err != 0 || wrSockPtr->status != SPOOLER_OK) {
 	SockError(wrSockPtr->sockPtr, wrSockPtr->status, wrSockPtr->err);
         NsSockClose(wrSockPtr->sockPtr, 0);
     } else {
@@ -3330,9 +3348,10 @@ WriterSockRelease(WriterSock *wrSockPtr) {
  *----------------------------------------------------------------------
  */
 
-static int
+static SpoolerState
 WriterReadFromSpool(WriterSock *curPtr) {
-    int            streaming, status = NS_OK;
+    int            streaming;
+    SpoolerState   status = SPOOLER_OK;
     Tcl_WideInt    toRead;
     size_t         maxsize;
     unsigned char *bufPtr;
@@ -3400,7 +3419,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	n = ns_read(curPtr->fd, bufPtr, (size_t)toRead);
 	
 	if (n <= 0) {
-	    status = SOCK_ERROR;
+	    status = SPOOLER_READERROR;
 	} else {
 	    /* 
 	     * curPtr->c.file.toread is still protected by curPtr->c.file.fdlock when
@@ -3436,10 +3455,11 @@ WriterReadFromSpool(WriterSock *curPtr) {
  *----------------------------------------------------------------------
  */
 
-static int
+static SpoolerState
 WriterSend(WriterSock *curPtr, int *err) {
     struct iovec *bufs, vbuf;
-    int           nbufs, status = NS_OK;
+    int           nbufs;
+    SpoolerState  status = SPOOLER_OK;
     size_t        toWrite;
     ssize_t       n;
 
@@ -3504,7 +3524,7 @@ WriterSend(WriterSock *curPtr, int *err) {
    
     if (n < 0) {
 	*err = errno;
-	status = SOCK_WRITEERROR;
+	status = SPOOLER_WRITEERROR;
     } else {
 	/* 
 	 * We have sent something.
@@ -3565,7 +3585,7 @@ static void
 WriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
-    int             err, stopping, pollto, status;
+    int             err, stopping, pollto;
     Ns_Time         now;
     Sock           *sockPtr;
     Driver         *drvPtr;
@@ -3633,19 +3653,18 @@ WriterThread(void *arg)
 
         while (curPtr != NULL) {
 	    int streaming;
+	    SpoolerState spoolerState = SPOOLER_OK;
 
             nextPtr = curPtr->nextPtr;
-
             sockPtr = curPtr->sockPtr;
-            /*drvPtr  = sockPtr->drvPtr;*/
-            err = status = NS_OK;
+            err = NS_OK;
 
 	    /* the truth value of streaming does not change through concurrency */
 	    streaming = curPtr->streaming; 
 
 	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
 		Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
-		status = SOCK_CLOSE;
+		spoolerState = SPOOLER_CLOSE;
 		err = 0;
 
 	    } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (streaming == NS_WRITER_STREAM_FINISH)) {
@@ -3662,7 +3681,7 @@ WriterThread(void *arg)
 			if (streaming == NS_WRITER_STREAM_FINISH) {
 			    Ns_ReleaseTemp(curPtr->fd);
 			}
-			status = SOCK_CLOSE;
+			spoolerState = SPOOLER_CLOSE;
 		    }
 		} else {
 		    /*
@@ -3671,11 +3690,11 @@ WriterThread(void *arg)
 		     * from the (spool) file and place it into curPtr->c.file.buf.
 		     */
 		    if (curPtr->fd > -1) {
-			status = WriterReadFromSpool(curPtr);
+			spoolerState = WriterReadFromSpool(curPtr);
 		    }
 		    
-		    if (status == NS_OK) {
-			status = WriterSend(curPtr, &err);
+		    if (spoolerState == SPOOLER_OK) {
+			spoolerState = WriterSend(curPtr, &err);
 		    }
 		} 
             } else {
@@ -3690,8 +3709,8 @@ WriterThread(void *arg)
                     SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
 		} else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
 		    Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
-		    err    = ETIMEDOUT;
-		    status = SOCK_CLOSETIMEOUT;
+		    err          = ETIMEDOUT;
+		    spoolerState = SPOOLER_CLOSETIMEOUT;
                 }
             }
 
@@ -3701,7 +3720,7 @@ WriterThread(void *arg)
              */
 
 	    Ns_MutexLock(&queuePtr->lock);
-            if (status == NS_OK) {
+            if (spoolerState == SPOOLER_OK) {
                 if (curPtr->size > 0U || streaming == NS_WRITER_STREAM_ACTIVE) {
 		    Ns_Log(DriverDebug, 
 			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
@@ -3715,12 +3734,12 @@ WriterThread(void *arg)
 		}
 	    } else {
 		/*
-		 * status might be SOCK_CLOSE or SOCK_CLOSETIMEOUT, or SOCK_ERR
+		 * spoolerState might be SPOOLER_CLOSE or SPOOLER_*TIMEOUT, or SPOOLER_*ERROR
 		 */ 
 		Ns_Log(DriverDebug, 
 		       "Writer %p fd %d release, not OK (status %d) => RELEASE", 
-		       (void *)curPtr, curPtr->sockPtr->sock, status);
-		curPtr->status = status;
+		       (void *)curPtr, curPtr->sockPtr->sock, (int)spoolerState);
+		curPtr->status = (int)spoolerState;
 		curPtr->err    = err;
 		WriterSockRelease(curPtr);
             }

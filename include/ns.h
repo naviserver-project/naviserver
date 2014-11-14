@@ -131,15 +131,17 @@
 /*
  * The following define socket events for the Ns_Sock* APIs.
  */
+typedef enum {
+    NS_SOCK_READ =              0x01U, /* Socket is readable */
+    NS_SOCK_WRITE =             0x02U, /* Socket is writeable */
+    NS_SOCK_EXCEPTION =         0x04U, /* Socket has OOB data */
+    NS_SOCK_EXIT =              0x08U, /* The server is shutting down */
+    NS_SOCK_DONE =              0x10U, /* Task processing is done */
+    NS_SOCK_CANCEL =            0x20U, /* Remove event from sock callback thread */
+    NS_SOCK_TIMEOUT =           0x40U, /* Timeout waiting for socket event. */
+    NS_SOCK_INIT =              0x80U /* Initialise a Task callback. */
+} Ns_SockState;
 
-#define NS_SOCK_READ               0x01U /* Socket is readable */
-#define NS_SOCK_WRITE              0x02U /* Socket is writeable */
-#define NS_SOCK_EXCEPTION          0x04U /* Socket has OOB data */
-#define NS_SOCK_EXIT               0x08U /* The server is shutting down */
-#define NS_SOCK_DONE               0x10U /* Task processing is done */
-#define NS_SOCK_CANCEL             0x20U /* Remove event from sock callback thread */
-#define NS_SOCK_TIMEOUT            0x40U /* Timeout waiting for socket event. */
-#define NS_SOCK_INIT               0x80U /* Initialise a Task callback. */
 #define NS_SOCK_ANY                (NS_SOCK_READ|NS_SOCK_WRITE|NS_SOCK_EXCEPTION)
 
 /*
@@ -286,7 +288,7 @@ typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
-typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why);
+typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, unsigned int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (const char *server);
@@ -2111,7 +2113,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
 NS_EXTERN int
 Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data, 
 		  ssize_t len, const char *type)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *type,
@@ -2630,28 +2632,31 @@ Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg);
  */
 
 NS_EXTERN char *
-Ns_StrTrim(char *string);
-
-NS_EXTERN char *
-Ns_StrTrimLeft(char *string);
-
-NS_EXTERN char *
-Ns_StrTrimRight(char *string);
-
-NS_EXTERN char *
-Ns_StrToLower(char *string)
+Ns_StrTrim(char *chars)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_StrToUpper(char *string)
+Ns_StrTrimLeft(char *chars)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN char *
+Ns_StrTrimRight(char *chars)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN char *
+Ns_StrToLower(char *chars)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN char *
+Ns_StrToUpper(char *chars)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_StrToInt(const char *s, int *intPtr)
+Ns_StrToInt(const char *chars, int *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_StrToWideInt(const char *string, Tcl_WideInt *intPtr)
+Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
@@ -2662,15 +2667,15 @@ Ns_NextWord(const char *line)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
-Ns_StrNStr(const char *string, const char *subString)
+Ns_StrNStr(const char *chars, const char *subString)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
-Ns_StrCaseFind(const char *string, const char *subString)
+Ns_StrCaseFind(const char *chars, const char *subString)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_StrIsHost(const char *string)
+Ns_StrIsHost(const char *chars)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -2757,7 +2762,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc, void *arg, Ns_Tcl
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
-Ns_TclLibrary(CONST char *server);
+Ns_TclLibrary(const char *server);
 
 NS_EXTERN char *
 Ns_TclInterpServer(Tcl_Interp *interp)
@@ -2784,7 +2789,7 @@ Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
-Ns_TclInitInterps(CONST char *server, Ns_TclInterpInitProc *proc, void *arg)
+Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_TclRegisterTrace);
 
 NS_EXTERN void

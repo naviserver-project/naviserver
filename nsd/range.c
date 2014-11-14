@@ -50,7 +50,7 @@ static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
 
 static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength);
 static void SetMultipartRangeHeader(const Ns_Conn *conn);
-static int AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
+static int AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                                       off_t start, off_t end, size_t objLength);
 static int AppendMultipartRangeTrailer(Ns_DString *dsPtr);
 
@@ -457,7 +457,7 @@ SetMultipartRangeHeader(const Ns_Conn *conn)
  */
 
 static int
-AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
+AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                            off_t start, off_t end, size_t objLength)
 {
     int origlen = dsPtr->length;

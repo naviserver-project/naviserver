@@ -715,9 +715,9 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
 {
     int result;
 
-    if (type != NULL) {
-        Ns_ConnSetTypeHeader(conn, type);
-    }
+    assert(type != NULL);
+
+    Ns_ConnSetTypeHeader(conn, type);
     if (len < 0) {
         len = (data != NULL) ? (ssize_t)strlen(data) : 0;
     }
