@@ -50,7 +50,7 @@ typedef struct Args {
  * when looking at the code
  */
 
-typedef enum _runState {
+typedef enum {
     starting,  /* == 0 */
     running,   /* == 1 */
     stopping,  /* == 2 */

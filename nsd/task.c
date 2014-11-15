@@ -435,7 +435,7 @@ Ns_TaskCompleted(Ns_Task *task)
  */
 
 void
-Ns_TaskCallback(Ns_Task *task, unsigned int when, const Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
     Task *taskPtr = (Task *) task;
     int   i;
@@ -446,7 +446,7 @@ Ns_TaskCallback(Ns_Task *task, unsigned int when, const Ns_Time *timeoutPtr)
 
     taskPtr->events = 0;
     for (i = 0; i < Ns_NrElements(map); ++i) {
-        if (when & map[i].when) {
+        if (when == map[i].when) {
             taskPtr->events |= map[i].event;
         }
     }

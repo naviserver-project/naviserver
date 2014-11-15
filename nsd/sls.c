@@ -202,8 +202,8 @@ Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
     hPtr = Tcl_CreateHashEntry(tblPtr, key, &created);
     len = strlen(value);
     old = Tcl_GetHashValue(hPtr);
-    new = ns_realloc(old, (size_t)(len+1));
-    memcpy(new, value, (size_t)(len+1));
+    new = ns_realloc(old, len + 1U);
+    memcpy(new, value, len + 1U);
     Tcl_SetHashValue(hPtr, new);
 }
 

@@ -521,11 +521,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 break;
 
             case SDeleteIdx:
-                Ns_SetDelete(set, (int)i);
+                Ns_SetDelete(set, i);
                 break;
 
             case STruncateIdx:
-                Ns_SetTrunc(set, i);
+                Ns_SetTrunc(set, (size_t)i);
                 break;
 
             default:

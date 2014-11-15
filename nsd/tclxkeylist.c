@@ -341,7 +341,7 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
     }
 
     listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &listLen);
-    newList = ns_strncopy(listStr, (size_t)listLen);
+    newList = ns_strncopy(listStr, (ssize_t)listLen);
 
     Tcl_DecrRefCount(valuePtr);
     Tcl_DecrRefCount(keylistPtr);
@@ -381,7 +381,7 @@ Tcl_DeleteKeyedListField(Tcl_Interp *interp, const char *fieldName, const char *
     }
 
     listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &listLen);
-    newList = ns_strncopy(listStr, (size_t)listLen);
+    newList = ns_strncopy(listStr, (ssize_t)listLen);
 
     Tcl_DecrRefCount(keylistPtr);
 

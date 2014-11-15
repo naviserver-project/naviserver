@@ -204,7 +204,7 @@ Ns_ConnContentLength(const Ns_Conn *conn)
 char *
 Ns_ConnContent(const Ns_Conn *conn)
 {
-    const Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     return connPtr->reqPtr->content;
 }

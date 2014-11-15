@@ -160,9 +160,9 @@ static int   SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static void  SockPrepare(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static void  SockRelease(Sock *sockPtr, int reason, int err)
+static void  SockRelease(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
-static void  SockError(Sock *sockPtr, int reason, int err);
+static void  SockError(Sock *sockPtr, SockState reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code)
     NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
@@ -1865,7 +1865,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 
             if (drvPtr->opts & NS_DRIVER_ASYNC) {
                 sockStatus = SockRead(sockPtr, 0, nowPtr);
-                if (sockStatus < 0) {
+                if ((int)sockStatus < 0) {
                     SockRelease(sockPtr, sockStatus, errno);
                     sockStatus = SOCK_ERROR;
                     sockPtr = NULL;

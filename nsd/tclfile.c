@@ -40,7 +40,7 @@
  * Structure handling one registered channel for the [ns_chan] command
  */
 
-typedef struct _NsRegChan {
+typedef struct {
     char        *name;
     Tcl_Channel  chan;
 } NsRegChan;

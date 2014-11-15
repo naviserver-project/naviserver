@@ -310,7 +310,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	if (nhandles == 1) {
     	    handlesPtrPtr = &handlePtr;
 	} else {
-	    handlesPtrPtr = ns_malloc(nhandles * sizeof(Ns_DbHandle *));
+	    handlesPtrPtr = ns_malloc((size_t)nhandles * sizeof(Ns_DbHandle *));
 	}
 	result = Ns_DbPoolTimedGetMultipleHandles(handlesPtrPtr, pool,
     	    	                                  nhandles, timeout);

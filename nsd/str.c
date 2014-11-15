@@ -363,12 +363,18 @@ Ns_NextWord(const char *line)
 const char *
 Ns_StrNStr(const char *chars, const char *subString)
 {
+    assert(chars != NULL);
+    assert(subString != NULL);
+
     return Ns_StrCaseFind(chars, subString);
 }
 
 const char *
 Ns_StrCaseFind(const char *chars, const char *subString)
 {
+    assert(chars != NULL);
+    assert(subString != NULL);
+
     if (strlen(chars) > strlen(subString)) {
         while (*chars != '\0') {
             if (Ns_Match(chars, subString)) {

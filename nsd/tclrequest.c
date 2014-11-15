@@ -319,8 +319,8 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc, 
 			      scriptObj, remain, objv + (objc - remain));
-    Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                      NsTclFilterProc, (Ns_FilterType)when, cbPtr, first);
+    (void)Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
+			    NsTclFilterProc, (Ns_FilterType)when, cbPtr, first);
 
     return TCL_OK;
 }
@@ -360,8 +360,8 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
         return TCL_ERROR;
     }
 
-    Ns_RegisterFilter(server, method, urlPattern,
-                      NsShortcutFilterProc, (Ns_FilterType)when, NULL, 0);
+    (void)Ns_RegisterFilter(server, method, urlPattern,
+			    NsShortcutFilterProc, (Ns_FilterType)when, NULL, 0);
 
     return TCL_OK;
 }
@@ -405,8 +405,8 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc, 
 			      scriptObj, remain, objv + (objc - remain));
-    Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                      NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, 0);
+    (void)Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
+			    NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, 0);
 
     return TCL_OK;
 }

@@ -668,7 +668,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
      * already initialised interp which loads the modules.
      */
 
-    if ((when & (NS_TCL_TRACE_CREATE|NS_TCL_TRACE_ALLOCATE)) != 0U) {
+    if ((when == NS_TCL_TRACE_CREATE) || (when == NS_TCL_TRACE_ALLOCATE)) {
 	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
 
         if ((*proc)(interp, arg) != TCL_OK) {
@@ -936,7 +936,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     Ns_DString      ds;
     char           *script;
     int             remain = 0, opt, length, result = TCL_OK;
-    Ns_TclTraceType when = NS_TCL_TRACE_NONE;
+    Ns_TclTraceType when;
+    unsigned int    flags = 0;
 
     static const char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
@@ -950,22 +951,22 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         IOnInitIdx, IRunTracesIdx, ISaveIdx, ITraceIdx, IUpdateIdx
     };
     static Ns_ObjvTable traceWhen[] = {
-        {"create",     NS_TCL_TRACE_CREATE},
-        {"delete",     NS_TCL_TRACE_DELETE},
-        {"allocate",   NS_TCL_TRACE_ALLOCATE},
-        {"deallocate", NS_TCL_TRACE_DEALLOCATE},
-        {"getconn",    NS_TCL_TRACE_GETCONN},
-        {"freeconn",   NS_TCL_TRACE_FREECONN},
-        {NULL,         NS_TCL_TRACE_NONE}
+        {"create",     (unsigned int)NS_TCL_TRACE_CREATE},
+        {"delete",     (unsigned int)NS_TCL_TRACE_DELETE},
+        {"allocate",   (unsigned int)NS_TCL_TRACE_ALLOCATE},
+        {"deallocate", (unsigned int)NS_TCL_TRACE_DEALLOCATE},
+        {"getconn",    (unsigned int)NS_TCL_TRACE_GETCONN},
+        {"freeconn",   (unsigned int)NS_TCL_TRACE_FREECONN},
+        {NULL,         (unsigned int)0}
     };
     Ns_ObjvSpec addTraceArgs[] = {
-        {"when",       Ns_ObjvFlags,  &when,      traceWhen},
+        {"when",       Ns_ObjvFlags,  &flags,      traceWhen},
         {"script",     Ns_ObjvObj,    &scriptObj, NULL},
         {"?args",      Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec runTraceArgs[] = {
-        {"when",       Ns_ObjvFlags,  &when,      traceWhen},
+        {"when",       Ns_ObjvFlags,  &flags,      traceWhen},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1136,6 +1137,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, addTraceArgs, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
+        when = (Ns_TclTraceType)flags;
 
     trace:
         if (servPtr != NsGetInitServer()) {
@@ -1153,13 +1155,14 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, runTraceArgs, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
+        when = (Ns_TclTraceType)flags;
         if (opt == IRunTracesIdx) {
             RunTraces(itPtr, when);
         } else {
             Ns_DStringInit(&ds);
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-		if ((tracePtr->when & when) != 0U) {
+		if (tracePtr->when == when) {
 		    Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
                 }
 		tracePtr = tracePtr->nextPtr;
@@ -1809,7 +1812,7 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
 
             tracePtr = servPtr->tcl.lastTracePtr;
             while (tracePtr != NULL) {
-                if ((tracePtr->when & why) != 0U) {
+                if (tracePtr->when == why) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
                         (void) Ns_TclLogErrorInfo(itPtr->interp, "\n(context: run trace)");
@@ -1819,12 +1822,14 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
             }
             break;
 
-        default:
+        case NS_TCL_TRACE_ALLOCATE:
+        case NS_TCL_TRACE_CREATE:
+        case NS_TCL_TRACE_GETCONN:
             /* Run initialization traces in FIFO order. */
 
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-                if ((tracePtr->when & why) != 0U) {
+                if (tracePtr->when == why) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
                         (void) Ns_TclLogErrorInfo(itPtr->interp, "\n(context: run trace)");

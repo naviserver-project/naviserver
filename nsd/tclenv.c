@@ -267,12 +267,12 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     len = strlen(name);
     if (value != NULL) {
-        len += strlen(value) + 1;
+        len += strlen(value) + 1U;
     } else {
-        len += 1;
+        len += 1U;
     }
     /* NB: Use malloc() directly as putenv() would expect. */
-    s = malloc(len + 1);
+    s = malloc(len + 1U);
     if (s == NULL) {
         Tcl_SetResult(interp, "could not allocate memory for new env entry",
                       TCL_STATIC);

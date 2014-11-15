@@ -324,7 +324,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
  */
 
 void
-Ns_ConnSetLengthHeader(const Ns_Conn *conn, size_t length, int streaming)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int streaming)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -563,7 +563,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 }
 
 void
-Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, const char *type, size_t length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *type, size_t length)
 {
     /* 
      * Deprecated

@@ -161,7 +161,6 @@ typedef enum {
  */
 
 typedef enum {
-    NS_TCL_TRACE_NONE         = 0x00U, /* No trace */
     NS_TCL_TRACE_CREATE       = 0x01U, /* New interp created */
     NS_TCL_TRACE_DELETE       = 0x02U, /* Interp destroyed */
     NS_TCL_TRACE_ALLOCATE     = 0x04U, /* Interp allocated, possibly from thread cache */
@@ -1371,7 +1370,7 @@ NS_EXTERN Ns_OpProc Ns_FastPathProc;
 
 NS_EXTERN void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
-		  Ns_FilterProc *proc, unsigned int when, void *arg, int first)
+		  Ns_FilterProc *proc, Ns_FilterType when, void *arg, int first)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
     NS_GNUC_RETURNS_NONNULL;
 
@@ -1559,7 +1558,7 @@ Ns_TaskRun(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TaskCallback(Ns_Task *task, unsigned int when, const Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2083,7 +2082,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetLengthHeader(const Ns_Conn *conn, size_t length, int streaming)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int streaming)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2143,7 +2142,7 @@ NS_EXTERN int
 Ns_ConnReturnRequestURITooLong(Ns_Conn *conn);
 
 NS_EXTERN void
-Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, const char *type, size_t length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *type, size_t length)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
@@ -2675,11 +2674,12 @@ Ns_NextWord(const char *line)
 
 NS_EXTERN const char *
 Ns_StrNStr(const char *chars, const char *subString)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+     NS_GNUC_DEPRECATED_FOR(Ns_StrCaseFind);
 
 NS_EXTERN const char *
 Ns_StrCaseFind(const char *chars, const char *subString)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_StrIsHost(const char *chars)
