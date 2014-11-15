@@ -37,6 +37,16 @@
 #include "nsd.h"
 
 /*
+ * Local constants
+ */
+
+#define NS_COOKIE_SECURE        0x01U  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE    0x02U  /* Available to javascript on the client. */
+#define NS_COOKIE_DISCARD       0x04U  /* Discard the cookie at the end of the current session. */
+#define NS_COOKIE_REPLACE       0x08U  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_EXPIRENOW     0x10U  /* Replace the cookie in the output headers. */
+
+/*
  * Local functions defined in this file.
  */
 
@@ -520,3 +530,12 @@ GetConn(Tcl_Interp *interp)
 
     return conn;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

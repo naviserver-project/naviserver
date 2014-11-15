@@ -1138,3 +1138,12 @@ CmdThread(void *arg)
 
     Tcl_Main(cmd->argc, cmd->argv, NsTclAppInit);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

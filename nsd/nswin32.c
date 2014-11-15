@@ -1183,7 +1183,9 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 
     return rc;
 }
-
+#else
+/* avoid empty translation unit */
+   typedef void empty; 
 #endif
 
 /*

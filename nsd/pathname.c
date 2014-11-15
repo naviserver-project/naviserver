@@ -38,6 +38,8 @@
 
 #define ISSLASH(c)  ((c) == '/' || (c) == '\\')
 
+#define NSD_STRIP_WWW                  0x01U
+#define NSD_STRIP_PORT                 0x02U
 
 /*
  * Local functions defined in this file.

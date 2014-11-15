@@ -61,7 +61,8 @@
 #define NS_FALSE                   0
 
 /*
- * The following describe various properties of a connection.
+ * The following describe various properties of a connection. Used in the
+ * public interface in e.g. Ns_ConnWriteVChars() or Ns_ConnWriteData()
  */
 
 #define NS_CONN_CLOSED             0x001U /* The underlying socket is closed */
@@ -79,16 +80,8 @@
 #define NS_CONN_ZIPACCEPTED       0x1000U /* the request accepts zip encoding */
 #define NS_CONN_ENTITYTOOLARGE    0x2000U /* the sent Entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x4000U /* request-URI too long */
-#define NS_CONN_LINETOOLONG       0x8000U/* request Header line too long */
+#define NS_CONN_LINETOOLONG       0x8000U /* request Header line too long */
 
-/*
- * The following are valid return codes from an Ns_UserAuthorizeProc.
- */
-
-                                        /* NS_OK The user's access is authorized */
-#define NS_UNAUTHORIZED            (-2) /* Bad user/passwd or unauthorized */
-#define NS_FORBIDDEN               (-3) /* Authorization is not possible */
-                                        /* NS_ERROR The authorization function failed */
 
 /*
  * The following are valid options when manipulating
@@ -111,25 +104,6 @@ typedef enum {
 
 
 /*
- * The following are valid return codes from an Ns_FilterProc.
- */
-
-                                        /* NS_OK Run next filter */
-#define NS_FILTER_BREAK            (-4) /* Run next stage of connection */
-#define NS_FILTER_RETURN           (-5) /* Close connection */
-
-/*
- * The following are the valid attributes of a scheduled event.
- */
-
-#define NS_SCHED_THREAD            0x01U /* Ns_SchedProc will run in detached thread */
-#define NS_SCHED_ONCE              0x02U /* Call cleanup proc after running once */
-#define NS_SCHED_DAILY             0x04U /* Event is scheduled to occur daily */
-#define NS_SCHED_WEEKLY            0x08U /* Event is scheduled to occur weekly */
-#define NS_SCHED_PAUSED            0x10U /* Event is currently paused */
-#define NS_SCHED_RUNNING           0x20U /* Event is currently running, perhaps in detached thread */
-
-/*
  * The following define socket events for the Ns_Sock* APIs.
  */
 typedef enum {
@@ -143,12 +117,24 @@ typedef enum {
     NS_SOCK_INIT =              0x80U /* Initialise a Task callback. */
 } Ns_SockState;
 
+/*
+ * Many of sock-states are just from the Ns_EventQueue or Ns_Task
+ * interface. It is probably a good idea to define different types for these
+ * interfaces, or to define e.g. SockConditions like the following
+ *
+
+typedef enum {
+    NS_SOCK_COND_READ =         NS_SOCK_READ,
+    NS_SOCK_COND_WRITE =        NS_SOCK_WRITE,
+    NS_SOCK_COND_EXCEPTION =    NS_SOCK_EXCEPTION
+} Ns_SockCondition;
+*/
+
 #define NS_SOCK_ANY                (NS_SOCK_READ|NS_SOCK_WRITE|NS_SOCK_EXCEPTION)
 
 /*
  * The following are valid comm driver options.
  */
-
 #define NS_DRIVER_ASYNC            0x01U /* Use async read-ahead. */
 #define NS_DRIVER_SSL              0x02U /* Use SSL port, protocol defaults. */
 #define NS_DRIVER_NOPARSE          0x04U /* Do not parse request */
@@ -172,25 +158,16 @@ typedef enum {
 /*
  * The following define some buffer sizes and limits.
  */
-
 #define NS_CONN_MAXCLS             16  /* Max num CLS keys which may be allocated */
 #define NS_CONN_MAXBUFS            16  /* Max num buffers which Ns_ConnSend will write */
 #define NS_ENCRYPT_BUFSIZE         128 /* Min size of buffer for Ns_Encrypt output */
 
-
 /*
- * The following flags define how Ns_Set's are managed by Tcl.
+ * The following flags define how Ns_Set's are managed by Tcl. Used in the
+ * public interface by Ns_TclEnterSet()
  */
-
 #define NS_TCL_SET_STATIC          0U /* Ns_Set managed elsewhere, maintain a Tcl reference */
 #define NS_TCL_SET_DYNAMIC         1U /* Tcl owns the Ns_Set and will free when finished */
-
-#define NS_COOKIE_SECURE        0x01U  /* The cookie should only be sent using HTTPS */
-#define NS_COOKIE_SCRIPTABLE    0x02U  /* Available to javascript on the client. */
-#define NS_COOKIE_DISCARD       0x04U  /* Discard the cookie at the end of the current session. */
-#define NS_COOKIE_REPLACE       0x08U  /* Replace the cookie in the output headers. */
-#define NS_COOKIE_EXPIRENOW     0x10U  /* Replace the cookie in the output headers. */
-
 
 /*
  * C API macros.
@@ -287,7 +264,7 @@ typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
-typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
+typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, unsigned int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
@@ -1304,7 +1281,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_EventCallback(Ns_Event *event, int unsigned when, const Ns_Time *timeoutPtr)
+Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

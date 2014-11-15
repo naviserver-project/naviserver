@@ -893,7 +893,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
     lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)Tcl_GetCharLength(objv[3]));
     lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
     strcpy(lcbPtr->script, Tcl_GetString(objv[3]));
-    if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr)!= NS_OK) {
+    if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr) != NS_OK) {
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
         ns_free(lcbPtr);
         return TCL_ERROR;
@@ -1149,7 +1149,7 @@ EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
  */
 
 int
-NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
+NsTclSockProc(NS_SOCKET sock, void *arg, Ns_SockState why)
 {
     Tcl_DString  script;
     int          ok;
@@ -1242,7 +1242,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
  */
 
 static int
-SockListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
+SockListenCallback(NS_SOCKET sock, void *arg, Ns_SockState UNUSED(why))
 {
     ListenCallback *lcbPtr = arg;
     Tcl_Interp     *interp;

@@ -57,7 +57,7 @@ static void AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr);
  * Static variables defined in this file.
  */
 
-static Tcl_HashTable info;
+static Tcl_HashTable infoHashTable;
 
 static struct proc {
     Ns_Callback *procAddr;
@@ -105,7 +105,7 @@ NsInitProcInfo(void)
 {
     struct proc *procPtr;
 
-    Tcl_InitHashTable(&info, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&infoHashTable, TCL_ONE_WORD_KEYS);
     procPtr = procs;
     while (procPtr->procAddr != NULL) {
         Ns_RegisterProcInfo(procPtr->procAddr, procPtr->desc,
@@ -137,18 +137,18 @@ void
 Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
 {
     Tcl_HashEntry *hPtr;
-    Info          *iPtr;
+    Info          *infoPtr;
     int            isNew;
 
-    hPtr = Tcl_CreateHashEntry(&info, (char *)procAddr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&infoHashTable, (char *)procAddr, &isNew);
     if (isNew == 0) {
-        iPtr = Tcl_GetHashValue(hPtr);
+        infoPtr = Tcl_GetHashValue(hPtr);
     } else {
-        iPtr = ns_malloc(sizeof(Info));
-        Tcl_SetHashValue(hPtr, iPtr);
+        infoPtr = ns_malloc(sizeof(Info));
+        Tcl_SetHashValue(hPtr, infoPtr);
     }
-    iPtr->desc = desc;
-    iPtr->proc = argProc;
+    infoPtr->desc = desc;
+    infoPtr->proc = argProc;
 }
 
 
@@ -173,22 +173,22 @@ void
 Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, void *arg)
 {
     Tcl_HashEntry          *hPtr;
-    Info                   *iPtr;
+    Info                   *infoPtr;
     static Info nullInfo =  {NULL, NULL};
 
-    hPtr = Tcl_FindHashEntry(&info, (char *) procAddr);
+    hPtr = Tcl_FindHashEntry(&infoHashTable, (char *) procAddr);
     if (hPtr != NULL) {
-        iPtr = Tcl_GetHashValue(hPtr);
+        infoPtr = Tcl_GetHashValue(hPtr);
     } else {
-        iPtr = &nullInfo;
+        infoPtr = &nullInfo;
     }
-    if (iPtr->desc != NULL) {
-        Tcl_DStringAppendElement(dsPtr, iPtr->desc);
+    if (infoPtr->desc != NULL) {
+        Tcl_DStringAppendElement(dsPtr, infoPtr->desc);
     } else {
-      AppendAddr(dsPtr, "p", (void *)procAddr);
+        AppendAddr(dsPtr, "p", (void *)procAddr);
     }
-    if (iPtr->proc != NULL) {
-        (*iPtr->proc)(dsPtr, arg);
+    if (infoPtr->proc != NULL) {
+        (*infoPtr->proc)(dsPtr, arg);
     } else {
         AppendAddr(dsPtr, "a", arg);
     }
@@ -266,3 +266,12 @@ AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr)
 {
     Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

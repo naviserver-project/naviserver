@@ -61,16 +61,16 @@
 #define ADP_TCLFILE                    0x10000U /* Object to evaluate is a Tcl file */
 #define ADP_OPTIONMAX                  0x1000000U /* watermark for flag values */
 
-#define ADP_OK                         0
-#define ADP_BREAK                      1
-#define ADP_ABORT                      2
-#define ADP_RETURN                     3
-#define ADP_TIMEOUT                    4
-
-#define NSD_STRIP_WWW                  0x01U
-#define NSD_STRIP_PORT                 0x02U
+typedef enum {
+  ADP_OK =                     0,
+  ADP_BREAK =                  1,
+  ADP_ABORT =                  2,
+  ADP_RETURN =                 3,
+  ADP_TIMEOUT =                4
+} AdpResult;
 
 #define MAX_URLSPACES                  16
+#define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
 
 #define CONN_TCLFORM                   0x01U  /* Query form set is registered for interp */
 #define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
@@ -78,23 +78,15 @@
 #define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
 #define CONN_TCLHTTP                   0x10U  /* HTTP headers requested by ns_headers */
 
-#define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
-
 /*
- * For the time being, don't try to be very clever
- * and define (platform-neutral) just those two modes
- * for mapping the files.
- * Although the underlying implementation(s) can do
- * much more, we really need only one (read-maps) now.
+ * The following are the valid attributes of a scheduled event.
  */
-
-#ifdef _WIN32
-#  define NS_MMAP_READ                 FILE_MAP_READ
-#  define NS_MMAP_WRITE                FILE_MAP_WRITE
-#else
-#  define NS_MMAP_READ                 PROT_READ
-#  define NS_MMAP_WRITE                PROT_WRITE
-#endif
+#define NS_SCHED_THREAD            0x01U /* Ns_SchedProc will run in detached thread */
+#define NS_SCHED_ONCE              0x02U /* Call cleanup proc after running once */
+#define NS_SCHED_DAILY             0x04U /* Event is scheduled to occur daily */
+#define NS_SCHED_WEEKLY            0x08U /* Event is scheduled to occur weekly */
+#define NS_SCHED_PAUSED            0x10U /* Event is currently paused */
+#define NS_SCHED_RUNNING           0x20U /* Event is currently running, perhaps in detached thread */
 
 /*
  * The following is the default text/html content type
@@ -957,7 +949,7 @@ typedef struct NsInterp {
 
     struct adp {
 	unsigned int	   flags;
-	int		   exception;
+	AdpResult	   exception;
 	int		   refresh;
 	size_t		   bufsize;
 	int                errorLevel;

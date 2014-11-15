@@ -1181,5 +1181,16 @@ truncate(char *file, off_t size)
 
     return 0;
 }
-
+#else
+/* avoid empty translation unit */
+   typedef void empty; 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

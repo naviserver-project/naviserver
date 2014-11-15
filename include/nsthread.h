@@ -171,6 +171,7 @@ typedef int32_t ssize_t;
 #  define NS_INVALID_SOCKET     (-1)
 # endif
 
+
 /*
  * ALL _WIN32
  */
@@ -184,6 +185,16 @@ typedef int32_t ssize_t;
 # define NS_SIGTERM                15
 
 # define DEVNULL	           "nul:"
+
+/*
+ * For the time being, don't try to be very clever
+ * and define (platform-neutral) just those two modes
+ * for mapping the files.
+ * Although the underlying implementation(s) can do
+ * much more, we really need only one (read-maps) now.
+ */
+# define NS_MMAP_READ               (FILE_MAP_READ)
+# define NS_MMAP_WRITE              (FILE_MAP_WRITE)
 
 # define sleep(n)                  (Sleep((n)*1000))
 # define mkdir(d,m)                _mkdir((d))
@@ -363,23 +374,26 @@ typedef struct DIR_ *DIR;
 /*
  * Workaround until we have ENOTSUP in errno.h
  */
-#   define ENOTSUP                     EOPNOTSUPP
+#   define ENOTSUP                  EOPNOTSUPP
 #  endif
 # endif
 
-# define O_TEXT                      0
-# define O_BINARY                    0
+# define O_TEXT                     (0)
+# define O_BINARY                   (0)
 
-# define NS_INVALID_SOCKET           (-1)
-# define SOCKET_ERROR                (-1)
+# define NS_INVALID_SOCKET          (-1)
+# define SOCKET_ERROR               (-1)
 
-# define NS_SIGHUP                   SIGHUP
-# define NS_SIGINT                   SIGINT
-# define NS_SIGQUIT                  SIGQUIT
-# define NS_SIGPIPE                  SIGPIPE
-# define NS_SIGTERM                  SIGTERM
+# define NS_SIGHUP                  (SIGHUP)
+# define NS_SIGINT                  (SIGINT)
+# define NS_SIGQUIT                 (SIGQUIT)
+# define NS_SIGPIPE                 (SIGPIPE)
+# define NS_SIGTERM                 (SIGTERM)
 
 # define DEVNULL	            "/dev/null"
+
+# define NS_MMAP_READ               (PROT_READ)
+# define NS_MMAP_WRITE              (PROT_WRITE)
 
 # define ns_mkstemp	 	    mkstemp
 # define ns_read                    read
@@ -644,14 +658,35 @@ typedef struct DIR_ *DIR;
 #endif
 
 /*
- * Various constants.
+ * Return codes. It would be probably a good idea to define an enum
+ * Ns_ReturnCode, but that would be a large change.
  */
-
 #define NS_OK                       0
 #define NS_ERROR                    (-1)
-#define NS_TIMEOUT                  (-2)
-#define NS_FATAL                    (-3)
 
+/*
+ * The following are valid return codes from an Ns_UserAuthorizeProc.
+ */
+#define NS_TIMEOUT                  (-2)
+
+/*
+ * The following are valid return codes from an Ns_UserAuthorizeProc.
+ */
+                                        /* NS_OK The user's access is authorized */
+#define NS_UNAUTHORIZED            (-3) /* Bad user/passwd or unauthorized */
+#define NS_FORBIDDEN               (-4) /* Authorization is not possible */
+                                        /* NS_ERROR The authorization function failed */
+/*
+ * The following are valid return codes from an Ns_FilterProc.
+ */
+                                        /* NS_OK Run next filter */
+#define NS_FILTER_BREAK            (-5) /* Run next stage of connection */
+#define NS_FILTER_RETURN           (-6) /* Close connection */
+
+
+/*
+ * Constants for nsthread 
+ */
 #define NS_THREAD_DETACHED          1
 #define NS_THREAD_JOINED            2
 #define NS_THREAD_EXITED            4

@@ -486,7 +486,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                         if (he == NULL) {
                             assert(s != NULL);
                             he = s;
-                            while (CHARTYPE(space, *he) == 0) {
+                            while (*he != '\0' && CHARTYPE(space, *he) == 0) {
                                 ++he;
                             }
                         }
