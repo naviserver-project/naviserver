@@ -79,16 +79,6 @@ typedef enum {
 #define CONN_TCLHTTP                   0x10U  /* HTTP headers requested by ns_headers */
 
 /*
- * The following are the valid attributes of a scheduled event.
- */
-#define NS_SCHED_THREAD            0x01U /* Ns_SchedProc will run in detached thread */
-#define NS_SCHED_ONCE              0x02U /* Call cleanup proc after running once */
-#define NS_SCHED_DAILY             0x04U /* Event is scheduled to occur daily */
-#define NS_SCHED_WEEKLY            0x08U /* Event is scheduled to occur weekly */
-#define NS_SCHED_PAUSED            0x10U /* Event is currently paused */
-#define NS_SCHED_RUNNING           0x20U /* Event is currently running, perhaps in detached thread */
-
-/*
  * The following is the default text/html content type
  * sent to the browser for html/adp etc. requests.
  */

@@ -109,12 +109,12 @@ int
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
 {
-    Tcl_PackageInitProc  *tclInitProc = NULL, *tclVerProc = NULL;
+    Tcl_PackageInitProc  *tclInitProc = NULL, *moduleVersionAddr = NULL;
     Ns_ModuleInitProc    *initProc;
     Ns_DString            ds;
-    int                   status, *verPtr, privateInterp = (interp == NULL);
+    int                   status, *versionPtr, privateInterp = (interp == NULL);
     Tcl_Obj              *pathObj;
-    Tcl_LoadHandle        lh;
+    Tcl_LoadHandle        lh = NULL;
     Tcl_FSUnloadFileProc *uPtr;
 
     Ns_Log(Notice, "modload: loading module %s from file %s", module, file);
@@ -136,8 +136,18 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
     if (privateInterp != 0) {
       interp = NsTclCreateInterp();
     }
+    /*
+     * The 3rd arg of Tcl_FSLoadFile is the 1st symbol, typically
+     * "Ns_ModuleInit".  The 4th arg of Tcl_FSLoadFile is the 2nd
+     * symbol, hardcoded here to "Ns_ModuleVersion".
+     *
+     * Note that this is a little bit hacky, since the intention of
+     * the Tcl interface is to return here the safeInitProc, which is
+     * a procPtr and not a pointer to a global variable (object pointer).
+     */
     status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
-                            &tclInitProc, &tclVerProc, &lh, &uPtr);
+                            &tclInitProc, &moduleVersionAddr, &lh, &uPtr);
+
     Tcl_DecrRefCount(pathObj);
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
@@ -151,18 +161,26 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
       Tcl_DeleteInterp(interp);
     }
 
-    initProc = (Ns_ModuleInitProc *) tclInitProc;
-    verPtr = (int *) tclVerProc;
-
-    if (initProc == NULL) {
+    if (tclInitProc == NULL) {
         Ns_Log(Error, "modload: %s: %s: symbol not found", file, init);
         Ns_DStringFree(&ds);
         return NS_ERROR;
     }
+    if (moduleVersionAddr == NULL) {
+        Ns_Log(Error, "modload: %s: %s: symbol not found", file, "Ns_ModuleVersion");
+        Ns_DStringFree(&ds);
+        return NS_ERROR;
+    }
 
+    initProc = (Ns_ModuleInitProc *) tclInitProc;
+    versionPtr = (int *) moduleVersionAddr;
+
+    /*
+     * Calling Ns_ModuleInit()
+     */
     status = (*initProc)(server, module);
 
-    if (verPtr == NULL || *verPtr < 1) {
+    if (*versionPtr < 1) {
         status = NS_OK;
     } else if (status != NS_OK) {
         Ns_Log(Error, "modload: %s: %s returned: %d", file, init, status);

@@ -82,15 +82,39 @@
 #define NS_CONN_REQUESTURITOOLONG 0x4000U /* request-URI too long */
 #define NS_CONN_LINETOOLONG       0x8000U /* request Header line too long */
 
+/*
+ * Coockie creation options.  For NaviServer and the current set of NaviServer
+ * modules, these constants would not be needed here. As long we have
+ * Ns_ConnSetCookieEx() in the public interface, we these flags here as well.
+ */
+#define NS_COOKIE_SECURE           0x01U  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE       0x02U  /* Available to javascript on the client. */
+#define NS_COOKIE_DISCARD          0x04U  /* Discard the cookie at the end of the current session. */
+#define NS_COOKIE_REPLACE          0x08U  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_EXPIRENOW        0x10U  /* Replace the cookie in the output headers. */
+
+/*
+ * The following are the valid attributes of a scheduled event. For NaviServer
+ * and the current set of NaviServer modules, these constants would not be
+ * needed here. As long Ns_ScheduleProcEx() is in the public interface and
+ * uses the flags, we these constants here as well.
+ */
+#define NS_SCHED_THREAD            0x01U /* Ns_SchedProc will run in detached thread */
+#define NS_SCHED_ONCE              0x02U /* Call cleanup proc after running once */
+#define NS_SCHED_DAILY             0x04U /* Event is scheduled to occur daily */
+#define NS_SCHED_WEEKLY            0x08U /* Event is scheduled to occur weekly */
+#define NS_SCHED_PAUSED            0x10U /* Event is currently paused */
+#define NS_SCHED_RUNNING           0x20U /* Event is currently running, perhaps in detached thread */
 
 /*
  * The following are valid options when manipulating
  * URL specific data.
  */
-
 #define NS_OP_NOINHERIT            0x02U /* Match URL exactly */
 #define NS_OP_NODELETE             0x04U /* Do call previous procs Ns_OpDeleteProc */
 #define NS_OP_RECURSE              0x08U /* Also destroy registered procs below given URL */
+
+
 
 /*
  * The following types of filters may be registered.
