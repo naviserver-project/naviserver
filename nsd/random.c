@@ -264,7 +264,7 @@ TrueRand(void)
     int i;
 
     for (i = 0; i < ROULETTE_PRE_ITERS; i++) {
-	Roulette();
+        (void) Roulette();
     }
     return Roulette();
 }
@@ -288,3 +288,12 @@ Roulette(void)
     randbuf = (randbuf<<3) ^ counter;
     return randbuf;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

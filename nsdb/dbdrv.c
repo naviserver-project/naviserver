@@ -348,7 +348,7 @@ Ns_DbDML(Ns_DbHandle *handle, char *sql)
 		if (status == NS_ROWS) {
         	    Ns_DbSetException(handle, "NSDB",
 		    	    "Query was not a DML or DDL command.");
-        	    Ns_DbFlush(handle);
+        	    (void) Ns_DbFlush(handle);
 		}
 		status = NS_ERROR;
 	    }

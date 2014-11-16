@@ -462,7 +462,7 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
 {
     Conn *connPtr = (Conn *) conn;
 
-    connPtr->reqPtr->port = ntohs(saPtr->sin_port);
+    connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
     strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr));
     return connPtr->reqPtr->peer;
 }
@@ -1073,8 +1073,8 @@ Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 {
     char *hdr;
 
-    if ((hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since")) != NULL
-            && Ns_ParseHttpTime(hdr) < since) {
+    hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since");
+    if (hdr != NULL && Ns_ParseHttpTime(hdr) < since) {
         return NS_FALSE;
     }
     return NS_TRUE;
@@ -1384,7 +1384,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	}
 
         if (objc == 2) {
-            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length > 0) {
+            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length > 0u) {
                 Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
 							     (int)connPtr->reqPtr->length));
             }
@@ -1398,7 +1398,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CContentLengthIdx:
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(conn->contentLength));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)conn->contentLength));
         break;
 
     case CContentFileIdx:
@@ -1519,9 +1519,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         }
         filePtr = Tcl_GetHashValue(hPtr);
         if (opt == (int)CFileOffIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->off));
+            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)filePtr->off));
         } else if (opt == (int)CFileLenIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->len));
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)filePtr->len));
         } else {
             Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
         }
@@ -1562,7 +1562,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CPortIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(request->port));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int)request->port));
         break;
 
     case CUrlIdx:
@@ -1650,7 +1650,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CContentSentLenIdx:
         if (objc == 2) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(connPtr->nContentSent));
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)connPtr->nContentSent));
         } else if (objc == 3) {
 	    Tcl_WideInt sent;
             if (Tcl_GetWideIntFromObj(interp, objv[2], &sent) != TCL_OK) {

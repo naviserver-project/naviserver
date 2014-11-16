@@ -182,8 +182,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     Tcl_DecrRefCount(objv[1]);
 
     if (itPtr->adp.exception == ADP_TIMEOUT) {
-        Ns_ConnReturnUnavailable(conn);
-        return NS_OK;
+        return Ns_ConnReturnUnavailable(conn);
     }
 
     if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {

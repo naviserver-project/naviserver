@@ -339,7 +339,7 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     }
     time = (time_t) itime;
     Ns_DStringInit(&ds);
-    Ns_HttpTime(&ds, &time);
+    (void) Ns_HttpTime(&ds, &time);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;

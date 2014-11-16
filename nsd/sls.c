@@ -366,7 +366,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
     case CArrayIdx:
         Ns_DStringInit(&ds);
-        Ns_SlsAppendKeyed(&ds, sock);
+        (void) Ns_SlsAppendKeyed(&ds, sock);
         Tcl_DStringResult(interp, &ds);
         break;
 

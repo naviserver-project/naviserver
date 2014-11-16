@@ -365,7 +365,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 		    size_t i;
 
 		    Tcl_DStringInit(&ds);
-		    for (i = 0; i < Ns_SetSize(set); ++i) {
+		    for (i = 0u; i < Ns_SetSize(set); ++i) {
 			Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
 			Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
 		    }

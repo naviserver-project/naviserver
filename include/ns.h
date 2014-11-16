@@ -739,7 +739,7 @@ NS_EXTERN void
 Ns_CacheUnlock(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void
+NS_EXTERN int
 Ns_CacheWait(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
@@ -2913,8 +2913,8 @@ Ns_ParseHttpTime(char *str);
  * url.c:
  */
 
-NS_EXTERN CONST char *
-Ns_RelativeUrl(CONST char *url, CONST char *location);
+NS_EXTERN const char *
+Ns_RelativeUrl(const char *url, const char *location);
 
 NS_EXTERN int
 Ns_ParseUrl(char *url, char **pprotocol, char **phost, char **pport,
@@ -2923,7 +2923,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost, char **pport,
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
 NS_EXTERN int
-Ns_AbsoluteUrl(Ns_DString *dsPtr, CONST char *url, CONST char *base)
+Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*

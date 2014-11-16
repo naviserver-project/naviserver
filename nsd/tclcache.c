@@ -731,7 +731,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         }
         Tcl_DStringEndSublist(&ds);
     } else {
-        Ns_CacheStats(cache, &ds);
+        (void) Ns_CacheStats(cache, &ds);
     }
     if (reset != 0) {
         Ns_CacheResetStats(cache);
@@ -879,3 +879,12 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

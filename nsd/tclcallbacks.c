@@ -268,7 +268,7 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     }
     cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1], 
                               objc - 2, objv + 2);
-    (*atProc)(Ns_TclCallbackProc, cbPtr);
+    (void) (*atProc)(Ns_TclCallbackProc, cbPtr);
 
     return TCL_OK;
 }
@@ -332,9 +332,7 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc, 
 			      objv[1], objc - 2, objv + 2);
-    Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
-
-    return TCL_OK;
+    return Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
 }
 
 static void

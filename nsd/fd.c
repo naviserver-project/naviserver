@@ -166,8 +166,8 @@ NsInitFd(void)
     if (devNull < 0) {
         Ns_Fatal("fd: open(%s) failed: %s", DEVNULL, strerror(errno));
     }
-    Ns_DupHigh(&devNull);
-    Ns_CloseOnExec(devNull);
+    (void) Ns_DupHigh(&devNull);
+    (void) Ns_CloseOnExec(devNull);
 }
 
 
@@ -347,8 +347,8 @@ Ns_GetTemp(void)
                path, strerror(errno));
 #ifndef _WIN32
     } else {
-        Ns_DupHigh(&fd);
-        Ns_CloseOnExec(fd);
+        (void) Ns_DupHigh(&fd);
+        (void) Ns_CloseOnExec(fd);
         if (unlink(path) != 0) {
             Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
         }
@@ -392,3 +392,12 @@ Ns_ReleaseTemp(int fd)
         Ns_MutexUnlock(&lock);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

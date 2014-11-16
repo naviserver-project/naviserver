@@ -75,9 +75,10 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
 {
     Ns_DString  ds;
     Tcl_Channel chan;
+    int result = NS_OK;
 
     Ns_DStringInit(&ds);
-    Ns_UrlToFile(&ds, server, url);
+    (void) Ns_UrlToFile(&ds, server, url);
     chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
     Ns_DStringFree(&ds);
     if (chan != NULL) {
@@ -87,12 +88,12 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
         while ((nread = Tcl_Read(chan, buf, (int)sizeof(buf))) > 0) {
             Ns_DStringNAppend(dsPtr, buf, nread);
         }
-        Tcl_Close(NULL, chan);
+        result = Tcl_Close(NULL, chan);
     } else {
-        return NS_ERROR;
+        result = NS_ERROR;
     }
 
-    return NS_OK;
+    return result;
 }
 
 

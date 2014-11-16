@@ -557,7 +557,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
      * Deprecated
      */
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteVData(conn, NULL, 0, 0U);
+    (void) Ns_ConnWriteVData(conn, NULL, 0, 0U);
 
     return connPtr->nContentSent;
 }

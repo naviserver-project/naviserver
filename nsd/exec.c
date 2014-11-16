@@ -37,7 +37,7 @@
 
 #ifdef _WIN32
 #include <process.h>
-static char   **Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
+static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 #else
 #define ERR_DUP         (-1)
 #define ERR_CHDIR	(-2)
@@ -590,7 +590,7 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
  *----------------------------------------------------------------------
  */
 
-static char **
+static void
 Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 {
     size_t i;

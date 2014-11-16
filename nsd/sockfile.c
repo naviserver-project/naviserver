@@ -360,7 +360,7 @@ ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
         return -1;
     }
 
-    return ret;
+    return (ssize_t)ret;
 }
 #endif
 
@@ -450,7 +450,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
 {
     char          buf[16384];
     struct iovec  iov;
-    ssize_t       nwrote = 0, toRead = length;
+    ssize_t       nwrote = 0, toRead = (ssize_t)length;
     int           decork;
 
     decork = Ns_SockCork(sock, 1);

@@ -154,7 +154,7 @@ Ns_CacheDestroy(Ns_Cache *cache)
 {
     Cache      *cachePtr = (Cache *) cache;
 
-    Ns_CacheFlush(cache);
+    (void) Ns_CacheFlush(cache);
     Ns_MutexDestroy(&cachePtr->lock);
     Ns_CondDestroy(&cachePtr->cond);
     Tcl_DeleteHashTable(&cachePtr->entriesTable);
@@ -728,10 +728,10 @@ Ns_CacheUnlock(Ns_Cache *cache)
  *----------------------------------------------------------------------
  */
 
-void
+int
 Ns_CacheWait(Ns_Cache *cache)
 {
-    Ns_CacheTimedWait(cache, NULL);
+    return Ns_CacheTimedWait(cache, NULL);
 }
 
 int
@@ -968,3 +968,14 @@ Push(Entry *ePtr)
         ePtr->cachePtr->lastEntryPtr = ePtr;
     }
 }
+
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
+

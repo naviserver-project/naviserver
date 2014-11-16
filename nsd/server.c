@@ -407,7 +407,7 @@ CreatePool(NsServer *servPtr, char *pool)
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
         connPtr->nextPtr = &connBufPtr[n+1];
-        Ns_CompressInit(&connPtr->stream);
+        (void) Ns_CompressInit(&connPtr->stream);
     }
     connBufPtr[n].nextPtr = NULL;
     poolPtr->wqueue.freePtr = &connBufPtr[0];
