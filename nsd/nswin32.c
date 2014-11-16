@@ -1183,6 +1183,53 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 
     return rc;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_open, ns_close, ns_write, ns_read  --
+ *
+ *      Elementary operations on file descriptors. The interfaces are the same
+ *      as in a Unix environment.
+ *
+ *      These functions are implemented in C due to slightly different
+ *      interfaces under windows, but most prominently, to link the _* system
+ *      calls to the main .dll file, such that external modules (such as
+ *      e.g. nslog) do link against these instead of their own version.
+ *
+ * Results:
+ *      See MSDN
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_open(const char *path, int oflag, int mode) 
+{
+    return _open(path, oflag, mode);
+}
+
+int
+ns_close(int fildes) 
+{
+    return _close(fildes);
+}
+
+ssize_t
+ns_write(int fildes, const void *buf, size_t nbyte)
+{
+    return _write(fildes, buf, (unsigned int)nbyte);
+}
+
+ssize_t
+ns_read(int fildes, void *buf, size_t nbyte) 
+{
+    return _read(fildes, buf, (unsigned int)nbyte);
+}
+
 #else
 /* avoid empty translation unit */
    typedef void empty; 

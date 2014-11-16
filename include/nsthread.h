@@ -201,15 +201,12 @@ typedef int32_t ssize_t;
 # define strcasecmp                _stricmp
 # define strncasecmp               _strnicmp
 
-# define ns_read(fd,buf,nbyte)     _read((fd),(buf),(unsigned int)(nbyte))
 # define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),flgs)
 # define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),flgs)
 # define ns_sockclose              closesocket
 # define ns_sockerrno              GetLastError()
 # define ns_sockioctl              ioctlsocket
 # define ns_sockstrerror           NsWin32ErrMsg
-# define ns_write(fd,buf,nbyte)    _write((fd),(buf),(unsigned int)(nbyte))
-
 
 /*
  * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
@@ -396,7 +393,7 @@ typedef struct DIR_ *DIR;
 # define NS_MMAP_WRITE              (PROT_WRITE)
 
 # define ns_mkstemp	 	    mkstemp
-# define ns_read                    read
+
 # define ns_recv                    recv
 # define ns_send                    send
 # define ns_sockclose               close
@@ -405,6 +402,10 @@ typedef struct DIR_ *DIR;
 # define ns_sockioctl               ioctl
 # define ns_socknbclose             close
 # define ns_sockstrerror            strerror
+
+# define ns_open		    open
+# define ns_close		    close
+# define ns_read                    read
 # define ns_write                   write
 
 # if __GNUC__ >= 4
@@ -880,7 +881,17 @@ NS_EXTERN int truncate(char *file, off_t size);
 #endif
 
 /*
- * tcl 8.6 and TIP 330/336 compatability
+ * nswin32.c:
+ */
+#ifdef _WIN32
+NS_EXTERN int ns_open(const char *path, int oflag, int mode);
+NS_EXTERN int ns_close(int filedes);
+NS_EXTERN ssize_t ns_write(int fildes, const void *buf, size_t nbyte);
+NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
+#endif
+
+/*
+ * Tcl 8.6 and TIP 330/336 compatability
  */
 
 #if (TCL_MAJOR_VERSION < 8) || (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6)

@@ -503,7 +503,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Log         *logPtr = arg;
     CONST char **h;
     char        *p, *user, buffer[PIPE_BUF], *bufferPtr = NULL;
-    int          n, status, i, fd;
+    int          n, status, i;
     size_t	 bufferSize = 0U;
     Ns_DString   ds;
 
@@ -633,7 +633,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
     }
 
-    for (i=0; i<ds.length; i++) {
+    for (i = 0; i < ds.length; i++) {
       /* 
        * Quick fix to disallow terminal escape characters in the log
        * file. See e.g. http://www.securityfocus.com/bid/37712/info
@@ -678,23 +678,12 @@ LogTrace(void *arg, Ns_Conn *conn)
             status = NS_OK;
         }
     }
-    ((void)(status)); /* ignore status */
-
-    fd = logPtr->fd;
     Ns_MutexUnlock(&logPtr->lock);
 
-    if (likely(bufferPtr != NULL) && likely(fd >= 0) && likely(bufferSize > 0)) {
-#ifdef _MSC_VER
-      size_t written;
+    (void)(status); /* ignore status */
 
-      written = _write(fd, bufferPtr, bufferSize);
-
-      if (written != bufferSize) {
-	  fprintf(stderr, "Warning: write operation to access.log failed\n");
-      }
-#else
-      NsAsyncWrite(fd, bufferPtr, bufferSize);
-#endif
+    if (likely(bufferPtr != NULL) && likely(logPtr->fd >= 0) && likely(bufferSize > 0)) {
+        NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
     }
 
     Ns_DStringFree(&ds);
@@ -723,14 +712,14 @@ LogOpen(Log *logPtr)
 {
     int fd;
 
-    fd = open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
+    fd = ns_open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
     if (fd == -1) {
         Ns_Log(Error,"nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->file);
         return NS_ERROR;
     }
     if (logPtr->fd >= 0) {
-        close(logPtr->fd);
+        ns_close(logPtr->fd);
     }
 
     logPtr->fd = fd;
@@ -764,7 +753,7 @@ LogClose(Log *logPtr)
 
     if (logPtr->fd >= 0) {
         status = LogFlush(logPtr, &logPtr->buffer);
-        close(logPtr->fd);
+        ns_close(logPtr->fd);
         logPtr->fd = -1;
         Ns_DStringFree(&logPtr->buffer);
         Ns_Log(Notice,"nslog: closed '%s'", logPtr->file);
@@ -801,7 +790,7 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
         if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, len) != len) {
             Ns_Log(Error, "nslog: logging disabled: write() failed: '%s'",
                    strerror(errno));
-            close(logPtr->fd);
+            ns_close(logPtr->fd);
             logPtr->fd = -1;
         }
         Ns_DStringTrunc(dsPtr, 0);
@@ -970,3 +959,12 @@ LogArg(Tcl_DString *dsPtr, void *arg)
 
     Tcl_DStringAppendElement(dsPtr, logPtr->file);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
