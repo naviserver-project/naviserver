@@ -426,17 +426,6 @@ typedef struct {
 #define KEYEDLIST_ARRAY_INCR_SIZE 16
 
 /*
- * Macro to duplicate a child entry of a keyed list if it is share by more
- * than the parent.
- */
-#define DupSharedKeyListChild(keylIntPtr, idx) \
-    if (Tcl_IsShared((keylIntPtr)->entries[(idx)].valuePtr)) {	 \
-	(keylIntPtr)->entries[(idx)].valuePtr =				\
-	    Tcl_DuplicateObj((keylIntPtr)->entries[(idx)].valuePtr);	\
-        Tcl_IncrRefCount((keylIntPtr)->entries[(idx)].valuePtr);	\
-    }
-
-/*
  * Macros to validate an keyed list object or internal representation
  */
 #ifdef TCLX_DEBUG
@@ -454,6 +443,8 @@ typedef struct {
 /*
  * Prototypes of internal functions.
  */
+static void DupSharedKeyListChild(keylIntObj_t *keylIntPtr, int idx) NS_GNUC_NONNULL(1);
+
 #ifdef TCLX_DEBUG
 static void
 ValidateKeyedList _ANSI_ARGS_((keylIntObj_t *keylIntPtr));
@@ -506,6 +497,28 @@ static Tcl_ObjType keyedListType = {
     UpdateStringOfKeyedList,  /* updateStringProc */
     SetKeyedListFromAny       /* setFromAnyProc */
 };
+
+
+/*-----------------------------------------------------------------------------
+ * DupSharedKeyListChild --
+ *   duplicate a child entry of a keyed list if it is share by more
+ *   than the parent.
+ * Parameters:
+ *   keylIntPtr - Keyed list internal representation.
+ *   idx        - Index position
+ *-----------------------------------------------------------------------------
+ */
+static void 
+DupSharedKeyListChild(keylIntObj_t *keylIntPtr, int idx) 
+{
+    assert(keylIntPtr != NULL);
+
+    if (Tcl_IsShared(keylIntPtr->entries[idx].valuePtr)) {
+	keylIntPtr->entries[idx].valuePtr =
+	    Tcl_DuplicateObj(keylIntPtr->entries[idx].valuePtr);
+        Tcl_IncrRefCount(keylIntPtr->entries[idx].valuePtr);
+    }
+}
 
 
 /*-----------------------------------------------------------------------------
