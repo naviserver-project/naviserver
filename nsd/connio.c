@@ -413,6 +413,25 @@ Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
     return ConnSend(conn, nsend, NULL, NULL, fd);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnSend --
+ *
+ *      Send an open channel, FILE or fd. Read the content from the
+ *      various sources into a buffer and send the data to the client
+ *      via Ns_ConnWriteVData(). Stop transmission when errors or
+ *      0-byte reads occur.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR.
+ *
+ * Side effects:
+ *      Send data to client
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 {

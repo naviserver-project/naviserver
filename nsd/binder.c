@@ -630,7 +630,10 @@ PreBind(const char *line)
         }
         proto = "tcp";
         addr = "0.0.0.0";
-        /* Parse port */
+
+        /* 
+	 * Parse port 
+	 */
         str = strchr(line, ':');
         if (str != NULL) {
             *str++ = '\0';
@@ -640,12 +643,18 @@ PreBind(const char *line)
         } else {
             port = strtol(line, NULL, 10);
         }
-        /* Parse protocol */
+
+        /* 
+	 * Parse protocol 
+	 */
         if (*line != '/' && (str = strchr(line,'/'))) {
             *str++ = '\0';
             proto = str;
         }
 
+	/*
+	 * TCP
+	 */
         if (STREQ(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: %s:%d",
@@ -669,6 +678,9 @@ PreBind(const char *line)
             Ns_Log(Notice, "prebind: tcp: %s:%d = %d", addr, port, sock);
         }
 
+	/*
+	 * UDP
+	 */
         if (STREQ(proto,"udp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: udp: invalid address: %s:%d",
@@ -692,6 +704,9 @@ PreBind(const char *line)
             Ns_Log(Notice, "prebind: udp: %s:%d = %d", addr, port, sock);
         }
 
+	/*
+	 * ICMP
+	 */
         if (strncmp(proto, "icmp", 4U) == 0) {
             int count = 1;
             /* Parse count */
@@ -788,7 +803,7 @@ Ns_SockBinderListen(int type, const char *address, int port, int options)
     iov[2].iov_len = sizeof(type);
     iov[3].iov_base = (caddr_t) data;
     iov[3].iov_len = sizeof(data);
-    /*memset(data, 0, sizeof(data));*/
+
     strncpy(data, address, sizeof(data)-1);
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
