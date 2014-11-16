@@ -588,7 +588,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
                 Ns_Log(Warning, "fastpath: open(%s') failed '%s'",
                        file, strerror(errno));
             } else {
- 	        int nread;
+ 	        ssize_t nread;
 
                 filePtr = ns_malloc(sizeof(File) + connPtr->fileInfo.st_size);
                 filePtr->refcnt = 1;
