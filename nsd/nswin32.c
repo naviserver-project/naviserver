@@ -1134,7 +1134,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     FD_ZERO(&ofds);
     FD_ZERO(&efds);
 
-    for (i = 0i; i < nfds; ++i) {
+    for (i = 0u; i < nfds; ++i) {
         if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
         }

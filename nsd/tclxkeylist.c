@@ -45,10 +45,10 @@ static int TclX_IsNullObj(Tcl_Obj *objPtr);
  */
 
 #define ckstrdup(a) \
-  (strcpy(ckalloc((size_t)(strlen((a))+1)),(a)))
+  (strcpy(ckalloc((unsigned int)(strlen((a))+1)),(a)))
 
 #define ckbinstrdup(a,b) \
-  ((char *)memcpy(ckalloc((size_t)((b)+1)),(a),(size_t)((b)+1)))
+  ((char *)memcpy(ckalloc((unsigned int)((b)+1)),(a),(size_t)((b)+1)))
 
 /*
  * Used to return argument messages by most commands.
@@ -224,7 +224,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
                 totalKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
             }
 	    keySize = (keyCount + 1) * sizeof(char *);
-            keyArgv = (char **)ckalloc(keySize + totalKeySize);
+            keyArgv = (char **)ckalloc((unsigned int)(keySize + totalKeySize));
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + keySize;
 

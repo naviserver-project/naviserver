@@ -488,12 +488,15 @@ int main(int argc, char *argv[])
     Ns_MutexUnlock(&dlock);
     Ns_ThreadJoin(&dumper, NULL);
     Msg("threads joined");
-    for (i = 0; i < 10; ++i) {
-	Ns_ThreadCreate(CheckStackThread, NULL, 8192*(i+1), &threads[i]);
-    }
-    for (i = 0; i < 10; ++i) {
-        Ns_ThreadJoin(&threads[i], &arg);
-        printf("check stack %" PRIdPTR " = %" PRIdPTR "\n", i, (intptr_t) arg);
+    {
+        int i;
+        for (i = 0; i < 10; ++i) {
+            Ns_ThreadCreate(CheckStackThread, NULL, 8192*(i+1), &threads[i]);
+        }
+        for (i = 0; i < 10; ++i) {
+            Ns_ThreadJoin(&threads[i], &arg);
+            printf("check stack %" PRIdPTR " = %" PRIdPTR "\n", i, (intptr_t) arg);
+        }
     }
     /*Ns_ThreadEnum(DumpThreads, NULL);*/
     /*Ns_MutexEnum(DumpLocks, NULL);*/
@@ -502,3 +505,12 @@ mem:
     MemTime(1);
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
