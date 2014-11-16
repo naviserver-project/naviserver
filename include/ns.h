@@ -796,15 +796,15 @@ typedef struct Ns_CompressStream {
 
 
 NS_EXTERN int
-Ns_CompressInit(Ns_CompressStream *stream)
+Ns_CompressInit(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_CompressFree(Ns_CompressStream *stream)
+Ns_CompressFree(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs, 
+Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs, 
 		    Ns_DString *dsPtr, int level, int flush)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
@@ -813,19 +813,19 @@ Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level);
 
 
 NS_EXTERN int 
-Ns_InflateInit(Ns_CompressStream *stream) 
+Ns_InflateInit(Ns_CompressStream *cStream) 
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_InflateBufferInit(Ns_CompressStream *stream, const char *buffer, size_t inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_InflateBuffer(Ns_CompressStream *stream, const char *buffer, size_t outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, int *nrBytes) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_InflateEnd(Ns_CompressStream *stream) 
+Ns_InflateEnd(Ns_CompressStream *cStream) 
     NS_GNUC_NONNULL(1);
 
 /*

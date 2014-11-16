@@ -94,7 +94,7 @@ typedef int bool;
 struct Sock;
 struct NsServer;
 
-struct _nsconf {
+struct nsconf {
     char *argv0;
     char *nsd;
     char *name;
@@ -166,7 +166,7 @@ struct _nsconf {
     } job;
 };
 
-NS_EXTERN struct _nsconf nsconf;
+NS_EXTERN struct nsconf nsconf;
 
 /*
  * The following structure tracks a memory-mapped file
@@ -341,14 +341,14 @@ typedef struct Request {
  * a driver initialized with Ns_DriverInit.
  */
 
-typedef struct _DrvSpooler {
+typedef struct {
     int threads;               /* Number of spooler threads to run */
     Ns_Mutex lock;             /* Lock around spooler queue */
     SpoolerQueue *firstPtr;    /* Spooler thread queue */
     SpoolerQueue *curPtr;      /* Current spooler thread */
 } DrvSpooler;
 
-typedef struct _DrvWriter {
+typedef struct {
     int       threads;         /* Number of writer threads to run */
     size_t    maxsize;         /* Max content size to use writer thread */
     size_t    bufsize;         /* Size of the output buffer */
@@ -579,7 +579,7 @@ typedef struct Conn {
     int fd;
     WriterSock *streamWriter;
 
-    Ns_CompressStream  stream;
+    Ns_CompressStream cStream;
     int requestCompress;
     int compress;
 

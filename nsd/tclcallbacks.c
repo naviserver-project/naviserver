@@ -332,7 +332,8 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc, 
 			      objv[1], objc - 2, objv + 2);
-    return Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
+    (void) Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
+    return TCL_OK;
 }
 
 static void

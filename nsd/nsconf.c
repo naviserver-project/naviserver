@@ -35,7 +35,7 @@
 
 #include "nsd.h"
 
-struct _nsconf nsconf;
+struct nsconf nsconf;
 
 
 
