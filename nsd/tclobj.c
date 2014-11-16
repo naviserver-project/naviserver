@@ -357,10 +357,10 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
-    return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes==NULL));
+  return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes==NULL)) ? NS_TRUE : NS_FALSE;
 }
 
 

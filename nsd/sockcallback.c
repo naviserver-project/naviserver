@@ -129,7 +129,7 @@ Ns_SockCancelCallback(NS_SOCKET sock)
 int
 Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg)
 {
-    return Queue(sock, proc, arg, NS_SOCK_CANCEL, 0);
+    return Queue(sock, proc, arg, (unsigned int)NS_SOCK_CANCEL, 0);
 }
 
 
@@ -306,9 +306,9 @@ SockCallbackThread(void *UNUSED(arg))
     events[0] = POLLIN;
     events[1] = POLLOUT;
     events[2] = POLLPRI;
-    when[0] = NS_SOCK_READ;
-    when[1] = NS_SOCK_WRITE;
-    when[2] = NS_SOCK_EXCEPTION | NS_SOCK_DONE;
+    when[0] = (unsigned int)NS_SOCK_READ;
+    when[1] = (unsigned int)NS_SOCK_WRITE;
+    when[2] = (unsigned int)NS_SOCK_EXCEPTION | (unsigned int)NS_SOCK_DONE;
     max = 100U;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     pfds[0].fd = trigPipe[0];
@@ -336,7 +336,7 @@ SockCallbackThread(void *UNUSED(arg))
 
         while (cbPtr != NULL) {
             nextPtr = cbPtr->nextPtr;
-            if ((cbPtr->when & NS_SOCK_CANCEL) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_CANCEL) != 0U) {
 		hPtr = Tcl_FindHashEntry(&table, NSSOCK2PTR(cbPtr->sock));
                 if (hPtr != NULL) {
                     ns_free(Tcl_GetHashValue(hPtr));
@@ -366,7 +366,7 @@ SockCallbackThread(void *UNUSED(arg))
 	}
 
         /*
-         * Wake up every 5 seconds to process expired sockets
+         * Wake up every 30 seconds to process expired sockets
          */
 
         pollto = 30000;
@@ -399,8 +399,8 @@ SockCallbackThread(void *UNUSED(arg))
 
                     /*
                      * Set expiration time for this callback, every time
-                     * event occures on this socket we reset expiration so
-                     * expiration is processed since the last event
+                     * event occures on this socket we reset expiration
+                     * so expiration is processed since the last event.
                      */
 
                     if (cbPtr->expires == 0) {
@@ -453,8 +453,7 @@ SockCallbackThread(void *UNUSED(arg))
     }
 
     /*
-     * Invoke any exit callabacks, cleanup the callback
-     * system, and signal shutdown complete.
+     * Fire socket exit callbacks.
      */
 
     Ns_Log(Notice, "socks: shutdown pending");
@@ -466,6 +465,9 @@ SockCallbackThread(void *UNUSED(arg))
 	}
 	hPtr = Tcl_NextHashEntry(&search);
     }
+    /*
+     * Clean up the registered callbacks.
+     */
     hPtr = Tcl_FirstHashEntry(&table, &search);
     while (hPtr != NULL) {
 	ns_free(Tcl_GetHashValue(hPtr));
@@ -474,12 +476,34 @@ SockCallbackThread(void *UNUSED(arg))
     Tcl_DeleteHashTable(&table);
 
     Ns_Log(Notice, "socks: shutdown complete");
+
+    /*
+     * Tell others tht shutdown is complete.
+     */
     Ns_MutexLock(&lock);
     running = 0;
     Ns_CondBroadcast(&cond);
     Ns_MutexUnlock(&lock);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsGetSockCallbacks --
+ *
+ *	Return all defined socket callbacks in form of a valid Tcl list
+ *	in the provided Tcl_DString. The passed Tcl_DString has to be
+ *	initialized by the caller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	DString is updated
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 NsGetSockCallbacks(Tcl_DString *dsPtr)
@@ -498,16 +522,16 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
             snprintf(buf, sizeof(buf), "%d", (int) cbPtr->sock);
             Tcl_DStringAppendElement(dsPtr, buf);
             Tcl_DStringStartSublist(dsPtr);
-            if ((cbPtr->when & NS_SOCK_READ) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_READ) != 0U) {
                 Tcl_DStringAppendElement(dsPtr, "read");
             }
-            if ((cbPtr->when & NS_SOCK_WRITE) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_WRITE) != 0U) {
                 Tcl_DStringAppendElement(dsPtr, "write");
             }
-            if ((cbPtr->when & NS_SOCK_EXCEPTION) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_EXCEPTION) != 0U) {
                 Tcl_DStringAppendElement(dsPtr, "exception");
             }
-            if ((cbPtr->when & NS_SOCK_EXIT) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U) {
                 Tcl_DStringAppendElement(dsPtr, "exit");
             }
             Tcl_DStringEndSublist(dsPtr);
@@ -525,7 +549,7 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 72
  * indent-tabs-mode: nil
  * End:
  */

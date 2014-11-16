@@ -1137,9 +1137,9 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, addTraceArgs, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
-        when = (Ns_TclTraceType)flags;
 
     trace:
+        when = (Ns_TclTraceType)flags;
         if (servPtr != NsGetInitServer()) {
             Tcl_SetResult(interp, "cannot register trace after server startup",
                           TCL_STATIC);

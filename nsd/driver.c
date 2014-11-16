@@ -1428,10 +1428,22 @@ DriverThread(void *arg)
 			break;
 			
 		    case SOCK_READERROR:
-			Ns_Log(DriverDebug, "sockread returned read error; close socket");
+			Ns_Log(DriverDebug, "sockread returned error; close socket");
 			SockRelease(sockPtr, n, errno);
 			break;
 
+		    case SOCK_BADHEADER:
+		    case SOCK_BADREQUEST:
+		    case SOCK_CLOSE:
+		    case SOCK_CLOSETIMEOUT:
+		    case SOCK_ENTITYTOOLARGE:
+		    case SOCK_ERROR:
+		    case SOCK_READTIMEOUT:
+		    case SOCK_SERVERREJECT:
+		    case SOCK_SHUTERROR:
+		    case SOCK_TOOMANYHEADERS:
+		    case SOCK_WRITEERROR:
+		    case SOCK_WRITETIMEOUT:
 		    default:
 			Ns_Log(Warning, "sockread returned unexpected result %d; close socket", n);
 			SockRelease(sockPtr, n, errno);
@@ -1508,6 +1520,19 @@ DriverThread(void *arg)
                     }
                     break;
 
+		case SOCK_BADHEADER:
+		case SOCK_BADREQUEST:
+		case SOCK_CLOSE:
+		case SOCK_CLOSETIMEOUT:
+		case SOCK_ENTITYTOOLARGE:
+		case SOCK_ERROR:
+		case SOCK_READERROR:
+		case SOCK_READTIMEOUT:
+		case SOCK_SERVERREJECT:
+		case SOCK_SHUTERROR:
+		case SOCK_TOOMANYHEADERS:
+		case SOCK_WRITEERROR:
+		case SOCK_WRITETIMEOUT:
                 default:
                     Ns_Fatal("driver: SockAccept returned: %d", n);
                 }
@@ -1917,7 +1942,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
  */
 
 static void
-SockRelease(Sock *sockPtr, int reason, int err)
+SockRelease(Sock *sockPtr, SockState reason, int err)
 {
     Driver *drvPtr;
 
@@ -1960,11 +1985,15 @@ SockRelease(Sock *sockPtr, int reason, int err)
  */
 
 static void
-SockError(Sock *sockPtr, int reason, int err)
+SockError(Sock *sockPtr, SockState reason, int err)
 {
     char   *errMsg = NULL;
 
     switch (reason) {
+    case SOCK_READY:
+    case SOCK_SPOOL:
+    case SOCK_MORE:
+	break;
     case SOCK_CLOSE:
     case SOCK_CLOSETIMEOUT:
         /* This is normal, never log. */
@@ -2019,6 +2048,10 @@ SockError(Sock *sockPtr, int reason, int err)
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
         SockSendResponse(sockPtr, 413);
+        break;
+    case SOCK_ERROR:
+        errMsg = "Unknown Error";
+        SockSendResponse(sockPtr, 400);
         break;
     }
     if (errMsg != NULL) {

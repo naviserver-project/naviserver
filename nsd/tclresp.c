@@ -255,13 +255,13 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      * text objects...
      */
 
-    binary = (conn->flags & NS_CONN_WRITE_ENCODED) ? 0 : 1;
+    binary = (conn->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE;
 
     for (i = 0, n = 0; i < objc; i++) {
-	if (binary == 0) {
+	if (binary == NS_FALSE) {
 	    binary = NsTclObjIsByteArray(objv[i]);
 	}
-	if (binary != 0) {
+	if (binary == NS_TRUE) {
 	    sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
         } else {
             sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
@@ -338,7 +338,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (binary || NsTclObjIsByteArray(dataObj)) {
+    if (binary == NS_TRUE || NsTclObjIsByteArray(dataObj) == NS_TRUE) {
         data = (char *) Tcl_GetByteArrayFromObj(dataObj, &len);
         result = Ns_ConnReturnData(conn, status, data, len, type);
     } else {
@@ -373,19 +373,18 @@ int
 NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn     *conn = NULL;
-    int          status = 200, length = -1;
-    char        *type = "*/*", *setid = NULL, *binary = NULL;
-    char        *string = NULL, *filename = NULL, *chanid = NULL;
+    int          result, status = 200, length = -1;
+    const char  *type = "*/*", *setid = NULL, *binary = NULL;
+    const char  *chars = NULL, *filename = NULL, *chanid = NULL;
     Ns_Set      *set = NULL;
     Tcl_Channel  chan;
-    int          result;
 
     Ns_ObjvSpec opts[] = {
         {"-status",   Ns_ObjvInt,       &status,   NULL},
         {"-type",     Ns_ObjvString,    &type,     NULL},
         {"-length",   Ns_ObjvInt,       &length,   NULL},
         {"-headers",  Ns_ObjvString,    &setid,    NULL},
-        {"-string",   Ns_ObjvString,    &string,   NULL},
+        {"-string",   Ns_ObjvString,    &chars,    NULL},
         {"-file",     Ns_ObjvString,    &filename, NULL},
         {"-fileid",   Ns_ObjvString,    &chanid,   NULL},
         {"-binary",   Ns_ObjvByteArray, &binary,   &length},
@@ -400,7 +399,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
                       TCL_STATIC);
         return TCL_ERROR;
     }
-    if ((binary != NULL) + (string != NULL) + (filename != NULL)
+    if ((binary != NULL) + (chars != NULL) + (filename != NULL)
         + (chanid != NULL) != 1) {
         Tcl_SetResult(interp, "must specify only one of -string, "
                       "-file, -binary or -fileid", TCL_STATIC);
@@ -446,10 +445,10 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 
     } else {
         /*
-         * We'll be returning a string now.
+         * We'll be returning chars.
          */
 
-        result = Ns_ConnReturnCharData(conn, status, string, length, type);
+        result = Ns_ConnReturnCharData(conn, status, chars, length, type);
     }
 
     return Result(interp, result);

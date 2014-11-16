@@ -130,7 +130,7 @@ typedef enum {
 } Ns_SockCondition;
 */
 
-#define NS_SOCK_ANY                (NS_SOCK_READ|NS_SOCK_WRITE|NS_SOCK_EXCEPTION)
+#define NS_SOCK_ANY                ((unsigned int)NS_SOCK_READ|(unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_EXCEPTION)
 
 /*
  * The following are valid comm driver options.
@@ -266,7 +266,7 @@ typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
-typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, unsigned int why);
+typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, Ns_SockState why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (const char *server);
 typedef int   (Ns_ModuleInitProc) (const char *server, const char *module);

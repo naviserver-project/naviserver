@@ -185,7 +185,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
     n = SockRecv(sock, bufs, nbufs, flags);
     if (n < 0
         && ns_sockerrno == EWOULDBLOCK
-        && Ns_SockTimedWait(sock, NS_SOCK_READ, timeoutPtr) == NS_OK) {
+        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ, timeoutPtr) == NS_OK) {
         n = SockRecv(sock, bufs, nbufs, flags);
     }
 
@@ -214,8 +214,8 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
-    ssize_t       sent = -1, nWrote = 0;
-    size_t        len, toWrite = 0U;
+    ssize_t       sent = -1;
+    size_t        len, toWrite = 0u, nWrote = 0u;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     Sock         *sock = (Sock *)sockPtr;
     void         *data;
@@ -252,15 +252,15 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         sent = NsDriverSend(sock, sbufPtr, nsbufs, flags);
         if (sent < 0
             && ns_sockerrno == EWOULDBLOCK
-            && Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+            && Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
             sent = NsDriverSend(sock, sbufPtr, nsbufs, flags);
         }
         if (sent < 0) {
             break;
         }
 
-        toWrite -= sent;
-        nWrote  += sent;
+        toWrite -= (size_t)sent;
+        nWrote  += (size_t)sent;
 
         if (toWrite > 0U) {
 
@@ -286,7 +286,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         sbufIdx = 0;
     }
 
-    return (nWrote != 0) ? nWrote : sent;
+    return (nWrote != 0u) ? (ssize_t)nWrote : sent;
 }
 
 
@@ -315,7 +315,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
 
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
-        && Ns_SockTimedWait(sock, NS_SOCK_READ, timeoutPtr) == NS_OK) {
+        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ, timeoutPtr) == NS_OK) {
         nread = ns_recv(sock, buffer, length, 0);
     }
 
@@ -349,7 +349,7 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 
     if (nwrote == -1
         && ns_sockerrno == EWOULDBLOCK
-        && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
         nwrote = ns_send(sock, buffer, length, 0);
     }
 
@@ -385,13 +385,13 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     pfd.fd = sock;
     pfd.events = 0;
 
-    if (what & NS_SOCK_READ) {
+    if (what & (unsigned int)NS_SOCK_READ) {
 	pfd.events |= POLLIN;
     }
-    if (what & NS_SOCK_WRITE) {
+    if (what & (unsigned int)NS_SOCK_WRITE) {
 	pfd.events |= POLLOUT;
     }
-    if (what & NS_SOCK_EXCEPTION) {
+    if (what & (unsigned int)NS_SOCK_EXCEPTION) {
 	pfd.events |= POLLPRI;
     }
 
@@ -527,7 +527,7 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                        (char *) &n, sizeof(n));
         }
-        if (bind(sock, (struct sockaddr *) saPtr,
+        if (bind(sock, (const struct sockaddr *) saPtr,
                  sizeof(struct sockaddr_in)) != 0) {
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
@@ -635,7 +635,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
 
     if (sock != NS_INVALID_SOCKET) {
         len = (socklen_t)sizeof(err);
-        err = Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr);
+        err = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
         switch (err) {
         case NS_OK:
             len = sizeof(err);
@@ -876,7 +876,7 @@ CloseLater(NS_SOCKET sock, void *UNUSED(arg), Ns_SockState UNUSED(why))
 int
 Ns_SockCloseLater(NS_SOCKET sock)
 {
-    return Ns_SockCallback(sock, CloseLater, NULL, NS_SOCK_WRITE);
+    return Ns_SockCallback(sock, CloseLater, NULL, (unsigned int)NS_SOCK_WRITE);
 }
 
 

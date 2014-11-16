@@ -1499,7 +1499,7 @@ NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
 
 NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth);
 
-NS_EXTERN int NsTclObjIsByteArray(const Tcl_Obj *objPtr);
+NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
 NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
 

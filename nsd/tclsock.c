@@ -273,6 +273,7 @@ int
 NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     unsigned long nread;
+    int           nrBytes;
     Tcl_Channel   chan;
     NS_SOCKET     sock;
 
@@ -291,8 +292,9 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
-    nread += Tcl_InputBuffered(chan);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)nread));
+    nrBytes = (int)nread;
+    nrBytes += Tcl_InputBuffered(chan);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(nrBytes));
 
     return TCL_OK;
 }
@@ -795,13 +797,13 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     when = 0U;
     while (*s != '\0') {
         if (*s == 'r') {
-            when |= NS_SOCK_READ;
+            when |= (unsigned int)NS_SOCK_READ;
         } else if (*s == 'w') {
-            when |= NS_SOCK_WRITE;
+            when |= (unsigned int)NS_SOCK_WRITE;
         } else if (*s == 'e') {
-            when |= NS_SOCK_EXCEPTION;
+            when |= (unsigned int)NS_SOCK_EXCEPTION;
         } else if (*s == 'x') {
-            when |= NS_SOCK_EXIT;
+            when |= (unsigned int)NS_SOCK_EXIT;
         } else {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                    "invalid when specification \"",
@@ -821,7 +823,8 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         return TCL_ERROR;
     }
     if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]),
-                        (when & NS_SOCK_WRITE), (int *) &sock) != TCL_OK) {
+                        (when & (unsigned int)NS_SOCK_WRITE) != 0u, 
+			(int *) &sock) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -843,7 +846,8 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 	timeout = strtol(Tcl_GetString(objv[4]), NULL, 10);
     }
     if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
-                        when | NS_SOCK_EXIT, timeout) != NS_OK) {
+			  when | (unsigned int)NS_SOCK_EXIT, 
+			  timeout) != NS_OK) {
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
         ns_sockclose(sock);
         ns_free(cbPtr);
@@ -1155,7 +1159,9 @@ NsTclSockProc(NS_SOCKET sock, void *arg, Ns_SockState why)
     int          ok;
     Callback    *cbPtr = arg;
 
-    if (why != NS_SOCK_EXIT || ((cbPtr->when & NS_SOCK_EXIT) != 0U)) {
+    if (why != NS_SOCK_EXIT 
+	|| ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U)
+	) {
         Tcl_Interp  *interp;
 	char        *w;
         int          result;

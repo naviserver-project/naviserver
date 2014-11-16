@@ -125,7 +125,7 @@ Ns_ModuleInit(char *server, char *module)
     Mod           *modPtr;
     char          *end;
     const char    *addr, *path;
-    int            isNew, port;
+    int            isNew, port, result;
     size_t         i;
     NS_SOCKET      lsock;
     Tcl_HashEntry *hPtr;
@@ -246,9 +246,11 @@ Ns_ModuleInit(char *server, char *module)
     if (modPtr->users.numEntries == 0) {
 	Ns_Log(Warning, "nscp: no authorized users");
     }
-    Ns_SockCallback(lsock, AcceptProc, modPtr, NS_SOCK_READ|NS_SOCK_EXIT);
-    Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
-    return NS_OK;
+    result = Ns_SockCallback(lsock, AcceptProc, modPtr, (unsigned int)NS_SOCK_READ|(unsigned int)NS_SOCK_EXIT);
+    if (result == TCL_OK) {
+        Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+    }
+    return result;
 }
 
 
@@ -296,7 +298,7 @@ ArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static int
-AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
+AcceptProc(NS_SOCKET lsock, void *arg, Ns_SockState why)
 {
     Mod       *modPtr = arg;
     Sess      *sessPtr;
@@ -530,7 +532,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	Tcl_DStringAppend(dsPtr, buf, (int)n);
 	result = 1;
 
-    } while (buf[n-1] != UCHAR('\n'));
+    } while (buf[n-1] != '\n');
 
  bail:
     if (echo == 0) {
@@ -579,7 +581,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 	    char *encpass = Tcl_GetHashValue(hPtr);
 	    char  buf[NS_ENCRYPT_BUFSIZE];
 
-	    Ns_Encrypt(pass, encpass, buf);
+	    (void) Ns_Encrypt(pass, encpass, buf);
     	    if (STREQ(buf, encpass)) {
 		ok = 1;
 	    }
