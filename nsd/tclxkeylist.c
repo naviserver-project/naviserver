@@ -1073,7 +1073,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
             ckfree(keylIntPtr->entries[findIdx].key);
             Tcl_DecrRefCount(keylIntPtr->entries[findIdx].valuePtr);
         }
-        keylIntPtr->entries[findIdx].key = (char *)ckalloc(keyLen + 1U);
+        keylIntPtr->entries[findIdx].key = (char *)ckalloc((unsigned int)(keyLen + 1U));
         strncpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = valuePtr;
@@ -1112,7 +1112,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
         }
         EnsureKeyedListSpace(keylIntPtr, 1);
         findIdx = keylIntPtr->numEntries++;
-        keylIntPtr->entries[findIdx].key = (char *) ckalloc(keyLen + 1U);
+        keylIntPtr->entries[findIdx].key = (char *) ckalloc((unsigned int)(keyLen + 1U));
         strncpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = newKeylPtr;

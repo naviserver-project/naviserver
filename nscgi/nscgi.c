@@ -81,7 +81,7 @@ typedef struct Cgi {
     Ns_Set         *interpEnv;
     int		    ifd;
     int		    ofd;
-    int		    cnt;
+    ssize_t	    cnt;
     char	   *ptr;
     int		    nextds;
     Tcl_DString	    ds[NDSTRINGS];
@@ -121,8 +121,8 @@ static void	CgiFree(Cgi *cgiPtr);
 static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn);
 static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn);
 static int	CgiCopy(Cgi *cgiPtr, Ns_Conn *conn);
-static int	CgiRead(Cgi *cgiPtr);
-static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
+static ssize_t	CgiRead(Cgi *cgiPtr);
+static ssize_t	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
 static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, const char *key, const char *value);
@@ -950,10 +950,10 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 CgiRead(Cgi *cgiPtr)
 {
-    int n;
+    ssize_t n;
 
     cgiPtr->ptr = cgiPtr->buf;
     do {
@@ -985,11 +985,11 @@ CgiRead(Cgi *cgiPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 {
-    char c;
-    int n;
+    char    c;
+    ssize_t n;
 
     do {
 	while (cgiPtr->cnt > 0) {
@@ -1030,9 +1030,10 @@ static int
 CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 {
     Ns_DString      ds, redir;
-    int             status, last, n, httpstatus;
+    int             status, last, httpstatus;
     char           *value;
     Ns_Set         *hdrs;
+    ssize_t         n;
 
     /*
      * Skip to copy for nph CGI's.

@@ -1198,7 +1198,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
  *      e.g. nslog) do link against these instead of their own version.
  *
  * Results:
- *      See MSDN
+ *      For details, see MSDN
  *
  * Side effects:
  *      None.
