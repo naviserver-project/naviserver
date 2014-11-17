@@ -191,7 +191,8 @@ NsWin32ErrMsg(DWORD err)
     len = strlen(msg);
     
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 
-		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), msg+len, 1000u - len, NULL);
+		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+                  msg+len, (DWORD)(1000u - len), NULL);
 
     return msg;
 }

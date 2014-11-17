@@ -303,10 +303,10 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 
     switch (mode) {
     case NS_MMAP_WRITE:
-        mapPtr->handle = ns_open(path, O_BINARY | O_RDWR);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDWR, 0);
         break;
     case NS_MMAP_READ:
-        mapPtr->handle = ns_open(path, O_BINARY | O_RDONLY);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDONLY, 0);
         break;
     default:
         return NS_ERROR;
@@ -851,3 +851,12 @@ Abort(int signal)
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

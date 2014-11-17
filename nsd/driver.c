@@ -3432,7 +3432,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
      * Read content from the file into the buffer.
      */
     if (toRead > 0) {
-	int n;
+	ssize_t n;
 
 	if (doStream != 0) {
 	    /* 
@@ -4306,7 +4306,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	    return TCL_ERROR;
 	}
 
-        fd = ns_open(name, O_RDONLY);
+        fd = ns_open(name, O_RDONLY, 0);
         if (fd == -1) {
 	    Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
             return TCL_ERROR;

@@ -162,7 +162,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     if (initialized == 0) {
-	devNull = ns_open(DEVNULL, O_RDONLY);
+	devNull = ns_open(DEVNULL, O_RDONLY, 0);
 	if (devNull < 0) {
 	    Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
 		   DEVNULL, strerror(errno));

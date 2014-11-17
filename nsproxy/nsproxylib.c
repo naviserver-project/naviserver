@@ -398,7 +398,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
     ns_close(0);
-    if (ns_open("/dev/null", O_RDONLY) != 0) {
+    if (ns_open("/dev/null", O_RDONLY, 0) != 0) {
         Ns_Fatal("nsproxy: open: %s", strerror(errno));
     }
     ns_close(1);

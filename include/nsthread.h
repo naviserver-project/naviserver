@@ -404,7 +404,6 @@ typedef struct DIR_ *DIR;
 # define ns_close		    close
 # define ns_read                    read
 # define ns_write                   write
-# define ns_lseek		    lseek
 # define ns_dup		    	    dup
 # define ns_dup2	    	    dup2
 
