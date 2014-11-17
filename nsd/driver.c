@@ -3902,7 +3902,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     if (((connPtr->flags & NS_CONN_STREAM) != 0U) || connPtr->fd > 0) {
-	int         first = 0, wrote = 0;
+	int         first = 0;
+        size_t      wrote = 0u;
 	WriterSock *wrSockPtr1 = NULL;
 
 	if (wrPtr->doStream == NS_FALSE) {
@@ -3947,10 +3948,15 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    int i;
 	    assert(bufs != NULL);
 	    for (i = 0; i < nbufs; i++) {
-		int j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
-		wrote += j;
-		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIiovlen " OK %d", 
-		       connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
+		ssize_t j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
+                if (j > 0) {
+                    wrote += (size_t)j;
+                    Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIiovlen " OK %d", 
+                           connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
+                } else {
+                    Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed", 
+                           connPtr->fd);
+                }
 	    }
 	}
 
@@ -4724,7 +4730,7 @@ AsyncWriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     unsigned char   c;
-    int             n, stopping, pollto, status;
+    int             stopping, pollto, status;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
@@ -4815,6 +4821,7 @@ AsyncWriterThread(void *arg)
         writePtr = NULL;
 
         while (curPtr != NULL) {
+            ssize_t written;
 
             nextPtr = curPtr->nextPtr;
             status = NS_OK;
@@ -4822,15 +4829,15 @@ AsyncWriterThread(void *arg)
 	    /*
 	     * write the actual data and allow for partial write operations.
 	     */
-	    n = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-	    if (n < 0) {
+	    written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+	    if (written < 0) {
 		status = NS_ERROR;
 	    } else {
-		curPtr->size -= n;
-		curPtr->nsent += n;
-		curPtr->bufsize -= n;
+		curPtr->size -= written;
+		curPtr->nsent += written;
+		curPtr->bufsize -= written;
 		if (curPtr->data != NULL) {
-		    curPtr->buf += n;
+		    curPtr->buf += written;
 		}
 	    }
 
@@ -4864,7 +4871,7 @@ AsyncWriterThread(void *arg)
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-		size_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		if (unlikely(written != curPtr->bufsize)) { 
 		    WriteError("shutdown", curPtr->fd, curPtr->bufsize, written);
 		}
