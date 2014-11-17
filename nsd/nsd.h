@@ -195,7 +195,7 @@ typedef struct WriterSock {
     Tcl_WideInt          nsent;
     size_t               size;
     unsigned int         flags;
-    int                  streaming;
+    int                  doStream;
     int                  fd;
     char                 *headerString;
     
@@ -215,7 +215,7 @@ typedef struct WriterSock {
 	    size_t             maxsize;
 	    size_t             bufsize;
 	    off_t              bufoffset;
-	    Tcl_WideInt        toread;
+	    Tcl_WideInt        toRead;
 	    unsigned char     *buf;
 	    Ns_Mutex           fdlock;
 	} file;
@@ -352,7 +352,7 @@ typedef struct {
     int       threads;         /* Number of writer threads to run */
     size_t    maxsize;         /* Max content size to use writer thread */
     size_t    bufsize;         /* Size of the output buffer */
-    int       streaming;       /* Activate writer for HTML streaming */
+    int       doStream;        /* Activate writer for HTML streaming */
     Ns_Mutex lock;             /* Lock around writer queues */
     SpoolerQueue *firstPtr;    /* List of writer threads */
     SpoolerQueue *curPtr;      /* Current writer thread */
@@ -577,7 +577,7 @@ typedef struct Conn {
     int keep;
 
     int fd;
-    WriterSock *streamWriter;
+    WriterSock *strWriter;
 
     Ns_CompressStream cStream;
     int requestCompress;

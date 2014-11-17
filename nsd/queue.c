@@ -1574,14 +1574,14 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     if (connPtr->fd != 0) {
 	connPtr->fd = 0;
     }
-    if (connPtr->streamWriter != NULL) {
+    if (connPtr->strWriter != NULL) {
 	WriterSock *wrPtr;
 
 	NsWriterLock();
-	wrPtr = connPtr->streamWriter;
+	wrPtr = connPtr->strWriter;
 	if (wrPtr != NULL) {
 	    NsWriterFinish(wrPtr);
-	    connPtr->streamWriter = NULL;
+	    connPtr->strWriter = NULL;
 	}
 	NsWriterUnlock();
     }

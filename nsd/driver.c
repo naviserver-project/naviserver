@@ -569,10 +569,10 @@ Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 						   1024*1024, 1024, INT_MAX);
         wrPtr->bufsize = (size_t)Ns_ConfigIntRange(path, "writerbufsize",
 						   8192, 512, INT_MAX);
-        wrPtr->streaming = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
+        wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
-               module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->streaming);
+               module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->doStream);
         for (i = 0; i < wrPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
             char buffer[100];
@@ -3267,7 +3267,7 @@ WriterSockRequire(const Conn *connPtr) {
     assert(connPtr != NULL);
 
     NsWriterLock();
-    wrSockPtr = connPtr->streamWriter;
+    wrSockPtr = connPtr->strWriter;
     if (wrSockPtr != NULL) {
 	wrSockPtr->refCount ++;
     }
@@ -3297,12 +3297,12 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	   wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
-    if (wrSockPtr->streaming != 0) {
+    if (wrSockPtr->doStream != 0) {
 	Conn *connPtr;
 	NsWriterLock();
 	connPtr = wrSockPtr->connPtr;
-	if (connPtr && connPtr->streamWriter) {
-	    connPtr->streamWriter = NULL;
+	if (connPtr != NULL && connPtr->strWriter) {
+	    connPtr->strWriter = NULL;
 	}
 	NsWriterUnlock();
     }
@@ -3335,7 +3335,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	ns_free(wrSockPtr->clientData);
     }
     if (wrSockPtr->fd > -1) {
-	if (wrSockPtr->streaming != NS_WRITER_STREAM_FINISH) {
+	if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
 	    close(wrSockPtr->fd);
 	}
         ns_free(wrSockPtr->c.file.buf);
@@ -3383,7 +3383,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
 static SpoolerState
 WriterReadFromSpool(WriterSock *curPtr) {
-    int            streaming;
+    int            doStream;
     SpoolerState   status = SPOOLER_OK;
     Tcl_WideInt    toRead;
     size_t         maxsize;
@@ -3391,13 +3391,13 @@ WriterReadFromSpool(WriterSock *curPtr) {
 
     assert(curPtr != NULL);
 
-    streaming = curPtr->streaming;
-    if (streaming != 0) {
+    doStream = curPtr->doStream;
+    if (doStream != 0) {
 	Ns_MutexLock(&curPtr->c.file.fdlock);
-	toRead = curPtr->c.file.toread;
+	toRead = curPtr->c.file.toRead;
 	Ns_MutexUnlock(&curPtr->c.file.fdlock);
     } else {
-	toRead = curPtr->c.file.toread;
+	toRead = curPtr->c.file.toRead;
     }
     
     maxsize = curPtr->c.file.maxsize;
@@ -3434,7 +3434,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     if (toRead > 0) {
 	int n;
 
-	if (streaming != 0) {
+	if (doStream != 0) {
 	    /* 
 	     * In streaming mode, the connection thread writes to the
 	     * spool file and the writer thread reads from the same
@@ -3455,14 +3455,14 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	    status = SPOOLER_READERROR;
 	} else {
 	    /* 
-	     * curPtr->c.file.toread is still protected by curPtr->c.file.fdlock when
+	     * curPtr->c.file.toRead is still protected by curPtr->c.file.fdlock when
 	     * needed.
 	     */
-	    curPtr->c.file.toread -= n;
+	    curPtr->c.file.toRead -= n;
 	    curPtr->c.file.bufsize += n;
 	}
 	
-	if (streaming != 0) {
+	if (doStream != 0) {
 	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
 	}
     }
@@ -3562,7 +3562,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	/* 
 	 * We have sent something.
 	*/
-	if (curPtr->streaming != 0) {
+	if (curPtr->doStream != 0) {
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
 	    curPtr->size -= n;
 	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
@@ -3656,11 +3656,11 @@ WriterThread(void *arg)
 	    pollto = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
 		Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d", 
-		       (void *)curPtr, curPtr->size, curPtr->streaming);
+		       (void *)curPtr, curPtr->size, curPtr->doStream);
 		if (likely(curPtr->size > 0U)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
 		    pollto = -1;
-		} else if (unlikely(curPtr->streaming == NS_WRITER_STREAM_FINISH)) {
+		} else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
 		    pollto = -1;
 		}
 	    }
@@ -3685,33 +3685,33 @@ WriterThread(void *arg)
         writePtr = NULL;
 
         while (curPtr != NULL) {
-	    int streaming;
+	    int doStream;
 	    SpoolerState spoolerState = SPOOLER_OK;
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
             err = NS_OK;
 
-	    /* the truth value of streaming does not change through concurrency */
-	    streaming = curPtr->streaming; 
+	    /* the truth value of doStream does not change through concurrency */
+	    doStream = curPtr->doStream; 
 
 	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
 		Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
 		spoolerState = SPOOLER_CLOSE;
 		err = 0;
 
-	    } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (streaming == NS_WRITER_STREAM_FINISH)) {
+	    } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
 		Ns_Log(DriverDebug, 
                        "### Writer %p can write to client fd %d (trigger %d) streaming %.6x"
 		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
-                       (void *)curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
+                       (void *)curPtr, sockPtr->sock, PollIn(&pdata, 0), doStream,
                        curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
 		if (unlikely(curPtr->size < 1U)) {
 		    /*
 		     * Size < 0 means that everything was sent.
 		     */
-		    if (streaming != NS_WRITER_STREAM_ACTIVE) {
-			if (streaming == NS_WRITER_STREAM_FINISH) {
+		    if (doStream != NS_WRITER_STREAM_ACTIVE) {
+			if (doStream == NS_WRITER_STREAM_FINISH) {
 			    Ns_ReleaseTemp(curPtr->fd);
 			}
 			spoolerState = SPOOLER_CLOSE;
@@ -3754,7 +3754,7 @@ WriterThread(void *arg)
 
 	    Ns_MutexLock(&queuePtr->lock);
             if (spoolerState == SPOOLER_OK) {
-                if (curPtr->size > 0U || streaming == NS_WRITER_STREAM_ACTIVE) {
+                if (curPtr->size > 0U || doStream == NS_WRITER_STREAM_ACTIVE) {
 		    Ns_Log(DriverDebug, 
 			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
 			   (void *)curPtr, curPtr->size);
@@ -3843,7 +3843,7 @@ WriterThread(void *arg)
 void 
 NsWriterFinish(WriterSock *wrSockPtr) {
     Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)wrSockPtr);
-    wrSockPtr->streaming = NS_WRITER_STREAM_FINISH;
+    wrSockPtr->doStream = NS_WRITER_STREAM_FINISH;
     SockTrigger(wrSockPtr->queuePtr->pipe[1]);
 }
 
@@ -3905,7 +3905,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	int         first = 0, wrote = 0;
 	WriterSock *wrSockPtr1 = NULL;
 
-	if (wrPtr->streaming == NS_FALSE) {
+	if (wrPtr->doStream == NS_FALSE) {
 	    return NS_ERROR;
 	}
 
@@ -3964,14 +3964,14 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	} else {
 	    /*
 	     * This is a later streaming operation, where the writer
-	     * job (streamWriter) was previously established. Update
+	     * job (strWriter) was previously established. Update
 	     * the controlling variables (size and toread), and the
 	     * length info for the access log, and trigger the writer
 	     * to notify it about the change.
 	     */
 	    assert(wrSockPtr1 != NULL);
-	    connPtr->streamWriter->size += wrote;
-	    connPtr->streamWriter->c.file.toread += wrote;
+	    connPtr->strWriter->size += wrote;
+	    connPtr->strWriter->c.file.toRead += wrote;
 	    Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
 
 	    connPtr->nContentSent += wrote;
@@ -4073,7 +4073,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    wrSockPtr->c.file.maxsize = wrPtr->bufsize;
 	}
 	wrSockPtr->c.file.bufoffset = 0;
-	wrSockPtr->c.file.toread = nsend;
+	wrSockPtr->c.file.toRead = nsend;
 
     } else if (bufs != NULL) {
 	int   i, j, headerbufs = headerSize > 0U ? 1 : 0;
@@ -4144,8 +4144,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      */
 
     if ((wrSockPtr->flags & NS_CONN_STREAM) != 0U) { 
-	wrSockPtr->streaming = NS_WRITER_STREAM_ACTIVE;
-	assert(connPtr->streamWriter == NULL);
+	wrSockPtr->doStream = NS_WRITER_STREAM_ACTIVE;
+	assert(connPtr->strWriter == NULL);
 	/*
 	 * Add a reference to the stream writer to the connection such
 	 * it can efficiently append to a stream when multiple output
@@ -4154,7 +4154,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	 * writer in case the writer is deleted. No locks are needed,
 	 * since nobody can share this structure yet.
 	 */
-	connPtr->streamWriter = wrSockPtr;
+	connPtr->strWriter = wrSockPtr;
 	wrSockPtr->connPtr = connPtr; 
     }
 
@@ -4462,9 +4462,9 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 		if (Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		wrPtr->streaming = value;
+		wrPtr->doStream = value;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wrPtr->streaming));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wrPtr->doStream));
 	}
 	break;
     }
