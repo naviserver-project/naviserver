@@ -148,11 +148,8 @@ typedef int32_t ssize_t;
 #  define access                      _access
 #  define chsize                      _chsize
 #  define close                       _close
-#  define dup                         _dup
-#  define dup2                        _dup2
 #  define fileno                      _fileno
 #  define getpid                      _getpid
-#  define lseek                       _lseek
 #  define mktemp                      _mktemp
 #  define open                        _open
 #  define putenv                      _putenv
@@ -407,6 +404,9 @@ typedef struct DIR_ *DIR;
 # define ns_close		    close
 # define ns_read                    read
 # define ns_write                   write
+# define ns_lseek		    lseek
+# define ns_dup		    	    dup
+# define ns_dup2	    	    dup2
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))
@@ -884,10 +884,13 @@ NS_EXTERN int truncate(char *file, off_t size);
  * nswin32.c:
  */
 #ifdef _WIN32
-NS_EXTERN int ns_open(const char *path, int oflag, int mode);
-NS_EXTERN int ns_close(int filedes);
+NS_EXTERN int     ns_open(const char *path, int oflag, int mode);
+NS_EXTERN int     ns_close(int filedes);
 NS_EXTERN ssize_t ns_write(int fildes, const void *buf, size_t nbyte);
 NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
+NS_EXTERN off_t   ns_lseek(int fildes, off_t offset, int whence);
+NS_EXTERN int     ns_dup(int fildes);
+NS_EXTERN int     ns_dup2(int fildes, int fildes2);
 #endif
 
 /*

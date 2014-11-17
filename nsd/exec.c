@@ -475,8 +475,8 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 
     pid = ns_fork();
     if (pid < 0) {
-        close(errpipe[0]);
-        close(errpipe[1]);
+        ns_close(errpipe[0]);
+        ns_close(errpipe[1]);
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
 	return NS_INVALID_PID;
     }
@@ -490,20 +490,20 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 	 * to the parent if necessary.
 	 */
 
-        close(errpipe[0]);
+        ns_close(errpipe[0]);
         if (dir != NULL && chdir(dir) != 0) {
 	    result = ERR_CHDIR;
-        } else if ((fdin == 1 && (fdin = dup(1)) < 0) ||
-    	    	    (fdout == 0 && (fdout = dup(0)) < 0) ||
-	    	    (fdin != 0 && dup2(fdin, 0) < 0) ||
-    	    	    (fdout != 1 && dup2(fdout, 1) < 0)) {
+        } else if ((fdin == 1 && (fdin = ns_dup(1)) < 0) ||
+    	    	    (fdout == 0 && (fdout = ns_dup(0)) < 0) ||
+	    	    (fdin != 0 && ns_dup2(fdin, 0) < 0) ||
+    	    	    (fdout != 1 && ns_dup2(fdout, 1) < 0)) {
 	    result = ERR_DUP;
 	} else {
 	    if (fdin > 2) {
-		close(fdin);
+		ns_close(fdin);
 	    }
 	    if (fdout > 2) {
-            	close(fdout);
+            	ns_close(fdout);
 	    }
             NsRestoreSignals();
 	    Ns_NoCloseOnExec(0);
@@ -530,11 +530,11 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 	 * Read result and errno from the child if any.
 	 */
 
-        close(errpipe[1]);
+        ns_close(errpipe[1]);
 	do {
             nread = readv(errpipe[0], iov, 2);
 	} while (nread < 0 && errno == EINTR);
-        close(errpipe[0]);
+        ns_close(errpipe[0]);
         if (nread == 0) {
 	    errnum = 0;
 	    result = pid;

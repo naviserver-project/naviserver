@@ -941,7 +941,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	    }
 	} else if (rangeCount < 2) {
 	    if (rangeCount == 1) {
-		lseek(fd, bufs[0].offset, SEEK_SET);
+		ns_lseek(fd, bufs[0].offset, SEEK_SET);
 		len = bufs[0].length;
 	    }
 	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {
@@ -972,3 +972,12 @@ ReturnRange(Ns_Conn *conn, const char *type,
 
     return result;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

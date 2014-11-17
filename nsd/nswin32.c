@@ -1230,6 +1230,23 @@ ns_read(int fildes, void *buf, size_t nbyte)
     return _read(fildes, buf, (unsigned int)nbyte);
 }
 
+off_t
+ns_lseek(int fildes, off_t offset, int whence)
+{
+    return (off_t)_lseek(fildes, (long)offset, whence);
+}
+
+int 
+ns_dup(int fildes) 
+{
+    return _dup(fildes);
+}
+
+int     
+ns_dup2(int fildes, int fildes2)
+{
+    return _dup2(fildes, fildes2);
+}
 #else
 /* avoid empty translation unit */
    typedef void empty; 

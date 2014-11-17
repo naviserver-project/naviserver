@@ -854,7 +854,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
 
     interp = itPtr->interp;
 
-    fd = open(file, O_RDONLY | O_BINARY);
+    fd = ns_open(file, O_RDONLY | O_BINARY);
     if (fd < 0) {
         Tcl_AppendResult(interp, "could not open \"",
                          file, "\": ", Tcl_PosixError(interp), NULL);
@@ -893,7 +893,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
              * File is not expected size, rewind and fstat/read again.
              */
 
-            if (lseek(fd, (off_t) 0, SEEK_SET) != 0) {
+            if (ns_lseek(fd, (off_t) 0, SEEK_SET) != 0) {
                 Tcl_AppendResult(interp, "could not lseek \"", file,
                                  "\": ", Tcl_PosixError(interp), NULL);
                 goto done;
@@ -933,7 +933,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
 
 done:
     ns_free(buf);
-    close(fd);
+    ns_close(fd);
 
     return pagePtr;
 }
@@ -1259,7 +1259,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
 	    Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
 	    code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
 	}
-	close(fd);
+	ns_close(fd);
 	unlink(debugfile);
     }
     Ns_DStringFree(&ds);

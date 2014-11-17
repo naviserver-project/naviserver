@@ -1073,7 +1073,7 @@ SockSetup(NS_SOCKET sock)
 
     nsock = fcntl(sock, F_DUPFD, 256);
     if (nsock != NS_INVALID_SOCKET) {
-      close(sock);
+      ns_sockclose(sock);
       sock = nsock;
     }
 #endif

@@ -2192,7 +2192,7 @@ SockClose(Sock *sockPtr, int keep)
      */
 
     if (sockPtr->tfd > 0) {
-        close(sockPtr->tfd);
+        ns_close(sockPtr->tfd);
     }
     sockPtr->tfd = 0;
 
@@ -3336,7 +3336,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     }
     if (wrSockPtr->fd > -1) {
 	if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
-	    close(wrSockPtr->fd);
+	    ns_close(wrSockPtr->fd);
 	}
         ns_free(wrSockPtr->c.file.buf);
     } else if (wrSockPtr->c.mem.bufs != NULL) {
@@ -3446,7 +3446,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	     * send operation.
 	     */
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
+	    ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
 	n = ns_read(curPtr->fd, bufPtr, (size_t)toRead);
@@ -3936,7 +3936,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 		return NS_ERROR;
 	    }
 	    Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
-	    lseek(connPtr->fd, 0, SEEK_END);
+	    ns_lseek(connPtr->fd, 0, SEEK_END);
 	}
 
 	/*
@@ -3986,12 +3986,12 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    /* 
 	     * The client provided an open file pointer and closes it
 	     */
-	    fd = dup(fileno(fp));
+	    fd = ns_dup(fileno(fp));
 	} else if (fd != -1) {
 	    /* 
 	     * The client provided an open file descriptor and closes it 
 	     */
-	    fd = dup(fd);
+	    fd = ns_dup(fd);
 	} else if (chan != NULL) {
 	    /* 
 	     * The client provided an open tcl channel and closes it 
@@ -4000,7 +4000,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 				     (ClientData)&fd) != TCL_OK) {
 		return NS_ERROR;
 	    }
-	    fd = dup(fd);
+	    fd = ns_dup(fd);
         }
     }
 
@@ -4306,7 +4306,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	    return TCL_ERROR;
 	}
 
-        fd = open(name, O_RDONLY);
+        fd = ns_open(name, O_RDONLY);
         if (fd == -1) {
 	    Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
             return TCL_ERROR;
@@ -4314,20 +4314,20 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
 	if (size < 0 || size > st.st_size) {
 	    Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
-	    close(fd);
+	    ns_close(fd);
 	    return TCL_ERROR;
 	}
 
 	if (offset < 0 || offset > st.st_size) {
 	    Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
-	    close(fd);
+	    ns_close(fd);
 	    return TCL_ERROR;
 	} 
 
 	if (size > 0) {
 	    if (size + offset > st.st_size) {
 		Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
-		close(fd);
+		ns_close(fd);
 		return TCL_ERROR;
 	    }
 	    nrbytes = (size_t)size;
@@ -4336,7 +4336,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	}
 
 	if (offset > 0) {
-	    lseek(fd, (off_t)offset, SEEK_SET);
+	    ns_lseek(fd, (off_t)offset, SEEK_SET);
 	}
 
         /*
@@ -4350,7 +4350,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         rc = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-        close(fd);
+        ns_close(fd);
 
         break;
     }

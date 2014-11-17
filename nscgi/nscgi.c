@@ -162,7 +162,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     if (initialized == 0) {
-	devNull = open(DEVNULL, O_RDONLY);
+	devNull = ns_open(DEVNULL, O_RDONLY);
 	if (devNull < 0) {
 	    Ns_Log(Error, "nscgi: open(%s) failed: %s",
 		   DEVNULL, strerror(errno));
@@ -569,12 +569,12 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
     } else if (ns_write(fd, content, len) != len) {
 	err = "write";
-    } else if (lseek(fd, 0, SEEK_SET) != 0) {
+    } else if (ns_lseek(fd, 0, SEEK_SET) != 0) {
 	err = "lseek";
     }
     if (err != NULL) {
 	Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
-	close(fd);
+	ns_close(fd);
 	fd = -1;
     }
     if (fd < 0) {
@@ -632,7 +632,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->ofd >= 0) {
-    	close(cgiPtr->ofd);
+    	ns_close(cgiPtr->ofd);
     }
 
     /*
@@ -923,9 +923,9 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     cgiPtr->pid = Ns_ExecProcess(cgiPtr->exec, cgiPtr->dir,
 	cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
 	opipe[1], dsPtr->string, cgiPtr->env);
-    close(opipe[1]);
+    ns_close(opipe[1]);
     if (cgiPtr->pid == NS_INVALID_PID) {
-    	close(opipe[0]);
+    	ns_close(opipe[0]);
 	return NS_ERROR;
     }
 

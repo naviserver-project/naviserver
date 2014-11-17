@@ -609,7 +609,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     }
 
     if (httpPtr->spoolFd > 0)  {
-	close(httpPtr->spoolFd);
+	ns_close(httpPtr->spoolFd);
 	valPtr = Tcl_NewObj();
     } else {
 	valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
@@ -926,7 +926,7 @@ HttpClose(Ns_HttpTask *httpPtr)
     if (httpPtr->task != NULL)          {Ns_TaskFree(httpPtr->task);}
     if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
     if (httpPtr->spoolFileName != NULL) {ns_free(httpPtr->spoolFileName);}
-    if (httpPtr->spoolFd > 0)           {close(httpPtr->spoolFd);}
+    if (httpPtr->spoolFd > 0)           {ns_close(httpPtr->spoolFd);}
     if (httpPtr->compress != NULL)      {
 	Ns_InflateEnd(httpPtr->compress);
 	ns_free(httpPtr->compress);

@@ -1169,12 +1169,12 @@ truncate(char *file, off_t size)
 {
     int fd;
 
-    fd = open(file, O_WRONLY|O_BINARY);
+    fd = _open(file, O_WRONLY|O_BINARY);
     if (fd < 0) {
         return -1;
     }
     size = _chsize(fd, size);
-    close(fd);
+    _close(fd);
     if (size != 0) {
         return -1;
     }

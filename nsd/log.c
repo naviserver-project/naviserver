@@ -997,8 +997,8 @@ Ns_LogRoll(void)
     if (file != NULL) {
 	NsAsyncWriterQueueDisable(0);
 #ifdef _WIN32
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
+        ns_close(STDOUT_FILENO);
+        ns_close(STDERR_FILENO);
 #endif
 
         if (access(file, F_OK) == 0) {
@@ -1078,7 +1078,7 @@ LogOpen(void)
     oflags |= O_LARGEFILE;
 #endif
 
-    fd = open(file, oflags, 0644);
+    fd = ns_open(file, oflags, 0644);
     if (fd == -1) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
@@ -1089,7 +1089,7 @@ LogOpen(void)
          * Route stderr to the file
          */
 
-        if (fd != STDERR_FILENO && dup2(fd, STDERR_FILENO) == -1) {
+        if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
             fprintf(stdout, "dup2(%s, STDERR_FILENO) failed: %s\n",
                     file, strerror(errno));
             status = NS_ERROR;
@@ -1099,7 +1099,7 @@ LogOpen(void)
          * Route stdout to the file
          */
 
-        if (dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
+        if (ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
             Ns_Log(Error, "log: failed to route stdout to file: '%s'",
                    strerror(errno));
             status = NS_ERROR;
@@ -1110,7 +1110,7 @@ LogOpen(void)
          */
 
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-            close(fd);
+            ns_close(fd);
         }
     }
     return status;
