@@ -6,6 +6,12 @@ syntax: glob
 *.o
 *.so
 *.dylib
+*.dll
+*.exe
+*.exp
+*.lib
+*.pdb
+*.ilk
 *.DS_Store
 nsd/nsd
 nsproxy/nsproxy
