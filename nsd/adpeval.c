@@ -481,8 +481,8 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
         port = Ns_SetIGet(hdrs, "dport");
         procs = Ns_SetIGet(hdrs, "dprocs");
         if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
-            Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
-                                Tcl_GetStringResult(interp));
+            (void) Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
+                                       Tcl_GetStringResult(interp));
             itPtr->adp.exception = ADP_ABORT;
             goto done;
         }
@@ -913,8 +913,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         if (encoding == NULL) {
             page = buf;
         } else {
-	    Tcl_ExternalToUtfDString(encoding, buf, (int)n, &utf);
-            page = utf.string;
+            page = Tcl_ExternalToUtfDString(encoding, buf, (int)n, &utf);;
         }
         pagePtr = ns_malloc(sizeof(Page));
         pagePtr->servPtr = itPtr->servPtr;
@@ -1095,7 +1094,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     frame.ident = NULL;
     savecwd = itPtr->adp.cwd;
     if (file != NULL && (slash = strrchr(file, '/')) != NULL) {
-      Ns_DStringNAppend(&cwd, file, (int)(slash - file));
+        Ns_DStringNAppend(&cwd, file, (int)(slash - file));
         itPtr->adp.cwd = cwd.string;
     }
     frame.prevPtr = itPtr->adp.framePtr;
@@ -1177,6 +1176,9 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     case ADP_RETURN:
         itPtr->adp.exception = ADP_OK;
         /* FALLTHROUGH */
+    case ADP_ABORT:
+    case ADP_BREAK:
+    case ADP_TIMEOUT:
     default:
         result = TCL_OK;
         break;
