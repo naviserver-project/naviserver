@@ -175,7 +175,7 @@ NS_EXTERN struct nsconf nsconf;
 
 typedef struct FileMap {
     char *addr;                 /* Mapped to this virtual address */
-    int size;                   /* Size of the mapped region */
+    size_t size;                /* Size of the mapped region */
     int handle;                 /* OS handle of the opened/mapped file */
     void *mapobj;               /* Mapping object (Win32 only) */
 } FileMap;
@@ -1474,7 +1474,7 @@ NS_EXTERN int NsForkWatchedProcess(void);
  */
 
 NS_EXTERN int NsCloseAllFiles(int errFd);
-NS_EXTERN int NsMemMap(const char *path, int size, int mode, FileMap *mapPtr);
+NS_EXTERN int NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr);
 NS_EXTERN void NsMemUmap(const FileMap *mapPtr);
 
 NS_EXTERN void NsStopSockCallbacks(void);
@@ -1501,3 +1501,12 @@ NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
 NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn);
 
 #endif /* NSD_H */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

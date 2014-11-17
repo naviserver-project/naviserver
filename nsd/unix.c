@@ -295,7 +295,7 @@ NsSendSignal(int sig)
  */
 
 int
-NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
+NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
     /*
      * Open the file according to map mode
@@ -322,7 +322,7 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
      * per default.
      */
 
-    mapPtr->addr = mmap(0, (size_t)size, mode, MAP_SHARED, mapPtr->handle, 0);
+    mapPtr->addr = mmap(0, size, mode, MAP_SHARED, mapPtr->handle, 0);
     if (mapPtr->addr == MAP_FAILED) {
         Ns_Log(Warning, "mmap: mmap(%s) failed: %s", path, strerror(errno));
         close(mapPtr->handle);
@@ -355,7 +355,7 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
 void
 NsMemUmap(const FileMap *mapPtr)
 {
-    munmap(mapPtr->addr, (size_t)mapPtr->size);
+    munmap(mapPtr->addr, mapPtr->size);
 }
 
 

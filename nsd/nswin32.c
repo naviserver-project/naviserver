@@ -452,7 +452,7 @@ NsHandleSignals(void)
         }
         sig = sigpending;
         sigpending = 0U;
-        if ((sig & (1 << NS_SIGINT)) != 0U) {
+        if ((sig & (1u << NS_SIGINT)) != 0U) {
 
            /*
             * Signalize the Service Control Manager
@@ -462,10 +462,10 @@ NsHandleSignals(void)
             serviceFailed = 1;
         }
         Ns_MutexUnlock(&lock);
-        if ((sig & (1 << NS_SIGHUP)) != 0U) {
+        if ((sig & (1u << NS_SIGHUP)) != 0U) {
 	    NsRunSignalProcs();
         }
-    } while ((sig & (1 << NS_SIGHUP)) != 0U);
+    } while ((sig & (1u << NS_SIGHUP)) != 0U);
 
     /*
      * If running as a service, startup the ticker thread again
@@ -505,7 +505,7 @@ NsSendSignal(int sig)
     case NS_SIGINT:
     case NS_SIGHUP:
         Ns_MutexLock(&lock);
-        sigpending |= (1 << sig);
+        sigpending |= (1u << sig);
         Ns_CondSignal(&cond);
         Ns_MutexUnlock(&lock);
         break;
@@ -532,7 +532,7 @@ NsSendSignal(int sig)
  */
 
 int
-NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
+NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
     HANDLE hndl, mobj;
     LPCVOID addr;
