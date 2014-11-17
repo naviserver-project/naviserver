@@ -44,7 +44,7 @@
 static void  SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr);
 static int   SetTimeFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void  UpdateStringOfTime(Tcl_Obj *objPtr);
-static int TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
+static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
 
 
 /*
@@ -385,7 +385,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  */
 
 static int
-TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     time_t     now;
     struct tm *ptm;
@@ -396,7 +396,7 @@ TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         return TCL_ERROR;
     }
     now = time(NULL);
-    if (PTR2INT(isgmt) != 0) {
+    if (PTR2INT(isGmt) != 0) {
         ptm = ns_gmtime(&now);
     } else {
         ptm = ns_localtime(&now);
@@ -447,23 +447,23 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Time time;
+    Ns_Time t;
     int     ms;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "timespec");
         return TCL_ERROR;
     }
-    if (Ns_TclGetTimeFromObj(interp, objv[1], &time) != TCL_OK) {
+    if (Ns_TclGetTimeFromObj(interp, objv[1], &t) != TCL_OK) {
         return TCL_ERROR;
     }
-    Ns_AdjTime(&time);
-    if (time.sec < 0 || (time.sec == 0 && time.usec < 0)) {
+    Ns_AdjTime(&t);
+    if (t.sec < 0 || (t.sec == 0 && t.usec < 0)) {
         Tcl_AppendResult(interp, "invalid timespec: ",
                          Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    ms = (int)(time.sec * 1000 + time.usec / 1000);
+    ms = (int)(t.sec * 1000 + t.usec / 1000);
     Tcl_Sleep(ms);
 
     return TCL_OK;
@@ -490,7 +490,7 @@ int
 NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char   *fmt, buf[200];
-    time_t  time;
+    time_t  t;
     long    sec;
 
     if (objc != 2 && objc != 3) {
@@ -500,14 +500,14 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (Tcl_GetLongFromObj(interp, objv[1], &sec) != TCL_OK) {
         return TCL_ERROR;
     }
-    time = sec;
+    t = sec;
 
     if (objc > 2) {
         fmt = Tcl_GetString(objv[2]);
     } else {
         fmt = "%c";
     }
-    if (strftime(buf, sizeof(buf), fmt, ns_localtime(&time)) == 0) {
+    if (strftime(buf, sizeof(buf), fmt, ns_localtime(&t)) == 0) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
                                Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
@@ -578,7 +578,7 @@ static int
 SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
     char    *str, *sep;
-    Ns_Time  time;
+    Ns_Time  t;
     long     sec;
     int      value;
 
@@ -588,14 +588,14 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
-        time.sec = (time_t) sec;
-        time.usec = 0;
+        t.sec = (time_t) sec;
+        t.usec = 0;
     } else {
         int result;
 
         *sep = '\0';
         result = Tcl_GetInt(interp, str, &value);
-        time.sec = value;
+        t.sec = value;
         *sep = ':';
         if (result != TCL_OK) {
             return TCL_ERROR;
@@ -603,10 +603,10 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
             return TCL_ERROR;
         }
-        time.usec = value;
+        t.usec = value;
     }
-    Ns_AdjTime(&time);
-    SetTimeInternalRep(objPtr, &time);
+    Ns_AdjTime(&t);
+    SetTimeInternalRep(objPtr, &t);
 
     return TCL_OK;
 }
