@@ -634,11 +634,10 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
     sock = SockConnect(host, port, lhost, lport, 1);
 
     if (sock != NS_INVALID_SOCKET) {
-        len = (socklen_t)sizeof(err);
         err = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
         switch (err) {
         case NS_OK:
-            len = sizeof(err);
+            len = (socklen_t)sizeof(err);
             if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) == -1) {
                 return sock;
             }
@@ -1130,3 +1129,12 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 #endif
 }
 
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

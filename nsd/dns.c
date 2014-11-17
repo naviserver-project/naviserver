@@ -395,7 +395,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     int result = 0;
     int h_errnop = 0;
     int status = NS_FALSE;
-#if defined(HAVE_GETHOSTBYNAME_R_6) || defined(HAVE_GETHOSTBYNAME_R_5) || defined(HAVE_GETHOSTBYNAME_R_6)
+#if defined(HAVE_GETHOSTBYNAME_R_6) || defined(HAVE_GETHOSTBYNAME_R_5)
     struct hostent he;
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3

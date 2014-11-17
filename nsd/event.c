@@ -51,8 +51,8 @@ typedef struct Event {
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;
 
-#define EVENT_WAIT 1U  /* Event callback has requested a wait. */
-#define EVENT_DONE 2U  /* Event callback has signaled Event done. */
+#define NS_EVENT_WAIT 1U  /* Event callback has requested a wait. */
+#define NS_EVENT_DONE 2U  /* Event callback has signaled Event done. */
 
 /*
  * The following defines an event queue of sockets waiting for
@@ -224,9 +224,9 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
      */
 
     if (evPtr->events != 0 || timeoutPtr != NULL) {
-        evPtr->status = EVENT_WAIT;
+        evPtr->status = NS_EVENT_WAIT;
     } else {
-        evPtr->status = EVENT_DONE;
+        evPtr->status = NS_EVENT_DONE;
     }
 }
 
@@ -311,7 +311,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      */
     ((void)(n)); /* ignore n */
 
-    if (((queuePtr->pfds[0].revents & POLLIN) != 0U)
+    if (((queuePtr->pfds[0].revents & POLLIN) != 0)
         && (recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1)
 	) {
 	Ns_Fatal("event queue: trigger ns_read() failed: %s",
@@ -350,7 +350,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
             Call(evPtr, &now, NS_SOCK_TIMEOUT);
         }
 
-        if (evPtr->status == EVENT_WAIT) {
+        if (evPtr->status == NS_EVENT_WAIT) {
             Push(evPtr, queuePtr->firstWaitPtr);
         } else {
             Push(evPtr, queuePtr->firstFreePtr);

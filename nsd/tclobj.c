@@ -360,7 +360,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
 bool
 NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
-  return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes==NULL)) ? NS_TRUE : NS_FALSE;
+  return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes == NULL)) ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -417,12 +417,12 @@ static int
 SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
     void *type, *addr;
-    char *string;
+    char *chars;
 
-    string = Tcl_GetString(objPtr);
-    if (sscanf(string, "t%p-a%p", &type, &addr) != 2
+    chars = Tcl_GetString(objPtr);
+    if (sscanf(chars, "t%p-a%p", &type, &addr) != 2
         || type == NULL || addr == NULL) {
-        Tcl_AppendResult(interp, "invalid address \"", string, "\"", NULL);
+        Tcl_AppendResult(interp, "invalid address \"", chars, "\"", NULL);
         return TCL_ERROR;
     }
     Ns_TclSetTwoPtrValue(objPtr, &addrType, type, addr);

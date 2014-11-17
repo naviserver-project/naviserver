@@ -157,7 +157,7 @@ static struct {
     { "Dev",     NS_FALSE }
 };
 
-static const Ns_LogSeverity severityMaxCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
+static const Ns_LogSeverity severityMaxCount = (Ns_LogSeverity)(sizeof(severityConfig) / sizeof(severityConfig[0]));
 static Ns_LogSeverity severityIdx = 0;
 
 static Tcl_HashTable severityTable; /* Map severity names to indexes for Tcl. */
@@ -657,7 +657,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
     Ns_Time now;
 
     Ns_GetTime(&now);
-    return strncpy(timeBuf, LogTime(GetCache(), &now, gmt), 41);
+    return strncpy(timeBuf, LogTime(GetCache(), &now, gmt), 41u);
 }
 
 
@@ -1258,7 +1258,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
      * Add the log message
      */
 
-    if (len == 0) {
+    if (len == 0u) {
         len = strlen(msg);
     }
     Ns_DStringNAppend(dsPtr, msg, (int)len);
@@ -1347,7 +1347,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
         char *err = "LogToTcl: can't get interpreter";
-        LogToFile(logfile, Error, stampPtr, err, 0);
+        LogToFile(logfile, Error, stampPtr, err, 0u);
         return NS_ERROR;
     }
 

@@ -1011,7 +1011,8 @@ NsConnThread(void *arg)
     NsServer      *servPtr = poolPtr->servPtr;
     Conn          *connPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
-    unsigned int   id, shutdown;
+    unsigned int   id;
+    bool           shutdown;
     int            status = NS_OK, cpt, ncons, timeout, current, fromQueue;
     const char    *path, *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
@@ -1442,7 +1443,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->contentLength = connPtr->reqPtr->length;
 
-    connPtr->nContentSent = 0;
+    connPtr->nContentSent = 0u;
     connPtr->responseStatus = 200;
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;

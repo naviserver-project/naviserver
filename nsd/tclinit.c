@@ -453,7 +453,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
     if (connPtr->itPtr == NULL) {
         itPtr = PopInterp(connPtr->poolPtr->servPtr, NULL);
         itPtr->conn = conn;
-        itPtr->nsconn.flags = 0U;
+        itPtr->nsconn.flags = 0u;
         connPtr->itPtr = itPtr;
         RunTraces(itPtr, NS_TCL_TRACE_GETCONN);
     }
@@ -937,7 +937,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     char           *script;
     int             remain = 0, opt, length, result = TCL_OK;
     Ns_TclTraceType when;
-    unsigned int    flags = 0;
+    unsigned int    flags = 0u;
 
     static const char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
@@ -1381,7 +1381,7 @@ NsFreeConnInterp(Conn *connPtr)
     if (itPtr != NULL) {
         RunTraces(itPtr, NS_TCL_TRACE_FREECONN);
         itPtr->conn = NULL;
-        itPtr->nsconn.flags = 0U;
+        itPtr->nsconn.flags = 0u;
         PushInterp(itPtr);
         connPtr->itPtr = NULL;
     }
