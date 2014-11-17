@@ -601,7 +601,7 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
         Ns_DStringNAppend(dsPtr, "", 1);
     }
     Ns_DStringNAppend(dsPtr, "", 1);
-    return Ns_DStringAppendArgv(dsPtr);
+    (void )Ns_DStringAppendArgv(dsPtr);
 }
 
 #endif /* _WIN32 */
