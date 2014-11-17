@@ -198,11 +198,11 @@ PGMLIBS  = $(PGMLIBS) $(DLLLIB)
 #
 
 !if "$(DEBUG)" == "1"
-COPTS	= $(COPTS) /MTd /Od /Zi /RTC1
+COPTS	= $(COPTS) /MDd /Od /Zi /RTC1
 DEFS	= $(DEFS) /D "_DEBUG"
 LOPTS	= $(LOPTS) /DEBUG
 !else
-COPTS	= $(COPTS) /MT /O2
+COPTS	= $(COPTS) /MD /O2
 DEFS	= $(DEFS) /D "NDEBUG"
 !endif
 
