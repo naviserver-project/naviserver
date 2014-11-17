@@ -732,6 +732,9 @@ PreBind(const char *line)
             }
         }
 
+	/*
+	 * Unix-domain socket
+	 */
         if (Ns_PathIsAbsolute(line)) {
             /* Parse mode */
             mode = 0;
