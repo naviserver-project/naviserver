@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
         }
         for (i = 0; i < 10; ++i) {
             Ns_ThreadJoin(&threads[i], &arg);
-            printf("check stack %" PRIdPTR " = %" PRIdPTR "\n", i, (intptr_t) arg);
+            printf("check stack %d = %" PRIdPTR "\n", i, (intptr_t) arg);
         }
     }
     /*Ns_ThreadEnum(DumpThreads, NULL);*/
