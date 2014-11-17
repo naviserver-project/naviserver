@@ -1090,7 +1090,7 @@ LogOpen(void)
          */
 
         if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
-            fprintf(stdout, "dup2(%s, STDERR_FILENO) failed: %s\n",
+            fprintf(stdout, "ns_dup2(%s, STDERR_FILENO) failed: %s\n",
                     file, strerror(errno));
             status = NS_ERROR;
         }

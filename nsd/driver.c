@@ -4623,7 +4623,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 
     /*
      * If the async writer has not started or is deactivated, behave
-     * like a write() command. If the write() fails, we can't do much,
+     * like a ns_write() command. If the ns_write() fails, we can't do much,
      * since writing of an error message to the log might bring us
      * into an infinte loop.
      */
@@ -4638,7 +4638,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 
     /*
      * Allocate a writer cmd and initialize it. In order to provide an
-     * interface compatible to write(), we copy the provided data,
+     * interface compatible to ns_write(), we copy the provided data,
      * such it can be freed by the caller. Wen we would give up the
      * interface, we could free the memory block after writing, and
      * save a malloc/free operation on the data.

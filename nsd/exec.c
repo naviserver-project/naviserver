@@ -549,7 +549,7 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 				exec, dir, strerror(errnum));
 	    		break;
 		    case ERR_DUP:
-	    		Ns_Log(Error, "exec %s: dup() failed: %s",
+	    		Ns_Log(Error, "exec %s: ns_dup() failed: %s",
 				exec, strerror(errnum));
 	    		break;
 		    case ERR_EXEC:

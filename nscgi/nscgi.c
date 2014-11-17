@@ -164,7 +164,7 @@ Ns_ModuleInit(char *server, char *module)
     if (initialized == 0) {
 	devNull = ns_open(DEVNULL, O_RDONLY);
 	if (devNull < 0) {
-	    Ns_Log(Error, "nscgi: open(%s) failed: %s",
+	    Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
 		   DEVNULL, strerror(errno));
 	    return NS_ERROR;
 	}
@@ -962,7 +962,7 @@ CgiRead(Cgi *cgiPtr)
     if (n > 0) {
 	cgiPtr->cnt = n;
     } else if (n < 0) {
-	Ns_Log(Error, "nscgi: pipe read() from %s failed: %s",
+	Ns_Log(Error, "nscgi: pipe ns_read() from %s failed: %s",
 	       cgiPtr->exec, strerror(errno));
     }
     return n;

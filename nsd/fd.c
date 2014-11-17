@@ -164,7 +164,7 @@ NsInitFd(void)
 
     devNull = ns_open(DEVNULL, O_RDWR);
     if (devNull < 0) {
-        Ns_Fatal("fd: open(%s) failed: %s", DEVNULL, strerror(errno));
+        Ns_Fatal("fd: ns_open(%s) failed: %s", DEVNULL, strerror(errno));
     }
     (void) Ns_DupHigh(&devNull);
     (void) Ns_CloseOnExec(devNull);

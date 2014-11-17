@@ -788,7 +788,7 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
 
     if (len > 0) {
         if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, len) != len) {
-            Ns_Log(Error, "nslog: logging disabled: write() failed: '%s'",
+            Ns_Log(Error, "nslog: logging disabled: ns_write() failed: '%s'",
                    strerror(errno));
             ns_close(logPtr->fd);
             logPtr->fd = -1;

@@ -1358,7 +1358,7 @@ FreeObjs(Objs *objsPtr)
 {
     int i;
 
-    assert(objsPtr);
+    assert(objsPtr != NULL);
 
     for (i = 0; i < objsPtr->nobjs; ++i) {
         if (objsPtr->objs[i] != NULL) {

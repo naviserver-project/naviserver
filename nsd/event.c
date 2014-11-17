@@ -314,7 +314,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     if (((queuePtr->pfds[0].revents & POLLIN) != 0U)
         && (recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1)
 	) {
-	Ns_Fatal("event queue: trigger read() failed: %s",
+	Ns_Fatal("event queue: trigger ns_read() failed: %s",
 		 ns_sockstrerror(ns_sockerrno));
     }
 

@@ -540,7 +540,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
         } else {
             fd = ns_open(file, O_RDONLY | O_BINARY);
             if (fd < 0) {
-                Ns_Log(Warning, "fastpath: open(%s) failed: '%s'",
+                Ns_Log(Warning, "fastpath: ns_open(%s) failed: '%s'",
                        file, strerror(errno));
                 goto notfound;
             }
@@ -585,7 +585,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
             fd = ns_open(file, O_RDONLY | O_BINARY);
             if (fd < 0) {
                 filePtr = NULL;
-                Ns_Log(Warning, "fastpath: open(%s') failed '%s'",
+                Ns_Log(Warning, "fastpath: ns_open(%s') failed '%s'",
                        file, strerror(errno));
             } else {
  	        ssize_t nread;

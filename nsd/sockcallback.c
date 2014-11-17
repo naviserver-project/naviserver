@@ -429,7 +429,7 @@ SockCallbackThread(void *UNUSED(arg))
         }
 	if (((pfds[0].revents & POLLIN) != 0)
 	    && recv(trigPipe[0], &c, 1, 0) != 1) {
-	    Ns_Fatal("trigger read() failed: %s", strerror(errno));
+	    Ns_Fatal("trigger ns_read() failed: %s", strerror(errno));
 	}
 
     	/*

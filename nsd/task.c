@@ -947,7 +947,7 @@ TaskThread(void *arg)
 
         if ((pfds[0].revents & POLLIN) != 0
 	    && recv(pfds[0].fd, &c, 1, 0) != 1) {
-            Ns_Fatal("queue: trigger read() failed: %s",
+            Ns_Fatal("queue: trigger ns_read() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
 

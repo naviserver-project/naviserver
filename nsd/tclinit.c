@@ -1277,7 +1277,7 @@ NsTclInitServer(const char *server)
 {
     NsServer *servPtr;
     
-    assert(server); 
+    assert(server != NULL); 
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {

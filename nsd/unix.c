@@ -303,17 +303,17 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 
     switch (mode) {
     case NS_MMAP_WRITE:
-        mapPtr->handle = open(path, O_BINARY | O_RDWR);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDWR);
         break;
     case NS_MMAP_READ:
-        mapPtr->handle = open(path, O_BINARY | O_RDONLY);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDONLY);
         break;
     default:
         return NS_ERROR;
     }
 
     if (mapPtr->handle == -1) {
-        Ns_Log(Warning, "mmap: open(%s) failed: %s", path, strerror(errno));
+        Ns_Log(Warning, "mmap: ns_open(%s) failed: %s", path, strerror(errno));
         return NS_ERROR;
     }
 
@@ -325,11 +325,11 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
     mapPtr->addr = mmap(0, size, mode, MAP_SHARED, mapPtr->handle, 0);
     if (mapPtr->addr == MAP_FAILED) {
         Ns_Log(Warning, "mmap: mmap(%s) failed: %s", path, strerror(errno));
-        close(mapPtr->handle);
+        ns_close(mapPtr->handle);
         return NS_ERROR;
     }
 
-    close(mapPtr->handle);
+    ns_close(mapPtr->handle);
     mapPtr->size = size;
 
     return NS_OK;
