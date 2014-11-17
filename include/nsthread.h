@@ -406,6 +406,7 @@ typedef struct DIR_ *DIR;
 # define ns_write                   write
 # define ns_dup		    	    dup
 # define ns_dup2	    	    dup2
+# define ns_lseek		    lseek
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))
