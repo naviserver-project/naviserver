@@ -460,7 +460,7 @@ SockCallbackThread(void *UNUSED(arg))
     hPtr = Tcl_FirstHashEntry(&table, &search);
     while (hPtr != NULL) {
 	cbPtr = Tcl_GetHashValue(hPtr);
-	if ((cbPtr->when & NS_SOCK_EXIT) != 0U) {
+	if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0u) {
 	    (void) ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, NS_SOCK_EXIT));
 	}
 	hPtr = Tcl_NextHashEntry(&search);
