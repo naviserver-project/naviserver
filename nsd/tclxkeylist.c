@@ -24,7 +24,7 @@
 
 #include "nsd.h"
 
-static int TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *string);
+static int TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg);
 static int TclX_IsNullObj(Tcl_Obj *objPtr);
 
 
@@ -60,7 +60,7 @@ static const char *tclXWrongArgs = "wrong # args: ";
  * therefore no need to mutex protect them (see below).
  */
 static const Tcl_ObjType *listType;
-static const Tcl_ObjType *stringType;
+static const Tcl_ObjType *strType;
 
 /*
  * This is called once from InitInterp() call in tclinit.c
@@ -68,8 +68,8 @@ static const Tcl_ObjType *stringType;
  */
 void NsTclInitKeylistType(void)
 {
-    listType   = Tcl_GetObjType("list");
-    stringType = Tcl_GetObjType("string");
+    listType = Tcl_GetObjType("list");
+    strType  = Tcl_GetObjType("string");
 }
 
 /*-----------------------------------------------------------------------------
@@ -79,13 +79,13 @@ void NsTclInitKeylistType(void)
  *
  * Parameters:
  *   o commandNameObj - Object containing name of command (objv[0])
- *   o string - Text message to append.
+ *   o msg - Text message to append.
  * Returns:
  *   TCL_ERROR
  *-----------------------------------------------------------------------------
  */
 static int
-TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *string)
+TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg)
 {
     const char *commandName;
     int         commandLength;
@@ -97,8 +97,8 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *string)
 		     commandName,
 		     (char *)NULL);
 
-    if (*string != '\0') {
-        Tcl_AppendResult(interp, " ", string, (char *)NULL);
+    if (*msg != '\0') {
+        Tcl_AppendResult(interp, " ", msg, (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -127,7 +127,7 @@ TclX_IsNullObj(Tcl_Obj *objPtr)
             (void) Tcl_ListObjLength(NULL, objPtr, &length);
             return (length == 0);
 
-        } else if (objPtr->typePtr == stringType) {
+        } else if (objPtr->typePtr == strType) {
             return (Tcl_GetCharLength(objPtr) == 0);
         }
     }
@@ -443,7 +443,7 @@ typedef struct {
 /*
  * Prototypes of internal functions.
  */
-static void DupSharedKeyListChild(keylIntObj_t *keylIntPtr, int idx) NS_GNUC_NONNULL(1);
+static void DupSharedKeyListChild(const keylIntObj_t *keylIntPtr, int idx) NS_GNUC_NONNULL(1);
 
 #ifdef TCLX_DEBUG
 static void
@@ -509,7 +509,7 @@ static Tcl_ObjType keyedListType = {
  *-----------------------------------------------------------------------------
  */
 static void 
-DupSharedKeyListChild(keylIntObj_t *keylIntPtr, int idx) 
+DupSharedKeyListChild(const keylIntObj_t *keylIntPtr, int idx) 
 {
     assert(keylIntPtr != NULL);
 
@@ -723,7 +723,7 @@ FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyL
 
     keySeparPtr = strchr(key, '.');
     if (keySeparPtr != NULL) {
-        keyLen = keySeparPtr - key;
+        keyLen = (size_t)(keySeparPtr - key);
     } else {
         keyLen = strlen(key);
     }

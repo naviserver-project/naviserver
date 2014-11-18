@@ -89,7 +89,7 @@ int
 NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = arg;
-    Ns_HttpTask *httpPtr;
+    Ns_HttpTask *httpPtr = NULL;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int result, opt, run = 0;

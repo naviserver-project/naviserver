@@ -1302,9 +1302,9 @@ DriverThread(void *arg)
 
         n = PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
             errstr = ns_sockstrerror(ns_sockerrno);
-            Ns_Fatal("driver: trigger recv() failed: %s", errstr);
+            Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
         }
 	/*
 	 * Check whether we should reanimate some connection threads,
@@ -1355,7 +1355,7 @@ DriverThread(void *arg)
 		    /* 
 		     * Got some data
 		     */
-                    n = recv(sockPtr->sock, drain, sizeof(drain), 0);
+                    n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
                         sockPtr->timeout = now;
                     }
@@ -1403,13 +1403,13 @@ DriverThread(void *arg)
                  * If enabled, perform read-ahead now.
                  */
                 if (likely(sockPtr->drvPtr->opts & NS_DRIVER_ASYNC)) {
-                    SockState n = SockRead(sockPtr, 0, &now);
+                    SockState s = SockRead(sockPtr, 0, &now);
 
 		    /*
 		     * Queue for connection processing if ready.
 		     */
 		    
-		    switch (n) {
+		    switch (s) {
 		    case SOCK_SPOOL:
 			if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
 			    Push(sockPtr, readPtr);
@@ -1429,7 +1429,7 @@ DriverThread(void *arg)
 			
 		    case SOCK_READERROR:
 			Ns_Log(DriverDebug, "sockread returned error; close socket");
-			SockRelease(sockPtr, n, errno);
+			SockRelease(sockPtr, s, errno);
 			break;
 
 		    case SOCK_BADHEADER:
@@ -1445,8 +1445,8 @@ DriverThread(void *arg)
 		    case SOCK_WRITEERROR:
 		    case SOCK_WRITETIMEOUT:
 		    default:
-			Ns_Log(Warning, "sockread returned unexpected result %d; close socket", n);
-			SockRelease(sockPtr, n, errno);
+			Ns_Log(Warning, "sockread returned unexpected result %d; close socket", s);
+			SockRelease(sockPtr, s, errno);
 			break;
 		    }
                 } else {
@@ -1494,15 +1494,15 @@ DriverThread(void *arg)
              * If configured, try to accept more than one request, under heavy load
              * this helps to process more requests
              */
-	    SockState n;
+	    SockState s;
 
             accepted = 0;
             while (accepted < drvPtr->acceptsize
                    && drvPtr->queuesize < drvPtr->maxqueuesize
                    && PollIn(&pdata, drvPtr->pidx)
-                   && (n = SockAccept(drvPtr, &sockPtr, &now)) != SOCK_ERROR) {
+                   && (s = SockAccept(drvPtr, &sockPtr, &now)) != SOCK_ERROR) {
 
-                switch (n) {
+                switch (s) {
                 case SOCK_SPOOL:
                     if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
                         Push(sockPtr, readPtr);
@@ -1534,7 +1534,7 @@ DriverThread(void *arg)
 		case SOCK_WRITEERROR:
 		case SOCK_WRITETIMEOUT:
                 default:
-                    Ns_Fatal("driver: SockAccept returned: %d", n);
+                    Ns_Fatal("driver: SockAccept returned: %d", s);
                 }
                 accepted++;
 #ifdef __APPLE__
@@ -2192,7 +2192,7 @@ SockClose(Sock *sockPtr, int keep)
      */
 
     if (sockPtr->tfd > 0) {
-        ns_close(sockPtr->tfd);
+        (void) ns_close(sockPtr->tfd);
     }
     sockPtr->tfd = 0;
 
@@ -2357,7 +2357,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     n = (ssize_t)(len + nread);
     if (n > drvPtr->maxinput) {
 	n = (ssize_t)drvPtr->maxinput;
-        nread = (size_t)(n - len);
+        nread = (size_t)n - len;
         if (nread == 0U) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
                    drvPtr->maxinput);
@@ -2752,7 +2752,7 @@ SockParse(Sock *sockPtr)
         size_t currentContentLength;
 
         complete = ChunkedDecode(reqPtr, 1);
-        currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
+        currentContentLength = reqPtr->chunkWriteOff - (size_t)reqPtr->coff;
 
         /* 
          * A chunk might be complete, but it might not be the last
@@ -2992,8 +2992,8 @@ SpoolerThread(void *arg)
 
         /*n =*/ (void) PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
-            Ns_Fatal("spooler: trigger recv() failed: %s",
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
+            Ns_Fatal("spooler: trigger ns_recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
 
@@ -3671,8 +3671,8 @@ WriterThread(void *arg)
          */
         (void) PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
-	    Ns_Fatal("writer: trigger recv() failed: %s",
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
+	    Ns_Fatal("writer: trigger ns_recv() failed: %s",
 		     ns_sockstrerror(ns_sockerrno));
 	}
 
@@ -4781,8 +4781,8 @@ AsyncWriterThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
         if (PollIn(&pdata, 0)) {
-	    if (recv(queuePtr->pipe[0], &c, 1U, 0) != 1) {
-		Ns_Fatal("asynclogwriter: trigger recv() failed: %s",
+	    if (ns_recv(queuePtr->pipe[0], &c, 1U, 0) != 1) {
+		Ns_Fatal("asynclogwriter: trigger ns_recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }
 	    if (queuePtr->stopped != 0) {

@@ -807,21 +807,21 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
 static void
 SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost)
 {
-    char    *string;
+    char    *bytes;
     int      len;
     size_t   length;
     Ns_Time  t;
 
-    string = Tcl_GetStringFromObj(valObj, &len);
+    bytes = Tcl_GetStringFromObj(valObj, &len);
     assert(len >= 0);
     length = (size_t)len;
 
     if (cPtr->maxEntry > 0 && length > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
-      char *value = ns_malloc(length + 1U);
+        char *value = ns_malloc(length + 1u);
 
-      memcpy(value, string, length);
+        memcpy(value, bytes, length);
         value[length] = '\0';
         if (expPtr == NULL
             && (cPtr->expires.sec > 0 || cPtr->expires.usec > 0)) {

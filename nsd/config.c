@@ -150,11 +150,11 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
         found = NS_TRUE;
     }
 
-    Ns_Log(Dev, "config: %s:%s value=%d default=%d (flag)", 
+    Ns_Log(Dev, "config: %s:%s value=%u default=%u (flag)", 
 	   (section != NULL) ? section : "", 
 	   key, 
-	   (value != 0) ? flag : 0, 
-	   (def != 0) ? flag : 0);
+	   (value != 0) ? flag : 0u, 
+	   (def != 0) ? flag : 0u);
 
     if (value != 0) {
         *flagsPtr |= flag;
@@ -233,11 +233,18 @@ Ns_ConfigIntRange(const char *section, const char *key, int def,
  *
  *----------------------------------------------------------------------
  */
+#ifdef TCL_WIDE_INT_IS_LONG
+# define WIDE_INT_MAX LONG_MAX
+# define WIDE_INT_MIN LONG_MIN
+#else
+# define WIDE_INT_MAX LLONG_MAX
+# define WIDE_INT_MIN LLONG_MIN
+#endif
 
 Tcl_WideInt
 Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt def)
 {
-    return Ns_ConfigWideIntRange(section, key, def, INT_MIN, INT_MAX);
+    return Ns_ConfigWideIntRange(section, key, def, WIDE_INT_MIN, WIDE_INT_MAX);
 }
 
 Tcl_WideInt
@@ -521,7 +528,7 @@ Ns_ConfigGetSections(void)
     int             n;
 
     n = nsconf.sections.numEntries + 1;
-    sets = ns_malloc(sizeof(Ns_Set *) * n);
+    sets = ns_malloc(sizeof(Ns_Set *) * (size_t)n);
     n = 0;
     hPtr = Tcl_FirstHashEntry(&nsconf.sections, &search);
     while (hPtr != NULL) {

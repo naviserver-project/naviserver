@@ -86,7 +86,7 @@ Ns_IndexInit(Ns_Index *indexPtr, int inc,
     indexPtr->CmpEls = CmpEls;
     indexPtr->CmpKeyWithEl = CmpKeyWithEl;
 
-    indexPtr->el = (void **) ns_malloc(inc * sizeof(void *));
+    indexPtr->el = (void **) ns_malloc((size_t)inc * sizeof(void *));
 }
 
 
@@ -112,7 +112,7 @@ Ns_IndexTrunc(Ns_Index* indexPtr)
     indexPtr->n = 0;
     ns_free(indexPtr->el);
     indexPtr->max = indexPtr->inc;
-    indexPtr->el = (void **) ns_malloc(indexPtr->inc * sizeof(void *));
+    indexPtr->el = (void **) ns_malloc((size_t)indexPtr->inc * sizeof(void *));
 }
 
 
@@ -166,8 +166,8 @@ Ns_IndexDup(const Ns_Index *indexPtr)
 
     newPtr = (Ns_Index *) ns_malloc(sizeof(Ns_Index));
     memcpy(newPtr, indexPtr, sizeof(Ns_Index));
-    newPtr->el = (void **) ns_malloc(indexPtr->max * sizeof(void *));
-    memcpy(newPtr->el, indexPtr->el, indexPtr->n * sizeof(void *));
+    newPtr->el = (void **) ns_malloc((size_t)indexPtr->max * sizeof(void *));
+    memcpy(newPtr->el, indexPtr->el, (size_t)indexPtr->n * sizeof(void *));
 
     return newPtr;
 }
@@ -309,7 +309,7 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
 	 * Build array of values to return
 	 */
 	
-        retPtrPtr = ns_malloc((i + 1) * sizeof(void *));
+        retPtrPtr = ns_malloc((i + 1u) * sizeof(void *));
         memcpy(retPtrPtr, firstPtrPtr, i * sizeof(void *));
         retPtrPtr[i] = NULL;
 
@@ -348,7 +348,8 @@ BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc
 	int cond;
 
         mid = (low + high) / 2;
-        if ((cond = (*cmpProc) (elPtrPtr, ((unsigned char **)listPtrPtr) + mid)) < 0) {
+        cond = (*cmpProc) (elPtrPtr, ((const unsigned char **)listPtrPtr) + mid);
+        if (cond < 0) {
             high = mid - 1;
         } else if (cond > 0) {
             low = mid + 1;
@@ -390,7 +391,8 @@ BinSearchKey(const void *key, void *const* listPtrPtr, int n, Ns_IndexCmpProc *c
 	int cond;
 
         mid = (low + high) / 2;
-        if ((cond = (*cmpProc) (key, ((unsigned char **)listPtrPtr) + mid)) < 0) {
+        cond = (*cmpProc)(key, ((const unsigned char **)listPtrPtr) + mid);
+        if (cond < 0) {
             high = mid - 1;
         } else if (cond > 0) {
             low = mid + 1;
@@ -429,10 +431,10 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
     if (indexPtr->n == indexPtr->max) {
         indexPtr->max += indexPtr->inc;
         indexPtr->el = (void **) ns_realloc(indexPtr->el,
-					    indexPtr->max * sizeof(void *));
+					    (size_t)indexPtr->max * sizeof(void *));
     } else if (indexPtr->max == 0) {
         indexPtr->max += indexPtr->inc;
-        indexPtr->el = (void **) ns_malloc(indexPtr->max * sizeof(void *));
+        indexPtr->el = (void **) ns_malloc((size_t)indexPtr->max * sizeof(void *));
     }
     if (indexPtr->n > 0) {
         i = BinSearch(&el, indexPtr->el, indexPtr->n, indexPtr->CmpEls);
@@ -622,7 +624,7 @@ Ns_IndexStringDup(const Ns_Index *indexPtr)
 
     newPtr = (Ns_Index *) ns_malloc(sizeof(Ns_Index));
     memcpy(newPtr, indexPtr, sizeof(Ns_Index));
-    newPtr->el = (void **) ns_malloc(indexPtr->max * sizeof(void *));
+    newPtr->el = (void **) ns_malloc((size_t)indexPtr->max * sizeof(void *));
 
     for (i = 0; i < newPtr->n; i++) {
         newPtr->el[i] = ns_strdup(indexPtr->el[i]);

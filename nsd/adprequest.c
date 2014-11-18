@@ -403,7 +403,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 int
-Ns_AdpFlush(Tcl_Interp *interp, int stream)
+Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
 {
     NsInterp *itPtr;
 
@@ -412,7 +412,7 @@ Ns_AdpFlush(Tcl_Interp *interp, int stream)
         Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
         return TCL_ERROR;
     }
-    return NsAdpFlush(itPtr, stream);
+    return NsAdpFlush(itPtr, isStreaming);
 }
 
 int

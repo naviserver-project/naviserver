@@ -246,7 +246,8 @@ Ns_ModuleInit(char *server, char *module)
     if (modPtr->users.numEntries == 0) {
 	Ns_Log(Warning, "nscp: no authorized users");
     }
-    result = Ns_SockCallback(lsock, AcceptProc, modPtr, (unsigned int)NS_SOCK_READ|(unsigned int)NS_SOCK_EXIT);
+    result = Ns_SockCallback(lsock, AcceptProc, modPtr, 
+                             ((unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT));
     if (result == TCL_OK) {
         Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
     }

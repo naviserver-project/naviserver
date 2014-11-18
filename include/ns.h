@@ -576,22 +576,22 @@ typedef int (Ns_LogFilter)
     (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len);
 
 typedef int (Ns_UrlToFileProc)
-    (Ns_DString *dsPtr, CONST char *server, CONST char *url);
+    (Ns_DString *dsPtr, const char *server, const char *url);
 
 typedef int (Ns_Url2FileProc)
-    (Ns_DString *dsPtr, CONST char *url, void *arg);
+    (Ns_DString *dsPtr, const char *url, void *arg);
 
 typedef char* (Ns_ServerRootProc)
-    (Ns_DString  *dest, CONST char *host, void *arg);
+    (Ns_DString  *dest, const char *host, void *arg);
 
 typedef char* (Ns_ConnLocationProc)
     (Ns_Conn *conn, Ns_DString *dest, void *arg);
 
 typedef int (Ns_LogProc)               /* Deprecated */
-    (Ns_DString *dsPtr, Ns_LogSeverity severity, CONST char *fmt, va_list ap);
+    (Ns_DString *dsPtr, Ns_LogSeverity severity, const char *fmt, va_list ap);
 
 typedef int (Ns_LogFlushProc)          /* Deprecated */
-    (CONST char *msg, size_t len);
+    (const char *msg, size_t len);
 
 typedef char *(Ns_LocationProc)        /* Deprecated */
     (Ns_Conn *conn);
@@ -622,7 +622,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_AdpFlush(Tcl_Interp *interp, int stream)
+Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -1964,17 +1964,17 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
  */
 
 NS_EXTERN int
-Ns_PathIsAbsolute(CONST char *path)
+Ns_PathIsAbsolute(const char *path)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path);
+Ns_NormalizePath(Ns_DString *dsPtr, const char *path);
 
 NS_EXTERN char *
 Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN char *
-Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels);
+Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels);
 
 NS_EXTERN char *
 Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
@@ -1989,13 +1989,13 @@ NS_EXTERN int
 Ns_HomePathExists(char *path, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN char *
-Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...) NS_GNUC_SENTINEL;
+Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN char *
-Ns_ServerPath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
+Ns_ServerPath(Ns_DString *dest, const char *server, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN char *
-Ns_PagePath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
+Ns_PagePath(Ns_DString *dest, const char *server, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN int
 Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
@@ -2026,7 +2026,7 @@ Ns_GetConn(void);
  */
 
 NS_EXTERN void
-Ns_QuoteHtml(Ns_DString *pds, CONST char *string);
+Ns_QuoteHtml(Ns_DString *pds, const char *htmlString);
 
 /*
  * request.c:

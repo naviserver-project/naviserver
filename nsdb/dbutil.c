@@ -61,17 +61,17 @@
  */
 
 void
-Ns_DbQuoteValue(Ns_DString *dsPtr, const char *string)
+Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
 {
     assert(dsPtr != NULL);
-    assert(string != NULL);
+    assert(chars != NULL);
 
-    while (*string != '\0') {
-        if (*string == '\'') {
+    while (*chars != '\0') {
+        if (*chars == '\'') {
             Ns_DStringNAppend(dsPtr, "'", 1);
         }
-        Ns_DStringNAppend(dsPtr, string, 1);
-        ++string;
+        Ns_DStringNAppend(dsPtr, chars, 1);
+        ++chars;
     }
 }
 

@@ -885,7 +885,7 @@ NS_EXTERN int truncate(char *file, off_t size);
  */
 #ifdef _WIN32
 NS_EXTERN int     ns_open(const char *path, int oflag, int mode);
-NS_EXTERN int     ns_close(int filedes);
+NS_EXTERN int     ns_close(int fildes);
 NS_EXTERN ssize_t ns_write(int fildes, const void *buf, size_t nbyte);
 NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
 NS_EXTERN off_t   ns_lseek(int fildes, off_t offset, int whence);

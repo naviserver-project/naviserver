@@ -473,7 +473,7 @@ Ns_InfoTag(void)
 int
 NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         opt;
+    int         opt, result;
     NsInterp    *itPtr = arg;
     char        *server;
     const char  *elog;
@@ -661,6 +661,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     }
 
     server = itPtr->servPtr->server;
+    result = TCL_OK;
 
     switch (opt) {
     case IPageDirIdx:
@@ -668,47 +669,48 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
         NsPageRoot(&ds, itPtr->servPtr, NULL);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IServerIdx:
         Tcl_SetResult(interp, server, TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case ITclLibIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->servPtr->tcl.library, -1));
-        return TCL_OK;
+        break;
 
     case IFiltersIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? filters", NULL);
         NsGetFilters(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case ITracesIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? traces", NULL);
         NsGetTraces(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IRequestProcsIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? requestprocs", NULL);
         NsGetRequestProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IUrl2FileIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? url2file", NULL);
         NsGetUrl2FileProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     default:
         Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+        break;
     }
 
-    return TCL_ERROR;
+    return result;
 }
 
 

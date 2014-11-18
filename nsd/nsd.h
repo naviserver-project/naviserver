@@ -320,9 +320,9 @@ typedef struct Request {
    /*
     * The following block is for chunked encodings
     */
-    size_t expectedLength; /* Provided expected length */
-    size_t chunkStartOff;  /* Offset pointing to start of chunk to be parsed */
-    size_t chunkWriteOff;  /* Offset pointing to position were to write chunk */
+    size_t expectedLength;      /* Provided expected length */
+    size_t chunkStartOff;       /* Offset pointing to start of chunk to be parsed */
+    size_t chunkWriteOff;       /* Offset pointing to position were to write chunk */
 
     /*
      * The following offsets are used to manage
@@ -332,7 +332,7 @@ typedef struct Request {
     off_t woff;                   /* Next write buffer offset */
     off_t roff;                   /* Next read buffer offset */
     off_t coff;                   /* Content buffer offset */
-    Tcl_DString buffer;         /* Request and content buffer */
+    Tcl_DString buffer;           /* Request and content buffer */
 
 } Request;
 
@@ -342,20 +342,20 @@ typedef struct Request {
  */
 
 typedef struct {
-    int threads;               /* Number of spooler threads to run */
-    Ns_Mutex lock;             /* Lock around spooler queue */
-    SpoolerQueue *firstPtr;    /* Spooler thread queue */
-    SpoolerQueue *curPtr;      /* Current spooler thread */
+    int threads;                 /* Number of spooler threads to run */
+    Ns_Mutex lock;               /* Lock around spooler queue */
+    SpoolerQueue *firstPtr;      /* Spooler thread queue */
+    SpoolerQueue *curPtr;        /* Current spooler thread */
 } DrvSpooler;
 
 typedef struct {
-    int       threads;         /* Number of writer threads to run */
-    size_t    maxsize;         /* Max content size to use writer thread */
-    size_t    bufsize;         /* Size of the output buffer */
-    int       doStream;        /* Activate writer for HTML streaming */
-    Ns_Mutex lock;             /* Lock around writer queues */
-    SpoolerQueue *firstPtr;    /* List of writer threads */
-    SpoolerQueue *curPtr;      /* Current writer thread */
+    int       threads;           /* Number of writer threads to run */
+    size_t    maxsize;           /* Max content size to use writer thread */
+    size_t    bufsize;           /* Size of the output buffer */
+    int       doStream;          /* Activate writer for HTML streaming */
+    Ns_Mutex lock;               /* Lock around writer queues */
+    SpoolerQueue *firstPtr;      /* List of writer threads */
+    SpoolerQueue *curPtr;        /* Current writer thread */
 } DrvWriter;
 
 typedef struct Driver {
@@ -726,7 +726,7 @@ typedef struct NsServer {
         bool modsince;
         bool noticedetail;
         int  errorminsize;
-        CONST char *realm;
+        const char *realm;
         Ns_HeaderCaseDisposition hdrcase;
     } opts;
 
@@ -736,10 +736,10 @@ typedef struct NsServer {
 
     struct {
 
-        CONST char    *urlCharset;
+        const char    *urlCharset;
         Tcl_Encoding   urlEncoding;
 
-        CONST char    *outputCharset;
+        const char    *outputCharset;
         Tcl_Encoding   outputEncoding;
 
         bool           hackContentTypeP;
@@ -747,13 +747,13 @@ typedef struct NsServer {
     } encoding;
 
     struct {
-        CONST char *serverdir;  /* Virtual server files path */
-        CONST char *pagedir;    /* Path to public pages */
-        CONST char *pageroot;   /* Absolute path to public pages */
-        CONST char **dirv;
+        const char *serverdir;  /* Virtual server files path */
+        const char *pagedir;    /* Path to public pages */
+        const char *pageroot;   /* Absolute path to public pages */
+        const char **dirv;
         int dirc;
-        CONST char *dirproc;
-        CONST char *diradp;
+        const char *dirproc;
+        const char *diradp;
         Ns_UrlToFileProc *url2file;
     } fastpath;
 
@@ -764,7 +764,7 @@ typedef struct NsServer {
     struct {
         bool enabled;
         unsigned int opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
-        CONST char *hostprefix;
+        const char *hostprefix;
         int hosthashlevel;
         Ns_ServerRootProc *serverRootProc;
         void *serverRootArg;
@@ -811,12 +811,12 @@ typedef struct NsServer {
         struct TclTrace *lastTracePtr;
         const char *initfile;
         Ns_RWLock lock;
-        char *script;
+        const char *script;
         int length;
         int epoch;
         Tcl_Obj *modules;
         Tcl_HashTable runTable;
-        CONST char **errorLogHeaders;
+        const char **errorLogHeaders;
         Tcl_HashTable caches;
         Ns_Mutex cachelock;
 
@@ -848,9 +848,9 @@ typedef struct NsServer {
         size_t bufsize;
         size_t cachesize;
 
-        CONST char *errorpage;
-        CONST char *startpage;
-        CONST char *debuginit;
+        const char *errorpage;
+        const char *startpage;
+        const char *debuginit;
 
         Ns_Cond pagecond;
         Ns_Mutex pagelock;

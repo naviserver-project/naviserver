@@ -46,7 +46,7 @@
  */
 
 static Ns_ServerInitProc ConfigServerVhost;
-static int ConfigServerVhost(CONST char *server)
+static int ConfigServerVhost(const char *server)
     NS_GNUC_NONNULL(1);
 
 static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
@@ -85,7 +85,7 @@ ConfigServerVhost(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
-    CONST char *path;
+    const char *path;
 
     assert(server != NULL);
 
@@ -136,7 +136,7 @@ ConfigServerVhost(const char *server)
  */
 
 int
-Ns_PathIsAbsolute(CONST char *path)
+Ns_PathIsAbsolute(const char *path)
 {
     assert(path != NULL);
 
@@ -169,7 +169,7 @@ Ns_PathIsAbsolute(CONST char *path)
  */
 
 char *
-Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
+Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
 {
     char end;
     register char *src, *slash;
@@ -306,9 +306,9 @@ Ns_MakePath(Ns_DString *dsPtr, ...)
  */
 
 char *
-Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels)
+Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
 {
-    CONST char *p = string;
+    const char *p = path;
     int         i;
 
     for (i = 0; i < levels; ++i) {
@@ -487,7 +487,7 @@ Ns_HomePathExists(char *path, ...)
  */
 
 char *
-Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
+Ns_ServerPath(Ns_DString *dest, const char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
@@ -523,7 +523,7 @@ Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
  */
 
 char *
-Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
+Ns_PagePath(Ns_DString *dest, const char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
@@ -561,7 +561,7 @@ Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
  */
 
 char *
-Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...)
+Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...)
 {
     va_list         ap;
     char           *path;
@@ -863,7 +863,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  */
 
 char *
-NsTclServerRoot(Ns_DString *dest, CONST char *host, void *arg)
+NsTclServerRoot(Ns_DString *dest, const char *host, void *arg)
 {
     Ns_TclCallback *cbPtr = arg;
 

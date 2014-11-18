@@ -913,7 +913,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         if (encoding == NULL) {
             page = buf;
         } else {
-            page = Tcl_ExternalToUtfDString(encoding, buf, (int)n, &utf);;
+            page = Tcl_ExternalToUtfDString(encoding, buf, (int)n, &utf);
         }
         pagePtr = ns_malloc(sizeof(Page));
         pagePtr->servPtr = itPtr->servPtr;
@@ -933,7 +933,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
 
 done:
     ns_free(buf);
-    ns_close(fd);
+    (void) ns_close(fd);
 
     return pagePtr;
 }
@@ -1259,7 +1259,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
 	    Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
 	    code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
 	}
-	ns_close(fd);
+	(void) ns_close(fd);
 	unlink(debugfile);
     }
     Ns_DStringFree(&ds);

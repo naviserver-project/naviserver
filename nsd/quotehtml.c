@@ -54,35 +54,35 @@
  */
 
 void
-Ns_QuoteHtml(Ns_DString *pds, CONST char *string)
+Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
 {
-    while (likely(*string != '\0')) {
-        switch (*string) {
+    while (likely(*htmlString != '\0')) {
+        switch (*htmlString) {
         case '<':
-            Ns_DStringAppend(pds, "&lt;");
+            Ns_DStringAppend(dsPtr, "&lt;");
             break;
 
         case '>':
-            Ns_DStringAppend(pds, "&gt;");
+            Ns_DStringAppend(dsPtr, "&gt;");
             break;
 
 	case '&':
-            Ns_DStringAppend(pds, "&amp;");
+            Ns_DStringAppend(dsPtr, "&amp;");
             break;
 
 	case '\'':
-            Ns_DStringAppend(pds, "&#39;");
+            Ns_DStringAppend(dsPtr, "&#39;");
 	    break;
 
 	case '"':
-            Ns_DStringAppend(pds, "&#34;");
+            Ns_DStringAppend(dsPtr, "&#34;");
 	    break;
 	    
 	default:
-            Ns_DStringNAppend(pds, string, 1);
+            Ns_DStringNAppend(dsPtr, htmlString, 1);
             break;
         }
-        ++string;
+        ++htmlString;
     }
 }
 
@@ -119,3 +119,12 @@ NsTclQuoteHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
     Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

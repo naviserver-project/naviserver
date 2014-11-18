@@ -1125,7 +1125,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
 int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 {
-    struct timeval timeout, *toptr;
+    struct timeval timeout, *toPtr;
     fd_set ifds, ofds, efds;
     unsigned long int i;
     NS_SOCKET n = NS_INVALID_SOCKET;
@@ -1156,13 +1156,13 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
         }
     }
     if (timo < 0) {
-        toptr = NULL;
+        toPtr = NULL;
     } else {
-        toptr = &timeout;
+        toPtr = &timeout;
         timeout.tv_sec = timo / 1000;
         timeout.tv_usec = (timo - timeout.tv_sec * 1000) * 1000;
     }
-    rc = select((int)++n, &ifds, &ofds, &efds, toptr);
+    rc = select((int)++n, &ifds, &ofds, &efds, toPtr);
     if (rc <= 0) {
         return rc;
     }

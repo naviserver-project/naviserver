@@ -1061,7 +1061,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         }
         script = ns_strdup(Tcl_GetStringFromObj(objv[2], &length));
         Ns_RWLockWrLock(&servPtr->tcl.lock);
-        ns_free(servPtr->tcl.script);
+        ns_free((char *)servPtr->tcl.script);
         servPtr->tcl.script = script;
         servPtr->tcl.length = length;
         if (++servPtr->tcl.epoch == 0) {
@@ -1137,9 +1137,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, addTraceArgs, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
-
-    trace:
         when = (Ns_TclTraceType)flags;
+    trace:
         if (servPtr != NsGetInitServer()) {
             Tcl_SetResult(interp, "cannot register trace after server startup",
                           TCL_STATIC);

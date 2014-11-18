@@ -44,7 +44,7 @@ static void ParseMultiInput(Conn *connPtr, const char *start, char *end);
 static char *Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape);
 static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn);
 static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e);
-static int GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr);
+static int GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr);
 
 
 /*
@@ -296,7 +296,8 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 {
     Tcl_Encoding encoding = connPtr->urlEncoding;
     Tcl_DString  kds, vds;
-    char        *e, *ks, *ke, *fs, *fe, saveend, *disp, unescape;
+    char        *e, saveend, *disp, unescape;
+    const char  *ks, *ke;
     Ns_Set      *set;
     int          isNew;
 
@@ -317,7 +318,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
      * Parse header lines
      */
 
-    ks = fs = NULL;
+    ks = NULL;
     while ((e = strchr(start, '\n')) != NULL) {
 	char save;
 	const char *s = start;
@@ -343,7 +344,9 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
     if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == 1) {
 	char *key = Ext2Utf(&kds, ks, (size_t)(ke-ks), encoding, unescape);
 	char *value;
+	const char *fs, *fe;
 
+	fs = NULL;
         if (GetValue(disp, "filename=", &fs, &fe, &unescape) == 0) {
 	    value = Ext2Utf(&vds, start, (size_t)(end-start), encoding, unescape);
         } else {
@@ -474,7 +477,7 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
  */
 
 static int
-GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPtr)
+GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
 {
     const char *s, *e;
 
@@ -512,8 +515,8 @@ GetValue(const char *hdr, const char *att, char **vsPtr, char **vePtr, char *uPt
         }
         ++s;
     }
-    *vsPtr = (char *) s;
-    *vePtr = (char *) e;
+    *vsPtr = s;
+    *vePtr = e;
 
     return 1;
 }

@@ -136,7 +136,7 @@ ConfigServerUrl2File(const char *server)
  */
 
 void
-Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
+Ns_RegisterUrl2FileProc(const char *server, const char *url,
                         Ns_Url2FileProc *proc, Ns_Callback *deleteCallback, void *arg,
                         unsigned int flags)
 {
@@ -534,7 +534,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
  */
 
 int
-NsTclUrl2FileProc(Ns_DString *dsPtr, CONST char *url, void *arg)
+NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
     Ns_TclCallback *cbPtr = arg;
 
@@ -562,7 +562,7 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, CONST char *url, void *arg)
  */
 
 int
-NsMountUrl2FileProc(Ns_DString *dsPtr, CONST char *url, void *arg)
+NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
     Mount      *mPtr = arg;
     CONST char *u;
@@ -628,7 +628,7 @@ NsMountUrl2FileArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 void
-NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server)
+NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
 {
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificWalk(uid, server, WalkCallback, dsPtr);
@@ -699,3 +699,12 @@ FreeUrl2File(void *arg)
         ns_free(u2fPtr);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
