@@ -55,7 +55,7 @@ typedef struct {
 typedef struct {
     char       *basepath;
     char       *url;
-    CONST char *server;
+    const char *server;
 } Mount;
 
 
@@ -173,7 +173,7 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
  */
 
 void
-Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, unsigned int flags)
+Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flags)
 {
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificDestroy(server, "x", url, uid, flags);
@@ -197,7 +197,7 @@ Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, unsigned int flag
  */
 
 int
-Ns_FastUrl2FileProc(Ns_DString *dsPtr, CONST char *url, void *arg)
+Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
     NsServer *servPtr = arg;
 
@@ -227,7 +227,7 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, CONST char *url, void *arg)
  */
 
 int
-Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
+Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -235,7 +235,7 @@ Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
 }
 
 int
-NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
+NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
 {
     int       status = NS_ERROR;
 
@@ -289,7 +289,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
  */
 
 void
-Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr)
+Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -314,7 +314,7 @@ Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr)
  */
 
 int
-NsUrlToFileProc(Ns_DString *dsPtr, CONST char *server, CONST char *url)
+NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -432,7 +432,7 @@ int
 NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp     *itPtr = arg;
-    CONST char   *url = NULL;
+    const char   *url = NULL;
     int           noinherit = 0, recurse = 0;
     unsigned int  flags = 0U;
 
@@ -479,7 +479,7 @@ int
 NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp     *itPtr = arg;
-    CONST char   *url = NULL, *basepath = NULL;
+    const char   *url = NULL, *basepath = NULL;
     int           noinherit = 0;
     unsigned int  flags = 0U;
 
@@ -565,7 +565,7 @@ int
 NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
     Mount      *mPtr = arg;
-    CONST char *u;
+    const char *u;
 
     u = mPtr->url;
     while (*u != '\0' && *url != '\0' && *u == *url) {

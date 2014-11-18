@@ -866,7 +866,7 @@ Ns_SockPipe(NS_SOCKET socks[2])
  */
 
 static int
-CloseLater(NS_SOCKET sock, void *UNUSED(arg), Ns_SockState UNUSED(why))
+CloseLater(NS_SOCKET sock, void *UNUSED(arg), unsigned int UNUSED(why))
 {
     ns_sockclose(sock);
     return NS_FALSE;

@@ -222,7 +222,7 @@ Ns_SockPortBound(int port)
  */
 
 static int
-ListenCallback(NS_SOCKET sock, void *arg, Ns_SockState why)
+ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 {
     struct sockaddr_in  sa;
     socklen_t           len;
@@ -230,7 +230,7 @@ ListenCallback(NS_SOCKET sock, void *arg, Ns_SockState why)
     NS_SOCKET           newSock;
 
     tablePtr = arg;
-    if (why == NS_SOCK_EXIT) {
+    if (why == (unsigned int)NS_SOCK_EXIT) {
         ns_sockclose(sock);
         return NS_FALSE;
     }

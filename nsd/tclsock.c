@@ -1121,15 +1121,24 @@ EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
  */
 
 int
-NsTclSockProc(NS_SOCKET sock, void *arg, Ns_SockState why)
+NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Tcl_DString  script;
     int          ok;
     Callback    *cbPtr = arg;
 
-    if (why != NS_SOCK_EXIT 
-	|| ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U)
-	) {
+    if (why == (unsigned int)NS_SOCK_EXIT) {
+    fail:
+        if (cbPtr->chan != NULL) {
+            (void) Tcl_UnregisterChannel(NULL, cbPtr->chan);
+        } else {
+            ns_sockclose(sock);
+        }
+        ns_free(cbPtr);
+        return NS_FALSE;
+    }
+
+    if (((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U)) {
         Tcl_Interp  *interp;
 	char        *w;
         int          result;
@@ -1156,43 +1165,35 @@ NsTclSockProc(NS_SOCKET sock, void *arg, Ns_SockState why)
         Tcl_RegisterChannel(interp, cbPtr->chan);
         Tcl_DStringAppend(&script, cbPtr->script, -1);
         Tcl_DStringAppendElement(&script, Tcl_GetChannelName(cbPtr->chan));
-        if (why == NS_SOCK_TIMEOUT) {
+        if ((why & (unsigned int)NS_SOCK_TIMEOUT) != 0u) {
             w = "t";
-        } else if (why == NS_SOCK_READ) {
+        } else if ((why & (unsigned int)NS_SOCK_READ) != 0u) {
             w = "r";
-        } else if (why == NS_SOCK_WRITE) {
+        } else if ((why & (unsigned int)NS_SOCK_WRITE) != 0u) {
             w = "w";
-        } else if (why == NS_SOCK_EXCEPTION) {
+        } else if ((why & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
             w = "e";
         } else {
             w = "x";
         }
+
         Tcl_DStringAppendElement(&script, w);
         result = Tcl_EvalEx(interp, script.string, script.length, 0);
+
         if (result != TCL_OK) {
 	  (void) Ns_TclLogErrorInfo(interp, "\n(context: sock proc)");
         } else {
-	    Tcl_Obj *objPtr;
+	    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
-            objPtr = Tcl_GetObjResult(interp);
             result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
             if (result != TCL_OK || ok == 0) {
-                why = NS_SOCK_EXIT;
+                goto fail;
             }
         }
         Ns_TclDeAllocateInterp(interp);
         Tcl_DStringFree(&script);
     }
-    if (why == NS_SOCK_EXIT) {
-    fail:
-        if (cbPtr->chan != NULL) {
-            (void) Tcl_UnregisterChannel(NULL, cbPtr->chan);
-        } else {
-            ns_sockclose(sock);
-        }
-        ns_free(cbPtr);
-        return NS_FALSE;
-    }
+
 
     return NS_TRUE;
 }
@@ -1216,7 +1217,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, Ns_SockState why)
  */
 
 static int
-SockListenCallback(NS_SOCKET sock, void *arg, Ns_SockState UNUSED(why))
+SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
 {
     ListenCallback *lcbPtr = arg;
     Tcl_Interp     *interp;

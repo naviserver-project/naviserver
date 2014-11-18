@@ -299,17 +299,18 @@ ArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static int
-AcceptProc(NS_SOCKET lsock, void *arg, Ns_SockState why)
+AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 {
     Mod       *modPtr = arg;
     Sess      *sessPtr;
     socklen_t  len;
 
-    if (why == NS_SOCK_EXIT) {
+    if (why == (unsigned int)NS_SOCK_EXIT) {
 	Ns_Log(Notice, "nscp: shutdown");
 	ns_sockclose(lsock);
 	return NS_FALSE;
     }
+
     sessPtr = ns_malloc(sizeof(Sess));
     sessPtr->modPtr = modPtr;
     len = (socklen_t)sizeof(struct sockaddr_in);

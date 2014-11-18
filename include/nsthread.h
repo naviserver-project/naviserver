@@ -198,8 +198,8 @@ typedef int32_t ssize_t;
 # define strcasecmp                _stricmp
 # define strncasecmp               _strnicmp
 
-# define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),flgs)
-# define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),flgs)
+# define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),(flgs))
+# define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),(flgs))
 # define ns_sockclose              closesocket
 # define ns_sockerrno              GetLastError()
 # define ns_sockioctl              ioctlsocket

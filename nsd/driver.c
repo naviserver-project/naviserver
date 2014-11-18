@@ -885,21 +885,21 @@ NsFreeRequest(Request *reqPtr)
 
         reqPtr->next           = NULL;
         reqPtr->content        = NULL;
-        reqPtr->length         = 0U;
-        reqPtr->contentLength  = 0U;
-        reqPtr->avail          = 0U;
+        reqPtr->length         = 0u;
+        reqPtr->contentLength  = 0u;
+        reqPtr->avail          = 0u;
         reqPtr->leadblanks     = 0;
 
-        reqPtr->expectedLength = 0U;
-        reqPtr->chunkStartOff  = 0U;
-        reqPtr->chunkWriteOff  = 0U;
+        reqPtr->expectedLength = 0u;
+        reqPtr->chunkStartOff  = 0u;
+        reqPtr->chunkWriteOff  = 0u;
 
-        reqPtr->woff           = 0;
-        reqPtr->roff           = 0;
-        reqPtr->coff           = 0;
+        reqPtr->woff           = 0u;
+        reqPtr->roff           = 0u;
+        reqPtr->coff           = 0u;
 
         Tcl_DStringFree(&reqPtr->buffer);
-        Ns_SetTrunc(reqPtr->headers, 0U);
+        Ns_SetTrunc(reqPtr->headers, 0u);
 
         if (reqPtr->auth != NULL) {
 	  Ns_SetFree(reqPtr->auth);
@@ -1219,7 +1219,8 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char          *errstr, c, drain[1024];
-    int            stopping, pollto, accepted;
+    int            pollto, accepted;
+    bool           stopping;
     unsigned int   flags;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
     PollData       pdata;
@@ -1253,7 +1254,7 @@ DriverThread(void *arg)
     closePtr = waitPtr = readPtr = NULL;
     stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
 
-    while (stopping == 0) {
+    while (stopping == NS_FALSE) {
 	int n;
 
         /*
@@ -1589,7 +1590,7 @@ DriverThread(void *arg)
          * Close the active drivers if shutdown is pending.
          */
 
-        if (stopping != 0) {
+        if (stopping == NS_TRUE) {
             ns_sockclose(drvPtr->sock);
             drvPtr->sock = NS_INVALID_SOCKET;
         }
@@ -2370,7 +2371,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      */
 
 #ifndef _WIN32
-    if (reqPtr->coff > 0 &&
+    if (reqPtr->coff > 0u &&
         !reqPtr->chunkStartOff /* never spool chunked encoded data since we decode in memory */ &&
         reqPtr->length > drvPtr->readahead && sockPtr->tfd <= 0) {
         DrvSpooler   *spPtr  = &drvPtr->spooler;
@@ -2443,7 +2444,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
       Tcl_DStringSetLength(bufPtr, (int)(len + n));
     }
 
-    reqPtr->woff  += (off_t)n;
+    reqPtr->woff  += (size_t)n;
     reqPtr->avail += (size_t)n;
 
     /*
@@ -2516,7 +2517,7 @@ SockParse(Sock *sockPtr)
      * Scan lines (header) until start of content (body-part)
      */
 
-    while (reqPtr->coff == 0) {
+    while (reqPtr->coff == 0u) {
 	char *s, *e;
 	int cnt;
 
@@ -2584,13 +2585,13 @@ SockParse(Sock *sockPtr)
                 if (++reqPtr->leadblanks > 2) {
                     return SOCK_ERROR;
                 }
-                reqPtr->woff = reqPtr->roff = 0;
+                reqPtr->woff = reqPtr->roff = 0u;
                 Tcl_DStringSetLength(bufPtr, 0);
                 return SOCK_MORE;
             }
 
             reqPtr->coff = reqPtr->roff;
-            reqPtr->chunkStartOff = 0U;
+            reqPtr->chunkStartOff = 0u;
 
             s = Ns_SetIGet(reqPtr->headers, "content-length");
             if (s == NULL) {
@@ -2752,7 +2753,7 @@ SockParse(Sock *sockPtr)
         size_t currentContentLength;
 
         complete = ChunkedDecode(reqPtr, 1);
-        currentContentLength = reqPtr->chunkWriteOff - (size_t)reqPtr->coff;
+        currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
 
         /* 
          * A chunk might be complete, but it might not be the last
@@ -2770,7 +2771,7 @@ SockParse(Sock *sockPtr)
         reqPtr->length = (size_t)currentContentLength;
     }
 
-    if (reqPtr->coff > 0 && reqPtr->length <= reqPtr->avail) {
+    if (reqPtr->coff > 0u && reqPtr->length <= reqPtr->avail) {
 
         /*
          * With very large uploads we have to put them into regular temporary file
@@ -2944,7 +2945,8 @@ SpoolerThread(void *arg)
 {
     SpoolerQueue  *queuePtr = (SpoolerQueue*)arg;
     char           c;
-    int            stopping, pollto;
+    int            pollto;
+    bool           stopping;
     Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
     Ns_Time        now, diff;
     Driver        *drvPtr;
@@ -2963,9 +2965,9 @@ SpoolerThread(void *arg)
     PollCreate(&pdata);
     Ns_GetTime(&now);
     waitPtr = readPtr = NULL;
-    stopping = 0;
+    stopping = NS_FALSE;
 
-    while (stopping == 0) {
+    while (stopping == NS_FALSE) {
 
         /*
          * If there are any read sockets, set the bits
@@ -3044,6 +3046,20 @@ SpoolerThread(void *arg)
                     }
                     break;
 
+                case SOCK_BADHEADER:
+                case SOCK_BADREQUEST:
+                case SOCK_CLOSE:
+                case SOCK_CLOSETIMEOUT:
+                case SOCK_ENTITYTOOLARGE:
+                case SOCK_ERROR:
+                case SOCK_READERROR:
+                case SOCK_READTIMEOUT:
+                case SOCK_SERVERREJECT:
+                case SOCK_SHUTERROR:
+                case SOCK_SPOOL:
+                case SOCK_TOOMANYHEADERS:
+                case SOCK_WRITEERROR:
+                case SOCK_WRITETIMEOUT:
                 default:
                     SockRelease(sockPtr, n, errno);
                     queuePtr->queuesize--;
@@ -3106,7 +3122,7 @@ SpoolerThread(void *arg)
     Ns_Log(Notice, "exiting");
 
     Ns_MutexLock(&queuePtr->lock);
-    queuePtr->stopped = 1;
+    queuePtr->stopped = NS_TRUE;
     Ns_CondBroadcast(&queuePtr->cond);
     Ns_MutexUnlock(&queuePtr->lock);
 }
@@ -3135,13 +3151,13 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
 	int status;
 
         Ns_MutexLock(&queuePtr->lock);
-        if (!queuePtr->stopped && !queuePtr->shutdown) {
+        if (queuePtr->stopped == NS_FALSE && !queuePtr->shutdown) {
             Ns_Log(Debug, "%s%d: triggering shutdown", name, queuePtr->id);
             queuePtr->shutdown = 1;
             SockTrigger(queuePtr->pipe[1]);
         }
         status = NS_OK;
-        while (!queuePtr->stopped && status == NS_OK) {
+        while (queuePtr->stopped == NS_FALSE && status == NS_OK) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, timeoutPtr);
         }
         if (status != NS_OK) {
@@ -3336,7 +3352,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     }
     if (wrSockPtr->fd > -1) {
 	if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
-	    ns_close(wrSockPtr->fd);
+	    (void) ns_close(wrSockPtr->fd);
 	}
         ns_free(wrSockPtr->c.file.buf);
     } else if (wrSockPtr->c.mem.bufs != NULL) {
@@ -3446,7 +3462,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	     * send operation.
 	     */
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
+	    (void) ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
 	n = ns_read(curPtr->fd, bufPtr, (size_t)toRead);
@@ -3618,7 +3634,8 @@ static void
 WriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
-    int             err, stopping, pollto;
+    int             err, pollto;
+    bool            stopping;
     Ns_Time         now;
     Sock           *sockPtr;
     Driver         *drvPtr;
@@ -3638,9 +3655,9 @@ WriterThread(void *arg)
     PollCreate(&pdata);
     Ns_GetTime(&now);
     writePtr = NULL;
-    stopping = 0;
+    stopping = NS_FALSE;
 
-    while (stopping == 0) {
+    while (stopping == NS_FALSE) {
 	unsigned char c;
 
         /*
@@ -3814,7 +3831,7 @@ WriterThread(void *arg)
     Ns_Log(Notice, "exiting");
 
     Ns_MutexLock(&queuePtr->lock);
-    queuePtr->stopped = 1;
+    queuePtr->stopped = NS_TRUE;
     Ns_CondBroadcast(&queuePtr->cond);
     Ns_MutexUnlock(&queuePtr->lock);
 }
@@ -3895,7 +3912,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    if (nsend < (size_t)wrPtr->maxsize && !everysize && connPtr->fd == 0) {
+    if (nsend < (size_t)wrPtr->maxsize && everysize == 0 && connPtr->fd == 0) {
         Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %" PRIdz ")",
                nsend, wrPtr->maxsize);
         return NS_ERROR;
@@ -4320,20 +4337,20 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
 	if (size < 0 || size > st.st_size) {
 	    Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
-	    ns_close(fd);
+	    (void) ns_close(fd);
 	    return TCL_ERROR;
 	}
 
 	if (offset < 0 || offset > st.st_size) {
 	    Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
-	    ns_close(fd);
+	    (void) ns_close(fd);
 	    return TCL_ERROR;
 	} 
 
 	if (size > 0) {
 	    if (size + offset > st.st_size) {
 		Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
-		ns_close(fd);
+		(void) ns_close(fd);
 		return TCL_ERROR;
 	    }
 	    nrbytes = (size_t)size;
@@ -4356,7 +4373,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         rc = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-        ns_close(fd);
+        (void) ns_close(fd);
 
         break;
     }
@@ -4507,7 +4524,7 @@ NsAsyncWriterQueueEnable(void)
 {
     SpoolerQueue  *queuePtr;
 
-    if (!Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE)) {
+    if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_FALSE) {
 	/*
 	 * Asyncwriter is disabled, nothing to do.
 	 */
@@ -4549,7 +4566,7 @@ NsAsyncWriterQueueEnable(void)
     assert(queuePtr != NULL);
 
     Ns_MutexLock(&queuePtr->lock);
-    queuePtr->stopped = 0;
+    queuePtr->stopped = NS_FALSE;
     Ns_MutexUnlock(&queuePtr->lock);
 }
 
@@ -4581,7 +4598,7 @@ NsAsyncWriterQueueDisable(int shutdown)
 	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
 
 	Ns_MutexLock(&queuePtr->lock);
-	queuePtr->stopped = 1;
+	queuePtr->stopped = NS_TRUE;
 	queuePtr->shutdown = shutdown;
 
 	/*
@@ -4633,7 +4650,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * since writing of an error message to the log might bring us
      * into an infinte loop.
      */
-    if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
+    if (asyncWriter == NULL || asyncWriter->firstPtr->stopped == NS_TRUE) {
 	size_t written = ns_write(fd, buffer, nbyte);
 
 	if (unlikely(written != nbyte)) {
@@ -4730,7 +4747,8 @@ AsyncWriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     unsigned char   c;
-    int             stopping, pollto, status;
+    int             pollto, status;
+    bool            stopping;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
@@ -4746,14 +4764,14 @@ AsyncWriterThread(void *arg)
 
     PollCreate(&pdata);
     writePtr = NULL;
-    stopping = 0;
+    stopping = NS_FALSE;
 
     /*
      * Loop forever until signalled to shutdown and all
      * connections are complete and gracefully closed.
      */
 
-    while (stopping == 0) {
+    while (stopping == NS_FALSE) {
 
         /*
          * Always listen to the trigger pipe. We could as well perform
@@ -4785,7 +4803,7 @@ AsyncWriterThread(void *arg)
 		Ns_Fatal("asynclogwriter: trigger ns_recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }
-	    if (queuePtr->stopped != 0) {
+	    if (queuePtr->stopped == NS_TRUE) {
 		/*
 		 * Drain the queue from everything
 		 */
@@ -4867,7 +4885,7 @@ AsyncWriterThread(void *arg)
 	 * Check for shutdown
 	 */
         stopping = queuePtr->shutdown;
-	if (stopping != 0) {
+	if (stopping == NS_TRUE) {
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
@@ -4901,7 +4919,7 @@ AsyncWriterThread(void *arg)
 
     PollFree(&pdata);
     
-    queuePtr->stopped = 1;
+    queuePtr->stopped = NS_TRUE;
     Ns_Log(Notice, "exiting");
 
 }

@@ -343,7 +343,7 @@ SockCallbackThread(void *UNUSED(arg))
                     Tcl_DeleteHashEntry(hPtr);
                 }
                 if (cbPtr->proc != NULL) {
-                    (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, NS_SOCK_CANCEL);
+                    (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_CANCEL);
                 }
                 ns_free(cbPtr);
             } else {
@@ -376,7 +376,7 @@ SockCallbackThread(void *UNUSED(arg))
 	while (hPtr != NULL) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
             if (cbPtr->timeout > 0 && cbPtr->expires > 0 && cbPtr->expires < now) {
-                (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, NS_SOCK_TIMEOUT);
+                (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_TIMEOUT);
                 cbPtr->when = 0U;
             }
 	    if ((cbPtr->when & NS_SOCK_ANY) == 0U) {
@@ -386,7 +386,7 @@ SockCallbackThread(void *UNUSED(arg))
 		cbPtr->idx = nfds;
 		pfds[nfds].fd = cbPtr->sock;
 		pfds[nfds].events = pfds[nfds].revents = 0;
-        	for (i = 0; i < 3; ++i) {
+        	for (i = 0; i < Ns_NrElements(when); ++i) {
                     if ((cbPtr->when & when[i]) != 0U) {
 			pfds[nfds].events |= events[i];
                     }
@@ -439,9 +439,18 @@ SockCallbackThread(void *UNUSED(arg))
     	hPtr = Tcl_FirstHashEntry(&table, &search);
 	while (n > 0 && hPtr != NULL) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
-            for (i = 0; i < 3; ++i) {
+            for (i = 0; i < Ns_NrElements(when); ++i) {
                 if (((cbPtr->when & when[i]) != 0U) 
 		    && (pfds[cbPtr->idx].revents & events[i]) != 0) {
+                    /* 
+                     * Call the Sock_Proc with the SockState flag
+                     * combination from when[i]. This is actually the
+                     * ony place, where a Ns_SockProc is called with a
+                     * flag combination in the last argument. If this
+                     * would not be the case, we could set the type of
+                     * the last parameter of Ns_SockProc to
+                     * Ns_SockState.
+                     */
                     if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == 0) {
 			cbPtr->when = 0U;
 		    }
@@ -461,7 +470,7 @@ SockCallbackThread(void *UNUSED(arg))
     while (hPtr != NULL) {
 	cbPtr = Tcl_GetHashValue(hPtr);
 	if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0u) {
-	    (void) ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, NS_SOCK_EXIT));
+	    (void) ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_EXIT));
 	}
 	hPtr = Tcl_NextHashEntry(&search);
     }

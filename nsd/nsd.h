@@ -239,11 +239,11 @@ typedef struct SpoolerQueue {
     Ns_Mutex             lock;        /* Lock around spooled list */
     Ns_Cond              cond;        /* Cond for stopped flag */
     Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
-    int                  stopped;     /* Flag to indicate thread stopped */
+    bool                 stopped;     /* Flag to indicate thread stopped */
     int                  shutdown;    /* Flag to indicate shutdown */
     int                  id;          /* Queue id */
     int                  queuesize;   /* Number of active sockets in the queue */
-    CONST char          *threadname;  /* name of the thread working on this queue */
+    const char          *threadname;  /* name of the thread working on this queue */
 } SpoolerQueue;
 
 
@@ -329,9 +329,9 @@ typedef struct Request {
      * the buffer read-ahead process.
      */
 
-    off_t woff;                   /* Next write buffer offset */
-    off_t roff;                   /* Next read buffer offset */
-    off_t coff;                   /* Content buffer offset */
+    size_t woff;                  /* Next write buffer offset */
+    size_t roff;                  /* Next read buffer offset */
+    size_t coff;                  /* Content buffer offset */
     Tcl_DString buffer;           /* Request and content buffer */
 
 } Request;
@@ -1284,7 +1284,7 @@ NS_EXTERN void NsFreeAdp(NsInterp *itPtr);
 NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)
      NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
+NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url);
 NS_EXTERN char *NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host);
 
 /*
@@ -1339,7 +1339,7 @@ NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
 NS_EXTERN void NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
-NS_EXTERN char *NsConfigRead(CONST char *file);
+NS_EXTERN char *NsConfigRead(const char *file);
 NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int optind);
 NS_EXTERN void NsConfUpdate(void);
 NS_EXTERN void NsEnableDNSCache(int maxsize, int ttl, int timeout);
@@ -1484,7 +1484,7 @@ NS_EXTERN void NsGetBuf(char **bufPtr, int *sizePtr);
 NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr);
 NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 
-NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
+NS_EXTERN void NsUrlSpecificWalk(int id, const char *server, Ns_ArgProc func,
 				 Tcl_DString *dsPtr);
 
 NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth);

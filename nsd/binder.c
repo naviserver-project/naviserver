@@ -321,7 +321,7 @@ Ns_SockBindUdp(const struct sockaddr_in *saPtr)
     if (sock == NS_INVALID_SOCKET
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
         || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
-        || bind(sock,(struct sockaddr*)saPtr, sizeof(struct sockaddr_in)) == -1) {
+        || bind(sock,(const struct sockaddr*)saPtr, sizeof(struct sockaddr_in)) == -1) {
         int err = errno;
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;

@@ -51,7 +51,7 @@
 #define NS_ALPHA_RELEASE    1
 #define NS_BETA_RELEASE     2
 #define NS_FINAL_RELEASE    3
-#define NS_RELEASE_LEVEL    @NS_RELEASE_LEVEL@
+#define NS_RELEASE_LEVEL    (@NS_RELEASE_LEVEL@)
 
 
 #endif /* NSVERSION_H */

@@ -198,7 +198,7 @@ typedef enum {
  */
 
 #define UCHAR(c)                   ((unsigned char)(c))
-#define CHARTYPE(what,c)           is ## what ((int)((unsigned char)(c)))
+#define CHARTYPE(what,c)           (is ## what ((int)((unsigned char)(c))))
 #define CHARCONV(what,c)           ((char)to ## what ((int)((unsigned char)(c))))
 #define STREQ(a,b)                 (((*(a)) == (*(b))) && (strcmp((a),(b)) == 0))
 #define STRIEQ(a,b)                (strcasecmp((a),(b)) == 0)
@@ -226,7 +226,7 @@ typedef enum {
 #define Ns_DStringFree             Tcl_DStringFree
 #define Ns_DStringTrunc            Tcl_DStringTrunc
 #define Ns_DStringSetLength        Tcl_DStringSetLength
-#define NS_DSTRING_STATIC_SIZE     TCL_DSTRING_STATIC_SIZE
+#define NS_DSTRING_STATIC_SIZE     (TCL_DSTRING_STATIC_SIZE)
 #define NS_DSTRING_PRINTF_MAX      2048
 
 /*
@@ -288,7 +288,7 @@ typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
-typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, Ns_SockState why);
+typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, Ns_SockState why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
@@ -643,8 +643,6 @@ Ns_AuthorizeUser(const char *user, const char *passwd);
 /*
  * cache.c:
  */
-
-#define NS_CACHE_FREE ns_free
 
 NS_EXTERN Ns_Cache *
 Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)
@@ -2931,21 +2929,21 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
  */
 
 NS_EXTERN void
-Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
+Ns_RegisterUrl2FileProc(const char *server, const char *url,
                         Ns_Url2FileProc *proc, Ns_Callback *deleteCallback,
                         void *arg, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, unsigned int flags)
+Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
+Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr)
+Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 

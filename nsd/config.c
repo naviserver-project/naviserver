@@ -640,7 +640,7 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  */
 
 char *
-NsConfigRead(CONST char *file)
+NsConfigRead(const char *file)
 {
     Tcl_Channel  chan = NULL;
     Tcl_Obj     *buf = NULL;

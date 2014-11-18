@@ -241,7 +241,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      */
 
     if (objc > (int)(sizeof(iov) / sizeof(struct iovec))) {
-        sbufs = ns_calloc(objc, sizeof(struct iovec));
+        sbufs = ns_calloc((size_t)objc, sizeof(struct iovec));
     }
 
     /*
@@ -267,7 +267,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
         }
         if (length > 0) {
-            sbufs[n].iov_len = length;
+            sbufs[n].iov_len = (size_t)length;
             n++;
         }
     }
@@ -427,7 +427,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         if (Ns_TclGetOpenChannel(interp, chanid, 0, 1, &chan) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = Ns_ConnReturnOpenChannel(conn, status, type, chan, length);
+        result = Ns_ConnReturnOpenChannel(conn, status, type, chan, (size_t)length);
 
     } else if (filename != NULL) {
         /*
@@ -536,13 +536,12 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     if (Tcl_GetIntFromObj(interp, objv[4], &len) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[3]), 0, 1, &chan)
-        != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[3]), 0, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
 
     result = Ns_ConnReturnOpenChannel(conn, status, Tcl_GetString(objv[2]),
-                                      chan, len);
+                                      chan, (size_t)len);
 
     return Result(interp, result);
 }
@@ -579,8 +578,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan)
-        != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
@@ -590,7 +588,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_LogDeprecated(objv, 3, "ns_writefp fileid ?nbytes?", NULL);
 
     conn->flags |= NS_CONN_SKIPHDRS;
-    if (Ns_ConnSendChannel(conn, chan, len) != NS_OK) {
+    if (Ns_ConnSendChannel(conn, chan, (size_t)len) != NS_OK) {
         Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
                            len, Tcl_GetString(objv[1]));
         return TCL_ERROR;

@@ -605,7 +605,7 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
     while (status == NS_OK && queuePtr != NULL) {
         nextPtr = queuePtr->nextPtr;
         Ns_MutexLock(&queuePtr->lock);
-        while (status == NS_OK && !queuePtr->stopped) {
+        while (status == NS_OK && queuePtr->stopped == NS_FALSE) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, toPtr);
         }
         Ns_MutexUnlock(&queuePtr->lock);
@@ -984,7 +984,7 @@ TaskThread(void *arg)
         taskPtr->signal |= TASK_DONE;
     }
 
-    queuePtr->stopped = 1;
+    queuePtr->stopped = NS_TRUE;
     Ns_MutexUnlock(&queuePtr->lock);
     Ns_CondBroadcast(&queuePtr->cond);
 
