@@ -493,7 +493,7 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 {
     char           *sep;
     char           *value;
-    int             index;
+    size_t          index;
     Ns_DString	    ds;
 
     /* 
@@ -503,10 +503,10 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
      */
 
     if (CHARTYPE(space, *line) != 0) {
-        index = Ns_SetLast(set);
-        if (index < 0) {
+        if (Ns_SetSize(set) == 0U) {
 	    return NS_ERROR;	/* Continue before first header. */
         }
+	index = Ns_SetLast(set);
         while (CHARTYPE(space, *line) != 0) {
             ++line;
         }

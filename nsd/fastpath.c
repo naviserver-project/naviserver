@@ -134,7 +134,7 @@ ConfigServerFastpath(const char *server)
     }
 
     servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
-    if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
+    if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == 0) {
 	(void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     }
@@ -325,7 +325,7 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK
-        && !stat(ds.string, &st)
+        && stat(ds.string, &st) == 0
         && ((dir != 0 && S_ISDIR(st.st_mode))
             || (dir == 0 && S_ISREG(st.st_mode)))) {
         is = NS_TRUE;
@@ -447,10 +447,10 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 
     Ns_ConnSetLastModifiedHeader(conn, &connPtr->fileInfo.st_mtime);
 
-    if (!Ns_ConnModifiedSince(conn, connPtr->fileInfo.st_mtime)) {
+    if (Ns_ConnModifiedSince(conn, connPtr->fileInfo.st_mtime) == 0) {
         return Ns_ConnReturnNotModified(conn);
     }
-    if (!Ns_ConnUnmodifiedSince(conn, connPtr->fileInfo.st_mtime)) {
+    if (Ns_ConnUnmodifiedSince(conn, connPtr->fileInfo.st_mtime) == 0) {
         return Ns_ConnReturnStatus(conn, 412); /* Precondition Failed. */
     }
 
@@ -460,7 +460,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     /*
      * Check gzip version
      */
-    if (useGzip && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0U) {
+    if (useGzip != 0 && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0U) {
 	struct stat gzStat;
 	char *gzFile;
 
@@ -529,7 +529,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 	 * directly.
          */
 
-        if (usemmap
+        if ((usemmap != 0)
 	    && NsMemMap(file, connPtr->fileInfo.st_size, NS_MMAP_READ, &connPtr->fmap) == NS_OK) {
             result = Ns_ConnReturnData(conn, status, connPtr->fmap.addr, connPtr->fmap.size, type);
 	    if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0U) {
@@ -538,14 +538,14 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 	    connPtr->fmap.addr = NULL;
 
         } else {
-            fd = open(file, O_RDONLY | O_BINARY);
+            fd = ns_open(file, O_RDONLY | O_BINARY, 0);
             if (fd < 0) {
-                Ns_Log(Warning, "fastpath: open(%s) failed: '%s'",
+                Ns_Log(Warning, "fastpath: ns_open(%s) failed: '%s'",
                        file, strerror(errno));
                 goto notfound;
             }
             result = Ns_ConnReturnOpenFd(conn, status, type, fd, connPtr->fileInfo.st_size);
-            close(fd);
+            ns_close(fd);
         }
 
     } else {
@@ -565,7 +565,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
          * Validate entry.
          */
 
-        if (!isNew
+        if (isNew == 0
             && (filePtr = Ns_CacheGetValue(entry)) != NULL
             && (filePtr->mtime != connPtr->fileInfo.st_mtime
                 || filePtr->size != connPtr->fileInfo.st_size
@@ -582,13 +582,13 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
              */
 
             Ns_CacheUnlock(cache);
-            fd = open(file, O_RDONLY | O_BINARY);
+            fd = ns_open(file, O_RDONLY | O_BINARY, 0);
             if (fd < 0) {
                 filePtr = NULL;
-                Ns_Log(Warning, "fastpath: open(%s') failed '%s'",
+                Ns_Log(Warning, "fastpath: ns_open(%s') failed '%s'",
                        file, strerror(errno));
             } else {
- 	        int nread;
+ 	        ssize_t nread;
 
                 filePtr = ns_malloc(sizeof(File) + connPtr->fileInfo.st_size);
                 filePtr->refcnt = 1;
@@ -596,8 +596,8 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
                 filePtr->mtime  = connPtr->fileInfo.st_mtime;
                 filePtr->dev    = connPtr->fileInfo.st_dev;
                 filePtr->ino    = connPtr->fileInfo.st_ino;
-                nread = read(fd, filePtr->bytes, filePtr->size);
-                close(fd);
+                nread = ns_read(fd, filePtr->bytes, filePtr->size);
+                ns_close(fd);
                 if (nread != filePtr->size) {
                     Ns_Log(Warning, "fastpath: failed to read '%s': '%s'",
                            file, strerror(errno));
@@ -827,3 +827,12 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

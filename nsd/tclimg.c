@@ -111,6 +111,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     case png:     type = "png";     break;
     case gif:     type = "gif";     break;
     case unknown: type = "unknown"; break;
+    default: /*should not happen */ assert(0); break;
     }
 
     result = Tcl_Close(interp, chan);
@@ -158,6 +159,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     case png:     mime = "image/png";     break;
     case gif:     mime = "image/gif";     break;
     case unknown: mime = "image/unknown"; break;
+    default: /*should not happen */ assert(0); break;
     }
 
     result = Tcl_Close(interp, chan);
@@ -207,6 +209,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     case png:     status = PngSize (chan, &w, &h); break;
     case gif:     status = GifSize (chan, &w, &h); break;
     case unknown: status = TCL_ERROR; break;
+    default: /*should not happen */ assert(0); break;
     }
 
     if (Tcl_Close(interp, chan) != TCL_OK) {
@@ -398,9 +401,9 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
     }
 
     depth = 1U << ((buf[4] & 0x7U) + 1U);
-    colormap = ((buf[4] & 0x80U) ? 1U : 0U);
+    colormap = (((buf[4] & 0x80U) != 0U) ? 1U : 0U);
 
-    if (colormap != 0) {
+    if (colormap != 0U) {
         if (Tcl_Read(chan, (char *)buf, (3*depth)) != (3*depth)) {
             return TCL_ERROR;
         }
@@ -631,7 +634,7 @@ GetImageType(Tcl_Channel chan)
     static const unsigned char jpeg_magic  [] = {0xff, 0xd8};
     static const          char gif87_magic [] = {'G','I','F','8','7','a'};
     static const          char gif89_magic [] = {'G','I','F','8','9','a'};
-    static const unsigned char png_magic   [] = {0x89,0x50,0x4e,0x47,0xd,0xa,0x1a,0xa};
+    static const unsigned char png_magic   [] = {0x89U,0x50U,0x4eU,0x47U,0xdU,0x0aU,0x1aU,0x0aU};
 
     Tcl_Seek(chan, 0LL, SEEK_SET);
 
@@ -751,3 +754,12 @@ GetFileChan(Tcl_Interp *interp, const char *path)
 
     return chan;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

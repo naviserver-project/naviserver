@@ -100,7 +100,7 @@ static Ns_ObjvTable adpOpts[] = {
  */
 
 int
-Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
+Ns_AdpRequest(Ns_Conn *conn, const char *file)
 {
     assert(conn != NULL);
     assert(file != NULL);
@@ -109,7 +109,7 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 }
 
 int
-Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, const Ns_Time *expiresPtr)
+Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
 {
     assert(conn != NULL);
     assert(file != NULL);
@@ -182,8 +182,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     Tcl_DecrRefCount(objv[1]);
 
     if (itPtr->adp.exception == ADP_TIMEOUT) {
-        Ns_ConnReturnUnavailable(conn);
-        return NS_OK;
+        return Ns_ConnReturnUnavailable(conn);
     }
 
     if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
@@ -404,7 +403,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 int
-Ns_AdpFlush(Tcl_Interp *interp, int stream)
+Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
 {
     NsInterp *itPtr;
 
@@ -413,7 +412,7 @@ Ns_AdpFlush(Tcl_Interp *interp, int stream)
         Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
         return TCL_ERROR;
     }
-    return NsAdpFlush(itPtr, stream);
+    return NsAdpFlush(itPtr, isStreaming);
 }
 
 int
@@ -548,3 +547,12 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     }
     return result;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

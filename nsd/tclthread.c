@@ -52,11 +52,14 @@ typedef struct TclThreadArg {
  */
 
 static void CreateTclThread(const NsInterp *itPtr, const char *script, int detached,
-                            Ns_Thread *thrPtr);
+                            Ns_Thread *thrPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void *CreateSynchObject(const NsInterp *itPtr,
                                Tcl_HashTable *typeTable, unsigned int *idPtr,
-                               Ns_Callback *initProc, CONST char *type,
-                               Tcl_Obj *objPtr, int cnt);
+                               Ns_Callback *initProc, const char *type,
+                               Tcl_Obj *objPtr, int cnt)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 /*
  * Local variables defined in this file.
@@ -89,9 +92,10 @@ static const char *threadType = "ns:thread";
 int
 Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
 {
-    NsInterp *itPtr = NsGetInterpData(interp);
+    assert(interp != NULL);
+    assert(script != NULL);
 
-    CreateTclThread(itPtr, script, (thrPtr == NULL), thrPtr);
+    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL), thrPtr);
     return NS_OK;
 }
 
@@ -229,6 +233,11 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     case TYieldIdx:
         Ns_ThreadYield();
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     return TCL_OK;
@@ -311,6 +320,11 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     case MDestroyIdx:
         /* No-op. */
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     return status;
@@ -386,6 +400,11 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 
     case CDestroyIdx:
         /* No-op. */
+        break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
         break;
     }
 
@@ -465,6 +484,11 @@ NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case SDestroyIdx:
         /* No-op. */
+        break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
         break;
     }
 
@@ -578,6 +602,11 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     case EDestroyIdx:
         /* No-op. */
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     return TCL_OK;
@@ -671,6 +700,11 @@ NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 
     case RDestroyIdx:
         /* No-op. */
+        break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
         break;
     }
 
@@ -774,6 +808,9 @@ CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thre
 {
     TclThreadArg *argPtr;
 
+    assert(itPtr != NULL);
+    assert(script != NULL);
+
     argPtr = ns_malloc(sizeof(TclThreadArg) + strlen(script));
     argPtr->detached = detached;
     strcpy(argPtr->script, script);
@@ -807,15 +844,22 @@ CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thre
 static void *
 CreateSynchObject(const NsInterp *itPtr,
                   Tcl_HashTable *typeTable, unsigned int *idPtr,
-                  Ns_Callback *initProc, CONST char *type,
+                  Ns_Callback *initProc, const char *type,
                   Tcl_Obj *objPtr, int cnt)
 {
-    NsServer      *servPtr = itPtr->servPtr;
-    Tcl_Interp    *interp  = itPtr->interp;
+    NsServer      *servPtr;
+    Tcl_Interp    *interp;
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;
     void          *addr;
     int            isNew;
+
+    assert(itPtr != NULL);
+    assert(typeTable != NULL);
+    assert(idPtr != NULL);
+    assert(type != NULL);
+
+    interp  = itPtr->interp;
 
     if (objPtr != NULL
 	&& Ns_TclGetOpaqueFromObj(objPtr, type, &addr) == TCL_OK) {
@@ -823,6 +867,7 @@ CreateSynchObject(const NsInterp *itPtr,
         return addr;
     }
 
+    servPtr = itPtr->servPtr;
     Ns_MutexLock(&servPtr->tcl.synch.lock);
 
     if (objPtr == NULL) {
@@ -858,3 +903,12 @@ CreateSynchObject(const NsInterp *itPtr,
 
     return addr;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -217,18 +217,29 @@ typedef struct Junction {
  * Local functions defined in this file
  */
 
-static void  NodeDestroy(Node *nodePtr);
-static void  BranchDestroy(Branch *branchPtr);
-static int   CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr);
-static int   CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr);
+static void  NodeDestroy(Node *nodePtr)
+    NS_GNUC_NONNULL(1);
+
+static void  BranchDestroy(Branch *branchPtr)
+    NS_GNUC_NONNULL(1);
+
+static int   CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int   CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Utility functions
  */
 
-static void MkSeq(Ns_DString *dsPtr, const char *method, const char *url);
+static void MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 static void WalkTrie(const Trie *triePtr, Ns_ArgProc func,
-                     Ns_DString *dsPtr, char **stack, const char *filter);
+                     Ns_DString *dsPtr, char **stack, const char *filter)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
 #ifdef DEBUG
 static void PrintSeq(const char *seq);
 #endif
@@ -237,27 +248,46 @@ static void PrintSeq(const char *seq);
  * Trie functions
  */
 
-static void  TrieInit(Trie *triePtr);
+static void  TrieInit(Trie *triePtr)
+    NS_GNUC_NONNULL(1);
+
 static void  TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags, 
-                     void (*deletefunc)(void *data));
-static void *TrieFind(const Trie *triePtr, char *seq, int *depthPtr);
-static void *TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags);
-static void *TrieDelete(const Trie *triePtr, char *seq, unsigned int flags);
-static void  TrieTrunc(Trie *triePtr);
-static int   TrieTruncBranch(Trie *triePtr, char *seq);
-static void  TrieDestroy(Trie *triePtr);
+                     void (*deletefunc)(void *data))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void *TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void *TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void *TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void  TrieTrunc(Trie *triePtr)
+    NS_GNUC_NONNULL(1);
+
+static int   TrieTruncBranch(Trie *triePtr, char *seq)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void  TrieDestroy(Trie *triePtr)
+    NS_GNUC_NONNULL(1);
 
 /*
  * Channel functions
  */
 
 #ifndef __URLSPACE_OPTIMIZE__
-static int CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr);
-static int CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr);
+static int CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 #endif
 
-static int CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr);
-static int CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr);
+static int CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  * Juntion functions
@@ -265,15 +295,20 @@ static int CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPt
 
 static Junction *JunctionGet(NsServer *servPtr, int id)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
                         unsigned int flags, void (*deletefunc)(void *data))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void *JunctionFind(const Junction *juncPtr, char *seq, int fast)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void *JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void *JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void JunctionTruncBranch(const Junction *juncPtr, char *seq)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -306,7 +341,8 @@ Ns_UrlSpecificAlloc(void)
     static int nextid = 0;
     int        id;
 
-    if ((id = nextid++) >= MAX_URLSPACES) {
+    id = nextid++;
+    if (id >= MAX_URLSPACES) {
         Ns_Fatal("Ns_UrlSpecificAlloc: NS_MAXURLSPACE exceeded: %d",
                  MAX_URLSPACES);
     }
@@ -335,15 +371,18 @@ Ns_UrlSpecificAlloc(void)
  */
 
 void
-Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
+Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
                   void *data, unsigned int flags, void (*deletefunc) (void *data))
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr;
     Ns_DString  ds;
 
-    if (method == NULL || url == NULL) {
-        return;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+    assert(data != NULL);
+
+    servPtr = NsGetServer(server);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -372,27 +411,34 @@ Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int i
  */
 
 void *
-Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url, int id)
+Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
 {
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0);
 }
 
 void *
-Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, int id)
+Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
 {
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, 1);
 }
 
 void *
-NsUrlSpecificGet(NsServer *servPtr, CONST char *method, CONST char *url, int id,
-                 int fast)
+NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id, int fast)
 {
     Ns_DString  ds;
     void       *data;
 
-    if (method == NULL || url == NULL) {
-        return NULL;
-    }
+    assert(servPtr != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -421,16 +467,18 @@ NsUrlSpecificGet(NsServer *servPtr, CONST char *method, CONST char *url, int id,
  */
 
 void *
-Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
+Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
                        int id, unsigned int flags)
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr;
     Ns_DString  ds;
     void       *data;
 
-    if (method == NULL || url == NULL) {
-        return NULL;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
+    servPtr = NsGetServer(server);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -459,16 +507,18 @@ Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void *
-Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
+Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
                       int id, unsigned int flags)
 {
-    NsServer   *servPtr = NsGetServer(server);
+    NsServer   *servPtr;
     Ns_DString  ds;
     void       *data = NULL;
 
-    if (method == NULL || url == NULL) {
-        return NULL;
-    }
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
+    servPtr = NsGetServer(server);
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -501,12 +551,16 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void
-Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
 {
     Junction *juncPtr;
     Channel  *channelPtr;
     int       n, i;
     char     *stack[STACK_SIZE];
+
+    assert(server != NULL);
+    assert(func != NULL);
+    assert(dsPtr != NULL);
 
     juncPtr = JunctionGet(NsGetServer(server), id);
     memset(stack, 0, sizeof(stack));
@@ -532,6 +586,12 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
     Node        *nodePtr;
     int          i, depth;
     Tcl_DString  subDs;
+
+    assert(triePtr != NULL);
+    assert(func != NULL);
+    assert(dsPtr != NULL);
+    assert(stack != NULL);
+    assert(filter != NULL);
 
     for (i = 0; i < triePtr->branches.n; i++) {
         branchPtr = Ns_IndexEl(&triePtr->branches, i);
@@ -621,6 +681,8 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 static void
 NodeDestroy(Node *nodePtr)
 {
+    assert(nodePtr != NULL);
+
     if (nodePtr->deletefuncNoInherit != NULL) {
         (*nodePtr->deletefuncNoInherit) (nodePtr->dataNoInherit);
     }
@@ -650,6 +712,9 @@ NodeDestroy(Node *nodePtr)
 static int
 CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
 {
+    assert(leftPtrPtr != NULL);
+    assert(rightPtrPtr != NULL);
+
     return strcmp((*leftPtrPtr)->word, (*rightPtrPtr)->word);
 }
 
@@ -674,6 +739,9 @@ CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
 static int
 CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr)
 {
+    assert(key != NULL);
+    assert(branchPtrPtr != NULL);
+
     return strcmp(key, (*branchPtrPtr)->word);
 }
 
@@ -723,6 +791,8 @@ BranchDestroy(Branch *branchPtr)
 static void
 TrieInit(Trie *triePtr)
 {
+    assert(triePtr != NULL);
+
     Ns_IndexInit(&triePtr->branches, 25,
         (int (*) (const void *left, const void *right)) CmpBranches,
         (int (*) (const void *left, const void *right)) CmpKeyWithBranch);
@@ -757,6 +827,10 @@ static void
 TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
         void (*deletefunc)(void *data))
 {
+    assert(triePtr != NULL);
+    assert(seq != NULL);
+    assert(data != NULL);
+
     if (*seq != '\0') {
         Branch *branchPtr;
 
@@ -776,7 +850,7 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
 
             Ns_IndexAdd(&triePtr->branches, branchPtr);
         }
-        TrieAdd(&branchPtr->trie, seq + strlen(seq) + 1, data, flags,
+        TrieAdd(&branchPtr->trie, seq + strlen(seq) + 1U, data, flags,
                 deletefunc);
 
     } else {
@@ -846,8 +920,9 @@ TrieTrunc(Trie *triePtr)
     Branch *branchPtr;
     int     n;
 
-    n = Ns_IndexCount(&triePtr->branches);
+    assert(triePtr != NULL);
 
+    n = Ns_IndexCount(&triePtr->branches);
     if (n > 0) {
         int i;
 
@@ -888,6 +963,9 @@ TrieTruncBranch(Trie *triePtr, char *seq)
 {
     Branch *branchPtr;
 
+    assert(triePtr != NULL);
+    assert(seq != NULL);
+
     if (*seq != '\0') {
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
 
@@ -897,7 +975,7 @@ TrieTruncBranch(Trie *triePtr, char *seq)
          */
 
         if (branchPtr != NULL) {
-            return TrieTruncBranch(&branchPtr->trie, seq + strlen(seq) + 1);
+            return TrieTruncBranch(&branchPtr->trie, seq + strlen(seq) + 1U);
         } else {
             return -1;
         }
@@ -933,8 +1011,11 @@ TrieTruncBranch(Trie *triePtr, char *seq)
 static void
 TrieDestroy(Trie *triePtr)
 {
-    int n = Ns_IndexCount(&triePtr->branches);
+    int n;
 
+    assert(triePtr != NULL);
+
+    n = Ns_IndexCount(&triePtr->branches);
     if (n > 0) {
         int i;
 
@@ -975,10 +1056,17 @@ TrieDestroy(Trie *triePtr)
 static void *
 TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
 {
-    Node   *nodePtr = triePtr->node;
+    Node   *nodePtr;
     Branch *branchPtr;
     void   *data = NULL;
-    int     ldepth = *depthPtr;
+    int     ldepth;
+
+    assert(triePtr != NULL);
+    assert(seq != NULL);
+    assert(depthPtr != NULL);
+
+    nodePtr = triePtr->node;
+    ldepth = *depthPtr;
 
     if (nodePtr != NULL) {
         if ((*seq == '\0') && (nodePtr->dataNoInherit != NULL)) {
@@ -997,7 +1085,7 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         ldepth += 1;
         if (branchPtr != NULL) {
-            void *p = TrieFind(&branchPtr->trie, seq + strlen(seq) + 1, &ldepth);
+            void *p = TrieFind(&branchPtr->trie, seq + strlen(seq) + 1U, &ldepth);
             if (p != NULL) {
                 data = p;
                 *depthPtr = ldepth;
@@ -1031,9 +1119,14 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
 static void *
 TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 {
-    Node   *nodePtr = triePtr->node;
+    Node   *nodePtr;
     Branch *branchPtr;
     void   *data = NULL;
+
+    assert(triePtr != NULL);
+    assert(seq != NULL);
+
+    nodePtr = triePtr->node;
 
     if (*seq != '\0') {
 
@@ -1044,7 +1137,7 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieFindExact(&branchPtr->trie, seq + strlen(seq) + 1, flags);
+            data = TrieFindExact(&branchPtr->trie, seq + strlen(seq) + 1U, flags);
         }
     } else if (nodePtr != NULL) {
 
@@ -1089,9 +1182,14 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 static void *
 TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
 {
-    Node   *nodePtr = triePtr->node;
+    Node   *nodePtr;
     Branch *branchPtr;
     void   *data = NULL;
+
+    assert(triePtr != NULL);
+    assert(seq != NULL);
+
+    nodePtr = triePtr->node;
 
     if (*seq != '\0') {
 
@@ -1102,7 +1200,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieDelete(&branchPtr->trie, seq + strlen(seq) + 1, flags);
+            data = TrieDelete(&branchPtr->trie, seq + strlen(seq) + 1U, flags);
         }
     } else if (nodePtr != NULL) {
 
@@ -1162,6 +1260,9 @@ CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
 {
     int lcontainsr, rcontainsl;
 
+    assert(leftPtrPtr != NULL);
+    assert(rightPtrPtr != NULL);
+
     lcontainsr = Tcl_StringMatch((*rightPtrPtr)->filter,
                                  (*leftPtrPtr)->filter);
     rcontainsl = Tcl_StringMatch((*leftPtrPtr)->filter,
@@ -1202,6 +1303,9 @@ CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
 {
     int lcontainsr, rcontainsl;
 
+    assert(key != NULL);
+    assert(channelPtrPtr != NULL);
+
     lcontainsr = Tcl_StringMatch((*channelPtrPtr)->filter, key);
     rcontainsl = Tcl_StringMatch(key, (*channelPtrPtr)->filter);
     if (lcontainsr != 0 && rcontainsl != 0) {
@@ -1236,6 +1340,9 @@ CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
 static int
 CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
 {
+    assert(leftPtrPtr != NULL);
+    assert(rightPtrPtr != NULL);
+
     return strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter);
 }
 
@@ -1259,6 +1366,9 @@ CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
 static int
 CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr)
 {
+    assert(key != NULL);
+    assert(channelPtrPtr != NULL);
+
     return strcmp(key, (*channelPtrPtr)->filter);
 }
 
@@ -1342,13 +1452,13 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
     n = Ns_IndexCount(&juncPtr->byuse);
     for (i = 0; i < n; i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
-        TrieTruncBranch(&channelPtr->trie, seq);
+        (void) TrieTruncBranch(&channelPtr->trie, seq);
     }
 #else
     n = Ns_IndexCount(&juncPtr->byname);
     for (i = (n - 1); i >= 0; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
-        TrieTruncBranch(&channelPtr->trie, seq);
+        (void) TrieTruncBranch(&channelPtr->trie, seq);
     }
 #endif
 }
@@ -1402,7 +1512,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
      * beginning of the last word in the sequence.
      */
 
-    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
+    for (p = seq; p[l = strlen(p) + 1U] != '\0'; p += l) {
         depth++;
     }
 
@@ -1495,7 +1605,9 @@ JunctionFind(const Junction *juncPtr, char *seq, int fast)
      * After this loop, p will point at the last element in the sequence.
      */
     
-    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) ;
+    for (p = seq; p[l = strlen(p) + 1U] != '\0'; p += l) {
+	;
+    }
 
     /*
      * Check filters from most restrictive to least restrictive
@@ -1625,7 +1737,9 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
      * Set p to the last element of the sequence.
      */
 
-    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l);
+    for (p = seq; p[l = strlen(p) + 1U] != '\0'; p += l) {
+	;
+    }
 
     /*
      * First, loop through all the channels that have non-"*"
@@ -1716,7 +1830,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
      * depth to the number of elements in the sequence.
      */
 
-    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
+    for (p = seq; p[l = strlen(p) + 1U] != '\0'; p += l) {
         depth++;
     }
 
@@ -1740,7 +1854,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
             *p = '\0';
             data = TrieFindExact(&channelPtr->trie, seq, flags);
             if (data != NULL) {
-                TrieDelete(&channelPtr->trie, seq, flags);
+                (void) TrieDelete(&channelPtr->trie, seq, flags);
             }
         } else if (Tcl_StringMatch(p, channelPtr->filter)) {
 
@@ -1750,7 +1864,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
 
             data = TrieFindExact(&channelPtr->trie, seq, flags);
             if (data != NULL) {
-                TrieDelete(&channelPtr->trie, seq, flags);
+                (void) TrieDelete(&channelPtr->trie, seq, flags);
             }
         }
     }
@@ -1779,11 +1893,15 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
 static void
 MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
 {
-    CONST char *p;
+    const char *p;
     int         done;
     size_t      l;
 
-    Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1));
+    assert(dsPtr != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+
+    Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1U));
 
     /*
      * Loop over each directory in the URL and turn the slashes
@@ -1840,7 +1958,7 @@ PrintSeq(const char *seq)
 {
     const char *p;
 
-    for (p = seq; *p != '\0'; p += strlen(p) + 1) {
+    for (p = seq; *p != '\0'; p += strlen(p) + 1U) {
         if (p != seq) {
             fputs(", ", stderr);
         }
@@ -1848,3 +1966,12 @@ PrintSeq(const char *seq)
     }
 }
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

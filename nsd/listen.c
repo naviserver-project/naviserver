@@ -150,7 +150,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
             Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
             Tcl_SetHashValue(hPtr, tablePtr);
             status = Ns_SockCallback(sock, ListenCallback, tablePtr,
-				     NS_SOCK_READ | NS_SOCK_EXIT);
+				     (unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT);
         }
     }
     if (status == NS_OK) {
@@ -230,10 +230,11 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
     NS_SOCKET           newSock;
 
     tablePtr = arg;
-    if (why == NS_SOCK_EXIT) {
+    if (why == (unsigned int)NS_SOCK_EXIT) {
         ns_sockclose(sock);
         return NS_FALSE;
     }
+
     newSock = Ns_SockAccept(sock, NULL, NULL);
     if (newSock != NS_INVALID_SOCKET) {
         Tcl_HashEntry *hPtr;

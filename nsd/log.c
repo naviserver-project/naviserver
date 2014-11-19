@@ -145,7 +145,7 @@ static const char  *severityType = "ns:logseverity";
  */
 
 static struct {
-    const char *string;
+    const char *label;
     int         enabled;
 } severityConfig[640] = {
     { "Notice",  NS_TRUE  },
@@ -157,7 +157,7 @@ static struct {
     { "Dev",     NS_FALSE }
 };
 
-static const Ns_LogSeverity severityMaxCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
+static const Ns_LogSeverity severityMaxCount = (Ns_LogSeverity)(sizeof(severityConfig) / sizeof(severityConfig[0]));
 static Ns_LogSeverity severityIdx = 0;
 
 static Tcl_HashTable severityTable; /* Map severity names to indexes for Tcl. */
@@ -203,7 +203,7 @@ NsInitLog(void)
         snprintf(buf, sizeof(buf), "%d", i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
-        severityConfig[i].string = Tcl_GetHashKey(&severityTable, hPtr);
+        severityConfig[i].label = Tcl_GetHashKey(&severityTable, hPtr);
         severityConfig[i].enabled = 0;
     }
 
@@ -212,9 +212,9 @@ NsInitLog(void)
      */
 
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
-        (void) Ns_CreateLogSeverity(severityConfig[i].string);
+        (void) Ns_CreateLogSeverity(severityConfig[i].label);
 
-        strcpy(buf, severityConfig[i].string);
+        strcpy(buf, severityConfig[i].label);
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
     }
@@ -261,7 +261,7 @@ NsConfigLog(void)
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
     file = Ns_ConfigString(path, "serverlog", "nsd.log");
-    if (!Ns_PathIsAbsolute(file)) {
+    if (Ns_PathIsAbsolute(file) == 0) {
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0)) {
             Ns_HomePath(&ds, "logs", file, NULL);
@@ -329,7 +329,7 @@ Ns_CreateLogSeverity(const char *name)
     if (isNew != 0) {
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, INT2PTR(severity));
-        severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
+        severityConfig[severity].label = Tcl_GetHashKey(&severityTable, hPtr);
     } else {
 	severity = PTR2INT(Tcl_GetHashValue(hPtr));
     }
@@ -359,7 +359,7 @@ const char *
 Ns_LogSeverityName(Ns_LogSeverity severity)
 {
     if (severity < severityMaxCount) {
-        return severityConfig[severity].string;
+        return severityConfig[severity].label;
     }
     return "Unknown";
 }
@@ -446,7 +446,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      * or if severity level out of range(s).
      */
 
-    if (!Ns_LogSeverityEnabled(severity)) {
+    if (Ns_LogSeverityEnabled(severity) == 0) {
         return;
     }
 
@@ -487,7 +487,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      * Flush it out if not held
      */
 
-    if (!cachePtr->hold || severity == Fatal) {
+    if (cachePtr->hold == 0 || severity == Fatal) {
         LogFlush(cachePtr, filters, -1, 1, 1);
     }
 }
@@ -657,7 +657,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
     Ns_Time now;
 
     Ns_GetTime(&now);
-    return strncpy(timeBuf, LogTime(GetCache(), &now, gmt), 41);
+    return strncpy(timeBuf, LogTime(GetCache(), &now, gmt), 41u);
 }
 
 
@@ -713,7 +713,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
             gmtoff = ptm->tm_gmtoff / 60;
 #else
             gmtoff = -timezone / 60;
-            if (daylight && ptm->tm_isdst) {
+            if (daylight != 0 && ptm->tm_isdst != 0) {
                 gmtoff += 60;
             }
 #endif
@@ -929,10 +929,15 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         objPtr = Tcl_GetObjResult(interp);
         for (i = 0; i < severityIdx; i++) {
             if (Tcl_ListObjAppendElement(interp, objPtr,
-                    Tcl_NewStringObj(severityConfig[i].string, -1)) != TCL_OK) {
+                    Tcl_NewStringObj(severityConfig[i].label, -1)) != TCL_OK) {
                 return TCL_ERROR;
             }
         }
+        break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
         break;
     }
 
@@ -992,8 +997,8 @@ Ns_LogRoll(void)
     if (file != NULL) {
 	NsAsyncWriterQueueDisable(0);
 #ifdef _WIN32
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
+        ns_close(STDOUT_FILENO);
+        ns_close(STDERR_FILENO);
 #endif
 
         if (access(file, F_OK) == 0) {
@@ -1075,8 +1080,8 @@ LogOpen(void)
     oflags |= O_LARGEFILE;
 #endif
 
-    fd = open(file, oflags, 0644);
-    if (fd == -1) {
+    fd = ns_open(file, oflags, 0644);
+    if (fd == NS_INVALID_FD) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
         status = NS_ERROR;
@@ -1086,8 +1091,8 @@ LogOpen(void)
          * Route stderr to the file
          */
 
-        if (fd != STDERR_FILENO && dup2(fd, STDERR_FILENO) == -1) {
-            fprintf(stdout, "dup2(%s, STDERR_FILENO) failed: %s\n",
+        if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
+            fprintf(stdout, "ns_dup2(%s, STDERR_FILENO) failed: %s\n",
                     file, strerror(errno));
             status = NS_ERROR;
         }
@@ -1096,7 +1101,7 @@ LogOpen(void)
          * Route stdout to the file
          */
 
-        if (dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
+        if (ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
             Ns_Log(Error, "log: failed to route stdout to file: '%s'",
                    strerror(errno));
             status = NS_ERROR;
@@ -1107,7 +1112,7 @@ LogOpen(void)
          */
 
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-            close(fd);
+            ns_close(fd);
         }
     }
     return status;
@@ -1141,8 +1146,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
     assert(cachePtr != NULL);
     assert(listPtr != NULL);
 
-    while (ePtr != NULL && cachePtr->currEntry) {
-        char *log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
+    while (ePtr != NULL && cachePtr->currEntry != NULL) {
+        const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
         if (locked != 0) {
             Ns_MutexLock(&lock);
@@ -1155,7 +1160,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                     Ns_MutexUnlock(&lock);
                 }
                 status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
-                                       &ePtr->stamp, log, ePtr->length);
+                                       &ePtr->stamp, logString, ePtr->length);
                 if (locked != 0) {
                     Ns_MutexLock(&lock);
                     cPtr->refcnt--;
@@ -1170,7 +1175,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                      * use the default logfile sink.
                      */
                     LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
-                              &ePtr->stamp, log, ePtr->length);
+                              &ePtr->stamp, logString, ePtr->length);
                     break;
                 }
             }
@@ -1188,7 +1193,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
 
     if (trunc != 0) {
         if (count > 0) {
-            int length = (ePtr != NULL) ? ePtr->offset + ePtr->length : 0;
+	    int length = (ePtr != NULL) ? (int)(ePtr->offset + ePtr->length) : 0;
             cachePtr->count = (length != 0) ? nentry : 0;
             cachePtr->currEntry = ePtr;
             Ns_DStringSetLength(&cachePtr->buffer, length);
@@ -1255,7 +1260,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
      * Add the log message
      */
 
-    if (len == 0) {
+    if (len == 0u) {
         len = strlen(msg);
     }
     Ns_DStringNAppend(dsPtr, msg, (int)len);
@@ -1344,7 +1349,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
         char *err = "LogToTcl: can't get interpreter";
-        LogToFile(logfile, Error, stampPtr, err, 0);
+        LogToFile(logfile, Error, stampPtr, err, 0u);
         return NS_ERROR;
     }
 
@@ -1512,7 +1517,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
                                  Tcl_GetString(objPtr),
                                  "\": should be one of: ", NULL);
                 for (i = 0; i < severityIdx; i++) {
-                    Tcl_AppendResult(interp, severityConfig[i].string, " ", NULL);
+                    Tcl_AppendResult(interp, severityConfig[i].label, " ", NULL);
                 }
                 return TCL_ERROR;
             }
@@ -1554,3 +1559,12 @@ Ns_SetNsLogProc(Ns_LogProc *UNUSED(procPtr))
 {
     Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

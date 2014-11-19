@@ -50,7 +50,7 @@ static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
 
 static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength);
 static void SetMultipartRangeHeader(const Ns_Conn *conn);
-static int AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
+static int AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                                       off_t start, off_t end, size_t objLength);
 static int AppendMultipartRangeTrailer(Ns_DString *dsPtr);
 
@@ -132,7 +132,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
     }
 
     maxranges = (*nbufsPtr / 2) - 1;
-    ranges = alloca(sizeof(Range) * maxranges);
+    ranges = alloca(sizeof(Range) * (size_t)maxranges);
 
     rangeCount = ParseRangeOffsets(conn, objLength, ranges, maxranges);
     if (rangeCount < 1) {
@@ -150,7 +150,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
 
         start = ranges[0].start;
         end   = ranges[0].end;
-        len   = (end - start) + 1;
+        len   = (size_t)((end - start) + 1);
 
         responseLength = Ns_SetFileVec(bufs, 0, fd, data, start, len);
         *nbufsPtr = 1;
@@ -167,21 +167,21 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
      */
 
     dsbase = 0;
-    len = 0;
+    len = 0U;
 
     for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
 
         start = ranges[i].start;
         end   = ranges[i].end;
 
-        len += AppendMultipartRangeHeader(dsPtr, type, start, end, objLength);
+        len += (size_t)AppendMultipartRangeHeader(dsPtr, type, start, end, objLength);
         dsbase += (off_t)Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
         /* Combine the footer with the next header. */
         Ns_DStringAppend(dsPtr, "\r\n");
-        len = 2;
+        len = 2U;
     }
-    len += AppendMultipartRangeTrailer(dsPtr);
+    len += (size_t)AppendMultipartRangeTrailer(dsPtr);
     Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
     /*
@@ -189,7 +189,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
      * the rebased trailer.
      */
 
-    responseLength = 0;
+    responseLength = 0U;
 
     for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
 
@@ -198,7 +198,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
                                         bufs[v].offset, bufs[v].length);
 
         start = ranges[i].start;
-        len   = (ranges[i].end - start) + 1;
+        len   = (size_t)((ranges[i].end - start) + 1);
 
         responseLength += Ns_SetFileVec(bufs, v + 1, fd, data, start, len);
     }
@@ -457,7 +457,7 @@ SetMultipartRangeHeader(const Ns_Conn *conn)
  */
 
 static int
-AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
+AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                            off_t start, off_t end, size_t objLength)
 {
     int origlen = dsPtr->length;

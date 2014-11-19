@@ -473,7 +473,7 @@ Ns_InfoTag(void)
 int
 NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         opt;
+    int         opt, result;
     NsInterp    *itPtr = arg;
     char        *server;
     const char  *elog;
@@ -645,6 +645,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     case IServersIdx:
         Tcl_DStringResult(interp, &nsconf.servers);
         return TCL_OK;
+
+    default:
+        /* cases handled below */
+        break;
     }
 
     /*
@@ -657,6 +661,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     }
 
     server = itPtr->servPtr->server;
+    result = TCL_OK;
 
     switch (opt) {
     case IPageDirIdx:
@@ -664,45 +669,48 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
         NsPageRoot(&ds, itPtr->servPtr, NULL);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IServerIdx:
         Tcl_SetResult(interp, server, TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case ITclLibIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->servPtr->tcl.library, -1));
-        return TCL_OK;
+        break;
 
     case IFiltersIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? filters", NULL);
         NsGetFilters(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case ITracesIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? traces", NULL);
         NsGetTraces(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IRequestProcsIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? requestprocs", NULL);
         NsGetRequestProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IUrl2FileIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? url2file", NULL);
         NsGetUrl2FileProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
+
+    default:
+        Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
+        result = TCL_ERROR;
+        break;
     }
 
-    Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
-
-    return TCL_ERROR;
+    return result;
 }
 
 
@@ -753,7 +761,16 @@ NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv
 
 
 static void
-ThreadArgProc(Tcl_DString *dsPtr, const void *proc, void *arg)
+ThreadArgProc(Tcl_DString *dsPtr, Ns_ThreadProc proc, void *arg)
 {
     Ns_GetProcInfo(dsPtr, (Ns_Callback *)proc, arg);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

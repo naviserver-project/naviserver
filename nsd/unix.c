@@ -295,7 +295,7 @@ NsSendSignal(int sig)
  */
 
 int
-NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
+NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
     /*
      * Open the file according to map mode
@@ -303,17 +303,17 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
 
     switch (mode) {
     case NS_MMAP_WRITE:
-        mapPtr->handle = open(path, O_BINARY | O_RDWR);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDWR, 0);
         break;
     case NS_MMAP_READ:
-        mapPtr->handle = open(path, O_BINARY | O_RDONLY);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDONLY, 0);
         break;
     default:
         return NS_ERROR;
     }
 
     if (mapPtr->handle == -1) {
-        Ns_Log(Warning, "mmap: open(%s) failed: %s", path, strerror(errno));
+        Ns_Log(Warning, "mmap: ns_open(%s) failed: %s", path, strerror(errno));
         return NS_ERROR;
     }
 
@@ -322,14 +322,14 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
      * per default.
      */
 
-    mapPtr->addr = mmap(0, (size_t)size, mode, MAP_SHARED, mapPtr->handle, 0);
+    mapPtr->addr = mmap(0, size, mode, MAP_SHARED, mapPtr->handle, 0);
     if (mapPtr->addr == MAP_FAILED) {
         Ns_Log(Warning, "mmap: mmap(%s) failed: %s", path, strerror(errno));
-        close(mapPtr->handle);
+        ns_close(mapPtr->handle);
         return NS_ERROR;
     }
 
-    close(mapPtr->handle);
+    ns_close(mapPtr->handle);
     mapPtr->size = size;
 
     return NS_OK;
@@ -355,7 +355,7 @@ NsMemMap(const char *path, int size, int mode, FileMap *mapPtr)
 void
 NsMemUmap(const FileMap *mapPtr)
 {
-    munmap(mapPtr->addr, (size_t)mapPtr->size);
+    munmap(mapPtr->addr, mapPtr->size);
 }
 
 
@@ -779,7 +779,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     FD_ZERO(&efds);
 
     for (i = 0; i < nfds; ++i) {
-        if (fds[i].fd == -1) {
+        if (fds[i].fd == NS_INVALID_FD) {
             continue;
         }
         if (fds[i].fd > n) {
@@ -808,7 +808,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     }
     for (i = 0; i < nfds; ++i) {
         fds[i].revents = 0;
-        if (fds[i].fd == -1) {
+        if (fds[i].fd == NS_INVALID_FD) {
             continue;
         }
         if (FD_ISSET(fds[i].fd, &ifds)) {
@@ -851,3 +851,12 @@ Abort(int signal)
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

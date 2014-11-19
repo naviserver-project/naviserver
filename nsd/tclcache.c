@@ -646,7 +646,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     Ns_CacheUnlock(cPtr->cache);
 
     if (varNameObj != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(resultObj != NULL));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(resultObj != NULL));
 	if (resultObj != NULL) {
 	    Tcl_ObjSetVar2(interp, varNameObj, NULL, resultObj, 0);
 	}
@@ -731,7 +731,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         }
         Tcl_DStringEndSublist(&ds);
     } else {
-        Ns_CacheStats(cache, &ds);
+        (void) Ns_CacheStats(cache, &ds);
     }
     if (reset != 0) {
         Ns_CacheResetStats(cache);
@@ -807,21 +807,21 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
 static void
 SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost)
 {
-    char    *string;
+    char    *bytes;
     int      len;
     size_t   length;
     Ns_Time  t;
 
-    string = Tcl_GetStringFromObj(valObj, &len);
+    bytes = Tcl_GetStringFromObj(valObj, &len);
     assert(len >= 0);
     length = (size_t)len;
 
     if (cPtr->maxEntry > 0 && length > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
-      char *value = ns_malloc(length + 1U);
+        char *value = ns_malloc(length + 1u);
 
-      memcpy(value, string, length);
+        memcpy(value, bytes, length);
         value[length] = '\0';
         if (expPtr == NULL
             && (cPtr->expires.sec > 0 || cPtr->expires.usec > 0)) {
@@ -879,3 +879,12 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

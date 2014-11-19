@@ -85,10 +85,10 @@ static Ns_Mutex      lock;            /* Lock around table and Progress struct. 
 void
 NsConfigProgress(void)
 {
-    progressMinSize =
+    progressMinSize = (size_t)
         Ns_ConfigIntRange(NS_CONFIG_PARAMETERS, "progressminsize", 0, 0, INT_MAX);
 
-    if (progressMinSize > 0) {
+    if (progressMinSize > 0u) {
         Ns_SlsAlloc(&slot, ResetProgress);
         Tcl_InitHashTable(&urlTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
@@ -123,7 +123,7 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         Tcl_WrongNumArgs(interp, 1, objv, "url");
         return TCL_ERROR;
     }
-    if (progressMinSize > 0) {
+    if (progressMinSize > 0u) {
         Tcl_HashEntry *hPtr;
         char          *url = Tcl_GetString(objv[1]);
 
@@ -137,9 +137,9 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             resObj = Tcl_GetObjResult(interp);
 
             if (Tcl_ListObjAppendElement(interp, resObj,
-                                         Tcl_NewWideIntObj(pPtr->current)) != TCL_OK
+                                         Tcl_NewWideIntObj((Tcl_WideInt)pPtr->current)) != TCL_OK
                 || Tcl_ListObjAppendElement(interp, resObj,
-                                            Tcl_NewWideIntObj(pPtr->size)) != TCL_OK) {
+                                            Tcl_NewWideIntObj((Tcl_WideInt)pPtr->size)) != TCL_OK) {
                 Ns_MutexUnlock(&lock);
                 return TCL_ERROR;
             }
@@ -192,7 +192,7 @@ NsUpdateProgress(Ns_Sock *sock)
     reqPtr  = sockPtr->reqPtr;
     request = &reqPtr->request;
 
-    if (progressMinSize > 0
+    if (progressMinSize > 0u
         && request->url != NULL
         && sockPtr->reqPtr->length > progressMinSize) {
         Progress *pPtr = Ns_SlsGet(&slot, sock);
@@ -296,8 +296,17 @@ ResetProgress(void *arg)
         Ns_MutexLock(&lock);
         Tcl_DeleteHashEntry(pPtr->hPtr);
         pPtr->hPtr = NULL;
-        pPtr->current = 0;
-        pPtr->size = 0;
+        pPtr->current = 0u;
+        pPtr->size = 0u;
         Ns_MutexUnlock(&lock);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

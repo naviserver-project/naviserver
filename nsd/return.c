@@ -324,7 +324,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
  */
 
 void
-Ns_ConnSetLengthHeader(const Ns_Conn *conn, size_t length, int streaming)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int streaming)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -557,13 +557,13 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
      * Deprecated
      */
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteVData(conn, NULL, 0, 0U);
+    (void) Ns_ConnWriteVData(conn, NULL, 0, 0U);
 
     return connPtr->nContentSent;
 }
 
 void
-Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, const char *type, size_t length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *type, size_t length)
 {
     /* 
      * Deprecated
@@ -715,9 +715,9 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
 {
     int result;
 
-    if (type != NULL) {
-        Ns_ConnSetTypeHeader(conn, type);
-    }
+    assert(type != NULL);
+
+    Ns_ConnSetTypeHeader(conn, type);
     if (len < 0) {
         len = (data != NULL) ? (ssize_t)strlen(data) : 0;
     }
@@ -915,7 +915,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	 * - iovec based requests: all range request up to 32 ranges.
 	 * - fd based requests: 0 or 1 range requests
 	 */
-	if (fd == -1) {
+	if (fd == NS_INVALID_FD) {
 	    int nvbufs;
 	    struct iovec vbuf[32];
 
@@ -941,7 +941,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	    }
 	} else if (rangeCount < 2) {
 	    if (rangeCount == 1) {
-		lseek(fd, bufs[0].offset, SEEK_SET);
+		ns_lseek(fd, bufs[0].offset, SEEK_SET);
 		len = bufs[0].length;
 	    }
 	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {
@@ -972,3 +972,12 @@ ReturnRange(Ns_Conn *conn, const char *type,
 
     return result;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

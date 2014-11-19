@@ -552,7 +552,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              */
 
             jobPtr = NewJob((itPtr->servPtr != NULL) ? itPtr->servPtr->server : NULL,
-                            queue->name, (unsigned)jobType, script);
+                            queue->name, jobType, script);
             Ns_GetTime(&jobPtr->startTime);
             if (tp.req == THREADPOOL_REQ_STOP
                 || queue->req == QUEUE_REQ_DELETE) {
@@ -1147,7 +1147,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             Tcl_SetObjResult(interp, tpFieldList);
         }
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
+
     return code;
 }
 
@@ -1267,7 +1273,7 @@ JobThread(void *UNUSED(arg))
          */
 
         if (jobPtr->type == JOB_DETACHED && jobPtr->code != TCL_OK) {
-            Ns_TclLogError(interp);
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: detached job)");
         }
 
         /*
@@ -2132,3 +2138,12 @@ SetupJobDefaults(void)
         tp.timeout = nsconf.job.timeout;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

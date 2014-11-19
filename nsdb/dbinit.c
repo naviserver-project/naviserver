@@ -272,8 +272,8 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
      * Cleanup the handle.
      */
 
-    Ns_DbFlush(handle);
-    Ns_DbResetHandle(handle);
+    (void) Ns_DbFlush(handle);
+    (void) Ns_DbResetHandle(handle);
 
     Ns_DStringFree(&handle->dsExceptionMsg);
     handle->cExceptionCode[0] = '\0';
@@ -289,7 +289,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     } else {
         handlePtr->atime = now;
     }
-    IncrCount(poolPtr, -1);
+    (void) IncrCount(poolPtr, -1);
     Ns_MutexLock(&poolPtr->lock);
     ReturnHandle(handlePtr);
     if (poolPtr->waiting != 0) {
@@ -427,7 +427,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 	Ns_Log(Error, "dbinit: db handle limit exceeded: "
 	       "thread already owns %d handle%s from pool '%s'",
 	       ngot, ngot == 1 ? "" : "s", pool);
-	IncrCount(poolPtr, -nwant);
+	(void) IncrCount(poolPtr, -nwant);
 	return NS_ERROR;
     }
     
@@ -501,7 +501,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 	    Ns_CondSignal(&poolPtr->getCond);
 	}
 	Ns_MutexUnlock(&poolPtr->lock);
-	IncrCount(poolPtr, -nwant);
+	(void) IncrCount(poolPtr, -nwant);
     }
     return status;
 }
@@ -687,8 +687,8 @@ NsDbInitServer(char *server)
 	    }
 	    ns_free(toDelete);
 	}
-    	sdataPtr->allowed = ns_malloc((size_t)(ds.length + 1));
-    	memcpy(sdataPtr->allowed, ds.string, (size_t)(ds.length + 1));
+    	sdataPtr->allowed = ns_malloc((size_t)ds.length + 1u);
+    	memcpy(sdataPtr->allowed, ds.string, (size_t)ds.length + 1u);
     	Ns_DStringFree(&ds);
     }
 }
@@ -1088,8 +1088,8 @@ CreatePool(const char *pool, const char *path, const char *driver)
 	handlePtr->poolname = pool;
 	ReturnHandle(handlePtr);
     }
-    Ns_ScheduleProc(CheckPool, poolPtr, 0,
-                    Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
+    (void) Ns_ScheduleProc(CheckPool, poolPtr, 0,
+			   Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
     return poolPtr;
 }
 
@@ -1162,7 +1162,7 @@ IncrCount(const Pool *poolPtr, int incr)
 	Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
 	Ns_TlsSet(&tls, tablePtr);
     }
-    hPtr = Tcl_CreateHashEntry(tablePtr, (char *) poolPtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(tablePtr, (const char *) poolPtr, &isNew);
     if (isNew != 0) {
 	prev = 0;
     } else {

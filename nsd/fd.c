@@ -97,17 +97,17 @@ NsInitFd(void)
      * Ensure fd 0, 1, and 2 are open on at least /dev/null.
      */
 
-    fd = open(DEVNULL, O_RDONLY);
+    fd = ns_open(DEVNULL, O_RDONLY, 0);
     if (fd > 0) {
-        close(fd);
+        ns_close(fd);
     }
-    fd = open(DEVNULL, O_WRONLY);
+    fd = ns_open(DEVNULL, O_WRONLY, 0);
     if (fd > 0 && fd != 1) {
-        close(fd);
+        ns_close(fd);
     }
-    fd = open(DEVNULL, O_WRONLY);
+    fd = ns_open(DEVNULL, O_WRONLY, 0);
     if (fd > 0 && fd != 2) {
-        close(fd);
+        ns_close(fd);
     }
 
 #ifndef _WIN32
@@ -162,12 +162,12 @@ NsInitFd(void)
      * Open a fd on /dev/null which can be later re-used.
      */
 
-    devNull = open(DEVNULL, O_RDWR);
+    devNull = ns_open(DEVNULL, O_RDWR, 0);
     if (devNull < 0) {
-        Ns_Fatal("fd: open(%s) failed: %s", DEVNULL, strerror(errno));
+        Ns_Fatal("fd: ns_open(%s) failed: %s", DEVNULL, strerror(errno));
     }
-    Ns_DupHigh(&devNull);
-    Ns_CloseOnExec(devNull);
+    (void) Ns_DupHigh(&devNull);
+    (void) Ns_CloseOnExec(devNull);
 }
 
 
@@ -274,9 +274,9 @@ Ns_DupHigh(int *fdPtr)
         } else if (fcntl(nfd, F_SETFD, flags) < 0) {
             Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_SETFD, %d): '%s'",
                    nfd, flags, strerror(errno));
-            close(nfd);
+            ns_close(nfd);
         } else {
-            close(ofd);
+            ns_close(ofd);
             *fdPtr = nfd;
         }
     }
@@ -338,7 +338,7 @@ Ns_GetTemp(void)
 #ifdef _WIN32
         fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
 #else
-        fd = open(path, flags, 0600);
+        fd = ns_open(path, flags, 0600);
 #endif
     } while (fd < 0 && trys++ < 10 && errno == EEXIST);
 
@@ -347,8 +347,8 @@ Ns_GetTemp(void)
                path, strerror(errno));
 #ifndef _WIN32
     } else {
-        Ns_DupHigh(&fd);
-        Ns_CloseOnExec(fd);
+        (void) Ns_DupHigh(&fd);
+        (void) Ns_CloseOnExec(fd);
         if (unlink(path) != 0) {
             Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
         }
@@ -381,8 +381,8 @@ Ns_ReleaseTemp(int fd)
 {
     Tmp *tmpPtr;
 
-    if (lseek(fd, 0, SEEK_SET) != 0 || ftruncate(fd, 0) != 0) {
-        close(fd);
+    if (ns_lseek(fd, 0, SEEK_SET) != 0 || ftruncate(fd, 0) != 0) {
+        ns_close(fd);
     } else {
         tmpPtr = ns_malloc(sizeof(Tmp));
         tmpPtr->fd = fd;
@@ -392,3 +392,12 @@ Ns_ReleaseTemp(int fd)
         Ns_MutexUnlock(&lock);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

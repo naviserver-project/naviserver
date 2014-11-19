@@ -310,7 +310,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	if (nhandles == 1) {
     	    handlesPtrPtr = &handlePtr;
 	} else {
-	    handlesPtrPtr = ns_malloc(nhandles * sizeof(Ns_DbHandle *));
+	    handlesPtrPtr = ns_malloc((size_t)nhandles * sizeof(Ns_DbHandle *));
 	}
 	result = Ns_DbPoolTimedGetMultipleHandles(handlesPtrPtr, pool,
     	    	                                  nhandles, timeout);
@@ -474,6 +474,10 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
       	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(tmpbuf, -1));
             break;
+
+        default:
+            /* should not happen */
+            assert(cmd && 0);
         }
         break;
 
@@ -586,6 +590,10 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
             }
             break;
+
+        default:
+            /* should not happen */
+            assert(cmd && 0);
         }
         break;
 
@@ -643,6 +651,10 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	    }
 	    break;
 	}
+
+    default:
+        /* should not happen */
+        assert(cmd && 0);
     }
 
     return TCL_OK;
@@ -925,7 +937,7 @@ loopstart:
                 continue;
             } else if (strchr(delimiter,c) != NULL) {
                 if (quoted == 0) {
-                    Ns_StrTrimRight(elem.string);
+                    (void) Ns_StrTrimRight(elem.string);
                 }
 		Tcl_DStringAppendElement(&cols, elem.string);
                 Tcl_DStringTrunc(&elem, 0);
@@ -938,7 +950,7 @@ loopstart:
         }
     }
     if (quoted == 0) {
-        Ns_StrTrimRight(elem.string);
+        (void) Ns_StrTrimRight(elem.string);
     }
     if (blank == 0) {
 	Tcl_DStringAppendElement(&cols, elem.string);
@@ -1080,3 +1092,12 @@ FreeData(ClientData clientData, Tcl_Interp *UNUSED(interp))
     Tcl_DeleteHashTable(&idataPtr->dbs);
     ns_free(idataPtr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

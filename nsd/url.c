@@ -57,10 +57,10 @@
  *----------------------------------------------------------------------
  */
 
-CONST char *
-Ns_RelativeUrl(CONST char *url, CONST char *location)
+const char *
+Ns_RelativeUrl(const char *url, const char *location)
 {
-    CONST char *v;
+    const char *v;
 
     if (url == NULL || location == NULL) {
         return NULL;
@@ -299,24 +299,31 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
  */
 
 int
-Ns_AbsoluteUrl(Ns_DString *dsPtr, CONST char *url, CONST char *base)
+Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
 {
     Ns_DString  urlDs, baseDs;
     char       *proto, *host, *port, *path, *tail;
     char       *bproto, *bhost, *bport, *bpath, *btail;
-    int        status = NS_OK;
+    int        status;
 
     /*
      * Copy the URL's to allow Ns_ParseUrl to destory them.
      */
 
     Ns_DStringInit(&urlDs);
-    Ns_DStringAppend(&urlDs, url);
-    Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
-
     Ns_DStringInit(&baseDs);
+
+    Ns_DStringAppend(&urlDs, url);
+    status = Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
+    if (status != TCL_OK) {
+        goto done;
+    }
+
     Ns_DStringAppend(&baseDs, base);
-    Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);
+    status = Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);
+    if (status != TCL_OK) {
+        goto done;
+    }
 
     if (bproto == NULL || bhost == NULL || bpath == NULL) {
         status = NS_ERROR;
@@ -347,3 +354,12 @@ done:
 
     return status;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

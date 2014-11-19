@@ -204,7 +204,7 @@ Ns_ConnContentLength(const Ns_Conn *conn)
 char *
 Ns_ConnContent(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     return connPtr->reqPtr->content;
 }
@@ -359,7 +359,7 @@ Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+size_t
 Ns_ConnContentSent(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -384,7 +384,7 @@ Ns_ConnContentSent(Ns_Conn *conn)
  */
 
 void
-Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length)
+Ns_ConnSetContentSent(Ns_Conn *conn, size_t length)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -408,7 +408,7 @@ Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+ssize_t
 Ns_ConnResponseLength(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -462,7 +462,7 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
 {
     Conn *connPtr = (Conn *) conn;
 
-    connPtr->reqPtr->port = ntohs(saPtr->sin_port);
+    connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
     strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr));
     return connPtr->reqPtr->peer;
 }
@@ -1073,8 +1073,8 @@ Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 {
     char *hdr;
 
-    if ((hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since")) != NULL
-            && Ns_ParseHttpTime(hdr) < since) {
+    hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since");
+    if (hdr != NULL && Ns_ParseHttpTime(hdr) < since) {
         return NS_FALSE;
     }
     return NS_TRUE;
@@ -1384,7 +1384,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	}
 
         if (objc == 2) {
-            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length > 0) {
+            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length > 0u) {
                 Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
 							     (int)connPtr->reqPtr->length));
             }
@@ -1398,7 +1398,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CContentLengthIdx:
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(conn->contentLength));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)conn->contentLength));
         break;
 
     case CContentFileIdx:
@@ -1518,10 +1518,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
         filePtr = Tcl_GetHashValue(hPtr);
-        if (opt == CFileOffIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->off));
-        } else if (opt == CFileLenIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->len));
+        if (opt == (int)CFileOffIdx) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)filePtr->off));
+        } else if (opt == (int)CFileLenIdx) {
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)filePtr->len));
         } else {
             Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
         }
@@ -1562,7 +1562,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CPortIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(request->port));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int)request->port));
         break;
 
     case CUrlIdx:
@@ -1583,7 +1583,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CLocationIdx:
         Ns_DStringInit(&ds);
-        Ns_ConnLocationAppend(conn, &ds);
+        (void) Ns_ConnLocationAppend(conn, &ds);
         Tcl_DStringResult(interp, &ds);
         break;
 
@@ -1636,7 +1636,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CCloseIdx:
-	Ns_ConnClose(conn);
+	(void) Ns_ConnClose(conn);
         break;
 
     case CChannelIdx:
@@ -1650,7 +1650,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CContentSentLenIdx:
         if (objc == 2) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(connPtr->nContentSent));
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)connPtr->nContentSent));
         } else if (objc == 3) {
 	    Tcl_WideInt sent;
             if (Tcl_GetWideIntFromObj(interp, objv[2], &sent) != TCL_OK) {
@@ -1664,8 +1664,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	break;
 
     case CZipacceptedIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0U));
 	break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
 
     }
 
@@ -1694,6 +1699,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
+    int result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
@@ -1705,9 +1711,9 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
 			      objv[1], objc - 2, objv + 2);
-    Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
+    result = Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1760,7 +1766,10 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     if (GetChan(interp, chanName, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_Flush(chan);
+    if (Tcl_Flush(chan) != TCL_OK) {
+	Ns_TclPrintfResult(interp, "flush returned error: %s", strerror(Tcl_GetErrno()));
+	return TCL_ERROR;
+    }
     reqPtr = ((Conn *)itPtr->conn)->reqPtr;
     if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
         toCopy = (int)reqPtr->avail;
@@ -1797,7 +1806,7 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, void *arg)
     Tcl_Interp *interp = Ns_GetConnInterp(conn);
 
     if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != NS_OK) {
-        Ns_TclLogError(interp);
+	(void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
         return NULL;
     }
 
@@ -1883,7 +1892,7 @@ GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *o
                          NULL);
         return TCL_ERROR;
     }
-    if (len < 0 || (size_t)len > (connPtr->reqPtr->length - off)) {
+    if (len < 0 || (size_t)len > (connPtr->reqPtr->length - (size_t)off)) {
         Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[1]),
                          NULL);
         return TCL_ERROR;
@@ -1958,12 +1967,26 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
         if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0U) {
             conn->flags |= NS_CONN_SKIPHDRS;
         } else {
-            Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
+            if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != TCL_OK) {
+		Ns_Log(Error, "make channel: error writing headers");
+	    }
         }
     }
 
-    Ns_SockSetBlocking(connPtr->sockPtr->sock);
+    if (Ns_SockSetBlocking(connPtr->sockPtr->sock) != TCL_OK) {
+	Ns_Log(Error, "make channel: error while making channel blocking");
+    }
+
     connPtr->sockPtr->sock = NS_INVALID_SOCKET;
 
     return chan;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

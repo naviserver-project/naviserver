@@ -38,13 +38,15 @@
 
 #define ISSLASH(c)  ((c) == '/' || (c) == '\\')
 
+#define NSD_STRIP_WWW                  0x01U
+#define NSD_STRIP_PORT                 0x02U
 
 /*
  * Local functions defined in this file.
  */
 
 static Ns_ServerInitProc ConfigServerVhost;
-static int ConfigServerVhost(CONST char *server)
+static int ConfigServerVhost(const char *server)
     NS_GNUC_NONNULL(1);
 
 static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
@@ -83,7 +85,7 @@ ConfigServerVhost(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
-    CONST char *path;
+    const char *path;
 
     assert(server != NULL);
 
@@ -108,7 +110,7 @@ ConfigServerVhost(const char *server)
 
     if (servPtr->vhost.enabled == NS_TRUE) {
         Ns_DStringInit(&ds);
-        NsPageRoot(&ds, servPtr, "www.example.com:80");
+        (void) NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
         Ns_DStringFree(&ds);
     }
@@ -134,7 +136,7 @@ ConfigServerVhost(const char *server)
  */
 
 int
-Ns_PathIsAbsolute(CONST char *path)
+Ns_PathIsAbsolute(const char *path)
 {
     assert(path != NULL);
 
@@ -167,7 +169,7 @@ Ns_PathIsAbsolute(CONST char *path)
  */
 
 char *
-Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
+Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
 {
     char end;
     register char *src, *slash;
@@ -304,9 +306,9 @@ Ns_MakePath(Ns_DString *dsPtr, ...)
  */
 
 char *
-Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels)
+Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
 {
-    CONST char *p = string;
+    const char *p = path;
     int         i;
 
     for (i = 0; i < levels; ++i) {
@@ -485,7 +487,7 @@ Ns_HomePathExists(char *path, ...)
  */
 
 char *
-Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
+Ns_ServerPath(Ns_DString *dest, const char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
@@ -495,7 +497,7 @@ Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
     if (servPtr == NULL) {
         return NULL;
     }
-    ServerRoot(dest, servPtr, NULL);
+    (void) ServerRoot(dest, servPtr, NULL);
     va_start(ap, server);
     path = MakePath(dest, &ap);
     va_end(ap);
@@ -521,7 +523,7 @@ Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
  */
 
 char *
-Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
+Ns_PagePath(Ns_DString *dest, const char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
@@ -531,7 +533,7 @@ Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
     if (servPtr == NULL) {
         return NULL;
     }
-    NsPageRoot(dest, servPtr, NULL);
+    (void) NsPageRoot(dest, servPtr, NULL);
     va_start(ap, server);
     path = MakePath(dest, &ap);
     va_end(ap);
@@ -559,7 +561,7 @@ Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
  */
 
 char *
-Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...)
+Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...)
 {
     va_list         ap;
     char           *path;
@@ -587,7 +589,7 @@ Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...)
  *      for a server.
  *
  * Results:
- *      None.
+ *      Result code.
  *
  * Side effects:
  *      None.
@@ -635,7 +637,7 @@ NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host)
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
         path = Ns_DStringAppend(dest, servPtr->fastpath.pagedir);
     } else {
-        ServerRoot(dest, servPtr, host);
+	(void) ServerRoot(dest, servPtr, host);
         path = Ns_MakePath(dest, servPtr->fastpath.pagedir, NULL);
     }
 
@@ -826,6 +828,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
 {
     NsServer       *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
+    int             result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
@@ -837,9 +840,9 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclServerRoot, objv[1],
                               objc - 2, objv + 2);
-    Ns_SetServerRootProc(NsTclServerRoot, cbPtr);
+    result = Ns_SetServerRootProc(NsTclServerRoot, cbPtr);
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -860,7 +863,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  */
 
 char *
-NsTclServerRoot(Ns_DString *dest, CONST char *host, void *arg)
+NsTclServerRoot(Ns_DString *dest, const char *host, void *arg)
 {
     Ns_TclCallback *cbPtr = arg;
 
@@ -985,9 +988,9 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         Ns_DStringInit(&ds);
         safehost = Ns_DStringAppend(&ds, rawHost);
 
-        Ns_StrToLower(safehost);
+        (void) Ns_StrToLower(safehost);
         if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0U
-            && strncmp(safehost, "www.", 4) == 0) {
+            && strncmp(safehost, "www.", 4U) == 0) {
             safehost = &safehost[4];
         }
         if ((servPtr->vhost.opts & NSD_STRIP_PORT)
@@ -1019,3 +1022,12 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 
     return path;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

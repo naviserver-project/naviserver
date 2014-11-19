@@ -172,7 +172,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
             Ns_GetProcInfo(&ds, (Ns_Callback *)cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
             if (deallocInterp != 0) {
-                Ns_TclLogError(interp);
+		(void) Ns_TclLogErrorInfo(interp, NULL);
             }
         } else if (result != NULL) {
             Ns_DStringAppend(result, Tcl_GetStringResult(interp));
@@ -268,7 +268,7 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     }
     cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1], 
                               objc - 2, objv + 2);
-    (*atProc)(Ns_TclCallbackProc, cbPtr);
+    (void) (*atProc)(Ns_TclCallbackProc, cbPtr);
 
     return TCL_OK;
 }
@@ -332,8 +332,7 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc, 
 			      objv[1], objc - 2, objv + 2);
-    Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
-
+    (void) Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
     return TCL_OK;
 }
 

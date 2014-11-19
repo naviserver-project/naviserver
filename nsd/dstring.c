@@ -122,9 +122,9 @@ Ns_DStringExport(Ns_DString *dsPtr)
  */
 
 char *
-Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *string)
+Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *bytes)
 {
-    return Ns_DStringNAppend(dsPtr, string, (int) strlen(string) + 1);
+    return Ns_DStringNAppend(dsPtr, bytes, (int) strlen(bytes) + 1);
 }
 
 
@@ -177,7 +177,8 @@ char *
 Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
 {
     char    *buf;
-    int      origLength, newLength, bufLength, result;
+    int      origLength, newLength, result;
+    size_t   bufLength;
     va_list  ap;
 
     origLength = dsPtr->length;
@@ -202,7 +203,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
      */
 
     buf = dsPtr->string + origLength;
-    bufLength = newLength - origLength;
+    bufLength = (size_t)newLength - (size_t)origLength;
 
     va_copy(ap, apSrc);
     result = vsnprintf(buf, bufLength, fmt, ap);
@@ -404,25 +405,25 @@ Ns_DStringTrunc(Ns_DString *dsPtr, int length)
 #undef Ns_DStringNAppend
 
 char *
-Ns_DStringNAppend(Ns_DString *dsPtr, const char *string, int length)
+Ns_DStringNAppend(Ns_DString *dsPtr, const char *bytes, int length)
 {
-    return Tcl_DStringAppend(dsPtr, string, length);
+    return Tcl_DStringAppend(dsPtr, bytes, length);
 }
 
 #undef Ns_DStringAppend
 
 char *
-Ns_DStringAppend(Ns_DString *dsPtr, const char *string)
+Ns_DStringAppend(Ns_DString *dsPtr, const char *bytes)
 {
-    return Tcl_DStringAppend(dsPtr, string, -1);
+    return Tcl_DStringAppend(dsPtr, bytes, -1);
 }
 
 #undef Ns_DStringAppendElement
 
 char *
-Ns_DStringAppendElement(Ns_DString *dsPtr, const char *string)
+Ns_DStringAppendElement(Ns_DString *dsPtr, const char *bytes)
 {
-    return Tcl_DStringAppendElement(dsPtr, string);
+    return Tcl_DStringAppendElement(dsPtr, bytes);
 }
 
 #undef Ns_DStringLength
@@ -440,3 +441,12 @@ Ns_DStringValue(const Ns_DString *dsPtr)
 {
     return dsPtr->string;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

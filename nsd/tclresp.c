@@ -241,7 +241,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      */
 
     if (objc > (int)(sizeof(iov) / sizeof(struct iovec))) {
-        sbufs = ns_calloc(objc, sizeof(struct iovec));
+        sbufs = ns_calloc((size_t)objc, sizeof(struct iovec));
     }
 
     /*
@@ -255,19 +255,19 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      * text objects...
      */
 
-    binary = (conn->flags & NS_CONN_WRITE_ENCODED) ? 0 : 1;
+    binary = (conn->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE;
 
     for (i = 0, n = 0; i < objc; i++) {
-	if (binary == 0) {
+	if (binary == NS_FALSE) {
 	    binary = NsTclObjIsByteArray(objv[i]);
 	}
-	if (binary != 0) {
+	if (binary == NS_TRUE) {
 	    sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
         } else {
             sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
         }
         if (length > 0) {
-            sbufs[n].iov_len = length;
+            sbufs[n].iov_len = (size_t)length;
             n++;
         }
     }
@@ -338,7 +338,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (binary || NsTclObjIsByteArray(dataObj)) {
+    if (binary == NS_TRUE || NsTclObjIsByteArray(dataObj) == NS_TRUE) {
         data = (char *) Tcl_GetByteArrayFromObj(dataObj, &len);
         result = Ns_ConnReturnData(conn, status, data, len, type);
     } else {
@@ -373,19 +373,18 @@ int
 NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn     *conn = NULL;
-    int          status = 200, length = -1;
-    char        *type = "*/*", *setid = NULL, *binary = NULL;
-    char        *string = NULL, *filename = NULL, *chanid = NULL;
+    int          result, status = 200, length = -1;
+    const char  *type = "*/*", *setid = NULL, *binary = NULL;
+    const char  *chars = NULL, *filename = NULL, *chanid = NULL;
     Ns_Set      *set = NULL;
     Tcl_Channel  chan;
-    int          result;
 
     Ns_ObjvSpec opts[] = {
         {"-status",   Ns_ObjvInt,       &status,   NULL},
         {"-type",     Ns_ObjvString,    &type,     NULL},
         {"-length",   Ns_ObjvInt,       &length,   NULL},
         {"-headers",  Ns_ObjvString,    &setid,    NULL},
-        {"-string",   Ns_ObjvString,    &string,   NULL},
+        {"-string",   Ns_ObjvString,    &chars,    NULL},
         {"-file",     Ns_ObjvString,    &filename, NULL},
         {"-fileid",   Ns_ObjvString,    &chanid,   NULL},
         {"-binary",   Ns_ObjvByteArray, &binary,   &length},
@@ -400,7 +399,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
                       TCL_STATIC);
         return TCL_ERROR;
     }
-    if ((binary != NULL) + (string != NULL) + (filename != NULL)
+    if ((binary != NULL) + (chars != NULL) + (filename != NULL)
         + (chanid != NULL) != 1) {
         Tcl_SetResult(interp, "must specify only one of -string, "
                       "-file, -binary or -fileid", TCL_STATIC);
@@ -428,7 +427,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         if (Ns_TclGetOpenChannel(interp, chanid, 0, 1, &chan) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = Ns_ConnReturnOpenChannel(conn, status, type, chan, length);
+        result = Ns_ConnReturnOpenChannel(conn, status, type, chan, (size_t)length);
 
     } else if (filename != NULL) {
         /*
@@ -446,10 +445,10 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 
     } else {
         /*
-         * We'll be returning a string now.
+         * We'll be returning chars.
          */
 
-        result = Ns_ConnReturnCharData(conn, status, string, length, type);
+        result = Ns_ConnReturnCharData(conn, status, chars, length, type);
     }
 
     return Result(interp, result);
@@ -537,13 +536,12 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     if (Tcl_GetIntFromObj(interp, objv[4], &len) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[3]), 0, 1, &chan)
-        != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[3]), 0, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
 
     result = Ns_ConnReturnOpenChannel(conn, status, Tcl_GetString(objv[2]),
-                                      chan, len);
+                                      chan, (size_t)len);
 
     return Result(interp, result);
 }
@@ -580,8 +578,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan)
-        != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
@@ -591,7 +588,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_LogDeprecated(objv, 3, "ns_writefp fileid ?nbytes?", NULL);
 
     conn->flags |= NS_CONN_SKIPHDRS;
-    if (Ns_ConnSendChannel(conn, chan, len) != NS_OK) {
+    if (Ns_ConnSendChannel(conn, chan, (size_t)len) != NS_OK) {
         Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
                            len, Tcl_GetString(objv[1]));
         return TCL_ERROR;

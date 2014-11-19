@@ -118,13 +118,13 @@ Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freePr
     strcpy(cachePtr->name, name);
     cachePtr->freeProc       = freeProc;
     cachePtr->maxSize        = maxSize;
-    cachePtr->currentSize    = 0;
+    cachePtr->currentSize    = 0u;
     cachePtr->keys           = keys;
-    cachePtr->stats.nhit     = 0;
-    cachePtr->stats.nmiss    = 0;
-    cachePtr->stats.nexpired = 0;
-    cachePtr->stats.nflushed = 0;
-    cachePtr->stats.npruned  = 0;
+    cachePtr->stats.nhit     = 0u;
+    cachePtr->stats.nmiss    = 0u;
+    cachePtr->stats.nexpired = 0u;
+    cachePtr->stats.nflushed = 0u;
+    cachePtr->stats.npruned  = 0u;
 
     Ns_MutexSetName2(&cachePtr->lock, "ns:cache", name);
     Tcl_InitHashTable(&cachePtr->entriesTable, keys);
@@ -154,7 +154,7 @@ Ns_CacheDestroy(Ns_Cache *cache)
 {
     Cache      *cachePtr = (Cache *) cache;
 
-    Ns_CacheFlush(cache);
+    (void) Ns_CacheFlush(cache);
     Ns_MutexDestroy(&cachePtr->lock);
     Ns_CondDestroy(&cachePtr->cond);
     Tcl_DeleteHashTable(&cachePtr->entriesTable);
@@ -354,13 +354,13 @@ Ns_CacheKey(Ns_Entry *entry)
 void *
 Ns_CacheGetValue(const Ns_Entry *entry)
 {
-    return ((Entry *) entry)->value;
+    return ((const Entry *) entry)->value;
 }
 
 size_t
 Ns_CacheGetSize(const Ns_Entry *entry)
 {
-    return ((Entry *) entry)->size;
+    return ((const Entry *) entry)->size;
 }
 
 Ns_Time *
@@ -391,7 +391,7 @@ Ns_CacheGetExpirey(Ns_Entry *entry)
 void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
 {
-    Ns_CacheSetValueSz(entry, value, 0);
+    Ns_CacheSetValueSz(entry, value, 0u);
 }
 
 void
@@ -417,7 +417,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
         ePtr->expires = *timeoutPtr;
     }
     cachePtr->currentSize += size;
-    if (cachePtr->maxSize > 0) {
+    if (cachePtr->maxSize > 0u) {
         /* 
 	 * Make space for the new entry, but don't delete the current
 	 * entry, and don't delete other newborn entries (with a value
@@ -470,7 +470,7 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 	 */
         cachePtr = ePtr->cachePtr;
         cachePtr->currentSize -= ePtr->size;
-	ePtr->size = 0;
+	ePtr->size = 0u;
         ePtr->value = NULL;
         ePtr->expires.sec = ePtr->expires.usec = 0;
 		
@@ -728,10 +728,10 @@ Ns_CacheUnlock(Ns_Cache *cache)
  *----------------------------------------------------------------------
  */
 
-void
+int
 Ns_CacheWait(Ns_Cache *cache)
 {
-    Ns_CacheTimedWait(cache, NULL);
+    return Ns_CacheTimedWait(cache, NULL);
 }
 
 int
@@ -824,7 +824,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     double          savedCost = 0.0;
 
     total = cachePtr->stats.nhit + cachePtr->stats.nmiss;
-    hitrate = ((total != 0) ? (cachePtr->stats.nhit * 100) / total : 0);
+    hitrate = ((total != 0u) ? (cachePtr->stats.nhit * 100u) / total : 0u);
 
     ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
     while (ePtr != NULL) {
@@ -968,3 +968,14 @@ Push(Entry *ePtr)
         ePtr->cachePtr->lastEntryPtr = ePtr;
     }
 }
+
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
+

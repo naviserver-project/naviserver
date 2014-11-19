@@ -75,12 +75,12 @@ NsCreatePidFile(void)
     	Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else {
-        size_t towrite;
+        size_t toWrite;
         char   buf[TCL_INTEGER_SPACE + 1];
 
         snprintf(buf, sizeof(buf), "%d\n", nsconf.pid);
-        towrite = strlen(buf);
-        if ((size_t)Tcl_WriteChars(chan, buf, (int)towrite) != towrite) {
+        toWrite = strlen(buf);
+        if ((size_t)Tcl_WriteChars(chan, buf, (int)toWrite) != toWrite) {
             Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'",
                    Tcl_GetString(path), strerror(Tcl_GetErrno()));
         }
@@ -147,3 +147,12 @@ GetFile(void)
     }
     return path;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

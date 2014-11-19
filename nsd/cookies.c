@@ -392,8 +392,8 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     static const char  *options[]           = {"-include_set_cookies", NULL};
     enum                                      {OSetCookiesIdx};
-    ClientData          optionClientData[2] = {NULL};
-    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionBoolean};
+    ClientData          optionClientData[1] = {NULL};
+    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionBoolean};
 
     if (unlikely(objc < 1)) {
     usage_error:
@@ -520,3 +520,12 @@ GetConn(Tcl_Interp *interp)
 
     return conn;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

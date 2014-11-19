@@ -81,7 +81,7 @@ typedef struct Cgi {
     Ns_Set         *interpEnv;
     int		    ifd;
     int		    ofd;
-    int		    cnt;
+    ssize_t	    cnt;
     char	   *ptr;
     int		    nextds;
     Tcl_DString	    ds[NDSTRINGS];
@@ -121,8 +121,8 @@ static void	CgiFree(Cgi *cgiPtr);
 static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn);
 static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn);
 static int	CgiCopy(Cgi *cgiPtr, Ns_Conn *conn);
-static int	CgiRead(Cgi *cgiPtr);
-static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
+static ssize_t	CgiRead(Cgi *cgiPtr);
+static ssize_t	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
 static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, const char *key, const char *value);
@@ -162,9 +162,9 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     if (initialized == 0) {
-	devNull = open(DEVNULL, O_RDONLY);
+	devNull = ns_open(DEVNULL, O_RDONLY, 0);
 	if (devNull < 0) {
-	    Ns_Log(Error, "nscgi: open(%s) failed: %s",
+	    Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
 		   DEVNULL, strerror(errno));
 	    return NS_ERROR;
 	}
@@ -388,7 +388,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
     cgiPtr->pid = NS_INVALID_PID;
-    cgiPtr->ofd = cgiPtr->ifd = -1;
+    cgiPtr->ofd = cgiPtr->ifd = NS_INVALID_FD;
     cgiPtr->ptr = cgiPtr->buf;
     for (i = 0; i < NDSTRINGS; ++i) {
 	Ns_DStringInit(&cgiPtr->ds[i]);
@@ -413,7 +413,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 	     * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
              */
 
-            cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, plen);
+	    cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
 	    dsPtr = CgiDs(cgiPtr);
             Ns_UrlToFile(dsPtr, server, cgiPtr->name);
 	    cgiPtr->path = dsPtr->string;
@@ -503,7 +503,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     *s = '\0';
     cgiPtr->dir = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->path);
     *s++ = '/';
-    if (strncmp(s, "nph-", 4) == 0) {
+    if (strncmp(s, "nph-", 4U) == 0) {
         cgiPtr->flags |= CGI_NPH;
     }
 
@@ -546,7 +546,7 @@ err:
  *	Spool content to a temp file.
  *
  * Results:
- *	File descriptor of temp file or -1 on error.
+ *	File descriptor of temp file or NS_INVALID_FD on error.
  *
  * Side effects:
  *	May open a new temp file.
@@ -567,15 +567,15 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     fd = Ns_GetTemp();
     if (fd < 0) {
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
-    } else if (write(fd, content, len) != len) {
+    } else if (ns_write(fd, content, len) != len) {
 	err = "write";
-    } else if (lseek(fd, 0, SEEK_SET) != 0) {
+    } else if (ns_lseek(fd, 0, SEEK_SET) != 0) {
 	err = "lseek";
     }
     if (err != NULL) {
 	Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
-	close(fd);
-	fd = -1;
+	ns_close(fd);
+	fd = NS_INVALID_FD;
     }
     if (fd < 0) {
 	return NS_ERROR;
@@ -632,7 +632,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->ofd >= 0) {
-    	close(cgiPtr->ofd);
+    	ns_close(cgiPtr->ofd);
     }
 
     /*
@@ -788,13 +788,13 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     s += 3;               /* Get past the protocol://  */
     p = strchr(s, ':');   /* Get to the port number    */
     if (p != NULL) {
-	size_t i;
+	int j;
 
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
-        for (i = 0U; *p != '\0'; ++p) {
-            ++i;
+        for (j = 0; *p != '\0'; ++p) {
+            ++j;
         }
-        Ns_DStringTrunc(dsPtr, i);
+        Ns_DStringTrunc(dsPtr, j);
     }
     SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
@@ -923,9 +923,9 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     cgiPtr->pid = Ns_ExecProcess(cgiPtr->exec, cgiPtr->dir,
 	cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
 	opipe[1], dsPtr->string, cgiPtr->env);
-    close(opipe[1]);
+    ns_close(opipe[1]);
     if (cgiPtr->pid == NS_INVALID_PID) {
-    	close(opipe[0]);
+    	ns_close(opipe[0]);
 	return NS_ERROR;
     }
 
@@ -950,19 +950,19 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 CgiRead(Cgi *cgiPtr)
 {
-    int n;
+    ssize_t n;
 
     cgiPtr->ptr = cgiPtr->buf;
     do {
-    	n = read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
+    	n = ns_read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
     } while (n < 0 && errno == EINTR);
     if (n > 0) {
 	cgiPtr->cnt = n;
     } else if (n < 0) {
-	Ns_Log(Error, "nscgi: pipe read() from %s failed: %s",
+	Ns_Log(Error, "nscgi: pipe ns_read() from %s failed: %s",
 	       cgiPtr->exec, strerror(errno));
     }
     return n;
@@ -985,11 +985,11 @@ CgiRead(Cgi *cgiPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 {
-    char c;
-    int n;
+    char    c;
+    ssize_t n;
 
     do {
 	while (cgiPtr->cnt > 0) {
@@ -1030,9 +1030,10 @@ static int
 CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 {
     Ns_DString      ds, redir;
-    int             status, last, n, httpstatus;
+    int             status, last, httpstatus;
     char           *value;
     Ns_Set         *hdrs;
+    ssize_t         n;
 
     /*
      * Skip to copy for nph CGI's.
@@ -1073,13 +1074,13 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                     Ns_DStringInit(&redir);
                     Ns_ConnLocationAppend(conn, &redir);
                     Ns_DStringAppend(&redir, value);
-                    last = Ns_SetPut(hdrs, ds.string, redir.string);
+                    last = (int)Ns_SetPut(hdrs, ds.string, redir.string);
                     Ns_DStringFree(&redir);
                 } else {
-                    last = Ns_SetPut(hdrs, ds.string, value);
+                    last = (int)Ns_SetPut(hdrs, ds.string, value);
                 }
             } else {
-                last = Ns_SetPut(hdrs, ds.string, value);
+                last = (int)Ns_SetPut(hdrs, ds.string, value);
             }
         }
         Ns_DStringTrunc(&ds, 0);
@@ -1290,3 +1291,11 @@ SetUpdate(Ns_Set *set, const char *key, const char *value)
     Ns_SetUpdate(set, key, (value != NULL) ? value : "");
 }
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

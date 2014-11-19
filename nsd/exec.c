@@ -37,7 +37,7 @@
 
 #ifdef _WIN32
 #include <process.h>
-static char   **Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
+static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 #else
 #define ERR_DUP         (-1)
 #define ERR_CHDIR	(-2)
@@ -138,7 +138,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 #ifdef _WIN32
     HANDLE process = (HANDLE) pid;
     int status = NS_OK;
-    DWORD exitcode = 0;
+    DWORD exitcode = 0U;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
         (GetExitCodeProcess(process, &exitcode) != TRUE)) {
@@ -475,8 +475,8 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 
     pid = ns_fork();
     if (pid < 0) {
-        close(errpipe[0]);
-        close(errpipe[1]);
+        ns_close(errpipe[0]);
+        ns_close(errpipe[1]);
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
 	return NS_INVALID_PID;
     }
@@ -490,20 +490,20 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 	 * to the parent if necessary.
 	 */
 
-        close(errpipe[0]);
+        ns_close(errpipe[0]);
         if (dir != NULL && chdir(dir) != 0) {
 	    result = ERR_CHDIR;
-        } else if ((fdin == 1 && (fdin = dup(1)) < 0) ||
-    	    	    (fdout == 0 && (fdout = dup(0)) < 0) ||
-	    	    (fdin != 0 && dup2(fdin, 0) < 0) ||
-    	    	    (fdout != 1 && dup2(fdout, 1) < 0)) {
+        } else if ((fdin == 1 && (fdin = ns_dup(1)) < 0) ||
+    	    	    (fdout == 0 && (fdout = ns_dup(0)) < 0) ||
+	    	    (fdin != 0 && ns_dup2(fdin, 0) < 0) ||
+    	    	    (fdout != 1 && ns_dup2(fdout, 1) < 0)) {
 	    result = ERR_DUP;
 	} else {
 	    if (fdin > 2) {
-		close(fdin);
+		ns_close(fdin);
 	    }
 	    if (fdout > 2) {
-            	close(fdout);
+            	ns_close(fdout);
 	    }
             NsRestoreSignals();
 	    Ns_NoCloseOnExec(0);
@@ -530,11 +530,11 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 	 * Read result and errno from the child if any.
 	 */
 
-        close(errpipe[1]);
+        ns_close(errpipe[1]);
 	do {
             nread = readv(errpipe[0], iov, 2);
 	} while (nread < 0 && errno == EINTR);
-        close(errpipe[0]);
+        ns_close(errpipe[0]);
         if (nread == 0) {
 	    errnum = 0;
 	    result = pid;
@@ -549,7 +549,7 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
 				exec, dir, strerror(errnum));
 	    		break;
 		    case ERR_DUP:
-	    		Ns_Log(Error, "exec %s: dup() failed: %s",
+	    		Ns_Log(Error, "exec %s: ns_dup() failed: %s",
 				exec, strerror(errnum));
 	    		break;
 		    case ERR_EXEC:
@@ -590,18 +590,27 @@ ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
  *----------------------------------------------------------------------
  */
 
-static char **
+static void
 Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 {
     size_t i;
 
     for (i = 0U; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
-        Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
+                            Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
         Ns_DStringNAppend(dsPtr, "", 1);
     }
     Ns_DStringNAppend(dsPtr, "", 1);
-    return Ns_DStringAppendArgv(dsPtr);
+    (void )Ns_DStringAppendArgv(dsPtr);
 }
 
 #endif /* _WIN32 */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

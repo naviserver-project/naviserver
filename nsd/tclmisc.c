@@ -149,11 +149,11 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
     NsInterp    *itPtr = NsGetInterpData(interp);
-    CONST char  *errorInfo, **logHeaders;
+    const char  *errorInfo, **logHeaders;
     Ns_DString   ds;
 
     if (extraInfo != NULL) {
@@ -212,7 +212,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_TclLogError(Tcl_Interp *interp)
 {
     return Ns_TclLogErrorInfo(interp, NULL);
@@ -235,7 +235,7 @@ Ns_TclLogError(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
 {
     return Ns_TclLogErrorInfo(interp, NULL);
@@ -314,8 +314,9 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
     errPtr = Tcl_ObjSetVar2(interp, varPtr, NULL, valPtr,
 			       TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG);
     Tcl_DecrRefCount(valPtr);
-    return (errPtr != NULL ? 1 : 0);
+    return (errPtr != NULL ? NS_TRUE : NS_FALSE);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -484,8 +485,9 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                             ++s;
                         }
                         if (he == NULL) {
+                            assert(s != NULL);
                             he = s;
-                            while (CHARTYPE(space, *he) == 0) {
+                            while (*he != '\0' && CHARTYPE(space, *he) == 0) {
                                 ++he;
                             }
                         }
@@ -532,7 +534,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
 int
 NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char *string;
+    unsigned char *bytes;
     char          *result;
     int            nbytes = 0;
     size_t         size;
@@ -542,10 +544,10 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    string = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
+    bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
     size = (size_t)nbytes;
     result = ns_malloc(1U + (4U * MAX(size,2U)) / 2U);
-    (void)Ns_HtuuEncode(string, size, result);
+    (void)Ns_HtuuEncode(bytes, size, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
 
     return TCL_OK;
@@ -573,7 +575,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     int            len;
     size_t         size;
-    char          *string;
+    char          *chars;
     unsigned char *decoded;
 
     if (objc != 2) {
@@ -581,10 +583,10 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    string = Tcl_GetStringFromObj(objv[1], &len);
+    chars = Tcl_GetStringFromObj(objv[1], &len);
     size = (size_t)len + 3U;
     decoded = (unsigned char *)ns_malloc(size);
-    size = Ns_HtuuDecode(string, decoded, size);
+    size = Ns_HtuuDecode(chars, decoded, size);
     decoded[size] = UCHAR('\0');
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
     ns_free(decoded);
@@ -923,7 +925,7 @@ SHATransform(Ns_CtxSHA1 *sha)
 }
 
 /* Update SHA for a block of data. */
-void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
+void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 {
     unsigned i;
 
@@ -934,7 +936,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
     ctx->bytes += len;
 #else
     uint32_t t = ctx->bytesLo;
-    if ((ctx->bytesLo = t + len) < t) {
+    if ((ctx->bytesLo = (uint32_t)(t + len)) < t) {
        ctx->bytesHi++;		/* Carry from low to high */
     }
 
@@ -1072,7 +1074,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxSHAInit(&ctx);
-    Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (unsigned int) strLen);
+    Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (size_t) strLen);
     Ns_CtxSHAFinal(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 20);
@@ -1116,14 +1118,14 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (objc > 2) {
         char *name = Tcl_GetString(objv[2]);
         Tcl_SetVar2Ex(interp, name, "dev", Tcl_NewIntObj(st.st_ino), 0);
-        Tcl_SetVar2Ex(interp, name, "ino", Tcl_NewWideIntObj(st.st_ino), 0);
+        Tcl_SetVar2Ex(interp, name, "ino", Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);
         Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewLongObj(st.st_nlink), 0);
         Tcl_SetVar2Ex(interp, name, "uid", Tcl_NewIntObj(st.st_uid), 0);
         Tcl_SetVar2Ex(interp, name, "gid", Tcl_NewIntObj(st.st_gid), 0);
         Tcl_SetVar2Ex(interp, name, "size", Tcl_NewWideIntObj(st.st_size), 0);
-        Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewWideIntObj(st.st_atime), 0);
-        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewWideIntObj(st.st_ctime), 0);
-        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewWideIntObj(st.st_mtime), 0);
+        Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_atime), 0);
+        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_ctime), 0);
+        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_mtime), 0);
         Tcl_SetVar2Ex(interp, name, "mode", Tcl_NewIntObj(st.st_mode), 0);
         Tcl_SetVar2Ex(interp, name, "type", Tcl_NewStringObj(
                   (S_ISREG(st.st_mode) ? "file" :
@@ -1212,7 +1214,7 @@ void Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
 {
     uint32_t t;
 
@@ -1222,7 +1224,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
     if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t) {
 	ctx->bits[1]++;		/* Carry from low to high */
     }
-    ctx->bits[1] += len >> 29;
+    ctx->bits[1] += (uint32_t)(len >> 29);
 
     t = (t >> 3) & 0x3FU;	/* Bytes already in shsInfo->data */
 
@@ -1435,7 +1437,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
     str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxMD5Init(&ctx);
-    Ns_CtxMD5Update(&ctx, (unsigned char *) str, (unsigned int) strLen);
+    Ns_CtxMD5Update(&ctx, (unsigned char *) str, (size_t)strLen);
     Ns_CtxMD5Final(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 16);
@@ -1484,3 +1486,12 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     return TCL_OK;
 }
 
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -221,6 +221,11 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
             Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
         }
         break;
+
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
     status = TCL_OK;
 
@@ -262,12 +267,12 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     len = strlen(name);
     if (value != NULL) {
-        len += strlen(value) + 1;
+        len += strlen(value) + 1U;
     } else {
-        len += 1;
+        len += 1U;
     }
     /* NB: Use malloc() directly as putenv() would expect. */
-    s = malloc(len + 1);
+    s = malloc(len + 1U);
     if (s == NULL) {
         Tcl_SetResult(interp, "could not allocate memory for new env entry",
                       TCL_STATIC);
@@ -307,3 +312,12 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

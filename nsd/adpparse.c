@@ -44,7 +44,7 @@
 #define TAG_SCRIPT  3
 
 #define APPEND      "ns_adp_append "
-#define APPEND_LEN  (sizeof(APPEND)-1)
+#define APPEND_LEN  (sizeof(APPEND) - 1U)
 
 #define LENSZ       ((int)(sizeof(int)))
 
@@ -55,10 +55,10 @@
  */
 
 typedef struct Tag {
-    int            type;   /* Type of tag, ADP or proc. */
-    char          *tag;    /* The name of the tag (e.g., "mytag") */
-    char          *endtag; /* The closing tag or null (e.g., "/mytag")*/
-    char          *string; /* Proc (e.g., "ns_adp_netscape") or ADP string. */
+    int            type;    /* Type of tag, ADP or proc. */
+    char          *tag;     /* The name of the tag (e.g., "mytag") */
+    char          *endtag;  /* The closing tag or null (e.g., "/mytag")*/
+    char          *content; /* Proc (e.g., "ns_adp_netscape") or ADP string. */
 } Tag;
 
 /*
@@ -153,7 +153,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr;
-    char           *string, *end, *tag;
+    char           *content, *end, *tag;
     Tcl_HashEntry  *hPtr;
     int             isNew, slen, elen, tlen;
     Tcl_DString     tbuf;
@@ -169,7 +169,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         return TCL_ERROR;
     }
 
-    string = Tcl_GetStringFromObj(objv[objc-1], &slen);
+    content = Tcl_GetStringFromObj(objv[objc-1], &slen);
     ++slen;
     if (objc == 3) {
         end = NULL;
@@ -179,15 +179,21 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         ++elen;
     }
 
-    tagPtr = ns_malloc(sizeof(Tag) + slen + elen);
+    /*
+     * Allocate piggypacked memory chunk containing 
+     *   - tag structure, 
+     *   + tag begin string,
+     *   + tag end string
+     */
+    tagPtr = ns_malloc(sizeof(Tag) + (size_t)slen + (size_t)elen);
     tagPtr->type = type;
-    tagPtr->string = (char *)tagPtr + sizeof(Tag);
-    memcpy(tagPtr->string, string, (size_t) slen);
-    Tcl_UtfToLower(tagPtr->string);
+    tagPtr->content = (char *)tagPtr + sizeof(Tag);
+    memcpy(tagPtr->content, content, (size_t) slen);
+    Tcl_UtfToLower(tagPtr->content);
     if (end == NULL) {
         tagPtr->endtag = NULL;
     } else {
-        tagPtr->endtag = tagPtr->string + slen;
+        tagPtr->endtag = tagPtr->content + slen;
         memcpy(tagPtr->endtag, end, (size_t) elen);
         Tcl_UtfToLower(tagPtr->endtag);
     }
@@ -239,7 +245,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
 void
 NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
-	   unsigned int flags, CONST char* file)
+	   unsigned int flags, const char* file)
 {
     int             level, streamDone;
     unsigned int    streamFlag;
@@ -254,6 +260,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
         TagReg
     } state;
     Parse parse;
+
+    assert(codePtr != NULL);
+    assert(servPtr != NULL);
+    assert(adp != NULL);
 
     /*
      * Initialize the code and parse structures.
@@ -457,6 +467,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                 }
             }
             break;
+
+	default:
+            /* should not happen */
+            assert(state && 0);
         }
 
         /*
@@ -470,6 +484,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     /*
      * Append the remaining text block
      */
+    assert(text != NULL);
     { 
 	size_t len = strlen(text);
 	if (len > 0U) {
@@ -515,6 +530,8 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 void
 NsAdpFreeCode(AdpCode *codePtr)
 {
+    assert(codePtr != NULL);
+
     Tcl_DStringFree(&codePtr->text);
     codePtr->nblocks = codePtr->nscripts = 0;
     codePtr->len = codePtr->line = NULL;
@@ -851,7 +868,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         /* NB: String will be an ADP fragment to evaluate. */
         Tcl_DStringAppend(&script, "ns_adp_eval ", -1);
     }
-    Tcl_DStringAppendElement(&script, tagPtr->string);
+    Tcl_DStringAppendElement(&script, tagPtr->content);
     if (tagPtr->type == TAG_PROC) {
         /* NB: String was a procedure, append tag attributes. */
         ParseAtts(as, ae, NULL, &script, 0);
@@ -914,3 +931,12 @@ AppendLengths(AdpCode *codePtr, const int *length, const int *line)
     memcpy(codePtr->len,  length, (size_t) ncopy);
     memcpy(codePtr->line, line, (size_t) ncopy);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

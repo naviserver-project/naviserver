@@ -325,6 +325,8 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     Ns_MasterLock();
     thrPtr = firstThreadPtr;
     while (thrPtr != NULL) {
+	int written;
+
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, thrPtr->name);
         Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
@@ -332,13 +334,25 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                  thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
         Tcl_DStringAppend(dsPtr, buf, -1);
         if (proc != NULL) {
-	    (*proc)(dsPtr, (void *)thrPtr->proc, thrPtr->arg);
+	    (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
         } else {
-	    snprintf(buf, sizeof(buf), " %p %p", (void *)thrPtr->proc, (void *)thrPtr->arg);
-            Tcl_DStringAppend(dsPtr, buf, -1);
+	    /* 
+	     * The only legal way to print a function pointer is by
+	     * printing the bytes via casting to a character array.
+	     */
+	    unsigned char *p = (unsigned char *)thrPtr->proc;
+	    int i;
+
+            Tcl_DStringAppend(dsPtr, " 0x", 3);
+	    for (i = 0; i < sizeof(thrPtr->proc); i++) {
+		written = snprintf(buf, sizeof(buf), "%02x", p != NULL ? p[i] : 0);
+		Tcl_DStringAppend(dsPtr, buf, written);
+            }
+            written = snprintf(buf, sizeof(buf), " %p", thrPtr->arg);
+            Tcl_DStringAppend(dsPtr, buf, written);
         }
-        snprintf(buf, sizeof(buf), " %" PRIuMAX , (uintmax_t) thrPtr->ostid);
-        Tcl_DStringAppend(dsPtr, buf, -1);
+        written = snprintf(buf, sizeof(buf), " %" PRIuMAX , (uintmax_t) thrPtr->ostid);
+        Tcl_DStringAppend(dsPtr, buf, written);
 
         Tcl_DStringEndSublist(dsPtr);
         thrPtr = thrPtr->nextPtr;

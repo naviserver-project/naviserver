@@ -115,9 +115,6 @@
 /*
  * Visual Studio defines
  */
-#  define NS_SOCKET		SOCKET
-#  define NS_INVALID_SOCKET     INVALID_SOCKET
-
 typedef          __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 
@@ -134,7 +131,11 @@ typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
 typedef          DWORD pid_t;
-#define NS_INVALID_PID 0
+
+#  define NS_SOCKET		SOCKET
+#  define NS_INVALID_SOCKET     (INVALID_SOCKET)
+#  define NS_INVALID_PID        (0)
+#  define NS_INVALID_FD         (-1)
 
 #  ifdef _WIN64
 typedef int64_t ssize_t;
@@ -148,19 +149,14 @@ typedef int32_t ssize_t;
 #  define access                      _access
 #  define chsize                      _chsize
 #  define close                       _close
-#  define dup                         _dup
-#  define dup2                        _dup2
 #  define fileno                      _fileno
 #  define getpid                      _getpid
-#  define lseek                       _lseek
 #  define mktemp                      _mktemp
 #  define open                        _open
 #  define putenv                      _putenv
-#  define read                        _read
 #  define snprintf                    _snprintf
 #  define unlink                      _unlink
 #  define vsnprintf                   _vsnprintf
-#  define write                       _write
 
 #  define ftruncate(f,s)              chsize((f),(s))
 
@@ -171,7 +167,9 @@ typedef int32_t ssize_t;
 #  define NS_SOCKET 		int
 #  define NS_INVALID_PID 	(-1)
 #  define NS_INVALID_SOCKET     (-1)
+#  define NS_INVALID_FD         (-1)
 # endif
+
 
 /*
  * ALL _WIN32
@@ -185,15 +183,29 @@ typedef int32_t ssize_t;
 # define NS_SIGPIPE                13
 # define NS_SIGTERM                15
 
-# define DEVNULL	             "nul:"
+# define DEVNULL	           "nul:"
 
-# define sleep(n)                    (Sleep((n)*1000))
-# define mkdir(d,m)                  _mkdir((d))
-# define strcasecmp                  _stricmp
-# define strncasecmp                 _strnicmp
+/*
+ * For the time being, don't try to be very clever
+ * and define (platform-neutral) just those two modes
+ * for mapping the files.
+ * Although the underlying implementation(s) can do
+ * much more, we really need only one (read-maps) now.
+ */
+# define NS_MMAP_READ               (FILE_MAP_READ)
+# define NS_MMAP_WRITE              (FILE_MAP_WRITE)
 
+# define sleep(n)                  (Sleep((n)*1000))
+# define mkdir(d,m)                _mkdir((d))
+# define strcasecmp                _stricmp
+# define strncasecmp               _strnicmp
 
-# define mkstemp		     ns_mkstemp
+# define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),(flgs))
+# define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),(flgs))
+# define ns_sockclose              closesocket
+# define ns_sockerrno              GetLastError()
+# define ns_sockioctl              ioctlsocket
+# define ns_sockstrerror           NsWin32ErrMsg
 
 /*
  * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
@@ -305,8 +317,10 @@ typedef struct DIR_ *DIR;
 #include <sys/mman.h>
 #include <poll.h>
 
-#define NS_SOCKET	int
-#define NS_INVALID_PID  (-1)
+#define NS_SOCKET	      int
+#define NS_INVALID_SOCKET     (-1)
+#define NS_INVALID_PID        (-1)
+#define NS_INVALID_FD         (-1)
 
 /* 
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
@@ -358,23 +372,44 @@ typedef struct DIR_ *DIR;
 /*
  * Workaround until we have ENOTSUP in errno.h
  */
-#   define ENOTSUP                     EOPNOTSUPP
+#   define ENOTSUP                  EOPNOTSUPP
 #  endif
 # endif
 
-# define O_TEXT                      0
-# define O_BINARY                    0
+# define O_TEXT                     (0)
+# define O_BINARY                   (0)
 
-# define NS_INVALID_SOCKET           (-1)
-# define SOCKET_ERROR                (-1)
+# define SOCKET_ERROR               (-1)
 
-# define NS_SIGHUP                   SIGHUP
-# define NS_SIGINT                   SIGINT
-# define NS_SIGQUIT                  SIGQUIT
-# define NS_SIGPIPE                  SIGPIPE
-# define NS_SIGTERM                  SIGTERM
+# define NS_SIGHUP                  (SIGHUP)
+# define NS_SIGINT                  (SIGINT)
+# define NS_SIGQUIT                 (SIGQUIT)
+# define NS_SIGPIPE                 (SIGPIPE)
+# define NS_SIGTERM                 (SIGTERM)
 
-# define DEVNULL	                    "/dev/null"
+# define DEVNULL	            "/dev/null"
+
+# define NS_MMAP_READ               (PROT_READ)
+# define NS_MMAP_WRITE              (PROT_WRITE)
+
+# define ns_mkstemp	 	    mkstemp
+
+# define ns_recv                    recv
+# define ns_send                    send
+# define ns_sockclose               close
+# define ns_sockdup                 dup
+# define ns_sockerrno               errno
+# define ns_sockioctl               ioctl
+# define ns_socknbclose             close
+# define ns_sockstrerror            strerror
+
+# define ns_open		    open
+# define ns_close		    close
+# define ns_read                    read
+# define ns_write                   write
+# define ns_dup		    	    dup
+# define ns_dup2	    	    dup2
+# define ns_lseek		    lseek
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))
@@ -627,14 +662,35 @@ typedef struct DIR_ *DIR;
 #endif
 
 /*
- * Various constants.
+ * Return codes. It would be probably a good idea to define an enum
+ * Ns_ReturnCode, but that would be a large change.
  */
-
 #define NS_OK                       0
 #define NS_ERROR                    (-1)
-#define NS_TIMEOUT                  (-2)
-#define NS_FATAL                    (-3)
 
+/*
+ * The following are valid return codes from an Ns_UserAuthorizeProc.
+ */
+#define NS_TIMEOUT                  (-2)
+
+/*
+ * The following are valid return codes from an Ns_UserAuthorizeProc.
+ */
+                                        /* NS_OK The user's access is authorized */
+#define NS_UNAUTHORIZED            (-3) /* Bad user/passwd or unauthorized */
+#define NS_FORBIDDEN               (-4) /* Authorization is not possible */
+                                        /* NS_ERROR The authorization function failed */
+/*
+ * The following are valid return codes from an Ns_FilterProc.
+ */
+                                        /* NS_OK Run next filter */
+#define NS_FILTER_BREAK            (-5) /* Run next stage of connection */
+#define NS_FILTER_RETURN           (-6) /* Close connection */
+
+
+/*
+ * Constants for nsthread 
+ */
 #define NS_THREAD_DETACHED          1
 #define NS_THREAD_JOINED            2
 #define NS_THREAD_EXITED            4
@@ -662,7 +718,7 @@ typedef struct Ns_Time {
 
 typedef void (Ns_ThreadProc) (void *arg);
 typedef void (Ns_TlsCleanup) (void *arg);
-typedef void (Ns_ThreadArgProc) (Tcl_DString *dsPtr, const void *proc, void *arg);
+typedef void (Ns_ThreadArgProc) (Tcl_DString *dsPtr, Ns_ThreadProc proc, void *arg);
 
 /*
  * pthread.c
@@ -829,11 +885,24 @@ NS_EXTERN int truncate(char *file, off_t size);
 #endif
 
 /*
- * tcl 8.6 and TIP 330/336 compatability
+ * nswin32.c:
+ */
+#ifdef _WIN32
+NS_EXTERN int     ns_open(const char *path, int oflag, int mode);
+NS_EXTERN int     ns_close(int fildes);
+NS_EXTERN ssize_t ns_write(int fildes, const void *buf, size_t nbyte);
+NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
+NS_EXTERN off_t   ns_lseek(int fildes, off_t offset, int whence);
+NS_EXTERN int     ns_dup(int fildes);
+NS_EXTERN int     ns_dup2(int fildes, int fildes2);
+#endif
+
+/*
+ * Tcl 8.6 and TIP 330/336 compatability
  */
 
 #if (TCL_MAJOR_VERSION < 8) || (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6)
-#define Tcl_GetErrorLine(interp) (interp->errorLine)
+#define Tcl_GetErrorLine(interp) ((interp)->errorLine)
 #endif
 
 #endif /* NSTHREAD_H */

@@ -38,6 +38,7 @@
 
 #define TYPE_DEFAULT "*/*"
 
+
 /*
  * Local functions defined in this file.
  */

@@ -44,7 +44,7 @@ typedef struct TclTrace {
     struct TclTrace    *prevPtr;
     Ns_TclTraceProc    *proc;
     void               *arg;
-    unsigned int        when;
+    Ns_TclTraceType     when;
 } TclTrace;
 
 /*
@@ -78,15 +78,33 @@ typedef struct AtClose {
  */
 
 static NsInterp *PopInterp(NsServer *servPtr, Tcl_Interp *interp);
-static void PushInterp(NsInterp *itPtr);
-static Tcl_HashEntry *GetCacheEntry(const NsServer *servPtr);
-static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr);
-static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr);
-static int UpdateInterp(NsInterp *itPtr);
+
+static void PushInterp(NsInterp *itPtr)
+    NS_GNUC_NONNULL(1);
+
+static Tcl_HashEntry *GetCacheEntry(const NsServer *servPtr)
+    NS_GNUC_RETURNS_NONNULL;
+
+static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_RETURNS_NONNULL;
+
+static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
+    NS_GNUC_NONNULL(1);
+
+static int UpdateInterp(NsInterp *itPtr)
+    NS_GNUC_NONNULL(1);
+
+static void RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
+    NS_GNUC_NONNULL(1);
+
+static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
+    NS_GNUC_NONNULL(1);
+
+static int RegisterAt(Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
+    NS_GNUC_NONNULL(1);
+
 static Tcl_InterpDeleteProc FreeInterpData;
-static void RunTraces(NsInterp *itPtr, unsigned int why);
-static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, unsigned int why);
-static int RegisterAt(Ns_TclTraceProc *proc, void *arg, unsigned int when);
 static Ns_TlsCleanup DeleteInterps;
 static Ns_ServerInitProc ConfigServerTcl;
 
@@ -118,6 +136,8 @@ static Ns_Tls tls;  /* Slot for per-thread Tcl interp cache. */
 int
 Nsd_Init(Tcl_Interp *interp)
 {
+    assert(interp != NULL);
+
     return Ns_TclInit(interp);
 }
 
@@ -157,11 +177,12 @@ ConfigServerTcl(const char *server)
 {
     NsServer   *servPtr;
     Ns_DString  ds;
-    CONST char *path, *p;
+    const char *path, *p;
     int         n;
     Ns_Set     *set;
 
     assert(server != NULL);
+
     servPtr = NsGetServer(server);
     assert(servPtr != NULL);
 
@@ -171,14 +192,14 @@ ConfigServerTcl(const char *server)
     Ns_DStringInit(&ds);
 
     servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
-    if (!Ns_PathIsAbsolute(servPtr->tcl.library)) {
+    if (Ns_PathIsAbsolute(servPtr->tcl.library) == 0) {
         Ns_HomePath(&ds, servPtr->tcl.library, NULL);
         servPtr->tcl.library = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "library", servPtr->tcl.library);
     }
 
     servPtr->tcl.initfile = Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (!Ns_PathIsAbsolute(servPtr->tcl.initfile) ) {
+    if (Ns_PathIsAbsolute(servPtr->tcl.initfile) == 0) {
         Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
         servPtr->tcl.initfile = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "initfile", servPtr->tcl.initfile);
@@ -267,7 +288,13 @@ Ns_TclInit(Tcl_Interp *interp)
 {
     NsServer *servPtr = NsGetServer(NULL);
 
-    NewInterpData(interp, servPtr);
+    assert(interp != NULL);
+
+    /* 
+     * Associate the the interp data with the current interpreter.
+     */
+    (void)NewInterpData(interp, servPtr);
+
     return TCL_OK;
 }
 
@@ -291,17 +318,19 @@ Ns_TclInit(Tcl_Interp *interp)
  */
 
 int
-Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
+Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
 {
     Tcl_Interp *interp;
     int         retcode = NS_ERROR;
 
+    assert(script != NULL);
+
     interp = Ns_TclAllocateInterp(server);
     if (interp != NULL) {
-        CONST char *result;
+        const char *result;
 
         if (Tcl_EvalEx(interp, script, -1, 0) != TCL_OK) {
-            result = Ns_TclLogError(interp);
+            result = Ns_TclLogErrorInfo(interp, NULL);
         } else {
             result = Tcl_GetStringResult(interp);
             retcode = NS_OK;
@@ -333,7 +362,7 @@ Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
  */
 
 Tcl_Interp *
-Ns_TclAllocateInterp(CONST char *server)
+Ns_TclAllocateInterp(const char *server)
 {
     NsServer *servPtr;
     NsInterp *itPtr;
@@ -380,6 +409,8 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
 {
     NsInterp *itPtr;
 
+    assert(interp != NULL);
+
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
         Ns_Log(Bug, "Ns_TclDeAllocateInterp: no interp data");
@@ -417,10 +448,12 @@ Ns_GetConnInterp(Ns_Conn *conn)
     Conn     *connPtr = (Conn *) conn;
     NsInterp *itPtr;
 
+    assert(conn != NULL);
+
     if (connPtr->itPtr == NULL) {
         itPtr = PopInterp(connPtr->poolPtr->servPtr, NULL);
         itPtr->conn = conn;
-        itPtr->nsconn.flags = 0U;
+        itPtr->nsconn.flags = 0u;
         connPtr->itPtr = itPtr;
         RunTraces(itPtr, NS_TCL_TRACE_GETCONN);
     }
@@ -470,8 +503,11 @@ Ns_FreeConnInterp(Ns_Conn *UNUSED(conn))
 Ns_Conn *
 Ns_TclGetConn(Tcl_Interp *interp)
 {
-    NsInterp *itPtr = NsGetInterpData(interp);
+    NsInterp *itPtr;
 
+    assert(interp != NULL);
+
+    itPtr = NsGetInterpData(interp);
     return ((itPtr != NULL) ? itPtr->conn : NULL);
 }
 
@@ -496,6 +532,8 @@ void
 Ns_TclDestroyInterp(Tcl_Interp *interp)
 {
     NsInterp      *itPtr;
+
+    assert(interp != NULL);
 
     itPtr = NsGetInterpData(interp);
     /*
@@ -559,8 +597,11 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
 void
 Ns_TclMarkForDelete(Tcl_Interp *interp)
 {
-    NsInterp *itPtr = NsGetInterpData(interp);
+    NsInterp *itPtr;
 
+    assert(interp != NULL);
+
+    itPtr = NsGetInterpData(interp);
     if (itPtr != NULL) {
         itPtr->deleteInterp = 1;
     }
@@ -588,11 +629,14 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
  */
 
 int
-Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
-                    void *arg, unsigned int when)
+Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
+                    void *arg, Ns_TclTraceType when)
 {
     TclTrace   *tracePtr;
     NsServer   *servPtr;
+
+    assert(server != NULL);
+    assert(proc != NULL);
 
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
@@ -624,11 +668,11 @@ Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
      * already initialised interp which loads the modules.
      */
 
-    if ((when & (NS_TCL_TRACE_CREATE|NS_TCL_TRACE_ALLOCATE)) != 0U) {
+    if ((when == NS_TCL_TRACE_CREATE) || (when == NS_TCL_TRACE_ALLOCATE)) {
 	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
 
         if ((*proc)(interp, arg) != TCL_OK) {
-            Ns_TclLogError(interp);
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: register trace)");
         }
         Ns_TclDeAllocateInterp(interp);
     }
@@ -679,9 +723,11 @@ Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
 }
 
 static int
-RegisterAt(Ns_TclTraceProc *proc, void *arg, unsigned int when)
+RegisterAt(Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
 {
     NsServer *servPtr;
+
+    assert(proc != NULL);
 
     servPtr = NsGetInitServer();
     if (servPtr == NULL) {
@@ -714,7 +760,7 @@ RegisterAt(Ns_TclTraceProc *proc, void *arg, unsigned int when)
  */
 
 int
-Ns_TclInitInterps(CONST char *server, Ns_TclInterpInitProc *proc, void *arg)
+Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, void *arg)
 {
     return Ns_TclRegisterTrace(server, proc, arg, NS_TCL_TRACE_CREATE);
 }
@@ -779,7 +825,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  */
 
 const char *
-Ns_TclLibrary(CONST char *server)
+Ns_TclLibrary(const char *server)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -806,8 +852,11 @@ Ns_TclLibrary(CONST char *server)
 char *
 Ns_TclInterpServer(Tcl_Interp *interp)
 {
-    NsInterp *itPtr = NsGetInterpData(interp);
+    NsInterp *itPtr;
 
+    assert(interp != NULL);
+
+    itPtr = NsGetInterpData(interp);
     if (itPtr != NULL && itPtr->servPtr != NULL) {
         return itPtr->servPtr->server;
     }
@@ -832,9 +881,12 @@ Ns_TclInterpServer(Tcl_Interp *interp)
  */
 
 int
-Ns_TclInitModule(CONST char *server, CONST char *module)
+Ns_TclInitModule(const char *server, const char *module)
 {
     NsServer *servPtr;
+
+    assert(server != NULL);
+    assert(module != NULL);
 
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
@@ -884,7 +936,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     Ns_DString      ds;
     char           *script;
     int             remain = 0, opt, length, result = TCL_OK;
-    unsigned int    when = 0U;
+    Ns_TclTraceType when;
+    unsigned int    flags = 0u;
 
     static const char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
@@ -898,22 +951,22 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         IOnInitIdx, IRunTracesIdx, ISaveIdx, ITraceIdx, IUpdateIdx
     };
     static Ns_ObjvTable traceWhen[] = {
-        {"create",     NS_TCL_TRACE_CREATE},
-        {"delete",     NS_TCL_TRACE_DELETE},
-        {"allocate",   NS_TCL_TRACE_ALLOCATE},
-        {"deallocate", NS_TCL_TRACE_DEALLOCATE},
-        {"getconn",    NS_TCL_TRACE_GETCONN},
-        {"freeconn",   NS_TCL_TRACE_FREECONN},
-        {NULL, 0}
+        {"create",     (unsigned int)NS_TCL_TRACE_CREATE},
+        {"delete",     (unsigned int)NS_TCL_TRACE_DELETE},
+        {"allocate",   (unsigned int)NS_TCL_TRACE_ALLOCATE},
+        {"deallocate", (unsigned int)NS_TCL_TRACE_DEALLOCATE},
+        {"getconn",    (unsigned int)NS_TCL_TRACE_GETCONN},
+        {"freeconn",   (unsigned int)NS_TCL_TRACE_FREECONN},
+        {NULL,         (unsigned int)0}
     };
     Ns_ObjvSpec addTraceArgs[] = {
-        {"when",       Ns_ObjvFlags,  &when,      traceWhen},
+        {"when",       Ns_ObjvFlags,  &flags,      traceWhen},
         {"script",     Ns_ObjvObj,    &scriptObj, NULL},
         {"?args",      Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec runTraceArgs[] = {
-        {"when",       Ns_ObjvFlags,  &when,      traceWhen},
+        {"when",       Ns_ObjvFlags,  &flags,      traceWhen},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1008,7 +1061,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         }
         script = ns_strdup(Tcl_GetStringFromObj(objv[2], &length));
         Ns_RWLockWrLock(&servPtr->tcl.lock);
-        ns_free(servPtr->tcl.script);
+        ns_free((char *)servPtr->tcl.script);
         servPtr->tcl.script = script;
         servPtr->tcl.length = length;
         if (++servPtr->tcl.epoch == 0) {
@@ -1039,11 +1092,11 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
             return TCL_ERROR;
         }
-        while ((deferPtr = itPtr->firstDeferPtr) != NULL) {
-            itPtr->firstDeferPtr = deferPtr->nextPtr;
+	for (deferPtr = itPtr->firstDeferPtr; deferPtr != NULL; deferPtr = deferPtr->nextPtr) {
             (*deferPtr->proc)(interp, deferPtr->arg);
             ns_free(deferPtr);
         }
+	itPtr->firstDeferPtr = NULL;
         break;
 
     case IOnInitIdx:
@@ -1084,7 +1137,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, addTraceArgs, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
-
+        when = (Ns_TclTraceType)flags;
     trace:
         if (servPtr != NsGetInitServer()) {
             Tcl_SetResult(interp, "cannot register trace after server startup",
@@ -1101,21 +1154,26 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, runTraceArgs, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
+        when = (Ns_TclTraceType)flags;
         if (opt == IRunTracesIdx) {
             RunTraces(itPtr, when);
         } else {
             Ns_DStringInit(&ds);
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-	      if ((tracePtr->when & when) != 0U) {
-		  Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+		if (tracePtr->when == when) {
+		    Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
                 }
-                tracePtr = tracePtr->nextPtr;
+		tracePtr = tracePtr->nextPtr;
             }
             Tcl_DStringResult(interp, &ds);
         }
         break;
 
+    default:
+        /* unexpected value */
+        assert(opt && 0);
+        break;
     }
 
     return result;
@@ -1186,14 +1244,14 @@ NsTclRunAtClose(NsInterp *itPtr)
     Tcl_Interp  *interp = itPtr->interp;
     AtClose     *atPtr;
 
-    while ((atPtr = itPtr->firstAtClosePtr) != NULL) {
-        itPtr->firstAtClosePtr = atPtr->nextPtr;
+    for (atPtr = itPtr->firstAtClosePtr; atPtr != NULL; atPtr = atPtr->nextPtr) {
         if (Tcl_EvalObjEx(interp, atPtr->objPtr, TCL_EVAL_DIRECT) != TCL_OK) {
-            Ns_TclLogError(interp);
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: at close)");
         }
         Tcl_DecrRefCount(atPtr->objPtr);
         ns_free(atPtr);
     }
+    itPtr->firstAtClosePtr = NULL;
 }
 
 
@@ -1214,15 +1272,18 @@ NsTclRunAtClose(NsInterp *itPtr)
  */
 
 void
-NsTclInitServer(CONST char *server)
+NsTclInitServer(const char *server)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
+    
+    assert(server != NULL); 
 
+    servPtr = NsGetServer(server);
     if (servPtr != NULL) {
 	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
 
         if (Tcl_EvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
-            Ns_TclLogError(interp);
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: init server)");
         }
         Ns_TclDeAllocateInterp(interp);
     }
@@ -1260,8 +1321,8 @@ NsTclAppInit(Tcl_Interp *interp)
     if (Tcl_Init(interp) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_SetVar(interp, "tcl_rcFileName", "~/.nsdrc", TCL_GLOBAL_ONLY);
-    Tcl_Eval(interp, "proc exit {} ns_shutdown");
+    (void) Tcl_SetVar(interp, "tcl_rcFileName", "~/.nsdrc", TCL_GLOBAL_ONLY);
+    (void) Tcl_Eval(interp, "proc exit {} ns_shutdown");
     (void) PopInterp(servPtr, interp);
 
     return TCL_OK;
@@ -1319,7 +1380,7 @@ NsFreeConnInterp(Conn *connPtr)
     if (itPtr != NULL) {
         RunTraces(itPtr, NS_TCL_TRACE_FREECONN);
         itPtr->conn = NULL;
-        itPtr->nsconn.flags = 0U;
+        itPtr->nsconn.flags = 0u;
         PushInterp(itPtr);
         connPtr->itPtr = NULL;
     }
@@ -1350,7 +1411,7 @@ NsTclTraceProc(Tcl_Interp *interp, void *arg)
 
     status = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0);
     if (status != TCL_OK) {
-        Ns_TclLogError(interp);
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: trace proc)");
     }
 
     return status;
@@ -1404,7 +1465,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
             NsTclAddServerCmds(itPtr);
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
             if (UpdateInterp(itPtr) != TCL_OK) {
-                Ns_TclLogError(interp);
+                (void) Ns_TclLogErrorInfo(interp, "\n(context: update interpreter)");
             }
         } else {
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
@@ -1447,14 +1508,17 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
 static void
 PushInterp(NsInterp *itPtr)
 {
-    Tcl_Interp *interp = itPtr->interp;
+    Tcl_Interp *interp;
+
+    assert(itPtr != NULL);
+    
+    interp = itPtr->interp;
 
     /*
      * Evaluate the dellocation traces once to perform various garbage
      * collection and then either delete the interp or push it back on the
      * per-thread list.
      */
-
     if (itPtr->refcnt == 1) {
         RunTraces(itPtr, NS_TCL_TRACE_DEALLOCATE);
         if (itPtr->deleteInterp != 0) {
@@ -1562,7 +1626,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 
     Tcl_InitMemory(interp);
     if (Tcl_Init(interp) != TCL_OK) {
-        Ns_TclLogError(interp);
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: create interpreter)");
     }
 
     /*
@@ -1573,7 +1637,10 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      * operation only once for all threads.
      */
     if (strcmp("utf-8", Tcl_GetEncodingName(Tcl_GetEncoding(interp, NULL))) != 0) {
-      Tcl_SetSystemEncoding(interp, "utf-8");
+	int result = Tcl_SetSystemEncoding(interp, "utf-8");
+	if (result != TCL_OK) {
+	    (void) Ns_TclLogErrorInfo(interp, "\n(context: set system encoding to utf-8)");
+	}
     }
 
     /*
@@ -1612,6 +1679,8 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 {
     static volatile int initialized = 0;
     NsInterp *itPtr;
+
+    assert(interp != NULL);
 
     /*
      * Core one-time server initialization to add a few Tcl_Obj
@@ -1683,8 +1752,11 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 static int
 UpdateInterp(NsInterp *itPtr)
 {
-    NsServer *servPtr = itPtr->servPtr;
+    NsServer *servPtr;
     int       result = TCL_OK;
+
+    assert(itPtr != NULL);
+    servPtr = itPtr->servPtr;
 
     /*
      * A reader-writer lock is used on the assumption updates are
@@ -1721,37 +1793,45 @@ UpdateInterp(NsInterp *itPtr)
  */
 
 static void
-RunTraces(NsInterp *itPtr, unsigned int why)
+RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
 {
     TclTrace *tracePtr;
-    NsServer *servPtr = itPtr->servPtr;
+    NsServer *servPtr;
 
+    assert(itPtr != NULL);
+
+    servPtr = itPtr->servPtr;
     if (servPtr != NULL) {
 
-	if ((why & (NS_TCL_TRACE_FREECONN|NS_TCL_TRACE_DEALLOCATE|NS_TCL_TRACE_DELETE)) != 0U) {
-
-            /* Run finalisation traces in LIFO order. */
+        switch (why) {
+        case NS_TCL_TRACE_FREECONN:
+        case NS_TCL_TRACE_DEALLOCATE:
+        case NS_TCL_TRACE_DELETE:
+            /* Run finalization traces in LIFO order. */
 
             tracePtr = servPtr->tcl.lastTracePtr;
             while (tracePtr != NULL) {
-                if ((tracePtr->when & why) != 0U) {
+                if (tracePtr->when == why) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
-                        Ns_TclLogError(itPtr->interp);
+                        (void) Ns_TclLogErrorInfo(itPtr->interp, "\n(context: run trace)");
                     }
                 }
                 tracePtr = tracePtr->prevPtr;
             }
+            break;
 
-        } else {
-            /* Run initialisation traces in FIFO order. */
+        case NS_TCL_TRACE_ALLOCATE:
+        case NS_TCL_TRACE_CREATE:
+        case NS_TCL_TRACE_GETCONN:
+            /* Run initialization traces in FIFO order. */
 
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
-                if ((tracePtr->when & why) != 0U) {
+                if (tracePtr->when == why) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
-                        Ns_TclLogError(itPtr->interp);
+                        (void) Ns_TclLogErrorInfo(itPtr->interp, "\n(context: run trace)");
                     }
                 }
                 tracePtr = tracePtr->nextPtr;
@@ -1761,9 +1841,11 @@ RunTraces(NsInterp *itPtr, unsigned int why)
 }
 
 static void
-LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, unsigned int why)
+LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
 {
     Ns_DString  ds;
+
+    assert(itPtr != NULL);
 
     if (Ns_LogSeverityEnabled(Debug)) {
         Ns_DStringInit(&ds);
@@ -1785,6 +1867,10 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, unsigned int why)
             break;
         case NS_TCL_TRACE_FREECONN:
             Tcl_DStringAppendElement(&ds, "freeconn");
+            break;
+        default:
+            /* unexpected value */
+            assert(why && 0);
             break;
         }
         Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
@@ -1854,13 +1940,21 @@ DeleteInterps(void *arg)
     while (hPtr != NULL) {
         NsInterp  *itPtr;
 
-        if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
-	    if (itPtr->interp != NULL) {
-	        Ns_TclDestroyInterp(itPtr->interp);
-	    }
+        itPtr = Tcl_GetHashValue(hPtr);
+        if ((itPtr != NULL) && (itPtr->interp != NULL)) {
+	    Ns_TclDestroyInterp(itPtr->interp);
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(tablePtr);
     ns_free(tablePtr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -51,8 +51,8 @@ typedef struct Event {
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;
 
-#define EVENT_WAIT 1U  /* Event callback has requested a wait. */
-#define EVENT_DONE 2U  /* Event callback has signaled Event done. */
+#define NS_EVENT_WAIT 1U  /* Event callback has requested a wait. */
+#define NS_EVENT_DONE 2U  /* Event callback has signaled Event done. */
 
 /*
  * The following defines an event queue of sockets waiting for
@@ -82,8 +82,8 @@ typedef struct EventQueue {
  */
 
 static const struct {
-    unsigned const int when;  /* Event when bit. */
-    const short event;        /* Poll event bit. */
+    Ns_SockState when;  /* Event when bit. */
+    const short  event;        /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -116,8 +116,8 @@ Ns_CreateEventQueue(int maxevents)
 
     assert(maxevents > 0);
 
-    queuePtr = ns_calloc(1U, sizeof(EventQueue) + (sizeof(Event) * maxevents));
-    queuePtr->pfds = ns_calloc(maxevents + 1, sizeof(struct pollfd));
+    queuePtr = ns_calloc(1u, sizeof(EventQueue) + (sizeof(Event) * (size_t)maxevents));
+    queuePtr->pfds = ns_calloc((size_t)maxevents + 1u, sizeof(struct pollfd));
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -195,7 +195,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
  */
 
 void
-Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
+Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
     Event *evPtr = (Event *) event;
     int    i;
@@ -205,8 +205,8 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      */
 
     evPtr->events = 0;
-    for (i = 0; i < 3; ++i) {
-        if ((when & map[i].when) != 0U) {
+    for (i = 0; i < Ns_NrElements(map); ++i) {
+        if (when == map[i].when) {
             evPtr->events |= map[i].event;
         }
     }
@@ -223,10 +223,10 @@ Ns_EventCallback(Ns_Event *event, unsigned int when, const Ns_Time *timeoutPtr)
      * Add to the waiting list if there are events or a timeout.
      */
 
-    if (evPtr->events != 0U || timeoutPtr != NULL) {
-        evPtr->status = EVENT_WAIT;
+    if (evPtr->events != 0 || timeoutPtr != NULL) {
+        evPtr->status = NS_EVENT_WAIT;
     } else {
-        evPtr->status = EVENT_DONE;
+        evPtr->status = NS_EVENT_DONE;
     }
 }
 
@@ -311,10 +311,10 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      */
     ((void)(n)); /* ignore n */
 
-    if (((queuePtr->pfds[0].revents & POLLIN) != 0U)
+    if (((queuePtr->pfds[0].revents & POLLIN) != 0)
         && (recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1)
 	) {
-	Ns_Fatal("event queue: trigger read() failed: %s",
+	Ns_Fatal("event queue: trigger ns_read() failed: %s",
 		 ns_sockstrerror(ns_sockerrno));
     }
 
@@ -340,7 +340,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
             revents |= POLLIN;
         }
         if (revents != 0) {
-            for (i = 0; i < 3; ++i) {
+            for (i = 0; i < Ns_NrElements(map); ++i) {
                 if ((revents & map[i].event) != 0) {
                     Call(evPtr, &now, map[i].when);
                 }
@@ -350,7 +350,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
             Call(evPtr, &now, NS_SOCK_TIMEOUT);
         }
 
-        if (evPtr->status == EVENT_WAIT) {
+        if (evPtr->status == NS_EVENT_WAIT) {
             Push(evPtr, queuePtr->firstWaitPtr);
         } else {
             Push(evPtr, queuePtr->firstFreePtr);
@@ -421,3 +421,12 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
         evPtr = evPtr->nextPtr;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

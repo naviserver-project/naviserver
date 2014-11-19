@@ -108,7 +108,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
         if (sock >= 0 && listen(sock, backlog) == -1) {
             /* Can't listen; close the opened socket */
             int err = errno;
-            close(sock);
+            ns_sockclose(sock);
             errno = err;
             sock = NS_INVALID_SOCKET;
             Ns_SetSockErrno(err);
@@ -275,7 +275,7 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
         /* Can't listen; close the opened socket */
         int err = errno;
 
-        close(sock);
+        ns_sockclose(sock);
         errno = err;
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
@@ -321,9 +321,9 @@ Ns_SockBindUdp(const struct sockaddr_in *saPtr)
     if (sock == NS_INVALID_SOCKET
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
         || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
-        || bind(sock,(struct sockaddr*)saPtr, sizeof(struct sockaddr_in)) == -1) {
+        || bind(sock,(const struct sockaddr*)saPtr, sizeof(struct sockaddr_in)) == -1) {
         int err = errno;
-        close(sock);
+        ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
@@ -369,7 +369,7 @@ Ns_SockBindUnix(const char *path, int socktype, int mode)
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
         || (mode && chmod(path, mode) == -1)) {
         int err = errno;
-        close(sock);
+        ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
@@ -405,7 +405,7 @@ Ns_SockBindRaw(int proto)
 
     if (sock == NS_INVALID_SOCKET) {
         int err = errno;
-        close(sock);
+        ns_sockclose(sock);
         Ns_SetSockErrno(err);
     }
 
@@ -525,7 +525,7 @@ NsClosePreBound(void)
         sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused TCP socket: %s:%d = %d",
                addr, port, sock);
-        close(sock);
+        ns_sockclose(sock);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -544,7 +544,7 @@ NsClosePreBound(void)
         sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused UDP socket: %s:%d = %d",
                addr, port, sock);
-        close(sock);
+        ns_sockclose(sock);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -561,7 +561,7 @@ NsClosePreBound(void)
         port = PTR2INT(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused raw socket: %d = %d",
                port, sock);
-        close(sock);
+        ns_sockclose(sock);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -578,7 +578,7 @@ NsClosePreBound(void)
         sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused Unix-domain socket: %s = %d",
                addr, sock);
-        close(sock);
+        ns_sockclose(sock);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -630,7 +630,10 @@ PreBind(const char *line)
         }
         proto = "tcp";
         addr = "0.0.0.0";
-        /* Parse port */
+
+        /* 
+	 * Parse port 
+	 */
         str = strchr(line, ':');
         if (str != NULL) {
             *str++ = '\0';
@@ -640,12 +643,18 @@ PreBind(const char *line)
         } else {
             port = strtol(line, NULL, 10);
         }
-        /* Parse protocol */
+
+        /* 
+	 * Parse protocol 
+	 */
         if (*line != '/' && (str = strchr(line,'/'))) {
             *str++ = '\0';
             proto = str;
         }
 
+	/*
+	 * TCP
+	 */
         if (STREQ(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: %s:%d",
@@ -669,6 +678,9 @@ PreBind(const char *line)
             Ns_Log(Notice, "prebind: tcp: %s:%d = %d", addr, port, sock);
         }
 
+	/*
+	 * UDP
+	 */
         if (STREQ(proto,"udp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: udp: invalid address: %s:%d",
@@ -692,7 +704,10 @@ PreBind(const char *line)
             Ns_Log(Notice, "prebind: udp: %s:%d = %d", addr, port, sock);
         }
 
-        if (!strncmp(proto,"icmp",4)) {
+	/*
+	 * ICMP
+	 */
+        if (strncmp(proto, "icmp", 4U) == 0) {
             int count = 1;
             /* Parse count */
             str = strchr(str,'/');
@@ -709,7 +724,7 @@ PreBind(const char *line)
                 hPtr = Tcl_CreateHashEntry(&preboundRaw, NSSOCK2PTR(sock), &isNew);
                 if (isNew == 0) {
                     Ns_Log(Error, "prebind: icmp: duplicate entry");
-                    close(sock);
+                    ns_sockclose(sock);
                     continue;
                 }
                 Tcl_SetHashValue(hPtr, IPPROTO_ICMP);
@@ -717,6 +732,9 @@ PreBind(const char *line)
             }
         }
 
+	/*
+	 * Unix-domain socket
+	 */
         if (Ns_PathIsAbsolute(line)) {
             /* Parse mode */
             mode = 0;
@@ -788,7 +806,7 @@ Ns_SockBinderListen(int type, const char *address, int port, int options)
     iov[2].iov_len = sizeof(type);
     iov[3].iov_base = (caddr_t) data;
     iov[3].iov_len = sizeof(data);
-    /*memset(data, 0, sizeof(data));*/
+
     strncpy(data, address, sizeof(data)-1);
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
@@ -837,7 +855,7 @@ Ns_SockBinderListen(int type, const char *address, int port, int options)
      */
 
     if (sock != NS_INVALID_SOCKET && Ns_CloseOnExec(sock) != NS_OK) {
-        close(sock);
+        ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
     }
     if (err == 0) {
@@ -904,8 +922,8 @@ NsForkBinder(void)
         if (pid < 0) {
             Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
         } else if (pid == 0) {
-            close(binderRequest[1]);
-            close(binderResponse[0]);
+            ns_sockclose(binderRequest[1]);
+            ns_sockclose(binderResponse[0]);
             Binder();
         }
         exit(0);
@@ -944,10 +962,10 @@ void
 NsStopBinder(void)
 {
     if (binderRunning != 0) {
-        close(binderRequest[1]);
-        close(binderResponse[0]);
-        close(binderRequest[0]);
-        close(binderResponse[1]);
+        ns_sockclose(binderRequest[1]);
+        ns_sockclose(binderResponse[0]);
+        ns_sockclose(binderRequest[0]);
+        ns_sockclose(binderResponse[1]);
         binderRunning = 0;
     }
 }
@@ -973,7 +991,7 @@ NsStopBinder(void)
 static void
 Binder(void)
 {
-    int           options, type, port, n, err, fd;
+    int           options, type, port, n, err, sock;
     char          address[64];
     struct msghdr msg;
     struct iovec  iov[4];
@@ -1022,20 +1040,20 @@ Binder(void)
          */
         switch (type) {
         case 'U':
-            fd = Ns_SockListenUdp(address, port);
+            sock = Ns_SockListenUdp(address, port);
             break;
         case 'D':
-            fd = Ns_SockListenUnix(address, options, port);
+            sock = Ns_SockListenUnix(address, options, port);
             break;
         case 'R':
-            fd = Ns_SockListenRaw(options);
+            sock = Ns_SockListenRaw(options);
             break;
         case 'T':
         default:
-            fd = Ns_SockListenEx(address, port, options);
+            sock = Ns_SockListenEx(address, port, options);
         }
 
-        if (fd < 0) {
+        if (sock < 0) {
             err = errno;
         }
 
@@ -1049,7 +1067,7 @@ Binder(void)
         msg.msg_controllen = sizeof(address); 
 #endif
 
-        if (fd != -1) {
+        if (sock != -1) {
 #ifdef HAVE_CMMSG
 	    int *pfd;
 
@@ -1057,12 +1075,12 @@ Binder(void)
             c->cmsg_level = SOL_SOCKET;
             c->cmsg_type  = SCM_RIGHTS;
             pfd = (int*)CMSG_DATA(c); 
-            *pfd = fd;
+            *pfd = sock;
             c->cmsg_len = CMSG_LEN(sizeof(int));
             msg.msg_controllen = c->cmsg_len; 
 #else
-            msg.msg_accrights = (caddr_t) &fd;
-            msg.msg_accrightslen = sizeof(fd);
+            msg.msg_accrights = (caddr_t) &sock;
+            msg.msg_accrightslen = sizeof(sock);
 #endif
         }
         do {
@@ -1071,15 +1089,24 @@ Binder(void)
         if (n != RESPONSE_SIZE) {
             Ns_Fatal("binder: sendmsg() failed: sent %d bytes, '%s'", n, strerror(errno));
         }
-        if (fd != -1) {
+        if (sock != -1) {
 
             /*
              * Close the socket as it won't be needed in the slave.
              */
 
-            close(fd);
+            ns_sockclose(sock);
         }
     }
     Ns_Log(Notice, "binder: stopped");
 }
 #endif /* _WIN32 */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

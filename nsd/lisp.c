@@ -59,12 +59,13 @@ Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
     Ns_List *lPtr;
 
     if (l1Ptr != NULL) {
-        for (lPtr = l1Ptr; ((lPtr->rest) != NULL); lPtr = lPtr->rest)
-	    ;
+        for (lPtr = l1Ptr; ((lPtr->rest) != NULL); lPtr = lPtr->rest) {
+            ;
+        }
         lPtr->rest = l2Ptr;
-        return (l1Ptr);
+        return l1Ptr;
     } else {
-        return (l2Ptr);
+        return l2Ptr;
     }
 }
 
@@ -398,13 +399,13 @@ Ns_ListWeightSort(Ns_List *wPtr)
      * Sort the list of larger elements and append it to axis
      */
     
-    Ns_ListNconc(axisnodePtr, Ns_ListWeightSort(nPtr));
+    (void) Ns_ListNconc(axisnodePtr, Ns_ListWeightSort(nPtr));
 
     /*
      * Sort the list of smaller elements and append axis to it.
      */
     
-    return (Ns_ListNconc(Ns_ListWeightSort(mPtr), axisnodePtr));
+    return Ns_ListNconc(Ns_ListWeightSort(mPtr), axisnodePtr);
 }
 
 
@@ -460,8 +461,8 @@ Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
     *lastmPtrPtr = NULL;
     *lastnPtrPtr = NULL;
 
-    Ns_ListNconc(axisnodePtr, Ns_ListSort(nPtr, sortProc));
-    return (Ns_ListNconc(Ns_ListSort(mPtr, sortProc), axisnodePtr));
+    (void) Ns_ListNconc(axisnodePtr, Ns_ListSort(nPtr, sortProc));
+    return Ns_ListNconc(Ns_ListSort(mPtr, sortProc), axisnodePtr);
 }
 
 
@@ -663,3 +664,12 @@ Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc)
     
     return Ns_ListNreverse(mPtr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

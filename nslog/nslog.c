@@ -127,7 +127,7 @@ Ns_ModuleInit(char *server, char *module)
 
     logPtr = ns_calloc(1U, sizeof(Log));
     logPtr->module = module;
-    logPtr->fd = -1;
+    logPtr->fd = NS_INVALID_FD;
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Ns_DStringInit(&logPtr->buffer);
@@ -149,13 +149,13 @@ Ns_ModuleInit(char *server, char *module)
          */
 
         if (Ns_HomePathExists("logs", NULL)) {
-            Ns_HomePath(&ds, "logs", "/", file, NULL);
+            (void) Ns_HomePath(&ds, "logs", "/", file, NULL);
         } else {
             Tcl_Obj *dirpath;
 	    int status;
 
             Ns_DStringTrunc(&ds, 0);
-            Ns_ModulePath(&ds, server, module, NULL, (char *)0);
+            (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
             status = Tcl_FSCreateDirectory(dirpath);
@@ -167,7 +167,7 @@ Ns_ModuleInit(char *server, char *module)
                 return NS_ERROR;
             }
             Ns_DStringTrunc(&ds, 0);
-            Ns_ModulePath(&ds, server, module, file, (char *)0);
+            (void) Ns_ModulePath(&ds, server, module, file, (char *)0);
         }
         logPtr->file = Ns_DStringExport(&ds);
     }
@@ -503,7 +503,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Log         *logPtr = arg;
     CONST char **h;
     char        *p, *user, buffer[PIPE_BUF], *bufferPtr = NULL;
-    int          n, status, i, fd;
+    int          n, status, i;
     size_t	 bufferSize = 0U;
     Ns_DString   ds;
 
@@ -575,7 +575,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     n = Ns_ConnResponseStatus(conn);
-    Ns_DStringPrintf(&ds, "%d %" TCL_LL_MODIFIER "d", (n != 0) ? n : 200, Ns_ConnContentSent(conn));
+    Ns_DStringPrintf(&ds, "%d %" PRIdz, (n != 0) ? n : 200, Ns_ConnContentSent(conn));
 
     /*
      * Append the referer and user-agent headers (if any)
@@ -633,7 +633,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
     }
 
-    for (i=0; i<ds.length; i++) {
+    for (i = 0; i < ds.length; i++) {
       /* 
        * Quick fix to disallow terminal escape characters in the log
        * file. See e.g. http://www.securityfocus.com/bid/37712/info
@@ -653,7 +653,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     if (logPtr->maxlines == 0) {
         bufferSize = ds.length;
 	if (bufferSize < PIPE_BUF) {
-	  /* only those write() operations are guaranteed to be atomic */
+	  /* only those ns_write() operations are guaranteed to be atomic */
 	    bufferPtr = ds.string;
            status = NS_OK;
 	} else {
@@ -664,7 +664,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         if (++logPtr->curlines > logPtr->maxlines) {
 	    bufferSize = logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {
-              /* only those write() are guaranteed to be atomic */
+              /* only those ns_write() are guaranteed to be atomic */
               /* in most cases, we will fall into the other branch */
 	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
 	      bufferPtr = buffer;
@@ -678,23 +678,12 @@ LogTrace(void *arg, Ns_Conn *conn)
             status = NS_OK;
         }
     }
-    ((void)(status)); /* ignore status */
-
-    fd = logPtr->fd;
     Ns_MutexUnlock(&logPtr->lock);
 
-    if (likely(bufferPtr != NULL) && likely(fd >= 0) && likely(bufferSize > 0)) {
-#ifdef _MSC_VER
-      size_t written;
+    (void)(status); /* ignore status */
 
-      written = _write(fd, bufferPtr, bufferSize);
-
-      if (written != bufferSize) {
-	  fprintf(stderr, "Warning: write operation to access.log failed\n");
-      }
-#else
-      NsAsyncWrite(fd, bufferPtr, bufferSize);
-#endif
+    if (likely(bufferPtr != NULL) && likely(logPtr->fd >= 0) && likely(bufferSize > 0)) {
+        NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
     }
 
     Ns_DStringFree(&ds);
@@ -723,14 +712,14 @@ LogOpen(Log *logPtr)
 {
     int fd;
 
-    fd = open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
-    if (fd == -1) {
+    fd = ns_open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
+    if (fd == NS_INVALID_FD) {
         Ns_Log(Error,"nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->file);
         return NS_ERROR;
     }
     if (logPtr->fd >= 0) {
-        close(logPtr->fd);
+        ns_close(logPtr->fd);
     }
 
     logPtr->fd = fd;
@@ -764,8 +753,8 @@ LogClose(Log *logPtr)
 
     if (logPtr->fd >= 0) {
         status = LogFlush(logPtr, &logPtr->buffer);
-        close(logPtr->fd);
-        logPtr->fd = -1;
+        ns_close(logPtr->fd);
+        logPtr->fd = NS_INVALID_FD;
         Ns_DStringFree(&logPtr->buffer);
         Ns_Log(Notice,"nslog: closed '%s'", logPtr->file);
     }
@@ -798,16 +787,16 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
     char *buf = dsPtr->string;
 
     if (len > 0) {
-        if (logPtr->fd >= 0 && write(logPtr->fd, buf, len) != len) {
-            Ns_Log(Error, "nslog: logging disabled: write() failed: '%s'",
+        if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, len) != len) {
+            Ns_Log(Error, "nslog: logging disabled: ns_write() failed: '%s'",
                    strerror(errno));
-            close(logPtr->fd);
-            logPtr->fd = -1;
+            ns_close(logPtr->fd);
+            logPtr->fd = NS_INVALID_FD;
         }
         Ns_DStringTrunc(dsPtr, 0);
     }
 
-    return (logPtr->fd == -1) ? NS_ERROR : NS_OK;
+    return (logPtr->fd == NS_INVALID_FD) ? NS_ERROR : NS_OK;
 }
 
 
@@ -970,3 +959,12 @@ LogArg(Tcl_DString *dsPtr, void *arg)
 
     Tcl_DStringAppendElement(dsPtr, logPtr->file);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

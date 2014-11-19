@@ -35,7 +35,7 @@
 
 #include "nsd.h"
 
-struct _nsconf nsconf;
+struct nsconf nsconf;
 
 
 
@@ -171,7 +171,7 @@ NsConfUpdate(void)
     if ((i = Ns_ConfigIntRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX)) > 0
         || (i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX)) > 0) {
 
-	Ns_ThreadStackSize((long)i);
+	(void) Ns_ThreadStackSize((long)i);
     }
 
     /*

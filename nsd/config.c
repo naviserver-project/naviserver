@@ -150,11 +150,11 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
         found = NS_TRUE;
     }
 
-    Ns_Log(Dev, "config: %s:%s value=%d default=%d (flag)", 
+    Ns_Log(Dev, "config: %s:%s value=%u default=%u (flag)", 
 	   (section != NULL) ? section : "", 
 	   key, 
-	   (value != 0) ? flag : 0, 
-	   (def != 0) ? flag : 0);
+	   (value != 0) ? flag : 0u, 
+	   (def != 0) ? flag : 0u);
 
     if (value != 0) {
         *flagsPtr |= flag;
@@ -233,11 +233,18 @@ Ns_ConfigIntRange(const char *section, const char *key, int def,
  *
  *----------------------------------------------------------------------
  */
+#ifdef TCL_WIDE_INT_IS_LONG
+# define WIDE_INT_MAX LONG_MAX
+# define WIDE_INT_MIN LONG_MIN
+#else
+# define WIDE_INT_MAX LLONG_MAX
+# define WIDE_INT_MIN LLONG_MIN
+#endif
 
 Tcl_WideInt
 Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt def)
 {
-    return Ns_ConfigWideIntRange(section, key, def, INT_MIN, INT_MAX);
+    return Ns_ConfigWideIntRange(section, key, def, WIDE_INT_MIN, WIDE_INT_MAX);
 }
 
 Tcl_WideInt
@@ -521,7 +528,7 @@ Ns_ConfigGetSections(void)
     int             n;
 
     n = nsconf.sections.numEntries + 1;
-    sets = ns_malloc(sizeof(Ns_Set *) * n);
+    sets = ns_malloc(sizeof(Ns_Set *) * (size_t)n);
     n = 0;
     hPtr = Tcl_FirstHashEntry(&nsconf.sections, &search);
     while (hPtr != NULL) {
@@ -575,7 +582,7 @@ Ns_ConfigGetSection(const char *section)
 Ns_Set *
 Ns_ConfigCreateSection(const char *section)
 {
-    int create = Ns_InfoStarted() ? 0 : 1;
+    int create = (Ns_InfoStarted() != 0) ? 0 : 1;
     return GetSection(section, create);
 }
 
@@ -633,7 +640,7 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  */
 
 char *
-NsConfigRead(CONST char *file)
+NsConfigRead(const char *file)
 {
     Tcl_Channel  chan = NULL;
     Tcl_Obj     *buf = NULL;
@@ -725,7 +732,7 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
     Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optind), TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
-        Ns_TclLogError(interp);
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: config eval)");
         Ns_Fatal("config error");
     }
     Ns_TclDestroyInterp(interp);
@@ -844,7 +851,7 @@ ConfigGet(const char *section, const char *key, int exact, const char *defstr)
 	if (i >= 0) {
 	    s = Ns_SetValue(set, i);
 	} else {
-	    i = Ns_SetPut(set, key, defstr);
+	    i = (int)Ns_SetPut(set, key, defstr);
 	    if (defstr != NULL) {
 		s = Ns_SetValue(set, i);
             }
@@ -978,3 +985,12 @@ ToBool(const char *value, int *valuePtr)
 
     return NS_TRUE;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

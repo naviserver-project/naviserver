@@ -75,9 +75,10 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
 {
     Ns_DString  ds;
     Tcl_Channel chan;
+    int result = NS_OK;
 
     Ns_DStringInit(&ds);
-    Ns_UrlToFile(&ds, server, url);
+    (void) Ns_UrlToFile(&ds, server, url);
     chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
     Ns_DStringFree(&ds);
     if (chan != NULL) {
@@ -87,12 +88,12 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
         while ((nread = Tcl_Read(chan, buf, (int)sizeof(buf))) > 0) {
             Ns_DStringNAppend(dsPtr, buf, nread);
         }
-        Tcl_Close(NULL, chan);
+        result = Tcl_Close(NULL, chan);
     } else {
-        return NS_ERROR;
+        result = NS_ERROR;
     }
 
-    return NS_OK;
+    return result;
 }
 
 
@@ -123,7 +124,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     Stream          stream;
     Ns_Request      request;
     int             status, n;
-    unsigned int    tosend;
+    unsigned int    toSend;
 
     sock = NS_INVALID_SOCKET;
     Ns_DStringInit(&ds);
@@ -162,15 +163,15 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     }
     Ns_DStringAppend(&ds, " HTTP/1.0\r\nAccept: */*\r\n\r\n");
     p = ds.string;
-    tosend = ds.length;
-    while (tosend > 0) {
-        n = send(sock, p, tosend, 0);
+    toSend = ds.length;
+    while (toSend > 0) {
+        n = send(sock, p, toSend, 0);
         if (n == SOCKET_ERROR) {
             Ns_Log(Error, "urlopen: failed to send data to '%s': '%s'",
                    url, ns_sockstrerror(ns_sockerrno));
             goto done;
         }
-        tosend -= n;
+        toSend -= n;
         p += n;
     }
 
@@ -186,7 +187,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     if (GetLine(&stream, &ds) == 0) {
         goto done;
     }
-    if (headers != NULL && strncmp(ds.string, "HTTP", 4) == 0) {
+    if (headers != NULL && strncmp(ds.string, "HTTP", 4U) == 0) {
         if (headers->name != NULL) {
 	    ns_free((char *)headers->name);
         }
@@ -382,3 +383,12 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
 
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

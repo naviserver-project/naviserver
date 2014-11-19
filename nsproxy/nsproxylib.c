@@ -389,20 +389,20 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     minor = htons(MINOR_VERSION);
     proc.pid = NS_INVALID_PID;
 
-    proc.rfd = dup(0);
+    proc.rfd = ns_dup(0);
     if (proc.rfd < 0) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
-    proc.wfd = dup(1);
+    proc.wfd = ns_dup(1);
     if (proc.wfd < 0) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
-    close(0);
-    if (open("/dev/null", O_RDONLY) != 0) {
+    ns_close(0);
+    if (ns_open("/dev/null", O_RDONLY, 0) != 0) {
         Ns_Fatal("nsproxy: open: %s", strerror(errno));
     }
-    close(1);
-    if (dup(2) != 1) {
+    ns_close(1);
+    if (ns_dup(2) != 1) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
 
@@ -784,23 +784,23 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     }
     if (ns_pipe(wpipe) != 0) {
         Tcl_AppendResult(interp, "pipe failed: ", Tcl_PosixError(interp), NULL);
-        close(rpipe[0]);
-        close(rpipe[1]);
+        ns_close(rpipe[0]);
+        ns_close(rpipe[1]);
         return NULL;
     }
 
     pid = Ns_ExecArgv(poolPtr->exec, NULL, rpipe[0], wpipe[1], argv, NULL);
 
-    close(rpipe[0]);
-    close(wpipe[1]);
+    ns_close(rpipe[0]);
+    ns_close(wpipe[1]);
 
     ns_free(argv[0]);
     ns_free(argv[1]);
 
     if (pid == NS_INVALID_PID) {
         Tcl_AppendResult(interp, "exec failed: ", Tcl_PosixError(interp), NULL);
-        close(wpipe[0]);
-        close(rpipe[1]);
+        ns_close(wpipe[0]);
+        ns_close(rpipe[1]);
         return NULL;
     }
 
@@ -1183,7 +1183,7 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     ptr  = dsPtr->string + n;
     while (len > 0) {
         do {
-            n = read(slavePtr->rfd, ptr, len);
+            n = ns_read(slavePtr->rfd, ptr, len);
         } while (n == -1 && errno == EINTR);
         if (n == 0) {
             return 0; /* EOF */
@@ -2481,7 +2481,7 @@ CloseSlave(Slave *slavePtr, int ms)
      * Closing the write pipe should normally make proxy exit.
      */
 
-    close(slavePtr->wfd);
+    ns_close(slavePtr->wfd);
     slavePtr->signal  = 0;
     slavePtr->sigsent = 0;
 
@@ -2721,7 +2721,7 @@ ReaperThread(void *ignored)
                 }
 
                 tmpSlavePtr = slavePtr->nextPtr;
-                close(slavePtr->rfd);
+                ns_close(slavePtr->rfd);
                 ns_free(slavePtr);
                 slavePtr = tmpSlavePtr;
 
