@@ -127,7 +127,7 @@ Ns_ModuleInit(char *server, char *module)
 
     logPtr = ns_calloc(1U, sizeof(Log));
     logPtr->module = module;
-    logPtr->fd = -1;
+    logPtr->fd = NS_INVALID_FD;
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Ns_DStringInit(&logPtr->buffer);
@@ -713,7 +713,7 @@ LogOpen(Log *logPtr)
     int fd;
 
     fd = ns_open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
-    if (fd == -1) {
+    if (fd == NS_INVALID_FD) {
         Ns_Log(Error,"nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->file);
         return NS_ERROR;
@@ -754,7 +754,7 @@ LogClose(Log *logPtr)
     if (logPtr->fd >= 0) {
         status = LogFlush(logPtr, &logPtr->buffer);
         ns_close(logPtr->fd);
-        logPtr->fd = -1;
+        logPtr->fd = NS_INVALID_FD;
         Ns_DStringFree(&logPtr->buffer);
         Ns_Log(Notice,"nslog: closed '%s'", logPtr->file);
     }
@@ -791,12 +791,12 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
             Ns_Log(Error, "nslog: logging disabled: ns_write() failed: '%s'",
                    strerror(errno));
             ns_close(logPtr->fd);
-            logPtr->fd = -1;
+            logPtr->fd = NS_INVALID_FD;
         }
         Ns_DStringTrunc(dsPtr, 0);
     }
 
-    return (logPtr->fd == -1) ? NS_ERROR : NS_OK;
+    return (logPtr->fd == NS_INVALID_FD) ? NS_ERROR : NS_OK;
 }
 
 

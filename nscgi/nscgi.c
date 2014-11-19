@@ -388,7 +388,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
     cgiPtr->pid = NS_INVALID_PID;
-    cgiPtr->ofd = cgiPtr->ifd = -1;
+    cgiPtr->ofd = cgiPtr->ifd = NS_INVALID_FD;
     cgiPtr->ptr = cgiPtr->buf;
     for (i = 0; i < NDSTRINGS; ++i) {
 	Ns_DStringInit(&cgiPtr->ds[i]);
@@ -546,7 +546,7 @@ err:
  *	Spool content to a temp file.
  *
  * Results:
- *	File descriptor of temp file or -1 on error.
+ *	File descriptor of temp file or NS_INVALID_FD on error.
  *
  * Side effects:
  *	May open a new temp file.
@@ -575,7 +575,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     if (err != NULL) {
 	Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
 	ns_close(fd);
-	fd = -1;
+	fd = NS_INVALID_FD;
     }
     if (fd < 0) {
 	return NS_ERROR;

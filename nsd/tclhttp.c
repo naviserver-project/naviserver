@@ -466,7 +466,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		    sprintf(httpPtr->spoolFileName, "%s/http.XXXXXX", nsconf.tmpDir);
 		    fd = ns_mkstemp(httpPtr->spoolFileName);
 		    
-		    if (fd == -1) {
+		    if (fd == NS_INVALID_FD) {
 		      Ns_Log(Error, "ns_http: cannot create spool file with template '%s': %s", 
 			     httpPtr->spoolFileName, strerror(errno));
 		    }

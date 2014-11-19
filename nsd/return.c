@@ -915,7 +915,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	 * - iovec based requests: all range request up to 32 ranges.
 	 * - fd based requests: 0 or 1 range requests
 	 */
-	if (fd == -1) {
+	if (fd == NS_INVALID_FD) {
 	    int nvbufs;
 	    struct iovec vbuf[32];
 

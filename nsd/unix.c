@@ -779,7 +779,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     FD_ZERO(&efds);
 
     for (i = 0; i < nfds; ++i) {
-        if (fds[i].fd == -1) {
+        if (fds[i].fd == NS_INVALID_FD) {
             continue;
         }
         if (fds[i].fd > n) {
@@ -808,7 +808,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     }
     for (i = 0; i < nfds; ++i) {
         fds[i].revents = 0;
-        if (fds[i].fd == -1) {
+        if (fds[i].fd == NS_INVALID_FD) {
             continue;
         }
         if (FD_ISSET(fds[i].fd, &ifds)) {

@@ -2406,7 +2406,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16U);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
-	    if (sockPtr->tfd == -1) {
+	    if (sockPtr->tfd == NS_INVALID_FD) {
 	      Ns_Log(Error, "nssock: cannot create spool file with template '%s': %s", 
 		     sockPtr->tfile, strerror(errno));
 	    }
@@ -3361,7 +3361,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     if (wrSockPtr->clientData != NULL) {
 	ns_free(wrSockPtr->clientData);
     }
-    if (wrSockPtr->fd > -1) {
+    if (wrSockPtr->fd != NS_INVALID_FD) {
 	if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
 	    (void) ns_close(wrSockPtr->fd);
 	}
@@ -3529,7 +3529,7 @@ WriterSend(WriterSock *curPtr, int *err) {
     /*
      * Prepare send operation
      */
-    if (curPtr->fd > -1) {
+    if (curPtr->fd != NS_INVALID_FD) {
 	/*
 	 * Send a single buffer with curPtr->c.file.bufsize bytes from the
 	 * curPtr->c.file.buf to the client.
@@ -3599,7 +3599,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	curPtr->nsent += n;
 	curPtr->sockPtr->timeout.sec = 0;
 
-	if (curPtr->fd > -1) {
+	if (curPtr->fd != NS_INVALID_FD) {
 	    curPtr->c.file.bufsize -= n;
 	    curPtr->c.file.bufoffset = (off_t)n;
 	    /* for partial transmits bufsize is now > 0 */
@@ -3750,7 +3750,7 @@ WriterThread(void *arg)
 		     * If we are spooling from a file, read some data
 		     * from the (spool) file and place it into curPtr->c.file.buf.
 		     */
-		    if (curPtr->fd > -1) {
+		    if (curPtr->fd != NS_INVALID_FD) {
 			spoolerState = WriterReadFromSpool(curPtr);
 		    }
 		    
@@ -3938,7 +3938,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    return NS_ERROR;
 	}
 
-	if (unlikely(fp != NULL || fd > -1)) {
+	if (unlikely(fp != NULL || fd != NS_INVALID_FD)) {
 	    Ns_Log(DriverDebug, "NsWriterQueue: does not stream from this source via writer");
 	    return NS_ERROR;
 	}
@@ -4021,7 +4021,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * The client provided an open file pointer and closes it
 	     */
 	    fd = ns_dup(fileno(fp));
-	} else if (fd != -1) {
+	} else if (fd != NS_INVALID_FD) {
 	    /* 
 	     * The client provided an open file descriptor and closes it 
 	     */
@@ -4076,8 +4076,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	headerSize = 0U;
     }
 
-    if (fd != -1) {
-	/* maybe add mmap support for files (fd != -1) */
+    if (fd != NS_INVALID_FD) {
+	/* maybe add mmap support for files (fd != NS_INVALID_FD) */
 
 	wrSockPtr->fd = fd;
 	if (unlikely(headerSize >= wrPtr->bufsize)) {
@@ -4112,7 +4112,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     } else if (bufs != NULL) {
 	int   i, j, headerbufs = headerSize > 0U ? 1 : 0;
 
-	wrSockPtr->fd = -1;
+	wrSockPtr->fd = NS_INVALID_FD;
 	
 	if (nbufs+headerbufs < UIO_SMALLIOV) {
 	    wrSockPtr->c.mem.bufs = wrSockPtr->c.mem.preallocated_bufs;
@@ -4341,7 +4341,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	}
 
         fd = ns_open(name, O_RDONLY, 0);
-        if (fd == -1) {
+        if (fd == NS_INVALID_FD) {
 	    Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
             return TCL_ERROR;
         }

@@ -1079,7 +1079,7 @@ LogOpen(void)
 #endif
 
     fd = ns_open(file, oflags, 0644);
-    if (fd == -1) {
+    if (fd == NS_INVALID_FD) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
         status = NS_ERROR;

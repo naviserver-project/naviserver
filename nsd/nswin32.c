@@ -746,7 +746,7 @@ ns_pipe(int *fds)
  *      under unix-like systems.
  *
  * Results:
- *      fd if ok, -1 on error.
+ *      fd if ok, NS_INVALID_FD on error.
  *
  * Side effects:
  *      Opens a temporary file.
@@ -758,7 +758,7 @@ ns_pipe(int *fds)
 int
 ns_mkstemp(char *template) 
 {
-    int err, fd = -1;
+    int err, fd = NS_INVALID_FD;
 
     err = _mktemp_s(template, strlen(template));
 

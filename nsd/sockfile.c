@@ -80,7 +80,7 @@ Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, const void *data,
     bufs[i].fd = fd;
     bufs[i].length = length;
 
-    if (fd > -1) {
+    if (fd != NS_INVALID_FD) {
         bufs[i].offset = offset;
     } else {
         bufs[i].offset = ((off_t)(intptr_t) data) + offset;
