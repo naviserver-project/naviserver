@@ -68,7 +68,7 @@ static int    poolid = 0;
 /*
  * Debugging stuff
  */
-#define ThreadNr(poolPtr, argPtr) ((int)((argPtr != NULL) ? ((argPtr) - (poolPtr)->tqueue.args) : -1))
+#define ThreadNr(poolPtr, argPtr) ((int)(((argPtr) != NULL) ? ((argPtr) - (poolPtr)->tqueue.args) : -1))
 
 #if 0
 static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
@@ -795,6 +795,10 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	    Ns_MutexUnlock(&poolPtr->wqueue.lock);
         }
         Tcl_DStringResult(interp, dsPtr);
+        break;
+    default:
+        /* should never happen */
+        assert(subcmd && 0);
     }
 
     return TCL_OK;
@@ -1007,7 +1011,8 @@ NsConnThread(void *arg)
     NsServer      *servPtr = poolPtr->servPtr;
     Conn          *connPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
-    unsigned int   id, shutdown;
+    unsigned int   id;
+    bool           shutdown;
     int            status = NS_OK, cpt, ncons, timeout, current, fromQueue;
     const char    *path, *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
@@ -1419,7 +1424,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 
     if (connPtr->reqPtr == NULL) {
 	Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
-        Ns_ConnClose(conn);
+        (void) Ns_ConnClose(conn);
         return;
     }
     assert(sockPtr != NULL);
@@ -1438,7 +1443,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->contentLength = connPtr->reqPtr->length;
 
-    connPtr->nContentSent = 0;
+    connPtr->nContentSent = 0u;
     connPtr->responseStatus = 200;
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;
@@ -1570,14 +1575,14 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     if (connPtr->fd != 0) {
 	connPtr->fd = 0;
     }
-    if (connPtr->streamWriter != NULL) {
+    if (connPtr->strWriter != NULL) {
 	WriterSock *wrPtr;
 
 	NsWriterLock();
-	wrPtr = connPtr->streamWriter;
+	wrPtr = connPtr->strWriter;
 	if (wrPtr != NULL) {
 	    NsWriterFinish(wrPtr);
-	    connPtr->streamWriter = NULL;
+	    connPtr->strWriter = NULL;
 	}
 	NsWriterUnlock();
     }
@@ -1593,8 +1598,8 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     NsFreeRequest(connPtr->reqPtr);
     connPtr->reqPtr = NULL;
     if (connPtr->clientData != NULL) {
-      ns_free(connPtr->clientData);
-      connPtr->clientData = NULL;
+        ns_free(connPtr->clientData);
+        connPtr->clientData = NULL;
     }
 }
 
@@ -1624,12 +1629,10 @@ CreateConnThread(ConnPool *poolPtr)
 
 #if !defined(NDEBUG)
     { char *threadName = Ns_ThreadGetName();
-      /* Ns_Log(Debug, "CreateConnThread: threadName is: '%s'", threadName); */
-      assert(strncmp("-driver:", threadName, 8) == 0 
-	     || strncmp("-main-", threadName, 6) == 0
-	     || strncmp("-spooler", threadName, 8) == 0
-	     || strncmp("-service-", threadName, 9) == 0
-	     || strncmp("", threadName, 1) == 0
+      assert(strncmp("-driver:", threadName, 8U) == 0 
+	     || strncmp("-main-", threadName, 6U) == 0
+	     || strncmp("-spooler", threadName, 8U) == 0
+	     || strncmp("-service-", threadName, 9U) == 0
 	     );
     }
 #endif
@@ -1800,3 +1803,12 @@ AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state)
         firstPtr = firstPtr->nextPtr;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
