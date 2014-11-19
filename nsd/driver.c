@@ -666,8 +666,7 @@ NsStartDrivers(void)
      * Signal and wait for each driver to start.
      */
 
-    drvPtr = firstDrvPtr;
-    while (drvPtr != NULL) {
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         if (drvPtr->port == 0) {
             /*
              * Don't start this driver
@@ -684,7 +683,6 @@ NsStartDrivers(void)
             status = NS_ERROR;
 	    }*/
         Ns_MutexUnlock(&drvPtr->lock);
-        drvPtr = drvPtr->nextPtr;
     }
 }
 
@@ -709,20 +707,22 @@ NsStartDrivers(void)
 void
 NsStopDrivers(void)
 {
-    Driver *drvPtr = firstDrvPtr;
+    Driver         *drvPtr;
     Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch search;
+    Tcl_HashSearch  search;
 
     NsAsyncWriterQueueDisable(1);
 
-    while (drvPtr != NULL) {
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        if ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+            continue;
+        }
         Ns_MutexLock(&drvPtr->lock);
         Ns_Log(Notice, "[driver:%s]: stopping", drvPtr->name);
         drvPtr->flags |= DRIVER_SHUTDOWN;
         Ns_CondBroadcast(&drvPtr->cond);
         Ns_MutexUnlock(&drvPtr->lock);
         SockTrigger(drvPtr->trigger[1]);
-        drvPtr = drvPtr->nextPtr;
     }
 
     hPtr = Tcl_FirstHashEntry(&hosts, &search);
@@ -736,21 +736,24 @@ NsStopDrivers(void)
 void
 NsStopSpoolers(void)
 {
-    Driver *drvPtr = firstDrvPtr;
+    Driver *drvPtr;
 
     Ns_Log(Notice, "driver: stopping writer and spooler threads");
     
     /*
      * Shutdown all spooler and writer threads
      */
-    while (drvPtr != NULL) {
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
 	Ns_Time timeout;
+
+        if ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+            continue;
+        }
 	Ns_GetTime(&timeout);
 	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
 	
 	SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
 	SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
-        drvPtr = drvPtr->nextPtr;
     }
 }
 
@@ -801,7 +804,10 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
     Driver *drvPtr = firstDrvPtr;
     int status = NS_OK;
 
-    while (drvPtr != NULL) {
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        if ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+            continue;
+        }
         Ns_MutexLock(&drvPtr->lock);
         while ((drvPtr->flags & DRIVER_STOPPED) == 0U && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
@@ -814,7 +820,6 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
             Ns_ThreadJoin(&drvPtr->thread, NULL);
             drvPtr->thread = NULL;
         }
-        drvPtr = drvPtr->nextPtr;
     }
 }
 
