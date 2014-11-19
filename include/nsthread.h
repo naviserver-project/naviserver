@@ -115,9 +115,6 @@
 /*
  * Visual Studio defines
  */
-#  define NS_SOCKET		SOCKET
-#  define NS_INVALID_SOCKET     INVALID_SOCKET
-
 typedef          __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 
@@ -134,7 +131,11 @@ typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
 typedef          DWORD pid_t;
-#define NS_INVALID_PID 0
+
+#  define NS_SOCKET		SOCKET
+#  define NS_INVALID_SOCKET     (INVALID_SOCKET)
+#  define NS_INVALID_PID        (0)
+#  define NS_INVALID_FD         (-1)
 
 #  ifdef _WIN64
 typedef int64_t ssize_t;
@@ -166,6 +167,7 @@ typedef int32_t ssize_t;
 #  define NS_SOCKET 		int
 #  define NS_INVALID_PID 	(-1)
 #  define NS_INVALID_SOCKET     (-1)
+#  define NS_INVALID_FD         (-1)
 # endif
 
 
@@ -315,8 +317,10 @@ typedef struct DIR_ *DIR;
 #include <sys/mman.h>
 #include <poll.h>
 
-#define NS_SOCKET	int
-#define NS_INVALID_PID  (-1)
+#define NS_SOCKET	      int
+#define NS_INVALID_SOCKET     (-1)
+#define NS_INVALID_PID        (-1)
+#define NS_INVALID_FD         (-1)
 
 /* 
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
@@ -375,7 +379,6 @@ typedef struct DIR_ *DIR;
 # define O_TEXT                     (0)
 # define O_BINARY                   (0)
 
-# define NS_INVALID_SOCKET          (-1)
 # define SOCKET_ERROR               (-1)
 
 # define NS_SIGHUP                  (SIGHUP)
