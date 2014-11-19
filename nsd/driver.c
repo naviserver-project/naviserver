@@ -801,7 +801,7 @@ NsWakeupDriver(const Driver *drvPtr) {
 void
 NsWaitDriversShutdown(const Ns_Time *toPtr)
 {
-    Driver *drvPtr = firstDrvPtr;
+    Driver *drvPtr;
     int status = NS_OK;
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
@@ -3162,9 +3162,9 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
 	int status;
 
         Ns_MutexLock(&queuePtr->lock);
-        if (queuePtr->stopped == NS_FALSE && !queuePtr->shutdown) {
+        if (queuePtr->stopped == NS_FALSE && queuePtr->shutdown == NS_FALSE) {
             Ns_Log(Debug, "%s%d: triggering shutdown", name, queuePtr->id);
-            queuePtr->shutdown = 1;
+            queuePtr->shutdown = NS_TRUE;
             SockTrigger(queuePtr->pipe[1]);
         }
         status = NS_OK;
@@ -3328,7 +3328,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	Conn *connPtr;
 	NsWriterLock();
 	connPtr = wrSockPtr->connPtr;
-	if (connPtr != NULL && connPtr->strWriter) {
+	if (connPtr != NULL && connPtr->strWriter != NULL) {
 	    connPtr->strWriter = NULL;
 	}
 	NsWriterUnlock();
@@ -4423,7 +4423,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	    /*
 	     * if server was specified, list only results from this server.
 	     */
-	    if (servPtr && servPtr != drvPtr->servPtr) {
+	    if (servPtr != NULL && servPtr != drvPtr->servPtr) {
 		continue;
 	    }
 

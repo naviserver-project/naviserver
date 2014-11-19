@@ -788,13 +788,13 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     s += 3;               /* Get past the protocol://  */
     p = strchr(s, ':');   /* Get to the port number    */
     if (p != NULL) {
-	size_t i;
+	int j;
 
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
-        for (i = 0U; *p != '\0'; ++p) {
-            ++i;
+        for (j = 0; *p != '\0'; ++p) {
+            ++j;
         }
-        Ns_DStringTrunc(dsPtr, (int)i);
+        Ns_DStringTrunc(dsPtr, j);
     }
     SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);

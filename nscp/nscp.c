@@ -420,7 +420,8 @@ retry:
 	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
 	while (len > 0U) {
-	    if ((n = ns_send(sessPtr->sock, res, len, 0)) <= 0) {
+	    n = ns_send(sessPtr->sock, res, len, 0);
+	    if (n <= 0) {
 		goto done;
 	    }
 	    len -= (size_t)n;
@@ -484,7 +485,8 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
     }
 
     do {
-	if ((n = ns_recv(sock, buf, sizeof(buf), 0)) <= 0) {
+	n = ns_recv(sock, buf, sizeof(buf), 0);
+	if (n <= 0) {
 	    result = 0;
 	    goto bail;
 	}

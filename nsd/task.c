@@ -47,7 +47,7 @@ typedef struct TaskQueue {
     Ns_Thread          tid;               /* Thread id. */
     Ns_Mutex           lock;              /* Queue list and signal lock. */
     Ns_Cond            cond;              /* Task and queue signal condition. */
-    int                shutdown;          /* Shutdown flag. */
+    bool               shutdown;          /* Shutdown flag. */
     int                stopped;           /* Stop flag. */
     NS_SOCKET          trigger[2];        /* Trigger pipe. */
     char               name[NAME_SIZE+1]; /* String name. */
@@ -684,11 +684,12 @@ static int
 SignalQueue(Task *taskPtr, unsigned int bit)
 {
     TaskQueue *queuePtr = taskPtr->queuePtr;
-    int        pending = 0, shutdown;
+    int        pending = 0;
+    bool       shutdown;
 
     Ns_MutexLock(&queuePtr->lock);
     shutdown = queuePtr->shutdown;
-    if (shutdown == 0) {
+    if (shutdown == NS_FALSE) {
 
         /*
          * Mark the signal and add event to signal list if not
@@ -704,7 +705,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
         }
     }
     Ns_MutexUnlock(&queuePtr->lock);
-    if (shutdown != 0) {
+    if (shutdown == NS_TRUE) {
         return 0;
     }
     if (pending == 0) {
@@ -761,7 +762,7 @@ static void
 StopQueue(TaskQueue *queuePtr)
 {
     Ns_MutexLock(&queuePtr->lock);
-    queuePtr->shutdown = 1;
+    queuePtr->shutdown = NS_TRUE;
     Ns_MutexUnlock(&queuePtr->lock);
     TriggerQueue(queuePtr);
 }
@@ -827,7 +828,8 @@ TaskThread(void *arg)
     firstWaitPtr = NULL;
 
     while (1) {
-	int n, broadcast, nfds, shutdown;
+        int n, broadcast, nfds;
+        bool shutdown;
 	Ns_Time  *timeoutPtr, now;
 
         /*
@@ -930,7 +932,7 @@ TaskThread(void *arg)
          * Break now if shutting down now that all signals have been processed.
          */
 
-        if (shutdown != 0) {
+        if (shutdown == NS_TRUE) {
             break;
         }
 
@@ -990,3 +992,11 @@ TaskThread(void *arg)
 
     Ns_Log(Notice, "shutdown complete");
 }
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

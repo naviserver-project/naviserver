@@ -240,7 +240,7 @@ typedef struct SpoolerQueue {
     Ns_Cond              cond;        /* Cond for stopped flag */
     Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
     bool                 stopped;     /* Flag to indicate thread stopped */
-    int                  shutdown;    /* Flag to indicate shutdown */
+    bool                 shutdown;    /* Flag to indicate shutdown */
     int                  id;          /* Queue id */
     int                  queuesize;   /* Number of active sockets in the queue */
     const char          *threadname;  /* name of the thread working on this queue */
