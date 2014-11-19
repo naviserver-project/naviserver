@@ -668,6 +668,12 @@ NsStartDrivers(void)
 
     drvPtr = firstDrvPtr;
     while (drvPtr != NULL) {
+        if (drvPtr->port == 0) {
+            /*
+             * Don't start this driver
+             */
+            continue;
+        }
         Ns_Log(Notice, "driver: starting: %s", drvPtr->name);
         Ns_ThreadCreate(DriverThread, drvPtr, 0, &drvPtr->thread);
         Ns_MutexLock(&drvPtr->lock);
