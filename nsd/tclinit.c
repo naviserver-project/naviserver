@@ -1242,13 +1242,15 @@ void
 NsTclRunAtClose(NsInterp *itPtr)
 {
     Tcl_Interp  *interp = itPtr->interp;
-    AtClose     *atPtr;
+    AtClose     *atPtr, *nextPtr;
 
-    for (atPtr = itPtr->firstAtClosePtr; atPtr != NULL; atPtr = atPtr->nextPtr) {
+    for (atPtr = itPtr->firstAtClosePtr; atPtr != NULL; atPtr = nextPtr) {
+        assert(atPtr->objPtr != NULL);
         if (Tcl_EvalObjEx(interp, atPtr->objPtr, TCL_EVAL_DIRECT) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: at close)");
         }
         Tcl_DecrRefCount(atPtr->objPtr);
+        nextPtr = atPtr->nextPtr;
         ns_free(atPtr);
     }
     itPtr->firstAtClosePtr = NULL;
