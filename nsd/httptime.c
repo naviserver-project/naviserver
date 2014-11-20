@@ -132,7 +132,7 @@ time_t
 Ns_ParseHttpTime(char *str)
 {
     char      *s;
-    struct tm  tm;
+    struct tm  timeInfo;
     time_t     t;
 
     if (str == NULL) {
@@ -182,12 +182,12 @@ Ns_ParseHttpTime(char *str)
              *           +--s
              */
 
-            tm.tm_mday = MakeNum(s);
-            tm.tm_mon = MakeMonth(s + 3);
-            tm.tm_year = MakeNum(s + 7);
-            tm.tm_hour = MakeNum(s + 10);
-            tm.tm_min = MakeNum(s + 13);
-            tm.tm_sec = MakeNum(s + 16);
+            timeInfo.tm_mday = MakeNum(s);
+            timeInfo.tm_mon = MakeMonth(s + 3);
+            timeInfo.tm_year = MakeNum(s + 7);
+            timeInfo.tm_hour = MakeNum(s + 10);
+            timeInfo.tm_min = MakeNum(s + 13);
+            timeInfo.tm_sec = MakeNum(s + 16);
         } else {
             if ((int) strlen(s) < 20) {
                 return 0;
@@ -201,12 +201,12 @@ Ns_ParseHttpTime(char *str)
              *      +--s
              */
 
-            tm.tm_mday = MakeNum(s);
-            tm.tm_mon = MakeMonth(s + 3);
-            tm.tm_year = ((100 * MakeNum(s + 7)) - 1900) + MakeNum(s + 9);
-            tm.tm_hour = MakeNum(s + 12);
-            tm.tm_min = MakeNum(s + 15);
-            tm.tm_sec = MakeNum(s + 18);
+            timeInfo.tm_mday = MakeNum(s);
+            timeInfo.tm_mon = MakeMonth(s + 3);
+            timeInfo.tm_year = ((100 * MakeNum(s + 7)) - 1900) + MakeNum(s + 9);
+            timeInfo.tm_hour = MakeNum(s + 12);
+            timeInfo.tm_min = MakeNum(s + 15);
+            timeInfo.tm_sec = MakeNum(s + 18);
         }
     } else {
 
@@ -225,27 +225,27 @@ Ns_ParseHttpTime(char *str)
         if ((int) strlen(s) < 24) {
             return 0;
         }
-        tm.tm_mday = MakeNum(s + 8);
-        tm.tm_mon = MakeMonth(s + 4);
-        tm.tm_year = MakeNum(s + 22);
-        tm.tm_hour = MakeNum(s + 11);
-        tm.tm_min = MakeNum(s + 14);
-        tm.tm_sec = MakeNum(s + 17);
+        timeInfo.tm_mday = MakeNum(s + 8);
+        timeInfo.tm_mon = MakeMonth(s + 4);
+        timeInfo.tm_year = MakeNum(s + 22);
+        timeInfo.tm_hour = MakeNum(s + 11);
+        timeInfo.tm_min = MakeNum(s + 14);
+        timeInfo.tm_sec = MakeNum(s + 17);
     }
 
     /*
      * If there are any impossible values, then return an error.
      */
 
-    if (tm.tm_sec < 0 || tm.tm_sec > 59 ||
-        tm.tm_min < 0 || tm.tm_min > 59 ||
-        tm.tm_hour < 0 || tm.tm_hour > 23 ||
-        tm.tm_mday < 1 || tm.tm_mday > 31 ||
-        tm.tm_mon < 0 || tm.tm_mon > 11 ||
-        tm.tm_year < 70 || tm.tm_year > 120) {
+    if (timeInfo.tm_sec < 0 || timeInfo.tm_sec > 59 ||
+        timeInfo.tm_min < 0 || timeInfo.tm_min > 59 ||
+        timeInfo.tm_hour < 0 || timeInfo.tm_hour > 23 ||
+        timeInfo.tm_mday < 1 || timeInfo.tm_mday > 31 ||
+        timeInfo.tm_mon < 0 || timeInfo.tm_mon > 11 ||
+        timeInfo.tm_year < 70 || timeInfo.tm_year > 120) {
         return 0;
     }
-    tm.tm_isdst = 0;
+    timeInfo.tm_isdst = 0;
 #ifdef HAVE_TIMEGM
     /*
      * Initialize the mutex (if this did not happen so far) and
@@ -260,10 +260,10 @@ Ns_ParseHttpTime(char *str)
       Ns_MasterUnlock();
     }
     Ns_MutexLock(&lock);
-    t = timegm(&tm);
+    t = timegm(&timeInfo);
     Ns_MutexUnlock(&lock);
 #else
-    t = mktime(&tm) - timezone;
+    t = mktime(&timeInfo) - timezone;
 #endif
 
     return t;
@@ -289,19 +289,19 @@ Ns_ParseHttpTime(char *str)
 int
 NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    time_t time;
+    time_t t;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "httptime");
         return TCL_ERROR;
     }
-    time = Ns_ParseHttpTime(Tcl_GetString(objv[1]));
-    if (time == 0) {
+    t = Ns_ParseHttpTime(Tcl_GetString(objv[1]));
+    if (t == 0) {
         Tcl_AppendResult(interp, "invalid time: ",
                          Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(time));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(t));
 
     return TCL_OK;
 }
@@ -328,7 +328,7 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     Ns_DString ds;
     int        itime;
-    time_t     time;
+    time_t     t;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "time");
@@ -337,9 +337,9 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (Tcl_GetIntFromObj(interp, objv[1], &itime) != TCL_OK) {
         return TCL_ERROR;
     }
-    time = (time_t) itime;
+    t = (time_t) itime;
     Ns_DStringInit(&ds);
-    (void) Ns_HttpTime(&ds, &time);
+    (void) Ns_HttpTime(&ds, &t);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
