@@ -524,7 +524,7 @@ ns_section ns/server/${server}/modules
 	if {$libthread eq ""} {
 	  ns_log notice "No Tcl thread library installed in $homedir/lib/"
 	} else {
-	  ns_param	libthread $libthread end
+	  ns_param	libthread $libthread
 	  ns_log notice "Use Tcl thread library $libthread"
 	}
 
