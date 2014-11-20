@@ -248,6 +248,8 @@ typedef struct _Ns_Task         *Ns_Task;
 typedef struct _Ns_EventQueue   *Ns_EventQueue;
 typedef struct _Ns_Event        *Ns_Event;
 
+typedef int bool;
+
 /*
  * This is used for logging messages.
  */
@@ -3075,13 +3077,13 @@ ns_mkstemp(char *template);
 NS_EXTERN int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_GetNameForUid(Ns_DString *dsPtr, int uid);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_GetNameForGid(Ns_DString *dsPtr, int gid);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_GetUserHome(Ns_DString *dsPtr, char *user);
 
 NS_EXTERN int
