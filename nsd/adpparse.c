@@ -91,7 +91,7 @@ static void AppendLengths(AdpCode *codePtr, const int *length, const int *line)
 static void GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static char *GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr)
+static char *GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4); 
 
 static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
@@ -247,8 +247,8 @@ void
 NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
 	   unsigned int flags, const char* file)
 {
-    int             level, streamDone;
-    unsigned int    streamFlag;
+    int             level, scriptStreamDone;
+    unsigned int    scriptFlags;
     Tag            *tagPtr = NULL;
     char           *script = "", *s, *e, *n;
     char           *a, *as = "", *ae = "", *text;
@@ -309,8 +309,8 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      */
 
     text = adp;
-    streamDone = 0;
-    streamFlag = 0U;
+    scriptStreamDone = 0;
+    scriptFlags = 0U;
     level = 0;
     state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
@@ -372,7 +372,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                  */
 
                 GetTag(&tag, s, e, &a);
-                script = GetScript(tag.string, a, e, &streamFlag);
+                script = GetScript(tag.string, a, e, &scriptFlags);
                 if (script != NULL) {
                     /*
                      * Append text and begin looking for closing </script> tag.
@@ -429,12 +429,12 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      */
 
                     if ((flags & ADP_SAFE) == 0U) {
-                        if ((streamFlag != 0U) && (streamDone == 0)) {
+                        if (((scriptFlags & SERV_STREAM) != 0U) && (scriptStreamDone == 0)) {
 			    static char *buffer = "ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
                             AppendBlock(&parse, buffer, end, 's', flags);
-                            streamDone = 1;
+                            scriptStreamDone = 1;
                         }
                         AppendBlock(&parse, script, s, 's', flags);
                     }
@@ -817,19 +817,19 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
  */
 
 static char *
-GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr)
+GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
 {
     unsigned int flags;
 
     assert(tag != NULL);
     assert(a != NULL);
     assert(e != NULL);
-    assert(streamFlagPtr != NULL);
+    assert(flagPtr != NULL);
 
     if (a < e && STRIEQ(tag, "script")) {
         ParseAtts(a, e, &flags, NULL, 1);
         if ((flags & SERV_RUNAT) != 0U && (flags & SERV_NOTTCL) == 0U) {
-            *streamFlagPtr = (flags & SERV_STREAM);
+            *flagPtr = (flags & SERV_STREAM);
             return (e + 1);
         }
     }

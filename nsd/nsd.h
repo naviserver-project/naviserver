@@ -1396,7 +1396,7 @@ NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len) 
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) 
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int doStream) 
   NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)

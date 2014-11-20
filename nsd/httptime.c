@@ -129,13 +129,13 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
  */
 
 time_t
-Ns_ParseHttpTime(char *str)
+Ns_ParseHttpTime(char *chars)
 {
     char      *s;
     struct tm  timeInfo;
     time_t     t;
 
-    if (str == NULL) {
+    if (chars == NULL) {
         return 0;
     }
 
@@ -151,7 +151,7 @@ Ns_ParseHttpTime(char *str)
      *    +-- s
      */
 
-    s = strchr(str, ',');
+    s = strchr(chars, ',');
     if (s != NULL) {
 
         /*
@@ -218,7 +218,7 @@ Ns_ParseHttpTime(char *str)
          * Advance s to the first letter of the month.
          */
 
-        s = str;
+        s = chars;
         while (*s != '\0' && *s == ' ') {
             s++;
         }

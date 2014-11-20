@@ -608,7 +608,7 @@ Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
 
 NS_EXTERN int
 Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
-                int *streamPtr, size_t *maxBufferPtr)
+                int *doStreamPtr, size_t *maxBufferPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -2907,7 +2907,7 @@ NS_EXTERN char *
 Ns_HttpTime(Ns_DString *dsPtr, const time_t *when) NS_GNUC_NONNULL(1);
 
 NS_EXTERN time_t
-Ns_ParseHttpTime(char *str);
+Ns_ParseHttpTime(char *chars);
 
 /*
  * url.c:
