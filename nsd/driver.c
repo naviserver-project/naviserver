@@ -2530,7 +2530,7 @@ SockParse(Sock *sockPtr)
 
     while (reqPtr->coff == 0u) {
 	char *s, *e;
-	int cnt;
+	size_t cnt;
 
         /*
          * Find the next line.
@@ -2573,9 +2573,9 @@ SockParse(Sock *sockPtr)
         /*
          * Update next read pointer to end of this line.
          */
-        cnt = (int)(e - s) + 1;
+        cnt = (size_t)(e - s) + 1u;
         reqPtr->roff  += cnt;
-        reqPtr->avail -= (size_t)cnt;
+        reqPtr->avail -= cnt;
         if (likely(e > s) && likely(e[-1] == '\r')) {
             --e;
         }
@@ -3486,7 +3486,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	     * needed.
 	     */
 	    curPtr->c.file.toRead -= n;
-	    curPtr->c.file.bufsize += n;
+	    curPtr->c.file.bufsize += (size_t)n;
 	}
 	
 	if (doStream != 0) {
@@ -3591,16 +3591,16 @@ WriterSend(WriterSock *curPtr, int *err) {
 	*/
 	if (curPtr->doStream != 0) {
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    curPtr->size -= n;
+	    curPtr->size -= (size_t)n;
 	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
 	} else {
-	    curPtr->size -= n;
+	    curPtr->size -= (size_t)n;
 	}
 	curPtr->nsent += n;
 	curPtr->sockPtr->timeout.sec = 0;
 
 	if (curPtr->fd != NS_INVALID_FD) {
-	    curPtr->c.file.bufsize -= n;
+	    curPtr->c.file.bufsize -= (size_t)n;
 	    curPtr->c.file.bufoffset = (off_t)n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
@@ -3615,7 +3615,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 		
 		memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx, 
 			/* move the iovecs to the start of the scratch buffers */
-			(size_t) sizeof(struct iovec) * curPtr->c.mem.nsbufs);
+			sizeof(struct iovec) * (size_t)curPtr->c.mem.nsbufs);
 	    }
 	}
     }
@@ -4862,9 +4862,9 @@ AsyncWriterThread(void *arg)
 	    if (written < 0) {
 		status = NS_ERROR;
 	    } else {
-		curPtr->size -= written;
+		curPtr->size -= (size_t)written;
 		curPtr->nsent += written;
-		curPtr->bufsize -= written;
+		curPtr->bufsize -= (size_t)written;
 		if (curPtr->data != NULL) {
 		    curPtr->buf += written;
 		}
@@ -4901,7 +4901,7 @@ AsyncWriterThread(void *arg)
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
 		ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-		if (unlikely(written != curPtr->bufsize)) { 
+		if (unlikely(written != (ssize_t)curPtr->bufsize)) { 
 		    WriteError("shutdown", curPtr->fd, curPtr->bufsize, written);
 		}
 		curPtr = curPtr->nextPtr;
