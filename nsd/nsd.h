@@ -89,8 +89,6 @@ typedef enum {
  * Types definitions.
  */
 
-typedef int bool;
-
 struct Sock;
 struct NsServer;
 
