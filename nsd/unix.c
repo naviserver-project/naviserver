@@ -466,12 +466,11 @@ GetPwNam(char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **f
     struct passwd pw;
     char *buffer;
     size_t bufSize = 4096u;
-    int errorCode;
 
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
     do {
-        errorCode = getpwnam_r(user, &pw, buffer, bufSize, &pwPtr);
+        int errorCode = getpwnam_r(user, &pw, buffer, bufSize, &pwPtr);
         if (errorCode != ERANGE) {
             break;
         }
@@ -540,12 +539,11 @@ GetPwUID(int uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **free
     struct passwd pw;
     char *buffer;
     size_t bufSize = 4096u;
-    int errorCode;
 
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
     do {
-        errorCode = getpwuid_r(uid, &pw, buffer, bufSize, &pwPtr);
+        int errorCode = getpwuid_r(uid, &pw, buffer, bufSize, &pwPtr);
         if (errorCode != ERANGE) {
             break;
         }
