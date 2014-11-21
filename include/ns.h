@@ -2507,7 +2507,7 @@ Ns_SockCork(Ns_Sock *sock, int cork);
  */
 
 NS_EXTERN size_t
-Ns_SetVec(struct iovec *bufs, int i, CONST void *data, size_t len)
+Ns_SetVec(struct iovec *bufs, int i, const void *data, size_t len)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

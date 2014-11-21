@@ -294,7 +294,7 @@ CgiRequest(void *arg, Ns_Conn *conn)
      * Spool input to temp file if necessary.
      */
 
-    if (conn->contentLength > 0 && CgiSpool(&cgi, conn) != NS_OK) {
+    if (conn->contentLength > 0u && CgiSpool(&cgi, conn) != NS_OK) {
 	if (cgi.flags & CGI_ECONTENT) {
 	    status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
 	} else {
@@ -567,7 +567,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     fd = Ns_GetTemp();
     if (fd < 0) {
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
-    } else if (ns_write(fd, content, len) != len) {
+    } else if (ns_write(fd, content, len) != (ssize_t)len) {
 	err = "write";
     } else if (ns_lseek(fd, 0, SEEK_SET) != 0) {
 	err = "lseek";
@@ -840,7 +840,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
     SetUpdate(cgiPtr->env, "CONTENT_TYPE", s);
 
-    if (conn->contentLength == 0) {
+    if (conn->contentLength == 0u) {
         SetUpdate(cgiPtr->env, "CONTENT_LENGTH", "");
     } else {
         Ns_DStringPrintf(dsPtr, "%u", (unsigned) conn->contentLength);
@@ -1100,7 +1100,7 @@ copy:
 	struct iovec vbuf;
 
 	vbuf.iov_base = cgiPtr->ptr;
-	vbuf.iov_len  = cgiPtr->cnt;
+	vbuf.iov_len  = (size_t)cgiPtr->cnt;
     	status = Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
     } while (status == NS_OK && CgiRead(cgiPtr) > 0);
 
@@ -1205,7 +1205,7 @@ CgiRegister(Mod *modPtr, const char *map)
 	   (path != NULL) ? " -> " : "", 
 	   (path != NULL) ? path : "");
     Ns_RegisterRequest(modPtr->server, method, url,
-		       CgiRequest, CgiFreeMap, mapPtr, 0);
+		       CgiRequest, CgiFreeMap, mapPtr, 0u);
 
 done:
     Ns_DStringFree(&ds1);
@@ -1264,7 +1264,7 @@ SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, Ns_SetValue(set, index),
 	sep, value, NULL);
-    Ns_SetPutValue(set, index, ds.string);
+    Ns_SetPutValue(set, (size_t)index, ds.string);
     Ns_DStringFree(&ds);
 }
 
