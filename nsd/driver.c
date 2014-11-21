@@ -126,7 +126,7 @@ typedef struct AsyncWriteData {
     Tcl_WideInt        nsent;
     size_t             size;
     size_t             bufsize;
-    char              *buf;
+    const char        *buf;
 } AsyncWriteData;
 
 static AsyncWriter *asyncWriter = NULL;
@@ -276,10 +276,9 @@ NsInitDrivers(void)
  */
 
 int
-Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
+Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *init)
 {
-    char           *defproto;
-    const char     *host, *address, *bindaddr, *defserver, *path;
+    const char     *defproto, *host, *address, *bindaddr, *defserver, *path;
     int             i, n, defport, noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;
@@ -1229,7 +1228,7 @@ DriverThread(void *arg)
 {
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
-    char          *errstr, c, drain[1024];
+    char           charBuffer[1], drain[1024];
     int            pollto, accepted;
     bool           stopping;
     unsigned int   flags;
@@ -1314,8 +1313,8 @@ DriverThread(void *arg)
 
         n = PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
-            errstr = ns_sockstrerror(ns_sockerrno);
+        if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], charBuffer, 1, 0) != 1) {
+            const char *errstr = ns_sockstrerror(ns_sockerrno);
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
         }
 	/*
@@ -1999,7 +1998,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
 static void
 SockError(Sock *sockPtr, SockState reason, int err)
 {
-    char   *errMsg = NULL;
+    const char *errMsg = NULL;
 
     switch (reason) {
     case SOCK_READY:
@@ -2149,7 +2148,7 @@ static void
 SockTrigger(NS_SOCKET sock)
 {
     if (send(sock, "", 1, 0) != 1) {
-        char *errstr = ns_sockstrerror(ns_sockerrno);
+        const char *errstr = ns_sockstrerror(ns_sockerrno);
 
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
     }
@@ -2242,36 +2241,36 @@ ChunkedDecode(Request *reqPtr, int update)
 {
     Tcl_DString *bufPtr = &reqPtr->buffer;
     char 
-      *end = bufPtr->string + bufPtr->length, 
-      *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
+        *end = bufPtr->string + bufPtr->length, 
+        *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
-      char *p = strstr(chunkStart, "\r\n");
-      size_t chunk_length;
+        char *p = strstr(chunkStart, "\r\n");
+        size_t chunk_length;
 
-      if (p == NULL) {
-        Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
-        return -1;
-      }
+        if (p == NULL) {
+            Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
+            return -1;
+        }
+        
+        *p = '\0';
+        chunk_length = (size_t)strtol(chunkStart, NULL, 16);
+        *p = '\r';
 
-      *p = '\0';
-      chunk_length = (size_t)strtol(chunkStart, NULL, 16);
-      *p = '\r';
-
-      if (p + 2 + chunk_length > end) {
-        Ns_Log(DriverDebug,"ChunkedDecode: chunk length past end of buffer");
-        return -1;
-      }
-      if (update != 0) {
-        char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
-        memmove(writeBuffer, p + 2, chunk_length);
-        reqPtr->chunkWriteOff += chunk_length;
-        *(writeBuffer + chunk_length) = '\0';
-      }
-      reqPtr->chunkStartOff += (p - chunkStart) + 4 + chunk_length ;
-      chunkStart = bufPtr->string + reqPtr->chunkStartOff;
+        if (p + 2 + chunk_length > end) {
+            Ns_Log(DriverDebug,"ChunkedDecode: chunk length past end of buffer");
+            return -1;
+        }
+        if (update != 0) {
+            char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
+            memmove(writeBuffer, p + 2, chunk_length);
+            reqPtr->chunkWriteOff += chunk_length;
+            *(writeBuffer + chunk_length) = '\0';
+        }
+        reqPtr->chunkStartOff += (p - chunkStart) + 4 + chunk_length ;
+        chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
-
+    
     return 1;
 }
 
@@ -2885,7 +2884,7 @@ static int
 SockSetServer(Sock *sockPtr)
 {
     ServerMap     *mapPtr = NULL;
-    char          *host = NULL;
+    const char    *host = NULL;
     int            status = 1;
 
     assert(sockPtr != NULL);
@@ -2955,7 +2954,7 @@ static void
 SpoolerThread(void *arg)
 {
     SpoolerQueue  *queuePtr = (SpoolerQueue*)arg;
-    char           c;
+    char           charBuffer[1];
     int            pollto;
     bool           stopping;
     Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
@@ -3005,7 +3004,7 @@ SpoolerThread(void *arg)
 
         /*n =*/ (void) PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1, 0) != 1)) {
             Ns_Fatal("spooler: trigger ns_recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -3669,7 +3668,7 @@ WriterThread(void *arg)
     stopping = NS_FALSE;
 
     while (stopping == NS_FALSE) {
-	unsigned char c;
+	char charBuffer[1];
 
         /*
          * If there are any write sockets, set the bits.
@@ -3699,7 +3698,7 @@ WriterThread(void *arg)
          */
         (void) PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1, 0) != 1)) {
 	    Ns_Fatal("writer: trigger ns_recv() failed: %s",
 		     ns_sockstrerror(ns_sockerrno));
 	}
@@ -4259,7 +4258,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     DrvWriter    *wrPtr = NULL;
     WriterSock   *wrSockPtr;
     SpoolerQueue *queuePtr;
-    char         *driverName;
+    const char   *driverName;
     NsServer     *servPtr = NULL;
 
     static const char *opts[] = {
@@ -4306,7 +4305,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     case cmdSubmitFileIdx: {
         struct stat st;
-        char       *name;
+        const char *name;
         Tcl_Obj    *fileObj = NULL;
 	int         headers = 0;
         Tcl_WideInt offset = 0, size = 0;
@@ -4366,7 +4365,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	    }
 	    nrbytes = (size_t)size;
 	} else {
-	  nrbytes = (size_t)(st.st_size - offset);
+            nrbytes = (size_t)st.st_size - (size_t)offset;
 	}
 
 	if (offset > 0) {
@@ -4757,7 +4756,7 @@ static void
 AsyncWriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
-    unsigned char   c;
+    char            charBuffer[1];
     int             pollto, status;
     bool            stopping;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
@@ -4810,7 +4809,7 @@ AsyncWriterThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
         if (PollIn(&pdata, 0)) {
-	    if (ns_recv(queuePtr->pipe[0], &c, 1U, 0) != 1) {
+	    if (ns_recv(queuePtr->pipe[0], charBuffer, 1U, 0) != 1) {
 		Ns_Fatal("asynclogwriter: trigger ns_recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }

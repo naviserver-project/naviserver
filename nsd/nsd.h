@@ -363,12 +363,12 @@ typedef struct Driver {
      */
 
     void  *arg;                         /* Driver callback data */
-    char  *server;                      /* Virtual server name */
-    char  *module;                      /* Driver module */
-    char  *name;                        /* Driver name */
+    const char  *server;                /* Virtual server name */
+    const char  *module;                /* Driver module */
+    const char  *name;                  /* Driver name */
     const char  *location;              /* Location, e.g, "http://foo:9090" */
-    char  *address;                     /* Address in location, e.g. "foo" */
-    char  *protocol;                    /* Protocol in location, e.g, "http" */
+    const char  *address;               /* Address in location, e.g. "foo" */
+    const char  *protocol;              /* Protocol in location, e.g, "http" */
     long   sendwait;                    /* send() I/O timeout */
     long   recvwait;                    /* recv() I/O timeout */
     size_t bufsize;                     /* Conn bufsize (0 for SSL) */

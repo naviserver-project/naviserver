@@ -688,10 +688,10 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnHost(Ns_Conn *conn)
+const char *
+Ns_ConnHost(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     return connPtr->drvPtr->address;
 }
@@ -814,10 +814,10 @@ Ns_ConnSockContent(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnDriverName(Ns_Conn *conn)
+const char *
+Ns_ConnDriverName(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     return connPtr->drvPtr->name;
 }
@@ -1588,7 +1588,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CDriverIdx:
-        Tcl_SetResult(interp, Ns_ConnDriverName(conn), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnDriverName(conn), -1));
         break;
 
     case CServerIdx:

@@ -1039,8 +1039,8 @@ NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
 NS_EXTERN char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
 
-NS_EXTERN char *
-Ns_ConnHost(Ns_Conn *conn);
+NS_EXTERN const char *
+Ns_ConnHost(const Ns_Conn *conn);
 
 NS_EXTERN int
 Ns_ConnPort(Ns_Conn *conn);
@@ -1054,8 +1054,8 @@ Ns_ConnSockPtr(Ns_Conn *conn);
 NS_EXTERN Ns_DString *
 Ns_ConnSockContent(Ns_Conn *conn);
 
-NS_EXTERN char *
-Ns_ConnDriverName(Ns_Conn *conn);
+NS_EXTERN const char *
+Ns_ConnDriverName(const Ns_Conn *conn);
 
 NS_EXTERN void
 Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
@@ -1255,7 +1255,7 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host);
  * driver.c:
  */
 
-NS_EXTERN int Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init);
+NS_EXTERN int Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *init);
 
 /*
  * dstring.c:
