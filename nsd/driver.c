@@ -205,7 +205,7 @@ static SpoolerState WriterSend(WriterSock *curPtr, int *err)
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
 
-static void WriteError(const char *msg, int fd, size_t wantWrite, size_t written);
+static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written);
 
 /*
  * Static variables defined in this file.
@@ -223,11 +223,11 @@ static Driver    *firstDrvPtr = NULL; /* First in list of all drivers */
 
 
 static void 
-WriteError(const char *msg, int fd, size_t wantWrite, size_t written)
+WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
 {
     fprintf(stderr, "%s: Warning: wanted to write %" PRIdz 
-	    " bytes, wrote %" PRIdz " to file descriptor %d\n",
-	    msg, wantWrite, written, fd);
+	    " bytes, wrote %ld to file descriptor %d\n",
+	    msg, wantWrite, (long)written, fd);
 }
 
 
@@ -4662,9 +4662,9 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped == NS_TRUE) {
-	size_t written = ns_write(fd, buffer, nbyte);
+	ssize_t written = ns_write(fd, buffer, nbyte);
 
-	if (unlikely(written != nbyte)) {
+	if (unlikely(written != (ssize_t)nbyte)) {
 	    WriteError("sync write", fd, nbyte, written);
 	}
         return NS_ERROR;
@@ -4819,17 +4819,17 @@ AsyncWriterThread(void *arg)
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    size_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-		    if (unlikely(written != curPtr->bufsize)) { 
+		    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    if (unlikely(written != (ssize_t)curPtr->bufsize)) { 
 			WriteError("drain writer", curPtr->fd, curPtr->bufsize, written);
 		    }
 		}
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    size_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-		    if (unlikely(written != curPtr->bufsize)) { 
-			WriteError("drain queue", curPtr->fd, curPtr->bufsize, written);
+		    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    if (unlikely(written != (ssize_t)curPtr->bufsize)) { 
+                        WriteError("drain queue", curPtr->fd, curPtr->bufsize, written);
 		    }
 		}
 		queuePtr->sockPtr = NULL;
