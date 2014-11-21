@@ -36,40 +36,6 @@
 #include "nsd.h"
 
 /*
- * constants for SockState return and reason codes.
- */
-
-typedef enum {
-    SOCK_READY =               0,
-    SOCK_MORE =                1,
-    SOCK_SPOOL =               2,
-    SOCK_ERROR =              -1,
-    SOCK_CLOSE =              -2,
-    SOCK_CLOSETIMEOUT =       -3,
-    SOCK_READTIMEOUT =        -4,
-    SOCK_WRITETIMEOUT =       -5,
-    SOCK_SERVERREJECT =       -6,
-    SOCK_READERROR =          -7,
-    SOCK_WRITEERROR =         -8,
-    SOCK_SHUTERROR =          -9,
-    SOCK_BADREQUEST =         -11,
-    SOCK_ENTITYTOOLARGE =     -12,
-    SOCK_BADHEADER =          -13,
-    SOCK_TOOMANYHEADERS =     -14
-} SockState;
-
-/*
- * subset for spooler states
- */
-typedef enum {
-    SPOOLER_CLOSE =             SOCK_CLOSE,
-    SPOOLER_OK =                SOCK_READY,
-    SPOOLER_READERROR =         SOCK_READERROR,
-    SPOOLER_WRITEERROR =        SOCK_WRITEERROR,
-    SPOOLER_CLOSETIMEOUT =      SOCK_CLOSETIMEOUT
-} SpoolerState;
-
-/*
  * The following are valid driver state flags.
  */
 
@@ -3411,8 +3377,7 @@ static SpoolerState
 WriterReadFromSpool(WriterSock *curPtr) {
     int            doStream;
     SpoolerState   status = SPOOLER_OK;
-    Tcl_WideInt    toRead;
-    size_t         maxsize;
+    size_t         maxsize, toRead;
     unsigned char *bufPtr;
 
     assert(curPtr != NULL);
@@ -3450,14 +3415,14 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
 	maxsize -= curPtr->c.file.bufsize;
     }
-    if (toRead > (Tcl_WideInt)maxsize) {
-	toRead = (Tcl_WideInt)maxsize;
+    if (toRead > maxsize) {
+	toRead = maxsize;
     }
     
     /*
      * Read content from the file into the buffer.
      */
-    if (toRead > 0) {
+    if (toRead > 0u) {
 	ssize_t n;
 
 	if (doStream != 0) {
@@ -3475,7 +3440,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	    (void) ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
-	n = ns_read(curPtr->fd, bufPtr, (size_t)toRead);
+	n = ns_read(curPtr->fd, bufPtr, toRead);
 	
 	if (n <= 0) {
 	    status = SPOOLER_READERROR;
@@ -3484,7 +3449,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	     * curPtr->c.file.toRead is still protected by curPtr->c.file.fdlock when
 	     * needed.
 	     */
-	    curPtr->c.file.toRead -= n;
+	    curPtr->c.file.toRead -= (size_t)n;
 	    curPtr->c.file.bufsize += (size_t)n;
 	}
 	
@@ -3799,7 +3764,7 @@ WriterThread(void *arg)
 		Ns_Log(DriverDebug, 
 		       "Writer %p fd %d release, not OK (status %d) => RELEASE", 
 		       (void *)curPtr, curPtr->sockPtr->sock, (int)spoolerState);
-		curPtr->status = (int)spoolerState;
+		curPtr->status = spoolerState;
 		curPtr->err    = err;
 		WriterSockRelease(curPtr);
             }
@@ -3979,7 +3944,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                 if (j > 0) {
                     wrote += (size_t)j;
                     Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %" PRIdz " of %" PRIiovlen " OK %d", 
-                           connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
+                           connPtr->fd, i, j, bufs[i].iov_len, j == (ssize_t)bufs[i].iov_len);
                 } else {
                     Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed", 
                            connPtr->fd);
@@ -4117,7 +4082,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    wrSockPtr->c.mem.bufs = wrSockPtr->c.mem.preallocated_bufs;
 	} else {
 	    Ns_Log(Notice, "NsWriterQueue: alloc %d iovecs", nbufs);
-	    wrSockPtr->c.mem.bufs = ns_calloc(nbufs+headerbufs, sizeof(struct iovec));
+	    wrSockPtr->c.mem.bufs = ns_calloc((size_t)nbufs + (size_t)headerbufs, sizeof(struct iovec));
 	}
 	wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
 	if (headerbufs != 0) {
@@ -4464,7 +4429,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	
 	/* look up driver with the specified name */
         for (drvPtr = firstDrvPtr; drvPtr; drvPtr = drvPtr->nextPtr) {
-	    if (strncmp(driverName, drvPtr->name, driverNameLen) == 0) {
+	    if (strncmp(driverName, drvPtr->name, (size_t)driverNameLen) == 0) {
 		if (drvPtr->writer.firstPtr != NULL) {wrPtr = &drvPtr->writer;}
 		break;
 	    }

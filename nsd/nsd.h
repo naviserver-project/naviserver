@@ -84,6 +84,39 @@ typedef enum {
  */
 
 #define NSD_TEXTHTML                   "text/html"
+/*
+ * constants for SockState return and reason codes.
+ */
+
+typedef enum {
+    SOCK_READY =               0,
+    SOCK_MORE =                1,
+    SOCK_SPOOL =               2,
+    SOCK_ERROR =              -1,
+    SOCK_CLOSE =              -2,
+    SOCK_CLOSETIMEOUT =       -3,
+    SOCK_READTIMEOUT =        -4,
+    SOCK_WRITETIMEOUT =       -5,
+    SOCK_SERVERREJECT =       -6,
+    SOCK_READERROR =          -7,
+    SOCK_WRITEERROR =         -8,
+    SOCK_SHUTERROR =          -9,
+    SOCK_BADREQUEST =         -11,
+    SOCK_ENTITYTOOLARGE =     -12,
+    SOCK_BADHEADER =          -13,
+    SOCK_TOOMANYHEADERS =     -14
+} SockState;
+
+/*
+ * subset for spooler states
+ */
+typedef enum {
+    SPOOLER_CLOSE =             SOCK_CLOSE,
+    SPOOLER_OK =                SOCK_READY,
+    SPOOLER_READERROR =         SOCK_READERROR,
+    SPOOLER_WRITEERROR =        SOCK_WRITEERROR,
+    SPOOLER_CLOSETIMEOUT =      SOCK_CLOSETIMEOUT
+} SpoolerState;
 
 /*
  * Types definitions.
@@ -186,7 +219,7 @@ typedef struct WriterSock {
     struct Sock         *sockPtr;
     struct SpoolerQueue *queuePtr; 
     struct Conn         *connPtr;
-    int                  status;
+    SpoolerState         status;
     int                  err;
     int                  refCount;
     int                  keep;
@@ -213,7 +246,7 @@ typedef struct WriterSock {
 	    size_t             maxsize;
 	    size_t             bufsize;
 	    off_t              bufoffset;
-	    Tcl_WideInt        toRead;
+	    size_t             toRead;
 	    unsigned char     *buf;
 	    Ns_Mutex           fdlock;
 	} file;
