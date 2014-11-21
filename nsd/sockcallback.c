@@ -372,8 +372,7 @@ SockCallbackThread(void *UNUSED(arg))
         pollto = 30000;
         now = time(0);
 	nfds = 1;
-	hPtr = Tcl_FirstHashEntry(&table, &search);
-	while (hPtr != NULL) {
+        for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
             if (cbPtr->timeout > 0 && cbPtr->expires > 0 && cbPtr->expires < now) {
                 (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_TIMEOUT);
@@ -408,7 +407,6 @@ SockCallbackThread(void *UNUSED(arg))
                     }
                 }
 	    }
-	    hPtr = Tcl_NextHashEntry(&search);
         }
 
     	/*
@@ -435,9 +433,8 @@ SockCallbackThread(void *UNUSED(arg))
     	/*
 	 * Execute any ready callbacks.
 	 */
-
-    	hPtr = Tcl_FirstHashEntry(&table, &search);
-	while (n > 0 && hPtr != NULL) {
+	for (hPtr = Tcl_FirstHashEntry(&table, &search); n > 0 && hPtr != NULL; 
+             hPtr = Tcl_NextHashEntry(&search)) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
             for (i = 0; i < Ns_NrElements(when); ++i) {
                 if (((cbPtr->when & when[i]) != 0U) 
@@ -457,7 +454,6 @@ SockCallbackThread(void *UNUSED(arg))
                     cbPtr->expires = 0;
                 }
             }
-	    hPtr = Tcl_NextHashEntry(&search);
         }
     }
 
@@ -466,21 +462,17 @@ SockCallbackThread(void *UNUSED(arg))
      */
 
     Ns_Log(Notice, "socks: shutdown pending");
-    hPtr = Tcl_FirstHashEntry(&table, &search);
-    while (hPtr != NULL) {
+    for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	cbPtr = Tcl_GetHashValue(hPtr);
 	if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0u) {
 	    (void) ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_EXIT));
 	}
-	hPtr = Tcl_NextHashEntry(&search);
     }
     /*
      * Clean up the registered callbacks.
      */
-    hPtr = Tcl_FirstHashEntry(&table, &search);
-    while (hPtr != NULL) {
+    for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	ns_free(Tcl_GetHashValue(hPtr));
-	hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&table);
 
@@ -521,9 +513,9 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
 
     Ns_MutexLock(&lock);
     if (running != 0) {
-        Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&table, &search);
+        Tcl_HashEntry *hPtr; 
 
-        while (hPtr != NULL) {
+        for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    Callback *cbPtr = Tcl_GetHashValue(hPtr);
 	    char      buf[TCL_INTEGER_SPACE];
 
@@ -548,7 +540,6 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
             snprintf(buf, sizeof(buf), "%d", cbPtr->timeout);
             Tcl_DStringAppendElement(dsPtr, buf);
             Tcl_DStringEndSublist(dsPtr);
-            hPtr = Tcl_NextHashEntry(&search);
         }
     }
     Ns_MutexUnlock(&lock);
