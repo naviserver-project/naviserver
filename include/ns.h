@@ -1272,15 +1272,15 @@ Ns_DStringExport(Ns_DString *dsPtr)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *bytes)
+Ns_DStringAppendArg(Ns_DString *dsPtr, const char *bytes)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
+Ns_DStringPrintf(Ns_DString *dsPtr, const char *fmt, ...)
      NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(2,3);
 
 NS_EXTERN char *
-Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
+Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
      NS_GNUC_NONNULL(2);
 
 NS_EXTERN char **

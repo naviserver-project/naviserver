@@ -474,7 +474,7 @@ static int
 FindKeyedListEntry _ANSI_ARGS_((const keylIntObj_t *keylIntPtr,
                                 const char   *key,
                                 size_t       *keyLenPtr,
-                                char        **nextSubKeyPtr));
+                                const char  **nextSubKeyPtr));
 
 static int
 ObjToKeyedListEntry _ANSI_ARGS_((Tcl_Interp  *interp,
@@ -715,9 +715,9 @@ DeleteKeyedListEntry(keylIntObj_t *keylIntPtr, int entryIdx)
  *-----------------------------------------------------------------------------
  */
 static int
-FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
+FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyLenPtr, const char **nextSubKeyPtr)
 {
-    char *keySeparPtr;
+    const char *keySeparPtr;
     size_t keyLen;
     int    findIdx;
 
@@ -995,7 +995,7 @@ int
 TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj **valuePtrPtr)
 {
     keylIntObj_t *keylIntPtr;
-    char         *nextSubKey;
+    const char   *nextSubKey;
     int           findIdx;
 
     if (Tcl_ConvertToType(interp, keylPtr, &keyedListType) != TCL_OK) {
@@ -1047,7 +1047,7 @@ int
 TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj *valuePtr)
 {
     keylIntObj_t *keylIntPtr;
-    char         *nextSubKey;
+    const char   *nextSubKey;
     size_t        keyLen;
     int           findIdx;
     Tcl_Obj      *newKeylPtr;
@@ -1143,7 +1143,7 @@ int
 TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key)
 {
     keylIntObj_t *keylIntPtr;
-    char         *nextSubKey;
+    const char   *nextSubKey;
     int           findIdx;
     int           status;
 
@@ -1219,7 +1219,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
 {
     keylIntObj_t *keylIntPtr;
     Tcl_Obj      *listObjPtr;
-    char         *nextSubKey;
+    const char   *nextSubKey;
     int           idx;
 
     if (Tcl_ConvertToType(interp, keylPtr, &keyedListType) != TCL_OK) {

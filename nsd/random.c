@@ -109,7 +109,7 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 		    Tcl_GetString(objv[1]), "\": must be > 0", NULL);
 	    return TCL_ERROR;
 	}
-        Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * maxValue)));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * (double)maxValue)));
     } else {
         Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
     }
@@ -156,9 +156,9 @@ Ns_DRand(void)
 #if HAVE_DRAND48
     return drand48();
 #elif HAVE_RANDOM
-    return ((double) random() / (LONG_MAX + 1.0));
+    return ((double) random() / ((double)LONG_MAX + 1.0));
 #else
-    return ((double) rand() / (RAND_MAX + 1.0));
+    return ((double) rand() / ((double)RAND_MAX + 1.0));
 #endif
 }
 
@@ -272,13 +272,13 @@ TrueRand(void)
 static unsigned long
 Roulette(void)
 {
-    static unsigned long ocount = 0, randbuf = 0;
+    static unsigned long ocount = 0u, randbuf = 0u;
     struct timeval tv;
 
-    counter = 0;
+    counter = 0u;
     fCount = 1;
     Ns_SemaPost(&sema, 1);
-    tv.tv_sec = (time_t)0;
+    tv.tv_sec =  0;
     tv.tv_usec = MSEC_TO_COUNT * 1000;
     select(0, NULL, NULL, NULL, &tv);
     fCount = 0;
