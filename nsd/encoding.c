@@ -64,7 +64,7 @@ static Ns_Cond        cond;
 
 static Tcl_Encoding   utf8Encoding; /* Cached pointer to utf-8 encoding. */
 
-#define ENC_LOCKED ((Tcl_Encoding) (-1))
+#define EncodingLocked ((Tcl_Encoding) (-1))
 
 /*
  * The default table maps file extensions to Tcl encodings.
@@ -599,11 +599,11 @@ LoadEncoding(const char *name)
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&encodings, name, &isNew);
     if (isNew == 0) {
-        while ((encoding = Tcl_GetHashValue(hPtr)) == ENC_LOCKED) {
+        while ((encoding = Tcl_GetHashValue(hPtr)) == EncodingLocked) {
             Ns_CondWait(&cond, &lock);
         }
     } else {
-	Tcl_SetHashValue(hPtr, INT2PTR(ENC_LOCKED));
+	Tcl_SetHashValue(hPtr, INT2PTR(EncodingLocked));
         Ns_MutexUnlock(&lock);
         encoding = Tcl_GetEncoding(NULL, name);
         if (encoding == NULL) {
