@@ -404,7 +404,8 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
     colormap = (((buf[4] & 0x80U) != 0U) ? 1U : 0U);
 
     if (colormap != 0U) {
-        if (Tcl_Read(chan, (char *)buf, (3*depth)) != (3*depth)) {
+        int bytesToRead = 3 * (int)depth;
+        if (Tcl_Read(chan, (char *)buf, bytesToRead) != bytesToRead) {
             return TCL_ERROR;
         }
     }
@@ -425,7 +426,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         if (count == 0U) {
             goto outerloop;
         }
-        if (Tcl_Read(chan, (char *)buf, count) != count) {
+        if (Tcl_Read(chan, (char *)buf, (int)count) != (int)count) {
             return TCL_ERROR;
         }
         goto innerloop;
@@ -437,8 +438,8 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    *wPtr = 0x100U * (buf[5]) + (buf[4]);
-    *hPtr = 0x100U * (buf[7]) + (buf[6]);
+    *wPtr = (uint32_t)(0x100U * buf[5] + buf[4]);
+    *hPtr = (uint32_t)(0x100U * buf[7] + buf[6]);
 
     return TCL_OK;
 }
@@ -517,7 +518,7 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
                 break;
             }
             (void) JpegRead2Bytes(chan, &numBytes);
-            if (numBytes < 2 || Tcl_Seek(chan, (Tcl_WideInt)numBytes - 2, SEEK_CUR) == -1) {
+            if (numBytes < 2u || Tcl_Seek(chan, (Tcl_WideInt)numBytes - 2, SEEK_CUR) == -1) {
                 break;
             }
         }
@@ -629,23 +630,25 @@ static enum imgtype
 GetImageType(Tcl_Channel chan)
 {
     unsigned char buf[8];
+    int toRead;
     enum imgtype type = unknown;
 
-    static const unsigned char jpeg_magic  [] = {0xff, 0xd8};
+    static const unsigned char jpeg_magic  [] = {0xffu, 0xd8u};
     static const          char gif87_magic [] = {'G','I','F','8','7','a'};
     static const          char gif89_magic [] = {'G','I','F','8','9','a'};
     static const unsigned char png_magic   [] = {0x89U,0x50U,0x4eU,0x47U,0xdU,0x0aU,0x1aU,0x0aU};
 
     Tcl_Seek(chan, 0LL, SEEK_SET);
 
-    if (Tcl_Read(chan, (char*)buf, sizeof(buf)) != sizeof(buf)) {
+    toRead = (int)sizeof(buf);
+    if (Tcl_Read(chan, (char*)buf, toRead) != toRead) {
         Tcl_Seek(chan, 0LL, SEEK_SET);
         return type;
     }
 
     if (memcmp(buf, jpeg_magic, sizeof(jpeg_magic)) == 0) {
-        unsigned char trail[] = {0x00, 0x00};
-	static const unsigned char jpeg_trail  [] = {0xff, 0xd9};
+        unsigned char trail[] = {0x00u, 0x00u};
+	static const unsigned char jpeg_trail  [] = {0xffu, 0xd9u};
 
         Tcl_Seek(chan,  0LL, SEEK_END);
         Tcl_Seek(chan, -2LL, SEEK_CUR);

@@ -40,8 +40,7 @@
 
 #ifdef _WIN32
 #include <io.h>
-
-ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
+ssize_t pread(int fd, char *buf, size_t count, off_t offset);
 #endif
 
 /*
@@ -111,17 +110,17 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 {
     int          i;
 
-    for (i = 0; i < nbufs && sent > 0; i++) {
+    for (i = 0; i < nbufs && sent > 0u; i++) {
 	int    fd     = bufs[i].fd;
 	size_t length = bufs[i].length;
 	off_t  offset = bufs[i].offset;
 
-        if (length > 0) {
+        if (length > 0u) {
             if (sent >= length) {
                 sent -= length;
-                Ns_SetFileVec(bufs, i, fd, NULL, 0, 0);
+                Ns_SetFileVec(bufs, i, fd, NULL, 0, 0u);
             } else {
-	        Ns_SetFileVec(bufs, i, fd, NULL, (off_t)(offset + sent), length - sent);
+	        Ns_SetFileVec(bufs, i, fd, NULL, offset + (off_t)sent, length - sent);
                 break;
             }
         }
@@ -301,7 +300,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
         int     fd     = bufs[i].fd;
 	off_t   offset = bufs[i].offset;
 
-        if (toSend > 0) {
+        if (toSend > 0u) {
             if (fd < 0) {
                 Ns_SetVec(&iov, 0, INT2PTR(offset), toSend);
                 sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
@@ -312,7 +311,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
             if (sent > 0) {
                 nwrote += sent;
             }
-            if (sent != toSend) {
+            if (sent != (ssize_t)toSend) {
                 break;
             }
         }
@@ -342,9 +341,9 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 #ifdef _WIN32
 
 
-ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
+ssize_t pread(int fd, char *buf, size_t count, off_t offset)
 {
-    OVERLAPPED overlapped = { 0 };
+    OVERLAPPED overlapped = { 0u };
     HANDLE fh = (HANDLE)_get_osfhandle(fd);
     DWORD ret, c = (DWORD)count;
 
@@ -464,7 +463,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
         toRead -= nread;
         offset += (off_t)nread;
 
-        Ns_SetVec(&iov, 0, buf, nread);
+        Ns_SetVec(&iov, 0, buf, (size_t)nread);
         sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
         if (sent > 0) {
             nwrote += sent;

@@ -821,7 +821,7 @@ Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSi
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
@@ -835,7 +835,7 @@ typedef struct {
     Ns_Task    *task;
     NS_SOCKET   sock;
     int         status;
-    char       *url;
+    const char *url;
     char       *error;
     char       *next;             /* write to client */
     size_t      len;              /* size of request */
@@ -2817,7 +2817,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
     NS_GNUC_NONNULL(1); 
 
 NS_EXTERN int
-Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, size_t inSize) 
+Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2); 
 
 /*
@@ -3000,10 +3000,12 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *chars
  */
 
 NS_EXTERN int
-Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server);
+Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers);
+Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * urlspace.c:

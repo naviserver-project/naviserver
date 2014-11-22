@@ -218,7 +218,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
     if (argc == 1) {
         char buffer[PATH_MAX] = "";
 
-        snprintf(buffer, PATH_MAX - 1, "%s/ns-XXXXXX", nsconf.tmpDir);
+        snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
 
     } else if (argc == 2) {
@@ -412,7 +412,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Tcl_SetResult(interp, "no connection", TCL_STATIC);
         return TCL_ERROR;
     }
-    result = Ns_ConnSendChannel(itPtr->conn, chan, nbytes);
+    result = Ns_ConnSendChannel(itPtr->conn, chan, (size_t)nbytes);
     if (result != NS_OK) {
         Tcl_SetResult(interp, "i/o failed", TCL_STATIC);
         return TCL_ERROR;

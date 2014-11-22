@@ -142,7 +142,7 @@ Ns_ParseOptions(const char *options[], Ns_OptionConverter *const converter[],
 	}
     }
     if (objc > i) {
-        char *nextArgString = Tcl_GetString(objv[i]);
+        const char *nextArgString = Tcl_GetString(objv[i]);
 
 	if (*nextArgString == '-') {
 	    if (*(nextArgString+1) == '-' && *(nextArgString+2) == '\0') {
@@ -217,7 +217,7 @@ static int
 GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr) 
 {
     Ns_ObjvSpec *entryPtr;
-    char        *key;
+    const char  *key;
     int          idx;
 
     assert(obj != NULL);
@@ -459,7 +459,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
               Tcl_Obj *CONST* objv)
 {
     if (likely(*objcPtr > 0)) {
-	char **dest = spec->dest;
+	const char **dest = spec->dest;
 
         *dest = Tcl_GetStringFromObj(objv[0], (int *) spec->arg);
         *objcPtr -= 1;
@@ -492,7 +492,7 @@ int
 Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
               Tcl_Obj *CONST* objv)
 {
-    char **dest = spec->dest;
+    const char **dest = spec->dest;
 
     if (likely(*objcPtr > 0)) {
         if (Tcl_EvalObjEx(interp, objv[0], 0) == TCL_ERROR) {
@@ -530,7 +530,7 @@ int
 Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
               Tcl_Obj *CONST* objv)
 {
-    unsigned char **dest = spec->dest;
+    const unsigned char **dest = spec->dest;
 
     if (likely(*objcPtr > 0)) {
         *dest = Tcl_GetByteArrayFromObj(objv[0], (int *) spec->arg);
@@ -886,11 +886,11 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     if (Tcl_ListObjGetElements(interp, objPtr, &numSpecs, &specv) != TCL_OK) {
         return TCL_ERROR;
     }
-    optSpec = ns_calloc((size_t) numSpecs + 2, sizeof(Ns_ObjvSpec));
+    optSpec = ns_calloc((size_t) numSpecs + 2u, sizeof(Ns_ObjvSpec));
     specPtr = optSpec;
 
     for (i = 0; i < numSpecs; ++i) {
-	char *key;
+	const char *key;
 
         /*
          * Check for a default and extract the key.
@@ -1120,7 +1120,7 @@ DupSpec(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
     Ns_ObjvSpec  *oldOptSpec = srcObj->internalRep.twoPtrValue.ptr1;
     Ns_ObjvSpec  *oldArgSpec = srcObj->internalRep.twoPtrValue.ptr2;
     Ns_ObjvSpec  *optSpec, *argSpec, *specPtr;
-    size_t        numSpecs = 2;
+    size_t        numSpecs = 2u;
 
     for (specPtr = oldOptSpec; specPtr->key != NULL; specPtr++) {
         numSpecs++;
@@ -1258,7 +1258,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     }
 
     len = strlen(value);
-    if (value[0] == '[' && value[len - 1] == ']') {
+    if (value[0] == '[' && value[len - 1u] == ']') {
         value++;
         len -= 2U;
 
@@ -1307,7 +1307,7 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int
             } else if (specPtr->proc == Ns_ObjvBool && specPtr->arg != NULL) {
                 Ns_DStringPrintf(&ds, "?%s? ", specPtr->key);
             } else {
-	        char *p = specPtr->key;
+	        const char *p = specPtr->key;
                 if (*specPtr->key == '-') {
                     ++p;
                 }
@@ -1325,3 +1325,12 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int
     Tcl_WrongNumArgs(interp, objc, objv, ds.string);
     Ns_DStringFree(&ds);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -43,8 +43,8 @@
 typedef struct Filter {
     struct Filter *nextPtr;
     Ns_FilterProc *proc;
-    char          *method;
-    char          *url;
+    const char    *method;
+    const char    *url;
     Ns_FilterType  when;
     void          *arg;
 } Filter;
