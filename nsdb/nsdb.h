@@ -126,10 +126,10 @@ typedef struct {
  * dbdrv.c:
  */
 
-NS_EXTERN int Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs);
+NS_EXTERN int Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
 NS_EXTERN char *Ns_DbDriverName(Ns_DbHandle *handle);
 NS_EXTERN char *Ns_DbDriverDbType(Ns_DbHandle *handle);
-NS_EXTERN int Ns_DbDML(Ns_DbHandle *handle, char *sql);
+NS_EXTERN int Ns_DbDML(Ns_DbHandle *handle, const char *sql);
 NS_EXTERN Ns_Set *Ns_DbSelect(Ns_DbHandle *handle, const char *sql);
 NS_EXTERN int Ns_DbExec(Ns_DbHandle *handle, const char *sql);
 NS_EXTERN Ns_Set *Ns_DbBindRow(Ns_DbHandle *handle);

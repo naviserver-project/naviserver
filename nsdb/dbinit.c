@@ -623,7 +623,7 @@ NsDbInitPools(void)
  */
 
 void
-NsDbInitServer(char *server)
+NsDbInitServer(const char *server)
 {
     ServData	   *sdataPtr;
     Tcl_HashEntry  *hPtr;

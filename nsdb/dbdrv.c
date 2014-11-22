@@ -41,12 +41,12 @@
  * loadable drivers.
  */
 
-typedef int (InitProc) (char *server, char *module, char *driver);
+typedef int (InitProc) (const char *server, const char *module, const char *driver);
 typedef char *(NameProc) (Ns_DbHandle *handle);
 typedef char *(TypeProc) (Ns_DbHandle *handle);
 typedef int (OpenProc) (Ns_DbHandle *handle);
 typedef void (CloseProc) (Ns_DbHandle *handle);
-typedef int (DMLProc) (Ns_DbHandle *handle, char *sql);
+typedef int (DMLProc) (Ns_DbHandle *handle, const char *sql);
 typedef Ns_Set *(SelectProc) (Ns_DbHandle *handle, const char *sql);
 typedef int (ExecProc) (Ns_DbHandle *handle, const char *sql);
 typedef Ns_Set *(BindProc) (Ns_DbHandle *handle);
@@ -55,10 +55,10 @@ typedef int (FlushProc) (Ns_DbHandle *handle);
 typedef int (CancelProc) (Ns_DbHandle *handle);
 typedef int (CountProc) (Ns_DbHandle *handle);
 typedef int (ResetProc) (Ns_DbHandle *handle);
-typedef int (SpStartProc) (Ns_DbHandle *handle, char *procname);
+typedef int (SpStartProc) (Ns_DbHandle *handle, const char *procname);
 typedef int (SpSetParamProc) (Ns_DbHandle *handle, char *args);
 typedef int (SpExecProc) (Ns_DbHandle *handle);
-typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, char *returnCode, int bufsize);
+typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
 typedef Ns_Set *(SpGetParamsProc) (Ns_DbHandle *handle);
 
 
@@ -68,7 +68,7 @@ typedef Ns_Set *(SpGetParamsProc) (Ns_DbHandle *handle);
  */
 
 typedef struct DbDriver {
-    char	*name;
+    const char	*name;
     int		 registered;
     InitProc	*initProc;
     NameProc	*nameProc;
@@ -97,7 +97,7 @@ typedef struct DbDriver {
 
 static Tcl_HashTable driversTable;
 
-static void UnsupProcId(char *name);
+static void UnsupProcId(const char *name);
 
 
 
@@ -120,13 +120,13 @@ static void UnsupProcId(char *name);
  */
 
 static void
-UnsupProcId(char *name)
+UnsupProcId(const char *name)
 {
     Ns_Log(Warning, "dbdrv: unsupported function id '%s'", name);
 }
 
 int
-Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs)
+Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
 {
     Tcl_HashEntry *hPtr;
     DbDriver *driverPtr;
@@ -333,7 +333,7 @@ Ns_DbDriverDbType(Ns_DbHandle *handle)
  */
 
 int
-Ns_DbDML(Ns_DbHandle *handle, char *sql)
+Ns_DbDML(Ns_DbHandle *handle, const char *sql)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
@@ -723,7 +723,7 @@ NsDbLoadDriver(const char *driver)
  */
 
 void
-NsDbDriverInit(char *server, const DbDriver *driverPtr)
+NsDbDriverInit(const char *server, const DbDriver *driverPtr)
 {
     if (driverPtr->initProc != NULL &&
 	((*driverPtr->initProc) (server, "db", driverPtr->name)) != NS_OK) {
