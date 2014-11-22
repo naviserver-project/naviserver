@@ -841,12 +841,12 @@ Ns_StopServer(char *server)
 int
 NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int timeout = 0, signal = NS_SIGTERM;
+    int timeout = 0, sig = NS_SIGTERM;
 
     Ns_ObjvSpec opts[] = {
-        {"-restart", Ns_ObjvBool,  &signal, INT2PTR(NS_SIGINT)},
-        {"--",       Ns_ObjvBreak, NULL,    NULL},
-        {NULL,       NULL,         NULL,    NULL}
+        {"-restart", Ns_ObjvBool,  &sig, INT2PTR(NS_SIGINT)},
+        {"--",       Ns_ObjvBreak, NULL, NULL},
+        {NULL,       NULL,         NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"?timeout", Ns_ObjvInt, &timeout, NULL},
@@ -865,7 +865,7 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     }
     Ns_MutexUnlock(&nsconf.state.lock);
 
-    NsSendSignal(signal);
+    NsSendSignal(sig);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(timeout));
 
     return TCL_OK;

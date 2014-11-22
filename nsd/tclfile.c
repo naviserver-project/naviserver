@@ -288,7 +288,7 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
 int
 NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int pid, signal;
+    int pid, sig;
 
     if ((objc != 3) && (objc != 4)) {
     badargs:
@@ -299,10 +299,10 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         if (Tcl_GetIntFromObj(interp, objv[1], &pid) != TCL_OK) {
             return TCL_ERROR;
         }
-        if (Tcl_GetIntFromObj(interp, objv[2], &signal) != TCL_OK) {
+        if (Tcl_GetIntFromObj(interp, objv[2], &sig) != TCL_OK) {
             return TCL_ERROR;
         }
-        if (kill(pid, signal) != 0) {
+        if (kill(pid, sig) != 0) {
             Tcl_AppendResult(interp, "kill (\"", 
                              Tcl_GetString(objv[1]), ",", 
                              Tcl_GetString(objv[2]), "\") failed: ", 
@@ -316,10 +316,10 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         if (Tcl_GetIntFromObj(interp, objv[2], &pid) != TCL_OK) {
             return TCL_ERROR;
         }
-        if (Tcl_GetIntFromObj(interp, objv[3], &signal) != TCL_OK) {
+        if (Tcl_GetIntFromObj(interp, objv[3], &sig) != TCL_OK) {
             return TCL_ERROR;
         }
-        kill(pid, signal);
+        kill(pid, sig);
     }
 
     return TCL_OK;
