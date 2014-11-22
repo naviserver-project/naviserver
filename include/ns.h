@@ -2719,11 +2719,11 @@ Ns_GetEnviron(void);
  */
 
 NS_EXTERN int
-Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
+Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
 				int check, Tcl_Channel *chanPtr);
 
 NS_EXTERN int
-Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr);
+Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr);
 
 /*
  * tclinit.c:

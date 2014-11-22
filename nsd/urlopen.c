@@ -129,7 +129,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     NS_SOCKET       sock;
     const char     *p;
     Ns_DString      ds;
-    Stream          stream;
+    Stream          s;
     Ns_Request      request;
     int             status;
     size_t          toSend;
@@ -191,11 +191,11 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      * consume the headers, parsing them into any given header set.
      */
 
-    stream.cnt = 0u;
-    stream.error = 0;
-    stream.ptr = stream.buf;
-    stream.sock = sock;
-    if (GetLine(&stream, &ds) == NS_FALSE) {
+    s.cnt = 0u;
+    s.error = 0;
+    s.ptr = s.buf;
+    s.sock = sock;
+    if (GetLine(&s, &ds) == NS_FALSE) {
         goto done;
     }
     if (headers != NULL && strncmp(ds.string, "HTTP", 4u) == 0) {
@@ -205,7 +205,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
         headers->name = Ns_DStringExport(&ds);
     }
     do {
-        if (GetLine(&stream, &ds) == NS_FALSE) {
+        if (GetLine(&s, &ds) == NS_FALSE) {
             goto done;
         }
         if (ds.length > 0
@@ -221,9 +221,10 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      */
     
     do {
-      Ns_DStringNAppend(dsPtr, stream.ptr, (int)stream.cnt);
-    } while (FillBuf(&stream));
-    if (stream.error == 0) {
+      Ns_DStringNAppend(dsPtr, s.ptr, (int)s.cnt);
+    } while (FillBuf(&s));
+
+    if (s.error == 0) {
         status = NS_OK;
     }
 

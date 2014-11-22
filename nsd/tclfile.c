@@ -45,9 +45,9 @@ typedef struct {
     Tcl_Channel  chan;
 } NsRegChan;
 
-static void SpliceChannel   (Tcl_Interp *interp, Tcl_Channel chan);
-static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
-static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char *cmd);
+static void SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
+static void UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
+static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd);
 
 
 
@@ -69,7 +69,7 @@ static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char 
  */
 
 int
-Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
+Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
                      int check, Tcl_Channel *chanPtr)
 {
     int mode;
@@ -113,7 +113,7 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
  */
 
 int
-Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
+Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 {
     Tcl_Channel chan;
     ClientData  data;
@@ -151,7 +151,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
  */
 
 static int
-FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char *cmd)
+FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
 {
     int max, status;
 
@@ -288,38 +288,25 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
 int
 NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int pid, sig;
+    int pid, sig, nocomplain = NS_FALSE, result;
 
-    if ((objc != 3) && (objc != 4)) {
-    badargs:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? pid signal");
+    Ns_ObjvSpec opts[] = {
+        {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"pid",  Ns_ObjvInt, &pid,    NULL},
+        {"sig",  Ns_ObjvInt, &sig,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (objc == 3) {
-        if (Tcl_GetIntFromObj(interp, objv[1], &pid) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        if (Tcl_GetIntFromObj(interp, objv[2], &sig) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        if (kill(pid, sig) != 0) {
-            Tcl_AppendResult(interp, "kill (\"", 
-                             Tcl_GetString(objv[1]), ",", 
-                             Tcl_GetString(objv[2]), "\") failed: ", 
-                             Tcl_PosixError(interp), NULL);
-            return TCL_ERROR;
-        }
-    } else {
-        if (strcmp(Tcl_GetString(objv[1]), "-nocomplain") != 0) {
-            goto badargs;
-        }
-        if (Tcl_GetIntFromObj(interp, objv[2], &pid) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        if (Tcl_GetIntFromObj(interp, objv[3], &sig) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        kill(pid, sig);
+
+    result = kill(pid, sig);
+    if (result != 0 && nocomplain == NS_FALSE) {
+        Ns_TclPrintfResult(interp, "kill %d %d failed: %s", pid, sig, Tcl_PosixError(interp));
+        return TCL_ERROR;
     }
 
     return TCL_OK;
@@ -345,29 +332,28 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
+    const char *file1, *file2;
+    int nocomplain = NS_FALSE, result;
 
-    if ((objc != 3) && (objc != 4)) {
-    badargs:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? file1 file2");
+    Ns_ObjvSpec opts[] = {
+        {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
+        {"--",          Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"file1",  Ns_ObjvString, &file1,  NULL},
+        {"file2",  Ns_ObjvString, &file2,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    
-    if (objc == 3) {
-        if (symlink(Tcl_GetString(objv[1]), Tcl_GetString(objv[2])) != 0) {
-            Tcl_AppendResult(interp, "symlink (\"",
-                             Tcl_GetString(objv[1]), "\", \"",
-                             Tcl_GetString(objv[2]), "\") failed: ",
-                             Tcl_PosixError(interp), NULL);
-            return TCL_ERROR;
-        }
-    } else {
-        int err;
 
-        if (strcmp(Tcl_GetString(objv[1]), "-nocomplain") != 0) {
-            goto badargs;
-        }
-        err = symlink(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
-	((void)(err)); /* ignore err */
+    result = symlink(file1, file2);
+    if (result != 0 && nocomplain == NS_FALSE) {
+        Ns_TclPrintfResult(interp, "symlink '%s' '%s' failed: %s", file1, file2, 
+                           Tcl_PosixError(interp));
+        return TCL_ERROR;
     }
     
     return TCL_OK;
@@ -442,7 +428,7 @@ int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int length = 0;
-    char *fileString;
+    const char *fileString;
 
     Ns_ObjvSpec args[] = {
 	{"file",      Ns_ObjvString, &fileString, NULL},
@@ -485,7 +471,7 @@ int
 NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int length = 0, fd;
-    char *fileIdString;
+    const char *fileIdString;
     
     Ns_ObjvSpec args[] = {
 	{"fileId",    Ns_ObjvString, &fileIdString, NULL},
@@ -718,9 +704,9 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	    assert(regChan != NULL);
             if (shared != 0) {
                 Tcl_SpliceChannel(regChan->chan);
-                Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);
+                (void) Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);
             } else {
-                Tcl_UnregisterChannel(interp, regChan->chan);
+                (void) Tcl_UnregisterChannel(interp, regChan->chan);
             }
             ns_free(regChan->name);
             ns_free(regChan);
@@ -762,7 +748,7 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
     Tcl_SpliceChannel(chan);
     Tcl_RegisterChannel(interp, chan);
-    Tcl_UnregisterChannel((Tcl_Interp*)NULL, chan);
+    (void) Tcl_UnregisterChannel((Tcl_Interp*)NULL, chan);
 }
 
 
@@ -813,7 +799,7 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
      */
 
     Tcl_RegisterChannel((Tcl_Interp *) NULL, chan);
-    Tcl_UnregisterChannel(interp, chan);
+    (void) Tcl_UnregisterChannel(interp, chan);
 
     Tcl_CutChannel(chan);
 }

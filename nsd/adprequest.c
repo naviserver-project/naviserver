@@ -77,7 +77,7 @@ static Ns_ObjvTable adpOpts[] = {
     {"trace",        ADP_TRACE},
     {"trimspace",    ADP_TRIM},
     {"stream",       ADP_STREAM},
-    {NULL, 0}
+    {NULL, 0u}
 };
 
 

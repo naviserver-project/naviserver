@@ -210,7 +210,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
         }
     } else if (status == TCL_OK) {
         if (keysArgcPtr != NULL && keysArgvPtr != NULL) {
-            size_t    keySize, totalKeySize = 0U;
+            size_t    keySize, sumKeySize = 0U;
             int       ii, keyCount;
             char    **keyArgv, *nextByte;
             Tcl_Obj **objValues;
@@ -221,10 +221,10 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
                 return TCL_ERROR;
             }
             for (ii = 0; ii < keyCount; ii++) {
-                totalKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
+                sumKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
             }
 	    keySize = (keyCount + 1) * sizeof(char *);
-            keyArgv = (char **)ckalloc((unsigned int)(keySize + totalKeySize));
+            keyArgv = (char **)ckalloc((unsigned int)(keySize + sumKeySize));
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + keySize;
 
