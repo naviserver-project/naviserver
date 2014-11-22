@@ -47,7 +47,7 @@ static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
 			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 
-static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, int remove)
+static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void HttpClose(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
@@ -130,7 +130,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             result = TCL_ERROR;
         } else {
             result = TCL_OK;
-            if (HttpGet(itPtr, Tcl_GetString(objv[2]), &httpPtr, 1) == NS_FALSE) {
+            if (HttpGet(itPtr, Tcl_GetString(objv[2]), &httpPtr, NS_TRUE) == NS_FALSE) {
                 result = TCL_ERROR;
             }
 	}
@@ -140,22 +140,22 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
 
     case HCleanupIdx:
-        hPtr = Tcl_FirstHashEntry(&itPtr->https, &search);
+        hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
         while (hPtr != NULL) {
             httpPtr = Tcl_GetHashValue(hPtr);
             HttpAbort(httpPtr);
             hPtr = Tcl_NextHashEntry(&search);
         }
-        Tcl_DeleteHashTable(&itPtr->https);
-        Tcl_InitHashTable(&itPtr->https, TCL_STRING_KEYS);
+        Tcl_DeleteHashTable(&itPtr->httpRequests);
+        Tcl_InitHashTable(&itPtr->httpRequests, TCL_STRING_KEYS);
         result = TCL_OK;
         break;
 
     case HListIdx:
-        hPtr = Tcl_FirstHashEntry(&itPtr->https, &search);
+        hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
         while (hPtr != NULL) {
             httpPtr = Tcl_GetHashValue(hPtr);
-            Tcl_AppendResult(interp, Tcl_GetHashKey(&itPtr->https, hPtr), " ",
+            Tcl_AppendResult(interp, Tcl_GetHashKey(&itPtr->httpRequests, hPtr), " ",
                              httpPtr->url, " ",
                              Ns_TaskCompleted(httpPtr->task) ? "done" : "running",
                              " ", NULL);
@@ -248,10 +248,10 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 	    return TCL_ERROR;
 	}
     }
-    i = itPtr->https.numEntries;
+    i = itPtr->httpRequests.numEntries;
     do {
         snprintf(buf, sizeof(buf), "http%d", i++);
-        hPtr = Tcl_CreateHashEntry(&itPtr->https, buf, &isNew);
+        hPtr = Tcl_CreateHashEntry(&itPtr->httpRequests, buf, &isNew);
     } while (isNew == 0);
     Tcl_SetHashValue(hPtr, httpPtr);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
@@ -558,7 +558,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
         return TCL_ERROR;
     }
 
-    if (HttpGet(itPtr, id, &httpPtr, 1) == NS_FALSE) {
+    if (HttpGet(itPtr, id, &httpPtr, NS_TRUE) == NS_FALSE) {
 	return TCL_ERROR;
     }
     if (decompress != 0) {
@@ -644,7 +644,7 @@ err:
  *
  * HttpGet --
  *
- *	Locate and remove the Http struct for a given id.
+ *	Locate and optionally remove the Http struct for a given id.
  *
  * Results:
  *	NS_TRUE on success, NS_FALSE otherwise.
@@ -656,7 +656,7 @@ err:
  */
 
 static bool
-HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, int remove)
+HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeEntry)
 {
     Tcl_HashEntry *hPtr;
 
@@ -664,13 +664,13 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, int remove)
     assert(id != NULL);
     assert(httpPtrPtr != NULL);
 
-    hPtr = Tcl_FindHashEntry(&itPtr->https, id);
+    hPtr = Tcl_FindHashEntry(&itPtr->httpRequests, id);
     if (hPtr == NULL) {
         Tcl_AppendResult(itPtr->interp, "no such request: ", id, NULL);
         return NS_FALSE;
     }
     *httpPtrPtr = Tcl_GetHashValue(hPtr);
-    if (remove != 0) {
+    if (removeEntry == NS_TRUE) {
         Tcl_DeleteHashEntry(hPtr);
     }
     return NS_TRUE;

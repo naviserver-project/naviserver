@@ -1003,8 +1003,7 @@ typedef struct NsInterp {
     /*
      * The following table maintains the Tcl HTTP requests.
      */
-
-    Tcl_HashTable https;
+    Tcl_HashTable httpRequests;
 
 } NsInterp;
 

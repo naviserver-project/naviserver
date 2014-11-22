@@ -1713,7 +1713,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
         itPtr->servPtr = servPtr;
         Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);
         Tcl_InitHashTable(&itPtr->chans, TCL_STRING_KEYS);
-        Tcl_InitHashTable(&itPtr->https, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&itPtr->httpRequests, TCL_STRING_KEYS);
         NsAdpInit(itPtr);
 
         /*
@@ -1908,7 +1908,7 @@ FreeInterpData(ClientData arg, Tcl_Interp *UNUSED(interp))
     NsAdpFree(itPtr);
     Tcl_DeleteHashTable(&itPtr->sets);
     Tcl_DeleteHashTable(&itPtr->chans);
-    Tcl_DeleteHashTable(&itPtr->https);
+    Tcl_DeleteHashTable(&itPtr->httpRequests);
 
     ns_free(itPtr);
 }
