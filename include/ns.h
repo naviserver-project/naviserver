@@ -647,15 +647,15 @@ Ns_AuthorizeUser(const char *user, const char *passwd);
  */
 
 NS_EXTERN Ns_Cache *
-Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)
+Ns_CacheCreate(const char *name, int keys, time_t ttl, Ns_Callback *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Cache *
-Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
+Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Cache *
-Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize,
+Ns_CacheCreateEx(const char *name, int keys, time_t ttl, size_t maxSize,
                  Ns_Callback *freeProc)
     NS_GNUC_NONNULL(1);
 
@@ -664,19 +664,19 @@ Ns_CacheDestroy(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Entry *
-Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
+Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Entry *
-Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
+Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_Entry *
-Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr,
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
                         const Ns_Time *timeoutPtr) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_CacheKey(Ns_Entry *entry)
     NS_GNUC_NONNULL(1);
 
@@ -688,8 +688,8 @@ NS_EXTERN size_t
 Ns_CacheGetSize(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN Ns_Time *
-Ns_CacheGetExpirey(Ns_Entry *entry);
+NS_EXTERN const Ns_Time *
+Ns_CacheGetExpirey(const Ns_Entry *entry);
 
 NS_EXTERN void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
@@ -701,7 +701,8 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 
 NS_EXTERN void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        const Ns_Time *timeoutPtr, int cost) NS_GNUC_NONNULL(1);
+                        const Ns_Time *timeoutPtr, int cost) 
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_CacheUnsetValue(Ns_Entry *entry)
@@ -760,7 +761,8 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_CacheResetStats(Ns_Cache *cache);
+Ns_CacheResetStats(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
 
 /*
  * callbacks.c:
@@ -1566,7 +1568,7 @@ NS_EXTERN void
 Ns_TaskDone(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_TaskCompleted(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 

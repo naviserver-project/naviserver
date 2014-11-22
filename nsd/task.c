@@ -397,18 +397,18 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_TaskCompleted(Ns_Task *task)
 {
     Task      *taskPtr = (Task *) task;
     TaskQueue *queuePtr = taskPtr->queuePtr;
-    int        status;
+    bool       status;
 
     if (queuePtr == NULL) {
-        status = (taskPtr->signalFlags & TASK_DONE);
+        status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
     } else {
         Ns_MutexLock(&queuePtr->lock);
-        status = (taskPtr->signalFlags & TASK_DONE);
+        status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
         Ns_MutexUnlock(&queuePtr->lock);
     }
     return status;

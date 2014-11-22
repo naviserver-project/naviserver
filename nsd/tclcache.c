@@ -726,8 +726,8 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         Tcl_DStringStartSublist(&ds);
         entry = Ns_CacheFirstEntry(cache, &search);
         while (entry != NULL) {
-	    size_t   size = Ns_CacheGetSize(entry);
-	    Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
+	    size_t         size    = Ns_CacheGetSize(entry);
+	    const Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
 
             if (timePtr->usec == 0) {
                 Ns_DStringPrintf(&ds, "%" PRIdz " %" PRIu64 " ",

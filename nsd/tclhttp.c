@@ -157,7 +157,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             httpPtr = Tcl_GetHashValue(hPtr);
             Tcl_AppendResult(interp, Tcl_GetHashKey(&itPtr->httpRequests, hPtr), " ",
                              httpPtr->url, " ",
-                             Ns_TaskCompleted(httpPtr->task) ? "done" : "running",
+                             Ns_TaskCompleted(httpPtr->task) == NS_TRUE ? "done" : "running", 
                              " ", NULL);
             hPtr = Tcl_NextHashEntry(&search);
         }
