@@ -453,7 +453,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
      * Construct the full, normalized path to the ADP file.
      */
 
-    if (Ns_PathIsAbsolute(file) == 0) {
+    if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         if (itPtr->adp.cwd == NULL) {
             file = Ns_PagePath(&tmp, servPtr->server, file, NULL);
         } else {

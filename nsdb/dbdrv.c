@@ -47,8 +47,8 @@ typedef char *(TypeProc) (Ns_DbHandle *handle);
 typedef int (OpenProc) (Ns_DbHandle *handle);
 typedef void (CloseProc) (Ns_DbHandle *handle);
 typedef int (DMLProc) (Ns_DbHandle *handle, char *sql);
-typedef Ns_Set *(SelectProc) (Ns_DbHandle *handle, char *sql);
-typedef int (ExecProc) (Ns_DbHandle *handle, char *sql);
+typedef Ns_Set *(SelectProc) (Ns_DbHandle *handle, const char *sql);
+typedef int (ExecProc) (Ns_DbHandle *handle, const char *sql);
 typedef Ns_Set *(BindProc) (Ns_DbHandle *handle);
 typedef int (GetProc) (Ns_DbHandle *handle, Ns_Set *row);
 typedef int (FlushProc) (Ns_DbHandle *handle);
@@ -379,7 +379,7 @@ Ns_DbDML(Ns_DbHandle *handle, char *sql)
  */
 
 Ns_Set *
-Ns_DbSelect(Ns_DbHandle *handle, char *sql)
+Ns_DbSelect(Ns_DbHandle *handle, const char *sql)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
     Ns_Set *setPtr = NULL;
@@ -423,7 +423,7 @@ Ns_DbSelect(Ns_DbHandle *handle, char *sql)
  */
 
 int
-Ns_DbExec(Ns_DbHandle *handle, char *sql)
+Ns_DbExec(Ns_DbHandle *handle, const char *sql)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
@@ -856,8 +856,8 @@ Ns_DbSpStart(Ns_DbHandle *handle, char *procname)
  */
 
 int
-Ns_DbSpSetParam(Ns_DbHandle *handle, char *paramname, char *paramtype,
-                char *inout, char *value)
+Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtype,
+                const char *inout, const char *value)
 {
     DbDriver   *driverPtr = NsDbGetDriver(handle);
     int         status = NS_ERROR;

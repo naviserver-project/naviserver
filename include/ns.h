@@ -1963,7 +1963,7 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
  * pathname.c:
  */
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_PathIsAbsolute(const char *path)
     NS_GNUC_NONNULL(1);
 
@@ -2466,11 +2466,11 @@ Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
+Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN char *
-Ns_SlsGetKeyed(Ns_Sock *sock, CONST char *key)
+NS_EXTERN const char *
+Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
@@ -2478,7 +2478,7 @@ Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
+Ns_SlsUnsetKeyed(Ns_Sock *sock, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

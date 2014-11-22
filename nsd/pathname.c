@@ -92,8 +92,8 @@ ConfigServerVhost(const char *server)
     path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
 
     servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
-    if (servPtr->vhost.enabled
-	&& Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+    if (servPtr->vhost.enabled == NS_TRUE
+	&& Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
 	Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
                server, servPtr->fastpath.pagedir);
         servPtr->vhost.enabled = NS_FALSE;
@@ -135,7 +135,7 @@ ConfigServerVhost(const char *server)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_PathIsAbsolute(const char *path)
 {
     assert(path != NULL);
@@ -634,7 +634,7 @@ NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host)
 {
     char *path;
 
-    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
         path = Ns_DStringAppend(dest, servPtr->fastpath.pagedir);
     } else {
 	(void) ServerRoot(dest, servPtr, host);

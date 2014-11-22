@@ -130,8 +130,8 @@ NS_EXTERN int Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs);
 NS_EXTERN char *Ns_DbDriverName(Ns_DbHandle *handle);
 NS_EXTERN char *Ns_DbDriverDbType(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbDML(Ns_DbHandle *handle, char *sql);
-NS_EXTERN Ns_Set *Ns_DbSelect(Ns_DbHandle *handle, char *sql);
-NS_EXTERN int Ns_DbExec(Ns_DbHandle *handle, char *sql);
+NS_EXTERN Ns_Set *Ns_DbSelect(Ns_DbHandle *handle, const char *sql);
+NS_EXTERN int Ns_DbExec(Ns_DbHandle *handle, const char *sql);
 NS_EXTERN Ns_Set *Ns_DbBindRow(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row);
 NS_EXTERN int Ns_DbGetRowCount(Ns_DbHandle *handle);
@@ -139,8 +139,8 @@ NS_EXTERN int Ns_DbFlush(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbCancel(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbResetHandle(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbSpStart(Ns_DbHandle *handle, char *procname);
-NS_EXTERN int Ns_DbSpSetParam(Ns_DbHandle *handle, char *paramname,
-			   char *paramtype, char *inout, char *value);
+NS_EXTERN int Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname,
+			      const char *paramtype, const char *inout, const char *value);
 NS_EXTERN int Ns_DbSpExec(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbSpReturnCode(Ns_DbHandle *handle, char *returnCode,
 			     int bufsize);
@@ -169,7 +169,7 @@ NS_EXTERN int Ns_DbBouncePool(const char *pool);
  * dbtcl.c:
  */
 
-NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, char *handleId,
+NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, const char *handleId,
 				Ns_DbHandle **handlePtr);
 
 /*
@@ -179,10 +179,10 @@ NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, char *handleId,
 NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
+NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN Ns_Set *Ns_Db1Row(Ns_DbHandle *handle, char *sql)
+NS_EXTERN Ns_Set *Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)

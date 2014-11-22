@@ -1596,7 +1596,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CPoolIdx:
-        Tcl_SetResult(interp, connPtr->poolPtr->pool, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->poolPtr->pool, -1));
         break;
 
     case CStatusIdx:

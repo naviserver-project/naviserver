@@ -192,14 +192,14 @@ ConfigServerTcl(const char *server)
     Ns_DStringInit(&ds);
 
     servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.library) == 0) {
+    if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
         Ns_HomePath(&ds, servPtr->tcl.library, NULL);
         servPtr->tcl.library = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "library", servPtr->tcl.library);
     }
 
     servPtr->tcl.initfile = Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.initfile) == 0) {
+    if (Ns_PathIsAbsolute(servPtr->tcl.initfile) == NS_FALSE) {
         Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
         servPtr->tcl.initfile = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "initfile", servPtr->tcl.initfile);

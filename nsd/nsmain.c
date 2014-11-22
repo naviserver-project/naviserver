@@ -1029,7 +1029,7 @@ UsageError(const char *msg, ...)
 static const char *
 MakePath(char *file)
 {
-    if (Ns_PathIsAbsolute(nsconf.nsd)) {
+    if (Ns_PathIsAbsolute(nsconf.nsd) == NS_TRUE) {
 	char *str;
 	const char *path = NULL;
 	Tcl_Obj *obj;

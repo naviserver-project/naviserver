@@ -39,7 +39,7 @@ NS_EXTERN void 		NsDbClose(Ns_DbHandle *handle);
 NS_EXTERN void 		NsDbDisconnect(Ns_DbHandle *handle);
 NS_EXTERN struct DbDriver *NsDbGetDriver(Ns_DbHandle *handle);
 NS_EXTERN struct DbDriver *NsDbLoadDriver(const char *driver);
-NS_EXTERN void 		NsDbLogSql(Ns_DbHandle *handle, char *sql);
+NS_EXTERN void 		NsDbLogSql(Ns_DbHandle *handle, const char *sql);
 NS_EXTERN int 		NsDbOpen(Ns_DbHandle *handle);
 NS_EXTERN void 		NsDbDriverInit(char *server, const struct DbDriver *driverPtr);
 

@@ -134,13 +134,13 @@ ConfigServerFastpath(const char *server)
     }
 
     servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
-    if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == 0) {
+    if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
 	(void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     }
 
     servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
-    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
         servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
     } else {
         (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,

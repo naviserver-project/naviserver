@@ -740,7 +740,7 @@ NsDbDisconnect(Ns_DbHandle *handle)
  */
 
 void
-NsDbLogSql(Ns_DbHandle *handle, char *sql)
+NsDbLogSql(Ns_DbHandle *handle, const char *sql)
 {
     Handle *handlePtr = (Handle *) handle;
 

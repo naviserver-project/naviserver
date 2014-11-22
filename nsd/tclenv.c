@@ -105,13 +105,13 @@ Ns_GetEnviron(void)
 char **
 Ns_CopyEnviron(Ns_DString *dsPtr)
 {
-    char *s, **envp;
+    char *const*envp;
     int i;
 
     Ns_MutexLock(&lock);
     envp = Ns_GetEnviron();
-    for (i = 0; (s = envp[i]) != NULL; ++i) {
-        Ns_DStringAppendArg(dsPtr, s);
+    for (i = 0;  envp[i] != NULL; ++i) {
+        Ns_DStringAppendArg(dsPtr, envp[i]);
     }
     Ns_MutexUnlock(&lock);
 
@@ -141,7 +141,8 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
 int
 NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char        *name, *value, **envp;
+    const char  *name, *value;
+    char       **envp;
     int          status, i, opt;
     Tcl_Obj     *result;
 
@@ -203,7 +204,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         }
 
         if (objc == 4) {
-	    CONST char *arg = Tcl_GetString(objv[2]);
+	    const char *arg = Tcl_GetString(objv[2]);
 	    if (!STREQ(arg, "-nocomplain")) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
 		goto done;

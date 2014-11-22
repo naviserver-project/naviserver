@@ -324,7 +324,7 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
         } else {
             file = ds.string;
         }
-    } else if (Ns_PathIsAbsolute(adp->file) == 0) {
+    } else if (Ns_PathIsAbsolute(adp->file) == NS_FALSE) {
         file = Ns_PagePath(&ds, server, adp->file, NULL);
     } else {
         file = adp->file;
@@ -416,7 +416,7 @@ Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
 }
 
 int
-NsAdpFlush(NsInterp *itPtr, int stream)
+NsAdpFlush(NsInterp *itPtr, int isStreaming)
 {
     Ns_Conn     *conn;
     Tcl_Interp  *interp;
@@ -451,7 +451,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      */
 
     if (len < 1 && (flags & ADP_FLUSHED) != 0U) {
-        if (stream == 0) {
+        if (isStreaming == 0) {
             NsAdpReset(itPtr);
         }
         return NS_OK;
@@ -482,7 +482,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0U || (len == 0 && stream != 0)) {
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0U || (len == 0 && isStreaming != 0)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {
@@ -518,7 +518,8 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 		
 		sbuf.iov_base = buf;
 		sbuf.iov_len  = (size_t)len;
-                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, (stream != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
+                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, 
+                                       (isStreaming != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
                     result = TCL_OK;
                 }
                 if (result != TCL_OK) {
@@ -542,7 +543,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 
-    if (stream == 0) {
+    if (isStreaming == 0) {
         NsAdpReset(itPtr);
     }
     return result;

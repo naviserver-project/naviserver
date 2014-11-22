@@ -185,7 +185,7 @@ Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
  */
 
 void
-Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
+Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
 {
     Tcl_HashTable *tblPtr;
     Tcl_HashEntry *hPtr;
@@ -224,12 +224,12 @@ Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_SlsGetKeyed(Ns_Sock *sock, CONST char *key)
+const char *
+Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
 {
     Tcl_HashTable *tblPtr;
     Tcl_HashEntry *hPtr;
-    char          *value = NULL;
+    const char    *value = NULL;
 
     tblPtr = Ns_SlsGet(&kslot, sock);
     if (tblPtr == NULL) {
@@ -298,7 +298,7 @@ Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
  */
 
 void
-Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
+Ns_SlsUnsetKeyed(Ns_Sock *sock, const char *key)
 {
     Tcl_HashTable *tblPtr;
 
@@ -334,9 +334,9 @@ int
 NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn    *conn;
-    Ns_Sock    *sock;
+    Ns_Sock    *sock = NULL;
     Ns_DString  ds;
-    char       *data;
+    const char *data;
     int         cmd;
 
     static const char *cmds[] = {
@@ -346,19 +346,19 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         CArrayIdx, CGetIdx, CSetIdx, CUnsetIdx
     };
 
-    if ((conn = Ns_TclGetConn(interp)) == NULL
-        || (sock = Ns_ConnSockPtr(conn)) == NULL) {
-
+    conn = Ns_TclGetConn(interp);
+    if (conn != NULL) {
+        sock = Ns_ConnSockPtr(conn);
+    }
+    if (sock == NULL) {
         Tcl_SetResult(interp, "No connection available.", NULL);
         return TCL_ERROR;
     }
-
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "command");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd)
-            != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -525,3 +525,4 @@ CleanupKeyed(void *arg)
  * indent-tabs-mode: nil
  * End:
  */
+

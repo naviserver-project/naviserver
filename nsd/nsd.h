@@ -650,7 +650,7 @@ typedef struct ConnThreadArg {
  */
 
 typedef struct ConnPool {
-    char *pool;
+    const char *pool;
     struct ConnPool *nextPtr;
     struct NsServer *servPtr;
 

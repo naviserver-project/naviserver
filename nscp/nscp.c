@@ -59,7 +59,7 @@ static Ns_ThreadProc EvalThread;
 
 typedef struct Sess {
     Mod *modPtr;
-    char *user;
+    const char *user;
     int id;
     NS_SOCKET sock;
     struct sockaddr_in sa;
@@ -120,7 +120,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  */
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     Mod           *modPtr;
     char          *end;
@@ -136,8 +136,10 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
-    if (((addr = Ns_ConfigString(path, "address", "127.0.0.1")) == NULL)
-	 || (port = Ns_ConfigInt(path, "port", 2080)) <= 0 )  {
+    addr = Ns_ConfigString(path, "address", "127.0.0.1");
+    port = Ns_ConfigInt(path, "port", 2080);
+
+    if ((addr == NULL) || (port <= 0 ))  {
 	Ns_Log(Error, "nscp: address and port must be specified in config");
 	return NS_ERROR;
     }
@@ -568,7 +570,7 @@ static int
 Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 {
     Tcl_DString uds, pds, msgDs;
-    char       *user = NULL;
+    const char *user = NULL;
     int         ok = 0;
 
     Tcl_DStringInit(&uds);
@@ -576,13 +578,13 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
     if (GetLine(sessPtr->sock, "login: ", &uds, 1) != 0 &&
 	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo) != 0) {
         Tcl_HashEntry  *hPtr;
-	char           *pass;
+	const char     *pass;
 
 	user = Ns_StrTrim(uds.string);
 	pass = Ns_StrTrim(pds.string);
     	hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
 	if (hPtr != NULL) {
-	    char *encpass = Tcl_GetHashValue(hPtr);
+	    const char *encpass = Tcl_GetHashValue(hPtr);
 	    char  buf[NS_ENCRYPT_BUFSIZE];
 
 	    (void) Ns_Encrypt(pass, encpass, buf);

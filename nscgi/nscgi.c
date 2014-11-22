@@ -1191,7 +1191,7 @@ CgiRegister(Mod *modPtr, const char *map)
     } else {
     	Ns_NormalizePath(&ds2, path);
     	path = ds2.string;
-    	if (Ns_PathIsAbsolute(path) == 0 || access(path, R_OK) != 0) {
+    	if (Ns_PathIsAbsolute(path) == NS_FALSE || access(path, R_OK) != 0) {
             Ns_Log(Error, "nscgi: invalid directory: %s", path);
 	    goto done;
 	}

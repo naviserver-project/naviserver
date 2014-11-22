@@ -97,7 +97,7 @@ Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
  */
 
 Ns_Set *
-Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
+Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 {
     Ns_Set *row;
 
@@ -153,7 +153,7 @@ Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
  */
 
 Ns_Set *
-Ns_Db1Row(Ns_DbHandle *handle, char *sql)
+Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
 {
     Ns_Set         *row;
     int             nrows;
@@ -222,7 +222,8 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
             if (c != '\'') {
                 Ns_DStringNAppend(&dsSql, &c, 1);
             } else {
-                if ((i = getc(fp)) == EOF) {
+	      i = getc(fp);
+                if (i == EOF) {
                     break;
                 }
                 lastc = c;
@@ -239,7 +240,8 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
         } else {
             /* Check to see if it is a comment */
             if ((c == '-') && (lastc == '\n')) {
-                if ((i = getc(fp)) == EOF) {
+                i = getc(fp);
+                if (i == EOF) {
                     break;
                 }
                 lastc = c;
@@ -275,7 +277,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
      * If dstring contains anything but whitespace, return error
      */
     if (status != NS_ERROR) {
-        char *p;
+        const char *p;
 
         for (p = dsSql.string; *p != '\0'; p++) {
             if (CHARTYPE(space, *p) == 0) {
@@ -319,3 +321,11 @@ Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
     Ns_DStringAppend(&(handle->dsExceptionMsg), msg);
 }
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
