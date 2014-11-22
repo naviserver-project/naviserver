@@ -66,11 +66,11 @@ typedef struct LogEntry {
  */
 
 typedef struct LogFilter {
-    Ns_LogFilter      *proc;    /* User-given function for generating logs */
-    Ns_Callback       *free;    /* User-given function to free passed arg */
-    void              *arg;     /* Argument passed to proc and free */
-    int                refcnt;  /* Number of current consumers */
-    struct LogFilter  *nextPtr; /* Maintains double linked list */
+    Ns_LogFilter      *proc;        /* User-given function for generating logs */
+    Ns_Callback       *freeArgProc; /* User-given function to free passed arg */
+    void              *arg;         /* Argument passed to proc and free */
+    int                refcnt;      /* Number of current consumers */
+    struct LogFilter  *nextPtr;      /* Maintains double linked list */
     struct LogFilter  *prevPtr;
 } LogFilter;
 
@@ -528,7 +528,7 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 
     filterPtr->proc = procPtr;
     filterPtr->arg  = arg;
-    filterPtr->free = freeProc;
+    filterPtr->freeArgProc = freeProc;
 
     Ns_MutexUnlock(&lock);
 }
@@ -575,8 +575,8 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
         } else {
             filters = filterPtr->prevPtr;
         }
-        if (filterPtr->free != NULL && filterPtr->arg != NULL) {
-            (*filterPtr->free)(filterPtr->arg);
+        if (filterPtr->freeArgProc != NULL && filterPtr->arg != NULL) {
+            (*filterPtr->freeArgProc)(filterPtr->arg);
         }
         ns_free(filterPtr);
     }
