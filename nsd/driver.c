@@ -4192,6 +4192,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     /*
      * Now add new writer socket to the writer thread's queue
      */
+    wrSockPtr->queuePtr = queuePtr;
 
     Ns_MutexLock(&queuePtr->lock);
     if (queuePtr->sockPtr == NULL) {
@@ -4200,7 +4201,6 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     Push(wrSockPtr, queuePtr->sockPtr);
     Ns_MutexUnlock(&queuePtr->lock);
-    wrSockPtr->queuePtr = queuePtr;
 
     /*
      * Wake up writer thread
