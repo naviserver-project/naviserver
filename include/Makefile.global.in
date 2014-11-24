@@ -75,6 +75,17 @@ DL_LIBS		 =
 MATH_LIBS	 = @MATH_LIBS@
 
 
+# The Windows and Unix build systems treat $(LIBNM) differently, so we
+# arrange things so that the final output of library names is the same
+# on both platforms.  For nsd on Windows, we must use LIBNM = libnsd.
+# (See also the comments in nsd/Makefile.)  Unix must instead use
+# LIBNM = nsd here, and the lib prefix gets added elsewhere.  Since
+# this file is Unix-only, we need this simple fix-up:
+
+ifeq (libnsd,$(LIBNM))
+  LIBNM := nsd
+endif
+
 ifndef NSBUILD
     LDFLAGS += -L$(NAVISERVER)/lib
     NSLIBS  += -lnsthread -lnsd
