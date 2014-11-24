@@ -43,8 +43,8 @@
  * Local functions defined in this file.
  */
 
-static pthread_cond_t  *GetCond(Ns_Cond *cond);
-static void CleanupTls(void *arg);
+static pthread_cond_t *GetCond(Ns_Cond *cond)   NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+static void CleanupTls(void *arg)               NS_GNUC_NONNULL(1);
 static void *ThreadMain(void *arg);
 
 /*
@@ -158,7 +158,7 @@ NsGetTls(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 NsThreadLibName(void)
 {
     return "pthread";
@@ -217,6 +217,8 @@ NsLockFree(void *lock)
 {
     int err;
 
+    assert(lock != NULL);
+
     err = pthread_mutex_destroy((pthread_mutex_t *) lock);
     if (err != 0) {
     	NsThreadFatal("NsLockFree", "pthread_mutex_destroy", err);
@@ -246,6 +248,8 @@ NsLockSet(void *lock)
 {
     int err;
 
+    assert(lock != NULL);
+
     err = pthread_mutex_lock((pthread_mutex_t *) lock);
     if (err != 0) {
     	NsThreadFatal("NsLockSet", "pthread_mutex_lock", err);
@@ -273,6 +277,8 @@ int
 NsLockTry(void *lock)
 {
     int err;
+
+    assert(lock != NULL);
 
     err = pthread_mutex_trylock((pthread_mutex_t *) lock);
     if (unlikely(err == EBUSY)) {
@@ -304,6 +310,8 @@ void
 NsLockUnset(void *lock)
 {
     int err;
+
+    assert(lock != NULL);
 
     err = pthread_mutex_unlock((pthread_mutex_t *) lock);
     if (unlikely(err != 0)) {
@@ -515,6 +523,8 @@ Ns_ThreadId(void)
 void
 Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
+    assert(threadPtr != NULL);
+    
     *threadPtr = (Ns_Thread) pthread_self();
 }
 
@@ -543,6 +553,8 @@ Ns_CondInit(Ns_Cond *cond)
     pthread_cond_t *condPtr;
     int             err;
 
+    assert(cond != NULL);
+    
     condPtr = ns_malloc(sizeof(pthread_cond_t));
     err = pthread_cond_init(condPtr, NULL);
     if (err != 0) {
@@ -609,6 +621,8 @@ Ns_CondSignal(Ns_Cond *cond)
 {
     int             err;
 
+    assert(cond != NULL);
+    
     err = pthread_cond_signal(GetCond(cond));
     if (err != 0) {
         NsThreadFatal("Ns_CondSignal", "pthread_cond_signal", err);
@@ -637,6 +651,8 @@ Ns_CondBroadcast(Ns_Cond *cond)
 {
     int             err;
 
+    assert(cond != NULL);
+
     err = pthread_cond_broadcast(GetCond(cond));
     if (err != 0) {
         NsThreadFatal("Ns_CondBroadcast", "pthread_cond_broadcast", err);
@@ -663,7 +679,10 @@ Ns_CondBroadcast(Ns_Cond *cond)
 void
 Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
 {
-    int              err;
+    int err;
+
+    assert(cond != NULL);
+    assert(mutex != NULL);
 
     err = pthread_cond_wait(GetCond(cond), NsGetLock(mutex));
     if (err != 0) {
@@ -694,6 +713,9 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     int              err, status = NS_ERROR;
     struct timespec  ts;
 
+    assert(cond != NULL);
+    assert(mutex != NULL);
+    
     if (timePtr == NULL) {
 	Ns_CondWait(cond, mutex);
 	return NS_OK;
@@ -749,6 +771,8 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 static pthread_cond_t *
 GetCond(Ns_Cond *cond)
 {
+    assert(cond != NULL);
+    
     if (*cond == NULL) {
     	Ns_MasterLock();
     	if (*cond == NULL) {
@@ -807,6 +831,8 @@ CleanupTls(void *arg)
 {
     void **slots = arg;
 
+    assert(arg != NULL);
+    
     /*
      * Restore the current slots durin cleanup so handlers can access
      * TLS in other slots.
@@ -819,3 +845,12 @@ CleanupTls(void *arg)
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

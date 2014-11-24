@@ -1628,7 +1628,7 @@ CreateConnThread(ConnPool *poolPtr)
     int i;
 
 #if !defined(NDEBUG)
-    { char *threadName = Ns_ThreadGetName();
+    { const char *threadName = Ns_ThreadGetName();
       assert(strncmp("-driver:", threadName, 8U) == 0 
 	     || strncmp("-main-", threadName, 6U) == 0
 	     || strncmp("-spooler", threadName, 8U) == 0

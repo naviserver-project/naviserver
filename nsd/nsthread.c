@@ -54,7 +54,7 @@
  */
 
 void
-Ns_SetThreadServer(char *server)
+Ns_SetThreadServer(const char *server)
 {
     Ns_ThreadSetName(server);
 }
@@ -76,7 +76,7 @@ Ns_SetThreadServer(char *server)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_GetThreadServer(void)
 {
     return Ns_ThreadGetName();

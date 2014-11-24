@@ -1915,9 +1915,9 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  */
 
 NS_EXTERN void
-Ns_SetThreadServer(char *server);
+Ns_SetThreadServer(const char *server);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_GetThreadServer(void);
 
 /*

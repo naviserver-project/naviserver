@@ -63,7 +63,8 @@ typedef struct RwLock {
 			 * readers, -1 indicates exclusive writer. */
 } RwLock;
 
-static RwLock *GetRwLock(Ns_RWLock *rwPtr);
+static RwLock *GetRwLock(Ns_RWLock *rwPtr)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -87,6 +88,8 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr;
     static unsigned int nextid = 0;
+
+    assert(rwPtr != NULL);
     
     lockPtr = ns_calloc(1U, sizeof(RwLock));
     NsMutexInitNext(&lockPtr->mutex, "rw", &nextid);
@@ -151,8 +154,11 @@ Ns_RWLockDestroy(Ns_RWLock *rwPtr)
 void
 Ns_RWLockRdLock(Ns_RWLock *rwPtr)
 {
-    RwLock *lockPtr = GetRwLock(rwPtr);
+    RwLock *lockPtr;
 
+    assert(rwPtr != NULL);
+
+    lockPtr = GetRwLock(rwPtr);
     Ns_MutexLock(&lockPtr->mutex);
 
     /*
@@ -191,8 +197,12 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
 void
 Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 {
-    RwLock *lockPtr = GetRwLock(rwPtr);
+    RwLock *lockPtr;
 
+    assert(rwPtr != NULL);
+
+    lockPtr = GetRwLock(rwPtr);
+    
     Ns_MutexLock(&lockPtr->mutex);
     while (lockPtr->lockcnt != 0) {
 	lockPtr->nwriters++;
@@ -225,6 +235,8 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr = (RwLock *) *rwPtr;
 
+    assert(rwPtr != NULL);
+    
     Ns_MutexLock(&lockPtr->mutex);
     if (--lockPtr->lockcnt < 0) {
 	lockPtr->lockcnt = 0;
@@ -257,6 +269,8 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 static RwLock *
 GetRwLock(Ns_RWLock *rwPtr)
 {
+    assert(rwPtr != NULL);
+    
     if (*rwPtr == NULL) {
 	Ns_MasterLock();
 	if (*rwPtr == NULL) {
@@ -266,3 +280,12 @@ GetRwLock(Ns_RWLock *rwPtr)
     }
     return (RwLock *) *rwPtr;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

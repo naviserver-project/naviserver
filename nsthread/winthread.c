@@ -243,7 +243,7 @@ NsGetTls(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 NsThreadLibName(void)
 {
     return "win32";

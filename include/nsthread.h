@@ -771,32 +771,34 @@ NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, const char *prefix, const ch
  * rwlock.c:
  */
 
-NS_EXTERN void Ns_RWLockInit(Ns_RWLock *lockPtr);
+NS_EXTERN void Ns_RWLockInit(Ns_RWLock *lockPtr)      NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_RWLockDestroy(Ns_RWLock *lockPtr);
-NS_EXTERN void Ns_RWLockRdLock(Ns_RWLock *lockPtr);
-NS_EXTERN void Ns_RWLockWrLock(Ns_RWLock *lockPtr);
-NS_EXTERN void Ns_RWLockUnlock(Ns_RWLock *lockPtr);
+NS_EXTERN void Ns_RWLockRdLock(Ns_RWLock *lockPtr)    NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_RWLockWrLock(Ns_RWLock *lockPtr)    NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_RWLockUnlock(Ns_RWLock *lockPtr)    NS_GNUC_NONNULL(1);
 
 /*
  * cslock.c;
  */
 
-NS_EXTERN void Ns_CsInit(Ns_Cs *csPtr);
+NS_EXTERN void Ns_CsInit(Ns_Cs *csPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_CsDestroy(Ns_Cs *csPtr);
 NS_EXTERN void Ns_CsEnter(Ns_Cs *csPtr);
-NS_EXTERN void Ns_CsLeave(Ns_Cs *csPtr);
+NS_EXTERN void Ns_CsLeave(Ns_Cs *csPtr)      NS_GNUC_NONNULL(1);
 
 /*
- * cond.c:
+ * pthread.c:
  */
 
-NS_EXTERN void Ns_CondInit(Ns_Cond *condPtr);
+NS_EXTERN void Ns_CondInit(Ns_Cond *condPtr)          NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_CondDestroy(Ns_Cond *condPtr);
-NS_EXTERN void Ns_CondSignal(Ns_Cond *condPtr);
-NS_EXTERN void Ns_CondBroadcast(Ns_Cond *condPtr);
-NS_EXTERN void Ns_CondWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr);
+NS_EXTERN void Ns_CondSignal(Ns_Cond *condPtr)        NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_CondBroadcast(Ns_Cond *condPtr)     NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_CondWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int Ns_CondTimedWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr,
-			       const Ns_Time *timePtr);
+			       const Ns_Time *timePtr)
+      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * reentrant.c:
@@ -838,11 +840,11 @@ NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stackSize,
 NS_EXTERN void Ns_ThreadExit(void *arg);
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr);
 NS_EXTERN void Ns_ThreadYield(void);
-NS_EXTERN void Ns_ThreadSetName(char *name, ...);
+NS_EXTERN void Ns_ThreadSetName(const char *name, ...) NS_GNUC_NONNULL(1);
 NS_EXTERN uintptr_t Ns_ThreadId(void);
-NS_EXTERN void Ns_ThreadSelf(Ns_Thread *threadPtr);
-NS_EXTERN char *Ns_ThreadGetName(void);
-NS_EXTERN char *Ns_ThreadGetParent(void);
+NS_EXTERN void Ns_ThreadSelf(Ns_Thread *threadPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN const char *Ns_ThreadGetName(void)       NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN const char *Ns_ThreadGetParent(void)     NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN long Ns_ThreadStackSize(long size);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc);
 NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize);
@@ -853,7 +855,7 @@ NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSiz
  */
 
 NS_EXTERN void Ns_GetTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr)  NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)  NS_GNUC_NONNULL(1);
 NS_EXTERN int  Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)  
@@ -862,9 +864,9 @@ NS_EXTERN int  Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *result
  * tls.c:
  */
 
-NS_EXTERN void Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup);
-NS_EXTERN void Ns_TlsSet(Ns_Tls *tlsPtr, void *value);
-NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr);
+NS_EXTERN void Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_TlsSet(Ns_Tls *tlsPtr, void *value) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr) NS_GNUC_NONNULL(1);
 
 /*
  * winthread.c:

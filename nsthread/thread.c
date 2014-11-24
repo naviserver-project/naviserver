@@ -236,7 +236,7 @@ NsThreadMain(void *arg)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ThreadGetName(void)
 {
     Thread *thisPtr = GetThread();
@@ -262,11 +262,13 @@ Ns_ThreadGetName(void)
  */
 
 void
-Ns_ThreadSetName(char *name,...)
+Ns_ThreadSetName(const char *name,...)
 {
     Thread *thisPtr = GetThread();
     va_list ap;
 
+    assert(name != NULL);
+    
     Ns_MasterLock();
     va_start(ap, name);
     vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
@@ -291,7 +293,7 @@ Ns_ThreadSetName(char *name,...)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ThreadGetParent(void)
 {
     Thread *thisPtr = GetThread();
