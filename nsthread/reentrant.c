@@ -31,8 +31,8 @@
 /* 
  * reentrant.c --
  *
- *	Reentrant versions of common system utilities using per-thread
- *	data buffers.  See the corresponding manual page for details.
+ *    Reentrant versions of common system utilities using per-thread
+ *    data buffers.  See the corresponding manual page for details.
  */
 
 #include "thread.h"
@@ -43,14 +43,14 @@
  */
 
 typedef struct Tls {
-    char	    	nabuf[16];
-    char		asbuf[27];
-    char	       *stbuf;
-    char		ctbuf[27];
-    struct tm   	gtbuf;
-    struct tm   	ltbuf;
+    char        nabuf[16];
+    char        asbuf[27];
+    char       *stbuf;
+    char        ctbuf[27];
+    struct tm   gtbuf;
+    struct tm   ltbuf;
 #ifndef _WIN32
-    struct dirent       ent;
+    struct dirent ent;
 #endif
 } Tls;
 
@@ -62,15 +62,15 @@ static Tls *GetTls(void);
  *
  * NsInitReentrant --
  *
- *	Initialize reentrant function handling.  Some of the
+ *    Initialize reentrant function handling.  Some of the
  *      retentrant functions use to per-thread buffers (thread local
  *      storage) for reentrant routines
  *
  * Results:
- *	None.
+ *    None.
  *
  * Side effects:
- *	Allocating thread local storage id.
+ *    Allocating thread local storage id.
  *
  *----------------------------------------------------------------------
  */
@@ -85,14 +85,14 @@ NsInitReentrant(void)
  *
  * GetTls --
  *
- *	Return thread local storage. If not allocated yet, allocate
- *	memory via calloc.
+ *    Return thread local storage. If not allocated yet, allocate
+ *    memory via calloc.
  *
  * Results:
- *	Pointer to thread local storage
+ *    Pointer to thread local storage
  *
  * Side effects:
- *	Allocating potentially memory .
+ *    Allocating potentially memory .
  *
  *----------------------------------------------------------------------
  */
@@ -103,8 +103,8 @@ GetTls(void)
 
     tlsPtr = Ns_TlsGet(&tls);
     if (tlsPtr == NULL) {
-	tlsPtr = ns_calloc(1U, sizeof(Tls));
-	Ns_TlsSet(&tls, tlsPtr);
+        tlsPtr = ns_calloc(1U, sizeof(Tls));
+        Ns_TlsSet(&tls, tlsPtr);
     }
     return tlsPtr;
 }
@@ -142,8 +142,8 @@ ns_inet_ntoa(struct in_addr addr)
     inet_ntop(AF_INET, &addr, tlsPtr->nabuf, sizeof(tlsPtr->nabuf)); 
 #else
     union {
-    	unsigned long l;
-    	unsigned char b[4];
+        unsigned long l;
+        unsigned char b[4];
     } u;
     
     u.l = (unsigned long) addr.s_addr;
@@ -177,7 +177,7 @@ ns_readdir(DIR * dir)
 
     ent = &tlsPtr->ent; 
     if (readdir_r(dir, ent, &ent) != 0) {
-	ent = NULL;
+        ent = NULL;
     }
     return ent;
 }
@@ -195,20 +195,26 @@ struct tm *
 ns_localtime(const time_t *clock)
 {
 #ifdef _MSC_VER
+
     Tls *tlsPtr = GetTls();
     int errNum;
 
     errNum = localtime_s(&tlsPtr->ltbuf, clock);
     if (errNum != 0) {
-	NsThreadFatal("ns_localtime","localtime_s", errNum);
+        NsThreadFatal("ns_localtime","localtime_s", errNum);
     }
+
     return &tlsPtr->ltbuf;
 
 #elif defined(_WIN32)
+
     return localtime(clock);
+
 #else
+
     Tls *tlsPtr = GetTls();
     return localtime_r(clock, &tlsPtr->ltbuf);
+
 #endif
 }
 
@@ -230,8 +236,8 @@ ns_gmtime(const time_t *clock)
 
     errNum = gmtime_s(&tlsPtr->gtbuf, clock);
     if (errNum != 0) {
-	NsThreadFatal("ns_gmtime","gmtime_s", errNum);
-     }
+        NsThreadFatal("ns_gmtime","gmtime_s", errNum);
+    }
 
     return &tlsPtr->gtbuf;
 
@@ -265,7 +271,7 @@ ns_ctime(const time_t *clock)
 
     errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
     if (errNum != 0) {
-	NsThreadFatal("ns_ctime","ctime_s", errNum);
+        NsThreadFatal("ns_ctime","ctime_s", errNum);
     }
 
     return tlsPtr->ctbuf;
@@ -299,7 +305,7 @@ ns_asctime(const struct tm *tmPtr)
 
     errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
     if (errNum != 0) {
-	NsThreadFatal("ns_asctime","asctime_s", errNum);
+        NsThreadFatal("ns_asctime","asctime_s", errNum);
     }
 
     return tlsPtr->asbuf;
@@ -325,25 +331,31 @@ ns_asctime(const struct tm *tmPtr)
  */
 
 char *
-ns_strtok(char *s1, const char *s2)
+ns_strtok(char *str, const char *sep)
 {
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
-    return strtok_s(s1, s2, &tlsPtr->stbuf);
+    return strtok_s(str, sep, &tlsPtr->stbuf);
 
 #elif defined(_WIN32)
 
-    return strtok(s1, s2);
+    return strtok(str, sep);
 
 #else
 
     Tls *tlsPtr = GetTls();
-    return strtok_r(s1, s2, &tlsPtr->stbuf);
+    return strtok_r(str, sep, &tlsPtr->stbuf);
 
 #endif
 }
 
 
-
-
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
