@@ -120,16 +120,12 @@ ns_runonce {
         variable enabled    0     ; # True if trace is enabled
         variable config           ; # Array with config options
         variable epoch     -1     ; # The initialization epoch
-
-        # The 'namespace ensemble' command does not exist in Tcl 8.4, it is
-        # only in Tcl 8.5 and later:
-        variable no_ensemble_cmd_p  [catch { namespace ensemble exists foo }]
-
+        
         # Private namespaces
         namespace eval resolve "" ; # Commands for resolving commands
         namespace eval trace   "" ; # Commands registered for tracing
         namespace eval script  "" ; # Commands for generating scripts
-
+        
         # Exported commands
         namespace export unknown
 
@@ -670,21 +666,29 @@ ns_runonce {
 
 	#
 	# helper proc for ensemble serialization
-	# 
-
-        if { $no_ensemble_cmd_p } {
-            proc _getensemble {cmd} {
-                # Do nothing.
-            }
-        } else { proc _getensemble {cmd} {
-	    if {[namespace ensemble exists $cmd]} {
-		set _cfg [namespace ensemble configure $cmd]
-		set _enns [dict get $_cfg -namespace]
-		dict unset _cfg -namespace
-		set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
-		return [list namespace eval $_enns $_encmd]\n
+	#
+	# Tcl versions before 8.5 do not have a namespace ensemble
+	# command.  NaviServer does not support on the Tcl layer older
+	# versions than 8.5, but if someone wants to check e.g. some
+	# basic properties with a Tcl 8.4 version, it should not break
+	# due to this small change. So we guard the definition of the
+	# ensemble serialization by checking Tcl's version number.
+	
+	if {$::tcl_version >= 8.5} {
+	    proc _getensemble {cmd} {
+		if {[namespace ensemble exists $cmd]} {
+		    set _cfg [namespace ensemble configure $cmd]
+		    set _enns [dict get $_cfg -namespace]
+		    dict unset _cfg -namespace
+		    set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
+		    return [list namespace eval $_enns $_encmd]\n
+		}
 	    }
-	}}
+	} else {
+	    proc _getensemble {cmd} {
+		# Do nothing.
+            }
+	}
 
         #
         # Generates scipts to re-generate namespace definition.
