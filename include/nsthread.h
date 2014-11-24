@@ -200,8 +200,6 @@ typedef int32_t ssize_t;
 # define strcasecmp                _stricmp
 # define strncasecmp               _strnicmp
 
-# define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),(flgs))
-# define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),(flgs))
 # define ns_sockclose              closesocket
 # define ns_sockerrno              GetLastError()
 # define ns_sockioctl              ioctlsocket
@@ -896,6 +894,8 @@ NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
 NS_EXTERN off_t   ns_lseek(int fildes, off_t offset, int whence);
 NS_EXTERN int     ns_dup(int fildes);
 NS_EXTERN int     ns_dup2(int fildes, int fildes2);
+NS_EXTERN ssize_t ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags);
+NS_EXTERN ssize_t ns_send(NS_SOCKET socket, void *buffer, size_t length, int flags);
 #endif
 
 /*
