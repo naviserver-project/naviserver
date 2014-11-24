@@ -30,7 +30,7 @@
 
 dnl
 dnl Check to see wether we have the get*_r function for user and group
-dnl management available
+dnl management available.
 dnl
 
 AC_DEFUN([AX_HAVE_GETPWNAM_R],

@@ -323,7 +323,7 @@ done:
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 FillBuf(Stream *sPtr)
 {
     ssize_t n;
@@ -391,7 +391,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
             sPtr->cnt -= n;
             if (eol != NULL) {
                 n = (size_t)dsPtr->length;
-                if (n > 0 && dsPtr->string[n-1] == '\r') {
+                if (n > 0u && dsPtr->string[n-1] == '\r') {
 		  Ns_DStringSetLength(dsPtr, (int)n - 1);
                 }
                 return NS_TRUE;

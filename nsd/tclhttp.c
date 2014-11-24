@@ -449,9 +449,10 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	        const char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
 
 		if ((s != NULL
-		     && Ns_StrToWideInt(s, &length) == NS_OK && length > 0 
+		     && Ns_StrToWideInt(s, &length) == NS_OK
+                     && length > 0 
 		     && length >= httpPtr->spoolLimit
-		     ) || contentSize >= httpPtr->spoolLimit
+		     ) || (int)contentSize >= httpPtr->spoolLimit
 		    ) {
 		    int fd;
 		    /*
@@ -656,7 +657,7 @@ err:
  */
 
 static bool
-HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeEntry)
+HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
 {
     Tcl_HashEntry *hPtr;
 
@@ -670,7 +671,7 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeEn
         return NS_FALSE;
     }
     *httpPtrPtr = Tcl_GetHashValue(hPtr);
-    if (removeEntry == NS_TRUE) {
+    if (removeRequest == NS_TRUE) {
         Tcl_DeleteHashEntry(hPtr);
     }
     return NS_TRUE;

@@ -62,7 +62,7 @@ static const Ns_DbProc procs[] = {
     {DbFn_Flush,        (Ns_Callback *)Flush},
     {DbFn_Cancel,       (Ns_Callback *)Flush},
     {DbFn_ResetHandle,  (Ns_Callback *)ResetHandle},
-    {0, NULL}
+    {(Ns_DbProcId)0, NULL}
 };
 
 static char *dbName = "nsdbtest";
@@ -85,7 +85,7 @@ static char *dbName = "nsdbtest";
  */
 
 NS_EXPORT int
-Ns_DbDriverInit(char *driver, const char *UNUSED(configPath))
+Ns_DbDriverInit(const char *driver, const char *UNUSED(configPath))
 {
     return Ns_DbRegisterDriver(driver, &procs[0]);
 }

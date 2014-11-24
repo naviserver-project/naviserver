@@ -820,7 +820,7 @@ NsDbClose(Ns_DbHandle *handle)
  */
 
 int
-Ns_DbSpStart(Ns_DbHandle *handle, char *procname)
+Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
@@ -929,7 +929,7 @@ Ns_DbSpExec(Ns_DbHandle *handle)
  */
 
 int
-Ns_DbSpReturnCode(Ns_DbHandle *handle, char *returnCode, int bufsize)
+Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int       status = NS_ERROR;

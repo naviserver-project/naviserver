@@ -416,7 +416,7 @@ Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
 }
 
 int
-NsAdpFlush(NsInterp *itPtr, int isStreaming)
+NsAdpFlush(NsInterp *itPtr, int doStream)
 {
     Ns_Conn     *conn;
     Tcl_Interp  *interp;
@@ -451,7 +451,7 @@ NsAdpFlush(NsInterp *itPtr, int isStreaming)
      */
 
     if (len < 1 && (flags & ADP_FLUSHED) != 0U) {
-        if (isStreaming == 0) {
+        if (doStream == 0) {
             NsAdpReset(itPtr);
         }
         return NS_OK;
@@ -482,7 +482,7 @@ NsAdpFlush(NsInterp *itPtr, int isStreaming)
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0U || (len == 0 && isStreaming != 0)) {
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0U || (len == 0 && doStream != 0)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {
@@ -519,7 +519,7 @@ NsAdpFlush(NsInterp *itPtr, int isStreaming)
 		sbuf.iov_base = buf;
 		sbuf.iov_len  = (size_t)len;
                 if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, 
-                                       (isStreaming != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
+                                       (doStream != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
                     result = TCL_OK;
                 }
                 if (result != TCL_OK) {
@@ -543,7 +543,7 @@ NsAdpFlush(NsInterp *itPtr, int isStreaming)
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 
-    if (isStreaming == 0) {
+    if (doStream == 0) {
         NsAdpReset(itPtr);
     }
     return result;

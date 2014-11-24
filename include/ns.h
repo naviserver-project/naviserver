@@ -2028,7 +2028,7 @@ Ns_GetConn(void);
  */
 
 NS_EXTERN void
-Ns_QuoteHtml(Ns_DString *pds, const char *htmlString);
+Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString);
 
 /*
  * request.c:

@@ -1277,7 +1277,7 @@ NsConnThread(void *arg)
             Ns_MutexUnlock(wqueueLockPtr);
 
 	    if (Ns_LogSeverityEnabled(Debug)) {
-		Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, totalTime;
+		Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, fullTime;
 
 		Ns_DiffTime(&connPtr->requestQueueTime, &connPtr->acceptTime, &acceptTime);
 		Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime, &queueTime);
@@ -1286,7 +1286,7 @@ NsConnThread(void *arg)
 		Ns_GetTime(&now);
 		Ns_DiffTime(&now, &connPtr->requestDequeueTime, &runTime);
 		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
-		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &totalTime);
+		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
 
 		Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
 		       " start %" PRIu64 ".%06ld"
@@ -1306,7 +1306,7 @@ NsConnThread(void *arg)
 		       (int64_t) filterTime.sec, filterTime.usec,
 		       (int64_t) runTime.sec, runTime.usec,
 		       (int64_t) netRunTime.sec, netRunTime.usec,
-		       (int64_t) totalTime.sec, totalTime.usec
+		       (int64_t) fullTime.sec, fullTime.usec
 		       );
 	    }
 	    
