@@ -165,7 +165,7 @@ NsMapPool(ConnPool *poolPtr, const char *map)
 
     if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
         if (mc == 2) {
-            Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0, NULL);
+            Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0u, NULL);
             Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", 
 		   server, mv[0], mv[1], poolPtr->pool);
         }
@@ -1458,7 +1458,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
 
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
-    snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%d", connPtr->id);
+    snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%" PRIuPTR, connPtr->id);
     connPtr->outputheaders = Ns_SetCreate(NULL);
     if (connPtr->request->version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;

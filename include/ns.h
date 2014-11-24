@@ -633,14 +633,20 @@ Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
 
 NS_EXTERN int
 Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
-		    const char *user, const char *passwd, const char *peer);
+		    const char *user, const char *passwd, const char *peer)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 NS_EXTERN void
-Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr);
+Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN void
-Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr);
+Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_AuthorizeUser(const char *user, const char *passwd);
+Ns_AuthorizeUser(const char *user, const char *passwd)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * cache.c:
@@ -768,12 +774,12 @@ Ns_CacheResetStats(Ns_Cache *cache)
  * callbacks.c:
  */
 
-NS_EXTERN void *Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtStartup(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtSignal(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtReady(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg);
+NS_EXTERN void *Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg) NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)    NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)     NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtReady(Ns_Callback *proc, void *arg)      NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg) NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg)       NS_GNUC_NONNULL(1);
 
 /*
  * cls.c:
@@ -938,8 +944,9 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
  * conn.c:
  */
 
-NS_EXTERN int
-Ns_ConnId(Ns_Conn *conn);
+NS_EXTERN uintptr_t
+Ns_ConnId(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ConnContentFd(Ns_Conn *conn);
@@ -2902,14 +2909,16 @@ NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
- * time.c:
+ * httptime.c:
  */
 
 NS_EXTERN char *
-Ns_HttpTime(Ns_DString *dsPtr, const time_t *when) NS_GNUC_NONNULL(1);
+Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN time_t
-Ns_ParseHttpTime(char *chars);
+Ns_ParseHttpTime(char *chars)
+        NS_GNUC_NONNULL(1);
 
 /*
  * url.c:

@@ -543,7 +543,7 @@ typedef struct DIR_ *DIR;
 
 /*
  * Define a few macros from inttypes.h which are 
- * missing one some platforms.
+ * missing on some platforms.
  */
 #if !defined(PRId64)
 # define PRId64      "I64d"
@@ -755,16 +755,18 @@ NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
  * mutex.c:
  */
 
-NS_EXTERN void Ns_MutexInit(Ns_Mutex *mutexPtr);
+NS_EXTERN void Ns_MutexInit(Ns_Mutex *mutexPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_MutexDestroy(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexLock(Ns_Mutex *mutexPtr);
-NS_EXTERN int  Ns_MutexTryLock(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexUnlock(Ns_Mutex *mutexPtr);
-NS_EXTERN char *Ns_MutexGetName(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexSetName(Ns_Mutex *mutexPtr, CONST char *name);
-NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, CONST char *prefix,
-                                CONST char *name);
-NS_EXTERN void Ns_MutexList(Tcl_DString *dsPtr);
+NS_EXTERN void Ns_MutexLock(Ns_Mutex *mutexPtr)       NS_GNUC_NONNULL(1);
+NS_EXTERN int  Ns_MutexTryLock(Ns_Mutex *mutexPtr)    NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_MutexUnlock(Ns_Mutex *mutexPtr)     NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_MutexList(Tcl_DString *dsPtr)       NS_GNUC_NONNULL(1);
+NS_EXTERN const char *Ns_MutexGetName(Ns_Mutex *mutexPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_MutexSetName(Ns_Mutex *mutexPtr, const char *name)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, const char *prefix, const char *name)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*

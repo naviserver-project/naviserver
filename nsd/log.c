@@ -703,7 +703,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
 	secs = timePtr->sec;
         ptm = ns_localtime(&secs);
 
-        n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
+        n = strftime(bp, 32u, "[%d/%b/%Y:%H:%M:%S", ptm);
         if (gmt == 0) {
             bp[n++] = ']';
             bp[n] = '\0';

@@ -1008,13 +1008,25 @@ Ns_ConnTimeout(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_ConnId(Ns_Conn *conn)
+uintptr_t
+Ns_ConnId(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
-
+    const Conn *connPtr = (const Conn *) conn;
+    assert(conn != NULL);
+    
     return connPtr->id;
 }
+
+const char *
+NsConnIdStr(const Ns_Conn *conn)
+{
+    const Conn *connPtr = (const Conn *) conn;
+    assert(conn != NULL);
+    
+    return connPtr->idstr;
+}
+
+
 
 
 /*
@@ -1624,7 +1636,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CIdIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnId(conn)));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)Ns_ConnId(conn)));
         break;
 
     case CFlagsIdx:

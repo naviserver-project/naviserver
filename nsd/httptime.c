@@ -41,8 +41,12 @@
  * Local functions defined in this file
  */
 
-static int MakeNum(const char *s);
-static int MakeMonth(char *s);
+static int MakeNum(const char *s)
+    NS_GNUC_NONNULL(1);
+
+static int MakeMonth(char *s)
+    NS_GNUC_NONNULL(1);
+
 
 /*
  * Static variables defined in this file
@@ -86,6 +90,8 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
     time_t     now;
     struct tm *tmPtr;
 
+    assert(dsPtr != NULL);
+    
     if (when == NULL) {
         now = time(0);
         when = &now;
@@ -135,10 +141,8 @@ Ns_ParseHttpTime(char *chars)
     struct tm  timeInfo;
     time_t     t;
 
-    if (chars == NULL) {
-        return 0;
-    }
-
+    assert(chars != NULL);
+    
     /*
      * Find the comma after day-of-week
      *
@@ -366,6 +370,8 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static int
 MakeNum(const char *s)
 {
+    assert(s != NULL);
+    
     if (*s >= '0' && *s <= '9') {
         return (10 * (*s - '0')) + (*(s + 1) - '0');
     } else {
@@ -395,6 +401,8 @@ static int
 MakeMonth(char *s)
 {
     int i;
+
+    assert(s != NULL);
 
     /*
      * Make sure it's capitalized like this:

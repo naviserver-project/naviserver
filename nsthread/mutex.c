@@ -68,7 +68,7 @@ typedef struct Mutex {
 } Mutex;
 
 #define GETMUTEX(mutex) (*(mutex) != NULL ? ((Mutex *)*(mutex)) : GetMutex((mutex)))
-static Mutex *GetMutex(Ns_Mutex *mutex);
+static Mutex *GetMutex(Ns_Mutex *mutex) NS_GNUC_NONNULL(1);
 static Mutex *firstMutexPtr;
 
 
@@ -94,6 +94,8 @@ Ns_MutexInit(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
     static unsigned int nextid;
+
+    assert(mutex != NULL);
 
     mutexPtr = ns_calloc(1U, sizeof(Mutex));
     mutexPtr->lock = NsLockAlloc();
@@ -124,18 +126,25 @@ Ns_MutexInit(Ns_Mutex *mutex)
  */
 
 void
-Ns_MutexSetName(Ns_Mutex *mutex, CONST char *name)
+Ns_MutexSetName(Ns_Mutex *mutex, const char *name)
 {
+    assert(mutex != NULL);
+    assert(name != NULL);
+
     Ns_MutexSetName2(mutex, name, NULL);
 }
 
 void
-Ns_MutexSetName2(Ns_Mutex *mutex, CONST char *prefix, CONST char *name)
+Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
 {
-    Mutex *mutexPtr = GETMUTEX(mutex);
+    Mutex *mutexPtr;
     size_t prefixLength, nameLength;
     char *p;
 
+    assert(mutex != NULL);
+    assert(prefix != NULL);
+
+    mutexPtr = GETMUTEX(mutex);
     prefixLength = strlen(prefix);
     if (prefixLength > NS_THREAD_NAMESIZE) {
 	prefixLength = NS_THREAD_NAMESIZE;
@@ -217,13 +226,16 @@ Ns_MutexDestroy(Ns_Mutex *mutex)
 void
 Ns_MutexLock(Ns_Mutex *mutex)
 {
-    Mutex *mutexPtr = GETMUTEX(mutex);
-
+    Mutex *mutexPtr;
 #ifndef NS_NO_MUTEX_TIMING
     Ns_Time end, diff, startTime;
 
     Ns_GetTime(&startTime);
 #endif
+
+    assert(mutex != NULL);
+    
+    mutexPtr = GETMUTEX(mutex);
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
@@ -281,8 +293,11 @@ Ns_MutexLock(Ns_Mutex *mutex)
 int
 Ns_MutexTryLock(Ns_Mutex *mutex)
 {
-    Mutex *mutexPtr = GETMUTEX(mutex);
+    Mutex *mutexPtr;
 
+    assert(mutex != NULL);
+
+    mutexPtr = GETMUTEX(mutex);
     if (!NsLockTry(mutexPtr->lock)) {
     	return NS_TIMEOUT;
     }
@@ -396,6 +411,10 @@ NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
     unsigned int id;
     char buf[NS_THREAD_NAMESIZE];
 
+    assert(mutex != NULL);
+    assert(prefix != NULL);
+    assert(nextPtr != NULL);
+    
     Ns_MasterLock();
     id = *nextPtr;
     *nextPtr = id + 1;
@@ -425,8 +444,11 @@ NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
 void *
 NsGetLock(Ns_Mutex *mutex)
 {
-    Mutex *mutexPtr = GETMUTEX(mutex);
+    Mutex *mutexPtr;
 
+    assert(mutex != NULL);
+    
+    mutexPtr = GETMUTEX(mutex);
     return mutexPtr->lock;
 }
 
@@ -450,6 +472,8 @@ NsGetLock(Ns_Mutex *mutex)
 static Mutex *
 GetMutex(Ns_Mutex *mutex)
 {
+    assert(mutex != NULL);
+    
     Ns_MasterLock();
     if (*mutex == NULL) {
 	Ns_MutexInit(mutex);
@@ -473,10 +497,22 @@ GetMutex(Ns_Mutex *mutex)
  *
  *----------------------------------------------------------------------
  */
-char *
+const char *
 Ns_MutexGetName(Ns_Mutex *mutex)
 {
-    Mutex *mutexPtr = GETMUTEX(mutex);
-
+    Mutex *mutexPtr;
+    
+    assert(mutex != NULL);
+    
+    mutexPtr = GETMUTEX(mutex);
     return mutexPtr->name;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

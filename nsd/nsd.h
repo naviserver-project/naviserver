@@ -581,7 +581,7 @@ typedef struct Conn {
     struct ConnPool *poolPtr;
     struct Driver   *drvPtr;
 
-    int id;
+    uintptr_t id;
     char idstr[TCL_INTEGER_SPACE + 4];
 
     Ns_Time acceptTime;          /* time stamp, when the request was accepted */
@@ -741,7 +741,7 @@ typedef struct NsServer {
 
     struct {
         Ns_Mutex lock;
-        unsigned long nextconnid;
+        uintptr_t nextconnid;
         bool shutdown;
         ConnPool *firstPtr;
         ConnPool *defaultPtr;
@@ -1341,7 +1341,7 @@ NS_EXTERN Ns_Url2FileProc NsTclUrl2FileProc;
 NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
 
-NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr);
+NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr);
@@ -1405,16 +1405,29 @@ NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
 
 /*
- * Conn routines.
+ * limits.c
  */
+NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url);
-
-NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime);
+/*
+ * range.c
+ */
+NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
 			       int fd, const void *data, size_t objLength,
-			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
+			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
+
+/*
+ * conn.c
+ */
+NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
 /*
  * request parsing
  */
@@ -1517,7 +1530,8 @@ NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 NS_EXTERN void NsUrlSpecificWalk(int id, const char *server, Ns_ArgProc func,
 				 Tcl_DString *dsPtr);
 
-NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth);
+NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
