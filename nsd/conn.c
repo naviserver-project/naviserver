@@ -688,10 +688,10 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnHost(Ns_Conn *conn)
+const char *
+Ns_ConnHost(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     return connPtr->drvPtr->address;
 }
@@ -814,10 +814,10 @@ Ns_ConnSockContent(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnDriverName(Ns_Conn *conn)
+const char *
+Ns_ConnDriverName(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     return connPtr->drvPtr->name;
 }
@@ -1008,13 +1008,25 @@ Ns_ConnTimeout(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_ConnId(Ns_Conn *conn)
+uintptr_t
+Ns_ConnId(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
-
+    const Conn *connPtr = (const Conn *) conn;
+    assert(conn != NULL);
+    
     return connPtr->id;
 }
+
+const char *
+NsConnIdStr(const Ns_Conn *conn)
+{
+    const Conn *connPtr = (const Conn *) conn;
+    assert(conn != NULL);
+    
+    return connPtr->idstr;
+}
+
+
 
 
 /*
@@ -1588,7 +1600,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CDriverIdx:
-        Tcl_SetResult(interp, Ns_ConnDriverName(conn), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnDriverName(conn), -1));
         break;
 
     case CServerIdx:
@@ -1596,7 +1608,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CPoolIdx:
-        Tcl_SetResult(interp, connPtr->poolPtr->pool, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->poolPtr->pool, -1));
         break;
 
     case CStatusIdx:
@@ -1624,7 +1636,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CIdIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnId(conn)));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)Ns_ConnId(conn)));
         break;
 
     case CFlagsIdx:

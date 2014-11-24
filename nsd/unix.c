@@ -50,7 +50,9 @@ static void Abort(int signal);
  * Static variables defined in this file.
  */
 
+#if !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R) || !defined(HAVE_GETGRGID_R) || !defined(HAVE_GETGRNAM_R)
 static Ns_Mutex lock = NULL;
+#endif
 static int debugMode = 0;
 
 
@@ -439,6 +441,157 @@ ns_sock_set_blocking(NS_SOCKET fd, int blocking)
 
 /*
  *----------------------------------------------------------------------
+ * GetPwNam --
+ *
+ *      generalized version of getpwnam() and getpwnam_r
+ *
+ * Results:
+ *      NS_TRUE if user is found; NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      returning results in arguments 3 or 4 and freePtr in arg 5.
+ *
+ *----------------------------------------------------------------------
+ */
+
+typedef enum {
+    PwUID, PwNAME, PwDIR, PwGID
+} PwElement;
+
+bool
+GetPwNam(char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
+    struct passwd *pwPtr;
+    bool success;
+#if defined(HAVE_GETPWNAM_R)
+    struct passwd pw;
+    char *buffer;
+    size_t bufSize = 4096u;
+
+    pwPtr = NULL;
+    buffer = ns_malloc(bufSize);
+    do {
+        int errorCode = getpwnam_r(user, &pw, buffer, bufSize, &pwPtr);
+        if (errorCode != ERANGE) {
+            break;
+        }
+        bufSize *= 2u;
+        buffer = ns_realloc(buffer, bufSize);
+    } while (1);
+    *freePtr = buffer;
+#else
+    Ns_MutexLock(&lock);
+    pwPtr = getpwnam(user);
+#endif    
+
+    if (pwPtr != NULL) {
+        success = NS_TRUE;
+
+        switch (elem) {
+        case PwUID: 
+            *intResult = (int) pwPtr->pw_uid;
+            break;
+        case PwGID: 
+            *intResult = (int) pwPtr->pw_gid;
+            break;
+        case PwNAME:
+            if (dsPtr != NULL) {
+                Ns_DStringAppend(dsPtr, pwPtr->pw_name);
+            }
+            break;
+        case PwDIR:
+            if (dsPtr != NULL) {
+                Ns_DStringAppend(dsPtr, pwPtr->pw_dir);
+            }
+            break;
+        }
+    } else {
+        success = NS_FALSE;
+    }
+
+#if !defined(HAVE_GETPWNAM_R)
+    Ns_MutexUnlock(&lock);
+#endif
+
+    return success;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * GetPwUID --
+ *
+ *      generalized version of getpwuid() and getpwuid_r
+ *
+ * Results:
+ *      NS_TRUE if user is found; NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      returning results in arguments 3 or 4 and freePtr in arg 5.
+ *
+ *----------------------------------------------------------------------
+ */
+
+bool
+GetPwUID(int uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
+    struct passwd *pwPtr;
+    bool success;
+#if defined(HAVE_GETPWUID_R)
+    struct passwd pw;
+    char *buffer;
+    size_t bufSize = 4096u;
+
+    pwPtr = NULL;
+    buffer = ns_malloc(bufSize);
+    do {
+        int errorCode = getpwuid_r(uid, &pw, buffer, bufSize, &pwPtr);
+        if (errorCode != ERANGE) {
+            break;
+        }
+        bufSize *= 2u;
+        buffer = ns_realloc(buffer, bufSize);
+    } while (1);
+    *freePtr = buffer;
+    
+#else
+    Ns_MutexLock(&lock);
+    pwPtr = getpwuid(uid);
+#endif
+
+    if (pwPtr != NULL) {
+        success = NS_TRUE;
+
+        switch (elem) {
+        case PwUID: 
+            *intResult = (int) pwPtr->pw_uid;
+            break;
+        case PwGID: 
+            *intResult = (int) pwPtr->pw_gid;
+            break;
+        case PwNAME:
+            if (dsPtr != NULL) {
+                Ns_DStringAppend(dsPtr, pwPtr->pw_name);
+            }
+            break;
+        case PwDIR:
+            if (dsPtr != NULL) {
+                Ns_DStringAppend(dsPtr, pwPtr->pw_dir);
+            }
+            break;
+        }
+    } else {
+        success = NS_FALSE;
+    }
+
+#if !defined(HAVE_GETPWUID_R)
+    Ns_MutexUnlock(&lock);
+#endif
+
+    return success;
+}
+
+
+/*
+ *----------------------------------------------------------------------
  * Ns_GetNameForUid --
  *
  *      Get the user name given the id
@@ -452,19 +605,17 @@ ns_sock_set_blocking(NS_SOCKET fd, int blocking)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
 {
-    struct passwd *pw = NULL;
+    char *ptr = NULL;
+    bool success;
 
-    Ns_MutexLock(&lock);
-    pw = getpwuid((uid_t)uid);
-    if (pw != NULL && dsPtr) {
-        Ns_DStringAppend(dsPtr, pw->pw_name);
+    success = GetPwUID(uid, PwNAME, NULL, dsPtr, &ptr);
+    if (ptr != NULL) {
+        ns_free(ptr);
     }
-    Ns_MutexUnlock(&lock);
-
-    return (pw != NULL) ? NS_TRUE : NS_FALSE;
+    return success;
 }
 
 
@@ -483,19 +634,38 @@ Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_GetNameForGid(Ns_DString *dsPtr, int gid)
 {
-    struct group *gr = NULL;
+    struct group *grPtr;
+#if defined(HAVE_GETGRGID_R)
+    struct group gr;
+    size_t bufSize = 4096u;
+    char *buffer;
+    int errorCode = 0;
 
+    grPtr = NULL;
+    buffer = ns_malloc(bufSize);
+    do {
+        errorCode = getgrgid_r(gid, &gr, buffer, bufSize, &grPtr);
+        if (errorCode == ERANGE) {
+            bufSize *= 2u;
+            buffer = ns_realloc(buffer, bufSize);
+        }
+    } while (errorCode == ERANGE);
+    if (grPtr != NULL && dsPtr != NULL) {
+        Ns_DStringAppend(dsPtr, grPtr->gr_name);
+    }
+    ns_free(buffer);
+#else
     Ns_MutexLock(&lock);
-    gr = getgrgid((gid_t)gid);
-    if (gr != NULL && dsPtr) {
-        Ns_DStringAppend(dsPtr, gr->gr_name);
+    grPtr = getgrgid((gid_t)gid);
+    if (grPtr != NULL && dsPtr != NULL) {
+        Ns_DStringAppend(dsPtr, grPtr->gr_name);
     }
     Ns_MutexUnlock(&lock);
-
-    return (gr != NULL) ? NS_TRUE : NS_FALSE;
+#endif
+    return (grPtr != NULL) ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -515,19 +685,17 @@ Ns_GetNameForGid(Ns_DString *dsPtr, int gid)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_GetUserHome(Ns_DString *ds, char *user)
+bool
+Ns_GetUserHome(Ns_DString *dsPtr, char *user)
 {
-    struct passwd *pw = NULL;
+    char *ptr = NULL;
+    bool success;
 
-    Ns_MutexLock(&lock);
-    pw = getpwnam(user);
-    if (pw != NULL) {
-        Ns_DStringAppend(ds, pw->pw_dir);
+    success = GetPwNam(user, PwDIR, NULL, dsPtr, &ptr);
+    if (ptr != NULL) {
+        ns_free(ptr);
     }
-    Ns_MutexUnlock(&lock);
-
-    return (pw != NULL) ? NS_TRUE : NS_FALSE;
+    return success;
 }
 
 
@@ -549,18 +717,13 @@ Ns_GetUserHome(Ns_DString *ds, char *user)
 int
 Ns_GetUserGid(char *user)
 {
-    struct passwd *pw;
-    int retcode;
+    char *ptr = NULL;
+    int retcode = -1;
 
-    Ns_MutexLock(&lock);
-    pw = getpwnam(user);
-    if (pw == NULL) {
-        retcode = -1;
-    } else {
-        retcode = (int) pw->pw_gid;
+    (void) GetPwNam(user, PwGID, &retcode, NULL, &ptr);
+    if (ptr != NULL) {
+        ns_free(ptr);
     }
-    Ns_MutexUnlock(&lock);
-
     return retcode;
 }
 
@@ -583,18 +746,13 @@ Ns_GetUserGid(char *user)
 int
 Ns_GetUid(char *user)
 {
-    struct passwd *pw;
-    int retcode;
-
-    Ns_MutexLock(&lock);
-    pw = getpwnam(user);
-    if (pw == NULL) {
-        retcode = -1;
-    } else {
-        retcode = (int) pw->pw_uid;
+    char *ptr = NULL;
+    int retcode = -1;
+    
+    (void) GetPwNam(user, PwUID, &retcode, NULL, &ptr);
+    if (ptr != NULL) {
+        ns_free(ptr);
     }
-    Ns_MutexUnlock(&lock);
-
     return retcode;
 }
 
@@ -617,17 +775,35 @@ Ns_GetUid(char *user)
 int
 Ns_GetGid(char *group)
 {
-    struct group *gr;
+    struct group *grPtr;
     int retcode;
+#if defined(HAVE_GETGRNAM_R)
+    struct group gr;
+    size_t bufSize = 4096u;
+    char *buffer;
+    int errorCode = 0;
 
+    grPtr = NULL;
+    buffer = ns_malloc(bufSize);
+    do {
+        errorCode = getgrnam_r(group, &gr, buffer, bufSize, &grPtr);
+        if (errorCode == ERANGE) {
+            bufSize *= 2u;
+            buffer = ns_realloc(buffer, bufSize);
+        }
+    } while (errorCode == ERANGE);
+    retcode = (grPtr == NULL) ? -1 : (int) grPtr->gr_gid;
+    ns_free(buffer);
+#else
     Ns_MutexLock(&lock);
-    gr = getgrnam(group);
-    if (gr == NULL) {
+    grPtr = getgrnam(group);
+    if (grPtr == NULL) {
         retcode = -1;
     } else {
-        retcode = (int) gr->gr_gid;
+        retcode = (int) grPtr->gr_gid;
     }
     Ns_MutexUnlock(&lock);
+#endif
 
     return retcode;
 }

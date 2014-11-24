@@ -43,8 +43,9 @@ extern void   NsthreadsInit(void);
 extern void   NsInitThreads(void);
 extern void   NsInitMaster(void);
 extern void   NsInitReentrant(void);
-extern void   NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr);
-extern void  *NsGetLock(Ns_Mutex *mutex);
+extern void   NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+extern void  *NsGetLock(Ns_Mutex *mutex) NS_GNUC_NONNULL(1);
 extern void  *NsLockAlloc(void);
 extern void   NsLockFree(void *lock);
 extern void   NsLockSet(void *lock);

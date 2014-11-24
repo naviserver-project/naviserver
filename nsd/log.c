@@ -66,11 +66,11 @@ typedef struct LogEntry {
  */
 
 typedef struct LogFilter {
-    Ns_LogFilter      *proc;    /* User-given function for generating logs */
-    Ns_Callback       *free;    /* User-given function to free passed arg */
-    void              *arg;     /* Argument passed to proc and free */
-    int                refcnt;  /* Number of current consumers */
-    struct LogFilter  *nextPtr; /* Maintains double linked list */
+    Ns_LogFilter      *proc;        /* User-given function for generating logs */
+    Ns_Callback       *freeArgProc; /* User-given function to free passed arg */
+    void              *arg;         /* Argument passed to proc and free */
+    int                refcnt;      /* Number of current consumers */
+    struct LogFilter  *nextPtr;      /* Maintains double linked list */
     struct LogFilter  *prevPtr;
 } LogFilter;
 
@@ -261,7 +261,7 @@ NsConfigLog(void)
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
     file = Ns_ConfigString(path, "serverlog", "nsd.log");
-    if (Ns_PathIsAbsolute(file) == 0) {
+    if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0)) {
             Ns_HomePath(&ds, "logs", file, NULL);
@@ -528,7 +528,7 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 
     filterPtr->proc = procPtr;
     filterPtr->arg  = arg;
-    filterPtr->free = freeProc;
+    filterPtr->freeArgProc = freeProc;
 
     Ns_MutexUnlock(&lock);
 }
@@ -575,8 +575,8 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
         } else {
             filters = filterPtr->prevPtr;
         }
-        if (filterPtr->free != NULL && filterPtr->arg != NULL) {
-            (*filterPtr->free)(filterPtr->arg);
+        if (filterPtr->freeArgProc != NULL && filterPtr->arg != NULL) {
+            (*filterPtr->freeArgProc)(filterPtr->arg);
         }
         ns_free(filterPtr);
     }
@@ -703,7 +703,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
 	secs = timePtr->sec;
         ptm = ns_localtime(&secs);
 
-        n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
+        n = strftime(bp, 32u, "[%d/%b/%Y:%H:%M:%S", ptm);
         if (gmt == 0) {
             bp[n++] = ']';
             bp[n] = '\0';

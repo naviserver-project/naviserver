@@ -453,7 +453,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
      * Construct the full, normalized path to the ADP file.
      */
 
-    if (Ns_PathIsAbsolute(file) == 0) {
+    if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         if (itPtr->adp.cwd == NULL) {
             file = Ns_PagePath(&tmp, servPtr->server, file, NULL);
         } else {
@@ -1004,8 +1004,8 @@ NsAdpLogError(NsInterp *itPtr)
     if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL) != 0U) {
 	size_t i;
 
-        Ns_DStringPrintf(&ds, "\n    while processing connection #%d:\n%8s%s",
-                         Ns_ConnId(conn), "",
+        Ns_DStringPrintf(&ds, "\n    while processing connection %s:\n%8s%s",
+                         NsConnIdStr(conn), "",
                          conn->request->line);
         for (i = 0U; i < Ns_SetSize(conn->headers); ++i) {
             Ns_DStringPrintf(&ds, "\n        %s: %s",

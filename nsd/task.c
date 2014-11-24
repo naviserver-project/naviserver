@@ -79,7 +79,7 @@ typedef struct Task {
     int                idx;           /* Poll index. */
     short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
-    unsigned int       signal;        /* Signal bits sent to/from queue thread. */
+    unsigned int       signalFlags;   /* Signal bits sent to/from queue thread. */
     unsigned int       flags;         /* Flags private to queue. */
 } Task;
 
@@ -298,7 +298,7 @@ Ns_TaskRun(Ns_Task *task)
         RunTask(taskPtr, pfd.revents, &now);
     }
     Call(taskPtr, NS_SOCK_DONE);
-    taskPtr->signal |= TASK_DONE;
+    taskPtr->signalFlags |= TASK_DONE;
 }
 
 
@@ -325,7 +325,7 @@ Ns_TaskCancel(Ns_Task *task)
     Task *taskPtr = (Task *) task;
 
     if (taskPtr->queuePtr == NULL) {
-        taskPtr->signal |= TASK_CANCEL;
+        taskPtr->signalFlags |= TASK_CANCEL;
     } else if (SignalQueue(taskPtr, TASK_CANCEL) == 0) {
         return NS_ERROR;
     }
@@ -360,7 +360,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     Ns_Time    atime;
 
     if (queuePtr == NULL) {
-        if ((taskPtr->signal & TASK_DONE) == 0U) {
+        if ((taskPtr->signalFlags & TASK_DONE) == 0U) {
             status = NS_TIMEOUT;
         }
     } else {
@@ -368,7 +368,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
             timeoutPtr = Ns_AbsoluteTime(&atime, timeoutPtr);
         }
         Ns_MutexLock(&queuePtr->lock);
-        while (status == NS_OK && (taskPtr->signal & TASK_DONE) == 0U) {
+        while (status == NS_OK && (taskPtr->signalFlags & TASK_DONE) == 0U) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock,
                                       timeoutPtr);
         }
@@ -397,18 +397,18 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_TaskCompleted(Ns_Task *task)
 {
     Task      *taskPtr = (Task *) task;
     TaskQueue *queuePtr = taskPtr->queuePtr;
-    int        status;
+    bool       status;
 
     if (queuePtr == NULL) {
-        status = (taskPtr->signal & TASK_DONE);
+        status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
     } else {
         Ns_MutexLock(&queuePtr->lock);
-        status = (taskPtr->signal & TASK_DONE);
+        status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
         Ns_MutexUnlock(&queuePtr->lock);
     }
     return status;
@@ -696,10 +696,10 @@ SignalQueue(Task *taskPtr, unsigned int bit)
          * already there.
          */
 
-        taskPtr->signal |= bit;
-        pending = (taskPtr->signal & TASK_PENDING);
+        taskPtr->signalFlags |= bit;
+        pending = (taskPtr->signalFlags & TASK_PENDING);
         if (pending == 0) {
-            taskPtr->signal |= TASK_PENDING;
+            taskPtr->signalFlags |= TASK_PENDING;
             taskPtr->nextSignalPtr = queuePtr->firstSignalPtr;
             queuePtr->firstSignalPtr = taskPtr;
         }
@@ -841,20 +841,20 @@ TaskThread(void *arg)
         while ((taskPtr = queuePtr->firstSignalPtr) != NULL) {
             queuePtr->firstSignalPtr = taskPtr->nextSignalPtr;
             taskPtr->nextSignalPtr = NULL;
-            if (!(taskPtr->flags & TASK_WAIT)) {
+            if ((taskPtr->flags & TASK_WAIT) == 0u) {
                 taskPtr->flags |= TASK_WAIT;
                 taskPtr->nextWaitPtr = firstWaitPtr;
                 firstWaitPtr = taskPtr;
             }
-            if (taskPtr->signal & TASK_INIT) {
-                taskPtr->signal &= ~TASK_INIT;
-                taskPtr->flags  |= TASK_INIT;
+            if (taskPtr->signalFlags & TASK_INIT) {
+                taskPtr->signalFlags &= ~TASK_INIT;
+                taskPtr->flags       |= TASK_INIT;
             }
-            if (taskPtr->signal & TASK_CANCEL) {
-                taskPtr->signal &= ~TASK_CANCEL;
-                taskPtr->flags  |= TASK_CANCEL;
+            if (taskPtr->signalFlags & TASK_CANCEL) {
+                taskPtr->signalFlags &= ~TASK_CANCEL;
+                taskPtr->flags       |= TASK_CANCEL;
             }
-            taskPtr->signal &= ~TASK_PENDING;
+            taskPtr->signalFlags &= ~TASK_PENDING;
         }
         Ns_MutexUnlock(&queuePtr->lock);
 
@@ -894,7 +894,7 @@ TaskThread(void *arg)
                 taskPtr->flags &= ~(TASK_DONE|TASK_WAIT);
                 Call(taskPtr, NS_SOCK_DONE);
                 Ns_MutexLock(&queuePtr->lock);
-                taskPtr->signal |= TASK_DONE;
+                taskPtr->signalFlags |= TASK_DONE;
                 Ns_MutexUnlock(&queuePtr->lock);
                 broadcast = 1;
             }
@@ -983,7 +983,7 @@ TaskThread(void *arg)
 
     Ns_MutexLock(&queuePtr->lock);
     for (taskPtr = firstWaitPtr; taskPtr != NULL; taskPtr = taskPtr->nextWaitPtr) {
-        taskPtr->signal |= TASK_DONE;
+        taskPtr->signalFlags |= TASK_DONE;
     }
 
     queuePtr->stopped = NS_TRUE;

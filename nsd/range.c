@@ -46,13 +46,21 @@ typedef struct Range {
  * Local functions defined in this file
  */
 static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
-                             Range *ranges, int maxRanges);
+                             Range *ranges, int maxRanges)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength);
-static void SetMultipartRangeHeader(const Ns_Conn *conn);
+static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength)
+    NS_GNUC_NONNULL(1);
+    
+static void SetMultipartRangeHeader(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
 static int AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
-                                      off_t start, off_t end, size_t objLength);
-static int AppendMultipartRangeTrailer(Ns_DString *dsPtr);
+                                      off_t start, off_t end, size_t objLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1);
+
+static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
+        NS_GNUC_NONNULL(1);
 
 
 /*
@@ -75,7 +83,9 @@ int
 NsMatchRange(const Ns_Conn *conn, time_t mtime)
 {
     char *hdr;
-        
+
+    assert(conn != NULL);
+
     /*
      * From RFC 2068
      * If the client has no entity tag for an entity, but does have a Last-Modified date,
@@ -124,6 +134,11 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
     off_t   start, end, dsbase;
     size_t  len, responseLength;
 
+    assert(conn != NULL);
+    assert(type != NULL);
+    assert(nbufsPtr != NULL);
+    assert(dsPtr != NULL);
+    
     Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
 
     if (NsMatchRange(conn, connPtr->fileInfo.st_mtime) == 0) {
@@ -236,11 +251,14 @@ static int
 ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                   Range *ranges, int maxRanges)
 {
-    char   *rangestr;
+    const char *rangestr;
     off_t   start, end;
     Range  *thisPtr = NULL, *prevPtr = NULL;
     int     rangeCount = 0;
 
+    assert(conn != NULL);
+    assert(ranges != NULL);
+    
     /*
      * Check for valid "Range:" header
      */
@@ -427,6 +445,8 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
 static void
 SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength)
 {
+    assert(conn != NULL);
+    
     Ns_ConnPrintfHeaders(conn, "Content-range",
         "bytes %" PRIuMAX "-%" PRIuMAX "/%" PRIuMAX,
         (uintmax_t) start, (uintmax_t) end, (uintmax_t) objLength);
@@ -435,6 +455,8 @@ SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t objLength)
 static void
 SetMultipartRangeHeader(const Ns_Conn *conn)
 {
+    assert(conn != NULL);
+        
     Ns_ConnSetTypeHeader(conn,
         "multipart/byteranges; boundary=NaviServerNaviServerNaviServer");
 }
@@ -460,8 +482,13 @@ static int
 AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                            off_t start, off_t end, size_t objLength)
 {
-    int origlen = dsPtr->length;
+    int origlen;
 
+    assert(dsPtr != NULL);
+    assert(type != NULL);
+
+    origlen = dsPtr->length;
+    
     Ns_DStringPrintf(dsPtr, "--NaviServerNaviServerNaviServer\r\n"
         "Content-type: %s\r\n"
         "Content-range: bytes %" PRIuMAX "-%" PRIuMAX "/%" PRIuMAX "\r\n\r\n",
@@ -474,9 +501,21 @@ AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
 static int
 AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 {
-    int origlen = dsPtr->length;
+    int origlen;
 
+    assert(dsPtr != NULL);
+    
+    origlen = dsPtr->length;
     Ns_DStringAppend(dsPtr, "--NaviServerNaviServerNaviServer--\r\n");
 
     return dsPtr->length - origlen;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

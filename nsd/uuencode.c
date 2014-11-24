@@ -74,8 +74,8 @@ static const int pr2six[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
-#define ENC(c) (six2pr[(c)])
-#define DEC(c) ((unsigned char) pr2six[(int)(c)])
+#define Encode(c) (six2pr[(c)])
+#define Decode(c) ((unsigned char) pr2six[(int)(c)])
 
 
 /*
@@ -120,10 +120,10 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
 	    *q++ = UCHAR('\n'); 
 	    line = 0;
         }       
-	*q++ = ENC(p[0] >> 2);
-	*q++ = ENC(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
-	*q++ = ENC(((p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
-	*q++ = ENC(p[2] & 0x3FU);
+	*q++ = Encode(p[0] >> 2);
+	*q++ = Encode(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+	*q++ = Encode(((p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
+	*q++ = Encode(p[2] & 0x3FU);
 	p += 3;
         line += 4;
     }
@@ -134,13 +134,13 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
 
     n = bufSize % 3;
     if (n > 0) {
-	*q++ = ENC(p[0] >> 2);
+	*q++ = Encode(p[0] >> 2);
 	if (n == 1) {
-	    *q++ = ENC((p[0] << 4) & 0x30U);
+	    *q++ = Encode((p[0] << 4) & 0x30U);
 	    *q++ = UCHAR('=');
 	} else {
-	    *q++ = ENC(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
-	    *q++ = ENC(( p[1] << 2) & 0x3CU);
+	    *q++ = Encode(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+	    *q++ = Encode(( p[1] << 2) & 0x3CU);
 	}
 	*q++ = UCHAR('=');
     }
@@ -194,9 +194,9 @@ Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
         if (pr2six[(int)(*p)] >= 0) {
             chars[n++] = *p;
 	    if (n == 4) {
-		*q++ = DEC(chars[0]) << 2 | DEC(chars[1]) >> 4;
-		*q++ = DEC(chars[1]) << 4 | DEC(chars[2]) >> 2;
-		*q++ = DEC(chars[2]) << 6 | DEC(chars[3]);
+		*q++ = Decode(chars[0]) << 2 | Decode(chars[1]) >> 4;
+		*q++ = Decode(chars[1]) << 4 | Decode(chars[2]) >> 2;
+		*q++ = Decode(chars[2]) << 6 | Decode(chars[3]);
 		n = 0;
 	    }
         }
@@ -208,10 +208,10 @@ Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
      */
 
     if (n > 1) {
-	*q++ = DEC(chars[0]) << 2 | DEC(chars[1]) >> 4;
+	*q++ = Decode(chars[0]) << 2 | Decode(chars[1]) >> 4;
     }
     if (n > 2) {
-	*q++ = DEC(chars[1]) << 4 | DEC(chars[2]) >> 2;
+	*q++ = Decode(chars[1]) << 4 | Decode(chars[2]) >> 2;
     }
     if ((size_t)(q - buf) < bufSize) {
 	*q = UCHAR('\0');

@@ -139,7 +139,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     file = Ns_ConfigString(path, "file", "access.log");
-    if (Ns_PathIsAbsolute(file)) {
+    if (Ns_PathIsAbsolute(file) == NS_TRUE) {
         logPtr->file = ns_strdup(file);
     } else {
         /*

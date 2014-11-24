@@ -207,7 +207,7 @@ NsConfUpdate(void)
 
     Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = Ns_ConfigString(path, "tcllibrary", "tcl");
-    if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == 0) {
+    if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
 	Ns_Set *set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
 
         Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, NULL);

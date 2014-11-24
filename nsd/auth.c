@@ -40,7 +40,7 @@
  * could be useful for global modules (e.g., nscp).
  */
 
-static Ns_UserAuthorizeProc    *userProcPtr;
+static Ns_UserAuthorizeProc    *userProcPtr = NULL;
 
 
 /*
@@ -67,9 +67,14 @@ int
 Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
 	            const char *user, const char *passwd, const char *peer)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
 
-    if (servPtr == NULL || servPtr->request.authProc == NULL) {
+    assert(server != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+    
+    servPtr = NsGetServer(server);
+    if (unlikely(servPtr == NULL) || servPtr->request.authProc == NULL) {
     	return NS_OK;
     }
     return (*servPtr->request.authProc)(server, method, url, user, passwd, peer);
@@ -95,8 +100,12 @@ Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
 void
 Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
 
+    assert(server != NULL);
+    assert(procPtr != NULL);
+    
+    servPtr = NsGetServer(server);
     if (servPtr != NULL) {
 	servPtr->request.authProc = procPtr;
     }
@@ -185,6 +194,9 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 Ns_AuthorizeUser(const char *user, const char *passwd)
 {
+    assert(user != NULL);
+    assert(passwd != NULL);
+    
     if (userProcPtr == NULL) {
 	return NS_ERROR;
     }
@@ -211,6 +223,8 @@ Ns_AuthorizeUser(const char *user, const char *passwd)
 void
 Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 {
+    assert(procPtr != NULL);
+    
     userProcPtr = procPtr;
 }
 
@@ -235,6 +249,9 @@ NsParseAuth(Conn *connPtr, char *auth)
 {
     register char *p;
 
+    assert(connPtr != NULL);
+    assert(auth != NULL);
+    
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NULL);
     }
@@ -333,3 +350,12 @@ NsParseAuth(Conn *connPtr, char *auth)
 	}
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

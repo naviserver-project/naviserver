@@ -128,14 +128,12 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     Ns_DString  ds;
     char       *addr;
     int         status, result = TCL_OK;
-    Ns_ObjvSpec opts[] = {
-        {NULL, NULL,  NULL, NULL}
-    };
+
     Ns_ObjvSpec args[] = {
         {"address",  Ns_ObjvString, &addr,    NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 

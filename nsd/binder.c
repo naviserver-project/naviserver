@@ -735,7 +735,7 @@ PreBind(const char *line)
 	/*
 	 * Unix-domain socket
 	 */
-        if (Ns_PathIsAbsolute(line)) {
+        if (Ns_PathIsAbsolute(line) == NS_TRUE) {
             /* Parse mode */
             mode = 0;
             str = strchr(str,'|');

@@ -571,7 +571,7 @@ NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
     while (*u != '\0' && *url != '\0' && *u == *url) {
         ++u; ++url;
     }
-    if (Ns_PathIsAbsolute(mPtr->basepath)) {
+    if (Ns_PathIsAbsolute(mPtr->basepath) == NS_TRUE) {
         Ns_MakePath(dsPtr, mPtr->basepath, url, NULL);
         return NS_OK;
     }

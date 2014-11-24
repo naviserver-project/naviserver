@@ -54,9 +54,14 @@ typedef struct Callback {
 
 static Ns_ThreadProc ShutdownThread;
 
-static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo);
-static void RunCallbacks(const char *list, const Callback *cbPtr);
-static void AppendList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr);
+static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void RunCallbacks(const char *list, const Callback *cbPtr)
+    NS_GNUC_NONNULL(1);
+    
+static void AppendList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Static variables defined in this file
@@ -99,6 +104,7 @@ static Ns_Thread shutdownThread   = NULL;
 void *
 Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
 {
+    assert(proc != NULL);
     return RegisterAt(&firstPreStartup, proc, arg, 1);
 }
 
@@ -124,6 +130,7 @@ Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
 void *
 Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
 {
+    assert(proc != NULL);
     return RegisterAt(&firstStartup, proc, arg, 1);
 }
 
@@ -148,6 +155,7 @@ Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
 void *
 Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)
 {
+    assert(proc != NULL);
     return RegisterAt(&firstSignal, proc, arg, 1);
 }
 
@@ -171,6 +179,7 @@ Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)
 void *
 Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
 {
+    assert(proc != NULL);
     return RegisterAt(&firstReady, proc, arg, 0);
 }
 
@@ -194,6 +203,7 @@ Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
 void *
 Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 {
+    assert(proc != NULL);
     return RegisterAt(&firstShutdown, (Ns_Callback *)proc, arg, 0);
 }
 
@@ -217,6 +227,7 @@ Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 void *
 Ns_RegisterAtExit(Ns_Callback *proc, void *arg)
 {
+    assert(proc != NULL);
     return RegisterAt(&firstExit, proc, arg, 0);
 }
 
@@ -397,6 +408,8 @@ NsWaitShutdownProcs(const Ns_Time *toPtr)
 void
 NsGetCallbacks(Tcl_DString *dsPtr)
 {
+    assert(dsPtr != NULL);
+        
     Ns_MutexLock(&lock);
     AppendList(dsPtr, "prestartup", firstPreStartup);
     AppendList(dsPtr, "startup", firstStartup);
@@ -409,6 +422,9 @@ NsGetCallbacks(Tcl_DString *dsPtr)
 static void
 AppendList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr)
 {
+    assert(dsPtr != NULL);
+    assert(list != NULL);
+           
     while (cbPtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, list);
@@ -441,6 +457,9 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
 {
     Callback   *cbPtr, *nextPtr;
     static int first = 1;
+
+    assert(firstPtrPtr != NULL);
+    assert(proc != NULL);
 
     cbPtr = ns_malloc(sizeof(Callback));
     cbPtr->proc = proc;
@@ -493,6 +512,8 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
 static void
 RunCallbacks(const char *list, const Callback *cbPtr)
 {
+    assert(list != NULL);
+    
     while (cbPtr != NULL) {
 	Ns_Callback *proc;
 	Ns_DString   ds;
@@ -504,7 +525,7 @@ RunCallbacks(const char *list, const Callback *cbPtr)
             Ns_DStringFree(&ds);
         }
         proc = cbPtr->proc;
-        (*proc)(cbPtr->arg);
+       (*proc)(cbPtr->arg);
 
         cbPtr = cbPtr->nextPtr;
     }

@@ -46,6 +46,7 @@ static int GetFrame(ClientData arg, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1) N
 static int GetOutput(ClientData arg, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int doStream);
 
 
 /*
@@ -112,7 +113,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
  *
  * Results:
  *      TCL_ERROR if no active ADP, TCL_OK otherwise.
- *      streamPtr set to 1 if steaming mode active.
+ *      doStreamPtr set to 1 if steaming mode active.
  *      maxBufferPtr set to length of buffer before Flush
  *      should be called.
  *
@@ -124,7 +125,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
 
 int
 Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
-                int *streamPtr, size_t *maxBufferPtr)
+                int *doStreamPtr, size_t *maxBufferPtr)
 {
     NsInterp *itPtr;
 
@@ -132,8 +133,8 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
             || GetOutput(itPtr, dsPtrPtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (streamPtr != NULL) {
-        *streamPtr = (itPtr->adp.flags & ADP_STREAM) != 0U ? 1 : 0;
+    if (doStreamPtr != NULL) {
+        *doStreamPtr = (itPtr->adp.flags & ADP_STREAM) != 0U ? 1 : 0;
     }
     if (maxBufferPtr != NULL) {
         *maxBufferPtr = itPtr->adp.bufsize;
@@ -206,7 +207,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 {
     NsInterp    *itPtr = arg;
     Tcl_Channel  chan;
-    char        *id;
+    const char  *id;
     size_t       size;
     int          opt;
     unsigned int flag, oldFlag;
@@ -394,7 +395,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Tcl_DString *dsPtr;
     int          result;
     unsigned int flags;
-    char        *file;
+    const char  *file;
     int          tcl = 0, nocache = 0, nargs = 0;
     Ns_Time     *ttlPtr = NULL;
 
@@ -475,9 +476,8 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     NsInterp    *itPtr = arg;
     int          result, nargs = 0;
     unsigned int savedFlags;
-    char        *resvar = NULL;
     int          asFile = 0, safe = 0, asString = 0, tcl = 0;
-    const char  *cwd = NULL, *savedCwd = NULL;
+    const char  *cwd = NULL, *savedCwd = NULL, *resvar = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,      NULL},
@@ -577,7 +577,7 @@ NsTclAdpAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         return TCL_ERROR;
     }
     for (i = 1; i < objc; ++i) {
-        char  *s = Tcl_GetStringFromObj(objv[i], &len);
+        const char *s = Tcl_GetStringFromObj(objv[i], &len);
 
         if (NsAdpAppend(itPtr, s, len) != TCL_OK) {
             return TCL_ERROR;
@@ -589,9 +589,9 @@ NsTclAdpAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 int
 NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
-    char     *string;
-    int       length, nonewline = 0;
+    NsInterp   *itPtr = arg;
+    const char *s;
+    int         length, nonewline = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-nonewline", Ns_ObjvBool,  &nonewline, INT2PTR(NS_TRUE)},
@@ -599,14 +599,14 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"string",  Ns_ObjvString, &string, &length},
+        {"string",  Ns_ObjvString, &s, &length},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
-    if (NsAdpAppend(itPtr, string, length) != TCL_OK) {
+    if (NsAdpAppend(itPtr, s, length) != TCL_OK) {
         return TCL_ERROR;
     }
     if (nonewline == 0 && NsAdpAppend(itPtr, "\n", 1) != TCL_OK) {
@@ -1022,7 +1022,7 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(boolValue));
 
     if (objc == 2) {
-	char   *exception;
+	const char *exception;
         switch (itPtr->adp.exception) {
         case ADP_OK:
             exception = "ok";
@@ -1069,8 +1069,7 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
  */
 
 static int
-AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-               int stream)
+AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int doStream)
 {
     NsInterp *itPtr = arg;
 
@@ -1078,7 +1077,7 @@ AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         return TCL_ERROR;
     }
-    return NsAdpFlush(itPtr, stream);
+    return NsAdpFlush(itPtr, doStream);
 }
 
 int
@@ -1115,7 +1114,7 @@ int
 NsTclAdpDebugObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = arg;
-    char     *host = NULL, *port = NULL, *procs = NULL;
+    const char *host = NULL, *port = NULL, *procs = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-host",  Ns_ObjvString, &host,  NULL},
@@ -1172,7 +1171,8 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return TCL_ERROR;
     }
     if (conn != NULL) {
-	char *type;
+	const char *type;
+
         if (objc == 2) {
             Ns_ConnSetEncodedTypeHeader(conn, Tcl_GetString(objv[1]));
         }

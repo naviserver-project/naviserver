@@ -231,8 +231,8 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      * or this is some other protocol.
      */
 
-    if (!(conn->flags & NS_CONN_SENTHDRS)
-            && !(itPtr->nsconn.flags & CONN_TCLHTTP)) {
+    if ((conn->flags & NS_CONN_SENTHDRS) == 0u
+	&& (itPtr->nsconn.flags & CONN_TCLHTTP) == 0u) {
         conn->flags |= NS_CONN_SKIPHDRS;
     }
 
@@ -262,7 +262,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 	    binary = NsTclObjIsByteArray(objv[i]);
 	}
 	if (binary == NS_TRUE) {
-	    sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
+	    sbufs[n].iov_base = (void *)Tcl_GetByteArrayFromObj(objv[i], &length);
         } else {
             sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
         }

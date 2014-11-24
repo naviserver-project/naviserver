@@ -56,8 +56,7 @@
  * Local functions defined in this file
  */
 
-static NS_SOCKET SockConnect(const char *host, int port, const char *lhost, int lport,
-			     int async);
+static NS_SOCKET SockConnect(const char *host, int port, const char *lhost, int lport, bool async);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
 
@@ -80,7 +79,7 @@ static Ns_SockProc CloseLater;
  */
 
 size_t
-Ns_SetVec(struct iovec *bufs, int i, CONST void *data, size_t len)
+Ns_SetVec(struct iovec *bufs, int i, const void *data, size_t len)
 {
     bufs[i].iov_base = (void *) data;
     bufs[i].iov_len = len;
@@ -118,9 +117,9 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
         if (len > 0U) {
             if (sent >= len) {
                 sent -= len;
-                Ns_SetVec(bufs, i, NULL, 0U);
+                (void) Ns_SetVec(bufs, i, NULL, 0U);
             } else {
-                Ns_SetVec(bufs, i, data + sent, len - sent);
+                (void) Ns_SetVec(bufs, i, data + sent, len - sent);
                 break;
             }
         }
@@ -524,8 +523,7 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
     if (sock != NS_INVALID_SOCKET) {
         n = 1;
         if (saPtr->sin_port != 0U) {
-            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-                       (char *) &n, sizeof(n));
+            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n));
         }
         if (bind(sock, (const struct sockaddr *) saPtr,
                  sizeof(struct sockaddr_in)) != 0) {
@@ -557,13 +555,13 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
 NS_SOCKET
 Ns_SockConnect(const char *host, int port)
 {
-    return SockConnect(host, port, NULL, 0, 0);
+    return SockConnect(host, port, NULL, 0, NS_FALSE);
 }
 
 NS_SOCKET
 Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 {
-    return SockConnect(host, port, lhost, lport, 0);
+    return SockConnect(host, port, lhost, lport, NS_FALSE);
 }
 
 
@@ -586,13 +584,13 @@ Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 NS_SOCKET
 Ns_SockAsyncConnect(const char *host, int port)
 {
-    return SockConnect(host, port, NULL, 0, 1);
+    return SockConnect(host, port, NULL, 0, NS_TRUE);
 }
 
 NS_SOCKET
 Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 {
-    return SockConnect(host, port, lhost, lport, 1);
+    return SockConnect(host, port, lhost, lport, NS_TRUE);
 }
 
 
@@ -631,7 +629,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
      * it to connect.
      */
 
-    sock = SockConnect(host, port, lhost, lport, 1);
+    sock = SockConnect(host, port, lhost, lport, NS_TRUE);
 
     if (sock != NS_INVALID_SOCKET) {
         err = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
@@ -1005,19 +1003,20 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
  *
  * SockConnect --
  *
- *      Open a TCP connection to a host/port.
+ *      Open a TCP connection to a host/port sync or async.
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
- *      If async is true, the returned socket will be nonblocking.
+ *      If async is true, the returned socket will be set temporarily
+ *      nonblocking.
  *
  *----------------------------------------------------------------------
  */
 
 static NS_SOCKET
-SockConnect(const char *host, int port, const char *lhost, int lport, int async)
+SockConnect(const char *host, int port, const char *lhost, int lport, bool async)
 {
     NS_SOCKET          sock;
     struct sockaddr_in lsa;
@@ -1029,17 +1028,17 @@ SockConnect(const char *host, int port, const char *lhost, int lport, int async)
     }
     sock = Ns_SockBind(&lsa);
     if (sock != NS_INVALID_SOCKET) {
-        if (async != 0) {
-            Ns_SockSetNonBlocking(sock);
+        if (async == NS_TRUE) {
+            (void) Ns_SockSetNonBlocking(sock);
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
             unsigned int err = ns_sockerrno;
-            if (async == 0 || (err != EINPROGRESS && err != EWOULDBLOCK)) {
+            if (async == NS_FALSE || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
                 sock = NS_INVALID_SOCKET;
             }
         }
-        if (async != 0 && sock != NS_INVALID_SOCKET) {
+        if (async == NS_TRUE && sock != NS_INVALID_SOCKET) {
             Ns_SockSetBlocking(sock);
         }
     }

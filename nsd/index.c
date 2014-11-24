@@ -300,11 +300,11 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
 	 * Search linearly forward to find out how many there are
 	 */
 	
-        n = indexPtr->n - (firstPtrPtr - indexPtr->el);
-        for (i = 1; i < n &&
-		 indexPtr->CmpKeyWithEl(key, firstPtrPtr + i) == 0; i++)
+        n = indexPtr->n - (size_t)(firstPtrPtr - indexPtr->el);
+        for (i = 1u; i < n &&
+                 indexPtr->CmpKeyWithEl(key, firstPtrPtr + i) == 0; i++) {
 	    ;
-
+	}
         /*
 	 * Build array of values to return
 	 */
@@ -348,7 +348,7 @@ BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc
 	int cond;
 
         mid = (low + high) / 2;
-        cond = (*cmpProc) (elPtrPtr, ((const unsigned char **)listPtrPtr) + mid);
+        cond = (*cmpProc) (elPtrPtr, ((const unsigned char *const*)listPtrPtr) + mid);
         if (cond < 0) {
             high = mid - 1;
         } else if (cond > 0) {
@@ -391,7 +391,7 @@ BinSearchKey(const void *key, void *const* listPtrPtr, int n, Ns_IndexCmpProc *c
 	int cond;
 
         mid = (low + high) / 2;
-        cond = (*cmpProc)(key, ((const unsigned char **)listPtrPtr) + mid);
+        cond = (*cmpProc)(key, ((const unsigned char *const*)listPtrPtr) + mid);
         if (cond < 0) {
             high = mid - 1;
         } else if (cond > 0) {
@@ -851,3 +851,11 @@ NsBsearch (register const void *key, register const void *base,
 }
 #endif
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

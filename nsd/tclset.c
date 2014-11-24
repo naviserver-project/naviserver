@@ -206,10 +206,9 @@ int
 NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp        *itPtr = arg;
-    Ns_Set          *set = NULL, *set2Ptr, **sets;
+    Ns_Set          *set = NULL, *set2Ptr;
     int              opt;
-    unsigned int     flags;
-    const char            *key, *val, *def, *name, *split;
+    const char      *key, *val, *def;
     Tcl_DString      ds;
     Tcl_HashTable   *tablePtr;
     Tcl_HashEntry   *hPtr;
@@ -274,13 +273,13 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     case SNewIdx:
     case SCopyIdx:
     case SSplitIdx: {
-        int offset = 2;
+        int           offset = 2;
+        unsigned int  flags = NS_TCL_SET_DYNAMIC;
+        const char   *name;
 
         /*
          * The following commands create new sets.
          */
-
-        flags = NS_TCL_SET_DYNAMIC;
 
         switch (opt) {
         case SNewIdx:
@@ -306,7 +305,10 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             break;
 
         case SSplitIdx: {
-            int i;
+            int          i;
+            Ns_Set     **sets;
+            const char  *split;
+
             if (unlikely((objc - offset) < 1)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
                 return TCL_ERROR;

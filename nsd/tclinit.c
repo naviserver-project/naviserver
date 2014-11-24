@@ -192,14 +192,14 @@ ConfigServerTcl(const char *server)
     Ns_DStringInit(&ds);
 
     servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.library) == 0) {
+    if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
         Ns_HomePath(&ds, servPtr->tcl.library, NULL);
         servPtr->tcl.library = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "library", servPtr->tcl.library);
     }
 
     servPtr->tcl.initfile = Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.initfile) == 0) {
+    if (Ns_PathIsAbsolute(servPtr->tcl.initfile) == NS_FALSE) {
         Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
         servPtr->tcl.initfile = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "initfile", servPtr->tcl.initfile);
@@ -1242,13 +1242,15 @@ void
 NsTclRunAtClose(NsInterp *itPtr)
 {
     Tcl_Interp  *interp = itPtr->interp;
-    AtClose     *atPtr;
+    AtClose     *atPtr, *nextPtr;
 
-    for (atPtr = itPtr->firstAtClosePtr; atPtr != NULL; atPtr = atPtr->nextPtr) {
+    for (atPtr = itPtr->firstAtClosePtr; atPtr != NULL; atPtr = nextPtr) {
+        assert(atPtr->objPtr != NULL);
         if (Tcl_EvalObjEx(interp, atPtr->objPtr, TCL_EVAL_DIRECT) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: at close)");
         }
         Tcl_DecrRefCount(atPtr->objPtr);
+        nextPtr = atPtr->nextPtr;
         ns_free(atPtr);
     }
     itPtr->firstAtClosePtr = NULL;
@@ -1711,7 +1713,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
         itPtr->servPtr = servPtr;
         Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);
         Tcl_InitHashTable(&itPtr->chans, TCL_STRING_KEYS);
-        Tcl_InitHashTable(&itPtr->https, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&itPtr->httpRequests, TCL_STRING_KEYS);
         NsAdpInit(itPtr);
 
         /*
@@ -1906,7 +1908,7 @@ FreeInterpData(ClientData arg, Tcl_Interp *UNUSED(interp))
     NsAdpFree(itPtr);
     Tcl_DeleteHashTable(&itPtr->sets);
     Tcl_DeleteHashTable(&itPtr->chans);
-    Tcl_DeleteHashTable(&itPtr->https);
+    Tcl_DeleteHashTable(&itPtr->httpRequests);
 
     ns_free(itPtr);
 }

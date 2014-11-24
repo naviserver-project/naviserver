@@ -108,6 +108,10 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
 {
     NsLimits *limitsPtr;
 
+    assert(servPtr != NULL);
+    assert(method != NULL);
+    assert(url != NULL);
+    
     Ns_MutexLock(&lock);
     limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0);
     Ns_MutexUnlock(&lock);

@@ -56,10 +56,9 @@
 int
 NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *section, *key;
-    CONST char *value;
+    const char *section, *key, *value;
     Tcl_Obj    *defObj = NULL;
-    int         status, i, isBool = 0, isInt = 0, exact = 0, doSet = 0;
+    int         status, isBool = 0, isInt = 0, exact = 0, doSet = 0;
     Tcl_WideInt v, min = LLONG_MIN, max = LLONG_MAX;
 
     Ns_ObjvSpec opts[] = {
@@ -96,9 +95,13 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     status = TCL_OK;
 
     if (isBool != 0) {
-        if (value != NULL && ((status = Tcl_GetBoolean(interp, value, &i)) == TCL_OK)) {
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
-            return TCL_OK;
+        if (value != NULL) {
+            int i;
+            status = Tcl_GetBoolean(interp, value, &i);
+            if (status == TCL_OK) {
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
+                return TCL_OK;
+            }
         }
     } else if (isInt != 0) {
         if (value != NULL) { 
@@ -130,6 +133,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     if (defObj != NULL) {
 
         if (isBool != 0) {
+            int i;
             if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
                 return TCL_ERROR;
             }

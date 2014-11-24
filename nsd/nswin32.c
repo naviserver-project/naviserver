@@ -1188,7 +1188,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 /*
  *----------------------------------------------------------------------
  *
- * ns_open, ns_close, ns_write, ns_read  --
+ * ns_open, ns_close, ns_write, ns_read, ns_lseek, ns_dup, ns_dup2  --
  *
  *      Elementary operations on file descriptors. The interfaces are the same
  *      as in a Unix environment.
@@ -1248,6 +1248,38 @@ ns_dup2(int fildes, int fildes2)
 {
     return _dup2(fildes, fildes2);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_recv, ns_send  --
+ *
+ *      Elementary operations on sockets. The interfaces are the same
+ *      as in a Unix environment.
+ *
+ *      These functions are implemented in C due to slightly different
+ *      interfaces under windows.
+ *
+ * Results:
+ *      For details, see MSDN
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags)
+{
+    return recv(socket, buffer, (int)length, flags);
+}
+
+ssize_t
+ns_send(NS_SOCKET socket, void *buffer, size_t length, int flags)
+{
+    return send(socket, buffer, (int)length, flags);
+}
+
 #else
 /* avoid empty translation unit */
    typedef void empty; 

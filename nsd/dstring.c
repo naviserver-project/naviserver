@@ -57,7 +57,7 @@
 char *
 Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
 {
-    register char   *s;
+    const register char   *s;
     va_list         ap;
 
     va_start(ap, dsPtr);
@@ -97,8 +97,8 @@ Ns_DStringExport(Ns_DString *dsPtr)
         s = dsPtr->string;
         dsPtr->string = dsPtr->staticSpace;
     } else {
-        s = ns_malloc((size_t) dsPtr->length+1);
-        memcpy(s, dsPtr->string, (size_t) (dsPtr->length+1));  
+        s = ns_malloc((size_t)dsPtr->length + 1u);
+        memcpy(s, dsPtr->string, (size_t)dsPtr->length + 1u);  
     }
     Ns_DStringFree(dsPtr);
 
@@ -122,7 +122,7 @@ Ns_DStringExport(Ns_DString *dsPtr)
  */
 
 char *
-Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *bytes)
+Ns_DStringAppendArg(Ns_DString *dsPtr, const char *bytes)
 {
     return Ns_DStringNAppend(dsPtr, bytes, (int) strlen(bytes) + 1);
 }
@@ -144,7 +144,7 @@ Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *bytes)
  */
 
 char *
-Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
+Ns_DStringPrintf(Ns_DString *dsPtr, const char *fmt, ...)
 {
     char           *str;
     va_list         ap;
@@ -174,7 +174,7 @@ Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
  */
 
 char *
-Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
+Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
 {
     char    *buf;
     int      origLength, newLength, result;
@@ -225,7 +225,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
         Ns_DStringSetLength(dsPtr, newLength);
 
         buf = dsPtr->string + origLength;
-        bufLength = newLength - origLength;
+        bufLength = (size_t)newLength - (size_t)origLength;
 
         va_copy(ap, apSrc);
         result = vsnprintf(buf, bufLength, fmt, ap);
@@ -277,7 +277,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     s = dsPtr->string;
     while (*s != '\0') {
         ++argc;
-        s += strlen(s) + 1;
+        s += strlen(s) + 1u;
     }
 
     /*
@@ -297,7 +297,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     argv = (char **) (s + len);
     for (i = 0; i < argc; ++i) {
         argv[i] = s;
-        s += strlen(s) + 1;
+        s += strlen(s) + 1u;
     }
     argv[i] = NULL;
 

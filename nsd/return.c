@@ -324,11 +324,11 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
  */
 
 void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int streaming)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (streaming == 0) {
+    if (doStream == 0) {
 	char buffer[TCL_INTEGER_SPACE];
 
 	snprintf(buffer, sizeof(buffer), "%" PRIdz, length);

@@ -165,7 +165,7 @@ NsMapPool(ConnPool *poolPtr, const char *map)
 
     if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
         if (mc == 2) {
-            Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0, NULL);
+            Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0u, NULL);
             Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", 
 		   server, mv[0], mv[1], poolPtr->pool);
         }
@@ -1040,7 +1040,7 @@ NsConnThread(void *arg)
      */
     assert(poolPtr->pool != NULL);
     { 
-	char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
+	const char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
 	Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, 
 			 (p != NULL) ? ":" : "", 
 			 (p != NULL) ? p : "", id);
@@ -1277,7 +1277,7 @@ NsConnThread(void *arg)
             Ns_MutexUnlock(wqueueLockPtr);
 
 	    if (Ns_LogSeverityEnabled(Debug)) {
-		Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, totalTime;
+		Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, fullTime;
 
 		Ns_DiffTime(&connPtr->requestQueueTime, &connPtr->acceptTime, &acceptTime);
 		Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime, &queueTime);
@@ -1286,7 +1286,7 @@ NsConnThread(void *arg)
 		Ns_GetTime(&now);
 		Ns_DiffTime(&now, &connPtr->requestDequeueTime, &runTime);
 		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
-		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &totalTime);
+		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
 
 		Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
 		       " start %" PRIu64 ".%06ld"
@@ -1306,7 +1306,7 @@ NsConnThread(void *arg)
 		       (int64_t) filterTime.sec, filterTime.usec,
 		       (int64_t) runTime.sec, runTime.usec,
 		       (int64_t) netRunTime.sec, netRunTime.usec,
-		       (int64_t) totalTime.sec, totalTime.usec
+		       (int64_t) fullTime.sec, fullTime.usec
 		       );
 	    }
 	    
@@ -1458,7 +1458,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
 
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
-    snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%d", connPtr->id);
+    snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%" PRIuPTR, connPtr->id);
     connPtr->outputheaders = Ns_SetCreate(NULL);
     if (connPtr->request->version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;

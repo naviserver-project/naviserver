@@ -200,8 +200,6 @@ typedef int32_t ssize_t;
 # define strcasecmp                _stricmp
 # define strncasecmp               _strnicmp
 
-# define ns_recv(s,buf,len,flgs)   recv((s),(buf),(int)(len),(flgs))
-# define ns_send(s,buf,len,flgs)   send((s),(buf),(int)(len),(flgs))
 # define ns_sockclose              closesocket
 # define ns_sockerrno              GetLastError()
 # define ns_sockioctl              ioctlsocket
@@ -215,11 +213,11 @@ typedef int32_t ssize_t;
 #  define F_OK                        0
 #  define W_OK                        2
 #  define R_OK                        4
-#  define X_OK                        R_OK
+#  define X_OK                        (R_OK)
 #  define va_copy(dst,src)            ((void)((dst) = (src)))
 #  define USE_TCLVFS                  1
 #  define USE_THREAD_ALLOC            1
-#  define VERSION                     NS_PATCH_LEVEL
+#  define VERSION                     (NS_PATCH_LEVEL)
 #  define _LARGEFILE64_SOURCE         1
 #  define _THREAD_SAFE                1
 #  define TCL_THREADS                 1
@@ -228,12 +226,12 @@ typedef int32_t ssize_t;
 #  define HAVE_STRUCT_STAT64          1
 #  define PACKAGE                     "naviserver"
 #  define PACKAGE_NAME                "NaviServer"
-#  define PACKAGE_STRING              PACKAGE_NAME " " NS_PATCH_LEVEL
-#  define PACKAGE_TAG                 PACKAGE_STRING
-#  define PACKAGE_TARNAME             PACKAGE
-#  define PACKAGE_VERSION             NS_VERSION
+#  define PACKAGE_STRING              (PACKAGE_NAME " " NS_PATCH_LEVEL)
+#  define PACKAGE_TAG                 (PACKAGE_STRING)
+#  define PACKAGE_TARNAME             (PACKAGE)
+#  define PACKAGE_VERSION             (NS_VERSION)
 #  define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
-#  define TIME_T_MAX                  LONG_MAX
+#  define TIME_T_MAX                  (LONG_MAX)
 # endif
 
 /*
@@ -543,7 +541,7 @@ typedef struct DIR_ *DIR;
 
 /*
  * Define a few macros from inttypes.h which are 
- * missing one some platforms.
+ * missing on some platforms.
  */
 #if !defined(PRId64)
 # define PRId64      "I64d"
@@ -755,16 +753,18 @@ NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
  * mutex.c:
  */
 
-NS_EXTERN void Ns_MutexInit(Ns_Mutex *mutexPtr);
+NS_EXTERN void Ns_MutexInit(Ns_Mutex *mutexPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_MutexDestroy(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexLock(Ns_Mutex *mutexPtr);
-NS_EXTERN int  Ns_MutexTryLock(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexUnlock(Ns_Mutex *mutexPtr);
-NS_EXTERN char *Ns_MutexGetName(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexSetName(Ns_Mutex *mutexPtr, CONST char *name);
-NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, CONST char *prefix,
-                                CONST char *name);
-NS_EXTERN void Ns_MutexList(Tcl_DString *dsPtr);
+NS_EXTERN void Ns_MutexLock(Ns_Mutex *mutexPtr)       NS_GNUC_NONNULL(1);
+NS_EXTERN int  Ns_MutexTryLock(Ns_Mutex *mutexPtr)    NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_MutexUnlock(Ns_Mutex *mutexPtr)     NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_MutexList(Tcl_DString *dsPtr)       NS_GNUC_NONNULL(1);
+NS_EXTERN const char *Ns_MutexGetName(Ns_Mutex *mutexPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_MutexSetName(Ns_Mutex *mutexPtr, const char *name)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, const char *prefix, const char *name)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -895,6 +895,8 @@ NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
 NS_EXTERN off_t   ns_lseek(int fildes, off_t offset, int whence);
 NS_EXTERN int     ns_dup(int fildes);
 NS_EXTERN int     ns_dup2(int fildes, int fildes2);
+NS_EXTERN ssize_t ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags);
+NS_EXTERN ssize_t ns_send(NS_SOCKET socket, void *buffer, size_t length, int flags);
 #endif
 
 /*

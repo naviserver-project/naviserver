@@ -84,12 +84,43 @@ typedef enum {
  */
 
 #define NSD_TEXTHTML                   "text/html"
+/*
+ * constants for SockState return and reason codes.
+ */
+
+typedef enum {
+    SOCK_READY =               0,
+    SOCK_MORE =                1,
+    SOCK_SPOOL =               2,
+    SOCK_ERROR =              -1,
+    SOCK_CLOSE =              -2,
+    SOCK_CLOSETIMEOUT =       -3,
+    SOCK_READTIMEOUT =        -4,
+    SOCK_WRITETIMEOUT =       -5,
+    SOCK_SERVERREJECT =       -6,
+    SOCK_READERROR =          -7,
+    SOCK_WRITEERROR =         -8,
+    SOCK_SHUTERROR =          -9,
+    SOCK_BADREQUEST =         -11,
+    SOCK_ENTITYTOOLARGE =     -12,
+    SOCK_BADHEADER =          -13,
+    SOCK_TOOMANYHEADERS =     -14
+} SockState;
+
+/*
+ * subset for spooler states
+ */
+typedef enum {
+    SPOOLER_CLOSE =             SOCK_CLOSE,
+    SPOOLER_OK =                SOCK_READY,
+    SPOOLER_READERROR =         SOCK_READERROR,
+    SPOOLER_WRITEERROR =        SOCK_WRITEERROR,
+    SPOOLER_CLOSETIMEOUT =      SOCK_CLOSETIMEOUT
+} SpoolerState;
 
 /*
  * Types definitions.
  */
-
-typedef int bool;
 
 struct Sock;
 struct NsServer;
@@ -188,7 +219,7 @@ typedef struct WriterSock {
     struct Sock         *sockPtr;
     struct SpoolerQueue *queuePtr; 
     struct Conn         *connPtr;
-    int                  status;
+    SpoolerState         status;
     int                  err;
     int                  refCount;
     int                  keep;
@@ -215,7 +246,7 @@ typedef struct WriterSock {
 	    size_t             maxsize;
 	    size_t             bufsize;
 	    off_t              bufoffset;
-	    Tcl_WideInt        toRead;
+	    size_t             toRead;
 	    unsigned char     *buf;
 	    Ns_Mutex           fdlock;
 	} file;
@@ -365,12 +396,12 @@ typedef struct Driver {
      */
 
     void  *arg;                         /* Driver callback data */
-    char  *server;                      /* Virtual server name */
-    char  *module;                      /* Driver module */
-    char  *name;                        /* Driver name */
+    const char  *server;                /* Virtual server name */
+    const char  *module;                /* Driver module */
+    const char  *name;                  /* Driver name */
     const char  *location;              /* Location, e.g, "http://foo:9090" */
-    char  *address;                     /* Address in location, e.g. "foo" */
-    char  *protocol;                    /* Protocol in location, e.g, "http" */
+    const char  *address;               /* Address in location, e.g. "foo" */
+    const char  *protocol;              /* Protocol in location, e.g, "http" */
     long   sendwait;                    /* send() I/O timeout */
     long   recvwait;                    /* recv() I/O timeout */
     size_t bufsize;                     /* Conn bufsize (0 for SSL) */
@@ -550,7 +581,7 @@ typedef struct Conn {
     struct ConnPool *poolPtr;
     struct Driver   *drvPtr;
 
-    int id;
+    uintptr_t id;
     char idstr[TCL_INTEGER_SPACE + 4];
 
     Ns_Time acceptTime;          /* time stamp, when the request was accepted */
@@ -619,7 +650,7 @@ typedef struct ConnThreadArg {
  */
 
 typedef struct ConnPool {
-    char *pool;
+    const char *pool;
     struct ConnPool *nextPtr;
     struct NsServer *servPtr;
 
@@ -710,7 +741,7 @@ typedef struct NsServer {
 
     struct {
         Ns_Mutex lock;
-        unsigned long nextconnid;
+        uintptr_t nextconnid;
         bool shutdown;
         ConnPool *firstPtr;
         ConnPool *defaultPtr;
@@ -972,8 +1003,7 @@ typedef struct NsInterp {
     /*
      * The following table maintains the Tcl HTTP requests.
      */
-
-    Tcl_HashTable https;
+    Tcl_HashTable httpRequests;
 
 } NsInterp;
 
@@ -1311,7 +1341,7 @@ NS_EXTERN Ns_Url2FileProc NsTclUrl2FileProc;
 NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
 
-NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr);
+NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr);
 NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr);
@@ -1375,16 +1405,29 @@ NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
 
 /*
- * Conn routines.
+ * limits.c
  */
+NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url);
-
-NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime);
+/*
+ * range.c
+ */
+NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
 			       int fd, const void *data, size_t objLength,
-			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
+			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
+
+/*
+ * conn.c
+ */
+NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
 /*
  * request parsing
  */
@@ -1398,7 +1441,7 @@ NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len) 
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) 
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int doStream) 
   NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
@@ -1487,7 +1530,8 @@ NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 NS_EXTERN void NsUrlSpecificWalk(int id, const char *server, Ns_ArgProc func,
 				 Tcl_DString *dsPtr);
 
-NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth);
+NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 

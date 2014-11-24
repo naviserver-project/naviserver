@@ -50,7 +50,7 @@ typedef struct ServerInit {
  * Local functions defined in this file.
  */
 
-static void CreatePool(NsServer *servPtr, char *pool)
+static void CreatePool(NsServer *servPtr, const char *pool)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -358,7 +358,7 @@ NsRegisterServerInit(Ns_ServerInitProc *proc)
  */
 
 static void
-CreatePool(NsServer *servPtr, char *pool)
+CreatePool(NsServer *servPtr, const char *pool)
 {
     ConnPool   *poolPtr;
     Conn       *connBufPtr, *connPtr;
