@@ -213,11 +213,11 @@ typedef int32_t ssize_t;
 #  define F_OK                        0
 #  define W_OK                        2
 #  define R_OK                        4
-#  define X_OK                        R_OK
+#  define X_OK                        (R_OK)
 #  define va_copy(dst,src)            ((void)((dst) = (src)))
 #  define USE_TCLVFS                  1
 #  define USE_THREAD_ALLOC            1
-#  define VERSION                     NS_PATCH_LEVEL
+#  define VERSION                     (NS_PATCH_LEVEL)
 #  define _LARGEFILE64_SOURCE         1
 #  define _THREAD_SAFE                1
 #  define TCL_THREADS                 1
@@ -226,12 +226,12 @@ typedef int32_t ssize_t;
 #  define HAVE_STRUCT_STAT64          1
 #  define PACKAGE                     "naviserver"
 #  define PACKAGE_NAME                "NaviServer"
-#  define PACKAGE_STRING              PACKAGE_NAME " " NS_PATCH_LEVEL
-#  define PACKAGE_TAG                 PACKAGE_STRING
-#  define PACKAGE_TARNAME             PACKAGE
-#  define PACKAGE_VERSION             NS_VERSION
+#  define PACKAGE_STRING              (PACKAGE_NAME " " NS_PATCH_LEVEL)
+#  define PACKAGE_TAG                 (PACKAGE_STRING)
+#  define PACKAGE_TARNAME             (PACKAGE)
+#  define PACKAGE_VERSION             (NS_VERSION)
 #  define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
-#  define TIME_T_MAX                  LONG_MAX
+#  define TIME_T_MAX                  (LONG_MAX)
 # endif
 
 /*
