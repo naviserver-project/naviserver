@@ -123,14 +123,6 @@ typedef struct {
     SockState    sockState;
 } SpoolerStateMap;
 
-static SpoolerStateMap spoolerStateMap[] = {
-    {SPOOLER_CLOSE,        SOCK_CLOSE},
-    {SPOOLER_READERROR,    SOCK_READERROR},
-    {SPOOLER_WRITEERROR,   SOCK_WRITEERROR},
-    {SPOOLER_CLOSETIMEOUT, SOCK_CLOSETIMEOUT},
-    {SPOOLER_OK,           SOCK_READY}
-};
-
 /*
  * Types definitions.
  */
@@ -1228,6 +1220,7 @@ NS_EXTERN Tcl_CmdProc
     NsTclQuoteHtmlCmd,
     NsTclStripHtmlCmd;
 
+NS_EXTERN Ns_LogSeverity TaskDebug;    /* Severity at which to log verbose. */
 
 /*
  * Libnsd initialization routines.

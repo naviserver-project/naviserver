@@ -60,6 +60,16 @@ typedef struct ServerMap {
 } ServerMap;
 
 /*
+ * The following maintains the spooler state mapping
+ */
+static SpoolerStateMap spoolerStateMap[] = {
+    {SPOOLER_CLOSE,        SOCK_CLOSE},
+    {SPOOLER_READERROR,    SOCK_READERROR},
+    {SPOOLER_WRITEERROR,   SOCK_WRITEERROR},
+    {SPOOLER_CLOSETIMEOUT, SOCK_CLOSETIMEOUT},
+    {SPOOLER_OK,           SOCK_READY}
+};
+/*
  * The following structure manages polling.  The PollIn macro is
  * used for the common case of checking for readability.
  */
@@ -96,7 +106,6 @@ typedef struct AsyncWriteData {
 } AsyncWriteData;
 
 static AsyncWriter *asyncWriter = NULL;
-
 
 /*
  * Static functions defined in this file.
@@ -177,6 +186,8 @@ static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t writte
  * Static variables defined in this file.
  */
 
+Ns_LogSeverity TaskDebug;
+
 static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
 static Tcl_HashTable hosts;           /* Host header to server table */
 static ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
@@ -219,6 +230,7 @@ NsInitDrivers(void)
 {
     Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
+    TaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_MutexInit(&reqLock);
     Ns_MutexSetName2(&reqLock, "ns:driver","freelist");
     Ns_MutexSetName2(&writerlock, "ns:writer","stream");
