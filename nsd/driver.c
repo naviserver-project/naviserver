@@ -186,7 +186,7 @@ static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t writte
  * Static variables defined in this file.
  */
 
-Ns_LogSeverity TaskDebug;
+Ns_LogSeverity Ns_LogTaskDebug;
 
 static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
 static Tcl_HashTable hosts;           /* Host header to server table */
@@ -230,7 +230,7 @@ NsInitDrivers(void)
 {
     Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
-    TaskDebug = Ns_CreateLogSeverity("Debug(task)");
+    Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_MutexInit(&reqLock);
     Ns_MutexSetName2(&reqLock, "ns:driver","freelist");
     Ns_MutexSetName2(&writerlock, "ns:writer","stream");

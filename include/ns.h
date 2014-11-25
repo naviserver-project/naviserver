@@ -276,6 +276,12 @@ typedef enum {
 } Ns_HeaderCaseDisposition;
 
 /*
+ * LogSeverity, which can be used from modules (e.g. nsssl)
+ */
+
+NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;    /* Severity at which to log verbose. */
+
+/*
  * Typedefs of functions
  */
 

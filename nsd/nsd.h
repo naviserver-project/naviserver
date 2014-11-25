@@ -1220,8 +1220,6 @@ NS_EXTERN Tcl_CmdProc
     NsTclQuoteHtmlCmd,
     NsTclStripHtmlCmd;
 
-NS_EXTERN Ns_LogSeverity TaskDebug;    /* Severity at which to log verbose. */
-
 /*
  * Libnsd initialization routines.
  */
