@@ -244,7 +244,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 {
     const Log *logPtr = arg;
 
-    Tcl_CreateObjCommand(interp, "ns_accesslog", LogObjCmd, logPtr, NULL);
+    Tcl_CreateObjCommand(interp, "ns_accesslog", LogObjCmd, (ClientData)logPtr, NULL);
     return NS_OK;
 }
 
@@ -955,7 +955,7 @@ LogRollCallback(void *arg)
 static void
 LogArg(Tcl_DString *dsPtr, const void *arg)
 {
-    Log *logPtr = arg;
+    const Log *logPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, logPtr->file);
 }
