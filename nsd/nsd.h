@@ -125,10 +125,10 @@ typedef struct {
 
 static SpoolerStateMap spoolerStateMap[] = {
     {SPOOLER_CLOSE,        SOCK_CLOSE},
-    {SPOOLER_OK,           SOCK_READY},
     {SPOOLER_READERROR,    SOCK_READERROR},
     {SPOOLER_WRITEERROR,   SOCK_WRITEERROR},
-    {SPOOLER_CLOSETIMEOUT, SOCK_CLOSETIMEOUT}
+    {SPOOLER_CLOSETIMEOUT, SOCK_CLOSETIMEOUT},
+    {SPOOLER_OK,           SOCK_READY}
 };
 
 /*

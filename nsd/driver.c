@@ -3319,6 +3319,10 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
     if (wrSockPtr->err != 0 || wrSockPtr->status != SPOOLER_OK) {
         int i;
+        /*
+         * Lookup the matching sockState from the spooler state. The array has
+         * just 5 elements, on average, just 2 comparisons are needed (since OK ist at the end)
+         */
         for (i = 0; i < Ns_NrElements(spoolerStateMap); i++) {
             if (spoolerStateMap[i].spoolerState == wrSockPtr->status) {
                 SockError(wrSockPtr->sockPtr, spoolerStateMap[i].sockState, wrSockPtr->err);
