@@ -337,7 +337,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
     assert(httpPtr != NULL);
 
-    Ns_Log(Debug, "ProcessReplyHeaderFields %p", (void *)httpPtr->replyHeaders);
+    Ns_Log(TaskDebug, "ProcessReplyHeaderFields %p", (void *)httpPtr->replyHeaders);
 
     encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
 
@@ -473,7 +473,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		    }
 		    
 		    if (fd != 0) {
-		      /*Ns_Log(Notice, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
+		      /*Ns_Log(TaskDebug, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
 			httpPtr->spoolFd = fd;
 			Ns_HttpAppendBuffer(httpPtr, 
 					    httpPtr->ds.string + httpPtr->replyHeaderSize, 
@@ -493,7 +493,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	     * replace the compressed content with the decompressed.
 	     */
 
-	    Ns_Log(Debug, "ns_http: got header %d + %" PRIdz " bytes", httpPtr->replyHeaderSize, contentSize);
+	    Ns_Log(TaskDebug, "ns_http: got header %d + %" PRIdz " bytes", httpPtr->replyHeaderSize, contentSize);
 
 	    Tcl_DStringInit(dsPtr);
 	    Tcl_DStringAppend(dsPtr, httpPtr->ds.string + httpPtr->replyHeaderSize, (int)contentSize);
@@ -820,7 +820,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     httpPtr->next = httpPtr->ds.string;
     httpPtr->len = (size_t)httpPtr->ds.length;
 
-    /* Ns_Log(Notice, "final request <%s>", httpPtr->ds.string);*/
+    /* Ns_Log(TaskDebug, "final request <%s>", httpPtr->ds.string);*/
 
     *httpPtrPtr = httpPtr;
     return TCL_OK;
@@ -875,7 +875,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
     assert(httpPtr != NULL);
     assert(buffer != NULL);
 
-    Ns_Log(Debug, "Ns_HttpAppendBuffer: got %" PRIdz " bytes flags %.6x", inSize, httpPtr->flags);
+    Ns_Log(TaskDebug, "Ns_HttpAppendBuffer: got %" PRIdz " bytes flags %.6x", inSize, httpPtr->flags);
     
     if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) != NS_HTTP_FLAG_GUNZIP)) {
 	/*
@@ -890,12 +890,12 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	 * Output decompressed content
 	 */
 	Ns_InflateBufferInit(httpPtr->compress, buffer, inSize);
-	Ns_Log(Debug, "InflateBuffer: got %" PRIdz " compressed bytes", inSize);
+	Ns_Log(TaskDebug, "InflateBuffer: got %" PRIdz " compressed bytes", inSize);
 	do {
 	    size_t uncompressedLen = 0u;
 		
 	    status = Ns_InflateBuffer(httpPtr->compress, out, sizeof(out), &uncompressedLen);
-	    Ns_Log(Debug, "InflateBuffer status %d uncompressed %" PRIdz " bytes", status, uncompressedLen);
+	    Ns_Log(TaskDebug, "InflateBuffer status %d uncompressed %" PRIdz " bytes", status, uncompressedLen);
 	    
 	    HttpAppendRawBuffer(httpPtr, out, uncompressedLen);
 
@@ -1020,7 +1020,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 	    if (httpPtr->spoolFd > 0) {
 		Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
 	    } else {
-		Ns_Log(Debug, "Task got %d bytes", (int)n);
+		Ns_Log(TaskDebug, "Task got %d bytes", (int)n);
 		Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
 
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
@@ -1030,7 +1030,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 		 * Ns_HttpCheckSpool might set httpPtr->spoolFd
 		 */
 		Ns_HttpCheckSpool(httpPtr);
-		/*Ns_Log(Notice, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
+		/*Ns_Log(TaskDebug, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
 	    }
 	    return;
 	}

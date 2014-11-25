@@ -832,7 +832,7 @@ TaskThread(void *arg)
     struct pollfd *pfds;
 
     Ns_ThreadSetName("task:%s", queuePtr->name);
-    Ns_Log(Notice, "starting");
+    Ns_Log(TaskDebug, "starting");
 
     max = 100U;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
