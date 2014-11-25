@@ -775,9 +775,9 @@ NsTclThread(void *arg)
  */
 
 void
-NsTclThreadArgProc(Tcl_DString *dsPtr, void *arg)
+NsTclThreadArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    TclThreadArg *argPtr = arg;
+    const TclThreadArg *argPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, argPtr->server);
     if (argPtr->detached != 0) {

@@ -969,9 +969,9 @@ NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr)
  */
 
 void
-NsConnArgProc(Tcl_DString *dsPtr, void *arg)
+NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    ConnThreadArg *argPtr = arg;
+    const ConnThreadArg *argPtr = arg;
 
     assert(dsPtr != NULL);
 

@@ -43,7 +43,7 @@ typedef struct TclTrace {
     struct TclTrace    *nextPtr;
     struct TclTrace    *prevPtr;
     Ns_TclTraceProc    *proc;
-    void               *arg;
+    const void         *arg;
     Ns_TclTraceType     when;
 } TclTrace;
 
@@ -630,7 +630,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
 
 int
 Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
-                    void *arg, Ns_TclTraceType when)
+                    const void *arg, Ns_TclTraceType when)
 {
     TclTrace   *tracePtr;
     NsServer   *servPtr;
@@ -760,7 +760,7 @@ RegisterAt(Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
  */
 
 int
-Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, void *arg)
+Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, const void *arg)
 {
     return Ns_TclRegisterTrace(server, proc, arg, NS_TCL_TRACE_CREATE);
 }
@@ -1406,10 +1406,10 @@ NsFreeConnInterp(Conn *connPtr)
  */
 
 int
-NsTclTraceProc(Tcl_Interp *interp, void *arg)
+NsTclTraceProc(Tcl_Interp *interp, const void *arg)
 {
-    Ns_TclCallback *cbPtr = arg;
-    int             status;
+    const Ns_TclCallback *cbPtr = arg;
+    int   status;
 
     status = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0);
     if (status != TCL_OK) {

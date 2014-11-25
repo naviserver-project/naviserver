@@ -785,9 +785,11 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         return TCL_ERROR;
     }
 
-    if ((servPtr = itPtr->servPtr) == NULL
-        && (servPtr = NsGetInitServer()) == NULL) {
-
+    servPtr = itPtr->servPtr;
+    if (servPtr == NULL) {
+        servPtr = NsGetInitServer();
+    }
+    if (servPtr == NULL) {
         Tcl_SetResult(interp, "no server available", TCL_STATIC);
         return TCL_ERROR;
     }
@@ -989,11 +991,11 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         safehost = Ns_DStringAppend(&ds, rawHost);
 
         (void) Ns_StrToLower(safehost);
-        if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0U
+        if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0u
             && strncmp(safehost, "www.", 4U) == 0) {
             safehost = &safehost[4];
         }
-        if ((servPtr->vhost.opts & NSD_STRIP_PORT)
+        if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u
             && (p = strrchr(safehost, ':')) != NULL) {
             *p = '\0';
         }

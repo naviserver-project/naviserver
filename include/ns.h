@@ -287,8 +287,8 @@ typedef void *(Ns_ElemValProc) (void *elem);
 typedef int   (Ns_ElemTestProc) (void *elem);
 typedef void  (Ns_Callback) (void *arg);
 typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
-typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
-typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
+typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, const void *arg);
+typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, const void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
@@ -563,7 +563,7 @@ typedef struct Ns_CtxSHA1 {
  */
 
 typedef void (Ns_ArgProc)
-    (Tcl_DString *dsPtr, void *arg);
+    (Tcl_DString *dsPtr, const void *arg);
 
 typedef int (Ns_OpProc)
     (void *arg, Ns_Conn *conn);
@@ -2018,7 +2018,7 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, void *arg);
+Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg);
 
 NS_EXTERN void
 Ns_StringArgProc(Tcl_DString *dsPtr, void *arg);
@@ -2092,7 +2092,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int streaming)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2539,7 +2539,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr);
 NS_EXTERN ssize_t
 Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutPtr);
 
-NS_EXTERN int
+NS_EXTERN ssize_t
 Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *timeoutPtr);
 
 NS_EXTERN ssize_t
@@ -2704,7 +2704,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbProc, Tcl_Obj *scriptObjPtr
 		  Tcl_Obj *CONST* objv);
 
 NS_EXTERN int
-Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
+Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
 		   Ns_DString *result, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN Ns_Callback Ns_TclCallbackProc;
@@ -2775,7 +2775,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
+Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
@@ -2806,7 +2806,7 @@ Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
-Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, void *arg)
+Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, const void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_TclRegisterTrace);
 
 NS_EXTERN void

@@ -87,12 +87,14 @@ typedef struct Task {
  * Local functions defined in this file
  */
 
-static void TriggerQueue(const TaskQueue *queuePtr);
-static void JoinQueue(TaskQueue *queuePtr);
-static void StopQueue(TaskQueue *queuePtr);
-static int SignalQueue(Task *taskPtr, unsigned int bit);
+static void TriggerQueue(const TaskQueue *queuePtr)      NS_GNUC_NONNULL(1);
+static void JoinQueue(TaskQueue *queuePtr)               NS_GNUC_NONNULL(1);
+static void StopQueue(TaskQueue *queuePtr)               NS_GNUC_NONNULL(1);
+static bool SignalQueue(Task *taskPtr, unsigned int bit) NS_GNUC_NONNULL(1);
+static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
 static Ns_ThreadProc TaskThread;
-static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr);
 
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
 
@@ -251,7 +253,7 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     TaskQueue *queuePtr = (TaskQueue *) queue;
 
     taskPtr->queuePtr = queuePtr;
-    if (SignalQueue(taskPtr, TASK_INIT) == 0) {
+    if (SignalQueue(taskPtr, TASK_INIT) == NS_FALSE) {
         return NS_ERROR;
     }
     return NS_OK;
@@ -326,7 +328,7 @@ Ns_TaskCancel(Ns_Task *task)
 
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
-    } else if (SignalQueue(taskPtr, TASK_CANCEL) == 0) {
+    } else if (SignalQueue(taskPtr, TASK_CANCEL) == NS_FALSE) {
         return NS_ERROR;
     }
     return NS_OK;
@@ -640,7 +642,8 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
 static void
 RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 {
-
+    assert(taskPtr != NULL);
+    assert(nowPtr != NULL);
     /*
      * NB: Treat POLLHUP as POLLIN on systems which return it.
      */
@@ -656,7 +659,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 		Call(taskPtr, map[i].when);
 	    }
 	}
-    } else if ((taskPtr->flags & TASK_TIMEOUT)
+    } else if ((taskPtr->flags & TASK_TIMEOUT) != 0u
 	       && Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0) {
 	taskPtr->flags &= ~ TASK_WAIT;
 	Call(taskPtr, NS_SOCK_TIMEOUT);
@@ -672,7 +675,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
  *      Send a signal for a task to a task queue.
  *
  * Results:
- *      None.
+ *      boolean value.
  *
  * Side effects:
  *      Task queue will process signal on next spin.
@@ -680,13 +683,15 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SignalQueue(Task *taskPtr, unsigned int bit)
 {
     TaskQueue *queuePtr = taskPtr->queuePtr;
-    int        pending = 0;
+    bool       pending = NS_FALSE;
     bool       shutdown;
 
+    assert(taskPtr != NULL);
+    
     Ns_MutexLock(&queuePtr->lock);
     shutdown = queuePtr->shutdown;
     if (shutdown == NS_FALSE) {
@@ -697,7 +702,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
          */
 
         taskPtr->signalFlags |= bit;
-        pending = (taskPtr->signalFlags & TASK_PENDING);
+        pending = ((taskPtr->signalFlags & TASK_PENDING) != 0u);
         if (pending == 0) {
             taskPtr->signalFlags |= TASK_PENDING;
             taskPtr->nextSignalPtr = queuePtr->firstSignalPtr;
@@ -706,12 +711,12 @@ SignalQueue(Task *taskPtr, unsigned int bit)
     }
     Ns_MutexUnlock(&queuePtr->lock);
     if (shutdown == NS_TRUE) {
-        return 0;
+        return NS_FALSE;
     }
     if (pending == 0) {
         TriggerQueue(queuePtr);
     }
-    return 1;
+    return NS_TRUE;
 }
 
 
@@ -734,6 +739,8 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 static void
 TriggerQueue(const TaskQueue *queuePtr)
 {
+    assert(queuePtr != NULL);
+    
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("task queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -761,6 +768,8 @@ TriggerQueue(const TaskQueue *queuePtr)
 static void
 StopQueue(TaskQueue *queuePtr)
 {
+    assert(queuePtr != NULL);
+    
     Ns_MutexLock(&queuePtr->lock);
     queuePtr->shutdown = NS_TRUE;
     Ns_MutexUnlock(&queuePtr->lock);
@@ -787,6 +796,8 @@ StopQueue(TaskQueue *queuePtr)
 static void
 JoinQueue(TaskQueue *queuePtr)
 {
+    assert(queuePtr != NULL);
+
     Ns_ThreadJoin(&queuePtr->tid, NULL);
     ns_sockclose(queuePtr->trigger[0]);
     ns_sockclose(queuePtr->trigger[1]);

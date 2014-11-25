@@ -920,9 +920,9 @@ IsStale(const Handle *handlePtr, time_t now)
  */
 
 static void
-CheckArgProc(Tcl_DString *dsPtr, void *arg)
+CheckArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    Pool *poolPtr = arg;
+    const Pool *poolPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, poolPtr->name);
 }
@@ -1233,3 +1233,12 @@ FreeTable(void *arg)
     Tcl_DeleteHashTable(tablePtr);
     ns_free(tablePtr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

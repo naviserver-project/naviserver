@@ -536,7 +536,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
  */
 
 int
-Ns_ProxyCleanup(Tcl_Interp *interp, void *ignored)
+Ns_ProxyCleanup(Tcl_Interp *interp, const void *ignored)
 {
     InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);
 

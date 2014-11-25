@@ -339,10 +339,10 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
  *----------------------------------------------------------------------
  */
 
-int
+ssize_t
 Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *timeoutPtr)
 {
-    int nwrote;
+    ssize_t nwrote;
 
     nwrote = ns_send(sock, buffer, length, 0);
 

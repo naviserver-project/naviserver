@@ -118,7 +118,7 @@ Ns_TclDbGetHandle(Tcl_Interp *interp, const char *handleId, Ns_DbHandle **handle
  */
 
 int
-NsDbAddCmds(Tcl_Interp *interp, void *arg)
+NsDbAddCmds(Tcl_Interp *interp, const void *arg)
 {
     const char *server = arg;
     InterpData *idataPtr;
@@ -161,7 +161,7 @@ NsDbAddCmds(Tcl_Interp *interp, void *arg)
  */
 
 int
-NsDbReleaseHandles(Tcl_Interp *interp, void *arg)
+NsDbReleaseHandles(Tcl_Interp *interp, const void *arg)
 {
     InterpData     *idataPtr;
 
@@ -204,7 +204,7 @@ static int
 DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData	   *idataPtr = data;
-    char            tmpbuf[32];
+    char            tmpbuf[32] = "";
     const char     *pool = NULL;
     int             cmd, nrows;
     Ns_DbHandle    *handlePtr = NULL;
@@ -857,8 +857,8 @@ static int
 GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int             ncols, inquote, quoted, blank;
-    char            c, *p, *delimiter = ",", *fileId, *varName;
-    const char	   *result;
+    char            c;
+    const char     *p, *delimiter = ",", *fileId, *varName, *result;
     Tcl_DString     line, cols, elem;
     Tcl_Channel	    chan;
 

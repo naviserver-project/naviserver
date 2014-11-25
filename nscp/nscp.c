@@ -274,9 +274,9 @@ Ns_ModuleInit(const char *server, const char *module)
  */
 
 static void
-ArgProc(Tcl_DString *dsPtr, void *arg)
+ArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    Mod *modPtr = arg;
+    const Mod *modPtr = arg;
 
     Tcl_DStringStartSublist(dsPtr);
     Ns_DStringPrintf(dsPtr, "%s %d", modPtr->addr, modPtr->port);

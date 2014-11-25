@@ -312,12 +312,12 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
     assert(newPtr != NULL);
 
     entry = Ns_CacheCreateEntry(cache, key, &isNew);
-    if (!isNew && Ns_CacheGetValue(entry) == NULL) {
+    if (isNew == 0 && Ns_CacheGetValue(entry) == NULL) {
         do {
             status = Ns_CacheTimedWait(cache, timeoutPtr);
             entry = Ns_CacheCreateEntry(cache, key, &isNew);
         } while (status == NS_OK
-                 && !isNew
+                 && isNew == 0
                  && Ns_CacheGetValue(entry) == NULL);
     }
     *newPtr = isNew;
@@ -430,7 +430,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
                         const Ns_Time *timeoutPtr, int cost)
 {
     Entry *ePtr = (Entry *) entry;
-    Cache *cachePtr;;
+    Cache *cachePtr;
 
     assert(entry != NULL);
 

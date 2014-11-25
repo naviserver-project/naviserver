@@ -240,9 +240,9 @@ Ns_ModuleInit(char *server, char *module)
 }
 
 static int
-AddCmds(Tcl_Interp *interp, void *arg)
+AddCmds(Tcl_Interp *interp, const void *arg)
 {
-    Log *logPtr = arg;
+    const Log *logPtr = arg;
 
     Tcl_CreateObjCommand(interp, "ns_accesslog", LogObjCmd, logPtr, NULL);
     return NS_OK;
@@ -953,7 +953,7 @@ LogRollCallback(void *arg)
  */
 
 static void
-LogArg(Tcl_DString *dsPtr, void *arg)
+LogArg(Tcl_DString *dsPtr, const void *arg)
 {
     Log *logPtr = arg;
 

@@ -361,9 +361,9 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
  */
 
 void
-NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
+NsAdpPageArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    AdpRequest   *adp = arg;
+    const AdpRequest *adp = arg;
     unsigned int  i;
 
     Ns_DStringPrintf(dsPtr, " %" PRIu64 ":%ld",

@@ -118,10 +118,10 @@ Ns_ModuleInit(CONST char *server, CONST char *module)
 }
 
 static int
-InitInterp(Tcl_Interp *interp, void *arg)
+InitInterp(Tcl_Interp *interp, const void *arg)
 {
-    SrvMod *smPtr = arg;
-    int     status;
+    const SrvMod *smPtr = arg;
+    int           status;
 
     status = Ns_ProxyTclInit(interp);
 

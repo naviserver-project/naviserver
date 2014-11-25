@@ -122,7 +122,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
 static int ValidateUserAddr(User * userPtr, const char *peer);
 static int AuthProc(const char *server, const char *method, const char *url, 
 		    const char *user, const char *pwd, const char *peer);
-static void WalkCallback(Tcl_DString * dsPtr, void *arg);
+static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, char *uri);
 static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale);
 /*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
@@ -211,9 +211,9 @@ Ns_ModuleInit(char *server, char *module)
  *----------------------------------------------------------------------
  */
 
-static int AddCmds(Tcl_Interp * interpermPtr, void *arg)
+static int AddCmds(Tcl_Interp * interpermPtr, const void *arg)
 {
-    Tcl_CreateObjCommand(interpermPtr, "ns_perm", PermObjCmd, arg, NULL);
+  Tcl_CreateObjCommand(interpermPtr, "ns_perm", PermObjCmd, (ClientData)arg, NULL);
     return NS_OK;
 }
 
@@ -1383,9 +1383,9 @@ static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     return TCL_OK;
 }
 
-static void WalkCallback(Tcl_DString * dsPtr, void *arg)
+static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
 {
-    Perm *permPtr = arg;
+    Perm *permPtr = (Perm *)arg;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
@@ -1697,3 +1697,12 @@ static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale)
     Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
     return NS_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

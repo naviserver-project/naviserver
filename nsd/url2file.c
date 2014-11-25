@@ -65,7 +65,7 @@ typedef struct {
 
 static Ns_Callback FreeMount;
 static void FreeUrl2File(void *arg);
-static void WalkCallback(Ns_DString *dsPtr, void *arg);
+static void WalkCallback(Ns_DString *dsPtr, const void *arg);
 static Ns_ServerInitProc ConfigServerUrl2File;
 
 
@@ -564,8 +564,8 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 int
 NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
-    Mount      *mPtr = arg;
-    const char *u;
+    Mount *mPtr = arg;
+    const char  *u;
 
     u = mPtr->url;
     while (*u != '\0' && *url != '\0' && *u == *url) {
@@ -602,9 +602,9 @@ NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
  */
 
 void
-NsMountUrl2FileArgProc(Tcl_DString *dsPtr, void *arg)
+NsMountUrl2FileArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    Mount *mPtr = arg;
+    const Mount *mPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, mPtr->basepath);
     Tcl_DStringAppendElement(dsPtr, mPtr->url);
@@ -636,9 +636,9 @@ NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
 }
 
 static void
-WalkCallback(Ns_DString *dsPtr, void *arg)
+WalkCallback(Ns_DString *dsPtr, const void *arg)
 {
-    Url2File *u2fPtr = arg;
+    const Url2File *u2fPtr = arg;
 
     Ns_GetProcInfo(dsPtr, (Ns_Callback *)u2fPtr->proc, u2fPtr->arg);
 }

@@ -51,7 +51,7 @@ typedef struct Info {
  */
 
 static Ns_ArgProc ServerArgProc;
-static void AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr);
+static void AppendAddr(Tcl_DString *dsPtr, char *prefix, const void *addr);
 
 /*
  * Static variables defined in this file.
@@ -170,7 +170,7 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
  */
 
 void
-Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, void *arg)
+Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
 {
     Tcl_HashEntry          *hPtr;
     Info                   *infoPtr;
@@ -237,9 +237,9 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static void
-ServerArgProc(Tcl_DString *dsPtr, void *arg)
+ServerArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    NsServer *servPtr = arg;
+    const NsServer *servPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, (servPtr != NULL) ? servPtr->server : "");
 }
@@ -262,7 +262,7 @@ ServerArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static void
-AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr)
+AppendAddr(Tcl_DString *dsPtr, char *prefix, const void *addr)
 {
     Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
 }

@@ -139,7 +139,7 @@ Ns_TclFreeCallback(void *arg)
  */
 
 int
-Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
+Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
                    Ns_DString *result, ...)
 {
     Ns_DString   ds;
@@ -229,10 +229,10 @@ Ns_TclCallbackProc(void *arg)
  */
 
 void
-Ns_TclCallbackArgProc(Tcl_DString *dsPtr, void *arg)
+Ns_TclCallbackArgProc(Tcl_DString *dsPtr, const void *arg)
 {
     int             ii;
-    Ns_TclCallback *cbPtr = arg;
+    const Ns_TclCallback *cbPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, cbPtr->script);
     for (ii = 0; ii < cbPtr->argc; ii++) {

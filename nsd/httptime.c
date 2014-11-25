@@ -174,7 +174,7 @@ Ns_ParseHttpTime(char *chars)
          */
 
         if (strchr(s, '-') != NULL) {
-            if (strlen(s) < 18) {
+            if (strlen(s) < 18u) {
                 return 0;
             }
 

@@ -1085,7 +1085,7 @@ link(char *from, char *to)
 }
 
 int
-symlink(char *from, char *to)
+symlink(const char *from, const char *to)
 {
     errno = EINVAL;
     return -1;
@@ -1165,7 +1165,7 @@ kill(pid_t pid, int sig)
  */
 
 int
-truncate(char *file, off_t size)
+truncate(const char *file, off_t size)
 {
     int fd;
 

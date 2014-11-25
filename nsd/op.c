@@ -54,7 +54,7 @@ typedef struct {
  */
 
 static Ns_ServerInitProc ConfigServerProxy;
-static void WalkCallback(Tcl_DString *dsPtr, void *arg);
+static void WalkCallback(Tcl_DString *dsPtr, const void *arg);
 static void FreeReq(void *arg) NS_GNUC_NONNULL(1);
 
 /*
@@ -535,9 +535,9 @@ NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
 }
 
 static void
-WalkCallback(Tcl_DString *dsPtr, void *arg)
+WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
-     Req *reqPtr = arg;
+     const Req *reqPtr = arg;
 
      Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
 }

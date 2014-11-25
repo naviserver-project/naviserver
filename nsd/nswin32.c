@@ -1275,7 +1275,7 @@ ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags)
 }
 
 ssize_t
-ns_send(NS_SOCKET socket, void *buffer, size_t length, int flags)
+ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags)
 {
     return send(socket, buffer, (int)length, flags);
 }

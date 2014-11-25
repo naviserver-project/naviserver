@@ -55,7 +55,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  */
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     static int once = 0;
 
@@ -64,7 +64,7 @@ Ns_ModuleInit(char *server, char *module)
 	once = 1;
     }
     NsDbInitServer(server);
-    if (Ns_TclRegisterTrace(server, NsDbAddCmds, server,
+    if (Ns_TclRegisterTrace(server, NsDbAddCmds, (void *)server,
                             NS_TCL_TRACE_CREATE) != NS_OK
         || Ns_TclRegisterTrace(server, NsDbReleaseHandles, NULL,
                                NS_TCL_TRACE_DEALLOCATE) != NS_OK) {
@@ -75,3 +75,12 @@ Ns_ModuleInit(char *server, char *module)
 
     return NS_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -57,8 +57,8 @@
 char *
 Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
 {
-    const register char   *s;
-    va_list         ap;
+    register const char *s;
+    va_list              ap;
 
     va_start(ap, dsPtr);
     while ((s = va_arg(ap, char *)) != NULL) {

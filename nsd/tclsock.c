@@ -98,9 +98,9 @@ static Ns_SockProc SockListenCallback;
  *----------------------------------------------------------------------
  */
 void
-NsTclSockArgProc(Tcl_DString *dsPtr, void *arg)
+NsTclSockArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    Callback *cbPtr = arg;
+    const Callback *cbPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, cbPtr->script);
 }
