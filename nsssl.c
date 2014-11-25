@@ -73,7 +73,7 @@ static Ns_DriverSendProc Send;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 
-static int SSLInterpInit(Tcl_Interp *interp, void *arg);
+static int SSLInterpInit(Tcl_Interp *interp, const void *arg);
 static int SSLObjCmd(ClientData arg, Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 static void SSLLock(int mode, int n, const char *file, int line);
@@ -663,9 +663,9 @@ Close(Ns_Sock *sock)
  */
 
 static int
-SSLInterpInit(Tcl_Interp *interp, void *arg)
+SSLInterpInit(Tcl_Interp *interp, const void *arg)
 {
-    Tcl_CreateObjCommand(interp, "ns_ssl", SSLObjCmd, arg, NULL);
+    Tcl_CreateObjCommand(interp, "ns_ssl", SSLObjCmd, (ClientData)arg, NULL);
     return NS_OK;
 }
 
@@ -1250,7 +1250,7 @@ HttpsClose(Https *httpsPtr)
     }
     Ns_MutexDestroy(&httpPtr->lock);
     Tcl_DStringFree(&httpPtr->ds);
-    ns_free(httpPtr->url);
+    ns_free((char *)httpPtr->url);
     ns_free(httpsPtr);
 }
 
