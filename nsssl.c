@@ -40,7 +40,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.5"
+#define NSSSL_VERSION  "0.6"
 
 typedef struct {
     SSL_CTX     *ctx;
@@ -889,9 +889,9 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	}
 	Ns_HttpCheckSpool(httpPtr);
 
-	Ns_Log(Notice, "SSL request finished %d <%s>", httpPtr->status, httpPtr->replyHeaders->name);
+	Ns_Log(Ns_LogTaskDebug, "SSL request finished %d <%s>", httpPtr->status, httpPtr->replyHeaders->name);
 	if (httpPtr->status == 0) {
-	    Ns_Log(Notice, "======= SSL response <%s>", httpPtr->ds.string);
+	    Ns_Log(Ns_LogTaskDebug, "======= SSL response <%s>", httpPtr->ds.string);
 	}
 
         if (statusVarPtr != NULL && !Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status))) {
@@ -1043,11 +1043,11 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     }
     host = url + 8;
     file = strchr(host, '/');
-    // Ns_Log(Notice, "XXX search host <%s> for slash => file <%s>", host, file);
+    // Ns_Log(Ns_LogTaskDebug, "XXX search host <%s> for slash => file <%s>", host, file);
     if (file != NULL) {
 	*file = '\0';
     }
-    //Ns_Log(Notice, "XXX remaining host <%s>", host);
+    //Ns_Log(Ns_LogTaskDebug, "XXX remaining host <%s>", host);
     port = strchr(host, ':');
     if (port == NULL) {
 	portNr = 443;
@@ -1056,7 +1056,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	portNr = (int) strtol(port+1, NULL, 10);
     }
 
-    //Ns_Log(Notice, "XXX url <%s> port %d host <%s> file <%s>", url, portNr, host, file);
+    //Ns_Log(Ns_LogTaskDebug, "XXX url <%s> port %d host <%s> file <%s>", url, portNr, host, file);
     strncpy(hostBuffer, host, sizeof(hostBuffer));
     
     /*
@@ -1083,7 +1083,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
     Tcl_DStringInit(&httpPtr->ds);
 
-    //Ns_Log(Notice, "url <%s> port %d sock %d host <%s> file <%s>", httpPtr->url, portNr, sock, hostBuffer, file);
+    //Ns_Log(Ns_LogTaskDebug, "url <%s> port %d sock %d host <%s> file <%s>", httpPtr->url, portNr, sock, hostBuffer, file);
 
     /*
      * Now initialize OpenSSL context
@@ -1209,7 +1209,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     httpPtr->next = httpPtr->ds.string;
     httpPtr->len = httpPtr->ds.length;
 
-    /*Ns_Log(Notice, "final request <%s>", httpPtr->ds.string);*/
+    /*Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);*/
     
     *httpsPtrPtr = httpsPtr;
     return TCL_OK;
@@ -1324,7 +1324,7 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, Ns_SockState why)
             if (httpPtr->len == 0) {
 		SSL_set_shutdown(httpsPtr->ssl, SSL_SENT_SHUTDOWN);
                 /*shutdown(sock, 1);*/
-		/*Ns_Log(Notice, "SSL WRITE done, switch to READ");*/
+		/*Ns_Log(Ns_LogTaskDebug, "SSL WRITE done, switch to READ");*/
                 Tcl_DStringTrunc(&httpPtr->ds, 0);
                 Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
             }
@@ -1356,7 +1356,7 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, Ns_SockState why)
         }
 	n = got;
 
-	/*Ns_Log(Notice, "Task READ got %d bytes err %d", (int)n, err);*/
+	/*Ns_Log(Ns_LogTaskDebug, "Task READ got %d bytes err %d", (int)n, err);*/
 	
         if (likely(n > 0)) {
 	    /* 
@@ -1368,7 +1368,7 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, Ns_SockState why)
 	    if (httpPtr->spoolFd > 0) {
 		Ns_HttpAppendBuffer(httpPtr, buf, n);
 	    } else {
-		Ns_Log(Notice, "Task got %d bytes", (int)n);
+		Ns_Log(Ns_LogTaskDebug, "Task got %d bytes", (int)n);
 		Ns_HttpAppendBuffer(httpPtr, buf, n);
 
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
@@ -1378,7 +1378,7 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, Ns_SockState why)
 		 * Ns_HttpCheckSpool might set httpPtr->spoolFd
 		 */
 		Ns_HttpCheckSpool(httpPtr);
-		/*Ns_Log(Notice, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
+		/*Ns_Log(Ns_LogTaskDebug, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
 	    }
             return;
         }
