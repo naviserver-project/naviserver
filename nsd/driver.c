@@ -3318,7 +3318,13 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     }
 
     if (wrSockPtr->err != 0 || wrSockPtr->status != SPOOLER_OK) {
-	SockError(wrSockPtr->sockPtr, wrSockPtr->status, wrSockPtr->err);
+        int i;
+        for (i = 0; i < Ns_NrElements(spoolerStateMap); i++) {
+            if (spoolerStateMap[i].spoolerState == wrSockPtr->status) {
+                SockError(wrSockPtr->sockPtr, spoolerStateMap[i].sockState, wrSockPtr->err);
+                break;
+            }
+        }
         NsSockClose(wrSockPtr->sockPtr, 0);
     } else {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
