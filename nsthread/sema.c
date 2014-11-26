@@ -75,6 +75,8 @@ Ns_SemaInit(Ns_Sema *semaPtr, int count)
     static unsigned int nextid = 0;
     Sema *sPtr;
 
+    assert(semaPtr != NULL);
+    
     sPtr = ns_malloc(sizeof(Sema));
     sPtr->count = count;
     NsMutexInitNext(&sPtr->lock, "sm", &nextid);
@@ -104,6 +106,8 @@ Ns_SemaInit(Ns_Sema *semaPtr, int count)
 void
 Ns_SemaDestroy(Ns_Sema *semaPtr)
 {
+    assert(semaPtr != NULL);
+
     if (*semaPtr != NULL) {
     	Sema *sPtr = (Sema *) *semaPtr;
 
@@ -136,6 +140,8 @@ Ns_SemaWait(Ns_Sema *semaPtr)
 {
     Sema *sPtr = (Sema *) *semaPtr;
 
+    assert(semaPtr != NULL);
+    
     Ns_MutexLock(&sPtr->lock);
     while (sPtr->count == 0) {
 	Ns_CondWait(&sPtr->cond, &sPtr->lock);
@@ -166,6 +172,8 @@ Ns_SemaPost(Ns_Sema *semaPtr, int count)
 {
     Sema *sPtr = (Sema *) *semaPtr;
 
+    assert(semaPtr != NULL);
+
     Ns_MutexLock(&sPtr->lock);
     sPtr->count += count;
     if (count == 1) {
@@ -175,3 +183,12 @@ Ns_SemaPost(Ns_Sema *semaPtr, int count)
     }
     Ns_MutexUnlock(&sPtr->lock);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

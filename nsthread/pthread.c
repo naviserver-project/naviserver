@@ -451,6 +451,8 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
     pthread_t thr = (pthread_t) *thread;
     int err;
 
+    assert(thread != NULL);
+
     err = pthread_join(thr, argPtr);
     if (err != 0) {
 	NsThreadFatal("Ns_ThreadJoin", "pthread_join", err);

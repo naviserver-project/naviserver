@@ -58,10 +58,10 @@ typedef struct Thread {
     char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 } Thread;
 
-static Thread *NewThread(void);
-static Thread *GetThread(void);
+static Thread *NewThread(void) NS_GNUC_RETURNS_NONNULL;
+static Thread *GetThread(void) NS_GNUC_RETURNS_NONNULL;
 static void CleanupThread(void *arg);
-static void SetBottomOfStack(void *ptr);
+static void SetBottomOfStack(void *ptr)  NS_GNUC_NONNULL(1);
 
 /*
  * The following pointer maintains a linked list of all threads.
@@ -128,6 +128,8 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     	    	Ns_Thread *resultPtr)
 {
     Thread *thrPtr;
+
+    assert(proc != NULL);
 
     Ns_MasterLock();
 
@@ -324,6 +326,8 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     Thread *thrPtr;
     char buf[100];
 
+    assert(dsPtr != NULL);
+
     Ns_MasterLock();
     thrPtr = firstThreadPtr;
     while (thrPtr != NULL) {
@@ -489,6 +493,8 @@ static void
 SetBottomOfStack(void *ptr) {
     Thread *thisPtr = GetThread();
 
+    assert(ptr != NULL);
+    
     thisPtr->bottomOfStack = ptr;
     /*fprintf(stderr, "SetBottomOfStack %p %s bot %p\n", thisPtr, thisPtr->name, ptr);*/
 }
@@ -513,8 +519,20 @@ void
 Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize) {
   Thread *thisPtr = GetThread();
 
+  assert(maxStackSize != NULL);
+  assert(estimatedSize != NULL);
+  
   Ns_MasterLock();
   *maxStackSize = defstacksize;
   *estimatedSize = abs((int)(thisPtr->bottomOfStack - (unsigned char *)&thisPtr));
   Ns_MasterUnlock();  
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

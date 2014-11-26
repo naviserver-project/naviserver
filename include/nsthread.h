@@ -795,31 +795,31 @@ NS_EXTERN void Ns_CondDestroy(Ns_Cond *condPtr);
 NS_EXTERN void Ns_CondSignal(Ns_Cond *condPtr)        NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_CondBroadcast(Ns_Cond *condPtr)     NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_CondWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int Ns_CondTimedWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr,
 			       const Ns_Time *timePtr)
-      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * reentrant.c:
  */
 
-NS_EXTERN struct dirent *ns_readdir(DIR * pDir);
-NS_EXTERN struct tm *ns_localtime(const time_t * clock);
-NS_EXTERN struct tm *ns_gmtime(const time_t * clock);
-NS_EXTERN char *ns_ctime(const time_t * clock);
-NS_EXTERN char *ns_asctime(const struct tm *tmPtr);
-NS_EXTERN char *ns_strtok(char *s1, const char *s2);
+NS_EXTERN struct dirent *ns_readdir(DIR *pDir)           NS_GNUC_NONNULL(1);
+NS_EXTERN struct tm *ns_localtime(const time_t *clock)   NS_GNUC_NONNULL(1);
+NS_EXTERN struct tm *ns_gmtime(const time_t *clock)      NS_GNUC_NONNULL(1);
+NS_EXTERN char *ns_ctime(const time_t *clock)            NS_GNUC_NONNULL(1);
+NS_EXTERN char *ns_asctime(const struct tm *tmPtr)       NS_GNUC_NONNULL(1);
+NS_EXTERN char *ns_strtok(char *s1, const char *s2)      NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_inet_ntoa(struct in_addr addr);
 
 /*
  * sema.c:
  */
 
-NS_EXTERN void Ns_SemaInit(Ns_Sema *semaPtr, int initCount);
-NS_EXTERN void Ns_SemaDestroy(Ns_Sema *semaPtr);
-NS_EXTERN void Ns_SemaWait(Ns_Sema *semaPtr);
-NS_EXTERN void Ns_SemaPost(Ns_Sema *semaPtr, int count);
+NS_EXTERN void Ns_SemaInit(Ns_Sema *semaPtr, int initCount) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaDestroy(Ns_Sema *semaPtr)             NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaWait(Ns_Sema *semaPtr)                NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaPost(Ns_Sema *semaPtr, int count)     NS_GNUC_NONNULL(1);
 
 /*
  * signal.c:
@@ -836,9 +836,9 @@ NS_EXTERN int ns_signal(int sig, void (*proc)(int));
  */
 
 NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stackSize,
-                Ns_Thread *resultPtr);
+			       Ns_Thread *resultPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadExit(void *arg);
-NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr);
+NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadYield(void);
 NS_EXTERN void Ns_ThreadSetName(const char *name, ...) NS_GNUC_NONNULL(1);
 NS_EXTERN uintptr_t Ns_ThreadId(void);
@@ -846,8 +846,9 @@ NS_EXTERN void Ns_ThreadSelf(Ns_Thread *threadPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *Ns_ThreadGetName(void)       NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *Ns_ThreadGetParent(void)     NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN long Ns_ThreadStackSize(long size);
-NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc);
-NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize);
+NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -909,3 +910,12 @@ NS_EXTERN ssize_t ns_send(NS_SOCKET socket, const void *buffer, size_t length, i
 #endif
 
 #endif /* NSTHREAD_H */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

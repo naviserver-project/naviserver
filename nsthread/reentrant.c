@@ -55,7 +55,7 @@ typedef struct Tls {
 } Tls;
 
 static Ns_Tls tls;
-static Tls *GetTls(void);
+static Tls *GetTls(void) NS_GNUC_RETURNS_NONNULL;
 
 /*
  *----------------------------------------------------------------------
@@ -164,8 +164,9 @@ ns_inet_ntoa(struct in_addr addr)
  */
 #ifdef _WIN32
 struct dirent *
-ns_readdir(DIR * dir)
+ns_readdir(DIR *dir)
 {
+    assert(dir != NULL);
     return readdir(dir);
 }
 #else
@@ -174,7 +175,9 @@ ns_readdir(DIR * dir)
 {
     struct dirent *ent;
     Tls *tlsPtr = GetTls();
-
+    
+    assert(dir != NULL);
+    
     ent = &tlsPtr->ent; 
     if (readdir_r(dir, ent, &ent) != 0) {
         ent = NULL;
@@ -199,6 +202,8 @@ ns_localtime(const time_t *clock)
     Tls *tlsPtr = GetTls();
     int errNum;
 
+    assert(clock != NULL);
+    
     errNum = localtime_s(&tlsPtr->ltbuf, clock);
     if (errNum != 0) {
         NsThreadFatal("ns_localtime","localtime_s", errNum);
@@ -207,12 +212,12 @@ ns_localtime(const time_t *clock)
     return &tlsPtr->ltbuf;
 
 #elif defined(_WIN32)
-
+    assert(clock != NULL);
     return localtime(clock);
-
 #else
-
     Tls *tlsPtr = GetTls();
+    
+    assert(clock != NULL);
     return localtime_r(clock, &tlsPtr->ltbuf);
 
 #endif
@@ -234,6 +239,7 @@ ns_gmtime(const time_t *clock)
     Tls *tlsPtr = GetTls();
     int errNum;
 
+    assert(clock != NULL);
     errNum = gmtime_s(&tlsPtr->gtbuf, clock);
     if (errNum != 0) {
         NsThreadFatal("ns_gmtime","gmtime_s", errNum);
@@ -243,11 +249,13 @@ ns_gmtime(const time_t *clock)
 
 #elif defined(_WIN32)
 
+    assert(clock != NULL);
     return gmtime(clock);
 
 #else
 
     Tls *tlsPtr = GetTls();
+    assert(clock != NULL);
     return gmtime_r(clock, &tlsPtr->gtbuf);
 
 #endif
@@ -269,6 +277,7 @@ ns_ctime(const time_t *clock)
     Tls *tlsPtr = GetTls();
     int errNum;
 
+    assert(clock != NULL);
     errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
     if (errNum != 0) {
         NsThreadFatal("ns_ctime","ctime_s", errNum);
@@ -278,10 +287,12 @@ ns_ctime(const time_t *clock)
 
 #elif defined(_WIN32)
 
+    assert(clock != NULL);
     return ctime(clock);
 
 #else
     Tls *tlsPtr = GetTls();
+    assert(clock != NULL);
     return ctime_r(clock, tlsPtr->ctbuf);
 #endif
 }
@@ -303,6 +314,7 @@ ns_asctime(const struct tm *tmPtr)
     Tls *tlsPtr = GetTls();
     int errNum;
 
+    assert(tmPtr != NULL);
     errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
     if (errNum != 0) {
         NsThreadFatal("ns_asctime","asctime_s", errNum);
@@ -311,12 +323,14 @@ ns_asctime(const struct tm *tmPtr)
     return tlsPtr->asbuf;
 
 #elif defined(_WIN32)
-
+    
+    assert(tmPtr != NULL);
     return asctime(tmPtr);
 
 #else
 
     Tls *tlsPtr = GetTls();
+    assert(tmPtr != NULL);
     return asctime_r(tmPtr, tlsPtr->asbuf);
 
 #endif
@@ -336,15 +350,24 @@ ns_strtok(char *str, const char *sep)
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
+
+    assert(str != NULL);
+    assert(sep != NULL);
+
     return strtok_s(str, sep, &tlsPtr->stbuf);
 
 #elif defined(_WIN32)
-
+    
+    assert(str != NULL);
+    assert(sep != NULL);
     return strtok(str, sep);
 
 #else
 
     Tls *tlsPtr = GetTls();
+    
+    assert(str != NULL);
+    assert(sep != NULL);
     return strtok_r(str, sep, &tlsPtr->stbuf);
 
 #endif
