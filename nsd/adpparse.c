@@ -565,7 +565,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
     assert(e != NULL);
     assert(s <= e);
 
-    if (s == e) {
+    if (unlikely(s == e)) {
 	/* false alarm */
 	return;
     }
@@ -610,8 +610,8 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
         }
         Tcl_DStringAppend(&parsePtr->lens, (char *) &len, LENSZ);
         Tcl_DStringAppend(&parsePtr->lines, (char *) &parsePtr->line, LENSZ);
-        while (s < e) {
-            if (*s++ == '\n') {
+        while (likely(s < e)) {
+            if (unlikely(*s++ == '\n')) {
                 ++parsePtr->line;
             }
         }

@@ -901,7 +901,7 @@ GetSection(const char *section, int create)
     }
     Ns_DStringAppend(&ds, p);
     s = ds.string;
-    while (unlikely(*s != '\0')) {
+    while (likely(*s != '\0')) {
 	if (unlikely(*s == '\\')) {
             *s = '/';
         } else if (unlikely(CHARTYPE(upper, *s) != 0)) {

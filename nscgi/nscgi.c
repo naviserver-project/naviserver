@@ -168,8 +168,8 @@ Ns_ModuleInit(char *server, char *module)
 		   DEVNULL, strerror(errno));
 	    return NS_ERROR;
 	}
-	Ns_DupHigh(&devNull);
-	Ns_CloseOnExec(devNull);
+	(void)Ns_DupHigh(&devNull);
+	(void) Ns_CloseOnExec(devNull);
 	initialized = 1;
     }
 
@@ -384,7 +384,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     const char	   *server = Ns_ConnServer(conn);
 
     modPtr = mapPtr->modPtr;
-    memset(cgiPtr, 0, ((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
+    memset(cgiPtr, 0, (size_t)((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
     cgiPtr->pid = NS_INVALID_PID;
@@ -415,8 +415,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 
 	    cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
 	    dsPtr = CgiDs(cgiPtr);
-            Ns_UrlToFile(dsPtr, server, cgiPtr->name);
-	    cgiPtr->path = dsPtr->string;
+	    cgiPtr->path = Ns_UrlToFile(dsPtr, server, cgiPtr->name);
             cgiPtr->pathinfo = url + plen;
 
         } else if (stat(mapPtr->path, &st) != 0) {
@@ -565,7 +564,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     len = conn->contentLength;
     content = Ns_ConnContent(conn);
     fd = Ns_GetTemp();
-    if (fd < 0) {
+    if (fd == NS_INVALID_FD) {
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
     } else if (ns_write(fd, content, len) != (ssize_t)len) {
 	err = "write";
@@ -574,10 +573,10 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     }
     if (err != NULL) {
 	Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
-	ns_close(fd);
+	(void) ns_close(fd);
 	fd = NS_INVALID_FD;
     }
-    if (fd < 0) {
+    if (fd = NS_INVALID_FD) {
 	return NS_ERROR;
     }
     cgiPtr->ifd = fd;
@@ -632,7 +631,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->ofd >= 0) {
-    	ns_close(cgiPtr->ofd);
+    	(void) ns_close(cgiPtr->ofd);
     }
 
     /*
@@ -760,7 +759,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         }
 	Ns_DStringTrunc(dsPtr, 0);
 	Ns_DStringInit(&tmp);
-        Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
+        (void)Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
         if (Ns_UrlPathDecode(&tmp, dsPtr->string, NULL) != NULL) {
             SetUpdate(cgiPtr->env, "PATH_TRANSLATED", tmp.string);
         } else {
@@ -896,7 +895,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 		if (e != NULL) {
 		    *e = '\0';
 		}
-		Ns_UrlQueryDecode(dsPtr, s, NULL);
+		(void) Ns_UrlQueryDecode(dsPtr, s, NULL);
 		Ns_DStringNAppend(dsPtr, "", 1);
 		if (e != NULL) {
 		    *e++ = '+';
@@ -923,9 +922,9 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     cgiPtr->pid = Ns_ExecProcess(cgiPtr->exec, cgiPtr->dir,
 	cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
 	opipe[1], dsPtr->string, cgiPtr->env);
-    ns_close(opipe[1]);
+    (void) ns_close(opipe[1]);
     if (cgiPtr->pid == NS_INVALID_PID) {
-    	ns_close(opipe[0]);
+    	(void) ns_close(opipe[0]);
 	return NS_ERROR;
     }
 
@@ -1072,7 +1071,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                 httpstatus = 302;
                 if (*value == '/') {
                     Ns_DStringInit(&redir);
-                    Ns_ConnLocationAppend(conn, &redir);
+                    (void)Ns_ConnLocationAppend(conn, &redir);
                     Ns_DStringAppend(&redir, value);
                     last = (int)Ns_SetPut(hdrs, ds.string, redir.string);
                     Ns_DStringFree(&redir);
@@ -1189,8 +1188,7 @@ CgiRegister(Mod *modPtr, const char *map)
     if (*path == '\0') {
         path = NULL;
     } else {
-    	Ns_NormalizePath(&ds2, path);
-    	path = ds2.string;
+    	path = Ns_NormalizePath(&ds2, path);
     	if (Ns_PathIsAbsolute(path) == NS_FALSE || access(path, R_OK) != 0) {
             Ns_Log(Error, "nscgi: invalid directory: %s", path);
 	    goto done;

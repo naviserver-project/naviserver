@@ -346,7 +346,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
       if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
 	  httpPtr->compress = ns_calloc(1U, sizeof(Ns_CompressStream));
-	  Ns_InflateInit(httpPtr->compress);
+	  (void) Ns_InflateInit(httpPtr->compress);
       }
     }
 }
@@ -610,7 +610,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     }
 
     if (httpPtr->spoolFd > 0)  {
-	ns_close(httpPtr->spoolFd);
+	(void) ns_close(httpPtr->spoolFd);
 	valPtr = Tcl_NewObj();
     } else {
 	valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
@@ -881,7 +881,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	/*
 	 * Output raw content
 	 */
-	HttpAppendRawBuffer(httpPtr, buffer, inSize);
+	status = HttpAppendRawBuffer(httpPtr, buffer, inSize);
 
     } else {
 	char out[16384];
@@ -889,7 +889,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	/*
 	 * Output decompressed content
 	 */
-	Ns_InflateBufferInit(httpPtr->compress, buffer, inSize);
+	(void) Ns_InflateBufferInit(httpPtr->compress, buffer, inSize);
 	Ns_Log(Ns_LogTaskDebug, "InflateBuffer: got %" PRIdz " compressed bytes", inSize);
 	do {
 	    size_t uncompressedLen = 0u;
@@ -897,7 +897,9 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	    status = Ns_InflateBuffer(httpPtr->compress, out, sizeof(out), &uncompressedLen);
 	    Ns_Log(Ns_LogTaskDebug, "InflateBuffer status %d uncompressed %" PRIdz " bytes", status, uncompressedLen);
 	    
-	    HttpAppendRawBuffer(httpPtr, out, uncompressedLen);
+	    if (HttpAppendRawBuffer(httpPtr, out, uncompressedLen) != TCL_OK) {
+                status = TCL_ERROR;
+            }
 
 	} while(status == TCL_CONTINUE);
     }
@@ -925,12 +927,12 @@ HttpClose(Ns_HttpTask *httpPtr)
 {
     assert(httpPtr != NULL);
 
-    if (httpPtr->task != NULL)          {Ns_TaskFree(httpPtr->task);}
+    if (httpPtr->task != NULL)          {(void) Ns_TaskFree(httpPtr->task);}
     if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
     if (httpPtr->spoolFileName != NULL) {ns_free(httpPtr->spoolFileName);}
-    if (httpPtr->spoolFd > 0)           {ns_close(httpPtr->spoolFd);}
+    if (httpPtr->spoolFd > 0)           {(void) ns_close(httpPtr->spoolFd);}
     if (httpPtr->compress != NULL)      {
-	Ns_InflateEnd(httpPtr->compress);
+	(void) Ns_InflateEnd(httpPtr->compress);
 	ns_free(httpPtr->compress);
     }
     Ns_MutexDestroy(&httpPtr->lock);
@@ -945,8 +947,8 @@ HttpCancel(const Ns_HttpTask *httpPtr)
 {
     assert(httpPtr != NULL);
 
-    Ns_TaskCancel(httpPtr->task);
-    Ns_TaskWait(httpPtr->task, NULL);
+    (void) Ns_TaskCancel(httpPtr->task);
+    (void) Ns_TaskWait(httpPtr->task, NULL);
 }
 
 
@@ -1018,10 +1020,10 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 	     * need to HttpCheckHeader() again.
 	     */
 	    if (httpPtr->spoolFd > 0) {
-		Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
+		(void) Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
 	    } else {
 		Ns_Log(Ns_LogTaskDebug, "Task got %d bytes", (int)n);
-		Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
+		(void) Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
 
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
 		    Ns_HttpCheckHeader(httpPtr);
