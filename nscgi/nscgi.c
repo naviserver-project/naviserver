@@ -384,7 +384,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
     const char	   *server = Ns_ConnServer(conn);
 
     modPtr = mapPtr->modPtr;
-    memset(cgiPtr, 0, (size_t)((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
+    memset(cgiPtr, 0u, ((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
     cgiPtr->pid = NS_INVALID_PID;
@@ -415,7 +415,8 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
 
 	    cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
 	    dsPtr = CgiDs(cgiPtr);
-	    cgiPtr->path = Ns_UrlToFile(dsPtr, server, cgiPtr->name);
+            (void) Ns_UrlToFile(dsPtr, server, cgiPtr->name);
+	    cgiPtr->path =  dsPtr->string;
             cgiPtr->pathinfo = url + plen;
 
         } else if (stat(mapPtr->path, &st) != 0) {
@@ -576,7 +577,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 	(void) ns_close(fd);
 	fd = NS_INVALID_FD;
     }
-    if (fd = NS_INVALID_FD) {
+    if (fd == NS_INVALID_FD) {
 	return NS_ERROR;
     }
     cgiPtr->ifd = fd;
