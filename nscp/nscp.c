@@ -215,7 +215,7 @@ Ns_ModuleInit(const char *server, const char *module)
         /*
          * Terminate user part.
          */
-        userLength = passPart - user;
+        userLength = (size_t)(passPart - user);
 	*(p + userLength) = '\0';
 
 	hPtr = Tcl_CreateHashEntry(&modPtr->users, p, &isNew);
@@ -228,7 +228,7 @@ Ns_ModuleInit(const char *server, const char *module)
         /*
          * Advance to password part in scratch copy.
          */
-	p += userLength + 1;
+	p += userLength + 1u;
 
         /* 
          * look for end of password.
@@ -481,7 +481,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     promptLength = strlen(prompt);
-    if (ns_send(sock, prompt, promptLength, 0) != promptLength) {
+    if (ns_send(sock, prompt, promptLength, 0) != (ssize_t)promptLength) {
 	result = 0;
 	goto bail;
     }
@@ -613,7 +613,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 	Ns_Log(Warning, "nscp: login failed: '%s'", (user != NULL) ? user : "?");
         Ns_DStringAppend(&msgDs, "Access denied!\n");
     }
-    (void) ns_send(sessPtr->sock, msgDs.string, msgDs.length, 0);
+    (void) ns_send(sessPtr->sock, msgDs.string, (size_t)msgDs.length, 0);
 
     Tcl_DStringFree(&msgDs);
     Tcl_DStringFree(&uds);

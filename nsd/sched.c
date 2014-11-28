@@ -200,7 +200,7 @@ Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
     if (interval < 0) {
         return NS_ERROR;
     }
-    return Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0, interval, NULL);
+    return Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, interval, NULL);
 }
 
 
@@ -568,7 +568,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
     ePtr->qid = ++nqueue;
     if (maxqueue <= nqueue) {
         maxqueue += 25;
-        queue = ns_realloc(queue, (sizeof(Event *)) * (maxqueue + 1));
+        queue = ns_realloc(queue, sizeof(Event *) * ((size_t)maxqueue + 1u));
     }
     queue[nqueue] = ePtr;
     if (nqueue > 1) {
