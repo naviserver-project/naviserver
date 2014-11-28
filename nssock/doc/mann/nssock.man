@@ -112,7 +112,10 @@ TCP Performance option; use TCP_NODELAY (OS-default on
 Linux). (boolean, default: false)
 
 [def port]
-Port, on which the server listens (integer, default: 80)
+Port, on which the server listens. When the port is specified as 0,
+the module with its defined commands (such as [cmd ns_http] is
+loaded, but the driver will not be listening on any port.
+(integer, default: 80)
 
 [def extraheaders]
 This parameter can be used to add extra response headers
@@ -174,7 +177,7 @@ here [term nssock1] and [term nssock2].
 More to come here...
 
 
-[see_also ns_log ns_write]
-[keywords performance tuning configuration TCP TCP_FASTOPEN]
+[see_also ns_log ns_write ns_http ns_ssl]
+[keywords performance tuning configuration TCP TCP_FASTOPEN nssock nsssl]
 
 [manpage_end]
