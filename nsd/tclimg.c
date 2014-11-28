@@ -470,8 +470,12 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    Tcl_Read(chan, (char *)&w, 4);
-    Tcl_Read(chan, (char *)&h, 4);
+    if (Tcl_Read(chan, (char *)&w, 4) != 4) {
+        return TCL_ERROR;
+    }
+    if (Tcl_Read(chan, (char *)&h, 4) != 4) {
+        return TCL_ERROR;
+    }
 
     *wPtr = htonl(w);
     *hPtr = htonl(h);
@@ -638,11 +642,11 @@ GetImageType(Tcl_Channel chan)
     static const          char gif89_magic [] = {'G','I','F','8','9','a'};
     static const unsigned char png_magic   [] = {0x89U,0x50U,0x4eU,0x47U,0xdU,0x0aU,0x1aU,0x0aU};
 
-    Tcl_Seek(chan, 0LL, SEEK_SET);
+    (void)Tcl_Seek(chan, 0LL, SEEK_SET);
 
     toRead = (int)sizeof(buf);
     if (Tcl_Read(chan, (char*)buf, toRead) != toRead) {
-        Tcl_Seek(chan, 0LL, SEEK_SET);
+        (void)Tcl_Seek(chan, 0LL, SEEK_SET);
         return type;
     }
 
@@ -650,9 +654,9 @@ GetImageType(Tcl_Channel chan)
         unsigned char trail[] = {0x00u, 0x00u};
 	static const unsigned char jpeg_trail  [] = {0xffu, 0xd9u};
 
-        Tcl_Seek(chan,  0LL, SEEK_END);
-        Tcl_Seek(chan, -2LL, SEEK_CUR);
-        Tcl_Read(chan, (char*)trail, 2);
+        (void)Tcl_Seek(chan,  0LL, SEEK_END);
+        (void)Tcl_Seek(chan, -2LL, SEEK_CUR);
+        (void)Tcl_Read(chan, (char*)trail, 2);
         if (memcmp(trail, jpeg_trail, 2U) == 0) {
             type = jpeg;
         }
@@ -663,7 +667,7 @@ GetImageType(Tcl_Channel chan)
         type = png;
     }
 
-    Tcl_Seek(chan, 0LL, SEEK_SET);
+    (void)Tcl_Seek(chan, 0LL, SEEK_SET);
 
     return type;
 }

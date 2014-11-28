@@ -1220,7 +1220,7 @@ NS_EXTERN int
 Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVChars);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, unsigned int flags, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 

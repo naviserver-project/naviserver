@@ -222,7 +222,7 @@ Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
 
 int
 Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, unsigned int flags,
-    int hour, int minute, Ns_SchedProc *cleanupProc)
+                 int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int seconds;
 
@@ -348,7 +348,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 void
 Ns_UnscheduleProc(int id)
 {
-    Ns_Cancel(id);
+    (void) Ns_Cancel(id);
 }
 
 int
@@ -367,7 +367,7 @@ Ns_Cancel(int id)
             Tcl_DeleteHashEntry(hPtr);
             ePtr->hPtr = NULL;
             if (ePtr->qid > 0) {
-                DeQueueEvent(ePtr->qid);
+                (void) DeQueueEvent(ePtr->qid);
                 cancelled = 1;
             }
         }
@@ -412,7 +412,7 @@ Ns_Pause(int id)
             if ((ePtr->flags & NS_SCHED_PAUSED) == 0U) {
                 ePtr->flags |= NS_SCHED_PAUSED;
                 if (ePtr->qid > 0) {
-                    DeQueueEvent(ePtr->qid);
+                    (void) DeQueueEvent(ePtr->qid);
                 }
                 paused = 1;
             }
@@ -612,7 +612,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
  *----------------------------------------------------------------------
  */
 
-static Event   *
+static Event *
 DeQueueEvent(int qid)
 {
     Event          *ePtr;
@@ -851,7 +851,7 @@ SchedThread(void *UNUSED(arg))
         } else if (shutdownPending == 0) {
 	    timeout.sec  = (long)queue[1]->nextqueue;
             timeout.usec = 0;
-            Ns_CondTimedWait(&schedcond, &lock, &timeout);
+            (void) Ns_CondTimedWait(&schedcond, &lock, &timeout);
         }
 
     }
@@ -868,7 +868,7 @@ SchedThread(void *UNUSED(arg))
                nThreads, nIdleThreads);
         Ns_CondBroadcast(&eventcond);
         while (nThreads > 0) {
-            Ns_CondTimedWait(&schedcond, &lock, &timeout);
+            (void) Ns_CondTimedWait(&schedcond, &lock, &timeout);
         }
     }
     Ns_MutexUnlock(&lock);
@@ -908,3 +908,12 @@ NsGetScheduled(Tcl_DString *dsPtr)
     }
     Ns_MutexUnlock(&lock);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

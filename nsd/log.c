@@ -1002,7 +1002,7 @@ Ns_LogRoll(void)
 #endif
 
         if (access(file, F_OK) == 0) {
-            Ns_RollFile(file, maxback);
+            (void) Ns_RollFile(file, maxback);
         }
         Ns_Log(Notice, "log: re-opening log file '%s'", file);
 	rc = LogOpen();
@@ -1044,7 +1044,7 @@ NsLogOpen(void)
                  file, strerror(errno));
     }
     if (flags & LOG_ROLL) {
-        Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
+        (void) Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
     }
 }
 
@@ -1110,7 +1110,7 @@ LogOpen(void)
          */
 
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-            ns_close(fd);
+            (void) ns_close(fd);
         }
     }
     return status;
@@ -1297,7 +1297,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     Ns_DStringInit(&ds);
 
     LogToDString(&ds, severity, stamp, msg, len);      
-    NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
+    (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);
     return NS_OK;
@@ -1347,7 +1347,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
         char *err = "LogToTcl: can't get interpreter";
-        LogToFile(logfile, Error, stampPtr, err, 0u);
+        (void)LogToFile(logfile, Error, stampPtr, err, 0u);
         return NS_ERROR;
     }
 
@@ -1392,8 +1392,8 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
         Ns_DStringSetLength(&ds, 0);
         Ns_DStringAppend(&ds, "LogToTcl: ");
         Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
-        LogToFile(logfile, Error, stampPtr, Ns_DStringValue(&ds),
-                  (size_t)Ns_DStringLength(&ds));
+        (void)LogToFile(logfile, Error, stampPtr, Ns_DStringValue(&ds),
+                        (size_t)Ns_DStringLength(&ds));
     }
     Ns_DStringFree(&ds);
     Ns_TclDeAllocateInterp(interp);

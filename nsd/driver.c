@@ -3951,7 +3951,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 		return NS_ERROR;
 	    }
 	    Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
-	    ns_lseek(connPtr->fd, 0, SEEK_END);
+	    (void)ns_lseek(connPtr->fd, 0, SEEK_END);
 	}
 
 	/*
@@ -3977,7 +3977,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	if (first != 0) {
 	    bufs = NULL;
 	    connPtr->nContentSent = wrote;
-	    ns_sock_set_blocking(connPtr->fd, 0);
+	    (void)ns_sock_set_blocking(connPtr->fd, 0);
 	    /*
 	     * Fall through to register stream writer with temp file 
 	     */
@@ -4053,7 +4053,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	Ns_DStringInit(&ds);
 	Ns_Log(DriverDebug, "add header (fd %d)\n", fd);
 	conn->flags |= NS_CONN_SENTHDRS;
-	Ns_CompleteHeaders(conn, nsend, 0U, &ds);
+	(void)Ns_CompleteHeaders(conn, nsend, 0U, &ds);
 
 	wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
 	headerSize = (size_t)Ns_DStringLength(&ds);
@@ -4356,7 +4356,11 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	}
 
 	if (offset > 0) {
-	    ns_lseek(fd, (off_t)offset, SEEK_SET);
+	    if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
+                Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
+                (void) ns_close(fd);
+                return TCL_ERROR;
+            }
 	}
 
         /*
@@ -4602,7 +4606,7 @@ NsAsyncWriterQueueDisable(int shutdown)
 	 * Trigger the AsyncWriter Thread to drain the spooler queue.
 	 */
 	SockTrigger(queuePtr->pipe[1]);
-	Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, &timeout);
+	(void)Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, &timeout);
 
 	Ns_MutexUnlock(&queuePtr->lock);
 	

@@ -297,7 +297,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 
     if (((conn->flags & NS_CONN_SENTHDRS) == 0U)) {
         conn->flags |= NS_CONN_SENTHDRS;
-        if (Ns_CompleteHeaders(conn, bodyLength, flags, &ds)) {
+        if (Ns_CompleteHeaders(conn, bodyLength, flags, &ds) == NS_TRUE) {
             toWrite += Ns_SetVec(sbufPtr, sbufIdx++,
                                  Ns_DStringValue(&ds), 
 				 (size_t)Ns_DStringLength(&ds));
@@ -1116,7 +1116,7 @@ ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, 
 		   unsigned int flags, Ns_DString *dsPtr)
 {
@@ -1127,7 +1127,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     assert(dsPtr != NULL);
 
     if ((conn->flags & NS_CONN_SKIPHDRS) != 0U) {
-        return 0;
+        return NS_FALSE;
     }
 
     /*
@@ -1167,7 +1167,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     }
     Ns_ConnConstructHeaders(conn, dsPtr);
 
-    return 1;
+    return NS_TRUE;
 }
 
 

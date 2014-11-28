@@ -476,9 +476,9 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
      */
 
     if (echo == 0) {
-	ns_send(sock, (const void*)will_echo, 3u, 0);
-	ns_send(sock, (const void*)dont_echo, 3u, 0);
-	ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+	(void)ns_send(sock, (const void*)will_echo, 3u, 0);
+	(void)ns_send(sock, (const void*)dont_echo, 3u, 0);
+	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     promptLength = strlen(prompt);
     if (ns_send(sock, prompt, promptLength, 0) != promptLength) {
@@ -542,9 +542,9 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 
  bail:
     if (echo == 0) {
-	ns_send(sock, (const void*)wont_echo, 3u, 0);
-	ns_send(sock, (const void*)do_echo, 3u, 0);
-	ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+	(void)ns_send(sock, (const void*)wont_echo, 3u, 0);
+	(void)ns_send(sock, (const void*)do_echo, 3u, 0);
+	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     return result;
 }
