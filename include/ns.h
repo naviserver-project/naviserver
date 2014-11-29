@@ -2800,15 +2800,15 @@ Ns_FreeConnInterp(Ns_Conn *conn)
      NS_GNUC_DEPRECATED_FOR(NsFreeConnInterp);
 
 NS_EXTERN int
-Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, void *arg)
+Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, const void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
-Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, void *arg)
+Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, const void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
-Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
+Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, const void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int

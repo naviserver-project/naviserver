@@ -716,7 +716,7 @@ typedef struct Ns_Time {
 
 typedef void (Ns_ThreadProc) (void *arg);
 typedef void (Ns_TlsCleanup) (void *arg);
-typedef void (Ns_ThreadArgProc) (Tcl_DString *dsPtr, Ns_ThreadProc proc, void *arg);
+typedef void (Ns_ThreadArgProc) (Tcl_DString *dsPtr, Ns_ThreadProc proc, const void *arg);
 
 /*
  * pthread.c
@@ -878,11 +878,11 @@ NS_EXTERN DIR *opendir(char *pathname);
 NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
 NS_EXTERN int link(char *from, char *to);
-NS_EXTERN int symlink(char *from, char *to);
+NS_EXTERN int symlink(const char *from, const char *to);
 NS_EXTERN int kill(pid_t pid, int sig);
 
 # ifdef _MSC_VER
-NS_EXTERN int truncate(char *file, off_t size);
+NS_EXTERN int truncate(const char *file, off_t size);
 # endif
 #endif
 

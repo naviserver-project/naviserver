@@ -101,7 +101,7 @@ static void RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
 static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
-static int RegisterAt(Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
+static int RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
     NS_GNUC_NONNULL(1);
 
 static Tcl_InterpDeleteProc FreeInterpData;
@@ -705,25 +705,25 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
  */
 
 int
-Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, void *arg)
+Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, const void *arg)
 {
     return RegisterAt(proc, arg, NS_TCL_TRACE_CREATE);
 }
 
 int
-Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, void *arg)
+Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, const void *arg)
 {
     return RegisterAt(proc, arg, NS_TCL_TRACE_DEALLOCATE);
 }
 
 int
-Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
+Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, const void *arg)
 {
     return RegisterAt(proc, arg, NS_TCL_TRACE_DELETE);
 }
 
 static int
-RegisterAt(Ns_TclTraceProc *proc, void *arg, Ns_TclTraceType when)
+RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
 {
     NsServer *servPtr;
 

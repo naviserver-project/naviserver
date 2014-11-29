@@ -38,12 +38,12 @@
 #include "ns.h"
 #include <ctype.h>  /* isspace */
 
-#define LOG_COMBINED      0x01U
-#define LOG_FMTTIME       0x02U
-#define LOG_REQTIME       0x04U
-#define LOG_PARTIALTIMES  0x08U
-#define LOG_CHECKFORPROXY 0x10U
-#define LOG_SUPPRESSQUERY 0x20U
+#define LOG_COMBINED      0x01u
+#define LOG_FMTTIME       0x02u
+#define LOG_REQTIME       0x04u
+#define LOG_PARTIALTIMES  0x08u
+#define LOG_CHECKFORPROXY 0x10u
+#define LOG_SUPPRESSQUERY 0x20u
 
 #if !defined(PIPE_BUF)
 # define PIPE_BUF 512
@@ -53,10 +53,10 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 
 typedef struct {
     Ns_Mutex     lock;
-    char        *module;
-    char        *file;
-    char        *rollfmt;
-    CONST char **extheaders;
+    const char  *module;
+    const char  *file;
+    const char  *rollfmt;
+    const char **extheaders;
     int          numheaders;
     int          fd;
     unsigned int flags;
@@ -102,7 +102,7 @@ static int LogClose(Log *logPtr);
  */
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     const char *path, *file;
     Log        *logPtr;
@@ -268,8 +268,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 static int
 LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char        *strarg;
-    CONST char **hdrs;
+    const char  *strarg, **hdrs;
     int          status, intarg, cmd;
     Ns_DString   ds;
     Log         *logPtr = arg;
@@ -278,7 +277,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS,
         FLAGS, FILE, ROLL
     };
-    static CONST char *subcmd[] = {
+    static const char *subcmd[] = {
         "rollfmt", "maxbackup", "maxbuffer", "extendedheaders",
         "flags", "file", "roll", NULL
     };
@@ -298,7 +297,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         if (objc > 2) {
             strarg = ns_strdup(Tcl_GetString(objv[2]));
             if (logPtr->rollfmt != NULL) {
-                ns_free(logPtr->rollfmt);
+                ns_free((char *)logPtr->rollfmt);
             }
             logPtr->rollfmt = strarg;
         }
@@ -364,7 +363,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         }
         strarg = Tcl_Merge(logPtr->numheaders, logPtr->extheaders);
         Ns_MutexUnlock(&logPtr->lock);
-        Tcl_SetResult(interp, strarg, TCL_DYNAMIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
         break;
 
     case FLAGS:
@@ -432,14 +431,14 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             }
             Ns_MutexLock(&logPtr->lock);
             LogClose(logPtr);
-            ns_free(logPtr->file);
+            ns_free((char *)logPtr->file);
             logPtr->file = ns_strdup(strarg);
             Ns_DStringFree(&ds);
             LogOpen(logPtr);
         } else {
             Ns_MutexLock(&logPtr->lock);
         }
-        Tcl_SetResult(interp, logPtr->file, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->file, -1));
         Ns_MutexUnlock(&logPtr->lock);
         break;
 
@@ -501,10 +500,10 @@ static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
     Log         *logPtr = arg;
-    CONST char **h;
-    char        *p, *user, buffer[PIPE_BUF], *bufferPtr = NULL;
+    const char **h, *user, *p;
+    char         buffer[PIPE_BUF], *bufferPtr = NULL;
     int          n, status, i;
-    size_t	 bufferSize = 0U;
+    size_t	 bufferSize = 0u;
     Ns_DString   ds;
 
     Ns_DStringInit(&ds);

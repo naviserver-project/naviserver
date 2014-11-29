@@ -39,7 +39,7 @@
  * The following defines a task queue.
  */
 
-#define NAME_SIZE 31
+#define NAME_SIZE 31u
 
 typedef struct TaskQueue {
     struct TaskQueue  *nextPtr;           /* Next in list of all queues. */
@@ -58,12 +58,12 @@ typedef struct TaskQueue {
  * and manage the state tasks.
  */
 
-#define TASK_INIT           0x01U
-#define TASK_CANCEL         0x02U
-#define TASK_WAIT           0x04U
-#define TASK_TIMEOUT        0x08U
-#define TASK_DONE           0x10U
-#define TASK_PENDING        0x20U
+#define TASK_INIT           0x01u
+#define TASK_CANCEL         0x02u
+#define TASK_WAIT           0x04u
+#define TASK_TIMEOUT        0x08u
+#define TASK_DONE           0x10u
+#define TASK_PENDING        0x20u
 
 /*
  * The following defines a task.
