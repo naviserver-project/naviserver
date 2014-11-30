@@ -240,6 +240,11 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     ptrdiff_t   offset;
     int         flushFlags;
 
+    assert(cStream != NULL);
+    assert(bufs != NULL);
+    assert(dsPtr != NULL);
+    assert(nbufs > 0);
+    
     if (z->zalloc == NULL) {
 	Ns_CompressInit(cStream);
     }

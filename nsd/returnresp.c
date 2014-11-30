@@ -123,7 +123,7 @@ ConfigServerRedirects(const char *server)
  */
 
 void
-Ns_RegisterReturn(int status, CONST char *url)
+Ns_RegisterReturn(int status, const char *url)
 {
     NsServer      *servPtr;
     int            isNew;
@@ -214,7 +214,7 @@ Ns_ConnReturnOk(Ns_Conn *conn)
  */
 
 int
-Ns_ConnReturnMoved(Ns_Conn *conn, CONST char *url)
+Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 {
     Ns_DString ds, msg;
     int        result;
@@ -280,7 +280,7 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  */
 
 int
-Ns_ConnReturnRedirect(Ns_Conn *conn, CONST char *url)
+Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 {
     Ns_DString ds, msg;
     int        result;
@@ -324,7 +324,7 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, CONST char *url)
  */
 
 int
-Ns_ConnReturnBadRequest(Ns_Conn *conn, CONST char *reason)
+Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
 {
     Ns_DString ds;
     int        result;

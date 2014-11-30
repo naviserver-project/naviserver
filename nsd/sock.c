@@ -148,8 +148,10 @@ size_t
 Ns_SumVec(const struct iovec *bufs, int nbufs)
 {
     int     i;
-    size_t  sum = 0U;
+    size_t  sum = 0u;
 
+    assert(bufs != NULL);
+    
     for (i = 0; i < nbufs; i++) {
         if (bufs[i].iov_len > 0U) {
             sum += bufs[i].iov_len;

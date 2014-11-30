@@ -642,7 +642,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     const char *title, const char *notice)
 {
     Conn       *connPtr = (Conn *) conn;
-    NsServer   *servPtr = connPtr->poolPtr->servPtr;
+    NsServer   *servPtr;
     Ns_DString  ds;
     int         result;
 
@@ -658,6 +658,8 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
             "<TITLE>", title, "</TITLE>\n"
             "</HEAD>\n<BODY>\n"
             "<H2>", title, "</H2>\n", NULL);
+    Ns_DStringVarAppend(&ds, notice, "\n", NULL);
+
     /*
      * Detailed server information at the bottom of the page.
      */

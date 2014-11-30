@@ -1743,6 +1743,8 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
         return NS_ERROR;
         }
     */
+    (void) SockSetServer(sockPtr);
+    assert(sockPtr->servPtr != NULL);
 
     /*
      *  Actual queueing, if not ready spool to the waiting list

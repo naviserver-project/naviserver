@@ -2178,7 +2178,7 @@ Ns_ConnResetReturn(Ns_Conn *conn)
  */
 
 NS_EXTERN void
-Ns_RegisterReturn(int status, CONST char *url);
+Ns_RegisterReturn(int status, const char *url);
 
 NS_EXTERN int
 Ns_ConnReturnStatus(Ns_Conn *conn, int status)
@@ -2193,11 +2193,11 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnReturnRedirect(Ns_Conn *conn, CONST char *url)
+Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnReturnBadRequest(Ns_Conn *conn, CONST char *reason)
+Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -2209,7 +2209,7 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnReturnMoved(Ns_Conn *conn, CONST char *url)
+Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

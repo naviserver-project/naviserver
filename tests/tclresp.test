@@ -404,7 +404,7 @@ test tclresp-6.1 {ns_returnfp} -constraints serverListen -setup {
 
 
 test tclresp-7.1 {ns_returnbadrequest} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_returnbadrequest oops ;#}
+    ns_register_proc GET /tclresp {ns_returnbadrequest oops}
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
@@ -414,7 +414,7 @@ test tclresp-7.1 {ns_returnbadrequest} -constraints serverListen -setup {
 
 
 test tclresp-8.1 {ns_returnnotfound} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_returnnotfound ;#}
+    ns_register_proc GET /tclresp {ns_returnnotfound}
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
@@ -422,7 +422,7 @@ test tclresp-8.1 {ns_returnnotfound} -constraints serverListen -setup {
 } -match glob -result {404 *Not Found*}
 
 test tclresp-8.2 {ns_returnunauthorized} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_returnunauthorized ;#}
+    ns_register_proc GET /tclresp {ns_returnunauthorized}
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
@@ -430,7 +430,7 @@ test tclresp-8.2 {ns_returnunauthorized} -constraints serverListen -setup {
 } -match glob -result {401 *Access Denied*}
 
 test tclresp-8.3 {ns_returnforbidden} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_returnforbidden ;#}
+    ns_register_proc GET /tclresp {ns_returnforbidden}
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
@@ -440,7 +440,7 @@ test tclresp-8.3 {ns_returnforbidden} -constraints serverListen -setup {
 
 
 test tclresp-9.1 {ns_returnerror} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_returnerror 400 oops ;#}
+    ns_register_proc GET /tclresp {ns_returnerror 400 oops}
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
