@@ -885,7 +885,8 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 
     } else {
 	char out[16384];
-
+        
+        out[0] = '\0';
 	/*
 	 * Output decompressed content
 	 */
@@ -893,7 +894,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	Ns_Log(Ns_LogTaskDebug, "InflateBuffer: got %" PRIdz " compressed bytes", inSize);
 	do {
 	    size_t uncompressedLen = 0u;
-		
+
 	    status = Ns_InflateBuffer(httpPtr->compress, out, sizeof(out), &uncompressedLen);
 	    Ns_Log(Ns_LogTaskDebug, "InflateBuffer status %d uncompressed %" PRIdz " bytes", status, uncompressedLen);
 	    

@@ -925,9 +925,9 @@ UpdateStringOfKeyedList(Tcl_Obj *keylPtr)
      * Conversion to strings is done via list objects to support binary data.
      */
     if (keylIntPtr->numEntries > UPDATE_STATIC_SIZE) {
-        listObjv =
-            (Tcl_Obj **) ckalloc(keylIntPtr->numEntries * sizeof(Tcl_Obj *));
+        listObjv = (Tcl_Obj **) ckalloc(keylIntPtr->numEntries * sizeof(Tcl_Obj *));
     } else {
+        staticListObjv[0] = NULL;
         listObjv = staticListObjv;
     }
 
