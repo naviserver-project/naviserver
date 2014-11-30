@@ -620,6 +620,8 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	    if (objc != 5) {
 		Tcl_WrongNumArgs(interp, 2, objv, "dbId code message");
 	    }
+            assert(handlePtr != NULL);
+
 	    code = Tcl_GetStringFromObj(objv[3], &codeLen);
 	    if (codeLen > 5) {
 		Tcl_AppendResult(interp, "code \"", code,
@@ -643,6 +645,8 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 			      "be \"in\" or \"out\"", TCL_STATIC);
 		return TCL_ERROR;
 	    }
+            assert(handlePtr != NULL);
+
 	    if (Ns_DbSpSetParam(handlePtr, Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
 				arg5, Tcl_GetString(objv[6])) != NS_OK) {
 		return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
