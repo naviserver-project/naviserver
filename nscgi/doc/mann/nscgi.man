@@ -505,15 +505,14 @@ CGI programs can get input from these sources:
 Different languages allow you to access environment variables in
 different ways. Here are some examples:
 
-<emph {C or C++}]
-
+[para]
+[emph  {C or C++}]
 
 [example_begin]
 
-
-#include <stdlib.hgt;
-
-char *browser = getenv("HTTP_USER_AGENT");
+  #include <stdlib.h>;
+  
+  char *browser = getenv("HTTP_USER_AGENT");
 
 [example_end]
 
@@ -521,11 +520,10 @@ char *browser = getenv("HTTP_USER_AGENT");
 
 [emph {Perl}]
 
-
 [example_begin]
-
-$browser = $ENV{`HTTP_USER_AGENT'};
-
+  
+  $browser = $ENV{'HTTP_USER_AGENT'};
+  
 [example_end]
 
 
@@ -533,9 +531,9 @@ $browser = $ENV{`HTTP_USER_AGENT'};
 
 
 [example_begin]
-
-BROWSER=$HTTP_USER_AGENT
-
+  
+  BROWSER=$HTTP_USER_AGENT
+  
 [example_end]
 
 
@@ -543,9 +541,9 @@ BROWSER=$HTTP_USER_AGENT
 
 
 [example_begin]
-
-set BROWSER = $HTTP_USER_AGENT
-
+  
+  set BROWSER = $HTTP_USER_AGENT
+  
 [example_end]
 
 
@@ -562,7 +560,7 @@ by the NaviServer:
 [para]
 
 
- AUTH_TYPE:
+[emph AUTH_TYPE:]
 
 
 [para]
@@ -583,7 +581,7 @@ Example: Basic
 [para]
 
 
- CONTENT_LENGTH:
+[emph CONTENT_LENGTH:]
 
 
 [para]
@@ -605,7 +603,7 @@ Example: 442
 [para]
 
 
- CONTENT_TYPE:
+[emph  CONTENT_TYPE:]
 
 
 [para]
@@ -621,7 +619,7 @@ future.
 [para]
 
 
- GATEWAY_INTERFACE:
+[emph  GATEWAY_INTERFACE:]
 
 
 [para]
@@ -639,7 +637,7 @@ Example: CGI/1.1
 [para]
 
 
- HTTP_ACCEPT:
+[emph  HTTP_ACCEPT:]
 
 
 [para]
@@ -674,7 +672,7 @@ Examples:
 [para]
 
 
- HTTP_FROM:
+[emph  HTTP_FROM:]
 
 
 [para]
@@ -695,7 +693,7 @@ Example: itsme@mydomain.com
 [para]
 
 
- HTTP_IF_MODIFIED_SINCE:
+[emph  HTTP_IF_MODIFIED_SINCE:]
 
 
 [para]
@@ -716,7 +714,7 @@ Example: Thursday, 23-Nov-95 17:00:00 GMT
 [para]
 
 
- HTTP_REFERER:
+[emph  HTTP_REFERER:]
 
 
 [para]
@@ -737,7 +735,7 @@ Example: http://www.mydomain.com/mydir/feedback.htm
 [para]
 
 
- HTTP_USER_AGENT:
+[emph  HTTP_USER_AGENT:]
 
 
 [para]
@@ -756,7 +754,7 @@ Example: Mozilla/1.2N (Windows; I; 16bit)
 [para]
 
 
- PATH_INFO:
+[emph  PATH_INFO:]
 
 
 [para]
@@ -798,7 +796,7 @@ Examples: /misc/mydir/keyword=navigate
 [para]
 
 
- PATH_TRANSLATED:
+[emph  PATH_TRANSLATED:]
 
 
 [para]
@@ -820,7 +818,7 @@ Example: /NaviServer/pages/misc/mydir
 [para]
 
 
- QUERY_STRING:
+[emph  QUERY_STRING:]
 
 
 [para]
@@ -988,7 +986,7 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
 [para]
 
 
- REMOTE_ADDR:
+[emph  REMOTE_ADDR:]
 
 
 [para]
@@ -1007,7 +1005,7 @@ Example: 199.221.53.76
 [para]
 
 
- REMOTE_HOST:
+[emph  REMOTE_HOST:]
 
 
 [para]
@@ -1028,7 +1026,7 @@ Example: mybox.company.com
 [para]
 
 
- REMOTE_USER:
+[emph  REMOTE_USER:]
 
 
 [para]
@@ -1048,7 +1046,7 @@ Example: nsadmin
 [para]
 
 
- REQUEST_METHOD:
+[emph  REQUEST_METHOD:]
 
 
 [para]
@@ -1063,7 +1061,7 @@ or "POST". Another method is "HEAD", which CGI programs can treat like
 [para]
 
 
- SCRIPT_NAME:
+[emph  SCRIPT_NAME:]
 
 
 [para]
@@ -1084,7 +1082,7 @@ Example: /cgi-bin/search
 [para]
 
 
- SERVER_NAME:
+[emph  SERVER_NAME:]
 
 
 [para]
@@ -1104,7 +1102,7 @@ Example: www.mysite.com
 [para]
 
 
- SERVER_PORT:
+[emph  SERVER_PORT:]
 
 
 [para]
@@ -1124,7 +1122,7 @@ Example: 80
 [para]
 
 
- SERVER_PROTOCOL:
+[emph  SERVER_PROTOCOL:]
 
 
 [para]
@@ -1143,7 +1141,7 @@ Example: HTTP/1.0
 [para]
 
 
- SERVER_SOFTWARE:
+[emph  SERVER_SOFTWARE:]
 
 
 [para]
@@ -1209,36 +1207,30 @@ should also do some error checking.
 
 [para]
 
+[emph {C or C++}]
 
-C or C++
+[example_begin]
  #include <stdio.h>
  #include <stdlib.h>
  #define MAX_CONTENT_LENGTH 10000
-
-
-[para]
-
-
+ 
  char *inputlenstr;
  int inputlen;
  int status;
  char inputtext[lb]MAX_INPUT_LENGTH+1[rb];
 
-
-[para]
-
-
  inputlenstr = getenv("CONTENT_LENGTH");
  inputlen = atoi(inputlenstr);
  status = fread(inputtext, 1, inputlen, stdin);
-
+[example_end]
 
 [para]
 
+[emph {Bourne shell}]
 
-Bourne shell
- read input (reads contents to $input variable)
-
+[example_begin]
+  read input (reads contents to $input variable)
+[example_end]
 
 [section {Output from CGI Programs}]
 
@@ -1255,31 +1247,42 @@ examples:
 [para]
 
 
+[emph {C or C++}]
+
+[example_begin]
+  #include <stdio.h>
+  #include <stdlib.h>
+
+  printf("Content-type: text/html\r\n\r\n");
+  printf("<HEAD><TITLE>Hello</TITLE></HEAD>");
+  printf("<BODY>You are using %s.</BODY>",
+  getenv("HTTP_USER_AGENT") );
+[example_end]
+
+[emph Perl]
 
 [example_begin]
 
-
-C or C++
-#include <stdio.h>
-#include <stdlib.h>
-printf("<HEAD><TITLE>Hello</TITLE></HEAD>");
-printf("<BODY>You are using %s.</BODY>",
-getenv("HTTP_USER_AGENT") );
-
-Perl
-print "<HEAD><TITLE>Hello</TITLE></HEAD>";
-print "<BODY>";
-print "You are using $http_user_agent.</BODY>";
-
-Bourne shell
-echo \<HEAD\>\<TITLE\>Hello\</TITLE\>\</HEAD\>
-echo \<BODY\>
-echo You are using $HTTP_USER_AGENT.\</BODY\>
-
-
+  #!/opt/local/bin/perl
+  print "Content-type: text/plain\r\n\r\n";
+  for my $var ( sort keys %ENV ) {
+    printf "%s = \"%s\"\r\n", $var, $ENV{$var};
+  }
+  
 [example_end]
 
 
+[emph {Bourne shell}]
+
+[example_begin]
+
+  echo Content-type: text/html
+  echo 
+  echo \<HEAD\>\<TITLE\>Hello\</TITLE\>\</HEAD\>
+  echo \<BODY\>
+  echo You are using $HTTP_USER_AGENT.\</BODY\>
+
+[example_end]
 
 [para]
 

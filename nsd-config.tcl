@@ -110,9 +110,13 @@ ns_param        nsvbuckets          16       ;# default: 8
 ns_param        library             modules/tcl
 
 ns_section     "ns/server/default/module/nscgi"
-ns_param        map                 "GET  /cgi-bin [ns_info home]/cgi-bin"
-ns_param        map                 "POST /cgi-bin [ns_info home]/cgi-bin"
-ns_param        interps             interps
+ns_param        map                 "GET  /cgi-bin $home/cgi-bin"
+ns_param        map                 "POST /cgi-bin $home/cgi-bin"
+ns_param        interps             CGIinterps
+
+ns_section "ns/interps/CGIinterps"
+ns_param	.pl		    "/opt/local/bin/perl"
+ns_param	.sh		    "/bin/bash"
 
 ns_section     "ns/server/default/module/nslog"
 ns_param        file                access.log

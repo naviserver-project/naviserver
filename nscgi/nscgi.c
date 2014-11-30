@@ -790,6 +790,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     if (p != NULL) {
 	int j;
 
+        p++;
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
         for (j = 0; *p != '\0'; ++p) {
             ++j;
@@ -1052,6 +1053,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     httpstatus = 200;
     hdrs = conn->outputheaders;
     while ((n = CgiReadLine(cgiPtr, &ds)) > 0) {
+
         if (CHARTYPE(space, *ds.string) != 0) {   /* NB: Continued header. */
             if (last == -1) {
 		continue;	/* NB: Silently ignore bad header. */
