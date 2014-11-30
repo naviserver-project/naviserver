@@ -1734,10 +1734,15 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
      */
     assert(sockPtr != NULL);
 
-    if (SockSetServer(sockPtr) == 0) {
+    /*
+     * SockSetServer returns always 1
+     * 
+
+      if (SockSetServer(sockPtr) == 0) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
         return NS_ERROR;
-    }
+        }
+    */
 
     /*
      *  Actual queueing, if not ready spool to the waiting list

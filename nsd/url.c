@@ -326,9 +326,11 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
 
     Ns_DStringAppend(&baseDs, base);
     status = Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);
-    if (status != TCL_OK) {
-        goto done;
-    }
+    /*
+     * if (status != TCL_OK) {
+     *   goto done;
+     * }
+     */
 
     if (bproto == NULL || bhost == NULL || bpath == NULL) {
         status = NS_ERROR;
