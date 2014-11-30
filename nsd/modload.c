@@ -42,7 +42,7 @@
 
 typedef struct Module {
     struct Module     *nextPtr;
-    char              *name;
+    const char        *name;
     Ns_ModuleInitProc *proc;
 } Module;
 
@@ -73,7 +73,7 @@ static Module *firstPtr;           /* List of static modules to be inited. */
  */
 
 void
-Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
+Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
 {
     Module *modPtr, **nextPtrPtr;
 
@@ -280,7 +280,7 @@ NsInitStaticModules(const char *server)
             if ((*modPtr->proc)(server, modPtr->name) != NS_OK) {
                 Ns_Fatal("modload: %s: failed to initialize", modPtr->name);
             }
-            ns_free(modPtr->name);
+            ns_free((char *)modPtr->name);
             ns_free(modPtr);
             modPtr = nextPtr;
         }

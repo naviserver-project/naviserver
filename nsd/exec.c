@@ -223,23 +223,29 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
 {
 #ifndef _WIN32
     pid_t  pid;
-    char **argv;
-    Ns_DString vds;
+    char **argv, *argList[256]; /* maximum 256 arguments */
 
-    Ns_DStringInit(&vds);
     if (args == NULL) {
         argv = NULL;
     } else {
-	while (*args != '\0') {
-            Ns_DStringNAppend(&vds, (char *) &args, sizeof(args));
+        int i;
+        /*
+         * Produce an NULL terminated argv from a string containing '\0'
+         * characters as separators. We could make this dynamic, but the only
+         * usage within the NaviServer source tree is nscgi, which uses always
+         * exactly 2 or 0 arguments.
+         */
+        argv = argList;
+        for (i = 0; i < 255 && *args != '\0'; i++) {
+            argv[i] = args;
             args += strlen(args) + 1;
-	}
-	args = NULL;
-	Ns_DStringNAppend(&vds, (char *) &args, sizeof(args));
-	argv = (char **) vds.string;
+        }
+        argv[i] = NULL;
+        if (i == 255) {
+            Ns_Log(Warning, "as set up, exec accepts only 255 arguments");
+        }
     }
     pid = Ns_ExecArgv(exec, dir, fdin, fdout, argv, env);
-    Ns_DStringFree(&vds);
     return pid;
 #else
     STARTUPINFO     si;
@@ -395,7 +401,7 @@ Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
     Ns_DString eds;
     char *argvSh[4], **envp;
     pid_t pid;
-    
+
     if (exec == NULL) {
         return NS_INVALID_PID;
     }

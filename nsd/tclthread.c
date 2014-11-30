@@ -814,7 +814,7 @@ CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thre
     argPtr = ns_malloc(sizeof(TclThreadArg) + strlen(script));
     argPtr->detached = detached;
     strcpy(argPtr->script, script);
-    if (itPtr != NULL && itPtr->servPtr != NULL) {
+    if (itPtr->servPtr != NULL) {
         argPtr->server = itPtr->servPtr->server;
     } else {
         argPtr->server = NULL;

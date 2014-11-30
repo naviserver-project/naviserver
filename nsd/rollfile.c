@@ -191,6 +191,7 @@ Ns_PurgeFiles(CONST char *file, int max)
 
     if (nfiles >= max) {
         int ii;
+	assert(files != NULL);
 
         qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
         for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {

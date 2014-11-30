@@ -112,7 +112,7 @@ static void      ReturnHandle(Handle *handlePtr)              NS_GNUC_NONNULL(1)
 static int       IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
 static int	 Connect(Handle *handlePtr)                   NS_GNUC_NONNULL(1);
 static Pool     *CreatePool(const char *pool, const char *path, const char *driver)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int	 IncrCount(const Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
 static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1);
 
@@ -1023,7 +1023,6 @@ CreatePool(const char *pool, const char *path, const char *driver)
 
     assert(pool != NULL);
     assert(path != NULL);
-    assert(driver != NULL);
 
     if (driver == NULL) {
 	Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);

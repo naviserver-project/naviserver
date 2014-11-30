@@ -86,11 +86,10 @@ Ns_StrTrimLeft(char *chars)
 {
     assert(chars != NULL);
 
-    if (chars != NULL) {
-        while (CHARTYPE(space, *chars) != 0) {
-            ++chars;
-        }
+    while (CHARTYPE(space, *chars) != 0) {
+        ++chars;
     }
+    
     return chars;
 }
 
@@ -116,14 +115,16 @@ Ns_StrTrimLeft(char *chars)
 char *
 Ns_StrTrimRight(char *chars)
 {
-    if (chars != NULL) {
-        int len = (int)strlen(chars);
+    int len;
+    
+    assert(chars != NULL);
+    
+    len = (int)strlen(chars);
 
-        while ((--len >= 0)
-               && (CHARTYPE(space, chars[len]) != 0
-                   || chars[len] == '\n')) {
-            chars[len] = '\0';
-        }
+    while ((--len >= 0)
+           && (CHARTYPE(space, chars[len]) != 0
+               || chars[len] == '\n')) {
+        chars[len] = '\0';
     }
     return chars;
 }

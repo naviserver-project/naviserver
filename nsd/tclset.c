@@ -554,7 +554,6 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             }
             key = Tcl_GetString(objv[3]);
             val = Tcl_GetString(objv[4]);
-	    i = 0;
 
             switch (opt) {
             case SUpdateIdx:
@@ -583,6 +582,8 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             default:
                 /* should not happen */
                 assert(opt && 0);
+                i = 0;
+                break;
             }
             objPtr = Tcl_NewIntObj(i);
             Tcl_SetObjResult(interp, objPtr);

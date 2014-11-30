@@ -153,9 +153,6 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      * Make a copy of the line to chop up. Make sure it isn't blank.
      */
     
-    if (line == NULL) {
-        goto done;
-    }
     Ns_DStringAppend(&ds, line);
     l = Ns_StrTrim(ds.string);
     if (*l == '\0') {
@@ -489,7 +486,7 @@ SetUrl(Ns_Request *request, char *url)
  */
 
 int
-Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
+Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 {
     char           *sep;
     char           *value;
@@ -519,6 +516,7 @@ Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 	}
     } else {
         char *key;
+
         sep = strchr(line, ':');
         if (sep == NULL) {
 	    return NS_ERROR;	/* Malformed header. */
@@ -726,3 +724,12 @@ NsParseAcceptEncoding(double version, const char *hdr)
 
     return gzip;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

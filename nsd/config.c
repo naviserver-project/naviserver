@@ -75,9 +75,12 @@ Ns_ConfigString(const char *section, const char *key, const char *def)
 {
     const char *value;
 
+    assert(section != NULL);
+    assert(key != NULL);
+    
     value = ConfigGet(section, key, 0, def);
     Ns_Log(Dev, "config: %s:%s value=\"%s\" default=\"%s\" (string)", 
-	   (section != NULL) ? section : "", key, 
+	   section, key, 
 	   (value != NULL) ? value : "", 
 	   (def != NULL) ? def : "");
 
@@ -108,12 +111,15 @@ Ns_ConfigBool(const char *section, const char *key, int def)
     const char *s;
     int value = NS_FALSE, found = NS_FALSE;
 
+    assert(section != NULL);
+    assert(key != NULL);
+
     s = ConfigGet(section, key, 0, (def != NS_FALSE) ? "true" : "false");
     if (s != NULL && ToBool(s, &value) == NS_TRUE) {
         found = NS_TRUE;
     }
     Ns_Log(Dev, "config: %s:%s value=%s default=%s (bool)",
-           (section != NULL)   ? section : "", key,
+           section, key,
            (found != NS_FALSE) ? (value != NS_FALSE ? "true" : "false") : "(null)",
 	   (def != 0)          ? "true" : "false");
 
@@ -145,14 +151,16 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
     const char *s;
     int value = 0, found = NS_FALSE;
 
+    assert(section != NULL);
+    assert(key != NULL);
+
     s = ConfigGet(section, key, 0, (def != 0) ? "true" : "false");
     if (s != NULL && ToBool(s, &value) == NS_TRUE) {
         found = NS_TRUE;
     }
 
     Ns_Log(Dev, "config: %s:%s value=%u default=%u (flag)", 
-	   (section != NULL) ? section : "", 
-	   key, 
+	   section, key, 
 	   (value != 0) ? flag : 0u, 
 	   (def != 0) ? flag : 0u);
 
@@ -194,24 +202,27 @@ Ns_ConfigIntRange(const char *section, const char *key, int def,
     char defstr[TCL_INTEGER_SPACE];
     int value;
 
+    assert(section != NULL);
+    assert(key != NULL);
+
     snprintf(defstr, sizeof(defstr), "%d", def);
     s = ConfigGet(section, key, 0, defstr);
     if (s != NULL && Ns_StrToInt(s, &value) == NS_OK) {
         Ns_Log(Dev, "config: %s:%s value=%d min=%d max=%d default=%d (int)", 
-	       (section != NULL) ? section : "", key, value, min, max, def);
+	       section, key, value, min, max, def);
     } else {
         Ns_Log(Dev, "config: %s:%s value=(null) min=%d max=%d default=%d (int)", 
-	       (section != NULL) ? section : "", key, min, max, def);
+	       section, key, min, max, def);
         value = def;
     }
     if (value < min) {
         Ns_Log(Warning, "config: %s:%s value=%d, rounded up to %d", 
-	       (section != NULL) ? section : "", key, value, min);
+	       section, key, value, min);
         value = min;
     }
     if (value > max) {
         Ns_Log(Warning, "config: %s:%s value=%d, rounded down to %d", 
-	       (section != NULL) ? section : "", key, value, max);
+	       section, key, value, max);
         value = max;
     }
     return value;
@@ -255,26 +266,29 @@ Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt def,
     char defstr[TCL_INTEGER_SPACE];
     Tcl_WideInt value;
 
+    assert(section != NULL);
+    assert(key != NULL);
+
     snprintf(defstr, sizeof(defstr), "%" TCL_LL_MODIFIER "d", def);
     s = ConfigGet(section, key, 0, defstr);
     if (s != NULL && Ns_StrToWideInt(s, &value) == NS_OK) {
         Ns_Log(Dev, "config: %s:%s value=%" TCL_LL_MODIFIER "d min=%" TCL_LL_MODIFIER 
 	       "d max=%" TCL_LL_MODIFIER "d default=%" TCL_LL_MODIFIER "d (wide int)", 
-	       (section != NULL) ? section : "", key, value, min, max, def);
+	       section, key, value, min, max, def);
     } else {
 	Ns_Log(Dev, "config: %s:%s value=(null) min=%" TCL_LL_MODIFIER "d max=%" TCL_LL_MODIFIER 
 	       "d default=%" TCL_LL_MODIFIER "d (wide int)", 
-	       (section != NULL) ? section : "", key, min, max, def);
+	       section, key, min, max, def);
         value = def;
     }
     if (value < min) {
         Ns_Log(Warning, "config: %s:%s value=%" TCL_LL_MODIFIER "d, rounded up to %" 
-	       TCL_LL_MODIFIER "d", (section != NULL) ? section : "", key, value, min);
+	       TCL_LL_MODIFIER "d", section, key, value, min);
         value = min;
     }
     if (value > max) {
         Ns_Log(Warning, "config: %s:%s value=%" TCL_LL_MODIFIER "d, rounded down to %" 
-	       TCL_LL_MODIFIER "d", (section != NULL) ? section : "", key, value, max);
+	       TCL_LL_MODIFIER "d", section, key, value, max);
         value = max;
     }
     return value;
@@ -302,10 +316,12 @@ Ns_ConfigGetValue(const char *section, const char *key)
 {
     const char *value;
 
+    assert(section != NULL);
+    assert(key != NULL);
+    
     value = ConfigGet(section, key, 0, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string)", 
-	   (section != NULL) ? section : "", key, 
-	   (value != NULL) ? value : "");
+	   section, key, (value != NULL) ? value : "");
 
     return value;
 }
@@ -332,9 +348,12 @@ Ns_ConfigGetValueExact(const char *section, const char *key)
 {
     const char *value;
 
+    assert(section != NULL);
+    assert(key != NULL);
+    
     value = ConfigGet(section, key, 1, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string, exact match)", 
-	   (section != NULL) ? section : "", key, 
+	   section, key, 
 	   (value != NULL) ? value : "");
 
     return value;
@@ -359,19 +378,22 @@ Ns_ConfigGetValueExact(const char *section, const char *key)
  */
 
 int
-Ns_ConfigGetInt(CONST char *section, const char *key, int *valuePtr)
+Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
 {
     const char *s;
     int found;
 
+    assert(section != NULL);
+    assert(key != NULL);
+
     s = ConfigGet(section, key, 0, NULL);
     if (s != NULL && Ns_StrToInt(s, valuePtr) == NS_OK) {
         Ns_Log(Dev, "config: %s:%s value=%d min=%d max=%d (int)", 
-	       (section != NULL) ? section : "", key, *valuePtr, INT_MIN, INT_MAX);
+	       section, key, *valuePtr, INT_MIN, INT_MAX);
         found = NS_TRUE;
     } else {
         Ns_Log(Dev, "config: %s:%s value=(null) min=%d max=%d (int)", 
-	       (section != NULL) ? section : "", key, INT_MIN, INT_MAX);
+	       section, key, INT_MIN, INT_MAX);
         *valuePtr = 0;
         found = NS_FALSE;
     }
@@ -441,8 +463,7 @@ Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
         found = NS_TRUE;
     }
     Ns_Log(Dev, "config: %s:%s value=%s (bool)", 
-	   (section != NULL) ? section : "", key, 
-	   (found != NS_FALSE) ? (*valuePtr != 0 ? "true" : "false") : "(null)");
+	   section, key, (found != NS_FALSE) ? (*valuePtr != 0 ? "true" : "false") : "(null)");
 
     return found;
 }

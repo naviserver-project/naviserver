@@ -315,9 +315,14 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
 
     Ns_DStringAppend(&urlDs, url);
     status = Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
-    if (status != TCL_OK) {
-        goto done;
-    }
+    /*
+     * Currently, Ns_ParseUrl returns always TCL_OK; otherwise we should use
+     * here:
+     *
+     * if (status != TCL_OK) {
+     *   goto done;
+     * }
+     */
 
     Ns_DStringAppend(&baseDs, base);
     status = Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);

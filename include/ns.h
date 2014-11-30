@@ -988,7 +988,7 @@ NS_EXTERN int
 Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp);
+Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp);
 
 NS_EXTERN Ns_Set  *
 Ns_ConnGetQuery(Ns_Conn *conn);
@@ -1908,13 +1908,13 @@ Ns_GetEncoding(const char *name)
  */
 
 NS_EXTERN void
-Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
+Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
  * nsthread.c:

@@ -646,20 +646,18 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     Ns_DString  ds;
     int         result;
 
+    assert(conn != NULL);
+    assert(title != NULL);
+    assert(notice != NULL);
+
+    servPtr = connPtr->poolPtr->servPtr;
     Ns_DStringInit(&ds);
-    if (title == NULL) {
-        title = "Server Message";
-    }
     Ns_DStringVarAppend(&ds,
             "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
             "<HTML>\n<HEAD>\n"
             "<TITLE>", title, "</TITLE>\n"
             "</HEAD>\n<BODY>\n"
             "<H2>", title, "</H2>\n", NULL);
-    if (notice != NULL) {
-        Ns_DStringVarAppend(&ds, notice, "\n", NULL);
-    }
-
     /*
      * Detailed server information at the bottom of the page.
      */
@@ -714,16 +712,17 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
 		  ssize_t len, const char *type)
 {
     int result;
+    size_t length;
 
+    assert(conn != NULL);
+    assert(data != NULL);
     assert(type != NULL);
 
     Ns_ConnSetTypeHeader(conn, type);
-    if (len < 0) {
-        len = (data != NULL) ? (ssize_t)strlen(data) : 0;
-    }
+    length = (len < 0) ? strlen(data) : (size_t)len;
     Ns_ConnSetResponseStatus(conn, status);
 
-    result = ReturnRange(conn, type, -1, data, (size_t)len);
+    result = ReturnRange(conn, type, -1, data, length);
     (void) Ns_ConnClose(conn);
 
     return result;
@@ -754,12 +753,15 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
     struct iovec sbuf;
     int result;
 
+    assert(conn != NULL);
+    assert(data != NULL);
+    
     if (type != NULL) {
         Ns_ConnSetEncodedTypeHeader(conn, type);
     }
 
     sbuf.iov_base = (void *)data;
-    sbuf.iov_len = len < 0 ? (data != NULL ? strlen(data) : 0U) : (size_t)len;
+    sbuf.iov_len = len < 0 ? strlen(data) : (size_t)len;
 
     Ns_ConnSetResponseStatus(conn, status);
     result = Ns_ConnWriteVChars(conn, &sbuf, 1, 0U);

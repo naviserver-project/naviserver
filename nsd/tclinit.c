@@ -1620,6 +1620,8 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
     NsInterp   *itPtr;
     Tcl_Interp *interp;
 
+    assert(itPtrPtr != NULL);
+    
     /*
      * Create and initialize a basic Tcl interp.
      */
@@ -1650,9 +1652,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      */
 
     itPtr = NewInterpData(interp, servPtr);
-    if (itPtrPtr != NULL) {
-        *itPtrPtr = itPtr;
-    }
+    *itPtrPtr = itPtr;
 
     return interp;
 }

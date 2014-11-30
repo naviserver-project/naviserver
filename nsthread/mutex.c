@@ -148,16 +148,16 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
     prefixLength = strlen(prefix);
     if (prefixLength > NS_THREAD_NAMESIZE) {
 	prefixLength = NS_THREAD_NAMESIZE;
-	nameLength = 0;
-    } else {
-	nameLength = (name != NULL) ? strlen(name) : 0U;
+	nameLength = 0u;
+    } else if (name != NULL) {
+	nameLength = strlen(name);
 	if ((nameLength + prefixLength + 1) > NS_THREAD_NAMESIZE) {
 	    nameLength = NS_THREAD_NAMESIZE - prefixLength - 1;
 	}
     }
     Ns_MasterLock();
-    p = strncpy(mutexPtr->name, prefix, (size_t)prefixLength) + prefixLength;
-    if (nameLength > 0U) {
+    p = strncpy(mutexPtr->name, prefix, prefixLength) + prefixLength;
+    if (name != NULL) {
 	*p++ = ':';
 	assert(name != NULL);
 	p = strncpy(p, name, nameLength) + nameLength;
