@@ -632,13 +632,13 @@ typedef struct Conn {
  * info. The states if a conn thread are defined via enumeration.
  */
 typedef enum {
-  connThread_free,
-  connThread_initial,
-  connThread_warmup,
-  connThread_ready,
-  connThread_idle,
-  connThread_busy,
-  connThread_dead
+    connThread_free,
+    connThread_initial,
+    connThread_warmup,
+    connThread_ready,
+    connThread_idle,
+    connThread_busy,
+    connThread_dead
 } ConnThreadState;
 
 typedef struct ConnThreadArg {

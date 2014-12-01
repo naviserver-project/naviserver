@@ -1365,18 +1365,20 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr);
  */
 
 NS_EXTERN int
-Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type,
-                  CONST char *file);
+Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *type, const char *file)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
-NS_EXTERN CONST char *
-Ns_PageRoot(CONST char *server)
+NS_EXTERN const char *
+Ns_PageRoot(const char *server)
     NS_GNUC_DEPRECATED_FOR(Ns_PagePath);
 
-NS_EXTERN int
-Ns_UrlIsFile(CONST char *server, CONST char *url);
+NS_EXTERN bool
+Ns_UrlIsFile(const char *server, const char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
-Ns_UrlIsDir(CONST char *server, CONST char *url);
+NS_EXTERN bool
+Ns_UrlIsDir(const char *server, const char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_OpProc Ns_FastPathProc;
 
