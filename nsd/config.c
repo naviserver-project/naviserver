@@ -692,7 +692,7 @@ NsConfigRead(const char *file)
         goto err;
     }
 
-    Tcl_Close(NULL, chan);
+    (void) Tcl_Close(NULL, chan);
     data = Tcl_GetStringFromObj(buf, &length);
     conf = ns_strncopy(data, length);
     Tcl_DecrRefCount(buf);
@@ -701,7 +701,7 @@ NsConfigRead(const char *file)
 
  err:
     if (chan != NULL) {
-        Tcl_Close(NULL, chan);
+        (void) Tcl_Close(NULL, chan);
     }
     if (buf != NULL) {
         Tcl_DecrRefCount(buf);
@@ -748,10 +748,10 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
     Tcl_CreateCommand(interp, "ns_section", SectionCmd, &set, NULL);
     Tcl_CreateCommand(interp, "ns_param", ParamCmd, &set, NULL);
     for (i = 0; argv[i] != NULL; ++i) {
-        Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
+        (void) Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
-    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
-    Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optind), TCL_GLOBAL_ONLY);
+    (void) Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+    (void) Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optind), TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: config eval)");
         Ns_Fatal("config error");

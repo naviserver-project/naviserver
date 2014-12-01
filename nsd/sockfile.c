@@ -118,9 +118,10 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
         if (length > 0u) {
             if (sent >= length) {
                 sent -= length;
-                Ns_SetFileVec(bufs, i, fd, NULL, 0, 0u);
+                (void) Ns_SetFileVec(bufs, i, fd, NULL, 0, 0u);
             } else {
-	        Ns_SetFileVec(bufs, i, fd, NULL, offset + (off_t)sent, length - sent);
+	        (void) Ns_SetFileVec(bufs, i, fd, NULL,
+                                     offset + (off_t)sent, length - sent);
                 break;
             }
         }
@@ -184,7 +185,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
             /*
              * Coalesce runs of memory bufs into fixed-sized iovec.
              */
-	    Ns_SetVec(sbufs, nsbufs++, INT2PTR(offset), length);
+	    (void) Ns_SetVec(sbufs, nsbufs++, INT2PTR(offset), length);
         }
 
         /* Flush pending memory bufs. */
@@ -302,7 +303,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 
         if (toSend > 0u) {
             if (fd < 0) {
-                Ns_SetVec(&iov, 0, INT2PTR(offset), toSend);
+                (void) Ns_SetVec(&iov, 0, INT2PTR(offset), toSend);
                 sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
             } else {
                 sent = SendFd(sock, fd, offset, toSend,
@@ -385,7 +386,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
 int
 Ns_SockCork(Ns_Sock *sock, int cork)
 {
-    int success = 0;
+    int success = 1;
 #ifdef TCP_CORK
     Sock *sockPtr = (Sock *)sock;
 
@@ -475,7 +476,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     }
 
     if (decork != 0) {
-	Ns_SockCork(sock, 0);
+	(void) Ns_SockCork(sock, 0);
     }
 
     if (nwrote > 0) {

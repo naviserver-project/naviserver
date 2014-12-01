@@ -99,15 +99,15 @@ NsInitFd(void)
 
     fd = ns_open(DEVNULL, O_RDONLY, 0);
     if (fd > 0) {
-        ns_close(fd);
+        (void) ns_close(fd);
     }
     fd = ns_open(DEVNULL, O_WRONLY, 0);
     if (fd > 0 && fd != 1) {
-        ns_close(fd);
+        (void) ns_close(fd);
     }
     fd = ns_open(DEVNULL, O_WRONLY, 0);
     if (fd > 0 && fd != 2) {
-        ns_close(fd);
+        (void) ns_close(fd);
     }
 
 #ifndef _WIN32
@@ -274,7 +274,7 @@ Ns_DupHigh(int *fdPtr)
         } else if (fcntl(nfd, F_SETFD, flags) < 0) {
             Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_SETFD, %d): '%s'",
                    nfd, flags, strerror(errno));
-            ns_close(nfd);
+            (void) ns_close(nfd);
         } else {
             ns_close(ofd);
             *fdPtr = nfd;
@@ -382,7 +382,7 @@ Ns_ReleaseTemp(int fd)
     Tmp *tmpPtr;
 
     if (ns_lseek(fd, 0, SEEK_SET) != 0 || ftruncate(fd, 0) != 0) {
-        ns_close(fd);
+        (void) ns_close(fd);
     } else {
         tmpPtr = ns_malloc(sizeof(Tmp));
         tmpPtr->fd = fd;

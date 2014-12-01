@@ -1522,16 +1522,16 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
                 break;
 
             case NS_FORBIDDEN:
-                Ns_ConnReturnForbidden(conn);
+                (void) Ns_ConnReturnForbidden(conn);
                 break;
 
             case NS_UNAUTHORIZED:
-                Ns_ConnReturnUnauthorized(conn);
+                (void) Ns_ConnReturnUnauthorized(conn);
                 break;
 
             case NS_ERROR:
             default:
-                Ns_ConnReturnInternalError(conn);
+                (void) Ns_ConnReturnInternalError(conn);
                 break;
             }
         } else if (status != NS_FILTER_RETURN) {
@@ -1541,7 +1541,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
              * can't count on the filter to have sent a response
              * back to the client.  So, send an error response.
              */
-            Ns_ConnReturnInternalError(conn);
+            (void) Ns_ConnReturnInternalError(conn);
             status = NS_FILTER_RETURN; /* to allow tracing to happen */
         }
     }

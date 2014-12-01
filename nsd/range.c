@@ -197,7 +197,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
         len = 2U;
     }
     len += (size_t)AppendMultipartRangeTrailer(dsPtr);
-    Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
+    (void) Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
     /*
      * Rebase the header, add the data range, and finish off with
@@ -383,7 +383,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
         if (start >= (off_t)objLength) {
             Ns_ConnPrintfHeaders(conn, "Content-Range",
                                  "bytes */%" PRIuMAX, (uintmax_t) objLength);
-            Ns_ConnReturnStatus(conn, 416);
+            (void)Ns_ConnReturnStatus(conn, 416);
             return -1;
         }
 

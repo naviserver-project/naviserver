@@ -304,7 +304,7 @@ NsRemoveService(char *service)
     BOOL ok;
 
     Ns_DStringInit(&name);
-    GetServiceName(&name, service);
+    (void) GetServiceName(&name, service);
     ok = FALSE;
     hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
     if (hmgr != NULL) {
@@ -361,7 +361,7 @@ NsInstallService(char *service)
         Ns_DStringInit(&cmd);
         Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
                             " -S -s ", service, " -t \"", config, "\"", NULL);
-        GetServiceName(&name, service);
+        (void) GetServiceName(&name, service);
         hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
         if (hmgr != NULL) {
             hsrv = CreateService(hmgr, name.string, name.string,
@@ -986,7 +986,7 @@ ServiceTicker(void *arg)
         ReportStatus(pending, NO_ERROR, 2000u);
         Ns_GetTime(&timeout);
         Ns_IncrTime(&timeout, 1, 0);
-        Ns_CondTimedWait(&cond, &lock, &timeout);
+        (void) Ns_CondTimedWait(&cond, &lock, &timeout);
     } while (tick);
     Ns_MutexUnlock(&lock);
 }
@@ -1022,7 +1022,7 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     curStatus.dwServiceType = (DWORD)SERVICE_WIN32_OWN_PROCESS;
     curStatus.dwServiceSpecificExitCode = 0u;
     StartTicker((DWORD)SERVICE_START_PENDING);
-    Ns_Main((int)argc, argv, NULL);
+    (void) Ns_Main((int)argc, argv, NULL);
     StopTicker();
     ReportStatus((DWORD)SERVICE_STOP_PENDING, NO_ERROR, 100u);
     if (serviceFailed == 0) {

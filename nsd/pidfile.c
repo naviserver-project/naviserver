@@ -84,7 +84,7 @@ NsCreatePidFile(void)
             Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'",
                    Tcl_GetString(path), strerror(Tcl_GetErrno()));
         }
-        Tcl_Close(NULL, chan);
+        (void) Tcl_Close(NULL, chan);
     }
     Tcl_DecrRefCount(path);
 }
@@ -132,9 +132,9 @@ GetFile(void)
 
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0)) {
-	    Ns_HomePath(&ds, "logs/nsd.pid", NULL);
+	    (void) Ns_HomePath(&ds, "logs/nsd.pid", NULL);
         } else {
-            Ns_HomePath(&ds, "nsd.pid", NULL);
+            (void) Ns_HomePath(&ds, "nsd.pid", NULL);
         }
         path = Tcl_NewStringObj(ds.string, ds.length);
 

@@ -1172,8 +1172,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                      * eventually gets written into some log sink, so we
                      * use the default logfile sink.
                      */
-                    LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
-                              &ePtr->stamp, logString, ePtr->length);
+                    (void) LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
+                                     &ePtr->stamp, logString, ePtr->length);
                     break;
                 }
             }
@@ -1279,7 +1279,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  *      Callback to write the log line to the passed file descriptor.
  *
  * Results:
- *      Standard NS result code.
+ *      Returns always NS_OK
  *
  * Side effects:
  *      None.

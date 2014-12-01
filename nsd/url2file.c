@@ -176,7 +176,7 @@ void
 Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flags)
 {
     Ns_MutexLock(&ulock);
-    Ns_UrlSpecificDestroy(server, "x", url, uid, flags);
+    (void) Ns_UrlSpecificDestroy(server, "x", url, uid, flags);
     Ns_MutexUnlock(&ulock);
 }
 
@@ -204,7 +204,7 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
     if (NsPageRoot(dsPtr, servPtr, NULL) == NULL) {
         return NS_ERROR;
     }
-    Ns_MakePath(dsPtr, url, NULL);
+    (void) Ns_MakePath(dsPtr, url, NULL);
 
     return NS_OK;
 }
