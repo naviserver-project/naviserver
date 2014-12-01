@@ -996,10 +996,6 @@ Ns_LogRoll(void)
 
     if (file != NULL) {
 	NsAsyncWriterQueueDisable(0);
-#ifdef _WIN32
-        ns_close(STDOUT_FILENO);
-        ns_close(STDERR_FILENO);
-#endif
 
         if (access(file, F_OK) == 0) {
             (void) Ns_RollFile(file, maxback);
