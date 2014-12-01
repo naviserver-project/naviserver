@@ -1537,9 +1537,11 @@ NS_EXTERN void NsUrlSpecificWalk(int id, const char *server, Ns_ArgProc func,
 NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
+NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr)
+    NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
+NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
+    NS_GNUC_NONNULL(1);
 
 
 /*

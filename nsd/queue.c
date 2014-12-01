@@ -1432,8 +1432,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Make sure we update peer address with actual remote IP address
      */
-    connPtr->reqPtr->port = ntohs(sockPtr->sa.sin_port);
-    strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+    Ns_ConnSetPeer(conn, &sockPtr->sa);
 
     connPtr->request = &connPtr->reqPtr->request;
 

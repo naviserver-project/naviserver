@@ -214,7 +214,7 @@ NsInitLog(void)
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
         (void) Ns_CreateLogSeverity(severityConfig[i].label);
 
-        strcpy(buf, severityConfig[i].label);
+        strncpy(buf, severityConfig[i].label, sizeof(buf));
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
     }

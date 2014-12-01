@@ -594,9 +594,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
                     Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://",host,NULL);
-                    mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
+                    mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length + 1u);
                     mapPtr->servPtr  = servPtr;
-                    strcpy(mapPtr->location, ds.string);
+                    strncpy(mapPtr->location, ds.string, (size_t)ds.length + 1u);
                     Ns_DStringSetLength(&ds, 0);
                     if (defMapPtr == NULL && STREQ(defserver, server)) {
                         defMapPtr = mapPtr;
@@ -2560,7 +2560,7 @@ SockParse(Sock *sockPtr)
         cnt = (size_t)(e - s) + 1u;
         reqPtr->roff  += cnt;
         reqPtr->avail -= cnt;
-        if (likely(e > s) && likely(e[-1] == '\r')) {
+        if (likely(e > s) && likely(*(e-1) == '\r')) {
             --e;
         }
 

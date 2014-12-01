@@ -1604,24 +1604,29 @@ Ns_TaskFree(Ns_Task *task)
  */
 
 NS_EXTERN void
-Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr);
+Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
-                     void *ptr1, void *ptr2);
-NS_EXTERN void
-Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value);
+                     void *ptr1, void *ptr2)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length);
+Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                     CONST char *type, void **addrPtrPtr)
+                     const char *type, void **addrPtrPtr)
      NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_TclSetAddrObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
+Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
@@ -1629,8 +1634,8 @@ Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPt
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_SetFromAnyProc Ns_TclSetFromAnyError;
 

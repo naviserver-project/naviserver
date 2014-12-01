@@ -463,7 +463,7 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
     Conn *connPtr = (Conn *) conn;
 
     connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
-    strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr));
+    strncpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr), 16u);
     return connPtr->reqPtr->peer;
 }
 

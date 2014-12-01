@@ -6,6 +6,9 @@
 /* Defined when cygwin/mingw does not support EXCEPTION DISPOSITION */
 #undef EXCEPTION_DISPOSITION
 
+/* Define to 1 if arc4random is available. */
+#undef HAVE_ARC4RANDOM
+
 /* Defined when compiler supports casting to union type. */
 #undef HAVE_CAST_TO_UNION
 

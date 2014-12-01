@@ -269,14 +269,16 @@ RegisterPage(ClientData arg,
 {
     NsInterp   *itPtr = arg;
     AdpRequest *adp;
+    size_t fileLength;
 
     assert(itPtr != NULL);
     assert(method != NULL);
     assert(url != NULL);
 
-    adp = ns_calloc(1U, sizeof(AdpRequest) + ((file != NULL) ? strlen(file) : 0U));
+    fileLength = (file == NULL) ? 0u : strlen(file);
+    adp = ns_calloc(1U, sizeof(AdpRequest) + fileLength + 1u);
     if (file != NULL) {
-        strcpy(adp->file, file);
+        strncpy(adp->file, file, fileLength + 1u);
     }
     if (expiresPtr != NULL) {
         adp->expires = *expiresPtr;

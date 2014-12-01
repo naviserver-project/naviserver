@@ -304,7 +304,7 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     Ns_DString  urlDs, baseDs;
     char       *proto, *host, *port, *path, *tail;
     char       *bproto, *bhost, *bport, *bpath, *btail;
-    int        status;
+    int         status;
 
     /*
      * Copy the URL's to allow Ns_ParseUrl to destory them.
@@ -314,7 +314,7 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     Ns_DStringInit(&baseDs);
 
     Ns_DStringAppend(&urlDs, url);
-    status = Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
+    (void) Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
     /*
      * Currently, Ns_ParseUrl returns always TCL_OK; otherwise we should use
      * here:

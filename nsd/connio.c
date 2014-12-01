@@ -933,7 +933,7 @@ Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     if (nreadPtr != NULL) {
         *nreadPtr = nread;
     }
-    if (ncopy > 0U && eol[-1] == '\r') {
+    if (ncopy > 0u && *(eol-1) == '\r') {
         --ncopy;
     }
     Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);

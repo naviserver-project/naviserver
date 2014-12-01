@@ -118,7 +118,7 @@ NsInitInfo(void)
     Ns_DString addr;
 
     if (gethostname(nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
-        strcpy(nsconf.hostname, "localhost");
+        strncpy(nsconf.hostname, "localhost", 10u);
     }
     Ns_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
@@ -152,7 +152,7 @@ NsConfUpdate(void)
 {
     int i;
     Ns_DString ds;
-    char *path = NS_CONFIG_PARAMETERS;
+    const char *path = NS_CONFIG_PARAMETERS;
 
     NsConfigLog();
     NsConfigAdp();
@@ -218,3 +218,12 @@ NsConfUpdate(void)
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
     Ns_DStringFree(&ds);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

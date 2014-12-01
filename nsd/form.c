@@ -329,8 +329,8 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
      * Trim off the trailing \r\n and null terminate the input.
      */
 
-    if (end > start && end[-1] == '\n') {--end;}
-    if (end > start && end[-1] == '\r') {--end;}
+    if (end > start && *(end-1) == '\n') {--end;}
+    if (end > start && *(end-1) == '\r') {--end;}
     saveend = *end;
     *end = '\0';
 
@@ -344,7 +344,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 	char save;
 
         start = e + 1;
-        if (e > s && e[-1] == '\r') {
+        if (e > s && *(e-1) == '\r') {
             --e;
         }
         if (s == e) {

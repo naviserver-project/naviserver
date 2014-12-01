@@ -257,7 +257,7 @@ static int
 PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 {
     char   *s;
-    size_t  len;
+    size_t  len, valueLength;
 
 #ifdef HAVE_UNSETENV
     if (value == NULL) {
@@ -268,12 +268,13 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     len = strlen(name);
     if (value != NULL) {
-        len += strlen(value) + 1U;
+        valueLength = strlen(value);
+        len += valueLength + 1u;
     } else {
-        len += 1U;
+        len += 1u;
     }
     /* NB: Use malloc() directly as putenv() would expect. */
-    s = malloc(len + 1U);
+    s = malloc(len + 1u);
     if (s == NULL) {
         Tcl_SetResult(interp, "could not allocate memory for new env entry",
                       TCL_STATIC);
@@ -295,10 +296,10 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
      */
 
     strcpy(s, name);
-    strcat(s, "=");
+    strncat(s, "=", 1u);
 
     if (value != NULL) {
-        strcat(s, value);
+        strncat(s, value, valueLength);
     }
     if (putenv(s) != 0) {
         Tcl_AppendResult(interp, "could not put environment entry \"",
@@ -307,7 +308,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
         return TCL_ERROR;
     }
     if (value == NULL) {
-        strcpy(s, "=");
+        strncpy(s, "=", 2u);
         putenv(s);
     }
 

@@ -1142,7 +1142,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
              */
 
             if (result == TCL_ERROR) {
-                if (NsTclTimeoutException(interp)) {
+                if (NsTclTimeoutException(interp) == NS_TRUE) {
                     itPtr->adp.exception = ADP_TIMEOUT;
                 }
             }

@@ -107,9 +107,8 @@ ns_strncopy(const char *old, ssize_t size)
 
     if (likely(old != NULL)) {
         size = likely(size > 0) ? size : strlen(old);
-        new = ns_malloc(size + 1U);
-        strncpy(new, old, size);
-        new[size] = 0;
+        new = ns_malloc(size + 1u);
+        strncpy(new, old, size + 1u);
     }
     return new;
 }
@@ -118,9 +117,21 @@ char *
 ns_strdup(const char *old)
 {
     char *new;
+    size_t length = strlen(old) + 1u;
 
-    new = ns_malloc(strlen(old) + 1U);
-    strcpy(new, old);
+    assert(old != NULL);
+
+    new = ns_malloc(length);
+    strncpy(new, old, length);
 
     return new;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

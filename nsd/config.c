@@ -694,7 +694,7 @@ NsConfigRead(const char *file)
 
     Tcl_Close(NULL, chan);
     data = Tcl_GetStringFromObj(buf, &length);
-    conf = strcpy(ns_malloc((size_t)length + 1U), data);
+    conf = ns_strncopy(data, length);
     Tcl_DecrRefCount(buf);
 
     return conf;
