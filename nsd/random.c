@@ -153,7 +153,9 @@ Ns_DRand(void)
 	}
 	Ns_CsLeave(&lock);
     }
-#if HAVE_DRAND48
+#if HAVE_ARC4RANDOM
+    return ((double) arc4random() / ((double)RAND_MAX + 1.0));
+#elif HAVE_DRAND48
     return drand48();
 #elif HAVE_RANDOM
     return ((double) random() / ((double)LONG_MAX + 1.0));
