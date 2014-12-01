@@ -354,7 +354,7 @@ EvalThread(void *arg)
     Tcl_DString ds;
     Tcl_DString unameDS;
     char buf[64];
-    int n, ncmd, stop;
+    int ncmd, stop;
     size_t len;
     Sess *sessPtr = arg;
     const char *res, *server = sessPtr->modPtr->server;
@@ -421,13 +421,13 @@ retry:
 	Tcl_AppendResult(interp, "\r\n", NULL);
 	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
-	while (len > 0U) {
-	    n = ns_send(sessPtr->sock, res, len, 0);
-	    if (n <= 0) {
+	while (len > 0u) {
+	    ssize_t sent = ns_send(sessPtr->sock, res, len, 0);
+	    if (sent <= 0) {
 		goto done;
 	    }
-	    len -= (size_t)n;
-	    res += n;
+	    len -= (size_t)sent;
+	    res += sent;
 	}
 
         if (sessPtr->modPtr->commandLogging != 0) {
