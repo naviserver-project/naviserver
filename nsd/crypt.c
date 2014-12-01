@@ -54,7 +54,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 /*
  * Initial permutation,
  */
-static const char     IP[] = {
+static const int IP[] = {
     58, 50, 42, 34, 26, 18, 10, 2,
     60, 52, 44, 36, 28, 20, 12, 4,
     62, 54, 46, 38, 30, 22, 14, 6,
@@ -68,7 +68,7 @@ static const char     IP[] = {
 /*
  * Final permutation, FP = IP^(-1)
  */
-static const char    FP[] = {
+static const int FP[] = {
     40, 8, 48, 16, 56, 24, 64, 32,
     39, 7, 47, 15, 55, 23, 63, 31,
     38, 6, 46, 14, 54, 22, 62, 30,
@@ -83,14 +83,14 @@ static const char    FP[] = {
  * Permuted-choice 1 from the key bits to yield C and D. Note that bits
  * 8,16... are left out: They are intended for a parity check.
  */
-static const char    PC1_C[] = {
+static const int PC1_C[] = {
     57, 49, 41, 33, 25, 17, 9,
     1, 58, 50, 42, 34, 26, 18,
     10, 2, 59, 51, 43, 35, 27,
     19, 11, 3, 60, 52, 44, 36,
 };
 
-static const char     PC1_D[] = {
+static const int PC1_D[] = {
     63, 55, 47, 39, 31, 23, 15,
     7, 62, 54, 46, 38, 30, 22,
     14, 6, 61, 53, 45, 37, 29,
@@ -100,7 +100,7 @@ static const char     PC1_D[] = {
 /*
  * Sequence of shifts used for the key schedule.
  */
-static const char     shifts[] = {
+static const unsigned int shifts[] = {
     1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1,
 };
 
@@ -108,14 +108,14 @@ static const char     shifts[] = {
  * Permuted-choice 2, to pick out the bits from the CD array that generate
  * the key schedule.
  */
-static const char     PC2_C[] = {
+static const int PC2_C[] = {
     14, 17, 11, 24, 1, 5,
     3, 28, 15, 6, 21, 10,
     23, 19, 12, 4, 26, 8,
     16, 7, 27, 20, 13, 2,
 };
 
-static const char     PC2_D[] = {
+static const int PC2_D[] = {
     41, 52, 31, 37, 47, 55,
     30, 40, 51, 45, 33, 48,
     44, 49, 39, 56, 34, 53,
@@ -145,7 +145,7 @@ struct sched {
     char     E[48];
 };
 
-static const char     e[] = {
+static const int e[] = {
     32, 1, 2, 3, 4, 5,
     4, 5, 6, 7, 8, 9,
     8, 9, 10, 11, 12, 13,
@@ -183,8 +183,8 @@ setkey_private(struct sched *sp, const char *key)
      * each 8-bit char is not used, so C and D are only 28 bits apiece.
      */
     for (i = 0; i < 28; i++) {
-        sp->C[i] = key[PC1_C[i] - 1];
-        sp->D[i] = key[PC1_D[i] - 1];
+      sp->C[i] = key[PC1_C[i] - 1];
+      sp->D[i] = key[PC1_D[i] - 1];
     }
 
     /*
@@ -201,12 +201,12 @@ setkey_private(struct sched *sp, const char *key)
             for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];
 	    }
-            sp->C[27] = t;
+            sp->C[27] = (char)t;
             t = sp->D[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->D[j] = sp->D[j + 1];
 	    }
-            sp->D[27] = t;
+            sp->D[27] = (char)t;
         }
 
         /*
@@ -227,7 +227,7 @@ setkey_private(struct sched *sp, const char *key)
  * The 8 selection functions. For some reason, they give a 0-origin index,
  * unlike everything else.
  */
-static const char     S[8][64] = {
+static const int S[8][64] = {
     { 14,  4, 13,  1,  2, 15, 11,  8,  3, 10,  6, 12,  5,  9,  0,  7,
        0, 15,  7,  4, 14,  2, 13,  1, 10,  6, 12, 11,  9,  5,  3,  8,
        4,  1, 14,  8, 13,  6,  2, 11, 15, 12,  9,  7,  3, 10,  5,  0,
@@ -272,7 +272,7 @@ static const char     S[8][64] = {
 /*
  * P is a permutation on the selected combination of the current L and key.
  */
-static const char     P[] = {
+static const int P[] = {
     16, 7, 20, 21,
     29, 12, 28, 17,
     1, 15, 23, 26,
@@ -300,10 +300,10 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
     /*
      * The combination of the key and the input, before selection.
      */
-    char     preS[48];
+    unsigned char preS[48];
 
     int             i, ii;
-    register int    t, j, k;
+    register int    j;
 
     assert(sp != NULL);
     assert(block != NULL);
@@ -352,6 +352,9 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
          * simplified by rewriting the tables.
          */
         for (j = 0; j < 8; j++) {
+            register unsigned int k;
+            register int          t;
+
             t = 6 * j;
             k = S[j][(preS[t] << 5) +
                 (preS[t + 1] << 3) +
@@ -386,7 +389,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
      * The output L and R are reversed.
      */
     for (j = 0; j < 32; j++) {
-        t = L[j];
+        register char t = L[j];
         L[j] = R[j];
         R[j] = t;
     }
@@ -471,3 +474,12 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
