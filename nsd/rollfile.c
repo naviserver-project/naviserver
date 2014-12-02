@@ -204,6 +204,7 @@ Ns_PurgeFiles(const char *file, int max)
 
     if (nfiles >= max) {
         int ii;
+        
 	assert(files != NULL);
 
         qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
@@ -219,6 +220,8 @@ Ns_PurgeFiles(const char *file, int max)
  err:
     if (nfiles > 0) {
         int ii;
+
+        assert(files != NULL);
 
         for (ii = 0, fiPtr = files; ii < nfiles; ii++, fiPtr++) {
             Tcl_DecrRefCount(fiPtr->path);

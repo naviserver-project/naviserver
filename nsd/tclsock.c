@@ -41,7 +41,7 @@
  */
 
 typedef struct Callback {
-    char        *server;
+    const char  *server;
     Tcl_Channel  chan;
     unsigned int when;
     char         script[1];
@@ -52,7 +52,7 @@ typedef struct Callback {
  */
 
 typedef struct ListenCallback {
-    char *server;
+    const char *server;
     char  script[1];
 } ListenCallback;
 
@@ -126,7 +126,7 @@ int
 NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString  ds;
-    char       *addr;
+    const char *addr;
     int         status, result = TCL_OK;
 
     Ns_ObjvSpec args[] = {
@@ -172,7 +172,7 @@ int
 NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString  ds;
-    char       *host;
+    const char *host;
     int         all = 0, status, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-all",      Ns_ObjvBool,  &all, INT2PTR(1)},
@@ -317,9 +317,9 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NS_SOCKET sock;
-    char     *addr;
-    int       port;
+    NS_SOCKET   sock;
+    const char *addr;
+    int         port;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "address port");
@@ -445,11 +445,11 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char     *host, *lhost = NULL;
-    int       lport = 0, port, nonblock = 0, async = 0, msec = -1;
-    NS_SOCKET sock;
-    Ns_Time   timeout = {0,0};
-    Tcl_Obj  *timeoutObj = NULL;
+    const char *host, *lhost = NULL;
+    int         lport = 0, port, nonblock = 0, async = 0, msec = -1;
+    NS_SOCKET   sock;
+    Ns_Time     timeout = {0,0};
+    Tcl_Obj    *timeoutObj = NULL;
 
     Ns_ObjvSpec opts[] = {
 	{"-nonblock",  Ns_ObjvBool,   &nonblock,   INT2PTR(1)},
@@ -743,8 +743,9 @@ int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char        *s;
+    const char  *script;
     NS_SOCKET    sock;
-    int          timeout = 0;
+    int          timeout = 0, scriptLength = 0;
     unsigned int when;
     Callback    *cbPtr;
     NsInterp    *itPtr = clientData;
@@ -754,7 +755,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         return TCL_ERROR;
     }
     s = Tcl_GetString(objv[3]);
-    when = 0U;
+    when = 0u;
     while (*s != '\0') {
         if (*s == 'r') {
             when |= (unsigned int)NS_SOCK_READ;
@@ -774,7 +775,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         }
         ++s;
     }
-    if (when == 0U) {
+    if (when == 0u) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "invalid when specification \"",
                                Tcl_GetString(objv[3]), 
@@ -787,6 +788,11 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 			(int *) &sock) != TCL_OK) {
         return TCL_ERROR;
     }
+    if (objc > 4) {
+        if (Tcl_GetIntFromObj(interp, objv[4], &timeout) != TCL_OK) {
+            return TCL_ERROR;
+        }
+    }
 
     /*
      * Pass a dup of the socket to the callback thread, allowing
@@ -797,14 +803,14 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
      */
 
     sock = ns_sockdup(sock);
-    cbPtr = ns_malloc(sizeof(Callback) + (size_t)Tcl_GetCharLength(objv[2]));
+    script = Tcl_GetStringFromObj(objv[2], &scriptLength);
+    
+    cbPtr = ns_malloc(sizeof(Callback) + scriptLength);
     cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
     cbPtr->chan = NULL;
     cbPtr->when = when;
-    strcpy(cbPtr->script, Tcl_GetString(objv[2]));
-    if (objc > 4) {
-	timeout = strtol(Tcl_GetString(objv[4]), NULL, 10);
-    }
+    memcpy(cbPtr->script, script, (size_t)scriptLength + 1u);
+    
     if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
 			  when | (unsigned int)NS_SOCK_EXIT, 
 			  timeout) != NS_OK) {
@@ -840,8 +846,8 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
 {
     NsInterp       *itPtr = clientData;
     ListenCallback *lcbPtr;
-    int             port;
-    char           *addr;
+    int             port, length;
+    const char     *addr, *script;
 
     if (objc != 4) {
         Tcl_WrongNumArgs(interp, 1, objv, "address port script");
@@ -854,9 +860,11 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
     if (STREQ(addr, "*")) {
         addr = NULL;
     }
-    lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)Tcl_GetCharLength(objv[3]));
+    script = Tcl_GetStringFromObj(objv[3], &length);
+    lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)length);
     lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
-    strcpy(lcbPtr->script, Tcl_GetString(objv[3]));
+    memcpy(lcbPtr->script, script, (size_t)length + 1u);
+
     if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr) != NS_OK) {
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
         ns_free(lcbPtr);
@@ -985,7 +993,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
 {
     int          fargc, status;
     NS_SOCKET    sock;
-    CONST char **fargv = NULL;
+    const char **fargv = NULL;
 
     assert(interp != NULL);
     assert(flist != NULL);
@@ -1138,7 +1146,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 
     if (((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U)) {
         Tcl_Interp  *interp;
-	char        *w;
+	const char  *w;
         int          result;
 
         Tcl_DStringInit(&script);
@@ -1248,3 +1256,12 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
 
     return NS_TRUE;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

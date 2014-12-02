@@ -2254,17 +2254,20 @@ static Proxy*
 CreateProxy(Pool *poolPtr)
 {
     Proxy *proxyPtr;
-    char buf[32];
+    char buf[TCL_INTEGER_SPACE];
+    size_t nameLength;
+    int idLength;
 
-    sprintf(buf, "%d", poolPtr->nextid++);
+    idLength = snprintf(buf, sizeof(buf), "%d", poolPtr->nextid++);
+    nameLength = strlen(poolPtr->name);
 
-    proxyPtr = ns_calloc(1U, sizeof(Proxy));
-    proxyPtr->id = ns_calloc(1U, strlen(buf) + strlen(poolPtr->name) + 2);
-
-    strcpy(proxyPtr->id, poolPtr->name);
-    strcat(proxyPtr->id, "-");
-    strcat(proxyPtr->id, buf);
+    proxyPtr = ns_calloc(1u, sizeof(Proxy));
     proxyPtr->poolPtr = poolPtr;
+
+    proxyPtr->id = ns_calloc(1u, strlen(buf) + nameLength + 2u);
+    memcpy(proxyPtr->id, poolPtr->name, nameLength);
+    *(proxyPtr->id + nameLength) = '-';
+    memcpy(proxyPtr->id + nameLength + 1u, buf, (size_t)idLength + 1u);
 
     Tcl_DStringInit(&proxyPtr->in);
     Tcl_DStringInit(&proxyPtr->out);

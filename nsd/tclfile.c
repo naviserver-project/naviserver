@@ -41,7 +41,7 @@
  */
 
 typedef struct {
-    char        *name;
+    const char  *name;
     Tcl_Channel  chan;
 } NsRegChan;
 
@@ -554,7 +554,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsRegChan      *regChan = NULL;
 
     const char     *name = NULL, *chanName = NULL;
-    int             isNew, shared, opt, chanNameLength;
+    int             isNew, shared, opt;
     Tcl_Channel     chan = NULL;
 
     Tcl_HashTable  *tabPtr;
@@ -584,7 +584,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_WrongNumArgs(interp, 1, objv, "create channel name");
             return TCL_ERROR;
         }
-        chanName = Tcl_GetStringFromObj(objv[2], &chanNameLength);
+        chanName = Tcl_GetString(objv[2]);
         chan = Tcl_GetChannel(interp, chanName, NULL);
         if (chan == (Tcl_Channel)NULL) {
             return TCL_ERROR;
@@ -598,9 +598,8 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
         if (isNew != 0) {
             regChan = ns_malloc(sizeof(NsRegChan));
-            regChan->name = ns_malloc((size_t)chanNameLength + 1U);
+            regChan->name = ns_strdup(chanName);
             regChan->chan = chan;
-            strcpy(regChan->name, chanName);
             Tcl_SetHashValue(hPtr, regChan);
         }
         Ns_MutexUnlock(&servPtr->chans.lock);
@@ -708,7 +707,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             } else {
                 (void) Tcl_UnregisterChannel(interp, regChan->chan);
             }
-            ns_free(regChan->name);
+            ns_free((char *)regChan->name);
             ns_free(regChan);
             Tcl_DeleteHashEntry(hPtr);
             hPtr = Tcl_NextHashEntry(&search);

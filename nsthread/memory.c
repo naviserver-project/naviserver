@@ -116,15 +116,11 @@ ns_strncopy(const char *old, ssize_t size)
 char *
 ns_strdup(const char *old)
 {
-    char *new;
     size_t length = strlen(old) + 1u;
 
     assert(old != NULL);
 
-    new = ns_malloc(length);
-    strncpy(new, old, length);
-
-    return new;
+    return memcpy(ns_malloc(length), old, length);
 }
 
 /*

@@ -807,13 +807,16 @@ static void
 CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thread *thrPtr)
 {
     TclThreadArg *argPtr;
+    size_t scriptLength;
 
     assert(itPtr != NULL);
     assert(script != NULL);
 
-    argPtr = ns_malloc(sizeof(TclThreadArg) + strlen(script));
+    scriptLength = strlen(script);
+    argPtr = ns_malloc(sizeof(TclThreadArg) + scriptLength);
     argPtr->detached = detached;
-    strcpy(argPtr->script, script);
+    memcpy(argPtr->script, script, scriptLength + 1u);
+    
     if (itPtr->servPtr != NULL) {
         argPtr->server = itPtr->servPtr->server;
     } else {

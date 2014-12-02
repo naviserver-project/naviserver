@@ -316,7 +316,7 @@ Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
     assert(code != NULL);
     assert(msg != NULL);
 
-    strcpy(handle->cExceptionCode, code);
+    strncpy(handle->cExceptionCode, code, sizeof(handle->cExceptionCode));
     Ns_DStringFree(&(handle->dsExceptionMsg));
     Ns_DStringAppend(&(handle->dsExceptionMsg), msg);
 }

@@ -741,11 +741,11 @@ NS_EXTERN void Ns_MasterUnlock(void);
  * memory.c:
  */
 
-NS_EXTERN void *ns_malloc(size_t size) NS_GNUC_MALLOC;
-NS_EXTERN void *ns_calloc(size_t num, size_t size) NS_GNUC_MALLOC;
+NS_EXTERN void *ns_malloc(size_t size) NS_GNUC_MALLOC NS_GNUC_WARN_UNUSED_RESULT;
+NS_EXTERN void *ns_calloc(size_t num, size_t size) NS_GNUC_MALLOC NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN void ns_free(void *buf);
 NS_EXTERN void *ns_realloc(void *buf, size_t size) NS_GNUC_WARN_UNUSED_RESULT;
-NS_EXTERN char *ns_strdup(const char *string) NS_GNUC_NONNULL(1) NS_GNUC_MALLOC;
+NS_EXTERN char *ns_strdup(const char *string) NS_GNUC_NONNULL(1) NS_GNUC_MALLOC NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN char *ns_strcopy(const char *string) NS_GNUC_MALLOC;
 NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
 

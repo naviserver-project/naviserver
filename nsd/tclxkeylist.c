@@ -43,9 +43,16 @@ static int TclX_IsNullObj(Tcl_Obj *objPtr);
  * Macro that behaves like strdup, only uses ckalloc.  Also macro that does the
  * same with a string that might contain zero bytes,
  */
+static char *ckstrdup(const char *s) NS_GNUC_NONNULL(1) NS_GNUC_MALLOC NS_GNUC_WARN_UNUSED_RESULT;
 
-#define ckstrdup(a) \
-  (strcpy(ckalloc((unsigned int)(strlen((a))+1)),(a)))
+static char *ckstrdup(const char *s) {
+    size_t len;
+
+    assert(s != NULL);
+
+    len = strlen(s) + 1u;
+    return memcpy(ckalloc(len), s, len);
+}
 
 #define ckbinstrdup(a,b) \
   ((char *)memcpy(ckalloc((unsigned int)((b)+1)),(a),(size_t)((b)+1)))

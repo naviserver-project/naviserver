@@ -128,6 +128,8 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     	    	Ns_Thread *resultPtr)
 {
     Thread *thrPtr;
+    size_t nameLength;
+    const char *name;
 
     assert(proc != NULL);
 
@@ -148,8 +150,12 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     if (resultPtr == NULL) {
     	thrPtr->flags = NS_THREAD_DETACHED;
     }
-    strcpy(thrPtr->parent, Ns_ThreadGetName());
+    name = Ns_ThreadGetName();
+    nameLength = strlen(name);
+    assert(nameLength <= NS_THREAD_NAMESIZE);
+    memcpy(thrPtr->parent, name, nameLength + 1u);
     Ns_MasterUnlock();
+    
     NsCreateThread(thrPtr, stack, resultPtr);
 }
 

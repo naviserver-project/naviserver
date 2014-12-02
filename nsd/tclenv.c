@@ -257,7 +257,7 @@ static int
 PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 {
     char   *s;
-    size_t  len, valueLength;
+    size_t  len, nameLength, valueLength;
 
 #ifdef HAVE_UNSETENV
     if (value == NULL) {
@@ -266,7 +266,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
     }
 #endif
 
-    len = strlen(name);
+    len = nameLength = strlen(name);
     if (value != NULL) {
         valueLength = strlen(value);
         len += valueLength + 1u;
@@ -295,11 +295,11 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
      * string. This method fails on such platforms.
      */
 
-    strcpy(s, name);
-    strncat(s, "=", 1u);
+    strncpy(s, name, nameLength);
+    strncat(s + nameLength, "=", 1u);
 
     if (value != NULL) {
-        strncat(s, value, valueLength);
+        strncat(s + nameLength + 1, value, valueLength);
     }
     if (putenv(s) != 0) {
         Tcl_AppendResult(interp, "could not put environment entry \"",
@@ -307,10 +307,12 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
         free(s);
         return TCL_ERROR;
     }
+#if 0    
     if (value == NULL) {
         strncpy(s, "=", 2u);
         putenv(s);
     }
+#endif
 
     return TCL_OK;
 }
