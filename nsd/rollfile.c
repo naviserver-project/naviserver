@@ -44,11 +44,20 @@ typedef struct File {
  * Local functions defined in this file.
  */
 
-static int MatchFiles(CONST char *fileName, File **files);
-static int CmpFile(const void *arg1, const void *arg2);
-static int Rename(CONST char *from, CONST char *to);
-static int Exists(CONST char *file);
-static int Unlink(CONST char *file);
+static int MatchFiles(const char *fileName, File **files)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int CmpFile(const void *arg1, const void *arg2)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int Rename(const char *from, const char *to)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int Exists(const char *file)
+    NS_GNUC_NONNULL(1);
+
+static int Unlink(const char *file)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -75,11 +84,13 @@ static int Unlink(CONST char *file);
  */
 
 int
-Ns_RollFile(CONST char *file, int max)
+Ns_RollFile(const char *file, int max)
 {
     char *first;
     int   err;
 
+    assert(file != NULL);
+    
     if (max < 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
                "must be > 0 and < 999", max);
@@ -91,7 +102,7 @@ Ns_RollFile(CONST char *file, int max)
     err = Exists(first);
 
     if (err > 0) {
-        char *next;
+        const char *next;
         int num = 0;
 
         next = ns_strdup(first);
@@ -122,7 +133,7 @@ Ns_RollFile(CONST char *file, int max)
             sprintf(dot, "%03d", num + 1);
             err = Rename(first, next);
         }
-        ns_free(next);
+        ns_free((char *)next);
     }
 
     if (err == 0) {
@@ -162,17 +173,19 @@ Ns_RollFile(CONST char *file, int max)
  */
 
 int
-Ns_RollFileByDate(CONST char *file, int max)
+Ns_RollFileByDate(const char *file, int max)
 {
     return Ns_PurgeFiles(file, max);
 }
 
 int
-Ns_PurgeFiles(CONST char *file, int max)
+Ns_PurgeFiles(const char *file, int max)
 {
     File *fiPtr, *files = NULL;
     int   nfiles, status = NS_ERROR;
 
+    assert(file != NULL);
+    
     /*
      * Get all files matching "file*" pattern.
      */
@@ -237,15 +250,18 @@ Ns_PurgeFiles(CONST char *file, int max)
  */
 
 static int
-MatchFiles(CONST char *fileName, File **files)
+MatchFiles(const char *fileName, File **files)
 {
     Tcl_Obj          *path, *pathElems, *parent, *patternObj;
     Tcl_Obj          *matched, **matchElems;
     Tcl_GlobTypeData  types;
     Tcl_StatBuf       st;
     int               numElems, code;
-    char             *pattern;
+    const char       *pattern;
 
+    assert(fileName != NULL);
+    assert(files != NULL);
+    
     /*
      * Obtain fully qualified path of the passed filename
      */
@@ -269,9 +285,13 @@ MatchFiles(CONST char *fileName, File **files)
      * Construct the glob pattern for lookup.
      */
 
-    Tcl_ListObjIndex(NULL, pathElems, numElems - 1, &patternObj);
-    Tcl_AppendToObj(patternObj, "*", 1);
-    pattern = Tcl_GetString(patternObj);
+    if (Tcl_ListObjIndex(NULL, pathElems, numElems - 1, &patternObj) == TCL_OK) {
+        Tcl_AppendToObj(patternObj, "*", 1);
+        pattern = Tcl_GetString(patternObj);
+    } else {
+        Ns_Log(Notice, "filename '%s' does not contain a path", fileName);
+        pattern = "";
+    }
 
     /*
      * Now, do the match on files only.
@@ -291,9 +311,9 @@ MatchFiles(CONST char *fileName, File **files)
          * Construct array of File's to pass to caller
          */
 
-        Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
+        int result = Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
 
-        if (numElems > 0) {
+        if (result == TCL_OK && numElems > 0) {
 	    File *fiPtr;
 	    int   ii;
 
@@ -374,11 +394,13 @@ CmpFile(const void *arg1, const void *arg2)
  */
 
 static int
-Unlink(CONST char *file)
+Unlink(const char *file)
 {
     int err;
     Tcl_Obj *fileObj;
 
+    assert(file != NULL);
+    
     fileObj = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(fileObj);
     err = Tcl_FSDeleteFile(fileObj);
@@ -392,11 +414,14 @@ Unlink(CONST char *file)
 }
 
 static int
-Rename(CONST char *from, CONST char *to)
+Rename(const char *from, const char *to)
 {
     int err;
     Tcl_Obj *fromObj, *toObj;
 
+    assert(from != NULL);
+    assert(to != NULL);
+    
     fromObj = Tcl_NewStringObj(from, -1);
     Tcl_IncrRefCount(fromObj);
 
@@ -416,10 +441,12 @@ Rename(CONST char *from, CONST char *to)
 }
 
 static int
-Exists(CONST char *file)
+Exists(const char *file)
 {
     int exists;
 
+    assert(file != NULL);
+    
     if (Tcl_Access(file, F_OK) == 0) {
         exists = 1;
     } else if (Tcl_GetErrno() == ENOENT) {
@@ -432,3 +459,12 @@ Exists(CONST char *file)
 
     return exists;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

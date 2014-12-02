@@ -1294,9 +1294,9 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 
 
 NS_EXTERN int  NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
-     NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)

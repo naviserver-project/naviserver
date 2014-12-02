@@ -64,7 +64,7 @@ Ns_ModuleInit(const char *server, const char *module)
 	once = 1;
     }
     NsDbInitServer(server);
-    if (Ns_TclRegisterTrace(server, NsDbAddCmds, (void *)server,
+    if (Ns_TclRegisterTrace(server, NsDbAddCmds, server,
                             NS_TCL_TRACE_CREATE) != NS_OK
         || Ns_TclRegisterTrace(server, NsDbReleaseHandles, NULL,
                                NS_TCL_TRACE_DEALLOCATE) != NS_OK) {

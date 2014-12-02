@@ -1793,15 +1793,15 @@ Ns_LogSeverityEnabled(Ns_LogSeverity severity);
  */
 
 NS_EXTERN int
-Ns_RollFile(CONST char *file, int max)
+Ns_RollFile(const char *file, int max)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_PurgeFiles(CONST char *file, int max)
+Ns_PurgeFiles(const char *file, int max)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_RollFileByDate(CONST char *file, int max)
+Ns_RollFileByDate(const char *file, int max)
     NS_GNUC_NONNULL(1);
 
 /*

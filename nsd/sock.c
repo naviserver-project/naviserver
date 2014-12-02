@@ -1031,7 +1031,9 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
     sock = Ns_SockBind(&lsa);
     if (sock != NS_INVALID_SOCKET) {
         if (async == NS_TRUE) {
-            (void) Ns_SockSetNonBlocking(sock);
+            if (Ns_SockSetNonBlocking(sock) != TCL_OK) {
+                Ns_Log(Warning, "attempt to set socket nonblocking failed");
+            }
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
             unsigned int err = ns_sockerrno;
@@ -1041,7 +1043,9 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
             }
         }
         if (async == NS_TRUE && sock != NS_INVALID_SOCKET) {
-            Ns_SockSetBlocking(sock);
+            if (Ns_SockSetBlocking(sock) != TCL_OK) {
+                Ns_Log(Warning, "attempt to set socket blocking failed");
+            }
         }
     }
 

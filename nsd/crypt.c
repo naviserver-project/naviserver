@@ -101,7 +101,7 @@ static const int PC1_D[] = {
  * Sequence of shifts used for the key schedule.
  */
 static const unsigned int shifts[] = {
-    1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1,
+    1u, 1u, 2u, 2u, 2u, 2u, 2u, 2u, 1u, 2u, 2u, 2u, 2u, 2u, 2u, 1u,
 };
 
 /*
@@ -172,8 +172,7 @@ static void encrypt_private(const struct sched *sp, char *block, int edflag)
 static void
 setkey_private(struct sched *sp, const char *key)
 {
-    register int    i, j, k;
-    int             t;
+    register int    i;
 
     assert(sp != NULL);
     assert(key != NULL);
@@ -192,11 +191,14 @@ setkey_private(struct sched *sp, const char *key)
      * permutation using PC2.
      */
     for (i = 0; i < 16; i++) {
+        register unsigned int k;
+        register int j;
+        int          t;
 
         /*
          * rotate.
          */
-        for (k = 0; k < shifts[i]; k++) {
+        for (k = 0u; k < shifts[i]; k++) {
             t = sp->C[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];

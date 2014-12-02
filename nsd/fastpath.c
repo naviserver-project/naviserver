@@ -58,7 +58,7 @@ typedef struct {
 static void DecrEntry(File *filePtr)
     NS_GNUC_NONNULL(1);
 
-static bool UrlIs(const char *server, const char *url, int dir)
+static bool UrlIs(const char *server, const char *url, int isDir)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static bool FastStat(const char *path, struct stat *stPtr)

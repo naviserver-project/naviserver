@@ -912,7 +912,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
     /*
      * Don't use writer when only headers are returned
      */
-    if ((conn->flags & NS_CONN_SKIPBODY) == 0U) {
+    if ((conn->flags & NS_CONN_SKIPBODY) == 0u) {
 
 	/*
 	 * We are able to handle the following cases via writer:
@@ -945,7 +945,10 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	    }
 	} else if (rangeCount < 2) {
 	    if (rangeCount == 1) {
-		ns_lseek(fd, bufs[0].offset, SEEK_SET);
+		if (ns_lseek(fd, bufs[0].offset, SEEK_SET) == -1) {
+                    Ns_Log(Warning, "seek operation with offset %lld failed: %s",
+                           bufs[0].offset, strerror(errno));
+                }
 		len = bufs[0].length;
 	    }
 	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {

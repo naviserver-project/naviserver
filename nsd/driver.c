@@ -62,7 +62,7 @@ typedef struct ServerMap {
 /*
  * The following maintains the spooler state mapping
  */
-static SpoolerStateMap spoolerStateMap[] = {
+static const SpoolerStateMap spoolerStateMap[] = {
     {SPOOLER_CLOSE,        SOCK_CLOSE},
     {SPOOLER_READERROR,    SOCK_READERROR},
     {SPOOLER_WRITEERROR,   SOCK_WRITEERROR},

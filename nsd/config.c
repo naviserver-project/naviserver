@@ -245,11 +245,11 @@ Ns_ConfigIntRange(const char *section, const char *key, int def,
  *----------------------------------------------------------------------
  */
 #ifdef TCL_WIDE_INT_IS_LONG
-# define WIDE_INT_MAX LONG_MAX
-# define WIDE_INT_MIN LONG_MIN
+# define WIDE_INT_MAX (LONG_MAX)
+# define WIDE_INT_MIN (LONG_MIN)
 #else
-# define WIDE_INT_MAX LLONG_MAX
-# define WIDE_INT_MIN LLONG_MIN
+# define WIDE_INT_MAX (LLONG_MAX)
+# define WIDE_INT_MIN (LLONG_MIN)
 #endif
 
 Tcl_WideInt

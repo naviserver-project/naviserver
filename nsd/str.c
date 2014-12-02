@@ -232,7 +232,7 @@ Ns_StrToInt(const char *chars, int *intPtr)
         return NS_ERROR;
     }
     if ((errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN))
-         || (lval > INT_MAX || lval < INT_MIN)) {
+        || (lval > INT_MAX || lval < INT_MIN)) {
         return NS_ERROR;
     }
     *intPtr = (int) lval;

@@ -779,6 +779,8 @@ Ns_GetMimeType(const char *file)
     Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 
+    assert(file != NULL);
+    
     start = strrchr(file, '/');
     if (start == NULL) {
         start = file;
