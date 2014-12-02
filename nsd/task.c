@@ -686,11 +686,13 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 static bool
 SignalQueue(Task *taskPtr, unsigned int bit)
 {
-    TaskQueue *queuePtr = taskPtr->queuePtr;
+    TaskQueue *queuePtr;
     bool       pending = NS_FALSE;
     bool       shutdown;
 
     assert(taskPtr != NULL);
+
+    queuePtr = taskPtr->queuePtr;
     
     Ns_MutexLock(&queuePtr->lock);
     shutdown = queuePtr->shutdown;

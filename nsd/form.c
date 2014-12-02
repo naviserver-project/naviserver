@@ -310,7 +310,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 static void
 ParseMultiInput(Conn *connPtr, const char *start, char *end)
 {
-    Tcl_Encoding encoding = connPtr->urlEncoding;
+    Tcl_Encoding encoding;
     Tcl_DString  kds, vds;
     char        *e, saveend, *disp, unescape;
     const char  *ks, *ke;
@@ -321,6 +321,8 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
     assert(start != NULL);
     assert(end != NULL);
 
+    encoding = connPtr->urlEncoding;
+    
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
     set = Ns_SetCreate(NULL);

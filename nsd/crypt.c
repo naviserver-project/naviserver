@@ -193,13 +193,12 @@ setkey_private(struct sched *sp, const char *key)
     for (i = 0; i < 16; i++) {
         register unsigned int k;
         register int j;
-        int          t;
 
         /*
          * rotate.
          */
         for (k = 0u; k < shifts[i]; k++) {
-            t = sp->C[0];
+            int t = sp->C[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];
 	    }

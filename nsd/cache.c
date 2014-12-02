@@ -118,9 +118,15 @@ Ns_Cache *
 Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
 {
     Cache *cachePtr;
+    size_t nameLength;
 
-    cachePtr = ns_calloc(1U, sizeof(Cache) + strlen(name));
-    strcpy(cachePtr->name, name);
+    assert(name != NULL);
+
+    nameLength = strlen(name);
+
+    cachePtr = ns_calloc(1U, sizeof(Cache) + nameLength);
+    memcpy(cachePtr->name, name, nameLength + 1u);
+    
     cachePtr->freeProc       = freeProc;
     cachePtr->maxSize        = maxSize;
     cachePtr->currentSize    = 0u;
