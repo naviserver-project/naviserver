@@ -352,15 +352,24 @@ Ns_SockBindUdp(const struct sockaddr_in *saPtr)
 NS_SOCKET
 Ns_SockBindUnix(const char *path, int socktype, int mode)
 {
-    NS_SOCKET sock;
 #ifdef _WIN32
-    sock = NS_INVALID_SOCKET;
+    return NS_INVALID_SOCKET;
 #else
+    NS_SOCKET sock;
     struct sockaddr_un addr;
+    size_t pathLength;
+
+    assert(path != NULL);
+    pathLength = strlen(path);
+
+    if (pathLength >= sizeof(addr.sun_path)) {
+        Ns_Log(Error, "provided path exeeds maximum length: %s\n", path);
+        return NS_INVALID_SOCKET;
+    }
 
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, path, sizeof(addr.sun_path) - 1);
+    memcpy(addr.sun_path, path, pathLength + 1);
     unlink(path);
 
     sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);

@@ -1745,20 +1745,9 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
 	}
         Tcl_DStringAppendElement(dsPtr, state);
 
-        /*
-         * Carefully copy the bytes to avoid chasing a pointer
-         * which may be changing in the connection thread.  This
-         * is not entirely safe but acceptible for a seldom-used
-         * admin command.
-         */
         if (connPtr->request != NULL) {
-	    const char *p;
-	    p = (connPtr->request->method != NULL) ? connPtr->request->method : "?";
-	    (void)strncpy(buf, p, sizeof(buf));
-	    Tcl_DStringAppendElement(dsPtr, buf);
-	    p = (connPtr->request->url != NULL) ? connPtr->request->url : "?";
-	    (void)strncpy(buf, p, sizeof(buf));
-	    Tcl_DStringAppendElement(dsPtr, buf);
+            Tcl_DStringAppendElement(dsPtr, (connPtr->request->method != NULL) ? connPtr->request->method : "?");
+            Tcl_DStringAppendElement(dsPtr, (connPtr->request->url    != NULL) ? connPtr->request->url : "?");
 	} else {
 	    Ns_Log(Notice, "AppendConn: no request in state %s; ignore conn in output", state);
 	    Tcl_DStringAppendElement(dsPtr, "unknown");

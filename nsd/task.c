@@ -39,8 +39,6 @@
  * The following defines a task queue.
  */
 
-#define NAME_SIZE 31u
-
 typedef struct TaskQueue {
     struct TaskQueue  *nextPtr;           /* Next in list of all queues. */
     struct Task       *firstSignalPtr;    /* First in list of task signals. */
@@ -50,7 +48,7 @@ typedef struct TaskQueue {
     bool               shutdown;          /* Shutdown flag. */
     int                stopped;           /* Stop flag. */
     NS_SOCKET          trigger[2];        /* Trigger pipe. */
-    char               name[NAME_SIZE+1]; /* String name. */
+    char               name[1];           /* String name. */
 } TaskQueue;
 
 /*
@@ -141,9 +139,14 @@ Ns_TaskQueue *
 Ns_CreateTaskQueue(const char *name)
 {
     TaskQueue *queuePtr;
+    size_t nameLength;
 
-    queuePtr = ns_calloc(1U, sizeof(TaskQueue));
-    strncpy(queuePtr->name, (name != NULL) ? name : "", NAME_SIZE);
+    assert(name != NULL);
+    
+    nameLength = strlen(name);
+    queuePtr = ns_calloc(1u, sizeof(TaskQueue) + nameLength);
+    memcpy(queuePtr->name, name, nameLength + 1u);
+    
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -180,6 +183,8 @@ Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
     TaskQueue  *queuePtr = (TaskQueue *) queue;
     TaskQueue **nextPtrPtr;
 
+    assert(queue != NULL);
+    
     /*
      * Remove queue from list of all queues.
      */
@@ -222,6 +227,8 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
 {
     Task *taskPtr;
 
+    assert(proc != NULL);
+
     taskPtr = ns_calloc(1U, sizeof(Task));
     taskPtr->sock = sock;
     taskPtr->proc = proc;
@@ -252,6 +259,9 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     Task      *taskPtr = (Task *) task;
     TaskQueue *queuePtr = (TaskQueue *) queue;
 
+    assert(task != NULL);
+    assert(queue != NULL);
+    
     taskPtr->queuePtr = queuePtr;
     if (SignalQueue(taskPtr, TASK_INIT) == NS_FALSE) {
         return NS_ERROR;
@@ -282,6 +292,8 @@ Ns_TaskRun(Ns_Task *task)
     Task          *taskPtr = (Task *) task;
     Ns_Time        now, *timeoutPtr;
     struct pollfd  pfd;
+
+    assert(task != NULL);
 
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
@@ -326,6 +338,8 @@ Ns_TaskCancel(Ns_Task *task)
 {
     Task *taskPtr = (Task *) task;
 
+    assert(task != NULL);
+
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
     } else if (SignalQueue(taskPtr, TASK_CANCEL) == NS_FALSE) {
@@ -361,6 +375,8 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     int        status = NS_OK;
     Ns_Time    atime;
 
+    assert(task != NULL);
+    
     if (queuePtr == NULL) {
         if ((taskPtr->signalFlags & TASK_DONE) == 0U) {
             status = NS_TIMEOUT;
@@ -403,9 +419,12 @@ bool
 Ns_TaskCompleted(Ns_Task *task)
 {
     Task      *taskPtr = (Task *) task;
-    TaskQueue *queuePtr = taskPtr->queuePtr;
+    TaskQueue *queuePtr;
     bool       status;
 
+    assert(task != NULL);
+
+    queuePtr = taskPtr->queuePtr;
     if (queuePtr == NULL) {
         status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
     } else {
@@ -441,6 +460,8 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
     Task *taskPtr = (Task *) task;
     int   i;
+
+    assert(task != NULL);
 
     /*
      * Map from sock when bits to poll event bits.
@@ -499,6 +520,8 @@ Ns_TaskDone(Ns_Task *task)
 {
     Task *taskPtr = (Task *) task;
 
+    assert(task != NULL);
+
     taskPtr->flags |= TASK_DONE;
 }
 
@@ -526,8 +549,11 @@ NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
 {
     Task      *taskPtr = (Task *) task;
-    NS_SOCKET  sock    = taskPtr->sock;
+    NS_SOCKET  sock;
 
+    assert(task != NULL);
+
+    sock = taskPtr->sock;
     ns_free(taskPtr);
     return sock;
 }

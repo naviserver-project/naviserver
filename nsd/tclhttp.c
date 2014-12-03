@@ -341,7 +341,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
     encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
 
-    if (encString != NULL && strncmp("gzip", encString, 4U) == 0) {
+    if (encString != NULL && strncmp("gzip", encString, 4u) == 0) {
       httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
 
       if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
@@ -429,9 +429,10 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
     assert(httpPtr != NULL);
 
     /*
-     * There is a header, but it is not parsed yet.
+     * There is a header, but it is not parsed yet. We are already waiting for
+     * the reply, indicated by the available replyHeaders.
      */
-    if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
+    if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0 && httpPtr->replyHeaders != NULL) {
 	size_t contentSize = (size_t)httpPtr->ds.length - (size_t)httpPtr->replyHeaderSize;
 
 	Ns_MutexLock(&httpPtr->lock);
@@ -701,49 +702,45 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 {
     NS_SOCKET    sock;
     Ns_HttpTask *httpPtr;
-    int          len = 0, portNr, uaFlag = -1;
-    const char  *body, *host, *url2;
-    char        *file, *port;
-    char         hostBuffer[256];
+    int          portNr, uaFlag = -1;
+    char        *url2, *host, *file, *portString;
 
     assert(interp != NULL);
     assert(method != NULL);
     assert(url != NULL);
     assert(httpPtrPtr != NULL);
 
-    if (strncmp(url, "http://", 7U) != 0 || url[7] == '\0') {
+    if (strncmp(url, "http://", 7u) != 0 || url[7] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
         return TCL_ERROR;
     }
-    host = url + 7;
+    /*
+     * Make a non-const copy of url, where we can replace the item separating
+     * characters with '\0' characters.
+     */
+    url2 = ns_strdup(url);
+    
+    host = url2 + 7;
     file = strchr(host, '/');
     if (file != NULL) {
         *file = '\0';
     }
-    port = strchr(host, ':');
-    if (port == NULL) {
-        portNr = 80;
+    
+    portString = strchr(host, ':');
+    if (portString != NULL) {
+        *portString = '\0';
+        portNr = (int) strtol(portString + 1, NULL, 10);
     } else {
-        *port = '\0';
-        portNr = (int) strtol(port+1, NULL, 10);
+        portNr = 80;
     }
 
-    strncpy(hostBuffer, host, sizeof(hostBuffer));
-    sock = Ns_SockAsyncConnect(hostBuffer, portNr);
+    sock = Ns_SockAsyncConnect(host, portNr);
 
     if (sock == NS_INVALID_SOCKET) {
 	Tcl_AppendResult(interp, "connect to \"", url, "\" failed: ",
 	 		 ns_sockstrerror(ns_sockerrno), NULL);
+        ns_free(url2);
 	return TCL_ERROR;
-    }
-    url2 = ns_strdup(url);
-
-    /*
-     *  Restore the url string
-     */
-
-    if (file != NULL) {
-	*file = '/';
     }
     
     httpPtr = ns_calloc(1U, sizeof(Ns_HttpTask));
@@ -758,7 +755,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     Ns_StrToUpper(Ns_DStringValue(&httpPtr->ds));
 
     Ns_DStringVarAppend(&httpPtr->ds, " ", 
-			(file != NULL) ? file : "/",
+			(file != NULL && *file != '\0') ? file : "/",
 			" HTTP/1.0\r\n", NULL);
 
     /*
@@ -797,30 +794,36 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 			 Ns_InfoServerVersion());
     }
     
-    if (port == NULL) {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", hostBuffer);
+    if (portString == NULL) {
+	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
     } else {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", hostBuffer, portNr);
+	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
     }
-    
-    body = NULL;
+
     if (bodyPtr != NULL) {
-	body = Tcl_GetStringFromObj(bodyPtr, &len);
-	if (len == 0) {
-	    body = NULL;
-	}
+        int len = 0;
+	const char *body = Tcl_GetStringFromObj(bodyPtr, &len);
+	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", len);
+        Tcl_DStringAppend(&httpPtr->ds, body, len);
+    } else {
+        Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
     }
-    if (body != NULL) {
-	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n", len);
-    }
-    Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
-    if (body != NULL) {
-	Tcl_DStringAppend(&httpPtr->ds, body, len);
-    }
+
     httpPtr->next = httpPtr->ds.string;
     httpPtr->len = (size_t)httpPtr->ds.length;
 
-    /* Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);*/
+    /*
+     *  Restore the url2 string. This modifies the string appearance of host
+     *  as well.
+     */
+    if (file != NULL) {
+	*file = '/';
+    }
+    if (portString != NULL) {
+	*portString = ':';
+    }
+
+    Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);
 
     *httpPtrPtr = httpPtr;
     return TCL_OK;

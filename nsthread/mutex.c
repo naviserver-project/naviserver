@@ -156,13 +156,14 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
 	}
     }
     Ns_MasterLock();
-    p = strncpy(mutexPtr->name, prefix, prefixLength) + prefixLength;
+    p = mutexPtr->name;
+    memcpy(p, prefix, prefixLength + 1u);
     if (name != NULL) {
+        p += prefixLength;
 	*p++ = ':';
 	assert(name != NULL);
-	p = strncpy(p, name, nameLength) + nameLength;
+	memcpy(p, name, nameLength + 1u);
     }
-    *p = '\0';
     Ns_MasterUnlock();
 }
 

@@ -107,8 +107,9 @@ ns_strncopy(const char *old, ssize_t size)
 
     if (likely(old != NULL)) {
         size = likely(size > 0) ? size : strlen(old);
-        new = ns_malloc(size + 1u);
-        strncpy(new, old, size + 1u);
+        size ++;
+        new = ns_malloc(size);
+        memcpy(new, old, size);
     }
     return new;
 }

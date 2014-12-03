@@ -87,6 +87,8 @@ typedef struct LogCache {
     time_t      ltime;        /* For local time calculations */
     char        gbuf[100];    /* Buffer for GMT time string rep */
     char        lbuf[100];    /* Buffer for local time string rep */
+    size_t      gbufSize;
+    size_t      lbufSize;    
     LogEntry   *firstEntry;   /* First in the list of log entries */
     LogEntry   *currEntry;    /* Current in the list of log entries */
     Ns_DString  buffer;       /* The log entries cache text-cache */
@@ -212,9 +214,13 @@ NsInitLog(void)
      */
 
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
+        size_t labelLength;
+        
         (void) Ns_CreateLogSeverity(severityConfig[i].label);
-
-        strncpy(buf, severityConfig[i].label, sizeof(buf));
+        labelLength = strlen(severityConfig[i].label);
+        assert(labelLength < sizeof(buf));
+        
+        memcpy(buf, severityConfig[i].label, labelLength + 1u);
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
     }
@@ -394,6 +400,32 @@ Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_LogSeveritySetEnabled --
+ *
+ *      Allow from the C-API switching of enabled state on and off
+ *
+ * Results:
+ *      Previous enabled state.
+ *
+ * Side effects:
+ *      Upadating severityConfig
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
+{
+    if (likely(severity < severityMaxCount)) {
+        bool prevState = severityConfig[severity].enabled;
+        severityConfig[severity].enabled = enabled;
+        return prevState;
+    }
+    return NS_FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_Log --
  *
  *      Send a message to the server log.
@@ -449,9 +481,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     if (Ns_LogSeverityEnabled(severity) == 0) {
         return;
     }
-
     cachePtr = GetCache();
-
+        
     /*
      * Append new or reuse log entry record.
      */
@@ -648,6 +679,8 @@ Panic(CONST char *fmt, ...)
 char *
 Ns_LogTime(char *timeBuf)
 {
+    assert(timeBuf != NULL);
+
     return Ns_LogTime2(timeBuf, 1);
 }
 
@@ -655,9 +688,23 @@ char *
 Ns_LogTime2(char *timeBuf, int gmt)
 {
     Ns_Time now;
+    LogCache   *cachePtr = GetCache();
+    const char *timeString;
+    size_t      timeStringLength;
 
+    assert(timeBuf != NULL);
+    
+    /*
+     * Add the log stamp
+     */
     Ns_GetTime(&now);
-    return strncpy(timeBuf, LogTime(GetCache(), &now, gmt), 41u);
+    timeString = LogTime(cachePtr, &now, gmt);
+    timeStringLength = (gmt == 0) ? cachePtr->lbufSize : cachePtr->gbufSize;
+
+    assert(timeStringLength < 41);
+    assert(timeStringLength == strlen(timeString));
+
+    return memcpy(timeBuf, timeString, timeStringLength + 1u);
 }
 
 
@@ -682,6 +729,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
 {
     time_t    *tp;
     char      *bp;
+    size_t    *sizePtr; 
 
     assert(cachePtr != NULL);
     assert(timePtr != NULL);
@@ -689,9 +737,11 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     if (gmt != 0) {
         tp = &cachePtr->gtime;
         bp = cachePtr->gbuf;
+        sizePtr = &cachePtr->gbufSize; 
     } else {
         tp = &cachePtr->ltime;
         bp = cachePtr->lbuf;
+        sizePtr = &cachePtr->lbufSize; 
     }
     if (*tp != timePtr->sec) {
         size_t n;
@@ -723,8 +773,9 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
             } else {
                 sign = '+';
             }
-            sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
+            n += sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
         }
+        *sizePtr = n;
     }
 
     return bp;
@@ -1086,8 +1137,6 @@ LogOpen(void)
          */
 
         if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
-            fprintf(stdout, "ns_dup2(%s, STDERR_FILENO) failed: %s\n",
-                    file, strerror(errno));
             status = NS_ERROR;
         }
 
@@ -1233,12 +1282,21 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
+    LogCache   *cachePtr = GetCache();
+    const char *timeString;
+    size_t      timeStringLength;
 
+    assert(arg != NULL);
+    assert(stamp != NULL);
+    assert(msg != NULL);
+    
     /*
      * Add the log stamp
      */
-
-    Ns_DStringAppend(dsPtr, LogTime(GetCache(), stamp, 0));
+    timeString = LogTime(cachePtr, stamp, 0);
+    timeStringLength = cachePtr->lbufSize;
+        
+    Ns_DStringNAppend(dsPtr, timeString, (int)timeStringLength);
     if (flags & LOG_USEC) {
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
@@ -1247,7 +1305,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
                      (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
                      Ns_LogSeverityName(severity));
     if (flags & LOG_EXPAND) {
-        Ns_DStringAppend(dsPtr, "\n    ");
+        Ns_DStringNAppend(dsPtr, "\n    ", 5);
     }
 
     /*
@@ -1290,6 +1348,10 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     int        fd = PTR2INT(arg);
     Ns_DString ds;
 
+    assert(arg != NULL);
+    assert(stamp != NULL);
+    assert(msg != NULL);
+    
     Ns_DStringInit(&ds);
 
     LogToDString(&ds, severity, stamp, msg, len);      
@@ -1326,16 +1388,20 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  */
 
 static int
-LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
+LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          const char *msg, size_t len)
 {
     int             ii, ret;
     void           *logfile = INT2PTR(STDERR_FILENO);
-    Tcl_Obj        *stamp;
+    Tcl_Obj        *stampObj;
     Ns_DString      ds, ds2;
     Tcl_Interp     *interp;
     Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
+    assert(arg != NULL);
+    assert(stamp != NULL);
+    assert(msg != NULL);
+    
     if (severity == Fatal) {
         return NS_OK;
     }
@@ -1343,13 +1409,13 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
         char *err = "LogToTcl: can't get interpreter";
-        (void)LogToFile(logfile, Error, stampPtr, err, 0u);
+        (void)LogToFile(logfile, Error, stamp, err, 0u);
         return NS_ERROR;
     }
 
     Ns_DStringInit(&ds);
-    stamp = Tcl_NewObj();
-    Ns_TclSetTimeObj(stamp, stampPtr);
+    stampObj = Tcl_NewObj();
+    Ns_TclSetTimeObj(stampObj, stamp);
 
     /*
      * Construct args for passing to the callback script:
@@ -1362,8 +1428,8 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
      */
 
     Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
-    Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
-    Tcl_DecrRefCount(stamp);
+    Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
+    Tcl_DecrRefCount(stampObj);
 
     /*
      * Append n bytes of msg as proper list element to ds. Since
@@ -1388,7 +1454,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stampPtr,
         Ns_DStringSetLength(&ds, 0);
         Ns_DStringAppend(&ds, "LogToTcl: ");
         Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
-        (void)LogToFile(logfile, Error, stampPtr, Ns_DStringValue(&ds),
+        (void)LogToFile(logfile, Error, stamp, Ns_DStringValue(&ds),
                         (size_t)Ns_DStringLength(&ds));
     }
     Ns_DStringFree(&ds);
@@ -1421,7 +1487,7 @@ GetCache(void)
 
     cachePtr = Ns_TlsGet(&tls);
     if (cachePtr == NULL) {
-        cachePtr = ns_calloc(1U, sizeof(LogCache));
+        cachePtr = ns_calloc(1u, sizeof(LogCache));
         Ns_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
     }

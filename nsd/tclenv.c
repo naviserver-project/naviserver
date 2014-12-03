@@ -273,7 +273,10 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
     } else {
         len += 1u;
     }
-    /* NB: Use malloc() directly as putenv() would expect. */
+    /* 
+     * Use malloc() directly (and not ns_malloc())
+     * as putenv() expects. 
+     */
     s = malloc(len + 1u);
     if (s == NULL) {
         Tcl_SetResult(interp, "could not allocate memory for new env entry",
@@ -295,12 +298,14 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
      * string. This method fails on such platforms.
      */
 
-    strncpy(s, name, nameLength);
-    strncat(s + nameLength, "=", 1u);
+    memcpy(s, name, nameLength);
+    *(s + nameLength) = '=';
+    *(s + nameLength + 1u) = '\0';
 
     if (value != NULL) {
         strncat(s + nameLength + 1, value, valueLength);
     }
+
     if (putenv(s) != 0) {
         Tcl_AppendResult(interp, "could not put environment entry \"",
                          s, "\": ", Tcl_PosixError(interp), NULL);

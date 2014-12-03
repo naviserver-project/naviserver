@@ -280,6 +280,7 @@ typedef enum {
  */
 
 NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;    /* Severity at which to log verbose. */
+NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
 
 /*
  * Typedefs of functions
@@ -581,7 +582,8 @@ typedef int (Ns_FilterProc)
     (void *arg, Ns_Conn *conn, Ns_FilterType why);
 
 typedef int (Ns_LogFilter)
-    (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len);
+    (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef int (Ns_UrlToFileProc)
     (Ns_DString *dsPtr, const char *server, const char *url);
@@ -1565,7 +1567,9 @@ Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
 
 NS_EXTERN Ns_Task *
 Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
-    NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL
+    NS_GNUC_WARN_UNUSED_RESULT;
 
 NS_EXTERN int
 Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
@@ -1786,6 +1790,9 @@ Ns_LogSeverityName(Ns_LogSeverity severity);
 
 NS_EXTERN int
 Ns_LogSeverityEnabled(Ns_LogSeverity severity);
+
+NS_EXTERN int
+Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled);
 
 
 /*
@@ -2460,7 +2467,8 @@ NS_EXTERN NS_SOCKET
 Ns_SockBindRaw(int proto);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBindUnix(const char *path, int socktype, int mode);
+Ns_SockBindUnix(const char *path, int socktype, int mode)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 NsForkBinder(void);

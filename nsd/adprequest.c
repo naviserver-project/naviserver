@@ -276,9 +276,9 @@ RegisterPage(ClientData arg,
     assert(url != NULL);
 
     fileLength = (file == NULL) ? 0u : strlen(file);
-    adp = ns_calloc(1U, sizeof(AdpRequest) + fileLength + 1u);
+    adp = ns_calloc(1u, sizeof(AdpRequest) + fileLength + 1u);
     if (file != NULL) {
-        strncpy(adp->file, file, fileLength + 1u);
+        memcpy(adp->file, file, fileLength + 1u);
     }
     if (expiresPtr != NULL) {
         adp->expires = *expiresPtr;

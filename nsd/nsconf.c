@@ -118,13 +118,14 @@ NsInitInfo(void)
     Ns_DString addr;
 
     if (gethostname(nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
-        strncpy(nsconf.hostname, "localhost", 10u);
+        memcpy(nsconf.hostname, "localhost", 10u);
     }
     Ns_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
-        strncpy(nsconf.address, addr.string, sizeof(nsconf.address));
+        assert(addr.length < sizeof(nsconf.address));
+        memcpy(nsconf.address, addr.string, (size_t)addr.length + 1u);
     } else {
-        strncpy(nsconf.address, "0.0.0.0", sizeof(nsconf.address));
+        memcpy(nsconf.address, "0.0.0.0", 8u);
     }
     Ns_DStringFree(&addr);
 }
