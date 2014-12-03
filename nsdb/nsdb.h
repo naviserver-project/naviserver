@@ -122,6 +122,8 @@ typedef struct {
     Ns_Set **columns;
 } Ns_DbTableInfo;
 
+NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
+
 /*
  * dbdrv.c:
  */

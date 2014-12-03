@@ -280,7 +280,6 @@ typedef enum {
  */
 
 NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;    /* Severity at which to log verbose. */
-NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
 
 /*
  * Typedefs of functions

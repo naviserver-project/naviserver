@@ -1362,7 +1362,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC);
             setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
             setNameLength++;
-            memcpy(itPtr->nsconn.auth, setName, MIN(setNameLength, NS_SET_SIZE));
+            memcpy(itPtr->nsconn.auth, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
             itPtr->nsconn.flags |= CONN_TCLAUTH;
         }
         break;
@@ -1479,7 +1479,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
             setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
             setNameLength++;
-            memcpy(itPtr->nsconn.hdrs, setName, MIN(setNameLength, NS_SET_SIZE));
+            memcpy(itPtr->nsconn.hdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
             itPtr->nsconn.flags |= CONN_TCLHDRS;
         }
         break;
@@ -1491,7 +1491,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
             setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
             setNameLength++;
-            memcpy(itPtr->nsconn.outhdrs, setName, MIN(setNameLength, NS_SET_SIZE));
+            memcpy(itPtr->nsconn.outhdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
             itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
         }
         break;
@@ -1508,7 +1508,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC);
                 setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
                 setNameLength++;
-                memcpy(itPtr->nsconn.form, setName, MIN(setNameLength, NS_SET_SIZE));
+                memcpy(itPtr->nsconn.form, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
             }
             itPtr->nsconn.flags |= CONN_TCLFORM;
         }

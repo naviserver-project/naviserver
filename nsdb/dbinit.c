@@ -37,6 +37,8 @@
 
 #include "db.h"
 
+Ns_LogSeverity Ns_LogSqlDebug;
+
 /*
  * The following structure defines a database pool.
  */

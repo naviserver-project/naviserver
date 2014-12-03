@@ -40,9 +40,9 @@
  * The following define available flags bits.
  */
 
-#define LOG_ROLL   0x01U
-#define LOG_EXPAND 0x02U
-#define LOG_USEC   0x04U
+#define LOG_ROLL   0x01u
+#define LOG_EXPAND 0x02u
+#define LOG_USEC   0x04u
 
 /*
  * The following struct represents a log entry header as stored in
@@ -131,7 +131,7 @@ static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
 static const char  *file;
-static unsigned int flags = 0U;
+static unsigned int flags = 0u;
 static int          maxback;
 
 static LogFilter   *filters;
@@ -186,7 +186,7 @@ void
 NsInitLog(void)
 {
     Tcl_HashEntry *hPtr;
-    char           buf[20];
+    char           buf[21];
     int            isNew;
     Ns_LogSeverity i;
 

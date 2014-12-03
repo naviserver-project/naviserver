@@ -60,6 +60,7 @@ Ns_ModuleInit(const char *server, const char *module)
     static int once = 0;
 
     if (once == 0) {
+        Ns_LogSqlDebug = Ns_CreateLogSeverity("Debug(sql)");
 	NsDbInitPools();
 	once = 1;
     }

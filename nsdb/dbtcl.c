@@ -608,6 +608,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                 return TCL_ERROR;
             }
             handlePtr->verbose = verbose;
+            (void) Ns_LogSeveritySetEnabled(Ns_LogSqlDebug, verbose);
         }
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(handlePtr->verbose));
         break;
@@ -628,6 +629,8 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 				 "\" more than 5 characters", NULL);
 		return TCL_ERROR;
 	    }
+            assert(handlePtr != NULL);
+
 	    Ns_DbSetException(handlePtr, code, Tcl_GetString(objv[4]));
 	    break;
 	}
@@ -646,7 +649,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 		return TCL_ERROR;
 	    }
             assert(handlePtr != NULL);
-
+            
 	    if (Ns_DbSpSetParam(handlePtr, Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
 				arg5, Tcl_GetString(objv[6])) != NS_OK) {
 		return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
