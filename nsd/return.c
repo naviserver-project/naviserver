@@ -946,7 +946,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	} else if (rangeCount < 2) {
 	    if (rangeCount == 1) {
 		if (ns_lseek(fd, bufs[0].offset, SEEK_SET) == -1) {
-                    Ns_Log(Warning, "seek operation with offset %lld failed: %s",
+                    Ns_Log(Warning, "seek operation with offset %" PROTd " failed: %s",
                            bufs[0].offset, strerror(errno));
                 }
 		len = bufs[0].length;
