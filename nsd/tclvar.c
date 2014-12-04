@@ -1260,9 +1260,9 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create)
     assert(interp != NULL);
     assert(arrayObj != NULL);
 
-    if (likely(Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **) &arrayPtr)
-	       == TCL_OK)) {
-        Ns_MutexLock(&((arrayPtr)->bucketPtr->lock));
+    if (likely(Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **) &arrayPtr) == TCL_OK)
+        && arrayPtr->bucketPtr != NULL) {
+        Ns_MutexLock(&(arrayPtr->bucketPtr->lock));
 	arrayPtr->locks++;
     } else {
         NsInterp *itPtr = NsGetInterpData(interp);
