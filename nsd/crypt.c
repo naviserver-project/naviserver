@@ -29,6 +29,11 @@
 
 #include "nsd.h"
 
+#if !defined(HAVE_CRYPTR) && defined(__linux)
+static Ns_Mutex lock = NULL;
+#endif
+
+
 #if defined(HAVE_CRYPTR)
 
 char *
@@ -58,12 +63,16 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
-    char *c = crypt(pw, salt);
+    char *enc;
+    
+    Ns_MutexLock(&lock);
+    enc = crypt(pw, salt);
+    Ns_MutexUnlock(&lock);
 
-    if (c == NULL) {
+    if (enc == NULL) {
  	*iobuf = 0;
      } else {
-	strcpy(iobuf, c);
+	strcpy(iobuf, enc);
      }
      return iobuf;
  }
