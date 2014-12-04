@@ -39,3 +39,8 @@ AC_DEFUN([AX_HAVE_ARC4RANDOM],
   ])]
 )
 
+AC_DEFUN([AX_HAVE_CRYPT_R],
+  [AC_CHECK_FUNC([crypt_r], [
+    AC_DEFINE([HAVE_CRYPT_R],[1],[Define to 1 if crypt_r is available.])
+  ])]
+)

@@ -29,20 +29,44 @@
 
 #include "nsd.h"
 
-#ifdef __linux
+#if defined(HAVE_CRYPTR)
 
+char *
+Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
+{
+    char *enc;
+    struct crypt_data data;
+    
+    data.initialized = 0;
+    enc = crypt_r(pw, salt, &data);
+    
+    if (enc == NULL) {
+	*iobuf = '\0';
+    } else {
+	strcpy(iobuf, enc);
+    }
+    
+    return iobuf;
+}
+
+#elif defined(__linux)
+/*
+ * It seems that not every version of crypt() is compatible. We see different
+ * results e.g. when we use crypt under Mac OS X for the crypted strings in
+ * the regression test.
+ */
 char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     char *c = crypt(pw, salt);
 
     if (c == NULL) {
-	*iobuf = 0;
-    } else {
+ 	*iobuf = 0;
+     } else {
 	strcpy(iobuf, c);
-    }
-    return iobuf;
-}
+     }
+     return iobuf;
+ }
 
 #else
 
@@ -228,7 +252,7 @@ setkey_private(struct sched *sp, const char *key)
  * The 8 selection functions. For some reason, they give a 0-origin index,
  * unlike everything else.
  */
-static const int S[8][64] = {
+static const unsigned int S[8][64] = {
     { 14,  4, 13,  1,  2, 15, 11,  8,  3, 10,  6, 12,  5,  9,  0,  7,
        0, 15,  7,  4, 14,  2, 13,  1, 10,  6, 12, 11,  9,  5,  3,  8,
        4,  1, 14,  8, 13,  6,  2, 11, 15, 12,  9,  7,  3, 10,  5,  0,
@@ -296,7 +320,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
      */
     char     L[64], *R = L + 32;
     char     tempL[32];
-    char     f[32];
+    unsigned char f[32];
 
     /*
      * The combination of the key and the input, before selection.
@@ -364,10 +388,12 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
                 (preS[t + 4]     ) +
                 (preS[t + 5] << 4)];
             t = 4 * j;
-            f[t    ] = (k >> 3) & 1U;
-            f[t + 1] = (k >> 2) & 1U;
-            f[t + 2] = (k >> 1) & 1U;
-            f[t + 3] = (k     ) & 1U;
+            assert(t < (32-3));
+
+            f[t    ] = (k >> 3) & 1u;
+            f[t + 1] = (k >> 2) & 1u;
+            f[t + 2] = (k >> 1) & 1u;
+            f[t + 3] = (k     ) & 1u;
         }
 
         /*
@@ -407,7 +433,8 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
 char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
-    register int    i, j, c;
+    register int    i, j;
+    char            c;
     int             temp;
     char            block[66];
     struct sched    s;
@@ -415,9 +442,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     for (i = 0; i < 66; i++) {
         block[i] = '\0';
     }
-    for (i = 0; (c = *pw) && i < 64; pw++) {
+    for (i = 0, c = *pw; c != '\0' && i < 64; pw++, c = *pw) {
 	for (j = 0; j < 7; j++, i++) {
-            block[i] = (c >> (6 - j)) & 1U;
+            assert(i < sizeof(block));
+            block[i] = (c >> (6 - j)) & 1u;
 	}
         i++;
     }
@@ -439,7 +467,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 	}
         c -= '.';
         for (j = 0; j < 6; j++) {
-            if ((c >> j) & 1U) {
+            if ((c >> j) & 1u) {
                 temp = s.E[6 * i + j];
                 s.E[6 * i + j] = s.E[6 * i + j + 24];
                 s.E[6 * i + j + 24] = temp;

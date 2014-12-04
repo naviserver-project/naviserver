@@ -18,6 +18,9 @@
 /* Define to 1 if the native crypt library should be used */
 #undef HAVE_CRYPT
 
+/* Define to 1 if crypt_r is available. */
+#undef HAVE_CRYPT_R
+
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
 #undef HAVE_DECL_TZNAME
