@@ -228,7 +228,7 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeo
     Callback   *cbPtr;
     int         status, trigger, create;
 
-    cbPtr = ns_calloc(1U, sizeof(Callback));
+    cbPtr = ns_calloc(1u, sizeof(Callback));
     cbPtr->sock = sock;
     cbPtr->proc = proc;
     cbPtr->arg = arg;
@@ -309,7 +309,7 @@ SockCallbackThread(void *UNUSED(arg))
     when[0] = (unsigned int)NS_SOCK_READ;
     when[1] = (unsigned int)NS_SOCK_WRITE;
     when[2] = (unsigned int)NS_SOCK_EXCEPTION | (unsigned int)NS_SOCK_DONE;
-    max = 100U;
+    max = 100u;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     pfds[0].fd = trigPipe[0];
     pfds[0].events = POLLIN;
@@ -336,14 +336,18 @@ SockCallbackThread(void *UNUSED(arg))
 
         while (cbPtr != NULL) {
             nextPtr = cbPtr->nextPtr;
-            if ((cbPtr->when & (unsigned int)NS_SOCK_CANCEL) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_CANCEL) != 0u) {
 		hPtr = Tcl_FindHashEntry(&table, NSSOCK2PTR(cbPtr->sock));
                 if (hPtr != NULL) {
                     ns_free(Tcl_GetHashValue(hPtr));
                     Tcl_DeleteHashEntry(hPtr);
                 }
                 if (cbPtr->proc != NULL) {
-                    (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_CANCEL);
+                    /*
+                     * Call Ns_SockProc to notify about cancel. For the
+                     * time being, ignore boolean result.
+                     */
+                    (void) (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_CANCEL);
                 }
                 ns_free(cbPtr);
             } else {
@@ -375,10 +379,14 @@ SockCallbackThread(void *UNUSED(arg))
         for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
             if (cbPtr->timeout > 0 && cbPtr->expires > 0 && cbPtr->expires < now) {
-                (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_TIMEOUT);
-                cbPtr->when = 0U;
+                /*
+                 * Call Ns_SockProc to notify about timeout. For the
+                 * time being, ignore boolean result.
+                 */
+                (void) (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_TIMEOUT);
+                cbPtr->when = 0u;
             }
-	    if ((cbPtr->when & NS_SOCK_ANY) == 0U) {
+	    if ((cbPtr->when & NS_SOCK_ANY) == 0u) {
 	    	Tcl_DeleteHashEntry(hPtr);
 		ns_free(cbPtr);
 	    } else {
@@ -386,7 +394,7 @@ SockCallbackThread(void *UNUSED(arg))
 		pfds[nfds].fd = cbPtr->sock;
 		pfds[nfds].events = pfds[nfds].revents = 0;
         	for (i = 0; i < Ns_NrElements(when); ++i) {
-                    if ((cbPtr->when & when[i]) != 0U) {
+                    if ((cbPtr->when & when[i]) != 0u) {
 			pfds[nfds].events |= events[i];
                     }
         	}
@@ -437,7 +445,7 @@ SockCallbackThread(void *UNUSED(arg))
              hPtr = Tcl_NextHashEntry(&search)) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
             for (i = 0; i < Ns_NrElements(when); ++i) {
-                if (((cbPtr->when & when[i]) != 0U) 
+                if (((cbPtr->when & when[i]) != 0u) 
 		    && (pfds[cbPtr->idx].revents & events[i]) != 0) {
                     /* 
                      * Call the Sock_Proc with the SockState flag
@@ -448,8 +456,8 @@ SockCallbackThread(void *UNUSED(arg))
                      * the last parameter of Ns_SockProc to
                      * Ns_SockState.
                      */
-                    if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == 0) {
-			cbPtr->when = 0U;
+                    if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == NS_FALSE) {
+			cbPtr->when = 0u;
 		    }
                     cbPtr->expires = 0;
                 }
@@ -523,16 +531,16 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
             snprintf(buf, sizeof(buf), "%d", (int) cbPtr->sock);
             Tcl_DStringAppendElement(dsPtr, buf);
             Tcl_DStringStartSublist(dsPtr);
-            if ((cbPtr->when & (unsigned int)NS_SOCK_READ) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_READ) != 0u) {
                 Tcl_DStringAppendElement(dsPtr, "read");
             }
-            if ((cbPtr->when & (unsigned int)NS_SOCK_WRITE) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_WRITE) != 0u) {
                 Tcl_DStringAppendElement(dsPtr, "write");
             }
-            if ((cbPtr->when & (unsigned int)NS_SOCK_EXCEPTION) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
                 Tcl_DStringAppendElement(dsPtr, "exception");
             }
-            if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U) {
+            if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0u) {
                 Tcl_DStringAppendElement(dsPtr, "exit");
             }
             Tcl_DStringEndSublist(dsPtr);
