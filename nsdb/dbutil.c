@@ -118,7 +118,7 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 		case NS_OK:
 		    Ns_DbSetException(handle, NS_SQLERRORCODE,
 			"Query returned more than one row.");
-		    Ns_DbFlush(handle);
+		    (void) Ns_DbFlush(handle);
 		    /* FALLTHROUGH */
 
 		case NS_ERROR:
