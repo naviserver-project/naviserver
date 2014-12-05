@@ -54,7 +54,7 @@ static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
 static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
+static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 
@@ -363,16 +363,16 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
      */
 
     disp = Ns_SetGet(set, "content-disposition");
-    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == 1) {
-	const char *key = Ext2Utf(&kds, ks, (size_t)(ke-ks), encoding, unescape);
+    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == NS_TRUE) {
+	const char *key = Ext2Utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
 	const char *value, *fs = NULL, *fe = NULL;
 
-        if (GetValue(disp, "filename=", &fs, &fe, &unescape) == 0) {
-	    value = Ext2Utf(&vds, start, (size_t)(end-start), encoding, unescape);
+        if (GetValue(disp, "filename=", &fs, &fe, &unescape) == NS_FALSE) {
+	    value = Ext2Utf(&vds, start, (size_t)(end - start), encoding, unescape);
         } else {
 	    Tcl_HashEntry *hPtr;
 
-            value = Ext2Utf(&vds, fs, (size_t)(fe-fs), encoding, unescape);
+            value = Ext2Utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew != 0) {
 	        FormFile *filePtr = ns_malloc(sizeof(FormFile));
@@ -496,7 +496,7 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
  *      Determine start and end of a multipart form input value.
  *
  * Results:
- *      1 if attribute found and value parsed, 0 otherwise.
+ *      NS_TRUE if attribute found and value parsed, NS_FALSE otherwise.
  *
  * Side effects:
  *      Start and end are stored in given pointers, quoted character, 
@@ -505,7 +505,7 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
 {
     const char *s, *e;
@@ -518,7 +518,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 
     s = Ns_StrCaseFind(hdr, att);
     if (s == NULL) {
-        return 0;
+        return NS_FALSE;
     }
     s += strlen(att);
     e = s;
@@ -529,7 +529,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
         }
 	*uPtr = '\0';
     } else {
-        int escaped = 0;
+        bool escaped = NS_FALSE;
 
 	*uPtr = '\0';
         /* 
@@ -539,12 +539,12 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 	 * character as result.
 	 */
         ++e;
-        while (*e != '\0' && (escaped != 0 || *e != *s)) {
-	    if (escaped != 0) {
-	        escaped = 0;
+        while (*e != '\0' && (escaped == NS_TRUE || *e != *s)) {
+	    if (escaped == NS_TRUE) {
+	        escaped = NS_FALSE;
 	    } else if (*e == '\\') {
 	        *uPtr = *s;
-	        escaped = 1;
+	        escaped = NS_TRUE;
 	    }
             ++e;
         }
@@ -553,7 +553,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
     *vsPtr = s;
     *vePtr = e;
 
-    return 1;
+    return NS_TRUE;
 }
 
 
