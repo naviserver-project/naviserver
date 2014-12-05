@@ -1222,7 +1222,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
 {
     ListenCallback *lcbPtr = arg;

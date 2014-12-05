@@ -221,7 +221,7 @@ Ns_SockPortBound(int port)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 {
     struct sockaddr_in  sa;
@@ -231,7 +231,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 
     tablePtr = arg;
     if (why == (unsigned int)NS_SOCK_EXIT) {
-        ns_sockclose(sock);
+        (void) ns_sockclose(sock);
         return NS_FALSE;
     }
 
@@ -261,3 +261,12 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
     }
     return NS_TRUE;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

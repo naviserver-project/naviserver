@@ -300,7 +300,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 {
     Mod       *modPtr = arg;
@@ -309,7 +309,7 @@ AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 
     if (why == (unsigned int)NS_SOCK_EXIT) {
 	Ns_Log(Notice, "nscp: shutdown");
-	ns_sockclose(lsock);
+	(void )ns_sockclose(lsock);
 	return NS_FALSE;
     }
 

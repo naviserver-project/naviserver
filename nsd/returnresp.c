@@ -85,7 +85,7 @@ ConfigServerRedirects(const char *server)
     path = Ns_ConfigGetPath(server, NULL, "redirects", NULL);
     set = Ns_ConfigGetSection(path);
 
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key, *map;
 	int status;
 
@@ -165,6 +165,8 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 {
     int result;
 
+    assert(conn != NULL);
+    
     if (ReturnRedirect(conn, status, &result)) {
         return result;
     }
@@ -192,6 +194,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 int
 Ns_ConnReturnOk(Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return Ns_ConnReturnStatus(conn, 200);
 }
 
@@ -219,11 +222,13 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
     Ns_DString ds, msg;
     int        result;
 
+    assert(conn != NULL);
+
     Ns_DStringInit(&ds);
     Ns_DStringInit(&msg);
     if (url != NULL) {
         if (*url == '/') {
-            Ns_ConnLocationAppend(conn, &ds);
+            (void) Ns_ConnLocationAppend(conn, &ds);
         }
         Ns_DStringAppend(&ds, url);
         Ns_ConnSetHeaders(conn, "Location", ds.string);
@@ -258,6 +263,7 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 int
 Ns_ConnReturnNoResponse(Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return Ns_ConnReturnStatus(conn, 204);
 }
 
@@ -285,11 +291,13 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
     Ns_DString ds, msg;
     int        result;
 
+    assert(conn != NULL);
+
     Ns_DStringInit(&ds);
     Ns_DStringInit(&msg);
     if (url != NULL) {
         if (*url == '/') {
-            Ns_ConnLocationAppend(conn, &ds);
+            (void) Ns_ConnLocationAppend(conn, &ds);
         }
         Ns_DStringAppend(&ds, url);
         Ns_ConnSetHeaders(conn, "Location", ds.string);
@@ -328,6 +336,8 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
 {
     Ns_DString ds;
     int        result;
+
+    assert(conn != NULL);
 
     if (ReturnRedirect(conn, 400, &result)) {
         return result;
@@ -409,6 +419,8 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
 {
     int result;
 
+    assert(conn != NULL);
+
     if (ReturnRedirect(conn, 403, &result)) {
         return result;
     }
@@ -439,6 +451,8 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 {
     int result;
 
+    assert(conn != NULL);
+    
     if (ReturnRedirect(conn, 404, &result)) {
         return result;
     }
@@ -466,6 +480,8 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 int
 Ns_ConnReturnNotModified(Ns_Conn *conn)
 {
+    assert(conn != NULL);
+
     return Ns_ConnReturnStatus(conn, 304);
 }
 
@@ -488,6 +504,8 @@ int
 Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
 {
     int result;
+
+    assert(conn != NULL);
 
     if (ReturnRedirect(conn, 413, &result)) {
         return result;
@@ -515,6 +533,8 @@ int
 Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
 {
     int result;
+
+    assert(conn != NULL);
 
     if (ReturnRedirect(conn, 414, &result)) {
         return result;
@@ -544,6 +564,8 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
 {
     int result;
 
+    assert(conn != NULL);
+
     if (ReturnRedirect(conn, 431, &result)) {
         return result;
     }
@@ -572,6 +594,8 @@ int
 Ns_ConnReturnNotImplemented(Ns_Conn *conn)
 {
     int result;
+
+    assert(conn != NULL);
 
     if (ReturnRedirect(conn, 501, &result)) {
         return result;
@@ -606,7 +630,7 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
 
     assert(conn != NULL);
 
-    Ns_SetTrunc(conn->outputheaders, 0);
+    Ns_SetTrunc(conn->outputheaders, 0u);
     if (ReturnRedirect(conn, 500, &result)) {
         return result;
     }
@@ -640,7 +664,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
 
     assert(conn != NULL);
 
-    Ns_SetTrunc(conn->outputheaders, 0);
+    Ns_SetTrunc(conn->outputheaders, 0u);
     if (ReturnRedirect(conn, 503, &result)) {
         return result;
     }
@@ -675,7 +699,7 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
     Conn          *connPtr = (Conn *) conn;
     NsServer      *servPtr;
 
-    assert(connPtr != NULL);
+    assert(conn != NULL);
     assert(resultPtr != NULL);
 
     servPtr = connPtr->poolPtr->servPtr;
@@ -694,3 +718,12 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
     }
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

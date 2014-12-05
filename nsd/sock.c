@@ -865,11 +865,11 @@ Ns_SockPipe(NS_SOCKET socks[2])
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CloseLater(NS_SOCKET sock, void *UNUSED(arg), unsigned int UNUSED(why))
 {
-    ns_sockclose(sock);
-    return NS_FALSE;
+    int rc = ns_sockclose(sock);
+    return (rc == 0 ? NS_TRUE : NS_FALSE);
 }
 
 int
