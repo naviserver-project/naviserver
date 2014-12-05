@@ -237,7 +237,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
     }
 
     newSock = Ns_SockAccept(sock, NULL, NULL);
-    if (newSock != NS_INVALID_SOCKET) {
+    if (likely(newSock != NS_INVALID_SOCKET)) {
         Tcl_HashEntry *hPtr;
         ListenData    *ldPtr;
 
@@ -263,6 +263,8 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
              */
             success = (*ldPtr->proc) (newSock, ldPtr->arg, why);
         }
+    } else {
+        success = NS_FALSE;
     }
     return success;
 }
