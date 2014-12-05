@@ -148,7 +148,7 @@ static const char  *severityType = "ns:logseverity";
 
 static struct {
     const char *label;
-    int         enabled;
+    bool        enabled;
 } severityConfig[640] = {
     { "Notice",  NS_TRUE  },
     { "Warning", NS_TRUE  },
@@ -254,13 +254,13 @@ NsConfigLog(void)
     severityConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
     severityConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
 
-    if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
+    if (Ns_ConfigBool(path, "logroll", NS_TRUE) == NS_TRUE) {
         flags |= LOG_ROLL;
     }
-    if (Ns_ConfigBool(path, "logusec", NS_FALSE)) {
+    if (Ns_ConfigBool(path, "logusec", NS_FALSE) == NS_TRUE) {
         flags |= LOG_USEC;
     }
-    if (Ns_ConfigBool(path, "logexpanded", NS_FALSE)) {
+    if (Ns_ConfigBool(path, "logexpanded", NS_FALSE) == NS_TRUE) {
         flags |= LOG_EXPAND;
     }
 
@@ -387,7 +387,7 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
     if (likely(severity < severityMaxCount)) {
@@ -412,7 +412,7 @@ Ns_LogSeverityEnabled(Ns_LogSeverity severity)
  *
  *----------------------------------------------------------------------
  */
-int
+bool
 Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
 {
     if (likely(severity < severityMaxCount)) {
@@ -478,7 +478,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      * or if severity level out of range(s).
      */
 
-    if (Ns_LogSeverityEnabled(severity) == 0) {
+    if (Ns_LogSeverityEnabled(severity) == NS_FALSE) {
         return;
     }
     cachePtr = GetCache();
@@ -943,7 +943,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
       {
 	Ns_LogSeverity severity;
         void *addrPtr;
-	int   enabled;
+	bool   enabled;
 
         if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");

@@ -1787,10 +1787,10 @@ Ns_CreateLogSeverity(const char *name)
 NS_EXTERN const char *
 Ns_LogSeverityName(Ns_LogSeverity severity);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_LogSeverityEnabled(Ns_LogSeverity severity);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled);
 
 
