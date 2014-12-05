@@ -228,6 +228,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
     socklen_t           len;
     Tcl_HashTable      *tablePtr;
     NS_SOCKET           newSock;
+    bool                success;
 
     tablePtr = arg;
     if (why == (unsigned int)NS_SOCK_EXIT) {
@@ -240,7 +241,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         Tcl_HashEntry *hPtr;
         ListenData    *ldPtr;
 
-        Ns_SockSetBlocking(newSock);
+        (void) Ns_SockSetBlocking(newSock);
         len = (socklen_t)sizeof(sa);
         getsockname(newSock, (struct sockaddr *) &sa, &len);
         ldPtr = NULL;
@@ -254,12 +255,16 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         }
         Ns_MutexUnlock(&lock);
         if (ldPtr == NULL) {
-            ns_sockclose(newSock);
+            int result = ns_sockclose(newSock);
+            success = (result == 0) ? NS_TRUE : NS_FAIL;
         } else {
-            (*ldPtr->proc) (newSock, ldPtr->arg, why);
+            /*
+             * For the time being
+             */
+            success = (*ldPtr->proc) (newSock, ldPtr->arg, why);
         }
     }
-    return NS_TRUE;
+    return success;
 }
 
 /*

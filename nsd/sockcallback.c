@@ -365,7 +365,7 @@ SockCallbackThread(void *UNUSED(arg))
 	 */
 
 	if (max <= (size_t)table.numEntries) {
-	    max  = (size_t)(table.numEntries + 100);
+	    max  = (size_t)table.numEntries + 100u;
 	    pfds = ns_realloc(pfds, sizeof(struct pollfd) * max);
 	}
 
