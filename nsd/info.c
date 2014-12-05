@@ -643,8 +643,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         return TCL_OK;
 
     case IServersIdx:
-        Tcl_DStringResult(interp, &nsconf.servers);
-        return TCL_OK;
+        {
+            Tcl_DString *dsPtr = &nsconf.servers;
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
+            return TCL_OK;
+        }
 
     default:
         /* cases handled below */
