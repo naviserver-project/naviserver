@@ -52,8 +52,8 @@ static void FreeUrl(Ns_Request *request)
 static const char *GetQvalue(const char *str, int *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static char *GetEncodingFormat(const char *encodingString, 
-			       const char *encodingFormat, double *qValue)
+static const char *GetEncodingFormat(const char *encodingString, 
+                                     const char *encodingFormat, double *qValue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
@@ -635,9 +635,9 @@ GetQvalue(const char *str, int *lenPtr) {
  *
  *----------------------------------------------------------------------
  */
-static char *
+static const char *
 GetEncodingFormat(const char *encodingString, const char *encodingFormat, double *qValue) {
-    char *encodingStr;
+    const char *encodingStr;
 
     assert(encodingString != NULL);
     assert(encodingFormat != NULL);
@@ -687,7 +687,7 @@ NsParseAcceptEncoding(double version, const char *hdr)
 
     assert(hdr != NULL);
 
-    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
+    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue) != NULL) {
 	/* we have gzip specified in accept-encoding */
 	if (gzipQvalue > 0.999) {
 	    /* gzip qvalue 1, use it, nothing else can be higher */
@@ -697,10 +697,10 @@ NsParseAcceptEncoding(double version, const char *hdr)
 	    gzip = 0;
 	} else {
 	    /* a middle gzip qvalue, compare it with identity and default */
-	    if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
+	    if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
 		/* gzip qvalue larger than identity */
 		gzip = (gzipQvalue >= identityQvalue);
-	    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
+	    } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
 		/* gzip qvalue larger than default */
 		gzip = (gzipQvalue >= starQvalue);
 	    } else {
@@ -708,12 +708,12 @@ NsParseAcceptEncoding(double version, const char *hdr)
 		gzip = 1;
 	    }
 	}
-    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
+    } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
 	/* star matches everything, so as well gzip */
 	if (starQvalue < 0.0009) {
 	    /* star qvalue forbids gzip */
 	    gzip = 0;
-	} else if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
+	} else if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
 	    /* star qvalue allows gzip in HTTP/1.1 */
 	    gzip = (starQvalue >= identityQvalue) && (version >= 1.1);
 	} else {
