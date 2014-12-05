@@ -197,9 +197,9 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
             break;
         }
     }
-    p -= (sizeof(HTTP) - 2);
+    p -= (sizeof(HTTP) - 2u);
     if (p >= url) {
-        if (strncmp(p, HTTP, sizeof(HTTP) - 1) == 0) {
+        if (strncmp(p, HTTP, sizeof(HTTP) - 1u) == 0) {
 
             /*
              * If atof fails, version will be set to 0 and the server
@@ -207,7 +207,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
              */
 
             *p = '\0';
-            p += sizeof(HTTP) - 1;
+            p += sizeof(HTTP) - 1u;
             request->version = strtod(p, NULL);
         }
     }

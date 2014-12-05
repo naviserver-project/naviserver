@@ -55,9 +55,9 @@ static Tcl_HashTable preboundUdp;
 static Tcl_HashTable preboundRaw;
 static Tcl_HashTable preboundUnix;
 
-static int binderRunning = 0;
-static int binderRequest[2]  = { -1, -1 };
-static int binderResponse[2] = { -1, -1 };
+static bool binderRunning = NS_FALSE;
+static NS_SOCKET binderRequest[2]  = { NS_INVALID_SOCKET, NS_INVALID_SOCKET };
+static NS_SOCKET binderResponse[2] = { NS_INVALID_SOCKET, NS_INVALID_SOCKET };
 
 /*
  * Local functions defined in this file
@@ -120,7 +120,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
+    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
     return sock;
@@ -169,7 +169,7 @@ Ns_SockListenUdp(const char *address, int port)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
+    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
 
@@ -221,7 +221,7 @@ Ns_SockListenRaw(int proto)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
+    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
         sock = Ns_SockBinderListen('R', 0, proto, proto);
     }
 
@@ -286,7 +286,7 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning != 0) {
+    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
         sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
 #endif /* _WIN32 */
@@ -382,8 +382,8 @@ Ns_SockBindUnix(const char *path, int socktype, int mode)
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
-#endif /* _WIN32 */
     return sock;
+#endif /* _WIN32 */
 }
 
 
@@ -441,8 +441,8 @@ Ns_SockBindRaw(int proto)
 void
 NsInitBinder(void)
 {
-    Tcl_InitHashTable(&preboundTcp, sizeof(struct sockaddr_in)/sizeof(int));
-    Tcl_InitHashTable(&preboundUdp, sizeof(struct sockaddr_in)/sizeof(int));
+    Tcl_InitHashTable(&preboundTcp, (int)(sizeof(struct sockaddr_in) / sizeof(int)));
+    Tcl_InitHashTable(&preboundUdp, (int)(sizeof(struct sockaddr_in) / sizeof(int)));
     Tcl_InitHashTable(&preboundRaw, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
 }
@@ -944,7 +944,7 @@ NsForkBinder(void)
         Ns_Fatal("NsForkBinder: process %d exited with non-zero status: %d",
                  pid, status);
     }
-    binderRunning = 1;
+    binderRunning = NS_TRUE;
 #endif /* _WIN32 */
 }
 
@@ -970,12 +970,12 @@ NsForkBinder(void)
 void
 NsStopBinder(void)
 {
-    if (binderRunning != 0) {
+    if (binderRunning == NS_TRUE) {
         ns_sockclose(binderRequest[1]);
         ns_sockclose(binderResponse[0]);
         ns_sockclose(binderRequest[0]);
         ns_sockclose(binderResponse[1]);
-        binderRunning = 0;
+        binderRunning = NS_FALSE;
     }
 }
 
