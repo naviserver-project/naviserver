@@ -149,14 +149,15 @@ static const char  *severityType = "ns:logseverity";
 static struct {
     const char *label;
     bool        enabled;
+    long        count;
 } severityConfig[640] = {
-    { "Notice",  NS_TRUE  },
-    { "Warning", NS_TRUE  },
-    { "Error",   NS_TRUE  },
-    { "Fatal",   NS_TRUE  },
-    { "Bug",     NS_TRUE  },
-    { "Debug",   NS_FALSE },
-    { "Dev",     NS_FALSE }
+    { "Notice",  NS_TRUE,  0 },
+    { "Warning", NS_TRUE,  0 },
+    { "Error",   NS_TRUE,  0 },
+    { "Fatal",   NS_TRUE,  0 },
+    { "Bug",     NS_TRUE,  0 },
+    { "Debug",   NS_FALSE, 0 },
+    { "Dev",     NS_FALSE, 0 }
 };
 
 static const Ns_LogSeverity severityMaxCount = (Ns_LogSeverity)(sizeof(severityConfig) / sizeof(severityConfig[0]));
@@ -424,6 +425,39 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
     }
     return NS_FALSE;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogStats --
+ *
+ *      Return a Tcl list containing the labels and counts for all severities.
+ *      The function should be probably be guarded by a lock, but we have just
+ *      single word operations and potentially incorrect counts are not fatal.
+ *
+ * Results:
+ *      Tcl list
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+LogStats()
+{
+    Ns_LogSeverity s;
+    Tcl_Obj *listObj;
+
+    listObj = Tcl_NewListObj(0, NULL);
+    for (s = 0; s < severityIdx; s++) {
+        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(severityConfig[s].label, -1));
+        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewLongObj(severityConfig[s].count));
+    }
+    return listObj;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -487,6 +521,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     if (Ns_LogSeverityEnabled(severity) == NS_FALSE) {
         return;
     }
+    severityConfig[severity].count ++;
+
     cachePtr = GetCache();
         
     /*
@@ -875,12 +911,12 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     static const char *opts[] = {
         "hold", "count", "get", "peek", "flush", "release",
-        "truncate", "severity", "severities",
+        "truncate", "severity", "severities", "stats",
         "register", "unregister", NULL
     };
     enum {
         CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx,
-        CTruncIdx, CSeverityIdx, CSeveritiesIdx,
+        CTruncIdx, CSeverityIdx, CSeveritiesIdx, CStatsIdx,
         CRegisterIdx, CUnregisterIdx
     };
 
@@ -998,6 +1034,10 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 return TCL_ERROR;
             }
         }
+        break;
+        
+    case CStatsIdx:
+        Tcl_SetObjResult(interp, LogStats());
         break;
 
     default:
