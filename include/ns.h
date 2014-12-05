@@ -1749,14 +1749,17 @@ Ns_LogRoll(void);
 
 NS_EXTERN void
 Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
-     NS_GNUC_PRINTF(2, 3);
+    NS_GNUC_NONNULL(2)
+    NS_GNUC_PRINTF(2, 3);
 
 NS_EXTERN void
-Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr);
+Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
+    NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_Fatal(const char *fmt, ...)
-     NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
 
 NS_EXTERN char *
 Ns_LogTime(char *timeBuf)
@@ -1775,17 +1778,20 @@ Ns_SetNsLogProc(Ns_LogProc *procPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
 
 NS_EXTERN void
-Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc);
+Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg);
+Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_LogSeverity
 Ns_CreateLogSeverity(const char *name)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
-Ns_LogSeverityName(Ns_LogSeverity severity);
+Ns_LogSeverityName(Ns_LogSeverity severity)
+    NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN bool
 Ns_LogSeverityEnabled(Ns_LogSeverity severity);

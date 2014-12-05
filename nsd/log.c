@@ -327,6 +327,8 @@ Ns_CreateLogSeverity(const char *name)
     Tcl_HashEntry  *hPtr;
     int             isNew;
 
+    assert(name != NULL);
+    
     if (severityIdx >= severityMaxCount) {
         Ns_Fatal("max log severities exceeded");
     }
@@ -444,6 +446,8 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
 {
     va_list ap;
 
+    assert(fmt != NULL);
+    
     va_start(ap, fmt);
     Ns_VALog(severity, fmt, &ap);
     va_end(ap);
@@ -472,6 +476,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     size_t    length, offset;
     LogCache *cachePtr;
     LogEntry *entryPtr = NULL;
+
+    assert(fmt != NULL);
 
     /*
      * Skip if logging for selected severity is disabled
@@ -545,6 +551,9 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 {
     LogFilter *filterPtr = ns_calloc(1U, sizeof *filterPtr);
 
+    assert(procPtr != NULL);
+    assert(arg != NULL);
+    
     Ns_MutexLock(&lock);
 
     if (filters != NULL) {
@@ -585,6 +594,9 @@ void
 Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
 {
     LogFilter *filterPtr;
+
+    assert(procPtr != NULL);
+    assert(arg != NULL);
 
     Ns_MutexLock(&lock);
     filterPtr = filters;
@@ -636,7 +648,9 @@ void
 Ns_Fatal(const char *fmt, ...)
 {
     va_list ap;
-
+    
+    assert(fmt != NULL);
+    
     va_start(ap, fmt);
     Ns_VALog(Fatal, fmt, &ap);
     va_end(ap);
