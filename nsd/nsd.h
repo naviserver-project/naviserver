@@ -525,7 +525,7 @@ typedef struct NsLimits {
     unsigned int     maxrun;    /* Max conns to run at once */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped */
     size_t	     maxupload; /* Max data accepted */
-    int              timeout;   /* Seconds allowed for conn to complete */
+    long             timeout;   /* Seconds allowed for conn to complete */
 
     Ns_Mutex         lock;      /* Lock for state and stats */
 
@@ -697,7 +697,7 @@ typedef struct ConnPool {
         int max;
         int current;
         int idle;
-        int timeout;
+        long timeout;
         int creating;
 	Ns_Mutex lock;
     } threads;

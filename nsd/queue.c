@@ -220,7 +220,7 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
 	 ) {
 
 	Ns_MutexLock(&poolPtr->servPtr->pools.lock);
-	wantCreate = (poolPtr->servPtr->pools.shutdown == 0);
+	wantCreate = (poolPtr->servPtr->pools.shutdown == NS_FALSE);
 	Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
       
 	/*Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
@@ -355,7 +355,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     * available, ...)
     */
   
-    if (servPtr->pools.shutdown == 0) {
+    if (servPtr->pools.shutdown == NS_FALSE) {
 
 	Ns_MutexLock(&poolPtr->wqueue.lock);
 	if (poolPtr->wqueue.freePtr != NULL) {
@@ -385,7 +385,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             connPtr->server               = servPtr->server;
             connPtr->location             = sockPtr->location;
 	    connPtr->flags                = sockPtr->flags;
-	    if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0) {
+	    if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
 		connPtr->acceptTime       = *nowPtr;
 	    } else {
 		connPtr->acceptTime       = sockPtr->acceptTime;
@@ -722,7 +722,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	break;
     
     case SConnectionsIdx:
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(poolPtr->stats.processed));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)poolPtr->stats.processed));
         break;
 
     case SStatsIdx:
@@ -908,7 +908,7 @@ NsStopServer(NsServer *servPtr)
     assert(servPtr != NULL);
 
     Ns_Log(Notice, "server [%s]: stopping", servPtr->server);
-    servPtr->pools.shutdown = 1;
+    servPtr->pools.shutdown = NS_TRUE;
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
 	NsWakeupConnThreads(poolPtr);
@@ -1013,7 +1013,8 @@ NsConnThread(void *arg)
     Ns_Time        wait, *timePtr = &wait;
     unsigned int   id;
     bool           shutdown;
-    int            status = NS_OK, cpt, ncons, timeout, current, fromQueue;
+    int            status = NS_OK, cpt, ncons, current, fromQueue;
+    long           timeout;
     const char    *path, *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
     Ns_Mutex      *tqueueLockPtr  = &poolPtr->tqueue.lock;
@@ -1149,10 +1150,8 @@ NsConnThread(void *arg)
 	    /*
 	     * Wait until someone wakes us up, or a timeout happens.
 	     */
-	    while (1) {
+	    while (servPtr->pools.shutdown == NS_FALSE) {
 
-		if (servPtr->pools.shutdown != 0) {break;}
-		
 		Ns_GetTime(timePtr);
 		Ns_IncrTime(timePtr, timeout, 0);
 		
@@ -1208,7 +1207,7 @@ NsConnThread(void *arg)
 	    poolPtr->threads.idle --;
 	    Ns_MutexUnlock(threadsLockPtr);
 	    
-	    if (servPtr->pools.shutdown != 0) {
+	    if (servPtr->pools.shutdown == NS_TRUE) {
 		exitMsg = "shutdown pending";
 		break;
 	    } else if (status == NS_TIMEOUT) {
@@ -1339,7 +1338,8 @@ NsConnThread(void *arg)
     Ns_MutexUnlock(&servPtr->pools.lock);
 
 
-    { int wakeup; 
+    {
+        bool wakeup; 
 	/*
 	 * Record the fact that this driver is exiting by decrementing
 	 * the actually running threads and wakeup the driver to check
@@ -1355,7 +1355,8 @@ NsConnThread(void *arg)
 	 * During shutdown, we do not want to restart connection
 	 * threads. The driver pointer might be already invalid. 
 	 */
-	if (wakeup != 0 && connPtr != NULL && shutdown == 0) { 
+	if (wakeup == NS_TRUE && connPtr != NULL && shutdown == NS_FALSE) {
+            assert(connPtr->drvPtr != NULL);
 	    NsWakeupDriver(connPtr->drvPtr); 
 	} 
     }
@@ -1365,7 +1366,7 @@ NsConnThread(void *arg)
      * condition variable to check whether all threads have terminated
      * already.
      */
-    if (shutdown != 0) {
+    if (shutdown == NS_TRUE) {
 	Ns_CondSignal(&poolPtr->wqueue.cond); 
     }
 
@@ -1432,7 +1433,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Make sure we update peer address with actual remote IP address
      */
-    Ns_ConnSetPeer(conn, &sockPtr->sa);
+    (void) Ns_ConnSetPeer(conn, &sockPtr->sa);
 
     connPtr->request = &connPtr->reqPtr->request;
 
@@ -1546,7 +1547,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
         }
     }
 
-    Ns_ConnClose(conn);
+    (void) Ns_ConnClose(conn);
     Ns_ConnTimeStats(conn);
 
     if (status == NS_OK || status == NS_FILTER_RETURN) {

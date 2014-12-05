@@ -246,7 +246,7 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 	limitsPtr->maxupload = (size_t)maxupload;
     }
     if (timeout > -1) {
-        limitsPtr->timeout = timeout;
+      limitsPtr->timeout = (long)timeout;
     }
     LimitsResult(interp, limitsPtr);
 
@@ -419,7 +419,7 @@ LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
     Ns_DStringPrintf(&ds, "nrunning %u nwaiting %u"
                      " ntimeout %u ndropped %u noverflow %u"
                      " maxrun %u maxwait %u"
-                     " maxupload %lu timeout %d",
+                     " maxupload %lu timeout %ld",
                      limitsPtr->state.nrunning, limitsPtr->state.nwaiting,
                      limitsPtr->stats.ntimeout, limitsPtr->stats.ndropped,
                          limitsPtr->stats.noverflow,

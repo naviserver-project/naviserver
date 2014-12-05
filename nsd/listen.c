@@ -256,7 +256,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         Ns_MutexUnlock(&lock);
         if (ldPtr == NULL) {
             int result = ns_sockclose(newSock);
-            success = (result == 0) ? NS_TRUE : NS_FAIL;
+            success = (result == 0) ? NS_TRUE : NS_FALSE;
         } else {
             /*
              * For the time being
