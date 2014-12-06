@@ -36,7 +36,7 @@
 
 #include "nsd.h"
 
-static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
+static int GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static int GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv,
@@ -45,29 +45,6 @@ static int GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* o
 
 static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnAuth --
- *
- *      Get the authentication headers
- *
- * Results:
- *      An Ns_Set containing authentication user/password and other parameters
- *      as in digest method
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-Ns_Set *
-Ns_ConnAuth(const Ns_Conn *conn)
-{
-    return conn->auth;
-}
 
 
 /*
@@ -89,6 +66,7 @@ Ns_ConnAuth(const Ns_Conn *conn)
 Ns_Set *
 Ns_ConnHeaders(const Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return conn->headers;
 }
 
@@ -112,7 +90,32 @@ Ns_ConnHeaders(const Ns_Conn *conn)
 Ns_Set *
 Ns_ConnOutputHeaders(const Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return conn->outputheaders;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnAuth --
+ *
+ *      Get the authentication headers
+ *
+ * Results:
+ *      An Ns_Set containing authentication user/password and other parameters
+ *      as in digest method
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Set *
+Ns_ConnAuth(const Ns_Conn *conn)
+{
+    assert(conn != NULL);
+    return conn->auth;
 }
 
 
@@ -132,9 +135,10 @@ Ns_ConnOutputHeaders(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnAuthUser(const Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return conn->auth != NULL ? Ns_SetIGet(conn->auth, "Username") : NULL;
 }
 
@@ -155,9 +159,10 @@ Ns_ConnAuthUser(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnAuthPasswd(const Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return conn->auth != NULL ? Ns_SetIGet(conn->auth, "Password") : NULL;
 }
 
@@ -181,6 +186,7 @@ Ns_ConnAuthPasswd(const Ns_Conn *conn)
 size_t
 Ns_ConnContentLength(const Ns_Conn *conn)
 {
+    assert(conn != NULL);
     return conn->contentLength;
 }
 
@@ -201,7 +207,7 @@ Ns_ConnContentLength(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnContent(const Ns_Conn *conn)
 {
     const Conn *connPtr = (const Conn *) conn;
@@ -226,10 +232,11 @@ Ns_ConnContent(const Ns_Conn *conn)
  */
 
 size_t
-Ns_ConnContentSize(Ns_Conn *conn)
+Ns_ConnContentSize(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->reqPtr->length;
 }
 
@@ -249,11 +256,12 @@ Ns_ConnContentSize(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnContentFile(Ns_Conn *conn)
+const char *
+Ns_ConnContentFile(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
-
+    const Conn *connPtr = (const Conn *) conn;
+    
+    assert(conn != NULL);
     return connPtr->sockPtr != NULL ? connPtr->sockPtr->tfile : NULL;
 }
 
@@ -274,10 +282,11 @@ Ns_ConnContentFile(Ns_Conn *conn)
  */
 
 int
-Ns_ConnContentFd(Ns_Conn *conn)
+Ns_ConnContentFd(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->sockPtr != NULL ? connPtr->sockPtr->tfd : 0;
 }
 
@@ -299,10 +308,11 @@ Ns_ConnContentFd(Ns_Conn *conn)
  */
 
 const char *
-Ns_ConnServer(Ns_Conn *conn)
+Ns_ConnServer(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->server;
 }
 
@@ -324,21 +334,23 @@ Ns_ConnServer(Ns_Conn *conn)
  */
 
 int
-Ns_ConnResponseStatus(Ns_Conn *conn)
+Ns_ConnResponseStatus(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->responseStatus;
 
 }
 
 void
-Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
+Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (new_status != 200) {
-        connPtr->responseStatus = new_status;
+    assert(conn != NULL);
+    if (newStatus != 200) {
+        connPtr->responseStatus = newStatus;
     }
 }
 
@@ -360,10 +372,11 @@ Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
  */
 
 size_t
-Ns_ConnContentSent(Ns_Conn *conn)
+Ns_ConnContentSent(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
-
+    const Conn *connPtr = (const Conn *) conn;
+    
+    assert(conn != NULL);
     return connPtr->nContentSent;
 }
 
@@ -388,6 +401,7 @@ Ns_ConnSetContentSent(Ns_Conn *conn, size_t length)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     connPtr->nContentSent = length;
 }
 
@@ -409,10 +423,11 @@ Ns_ConnSetContentSent(Ns_Conn *conn, size_t length)
  */
 
 ssize_t
-Ns_ConnResponseLength(Ns_Conn *conn)
+Ns_ConnResponseLength(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->responseLength;
 }
 
@@ -433,11 +448,12 @@ Ns_ConnResponseLength(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnPeer(Ns_Conn *conn)
+const char *
+Ns_ConnPeer(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->reqPtr->peer;
 }
 
@@ -462,6 +478,9 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
+    assert(saPtr != NULL);
+
     connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
     strncpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr), 16u);
     return connPtr->reqPtr->peer;
@@ -485,10 +504,11 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
  */
 
 int
-Ns_ConnPeerPort(Ns_Conn *conn)
+Ns_ConnPeerPort(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->reqPtr->port;
 }
 
@@ -514,6 +534,9 @@ Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetInitServer();
 
+    assert(proc != NULL);
+    assert(arg != NULL);
+    
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_SetConnLocationProc: no initializing server");
         return NS_ERROR;
@@ -549,6 +572,9 @@ Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
 {
     NsServer *servPtr = NsGetServer(server);
 
+    assert(server != NULL);
+    assert(proc != NULL);
+    
     if (servPtr != NULL) {
         servPtr->vhost.locationProc = proc;
     }
@@ -614,10 +640,17 @@ char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 {
     Conn       *connPtr = (Conn *) conn;
-    NsServer   *servPtr = connPtr->poolPtr->servPtr;
+    NsServer   *servPtr;
     Ns_Set     *headers;
     char       *location, *host;
 
+    assert(conn != NULL);
+    assert(dest != NULL);
+    
+    assert(connPtr->poolPtr != NULL);
+    servPtr = connPtr->poolPtr->servPtr;
+    assert(servPtr);
+    
     if (servPtr->vhost.connLocationProc != NULL) {
 
         /*
@@ -693,6 +726,8 @@ Ns_ConnHost(const Ns_Conn *conn)
 {
     const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
+    assert(connPtr->drvPtr != NULL);
     return connPtr->drvPtr->address;
 }
 
@@ -714,10 +749,12 @@ Ns_ConnHost(const Ns_Conn *conn)
  */
 
 int
-Ns_ConnPort(Ns_Conn *conn)
+Ns_ConnPort(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
+    assert(connPtr->drvPtr != NULL);
     return connPtr->drvPtr->port;
 }
 
@@ -739,10 +776,11 @@ Ns_ConnPort(Ns_Conn *conn)
  */
 
 NS_SOCKET
-Ns_ConnSock(Ns_Conn *conn)
+Ns_ConnSock(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
-
+    const Conn *connPtr = (const Conn *) conn;
+    
+    assert(conn != NULL);
     return (connPtr->sockPtr != NULL ? connPtr->sockPtr->sock : NS_INVALID_SOCKET);
 }
 
@@ -763,11 +801,12 @@ Ns_ConnSock(Ns_Conn *conn)
  */
 
 Ns_Sock *
-Ns_ConnSockPtr(Ns_Conn *conn)
+Ns_ConnSockPtr(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
-    return (Ns_Sock*)connPtr->sockPtr;
+    assert(conn != NULL);
+    return (Ns_Sock *)connPtr->sockPtr;
 }
 
 /*
@@ -787,10 +826,11 @@ Ns_ConnSockPtr(Ns_Conn *conn)
  */
 
 Ns_DString *
-Ns_ConnSockContent(Ns_Conn *conn)
+Ns_ConnSockContent(const Ns_Conn *conn)
 {
-    Conn     *connPtr = (Conn*)conn;
+    const Conn *connPtr = (const Conn *)conn;
 
+    assert(conn != NULL);
     if (connPtr->reqPtr != NULL) {
         return &connPtr->reqPtr->buffer;
     }
@@ -819,6 +859,7 @@ Ns_ConnDriverName(const Ns_Conn *conn)
 {
     const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->drvPtr->name;
 }
 
@@ -852,6 +893,7 @@ Ns_ConnStartTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     return &connPtr->requestQueueTime;
 }
 
@@ -860,6 +902,7 @@ Ns_ConnAcceptTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     return &connPtr->acceptTime;
 }
 
@@ -868,6 +911,7 @@ Ns_ConnQueueTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     return &connPtr->requestQueueTime;
 }
 
@@ -876,6 +920,7 @@ Ns_ConnDequeueTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     return &connPtr->requestDequeueTime;
 }
 
@@ -884,6 +929,7 @@ Ns_ConnFilterTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     return &connPtr->filterDoneTime;
 }
 
@@ -905,10 +951,16 @@ Ns_ConnFilterTime(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 void
-Ns_ConnTimeSpans(Ns_Conn *conn, 
+Ns_ConnTimeSpans(const Ns_Conn *conn, 
 		 Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
 		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
+
+    assert(conn != NULL);
+    assert(acceptTimeSpanPtr != NULL);
+    assert(queueTimeSpanPtr != NULL);
+    assert(filterTimeSpanPtr != NULL);
+    assert(runTimeSpanPtr != NULL);
 
     *acceptTimeSpanPtr = connPtr->acceptTimeSpan;
     *queueTimeSpanPtr  = connPtr->queueTimeSpan;
@@ -944,11 +996,15 @@ Ns_ConnTimeSpans(Ns_Conn *conn,
  */
 void
 Ns_ConnTimeStats(Ns_Conn *conn) {
-    Conn      *connPtr = (Conn *) conn;
-    ConnPool  *poolPtr = connPtr->poolPtr;
-    Ns_Time    now;
+    Conn *connPtr = (Conn *) conn;
+    ConnPool   *poolPtr = connPtr->poolPtr;
+    Ns_Time     now;
 
+    assert(conn != NULL);
+    
+    poolPtr = connPtr->poolPtr;
     assert(poolPtr != NULL);
+    
     Ns_GetTime(&now);
 
     Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
@@ -988,6 +1044,7 @@ Ns_ConnTimeout(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     return &connPtr->timeout;
 }
 
@@ -1049,10 +1106,12 @@ NsConnIdStr(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
+bool
+Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
+
+    assert(conn != NULL);
 
     if (connPtr->poolPtr->servPtr->opts.modsince != 0) {
 	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
@@ -1080,7 +1139,7 @@ Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 {
     char *hdr;
@@ -1111,10 +1170,11 @@ Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
  */
 
 Tcl_Encoding
-Ns_ConnGetEncoding(Ns_Conn *conn)
+Ns_ConnGetEncoding(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->outputEncoding;
 }
 
@@ -1123,6 +1183,7 @@ Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     connPtr->outputEncoding = encoding;
 }
 
@@ -1145,10 +1206,11 @@ Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
  */
 
 Tcl_Encoding
-Ns_ConnGetUrlEncoding(Ns_Conn *conn)
+Ns_ConnGetUrlEncoding(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->urlEncoding;
 }
 
@@ -1157,6 +1219,7 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 {
     Conn *connPtr = (Conn *) conn;
 
+    assert(conn != NULL);
     connPtr->urlEncoding = encoding;
 }
 
@@ -1181,10 +1244,11 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
  */
 
 int
-Ns_ConnGetCompression(Ns_Conn *conn)
+Ns_ConnGetCompression(const Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
+    assert(conn != NULL);
     return connPtr->requestCompress;
 }
 
@@ -1192,6 +1256,8 @@ void
 Ns_ConnSetCompression(Ns_Conn *conn, int level)
 {
     Conn *connPtr = (Conn *) conn;
+
+    assert(conn != NULL);
 
 #ifdef HAVE_ZLIB_H
     connPtr->requestCompress = MIN(MAX(level, 0), 9);
@@ -1319,7 +1385,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CClientdataIdx:
         if (objc > 2) {
-	    char *value = Tcl_GetString(objv[2]);
+	    const char *value = Tcl_GetString(objv[2]);
 	    if (connPtr->clientData != NULL) {
 		ns_free(connPtr->clientData);
 	    }
@@ -1432,7 +1498,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             connPtr->outputEncoding = encoding;
         }
         if (connPtr->outputEncoding != NULL) {
-            CONST char *charset = Ns_GetEncodingCharset(connPtr->outputEncoding);
+            const char *charset = Ns_GetEncodingCharset(connPtr->outputEncoding);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
         }
         break;
@@ -1459,13 +1525,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             connPtr->urlEncoding = encoding;
         }
         if (connPtr->urlEncoding != NULL) {
-            CONST char *charset = Ns_GetEncodingCharset(connPtr->urlEncoding);
+            const char *charset = Ns_GetEncodingCharset(connPtr->urlEncoding);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
         }
         break;
 
     case CPeerAddrIdx:
-        Tcl_SetResult(interp, Ns_ConnPeer(conn), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeer(conn), -1));
         break;
 
     case CPeerPortIdx:
@@ -1759,8 +1825,8 @@ int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp    *itPtr = clientData;
-    int         toCopy = 0;
-    char        *chanName;
+    int          toCopy = 0;
+    const char  *chanName;
     Request     *reqPtr;
     Tcl_Channel  chan;
 
@@ -1854,7 +1920,7 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, void *arg)
  */
 
 static int
-GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
+GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
 {
     Tcl_Channel chan;
     int mode;

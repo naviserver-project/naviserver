@@ -217,7 +217,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
         }
     } else if (status == TCL_OK) {
         if (keysArgcPtr != NULL && keysArgvPtr != NULL) {
-            size_t    keySize, sumKeySize = 0u;
+            int       keySize, sumKeySize = 0;
             int       ii, keyCount;
             char    **keyArgv, *nextByte;
             Tcl_Obj **objValues;
@@ -230,8 +230,8 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
             for (ii = 0; ii < keyCount; ii++) {
                 sumKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
             }
-	    keySize = (keyCount + 1) * sizeof(char *);
-            keyArgv = (char **)ckalloc((unsigned int)(keySize + sumKeySize));
+	    keySize = (keyCount + 1) * (int)sizeof(char *);
+            keyArgv = (char **)ckalloc((unsigned int)keySize + (unsigned int)sumKeySize);
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + keySize;
 
@@ -669,11 +669,11 @@ EnsureKeyedListSpace(keylIntObj_t * keylIntPtr, int newNumEntries)
             KEYEDLIST_ARRAY_INCR_SIZE;
         if (keylIntPtr->entries == NULL) {
             keylIntPtr->entries = (keylEntry_t *)
-                ckalloc(newSize * sizeof(keylEntry_t));
+                ckalloc((unsigned)newSize * sizeof(keylEntry_t));
         } else {
             keylIntPtr->entries = (keylEntry_t *)
                 ckrealloc((char *) keylIntPtr->entries,
-			  newSize * sizeof(keylEntry_t));
+			  (unsigned)newSize * sizeof(keylEntry_t));
         }
         keylIntPtr->arraySize = newSize;
     }
@@ -842,11 +842,11 @@ DupKeyedListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 
     KEYL_REP_ASSERT(srcIntPtr);
 
-    copyIntPtr = (keylIntObj_t *) ckalloc(sizeof (keylIntObj_t));
+    copyIntPtr = (keylIntObj_t *) ckalloc(sizeof(keylIntObj_t));
     copyIntPtr->arraySize = srcIntPtr->arraySize;
     copyIntPtr->numEntries = srcIntPtr->numEntries;
     copyIntPtr->entries = (keylEntry_t *)
-        ckalloc(copyIntPtr->arraySize * sizeof(keylEntry_t));
+        ckalloc((unsigned)copyIntPtr->arraySize * sizeof(keylEntry_t));
 
     for (idx = 0; idx < srcIntPtr->numEntries ; idx++) {
         copyIntPtr->entries[idx].key = 
@@ -932,7 +932,7 @@ UpdateStringOfKeyedList(Tcl_Obj *keylPtr)
      * Conversion to strings is done via list objects to support binary data.
      */
     if (keylIntPtr->numEntries > UPDATE_STATIC_SIZE) {
-        listObjv = (Tcl_Obj **) ckalloc(keylIntPtr->numEntries * sizeof(Tcl_Obj *));
+        listObjv = (Tcl_Obj **) ckalloc((unsigned)keylIntPtr->numEntries * sizeof(Tcl_Obj *));
     } else {
         staticListObjv[0] = NULL;
         listObjv = staticListObjv;
@@ -1080,7 +1080,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
             ckfree(keylIntPtr->entries[findIdx].key);
             Tcl_DecrRefCount(keylIntPtr->entries[findIdx].valuePtr);
         }
-        keylIntPtr->entries[findIdx].key = (char *)ckalloc((unsigned int)(keyLen + 1u));
+        keylIntPtr->entries[findIdx].key = (char *)ckalloc((unsigned)keyLen + 1u);
         memcpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = valuePtr;
@@ -1119,7 +1119,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
         }
         EnsureKeyedListSpace(keylIntPtr, 1);
         findIdx = keylIntPtr->numEntries++;
-        keylIntPtr->entries[findIdx].key = (char *) ckalloc((unsigned int)(keyLen + 1U));
+        keylIntPtr->entries[findIdx].key = (char *) ckalloc((unsigned)keyLen + 1u);
         memcpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = newKeylPtr;

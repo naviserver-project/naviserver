@@ -476,7 +476,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     NsInterp    *itPtr = arg;
     int          result, nargs = 0;
     unsigned int savedFlags;
-    int          asFile = 0, safe = 0, asString = 0, tcl = 0;
+    bool         asFile = NS_FALSE, safe = NS_FALSE, asString = NS_FALSE, tcl = NS_FALSE;
     const char  *cwd = NULL, *savedCwd = NULL, *resvar = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -498,7 +498,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     objv = objv + (objc - nargs);
     objc = nargs;
 
-    if (asString != 0 && asFile != 0) {
+    if (asString == NS_TRUE && asFile == NS_TRUE) {
       Tcl_AppendResult(interp, "specify either '-string' or '-file', but not both.", NULL);
       return TCL_ERROR;
     }
@@ -511,17 +511,17 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
      */
     itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
 
-    if (asFile != 0) {
+    if (asFile == NS_TRUE) {
 	/* file mode */
         itPtr->adp.flags |= ADP_ADPFILE;
     } else {
 	/* string mode */
     }
-    if (tcl != 0) {
+    if (tcl == NS_TRUE) {
         /* tcl script */
         itPtr->adp.flags |= ADP_TCLFILE;
     }
-    if (safe != 0) {
+    if (safe == NS_TRUE) {
         itPtr->adp.flags |= ADP_SAFE;
     }
 
@@ -534,7 +534,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         savedCwd = itPtr->adp.cwd;
         itPtr->adp.cwd = cwd;
     }
-    if (asFile != 0) {
+    if (asFile == NS_TRUE) {
         result = NsAdpSource(arg, objc, objv, resvar);
     } else {
         result = NsAdpEval(arg, objc, objv, resvar);

@@ -272,6 +272,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
         len += valueLength + 1u;
     } else {
         len += 1u;
+        valueLength = 0u;
     }
     /* 
      * Use malloc() directly (and not ns_malloc())

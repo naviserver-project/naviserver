@@ -936,7 +936,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     Ns_DString      ds;
     char           *script;
     int             remain = 0, opt, length, result = TCL_OK;
-    Ns_TclTraceType when;
+    Ns_TclTraceType when = NS_TCL_TRACE_NONE;
     unsigned int    flags = 0u;
 
     static const char *opts[] = {
@@ -1838,6 +1838,10 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
                 }
                 tracePtr = tracePtr->nextPtr;
             }
+            break;
+            
+        case NS_TCL_TRACE_NONE:
+            break;
         }
     }
 }

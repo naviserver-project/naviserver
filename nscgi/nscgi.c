@@ -559,7 +559,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 {
     int     fd;
     size_t  len;
-    char   *content, *err;
+    const char   *content, *err;
 
     err = NULL;
     len = conn->contentLength;
@@ -811,16 +811,18 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     SetUpdate(cgiPtr->env, "AUTH_TYPE", "Basic");
     SetUpdate(cgiPtr->env, "REMOTE_USER", Ns_ConnAuthUser(conn));
-    s = Ns_ConnPeer(conn);
-    if (s != NULL) {
-        SetUpdate(cgiPtr->env, "REMOTE_ADDR", s);
-        if ((modPtr->flags & CGI_GETHOST)) {
-            if (Ns_GetHostByAddr(dsPtr, s)) {
-                SetUpdate(cgiPtr->env, "REMOTE_HOST", dsPtr->string);
+    {
+        const char *peer = Ns_ConnPeer(conn);
+        if (peer != NULL) {
+            SetUpdate(cgiPtr->env, "REMOTE_ADDR", peer);
+            if ((modPtr->flags & CGI_GETHOST)) {
+                if (Ns_GetHostByAddr(dsPtr, peer)) {
+                    SetUpdate(cgiPtr->env, "REMOTE_HOST", dsPtr->string);
+                }
+                Ns_DStringTrunc(dsPtr, 0);
+            } else {
+                SetUpdate(cgiPtr->env, "REMOTE_HOST", peer);
             }
-            Ns_DStringTrunc(dsPtr, 0);
-        } else {
-            SetUpdate(cgiPtr->env, "REMOTE_HOST", s);
         }
     }
 

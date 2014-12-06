@@ -82,6 +82,8 @@ Ns_ConnGetQuery(Ns_Conn *conn)
     Conn           *connPtr = (Conn *) conn;
     Tcl_DString     bound;
     char           *form, *s, *e;
+
+    assert(conn != NULL);
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -134,7 +136,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
  *      reparsing, as when the encoding changes.
  *
  * Results:
- *      Query data or NULL if error 
+ *      None
  *
  * Side effects:
  *      None.
@@ -149,7 +151,9 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    if (connPtr == NULL || connPtr->query == NULL) {
+    assert(conn != NULL);
+    
+    if (connPtr->query == NULL) {
         return;
     }
 
@@ -188,6 +192,9 @@ Ns_ConnClearQuery(Ns_Conn *conn)
 int
 Ns_QueryToSet(char *query, Ns_Set *set)
 {
+    assert(query != NULL);
+    assert(set != NULL);
+    
     ParseQuery(query, set, NULL);
     return NS_OK;
 }

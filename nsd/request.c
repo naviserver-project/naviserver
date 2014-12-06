@@ -499,6 +499,9 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
      * they must be in well form key: value form.
      */
 
+    assert(set != NULL);
+    assert(line != NULL);
+
     if (CHARTYPE(space, *line) != 0) {
         if (Ns_SetSize(set) == 0U) {
 	    return NS_ERROR;	/* Continue before first header. */

@@ -316,7 +316,7 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
 
             len = strlen(s);
             Ns_DStringNAppend(&cds, s, (int)len);
-            s += len + 1;
+            s += len + 1u;
             if (*s != '\0') {
                 Ns_DStringNAppend(&cds, " ", 1);
             }

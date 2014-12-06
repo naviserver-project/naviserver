@@ -74,8 +74,8 @@ static const int pr2six[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
-#define Encode(c) (six2pr[(c)])
-#define Decode(c) ((unsigned char) pr2six[(int)(c)])
+#define Encode(c) (UCHAR(six2pr[(c)]))
+#define Decode(c) (UCHAR(pr2six[(int)(c)]))
 
 
 /*
@@ -110,7 +110,7 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
 
     p = input;
     q = (unsigned char *) buf;
-    for (n = bufSize / 3; n > 0; --n) {
+    for (n = bufSize / 3u; n > 0u; --n) {
         /*
          * Add wrapping newline to be compatible with GNU uuencode
          * if line length exceeds max line length - without adding
@@ -132,10 +132,10 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
      * Convert and pad any remaining bytes.
      */
 
-    n = bufSize % 3;
-    if (n > 0) {
+    n = bufSize % 3u;
+    if (n > 0u) {
 	*q++ = Encode(p[0] >> 2);
-	if (n == 1) {
+	if (n == 1u) {
 	    *q++ = Encode((p[0] << 4) & 0x30U);
 	    *q++ = UCHAR('=');
 	} else {
@@ -216,5 +216,5 @@ Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
     if ((size_t)(q - buf) < bufSize) {
 	*q = UCHAR('\0');
     }
-    return (q - buf);
+    return (size_t)(q - buf);
 }

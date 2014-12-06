@@ -452,8 +452,8 @@ LogStats()
 
     listObj = Tcl_NewListObj(0, NULL);
     for (s = 0; s < severityIdx; s++) {
-        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(severityConfig[s].label, -1));
-        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewLongObj(severityConfig[s].count));
+        (void)Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(severityConfig[s].label, -1));
+        (void)Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewLongObj(severityConfig[s].count));
     }
     return listObj;
 }
@@ -812,7 +812,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
 #ifdef HAVE_TM_GMTOFF
             gmtoff = ptm->tm_gmtoff / 60;
 #else
-            gmtoff = -timezone / 60;
+            gmtoff = -1 * (int)timezone / 60;
             if (daylight != 0 && ptm->tm_isdst != 0) {
                 gmtoff += 60;
             }
@@ -823,7 +823,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
             } else {
                 sign = '+';
             }
-            n += sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
+            n += (size_t)sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
         }
         *sizePtr = n;
     }
@@ -1290,10 +1290,10 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
 
     if (trunc != 0) {
         if (count > 0) {
-	    int length = (ePtr != NULL) ? (int)(ePtr->offset + ePtr->length) : 0;
-            cachePtr->count = (length != 0) ? nentry : 0;
+	    size_t length = (ePtr != NULL) ? (ePtr->offset + ePtr->length) : 0u;
+            cachePtr->count = (length != 0u) ? nentry : 0;
             cachePtr->currEntry = ePtr;
-            Ns_DStringSetLength(&cachePtr->buffer, length);
+            Ns_DStringSetLength(&cachePtr->buffer, (int)length);
         } else {
 	    LogEntry *entryPtr, *tmpPtr;
 

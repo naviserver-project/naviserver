@@ -467,10 +467,10 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 
     Ns_ConnSetLastModifiedHeader(conn, &connPtr->fileInfo.st_mtime);
 
-    if (Ns_ConnModifiedSince(conn, connPtr->fileInfo.st_mtime) == 0) {
+    if (Ns_ConnModifiedSince(conn, connPtr->fileInfo.st_mtime) == NS_FALSE) {
         return Ns_ConnReturnNotModified(conn);
     }
-    if (Ns_ConnUnmodifiedSince(conn, connPtr->fileInfo.st_mtime) == 0) {
+    if (Ns_ConnUnmodifiedSince(conn, connPtr->fileInfo.st_mtime) == NS_FALSE) {
         return Ns_ConnReturnStatus(conn, 412); /* Precondition Failed. */
     }
 

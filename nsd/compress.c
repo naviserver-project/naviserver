@@ -244,7 +244,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     assert(bufs != NULL);
     assert(dsPtr != NULL);
     assert(nbufs > 0);
-    
+
     if (z->zalloc == NULL) {
 	Ns_CompressInit(cStream);
     }
@@ -332,6 +332,9 @@ Ns_CompressGzip(const char *buf, int len, Ns_DString *dsPtr, int level)
     struct iovec       iov;
     int                status;
 
+    assert(buf != NULL);
+    assert(dsPtr != NULL);
+    
     status = Ns_CompressInit(&cStream);
     if (status == NS_OK) {
       Ns_SetVec(&iov, 0, buf, len);

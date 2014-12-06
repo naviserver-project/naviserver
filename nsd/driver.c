@@ -180,7 +180,8 @@ static SpoolerState WriterSend(WriterSock *curPtr, int *err)
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
 
-static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written);
+static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
+    NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -267,6 +268,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     DrvSpooler     *spPtr;
     NsServer       *servPtr = NULL;
     Ns_Set         *set;
+
+    assert(module != NULL);
+    assert(init != NULL);
 
     /*
      * If a server is provided, servPtr must be set.
@@ -1627,7 +1631,7 @@ PollSet(PollData *pdata, NS_SOCKET sock, short type, const Ns_Time *timeoutPtr)
      */
 
     if (unlikely(pdata->nfds >= pdata->maxfds)) {
-        pdata->maxfds += 100;
+        pdata->maxfds += 100u;
         pdata->pfds = ns_realloc(pdata->pfds, pdata->maxfds * sizeof(struct pollfd));
     }
 
@@ -4652,6 +4656,8 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     int            trigger = 0;
     AsyncWriteData *wdPtr, *newWdPtr;
 
+    assert(buffer != NULL);
+    
     /*
      * If the async writer has not started or is deactivated, behave
      * like a ns_write() command. If the ns_write() fails, we can't do much,

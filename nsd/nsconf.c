@@ -169,9 +169,11 @@ NsConfUpdate(void)
      * Set a default stacksize, if specified. Use OS default otherwise.
      */
 
-    if ((i = Ns_ConfigIntRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX)) > 0
-        || (i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX)) > 0) {
-
+    i = Ns_ConfigIntRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX);
+    if (i == 0) {
+        i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX);
+    }
+    if (i > 0) {
 	(void) Ns_ThreadStackSize((long)i);
     }
 
