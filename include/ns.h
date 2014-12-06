@@ -1207,29 +1207,36 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, unsigned int flags, Ns_DStr
  */
 
 NS_EXTERN void
-Ns_ConnSetCookie(const Ns_Conn *conn,  char *name, const char *value, time_t maxage);
+Ns_ConnSetCookie(const Ns_Conn *conn,  const char *name, const char *value, time_t maxage)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetSecureCookie(const Ns_Conn *conn,  char *name, const char *value, time_t maxage);
+Ns_ConnSetSecureCookie(const Ns_Conn *conn, const char *name, const char *value, time_t maxage)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetCookieEx(const Ns_Conn *conn,  char *name, const char *value, time_t maxage,
-		   char *domain, char *path, unsigned int flags);
-NS_EXTERN void
-Ns_ConnDeleteCookie(const Ns_Conn *conn, char *name, char *domain, char *path);
+Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value, time_t maxage,
+		   const char *domain, const char *path, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, char *name, char *domain, char *path);
+Ns_ConnDeleteCookie(const Ns_Conn *conn, const char *name, const char *domain, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, const char *name, const char *domain, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name);
+Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * crypt.c:
  */
 
 NS_EXTERN char *
-Ns_Encrypt(const char *pw, const char *salt, char iobuf[ ]);
+Ns_Encrypt(const char *pw, const char *salt, char iobuf[]);
 
 /*
  * dns.c:
