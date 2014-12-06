@@ -71,7 +71,7 @@ static GetProc GetAddr;
 static GetProc GetHost;
 static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
                   Ns_Cache *cache, const char *key, int all)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)
@@ -181,7 +181,6 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
 
     assert(getProc != NULL);
     assert(dsPtr != NULL);
-    assert(cache != NULL);
     assert(key != NULL);
         
     /*

@@ -146,8 +146,8 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
 
     mutexPtr = GETMUTEX(mutex);
     prefixLength = strlen(prefix);
-    if (prefixLength > NS_THREAD_NAMESIZE) {
-	prefixLength = NS_THREAD_NAMESIZE;
+    if (prefixLength > NS_THREAD_NAMESIZE - 1) {
+	prefixLength = NS_THREAD_NAMESIZE - 1;
 	nameLength = 0u;
     } else if (name != NULL) {
 	nameLength = strlen(name);

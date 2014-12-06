@@ -997,7 +997,7 @@ Ns_ConnTimeSpans(const Ns_Conn *conn,
 void
 Ns_ConnTimeStats(Ns_Conn *conn) {
     Conn *connPtr = (Conn *) conn;
-    ConnPool   *poolPtr = connPtr->poolPtr;
+    ConnPool   *poolPtr;
     Ns_Time     now;
 
     assert(conn != NULL);
