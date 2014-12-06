@@ -64,6 +64,50 @@ If dev level logging is enabled the message is logged.
 
 
 [call [cmd ns_logctl] \
+	  [method count] ]
+
+Returns a count of buffered messages for the current thread. The
+message buffering can be turned on subcommand  [method hold].
+
+[call [cmd ns_logctl] \
+	  [method flush] ]
+
+[call [cmd ns_logctl] \
+	  [method get] ]
+
+Return all buffered log messages, removing them from the buffer without writing them
+to the log file.
+
+
+Write buffered log messages from the current thread to the log file. Do not
+disable buffering enabled by [arg hold].
+
+[call [cmd ns_logctl] \
+	  [method hold] ]
+
+Buffer log messages originating in the current thread indefinitely. Log messages
+are no longer written directly to the server log. Use the subcommand
+[method release] to disable buffering.
+
+[call [cmd ns_logctl] \
+	  [method peek] ]
+
+Return a copy of any buffered log messages for the current thread.
+
+
+[call [cmd ns_logctl] \
+	  [method release] ]
+
+Write buffered log messages from the current thread to the log file and disable
+buffering. Future log messages will not be buffered.
+
+[call [cmd ns_logctl] \
+	  [method severities] ]
+
+Return a list of available severity-levels. This includes the 7 predefined
+levels and those created with [cmd ns_logctl] or via C code.
+
+[call [cmd ns_logctl] \
       [method severity] \
       [arg severity-level] \
       [opt [arg bool]] ]
@@ -77,69 +121,16 @@ If [arg severity-level] does not already exist and [arg bool] is given, then the
 new severity is created, enabled or disabled according to [arg bool]. Future
 calls to [cmd ns_log] may use new [arg severity-level].
 
-
-
 [call [cmd ns_logctl] \
-	  [method severities] ]
+	  [method stats] ]
 
-Return a list of available severity-levels. This includes the 7 predefined
-levels and those created with [cmd ns_logctl] or via C code.
-
-
-
-[call [cmd ns_logctl] \
-	  [method hold] ]
-
-Buffer log messages originating in the current thread indefinitely. Log messages
-are no longer written directly to the server log.
-
-
-
-[call [cmd ns_logctl] \
-	  [method flush] ]
-
-Write buffered log messages from the current thread to the log file. Do not
-disable buffering enabled by [arg hold].
-
-
-
-[call [cmd ns_logctl] \
-	  [method release] ]
-
-Write buffered log messages from the current thread to the log file and disable
-buffering. Future log messages will not be buffered.
-
-
-
-[call [cmd ns_logctl] \
-	  [method peek] ]
-
-Return a copy of any buffered log messages for the current thread.
-
-
-
-[call [cmd ns_logctl] \
-	  [method get] ]
-
-Return all buffered log messages, removing them from the buffer without writing them
-to the log file.
-
-
-
-[call [cmd ns_logctl] \
-	  [method count] ]
-
-Returns a count of buffered messages for the current thread.
-
-
+Return statistics from calls to [cmd ns_log] by severity-level.
 
 [call [cmd ns_logctl] \
 	  [method truncate] \
 	  [arg count] ]
 
 Discard this threads buffered messages, leaving [arg count] untouched.
-
-
 
 [call [cmd ns_logctl] \
       [method register] \
@@ -150,7 +141,6 @@ Register a log filter [arg script] with the given [arg script-args] where
 [arg script] should have the signature:
 [emph script] [arg severity] [arg timestamp] [arg message] [opt [arg "script-args ..."]].
 A [arg handle] will be returned which can be used to unregister the filter script.
-
 
 
 [call [cmd ns_logctl] \
