@@ -163,6 +163,10 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
     EventQueue *queuePtr = (EventQueue *) queue;
     Event      *evPtr;
 
+    assert(queue != NULL);
+    assert(proc != NULL);
+    assert(arg != NULL);
+    
     evPtr = queuePtr->firstFreePtr;
     if (evPtr != NULL) {
         queuePtr->firstFreePtr = evPtr->nextPtr;
@@ -199,6 +203,8 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
     Event *evPtr = (Event *) event;
     int    i;
+
+    assert(event != NULL);
 
     /*
      * Map from sock when bits to poll event bits.
@@ -257,12 +263,13 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     int         i, n, nfds;
     char        c;
 
-    Ns_GetTime(&now);
+    assert(queue != NULL);
 
     /*
      * Process any new events.
      */
-
+    Ns_GetTime(&now);
+    
     while ((evPtr = queuePtr->firstInitPtr) != NULL) {
         queuePtr->firstInitPtr = evPtr->nextPtr;
         Call(evPtr, &now, NS_SOCK_INIT);
@@ -383,6 +390,8 @@ Ns_TriggerEventQueue(Ns_EventQueue *queue)
 {
     EventQueue *queuePtr = (EventQueue *) queue;
 
+    assert(queue != NULL);
+
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("event queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -412,6 +421,8 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
     EventQueue *queuePtr = (EventQueue *) queue;
     Event      *evPtr;
     Ns_Time     now;
+
+    assert(queue != NULL);
 
     Ns_GetTime(&now);
     evPtr = queuePtr->firstWaitPtr;

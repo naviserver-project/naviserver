@@ -41,6 +41,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     char *enc;
     struct crypt_data data;
+
+    assert(pw != NULL);
+    assert(salt != NULL);
+    assert(iobuf != NULL);
     
     data.initialized = 0;
     enc = crypt_r(pw, salt, &data);
@@ -64,6 +68,10 @@ char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     char *enc;
+
+    assert(pw != NULL);
+    assert(salt != NULL);
+    assert(iobuf != NULL);
     
     Ns_MutexLock(&lock);
     enc = crypt(pw, salt);
@@ -447,6 +455,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     int             temp;
     char            block[66];
     struct sched    s;
+
+    assert(pw != NULL);
+    assert(salt != NULL);
+    assert(iobuf != NULL);
 
     for (i = 0; i < 66; i++) {
         block[i] = '\0';

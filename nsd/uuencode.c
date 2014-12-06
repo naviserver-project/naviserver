@@ -97,11 +97,15 @@ static const int pr2six[256] = {
  */
 
 size_t
-Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
+Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
 {
-    register unsigned char  *p, *q;
+    register const unsigned char *p;
+    register unsigned char *q;
     register int line = 0;
     register size_t n;
+
+    assert(input != NULL);
+    assert(buf != NULL);
 
     /*
      * Convert every three input bytes into four output
@@ -168,13 +172,16 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
  */
 
 size_t
-Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
+Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
 {
     register int n;
     unsigned char chars[4];
-    register unsigned char *p, *q;
+    register const unsigned char *p;
+    register unsigned char *q;
 
-
+    assert(input != NULL);
+    assert(buf != NULL);
+    
     /*
      * Skip leading space, if any.
      */
@@ -188,7 +195,7 @@ Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
      */
 
     n = 0;
-    p = (unsigned char *) input;
+    p = (const unsigned char *) input;
     q = buf;
     while (*p) {
         if (pr2six[(int)(*p)] >= 0) {
@@ -218,3 +225,12 @@ Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
     }
     return (size_t)(q - buf);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -1236,20 +1236,24 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
  */
 
 NS_EXTERN char *
-Ns_Encrypt(const char *pw, const char *salt, char iobuf[]);
+Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * dns.c:
  */
 
 NS_EXTERN int
-Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr);
+Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host);
+Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host);
+Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * driver.c:
@@ -1339,18 +1343,22 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
  */
 
 NS_EXTERN pid_t
-Ns_ExecProcess(char *exec, const char *dir, int fdin, int fdout,
-	       char *args, const Ns_Set *env);
+Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout,
+	       char *args, const Ns_Set *env)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN pid_t
-Ns_ExecProc(char *exec, char **argv);
+Ns_ExecProc(char *exec, char **argv)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN pid_t
-Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
-	      char *args, const Ns_Set *env);
+Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
+	      char *args, const Ns_Set *env)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN pid_t
-Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout, char ** argv, const Ns_Set *env);
+Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout, char **argv, const Ns_Set *env)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_WaitProcess(pid_t pid);
@@ -1404,14 +1412,16 @@ Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg)
     NS_GNUC_NONNULL(1);
 
 /*
- * htuu.c
+ * uuencode.c
  */
 
 NS_EXTERN size_t
-Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf);
+Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN size_t
-Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize);
+Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * index.c:

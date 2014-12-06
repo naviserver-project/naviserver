@@ -36,15 +36,18 @@
 #include "nsd.h"
 
 #ifdef _WIN32
-#include <process.h>
-static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
-#else
-#define ERR_DUP         (-1)
-#define ERR_CHDIR	(-2)
-#define ERR_EXEC	(-3)
 
-static int ExecProc(char *exec, const char *dir, int fdin, int fdout,
-		    char **argv, char **envp);
+# include <process.h>
+static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
+
+#else
+
+# define ERR_DUP        (-1)
+# define ERR_CHDIR	(-2)
+# define ERR_EXEC	(-3)
+static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
+		    char **argv, char **envp)
+    NS_GNUC_NONNULL(1);
 #endif /* _WIN32 */
 
 
@@ -65,9 +68,11 @@ static int ExecProc(char *exec, const char *dir, int fdin, int fdout,
  */
 
 pid_t
-Ns_ExecProcess(char *exec, const char *dir, int fdin, int fdout, char *args,
+Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *args,
 	       const Ns_Set *env)
 {
+    assert(exec != NULL);
+
     return Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
 }
 
@@ -91,6 +96,8 @@ Ns_ExecProcess(char *exec, const char *dir, int fdin, int fdout, char *args,
 pid_t
 Ns_ExecProc(char *exec, char **argv)
 {
+    assert(exec != NULL);
+    
     return Ns_ExecArgv(exec, NULL, 0, 1, argv, NULL);
 }
 
@@ -218,13 +225,15 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
  */
 
 pid_t
-Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
+Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
 	      char *args, const Ns_Set *env)
 {
 #ifndef _WIN32
     pid_t  pid;
     char **argv, *argList[256]; /* maximum 256 arguments */
 
+    assert(exec != NULL);
+    
     if (args == NULL) {
         argv = NULL;
     } else {
@@ -372,8 +381,8 @@ Ns_ExecArgblk(char *exec, const char *dir, int fdin, int fdout,
  */
 
 pid_t
-Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
-	    char ** argv, const Ns_Set *env)
+Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
+	    char **argv, const Ns_Set *env)
 {
 #ifdef _WIN32
     /*
@@ -402,14 +411,13 @@ Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
     char *argvSh[4], **envp;
     pid_t pid;
 
-    if (exec == NULL) {
-        return NS_INVALID_PID;
-    }
+    assert(exec != NULL);
+
     if (argv == NULL) {
         argv = argvSh;
         argv[0] = "/bin/sh";
         argv[1] = "-c";
-        argv[2] = exec;
+        argv[2] = (char *)exec;
         argv[3] = NULL;
         exec = argv[0];
     }
@@ -459,7 +467,7 @@ Ns_ExecArgv(char *exec, const char *dir, int fdin, int fdout,
  */
 
 static pid_t
-ExecProc(char *exec, const char *dir, int fdin, int fdout, char **argv,
+ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
     	 char **envp)
 {
     struct iovec iov[2];

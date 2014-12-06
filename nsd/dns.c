@@ -70,7 +70,9 @@ typedef int (GetProc)(Ns_DString *dsPtr, const char *key);
 static GetProc GetAddr;
 static GetProc GetHost;
 static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
-                  Ns_Cache *cache, const char *key, int all);
+                  Ns_Cache *cache, const char *key, int all)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)
 static void LogError(char *func, int h_errnop);
@@ -108,7 +110,7 @@ void
 NsConfigDNS(void)
 {
     int         max;
-    CONST char *path = NS_CONFIG_PARAMETERS;
+    const char *path = NS_CONFIG_PARAMETERS;
 
     if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE
         && (max = Ns_ConfigIntRange(path, "dnscachemaxsize",
@@ -146,18 +148,27 @@ NsConfigDNS(void)
 int
 Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
 {
+    assert(dsPtr != NULL);
+    assert(addr != NULL);
+    
     return DnsGet(GetHost, dsPtr, hostCache, addr, 0);
 }
 
 int
 Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 {
+    assert(dsPtr != NULL);
+    assert(host != NULL);
+
     return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
 }
 
 int
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
 {
+    assert(dsPtr != NULL);
+    assert(host != NULL);
+    
     return DnsGet(GetAddr, dsPtr, addrCache, host, 1);
 }
 
@@ -168,6 +179,11 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     Ns_Time     t;
     int         isNew, status;
 
+    assert(getProc != NULL);
+    assert(dsPtr != NULL);
+    assert(cache != NULL);
+    assert(key != NULL);
+        
     /*
      * Call getProc directly or through cache.
      */
@@ -215,7 +231,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
 
     if (status == NS_TRUE) {
         if (getProc == GetAddr && all == 0) {
-            char *p = ds.string;
+            const char *p = ds.string;
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;
             }
@@ -493,7 +509,8 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 static void
 LogError(char *func, int h_errnop)
 {
-    char *h, *e, buf[100];
+    char        buf[100];
+    const char *h, *e;
 
     e = NULL;
     switch (h_errnop) {
@@ -530,3 +547,12 @@ LogError(char *func, int h_errnop)
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
