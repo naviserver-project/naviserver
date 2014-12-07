@@ -117,6 +117,8 @@ Ns_TclNewTimeObj(const Ns_Time *timePtr)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
+    assert(timePtr != NULL);
+    
     Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
 
@@ -143,6 +145,10 @@ Ns_TclNewTimeObj(const Ns_Time *timePtr)
 void
 Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
+
+    assert(timePtr != NULL);
+    assert(objPtr != NULL);
+
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetTimeObj called with shared object");
     }
@@ -171,6 +177,10 @@ int
 Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
     long sec;
+
+    assert(interp != NULL);
+    assert(objPtr != NULL);
+    assert(timePtr != NULL);
 
     if (objPtr->typePtr == intTypePtr) {
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
@@ -209,6 +219,11 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
 int
 Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr)
 {
+
+    assert(interp != NULL);
+    assert(objPtr != NULL);
+    assert(timePtrPtr != NULL);
+    
     if (objPtr->typePtr != &timeType) {
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
             return TCL_ERROR;

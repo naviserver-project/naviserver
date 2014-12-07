@@ -156,8 +156,9 @@ Ns_ListLast(Ns_List *lPtr)
     if (lPtr == NULL) {
         return NULL;
     } else {
-        for (; lPtr->rest != NULL; lPtr = lPtr->rest)
+        for (; lPtr->rest != NULL; lPtr = lPtr->rest) {
 	    ;
+        }
         return lPtr;
     }
 }
@@ -237,6 +238,7 @@ Ns_IntPrint(int d)
 void
 Ns_StringPrint(const char *s)
 {
+    assert(s != NULL);
     fputs(s, stdout);
 }
 

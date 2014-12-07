@@ -175,6 +175,9 @@ Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
     register char *src, *slash;
     Ns_DString tmp;
 
+    assert(dsPtr != NULL);
+    assert(path != NULL);
+    
     Ns_DStringInit(&tmp);
     src = Ns_DStringAppend(&tmp, path);
 #ifdef _WIN32
@@ -274,6 +277,8 @@ Ns_MakePath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
+    assert(dsPtr != NULL);
+    
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
     va_end(ap);
@@ -311,6 +316,9 @@ Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
     const char *p = path;
     int         i;
 
+    assert(dsPtr != NULL);
+    assert(path != NULL);
+    
     for (i = 0; i < levels; ++i) {
         if (dsPtr->string[dsPtr->length] != '/') {
             Ns_DStringNAppend(dsPtr, "/", 1);
@@ -354,6 +362,8 @@ Ns_LibPath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
+    assert(dsPtr != NULL);
+    
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), "lib", NULL);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
@@ -387,6 +397,8 @@ Ns_BinPath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
+    assert(dsPtr != NULL);
+
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), "bin", NULL);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
@@ -418,6 +430,8 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
+    assert(dsPtr != NULL);
+
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
@@ -443,13 +457,15 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
  */
 
 int
-Ns_HomePathExists(char *path, ...)
+Ns_HomePathExists(const char *path, ...)
 {
     va_list ap;
     int status;
     Tcl_Obj *obj;
     Ns_DString ds;
     Tcl_StatBuf *stPtr;
+
+    assert(path != NULL);
 
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, Ns_InfoHomePath(), path, NULL);
@@ -487,19 +503,22 @@ Ns_HomePathExists(char *path, ...)
  */
 
 char *
-Ns_ServerPath(Ns_DString *dest, const char *server, ...)
+Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
     char     *path;
 
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+    
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
         return NULL;
     }
-    (void) ServerRoot(dest, servPtr, NULL);
+    (void) ServerRoot(dsPtr, servPtr, NULL);
     va_start(ap, server);
-    path = MakePath(dest, &ap);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
 
     return path;
@@ -523,19 +542,22 @@ Ns_ServerPath(Ns_DString *dest, const char *server, ...)
  */
 
 char *
-Ns_PagePath(Ns_DString *dest, const char *server, ...)
+Ns_PagePath(Ns_DString *dsPtr, const char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
     char     *path;
 
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
         return NULL;
     }
-    (void) NsPageRoot(dest, servPtr, NULL);
+    (void) NsPageRoot(dsPtr, servPtr, NULL);
     va_start(ap, server);
-    path = MakePath(dest, &ap);
+    path = MakePath(dsPtr, &ap);
     va_end(ap);
 
     return path;
@@ -566,6 +588,8 @@ Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...)
     va_list         ap;
     char           *path;
 
+    assert(dsPtr != NULL);
+    
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
     if (server != NULL) {
        Ns_MakePath(dsPtr, "servers", server, NULL);

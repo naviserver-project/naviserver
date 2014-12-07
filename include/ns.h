@@ -1472,7 +1472,7 @@ NS_EXTERN void
 Ns_IndexStringDestroy(Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexStringTrunc(Ns_Index *indexPtr)  NS_GNUC_NONNULL(1);
+Ns_IndexStringTrunc(Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_IndexIntInit(Ns_Index *indexPtr, int inc) NS_GNUC_NONNULL(1);
@@ -1491,7 +1491,9 @@ NS_EXTERN Ns_List *
 Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr);
 
 NS_EXTERN Ns_List *
-Ns_ListCons(void *elem, Ns_List *lPtr);
+Ns_ListCons(void *elem, Ns_List *lPtr)
+    NS_GNUC_RETURNS_NONNULL
+    NS_GNUC_WARN_UNUSED_RESULT;
 
 NS_EXTERN Ns_List *
 Ns_ListNreverse(Ns_List *lPtr);
@@ -1506,7 +1508,7 @@ NS_EXTERN void
 Ns_IntPrint(int d);
 
 NS_EXTERN void
-Ns_StringPrint(const char *s);
+Ns_StringPrint(const char *s) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc);
@@ -1534,8 +1536,7 @@ NS_EXTERN Ns_List *
 Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc);
 
 NS_EXTERN Ns_List *
-Ns_ListDeleteDuplicates(Ns_List *lPtr,
-				        Ns_EqualProc *equalProc);
+Ns_ListDeleteDuplicates(Ns_List *lPtr, Ns_EqualProc *equalProc);
 
 NS_EXTERN Ns_List *
 Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
@@ -1704,16 +1705,20 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
  */
 
 NS_EXTERN Tcl_Obj*
-Ns_TclNewTimeObj(const Ns_Time *timePtr);
+Ns_TclNewTimeObj(const Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr);
+Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
+Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr);
+Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * tclxkeylist.c:
@@ -1740,7 +1745,9 @@ Tcl_SetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
  */
 
 NS_EXTERN int
-Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg);
+Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 
 NS_EXTERN int
 Ns_SockPortBound(int port);
@@ -2010,34 +2017,44 @@ Ns_PathIsAbsolute(const char *path)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_NormalizePath(Ns_DString *dsPtr, const char *path);
+Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels);
+Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_HomePathExists(char *path, ...) NS_GNUC_SENTINEL;
+Ns_HomePathExists(const char *path, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...) NS_GNUC_SENTINEL;
+Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ServerPath(Ns_DString *dest, const char *server, ...) NS_GNUC_SENTINEL;
+Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_PagePath(Ns_DString *dest, const char *server, ...) NS_GNUC_SENTINEL;
+Ns_PagePath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
