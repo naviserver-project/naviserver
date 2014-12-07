@@ -1144,7 +1144,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
         return NS_FALSE;
     }
 
-    if (((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0U)) {
+    if (((cbPtr->when & (unsigned int)NS_SOCK_EXIT) == 0u)) {
         Tcl_Interp  *interp;
 	const char  *w;
         int          result;
@@ -1185,7 +1185,6 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 
         Tcl_DStringAppendElement(&script, w);
         result = Tcl_EvalEx(interp, script.string, script.length, 0);
-
         if (result != TCL_OK) {
 	  (void) Ns_TclLogErrorInfo(interp, "\n(context: sock proc)");
         } else {

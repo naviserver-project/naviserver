@@ -64,7 +64,7 @@ static void CallbackTrigger(void);
  */
 
 static Callback	    *firstQueuePtr, *lastQueuePtr;
-static int	     shutdownPending;
+static bool	     shutdownPending;
 static int	     running;
 static Ns_Thread     sockThread;
 static Ns_Mutex      lock;
@@ -154,7 +154,7 @@ NsStartSockShutdown(void)
 {
     Ns_MutexLock(&lock);
     if (running != 0) {
-	shutdownPending = 1;
+	shutdownPending = NS_TRUE;
 	CallbackTrigger();
     }
     Ns_MutexUnlock(&lock);
@@ -236,7 +236,7 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeo
     cbPtr->timeout = timeout;
     trigger = create = 0;
     Ns_MutexLock(&lock);
-    if (shutdownPending != 0) {
+    if (shutdownPending == NS_TRUE) {
 	ns_free(cbPtr);
     	status = NS_ERROR;
     } else {
@@ -315,7 +315,8 @@ SockCallbackThread(void *UNUSED(arg))
     pfds[0].events = POLLIN;
 
     while (1) {
-	int stop, nfds, pollto;
+	int nfds, pollto;
+        bool stop;
 	time_t now;
 
 	/*
@@ -399,6 +400,7 @@ SockCallbackThread(void *UNUSED(arg))
                     }
         	}
 		++nfds;
+
                 if (cbPtr->timeout > 0) {
                     if (cbPtr->timeout * 1000 < pollto)  {
                         pollto = cbPtr->timeout * 1000;
@@ -422,13 +424,14 @@ SockCallbackThread(void *UNUSED(arg))
 	 * necessary.
 	 */
 
-	if (stop != 0) {
+	if (stop == NS_TRUE) {
 	    break;
 	}
 	pfds[0].revents = 0;
         do {
             n = ns_poll(pfds, nfds, pollto);
         } while (n < 0  && errno == EINTR);
+
         if (n < 0) {
             Ns_Fatal("sockcallback: ns_poll() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
@@ -438,33 +441,34 @@ SockCallbackThread(void *UNUSED(arg))
 	    Ns_Fatal("trigger ns_read() failed: %s", strerror(errno));
 	}
 
-    	/*
-	 * Execute any ready callbacks.
-	 */
-	for (hPtr = Tcl_FirstHashEntry(&table, &search); n > 0 && hPtr != NULL; 
-             hPtr = Tcl_NextHashEntry(&search)) {
-	    cbPtr = Tcl_GetHashValue(hPtr);
-            for (i = 0; i < Ns_NrElements(when); ++i) {
-                if (((cbPtr->when & when[i]) != 0u) 
-		    && (pfds[cbPtr->idx].revents & events[i]) != 0) {
-                    /* 
-                     * Call the Sock_Proc with the SockState flag
-                     * combination from when[i]. This is actually the
-                     * ony place, where a Ns_SockProc is called with a
-                     * flag combination in the last argument. If this
-                     * would not be the case, we could set the type of
-                     * the last parameter of Ns_SockProc to
-                     * Ns_SockState.
-                     */
-                    if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == NS_FALSE) {
-			cbPtr->when = 0u;
-		    }
-                    cbPtr->expires = 0;
+        if (n > 0) {
+            /*
+             * Execute any ready callbacks.
+             */
+            for (hPtr = Tcl_FirstHashEntry(&table, &search); n > 0 && hPtr != NULL; 
+                 hPtr = Tcl_NextHashEntry(&search)) {
+                cbPtr = Tcl_GetHashValue(hPtr);
+                for (i = 0; i < Ns_NrElements(when); ++i) {
+                    if (((cbPtr->when & when[i]) != 0u) 
+                        && (pfds[cbPtr->idx].revents & events[i]) != 0) {
+                        /* 
+                         * Call the Sock_Proc with the SockState flag
+                         * combination from when[i]. This is actually the
+                         * ony place, where a Ns_SockProc is called with a
+                         * flag combination in the last argument. If this
+                         * would not be the case, we could set the type of
+                         * the last parameter of Ns_SockProc to
+                         * Ns_SockState.
+                         */
+                        if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == NS_FALSE) {
+                            cbPtr->when = 0u;
+                        }
+                        cbPtr->expires = 0;
+                    }
                 }
             }
         }
     }
-
     /*
      * Fire socket exit callbacks.
      */
