@@ -1280,27 +1280,27 @@ NsAsyncWriterQueueEnable(void);
 
 NS_EXTERN char *
 Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
-     NS_GNUC_NONNULL(1) NS_GNUC_SENTINEL;
+    NS_GNUC_NONNULL(1) NS_GNUC_SENTINEL;
 
 NS_EXTERN char *
 Ns_DStringExport(Ns_DString *dsPtr)
-     NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
 Ns_DStringAppendArg(Ns_DString *dsPtr, const char *bytes)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
 Ns_DStringPrintf(Ns_DString *dsPtr, const char *fmt, ...)
-     NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(2,3);
+    NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(2,3);
 
 NS_EXTERN char *
 Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
-     NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char **
 Ns_DStringAppendArgv(Ns_DString *dsPtr)
-     NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_DString *
 Ns_DStringPop(void)
@@ -1429,13 +1429,14 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
 
 NS_EXTERN void
 Ns_IndexInit(Ns_Index *indexPtr, int inc, int (*CmpEls) (const void *left, const void *right),
-     			         int (*CmpKeyWithEl) (const void *left, const void *right));
+     			         int (*CmpKeyWithEl) (const void *left, const void *right))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_IndexTrunc(Ns_Index*indexPtr);
-
+Ns_IndexTrunc(Ns_Index*indexPtr) NS_GNUC_NONNULL(1);
+    
 NS_EXTERN void
-Ns_IndexDestroy(Ns_Index *indexPtr);
+Ns_IndexDestroy(Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Index *
 Ns_IndexDup(const Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
@@ -1468,13 +1469,13 @@ NS_EXTERN void
 Ns_IndexStringAppend(Ns_Index *addtoPtr, const Ns_Index *addfromPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_IndexStringDestroy(Ns_Index *indexPtr);
+Ns_IndexStringDestroy(Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexStringTrunc(Ns_Index *indexPtr);
+Ns_IndexStringTrunc(Ns_Index *indexPtr)  NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
+Ns_IndexIntInit(Ns_Index *indexPtr, int inc) NS_GNUC_NONNULL(1);
 
 /*
  * see macros above for:

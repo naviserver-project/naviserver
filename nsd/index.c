@@ -79,6 +79,11 @@ Ns_IndexInit(Ns_Index *indexPtr, int inc,
 	     int (*CmpEls) (const void *left, const void *right),
 	     int (*CmpKeyWithEl) (const void *left, const void *right))
 {
+
+    assert(indexPtr != NULL);
+    assert(CmpEls != NULL);
+    assert(CmpKeyWithEl != NULL);
+    
     indexPtr->n = 0;
     indexPtr->max = inc;
     indexPtr->inc = inc;
@@ -109,6 +114,8 @@ Ns_IndexInit(Ns_Index *indexPtr, int inc,
 void
 Ns_IndexTrunc(Ns_Index* indexPtr)
 {
+    assert(indexPtr != NULL);
+    
     indexPtr->n = 0;
     ns_free(indexPtr->el);
     indexPtr->max = indexPtr->inc;
@@ -135,6 +142,8 @@ Ns_IndexTrunc(Ns_Index* indexPtr)
 void
 Ns_IndexDestroy(Ns_Index *indexPtr)
 {
+    assert(indexPtr != NULL);
+    
     indexPtr->CmpEls = NULL;
     indexPtr->CmpKeyWithEl = NULL;
     ns_free(indexPtr->el);
@@ -685,6 +694,8 @@ Ns_IndexStringDestroy(Ns_Index *indexPtr)
 {
     int i;
 
+    assert(indexPtr != NULL);
+    
     for (i = 0; i < indexPtr->n; i++) {
         ns_free(indexPtr->el[i]);
     }
@@ -713,6 +724,8 @@ void
 Ns_IndexStringTrunc(Ns_Index *indexPtr)
 {
     int i;
+
+    assert(indexPtr != NULL);
 
     for (i = 0; i < indexPtr->n; i++) {
         ns_free(indexPtr->el[i]);
@@ -802,6 +815,8 @@ CmpKeyWithInt(const int *keyPtr, const int *elPtr)
 void
 Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 {
+    assert(indexPtr != NULL);
+    
     Ns_IndexInit(indexPtr, inc, 
 		 (int (*) (const void *left, const void *right)) CmpInts,
 		 (int (*) (const void *left, const void *right)) CmpKeyWithInt);
