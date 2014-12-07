@@ -824,6 +824,8 @@ int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *type,
                          Tcl_Channel chan, size_t len)
 {
+    assert(conn != NULL);
+    assert(type != NULL);
     return ReturnOpen(conn, status, type, chan, NULL, -1, len);
 }
 
@@ -831,6 +833,8 @@ int
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *type,
                       FILE *fp, size_t len)
 {
+    assert(conn != NULL);
+    assert(type != NULL);
     return ReturnOpen(conn, status, type, NULL, fp, -1, len);
 }
 
@@ -838,6 +842,8 @@ int
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *type,
                     int fd, size_t len)
 {
+    assert(conn != NULL);
+    assert(type != NULL);
     return ReturnOpen(conn, status, type, NULL, NULL, fd, len);
 }
 

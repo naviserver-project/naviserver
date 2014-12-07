@@ -108,6 +108,8 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
     char *const*envp;
     int i;
 
+    assert(dsPtr != NULL);
+    
     Ns_MutexLock(&lock);
     envp = Ns_GetEnviron();
     for (i = 0;  envp[i] != NULL; ++i) {

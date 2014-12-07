@@ -56,6 +56,9 @@
 void
 Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
 {
+    assert(dsPtr != NULL);
+    assert(htmlString != NULL);
+    
     while (likely(*htmlString != '\0')) {
         switch (*htmlString) {
         case '<':

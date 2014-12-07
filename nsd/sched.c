@@ -171,6 +171,8 @@ NsInitSched(void)
 int
 Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
 {
+    assert(proc != NULL);
+    
     if (delay < 0) {
         return NS_ERROR;
     }
@@ -197,6 +199,8 @@ Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
 int
 Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
 {
+    assert(proc != NULL);
+    
     if (interval < 0) {
         return NS_ERROR;
     }
@@ -225,6 +229,8 @@ Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, unsigned int flags,
                  int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int seconds;
+
+    assert(proc != NULL);
 
     if (hour > 23 || hour < 0 || minute > 59 || minute < 0) {
         return NS_ERROR;
@@ -255,6 +261,8 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
     int day, int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int seconds;
+
+    assert(proc != NULL);
 
     if (day < 0 || day > 6 || hour > 23 || hour < 0 || minute > 59 || minute < 0) {
         return NS_ERROR;
@@ -290,6 +298,8 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     int             id, isNew;
     time_t          now;
 
+    assert(proc != NULL);
+    
     if (interval < 0) {
         return NS_ERROR;
     }

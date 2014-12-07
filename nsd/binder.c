@@ -149,6 +149,8 @@ Ns_SockListenUdp(const char *address, int port)
     NS_SOCKET          sock = NS_INVALID_SOCKET;
     struct sockaddr_in sa;
 
+    assert(address != NULL);
+
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
         Tcl_HashEntry *hPtr;
         Ns_MutexLock(&lock);
@@ -254,10 +256,12 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
+    assert(path != NULL);
+
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
-	char *value = (char*) Tcl_GetHashValue(hPtr);
+	const char *value = (char*) Tcl_GetHashValue(hPtr);
 
         if (STREQ(path, value)) {
             sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
@@ -316,6 +320,8 @@ Ns_SockBindUdp(const struct sockaddr_in *saPtr)
     NS_SOCKET sock;
     int       n = 1;
 
+    assert(saPtr != NULL);
+    
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (sock == NS_INVALID_SOCKET
@@ -514,10 +520,10 @@ NsClosePreBound(void)
 {
 #ifndef _WIN32
     Tcl_HashEntry      *hPtr;
-    Tcl_HashSearch     search;
-    char               *addr;
-    int                port;
-    NS_SOCKET          sock;
+    Tcl_HashSearch      search;
+    const char         *addr;
+    int                 port;
+    NS_SOCKET           sock;
     struct sockaddr_in *saPtr;
 
     Ns_MutexLock(&lock);

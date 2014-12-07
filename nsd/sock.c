@@ -56,7 +56,9 @@
  * Local functions defined in this file
  */
 
-static NS_SOCKET SockConnect(const char *host, int port, const char *lhost, int lport, bool async);
+static NS_SOCKET SockConnect(const char *host, int port, const char *lhost, int lport, bool async)
+    NS_GNUC_NONNULL(1);
+
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
 
@@ -312,8 +314,9 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
 {
     ssize_t nread;
 
+    assert(buffer != NULL);
+    
     nread = ns_recv(sock, buffer, length, 0);
-
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ, timeoutPtr) == NS_OK) {
@@ -346,8 +349,9 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 {
     ssize_t nwrote;
 
-    nwrote = ns_send(sock, buffer, length, 0);
+    assert(buffer != NULL);
 
+    nwrote = ns_send(sock, buffer, length, 0);
     if (nwrote == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
@@ -517,6 +521,8 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
     NS_SOCKET sock;
     int       n;
 
+    assert(saPtr != NULL);
+
     sock = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sock != NS_INVALID_SOCKET) {
@@ -557,12 +563,14 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
 NS_SOCKET
 Ns_SockConnect(const char *host, int port)
 {
+    assert(host != NULL);
     return SockConnect(host, port, NULL, 0, NS_FALSE);
 }
 
 NS_SOCKET
 Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 {
+    assert(host != NULL);
     return SockConnect(host, port, lhost, lport, NS_FALSE);
 }
 
@@ -586,12 +594,14 @@ Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 NS_SOCKET
 Ns_SockAsyncConnect(const char *host, int port)
 {
+    assert(host != NULL);
     return SockConnect(host, port, NULL, 0, NS_TRUE);
 }
 
 NS_SOCKET
 Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 {
+    assert(host != NULL);
     return SockConnect(host, port, lhost, lport, NS_TRUE);
 }
 
@@ -615,6 +625,9 @@ Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 NS_SOCKET
 Ns_SockTimedConnect(const char *host, int port, const Ns_Time *timeoutPtr)
 {
+    assert(host != NULL);
+    assert(timeoutPtr != NULL);
+
     return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr);
 }
 
@@ -626,13 +639,15 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
     int       err;
     socklen_t len;
 
+    assert(host != NULL);
+    assert(timeoutPtr != NULL);
+
     /*
      * Connect to the host asynchronously and wait for
      * it to connect.
      */
-
+    
     sock = SockConnect(host, port, lhost, lport, NS_TRUE);
-
     if (sock != NS_INVALID_SOCKET) {
         err = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
         switch (err) {
@@ -796,6 +811,8 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
     struct in_addr ia;
     Ns_DString     ds;
 
+    assert(saPtr != NULL);
+           
     if (host == NULL) {
         ia.s_addr = htonl(INADDR_ANY);
     } else {
@@ -840,6 +857,8 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
 int
 Ns_SockPipe(NS_SOCKET socks[2])
 {
+    assert(socks != NULL);
+    
     if (ns_sockpair(socks) != 0) {
         return NS_ERROR;
     }

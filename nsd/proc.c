@@ -51,7 +51,8 @@ typedef struct Info {
  */
 
 static Ns_ArgProc ServerArgProc;
-static void AppendAddr(Tcl_DString *dsPtr, char *prefix, const void *addr);
+static void AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Static variables defined in this file.
@@ -140,6 +141,9 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
     Info          *infoPtr;
     int            isNew;
 
+    assert(procAddr != NULL);
+    assert(desc != NULL);
+    
     hPtr = Tcl_CreateHashEntry(&infoHashTable, (char *)procAddr, &isNew);
     if (isNew == 0) {
         infoPtr = Tcl_GetHashValue(hPtr);
@@ -176,6 +180,8 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
     Info                   *infoPtr;
     static Info nullInfo =  {NULL, NULL};
 
+    assert(dsPtr != NULL);
+    
     hPtr = Tcl_FindHashEntry(&infoHashTable, (char *) procAddr);
     if (hPtr != NULL) {
         infoPtr = Tcl_GetHashValue(hPtr);
@@ -216,7 +222,9 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
 {
     char *str = arg;
 
-    Tcl_DStringAppendElement(dsPtr, (str != 0) ? str : "");
+    assert(dsPtr != NULL);
+    
+    Tcl_DStringAppendElement(dsPtr, (str != NULL) ? str : "");
 }
 
 
@@ -262,8 +270,10 @@ ServerArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static void
-AppendAddr(Tcl_DString *dsPtr, char *prefix, const void *addr)
+AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
 {
+    assert(dsPtr != NULL);
+    assert(prefix != NULL);
     Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
 }
 

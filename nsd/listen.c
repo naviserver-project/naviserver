@@ -123,7 +123,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 	 * Make sure we can bind to the specified interface.
 	 */
 	
-        sa.sin_port = 0U;
+        sa.sin_port = 0u;
         sock = Ns_SockBind(&sa);
         if (sock == NS_INVALID_SOCKET) {
             return NS_ERROR;

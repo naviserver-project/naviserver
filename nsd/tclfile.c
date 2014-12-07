@@ -45,10 +45,14 @@ typedef struct {
     Tcl_Channel  chan;
 } NsRegChan;
 
-static void SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
-static void UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
-static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd);
+static void SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 
 /*
@@ -73,6 +77,10 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
                      int check, Tcl_Channel *chanPtr)
 {
     int mode;
+
+    assert(interp != NULL);
+    assert(chanId != NULL);
+    assert(chanPtr != NULL);
 
     *chanPtr = Tcl_GetChannel(interp, chanId, &mode);
 
@@ -118,6 +126,10 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
     Tcl_Channel chan;
     ClientData  data;
 
+    assert(interp != NULL);
+    assert(chanId != NULL);
+    assert(fdPtr != NULL);
+
     if (Ns_TclGetOpenChannel(interp, chanId, write, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -155,6 +167,9 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
 {
     int max, status;
 
+    assert(interp != NULL);
+    assert(cmd != NULL);
+    
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "file backupMax");
         return TCL_ERROR;
@@ -745,6 +760,9 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static void 
 SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
+    assert(interp != NULL);
+    assert(chan != NULL);
+    
     Tcl_SpliceChannel(chan);
     Tcl_RegisterChannel(interp, chan);
     (void) Tcl_UnregisterChannel((Tcl_Interp*)NULL, chan);
@@ -772,6 +790,9 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
     Tcl_ChannelType *chanTypePtr;
     Tcl_DriverWatchProc *watchProc;
+
+    assert(interp != NULL);
+    assert(chan != NULL);
 
     Tcl_ClearChannelHandlers(chan);
 

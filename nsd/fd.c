@@ -261,6 +261,8 @@ int
 Ns_DupHigh(int *fdPtr)
 {
 #ifdef USE_DUPHIGH
+    assert(fdPtr != NULL);
+    
     if (dupHigh != 0) {
         int  nfd, ofd, flags;
 

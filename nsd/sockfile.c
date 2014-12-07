@@ -390,6 +390,8 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 #ifdef TCP_CORK
     Sock *sockPtr = (Sock *)sock;
 
+    assert(sock != NULL);
+    
     /* fprintf(stderr, "### Ns_SockCork sock %d %d\n", sockPtr->sock, cork); */
 
     if (cork == 1 && (sockPtr->flags & NS_CONN_SOCK_CORKED)) {

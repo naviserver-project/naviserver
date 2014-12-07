@@ -39,12 +39,22 @@
 #include "nsd.h"
 #include <pwd.h>
 
+typedef enum {
+    PwUID, PwNAME, PwDIR, PwGID
+} PwElement;
+
+
 /*
  * Static functions defined in this file.
  */
 
-static int Pipe(int *fds, int sockpair);
+static int Pipe(int *fds, int sockpair)
+    NS_GNUC_NONNULL(1);
+
 static void Abort(int signal);
+
+static bool GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
 /*
  * Static variables defined in this file.
@@ -379,12 +389,15 @@ NsMemUmap(const FileMap *mapPtr)
 int
 ns_sockpair(int *socks)
 {
+    assert(socks != NULL);
+    
     return Pipe(socks, 1);
 }
 
 int
 ns_pipe(int *fds)
 {
+    assert(fds != NULL);
     return Pipe(fds, 0);
 }
 
@@ -393,6 +406,8 @@ Pipe(int *fds, int sockpair)
 {
     int err;
 
+    assert(fds != NULL);
+    
     if (sockpair != 0) {
         err = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
     } else {
@@ -454,12 +469,8 @@ ns_sock_set_blocking(NS_SOCKET fd, int blocking)
  *----------------------------------------------------------------------
  */
 
-typedef enum {
-    PwUID, PwNAME, PwDIR, PwGID
-} PwElement;
-
-bool
-GetPwNam(char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
+static bool
+GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
     struct passwd *pwPtr;
     bool success;
 #if defined(HAVE_GETPWNAM_R)
@@ -467,6 +478,9 @@ GetPwNam(char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **f
     char *buffer;
     size_t bufSize = 4096u;
 
+    assert(user != NULL);
+    assert(freePtr != NULL);
+    
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
     do {
@@ -479,6 +493,9 @@ GetPwNam(char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **f
     } while (1);
     *freePtr = buffer;
 #else
+    assert(user != NULL);
+    assert(freePtr != NULL);
+
     Ns_MutexLock(&lock);
     pwPtr = getpwnam(user);
 #endif    
@@ -611,6 +628,8 @@ Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
     char *ptr = NULL;
     bool success;
 
+    assert(dsPtr != NULL);
+    
     success = GetPwUID(uid, PwNAME, NULL, dsPtr, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);
@@ -686,11 +705,13 @@ Ns_GetNameForGid(Ns_DString *dsPtr, int gid)
  */
 
 bool
-Ns_GetUserHome(Ns_DString *dsPtr, char *user)
+Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
 {
     char *ptr = NULL;
     bool success;
 
+    assert(dsPtr != NULL);
+    
     success = GetPwNam(user, PwDIR, NULL, dsPtr, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);
@@ -715,11 +736,13 @@ Ns_GetUserHome(Ns_DString *dsPtr, char *user)
  */
 
 int
-Ns_GetUserGid(char *user)
+Ns_GetUserGid(const char *user)
 {
     char *ptr = NULL;
     int retcode = -1;
 
+    assert(user != NULL);
+    
     (void) GetPwNam(user, PwGID, &retcode, NULL, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);
@@ -744,11 +767,13 @@ Ns_GetUserGid(char *user)
  */
 
 int
-Ns_GetUid(char *user)
+Ns_GetUid(const char *user)
 {
     char *ptr = NULL;
     int retcode = -1;
-    
+
+    assert(user != NULL);
+
     (void) GetPwNam(user, PwUID, &retcode, NULL, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);
@@ -773,7 +798,7 @@ Ns_GetUid(char *user)
  */
 
 int
-Ns_GetGid(char *group)
+Ns_GetGid(const char *group)
 {
     struct group *grPtr;
     int retcode;
@@ -782,6 +807,8 @@ Ns_GetGid(char *group)
     size_t bufSize = 4096u;
     char *buffer;
     int errorCode = 0;
+
+    assert(group != NULL);
 
     grPtr = NULL;
     buffer = ns_malloc(bufSize);
@@ -795,6 +822,8 @@ Ns_GetGid(char *group)
     retcode = (grPtr == NULL) ? -1 : (int) grPtr->gr_gid;
     ns_free(buffer);
 #else
+    assert(group != NULL);
+
     Ns_MutexLock(&lock);
     grPtr = getgrnam(group);
     if (grPtr == NULL) {
@@ -824,7 +853,7 @@ Ns_GetGid(char *group)
  */
 
 int
-Ns_SetGroup(char *group)
+Ns_SetGroup(const char *group)
 {
     int nc;
 
@@ -871,7 +900,7 @@ Ns_SetGroup(char *group)
  */
 
 int
-Ns_SetUser(char *user)
+Ns_SetUser(const char *user)
 {
     int nc, uid;
     Ns_DString ds;
@@ -924,6 +953,7 @@ Ns_SetUser(char *user)
 int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 {
+    assert(fds != NULL);
     return poll(fds, nfds, timo);
 }
 #else
@@ -949,6 +979,8 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;
     int i, rc, n = -1;
+
+    assert(fds != NULL);
 
     FD_ZERO(&ifds);
     FD_ZERO(&ofds);
