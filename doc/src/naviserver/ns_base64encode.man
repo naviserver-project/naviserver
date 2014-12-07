@@ -11,7 +11,7 @@
 
 [list_begin definitions]
 
- [call [cmd ns_uuencode] [arg string]]
+ [call [cmd ns_base64encode] [arg string]]
 
 [list_end]
 
@@ -27,8 +27,8 @@ test
 
 [example_end]
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also ns_base64decode ns_uuencode ns_uudecode]
+[keywords encoding]
 [manpage_end]
 
 
