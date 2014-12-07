@@ -154,7 +154,7 @@ Ns_DRand(void)
 	Ns_CsLeave(&lock);
     }
 #if HAVE_ARC4RANDOM
-    return ((double) arc4random() / ((double)RAND_MAX + 1.0));
+    return ((double)(arc4random() % (unsigned)RAND_MAX) / ((double)RAND_MAX + 1.0));
 #elif HAVE_DRAND48
     return drand48();
 #elif HAVE_RANDOM
