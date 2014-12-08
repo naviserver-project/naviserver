@@ -138,6 +138,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
  * Ns_SockListenUdp --
  *
  *      Listen on the UDP socket for the given IP address and port.
+ *      The given address might be NULL, which implies "0.0.0.0";
  *
  * Results:
  *      Socket descriptor or -1 on error.
@@ -153,8 +154,6 @@ Ns_SockListenUdp(const char *address, int port)
 {
     NS_SOCKET          sock = NS_INVALID_SOCKET;
     struct sockaddr_in sa;
-
-    assert(address != NULL);
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
         Tcl_HashEntry *hPtr;
@@ -233,7 +232,7 @@ Ns_SockListenRaw(int proto)
      */
 
     if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
-        sock = Ns_SockBinderListen('R', 0, proto, proto);
+        sock = Ns_SockBinderListen('R', NULL, proto, proto);
     }
 
     return sock;

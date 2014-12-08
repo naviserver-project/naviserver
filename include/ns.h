@@ -2498,8 +2498,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockListenEx(const char *address, int port, int backlog);
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenUdp(const char *address, int port)
-    NS_GNUC_NONNULL(1);
+Ns_SockListenUdp(const char *address, int port);
 
 NS_EXTERN NS_SOCKET
 Ns_SockListenRaw(int proto);
