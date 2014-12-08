@@ -649,7 +649,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     
     assert(connPtr->poolPtr != NULL);
     servPtr = connPtr->poolPtr->servPtr;
-    assert(servPtr);
+    assert(servPtr != NULL);
     
     if (servPtr->vhost.connLocationProc != NULL) {
 
@@ -1474,7 +1474,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK) {
                 return TCL_ERROR;
             }
-            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)Ns_ConnContent(conn) + off, 
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)Ns_ConnContent(conn) + off, 
 							 (int)len));
         }
         break;
