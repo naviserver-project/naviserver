@@ -301,7 +301,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static bool
-AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
+AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Mod       *modPtr = arg;
     Sess      *sessPtr;
@@ -309,14 +309,14 @@ AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 
     if (why == (unsigned int)NS_SOCK_EXIT) {
 	Ns_Log(Notice, "nscp: shutdown");
-	(void )ns_sockclose(lsock);
+	(void )ns_sockclose(sock);
 	return NS_FALSE;
     }
 
     sessPtr = ns_malloc(sizeof(Sess));
     sessPtr->modPtr = modPtr;
     len = (socklen_t)sizeof(struct sockaddr_in);
-    sessPtr->sock = Ns_SockAccept(lsock, (struct sockaddr *) &sessPtr->sa, &len);
+    sessPtr->sock = Ns_SockAccept(sock, (struct sockaddr *) &sessPtr->sa, &len);
     if (sessPtr->sock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: accept() failed: %s",
 	       ns_sockstrerror(ns_sockerrno));
