@@ -110,13 +110,13 @@ NsUnblockSignal(int UNUSED(sig))
 }
 
 int
-Ns_SetGroup(char *UNUSED(group))
+Ns_SetGroup(const char *UNUSED(group))
 {
     return -1;
 }
 
 int
-Ns_SetUser(char *UNUSED(user))
+Ns_SetUser(const char *UNUSED(user))
 {
     return -1;
 }

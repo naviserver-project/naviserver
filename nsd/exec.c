@@ -94,7 +94,7 @@ Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *arg
  */
 
 pid_t
-Ns_ExecProc(char *exec, char **argv)
+Ns_ExecProc(const char *exec, char **argv)
 {
     assert(exec != NULL);
     

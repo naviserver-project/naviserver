@@ -49,7 +49,7 @@ static void CreateConnThread(ConnPool *poolPtr)
 static void JoinConnThread(Ns_Thread *threadPtr)
     NS_GNUC_NONNULL(1);
 
-static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
+static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
@@ -1718,7 +1718,7 @@ JoinConnThread(Ns_Thread *threadPtr)
  */
 
 static void
-AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
+AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, char *state)
 {
     Ns_Time now, diff;
 

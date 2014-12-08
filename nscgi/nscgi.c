@@ -116,7 +116,7 @@ static Ns_OpProc CgiRequest;
 static void     CgiRegister(Mod *modPtr, const char *map);
 static Ns_Callback CgiFreeMap;
 static Ns_DString *CgiDs(Cgi *cgiPtr);
-static int	CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn);
+static int	CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn);
 static void	CgiFree(Cgi *cgiPtr);
 static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn);
 static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn);
@@ -372,7 +372,7 @@ done:
  */
 
 static int
-CgiInit(Cgi *cgiPtr, const Map *mapPtr, Ns_Conn *conn)
+CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 {
     Mod		   *modPtr;
     Ns_DString     *dsPtr;
