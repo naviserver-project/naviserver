@@ -901,7 +901,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int             count, opt, i;
+    int             result = TCL_OK, count, opt, i;
     Ns_DString      ds;
     Tcl_Obj        *objPtr;
     LogCache       *cachePtr = GetCache();
@@ -930,27 +930,29 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     }
 
     switch (opt) {
+        
     case CRegisterIdx:
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc,
+                                      objv[2], objc - 3, objv + 3);
+            Ns_AddLogFilter(LogToTcl, cbPtr, Ns_TclFreeCallback);
+            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, cbPtr);
         }
-        cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc,
-                                  objv[2], objc - 3, objv + 3);
-        Ns_AddLogFilter(LogToTcl, cbPtr, Ns_TclFreeCallback);
-        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, cbPtr);
         break;
 
     case CUnregisterIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else if (Ns_TclGetAddrFromObj(interp, objv[2], filterType, &addr) != TCL_OK) {
+            result = TCL_ERROR;
+        } else {
+            cbPtr = addr;
+            Ns_RemoveLogFilter(LogToTcl, cbPtr);
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], filterType, &addr) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        cbPtr = addr;
-        Ns_RemoveLogFilter(LogToTcl, cbPtr);
         break;
 
     case CHoldIdx:
@@ -983,46 +985,50 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     case CTruncIdx:
         count = 0;
         if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &count) != TCL_OK) {
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            memset(filterPtr, 0, sizeof *filterPtr);
+            LogFlush(cachePtr, filterPtr, count, 1, 0);
         }
-        memset(filterPtr, 0, sizeof *filterPtr);
-        LogFlush(cachePtr, filterPtr, count, 1, 0);
         break;
 
     case CSeverityIdx:
       {
 	Ns_LogSeverity severity;
-        void *addrPtr;
+        void  *addrPtr;
 	bool   enabled;
 
         if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
-            return TCL_ERROR;
-        }
-
-        if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
-	    severity = PTR2INT(addrPtr);
-	} else {
+            result = TCL_ERROR;
+        } else if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
+            severity = PTR2INT(addrPtr);
+        } else {
             if (objc == 3) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
             }
-            severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
 	}
 
-	if (severity >= severityMaxCount) {
-	    Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
-	    return TCL_ERROR;
-	}
-
-        enabled = Ns_LogSeverityEnabled(severity);
-        if (objc == 4 && severity != Fatal) {
-	    int boolValue;
-            if (Tcl_GetBooleanFromObj(interp, objv[3], &boolValue) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            severityConfig[severity].enabled = boolValue;
+        if (result == TCL_OK && severity >= severityMaxCount) {
+            Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
+            result = TCL_ERROR;
         }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
+        if (result == TCL_OK) {
+            enabled = Ns_LogSeverityEnabled(severity);
+            if (objc == 4 && severity != Fatal) {
+                int boolValue;
+                if (Tcl_GetBooleanFromObj(interp, objv[3], &boolValue) == TCL_OK) {
+                    severityConfig[severity].enabled = boolValue;
+                } else {
+                    result = TCL_ERROR;
+                }
+            }
+            if (result == TCL_OK) {
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
+            }
+        }
         break;
       }
 
@@ -1030,8 +1036,10 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         objPtr = Tcl_GetObjResult(interp);
         for (i = 0; i < severityIdx; i++) {
             if (Tcl_ListObjAppendElement(interp, objPtr,
-                    Tcl_NewStringObj(severityConfig[i].label, -1)) != TCL_OK) {
-                return TCL_ERROR;
+                                         Tcl_NewStringObj(severityConfig[i].label, -1))
+                != TCL_OK) {
+                result = TCL_ERROR;
+                break;
             }
         }
         break;
@@ -1046,7 +1054,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         break;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
