@@ -4653,7 +4653,7 @@ int
 NsAsyncWrite(int fd, const char *buffer, size_t nbyte) 
 {
     SpoolerQueue  *queuePtr;
-    int            trigger = 0;
+    bool           trigger = NS_FALSE;
     AsyncWriteData *wdPtr, *newWdPtr;
 
     assert(buffer != NULL);
@@ -4683,7 +4683,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     newWdPtr = ns_calloc(1U, sizeof(AsyncWriteData));
     newWdPtr->fd = fd;
     newWdPtr->bufsize = nbyte;
-    newWdPtr->data = ns_malloc(nbyte + 1U);
+    newWdPtr->data = ns_malloc(nbyte + 1u);
     memcpy(newWdPtr->data, buffer, newWdPtr->bufsize);
     newWdPtr->buf  = newWdPtr->data;
     newWdPtr->size = newWdPtr->bufsize;
@@ -4702,14 +4702,14 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 	queuePtr->sockPtr = newWdPtr;
     } else {
 	queuePtr->sockPtr = newWdPtr;
-	trigger = 1;
+	trigger = NS_TRUE;
     }
     Ns_MutexUnlock(&queuePtr->lock);
 
     /*
      * Wake up writer thread if desired
      */
-    if (trigger != 0) { 
+    if (trigger == NS_TRUE) { 
         SockTrigger(queuePtr->pipe[1]);
     }
 
