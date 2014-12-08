@@ -1874,6 +1874,7 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
         case NS_TCL_TRACE_FREECONN:
             Tcl_DStringAppendElement(&ds, "freeconn");
             break;
+        case NS_TCL_TRACE_NONE:
         default:
             /* unexpected value */
             assert(why && 0);
