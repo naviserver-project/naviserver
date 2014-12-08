@@ -102,12 +102,17 @@ Ns_SockListenEx(const char *address, int port, int backlog)
         }
         Ns_MutexUnlock(&lock);
         if (hPtr == NULL) {
-            /* Not prebound, bind now */
+            /* 
+             * Not prebound, bind now 
+             */
             sock = Ns_SockBind(&sa);
         }
-        if (sock >= 0 && listen(sock, backlog) == -1) {
-            /* Can't listen; close the opened socket */
+        if (sock != NS_INVALID_SOCKET && listen(sock, backlog) == -1) {
+            /* 
+             * Can't listen; close the opened socket 
+             */
             int err = errno;
+            
             ns_sockclose(sock);
             errno = err;
             sock = NS_INVALID_SOCKET;
@@ -161,7 +166,9 @@ Ns_SockListenUdp(const char *address, int port)
         }
         Ns_MutexUnlock(&lock);
         if (hPtr == NULL) {
-            /* Not prebound, bind now */
+            /* 
+             * Not prebound, bind now 
+             */
             sock = Ns_SockBindUdp(&sa);
         }
     }
@@ -214,7 +221,9 @@ Ns_SockListenRaw(int proto)
     }
     Ns_MutexUnlock(&lock);
     if (hPtr == NULL) {
-        /* Not prebound, bind now */
+        /* 
+         * Not prebound, bind now 
+         */
         sock = Ns_SockBindRaw(proto);
     }
 
@@ -272,11 +281,15 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
     }
     Ns_MutexUnlock(&lock);
     if (hPtr == NULL) {
-        /* Not prebound, bind now */
+        /* 
+         * Not prebound, bind now 
+         */
         sock = Ns_SockBindUnix(path, backlog > 0 ? SOCK_STREAM : SOCK_DGRAM, mode);
     }
     if (sock >= 0 && backlog > 0 && listen(sock, backlog) == -1) {
-        /* Can't listen; close the opened socket */
+        /* 
+         * Can't listen; close the opened socket 
+         */
         int err = errno;
 
         ns_sockclose(sock);
@@ -636,8 +649,8 @@ PreBind(const char *line)
     char               *next, *str;
     struct sockaddr_in sa;
 
-    for (;line != NULL; line = next) {
-        const char  *addr, *proto;
+    for (; line != NULL; line = next) {
+        const char *addr, *proto;
 
         next = strchr(line, ',');
         if (next != NULL) {
