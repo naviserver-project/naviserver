@@ -1291,35 +1291,35 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
                            Ns_DriverSendProc *sendProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
-
-
 NS_EXTERN int  NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
+
 NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
+
 NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr);
 
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
+
 NS_EXTERN void NsFreeRequest(Request *reqPtr);
 
 NS_EXTERN void NsWriterLock(void);
 NS_EXTERN void NsWriterUnlock(void);
-NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr);
+
+NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr)
+        NS_GNUC_NONNULL(1);
+
 NS_EXTERN int  NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
 			  FILE *fp, int fd, struct iovec *bufs, int nbufs, 
-			  int everysize);
-
-NS_EXTERN void NsFreeAdp(NsInterp *itPtr);
-NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)
-     NS_GNUC_NONNULL(1);
-
-NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url);
-NS_EXTERN char *NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host);
+			  int everysize)
+    NS_GNUC_NONNULL(1);
 
 /*
  * External callback functions.
@@ -1346,13 +1346,13 @@ NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
 
 NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr);
-NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr);
-NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr);
-NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, const char *server);
-NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, const char *server);
-NS_EXTERN void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
-NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server);
+NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsGetRequestProcs(Tcl_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 #ifdef _WIN32
 NS_EXTERN int NsConnectService(void);
@@ -1413,6 +1413,18 @@ NS_EXTERN void NsSendSignal(int sig);
  */
 NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+/*
+ * url2file.c
+ */
+NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+/*
+ * pathname.c
+ */
+NS_EXTERN char *NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * range.c
@@ -1502,6 +1514,7 @@ NS_EXTERN void NsRunSignalProcs(void);
 NS_EXTERN void NsRunStartupProcs(void);
 NS_EXTERN void NsRunAtReadyProcs(void);
 NS_EXTERN void NsRunAtExitProcs(void);
+NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr) NS_GNUC_NONNULL(1);
 
 /*
  * Upload progress routines.

@@ -523,6 +523,8 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
 {
     Tcl_HashSearch  search;
 
+    assert(dsPtr != NULL);
+    
     Ns_MutexLock(&lock);
     if (running != 0) {
         Tcl_HashEntry *hPtr; 

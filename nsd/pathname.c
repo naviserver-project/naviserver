@@ -654,15 +654,18 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg)
  */
 
 char *
-NsPageRoot(Ns_DString *dest, const NsServer *servPtr, const char *host)
+NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
 {
     char *path;
 
+    assert(dsPtr != NULL);
+    assert(servPtr != NULL);
+
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
-        path = Ns_DStringAppend(dest, servPtr->fastpath.pagedir);
+        path = Ns_DStringAppend(dsPtr, servPtr->fastpath.pagedir);
     } else {
-	(void) ServerRoot(dest, servPtr, host);
-        path = Ns_MakePath(dest, servPtr->fastpath.pagedir, NULL);
+	(void) ServerRoot(dsPtr, servPtr, host);
+        path = Ns_MakePath(dsPtr, servPtr->fastpath.pagedir, NULL);
     }
 
     return path;

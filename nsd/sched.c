@@ -902,6 +902,8 @@ NsGetScheduled(Tcl_DString *dsPtr)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
+    assert(dsPtr != NULL);
+    
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&eventsTable, &search);
     while (hPtr != NULL) {

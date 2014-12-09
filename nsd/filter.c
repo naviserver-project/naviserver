@@ -382,10 +382,12 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
     Filter *fPtr;
     NsServer *servPtr;
 
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+
     servPtr = NsGetServer(server);
-    if (servPtr == NULL) {
-        return;
-    }
+    assert(servPtr != NULL);
+    
     fPtr = servPtr->filter.firstFilterPtr;
     while (fPtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
@@ -415,10 +417,12 @@ NsGetTraces(Tcl_DString *dsPtr, const char *server)
     Trace  *tracePtr;
     NsServer *servPtr;
 
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+    
     servPtr = NsGetServer(server);
-    if (servPtr == NULL) {
-        return;
-    }
+    assert(servPtr != NULL);
+
     tracePtr = servPtr->filter.firstTracePtr;
     while (tracePtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);

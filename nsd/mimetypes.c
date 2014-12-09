@@ -856,6 +856,8 @@ NsGetMimeTypes(Ns_DString *dsPtr)
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
 
+    assert(dsPtr != NULL);
+    
     hPtr = Tcl_FirstHashEntry(&types, &search);
     while (hPtr != NULL) {
         Tcl_DStringAppendElement(dsPtr, Tcl_GetHashKey(&types, hPtr));

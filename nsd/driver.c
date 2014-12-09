@@ -3867,6 +3867,9 @@ WriterThread(void *arg)
 
 void 
 NsWriterFinish(WriterSock *wrSockPtr) {
+
+    assert(wrSockPtr != NULL);
+   
     Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)wrSockPtr);
     wrSockPtr->doStream = NS_WRITER_STREAM_FINISH;
     SockTrigger(wrSockPtr->queuePtr->pipe[1]);
@@ -3897,14 +3900,16 @@ int
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs, int everysize)
 {
-    Conn          *connPtr = (Conn*)conn;
+    Conn          *connPtr = (Conn *)conn;
     WriterSock    *wrSockPtr; 
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
     int            trigger = 0;
     size_t         headerSize;
 
-    if (connPtr == NULL || connPtr->sockPtr == NULL) {
+    assert(conn != NULL);
+    
+    if (connPtr->sockPtr == NULL) {
         return NS_ERROR;
     }
 

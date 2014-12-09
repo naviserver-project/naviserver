@@ -229,8 +229,13 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 int
 Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 {
-    NsServer *servPtr = NsGetServer(server);
+    NsServer *servPtr;
 
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+    assert(url != NULL);
+    
+    servPtr = NsGetServer(server);
     return NsUrlToFile(dsPtr, servPtr, url);
 }
 
@@ -239,9 +244,10 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
 {
     int       status = NS_ERROR;
 
-    if (url == NULL) {
-        return status;
-    }
+    assert(dsPtr != NULL);
+    assert(servPtr != NULL);
+    assert(url != NULL);
+
     if (servPtr->fastpath.url2file != NULL) {
         status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
     } else {
@@ -630,6 +636,9 @@ NsMountUrl2FileArgProc(Tcl_DString *dsPtr, const void *arg)
 void
 NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
 {
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+    
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificWalk(uid, server, WalkCallback, dsPtr);
     Ns_MutexUnlock(&ulock);

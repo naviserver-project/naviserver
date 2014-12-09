@@ -54,7 +54,7 @@ typedef struct {
  */
 
 static Ns_ServerInitProc ConfigServerProxy;
-static void WalkCallback(Tcl_DString *dsPtr, const void *arg);
+static void WalkCallback(Tcl_DString *dsPtr, const void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void FreeReq(void *arg) NS_GNUC_NONNULL(1);
 
 /*
@@ -521,14 +521,16 @@ NsConnRunProxyRequest(Ns_Conn *conn)
  */
 
 void
-NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
+NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
 {
     NsServer *servPtr;
 
+    assert(dsPtr != NULL);
+    assert(server != NULL);
+    
     servPtr = NsGetServer(server);
-    if (servPtr == NULL) {
-        return;
-    }
+    assert(servPtr != NULL);
+    
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
     Ns_MutexUnlock(&ulock);
@@ -539,6 +541,9 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
      const Req *reqPtr = arg;
 
+     assert(dsPtr != NULL);
+     assert(arg != NULL);
+     
      Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
 }
 
@@ -573,3 +578,12 @@ FreeReq(void *arg)
         ns_free(reqPtr);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

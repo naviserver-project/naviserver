@@ -74,7 +74,7 @@ static const char *GetEncodingFormat(const char *encodingString,
  */
 
 void
-Ns_ResetRequest(Ns_Request * request)
+Ns_ResetRequest(Ns_Request *request)
 {
     if (request != NULL) {
         ns_free((char *)request->line);
@@ -104,7 +104,7 @@ Ns_ResetRequest(Ns_Request * request)
  */
 
 void
-Ns_FreeRequest(Ns_Request * request)
+Ns_FreeRequest(Ns_Request *request)
 {
     if (request != NULL) {
         ns_free((char *)request->line);
