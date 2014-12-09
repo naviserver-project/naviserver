@@ -443,7 +443,7 @@ NsSlsCleanup(Sock *sockPtr)
         uintptr_t i = nsconf.nextSlsId;
 
         retry = 0;
-        while (i-- > 0) {
+        while (i-- > 0u) {
             if (cleanupProcs[i] != NULL && sockPtr->sls[i] != NULL) {
                 arg = sockPtr->sls[i];
                 sockPtr->sls[i] = NULL;

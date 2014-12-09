@@ -183,7 +183,7 @@ typedef enum {
 /*
  * The following define some buffer sizes and limits.
  */
-#define NS_CONN_MAXCLS             16  /* Max num CLS keys which may be allocated */
+#define NS_CONN_MAXCLS             16u /* Max num CLS keys which may be allocated */
 #define NS_CONN_MAXBUFS            16  /* Max num buffers which Ns_ConnSend will write */
 #define NS_ENCRYPT_BUFSIZE         128 /* Min size of buffer for Ns_Encrypt output */
 

@@ -378,8 +378,8 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, const void *arg)
     if ((adp->flags & ADP_TCLFILE) != 0U) {
         Tcl_DStringAppendElement(dsPtr, "tcl");
     }
-    for (i = 0; i < (sizeof(adpOpts) / sizeof(adpOpts[0])); i++) {
-	if ((adp->flags & adpOpts[i].value) != 0U) {
+    for (i = 0u; i < (sizeof(adpOpts) / sizeof(adpOpts[0])); i++) {
+	if ((adp->flags & adpOpts[i].value) != 0u) {
             Tcl_DStringAppendElement(dsPtr, adpOpts[i].key);
         }
     }
@@ -502,18 +502,18 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
                 result = TCL_OK;
             }
         } else {
-            if ((conn->flags & NS_CONN_CLOSED) != 0U) {
+            if ((conn->flags & NS_CONN_CLOSED) != 0u) {
                 result = TCL_OK;
                 Tcl_SetResult(interp, "adp flush failed: connection closed",
                               TCL_STATIC);
             } else {
 		struct iovec sbuf;
 
-                if ((flags & ADP_FLUSHED) == 0U && (flags & ADP_EXPIRE) != 0U) {
+                if ((flags & ADP_FLUSHED) == 0u && (flags & ADP_EXPIRE) != 0u) {
                     Ns_ConnCondSetHeaders(conn, "Expires", "now");
                 }
 
-                if ((conn->flags & NS_CONN_SKIPBODY) != 0U) {
+                if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
                     buf = NULL;
                     len = 0;
                 }
@@ -521,7 +521,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
 		sbuf.iov_base = buf;
 		sbuf.iov_len  = (size_t)len;
                 if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, 
-                                       (doStream != 0) ? NS_CONN_STREAM : 0) == NS_OK) {
+                                       (doStream != 0) ? NS_CONN_STREAM : 0u) == NS_OK) {
                     result = TCL_OK;
                 }
                 if (result != TCL_OK) {
@@ -537,7 +537,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
          * Raise an abort exception if autoabort is enabled.
          */
 
-        if (result != TCL_OK && (flags & ADP_AUTOABORT) != 0U) {
+        if (result != TCL_OK && (flags & ADP_AUTOABORT) != 0u) {
             Tcl_AddErrorInfo(interp, "\n    abort exception raised");
             NsAdpLogError(itPtr);
             itPtr->adp.exception = ADP_ABORT;

@@ -944,9 +944,9 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         if ((key[0] != '-' && defObjPtr != NULL)
             || (i + 1 == numSpecs && STREQ(key, "args"))) {
 
-            specPtr->key = ns_malloc((size_t) keyLen + 2u);
+            specPtr->key = ns_malloc((size_t)keyLen + 2u);
             specPtr->key[0] = '?';
-            memcpy(specPtr->key + 1, key, keyLen + 1u);
+            memcpy(specPtr->key + 1, key, (size_t)keyLen + 1u);
         } else {
             specPtr->key = ns_strdup(key);
         }

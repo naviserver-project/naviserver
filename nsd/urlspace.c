@@ -1901,7 +1901,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
     assert(method != NULL);
     assert(url != NULL);
 
-    Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1U));
+    Ns_DStringNAppend(dsPtr, method, (int)strlen(method) + 1);
 
     /*
      * Loop over each directory in the URL and turn the slashes

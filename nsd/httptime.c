@@ -373,9 +373,9 @@ MakeNum(const char *s)
     assert(s != NULL);
     
     if (UCHAR(*s) >= UCHAR('0') && UCHAR(*s) <= UCHAR('9')) {
-        return (10 * (UCHAR(*s) - UCHAR('0'))) + (UCHAR(*(s + 1)) - UCHAR('0'));
+        return (10 * (int)((UCHAR(*s) - UCHAR('0')))) + (int)(UCHAR(*(s + 1)) - UCHAR('0'));
     } else {
-	return UCHAR(*(s + 1)) - UCHAR('0');
+	return (int)(UCHAR(*(s + 1)) - UCHAR('0'));
     }
 }
 

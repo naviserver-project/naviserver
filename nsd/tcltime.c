@@ -290,7 +290,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         if (Tcl_GetLongFromObj(interp, objv[2], &sec) != TCL_OK) {
             return TCL_ERROR;
         }
-        result.sec = (time_t) sec;
+        result.sec = sec;
         if (objc == 3) {
             result.usec = 0;
         } else if (Tcl_GetLongFromObj(interp, objv[3], &result.usec) != TCL_OK) {
@@ -307,7 +307,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 || Tcl_GetLongFromObj(interp, objv[3], &sec) != TCL_OK) {
             return TCL_ERROR;
         }
-        t2.sec = (time_t) sec;
+        t2.sec = sec;
         if (objc == 4) {
             t2.usec = 0;
         } else if (Tcl_GetLongFromObj(interp, objv[4], &t2.usec) != TCL_OK) {
@@ -603,18 +603,18 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
-        t.sec = (time_t) sec;
+        t.sec = sec;
         t.usec = 0;
     } else {
         int result;
 
         *sep = '\0';
         result = Tcl_GetInt(interp, str, &value);
-        t.sec = value;
         *sep = ':';
         if (result != TCL_OK) {
             return TCL_ERROR;
         }
+        t.sec = (long)value;
         if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
             return TCL_ERROR;
         }

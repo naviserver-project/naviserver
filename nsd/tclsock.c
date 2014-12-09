@@ -805,7 +805,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     sock = ns_sockdup(sock);
     script = Tcl_GetStringFromObj(objv[2], &scriptLength);
     
-    cbPtr = ns_malloc(sizeof(Callback) + scriptLength);
+    cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
     cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
     cbPtr->chan = NULL;
     cbPtr->when = when;

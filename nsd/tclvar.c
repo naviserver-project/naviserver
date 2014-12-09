@@ -1071,8 +1071,8 @@ UpdateVar(Tcl_HashEntry *hPtr, const char *value, size_t len)
     assert(value != NULL);
 
     oldString = Tcl_GetHashValue(hPtr);
-    newString = ns_realloc(oldString, (size_t) (len + 1));
-    memcpy(newString, value, (size_t) (len + 1));
+    newString = ns_realloc(oldString, len + 1u);
+    memcpy(newString, value, len + 1u);
     Tcl_SetHashValue(hPtr, newString);
 }
 

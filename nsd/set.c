@@ -248,7 +248,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
     assert(cmp != NULL);
     
     if (likely(key != NULL)) {
-	for (i = 0U; i < set->size; ++i) {
+	for (i = 0u; i < set->size; ++i) {
 	    const char *name = set->fields[i].name;
 
 	    if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
@@ -256,7 +256,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
 	    }
 	}
     } else {
-	for (i = 0U; i < set->size; ++i) {
+	for (i = 0u; i < set->size; ++i) {
 	    if (unlikely(set->fields[i].name == NULL)) {
 	      return (int)i;
 	    }
@@ -592,8 +592,8 @@ Ns_SetDelete(Ns_Set *set, int index)
         ns_free(set->fields[index].value);
         --set->size;
         for (i = (size_t)index; i < set->size; ++i) {
-            set->fields[i].name = set->fields[i + 1].name;
-            set->fields[i].value = set->fields[i + 1].value;
+            set->fields[i].name = set->fields[i + 1u].name;
+            set->fields[i].value = set->fields[i + 1u].value;
         }
     }
 }
@@ -751,7 +751,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
     assert(set != NULL);
 
     Ns_DStringInit(&ds);
-    Ns_DStringNAppend(&ds, (char *) &end, sizeof(Ns_Set *));
+    Ns_DStringNAppend(&ds, (char *) &end, (int)sizeof(Ns_Set *));
 
     for (i = 0U; i < set->size; ++i) {
         Ns_Set     *next;
@@ -773,7 +773,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
             next = Ns_SetCreate(name);
             sp = (Ns_Set **) (ds.string + ds.length - sizeof(Ns_Set *));
             *sp = next;
-            Ns_DStringNAppend(&ds, (char *) &end, sizeof(Ns_Set *));
+            Ns_DStringNAppend(&ds, (char *) &end, (int)sizeof(Ns_Set *));
         }
         (void)Ns_SetPut(next, key, set->fields[i].value);
         if (name != NULL) {

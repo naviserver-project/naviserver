@@ -35,7 +35,7 @@
 
 #include "nsd.h"
 
-#define BUFSIZE 2048
+#define BUFSIZE 2048u
 
 typedef struct Stream {
     NS_SOCKET sock;
@@ -392,7 +392,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
             if (eol != NULL) {
                 n = (size_t)dsPtr->length;
                 if (n > 0u && dsPtr->string[n-1] == '\r') {
-		  Ns_DStringSetLength(dsPtr, (int)n - 1);
+                    Ns_DStringSetLength(dsPtr, (int)n - 1);
                 }
                 return NS_TRUE;
             }

@@ -261,7 +261,7 @@ setkey_private(struct sched *sp, const char *key)
     }
 
     for (i = 0; i < 48; i++) {
-        sp->E[i] = e[i];
+        sp->E[i] = (char)e[i];
     }
 }
 
@@ -407,10 +407,10 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
             t = 4 * j;
             assert(t < (32-3));
 
-            f[t    ] = (k >> 3) & 1u;
-            f[t + 1] = (k >> 2) & 1u;
-            f[t + 2] = (k >> 1) & 1u;
-            f[t + 3] = (k     ) & 1u;
+            f[t    ] = UCHAR((k >> 3) & 1u);
+            f[t + 1] = UCHAR((k >> 2) & 1u);
+            f[t + 2] = UCHAR((k >> 1) & 1u);
+            f[t + 3] = UCHAR((k     ) & 1u);
         }
 
         /*
@@ -433,7 +433,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
      * The output L and R are reversed.
      */
     for (j = 0; j < 32; j++) {
-        register char t = L[j];
+        register unsigned char t = L[j];
         L[j] = R[j];
         R[j] = t;
     }
@@ -442,7 +442,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
      * The final output gets the inverse permutation of the very original.
      */
     for (j = 0; j < 64; j++) {
-        block[j] = L[FP[j] - 1];
+        block[j] = (char)L[FP[j] - 1];
     }
 }
 

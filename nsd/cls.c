@@ -63,7 +63,7 @@ static void **GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn);
 void
 Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc)
 {
-    static uintptr_t nextId = 1;
+    static uintptr_t nextId = 1u;
     uintptr_t        id;
 
     Ns_MasterLock();
@@ -154,11 +154,11 @@ NsClsCleanup(Conn *connPtr)
 
     trys = 0;
     do {
-        int i;
+      unsigned int i;
 
 	retry = 0;
     	i = NS_CONN_MAXCLS;
-    	while (i-- > 0) {
+    	while (i-- > 0u) {
 	    if (cleanupProcs[i] != NULL && connPtr->cls[i] != NULL) {
 	    	arg = connPtr->cls[i];
 	    	connPtr->cls[i] = NULL;
@@ -192,9 +192,18 @@ GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn)
     Conn *connPtr = (Conn *) conn;
     uintptr_t idx = (uintptr_t) *clsPtr;
 
-    if (idx < 1 || idx >= NS_CONN_MAXCLS) {
+    if (idx < 1u || idx >= NS_CONN_MAXCLS) {
         Ns_Fatal("Ns_Cls: invalid key: %" PRIuPTR ": must be between 1 and %d",
                  idx, NS_CONN_MAXCLS);
     }
     return &connPtr->cls[idx];
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

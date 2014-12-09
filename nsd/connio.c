@@ -339,7 +339,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
                  * Output length header followed by content and then trailer.
                  */
 
-		len = sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength);
+		len = (size_t)sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength);
                 toWrite += Ns_SetVec(sbufPtr, sbufIdx++, hdr, len);
 
                 (void) memcpy(sbufPtr + sbufIdx, bufs, (size_t)nbufs * sizeof(struct iovec));
@@ -798,7 +798,7 @@ Ns_ConnWrite(Ns_Conn *conn, const void *buf, size_t toWrite)
     n = connPtr->nContentSent;
     status = Ns_ConnWriteVData(conn, &vbuf, 1, 0U);
     if (status == NS_OK) {
-      return (int)(connPtr->nContentSent - n);
+        return (int)connPtr->nContentSent - (int)n;
     }
     return -1;
 }
