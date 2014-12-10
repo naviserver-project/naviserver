@@ -42,7 +42,7 @@
  */
 
 typedef struct TclThreadArg {
-    char *server;
+    const char *server;
     int   detached;
     char  script[1];
 } TclThreadArg;

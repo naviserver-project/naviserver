@@ -159,7 +159,7 @@ struct nsconf {
 
     Tcl_HashTable servertable;
     Tcl_DString servers;
-    char *defaultServer;
+    const char *defaultServer;
 
     /*
      * The following table holds config section sets from
@@ -738,7 +738,7 @@ typedef struct ConnPool {
 
 typedef struct NsServer {
 
-    char *server;
+    const char *server;
 
     /*
      * The following struct maintains the connection pool(s).
@@ -1255,7 +1255,7 @@ NS_EXTERN void NsConfigEncodings(void);
  * Virtual server management routines.
  */
 
-NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
+NS_EXTERN void NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
@@ -1356,8 +1356,8 @@ NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server) NS_GNUC
 
 #ifdef _WIN32
 NS_EXTERN int NsConnectService(void);
-NS_EXTERN int NsInstallService(char *service);
-NS_EXTERN int NsRemoveService(char *service);
+NS_EXTERN int NsInstallService(char *service) NS_GNUC_NONNULL(1);
+NS_EXTERN int NsRemoveService(char *service) NS_GNUC_NONNULL(1);
 #endif
 
 NS_EXTERN void NsCreatePidFile(void);
@@ -1373,7 +1373,7 @@ NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
 NS_EXTERN void NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
-NS_EXTERN char *NsConfigRead(const char *file);
+NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int optind);
 NS_EXTERN void NsConfUpdate(void);
 NS_EXTERN void NsEnableDNSCache(int maxsize, int ttl, int timeout);

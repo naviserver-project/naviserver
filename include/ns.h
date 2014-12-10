@@ -2870,7 +2870,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc, const void *arg, 
 NS_EXTERN const char *
 Ns_TclLibrary(const char *server);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_TclInterpServer(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 

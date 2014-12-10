@@ -475,7 +475,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 {
     int         opt, result;
     NsInterp    *itPtr = arg;
-    char        *server;
+    const char  *server;
     const char  *elog;
     Tcl_DString ds;
 
@@ -675,7 +675,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
 
     case IServerIdx:
-        Tcl_SetResult(interp, server, TCL_STATIC);
+        Tcl_SetObjResult(interp,  Tcl_NewStringObj(server, -1));
         break;
 
     case ITclLibIdx:

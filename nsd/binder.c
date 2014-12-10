@@ -63,7 +63,7 @@ static NS_SOCKET binderResponse[2] = { NS_INVALID_SOCKET, NS_INVALID_SOCKET };
  * Local functions defined in this file
  */
 #ifndef _WIN32
-static void PreBind(const char *line);
+static void PreBind(const char *line) NS_GNUC_NONNULL(1);
 static void Binder(void);
 #endif
 
@@ -647,6 +647,8 @@ PreBind(const char *line)
     int                isNew, sock, port, mode;
     char               *next, *str;
     struct sockaddr_in sa;
+
+    assert(line != NULL);
 
     for (; line != NULL; line = next) {
         const char *addr, *proto;

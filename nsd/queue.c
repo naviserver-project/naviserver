@@ -154,8 +154,8 @@ Ns_GetConn(void)
 void
 NsMapPool(ConnPool *poolPtr, const char *map)
 {
-    CONST char **mv;
-    char *server;
+    const char **mv;
+    const char *server;
     int  mc;
 
     assert(poolPtr != NULL);

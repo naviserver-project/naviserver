@@ -206,7 +206,7 @@ NsStopServers(const Ns_Time *toPtr)
  */
 
 void
-NsInitServer(char *server, Ns_ServerInitProc *initProc)
+NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 {
     Tcl_HashEntry     *hPtr;
     Ns_DString         ds;

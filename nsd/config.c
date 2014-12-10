@@ -46,8 +46,10 @@ static Tcl_CmdProc ParamCmd;
 
 static Ns_Set* GetSection(const char *section, int create)
     NS_GNUC_NONNULL(1);
+
 static const char* ConfigGet(const char *section, const char *key, int exact, const char *defstr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static int ToBool(const char *value, int *valuePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -660,18 +662,15 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  *---------------------------------------------------------------------
  */
 
-char *
+const char *
 NsConfigRead(const char *file)
 {
     Tcl_Channel  chan = NULL;
     Tcl_Obj     *buf = NULL;
-    char        *call = "open", *data, *conf = NULL;
+    const char  *call = "open", *data, *conf = NULL;
     int          length;
 
-    if (file == NULL || *file == '\0') {
-        goto err;
-    }
-
+    assert(file != NULL);
     /*
      * Open the channel for reading the config file
      */

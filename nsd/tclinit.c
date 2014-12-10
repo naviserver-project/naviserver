@@ -849,7 +849,7 @@ Ns_TclLibrary(const char *server)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_TclInterpServer(Tcl_Interp *interp)
 {
     NsInterp *itPtr;

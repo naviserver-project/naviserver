@@ -99,15 +99,15 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 {
     Args      cmd;
     int       sig, optind;
-    char     *config = NULL;
+    const char *config = NULL;
     Ns_Time   timeout;
     Ns_Set   *set;
 
 #ifndef _WIN32
     int       debug = 0;
     char      mode = '\0';
-    char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
-    char     *bindargs = NULL, *bindfile = NULL;
+    const char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
+    const char     *bindargs = NULL, *bindfile = NULL;
     Ns_Set   *servers;
     struct rlimit  rl;
 #else
@@ -373,7 +373,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
         }
     }
 
-    if (!(mode == 'c' && nsconf.config == NULL)) {
+    if (mode != 'c' || nsconf.config != NULL) {
 	config = NsConfigRead(nsconf.config);
     }
 
@@ -449,7 +449,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 	 */
 	
 	NsConfigEval(config, argc, argv, optind);
-	ns_free(config);
+	ns_free((char *)config);
     }
 
     /*
