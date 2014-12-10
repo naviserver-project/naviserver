@@ -267,7 +267,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 
         if (toWrite > 0U) {
 
-            sbufIdx = Ns_ResetVec(sbufPtr, nsbufs, sent);
+            sbufIdx = Ns_ResetVec(sbufPtr, nsbufs, (size_t)sent);
             nsbufs -= sbufIdx;
 
             /*
@@ -385,7 +385,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     struct pollfd pfd;
 
     if (timeoutPtr != NULL) {
-        msec = timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000;
+        msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
     }
     pfd.fd = sock;
     pfd.events = 0;
@@ -534,7 +534,7 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n));
         }
         if (bind(sock, (const struct sockaddr *) saPtr,
-                 sizeof(struct sockaddr_in)) != 0) {
+                 (socklen_t)sizeof(struct sockaddr_in)) != 0) {
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
         }
@@ -999,7 +999,7 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
             if (Ns_DiffTime(timeoutPtr, &now, &diff) <= 0) {
                 ms = 0;
             } else {
-                ms = diff.sec * 1000 + diff.usec / 1000;
+                ms = (int)(diff.sec * 1000 + diff.usec / 1000);
             }
         }
         n = ns_poll(pfds, (size_t) nfds, ms);
@@ -1054,7 +1054,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
                 Ns_Log(Warning, "attempt to set socket nonblocking failed");
             }
         }
-        if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
+        if (connect(sock, (struct sockaddr *) &sa, (socklen_t)sizeof(sa)) != 0) {
             unsigned int err = ns_sockerrno;
             if (async == NS_FALSE || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);

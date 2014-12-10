@@ -1735,7 +1735,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
 
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 	if (connPtr->reqPtr != NULL) {
-	    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((Ns_Conn *) connPtr));
+	    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((const Ns_Conn *) connPtr));
 	} else {
 	    /* Actually, this should not happen, but it does, maybe due
 	     * to the above mentioned race condition; we notice in the

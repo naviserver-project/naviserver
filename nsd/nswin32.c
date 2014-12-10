@@ -707,7 +707,7 @@ ns_sockdup(NS_SOCKET sock)
 int
 ns_sock_set_blocking(NS_SOCKET sock, int blocking) 
 {
-    long state = (long)(blocking == 0);
+    u_long state = (u_long)(blocking == 0);
 
     return ioctlsocket(sock, (long)FIONBIO, &state);
 }

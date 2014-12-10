@@ -848,7 +848,7 @@ LogRoll(Log *logPtr)
             struct tm  *ptm;
 
             ptm = ns_localtime(&now);
-            strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
+            (void) strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
 
             Ns_DStringInit(&ds);
             Ns_DStringVarAppend(&ds, logPtr->file,".", timeBuf, NULL);

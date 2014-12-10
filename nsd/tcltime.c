@@ -522,7 +522,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     } else {
         fmt = "%c";
     }
-    if (strftime(buf, sizeof(buf), fmt, ns_localtime(&t)) == 0) {
+    if (strftime(buf, sizeof(buf), fmt, ns_localtime(&t)) == 0u) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
                                Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
