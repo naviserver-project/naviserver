@@ -537,7 +537,7 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
 /*
  *----------------------------------------------------------------------
  *
- * NsUrlSpecificWalk --
+ * Ns_UrlSpecificWalk --
  *
  *      Walk the urlspace calling ArgProc function for each node.
  *

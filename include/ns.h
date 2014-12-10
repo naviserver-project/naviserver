@@ -1746,7 +1746,7 @@ Tcl_SetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
 
 NS_EXTERN int
 Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
 NS_EXTERN int

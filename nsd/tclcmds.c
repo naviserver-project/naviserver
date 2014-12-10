@@ -41,7 +41,7 @@
  */
 
 typedef struct Cmd {
-    CONST char *name;
+    const char *name;
     Tcl_CmdProc *proc;
     Tcl_ObjCmdProc *objProc;
 } Cmd;
@@ -311,7 +311,6 @@ static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 static void
 AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 {
-
     assert(cmdPtr != NULL);
     assert(itPtr != NULL);
 
@@ -348,11 +347,22 @@ AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 void
 NsTclAddBasicCmds(NsInterp *itPtr)
 {
+    assert(itPtr != NULL);
     AddCmds(basicCmds, itPtr);
 }
 
 void
 NsTclAddServerCmds(NsInterp *itPtr)
 {
+    assert(itPtr != NULL);
     AddCmds(servCmds, itPtr);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

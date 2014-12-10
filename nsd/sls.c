@@ -438,6 +438,8 @@ NsSlsCleanup(Sock *sockPtr)
     void *arg;
     int   trys, retry;
 
+    assert(sockPtr != NULL);
+    
     trys = 0;
     do {
         uintptr_t i = nsconf.nextSlsId;

@@ -1374,7 +1374,7 @@ NS_EXTERN void NsStopSpoolers(void);
 NS_EXTERN void NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int optind);
+NS_EXTERN void NsConfigEval(const char *config, int argc, char *const*argv, int optind) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsConfUpdate(void);
 NS_EXTERN void NsEnableDNSCache(int maxsize, int ttl, int timeout);
 NS_EXTERN void NsStartDrivers(void);
@@ -1400,10 +1400,10 @@ NS_EXTERN void NsFreeConnInterp(Conn *connPtr)           NS_GNUC_NONNULL(1);
 
 NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets) NS_GNUC_NONNULL(1);
 
-NS_EXTERN void NsSlsCleanup(Sock *sockPtr);
-NS_EXTERN void NsClsCleanup(Conn *connPtr);
-NS_EXTERN void NsTclAddBasicCmds(NsInterp *itPtr);
-NS_EXTERN void NsTclAddServerCmds(NsInterp *itPtr);
+NS_EXTERN void NsSlsCleanup(Sock *sockPtr)               NS_GNUC_NONNULL(1);
+NS_EXTERN void NsClsCleanup(Conn *connPtr)               NS_GNUC_NONNULL(1);
+NS_EXTERN void NsTclAddBasicCmds(NsInterp *itPtr)        NS_GNUC_NONNULL(1);
+NS_EXTERN void NsTclAddServerCmds(NsInterp *itPtr)       NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
@@ -1424,7 +1424,7 @@ NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
  * pathname.c
  */
 NS_EXTERN char *NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * range.c
@@ -1447,7 +1447,17 @@ NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
 /*
  * request parsing
  */
-NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
+NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr)
+    NS_GNUC_NONNULL(2);
+
+/*
+ * encoding.c
+ */
+
+NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 
 
 /*
@@ -1455,42 +1465,42 @@ NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr);
  */
 
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len) 
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int doStream) 
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
 			   const char *file, const Ns_Time *expiresPtr)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 			  unsigned int flags, const char* file)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsAdpLogError(NsInterp *itPtr)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsAdpInit(NsInterp *itPtr)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsAdpReset(NsInterp *itPtr)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsAdpFree(NsInterp *itPtr)
-  NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 /*
  * Tcl support routines.
@@ -1514,7 +1524,7 @@ NS_EXTERN void NsRunSignalProcs(void);
 NS_EXTERN void NsRunStartupProcs(void);
 NS_EXTERN void NsRunAtReadyProcs(void);
 NS_EXTERN void NsRunAtExitProcs(void);
-NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)              NS_GNUC_NONNULL(1);
 
 /*
  * Upload progress routines.
@@ -1533,19 +1543,11 @@ NS_EXTERN int NsForkWatchedProcess(void);
  * Utility functions.
  */
 
-NS_EXTERN int NsCloseAllFiles(int errFd);
-NS_EXTERN int NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr);
-NS_EXTERN void NsMemUmap(const FileMap *mapPtr);
+NS_EXTERN int NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
-NS_EXTERN void NsStopSockCallbacks(void);
-NS_EXTERN void NsStopScheduledProcs(void);
-NS_EXTERN void NsGetBuf(char **bufPtr, int *sizePtr);
-
-NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr);
-NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
-
-NS_EXTERN void NsUrlSpecificWalk(int id, const char *server, Ns_ArgProc func,
-				 Tcl_DString *dsPtr);
+NS_EXTERN void NsMemUmap(const FileMap *mapPtr)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1558,10 +1560,11 @@ NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
 
 
 /*
- * Proxy support
+ * (HTTP) Proxy support
  */
 
-NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn);
+NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
 
 #endif /* NSD_H */
 

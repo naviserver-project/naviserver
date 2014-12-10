@@ -474,12 +474,17 @@ int
 NsConnRunProxyRequest(Ns_Conn *conn)
 {
     Conn          *connPtr = (Conn *) conn;
-    NsServer      *servPtr = connPtr->poolPtr->servPtr;
-    Ns_Request    *request = conn->request;
+    NsServer      *servPtr;
+    Ns_Request    *request;
     Req           *reqPtr = NULL;
     int            status;
     Ns_DString     ds;
     Tcl_HashEntry *hPtr;
+
+    assert(conn != NULL);
+    
+    servPtr = connPtr->poolPtr->servPtr;
+    request = conn->request;
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, request->method, request->protocol, NULL);

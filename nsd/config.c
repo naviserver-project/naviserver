@@ -705,10 +705,10 @@ NsConfigRead(const char *file)
     if (buf != NULL) {
         Tcl_DecrRefCount(buf);
     }
-    Ns_Fatal("config: can't %s config file '%s': '%s' %s",
+    Ns_Fatal("config: can't %s config file '%s': '%s'",
              call,
              file,
-             strerror(Tcl_GetErrno()), (file != NULL) ? "" : "(Did you pass -t option to nsd?)");
+             strerror(Tcl_GetErrno()));
 
     return NULL; /* Keep the compiler happy */
 }
@@ -737,6 +737,8 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
     Tcl_Interp *interp;
     Ns_Set     *set;
     int i;
+
+    assert(config != NULL);
 
     /*
      * Create an interp with a few config-related commands.

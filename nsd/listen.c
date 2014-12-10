@@ -111,7 +111,6 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
     int                 isNew, status;
     struct sockaddr_in  sa;
 
-    assert(addr != NULL);
     assert(proc != NULL);
     assert(arg != NULL);
 

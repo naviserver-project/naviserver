@@ -456,6 +456,9 @@ NsFindCharset(const char *mimetype, size_t *lenPtr)
 {
     const char *start;
 
+    assert(mimetype != NULL);
+    assert(lenPtr != NULL);
+
     start = Ns_StrCaseFind(mimetype, "charset");
     if (start != NULL) {
         start += 7;

@@ -309,10 +309,12 @@ NsSendSignal(int sig)
 int
 NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
+    assert(path != NULL);
+    assert(mapPtr != NULL);
+    
     /*
      * Open the file according to map mode
      */
-
     switch (mode) {
     case NS_MMAP_WRITE:
         mapPtr->handle = ns_open(path, O_BINARY | O_RDWR, 0);
@@ -367,6 +369,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 void
 NsMemUmap(const FileMap *mapPtr)
 {
+    assert(mapPtr != NULL);
     munmap(mapPtr->addr, mapPtr->size);
 }
 

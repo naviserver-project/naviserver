@@ -152,6 +152,8 @@ NsClsCleanup(Conn *connPtr)
     int trys, retry;
     void *arg;
 
+    assert(connPtr != NULL);
+    
     trys = 0;
     do {
       unsigned int i;
