@@ -39,10 +39,10 @@
  * The following are valid driver state flags.
  */
 
-#define DRIVER_STARTED           1U
-#define DRIVER_STOPPED           2U
-#define DRIVER_SHUTDOWN          4U
-#define DRIVER_FAILED            8U
+#define DRIVER_STARTED           1u
+#define DRIVER_STOPPED           2u
+#define DRIVER_SHUTDOWN          4u
+#define DRIVER_FAILED            8u
 
 /*
  * Managing streaming output via writer
@@ -169,13 +169,13 @@ static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
 static int ChunkedDecode(Request *reqPtr, int update)
     NS_GNUC_NONNULL(1);
-static WriterSock *WriterSockRequire(const Conn *connPtr) 
+static WriterSock *WriterSockRequire(const Conn *connPtr)
     NS_GNUC_NONNULL(1);
-static void WriterSockRelease(WriterSock *wrSockPtr) 
+static void WriterSockRelease(WriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
 static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
-static SpoolerState WriterSend(WriterSock *curPtr, int *err) 
+static SpoolerState WriterSend(WriterSock *curPtr, int *err)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
@@ -200,12 +200,12 @@ static Driver    *firstDrvPtr = NULL; /* First in list of all drivers */
 #define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
 
 
-static void 
+static void
 WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
 {
-    fprintf(stderr, "%s: Warning: wanted to write %" PRIdz 
-	    " bytes, wrote %ld to file descriptor %d\n",
-	    msg, wantWrite, (long)written, fd);
+    fprintf(stderr, "%s: Warning: wanted to write %" PRIdz
+            " bytes, wrote %ld to file descriptor %d\n",
+            msg, wantWrite, (long)written, fd);
 }
 
 
@@ -276,10 +276,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      * If a server is provided, servPtr must be set.
      */
     if (server != NULL) {
-	servPtr = NsGetServer(server);
-	if (servPtr == NULL) {
-	    return NS_ERROR;
-	}
+        servPtr = NsGetServer(server);
+        if (servPtr == NULL) {
+            return NS_ERROR;
+        }
     }
 
     if (init->version != NS_DRIVER_VERSION_2) {
@@ -329,8 +329,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
          */
 
         if (he == NULL || he->h_name == NULL) {
-            Ns_Log(Error, "%s: could not resolve %s", module, 
-		   host != NULL ? host : Ns_InfoHostname());
+            Ns_Log(Error, "%s: could not resolve %s", module,
+                   host != NULL ? host : Ns_InfoHostname());
             return NS_ERROR;
         }
         if (*(he->h_addr_list) == NULL) {
@@ -341,9 +341,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         memcpy(&ia.s_addr, he->h_addr_list[0], sizeof(ia.s_addr));
         address = ns_inet_ntoa(ia);
 
-	if (address != NULL && path != NULL) {
-	    Ns_SetUpdate(set, "address", address);
-	}
+        if (address != NULL && path != NULL) {
+            Ns_SetUpdate(set, "address", address);
+        }
 
         /*
          * Finally, if no hostname was specified, set it to the hostname
@@ -365,7 +365,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     }
 
     if (noHostNameGiven != 0 && host != NULL && path != NULL) {
-	Ns_SetUpdate(set, "hostname", host);
+        Ns_SetUpdate(set, "hostname", host);
     }
 
     /*
@@ -384,7 +384,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      * Allocate a new driver instance and set configurable parameters.
      */
 
-    drvPtr = ns_calloc(1U, sizeof(Driver));
+    drvPtr = ns_calloc(1u, sizeof(Driver));
     Ns_MutexInit(&drvPtr->lock);
     Ns_MutexSetName2(&drvPtr->lock, "ns:drv", module);
 
@@ -409,12 +409,12 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     drvPtr->servPtr      = servPtr;
 
     drvPtr->maxinput     = Ns_ConfigWideIntRange(path, "maxinput",
-						 (Tcl_WideInt)1024*1024, 
-						 (Tcl_WideInt)1024, LLONG_MAX);
+                                                 (Tcl_WideInt)1024*1024,
+                                                 (Tcl_WideInt)1024, LLONG_MAX);
 
     drvPtr->maxupload     = Ns_ConfigWideIntRange(path, "maxupload",
-						  (Tcl_WideInt)0,            
-						  (Tcl_WideInt)0, drvPtr->maxinput);
+                                                  (Tcl_WideInt)0,
+                                                  (Tcl_WideInt)0, drvPtr->maxinput);
 
     drvPtr->maxline      = Ns_ConfigIntRange(path, "maxline",
                                              8192,         256, INT_MAX);
@@ -423,7 +423,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                                              128,          8, INT_MAX);
 
     drvPtr->bufsize      = (size_t)Ns_ConfigIntRange(path, "bufsize",
-                                             16384,        1024, INT_MAX);
+                                                     16384,        1024, INT_MAX);
 
     drvPtr->maxqueuesize = Ns_ConfigIntRange(path, "maxqueuesize",
                                              1024,         1, INT_MAX);
@@ -441,18 +441,18 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                                              5,            0, INT_MAX);
 
     drvPtr->keepmaxuploadsize = (size_t)Ns_ConfigIntRange(path, "keepalivemaxuploadsize",
-                                             0,            0, INT_MAX);
+                                                          0,            0, INT_MAX);
 
     drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigIntRange(path, "keepalivemaxdownloadsize",
-                                             0,            0, INT_MAX);
+                                                            0,            0, INT_MAX);
 
     drvPtr->backlog      = Ns_ConfigIntRange(path, "backlog",
                                              256,          1, INT_MAX);
 
     drvPtr->readahead    = Ns_ConfigWideIntRange(path, "readahead",
-						 (Tcl_WideInt)drvPtr->bufsize,
-						 (Tcl_WideInt)drvPtr->bufsize, 
-						 drvPtr->maxinput);
+                                                 (Tcl_WideInt)drvPtr->bufsize,
+                                                 (Tcl_WideInt)drvPtr->bufsize,
+                                                 drvPtr->maxinput);
 
     drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
                                              drvPtr->backlog, 1, INT_MAX);
@@ -491,26 +491,26 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      */
 
     {
-	const char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
+        const char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
 
-	if (extraHeaders != NULL) {
-	    int objc;
-	    Tcl_Obj **objv, *headers = Tcl_NewStringObj(extraHeaders, -1);
-	    int result = Tcl_ListObjGetElements(NULL, headers, &objc, &objv);
+        if (extraHeaders != NULL) {
+            int objc;
+            Tcl_Obj **objv, *headers = Tcl_NewStringObj(extraHeaders, -1);
+            int result = Tcl_ListObjGetElements(NULL, headers, &objc, &objv);
 
-	    if (result != TCL_OK || objc % 2 != 0) {
-		Ns_Log(Warning, "Ignoring invalid value for extraheaders: %s", extraHeaders);
-	    } else {
-		Ns_DStringInit(dsPtr);
-		for (i = 0; i < objc; i +=2) {
-		    Ns_DStringVarAppend(dsPtr,
-					Tcl_GetString(objv[i]), ": ", 
-					Tcl_GetString(objv[i+1]), "\r\n", 
-					NULL);
-		    drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
-		}
-	    }
-	}
+            if (result != TCL_OK || objc % 2 != 0) {
+                Ns_Log(Warning, "Ignoring invalid value for extraheaders: %s", extraHeaders);
+            } else {
+                Ns_DStringInit(dsPtr);
+                for (i = 0; i < objc; i +=2) {
+                    Ns_DStringVarAppend(dsPtr,
+                                        Tcl_GetString(objv[i]), ": ",
+                                        Tcl_GetString(objv[i+1]), "\r\n",
+                                        NULL);
+                    drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
+                }
+            }
+        }
     }
 
     /*
@@ -525,11 +525,11 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                "for uploads >= %" TCL_LL_MODIFIER "d bytes", module,
                spPtr->threads, drvPtr->readahead);
         for (i = 0; i < spPtr->threads; i++) {
-            SpoolerQueue *queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
+            SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char buffer[100];
 
-	    sprintf(buffer,"ns:driver:spooler:%d",i);
-	    Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
+            sprintf(buffer,"ns:driver:spooler:%d",i);
+            Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
         }
@@ -546,20 +546,20 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     wrPtr->threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
 
     if (wrPtr->threads > 0) {
-	wrPtr->maxsize = (size_t)Ns_ConfigIntRange(path, "writersize",
-						   1024*1024, 1024, INT_MAX);
+        wrPtr->maxsize = (size_t)Ns_ConfigIntRange(path, "writersize",
+                                                   1024*1024, 1024, INT_MAX);
         wrPtr->bufsize = (size_t)Ns_ConfigIntRange(path, "writerbufsize",
-						   8192, 512, INT_MAX);
+                                                   8192, 512, INT_MAX);
         wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
                module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->doStream);
         for (i = 0; i < wrPtr->threads; i++) {
-            SpoolerQueue *queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
+            SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char buffer[100];
 
-	    sprintf(buffer,"ns:driver:writer:%d",i);
-	    Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
+            sprintf(buffer,"ns:driver:writer:%d",i);
+            Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
         }
@@ -573,27 +573,27 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      */
 
     if (server == NULL) {
-	Ns_Set *lset;
-	size_t  j;
+        Ns_Set *lset;
+        size_t  j;
 
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
                      " but %s has no defaultserver defined", module, path);
         }
-	assert(defserver != NULL);
+        assert(defserver != NULL);
 
         defMapPtr = NULL;
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
         lset  = Ns_ConfigGetSection(path);
         Ns_DStringInit(dsPtr);
-        for (j = 0U; lset != NULL && j < Ns_SetSize(lset); ++j) {
+        for (j = 0u; lset != NULL && j < Ns_SetSize(lset); ++j) {
             server  = Ns_SetKey(lset, j);
             host    = Ns_SetValue(lset, j);
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", module, server);
             } else {
-		Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
+                Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
                 if (n == 0) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
@@ -657,12 +657,12 @@ NsStartDrivers(void)
         Ns_Log(Notice, "driver: starting: %s", drvPtr->name);
         Ns_ThreadCreate(DriverThread, drvPtr, 0, &drvPtr->thread);
         Ns_MutexLock(&drvPtr->lock);
-        while ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+        while ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
         }
         /*if ((drvPtr->flags & DRIVER_FAILED)) {
-            status = NS_ERROR;
-	    }*/
+          status = NS_ERROR;
+          }*/
         Ns_MutexUnlock(&drvPtr->lock);
     }
 }
@@ -695,7 +695,7 @@ NsStopDrivers(void)
     NsAsyncWriterQueueDisable(1);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        if ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+        if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             continue;
         }
         Ns_MutexLock(&drvPtr->lock);
@@ -720,21 +720,21 @@ NsStopSpoolers(void)
     Driver *drvPtr;
 
     Ns_Log(Notice, "driver: stopping writer and spooler threads");
-    
+
     /*
      * Shutdown all spooler and writer threads
      */
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-	Ns_Time timeout;
+        Ns_Time timeout;
 
-        if ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+        if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             continue;
         }
-	Ns_GetTime(&timeout);
-	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
-	
-	SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
-	SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
+        Ns_GetTime(&timeout);
+        Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+
+        SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
+        SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
     }
 }
 
@@ -745,7 +745,7 @@ NsStopSpoolers(void)
  *
  * NsWakeupDriver --
  *
- *      Wake up the associated DriverThread.  
+ *      Wake up the associated DriverThread.
  *
  * Results:
  *      None.
@@ -786,11 +786,11 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
     int status = NS_OK;
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        if ((drvPtr->flags & DRIVER_STARTED) == 0U) {
+        if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             continue;
         }
         Ns_MutexLock(&drvPtr->lock);
-        while ((drvPtr->flags & DRIVER_STOPPED) == 0U && status == NS_OK) {
+        while ((drvPtr->flags & DRIVER_STOPPED) == 0u && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
         }
         Ns_MutexUnlock(&drvPtr->lock);
@@ -894,11 +894,11 @@ NsFreeRequest(Request *reqPtr)
         Ns_SetTrunc(reqPtr->headers, 0u);
 
         if (reqPtr->auth != NULL) {
-	  Ns_SetFree(reqPtr->auth);
-	  reqPtr->auth = NULL;
-	}
+            Ns_SetFree(reqPtr->auth);
+            reqPtr->auth = NULL;
+        }
 
-	Ns_ResetRequest(&reqPtr->request);
+        Ns_ResetRequest(&reqPtr->request);
 
         Ns_MutexLock(&reqLock);
         reqPtr->nextPtr = firstReqPtr;
@@ -1043,14 +1043,14 @@ static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
     Ns_Time timeout;
-    
+
     assert(sockPtr != NULL);
 
     timeout.sec = sockPtr->drvPtr->recvwait;
     timeout.usec = 0;
 
     return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                        &timeout, 0U);
+                                        &timeout, 0u);
 }
 
 
@@ -1085,11 +1085,11 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
     fprintf(stderr, "NsDriverSend: nbufs %d\n", nbufs);
     fprintf(stderr, "NsDriverSend: bufs[0] %d '%s'\n", bufs[0].iov_len, (char *)bufs[0].iov_base);
     {int i; char *p= (char *)bufs[0].iov_base;
-      for (i=0; i<bufs[0].iov_len; i++) {
-	char c = *(p+i);
-	fprintf(stderr, "[%d] '%c' %d, ", i+1, c<32 ? 32 : c, c);
-      }
-      fprintf(stderr, "\n");
+        for (i=0; i<bufs[0].iov_len; i++) {
+            char c = *(p+i);
+            fprintf(stderr, "[%d] '%c' %d, ", i+1, c<32 ? 32 : c, c);
+        }
+        fprintf(stderr, "\n");
     }
 #endif
     return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
@@ -1244,10 +1244,10 @@ DriverThread(void *arg)
     PollCreate(&pdata);
     Ns_GetTime(&now);
     closePtr = waitPtr = readPtr = NULL;
-    stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
+    stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
 
     while (stopping == NS_FALSE) {
-	int n;
+        int n;
 
         /*
          * Set the bits for all active drivers if a connection
@@ -1264,8 +1264,8 @@ DriverThread(void *arg)
         /*
          * If there are any closing or read-ahead sockets, set the bits
          * and determine the minimum relative timeout.
-	 *
-	 * TODO: the various poll timeouts should probably be configurable.
+         *
+         * TODO: the various poll timeouts should probably be configurable.
          */
 
         if (readPtr == NULL && closePtr == NULL) {
@@ -1280,13 +1280,13 @@ DriverThread(void *arg)
             }
 
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
-		/* 
-		 * The resolution of pollto is ms, therefore, we round
-		 * up. If we would round down (eg. found 500
-		 * microseconds to 0 ms), the time comparison later
-		 * would determine that it is to early.
-		 */
-	        pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
+                /*
+                 * The resolution of pollto is ms, therefore, we round
+                 * up. If we would round down (eg. found 500
+                 * microseconds to 0 ms), the time comparison later
+                 * would determine that it is to early.
+                 */
+                pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
 
             } else {
                 pollto = 0;
@@ -1299,33 +1299,33 @@ DriverThread(void *arg)
             const char *errstr = ns_sockstrerror(ns_sockerrno);
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
         }
-	/*
-	 * Check whether we should reanimate some connection threads,
-	 * when e.g. the number of current threads dropped blow the
-	 * minimal value.  Perform this test on timeouts (n == 0;
-	 * just for safety reasons) or on explicit wakeup calls.
-	 */
-	if (n == 0 || PollIn(&pdata, 0)) {
-	    if (drvPtr->servPtr != NULL) {
-		NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
-	    } else {
-		Tcl_HashSearch search;
-		Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&hosts, &search);
-		/* 
-		 * In case, we have a "global" driver, we have to
-		 * check all associated servers.
-		 */
-		while (hPtr != NULL) {
-		    ServerMap *mapPtr = Tcl_GetHashValue(hPtr);
-		    /* 
-		     * We could reduce the calls in case multiple host
-		     * entries are mapped to the same server.
-		     */
-		    NsEnsureRunningConnectionThreads(mapPtr->servPtr, NULL);
-		    hPtr = Tcl_NextHashEntry(&search);
-		}
-	    }
-	}
+        /*
+         * Check whether we should reanimate some connection threads,
+         * when e.g. the number of current threads dropped blow the
+         * minimal value.  Perform this test on timeouts (n == 0;
+         * just for safety reasons) or on explicit wakeup calls.
+         */
+        if (n == 0 || PollIn(&pdata, 0)) {
+            if (drvPtr->servPtr != NULL) {
+                NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
+            } else {
+                Tcl_HashSearch search;
+                Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&hosts, &search);
+                /*
+                 * In case, we have a "global" driver, we have to
+                 * check all associated servers.
+                 */
+                while (hPtr != NULL) {
+                    ServerMap *mapPtr = Tcl_GetHashValue(hPtr);
+                    /*
+                     * We could reduce the calls in case multiple host
+                     * entries are mapped to the same server.
+                     */
+                    NsEnsureRunningConnectionThreads(mapPtr->servPtr, NULL);
+                    hPtr = Tcl_NextHashEntry(&search);
+                }
+            }
+        }
 
         /*
          * Update the current time and drain and/or release any
@@ -1338,27 +1338,27 @@ DriverThread(void *arg)
             closePtr = NULL;
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-		if (PollHup(&pdata, sockPtr->pidx)) {
-		  /*
-		   * Peer has closed the connection
-		   */
-		  sockPtr->timeout = now;
+                if (PollHup(&pdata, sockPtr->pidx)) {
+                    /*
+                     * Peer has closed the connection
+                     */
+                    sockPtr->timeout = now;
 
-		} else if (PollIn(&pdata, sockPtr->pidx)) {
-		    /* 
-		     * Got some data
-		     */
+                } else if (PollIn(&pdata, sockPtr->pidx)) {
+                    /*
+                     * Got some data
+                     */
                     n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
                         sockPtr->timeout = now;
                     }
-		}
-		if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-		    SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
-		} else {
-		    /* too early, keep waiting */
-		    Push(sockPtr, closePtr);
-		}
+                }
+                if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+                    SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
+                } else {
+                    /* too early, keep waiting */
+                    Push(sockPtr, closePtr);
+                }
                 sockPtr = nextPtr;
             }
         }
@@ -1371,93 +1371,93 @@ DriverThread(void *arg)
         readPtr = NULL;
 
         while (sockPtr != NULL) {
-	    nextPtr = sockPtr->nextPtr;
+            nextPtr = sockPtr->nextPtr;
 
-	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
-		/*
-		 * Peer has closed the connection
-		 */
-		SockRelease(sockPtr, SOCK_CLOSE, 0);
-		
-	    } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
-		/*
-		 * Got no data
-		 */
+            if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
+                /*
+                 * Peer has closed the connection
+                 */
+                SockRelease(sockPtr, SOCK_CLOSE, 0);
+
+            } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
+                /*
+                 * Got no data
+                 */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
-		    /* too early, keep waiting */
+                    /* too early, keep waiting */
                     Push(sockPtr, readPtr);
                 }
-		
+
             } else {
                 /*
-		 * Got some data.
+                 * Got some data.
                  * If enabled, perform read-ahead now.
                  */
                 if (likely(sockPtr->drvPtr->opts & NS_DRIVER_ASYNC)) {
                     SockState s = SockRead(sockPtr, 0, &now);
 
-		    /*
-		     * Queue for connection processing if ready.
-		     */
-		    
-		    switch (s) {
-		    case SOCK_SPOOL:
-			if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
-			    Push(sockPtr, readPtr);
-			}
-			break;
-			
-		    case SOCK_MORE:
-			SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-			Push(sockPtr, readPtr);
-			break;
-			
-		    case SOCK_READY:
-		        if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-			    Push(sockPtr, waitPtr);
-			}
-			break;
-			
-		    case SOCK_READERROR:
-			Ns_Log(DriverDebug, "sockread returned error; close socket");
-			SockRelease(sockPtr, s, errno);
-			break;
+                    /*
+                     * Queue for connection processing if ready.
+                     */
 
-		    case SOCK_BADHEADER:
-		    case SOCK_BADREQUEST:
-		    case SOCK_CLOSE:
-		    case SOCK_CLOSETIMEOUT:
-		    case SOCK_ENTITYTOOLARGE:
-		    case SOCK_ERROR:
-		    case SOCK_READTIMEOUT:
-		    case SOCK_SERVERREJECT:
-		    case SOCK_SHUTERROR:
-		    case SOCK_TOOMANYHEADERS:
-		    case SOCK_WRITEERROR:
-		    case SOCK_WRITETIMEOUT:
-		    default:
-			Ns_Log(Warning, "sockread returned unexpected result %d; close socket", s);
-			SockRelease(sockPtr, s, errno);
-			break;
-		    }
+                    switch (s) {
+                    case SOCK_SPOOL:
+                        if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
+                            Push(sockPtr, readPtr);
+                        }
+                        break;
+
+                    case SOCK_MORE:
+                        SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                        Push(sockPtr, readPtr);
+                        break;
+
+                    case SOCK_READY:
+                        if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                            Push(sockPtr, waitPtr);
+                        }
+                        break;
+
+                    case SOCK_READERROR:
+                        Ns_Log(DriverDebug, "sockread returned error; close socket");
+                        SockRelease(sockPtr, s, errno);
+                        break;
+
+                    case SOCK_BADHEADER:
+                    case SOCK_BADREQUEST:
+                    case SOCK_CLOSE:
+                    case SOCK_CLOSETIMEOUT:
+                    case SOCK_ENTITYTOOLARGE:
+                    case SOCK_ERROR:
+                    case SOCK_READTIMEOUT:
+                    case SOCK_SERVERREJECT:
+                    case SOCK_SHUTERROR:
+                    case SOCK_TOOMANYHEADERS:
+                    case SOCK_WRITEERROR:
+                    case SOCK_WRITETIMEOUT:
+                    default:
+                        Ns_Log(Warning, "sockread returned unexpected result %d; close socket", s);
+                        SockRelease(sockPtr, s, errno);
+                        break;
+                    }
                 } else {
-		  /* potentially blocking driver, NS_DRIVER_ASYNC is not defined */
+                    /* potentially blocking driver, NS_DRIVER_ASYNC is not defined */
 
-		    if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-			Ns_Log(Notice, "read-ahead have some data no async sock read, setting sock more  ===== diff time %d", 
-			       Ns_DiffTime(&sockPtr->timeout, &now, &diff));
-			sockPtr->keep = 0;
-			SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
+                    if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+                        Ns_Log(Notice, "read-ahead have some data no async sock read, setting sock more  ===== diff time %d",
+                               Ns_DiffTime(&sockPtr->timeout, &now, &diff));
+                        sockPtr->keep = 0;
+                        SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                     } else if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-			Push(sockPtr, waitPtr);
-		    }
-		}
+                        Push(sockPtr, waitPtr);
+                    }
+                }
             }
             sockPtr = nextPtr;
         }
-	
+
         /*
          * Attempt to queue any pending connection after reversing the
          * list to ensure oldest connections are tried first.
@@ -1487,7 +1487,7 @@ DriverThread(void *arg)
              * If configured, try to accept more than one request, under heavy load
              * this helps to process more requests
              */
-	    SockState s;
+            SockState s;
 
             accepted = 0;
             while (accepted < drvPtr->acceptsize
@@ -1508,39 +1508,39 @@ DriverThread(void *arg)
                     break;
 
                 case SOCK_READY:
-		    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                         Push(sockPtr, waitPtr);
                     }
                     break;
 
-		case SOCK_BADHEADER:
-		case SOCK_BADREQUEST:
-		case SOCK_CLOSE:
-		case SOCK_CLOSETIMEOUT:
-		case SOCK_ENTITYTOOLARGE:
-		case SOCK_ERROR:
-		case SOCK_READERROR:
-		case SOCK_READTIMEOUT:
-		case SOCK_SERVERREJECT:
-		case SOCK_SHUTERROR:
-		case SOCK_TOOMANYHEADERS:
-		case SOCK_WRITEERROR:
-		case SOCK_WRITETIMEOUT:
+                case SOCK_BADHEADER:
+                case SOCK_BADREQUEST:
+                case SOCK_CLOSE:
+                case SOCK_CLOSETIMEOUT:
+                case SOCK_ENTITYTOOLARGE:
+                case SOCK_ERROR:
+                case SOCK_READERROR:
+                case SOCK_READTIMEOUT:
+                case SOCK_SERVERREJECT:
+                case SOCK_SHUTERROR:
+                case SOCK_TOOMANYHEADERS:
+                case SOCK_WRITEERROR:
+                case SOCK_WRITETIMEOUT:
                 default:
                     Ns_Fatal("driver: SockAccept returned: %d", s);
                 }
                 accepted++;
 #ifdef __APPLE__
-		/* 
-		 * On Darwin, the first accept() succeeds typically,
-		 * but it is useless to try a attempt, since this
-		 * leads always to an EAGAIN
-		 */
-		break;
+                /*
+                 * On Darwin, the first accept() succeeds typically,
+                 * but it is useless to try a attempt, since this
+                 * leads always to an EAGAIN
+                 */
+                break;
 #endif
             }
-	    if (accepted > 1) {
-	        Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
+            if (accepted > 1) {
+                Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
             }
         }
 
@@ -1555,7 +1555,7 @@ DriverThread(void *arg)
         flags            = drvPtr->flags;
         Ns_MutexUnlock(&drvPtr->lock);
 
-	stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
+        stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
 
         /*
          * Update the timeout for each closing socket and add to the
@@ -1568,7 +1568,7 @@ DriverThread(void *arg)
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
-		if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
+                if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
                 } else {
                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
@@ -1705,7 +1705,7 @@ SockPrepare(Sock *sockPtr)
     }
     Ns_MutexUnlock(&reqLock);
     if (reqPtr == NULL) {
-        reqPtr = ns_calloc(1U, sizeof(Request));
+        reqPtr = ns_calloc(1u, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers    = Ns_SetCreate(NULL);
     }
@@ -1740,12 +1740,12 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 
     /*
      * SockSetServer returns always 1
-     * 
+     *
 
-      if (SockSetServer(sockPtr) == 0) {
-        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
-        return NS_ERROR;
-        }
+     if (SockSetServer(sockPtr) == 0) {
+     SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
+     return NS_ERROR;
+     }
     */
     (void) SockSetServer(sockPtr);
     assert(sockPtr->servPtr != NULL);
@@ -1851,14 +1851,14 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     Ns_MutexUnlock(&drvPtr->lock);
 
     if (sockPtr == NULL) {
-	size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
-        sockPtr = ns_calloc(1U, sockSize);
+        size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
+        sockPtr = ns_calloc(1u, sockSize);
         sockPtr->drvPtr = drvPtr;
     } else {
         sockPtr->tfd    = 0;
         sockPtr->taddr  = 0;
         sockPtr->keep   = 0;
-        sockPtr->flags  = 0U;
+        sockPtr->flags  = 0u;
         sockPtr->arg    = NULL;
     }
 
@@ -1878,7 +1878,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
         sockPtr = NULL;
 
     } else {
-	sockPtr->acceptTime = *nowPtr;
+        sockPtr->acceptTime = *nowPtr;
         drvPtr->queuesize++;
 
         if (status == NS_DRIVER_ACCEPT_DATA) {
@@ -1904,18 +1904,18 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
                 sockStatus = SOCK_READY;
             }
         } else
-        if (status == NS_DRIVER_ACCEPT_QUEUE) {
+            if (status == NS_DRIVER_ACCEPT_QUEUE) {
 
-            /*
-             *  We need to call SockPrepare to make sure socket has request structure allocated,
-             *  otherwise NsGetRequest will call SockRead which is not what this driver wants
-             */
+                /*
+                 *  We need to call SockPrepare to make sure socket has request structure allocated,
+                 *  otherwise NsGetRequest will call SockRead which is not what this driver wants
+                 */
 
-	    SockPrepare(sockPtr);
-            sockStatus = SOCK_READY;
-        } else {
-            sockStatus = SOCK_MORE;
-        }
+                SockPrepare(sockPtr);
+                sockStatus = SOCK_READY;
+            } else {
+                sockStatus = SOCK_MORE;
+            }
     }
 
     *sockPtrPtr = sockPtr;
@@ -1993,7 +1993,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
     case SOCK_READY:
     case SOCK_SPOOL:
     case SOCK_MORE:
-	break;
+        break;
     case SOCK_CLOSE:
     case SOCK_CLOSETIMEOUT:
         /* This is normal, never log. */
@@ -2011,8 +2011,8 @@ SockError(Sock *sockPtr, SockState reason, int err)
         break;
 
     case SOCK_WRITETIMEOUT:
-	errMsg = "Timeout during write";
-	break;
+        errMsg = "Timeout during write";
+        break;
 
     case SOCK_SERVERREJECT:
         errMsg = "No Server found for request";
@@ -2060,8 +2060,8 @@ SockError(Sock *sockPtr, SockState reason, int err)
                err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
                ns_inet_ntoa(sockPtr->sa.sin_addr),
-               ntohs(sockPtr->sa.sin_port), 
-	       (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
+               ntohs(sockPtr->sa.sin_port),
+               (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
     }
 }
 
@@ -2093,14 +2093,14 @@ SockSendResponse(Sock *sockPtr, int code)
 
     switch (code) {
     case 413:
-	response = "Bad Request";
+        response = "Bad Request";
         break;
     case 414:
-	response = "Request-URI Too Long";
+        response = "Request-URI Too Long";
         break;
     case 400:
     default:
-	response = "Bad Request";
+        response = "Bad Request";
         break;
     }
     snprintf(header, sizeof(header),"HTTP/1.0 %d ", code);
@@ -2109,10 +2109,10 @@ SockSendResponse(Sock *sockPtr, int code)
     iov[1].iov_base = response;
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
-    iov[2].iov_len = 4U;
-    sent = NsDriverSend(sockPtr, iov, 3, 0U);
+    iov[2].iov_len = 4u;
+    sent = NsDriverSend(sockPtr, iov, 3, 0u);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
-	Ns_Log(Warning, "Driver: partial write while sending error reply");
+        Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
 }
 
@@ -2168,7 +2168,7 @@ SockClose(Sock *sockPtr, int keep)
         keep = DriverKeep(sockPtr);
     }
     if (keep == 0) {
-	DriverClose(sockPtr);
+        DriverClose(sockPtr);
     }
     sockPtr->keep = keep;
 
@@ -2225,12 +2225,12 @@ SockClose(Sock *sockPtr, int keep)
  *
  *----------------------------------------------------------------------
  */
-static int 
+static int
 ChunkedDecode(Request *reqPtr, int update)
 {
     Tcl_DString *bufPtr = &reqPtr->buffer;
-    char 
-        *end = bufPtr->string + bufPtr->length, 
+    char
+        *end = bufPtr->string + bufPtr->length,
         *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
@@ -2241,7 +2241,7 @@ ChunkedDecode(Request *reqPtr, int update)
             Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
             return -1;
         }
-        
+
         *p = '\0';
         chunk_length = (size_t)strtol(chunkStart, NULL, 16);
         *p = '\r';
@@ -2259,7 +2259,7 @@ ChunkedDecode(Request *reqPtr, int update)
         reqPtr->chunkStartOff += (p - chunkStart) + 4 + chunk_length ;
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
-    
+
     return 1;
 }
 
@@ -2319,14 +2319,14 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      * begin of a request. This part is intended for async drivers.
      */
     if (sockPtr->acceptTime.sec == 0) {
-	assert(timePtr != NULL);
-	/*fprintf(stderr, "SOCKREAD reset times "
-		" start %" PRIu64 ".%06ld"
-		" now %" PRIu64 ".%06ld\n",
-		(int64_t) sockPtr->acceptTime.sec, sockPtr->acceptTime.usec,
-		(int64_t) timePtr->sec, timePtr->usec
-		);*/
-	sockPtr->acceptTime = *timePtr; 
+        assert(timePtr != NULL);
+        /*fprintf(stderr, "SOCKREAD reset times "
+          " start %" PRIu64 ".%06ld"
+          " now %" PRIu64 ".%06ld\n",
+          (int64_t) sockPtr->acceptTime.sec, sockPtr->acceptTime.usec,
+          (int64_t) timePtr->sec, timePtr->usec
+          );*/
+        sockPtr->acceptTime = *timePtr;
     }
 
     /*
@@ -2343,7 +2343,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 
     reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
-    if (reqPtr->length == 0U) {
+    if (reqPtr->length == 0u) {
         nread = drvPtr->bufsize;
     } else {
         nread = reqPtr->length - reqPtr->avail;
@@ -2356,9 +2356,9 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     len = (size_t)bufPtr->length;
     n = (ssize_t)(len + nread);
     if (n > drvPtr->maxinput) {
-	n = (ssize_t)drvPtr->maxinput;
+        n = (ssize_t)drvPtr->maxinput;
         nread = (size_t)n - len;
-        if (nread == 0U) {
+        if (nread == 0u) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
                    drvPtr->maxinput);
             return SOCK_ERROR;
@@ -2394,20 +2394,20 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16U);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
-	    if (sockPtr->tfd == NS_INVALID_FD) {
-	      Ns_Log(Error, "nssock: cannot create spool file with template '%s': %s", 
-		     sockPtr->tfile, strerror(errno));
-	    }
+            if (sockPtr->tfd == NS_INVALID_FD) {
+                Ns_Log(Error, "nssock: cannot create spool file with template '%s': %s",
+                       sockPtr->tfile, strerror(errno));
+            }
         } else {
-	    /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
-            sockPtr->tfd = Ns_GetTemp(); 
+            /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
+            sockPtr->tfd = Ns_GetTemp();
         }
 
         if (sockPtr->tfd < 0) {
             return SOCK_ERROR;
         }
         n = bufPtr->length - reqPtr->coff;
-	assert(n >= 0);
+        assert(n >= 0);
         if (ns_write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
@@ -2426,21 +2426,21 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     n = DriverRecv(sockPtr, &buf, 1);
 
     if (n < 0) {
-	Tcl_DStringSetLength(bufPtr, (int)len);
+        Tcl_DStringSetLength(bufPtr, (int)len);
         return SOCK_READERROR;
     }
 
     if (n == 0) {
-	Tcl_DStringSetLength(bufPtr, (int)len);
+        Tcl_DStringSetLength(bufPtr, (int)len);
         return SOCK_MORE;
     }
-    
+
     if (sockPtr->tfd > 0) {
-	if (ns_write(sockPtr->tfd, tbuf, (size_t)n) != n) {
+        if (ns_write(sockPtr->tfd, tbuf, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
     } else {
-      Tcl_DStringSetLength(bufPtr, (int)(len + n));
+        Tcl_DStringSetLength(bufPtr, (int)(len + n));
     }
 
     reqPtr->woff  += (size_t)n;
@@ -2517,8 +2517,8 @@ SockParse(Sock *sockPtr)
      */
 
     while (reqPtr->coff == 0u) {
-	char *s, *e;
-	size_t cnt;
+        char *s, *e;
+        size_t cnt;
 
         /*
          * Find the next line.
@@ -2534,9 +2534,9 @@ SockParse(Sock *sockPtr)
         }
 
         /*
-         * Check for max single line overflows. 
-	 *
-	 * Previous versions if the driver returned here directly an
+         * Check for max single line overflows.
+         *
+         * Previous versions if the driver returned here directly an
          * error code, which was handled via http error message
          * provided via SockError(). However, the SockError() handling
          * closes the connection immediately. This has the
@@ -2548,14 +2548,14 @@ SockParse(Sock *sockPtr)
          */
 
         if (unlikely((e - s) > drvPtr->maxline)) {
-	    sockPtr->keep = 0;
+            sockPtr->keep = 0;
             if (reqPtr->request.line == NULL) {
                 Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
                        drvPtr->maxline);
-		sockPtr->flags = NS_CONN_REQUESTURITOOLONG;
+                sockPtr->flags = NS_CONN_REQUESTURITOOLONG;
             } else {
-	      sockPtr->flags = NS_CONN_LINETOOLONG;
-	    }
+                sockPtr->flags = NS_CONN_LINETOOLONG;
+            }
         }
 
         /*
@@ -2572,7 +2572,7 @@ SockParse(Sock *sockPtr)
          * Check for end of headers.
          */
         if (unlikely(e == s)) {
-	    int gzip;
+            int gzip;
 
             /*
              * Look for a blank line on its own prior to any "real"
@@ -2600,22 +2600,22 @@ SockParse(Sock *sockPtr)
                     /* Lower case is in the standard, capitalized by Mac OS X */
                     if (STREQ(s, "chunked") || STREQ(s, "Chunked")) {
                         Tcl_WideInt expected;
-                        
+
                         reqPtr->chunkStartOff = reqPtr->coff;
                         reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
-                        reqPtr->contentLength = 0U;
+                        reqPtr->contentLength = 0u;
 
                         /* We need expectedLength for safely terminating read loop */
 
                         s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
 
                         if ((s != NULL)
-			    && (Ns_StrToWideInt(s, &expected) == NS_OK)
-			    && (expected > 0) ) {
-			    reqPtr->expectedLength = (size_t)expected;
+                            && (Ns_StrToWideInt(s, &expected) == NS_OK)
+                            && (expected > 0) ) {
+                            reqPtr->expectedLength = (size_t)expected;
                         }
                         s = NULL;
-                    } 
+                    }
                 }
             }
 
@@ -2627,65 +2627,65 @@ SockParse(Sock *sockPtr)
                  */
 
                 if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
-		    reqPtr->length = (size_t)length;
-		    /*
-		     * Handle too large input requests
-		     */
+                    reqPtr->length = (size_t)length;
+                    /*
+                     * Handle too large input requests
+                     */
                     if (reqPtr->length > (size_t)drvPtr->maxinput) {
                         Ns_Log(DriverDebug, "SockParse: request too large, length=%"
-                                            PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
+                               PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
                                reqPtr->length, drvPtr->maxinput);
-			/* 
-			 * We have to read the full request (although
-			 * it is too large) to drain the
-			 * channel. Otherwise, the server might close
-			 * the connection *before* it has received
-			 * full request with its body. Such a
-			 * premature close leads to an error message
-			 * in clients like firefox. Therefore we do
-			 * not return SOCK_ENTITYTOOLARGE here, but
-			 * just flag the condition. ...
-			 *
-			 * Possible future improvements: Currently,
-			 * the content is really received and kept. We
-			 * might simply drain the input and ignore the
-			 * read content, but this requires handling
-			 * for the various input modes (spooling,
-			 * chunked content, etc.). We should make the
-			 * same for the other reply-codes in
-			 * SockError().
-			 */
-			sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
-			sockPtr->keep = 0;
-			
+                        /*
+                         * We have to read the full request (although
+                         * it is too large) to drain the
+                         * channel. Otherwise, the server might close
+                         * the connection *before* it has received
+                         * full request with its body. Such a
+                         * premature close leads to an error message
+                         * in clients like firefox. Therefore we do
+                         * not return SOCK_ENTITYTOOLARGE here, but
+                         * just flag the condition. ...
+                         *
+                         * Possible future improvements: Currently,
+                         * the content is really received and kept. We
+                         * might simply drain the input and ignore the
+                         * read content, but this requires handling
+                         * for the various input modes (spooling,
+                         * chunked content, etc.). We should make the
+                         * same for the other reply-codes in
+                         * SockError().
+                         */
+                        sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
+                        sockPtr->keep = 0;
+
                     }
                     reqPtr->contentLength = (size_t)length;
                 }
 
             }
-	    
-	    /*
-	     * Clear NS_CONN_ZIPACCEPTED flag
-	     */
-	    sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED);
 
-	    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
-	    if (s != NULL) {
-		/* get gzip from accept-encoding header */
-		gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
-	    } else {
-		/* no accept-encoding header; don't allow gzip */
-		gzip = 0;
-	    }
-	    if (gzip != 0) {
-		/*
-		 * Don't allow gzip results for Range requests.
-		 */
-		s = Ns_SetIGet(reqPtr->headers, "Range");
-		if (s == NULL) {
-		    sockPtr->flags |= NS_CONN_ZIPACCEPTED;
-		}
-	    }
+            /*
+             * Clear NS_CONN_ZIPACCEPTED flag
+             */
+            sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED);
+
+            s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
+            if (s != NULL) {
+                /* get gzip from accept-encoding header */
+                gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
+            } else {
+                /* no accept-encoding header; don't allow gzip */
+                gzip = 0;
+            }
+            if (gzip != 0) {
+                /*
+                 * Don't allow gzip results for Range requests.
+                 */
+                s = Ns_SetIGet(reqPtr->headers, "Range");
+                if (s == NULL) {
+                    sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+                }
+            }
 
         } else {
             save = *e;
@@ -2735,18 +2735,18 @@ SockParse(Sock *sockPtr)
     /*
      * Set up request length for spooling and further read operations
      */
-    if (reqPtr->contentLength != 0U) {
-      /* 
-       * Content-Length was provided, use it 
-       */
-      reqPtr->length = reqPtr->contentLength;
+    if (reqPtr->contentLength != 0u) {
+        /*
+         * Content-Length was provided, use it
+         */
+        reqPtr->length = reqPtr->contentLength;
     }
 
     /*
      * Check if all content has arrived.
      */
 
-    if (reqPtr->chunkStartOff != 0U) {
+    if (reqPtr->chunkStartOff != 0u) {
         /* Chunked encoding was provided */
         int complete;
         size_t currentContentLength;
@@ -2754,7 +2754,7 @@ SockParse(Sock *sockPtr)
         complete = ChunkedDecode(reqPtr, 1);
         currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
 
-        /* 
+        /*
          * A chunk might be complete, but it might not be the last
          * chunk from the client. The best thing would be to be able
          * to read until eof here. In cases, where the (optional)
@@ -2762,7 +2762,7 @@ SockParse(Sock *sockPtr)
          * depending on that information
          */
         if ((complete == 0)
-            || (reqPtr->expectedLength != 0U && currentContentLength < reqPtr->expectedLength)) {
+            || (reqPtr->expectedLength != 0u && currentContentLength < reqPtr->expectedLength)) {
             /* ChunkedDecode wants more data */
             return SOCK_MORE;
         }
@@ -2781,7 +2781,7 @@ SockParse(Sock *sockPtr)
         if (sockPtr->tfile != NULL) {
             reqPtr->content = NULL;
             reqPtr->next = NULL;
-            reqPtr->avail = 0U;
+            reqPtr->avail = 0u;
             Ns_Log(Debug, "spooling content to file: size=%" PRIdz ", file=%s",
                    reqPtr->length, sockPtr->tfile);
 
@@ -2807,15 +2807,15 @@ SockParse(Sock *sockPtr)
         if (sockPtr->tfd > 0) {
 #ifndef _WIN32
             int prot = PROT_READ | PROT_WRITE;
-	    /* 
-	     * Add a byte to make sure, the \0 assignment below falls
-	     * always into the mmapped area. Might lead to crashes
-	     * when we hitting page boundaries.
-	     */
-	    int result = ns_write(sockPtr->tfd, "\0", 1); 
-	    if (result == -1) {
-		Ns_Log(Error, "socket: could not append terminating 0-byte");
-	    }
+            /*
+             * Add a byte to make sure, the \0 assignment below falls
+             * always into the mmapped area. Might lead to crashes
+             * when we hitting page boundaries.
+             */
+            int result = ns_write(sockPtr->tfd, "\0", 1);
+            if (result == -1) {
+                Ns_Log(Error, "socket: could not append terminating 0-byte");
+            }
             sockPtr->tsize = reqPtr->length + 1;
             sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
                                   sockPtr->tfd, 0);
@@ -2824,8 +2824,8 @@ SockParse(Sock *sockPtr)
                 return SOCK_ERROR;
             }
             reqPtr->content = sockPtr->taddr;
-            Ns_Log(Debug, "spooling content to file: readahead=%" 
-		   TCL_LL_MODIFIER "d, filesize=%" PRIdz,
+            Ns_Log(Debug, "spooling content to file: readahead=%"
+                   TCL_LL_MODIFIER "d, filesize=%" PRIdz,
                    drvPtr->readahead, sockPtr->tsize);
 #endif
         } else {
@@ -2840,7 +2840,7 @@ SockParse(Sock *sockPtr)
          * This happens from some browsers on POST requests.
          */
 
-        if (reqPtr->length > 0U) {
+        if (reqPtr->length > 0u) {
             reqPtr->content[reqPtr->length] = '\0';
         }
 
@@ -2984,7 +2984,7 @@ SpoolerThread(void *arg)
                 SockPoll(sockPtr, POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
-	    pollto = -1;
+            pollto = -1;
         }
 
         /*
@@ -3010,15 +3010,15 @@ SpoolerThread(void *arg)
             nextPtr = sockPtr->nextPtr;
             drvPtr  = sockPtr->drvPtr;
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
-		/*
-		 * Peer has closed the connection
-		 */
-		SockRelease(sockPtr, SOCK_CLOSE, 0);
+                /*
+                 * Peer has closed the connection
+                 */
+                SockRelease(sockPtr, SOCK_CLOSE, 0);
 
             } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
-	        /*
-	         * Got no data
-	         */
+                /*
+                 * Got no data
+                 */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                     queuePtr->queuesize--;
@@ -3026,9 +3026,9 @@ SpoolerThread(void *arg)
                     Push(sockPtr, readPtr);
                 }
             } else {
-	        /*
-		 * Got some data
-		 */
+                /*
+                 * Got some data
+                 */
                 SockState n = SockRead(sockPtr, 1, &now);
                 switch (n) {
                 case SOCK_MORE:
@@ -3147,7 +3147,7 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
     assert(name != NULL);
 
     while (queuePtr != NULL) {
-	int status;
+        int status;
 
         Ns_MutexLock(&queuePtr->lock);
         if (queuePtr->stopped == NS_FALSE && queuePtr->shutdown == NS_FALSE) {
@@ -3160,15 +3160,15 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, timeoutPtr);
         }
         if (status != NS_OK) {
-	    Ns_Log(Warning, "%s%d: timeout waiting for shutdown", name, queuePtr->id);
+            Ns_Log(Warning, "%s%d: timeout waiting for shutdown", name, queuePtr->id);
         } else {
             /*Ns_Log(Notice, "%s%d: shutdown complete", name, queuePtr->id);*/
-	    if (queuePtr->thread != NULL) {
-		Ns_ThreadJoin(&queuePtr->thread, NULL);
-		queuePtr->thread = NULL;
-	    } else {
-		Ns_Log(Notice, "%s%d: shutdown: thread already gone", name, queuePtr->id);
-	    }
+            if (queuePtr->thread != NULL) {
+                Ns_ThreadJoin(&queuePtr->thread, NULL);
+                queuePtr->thread = NULL;
+            } else {
+                Ns_Log(Notice, "%s%d: shutdown: thread already gone", name, queuePtr->id);
+            }
             ns_sockclose(queuePtr->pipe[0]);
             ns_sockclose(queuePtr->pipe[1]);
         }
@@ -3266,7 +3266,7 @@ void NsWriterUnlock(void) {
  *      closed and the memory is freed.
  *
  * Results:
- *      WriterSockRequire() returns a WriterSock from a connection, 
+ *      WriterSockRequire() returns a WriterSock from a connection,
  *      the other functions return nothing.
  *
  * Side effects:
@@ -3284,7 +3284,7 @@ WriterSockRequire(const Conn *connPtr) {
     NsWriterLock();
     wrSockPtr = connPtr->strWriter;
     if (wrSockPtr != NULL) {
-	wrSockPtr->refCount ++;
+        wrSockPtr->refCount ++;
     }
     NsWriterUnlock();
     return wrSockPtr;
@@ -3298,28 +3298,28 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
     wrSockPtr->refCount --;
 
-    Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d", 
-	   (void *)wrSockPtr, wrSockPtr->refCount);
+    Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d",
+           (void *)wrSockPtr, wrSockPtr->refCount);
 
     if (wrSockPtr->refCount > 0) {
-	return;
+        return;
     }
 
-    Ns_Log(DriverDebug, 
-	   "Writer: closed sock=%d, file fd=%d, error=%d/%d, "
+    Ns_Log(DriverDebug,
+           "Writer: closed sock=%d, file fd=%d, error=%d/%d, "
            "sent=%" TCL_LL_MODIFIER "d, flags=%X",
-           wrSockPtr->sockPtr->sock, wrSockPtr->fd, 
-	   wrSockPtr->status, wrSockPtr->err,
+           wrSockPtr->sockPtr->sock, wrSockPtr->fd,
+           wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
     if (wrSockPtr->doStream != 0) {
-	Conn *connPtr;
-	NsWriterLock();
-	connPtr = wrSockPtr->connPtr;
-	if (connPtr != NULL && connPtr->strWriter != NULL) {
-	    connPtr->strWriter = NULL;
-	}
-	NsWriterUnlock();
+        Conn *connPtr;
+        NsWriterLock();
+        connPtr = wrSockPtr->connPtr;
+        if (connPtr != NULL && connPtr->strWriter != NULL) {
+            connPtr->strWriter = NULL;
+        }
+        NsWriterUnlock();
     }
 
     /*
@@ -3327,17 +3327,17 @@ WriterSockRelease(WriterSock *wrSockPtr) {
      */
     queuePtr = wrSockPtr->queuePtr;
     if (queuePtr->curPtr == wrSockPtr) {
-	queuePtr->curPtr = wrSockPtr->nextPtr;
-	queuePtr->queuesize--;
+        queuePtr->curPtr = wrSockPtr->nextPtr;
+        queuePtr->queuesize--;
     } else {
-	WriterSock *curPtr, *lastPtr = queuePtr->curPtr;
-	for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
-	    if (curPtr == wrSockPtr) {
-		lastPtr->nextPtr = wrSockPtr->nextPtr;
-		queuePtr->queuesize--;
-		break;
-	    }
-	}
+        WriterSock *curPtr, *lastPtr = queuePtr->curPtr;
+        for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
+            if (curPtr == wrSockPtr) {
+                lastPtr->nextPtr = wrSockPtr->nextPtr;
+                queuePtr->queuesize--;
+                break;
+            }
+        }
     }
 
     if (wrSockPtr->err != 0 || wrSockPtr->status != SPOOLER_OK) {
@@ -3357,29 +3357,29 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
     }
     if (wrSockPtr->clientData != NULL) {
-	ns_free(wrSockPtr->clientData);
+        ns_free(wrSockPtr->clientData);
     }
     if (wrSockPtr->fd != NS_INVALID_FD) {
-	if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
-	    (void) ns_close(wrSockPtr->fd);
-	}
+        if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
+            (void) ns_close(wrSockPtr->fd);
+        }
         ns_free(wrSockPtr->c.file.buf);
     } else if (wrSockPtr->c.mem.bufs != NULL) {
-	if (wrSockPtr->c.mem.fmap.addr != NULL) {
-	    NsMemUmap(&wrSockPtr->c.mem.fmap);
+        if (wrSockPtr->c.mem.fmap.addr != NULL) {
+            NsMemUmap(&wrSockPtr->c.mem.fmap);
 
-	} else {
-	    int i;
-	    for (i = 0; i < wrSockPtr->c.mem.nbufs; i++) {
-		ns_free(wrSockPtr->c.mem.bufs[i].iov_base);
-	    }
-	}
-	if (wrSockPtr->c.mem.bufs != wrSockPtr->c.mem.preallocated_bufs) {
-	    ns_free(wrSockPtr->c.mem.bufs);
-	}
+        } else {
+            int i;
+            for (i = 0; i < wrSockPtr->c.mem.nbufs; i++) {
+                ns_free(wrSockPtr->c.mem.bufs[i].iov_base);
+            }
+        }
+        if (wrSockPtr->c.mem.bufs != wrSockPtr->c.mem.preallocated_bufs) {
+            ns_free(wrSockPtr->c.mem.bufs);
+        }
     }
     if (wrSockPtr->headerString != NULL) {
-	ns_free(wrSockPtr->headerString);
+        ns_free(wrSockPtr->headerString);
     }
 
     ns_free(wrSockPtr);
@@ -3417,78 +3417,78 @@ WriterReadFromSpool(WriterSock *curPtr) {
 
     doStream = curPtr->doStream;
     if (doStream != 0) {
-	Ns_MutexLock(&curPtr->c.file.fdlock);
-	toRead = curPtr->c.file.toRead;
-	Ns_MutexUnlock(&curPtr->c.file.fdlock);
+        Ns_MutexLock(&curPtr->c.file.fdlock);
+        toRead = curPtr->c.file.toRead;
+        Ns_MutexUnlock(&curPtr->c.file.fdlock);
     } else {
-	toRead = curPtr->c.file.toRead;
+        toRead = curPtr->c.file.toRead;
     }
-    
+
     maxsize = curPtr->c.file.maxsize;
     bufPtr  = curPtr->c.file.buf;
-			
+
     /*
      * When bufsize > 0 we have leftover from previous send. In such
      * cases, move the leftover to the front, and fill the reminder of
      * the buffer with new c.
      */
-	
-    if (curPtr->c.file.bufsize > 0U) {
-	Ns_Log(DriverDebug, 
-	       "### Writer %p %.6x leftover %" PRIdz " offset %ld", 
-	       (void *)curPtr, 
-	       curPtr->flags, 
-	       curPtr->c.file.bufsize, 
-	       (long)curPtr->c.file.bufoffset);
-	if (likely(curPtr->c.file.bufoffset > 0)) {
-	    memmove(curPtr->c.file.buf, 
-		    curPtr->c.file.buf + curPtr->c.file.bufoffset, 
-		    curPtr->c.file.bufsize);
-	}
-	bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
-	maxsize -= curPtr->c.file.bufsize;
+
+    if (curPtr->c.file.bufsize > 0u) {
+        Ns_Log(DriverDebug,
+               "### Writer %p %.6x leftover %" PRIdz " offset %ld",
+               (void *)curPtr,
+               curPtr->flags,
+               curPtr->c.file.bufsize,
+               (long)curPtr->c.file.bufoffset);
+        if (likely(curPtr->c.file.bufoffset > 0)) {
+            memmove(curPtr->c.file.buf,
+                    curPtr->c.file.buf + curPtr->c.file.bufoffset,
+                    curPtr->c.file.bufsize);
+        }
+        bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
+        maxsize -= curPtr->c.file.bufsize;
     }
     if (toRead > maxsize) {
-	toRead = maxsize;
+        toRead = maxsize;
     }
-    
+
     /*
      * Read content from the file into the buffer.
      */
     if (toRead > 0u) {
-	ssize_t n;
+        ssize_t n;
 
-	if (doStream != 0) {
-	    /* 
-	     * In streaming mode, the connection thread writes to the
-	     * spool file and the writer thread reads from the same
-	     * file.  Therefore we have to re-adjust the current
-	     * read/writer position, which might be changed by the
-	     * other thread. These positions have to be locked, since
-	     * seeking might be subject to race conditions. Here we
-	     * set the read pointer to the position after the last
-	     * send operation.
-	     */
-	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    (void) ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
-	}
-	
-	n = ns_read(curPtr->fd, bufPtr, toRead);
-	
-	if (n <= 0) {
-	    status = SPOOLER_READERROR;
-	} else {
-	    /* 
-	     * curPtr->c.file.toRead is still protected by curPtr->c.file.fdlock when
-	     * needed.
-	     */
-	    curPtr->c.file.toRead -= (size_t)n;
-	    curPtr->c.file.bufsize += (size_t)n;
-	}
-	
-	if (doStream != 0) {
-	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
-	}
+        if (doStream != 0) {
+            /*
+             * In streaming mode, the connection thread writes to the
+             * spool file and the writer thread reads from the same
+             * file.  Therefore we have to re-adjust the current
+             * read/writer position, which might be changed by the
+             * other thread. These positions have to be locked, since
+             * seeking might be subject to race conditions. Here we
+             * set the read pointer to the position after the last
+             * send operation.
+             */
+            Ns_MutexLock(&curPtr->c.file.fdlock);
+            (void) ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
+        }
+
+        n = ns_read(curPtr->fd, bufPtr, toRead);
+
+        if (n <= 0) {
+            status = SPOOLER_READERROR;
+        } else {
+            /*
+             * curPtr->c.file.toRead is still protected by curPtr->c.file.fdlock when
+             * needed.
+             */
+            curPtr->c.file.toRead -= (size_t)n;
+            curPtr->c.file.bufsize += (size_t)n;
+        }
+
+        if (doStream != 0) {
+            Ns_MutexUnlock(&curPtr->c.file.fdlock);
+        }
     }
 
     return status;
@@ -3522,99 +3522,99 @@ WriterSend(WriterSock *curPtr, int *err) {
 
     assert(curPtr != NULL);
     assert(err != NULL);
-    
+
     /*
      * Prepare send operation
      */
     if (curPtr->fd != NS_INVALID_FD) {
-	/*
-	 * Send a single buffer with curPtr->c.file.bufsize bytes from the
-	 * curPtr->c.file.buf to the client.
-	 */
-	vbuf.iov_len = curPtr->c.file.bufsize;
-	vbuf.iov_base = (void *)curPtr->c.file.buf;
-	bufs = &vbuf;
-	nbufs = 1;
-	toWrite = curPtr->c.file.bufsize;
+        /*
+         * Send a single buffer with curPtr->c.file.bufsize bytes from the
+         * curPtr->c.file.buf to the client.
+         */
+        vbuf.iov_len = curPtr->c.file.bufsize;
+        vbuf.iov_base = (void *)curPtr->c.file.buf;
+        bufs = &vbuf;
+        nbufs = 1;
+        toWrite = curPtr->c.file.bufsize;
     } else {
-	int i;
+        int i;
 
-	/*
-	 * Send multiple buffers.
-	 * Get length of remaining buffers
-	 */
-	toWrite = 0U;
-	for (i = 0; i < curPtr->c.mem.nsbufs; i ++) {
-	    toWrite += curPtr->c.mem.sbufs[i].iov_len;
-	}
-	Ns_Log(DriverDebug, 
-	       "### Writer wants to send remainder nbufs %d len %" PRIdz, 
-	       curPtr->c.mem.nsbufs, toWrite);
+        /*
+         * Send multiple buffers.
+         * Get length of remaining buffers
+         */
+        toWrite = 0u;
+        for (i = 0; i < curPtr->c.mem.nsbufs; i ++) {
+            toWrite += curPtr->c.mem.sbufs[i].iov_len;
+        }
+        Ns_Log(DriverDebug,
+               "### Writer wants to send remainder nbufs %d len %" PRIdz,
+               curPtr->c.mem.nsbufs, toWrite);
 
-	/*
-	 * Add buffers from the source and fill structure up to max 
-	 */
-	while (curPtr->c.mem.bufIdx  < curPtr->c.mem.nbufs && 
-	       curPtr->c.mem.sbufIdx < UIO_SMALLIOV) {
-	    struct iovec *vPtr = &curPtr->c.mem.bufs[curPtr->c.mem.bufIdx];
-	    
-	    if (vPtr->iov_len > 0U && vPtr->iov_base != NULL) {
+        /*
+         * Add buffers from the source and fill structure up to max
+         */
+        while (curPtr->c.mem.bufIdx  < curPtr->c.mem.nbufs &&
+               curPtr->c.mem.sbufIdx < UIO_SMALLIOV) {
+            struct iovec *vPtr = &curPtr->c.mem.bufs[curPtr->c.mem.bufIdx];
 
-		Ns_Log(DriverDebug, 
-		       "### Writer copies source %d to scratch %d len %" PRIiovlen,
-		       curPtr->c.mem.bufIdx, curPtr->c.mem.sbufIdx, vPtr->iov_len);
+            if (vPtr->iov_len > 0u && vPtr->iov_base != NULL) {
 
-		toWrite += Ns_SetVec(curPtr->c.mem.sbufs, curPtr->c.mem.sbufIdx++, 
-				     vPtr->iov_base, vPtr->iov_len);
-		curPtr->c.mem.nsbufs++;
-	    }
-	    curPtr->c.mem.bufIdx++;
-	}
+                Ns_Log(DriverDebug,
+                       "### Writer copies source %d to scratch %d len %" PRIiovlen,
+                       curPtr->c.mem.bufIdx, curPtr->c.mem.sbufIdx, vPtr->iov_len);
 
-	bufs  = curPtr->c.mem.sbufs;
-	nbufs = curPtr->c.mem.nsbufs;
-	Ns_Log(DriverDebug, "### Writer wants to send %d bufs size %" PRIdz, 
-	       nbufs, toWrite);
+                toWrite += Ns_SetVec(curPtr->c.mem.sbufs, curPtr->c.mem.sbufIdx++,
+                                     vPtr->iov_base, vPtr->iov_len);
+                curPtr->c.mem.nsbufs++;
+            }
+            curPtr->c.mem.bufIdx++;
+        }
+
+        bufs  = curPtr->c.mem.sbufs;
+        nbufs = curPtr->c.mem.nsbufs;
+        Ns_Log(DriverDebug, "### Writer wants to send %d bufs size %" PRIdz,
+               nbufs, toWrite);
     }
-    
-    n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0U);
-   
-    if (n < 0) {
-	*err = errno;
-	status = SPOOLER_WRITEERROR;
-    } else {
-	/* 
-	 * We have sent something.
-	*/
-	if (curPtr->doStream != 0) {
-	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    curPtr->size -= (size_t)n;
-	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
-	} else {
-	    curPtr->size -= (size_t)n;
-	}
-	curPtr->nsent += n;
-	curPtr->sockPtr->timeout.sec = 0;
 
-	if (curPtr->fd != NS_INVALID_FD) {
-	    curPtr->c.file.bufsize -= (size_t)n;
-	    curPtr->c.file.bufoffset = (off_t)n;
-	    /* for partial transmits bufsize is now > 0 */
-	} else {	
-	    if (n < (ssize_t)toWrite) {
-		/*
-		 * We have a partial transmit from the iovec
-		 * structure. We have to compact it to fill content in
-		 * the next round.
-		 */
-		curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, (size_t)n);
-		curPtr->c.mem.nsbufs -= curPtr->c.mem.sbufIdx;
-		
-		memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx, 
-			/* move the iovecs to the start of the scratch buffers */
-			sizeof(struct iovec) * (size_t)curPtr->c.mem.nsbufs);
-	    }
-	}
+    n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0u);
+
+    if (n < 0) {
+        *err = errno;
+        status = SPOOLER_WRITEERROR;
+    } else {
+        /*
+         * We have sent something.
+         */
+        if (curPtr->doStream != 0) {
+            Ns_MutexLock(&curPtr->c.file.fdlock);
+            curPtr->size -= (size_t)n;
+            Ns_MutexUnlock(&curPtr->c.file.fdlock);
+        } else {
+            curPtr->size -= (size_t)n;
+        }
+        curPtr->nsent += n;
+        curPtr->sockPtr->timeout.sec = 0;
+
+        if (curPtr->fd != NS_INVALID_FD) {
+            curPtr->c.file.bufsize -= (size_t)n;
+            curPtr->c.file.bufoffset = (off_t)n;
+            /* for partial transmits bufsize is now > 0 */
+        } else {
+            if (n < (ssize_t)toWrite) {
+                /*
+                 * We have a partial transmit from the iovec
+                 * structure. We have to compact it to fill content in
+                 * the next round.
+                 */
+                curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, (size_t)n);
+                curPtr->c.mem.nsbufs -= curPtr->c.mem.sbufIdx;
+
+                memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx,
+                        /* move the iovecs to the start of the scratch buffers */
+                        sizeof(struct iovec) * (size_t)curPtr->c.mem.nsbufs);
+            }
+        }
     }
 
     return status;
@@ -3666,7 +3666,7 @@ WriterThread(void *arg)
     stopping = NS_FALSE;
 
     while (stopping == NS_FALSE) {
-	char charBuffer[1];
+        char charBuffer[1];
 
         /*
          * If there are any write sockets, set the bits.
@@ -3678,17 +3678,17 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollto = 30 * 1000;
         } else {
-	    pollto = 1 * 1000;
+            pollto = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
-		Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d", 
-		       (void *)curPtr, curPtr->size, curPtr->doStream);
-		if (likely(curPtr->size > 0U)) {
+                Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d",
+                       (void *)curPtr, curPtr->size, curPtr->doStream);
+                if (likely(curPtr->size > 0u)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
-		    pollto = -1;
-		} else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
-		    pollto = -1;
-		}
-	    }
+                    pollto = -1;
+                } else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
+                    pollto = -1;
+                }
+            }
         }
 
         /*
@@ -3697,9 +3697,9 @@ WriterThread(void *arg)
         (void) PollWait(&pdata, pollto);
 
         if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1, 0) != 1)) {
-	    Ns_Fatal("writer: trigger ns_recv() failed: %s",
-		     ns_sockstrerror(ns_sockerrno));
-	}
+            Ns_Fatal("writer: trigger ns_recv() failed: %s",
+                     ns_sockstrerror(ns_sockerrno));
+        }
 
         /*
          * Write to all available sockets
@@ -3710,51 +3710,51 @@ WriterThread(void *arg)
         writePtr = NULL;
 
         while (curPtr != NULL) {
-	    int doStream;
-	    SpoolerState spoolerState = SPOOLER_OK;
+            int doStream;
+            SpoolerState spoolerState = SPOOLER_OK;
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
             err = NS_OK;
 
-	    /* the truth value of doStream does not change through concurrency */
-	    doStream = curPtr->doStream; 
+            /* the truth value of doStream does not change through concurrency */
+            doStream = curPtr->doStream;
 
-	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
-		Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
-		spoolerState = SPOOLER_CLOSE;
-		err = 0;
+            if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
+                Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
+                spoolerState = SPOOLER_CLOSE;
+                err = 0;
 
-	    } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
-		Ns_Log(DriverDebug, 
+            } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
+                Ns_Log(DriverDebug,
                        "### Writer %p can write to client fd %d (trigger %d) streaming %.6x"
-		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
+                       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
                        (void *)curPtr, sockPtr->sock, PollIn(&pdata, 0), doStream,
                        curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
-		if (unlikely(curPtr->size < 1U)) {
-		    /*
-		     * Size < 0 means that everything was sent.
-		     */
-		    if (doStream != NS_WRITER_STREAM_ACTIVE) {
-			if (doStream == NS_WRITER_STREAM_FINISH) {
-			    Ns_ReleaseTemp(curPtr->fd);
-			}
-			spoolerState = SPOOLER_CLOSE;
-		    }
-		} else {
-		    /*
-		     * If size > 0, there is still something to send.
-		     * If we are spooling from a file, read some data
-		     * from the (spool) file and place it into curPtr->c.file.buf.
-		     */
-		    if (curPtr->fd != NS_INVALID_FD) {
-			spoolerState = WriterReadFromSpool(curPtr);
-		    }
-		    
-		    if (spoolerState == SPOOLER_OK) {
-			spoolerState = WriterSend(curPtr, &err);
-		    }
-		} 
+                if (unlikely(curPtr->size < 1u)) {
+                    /*
+                     * Size < 0 means that everything was sent.
+                     */
+                    if (doStream != NS_WRITER_STREAM_ACTIVE) {
+                        if (doStream == NS_WRITER_STREAM_FINISH) {
+                            Ns_ReleaseTemp(curPtr->fd);
+                        }
+                        spoolerState = SPOOLER_CLOSE;
+                    }
+                } else {
+                    /*
+                     * If size > 0, there is still something to send.
+                     * If we are spooling from a file, read some data
+                     * from the (spool) file and place it into curPtr->c.file.buf.
+                     */
+                    if (curPtr->fd != NS_INVALID_FD) {
+                        spoolerState = WriterReadFromSpool(curPtr);
+                    }
+
+                    if (spoolerState == SPOOLER_OK) {
+                        spoolerState = WriterSend(curPtr, &err);
+                    }
+                }
             } else {
 
                 /*
@@ -3762,13 +3762,13 @@ WriterThread(void *arg)
                  *  for too long and we need to stop this socket
                  */
                 if (sockPtr->timeout.sec == 0) {
-		    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld", 
-			   (void *)curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
+                    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld",
+                           (void *)curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
                     SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
-		} else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
-		    Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
-		    err          = ETIMEDOUT;
-		    spoolerState = SPOOLER_CLOSETIMEOUT;
+                } else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
+                    Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
+                    err          = ETIMEDOUT;
+                    spoolerState = SPOOLER_CLOSETIMEOUT;
                 }
             }
 
@@ -3777,31 +3777,31 @@ WriterThread(void *arg)
              * timeout or completion
              */
 
-	    Ns_MutexLock(&queuePtr->lock);
+            Ns_MutexLock(&queuePtr->lock);
             if (spoolerState == SPOOLER_OK) {
-                if (curPtr->size > 0U || doStream == NS_WRITER_STREAM_ACTIVE) {
-		    Ns_Log(DriverDebug, 
-			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
-			   (void *)curPtr, curPtr->size);
+                if (curPtr->size > 0u || doStream == NS_WRITER_STREAM_ACTIVE) {
+                    Ns_Log(DriverDebug,
+                           "Writer %p continue OK (size %" PRIdz ") => PUSH",
+                           (void *)curPtr, curPtr->size);
                     Push(curPtr, writePtr);
-		} else {
-		    Ns_Log(DriverDebug, 
-			   "Writer %p done OK (size %" PRIdz ") => RELEASE", 
-			   (void *)curPtr, curPtr->size);
-		    WriterSockRelease(curPtr);
-		}
-	    } else {
-		/*
-		 * spoolerState might be SPOOLER_CLOSE or SPOOLER_*TIMEOUT, or SPOOLER_*ERROR
-		 */ 
-		Ns_Log(DriverDebug, 
-		       "Writer %p fd %d release, not OK (status %d) => RELEASE", 
-		       (void *)curPtr, curPtr->sockPtr->sock, (int)spoolerState);
-		curPtr->status = spoolerState;
-		curPtr->err    = err;
-		WriterSockRelease(curPtr);
+                } else {
+                    Ns_Log(DriverDebug,
+                           "Writer %p done OK (size %" PRIdz ") => RELEASE",
+                           (void *)curPtr, curPtr->size);
+                    WriterSockRelease(curPtr);
+                }
+            } else {
+                /*
+                 * spoolerState might be SPOOLER_CLOSE or SPOOLER_*TIMEOUT, or SPOOLER_*ERROR
+                 */
+                Ns_Log(DriverDebug,
+                       "Writer %p fd %d release, not OK (status %d) => RELEASE",
+                       (void *)curPtr, curPtr->sockPtr->sock, (int)spoolerState);
+                curPtr->status = spoolerState;
+                curPtr->err    = err;
+                WriterSockRelease(curPtr);
             }
-	    Ns_MutexUnlock(&queuePtr->lock);
+            Ns_MutexUnlock(&queuePtr->lock);
             curPtr = nextPtr;
         }
 
@@ -3809,24 +3809,24 @@ WriterThread(void *arg)
          * Add more sockets to the writer queue
          */
 
-	if (queuePtr->sockPtr != NULL) {
-	    Ns_MutexLock(&queuePtr->lock);
-	    if (queuePtr->sockPtr != NULL) {
-		curPtr = queuePtr->sockPtr;
-		queuePtr->sockPtr = NULL;
-		while (curPtr != NULL) {
-		    nextPtr = curPtr->nextPtr;
-		    sockPtr = curPtr->sockPtr;
-		    drvPtr  = sockPtr->drvPtr;
-		    SockTimeout(sockPtr, &now, drvPtr->sendwait);
-		    Push(curPtr, writePtr);
-		    queuePtr->queuesize++;
-		    curPtr = nextPtr;
-		}
-		queuePtr->curPtr = writePtr;
-	    }
-	    Ns_MutexUnlock(&queuePtr->lock);
-	}
+        if (queuePtr->sockPtr != NULL) {
+            Ns_MutexLock(&queuePtr->lock);
+            if (queuePtr->sockPtr != NULL) {
+                curPtr = queuePtr->sockPtr;
+                queuePtr->sockPtr = NULL;
+                while (curPtr != NULL) {
+                    nextPtr = curPtr->nextPtr;
+                    sockPtr = curPtr->sockPtr;
+                    drvPtr  = sockPtr->drvPtr;
+                    SockTimeout(sockPtr, &now, drvPtr->sendwait);
+                    Push(curPtr, writePtr);
+                    queuePtr->queuesize++;
+                    curPtr = nextPtr;
+                }
+                queuePtr->curPtr = writePtr;
+            }
+            Ns_MutexUnlock(&queuePtr->lock);
+        }
 
         /*
          * Check for shutdown
@@ -3852,7 +3852,7 @@ WriterThread(void *arg)
  *      Finish a streaming writer job (typically called at the close
  *      of a connection). A streaming writer job is fed typically by a
  *      sequence of ns_write operations. After such an operation, the
- *      WriterThread has to keep the writer job alive. 
+ *      WriterThread has to keep the writer job alive.
  *      NsWriterFinish() tells the WriterThread that no more
  *      other writer jobs will come from this connection.
  *
@@ -3865,11 +3865,11 @@ WriterThread(void *arg)
  *----------------------------------------------------------------------
  */
 
-void 
+void
 NsWriterFinish(WriterSock *wrSockPtr) {
 
     assert(wrSockPtr != NULL);
-   
+
     Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)wrSockPtr);
     wrSockPtr->doStream = NS_WRITER_STREAM_FINISH;
     SockTrigger(wrSockPtr->queuePtr->pipe[1]);
@@ -3901,24 +3901,24 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs, int everysize)
 {
     Conn          *connPtr = (Conn *)conn;
-    WriterSock    *wrSockPtr; 
+    WriterSock    *wrSockPtr;
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
     int            trigger = 0;
     size_t         headerSize;
 
     assert(conn != NULL);
-    
+
     if (connPtr->sockPtr == NULL) {
         return NS_ERROR;
     }
 
     wrPtr = &connPtr->sockPtr->drvPtr->writer;
 
-    Ns_Log(DriverDebug, 
-	   "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d thread %d", 
-	   nsend, (void *)bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM, 
-	   (void *)chan, fd, wrPtr->threads);
+    Ns_Log(DriverDebug,
+           "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d thread %d",
+           nsend, (void *)bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM,
+           (void *)chan, fd, wrPtr->threads);
 
     if (wrPtr->threads == 0) {
         Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
@@ -3931,124 +3931,124 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    if (((connPtr->flags & NS_CONN_STREAM) != 0U) || connPtr->fd > 0) {
-	int         first = 0;
+    if (((connPtr->flags & NS_CONN_STREAM) != 0u) || connPtr->fd > 0) {
+        int         first = 0;
         size_t      wrote = 0u;
-	WriterSock *wrSockPtr1 = NULL;
+        WriterSock *wrSockPtr1 = NULL;
 
-	if (wrPtr->doStream == NS_FALSE) {
-	    return NS_ERROR;
-	}
+        if (wrPtr->doStream == NS_FALSE) {
+            return NS_ERROR;
+        }
 
-	if (unlikely(fp != NULL || fd != NS_INVALID_FD)) {
-	    Ns_Log(DriverDebug, "NsWriterQueue: does not stream from this source via writer");
-	    return NS_ERROR;
-	}
+        if (unlikely(fp != NULL || fd != NS_INVALID_FD)) {
+            Ns_Log(DriverDebug, "NsWriterQueue: does not stream from this source via writer");
+            return NS_ERROR;
+        }
 
-	Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
+        Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
 
-	if (connPtr->fd == 0) {
-	    /*
-	     * Create a new temporary spool file.
-	     */
-	    first = 1;
-	    fd = connPtr->fd = Ns_GetTemp();
+        if (connPtr->fd == 0) {
+            /*
+             * Create a new temporary spool file.
+             */
+            first = 1;
+            fd = connPtr->fd = Ns_GetTemp();
 
-	    Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", fd);
-	
-	} else {
-	    /*
-	     * Reuse previously created spool file.
-	     */
-	    wrSockPtr1 = WriterSockRequire(connPtr);
-	    if (wrSockPtr1 == NULL) {
-		Ns_Log(Notice, 
-		       "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
-		return NS_ERROR;
-	    }
-	    Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
-	    (void)ns_lseek(connPtr->fd, 0, SEEK_END);
-	}
+            Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", fd);
 
-	/*
-	 * For the time being, handle just "string data" in streaming
-	 * output (iovec bufs). Write the content to the spool file.
-	 */
-	{
-	    int i;
-	    assert(bufs != NULL);
-	    for (i = 0; i < nbufs; i++) {
-		ssize_t j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
+        } else {
+            /*
+             * Reuse previously created spool file.
+             */
+            wrSockPtr1 = WriterSockRequire(connPtr);
+            if (wrSockPtr1 == NULL) {
+                Ns_Log(Notice,
+                       "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
+                return NS_ERROR;
+            }
+            Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
+            (void)ns_lseek(connPtr->fd, 0, SEEK_END);
+        }
+
+        /*
+         * For the time being, handle just "string data" in streaming
+         * output (iovec bufs). Write the content to the spool file.
+         */
+        {
+            int i;
+            assert(bufs != NULL);
+            for (i = 0; i < nbufs; i++) {
+                ssize_t j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
                 if (j > 0) {
                     wrote += (size_t)j;
-                    Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %" PRIdz " of %" PRIiovlen " OK %d", 
+                    Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %" PRIdz " of %" PRIiovlen " OK %d",
                            connPtr->fd, i, j, bufs[i].iov_len, j == (ssize_t)bufs[i].iov_len);
                 } else {
-                    Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed", 
+                    Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed",
                            connPtr->fd);
                 }
-	    }
-	}
+            }
+        }
 
-	if (first != 0) {
-	    bufs = NULL;
-	    connPtr->nContentSent = wrote;
-	    (void)ns_sock_set_blocking(connPtr->fd, 0);
-	    /*
-	     * Fall through to register stream writer with temp file 
-	     */
-	} else {
-	    /*
-	     * This is a later streaming operation, where the writer
-	     * job (strWriter) was previously established. Update
-	     * the controlling variables (size and toread), and the
-	     * length info for the access log, and trigger the writer
-	     * to notify it about the change.
-	     */
-	    assert(wrSockPtr1 != NULL);
-	    connPtr->strWriter->size += wrote;
-	    connPtr->strWriter->c.file.toRead += wrote;
-	    Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
+        if (first != 0) {
+            bufs = NULL;
+            connPtr->nContentSent = wrote;
+            (void)ns_sock_set_blocking(connPtr->fd, 0);
+            /*
+             * Fall through to register stream writer with temp file
+             */
+        } else {
+            /*
+             * This is a later streaming operation, where the writer
+             * job (strWriter) was previously established. Update
+             * the controlling variables (size and toread), and the
+             * length info for the access log, and trigger the writer
+             * to notify it about the change.
+             */
+            assert(wrSockPtr1 != NULL);
+            connPtr->strWriter->size += wrote;
+            connPtr->strWriter->c.file.toRead += wrote;
+            Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
 
-	    connPtr->nContentSent += wrote;
-	    if (likely(wrSockPtr1->queuePtr != NULL)) {
-		SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
-	    }
-	    WriterSockRelease(wrSockPtr1);
-	    return TCL_OK;
-	}
+            connPtr->nContentSent += wrote;
+            if (likely(wrSockPtr1->queuePtr != NULL)) {
+                SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
+            }
+            WriterSockRelease(wrSockPtr1);
+            return TCL_OK;
+        }
     } else {
-	if (fp != NULL) {
-	    /* 
-	     * The client provided an open file pointer and closes it
-	     */
-	    fd = ns_dup(fileno(fp));
-	} else if (fd != NS_INVALID_FD) {
-	    /* 
-	     * The client provided an open file descriptor and closes it 
-	     */
-	    fd = ns_dup(fd);
-	} else if (chan != NULL) {
-	    /* 
-	     * The client provided an open tcl channel and closes it 
-	     */
-	    if (Tcl_GetChannelHandle(chan, TCL_READABLE,
-				     (ClientData)&fd) != TCL_OK) {
-		return NS_ERROR;
-	    }
-	    fd = ns_dup(fd);
+        if (fp != NULL) {
+            /*
+             * The client provided an open file pointer and closes it
+             */
+            fd = ns_dup(fileno(fp));
+        } else if (fd != NS_INVALID_FD) {
+            /*
+             * The client provided an open file descriptor and closes it
+             */
+            fd = ns_dup(fd);
+        } else if (chan != NULL) {
+            /*
+             * The client provided an open tcl channel and closes it
+             */
+            if (Tcl_GetChannelHandle(chan, TCL_READABLE,
+                                     (ClientData)&fd) != TCL_OK) {
+                return NS_ERROR;
+            }
+            fd = ns_dup(fd);
         }
     }
 
     Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %" PRIdz,
-	   wrPtr->threads, nsend, wrPtr->maxsize);
+           wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->poolPtr != NULL);
     /* Ns_MutexLock(&connPtr->poolPtr->threads.lock); */
     connPtr->poolPtr->stats.spool++;
     /* Ns_MutexUnlock(&connPtr->poolPtr->threads.lock); */
 
-    wrSockPtr = (WriterSock *)ns_calloc(1U, sizeof(WriterSock));
+    wrSockPtr = (WriterSock *)ns_calloc(1u, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
@@ -4057,113 +4057,113 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     /*
      * Make sure we have proper content length header for keep-alives
      */
-    Ns_ConnSetLengthHeader(conn, nsend, (wrSockPtr->flags & NS_CONN_STREAM) != 0U);
+    Ns_ConnSetLengthHeader(conn, nsend, (wrSockPtr->flags & NS_CONN_STREAM) != 0u);
 
     /*
      * Flush the headers
      */
 
-    if ((conn->flags & NS_CONN_SENTHDRS) == 0U) {
-	Tcl_DString    ds;
+    if ((conn->flags & NS_CONN_SENTHDRS) == 0u) {
+        Tcl_DString    ds;
 
-	Ns_DStringInit(&ds);
-	Ns_Log(DriverDebug, "add header (fd %d)\n", fd);
-	conn->flags |= NS_CONN_SENTHDRS;
-	(void)Ns_CompleteHeaders(conn, nsend, 0U, &ds);
+        Ns_DStringInit(&ds);
+        Ns_Log(DriverDebug, "add header (fd %d)\n", fd);
+        conn->flags |= NS_CONN_SENTHDRS;
+        (void)Ns_CompleteHeaders(conn, nsend, 0u, &ds);
 
-	wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
-	headerSize = (size_t)Ns_DStringLength(&ds);
-	Ns_DStringFree(&ds);
+        wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
+        headerSize = (size_t)Ns_DStringLength(&ds);
+        Ns_DStringFree(&ds);
     } else {
-	headerSize = 0U;
+        headerSize = 0u;
     }
 
     if (fd != NS_INVALID_FD) {
-	/* maybe add mmap support for files (fd != NS_INVALID_FD) */
+        /* maybe add mmap support for files (fd != NS_INVALID_FD) */
 
-	wrSockPtr->fd = fd;
-	if (unlikely(headerSize >= wrPtr->bufsize)) {
-	    /* 
-	     * We have a header which is larger than bufsize; place it
-	     * as "leftover" and use the headerString as buffer for file
-	     * reads (rather rare case)
-	     */
-	    wrSockPtr->c.file.buf = (unsigned char *)wrSockPtr->headerString;
-	    wrSockPtr->c.file.maxsize = headerSize;
-	    wrSockPtr->c.file.bufsize = headerSize;
-	    wrSockPtr->headerString = NULL;
-	} else if (headerSize > 0U) {
-	    /* 
-	     * We have a header that fits into the bufsize; place it
-	     * as "leftover" at the end of the buffer.
-	     */
-	    wrSockPtr->c.file.buf = ns_malloc(wrPtr->bufsize);
-	    memcpy(wrSockPtr->c.file.buf, wrSockPtr->headerString, headerSize);
-	    wrSockPtr->c.file.bufsize = headerSize;
-	    wrSockPtr->c.file.maxsize = wrPtr->bufsize;
-	    ns_free(wrSockPtr->headerString);
-	    wrSockPtr->headerString = NULL;
-	} else {
-	    assert(wrSockPtr->headerString == NULL);
-	    wrSockPtr->c.file.buf = ns_malloc(wrPtr->bufsize);
-	    wrSockPtr->c.file.maxsize = wrPtr->bufsize;
-	}
-	wrSockPtr->c.file.bufoffset = 0;
-	wrSockPtr->c.file.toRead = nsend;
+        wrSockPtr->fd = fd;
+        if (unlikely(headerSize >= wrPtr->bufsize)) {
+            /*
+             * We have a header which is larger than bufsize; place it
+             * as "leftover" and use the headerString as buffer for file
+             * reads (rather rare case)
+             */
+            wrSockPtr->c.file.buf = (unsigned char *)wrSockPtr->headerString;
+            wrSockPtr->c.file.maxsize = headerSize;
+            wrSockPtr->c.file.bufsize = headerSize;
+            wrSockPtr->headerString = NULL;
+        } else if (headerSize > 0u) {
+            /*
+             * We have a header that fits into the bufsize; place it
+             * as "leftover" at the end of the buffer.
+             */
+            wrSockPtr->c.file.buf = ns_malloc(wrPtr->bufsize);
+            memcpy(wrSockPtr->c.file.buf, wrSockPtr->headerString, headerSize);
+            wrSockPtr->c.file.bufsize = headerSize;
+            wrSockPtr->c.file.maxsize = wrPtr->bufsize;
+            ns_free(wrSockPtr->headerString);
+            wrSockPtr->headerString = NULL;
+        } else {
+            assert(wrSockPtr->headerString == NULL);
+            wrSockPtr->c.file.buf = ns_malloc(wrPtr->bufsize);
+            wrSockPtr->c.file.maxsize = wrPtr->bufsize;
+        }
+        wrSockPtr->c.file.bufoffset = 0;
+        wrSockPtr->c.file.toRead = nsend;
 
     } else if (bufs != NULL) {
-	int   i, j, headerbufs = headerSize > 0U ? 1 : 0;
+        int   i, j, headerbufs = headerSize > 0u ? 1 : 0;
 
-	wrSockPtr->fd = NS_INVALID_FD;
-	
-	if (nbufs+headerbufs < UIO_SMALLIOV) {
-	    wrSockPtr->c.mem.bufs = wrSockPtr->c.mem.preallocated_bufs;
-	} else {
-	    Ns_Log(Notice, "NsWriterQueue: alloc %d iovecs", nbufs);
-	    wrSockPtr->c.mem.bufs = ns_calloc((size_t)nbufs + (size_t)headerbufs, sizeof(struct iovec));
-	}
-	wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
-	if (headerbufs != 0) {
-	    wrSockPtr->c.mem.bufs[0].iov_base = wrSockPtr->headerString;
-	    wrSockPtr->c.mem.bufs[0].iov_len  = headerSize;
-	}
+        wrSockPtr->fd = NS_INVALID_FD;
 
-	if (connPtr->fmap.addr != NULL) {
-	    Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", connPtr->fmap.addr);
-	    /*
-	     * Deliver an mmapped file, no need to copy content
-	     */
-	    for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
-		wrSockPtr->c.mem.bufs[j].iov_base = bufs[i].iov_base;
-		wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
-	    }
-	    /*
-	     * Make a copy of the fmap structure and make clear that
-	     * we unmap in the writer thread.
-	     */
-	    wrSockPtr->c.mem.fmap = connPtr->fmap;
-	    connPtr->fmap.addr = NULL;
-	    /* header string will be freed via wrSockPtr->headerString */
+        if (nbufs+headerbufs < UIO_SMALLIOV) {
+            wrSockPtr->c.mem.bufs = wrSockPtr->c.mem.preallocated_bufs;
+        } else {
+            Ns_Log(Notice, "NsWriterQueue: alloc %d iovecs", nbufs);
+            wrSockPtr->c.mem.bufs = ns_calloc((size_t)nbufs + (size_t)headerbufs, sizeof(struct iovec));
+        }
+        wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
+        if (headerbufs != 0) {
+            wrSockPtr->c.mem.bufs[0].iov_base = wrSockPtr->headerString;
+            wrSockPtr->c.mem.bufs[0].iov_len  = headerSize;
+        }
 
-	} else {
-	    /*
-	     * Deliver an content from iovec. The lifetime of the
-	     * source is unknown, we have to copy the c.
-	     */
-	    for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
-		wrSockPtr->c.mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
-		wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
-		memcpy(wrSockPtr->c.mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);
-	    }
-	    /* header string will be freed a buf[0] */
-	    wrSockPtr->headerString = NULL;
-	}
+        if (connPtr->fmap.addr != NULL) {
+            Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", connPtr->fmap.addr);
+            /*
+             * Deliver an mmapped file, no need to copy content
+             */
+            for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
+                wrSockPtr->c.mem.bufs[j].iov_base = bufs[i].iov_base;
+                wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
+            }
+            /*
+             * Make a copy of the fmap structure and make clear that
+             * we unmap in the writer thread.
+             */
+            wrSockPtr->c.mem.fmap = connPtr->fmap;
+            connPtr->fmap.addr = NULL;
+            /* header string will be freed via wrSockPtr->headerString */
+
+        } else {
+            /*
+             * Deliver an content from iovec. The lifetime of the
+             * source is unknown, we have to copy the c.
+             */
+            for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
+                wrSockPtr->c.mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
+                wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
+                memcpy(wrSockPtr->c.mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);
+            }
+            /* header string will be freed a buf[0] */
+            wrSockPtr->headerString = NULL;
+        }
 
     } else {
         ns_free(wrSockPtr);
         return NS_ERROR;
     }
-    
+
     /*
      * Add header size to total size.
      */
@@ -4171,7 +4171,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
 
     if (connPtr->clientData != NULL) {
-	wrSockPtr->clientData = ns_strdup(connPtr->clientData);
+        wrSockPtr->clientData = ns_strdup(connPtr->clientData);
     }
     wrSockPtr->startTime = *Ns_ConnStartTime(conn);
 
@@ -4179,19 +4179,19 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      * Setup streaming context before sending potentially headers.
      */
 
-    if ((wrSockPtr->flags & NS_CONN_STREAM) != 0U) { 
-	wrSockPtr->doStream = NS_WRITER_STREAM_ACTIVE;
-	assert(connPtr->strWriter == NULL);
-	/*
-	 * Add a reference to the stream writer to the connection such
-	 * it can efficiently append to a stream when multiple output
-	 * operations happen. The backpointer (from the stream writer
-	 * to the connection is needed to clear the reference to the
-	 * writer in case the writer is deleted. No locks are needed,
-	 * since nobody can share this structure yet.
-	 */
-	connPtr->strWriter = wrSockPtr;
-	wrSockPtr->connPtr = connPtr; 
+    if ((wrSockPtr->flags & NS_CONN_STREAM) != 0u) {
+        wrSockPtr->doStream = NS_WRITER_STREAM_ACTIVE;
+        assert(connPtr->strWriter == NULL);
+        /*
+         * Add a reference to the stream writer to the connection such
+         * it can efficiently append to a stream when multiple output
+         * operations happen. The backpointer (from the stream writer
+         * to the connection is needed to clear the reference to the
+         * writer in case the writer is deleted. No locks are needed,
+         * since nobody can share this structure yet.
+         */
+        connPtr->strWriter = wrSockPtr;
+        wrSockPtr->connPtr = connPtr;
     }
 
     /*
@@ -4203,10 +4203,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;
     wrSockPtr->size = nsend;
-    
-    if ((wrSockPtr->flags & NS_CONN_STREAM) == 0U) { 
-	connPtr->sockPtr = NULL;
-	connPtr->nContentSent = nsend - headerSize;
+
+    if ((wrSockPtr->flags & NS_CONN_STREAM) == 0u) {
+        connPtr->sockPtr = NULL;
+        connPtr->nContentSent = nsend - headerSize;
     }
 
     /*
@@ -4226,7 +4226,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
            "size=%" PRIdz ", flags=%X: %s",
            queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
            nsend, wrSockPtr->flags, connPtr->reqPtr->request.url);
-    
+
     /*
      * Now add new writer socket to the writer thread's queue
      */
@@ -4297,9 +4297,9 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         }
         data = Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data != NULL) {
-	    struct iovec vbuf;
-	    vbuf.iov_base = (void *)data;
-	    vbuf.iov_len = (size_t)size;
+            struct iovec vbuf;
+            vbuf.iov_base = (void *)data;
+            vbuf.iov_len = (size_t)size;
             rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
             Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         }
@@ -4310,12 +4310,12 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         struct stat st;
         const char *name;
         Tcl_Obj    *fileObj = NULL;
-	int         headers = 0;
+        int         headers = 0;
         Tcl_WideInt offset = 0, size = 0;
-	size_t      nrbytes;
+        size_t      nrbytes;
 
         Ns_ObjvSpec lopts[] = {
-	    {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
+            {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
             {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
             {"-size",     Ns_ObjvWideInt, &size,    NULL},
             {NULL, NULL, NULL, NULL}
@@ -4336,48 +4336,48 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
         name = Tcl_GetString(fileObj);
 
-	rc = stat(name, &st);
-	if (rc != 0) {
-	    Tcl_AppendResult(interp, "file does not exist '", name, "'", NULL);
-	    return TCL_ERROR;
-	}
-
-        fd = ns_open(name, O_RDONLY, 0);
-        if (fd == NS_INVALID_FD) {
-	    Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
+        rc = stat(name, &st);
+        if (rc != 0) {
+            Tcl_AppendResult(interp, "file does not exist '", name, "'", NULL);
             return TCL_ERROR;
         }
 
-	if (size < 0 || size > st.st_size) {
-	    Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
-	    (void) ns_close(fd);
-	    return TCL_ERROR;
-	}
+        fd = ns_open(name, O_RDONLY, 0);
+        if (fd == NS_INVALID_FD) {
+            Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
+            return TCL_ERROR;
+        }
 
-	if (offset < 0 || offset > st.st_size) {
-	    Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
-	    (void) ns_close(fd);
-	    return TCL_ERROR;
-	} 
+        if (size < 0 || size > st.st_size) {
+            Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
+            (void) ns_close(fd);
+            return TCL_ERROR;
+        }
 
-	if (size > 0) {
-	    if (size + offset > st.st_size) {
-		Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
-		(void) ns_close(fd);
-		return TCL_ERROR;
-	    }
-	    nrbytes = (size_t)size;
-	} else {
+        if (offset < 0 || offset > st.st_size) {
+            Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
+            (void) ns_close(fd);
+            return TCL_ERROR;
+        }
+
+        if (size > 0) {
+            if (size + offset > st.st_size) {
+                Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
+                (void) ns_close(fd);
+                return TCL_ERROR;
+            }
+            nrbytes = (size_t)size;
+        } else {
             nrbytes = (size_t)st.st_size - (size_t)offset;
-	}
+        }
 
-	if (offset > 0) {
-	    if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
+        if (offset > 0) {
+            if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
                 Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
                 (void) ns_close(fd);
                 return TCL_ERROR;
             }
-	}
+        }
 
         /*
          *  The caller requested that we build required headers
@@ -4395,43 +4395,43 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         break;
     }
 
-    case cmdListIdx: 
+    case cmdListIdx:
 
-	if (objc < 2) {
-	usage_error:
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-server server?");
-	    return TCL_ERROR;
-	}
+        if (objc < 2) {
+        usage_error:
+            Tcl_WrongNumArgs(interp, 2, objv, "?-server server?");
+            return TCL_ERROR;
+        }
 
-	if (objc > 4) {
-	    goto usage_error;
-	} else if (objc > 2) {
+        if (objc > 4) {
+            goto usage_error;
+        } else if (objc > 2) {
 
-	    int                 nextArgIdx;
-	    static const char  *options[]           = {"-server", NULL};
-	    enum                                      {OServerIdx};
-	    ClientData          optionClientData[1] = {NULL};
-	    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};
+            int                 nextArgIdx;
+            static const char  *options[]           = {"-server", NULL};
+            enum                                      {OServerIdx};
+            ClientData          optionClientData[1] = {NULL};
+            Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};
 
-	    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 2, 
-				Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (*Tcl_GetStringResult(interp) != '\0') {
-		return TCL_ERROR;
-	    }
-	    servPtr = optionClientData[OServerIdx];
-	}
+            if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 2,
+                                Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            if (*Tcl_GetStringResult(interp) != '\0') {
+                return TCL_ERROR;
+            }
+            servPtr = optionClientData[OServerIdx];
+        }
 
         Tcl_DStringInit(dsPtr);
 
         for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
-	    /*
-	     * if server was specified, list only results from this server.
-	     */
-	    if (servPtr != NULL && servPtr != drvPtr->servPtr) {
-		continue;
-	    }
+            /*
+             * if server was specified, list only results from this server.
+             */
+            if (servPtr != NULL && servPtr != drvPtr->servPtr) {
+                continue;
+            }
 
             wrPtr = &drvPtr->writer;
             queuePtr = wrPtr->firstPtr;
@@ -4441,13 +4441,13 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 while (wrSockPtr != NULL) {
                     Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
                                      "%" PRIdz " %" TCL_LL_MODIFIER "d ",
-				     (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
-				     queuePtr->threadname,
+                                     (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
+                                     queuePtr->threadname,
                                      drvPtr->name,
                                      ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
                                      wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
-                    Ns_DStringAppendElement(dsPtr, 
-					    (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
+                    Ns_DStringAppendElement(dsPtr,
+                                            (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
                     Ns_DStringAppend(dsPtr, "} ");
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
@@ -4461,52 +4461,52 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     case cmdSizeIdx:
     case cmdStreamingIdx: {
-	int driverNameLen;
+        int driverNameLen;
 
-	if (objc < 3 || objc > 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "driver ?value?");
-	    return TCL_ERROR;
-	}
-	driverName = Tcl_GetStringFromObj(objv[2], &driverNameLen);
-	
-	/* look up driver with the specified name */
+        if (objc < 3 || objc > 4) {
+            Tcl_WrongNumArgs(interp, 2, objv, "driver ?value?");
+            return TCL_ERROR;
+        }
+        driverName = Tcl_GetStringFromObj(objv[2], &driverNameLen);
+
+        /* look up driver with the specified name */
         for (drvPtr = firstDrvPtr; drvPtr; drvPtr = drvPtr->nextPtr) {
-	    if (strncmp(driverName, drvPtr->name, (size_t)driverNameLen) == 0) {
-		if (drvPtr->writer.firstPtr != NULL) {wrPtr = &drvPtr->writer;}
-		break;
-	    }
-	}
+            if (strncmp(driverName, drvPtr->name, (size_t)driverNameLen) == 0) {
+                if (drvPtr->writer.firstPtr != NULL) {wrPtr = &drvPtr->writer;}
+                break;
+            }
+        }
 
-	if (wrPtr == NULL) {
-	    Tcl_AppendResult(interp, "no writer configured for a driver with name ", driverName, NULL);
-	    return TCL_ERROR;
-	}
+        if (wrPtr == NULL) {
+            Tcl_AppendResult(interp, "no writer configured for a driver with name ", driverName, NULL);
+            return TCL_ERROR;
+        }
 
-	if (opt == cmdSizeIdx) {
-	    if (objc == 4) {
-		int value = 0;
+        if (opt == cmdSizeIdx) {
+            if (objc == 4) {
+                int value = 0;
 
-		if (Tcl_GetIntFromObj(interp, objv[3], &value) != NS_OK || value < 1024) {
-		    Tcl_AppendResult(interp, "argument is not an integer in valid range: ", 
-				     Tcl_GetString(objv[3]), " (min 1024)", NULL);
-		    return TCL_ERROR;
-		}
-		wrPtr->maxsize = (size_t)value;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
+                if (Tcl_GetIntFromObj(interp, objv[3], &value) != NS_OK || value < 1024) {
+                    Tcl_AppendResult(interp, "argument is not an integer in valid range: ",
+                                     Tcl_GetString(objv[3]), " (min 1024)", NULL);
+                    return TCL_ERROR;
+                }
+                wrPtr->maxsize = (size_t)value;
+            }
+            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
 
-	} else {
-	    if (objc == 4) {
-		int value = 0;
+        } else {
+            if (objc == 4) {
+                int value = 0;
 
-		if (Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		wrPtr->doStream = value;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wrPtr->doStream));
-	}
-	break;
+                if (Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK) {
+                    return TCL_ERROR;
+                }
+                wrPtr->doStream = value;
+            }
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wrPtr->doStream));
+        }
+        break;
     }
     }
 
@@ -4536,16 +4536,16 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  *----------------------------------------------------------------------
  */
-void 
-NsAsyncWriterQueueEnable(void) 
+void
+NsAsyncWriterQueueEnable(void)
 {
     SpoolerQueue  *queuePtr;
 
     if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_FALSE) {
-	/*
-	 * Asyncwriter is disabled, nothing to do.
-	 */
-	return;
+        /*
+         * Asyncwriter is disabled, nothing to do.
+         */
+        return;
     }
 
     /*
@@ -4553,28 +4553,28 @@ NsAsyncWriterQueueEnable(void)
      * variable asyncWriter is NULL.
      */
     if (asyncWriter == NULL) {
-	Ns_MutexLock(&reqLock);
-	if (asyncWriter == NULL) {
-	    /*
-	     * Allocate and initialize writer thread context.
-	     */
-	    asyncWriter = ns_calloc(1U, sizeof(AsyncWriter));
-	    Ns_MutexUnlock(&reqLock);
-	    Ns_MutexSetName2(&asyncWriter->lock, "ns:driver","async-writer");
-	    /*
-	     * Allocate and initialize a Spooler Queue for this thread.
-	     */
-	    queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
-	    Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer","queue");
-	    asyncWriter->firstPtr = queuePtr;
-	    /*
-	     * Start the spooler queue
-	     */
-	    SpoolerQueueStart(queuePtr, AsyncWriterThread);
+        Ns_MutexLock(&reqLock);
+        if (asyncWriter == NULL) {
+            /*
+             * Allocate and initialize writer thread context.
+             */
+            asyncWriter = ns_calloc(1u, sizeof(AsyncWriter));
+            Ns_MutexUnlock(&reqLock);
+            Ns_MutexSetName2(&asyncWriter->lock, "ns:driver","async-writer");
+            /*
+             * Allocate and initialize a Spooler Queue for this thread.
+             */
+            queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
+            Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer","queue");
+            asyncWriter->firstPtr = queuePtr;
+            /*
+             * Start the spooler queue
+             */
+            SpoolerQueueStart(queuePtr, AsyncWriterThread);
 
-	} else {
-	    Ns_MutexUnlock(&reqLock);
-	}
+        } else {
+            Ns_MutexUnlock(&reqLock);
+        }
     }
 
 
@@ -4602,37 +4602,37 @@ NsAsyncWriterQueueEnable(void)
  *
  *----------------------------------------------------------------------
  */
-void 
-NsAsyncWriterQueueDisable(int shutdown) 
+void
+NsAsyncWriterQueueDisable(int shutdown)
 {
     if (asyncWriter != NULL) {
-	SpoolerQueue *queuePtr = asyncWriter->firstPtr;
-	Ns_Time timeout;
+        SpoolerQueue *queuePtr = asyncWriter->firstPtr;
+        Ns_Time timeout;
 
-	assert(queuePtr != NULL);
+        assert(queuePtr != NULL);
 
-	Ns_GetTime(&timeout);
-	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+        Ns_GetTime(&timeout);
+        Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
 
-	Ns_MutexLock(&queuePtr->lock);
-	queuePtr->stopped = NS_TRUE;
-	queuePtr->shutdown = shutdown;
+        Ns_MutexLock(&queuePtr->lock);
+        queuePtr->stopped = NS_TRUE;
+        queuePtr->shutdown = shutdown;
 
-	/*
-	 * Trigger the AsyncWriter Thread to drain the spooler queue.
-	 */
-	SockTrigger(queuePtr->pipe[1]);
-	(void)Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, &timeout);
+        /*
+         * Trigger the AsyncWriter Thread to drain the spooler queue.
+         */
+        SockTrigger(queuePtr->pipe[1]);
+        (void)Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, &timeout);
 
-	Ns_MutexUnlock(&queuePtr->lock);
-	
-	if (shutdown != 0) {
-	    ns_free(queuePtr);
-	    ns_free(asyncWriter);
-	    asyncWriter = NULL;
-	}
+        Ns_MutexUnlock(&queuePtr->lock);
+
+        if (shutdown != 0) {
+            ns_free(queuePtr);
+            ns_free(asyncWriter);
+            asyncWriter = NULL;
+        }
     }
- }
+}
 
 
 /*
@@ -4646,7 +4646,7 @@ NsAsyncWriterQueueDisable(int shutdown)
  *      connection threads.
  *
  * Results:
- *      NS_OK, when write was performed via writer thread, 
+ *      NS_OK, when write was performed via writer thread,
  *      NS_ERROR otherwise (but data is written).
  *
  * Side effects:
@@ -4654,15 +4654,15 @@ NsAsyncWriterQueueDisable(int shutdown)
  *
  *----------------------------------------------------------------------
  */
-int 
-NsAsyncWrite(int fd, const char *buffer, size_t nbyte) 
+int
+NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 {
     SpoolerQueue  *queuePtr;
     bool           trigger = NS_FALSE;
     AsyncWriteData *wdPtr, *newWdPtr;
 
     assert(buffer != NULL);
-    
+
     /*
      * If the async writer has not started or is deactivated, behave
      * like a ns_write() command. If the ns_write() fails, we can't do much,
@@ -4670,11 +4670,11 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped == NS_TRUE) {
-	ssize_t written = ns_write(fd, buffer, nbyte);
+        ssize_t written = ns_write(fd, buffer, nbyte);
 
-	if (unlikely(written != (ssize_t)nbyte)) {
-	    WriteError("sync write", fd, nbyte, written);
-	}
+        if (unlikely(written != (ssize_t)nbyte)) {
+            WriteError("sync write", fd, nbyte, written);
+        }
         return NS_ERROR;
     }
 
@@ -4685,7 +4685,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * interface, we could free the memory block after writing, and
      * save a malloc/free operation on the data.
      */
-    newWdPtr = ns_calloc(1U, sizeof(AsyncWriteData));
+    newWdPtr = ns_calloc(1u, sizeof(AsyncWriteData));
     newWdPtr->fd = fd;
     newWdPtr->bufsize = nbyte;
     newWdPtr->data = ns_malloc(nbyte + 1u);
@@ -4703,18 +4703,18 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     Ns_MutexLock(&queuePtr->lock);
     wdPtr = queuePtr->sockPtr;
     if (wdPtr != NULL) {
-	newWdPtr->nextPtr = queuePtr->sockPtr;
-	queuePtr->sockPtr = newWdPtr;
+        newWdPtr->nextPtr = queuePtr->sockPtr;
+        queuePtr->sockPtr = newWdPtr;
     } else {
-	queuePtr->sockPtr = newWdPtr;
-	trigger = NS_TRUE;
+        queuePtr->sockPtr = newWdPtr;
+        trigger = NS_TRUE;
     }
     Ns_MutexUnlock(&queuePtr->lock);
 
     /*
      * Wake up writer thread if desired
      */
-    if (trigger == NS_TRUE) { 
+    if (trigger == NS_TRUE) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -4726,7 +4726,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
  *
  * AsyncWriterRelease --
  *
- *      Deallocate write data. 
+ *      Deallocate write data.
  *
  * Results:
  *      None
@@ -4771,9 +4771,9 @@ AsyncWriterThread(void *arg)
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
-    /*fprintf(stderr, "--- AsyncWriterThread started queuePtr %p asyncWriter %p asyncWriter->firstPtr %p\n", 
-	    queuePtr,
-	    asyncWriter, asyncWriter->firstPtr);*/
+    /*fprintf(stderr, "--- AsyncWriterThread started queuePtr %p asyncWriter %p asyncWriter->firstPtr %p\n",
+      queuePtr,
+      asyncWriter, asyncWriter->firstPtr);*/
     Ns_ThreadSetName("-asynclogwriter%d-", queuePtr->id);
     queuePtr->threadname = Ns_ThreadGetName();
 
@@ -4806,7 +4806,7 @@ AsyncWriterThread(void *arg)
         if (writePtr == NULL) {
             pollto = 30 * 1000;
         } else {
-	    pollto = 0;
+            pollto = 0;
         }
 
         /*
@@ -4818,37 +4818,37 @@ AsyncWriterThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
         if (PollIn(&pdata, 0)) {
-	    if (ns_recv(queuePtr->pipe[0], charBuffer, 1U, 0) != 1) {
-		Ns_Fatal("asynclogwriter: trigger ns_recv() failed: %s",
-			 ns_sockstrerror(ns_sockerrno));
-	    }
-	    if (queuePtr->stopped == NS_TRUE) {
-		/*
-		 * Drain the queue from everything
-		 */
-		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-		    if (unlikely(written != (ssize_t)curPtr->bufsize)) { 
-			WriteError("drain writer", curPtr->fd, curPtr->bufsize, written);
-		    }
-		}
-		writePtr = NULL;
+            if (ns_recv(queuePtr->pipe[0], charBuffer, 1u, 0) != 1) {
+                Ns_Fatal("asynclogwriter: trigger ns_recv() failed: %s",
+                         ns_sockstrerror(ns_sockerrno));
+            }
+            if (queuePtr->stopped == NS_TRUE) {
+                /*
+                 * Drain the queue from everything
+                 */
+                for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
+                    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+                    if (unlikely(written != (ssize_t)curPtr->bufsize)) {
+                        WriteError("drain writer", curPtr->fd, curPtr->bufsize, written);
+                    }
+                }
+                writePtr = NULL;
 
-		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-		    if (unlikely(written != (ssize_t)curPtr->bufsize)) { 
+                for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
+                    ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+                    if (unlikely(written != (ssize_t)curPtr->bufsize)) {
                         WriteError("drain queue", curPtr->fd, curPtr->bufsize, written);
-		    }
-		}
-		queuePtr->sockPtr = NULL;
+                    }
+                }
+                queuePtr->sockPtr = NULL;
 
-		/* 
-		 * Notify the caller (normally
-		 * NsAsyncWriterQueueDisable()) that we are done
-		 */
-		Ns_CondBroadcast(&queuePtr->cond);
-	    }
-	}
+                /*
+                 * Notify the caller (normally
+                 * NsAsyncWriterQueueDisable()) that we are done
+                 */
+                Ns_CondBroadcast(&queuePtr->cond);
+            }
+        }
 
         /*
          * Write to all available file descriptors
@@ -4863,32 +4863,32 @@ AsyncWriterThread(void *arg)
             nextPtr = curPtr->nextPtr;
             status = NS_OK;
 
-	    /*
-	     * write the actual data and allow for partial write operations.
-	     */
-	    written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-	    if (written < 0) {
-		status = NS_ERROR;
-	    } else {
-		curPtr->size -= (size_t)written;
-		curPtr->nsent += written;
-		curPtr->bufsize -= (size_t)written;
-		if (curPtr->data != NULL) {
-		    curPtr->buf += written;
-		}
-	    }
+            /*
+             * write the actual data and allow for partial write operations.
+             */
+            written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+            if (written < 0) {
+                status = NS_ERROR;
+            } else {
+                curPtr->size -= (size_t)written;
+                curPtr->nsent += written;
+                curPtr->bufsize -= (size_t)written;
+                if (curPtr->data != NULL) {
+                    curPtr->buf += written;
+                }
+            }
 
             if (status != NS_OK) {
                 AsyncWriterRelease(curPtr);
                 queuePtr->queuesize--;
             } else {
 
-		/*
-		 * The write operation was successful. Check if there
-		 * is some remaining data to write. If not we are done
-		 * with this request can can release the write buffer.
-		 */
-                if (curPtr->size > 0U) {
+                /*
+                 * The write operation was successful. Check if there
+                 * is some remaining data to write. If not we are done
+                 * with this request can can release the write buffer.
+                 */
+                if (curPtr->size > 0u) {
                     Push(curPtr, writePtr);
                 } else {
                     AsyncWriterRelease(curPtr);
@@ -4900,44 +4900,44 @@ AsyncWriterThread(void *arg)
         }
 
 
-	/*
-	 * Check for shutdown
-	 */
+        /*
+         * Check for shutdown
+         */
         stopping = queuePtr->shutdown;
-	if (stopping == NS_TRUE) {
-	    curPtr = queuePtr->sockPtr;
-	    assert(writePtr == NULL);
-	    while (curPtr != NULL) {
-		ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-		if (unlikely(written != (ssize_t)curPtr->bufsize)) { 
-		    WriteError("shutdown", curPtr->fd, curPtr->bufsize, written);
-		}
-		curPtr = curPtr->nextPtr;
-	    }
-	} else {
-	    /*
-	     * Add fresh jobs to the writer queue. This means actually to
-	     * move jobs from queuePtr->sockPtr (kept name for being able
-	     * to use the same queue as above) to the currently active
-	     * jobs in queuePtr->curPtr.
-	     */
-	    Ns_MutexLock(&queuePtr->lock);
-	    curPtr = queuePtr->sockPtr;
-	    queuePtr->sockPtr = NULL;
-	    while (curPtr != NULL) {
-		nextPtr = curPtr->nextPtr;
-		Push(curPtr, writePtr);
-		queuePtr->queuesize++;
-		curPtr = nextPtr;
-	    }
-	    queuePtr->curPtr = writePtr;
-	    Ns_MutexUnlock(&queuePtr->lock);
-	}
+        if (stopping == NS_TRUE) {
+            curPtr = queuePtr->sockPtr;
+            assert(writePtr == NULL);
+            while (curPtr != NULL) {
+                ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+                if (unlikely(written != (ssize_t)curPtr->bufsize)) {
+                    WriteError("shutdown", curPtr->fd, curPtr->bufsize, written);
+                }
+                curPtr = curPtr->nextPtr;
+            }
+        } else {
+            /*
+             * Add fresh jobs to the writer queue. This means actually to
+             * move jobs from queuePtr->sockPtr (kept name for being able
+             * to use the same queue as above) to the currently active
+             * jobs in queuePtr->curPtr.
+             */
+            Ns_MutexLock(&queuePtr->lock);
+            curPtr = queuePtr->sockPtr;
+            queuePtr->sockPtr = NULL;
+            while (curPtr != NULL) {
+                nextPtr = curPtr->nextPtr;
+                Push(curPtr, writePtr);
+                queuePtr->queuesize++;
+                curPtr = nextPtr;
+            }
+            queuePtr->curPtr = writePtr;
+            Ns_MutexUnlock(&queuePtr->lock);
+        }
 
     }
 
     PollFree(&pdata);
-    
+
     queuePtr->stopped = NS_TRUE;
     Ns_Log(Notice, "exiting");
 
