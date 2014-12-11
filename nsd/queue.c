@@ -470,7 +470,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	}
 
 	/*
-	 * Signal the associat trhead to start with this request.
+	 * Signal the associated thread to start with this request.
 	 */
 	Ns_MutexLock(&argPtr->lock);
         Ns_CondSignal(&argPtr->cond);
@@ -1244,16 +1244,6 @@ NsConnThread(void *arg)
         poolPtr->wqueue.freePtr = connPtr;
 	Ns_MutexUnlock(wqueueLockPtr);
 
-#if 0
-	/*  What is this for? */
-        if (connPtr->nextPtr == NULL) {
-            /*
-             * If this thread just free'd up the busy server,
-             * run the ready procs to signal other subsystems.
-             */
-            NsRunAtReadyProcs();
-        }
-#endif
 	Ns_MutexLock(tqueueLockPtr);
 	argPtr->state = connThread_ready;
 	Ns_MutexUnlock(tqueueLockPtr);
