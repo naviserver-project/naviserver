@@ -887,8 +887,8 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 
     ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
     while (ePtr != NULL) {
-      savedCost += ((int64_t) ePtr->count * ePtr->cost) / 1000000.0;
-      ePtr = (Entry *)Ns_CacheNextEntry(&search);
+        savedCost += ((double)ePtr->count * (double)ePtr->cost) / 1000000.0;
+        ePtr = (Entry *)Ns_CacheNextEntry(&search);
     }
 
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "

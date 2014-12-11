@@ -172,18 +172,18 @@ struct sched {
      * The C and D arrays used to calculate the key schedule.
      */
 
-    char     C[28];
-    char     D[28];
+    unsigned char C[28];
+    unsigned char D[28];
 
     /*
      * The key schedule. Generated from the key.
      */
-    char     KS[16][48];
+    unsigned char KS[16][48];
 
     /*
      * The E bit-selection table.
      */
-    char     E[48];
+    unsigned char E[48];
 };
 
 static const int e[] = {
@@ -200,7 +200,7 @@ static const int e[] = {
 /*
  * Locally defined functions
  */
-static void setkey_private(struct sched *sp, const char *key)
+static void setkey_private(struct sched *sp, const unsigned char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void encrypt_private(const struct sched *sp, char *block, int edflag)
@@ -211,7 +211,7 @@ static void encrypt_private(const struct sched *sp, char *block, int edflag)
  */
 
 static void
-setkey_private(struct sched *sp, const char *key)
+setkey_private(struct sched *sp, const unsigned char *key)
 {
     register int    i;
 
@@ -239,16 +239,16 @@ setkey_private(struct sched *sp, const char *key)
          * rotate.
          */
         for (k = 0u; k < shifts[i]; k++) {
-            int t = sp->C[0];
+            unsigned char t = sp->C[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];
 	    }
-            sp->C[27] = (char)t;
+            sp->C[27] = t;
             t = sp->D[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->D[j] = sp->D[j + 1];
 	    }
-            sp->D[27] = (char)t;
+            sp->D[27] = t;
         }
 
         /*
@@ -261,7 +261,7 @@ setkey_private(struct sched *sp, const char *key)
     }
 
     for (i = 0; i < 48; i++) {
-        sp->E[i] = (char)e[i];
+        sp->E[i] = (unsigned char)e[i];
     }
 }
 
@@ -471,7 +471,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         i++;
     }
 
-    setkey_private(&s, block);
+    setkey_private(&s, (unsigned char *)block);
 
     for (i = 0; i < 66; i++) {
         block[i] = '\0';
