@@ -121,7 +121,7 @@ static int   LogOpen(void);
 static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Tcl_Obj *LogStats();
+static Tcl_Obj *LogStats(void);
 
 /*
  * Static variables defined in this file
@@ -446,7 +446,7 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
  *----------------------------------------------------------------------
  */
 static Tcl_Obj *
-LogStats()
+LogStats(void)
 {
     Ns_LogSeverity s;
     Tcl_Obj *listObj;
