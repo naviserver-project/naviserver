@@ -665,9 +665,9 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
 const char *
 NsConfigRead(const char *file)
 {
-    Tcl_Channel  chan = NULL;
-    Tcl_Obj     *buf = NULL;
-    const char  *call = "open", *data, *conf = NULL;
+    Tcl_Channel  chan;
+    Tcl_Obj     *buf;
+    const char  *call = "open", *data, *conf;
     int          length;
 
     assert(file != NULL);
@@ -677,6 +677,7 @@ NsConfigRead(const char *file)
 
     chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
     if (chan == NULL) {
+        buf = NULL;
         goto err;
     }
 
