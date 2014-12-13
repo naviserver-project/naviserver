@@ -580,7 +580,6 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
          * the contents against the current file mtime, size and inode.
          */
 
-        filePtr = NULL;
         Ns_CacheLock(cache);
         entry = Ns_CacheWaitCreateEntry(cache, file, &isNew, NULL);
 
@@ -588,14 +587,18 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
          * Validate entry.
          */
 
-        if (isNew == 0
-            && (filePtr = Ns_CacheGetValue(entry)) != NULL
-            && (filePtr->mtime != connPtr->fileInfo.st_mtime
-                || filePtr->size != connPtr->fileInfo.st_size
-                || filePtr->dev != (dev_t)connPtr->fileInfo.st_dev
-                || filePtr->ino != connPtr->fileInfo.st_ino)) {
-            Ns_CacheUnsetValue(entry);
-            isNew = 1;
+        if (isNew == 0) {
+            filePtr = Ns_CacheGetValue(entry);
+            if (filePtr != NULL
+                && (filePtr->mtime != connPtr->fileInfo.st_mtime
+                    || filePtr->size != connPtr->fileInfo.st_size
+                    || filePtr->dev != (dev_t)connPtr->fileInfo.st_dev
+                    || filePtr->ino != connPtr->fileInfo.st_ino)) {
+                Ns_CacheUnsetValue(entry);
+                isNew = 1;
+            }
+        } else {
+            filePtr = NULL;
         }
 
         if (isNew != 0) {
@@ -631,8 +634,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
             Ns_CacheLock(cache);
             entry = Ns_CacheCreateEntry(cache, file, &isNew);
             if (filePtr != NULL) {
-                Ns_CacheSetValueSz(entry, filePtr,
-                                   (size_t) (filePtr->size + sizeof(File)));
+                Ns_CacheSetValueSz(entry, filePtr, filePtr->size + sizeof(File));
             } else {
                 Ns_CacheDeleteEntry(entry);
             }

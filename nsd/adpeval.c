@@ -1067,7 +1067,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     Ns_DString  cwd;
     Tcl_Obj    *objPtr;
     int         nscript, nblocks, result, i;
-    const char *ptr, *slash, *savecwd;
+    const char *ptr, *savecwd;
 
     assert(itPtr != NULL);
     assert(codePtr != NULL);
@@ -1093,9 +1093,12 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     frame.outputPtr = outputPtr;
     frame.ident = NULL;
     savecwd = itPtr->adp.cwd;
-    if (file != NULL && (slash = strrchr(file, '/')) != NULL) {
-        Ns_DStringNAppend(&cwd, file, (int)(slash - file));
-        itPtr->adp.cwd = cwd.string;
+    if (file != NULL) {
+        const char *slash = strrchr(file, '/');
+        if (slash != NULL) {
+            Ns_DStringNAppend(&cwd, file, (int)(slash - file));
+            itPtr->adp.cwd = cwd.string;
+        }
     }
     frame.prevPtr = itPtr->adp.framePtr;
     itPtr->adp.framePtr = &frame;

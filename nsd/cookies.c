@@ -71,8 +71,6 @@ static int DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *nam
 static int 
 SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
 {
-    char    *p, *q;
-    char     save;
     int      index = -1;
     size_t   nameLen, i;
 
@@ -82,27 +80,30 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
 
     nameLen = strlen(name);
 
-    for (i = 0U; i < hdrs->size; ++i) {
-        if (strcasecmp(hdrs->fields[i].name, setName) == 0
-            && (p = strstr(hdrs->fields[i].value, name)) != NULL) {
-
-            if (*(p += nameLen) == '=') {
-		if (dest != 0) {
-		    ++p; /* advance past equals sign */
-		    if (*p == '"') {
-			++p; /* advance past optional quote mark */
-		    }
-		    q = p;
-		    while (*q != '"' && *q != ';' && *q != '\0') {
-			++q;
-		    }
-		    save = *q;
-		    *q = '\0';
-		    Ns_UrlQueryDecode(dest, p, NULL);
-		    *q = save;
-		}
-		index = (int) i;
-                break;
+    for (i = 0u; i < hdrs->size; ++i) {
+        if (strcasecmp(hdrs->fields[i].name, setName) == 0) {
+            char *p, *q, save;
+            
+            p = strstr(hdrs->fields[i].value, name);
+            if (p != NULL) {
+                if (*(p += nameLen) == '=') {
+                    if (dest != 0) {
+                        ++p; /* advance past equals sign */
+                        if (*p == '"') {
+                            ++p; /* advance past optional quote mark */
+                        }
+                        q = p;
+                        while (*q != '"' && *q != ';' && *q != '\0') {
+                            ++q;
+                        }
+                        save = *q;
+                        *q = '\0';
+                        Ns_UrlQueryDecode(dest, p, NULL);
+                        *q = save;
+                    }
+                    index = (int) i;
+                    break;
+                }
             }
         }
     }

@@ -82,7 +82,7 @@ static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 int
 NsMatchRange(const Ns_Conn *conn, time_t mtime)
 {
-    char *hdr;
+    int result = NS_TRUE;
 
     assert(conn != NULL);
 
@@ -93,12 +93,13 @@ NsMatchRange(const Ns_Conn *conn, time_t mtime)
      * valid HTTP-date and any form of entity-tag by examining no more than two characters.)
      */
 
-    if (Ns_SetIGet(conn->headers, "Range") != NULL
-        && (hdr = Ns_SetIGet(conn->headers, "If-Range")) != NULL
-        && mtime > Ns_ParseHttpTime(hdr)) {
-        return NS_FALSE;
+    if (Ns_SetIGet(conn->headers, "Range") != NULL) {
+        char *hdr = Ns_SetIGet(conn->headers, "If-Range");
+        if (hdr != NULL && mtime > Ns_ParseHttpTime(hdr)) {
+            result = NS_FALSE;
+        }
     }
-    return NS_TRUE;
+    return result;
 }
 
 

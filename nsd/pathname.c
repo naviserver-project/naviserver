@@ -1000,7 +1000,6 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
                        && (headers = Ns_ConnHeaders(conn)) != NULL
                        && (rawHost = Ns_SetIGet(headers, "Host")) != NULL))
                && *rawHost != '\0') {
-        char *p;
 
         /*
          * Bail out if there are suspicious characters in the unprocessed Host.
@@ -1022,9 +1021,11 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             && strncmp(safehost, "www.", 4U) == 0) {
             safehost = &safehost[4];
         }
-        if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u
-            && (p = strrchr(safehost, ':')) != NULL) {
-            *p = '\0';
+        if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u) {
+            char *p = strrchr(safehost, ':');
+            if (p != NULL) {
+                *p = '\0';
+            }
         }
 
         /*

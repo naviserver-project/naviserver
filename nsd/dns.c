@@ -109,21 +109,21 @@ static int       timeout;   /* Time in seconds to wait for concurrent update.  *
 void
 NsConfigDNS(void)
 {
-    int         max;
     const char *path = NS_CONFIG_PARAMETERS;
 
-    if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE
-        && (max = Ns_ConfigIntRange(path, "dnscachemaxsize",
-                                    1024*500, 0, INT_MAX)) > 0) {
+    if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE) {
+        int max = Ns_ConfigIntRange(path, "dnscachemaxsize", 1024*500, 0, INT_MAX);
+        
+        if (max > 0) {
+            timeout = Ns_ConfigIntRange(path, "dnswaittimeout",  5, 0, INT_MAX);
+            ttl = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
+            ttl *= 60; /* NB: Config specifies minutes, seconds used internally. */
 
-        timeout = Ns_ConfigIntRange(path, "dnswaittimeout",  5, 0, INT_MAX);
-        ttl = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
-        ttl *= 60; /* NB: Config specifies minutes, seconds used internally. */
-
-        hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-                                     (size_t) max, ns_free);
-        addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-                                     (size_t) max, ns_free);
+            hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
+                                         (size_t) max, ns_free);
+            addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
+                                         (size_t) max, ns_free);
+        }
     }
 }
 
@@ -370,8 +370,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct addrinfo hints;
     struct addrinfo *res, *ptr;
-    int result;
-    int status = NS_FALSE;
+    int result, status = NS_FALSE;
 #ifndef HAVE_MTSAFE_DNS
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
@@ -381,7 +380,8 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((result = getaddrinfo(host, NULL, &hints, &res)) == 0) {
+    result = getaddrinfo(host, NULL, &hints, &res);
+    if (result == 0) {
         ptr = res;
         while (ptr != NULL) {
             Tcl_DStringAppendElement(dsPtr,

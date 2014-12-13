@@ -125,7 +125,6 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     NsInterp     *itPtr;
     char         *type;
     const char   *start;
-    Ns_Set       *query;
     NsServer     *servPtr;
     Tcl_Obj      *objv[2];
     int           result;
@@ -159,11 +158,14 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
      */
 
     servPtr = connPtr->poolPtr->servPtr;
-    if ((servPtr->adp.flags & ADP_DEBUG) != 0U &&
+    if ((servPtr->adp.flags & ADP_DEBUG) != 0u &&
         conn->request->method != NULL &&
-        STREQ(conn->request->method, "GET") &&
-        (query = Ns_ConnGetQuery(conn)) != NULL) {
-        itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
+        STREQ(conn->request->method, "GET")) {
+        Ns_Set *query = Ns_ConnGetQuery(conn);
+        
+        if (query != NULL) {
+            itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
+        }
     }
 
     /*
