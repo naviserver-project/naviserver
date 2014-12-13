@@ -203,7 +203,7 @@ static const int e[] = {
 static void setkey_private(struct sched *sp, const unsigned char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void encrypt_private(const struct sched *sp, char *block, int edflag)
+static void encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -330,7 +330,7 @@ static const int P[] = {
  */
 
 static void
-encrypt_private(const struct sched *sp, char *block, int edflag)
+encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
 {
     /*
      * The current block, divided into 2 halves.
@@ -354,7 +354,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
      * First, permute the bits in the input
      */
     for (j = 0; j < 64; j++) {
-        L[j] = UCHAR(block[IP[j] - 1]);
+        L[j] = block[IP[j] - 1];
     }
 
     /*
@@ -383,7 +383,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
          * current key bits.
          */
         for (j = 0; j < 48; j++) {
-            preS[j] = R[sp->E[j] - 1] ^ sp->KS[i][j];
+            preS[j] = R[sp->E[j] - 1u] ^ sp->KS[i][j];
 	}
 
         /*
@@ -442,7 +442,7 @@ encrypt_private(const struct sched *sp, char *block, int edflag)
      * The final output gets the inverse permutation of the very original.
      */
     for (j = 0; j < 64; j++) {
-        block[j] = (char)L[FP[j] - 1];
+        block[j] = L[FP[j] - 1];
     }
 }
 
@@ -451,9 +451,8 @@ char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     register int    i, j;
-    char            c;
-    int             temp;
-    char            block[66];
+    unsigned char   c;
+    unsigned char   block[66];
     struct sched    s;
 
     assert(pw != NULL);
@@ -461,9 +460,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     assert(iobuf != NULL);
 
     for (i = 0; i < 66; i++) {
-        block[i] = '\0';
+        block[i] = UCHAR('\0');
     }
-    for (i = 0, c = *pw; c != '\0' && i < 64; pw++, c = *pw) {
+    for (i = 0, c = UCHAR(*pw); c != '\0' && i < 64; pw++, c = UCHAR(*pw)) {
 	for (j = 0; j < 7; j++, i++) {
             assert(i < sizeof(block));
             block[i] = (c >> (6 - j)) & 1u;
@@ -471,25 +470,25 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         i++;
     }
 
-    setkey_private(&s, (unsigned char *)block);
+    setkey_private(&s, block);
 
     for (i = 0; i < 66; i++) {
-        block[i] = '\0';
+        block[i] = UCHAR('\0');
     }
 
     for (i = 0; i < 2; i++) {
-        c = *salt++;
-        iobuf[i] = c;
-        if (c > 'Z') {
-            c -= 6;
+        c = UCHAR(*salt++);
+        iobuf[i] = (char)c;
+        if (c > UCHAR('Z')) {
+            c -= 6u;
 	}
-        if (c > '9') {
-            c -= 7;
+        if (c > UCHAR('9')) {
+            c -= 7u;
 	}
-        c -= '.';
+        c -= UCHAR('.');
         for (j = 0; j < 6; j++) {
             if ((c >> j) & 1u) {
-                temp = s.E[6 * i + j];
+                unsigned char temp = s.E[6 * i + j];
                 s.E[6 * i + j] = s.E[6 * i + j + 24];
                 s.E[6 * i + j + 24] = temp;
             }
@@ -501,19 +500,19 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     }
 
     for (i = 0; i < 11; i++) {
-        c = 0;
+        c = UCHAR('\0');
         for (j = 0; j < 6; j++) {
             c <<= 1;
             c |= block[6 * i + j];
         }
-        c += '.';
-        if (c > '9') {
-            c += 7;
+        c += UCHAR('.');
+        if (c > UCHAR('9')) {
+            c += 7u;
 	}
-        if (c > 'Z') {
-            c += 6;
+        if (c > UCHAR('Z')) {
+            c += 6u;
 	}
-        iobuf[i + 2] = c;
+        iobuf[i + 2] = (char)c;
     }
     iobuf[i + 2] = '\0';
     if (iobuf[1] == '\0') {
