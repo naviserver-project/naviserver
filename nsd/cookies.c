@@ -371,11 +371,11 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     if (expiresPtr != NULL) {
         Ns_Time *nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
         if (expiresPtr->sec < 0) {
-	  maxage = TIME_T_MAX;
+            maxage = TIME_T_MAX;
         } else if (expiresPtr->sec > nowPtr->sec) {
-	  maxage = (time_t)(expiresPtr->sec - nowPtr->sec);
+            maxage = (time_t)expiresPtr->sec - (time_t)nowPtr->sec;
         } else {
-	  maxage = expiresPtr->sec;
+            maxage = expiresPtr->sec;
         }
     } else {
         maxage = 0;
