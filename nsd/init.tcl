@@ -334,9 +334,9 @@ proc _ns_load_server_modules {{network 0}} {
     set modules [ns_configsection ns/server/[ns_info server]/modules]
     if {$modules ne ""} {
         foreach {module file} [ns_set array $modules] {
+	    if {$network != [ns_module network $module]} continue
 	    ns_ictl addmodule $module
 	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
-	    if {$network != [ns_module network $module]} continue
 	    ns_moduleload $module $file 
         }
     }
@@ -347,8 +347,8 @@ proc _ns_load_global_modules {{network 0}} {
 
     if {$modules ne ""} {
 	foreach {module file} [ns_set array $modules] {
-	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
 	    if {$network != [ns_module network $module]} continue
+	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
 	    ns_moduleload -global $module $file
 	}
     }
