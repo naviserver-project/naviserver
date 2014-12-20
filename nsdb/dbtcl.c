@@ -262,12 +262,13 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case GETHANDLE: {
-	int timeout = -1, nhandles = 1, result;
+	int nhandles = 1, result;
+        Ns_Time *timeoutPtr = NULL;
 	Ns_DbHandle **handlesPtrPtr;
 
         Ns_ObjvSpec opts[] = {
-            {"-timeout", Ns_ObjvInt,   &timeout, NULL},
-            {"--",       Ns_ObjvBreak, NULL,       NULL},
+            {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
+            {"--",       Ns_ObjvBreak,  NULL,       NULL},
             {NULL, NULL, NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
@@ -302,6 +303,14 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                     "\": should be greater than 0.", NULL);
             return TCL_ERROR;
 	}
+        
+        /*
+         * When timeout is specified as 0 (or 0:0) then treat is as
+         * non-specified (blocking).
+         */
+        if (timeoutPtr != NULL && timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
+            timeoutPtr == NULL;
+        }
 
     	/*
          * Allocate handles and enter them into Tcl.
@@ -313,7 +322,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	    handlesPtrPtr = ns_malloc((size_t)nhandles * sizeof(Ns_DbHandle *));
 	}
 	result = Ns_DbPoolTimedGetMultipleHandles(handlesPtrPtr, pool,
-    	    	                                  nhandles, timeout);
+    	    	                                  nhandles, timeoutPtr);
     	if (result == NS_OK) {
   	    int i;
 

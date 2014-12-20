@@ -319,7 +319,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
  */
 
 Ns_DbHandle *
-Ns_DbPoolTimedGetHandle(const char *pool, int wait)
+Ns_DbPoolTimedGetHandle(const char *pool, Ns_Time *wait)
 {
     Ns_DbHandle       *handle;
 
@@ -349,7 +349,7 @@ Ns_DbPoolTimedGetHandle(const char *pool, int wait)
 Ns_DbHandle *
 Ns_DbPoolGetHandle(const char *pool)
 {
-    return Ns_DbPoolTimedGetHandle(pool, 0);
+    return Ns_DbPoolTimedGetHandle(pool, NULL);
 }
 
 
@@ -373,7 +373,7 @@ Ns_DbPoolGetHandle(const char *pool)
 int
 Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
 {
-    return Ns_DbPoolTimedGetMultipleHandles(handles, pool, nwant, 0);
+    return Ns_DbPoolTimedGetMultipleHandles(handles, pool, nwant, NULL);
 }
 
 
@@ -399,7 +399,7 @@ Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
 
 int
 Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool, 
-    				 int nwant, int wait)
+    				 int nwant, Ns_Time *wait)
 {
     Handle    *handlePtr;
     Handle   **handlesPtrPtr = (Handle **) handles;
@@ -439,11 +439,11 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
      * watching for timeout in either of these waits.
      */
      
-    if (wait < 0) {
+    if (wait == NULL) {
 	timePtr = NULL;
     } else {
     	Ns_GetTime(&timeout);
-    	Ns_IncrTime(&timeout, wait, 0);
+    	Ns_IncrTime(&timeout, wait->sec, wait->usec);
 	timePtr = &timeout;
     }
     status = NS_OK;
