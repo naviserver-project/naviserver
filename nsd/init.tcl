@@ -130,8 +130,8 @@ proc __ns_sourcelibs {{modname ""}} {
 proc __ns_sourcemodule {modname} {
 
     ns_module name    $modname
-    ns_module shared  [ns_library private $modname]
-    ns_module private [ns_library shared  $modname]
+    ns_module shared  [ns_library shared  $modname]
+    ns_module private [ns_library private $modname]
 
     __ns_sourcelibs $modname
 
