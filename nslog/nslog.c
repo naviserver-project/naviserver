@@ -417,8 +417,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         if ((status & LOG_SUPPRESSQUERY)) {
             Ns_DStringAppend(&ds, "suppressquery ");
         }
-        Tcl_AppendResult(interp, ds.string, NULL);
-        Ns_DStringFree(&ds);
+        Tcl_DStringResult(interp, &ds);
         break;
 
     case FILE:

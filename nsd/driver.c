@@ -4455,8 +4455,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 queuePtr = queuePtr->nextPtr;
             }
         }
-        Tcl_AppendResult(interp, ds.string, 0);
-        Tcl_DStringFree(dsPtr);
+        Tcl_DStringResult(interp, &ds);
         break;
 
     case cmdSizeIdx:
