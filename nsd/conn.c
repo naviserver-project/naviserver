@@ -482,7 +482,8 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
     assert(saPtr != NULL);
 
     connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
-    strncpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr), 16u);
+    strncpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr), NS_IPADDR_SIZE);
+    
     return connPtr->reqPtr->peer;
 }
 
@@ -1642,7 +1643,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CProtocolIdx:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->protocol, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->drvPtr->protocol, -1));
         break;
 
     case CHostIdx:

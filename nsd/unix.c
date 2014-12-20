@@ -440,13 +440,13 @@ Pipe(int *fds, int sockpair)
  */
 
 int
-ns_sock_set_blocking(NS_SOCKET fd, int blocking) 
+ns_sock_set_blocking(NS_SOCKET fd, bool blocking) 
 {
 #if defined USE_FIONBIO
     int state = (blocking == 0);
     return ioctl(fd, FIONBIO, &state);
 #else
-    unsigned int flags = fcntl(fd, F_GETFD, 0);
+    unsigned int flags = fcntl(fd, F_GETFL, 0);
 
     if (blocking != 0) {
 	return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);

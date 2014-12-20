@@ -5,9 +5,23 @@
 [titledesc {Register a socket callback script}]
 
 [description]
-ns_sockcallback registers a socket callback script. The script should accept
-the arguments sockid and when. The script will be called according to the value
-of the when argument as follows:
+ns_sockcallback registers a socket callback script. 
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_sockcallback] [arg sockid] [arg script] [arg when] [opt [arg timeout]]]
+
+The optional argument [arg when] can consist of one or more characters
+of r, w, e, or x, specifying, when the callback should fire.
+
+The optional argument [arg timeout] can be of the form
+secs:?microsecs?.
+
+When the callback is fired, the script will be called with additional
+[arg sockid] and [arg when]. The value of [arg when]  will be
+as follows:
 
 Value of, when Condition under which the script will be called:
 [list_begin itemized]
@@ -16,13 +30,8 @@ Value of, when Condition under which the script will be called:
 [item] w - the socket is writeable
 [item] e - the socket has an exceptional condition
 [item] x - the server is shutting down
+[item] t - timeout received
 [list_end]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-[call [cmd ns_sockcallback] [arg sockid] [arg script] [arg when]]
 
 [list_end]
 

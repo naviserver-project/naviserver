@@ -71,6 +71,7 @@ typedef enum {
 
 #define MAX_URLSPACES                  16
 #define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
+#define NS_IPADDR_SIZE                 16u
 
 #define CONN_TCLFORM                   0x01U  /* Query form set is registered for interp */
 #define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
@@ -142,7 +143,7 @@ struct nsconf {
     pid_t pid;
     time_t boot_t;
     char hostname[255];
-    char address[16];
+    char address[NS_IPADDR_SIZE];
     long shutdowntimeout;  /* same type as seconds in Ns_Time */
     int backlog;
 
@@ -338,7 +339,7 @@ typedef struct Request {
     Ns_Request request;         /* Parsed request line */
     Ns_Set *headers;            /* Input headers */
     Ns_Set *auth;               /* Auth user/password and parameters */
-    char peer[16];              /* Client peer address */
+    char peer[NS_IPADDR_SIZE];  /* Client peer address */
     int port;                   /* Client peer port */
 
     /*
@@ -921,7 +922,7 @@ typedef struct NsServer {
         Ns_Mutex lock;
         Tcl_HashTable table;
     } chans;
-
+    
 } NsServer;
 
 /*
@@ -1395,8 +1396,10 @@ NS_EXTERN void NsTclInitServer(const char *server)       NS_GNUC_NONNULL(1);
 NS_EXTERN void NsInitStaticModules(const char *server);
 
 NS_EXTERN Tcl_Interp *NsTclCreateInterp(void)            NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN Tcl_Interp *NsTclAllocateInterp(NsServer *servPtr) NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)  NS_GNUC_NONNULL(1);
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)           NS_GNUC_NONNULL(1);
+
 
 NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets) NS_GNUC_NONNULL(1);
 

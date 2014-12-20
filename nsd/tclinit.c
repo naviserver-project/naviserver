@@ -263,7 +263,7 @@ ConfigServerTcl(const char *server)
 Tcl_Interp *
 Ns_TclCreateInterp(void)
 {
-    return Ns_TclAllocateInterp(NULL);
+    return NsTclAllocateInterp(NULL);
 }
 
 
@@ -347,7 +347,7 @@ Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TclAllocateInterp --
+ * Ns_TclAllocateInterp, NsTclAllocateInterp --
  *
  *      Return a pre-initialized interp for the given server or create
  *      a new one and cache it for the current thread.
@@ -381,6 +381,14 @@ Ns_TclAllocateInterp(const char *server)
         }
     }
     itPtr = PopInterp(servPtr, NULL);
+
+    return itPtr->interp;
+}
+
+Tcl_Interp *
+NsTclAllocateInterp(NsServer *servPtr)
+{
+    NsInterp *itPtr = PopInterp(servPtr, NULL);
 
     return itPtr->interp;
 }
@@ -669,7 +677,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
      */
 
     if ((when == NS_TCL_TRACE_CREATE) || (when == NS_TCL_TRACE_ALLOCATE)) {
-	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
+	Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
         if ((*proc)(interp, arg) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: register trace)");
@@ -1282,7 +1290,7 @@ NsTclInitServer(const char *server)
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
-	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
+	Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
         if (Tcl_EvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: init server)");

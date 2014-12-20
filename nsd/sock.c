@@ -690,7 +690,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
 int
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
-    if (ns_sock_set_blocking(sock, 0) == -1) {
+    if (ns_sock_set_blocking(sock, NS_FALSE) == -1) {
 	return NS_ERROR;
     }
     return NS_OK;
@@ -716,7 +716,7 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
 int
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
-    if (ns_sock_set_blocking(sock, 1) == -1) {
+    if (ns_sock_set_blocking(sock, NS_TRUE) == -1) {
 	return NS_ERROR;
     }
     return NS_OK;

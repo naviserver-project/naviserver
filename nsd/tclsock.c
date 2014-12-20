@@ -745,7 +745,8 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     char        *s;
     const char  *script;
     NS_SOCKET    sock;
-    int          timeout = 0, scriptLength = 0;
+    int          scriptLength = 0;
+    Ns_Time     *timeoutPtr = NULL, timeout;
     unsigned int when;
     Callback    *cbPtr;
     NsInterp    *itPtr = clientData;
@@ -789,7 +790,14 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         return TCL_ERROR;
     }
     if (objc > 4) {
-        if (Tcl_GetIntFromObj(interp, objv[4], &timeout) != TCL_OK) {
+        /*
+         * timeout was specified, set is just in case the timeout was not 0:0
+         */
+        if (Ns_TclGetTimeFromObj(interp, objv[4], &timeout) == TCL_OK) {
+            if (timeout.sec > 0 || timeout.usec > 0) {
+                timeoutPtr = &timeout;
+            }
+        } else {
             return TCL_ERROR;
         }
     }
@@ -813,7 +821,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     
     if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
 			  when | (unsigned int)NS_SOCK_EXIT, 
-			  timeout) != NS_OK) {
+			  timeoutPtr, NULL) != NS_OK) {
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
         ns_sockclose(sock);
         ns_free(cbPtr);
@@ -1191,12 +1199,14 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 	    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
             result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
-            if (result != TCL_OK || ok == 0) {
-                goto fail;
-            }
         }
         Ns_TclDeAllocateInterp(interp);
         Tcl_DStringFree(&script);
+        
+        if (result != TCL_OK || ok == 0) {
+            goto fail;
+        }
+
     }
 
 

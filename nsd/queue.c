@@ -1069,7 +1069,7 @@ NsConnThread(void *arg)
 	Ns_Time     start, end, diff;
 
         Ns_GetTime(&start);
-	interp = Ns_TclAllocateInterp(servPtr->server);
+	interp = NsTclAllocateInterp(servPtr);
         Ns_GetTime(&end);
         Ns_DiffTime(&end, &start, &diff);
 	Ns_Log(Notice, "thread initialized (%" PRIu64 ".%06ld secs)", 

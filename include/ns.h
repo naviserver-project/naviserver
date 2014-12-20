@@ -1706,7 +1706,8 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
 
 NS_EXTERN Tcl_Obj*
 Ns_TclNewTimeObj(const Ns_Time *timePtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN void
 Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
@@ -2716,13 +2717,13 @@ NS_EXTERN int
 Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when);
 
 NS_EXTERN int
-Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeout);
+Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, Ns_Time *timeout, char const**threadNamePtr);
 
 NS_EXTERN void
 Ns_SockCancelCallback(NS_SOCKET sock);
 
 NS_EXTERN int
-Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg);
+Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, char const**threadNamePtr);
 
 /*
  * str.c:
@@ -3173,7 +3174,7 @@ ns_sockpair(NS_SOCKET *socks)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-ns_sock_set_blocking(NS_SOCKET sock, int blocking);
+ns_sock_set_blocking(NS_SOCKET sock, bool blocking);
 
 NS_EXTERN int
 ns_pipe(int *fds)
