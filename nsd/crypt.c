@@ -462,7 +462,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     for (i = 0; i < 66; i++) {
         block[i] = UCHAR('\0');
     }
-    for (i = 0, c = UCHAR(*pw); c != '\0' && i < 64; pw++, c = UCHAR(*pw)) {
+    for (i = 0, c = UCHAR(*pw); c != UCHAR('\0') && i < 64; pw++, c = UCHAR(*pw)) {
 	for (j = 0; j < 7; j++, i++) {
             assert(i < sizeof(block));
             block[i] = (c >> (6 - j)) & 1u;
