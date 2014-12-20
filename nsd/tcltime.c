@@ -41,11 +41,17 @@
  * Local functions defined in this file
  */
 
-static void  SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr);
-static int   SetTimeFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void  UpdateStringOfTime(Tcl_Obj *objPtr);
-static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
+static void  SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int   SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void  UpdateStringOfTime(Tcl_Obj *objPtr)
+    NS_GNUC_NONNULL(1);
+
+static int   TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+        NS_GNUC_NONNULL(2);
 
 /*
  * Local variables defined in this file.
@@ -406,6 +412,8 @@ TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     struct tm *ptm;
     Tcl_Obj   *objPtr[9];
 
+    assert(interp != NULL);
+    
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
         return TCL_ERROR;
@@ -504,7 +512,8 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 int
 NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char   *fmt, buf[200];
+    const char *fmt;
+    char    buf[200];
     time_t  t;
     long    sec;
 
@@ -555,10 +564,13 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static void
 UpdateStringOfTime(Tcl_Obj *objPtr)
 {
-    Ns_Time *timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
+    Ns_Time *timePtr;
     int      len;
     char     buf[(TCL_INTEGER_SPACE * 2) + 1];
 
+    assert(objPtr != NULL);
+
+    timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
         len = snprintf(buf, sizeof(buf), "%ld", timePtr->sec);
@@ -597,6 +609,9 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     long     sec;
     int      value;
 
+    assert(interp != NULL);
+    assert(objPtr != NULL);
+    
     str = Tcl_GetString(objPtr);
     sep = strchr(str, ':');
     if (objPtr->typePtr == intTypePtr || sep == NULL) {
@@ -647,6 +662,9 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void
 SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
+    assert(objPtr != NULL);
+    assert(timePtr != NULL);
+    
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));
 }
