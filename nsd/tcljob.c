@@ -173,7 +173,7 @@ typedef struct ThreadPool {
     int                nidle;
     Job               *firstPtr;
     int                jobsPerThread;
-    int                timeout;
+    Ns_Time            timeout;
 } ThreadPool;
 
 
@@ -277,7 +277,8 @@ NsTclInitQueueType(void)
     tp.firstPtr = NULL;
     tp.req = THREADPOOL_REQ_NONE;
     tp.jobsPerThread = 0;
-    tp.timeout = 0;
+    tp.timeout.sec = 0;
+    tp.timeout.usec = 0;
 }
 
 
@@ -411,10 +412,11 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * Configure jobs subsystem
              */
 
-            int jpt = -1, timeout = -1;
+            int jpt = -1;
+            Ns_Time *timeoutPtr;
             Ns_ObjvSpec lopts[] = {
-                {"-jobsperthread",  Ns_ObjvInt,  &jpt,     NULL},
-                {"-timeout",        Ns_ObjvInt,  &timeout, NULL},
+                {"-jobsperthread",  Ns_ObjvInt,  &jpt,        NULL},
+                {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
@@ -430,11 +432,11 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             if (jpt >= 0) {
                 tp.jobsPerThread = jpt;
             }
-            if (timeout >= 0) {
-                tp.timeout = timeout;
+            if (timeoutPtr != NULL) {
+                tp.timeout = *timeoutPtr;
             }
-            snprintf(buf, sizeof(buf), "jobsperthread %d timeout %d",
-                     tp.jobsPerThread, tp.timeout);
+            snprintf(buf, sizeof(buf), "jobsperthread %d timeout %ld:%06ld",
+                     tp.jobsPerThread, tp.timeout.sec, tp.timeout.usec);
             Ns_MutexUnlock(&tp.queuelock);
             Tcl_AppendResult(interp, buf, NULL);
         }
@@ -1209,9 +1211,9 @@ JobThread(void *UNUSED(arg))
 
         ++tp.nidle;
         status = NS_OK;
-        if (tp.timeout > 0) {
+        if (tp.timeout.sec > 0 || tp.timeout.usec > 0) {
             Ns_GetTime(&wait);
-            Ns_IncrTime(&wait, tp.timeout, 0);
+            Ns_IncrTime(&wait, tp.timeout.sec, tp.timeout.usec);
             timePtr = &wait;
         } else {
             timePtr = NULL;
@@ -2134,8 +2136,8 @@ SetupJobDefaults(void)
     if(tp.jobsPerThread == 0) {
        tp.jobsPerThread = nsconf.job.jobsperthread;
     }
-    if (tp.timeout == 0) {
-        tp.timeout = nsconf.job.timeout;
+    if (tp.timeout.sec == 0 && tp.timeout.usec == 0) {
+        tp.timeout.sec = nsconf.job.timeout;
     }
 }
 
