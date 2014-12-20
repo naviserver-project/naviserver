@@ -33,6 +33,10 @@ Adjusts time so that it is within the valid range of values for a time.
 Computes the time difference between time1 to time2.  It does this
 by subtracting time1 from time2 and returns a string in "sec:usec" format.
 
+[call [cmd  {ns_time format}] [arg time]]
+
+Returns the [arg time] in seconds in the form of a real number.
+
 [call [cmd  {ns_time get}]]
 
 Returns the current time in "sec:usec" format.
