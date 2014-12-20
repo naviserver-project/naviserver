@@ -56,7 +56,8 @@ static Ns_DriverSendFileProc SendFile;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 
-static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock);
+static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -76,7 +77,7 @@ static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock);
  */
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_DriverInitData  init = {0};
     Config            *cfg;
@@ -122,7 +123,7 @@ Ns_ModuleInit(char *server, char *module)
  */
 
 static NS_SOCKET
-Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
+Listen(Ns_Driver *driver, const char *address, int port, int backlog)
 {
     NS_SOCKET sock;
 
@@ -353,13 +354,16 @@ static void
 SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 {
 #ifdef TCP_NODELAY
-    Config *cfg = driver->arg;
+    Config *cfg;
 
+    assert(driver != NULL);
+    
+    cfg = driver->arg;
     if (cfg->nodelay != 0) {
 	int value = 1;
 
         if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
-                       (CONST void *)&value, sizeof(value)) == -1) {
+                       (const void *)&value, sizeof(value)) == -1) {
             Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
                    ns_sockstrerror(ns_sockerrno));
         } else {
