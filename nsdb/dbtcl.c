@@ -309,7 +309,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
          * non-specified (blocking).
          */
         if (timeoutPtr != NULL && timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-            timeoutPtr == NULL;
+            timeoutPtr = NULL;
         }
 
     	/*
