@@ -367,5 +367,13 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 	}
     }
 #endif
-
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
