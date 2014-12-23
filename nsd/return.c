@@ -418,6 +418,7 @@ void
 Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
+    Ns_Sock    *sockPtr;
     size_t      i;
     const char *reason, *value;
 
@@ -462,9 +463,12 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     /*
      * Add extra headers from config file, if available.
      */
-    value = Ns_ConnSockPtr(conn)->driver->extraHeaders;
-    if (value != NULL) {
-      Ns_DStringNAppend(dsPtr, value, -1);
+    sockPtr = Ns_ConnSockPtr(conn);
+    if (sockPtr != NULL) {
+        value = sockPtr->driver->extraHeaders;
+        if (value != NULL) {
+            Ns_DStringNAppend(dsPtr, value, -1);
+        }
     }
 
     /*
