@@ -335,7 +335,7 @@ SockCallbackThread(void *UNUSED(arg))
     pfds[0].events = POLLIN;
 
     while (1) {
-	int nfds, pollto, registered = 0;
+	int nfds, pollto;
         bool stop;
 	Ns_Time now, diff;
 
@@ -399,7 +399,6 @@ SockCallbackThread(void *UNUSED(arg))
 
 	nfds = 1;
         for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-            registered ++;
 	    cbPtr = Tcl_GetHashValue(hPtr);
             if ((cbPtr->timeout.sec > 0 || cbPtr->timeout.usec > 0)) {
 
