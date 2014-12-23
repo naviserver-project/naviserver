@@ -200,7 +200,7 @@ NsWaitSockShutdown(const Ns_Time *toPtr)
 static void
 CallbackTrigger(void)
 {
-    if (ns_send(trigPipe[1], "", 1, 0) != 1) {
+    if (ns_send(trigPipe[1], "", 1u, 0) != 1) {
 	Ns_Fatal("trigger send() failed: %s", ns_sockstrerror(ns_sockerrno));
     }
 }
@@ -338,7 +338,7 @@ SockCallbackThread(void *UNUSED(arg))
     while (1) {
 	int nfds, pollto;
         bool stop;
-	Ns_Time now, diff;
+	Ns_Time now, diff = {0, 0};
 
 	/*
 	 * Grab the list of any queue updates and the shutdown
