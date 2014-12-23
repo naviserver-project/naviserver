@@ -56,7 +56,7 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc SockCallbackThread;
-static int Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, Ns_Time *timeout, char const**threadNamePtr);
+static int Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, const Ns_Time *timeout, char const**threadNamePtr);
 static void CallbackTrigger(void);
 
 /*
@@ -223,7 +223,8 @@ CallbackTrigger(void)
  */
 
 static int
-Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, Ns_Time *timeout, char const**threadNamePtr)
+Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
+      const Ns_Time *timeout, char const**threadNamePtr)
 {
     Callback   *cbPtr;
     int         status;

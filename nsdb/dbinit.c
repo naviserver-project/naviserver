@@ -319,7 +319,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
  */
 
 Ns_DbHandle *
-Ns_DbPoolTimedGetHandle(const char *pool, Ns_Time *wait)
+Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)
 {
     Ns_DbHandle       *handle;
 
@@ -399,7 +399,7 @@ Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
 
 int
 Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool, 
-    				 int nwant, Ns_Time *wait)
+    				 int nwant, const Ns_Time *wait)
 {
     Handle    *handlePtr;
     Handle   **handlesPtrPtr = (Handle **) handles;

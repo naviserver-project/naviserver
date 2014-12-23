@@ -156,14 +156,14 @@ NS_EXTERN const char *Ns_DbPoolDefault(const char *server);
 NS_EXTERN char *Ns_DbPoolList(const char *server);
 NS_EXTERN int Ns_DbPoolAllowable(const char *server, const char *pool);
 NS_EXTERN void Ns_DbPoolPutHandle(Ns_DbHandle *handle);
-NS_EXTERN Ns_DbHandle *Ns_DbPoolTimedGetHandle(const char *pool, Ns_Time *wait);
+NS_EXTERN Ns_DbHandle *Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait);
 NS_EXTERN Ns_DbHandle *Ns_DbPoolGetHandle(const char *pool);
 NS_EXTERN int Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, 
 					  const char *pool,
 					  int nwant);
 NS_EXTERN int Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, 
 					       const char *pool,
-					       int nwant, Ns_Time *wait);
+					       int nwant, const Ns_Time *wait);
 NS_EXTERN int Ns_DbBouncePool(const char *pool);
 
 /*
