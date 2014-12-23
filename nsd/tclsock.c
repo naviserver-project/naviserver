@@ -1138,7 +1138,6 @@ int
 NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Tcl_DString  script;
-    int          ok;
     Callback    *cbPtr = arg;
 
     if (why == (unsigned int)NS_SOCK_EXIT) {
@@ -1197,13 +1196,17 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 	  (void) Ns_TclLogErrorInfo(interp, "\n(context: sock proc)");
         } else {
 	    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+            int      ok = 1;
 
             result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
+            if (result == TCL_OK && ok == 0) {
+                result = TCL_ERROR;
+            }
         }
         Ns_TclDeAllocateInterp(interp);
         Tcl_DStringFree(&script);
         
-        if (result != TCL_OK || ok == 0) {
+        if (result != TCL_OK) {
             goto fail;
         }
 
