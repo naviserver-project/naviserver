@@ -444,7 +444,7 @@ SetUrl(Ns_Request *request, char *url)
      */
 
     p = ns_strdup(request->url + 1);
-    Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
+    Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
     while (*p != '\0') {
         if (*p == '/') {
             *p++ = '\0';
@@ -455,13 +455,13 @@ SetUrl(Ns_Request *request, char *url)
 		
                 break;
             }
-            Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
+            Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
         }
         ++p;
     }
     request->urlc = ds1.length / (int)sizeof(char *);
     p = NULL;
-    Tcl_DStringAppend(&ds1, (char *) &p, sizeof(char *));
+    Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
     request->urlv = (char **) ns_malloc((size_t)ds1.length);
     memcpy(request->urlv, ds1.string, (size_t)ds1.length);
     Tcl_DStringFree(&ds1);

@@ -923,6 +923,16 @@ typedef struct NsServer {
         Tcl_HashTable table;
     } chans;
     
+    /*
+     * The following struct maintains detached Tcl
+     * channels for the benefit of the ns_connchan command.
+     */
+
+    struct {
+        Ns_Mutex lock;
+        Tcl_HashTable table;
+    } connchans;
+
 } NsServer;
 
 /*
@@ -1072,6 +1082,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclConfigSectionObjCmd,
     NsTclConfigSectionsObjCmd,
     NsTclConnObjCmd,
+    NsTclConnChanObjCmd,
     NsTclConnSendFpObjCmd,
     NsTclCritSecObjCmd,
     NsTclCryptObjCmd,

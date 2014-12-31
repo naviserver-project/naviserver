@@ -178,6 +178,7 @@ More to come here...
 
 
 [see_also ns_log ns_write ns_http ns_ssl]
-[keywords performance tuning configuration TCP TCP_FASTOPEN nssock nsssl]
+[keywords performance tuning configuration TCP TCP_FASTOPEN nssock \
+nsssl driver]
 
 [manpage_end]

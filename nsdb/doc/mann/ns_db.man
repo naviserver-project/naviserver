@@ -125,7 +125,7 @@ If [option -timeout] is not specified or timeout is zero, [cmd "ns_db gethandle"
 wait indefinitely (perhaps forever) for the requested number of handles to
 become available. If timeout is greater than zero, ns_db gethandle will either
 return with the handles within that time period, or return "" if the time period
-was exceeded, or generate a Tcl error. See the examples for [cmd ns_db gethandle], below.
+was exceeded, or generate a Tcl error. See the examples for [cmd "ns_db gethandle"], below.
 The argument [arg t] can be specified in the form [arg sec[opt :microseconds]].
 
 [call [cmd "ns_db getrow"] [arg handle] [arg setId]]
@@ -286,25 +286,24 @@ These are valid uses of ns_db gethandle:
 
 ns_db gethandle
 # 1 handle from default pool
-
+ 
 ns_db gethandle -timeout 2:500000
 # 1 handle from default pool, 2.5 sec timeout
-
+ 
 ns_db gethandle -timeout -1 poolname
 # 1 handle from poolname, error if not available
-
+ 
 ns_db gethandle poolname
 # 1 handle from poolname
-
+ 
 ns_db gethandle -timeout 23 poolname
 # 1 handle from poolname, 23 sec timeout
-
+ 
 ns_db gethandle poolname 5
 # 5 handles from poolname
-
+ 
 ns_db gethandle -timeout 23 poolname 5
 # 5 handles from poolname, 23 sec timeout
-
 [example_end]
 
 

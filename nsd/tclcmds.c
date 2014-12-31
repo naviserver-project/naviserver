@@ -205,6 +205,7 @@ static const Cmd servCmds[] = {
     {"ns_checkurl", NULL, NsTclRequestAuthorizeObjCmd},
     {"ns_cond", NULL, NsTclCondObjCmd},
     {"ns_conn", NULL, NsTclConnObjCmd},
+    {"ns_connchan", NULL, NsTclConnChanObjCmd},
     {"ns_conncptofp", NULL, NsTclWriteContentObjCmd},
     {"ns_connsendfp", NULL, NsTclConnSendFpObjCmd},
     {"ns_critsec", NULL, NsTclCritSecObjCmd},

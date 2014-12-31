@@ -211,7 +211,7 @@ typedef enum {
 #define Ns_SetName(s)              ((s)->name)
 #define Ns_SetKey(s,i)             ((s)->fields[(i)].name)
 #define Ns_SetValue(s,i)           ((s)->fields[(i)].value)
-#define Ns_SetLast(s)              (((s)->size)-1)
+#define Ns_SetLast(s)              (((s)->size)-1u)
 
 /*
  * Ns_DString's are now equivalent to Tcl_DString's starting in 4.0.
