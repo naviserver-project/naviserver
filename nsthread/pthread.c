@@ -425,6 +425,7 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 void
 Ns_ThreadExit(void *arg)
 {
+    NsThreadShutdownStarted();
     pthread_exit(arg);
 }
 
@@ -832,15 +833,17 @@ static void
 CleanupTls(void *arg)
 {
     void **slots = arg;
-
+    Ns_Thread thread = NULL;
+    
     assert(arg != NULL);
     
     /*
-     * Restore the current slots durin cleanup so handlers can access
+     * Restore the current slots during cleanup so handlers can access
      * TLS in other slots.
      */
 
     pthread_setspecific(key, arg);
+    Ns_ThreadSelf(&thread);
     NsCleanupTls(slots);
     pthread_setspecific(key, NULL);
     ns_free(slots);

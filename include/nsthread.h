@@ -689,9 +689,10 @@ typedef struct DIR_ *DIR;
 /*
  * Constants for nsthread 
  */
-#define NS_THREAD_DETACHED          1
-#define NS_THREAD_JOINED            2
-#define NS_THREAD_EXITED            4
+#define NS_THREAD_DETACHED          0x01u
+#define NS_THREAD_JOINED            0x02u
+#define NS_THREAD_EXITED            0x04u
+    
 #define NS_THREAD_NAMESIZE          64
 #define NS_THREAD_MAXTLS            100
 

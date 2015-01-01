@@ -56,5 +56,7 @@ extern void **NsGetTls(void)               NS_GNUC_RETURNS_NONNULL;
 extern void   NsThreadMain(void *arg);
 extern void   NsCreateThread(void *arg, long stacksize, Ns_Thread *threadPtr);
 extern void   NsThreadFatal(char *func, char *osfunc, int err);
+extern void   NsThreadShutdownStarted(void);
+
 
 #endif /* THREAD_H */

@@ -70,7 +70,7 @@ static Ns_TlsCleanup *cleanupProcs[NS_THREAD_MAXTLS];
 void
 Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
 {
-    static uintptr_t nextkey = 1;
+    static uintptr_t nextkey = 1u;
     uintptr_t        key;
 
     assert(keyPtr != NULL);

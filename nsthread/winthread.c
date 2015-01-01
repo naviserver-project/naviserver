@@ -732,6 +732,7 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 void
 Ns_ThreadExit(void *arg)
 {
+    NsThreadShutdownStarted();
     _endthreadex( PTR2UINT(arg) ); 
 }
 

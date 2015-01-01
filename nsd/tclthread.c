@@ -43,15 +43,17 @@
 
 typedef struct TclThreadArg {
     const char *server;
-    int   detached;
-    char  script[1];
+    bool        detached;
+    char        script[1];
 } TclThreadArg;
+
+static Ns_Tls argtls = NULL;
 
 /*
  * Local functions defined in this file
  */
 
-static void CreateTclThread(const NsInterp *itPtr, const char *script, int detached,
+static void CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
                             Ns_Thread *thrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -95,7 +97,7 @@ Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
     assert(interp != NULL);
     assert(script != NULL);
 
-    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL), thrPtr);
+    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL ? NS_TRUE : NS_FALSE), thrPtr);
     return NS_OK;
 }
 
@@ -183,9 +185,9 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         }
         script = Tcl_GetString(objv[2]);
         if (opt == TBeginDetachedIdx) {
-            CreateTclThread(itPtr, script, 1, NULL);
+            CreateTclThread(itPtr, script, NS_TRUE, NULL);
         } else {
-            CreateTclThread(itPtr, script, 0, &tid);
+            CreateTclThread(itPtr, script, NS_FALSE, &tid);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
         }
         break;
@@ -734,26 +736,55 @@ NsTclThread(void *arg)
 {
     TclThreadArg *argPtr = arg;
     Ns_DString    ds, *dsPtr;
-    int           detached = argPtr->detached;
+    bool          detached;
+    static int    once = 0;
 
-    if (detached != 0) {
+    assert(arg != NULL);
+
+    /*
+     * The argument structure is a TclThreadArg, which has to be freed when
+     * the thread shuts down.  The argument is used e.g. by the arg proc in
+     * Ns_ThreadList(), which might be called during thread shutdown. To
+     * ensure consistent cleanup in all success and error cases, we use a
+     * thread local variable with the specified ns_free as cleanup proc.
+     *
+     * On the first call, allocate the thread local storage slot. This
+     * initialization might be moved into some tclThreadInit() code, which
+     * does not exist.
+     */
+    if (once == 0) {
+        Ns_TlsAlloc(&argtls, ns_free);
+        once = 1;
+    }
+
+    Ns_TlsSet(&argtls, argPtr);
+
+    detached = argPtr->detached;
+    if (detached == NS_TRUE) {
         dsPtr = NULL;
     } else {
         Ns_DStringInit(&ds);
         dsPtr = &ds;
     }
-
+    
     /*
-     * Need to ensure that the server has completed it's initializtion
+     * Need to ensure that the server has completed it's initialization
      * prior to initiating TclEval.
      */
-
     (void) Ns_WaitForStartup();
 
     (void) Ns_TclEval(dsPtr, argPtr->server, argPtr->script);
-    ns_free(argPtr);
-    if (detached == 0) {
+    
+    /*
+     * No matter if the Tcl eval was successul or not, return in the
+     * non-detached case the dstring result, since some other thread might be
+     * waiting for a result. In the detached case, there is no dstring
+     * content.
+     */
+    if (detached == NS_FALSE) {
         Ns_ThreadExit(Ns_DStringExport(&ds));
+    } else {
+        Ns_ThreadExit(NULL);
     }
 }
 
@@ -780,7 +811,7 @@ NsTclThreadArgProc(Tcl_DString *dsPtr, const void *arg)
     const TclThreadArg *argPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, argPtr->server);
-    if (argPtr->detached != 0) {
+    if (argPtr->detached == NS_TRUE) {
         Tcl_DStringAppendElement(dsPtr, "detached");
     }
     Tcl_DStringAppendElement(dsPtr, argPtr->script);
@@ -804,7 +835,7 @@ NsTclThreadArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static void
-CreateTclThread(const NsInterp *itPtr, const char *script, int detached, Ns_Thread *thrPtr)
+CreateTclThread(const NsInterp *itPtr, const char *script, bool detached, Ns_Thread *thrPtr)
 {
     TclThreadArg *argPtr;
     size_t scriptLength;
