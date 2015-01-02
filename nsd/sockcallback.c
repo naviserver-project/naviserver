@@ -97,7 +97,8 @@ Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when)
 }
 
 int
-Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, Ns_Time *timeout, char const**threadNamePtr)
+Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
+                  const Ns_Time *timeout, char const**threadNamePtr)
 {
     return Queue(sock, proc, arg, when, timeout, threadNamePtr);
 }

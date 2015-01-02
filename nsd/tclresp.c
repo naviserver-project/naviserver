@@ -74,10 +74,10 @@ static int ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 int
 NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
-    Ns_Conn  *conn = NULL;
-    int       status, length = -1, binary = 0;
-    char     *type = NULL;
+    NsInterp   *itPtr = arg;
+    Ns_Conn    *conn = NULL;
+    int         status, length = -1, binary = 0;
+    const char *type = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
@@ -146,7 +146,7 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn = NULL;
     Tcl_Encoding  encoding = NULL;
-    char         *charset = NULL, *type = NULL;
+    const char   *charset = NULL, *type = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
@@ -223,7 +223,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         return TCL_ERROR;
     }
     if (Ns_ConnSockPtr(conn) == NULL) {
-      Ns_TclPrintfResult(interp, "connection channels is detached");
+        Ns_TclPrintfResult(interp, "connection channels is detached");
         return TCL_ERROR;
     }
     objv++;
@@ -321,10 +321,10 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 int
 NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn *conn = NULL;
-    Tcl_Obj *dataObj;
-    char    *type, *data;
-    int      status, len, result, binary = NS_FALSE;
+    Ns_Conn    *conn = NULL;
+    Tcl_Obj    *dataObj;
+    const char *type, *data;
+    int         status, len, result, binary = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
@@ -343,7 +343,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         return TCL_ERROR;
     }
     if (binary == NS_TRUE || NsTclObjIsByteArray(dataObj) == NS_TRUE) {
-        data = (char *) Tcl_GetByteArrayFromObj(dataObj, &len);
+        data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
         result = Ns_ConnReturnData(conn, status, data, len, type);
     } else {
         data = Tcl_GetStringFromObj(dataObj, &len);
@@ -923,3 +923,12 @@ GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
 
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

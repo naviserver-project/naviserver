@@ -618,7 +618,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 
                 filePtr = ns_malloc(sizeof(File) + (size_t)connPtr->fileInfo.st_size);
                 filePtr->refcnt = 1;
-                filePtr->size   = connPtr->fileInfo.st_size;
+                filePtr->size   = (size_t)connPtr->fileInfo.st_size;
                 filePtr->mtime  = connPtr->fileInfo.st_mtime;
                 filePtr->dev    = connPtr->fileInfo.st_dev;
                 filePtr->ino    = connPtr->fileInfo.st_ino;

@@ -337,9 +337,9 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     Ns_MasterLock();
     thrPtr = firstThreadPtr;
     while (thrPtr != NULL) {
-	int written;
 
         if ((thrPtr->flags & NS_THREAD_EXITED) == 0u) {
+            int written;
 
             Tcl_DStringStartSublist(dsPtr);
             Tcl_DStringAppendElement(dsPtr, thrPtr->name);

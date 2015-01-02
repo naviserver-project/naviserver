@@ -462,7 +462,7 @@ DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flag
     }
 
     return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                        &timeout, flags);
+                                        timeoutPtr, flags);
 }
 
 

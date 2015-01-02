@@ -2717,7 +2717,8 @@ NS_EXTERN int
 Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when);
 
 NS_EXTERN int
-Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, Ns_Time *timeout, char const**threadNamePtr);
+Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
+                  const Ns_Time *timeout, char const**threadNamePtr);
 
 NS_EXTERN void
 Ns_SockCancelCallback(NS_SOCKET sock);

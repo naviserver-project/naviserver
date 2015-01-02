@@ -85,10 +85,10 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
             char *p = strstr(hdrs->fields[i].value, name);
             
             if (p != NULL) {
-                char *q, save;
-
                 if (*(p += nameLen) == '=') {
                     if (dest != 0) {
+                        char *q, save;
+                                        
                         ++p; /* advance past equals sign */
                         if (*p == '"') {
                             ++p; /* advance past optional quote mark */
