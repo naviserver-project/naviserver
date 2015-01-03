@@ -13,9 +13,7 @@ sourced at startup by a virtual server. You can create private
 libraries for individual virtual servers and public libraries that
 affect all or some of an installation's virtual servers.
 
-
 [para]
-
 
 Each Tcl file in a library often contains one or more calls to
 ns_register_proc, ns_schedule_proc, or ns_register_filter to bind a
@@ -28,7 +26,7 @@ request for /example/hello, plus the [term hello] procedure itself:
 
  ns_register_proc GET /example/hello hello
  
- proc hello {conn context} {
+ proc hello {} {
    ns_return 200 text/plain "Hello World"
  }
 
