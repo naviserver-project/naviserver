@@ -10,15 +10,7 @@ This chapter contains general information about using Tcl whether you
 are using the ADP approach or the Tcl Libraries approach, both of
 which use the same features of Tcl.
 
-
-[para]
-
-
 [section {What is Tcl?}]
-
-
-[para]
-
 
 Tcl is a programming system developed by John Ousterhout at the
 University of California, Berkeley. According to Dr. Ousterhout:
@@ -38,7 +30,7 @@ for that application.
 [para]
 
 
-NaviServer supports the Tcl v7.6 commands. When you write NaviServer
+NaviServer supports the Tcl 8.* commands. When you write NaviServer
 extensions in Tcl, you use the core functionality of Tcl as well as a
 set of NaviServer-specific Tcl functions. For example, there is an
 NaviServer Tcl function called ns_conn that allows your Tcl script to
@@ -207,9 +199,6 @@ better-suited to different situations:
  also include files and parse other ADPs from within your ADPs.
 
 
-[para]
-
-
 [item] Tcl Libraries: The alternative to embedding Tcl scripts in HTML
  pages using ADPs, is to store Tcl scripts in Tcl libraries. You
  can define scripts that can be called from ADPs, schedule
@@ -222,15 +211,7 @@ better-suited to different situations:
 [list_end]
 
 
-
-[para]
-
-
 [section {Tcl Interpreters}]
-
-
-[para]
-
 
    During NaviServer initialization, only one interpreter exists. While
    modules are loaded and initialized, they may add procedures to the
@@ -253,9 +234,6 @@ better-suited to different situations:
 [section {Global Variables}]
 
 
-[para]
-
-
    Tcl interpreter has its own global variable table, so global
    variables are shared only within each Tcl interpreter by default. The
    nsv_ commands allows you to make a variable available to all
@@ -272,22 +250,15 @@ better-suited to different situations:
    variables set in ADPs.
 
 
-[para]
 
 
 [section {Sharing Files Between Interpreters}]
 
 
+   To share vairables between the interpreters in a group, use the Tcl
+   nsv_* command.
+   
 [para]
-
-
-   To share a file between the interpreters in a group, use the Tcl
-   nsv_* command. A shared file is left open after an interpreter is
-   deallocated.
-
-
-[para]
-
 
    For example:
 
@@ -426,13 +397,13 @@ better-suited to different situations:
     # ns_conn function.
     #
     # * The value for a particular header line is extracted
-    # with "ns_set get".
-
-    ns_register_proc GET /example/showbrowser showheader USER-AGENT
-    ns_register_proc GET /example/showrefer showheader REFER
-
-    proc showheader {conn key} {
-          set value [lb]ns_set get [lb]ns_conn headers[rb] $key[rb]
+    # with "ns_set iget" (case insensitive get).
+ 
+    ns_register_proc GET /showbrowser showheader User-Agent
+    ns_register_proc GET /showhost    showheader Host
+    
+    proc showheader {key} {
+          set value [lb]ns_set iget [lb]ns_conn headers[rb] $key[rb]
           ns_return 200 text/plain "$key: $value"
     }
 
@@ -473,14 +444,12 @@ which returns 'Hello World'.
 #   * the actual string to return
 #
 # * ns_return properly formats the HTTP response for you.
-
+ 
 ns_register_proc GET /example/hello hello
-
-proc hello {conn context} {
+ 
+proc hello {} {
    ns_return 200 text/plain "Hello World"
 }
-
-
 [example_end]
 
 
@@ -507,11 +476,11 @@ by the client within a Tcl script.
 # * The value for a particular header line is extracted
 #   with "ns_set iget", the case insensitive counterpart to
 #   "ns_set get".
-
-ns_register_proc GET /example/showbrowser showheader USER-AGENT
-ns_register_proc GET /example/showrefer showheader REFERER
-
-proc showheader {conn key} {
+ 
+ns_register_proc GET /showbrowser showheader User-Agent
+ns_register_proc GET /showhost    showheader Host
+ 
+proc showheader {key} {
     set value [lb]ns_set iget [lb]ns_conn headers[rb] $key[rb]
     ns_return 200 text/plain "$key: $value"
 }
@@ -552,64 +521,58 @@ a short story.
 #
 # * A counter is used to loop through all the key
 #   value pairs in the form.
-
-ns_register_proc GET /example/genstory genstoryform
+ 
+ns_register_proc GET  /example/genstory genstoryform
 ns_register_proc POST /example/genstory genstory
-
-proc genstoryform {conn context} {
+ 
+proc genstoryform {} {
   ns_return 200 text/html \
-"HTML>
-<HEAD>
-<TITLE>Automatic Story Generator</TITLE>
-</HEAD>
-<BODY>
-<H1>
-Automatic Story Generator
-</H1>
-<FORM ACTION=http:/example/genstory
-METHOD=POST>
-Noun: <INPUT TYPE=text NAME=noun1><BR>
-Noun: <INPUT TYPE=text NAME=noun2><BR>
-Name: <INPUT TYPE=text NAME=name1><BR>
-Name: <INPUT TYPE=text NAME=name2><BR>
-Adjective: <INPUT TYPE=text NAME=adjective1><BR>
-Adjective: <INPUT TYPE=text NAME=adjective2><BR>
-Verb: <INPUT TYPE=text NAME=verb1><BR>
-Verb: <INPUT TYPE=text NAME=verb2><BR>
-<P><INPUT TYPE=submit VALUE=\"Generate\">
-</FORM>
-<P>
-</BODY></HTML>
+"<html>
+<head>
+<title>Automatic Story Generator</title>
+</head>
+<body>
+<h1>Automatic Story Generator</h1>
+<form action='genstory' method='POST'>
+Noun: <input type='text' name='noun1'><br>
+Noun: <input type='text' name='noun2'><br>
+Name: <input type='text' name='name1'><br>
+Name: <input type='text' name='name2'><br>
+Adjective: <input type='text' name='adjective1'><br>
+Adjective: <input type='text' name='adjective2'><br>
+Verb: <input type='text' name='verb1'><br>
+Verb: <input type='text' name='verb2'><br>
+<p><input type='submit' value='Generate'>
+</form>
+</body></html>
 "}
-
-proc genstory {conn ignore} {
+ 
+proc genstory {} {
   set formdata [lb]ns_conn form[rb]
-
+ 
   if {$formdata eq ""} {
     ns_return 200 text/plain "Need form data!"
     return
   }
-
+ 
   # Build up a human-readable representation of the form data.
-
+ 
   set hrformdata "<dl>"
   set size [lb]ns_set size $formdata[rb]
   for {set i 0} {$i < $size} {incr i} {
     append hrformdata "<dt>[lb]ns_set key $formdata $i[rb]</dt><dd>[lb]ns_set value $formdata $i[rb]</dd>"
   }
   append hrformdata "</dl>"
-
+ 
   ns_return 200 text/html \
-"<HTML>
-<HEAD>
-<TITLE>The story of [lb]ns_set get $formdata name1[rb] and
-[lb]ns_set get $formdata name2[rb]</TITLE>
-</HEAD>
-<BODY>
-<H1>
-The story of [lb]ns_set get $formdata name1[rb] and [lb]ns_set get $formdata name2[rb]
-</H1>
-<P>Once upon a time [lb]ns_set get $formdata name1[rb] and
+"<html>
+<head>
+<title>The story of [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb]</title>
+</head>
+<body>
+<h1>The story of [lb]ns_set get $formdata name1[rb] and [lb]ns_set get $formdata name2[rb]</h1>
+<p>Once upon a time [lb]ns_set get $formdata name1[rb] and
 [lb]ns_set get $formdata name2[rb] went for a
 walk in the woods looking for a [lb]ns_set get $formdata noun1[rb].
 [lb]ns_set get $formdata name1[rb] was
@@ -621,13 +584,11 @@ feeling [lb]ns_set get $formdata adjective1[rb] because
 with a [lb]ns_set get $formdata noun2[rb].  This made
 [lb]ns_set get $formdata name2[rb] [lb]ns_set get $formdata verb2[rb]
 [lb]ns_set get $formdata name1[rb].
-<P><CENTER>The End</CENTER>
-The form data that made this possible:<BR>
+<p><center>The End</center>
+The form data that made this possible:<br>
 $hrformdata
-</BODY></HTML>"
+</body></html>"
 }
-
-
 [example_end]
 
 
@@ -636,18 +597,16 @@ $hrformdata
 
 The following example script implements the same story generating
 function of genstory (the previous example) but is implemented as a
-page Tcl script instead of a library Tcl script. Note that the
-associated HTML file (genstory.htm) is also included after the Tcl
-script.
-
+Tcl page instead of a library Tcl function. Save the the following
+snippet as [term genstory.tcl] as well as the associated HTML file
+[term genstory.html] under the pages directory.
 
 [example_begin]
-
 
 # Example 3b: Form generation and handling
 #
 # This operation generates a story based on the
-# form data submitted from the form genstory.htm.
+# form data submitted from the form genstory.html.
 #
 # Things to notice:
 #
@@ -664,16 +623,16 @@ script.
 #
 # * A counter is used to loop through all the key
 #   value pairs in the form.
-
+ 
 set formdata [lb]ns_conn form[rb]
-
+ 
 if {$formdata eq ""} {
     ns_return 200 text/plain "Need form data!"
     return
 }
-
+ 
 # Build up a human-readable representation of the form data.
-
+ 
 set hrformdata "<dl>"
 set size [lb]ns_set size $formdata[rb]
 for {set i 0} {$i < $size} {incr i} {
@@ -683,17 +642,15 @@ for {set i 0} {$i < $size} {incr i} {
 append hrformdata "</dl>"
 
 ns_return 200 text/html \
-"<HTML>
-<HEAD>
-<TITLE>The story of [lb]ns_set get $formdata name1[rb] and
-[lb]ns_set get $formdata name2[rb]</TITLE>
-</HEAD>
-<BODY>
-<H1>
-The story of [lb]ns_set get $formdata name1[rb] and
-[lb]ns_set get $formdata name2[rb]
-</H1>
-<P>Once upon a time [lb]ns_set get $formdata name1[rb] and
+"<html>
+<head>
+<title>The story of [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb]</title>
+</head>
+<body>
+<h1>The story of [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb]</h1>
+<p>Once upon a time [lb]ns_set get $formdata name1[rb] and
 [lb]ns_set get $formdata name2[rb] went for a
 walk in the woods looking for a [lb]ns_set get $formdata noun1[rb].
 [lb]ns_set get $formdata name1[rb] was
@@ -705,38 +662,35 @@ feeling [lb]ns_set get $formdata adjective1[rb] because
 with a [lb]ns_set get $formdata noun2[rb].  This made
 [lb]ns_set get $formdata name2[rb] [lb]ns_set get $formdata verb2[rb]
 [lb]ns_set get $formdata name1[rb].
-<P><CENTER>The End</CENTER>
-The form data that made this possible:<BR>
+<p><center>The End</center>
+The form data that made this possible:<br>
 $hrformdata
-</BODY></HTML>"
-
-Here's the associated HTML file:
-
-<HTML>
-<HEAD>
-<TITLE>Automatic Story Generator</TITLE>
-</HEAD>
-<BODY>
-<H1>
-Automatic Story Generator
-</H1>
-<FORM ACTION=genstory.tcl METHOD=POST>
-Noun: <INPUT TYPE=text NAME=noun1><BR>
-Noun: <INPUT TYPE=text NAME=noun2><BR>
-Name: <INPUT TYPE=text NAME=name1><BR>
-Name: <INPUT TYPE=text NAME=name2><BR>
-Adjective: <INPUT TYPE=text NAME=adjective1><BR>
-Adjective: <INPUT TYPE=text NAME=adjective2><BR>
-Verb: <INPUT TYPE=text NAME=verb1><BR>
-Verb: <INPUT TYPE=text NAME=verb2><BR>
-<P><INPUT TYPE=submit VALUE="Generate">
-</FORM>
-<P>
-</BODY></HTML>
-
-
+</body></html>"
 [example_end]
 
+Here's the associated HTML file [term genstory.html]:
+
+[example_begin]
+<html>
+<head>
+<title>Automatic Story Generator</title>
+</head>
+<body>
+<h1>Automatic Story Generator</h1>
+<form action='genstory.tcl' method='POST'>
+Noun: <input type='text' name='noun1'><br>
+Noun: <input type='text' name='noun2'><br>
+Name: <input type='text' name='name1'><br>
+Name: <input type='text' name='name2'><br>
+Adjective: <input type='text' name='adjective1'><br>
+Adjective: <input type='text' name='adjective2'><br>
+Verb: <input type='text' name='verb1'><br>
+Verb: <input type='text' name='verb2'><br>
+<p><input type='submit' value='Generate'>
+</form>
+</body>
+</html>
+[example_end]
 
 
 [subsection {Example 4: redirect}]
@@ -745,11 +699,7 @@ The following example script shows how to use an NaviServer simple
 response command (in this case, ns_returnredirect) and the equivalent
 code when sending raw data to the client.
 
-
-
 [example_begin]
-
-
 # Example 4: Implementing redirects with ns_respond and
 # ns_write
 #
@@ -770,47 +720,47 @@ code when sending raw data to the client.
 #
 # * ns_returnredirect is a lot simpler than either
 #   ns_respond or ns_write.
-
-ns_register_proc GET /example/finaldest finaldest
-ns_register_proc GET /example/not_here not_here
+ 
+ns_register_proc GET /example/not_here  not_here
 ns_register_proc GET /example/not_here2 not_here2
 ns_register_proc GET /example/not_here3 not_here3
-
-proc not_here {conn ignore} {
+ns_register_proc GET /example/finaldest finaldest
+ 
+proc not_here {} {
   set headers [lb]ns_set new myheaders[rb]
   ns_set put $headers Location \
       [lb]ns_conn location[rb]/example/finaldest
   ns_respond -status 302 -type text/plain \
       -string "Redirection" -headers $headers
 }
-
-proc not_here2 {conn context} {
+ 
+proc not_here2 {} {
   set content \
-"<HTML><HEAD><TITLE>Redirection</TITLE></HEAD><BODY>
-<H1>Redirection</H1>The actual location of what you were looking for is
-<A HREF=\"[lb]ns_conn location[rb]/example/finaldest\"> here.</A>
-</BODY></HTML>"
-
+"<html><head><title>Redirection</title></head><body>
+<h1>Redirection</h1>The actual location of what you were looking for is
+<a href='[lb]ns_conn location[rb]/example/finaldest'> here.</a>
+</body></html>"
+ 
   ns_write  \
 "HTTP/1.0 302 Document follows
 MIME-Version: 1.0
 Content-Type: text/html
 Content-Length: [lb]string length $content[rb]
 Location: [lb]ns_conn location[rb]/example/finaldest
-
+ 
 $content"
 }
-
-proc finaldest {conn context} {
+ 
+proc not_here3 {} {
+  ns_returnredirect [lb]ns_conn location[rb]/example/finaldest
+}
+ 
+proc finaldest {} {
   ns_return 200 text/plain \
       "You have arrived at the final destination."
 }
-
-proc not_here3 {conn context} {
-  ns_returnredirect [lb]ns_conn location[rb]/example/finaldest
-}
-
 [example_end]
+
 
 
 [subsection {Example 5: desctable}]
@@ -819,11 +769,7 @@ The following example script provides a request procedure which
 describes the columns of a database table using the NaviServer
 "ns_tableinfo" command .
 
-
-
 [example_begin]
-
-
 # Example 5: Describing a database table
 #
 # /example/describetable prints out a column-by-column
@@ -849,36 +795,38 @@ describes the columns of a database table using the NaviServer
 #   one.
 #
 # * ns_returnnotice nicely formats the return value.
-
+ 
 ns_register_proc GET /example/describetable describetable
-
-proc describetable {conn ignore} {
+ 
+proc describetable {} {
     if {[lb]ns_conn urlc[rb] != 4} {
-    return [lb]ns_returnbadrequest "Missing table name and/or poolname"[rb]
+        return [lb]ns_returnbadrequest "Missing table name and/or poolname"[rb]
     }
     set pool [lb]lindex [lb]ns_conn urlv] 2[rb]
-    if {[lb]lsearch $pool [lb]ns_db pools[rb][rb] == -1} {
-    return [lb]ns_returnbadrequest "Pool $pool does not exist"[rb]
+    if {$pool ni [lb]ns_db pools[rb]} {
+        return [lb]ns_returnbadrequest "Pool $pool does not exist"[rb]
     }
     set db [lb]ns_db gethandle $pool[rb]
     set table [lb]lindex [lb]ns_conn urlv] 3[rb]
-    set tinfo [lb]ns_table info $db $table[rb]
-    if {$tinfo eq ""} {
-    return [lb]ns_returnbadrequest "Table $table does not exist"[rb]
+    if {[lb]info command ns_table[rb] eq ""} {
+       set output "Driver [lb]ns_db driver $db[rb] does not support command ns_table"
+    } else {
+        set tinfo [lb]ns_table info $db $table[rb]
+        if {$tinfo eq ""} {
+            return [lb]ns_returnbadrequest "Table $table does not exist"[rb]
+        }
+        set output "<dl>"
+        set size [lb]ns_column count $tinfo[rb]
+        for {set i 0} {$i < $size} {incr i} {
+            append output "<dt>[lb]ns_column name $tinfo $i[rb] \
+                    <dd>[lb]ns_column typebyindex $tinfo $i[rb]</dd>"
+        }
+        append output "</dl><hr>"
     }
-    set output "<dl>"
-    set size [lb]ns_column count $tinfo[rb]
-    for {set i 0} {$i < $size} {incr i} {
-    append output "<dt>[lb]ns_column name $tinfo $i[rb] \
-                <dd>[lb]ns_column typebyindex $tinfo $i[rb]</dd>"
-    }
-    append output "</dl><hr>"
     ns_returnnotice 200 "Table $table in pool $pool" $output
 }
-
-
 [example_end]
-.
+
 
 
 [subsection {Example 6: getempsm}]
@@ -886,18 +834,13 @@ proc describetable {conn ignore} {
 The following example script shows how to query a table in the
 database.
 
-
-
 [example_begin]
-
-
 # Example 6: Getting data from the database
 #
 # /example/getemps queries a database in the default
 # pool and returns a list of all the employees listed
 # in the employees table.  It assumes a table called
-# employees exists with the column emp_name. You can
-# use the /NS/Db/Admin to create the table.
+# employees exists with the column emp_name. 
 #
 # Note: You must have the ns_db module loaded into your virtual
 #       server for this example to work.
@@ -912,17 +855,17 @@ database.
 #
 # * Rows are returned as ns_sets.
 #
-
+ 
 ns_register_proc GET /example/getemps getemps
-
-proc getemps {conn context} {
-        set ul "<UL>"
+ 
+proc getemps {} {
+        set ul "<ul>"
         set db [lb]ns_db gethandle [lb]ns_config [lb]ns_dbconfigpath[rb] "DefaultPool"[rb][rb]
         set row [lb]ns_db select $db "select emp_name from employees order by emp_name;"[rb]
         while { [lb]ns_db getrow $db $row] } {
-            append ul "<LI>[lb]ns_set get $row emp_name[rb] \n"
+            append ul "<li>[lb]ns_set get $row emp_name[rb] \n"
         }
-        append ul "</UL>"
+        append ul "</ul>"
         ns_returnnotice 200 "Employee list" $ul
 }
 
@@ -935,13 +878,11 @@ proc getemps {conn context} {
 [subsection {Example 7: wincgi}]
 
 The following example script is a simple emulation of the WebSite
-WinCGI interface.
-
-
+WinCGI interface. Notice that this is just a demo, since the NaviServer
+modules nscgi provides a much simpler way to interface via CGI (when
+this is necessary).
 
 [example_begin]
-.
-
 #
 # Example 7: simple emulation of the WebSite WinCGI interface
 #
@@ -994,7 +935,7 @@ ns_register_proc GET $WinCGI(prefix)/*.exe win-cgi
 #
 # win-cgi - The Tcl request procedure which emulates WinCGI.
 #
-proc win-cgi {conn ignored} {
+proc win-cgi {} {
     global WinCGI
 
     # The program is the second part of the WinCGI URL.
