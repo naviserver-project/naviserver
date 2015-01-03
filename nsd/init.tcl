@@ -82,8 +82,8 @@ proc __ns_sourcefile {file} {
 
 proc __ns_sourcelibs {{modname ""}} {
 
-    set sharedlib  [eval ns_library shared  [list $modname]]
-    set privatelib [eval ns_library private [list $modname]]
+    set sharedlib  [ns_library shared  $modname]
+    set privatelib [ns_library private $modname]
  
     set files ""
 
