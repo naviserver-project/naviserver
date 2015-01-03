@@ -29,7 +29,7 @@ Also, ns_geturl does not follow redirects or handle relative URLs. URLs that are
 [example_begin]
 ns_register_proc GET /wais getwais
 
-proc getwais { conn context } {
+proc getwais { } {
   ns_return 200 text/html [lb]ns_geturl http://www.wais.com/[rb]
 }
 
