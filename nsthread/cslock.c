@@ -79,7 +79,7 @@ void
 Ns_CsInit(Ns_Cs *csPtr)
 {
     CsLock     *lockPtr;
-    static unsigned int nextid = 0;
+    static uintptr_t nextid = 0u;
 
     assert(csPtr != NULL);
 

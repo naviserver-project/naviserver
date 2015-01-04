@@ -149,7 +149,7 @@ typedef struct Queue {
     const char        *desc;
     Ns_Mutex           lock;
     Ns_Cond            cond;
-    unsigned int       nextid;
+    uintptr_t          nextid;
     QueueRequests      req;
     int                maxThreads;
     int                nRunning;
@@ -589,7 +589,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                  */
 
                 do {
-                    snprintf(buf, sizeof(buf), "job%d", queue->nextid++);
+                    snprintf(buf, sizeof(buf), "job%" PRIuPTR, queue->nextid++);
                     hPtr = Tcl_CreateHashEntry(&queue->jobs, buf, &isNew);
                 } while (isNew == 0);
 

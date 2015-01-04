@@ -87,7 +87,7 @@ void
 Ns_RWLockInit(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr;
-    static unsigned int nextid = 0;
+    static uintptr_t nextid = 0;
 
     assert(rwPtr != NULL);
     

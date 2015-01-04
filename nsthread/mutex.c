@@ -57,7 +57,7 @@
 typedef struct Mutex {
     void	    *lock;
     struct Mutex    *nextPtr;
-    unsigned int     id;
+    uintptr_t        id;
     unsigned long    nlock;
     unsigned long    nbusy;
     Ns_Time          start_time;
@@ -93,7 +93,7 @@ void
 Ns_MutexInit(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
-    static unsigned int nextid;
+    static uintptr_t nextid = 0u;
 
     assert(mutex != NULL);
 
@@ -103,7 +103,7 @@ Ns_MutexInit(Ns_Mutex *mutex)
     mutexPtr->nextPtr = firstMutexPtr;
     firstMutexPtr = mutexPtr;
     mutexPtr->id = nextid++;
-    snprintf(mutexPtr->name, sizeof(mutexPtr->name), "mu%u", mutexPtr->id);
+    snprintf(mutexPtr->name, sizeof(mutexPtr->name), "mu%" PRIuPTR, mutexPtr->id);
     Ns_MasterUnlock();
     *mutex = (Ns_Mutex) mutexPtr;
 }
@@ -376,7 +376,8 @@ Ns_MutexList(Tcl_DString *dsPtr)
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
-        snprintf(buf, sizeof(buf), " %u %lu %lu %" PRIu64 ".%06ld %" PRIu64 ".%06ld %" PRIu64 ".%06ld", 
+        snprintf(buf, sizeof(buf),
+                 " %" PRIuPTR " %lu %lu %" PRIu64 ".%06ld %" PRIu64 ".%06ld %" PRIu64 ".%06ld", 
                  mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy, 
                  (int64_t)mutexPtr->total_waiting_time.sec, mutexPtr->total_waiting_time.usec,
                  (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec,
@@ -407,9 +408,9 @@ Ns_MutexList(Tcl_DString *dsPtr)
  */
 
 void
-NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
+NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
 {
-    unsigned int id;
+    uintptr_t id;
     char buf[NS_THREAD_NAMESIZE];
 
     assert(mutex != NULL);
@@ -418,9 +419,9 @@ NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
     
     Ns_MasterLock();
     id = *nextPtr;
-    *nextPtr = id + 1;
+    *nextPtr = id + 1u;
     Ns_MasterUnlock();
-    snprintf(buf, sizeof(buf), "ns:%s:%u", prefix, id);
+    snprintf(buf, sizeof(buf), "ns:%s:%" PRIuPTR, prefix, id);
     Ns_MutexInit(mutex);
     Ns_MutexSetName(mutex, buf);
 }

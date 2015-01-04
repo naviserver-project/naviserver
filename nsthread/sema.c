@@ -72,7 +72,7 @@ typedef struct {
 void
 Ns_SemaInit(Ns_Sema *semaPtr, int count)
 {
-    static unsigned int nextid = 0;
+    static uintptr_t nextid = 0u;
     Sema *sPtr;
 
     assert(semaPtr != NULL);

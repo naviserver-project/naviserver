@@ -693,7 +693,7 @@ typedef struct ConnPool {
      */
 
     struct {
-        unsigned int nextid;
+        uintptr_t nextid;
         int min;
         int max;
         int current;
