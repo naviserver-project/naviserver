@@ -151,25 +151,27 @@ directories and then the specified Tcl-only modules:
 
 NaviServer supports C-based modules and Tcl-only modules. Tcl-only
 modules are directories, containing potentially multiple Tcl source
-files.
+files. When a Tcl-only module [term mymodule] is configured to be
+loaded, during starutp NaviServer searches in the subdirectory of the
+global (shared) library directory, and if not found the per-server
+(privated) library directory for a directory with that name.  When it
+is found the subdirectory [term mymodule] is initialized (as described
+above).
 
-To load a Tcl-only module named [term mymodule], add the following line to your
-configuration file:
+To load a Tcl-only module named [term mymodule], add the following
+line to the per-server modules section in the configuration file:
 
 [example_begin]
  ns_section ns/server/servername/modules
       ns_param mymodule Tcl
 [example_end]
 
-Then, at server start-up, the subdirectory [term mymodule] of
-the Tcl library will be initialized (as described above) as well.
-
-Note that only when Tcl modules are specified, the named
+Note that when Tcl modules are specified, only the named
 subdirectories of the Tcl library directory are initialized (loaded).
-Otherwise, these are ignored. For example, if a server named
-[term myserver] has a Tcl library directory defined as
-[term /home/mydir/tcl/myserver-lib], and the modules
-[term foo] and [term bar] are loaded,
+Otherwise, all subdirectories of the Tcl library directories are
+ignored. For example, if a server named [term myserver] has a Tcl
+library directory defined as [term /home/mydir/tcl/myserver-lib], and
+the modules [term foo] and [term bar] are loaded,
 
 [example_begin]
  ns_section ns/server/myserver/tcl
@@ -184,9 +186,9 @@ Otherwise, these are ignored. For example, if a server named
 directories will be initialized as server start-up:
 
 [example_begin]
- /home/mydir/tcl/myserver-lib
- /home/mydir/tcl/myserver-lib/foo
- /home/mydir/tcl/myserver-lib/bar
+  /home/mydir/tcl/myserver-lib
+  /home/mydir/tcl/myserver-lib/foo
+  /home/mydir/tcl/myserver-lib/bar
 [example_end]
 
 
@@ -194,20 +196,28 @@ Assume the library directory for module [term foo] contains these
 files:
 
 [example_begin]
- init.tcl
- aa.tcl
- zz.tcl
+  init.tcl
+  aa.tcl
+  zz.tcl
 [example_end]
 
 The Tcl files will be sourced in this order:
 
 [example_begin]
- /home/mydir/tcl/myserver-lib/...
- /home/mydir/tcl/myserver-lib/foo/init.tcl
- /home/mydir/tcl/myserver-lib/foo/aa.tcl
- /home/mydir/tcl/myserver-lib/foo/zz.tcl
+  /home/mydir/tcl/myserver-lib/...
+  /home/mydir/tcl/myserver-lib/foo/init.tcl
+  /home/mydir/tcl/myserver-lib/foo/aa.tcl
+  /home/mydir/tcl/myserver-lib/foo/zz.tcl
 [example_end]
 
-[see_also ns_config]
-[keywords configuration]
+For a loaded Tcl-only module [term foo] the paths of the actual files
+can by queried via [term ns_library] as shown in the following example.
+
+[example_begin]
+   set shared [lb]ns_library shared foo[rb]
+   set priv [lb]ns_library private foo[rb]
+[example_end]
+
+[see_also ns_config ns_library]
+[keywords configuration paths resolution]
 [manpage_end]
