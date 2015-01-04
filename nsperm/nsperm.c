@@ -948,7 +948,8 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
         Tcl_AppendResult(interp, "{", Tcl_GetHashKey(&servPtr->users, hPtr), "} {", userPtr->pwd, "} {", NULL);
 
         if (userPtr->hosts.numEntries > 0 || userPtr->masks.numEntries > 0 || userPtr->nets.numEntries > 0) {
-            Tcl_AppendResult(interp, userPtr->flags & USER_FILTER_ALLOW ? " -allow " : " -deny ", NULL);
+            Tcl_AppendResult(interp,
+                             ((userPtr->flags & USER_FILTER_ALLOW) != 0u) ? " -allow " : " -deny ", NULL);
         }
         mPtr = Tcl_FirstHashEntry(&userPtr->nets, &msearch);
         while (mPtr != NULL) {
