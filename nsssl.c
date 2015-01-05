@@ -597,7 +597,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 Keep(Ns_Sock *sock)
 {
     SSLContext *sslPtr = sock->arg;
@@ -605,10 +605,10 @@ Keep(Ns_Sock *sock)
     if (SSL_get_shutdown(sslPtr->ssl) == 0) {
         BIO *bio = SSL_get_wbio(sslPtr->ssl);
         if (bio != NULL && BIO_flush(bio) == 1) {
-            return 1;
+            return NS_TRUE;
         }
     }
-    return 0;
+    return NS_FALSE;
 }
 
 
@@ -673,7 +673,7 @@ static int
 SSLPassword(char *buf, int num, int rwflag, void *userdata)
 {
     fprintf(stdout, "Enter SSL password:");
-    fgets(buf, num, stdin);
+    (void) fgets(buf, num, stdin);
     return(strlen(buf));
 }
 
@@ -1029,48 +1029,45 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     NS_SOCKET    sock;
     Ns_HttpTask *httpPtr = NULL;
     Https       *httpsPtr = NULL;
-    int          len, portNr, uaFlag = -1;
-    char        *host, *file, *port, *body;
-    char         hostBuffer[256];
+    int          portNr, uaFlag = -1;
+    char        *url2, *host, *file, *portString;
     
     /*
      * Parse and split url
      */
     
-    if (strncmp(url, "https://", 8) != 0 || url[8] == '\0') {
+    if (strncmp(url, "https://", 8u) != 0 || url[8] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
 	return TCL_ERROR;
     }
-    host = url + 8;
+        /*
+     * Make a non-const copy of url, where we can replace the item separating
+     * characters with '\0' characters.
+     */
+    url2 = ns_strdup(url);
+    
+    host = url2 + 8;
     file = strchr(host, '/');
-    // Ns_Log(Ns_LogTaskDebug, "XXX search host <%s> for slash => file <%s>", host, file);
     if (file != NULL) {
 	*file = '\0';
     }
-    //Ns_Log(Ns_LogTaskDebug, "XXX remaining host <%s>", host);
-    port = strchr(host, ':');
-    if (port == NULL) {
-	portNr = 443;
-    } else {
-	*port = '\0';
-	portNr = (int) strtol(port+1, NULL, 10);
-    }
 
-    //Ns_Log(Ns_LogTaskDebug, "XXX url <%s> port %d host <%s> file <%s>", url, portNr, host, file);
-    strncpy(hostBuffer, host, sizeof(hostBuffer));
+    portString = strchr(host, ':');
+    if (portString != NULL) {
+	portNr = (int) strtol(portString + 1, NULL, 10);
+    } else {
+        portNr = 443;
+    }
     
     /*
      * Connect to the host and allocate session struct
      */
 
-    sock = Ns_SockAsyncConnect(hostBuffer, portNr);
+    sock = Ns_SockAsyncConnect(host, portNr);
     if (sock == NS_INVALID_SOCKET) {
 	Tcl_AppendResult(interp, "connect to ", url, " failed: ", ns_sockstrerror(ns_sockerrno), NULL);
+        ns_free(url2);
 	return TCL_ERROR;
-    }
-
-    if (file != NULL) {
-	*file = '/';
     }
 
     httpsPtr = ns_calloc(1, sizeof(Https));
@@ -1078,7 +1075,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 
     httpPtr->sock            = sock;
     httpPtr->spoolLimit      = -1;
-    httpPtr->url             = ns_strdup(url);
+    httpPtr->url             = url2;
     Ns_MutexInit(&httpPtr->lock);
     /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
     Tcl_DStringInit(&httpPtr->ds);
@@ -1147,7 +1144,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	return TCL_ERROR;
     }
     
-    Ns_DStringPrintf(&httpPtr->ds, "%s %s HTTP/1.0\r\n", method, file ? file : "/");
+    Ns_DStringPrintf(&httpPtr->ds, "%s %s HTTP/1.0\r\n", method, (file != NULL && *file != '\0') ? file : "/");
 
     /*
      * Submit provided headers
@@ -1186,30 +1183,36 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 			 Ns_InfoServerVersion());
     }
     
-    if (port == NULL) {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", hostBuffer);
+    if (portString == NULL) {
+	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
     } else {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", hostBuffer, portNr);
+	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
     }
 
-    body = NULL;
     if (bodyPtr != NULL) {
-	body = Tcl_GetStringFromObj(bodyPtr, &len);
-	if (len == 0) {
-	    body = NULL;
-	}
+        int len = 0;
+	const char *body = Tcl_GetStringFromObj(bodyPtr, &len);
+	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", len);
+        Tcl_DStringAppend(&httpPtr->ds, body, len);
+    } else {
+        Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
     }
-    if (body != NULL) {
-	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n", len);
-    }
-    Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
-    if (body != NULL) {
-	Tcl_DStringAppend(&httpPtr->ds, body, len);
-    }
+        
     httpPtr->next = httpPtr->ds.string;
     httpPtr->len = httpPtr->ds.length;
 
-    /*Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);*/
+    /*
+     *  Restore the url2 string. This modifies the string appearance of host
+     *  as well.
+     */
+    if (file != NULL) {
+	*file = '/';
+    }
+    if (portString != NULL) {
+	*portString = ':';
+    }
+    
+    Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);
     
     *httpsPtrPtr = httpsPtr;
     return TCL_OK;
