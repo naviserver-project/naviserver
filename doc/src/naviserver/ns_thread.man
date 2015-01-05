@@ -52,7 +52,8 @@ to the third element in the sub-list returned from [cmd "ns_info threads"].
 [call [cmd  "ns_thread name"] \
 	[opt [arg name]]]
 
-Returns the name of the current thread.  Optionally sets the thread name if name is specified.
+Returns the name of the current thread.  Optionally sets the thread
+name if [arg name] is specified.
 
 [call [cmd  "ns_thread stackinfo"]]
 
@@ -67,8 +68,9 @@ Attempts to wait for the the thread with the specified [arg handle].  If the thr
 the caller will block until the thread being joined completes.  Returns the return value of
 the script that the thread being joined was executing.
 
-[para] NOTE: Calling ns_thread wait on an invalid thread ID or a thread ID that has
-already been waited for will cause the server to abort with a fatal error.
+[para] NOTE: Calling [cmd "ns_thread wait"] on an invalid [arg handle]
+or a [arg handle] that has already been waited for will cause the
+server to abort with a fatal error.
 
 [call [cmd  "ns_thread yield"]]
 
