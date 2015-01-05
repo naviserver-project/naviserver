@@ -125,8 +125,8 @@ Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
 	    line = 0;
         }       
 	*q++ = Encode(p[0] >> 2);
-	*q++ = Encode(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
-	*q++ = Encode(((p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
+	*q++ = Encode(UCHAR((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+	*q++ = Encode(UCHAR((p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
 	*q++ = Encode(p[2] & 0x3FU);
 	p += 3;
         line += 4;
@@ -140,11 +140,11 @@ Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
     if (n > 0u) {
 	*q++ = Encode(p[0] >> 2);
 	if (n == 1u) {
-	    *q++ = Encode((p[0] << 4) & 0x30U);
+	    *q++ = Encode(UCHAR(p[0] << 4) & 0x30U);
 	    *q++ = UCHAR('=');
 	} else {
-	    *q++ = Encode(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
-	    *q++ = Encode(( p[1] << 2) & 0x3CU);
+	    *q++ = Encode((UCHAR(p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+	    *q++ = Encode(UCHAR( p[1] << 2) & 0x3CU);
 	}
 	*q++ = UCHAR('=');
     }
@@ -201,9 +201,9 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
         if (pr2six[(int)(*p)] >= 0) {
             chars[n++] = *p;
 	    if (n == 4) {
-		*q++ = Decode(chars[0]) << 2 | Decode(chars[1]) >> 4;
-		*q++ = Decode(chars[1]) << 4 | Decode(chars[2]) >> 2;
-		*q++ = Decode(chars[2]) << 6 | Decode(chars[3]);
+		*q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
+		*q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
+		*q++ = UCHAR(Decode(chars[2]) << 6) | Decode(chars[3]);
 		n = 0;
 	    }
         }
@@ -215,10 +215,10 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
      */
 
     if (n > 1) {
-	*q++ = Decode(chars[0]) << 2 | Decode(chars[1]) >> 4;
+	*q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
     }
     if (n > 2) {
-	*q++ = Decode(chars[1]) << 4 | Decode(chars[2]) >> 2;
+	*q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
     }
     if ((size_t)(q - buf) < bufSize) {
 	*q = UCHAR('\0');
