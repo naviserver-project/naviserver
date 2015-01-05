@@ -12,65 +12,72 @@ This command provides a mechanism to manipulate threads.  The legal options (whi
 
 [list_begin definitions]
 
+[call [cmd  "ns_thread begin"] \
+	[opt [option "-name [arg threadName]"]] \
+	[opt [option "--"]] \
+	[arg script]]
 
-[call [cmd ns_thread] [opt [arg {arg arg ...}]]]
+Initializes a new thread and starts it executing script. 
+When the option  [option -name] is specified, then the thread is named
+as "-tcl-$name:$nr-", where $nr is a counter to ensure unique names.
 
-
-[list_end]
-
-[list_begin definitions]
-
-[call [cmd  ns_thread] [arg begin] [arg script]]
-[def] ns_thread create script
-
-Initializes a new thread and starts it executing script.  Threads created this way
+[para] Threads created this way
 are joinable and must be ns_thread joined, otherwise the resources held by the thread
-will not be freed until the thread is joined.  Returns a handle to the new thread.
+will not be freed until the thread is joined.  Returns a handle to the
+new thread, which can be used in [cmd "ns_thread wait"].
 
-[call [cmd  ns_thread] [arg begindetached] [arg script]]
+[call [cmd  "ns_thread begindetached"] \
+	[opt [option "-name [arg threadName]"]] \
+	[opt [option "--"]] \
+	[arg script]]
 
-Initializes a new thread and starts it executing script.  Threads created this way
-are detached and do not need to be (nor can be) joined.
+Initializes a new thread and starts it executing script.
+Initializes a new thread and starts it executing script. 
+When the option  [option -name] is specified, then the thread is named
+as "-tcl-$name:$nr-", where $nr is a counter to ensure unique names.
 
-[call [cmd  ns_thread] [arg get]]
+[para] Threads created this way are detached and do not need to be
+(nor can be) joined (no thread can wait for this thread). In contrary
+to [cmd "ns_thread begin"] this command returns an empty result.
+
+[call [cmd  "ns_thread handle"]]
 
 Returns the handle for the current thread.
 
-[call [cmd  ns_thread] [arg getid]]
+[call [cmd  "ns_thread id"]]
 
 Returns the current thread's thread ID as an integer.  This thread ID corresponds
-to the third element in the sub-list returned from ns_info threads.
+to the third element in the sub-list returned from [cmd "ns_info threads"].
 
-[call [cmd  ns_thread] [arg name] [opt [arg name]]]
+[call [cmd  "ns_thread name"] \
+	[opt [arg name]]]
 
 Returns the name of the current thread.  Optionally sets the thread name if name is specified.
 
-[call [cmd  ns_thread] [arg join] [arg tid]]
-
-Attempts to join the thread specified by thread handle tid.  If the thread is still executing,
-the caller will block until the thread being joined completes.  Returns the return value of
-the script that the thread being joined was executing.
-
-NOTE: Attempting to join a thread that has already been joined will
-currently crash the server.
-
-[call [cmd  ns_thread] [arg stackinfo]]
+[call [cmd  "ns_thread stackinfo"]]
 
 Returns the maximum available size of the C stack and the currently free size of the
 C stack from the current thread in a form usable for "array set".  For
 example the command might return "max 2048000 free 2024408"
 
-[call [cmd  ns_thread] [arg yield]]
+[call [cmd  "ns_thread wait"] \
+	[arg handle]]
+
+Attempts to wait for the the thread with the specified [arg handle].  If the thread is still executing,
+the caller will block until the thread being joined completes.  Returns the return value of
+the script that the thread being joined was executing.
+
+[para] NOTE: Calling ns_thread wait on an invalid thread ID or a thread ID that has
+already been waited for will cause the server to abort with a fatal error.
+
+[call [cmd  "ns_thread yield"]]
 
 Causes the current thread to yield its CPU to other running threads.
 
 [list_end]
 
 [para]
-Calling ns_thread join on an invalid thread ID or a thread ID that has
-already been joined will cause the server to abort with a fatal error.  See 
-
-[keywords stack]
-
+[keywords stack thread]
+[see_also ns_info]
 [manpage_end]
 

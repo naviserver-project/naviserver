@@ -854,7 +854,7 @@ ns_runonce {
             ns_mutex lock $elock
             set old [nsv_set  nstrace lastepoch]
             set new [nsv_incr nstrace lastepoch]
-            nsv_lappend nstrace $new [ns_thread getid]
+            nsv_lappend nstrace $new [ns_thread id]
             if {$old >= 0} {
                 _copyepoch $old $new
                 _delepochs
@@ -901,7 +901,7 @@ ns_runonce {
         #
 
         proc _delepoch {epoch threads} {
-            set self [ns_thread getid] 
+            set self [ns_thread id] 
             foreach tid [nsv_set nstrace $epoch] {
                 if {$tid ne $self && [lsearch $threads $tid] >= 0} {
                     lappend alive $tid
@@ -926,7 +926,7 @@ ns_runonce {
 
         proc _useepoch {epoch} {
             if {$epoch >= 0} {
-                set tid [ns_thread getid]
+                set tid [ns_thread id]
                 if {[lsearch [nsv_set nstrace $epoch] $tid] == -1} {
                     nsv_lappend nstrace $epoch $tid
                 }

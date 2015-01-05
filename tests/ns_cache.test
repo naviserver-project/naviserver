@@ -3,8 +3,7 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
-
+::tcltest::configure {*}$argv
 
 
 ns_cache_create -maxentry 10 -- c1 1024
@@ -480,7 +479,7 @@ test ns_cache-11.1 {stability} -constraints stress -body {
     }]
 
     foreach t $threads {
-        ns_thread join $t
+        ns_thread wait $t
     }
 
     ns_log Notice [ns_cache_stats c1]

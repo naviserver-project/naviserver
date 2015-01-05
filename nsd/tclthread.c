@@ -43,6 +43,7 @@
 
 typedef struct TclThreadArg {
     const char *server;
+    const char *threadName;
     bool        detached;
     char        script[1];
 } TclThreadArg;
@@ -54,7 +55,7 @@ static Ns_Tls argtls = NULL;
  */
 
 static void CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
-                            Ns_Thread *thrPtr)
+                            const char *threadName, Ns_Thread *thrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void *CreateSynchObject(const NsInterp *itPtr,
@@ -62,6 +63,10 @@ static void *CreateSynchObject(const NsInterp *itPtr,
                                Ns_Callback *initProc, const char *type,
                                Tcl_Obj *objPtr, int cnt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
+
+static void ThreadArgFree(void *arg)
+    NS_GNUC_NONNULL(1);
+
 
 /*
  * Local variables defined in this file.
@@ -97,7 +102,8 @@ Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
     assert(interp != NULL);
     assert(script != NULL);
 
-    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL ? NS_TRUE : NS_FALSE), thrPtr);
+    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL ? NS_TRUE : NS_FALSE),
+                    NULL, thrPtr);
     return NS_OK;
 }
 
@@ -154,52 +160,65 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     void      *tidArg;
     Ns_Thread  tid;
     void      *result;
-    char      *script;
     int        opt;
 
     static const char *opts[] = {
         "begin", "begindetached", "create", "wait", "join",
-        "name", "get", "getid", "id", "yield", "stackinfo", NULL
+        "name", "get", "getid", "handle" "id", "yield", "stackinfo", NULL
     };
     enum {
         TBeginIdx, TBeginDetachedIdx, TCreateIdx, TWaitIdx, TJoinIdx,
-        TNameIdx, TGetIdx, TGetIdIdx, TIdIdx, TYieldIdx, TStackinfoIdx
+        TNameIdx, TGetIdx, TGetIdIdx, THandleIdx, TIdIdx, TYieldIdx, TStackinfoIdx
     };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 0, &opt)
-        != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 
     switch (opt) {
+    case TCreateIdx:
+        Ns_LogDeprecated(objv, 2, "ns_thread begin ...", NULL);
+        /* fall through */
     case TBeginIdx:
     case TBeginDetachedIdx:
-    case TCreateIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "script");
-            return TCL_ERROR;
-        }
-        script = Tcl_GetString(objv[2]);
-        if (opt == TBeginDetachedIdx) {
-            CreateTclThread(itPtr, script, NS_TRUE, NULL);
-        } else {
-            CreateTclThread(itPtr, script, NS_FALSE, &tid);
-            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
-        }
-        break;
+        {
+            const char *threadName = NULL, *script;
+            Ns_ObjvSpec lopts[] = {
+                {"-name", Ns_ObjvString, &threadName, NULL},
+                {"--",    Ns_ObjvBreak,  NULL,    NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {"script", Ns_ObjvString, &script, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
 
-    case TWaitIdx:
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+
+            if (opt == TBeginDetachedIdx) {
+                CreateTclThread(itPtr, script, NS_TRUE, threadName, NULL);
+            } else {
+                CreateTclThread(itPtr, script, NS_FALSE, threadName, &tid);
+                Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
+            }
+            break;
+        }
+
     case TJoinIdx:
+        Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
+        /* fall through */
+    case TWaitIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "tid");
             return TCL_ERROR;
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], threadType, &tidArg)
-            != TCL_OK) {
+        if (Ns_TclGetAddrFromObj(interp, objv[2], threadType, &tidArg) != TCL_OK) {
             return TCL_ERROR;
         }
         tid = tidArg;
@@ -207,13 +226,20 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
         break;
 
+
     case TGetIdx:
+        Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
+        /* fall through */
+    case THandleIdx:
         Ns_ThreadSelf(&tid);
         Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
         break;
 
-    case TIdIdx:
+
     case TGetIdIdx:
+        Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
+        /* fall through */
+    case TIdIdx:
         Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
         break;
 
@@ -717,6 +743,34 @@ NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 /*
  *----------------------------------------------------------------------
  *
+ * ThreadArgFree --
+ *
+ *      Free the argument structure of a NsTclThread.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Free memory.
+ *
+ *----------------------------------------------------------------------
+ */
+static void ThreadArgFree(void *arg)
+{
+    TclThreadArg *argPtr = (TclThreadArg *)arg;
+    
+    assert(arg != NULL);
+    
+    if (argPtr->threadName != NULL) {
+        ns_free((char *)argPtr->threadName);
+    }
+    ns_free(argPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclThread --
  *
  *      Tcl thread main.
@@ -730,14 +784,14 @@ NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsTclThread(void *arg)
 {
-    TclThreadArg *argPtr = arg;
-    Ns_DString    ds, *dsPtr;
-    bool          detached;
-    static int    once = 0;
+    TclThreadArg    *argPtr = arg;
+    Ns_DString       ds, *dsPtr;
+    bool             detached;
+    static bool      initialized = NS_FALSE;
+    static uintptr_t id = 0u;
 
     assert(arg != NULL);
 
@@ -746,18 +800,22 @@ NsTclThread(void *arg)
      * the thread shuts down.  The argument is used e.g. by the arg proc in
      * Ns_ThreadList(), which might be called during thread shutdown. To
      * ensure consistent cleanup in all success and error cases, we use a
-     * thread local variable with the specified ns_free as cleanup proc.
+     * thread local variable with ThreadArgFree() as cleanup proc.
      *
      * On the first call, allocate the thread local storage slot. This
      * initialization might be moved into some tclThreadInit() code, which
      * does not exist.
      */
-    if (once == 0) {
-        Ns_TlsAlloc(&argtls, ns_free);
-        once = 1;
+    if (initialized == NS_FALSE) {
+        Ns_TlsAlloc(&argtls, ThreadArgFree);
+        initialized = NS_TRUE;
     }
 
     Ns_TlsSet(&argtls, argPtr);
+    
+    if (argPtr->threadName != NULL) {
+        Ns_ThreadSetName("-tcl-%s:%" PRIuPTR "-", argPtr->threadName, id++);
+    }
 
     detached = argPtr->detached;
     if (detached == NS_TRUE) {
@@ -835,7 +893,8 @@ NsTclThreadArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static void
-CreateTclThread(const NsInterp *itPtr, const char *script, bool detached, Ns_Thread *thrPtr)
+CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
+                const char *threadName, Ns_Thread *thrPtr)
 {
     TclThreadArg *argPtr;
     size_t scriptLength;
@@ -846,6 +905,7 @@ CreateTclThread(const NsInterp *itPtr, const char *script, bool detached, Ns_Thr
     scriptLength = strlen(script);
     argPtr = ns_malloc(sizeof(TclThreadArg) + scriptLength);
     argPtr->detached = detached;
+    argPtr->threadName = threadName;
     memcpy(argPtr->script, script, scriptLength + 1u);
     
     if (itPtr->servPtr != NULL) {

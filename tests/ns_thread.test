@@ -50,7 +50,7 @@ test ns_thread-2.3 {get thread id of self} -body {
 } -match regexp -result {[0-9]+}
 
 test ns_thread-2.4 {thread name} -body {
-    ns_thread wait [ns_thread create {ns_thread name threadtest}]
+    ns_thread wait [ns_thread begin {ns_thread name threadtest}]
 } -result {threadtest}
 
 test ns_thread-2.5 {thread yield} -body {
