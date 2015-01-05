@@ -507,7 +507,7 @@ typedef int
 (Ns_DriverRequestProc)(void *arg, Ns_Conn *conn)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-typedef int
+typedef bool
 (Ns_DriverKeepProc)(Ns_Sock *sock)
      NS_GNUC_NONNULL(1);
 

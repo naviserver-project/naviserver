@@ -228,7 +228,7 @@ typedef struct WriterSock {
     SpoolerState         status;
     int                  err;
     int                  refCount;
-    int                  keep;
+    bool                 keep;
     Tcl_WideInt          nsent;
     size_t               size;
     unsigned int         flags;
@@ -489,7 +489,7 @@ typedef struct Sock {
     struct NsServer    *servPtr;
 
     const char         *location;
-    int                 keep;
+    bool                keep;
     int                 pidx;            /* poll() index */
     unsigned int        flags;           /* state flags used by driver */
     Ns_Time             timeout;
@@ -611,7 +611,7 @@ typedef struct Conn {
     ssize_t responseLength;
     int responseStatus;
     int recursionCount;
-    int keep;
+    int keep;   /* bool or -1 if undefined */
 
     int fd;
     WriterSock *strWriter;

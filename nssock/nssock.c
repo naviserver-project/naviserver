@@ -317,10 +317,10 @@ SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 Keep(Ns_Sock *sock)
 {
-    return 1;
+    return NS_TRUE;
 }
 
 

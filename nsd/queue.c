@@ -1040,9 +1040,9 @@ NsConnThread(void *arg)
      * might have an empty string as "name".
      */
     assert(poolPtr->pool != NULL);
-    { 
-	const char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
-	Ns_ThreadSetName("-conn:%s%s%s:%" PRIuPTR, servPtr->server, 
+    {
+        const char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
+        Ns_ThreadSetName("-conn:%s%s%s:%" PRIuPTR, servPtr->server, 
 			 (p != NULL) ? ":" : "", 
 			 (p != NULL) ? p : "",
                          id);
@@ -1440,7 +1440,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
 
-    connPtr->keep = -1;                   /* Default keep-alive rules apply */
+    connPtr->keep = -1;            /* Undecided, default keep-alive rules apply */
 
     Ns_ConnSetCompression(conn, (servPtr->compress.enable != 0) ? servPtr->compress.level : 0);
     connPtr->compress = -1;

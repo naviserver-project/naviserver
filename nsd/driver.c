@@ -122,7 +122,7 @@ static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
     NS_GNUC_NONNULL(1);
-static int     DriverKeep(Sock *sockPtr)
+static bool    DriverKeep(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void    DriverClose(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -914,6 +914,7 @@ NsFreeRequest(Request *reqPtr)
  * NsSockClose --
  *
  *      Return a connction to the DriverThread for closing or keepalive.
+ *      "keep" might be NS_TRUE/NS_FALSE or -1 if undecided.
  *
  * Results:
  *      None.
@@ -1154,7 +1155,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 DriverKeep(Sock *sockPtr)
 {
     assert(sockPtr != NULL);
@@ -1448,7 +1449,7 @@ DriverThread(void *arg)
                     if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                         Ns_Log(Notice, "read-ahead have some data no async sock read, setting sock more  ===== diff time %d",
                                Ns_DiffTime(&sockPtr->timeout, &now, &diff));
-                        sockPtr->keep = 0;
+                        sockPtr->keep = NS_FALSE;
                         SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                     } else if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                         Push(sockPtr, waitPtr);
@@ -1857,7 +1858,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     } else {
         sockPtr->tfd    = 0;
         sockPtr->taddr  = 0;
-        sockPtr->keep   = 0;
+        sockPtr->keep   = NS_FALSE;
         sockPtr->flags  = 0u;
         sockPtr->arg    = NULL;
     }
@@ -1950,7 +1951,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     drvPtr = sockPtr->drvPtr;
 
     SockError(sockPtr, reason, err);
-    SockClose(sockPtr, 0);
+    SockClose(sockPtr, NS_FALSE);
     NsSlsCleanup(sockPtr);
 
     drvPtr->queuesize--;
@@ -2005,7 +2006,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
          * depends upon whether this sock was a keep-alive
          * that we were allowing to 'linger'.
          */
-        if (sockPtr->keep == 0) {
+        if (sockPtr->keep == NS_FALSE) {
             errMsg = "Timeout during read";
         }
         break;
@@ -2148,7 +2149,8 @@ SockTrigger(NS_SOCKET sock)
  *
  * SockClose --
  *
- *      Closes connection socket, does all cleanups
+ *      Closes connection socket, does all cleanups.
+ *      "keep" might be NS_TRUE/NS_FALSE or -1 if undecided.
  *
  * Results:
  *      None.
@@ -2167,14 +2169,14 @@ SockClose(Sock *sockPtr, int keep)
     if (keep != 0) {
         keep = DriverKeep(sockPtr);
     }
-    if (keep == 0) {
+    if (keep == NS_FALSE) {
         DriverClose(sockPtr);
     }
     sockPtr->keep = keep;
 
     /*
-     * Unconditionally remove temporaty file, connection thread
-     * should take care about very large uploads
+     * Unconditionally remove temporary file, connection thread
+     * should take care about very large uploads.
      */
 
     if (sockPtr->tfile != NULL) {
@@ -2200,7 +2202,7 @@ SockClose(Sock *sockPtr, int keep)
     if (sockPtr->taddr != NULL) {
         munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
     }
-    sockPtr->taddr = 0;
+    sockPtr->taddr = NULL;
 #endif
 }
 
@@ -2548,7 +2550,7 @@ SockParse(Sock *sockPtr)
          */
 
         if (unlikely((e - s) > drvPtr->maxline)) {
-            sockPtr->keep = 0;
+            sockPtr->keep = NS_FALSE;
             if (reqPtr->request.line == NULL) {
                 Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
                        drvPtr->maxline);
@@ -2656,7 +2658,7 @@ SockParse(Sock *sockPtr)
                          * SockError().
                          */
                         sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
-                        sockPtr->keep = 0;
+                        sockPtr->keep = NS_FALSE;
 
                     }
                     reqPtr->contentLength = (size_t)length;
@@ -3352,7 +3354,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
                 break;
             }
         }
-        NsSockClose(wrSockPtr->sockPtr, 0);
+        NsSockClose(wrSockPtr->sockPtr, NS_FALSE);
     } else {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
     }
@@ -4201,7 +4203,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
 
-    wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;
+    wrSockPtr->keep = connPtr->keep > 0 ? NS_TRUE : NS_FALSE;
     wrSockPtr->size = nsend;
 
     if ((wrSockPtr->flags & NS_CONN_STREAM) == 0u) {

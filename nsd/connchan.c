@@ -209,7 +209,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
         ns_free((char *)connChanPtr->clientData);
     }
 
-    NsSockClose(connChanPtr->sockPtr, 0);
+    NsSockClose(connChanPtr->sockPtr, NS_FALSE);
     ns_free((char *)connChanPtr);
 
 }
