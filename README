@@ -2,16 +2,16 @@ SSL driver for NaviServer 4.99.6
 ================================
 Release 0.6
 -----------
-> vlad@crystalballinc.com
-> neumann@wu-wien.ac.at
+>  vlad@crystalballinc.com
+>  neumann@wu-wien.ac.at
 
 This is NaviServer module that implements HTTP over SSL support and
 adds new ns_ssl command.
 
 * New in Version 0.2:
-> - Made driver fully asynchronous, supporting partial read and writes
-> - Performance improvements: E.g. support for TCP_CORK and deferaccept
-> - Strengthen security against BEAST and CRIME attack
+   - Made driver fully asynchronous, supporting partial read and writes
+   - Performance improvements: E.g. support for TCP_CORK and deferaccept
+   - Strengthen security against BEAST and CRIME attack
 
 * New in Version 0.3:
 > - ns_ssl working with asynchronous I/O
@@ -35,6 +35,7 @@ adds new ns_ssl command.
 > - Ability to load the module without listening to socket by speciying 0 as port.
 >   This is ueful for e.g. just using the HTTPS client command ns_ssl
 
+***
 
 Configuration:
 -------------- 
