@@ -28,12 +28,14 @@ New in Version 0.5:
 - Provide compiled-in defaults for DH parameters
 - Handling several SSL and TLS bugs.
 - Deactivated SSLv2
-  
 
-/*--------------------------------------------------------------------*/
+New in Version 0.6:
+- Ability to load the module without listening to socket by speciying 0 as port.
+  This is ueful for e.g. just using the HTTPS client command ns_ssl
 
 
- Configuration:
+Configuration:
+-------------- 
 
    nsd.tcl
 
@@ -51,19 +53,19 @@ New in Version 0.5:
      ns_param      extraheaders { Strict-Transport-Security "max-age=31536000; includeSubDomains"}
 
 
-   The parameter "certificate" is required, nsssl won't load without it; 
+ * The parameter "certificate" is required, nsssl won't load without it; 
    the .pem file should contain cert and privkey, and could contain DH parameters.
 
-   The parameter "ciphers" defines which ciphers will be used, by default nsssl uses all ciphers;
+ * The parameter "ciphers" defines which ciphers will be used, by default nsssl uses all ciphers;
    see e.g.: https://wiki.mozilla.org/Security/Server_Side_TLS
 
-   The parameter "protocols" defines which protocols are enabled;
+ * The parameter "protocols" defines which protocols are enabled;
    by default all protocols are enabled.
 
-   If the parameter "verify" is set to 1, nsssl will reject any connections without 
+ * If the parameter "verify" is set to 1, nsssl will reject any connections without 
    valid ceritificate.
 
-   The parameter "extraheaders" specifies, which headers should be sent on every request.
+ * The parameter "extraheaders" specifies, which headers should be sent on every request.
    The example above, HTTP Strict Transport Security (HSTS) is enabled.
 
 
@@ -80,7 +82,8 @@ New in Version 0.5:
     openssl dhparam 2048 >> server.pem
 
 
- Usage_
+Usage:
+------
 
    The module provides additionally the command "ns_ssl" 
    which is the http conterpart to "ns_http". 
@@ -94,8 +97,9 @@ New in Version 0.5:
 
   See the naviserver documentation of "ns_http" for usage and details about the options.
 
- Authors
+Authors:
+--------
 
-     Vlad Seryakov vlad@crystalballinc.com
-     Gustaf Neumann neumann@wu-wien.ac.at
+>     Vlad Seryakov vlad@crystalballinc.com
+>     Gustaf Neumann neumann@wu-wien.ac.at
 
