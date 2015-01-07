@@ -1042,7 +1042,8 @@ NsConnThread(void *arg)
     assert(poolPtr->pool != NULL);
     {
         const char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
-        Ns_ThreadSetName("-conn:%s%s%s:%" PRIuPTR, servPtr->server, 
+        Ns_ThreadSetName("-conn:%s%s%s:%" PRIuPTR "-",
+                         servPtr->server, 
 			 (p != NULL) ? ":" : "", 
 			 (p != NULL) ? p : "",
                          id);
