@@ -754,8 +754,8 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     Ns_DStringAppend(&httpPtr->ds, method);
     Ns_StrToUpper(Ns_DStringValue(&httpPtr->ds));
 
-    Ns_DStringVarAppend(&httpPtr->ds, " ", 
-			(file != NULL && *file != '\0') ? file : "/",
+    Ns_DStringVarAppend(&httpPtr->ds, " /", 
+			(file != NULL) ? file+1 : "",
 			" HTTP/1.0\r\n", NULL);
 
     /*
