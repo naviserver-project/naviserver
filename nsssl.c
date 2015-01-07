@@ -1144,7 +1144,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	return TCL_ERROR;
     }
     
-    Ns_DStringPrintf(&httpPtr->ds, "%s %s HTTP/1.0\r\n", method, (file != NULL && *file != '\0') ? file : "/");
+    Ns_DStringPrintf(&httpPtr->ds, "%s /%s HTTP/1.0\r\n", method, (file != NULL) ? file : "");
 
     /*
      * Submit provided headers
