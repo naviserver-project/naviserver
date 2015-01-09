@@ -40,11 +40,12 @@
  * Local functions defined in this file
  */
 
-static int WordEndsInSemi(const char *ip);
-
-static void shaByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
+static int WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
+static void SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
+static void MD5Transform(uint32_t buf[4], uint32_t const in[16]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 
 /*
@@ -68,6 +69,9 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
 {
     va_list     ap;
     Tcl_DString ds;
+
+    assert(interp != NULL);
+    assert(fmt != NULL);
 
     Tcl_DStringInit(&ds);
     va_start(ap, fmt);
@@ -97,7 +101,7 @@ int
 NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp             *itPtr = arg;
-    CONST char           *script;
+    const char           *script;
     int                   isNew, global = NS_FALSE;
     static Tcl_HashTable  runTable;
     static int            initialized = NS_FALSE;
@@ -176,10 +180,10 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
-	    CONST char  **hdr;
+	    const char  **hdr;
 
             for (hdr = logHeaders; *hdr != NULL; hdr++) {
-	        char *value = Ns_SetIGet(conn->headers, *hdr);
+	        const char *value = Ns_SetIGet(conn->headers, *hdr);
 
                 if (value != NULL) {
                     Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, NULL);
@@ -337,11 +341,11 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 int
 NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    int   intag;     /* flag to see if are we inside a tag */
-    int   intspec;   /* flag to see if we are inside a special char */
-    char *inString;  /* copy of input string */
-    char *inPtr;     /* moving pointer to input string */
-    char *outPtr;    /* moving pointer to output string */
+    int         intag;     /* flag to see if are we inside a tag */
+    int         intspec;   /* flag to see if we are inside a special char */
+    char       *inString;  /* copy of input string */
+    char       *outPtr;    /* moving pointer to output string */
+    const char *inPtr;     /* moving pointer to input string */
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # of args:  should be \"",
@@ -451,7 +455,7 @@ int
 NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     char       *s, *e, *he, save;
-    CONST char *p;
+    const char *p;
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -534,7 +538,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
 int
 NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char *bytes;
+    const unsigned char *bytes;
     char          *result;
     int            nbytes = 0;
     size_t         size;
@@ -575,7 +579,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     int            len;
     size_t         size;
-    char          *chars;
+    const char    *chars;
     unsigned char *decoded;
 
     if (objc != 2) {
@@ -643,9 +647,8 @@ NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
 static int
 WordEndsInSemi(const char *ip)
 {
-    if (ip == NULL) {
-        return 0;
-    }
+    assert(ip != NULL);
+    
     /* advance past the first '&' so we can check for a second
        (i.e. to handle "ben&jerry&nbsp;")
     */
@@ -705,7 +708,7 @@ static const char hexChars[] = "0123456789ABCDEF";
 
 
 static void
-shaByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
+SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
 {
     do {
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
@@ -929,6 +932,9 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 {
     unsigned i;
 
+    assert(ctx != NULL);
+    assert(buf != NULL);
+
     /* Update bitcount */
 
 #ifdef HAVE64
@@ -946,13 +952,13 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 
     /* i is always less than SHA_BLOCKBYTES. */
     if (SHA_BLOCKBYTES - i > len) {
-        memcpy((uint8_t *) ctx->key + i, buf, len);
+        memcpy(ctx->key + i, buf, len);
         return;
     }
 
     if (i != 0u) {				/* First chunk is an odd size */
-        memcpy((uint8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
-        shaByteSwap(ctx->key, (uint8_t *) ctx->key, SHA_BLOCKWORDS);
+        memcpy(ctx->key + i, buf, SHA_BLOCKBYTES - i);
+        SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, SHA_BLOCKWORDS);
         SHATransform(ctx);
         buf += SHA_BLOCKBYTES - i;
         len -= SHA_BLOCKBYTES - i;
@@ -960,7 +966,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 
     /* Process data in 64-byte chunks */
     while (len >= SHA_BLOCKBYTES) {
-        shaByteSwap(ctx->key, buf, SHA_BLOCKWORDS);
+        SHAByteSwap(ctx->key, buf, SHA_BLOCKWORDS);
         SHATransform(ctx);
         buf += SHA_BLOCKBYTES;
         len -= SHA_BLOCKBYTES;
@@ -994,13 +1000,13 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 
     if (i < 8u) {				/* Padding forces an extra block */
         memset(p, 0, i);
-        shaByteSwap(ctx->key, (uint8_t *) ctx->key, 16u);
+        SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, 16u);
         SHATransform(ctx);
         p = (uint8_t *) ctx->key;
         i = 64u;
     }
     memset(p, 0, i - 8u);
-    shaByteSwap(ctx->key, (uint8_t *) ctx->key, 14u);
+    SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, 14u);
 
     /* Append length in bits and transform */
 #if HAVE64
@@ -1065,7 +1071,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     Ns_CtxSHA1     ctx;
     unsigned char  digest[20];
     char           digestChars[41];
-    char          *str;
+    const char    *str;
     int            strLen;
 
     if (objc != 2) {
@@ -1075,7 +1081,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxSHAInit(&ctx);
-    Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (size_t) strLen);
+    Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) strLen);
     Ns_CtxSHAFinal(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 20);
@@ -1170,8 +1176,6 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  */
 
-static void MD5Transform(uint32_t buf[4], uint32_t const in[16]);
-
 #ifdef sun
 #define HIGHFIRST
 #endif
@@ -1219,6 +1223,9 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
 {
     uint32_t t;
 
+    assert(ctx != NULL);
+    assert(buf != NULL);
+
     /* Update bitcount */
 
     t = ctx->bits[0];
@@ -1233,7 +1240,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
     /* Handle any leading odd-sized chunks */
 
     if (t != 0u) {
-	unsigned char *p = (unsigned char *) ctx->in + t;
+	unsigned char *p = ctx->in + t;
 
 	t = 64u - t;
 	if (len < t) {
@@ -1269,6 +1276,9 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 {
     unsigned count;
     unsigned char *p;
+
+    assert(ctx != NULL);
+    assert(digest != NULL);
 
     /* Compute number of bytes mod 64 */
     count = (ctx->bits[0] >> 3) & 0x3Fu;
@@ -1310,7 +1320,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 
 /* #define F1(x, y, z) (x & y | ~x & z) */
 #define F1(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
-#define F2(x, y, z) F1((z), (x), (y))
+#define F2(x, y, z) (F1((z), (x), (y)))
 #define F3(x, y, z) ((x) ^ (y) ^ (z))
 #define F4(x, y, z) ((y) ^ ((x) | ~(z)))
 
@@ -1327,6 +1337,9 @@ static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
 {
     register uint32_t a, b, c, d;
 
+    assert(buf != NULL);
+    assert(in != NULL);
+    
     a = buf[0];
     b = buf[1];
     c = buf[2];
@@ -1429,7 +1442,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     Ns_CtxMD5      ctx;
     unsigned char  digest[16];
     char           digestChars[33];
-    char          *str;
+    const char    *str;
     int            strLen;
 
     if (objc != 2) {
@@ -1439,7 +1452,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
     str = Tcl_GetStringFromObj(objv[1], &strLen);
     Ns_CtxMD5Init(&ctx);
-    Ns_CtxMD5Update(&ctx, (unsigned char *) str, (size_t)strLen);
+    Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)strLen);
     Ns_CtxMD5Final(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 16);

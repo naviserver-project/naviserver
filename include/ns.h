@@ -2930,7 +2930,8 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 
 
 NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
-     NS_GNUC_PRINTF(2, 3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_PRINTF(2, 3);
 
 NS_EXTERN const char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
@@ -2956,11 +2957,11 @@ Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
 
 NS_EXTERN void
 Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
@@ -2968,7 +2969,7 @@ Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
 
 NS_EXTERN void
 Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
