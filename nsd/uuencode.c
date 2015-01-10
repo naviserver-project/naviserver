@@ -125,8 +125,8 @@ Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
 	    line = 0;
         }       
 	*q++ = Encode(p[0] >> 2);
-	*q++ = Encode(UCHAR((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
-	*q++ = Encode(UCHAR((p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
+	*q++ = Encode((UCHAR(p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+        *q++ = Encode((UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
 	*q++ = Encode(p[2] & 0x3FU);
 	p += 3;
         line += 4;
