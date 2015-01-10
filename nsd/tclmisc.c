@@ -941,13 +941,14 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
     i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
     ctx->bytes += len;
 #else
-    uint32_t t = ctx->bytesLo;
-    ctx->bytesLo = (uint32_t)(t + len);
-    if (ctx->bytesLo < t) {
-       ctx->bytesHi++;		/* Carry from low to high */
+    {
+        uint32_t t = ctx->bytesLo;
+        ctx->bytesLo = (uint32_t)(t + len);
+        if (ctx->bytesLo < t) {
+            ctx->bytesHi++;		/* Carry from low to high */
+        }
+        i = (unsigned) t % SHA_BLOCKBYTES;	/* Bytes already in ctx->key */
     }
-
-    i = (unsigned) t % SHA_BLOCKBYTES;	/* Bytes already in ctx->key */
 #endif
 
     /* i is always less than SHA_BLOCKBYTES. */
