@@ -9,7 +9,7 @@ eval ::tcltest::configure $argv
 
 test ns_thread-1.1 {basic syntax} -body {
     ns_thread ?
-} -returnCodes error -result {bad cmd "?": must be begin, begindetached, create, wait, join, name, get, getid, id, yield, or stackinfo}
+} -returnCodes error -result {bad cmd "?": must be begin, begindetached, create, wait, join, name, get, getid, handle, id, yield, or stackinfo}
 
 test ns_thread-1.2 {basic syntax} -body {
     ns_mutex ?
@@ -66,6 +66,9 @@ test ns_thread-2.5 {thread yield} -body {
     unset -nocomplain -- i
 } -result {}
 
+test ns_thread-2.6 {get thread handle of self} -body {
+    ns_thread handle
+} -match regexp -result {^t.*ns:thread$}
 
 
 test ns_thread-3.1 {create and destroy a mutex} -body {
