@@ -58,7 +58,7 @@ static SERVICE_STATUS curStatus;
 static Ns_Tls tls;
 static int serviceRunning = 0;
 static int tick = 0;
-static unsigned int sigpending = 0U;
+static unsigned int sigpending = 0u;
 static int serviceFailed = 0;
 
 #define SysErrMsg() (NsWin32ErrMsg(GetLastError()))
@@ -448,12 +448,12 @@ NsHandleSignals(void)
     Ns_MutexSetName2(&lock, "ns", "signal");
     do {
         Ns_MutexLock(&lock);
-        while (sigpending == 0U) {
+        while (sigpending == 0u) {
             Ns_CondWait(&cond, &lock);
         }
         sig = sigpending;
-        sigpending = 0U;
-        if ((sig & (1u << NS_SIGINT)) != 0U) {
+        sigpending = 0u;
+        if ((sig & (unsigned int)(1u << NS_SIGINT)) != 0u) {
 
            /*
             * Signalize the Service Control Manager
@@ -463,10 +463,10 @@ NsHandleSignals(void)
             serviceFailed = 1;
         }
         Ns_MutexUnlock(&lock);
-        if ((sig & (1u << NS_SIGHUP)) != 0U) {
+        if ((sig & (unsigned int)(1u << NS_SIGHUP)) != 0u) {
 	    NsRunSignalProcs();
         }
-    } while ((sig & (1u << NS_SIGHUP)) != 0U);
+    } while ((sig & (unsigned int)(1u << NS_SIGHUP)) != 0u);
 
     /*
      * If running as a service, startup the ticker thread again

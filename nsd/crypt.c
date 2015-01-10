@@ -399,11 +399,11 @@ encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
 
             t = 6 * j;
             k = S[j][(preS[t] << 5) +
-                (preS[t + 1] << 3) +
-                (preS[t + 2] << 2) +
-                (preS[t + 3] << 1) +
+                UCHAR(preS[t + 1] << 3) +
+                UCHAR(preS[t + 2] << 2) +
+                UCHAR(preS[t + 3] << 1) +
                 (preS[t + 4]     ) +
-                (preS[t + 5] << 4)];
+                UCHAR(preS[t + 5] << 4)];
             t = 4 * j;
             assert(t < (32-3));
 

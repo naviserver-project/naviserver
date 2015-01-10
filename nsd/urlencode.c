@@ -43,7 +43,7 @@
 typedef struct ByteKey {
     int   hex;	    /* Valid hex value or -1. */
     int   len;	    /* Length required to encode string. */
-    char *str;	    /* String for multibyte encoded character. */
+    const char *str;	    /* String for multibyte encoded character. */
 } ByteKey;
 
 /*
@@ -551,10 +551,11 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString   ds;
-    char        *charset = NULL, part;
-    int          nextArgIdx;
-    Tcl_Encoding encoding = NULL;
+    Ns_DString          ds;
+    const char         *charset = NULL;
+    char                part;
+    int                 nextArgIdx;
+    Tcl_Encoding        encoding = NULL;
     static const char  *options[]           = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
@@ -697,7 +698,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
      */
     length = strlen(urlSegment);
     if (encoding != NULL) {
-        copy = ns_malloc(length + 1U);
+        copy = ns_malloc(length + 1u);
         q = copy;
     } else {
         /*
@@ -718,7 +719,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 	if (unlikely(p[0] == '%') &&
             (i = enc[UCHAR(p[1])].hex) >= 0 &&
             (j = enc[UCHAR(p[2])].hex) >= 0) {
-	    *q++ = (char)((UCHAR(i) << 4U) + UCHAR(j));
+            *q++ = (char)(UCHAR(UCHAR(i) << 4u) + UCHAR(j));
             p += 3;
         } else if (unlikely(p[0] == '+') && part == 'q') {
             *q++ = ' ';
@@ -748,3 +749,12 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 
     return dsPtr->string;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
