@@ -729,7 +729,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
     ctx->iv[4] = 0xC3D2E1F0u;
 
     /* Initialise bit count */
-#ifdef HAVE64
+#if defined(HAVE_64BIT)
     ctx->bytes = 0u;
 #else
     ctx->bytesHi = 0u;
@@ -744,9 +744,6 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
    The f3 function can be modified to use an addition to combine the
    two halves rather than OR, allowing more opportunity for using
    associativity in optimization. (Colin Plumb)
-
-   Note that it may be necessary to add parentheses to these macros
-   if they are to be called with expressions as arguments.
  */
 #define f1(x,y,z) ( (z) ^ ((x) & ((y) ^ (z)) ) )	/* Rounds 0-19 */
 #define f2(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 20-39 */
@@ -937,7 +934,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 
     /* Update bitcount */
 
-#ifdef HAVE64
+#if defined(HAVE_64BIT)
     i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
     ctx->bytes += len;
 #else
@@ -986,7 +983,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 
 void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 {
-#if HAVE64
+#if defined(HAVE_64BIT)
     unsigned i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
 #else
     unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
@@ -1010,7 +1007,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, 14u);
 
     /* Append length in bits and transform */
-#if HAVE64
+#if defined(HAVE_64BIT)
     ctx->key[14] = (uint32_t) (ctx->bytes >> 29);
     ctx->key[15] = (uint32_t) ctx->bytes << 3;
 #else

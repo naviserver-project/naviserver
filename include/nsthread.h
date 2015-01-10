@@ -138,6 +138,7 @@ typedef          DWORD pid_t;
 #  define NS_INVALID_FD         (-1)
 
 #  ifdef _WIN64
+#   define HAVE_64BIT 1
 typedef int64_t ssize_t;
 #  else
 typedef int32_t ssize_t;
@@ -408,6 +409,12 @@ typedef struct DIR_ *DIR;
 # define ns_dup		    	    dup
 # define ns_dup2	    	    dup2
 # define ns_lseek		    lseek
+
+# if __GNUC__
+#  if __x86_64__ || __ppc64__
+#   define HAVE_64BIT 1
+#  endif
+# endif
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))

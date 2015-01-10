@@ -558,7 +558,7 @@ typedef struct Ns_CtxMD5 {
 typedef struct Ns_CtxSHA1 {
     unsigned int key[SHA_BLOCKWORDS];
     uint32_t iv[SHA_HASHWORDS];
-#ifdef HAVE64
+#if defined(HAVE_64BIT)
     uint64_t bytes;
 #else
     uint32_t bytesHi, bytesLo;
