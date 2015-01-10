@@ -57,19 +57,19 @@ enum imgtype {
  * Local functions defined in this file
  */
 
-static int JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr);
-static int PngSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr);
-static int GifSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr);
+static int JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int PngSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int GifSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int JpegRead2Bytes(Tcl_Channel chan, uint32_t *value) NS_GNUC_NONNULL(2);
-static int JpegNextMarker(Tcl_Channel chan);
+static int JpegRead2Bytes(Tcl_Channel chan, uint32_t *value) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int JpegNextMarker(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 
-static enum imgtype GetImageType(Tcl_Channel chan);
+static enum imgtype GetImageType(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 
-static void SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h);
+static void SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h) NS_GNUC_NONNULL(1);
 
-static int ChanGetc(Tcl_Channel chan);
-static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path);
+static int ChanGetc(Tcl_Channel chan) NS_GNUC_NONNULL(1);
+static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -91,9 +91,9 @@ static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path);
 int
 NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *file, *type = "unknown";
-    Tcl_Channel chan;
-    int         result;
+    const char  *file, *type = "unknown";
+    Tcl_Channel  chan;
+    int          result;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "file");
@@ -139,7 +139,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *file, *mime = "image/unknown";
+    const char *file, *mime = "image/unknown";
     Tcl_Channel chan;
     int         result;
 
@@ -188,9 +188,9 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *file;
+    const char *file;
     int         status = TCL_ERROR;
-    uint32_t    w = 0U, h = 0U;
+    uint32_t    w = 0u, h = 0u;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -217,7 +217,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
 
     if (status != TCL_OK) {
-        SetObjDims(interp, 0U, 0U);
+        SetObjDims(interp, 0u, 0u);
         return TCL_ERROR;
     }
 
@@ -246,7 +246,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *file;
+    const char *file;
     uint32_t    w, h;
     Tcl_Channel chan;
     int         result;
@@ -292,7 +292,7 @@ NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *file;
+    const char *file;
     uint32_t    w, h;
     Tcl_Channel chan;
     int         result;
@@ -338,8 +338,8 @@ NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char       *file;
-    uint32_t    w = 0U, h = 0U;
+    const char *file;
+    uint32_t    w = 0u, h = 0u;
     Tcl_Channel chan;
     int         result;
 
@@ -387,6 +387,10 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
     unsigned char count, buf[0x300];
     unsigned int  depth, colormap;
 
+    assert(chan != NULL);
+    assert(wPtr != NULL);
+    assert(hPtr != NULL);
+
     /*
      * Skip the magic as caller has already
      * checked it allright.
@@ -400,10 +404,10 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    depth = 1U << ((buf[4] & 0x7U) + 1U);
-    colormap = (((buf[4] & 0x80U) != 0U) ? 1U : 0U);
+    depth = (unsigned int)(1u << ((buf[4] & 0x7u) + 1u));
+    colormap = (((buf[4] & 0x80u) != 0u) ? 1u : 0u);
 
-    if (colormap != 0U) {
+    if (colormap != 0u) {
         int bytesToRead = 3 * (int)depth;
         if (Tcl_Read(chan, (char *)buf, bytesToRead) != bytesToRead) {
             return TCL_ERROR;
@@ -423,7 +427,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         if (Tcl_Read(chan, (char *) &count, 1) != 1) {
             return TCL_ERROR;
         }
-        if (count == 0U) {
+        if (count == 0u) {
             goto outerloop;
         }
         if (Tcl_Read(chan, (char *)buf, (int)count) != (int)count) {
@@ -438,8 +442,8 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    *wPtr = (uint32_t)(0x100U * buf[5] + buf[4]);
-    *hPtr = (uint32_t)(0x100U * buf[7] + buf[6]);
+    *wPtr = (uint32_t)(0x100u * buf[5] + buf[4]);
+    *hPtr = (uint32_t)(0x100u * buf[7] + buf[6]);
 
     return TCL_OK;
 }
@@ -465,6 +469,10 @@ static int
 PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned int w, h;
+
+    assert(chan != NULL);
+    assert(wPtr != NULL);
+    assert(hPtr != NULL);
 
     if (Tcl_Seek(chan, 16LL, SEEK_SET) == -1 || Tcl_Eof(chan) == 1) {
         return TCL_ERROR;
@@ -503,10 +511,14 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 static int
 JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
+    assert(chan != NULL);
+    assert(wPtr != NULL);
+    assert(hPtr != NULL);
+    
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
 	    int          i;
-	    uint32_t     numBytes = 0U;
+	    uint32_t     numBytes = 0u;
 
             i = JpegNextMarker(chan);
             if (i == EOF || i == M_SOS || i == M_EOI) {
@@ -554,6 +566,9 @@ JpegRead2Bytes(Tcl_Channel chan, uint32_t *value)
 {
     int c1, c2;
 
+    assert(chan != NULL);
+    assert(value != NULL);
+
     c1 = ChanGetc(chan);
     c2 = ChanGetc(chan);
     if (c1 == EOF || c2 == EOF) {
@@ -593,6 +608,8 @@ JpegNextMarker(Tcl_Channel chan)
 {
     int c;
 
+    assert(chan != NULL);
+    
     /*
      * Find 0xFF byte; count and skip any non-FFs.
      */
@@ -634,14 +651,15 @@ static enum imgtype
 GetImageType(Tcl_Channel chan)
 {
     unsigned char buf[8];
-    int toRead;
-    enum imgtype type = unknown;
-
+    int           toRead;
+    enum imgtype  type = unknown;
     static const unsigned char jpeg_magic  [] = {0xffu, 0xd8u};
     static const          char gif87_magic [] = {'G','I','F','8','7','a'};
     static const          char gif89_magic [] = {'G','I','F','8','9','a'};
-    static const unsigned char png_magic   [] = {0x89U,0x50U,0x4eU,0x47U,0xdU,0x0aU,0x1aU,0x0aU};
+    static const unsigned char png_magic   [] = {0x89u,0x50u,0x4eu,0x47u,0xdu,0x0au,0x1au,0x0au};
 
+    assert(chan != NULL);
+    
     (void)Tcl_Seek(chan, 0LL, SEEK_SET);
 
     toRead = (int)sizeof(buf);
@@ -694,6 +712,8 @@ ChanGetc(Tcl_Channel chan)
 {
     unsigned char buf[1];
 
+    assert(chan != NULL);
+
     if (Tcl_Read(chan, (char *) buf, 1) != 1) {
         return EOF;
     }
@@ -723,6 +743,8 @@ SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
 {
     Tcl_Obj *objv[2];
 
+    assert(interp != NULL);
+    
     objv[0] = Tcl_NewIntObj((int)w);
     objv[1] = Tcl_NewIntObj((int)h);
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, objv));
@@ -750,6 +772,9 @@ GetFileChan(Tcl_Interp *interp, const char *path)
 {
     Tcl_Channel chan;
 
+    assert(interp != NULL);
+    assert(path != NULL);
+    
     chan = Tcl_OpenFileChannel(interp, path, "r", 0);
     if (chan != NULL) {
         if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
