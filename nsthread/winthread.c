@@ -1166,17 +1166,17 @@ kill(pid_t pid, int sig)
  */
 
 int
-truncate(const char *file, off_t size)
+truncate(const char *path, off_t length)
 {
     int fd;
 
-    fd = _open(file, O_WRONLY|O_BINARY);
+    fd = _open(path, O_WRONLY|O_BINARY);
     if (fd < 0) {
         return -1;
     }
-    size = _chsize(fd, size);
+    length = _chsize(fd, length);
     _close(fd);
-    if (size != 0) {
+    if (length != 0) {
         return -1;
     }
 
