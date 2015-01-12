@@ -42,7 +42,7 @@ typedef struct Stream {
     int       error;
     size_t    cnt;
     char     *ptr;
-    char      buf[BUFSIZE+1];
+    char      buf[BUFSIZE + 1u];
 } Stream;
 
 /*
@@ -391,7 +391,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
             sPtr->cnt -= n;
             if (eol != NULL) {
                 n = (size_t)dsPtr->length;
-                if (n > 0u && dsPtr->string[n-1] == '\r') {
+                if (n > 0u && dsPtr->string[n - 1u] == '\r') {
                     Ns_DStringSetLength(dsPtr, (int)n - 1);
                 }
                 return NS_TRUE;

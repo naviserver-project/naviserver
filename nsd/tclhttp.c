@@ -999,7 +999,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 	return;
 
     case NS_SOCK_WRITE:
-        n = ns_send(sock, httpPtr->next, (int)httpPtr->len, 0);
+        n = ns_send(sock, httpPtr->next, httpPtr->len, 0);
     	if (n < 0) {
 	    httpPtr->error = "send failed";
 	} else {

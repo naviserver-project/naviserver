@@ -159,7 +159,7 @@ typedef int32_t ssize_t;
 #  define unlink                      _unlink
 #  define vsnprintf                   _vsnprintf
 
-#  define ftruncate(f,s)              chsize((f),(s))
+#  define ftruncate(f,s)              _chsize((f),(s))
 
 # else
 /*
@@ -890,7 +890,7 @@ NS_EXTERN int symlink(const char *from, const char *to);
 NS_EXTERN int kill(pid_t pid, int sig);
 
 # ifdef _MSC_VER
-NS_EXTERN int truncate(const char *file, off_t size);
+NS_EXTERN int truncate(const char *path, off_t length);
 # endif
 #endif
 

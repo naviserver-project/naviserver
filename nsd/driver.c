@@ -2258,7 +2258,7 @@ ChunkedDecode(Request *reqPtr, int update)
             reqPtr->chunkWriteOff += chunk_length;
             *(writeBuffer + chunk_length) = '\0';
         }
-        reqPtr->chunkStartOff += (p - chunkStart) + 4 + chunk_length ;
+        reqPtr->chunkStartOff += (p - chunkStart) + 4u + chunk_length ;
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
 

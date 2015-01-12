@@ -333,7 +333,7 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
 
 	snprintf(buffer, sizeof(buffer), "%" PRIdz, length);
 	Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
-	connPtr->responseLength = length;
+	connPtr->responseLength = (int)length;
     } else {
 	/*
 	 * In the streaming case, make sure no Content-Length is set.
@@ -482,7 +482,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-		const char *lineBreak = strchr(value, UCHAR('\n'));
+		char *lineBreak = strchr(value, UCHAR('\n'));
 
 		if (lineBreak == NULL) {
 		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);

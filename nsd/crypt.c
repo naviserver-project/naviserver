@@ -398,7 +398,8 @@ encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
             register int          t;
 
             t = 6 * j;
-            k = S[j][(preS[t] << 5) +
+            k = S[j][
+                UCHAR(preS[t] << 5) +
                 UCHAR(preS[t + 1] << 3) +
                 UCHAR(preS[t + 2] << 2) +
                 UCHAR(preS[t + 3] << 1) +

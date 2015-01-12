@@ -288,7 +288,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         fdout = 1;
     }
     if (DuplicateHandle(hCurrentProcess, (HANDLE) _get_osfhandle(fdout), hCurrentProcess,
-            &si.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS) != TRUE) {
+            &si.hStdOutput, 0u, TRUE, DUPLICATE_SAME_ACCESS) != TRUE) {
         Ns_Log(Error, "exec: failed to duplicate handle: %s",
         NsWin32ErrMsg(GetLastError()));
         return NS_INVALID_PID;
@@ -297,7 +297,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         fdin = 0;
     }
     if (DuplicateHandle(hCurrentProcess, (HANDLE) _get_osfhandle(fdin), hCurrentProcess,
-            &si.hStdInput, 0, TRUE, DUPLICATE_SAME_ACCESS) != TRUE) {
+            &si.hStdInput, 0u, TRUE, DUPLICATE_SAME_ACCESS) != TRUE) {
         Ns_Log(Error, "exec: failed to duplicate handle: %s",
         NsWin32ErrMsg(GetLastError()));
         (void) CloseHandle(si.hStdOutput);
@@ -346,7 +346,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         Set2Argv(&eds, env);
         envp = eds.string;
     }
-    if (CreateProcess(exec, cds.string, NULL, NULL, TRUE, 0, envp, dir, &si, &pi) != TRUE) {
+    if (CreateProcess(exec, cds.string, NULL, NULL, TRUEu, 0, envp, dir, &si, &pi) != TRUE) {
         Ns_Log(Error, "exec: failed to create process: %s: %s",
         exec != NULL ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
         pid = NS_INVALID_PID;

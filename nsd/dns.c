@@ -289,7 +289,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 
     result = getnameinfo((const struct sockaddr *) &sa,
                          sizeof(struct sockaddr_in), buf, sizeof(buf),
-                         NULL, 0, NI_NAMEREQD);
+                         NULL, 0u, NI_NAMEREQD);
     if (result == 0) {
         Ns_DStringAppend(dsPtr, buf);
         status = NS_TRUE;

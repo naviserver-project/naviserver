@@ -213,8 +213,8 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     unsigned int flag, oldFlag;
 
     enum {
-        CBufSizeIdx = ADP_OPTIONMAX + 1U,
-        CChanIdx    = ADP_OPTIONMAX + 2U
+        CBufSizeIdx = ADP_OPTIONMAX + 1u,
+        CChanIdx    = ADP_OPTIONMAX + 2u
     };
 
     static const struct {
@@ -222,8 +222,8 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         const unsigned int flag;
     } adpCtlOpts[] = {
 
-        { "bufsize",      CBufSizeIdx },
-        { "channel",      CChanIdx },
+        { "bufsize",      (unsigned)CBufSizeIdx },
+        { "channel",      (unsigned)CChanIdx },
 
         { "autoabort",    ADP_AUTOABORT },
         { "cache",        ADP_CACHE },

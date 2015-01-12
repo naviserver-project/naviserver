@@ -213,8 +213,12 @@ NS_EXTERN struct nsconf nsconf;
 typedef struct FileMap {
     char *addr;                 /* Mapped to this virtual address */
     size_t size;                /* Size of the mapped region */
+#ifndef _WIN32
     int handle;                 /* OS handle of the opened/mapped file */
+#else
+    HANDLE handle;              /* OS handle of the opened/mapped file */
     void *mapobj;               /* Mapping object (Win32 only) */
+#endif    
 } FileMap;
 
 /*
@@ -608,10 +612,10 @@ typedef struct Conn {
     Tcl_Encoding urlEncoding;
 
     size_t nContentSent;
-    ssize_t responseLength;
+    ssize_t responseLength;  /* -1 for: not specified */
     int responseStatus;
     int recursionCount;
-    int keep;   /* bool or -1 if undefined */
+    int keep;                /* bool or -1 if undefined */
 
     int fd;
     WriterSock *strWriter;

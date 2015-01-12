@@ -223,7 +223,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
 
     request->protocol = NULL;
     request->host = NULL;
-    request->port = 0U;
+    request->port = 0u;
 
     if (*url != '/') {
         p = url;
@@ -239,7 +239,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
             *p++ = '\0';
             request->protocol = ns_strdup(url);
             url = p;
-            if ((strlen(url) > 3U) && (*p++ == '/')
+            if ((strlen(url) > 3u) && (*p++ == '/')
                 && (*p++ == '/') && (*p != '\0') && (*p != '/')) {
                 char *h;
 
@@ -297,9 +297,9 @@ Ns_SkipUrl(const Ns_Request *request, int n)
     if (n > request->urlc) {
         return NULL;
     }
-    skip = 0U;
+    skip = 0u;
     while (--n >= 0) {
-        skip += strlen(request->urlv[n]) + 1U;
+        skip += strlen(request->urlv[n]) + 1u;
     }
     return (request->url + skip);
 }
@@ -430,7 +430,7 @@ SetUrl(Ns_Request *request, char *url)
     while (*url == '/') {
         ++url;
     }
-    if (*url != '\0' && url[strlen(url) - 1] == '/') {
+    if (*url != '\0' && url[strlen(url) - 1u] == '/') {
       Tcl_DStringAppend(&ds2, "/", 1);
     }
     request->url = ns_strdup(ds2.string);
@@ -503,7 +503,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
     assert(line != NULL);
 
     if (CHARTYPE(space, *line) != 0) {
-        if (Ns_SetSize(set) == 0U) {
+        if (Ns_SetSize(set) == 0u) {
 	    return NS_ERROR;	/* Continue before first header. */
         }
 	index = Ns_SetLast(set);
