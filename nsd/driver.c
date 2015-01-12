@@ -507,8 +507,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                                         Tcl_GetString(objv[i]), ": ",
                                         Tcl_GetString(objv[i+1]), "\r\n",
                                         NULL);
-                    drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
                 }
+                drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
             }
         }
     }
