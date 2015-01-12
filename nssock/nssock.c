@@ -309,7 +309,7 @@ SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
  *      We are always to try keepalive if the upper layers are.
  *
  * Results:
- *      1, always.
+ *      NS_TRUE, always.
  *
  * Side effects:
  *      None.
