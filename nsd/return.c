@@ -333,7 +333,7 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
 
 	snprintf(buffer, sizeof(buffer), "%" PRIdz, length);
 	Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
-	connPtr->responseLength = (int)length;
+	connPtr->responseLength = (ssize_t)length;
     } else {
 	/*
 	 * In the streaming case, make sure no Content-Length is set.
@@ -427,7 +427,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     reason = "Unknown Reason";
-    for (i = 0U; i < nreasons; i++) {
+    for (i = 0u; i < nreasons; i++) {
         if (reasons[i].status == connPtr->responseStatus) {
             reason = reasons[i].reason;
             break;
@@ -446,11 +446,14 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      *
      *       "MIME-Version: 1.0\r\n"
      *
-     * However, MIME_Version is a MIME header, not a HTTP header
-     * (allthough allowed in HTTP/1.1); it's only used when HTTP
-     * messages are moved over MIME-based protocols (e.g., SMTP),
-     * which is uncommon. The HTTP mime message parsing semantics are
-     * defined by this RFC 2616 and not any MIME specification.
+     * However, MIME_Version is a MIME header, not a HTTP header (allthough
+     * allowed in HTTP/1.1); it's only used when HTTP messages are moved over
+     * MIME-based protocols (e.g., SMTP), which is uncommon. The HTTP mime
+     * message parsing semantics are defined by this RFC 2616 and not any MIME
+     * specification.  
+     *
+     * For full backwards compatibility, a MIME-Version header could be added
+     * for a site via nssocket/nsssl driver parameter "extraheaders".
      */
 
     Ns_DStringVarAppend(dsPtr,
@@ -476,18 +479,18 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     if (conn->outputheaders != NULL) {
-        for (i = 0U; i < Ns_SetSize(conn->outputheaders); i++) {
+        for (i = 0u; i < Ns_SetSize(conn->outputheaders); i++) {
 	    const char *key;
 
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-		char *lineBreak = strchr(value, UCHAR('\n'));
+		char *lineBreak = strchr(value, (int)UCHAR('\n'));
 
 		if (lineBreak == NULL) {
 		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
 		} else {
-		    Ns_DString sanitize, *sPtr = &sanitize;
+		    Ns_DString sanitize, *sanitizePtr = &sanitize;
 		    /*
 		     * We have to sanititize the header field to avoid
 		     * a HTTP response splitting attack. After each
@@ -500,21 +503,21 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 		    do {
 			size_t offset = (size_t)(lineBreak - value);
 			
-			if (offset > 0U) {
-			    Tcl_DStringAppend(sPtr, value, (int)offset);
+			if (offset > 0u) {
+			    Tcl_DStringAppend(sanitizePtr, value, (int)offset);
 			}
-			Tcl_DStringAppend(sPtr, "\n\t", 2);
+			Tcl_DStringAppend(sanitizePtr, "\n\t", 2);
 
 			offset ++;
 			value += offset;
-			lineBreak = strchr(value, UCHAR('\n'));
+			lineBreak = strchr(value, (int)UCHAR('\n'));
 
 		    } while (lineBreak != NULL);
 
-		    Tcl_DStringAppend(sPtr, value, -1);
+		    Tcl_DStringAppend(sanitizePtr, value, -1);
 
-		    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sPtr), "\r\n", NULL);
-		    Ns_DStringFree(sPtr);
+		    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", NULL);
+		    Ns_DStringFree(sanitizePtr);
 		}
             }
         }
@@ -561,7 +564,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
      * Deprecated
      */
     Ns_ConnSetResponseStatus(conn, status);
-    (void) Ns_ConnWriteVData(conn, NULL, 0, 0U);
+    (void) Ns_ConnWriteVData(conn, NULL, 0, 0u);
 
     return connPtr->nContentSent;
 }
@@ -770,7 +773,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
     sbuf.iov_len = len < 0 ? strlen(data) : (size_t)len;
 
     Ns_ConnSetResponseStatus(conn, status);
-    result = Ns_ConnWriteVChars(conn, &sbuf, 1, 0U);
+    result = Ns_ConnWriteVChars(conn, &sbuf, 1, 0u);
     (void) Ns_ConnClose(conn);
 
     return result;
@@ -941,7 +944,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
 		int i;
 
 		nvbufs = rangeCount;
-		len = 0U;
+		len = 0u;
 		for (i = 0; i < rangeCount; i++) {
 		    vbuf[i].iov_base = INT2PTR(bufs[i].offset);
 		    vbuf[i].iov_len  = bufs[i].length;
@@ -972,8 +975,8 @@ ReturnRange(Ns_Conn *conn, const char *type,
 	if (rangeCount == 0) {
             Ns_ConnSetLengthHeader(conn, len, 0);
 
-	    if ((conn->flags & NS_CONN_SKIPBODY) != 0U) {
-	      len = 0U;
+	    if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
+	      len = 0u;
 	    }
 
             (void) Ns_SetFileVec(bufs, 0, fd, data, 0, len);
