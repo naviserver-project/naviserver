@@ -69,7 +69,7 @@ static void LogTclVersion(void);
 static const char *MakePath(char *file);
 static const char *SetCwd(const char *path);
 
-#if (STATIC_BUILD == 1)
+#if defined(STATIC_BUILD) && (STATIC_BUILD == 1)
 extern void NsthreadsInit();
 extern void NsdInit();
 #endif

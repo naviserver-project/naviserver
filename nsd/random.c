@@ -142,7 +142,7 @@ Ns_DRand(void)
 	if (initialized == 0) {
 	    unsigned long seed;
 	    Ns_GenSeeds(&seed, 1);
-#ifdef HAVE_DRAND48
+#if defined(HAVE_DRAND48)
     	    srand48((long) seed);
 #elif defined(HAVE_RANDOM)
     	    srandom((unsigned int) seed);
@@ -153,11 +153,11 @@ Ns_DRand(void)
 	}
 	Ns_CsLeave(&lock);
     }
-#if HAVE_ARC4RANDOM
+#if defined(HAVE_ARC4RANDOM)
     return ((double)(arc4random() % (unsigned)RAND_MAX) / ((double)RAND_MAX + 1.0));
-#elif HAVE_DRAND48
+#elif defined(HAVE_DRAND48)
     return drand48();
-#elif HAVE_RANDOM
+#elif defined(HAVE_RANDOM)
     return ((double) random() / ((double)LONG_MAX + 1.0));
 #else
     return ((double) rand() / ((double)RAND_MAX + 1.0));
