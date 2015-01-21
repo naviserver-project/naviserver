@@ -73,7 +73,7 @@ Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc)
     id = nextId++;
     cleanupProcs[id] = cleanupProc;
     Ns_MasterUnlock();
-    *clsPtr = (void *) id;
+    *clsPtr = INT2PTR(id);
 }
 
 
