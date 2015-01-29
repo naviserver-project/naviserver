@@ -277,8 +277,6 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     Ns_CsEnter(&cs);
 #endif
 
-    Ns_Log(Notice, "======== GetHost %s", addr);
-
     memset(&sa, 0, sizeof(struct sockaddr_in));
 
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
