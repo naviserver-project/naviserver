@@ -1339,22 +1339,23 @@ DriverThread(void *arg)
             closePtr = NULL;
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (PollHup(&pdata, sockPtr->pidx)) {
+                if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
                     /*
                      * Peer has closed the connection
                      */
-                    sockPtr->timeout = now;
-
-                } else if (PollIn(&pdata, sockPtr->pidx)) {
+                    SockRelease(sockPtr, SOCK_CLOSE, 0);
+                } else if (likely(PollIn(&pdata, sockPtr->pidx))) {
                     /*
                      * Got some data
                      */
                     n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
-                        sockPtr->timeout = now;
+                        SockRelease(sockPtr, SOCK_READERROR, 0);
+                    } else {
+                        Push(sockPtr, closePtr);
                     }
-                }
-                if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+                } else if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+                    /* no PollHup, no PollIn, maybe timeout */
                     SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
                 } else {
                     /* too early, keep waiting */
@@ -1371,7 +1372,7 @@ DriverThread(void *arg)
         sockPtr = readPtr;
         readPtr = NULL;
 
-        while (sockPtr != NULL) {
+        while (likely(sockPtr != NULL)) {
             nextPtr = sockPtr->nextPtr;
 
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
@@ -1380,7 +1381,7 @@ DriverThread(void *arg)
                  */
                 SockRelease(sockPtr, SOCK_CLOSE, 0);
 
-            } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
+            } else if (unlikely(PollIn(&pdata, sockPtr->pidx) == 0)) {
                 /*
                  * Got no data
                  */
