@@ -53,7 +53,7 @@ test compress-1.2.2 {HTTP 1.0: Accept-Encoding "gzip;q=1,"} -body {
         GET /ns_adp_compress.adp
 } -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
 
-test compress-1.2.3 {HTTP 1.0: Accept-Encoding "gzip;q=1a" - ignore invalud qvalue} -body {
+test compress-1.2.3 {HTTP 1.0: Accept-Encoding "gzip;q=1a" - ignore invalid qvalue} -body {
     nstest::http \
         -http 1.0 \
         -getbinary 1 \
