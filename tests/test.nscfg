@@ -17,7 +17,7 @@ for {set port 8000} {$port < 8100} {incr port} {
         break
     }
 }
-ns_param   listenport      [expr $port < 8100 ? $port : 0]
+ns_param   listenport	    [expr {$port < 8100 ? $port : 0}]
 
 
 
