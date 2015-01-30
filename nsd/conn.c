@@ -1319,7 +1319,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	"request", 
 	"server", "sock", "start", "status", 
 	"timeout",
-	"url", "urlc", "urlencoding", "urlv", 
+	"url", "urlc", "urlencoding", "urlv",
 	"version",
 	"zipaccepted",
         NULL
@@ -1447,38 +1447,103 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CContentIdx:
-        if (objc != 2 && objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "?off len?");
-            return TCL_ERROR;
-        }
+        {
+            bool binary = NS_FALSE;
+            int  offset = 0, length = -1, requiredLength;;
+            size_t contentLength;
+            char *content;
+            Tcl_DString encDs;
+            
+            Ns_ObjvSpec lopts[] = {
+                {"-binary",    Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {"?offset", Ns_ObjvInt, &offset, NULL},
+                {"?length", Ns_ObjvInt, &length, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
 
-        if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {
-	  /* 
-	   * In cases, the content is allocated via mmap, the content
-	   * is unmapped when the socket is closed. Accessing the
-	   * content will crash the server. Although we might not have
-	   * the same problem when the content is allocated
-	   * differently, we use here the restrictive strategy to
-	   * provide consistant behavior independent of the allocation
-	   * strategy.
-	   */
-	  Tcl_AppendResult(interp, "connection already closed, can't get content", NULL);
-	  return TCL_ERROR;
-	}
-
-        if (objc == 2) {
-            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length > 0u) {
-                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
-							     (int)connPtr->reqPtr->length));
-            }
-        } else {
-            if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK) {
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
-            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)Ns_ConnContent(conn) + off, 
-							 (int)len));
+
+            if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {
+                /* 
+                 * In cases, the content is allocated via mmap, the content
+                 * is unmapped when the socket is closed. Accessing the
+                 * content will crash the server. Although we might not have
+                 * the same problem when the content is allocated
+                 * differently, we use here the restrictive strategy to
+                 * provide consistant behavior independent of the allocation
+                 * strategy.
+                 */
+                Tcl_AppendResult(interp, "connection already closed, can't get content", NULL);
+                return TCL_ERROR;
+            }
+            if (offset < 0 || length < -1) {
+                Tcl_AppendResult(interp, "invalid offset and/or length specified", NULL);
+                return TCL_ERROR;
+            }
+            
+            requiredLength = length;
+            if (offset > 0 && ((size_t)offset > connPtr->reqPtr->length)) {
+                Tcl_AppendResult(interp, "offset exceeds available content length", NULL);
+                return TCL_ERROR;
+            }
+
+            if (length == -1) {
+                length = (int)connPtr->reqPtr->length - offset;
+            } else if (length > -1 && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)) {
+                Tcl_AppendResult(interp, "offset + length exceeds available content length", NULL);
+                return TCL_ERROR;
+            }
+                        
+            if (connPtr->reqPtr->length == 0u) {
+                content = NULL;
+                contentLength = 0u;
+                Tcl_ResetResult(interp);
+            } else if (binary == NS_FALSE) {
+                content = Tcl_ExternalToUtfDString(connPtr->outputEncoding,
+                                                   connPtr->reqPtr->content,
+                                                   (int)connPtr->reqPtr->length,
+                                                   &encDs);
+                contentLength = (size_t)Tcl_DStringLength(&encDs);
+                if (requiredLength == -1) {
+                    length = Tcl_DStringLength(&encDs) - offset;
+                }
+            } else {
+                content = connPtr->reqPtr->content;
+                contentLength = connPtr->reqPtr->length;
+            }
+
+            if (requiredLength == -1 && offset == 0) {
+                /*
+                 * return full content
+                 */
+                if (binary == NS_FALSE) {
+                    Tcl_DStringResult(interp, &encDs);
+                } else {
+                   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
+                                                                (int)connPtr->reqPtr->length));
+                }
+            } else {
+                /*
+                 * return partial content
+                 */
+                if (binary == NS_FALSE) {
+                    Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
+                    
+                    Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));
+                    Tcl_DStringFree(&encDs);
+                    Tcl_DecrRefCount(contentObj);
+                } else {
+                    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)content + offset, 
+                                                                 (int)length));
+                }
+            }
+            break;
         }
-        break;
 
     case CContentLengthIdx:
         Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)conn->contentLength));

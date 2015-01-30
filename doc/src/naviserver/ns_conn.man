@@ -64,11 +64,15 @@ Either set or query the compression level for the current connection.
 Use [cmd  "ns_conn compress 0"] to indicate that compression should be
 deactivated
 
-[call [cmd  "ns_conn content"] [opt [arg offset]] [opt [arg length]]]
+[call [cmd  "ns_conn content"] [opt [option -binary]] [opt [arg offset]] [opt [arg length]]]
 
 Returns the content of the HTTP request body, optionally a substring
 of that content starting at offset and extending length
-characters. Note that the client response might be returned as string
+characters. If the option [option -binary] is used, the content is
+returned raw. Otherwise, a conversion to the encoding of the connection
+is performed.
+
+Note that the client response might be returned as string
 content (as retrieved by this command) or as file 
 (see [cmd "ns_conn contentfile"] ).
 
