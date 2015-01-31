@@ -548,6 +548,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  * UpdateStringOfTime --
  *
  *      Update the string representation for an Ns_Time object.
+ *
  *      Note: This procedure does not free an existing old string rep
  *      so storage will be lost if this has not already been done.
  *
@@ -615,6 +616,9 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     str = Tcl_GetString(objPtr);
     sep = strchr(str, ':');
     if (objPtr->typePtr == intTypePtr || sep == NULL) {
+        /*
+         * When the type is "int" or no ":" is found, usec is 0.
+         */
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
@@ -623,6 +627,10 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     } else {
         int result;
 
+        /*
+         * Get sec: Overwrite the separator with a null-byte to make the
+         * first part null-terminated.
+         */
         *sep = '\0';
         result = Tcl_GetInt(interp, str, &value);
         *sep = ':';
@@ -630,6 +638,10 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
             return TCL_ERROR;
         }
         t.sec = (long)value;
+
+        /*
+         * Get usec
+         */
         if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
             return TCL_ERROR;
         }
