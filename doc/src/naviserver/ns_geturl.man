@@ -16,6 +16,10 @@ and you perform ns_geturl back to the originating server, the server may deadloc
 Also, ns_geturl does not follow redirects or handle relative URLs. URLs that are server-relative 
 (begin with "/") are translated into filenames, and the content of the file is returned.
 
+[para]
+The functions was deprecated in favor of [cmd ns_http].
+
+
 [section {COMMANDS}]
 
 [list_begin definitions]
@@ -35,8 +39,8 @@ proc getwais { } {
 
 [example_end]
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also ns_http]
+[keywords http-client]
 [manpage_end]
 
 

@@ -195,6 +195,10 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     s.error = 0;
     s.ptr = s.buf;
     s.sock = sock;
+
+    /*
+     * Read response line.
+     */
     if (GetLine(&s, &ds) == NS_FALSE) {
         goto done;
     }
@@ -204,6 +208,10 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
         }
         headers->name = Ns_DStringExport(&ds);
     }
+    
+    /*
+     * Parse header lines
+     */
     do {
         if (GetLine(&s, &ds) == NS_FALSE) {
             goto done;
@@ -270,6 +278,8 @@ NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         return TCL_ERROR;
     }
 
+    Ns_LogDeprecated(objv, 2, "ns_http queue ...; ns_http wait ...", NULL);
+    
     code = TCL_ERROR;
     if (objc == 2) {
         headers = NULL;
@@ -333,14 +343,18 @@ FillBuf(Stream *sPtr)
     n = ns_recv(sPtr->sock, sPtr->buf, BUFSIZE, 0);
     if (n <= 0) {
         if (n < 0) {
-            Ns_Log(Error, "urlopen: "
-                   "failed to fill socket stream buffer: '%s'", 
+            Ns_Log(Error, "urlopen: failed to fill socket stream buffer: '%s'", 
                    strerror(errno));
             sPtr->error = 1;
         }
         return NS_FALSE;
     }
     assert(n > 0);
+
+    /*
+     * The recv() operation was sucessuful, fill values into result fields and
+     * return NS_TRUE.
+     */
 
     sPtr->buf[n] = '\0';
     sPtr->ptr = sPtr->buf;
