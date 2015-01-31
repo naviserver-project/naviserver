@@ -148,6 +148,9 @@ NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_O
     return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
 }
 
+/*
+ * The actual function doing the hard work.
+ */
 static int
 RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
@@ -169,12 +172,21 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         return TCL_ERROR;
     }
 
+    /*
+     * Get the content
+     */
     content = Tcl_GetStringFromObj(objv[objc-1], &slen);
     ++slen;
     if (objc == 3) {
+        /*
+         * no end tag
+         */
         end = NULL;
         elen = 0;
     } else {
+        /*
+         * end tag provided.
+         */
         end = Tcl_GetStringFromObj(objv[2], &elen);
         ++elen;
     }
@@ -182,8 +194,8 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     /*
      * Allocate piggypacked memory chunk containing 
      *   - tag structure, 
-     *   + tag begin string,
-     *   + tag end string
+     *   - tag begin string,
+     *   - tag end string
      */
     tagPtr = ns_malloc(sizeof(Tag) + (size_t)slen + (size_t)elen);
     tagPtr->type = type;
@@ -198,6 +210,9 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         Tcl_UtfToLower(tagPtr->endtag);
     }
 
+    /*
+     * Get the tag string and add it to the adp.tag table.
+     */
     Tcl_DStringInit(&tbuf);
     tag = Tcl_GetStringFromObj(objv[1], &tlen);
     Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
@@ -268,7 +283,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     /*
      * Initialize the code and parse structures.
      */
-
     Tcl_DStringInit(&codePtr->text);
     codePtr->nscripts = codePtr->nblocks = 0;
     parse.codePtr = codePtr;
@@ -279,7 +293,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      * Tcl proc and save in ADP block with cache enabled or
      * just execute the Tcl code in case of cache disabled
      */
-
     if ((flags & ADP_TCLFILE) != 0U) {
         int size;
 
@@ -307,7 +320,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     /*
      * Parse ADP one tag at a time.
      */
-
     text = adp;
     scriptStreamDone = 0;
     scriptFlags = 0U;
@@ -316,6 +328,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     Ns_RWLockRdLock(&servPtr->adp.taglock);
 
     while ((s = strchr(adp, '<')) && (e = strchr(s, '>'))) {
+        
         /*
          * Process the tag depending on the current state.
          */
@@ -325,13 +338,11 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
             /*
              * Look for a <% ... %> sequence.
              */
-
             if (s[1] == '%' && s[2] != '>') {   /* NB: Avoid <%>. */
                 /*
                  * Find the cooresponding %> beyond any additional
                  * nested <% ... %> sequences.
                  */
-
                 e = strstr(e - 1, "%>");
                 n = s + 2;
                 while (e != NULL && (n = strstr(n, "<%")) != NULL && n < e) {
@@ -343,7 +354,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      * No matching %> found.  Append text and invalid
                      * opening <% before searching for next ADP tag.
                      */
-
                     AppendBlock(&parse, text, s + 2, 't', flags);
                     text = s + 2; /* NB: Next text after invalid opening <%. */
                 } else {
@@ -352,7 +362,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      * in safe mode which suppresses in-line scripts and
                      * continue looking for next ADP tag.
                      */
-
 		    if (s > text) {
 			AppendBlock(&parse, text, s, 't', flags);
 		    }
@@ -377,7 +386,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                     /*
                      * Append text and begin looking for closing </script> tag.
                      */
-
                     AppendBlock(&parse, text, s, 't', flags);
                     state = TagScript;
                     level = 1;
@@ -390,7 +398,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                          * Otherwise, save the tag attribute offsets
                          * and begin looking for required closing tag.
                          */
-
                         if (s > text) {
 			    AppendBlock(&parse, text, s, 't', flags);
 			}
@@ -414,7 +421,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
              * Look for corresponding closing </script> tag, handling
              * possible nesting of other <script> tags.
              */
-
             GetTag(&tag, s, e, NULL);
             if (STREQ(tag.string, "script")) {
                 ++level;
@@ -449,7 +455,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
              * Looking for cooresponding closing tag for a registered
              * tag, handling possible nesting of the same tag.
              */
-
             GetTag(&tag, s, e, NULL);
             if (STREQ(tag.string, tagPtr->tag)) {
                 ++level;
@@ -476,7 +481,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
         /*
          * Skip to next possible ADP tag location.
          */
-
         adp = s + 1;
     }
     Ns_RWLockUnlock(&servPtr->adp.taglock);
@@ -865,29 +869,39 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
     Tcl_DStringInit(&script);
     Tcl_DStringAppend(&script, "ns_adp_append [", -1);
     if (tagPtr->type == TAG_ADP) {
-        /* NB: String will be an ADP fragment to evaluate. */
+        /* 
+         * String will be an ADP fragment to evaluate. 
+         */
         Tcl_DStringAppend(&script, "ns_adp_eval ", -1);
     }
     Tcl_DStringAppendElement(&script, tagPtr->content);
     if (tagPtr->type == TAG_PROC) {
-        /* NB: String was a procedure, append tag attributes. */
+        /* 
+         * String was a procedure, append tag attributes. 
+         */
         ParseAtts(as, ae, NULL, &script, 0);
     }
     if (se != NULL && se > ae) {
-        /* NB: Append enclosing text as argument to eval or proc. */
+        /* 
+         * Append enclosing text as argument to eval or proc. 
+         */
         char save = *se;
         *se = '\0';
         Tcl_DStringAppendElement(&script, ae + 1);
         *se = save;
     }
     if (tagPtr->type == TAG_SCRIPT || tagPtr->type == TAG_ADP) {
-        /* NB: Append code to create set with tag attributes. */
+        /* 
+         * Append code to create set with tag attributes. 
+         */
         Tcl_DStringAppend(&script, " [ns_set create", -1);
         Tcl_DStringAppendElement(&script, tagPtr->tag);
         ParseAtts(as, ae, NULL, &script, 1);
         Tcl_DStringAppend(&script, "]", 1);
     }
-    /* NB: Close ns_adp_append subcommand. */
+    /* 
+     * Close ns_adp_append subcommand. 
+     */
     Tcl_DStringAppend(&script, "]", 1);
     AppendBlock(parsePtr, script.string, script.string+script.length, 's', flags);
     Tcl_DStringFree(&script);
@@ -922,7 +936,9 @@ AppendLengths(AdpCode *codePtr, const int *length, const int *line)
     assert(line != NULL);
 
     textPtr = &codePtr->text;
-    /* NB: Need to round up start of lengths array to next word. */
+    /* 
+     * Need to round up start of lengths array to next word. 
+     */
     start = ((textPtr->length / LENSZ) + 1) * LENSZ;
     ncopy = codePtr->nblocks * LENSZ;
     Tcl_DStringSetLength(textPtr, start + (ncopy * 2));
