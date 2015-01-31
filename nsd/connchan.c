@@ -526,22 +526,29 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
-
             if (connPtr == NULL) {
                 Ns_TclPrintfResult(interp, "no current connection");
                 return TCL_ERROR;
             }
-                    
+
+            /*
+             * Lock the channel table and create a new entry for the
+             * connection.
+             */
             Ns_MutexLock(&servPtr->connchans.lock);
             snprintf(buffer, sizeof(buffer), "conn%td", connchanCount ++);
             hPtr = Tcl_CreateHashEntry(&servPtr->connchans.table, buffer, &isNew);
-            if (isNew != 0) {
+            if (likely(isNew != 0)) {
                 Tcl_SetHashValue(hPtr, ConnChanCreate(buffer, connPtr));
                 connPtr->sockPtr = NULL;
             }
             Ns_MutexUnlock(&servPtr->connchans.lock);
-
-            if (isNew == 0) {
+            
+            /*
+             * If for some strange reason the entry existed already, return an
+             * error message.
+             */
+            if (unlikely(isNew == 0)) {
                 Ns_TclPrintfResult(interp, "connchan \"%s\" already exists", buffer);
                 result = TCL_ERROR;
             } else {
@@ -575,6 +582,11 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 }
             }
 
+            /*
+             * The provided parameter appear to be valid. Lock the channel
+             * table and return the infos for every existing entry in the
+             * conneciton channel table.
+             */
             Tcl_DStringInit(dsPtr);
 
             Ns_MutexLock(&servPtr->connchans.lock);
@@ -598,12 +610,14 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             Ns_MutexUnlock(&servPtr->connchans.lock);
 
             Tcl_DStringResult(interp, dsPtr);
-
             break;
         }
         
     case CCloseIdx:
         {
+            /*
+             * ns_connchan close
+             */
             Ns_ObjvSpec args[] = {
                 {"channel", Ns_ObjvString, &name, NULL},
                 {NULL, NULL, NULL, NULL}
@@ -625,6 +639,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
     case CCallbackIdx:
         {
+            /*
+             * ns_connchan callback
+             */
             const char *script, *whenString;
             Ns_Time     *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
             
@@ -646,7 +663,11 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             }
 
             connChanPtr = ConnChanGet(interp, servPtr, name);
-            if (connChanPtr != NULL) {
+            if (likely(connChanPtr != NULL)) {
+                /*
+                 * The provided channel name exists. In a first step get the
+                 * flags from the when string.
+                 */
                 unsigned int  when = 0u;
                 const char   *s = whenString;
                 
@@ -667,6 +688,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                     s++;
                 }
 
+                /*
+                 * Fill in the timeouts, when these are provided.
+                 */
                 if (recvTimeoutPtr != NULL) {
                     connChanPtr->recvTimeout = *recvTimeoutPtr;
                 }
@@ -674,6 +698,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                     connChanPtr->sendTimeout = *sendTimeoutPtr;
                 }
 
+                /*
+                 * Register the callback.
+                 */
                 result = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
                 if (result != TCL_OK) {
                     Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
@@ -693,6 +720,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
     case CReadIdx:
         {
+            /*
+             * ns_connchan read
+             */
             Ns_ObjvSpec  args[] = {
                 {"channel", Ns_ObjvString, &name, NULL},
                 {NULL, NULL, NULL, NULL}
@@ -703,19 +733,24 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             }
 
             connChanPtr = ConnChanGet(interp, servPtr, name);
-            if (connChanPtr != NULL) {
+            if (likely(connChanPtr != NULL)) {
+                /*
+                 * The provided channel exists.
+                 */
                 ssize_t      nRead;
                 struct iovec buf;
                 char         buffer[4096];
 
-                buf.iov_base = buffer;
-                buf.iov_len = sizeof(buffer);
-                
                 if (connChanPtr->binary != NS_TRUE) {
                     Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
                            "Channel %s is not binary", name);
                 }
 
+                /*
+                 * Read the data via the "receive" operation of the driver.
+                 */
+                buf.iov_base = buffer;
+                buf.iov_len = sizeof(buffer);
                 nRead = DriverRecv(connChanPtr->sockPtr, &buf, 1, &connChanPtr->recvTimeout);
 
                 if (nRead > -1) {
@@ -739,6 +774,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         
     case CWriteIdx:
         {
+            /*
+             * ns_connchan write
+             */
             Tcl_Obj     *msgObj;
             Ns_ObjvSpec  args[] = {
                 {"channel", Ns_ObjvString, &name, NULL},
@@ -751,7 +789,10 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             }
 
             connChanPtr = ConnChanGet(interp, servPtr, name);
-            if (connChanPtr != NULL) {
+            if (likely(connChanPtr != NULL)) {
+                /*
+                 * The provided channel name exists.
+                 */
                 struct iovec buf;
                 ssize_t      nSent;
                 int          msgLen;
@@ -762,9 +803,11 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                            "Channel %s is not binary", name);
                 }
 
+                /*
+                 * Write the data via the "send" operation of the driver.
+                 */
                 buf.iov_base = (void *)msgString;
                 buf.iov_len = (size_t)msgLen;
-
                 nSent = DriverSend(connChanPtr->sockPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
 
                 if (nSent > -1) {
@@ -781,7 +824,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         }
 
     default:
-        /* unexpected value */
+        /* 
+         * unexpected value 
+         */
         assert(opt && 0);
         break;
     }
