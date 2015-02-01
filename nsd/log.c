@@ -1181,7 +1181,8 @@ NsLogOpen(void)
 static int
 LogOpen(void)
 {
-    int fd, oflags, status = NS_OK;
+    int          fd, status = NS_OK;
+    unsigned int oflags;
 
     oflags = O_WRONLY | O_APPEND | O_CREAT;
 
@@ -1189,7 +1190,7 @@ LogOpen(void)
     oflags |= O_LARGEFILE;
 #endif
 
-    fd = ns_open(file, oflags, 0644);
+    fd = ns_open(file, (int)oflags, 0644);
     if (fd == NS_INVALID_FD) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
