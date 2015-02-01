@@ -1448,10 +1448,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CContentIdx:
         {
-            bool binary = NS_FALSE;
-            int  offset = 0, length = -1, requiredLength;;
-            size_t contentLength;
-            char *content;
+            bool        binary = NS_FALSE;
+            int         offset = 0, length = -1, requiredLength;
+            size_t      contentLength;
+            char       *content;
             Tcl_DString encDs;
             
             Ns_ObjvSpec lopts[] = {
