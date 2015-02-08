@@ -76,7 +76,7 @@ listed below are well-suited to the Tcl libraries approach.
  procedures do not normally involve returning HTML pages and so are
  not well suited to ADPs.
 
-[def Filters:] If you want a Tcl script to be called at
+[def "Filters:"] If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
  function.
@@ -99,27 +99,44 @@ Naviserver distinguishes between global (shared) and per-server
 
 [list_begin itemized]
 
-[item ]The [emph private] (per-server) Tcl library directory is
+[item] The [emph "global (shared)"] Tcl libray directory is specified by the
+parameter [term tcllibrary] in the [term ns/parameters] section and it
+defaults to [term tcl] under NaviServer [term home] directory.
+
+[example_begin]
+ ns_section  ns/parameters
+     ns_param home        /usr/local/ns   ;# usual place
+     ns_param tcllibrary  tcl             ;# default, full path: /usr/local/ns/tcl
+ 
+[example_end]
+
+[item ]The [emph "per-server (private)"] Tcl library directory is
 specified by the parameter [term library] in the
 [term ns/server/servername/tcl] section.  It defaults to
 [term modules/tcl]
 under NaviServer [term home].  One can specify a
 different Tcl library directory for each server.
 
-[item] The [emph shared] (global) Tcl libray directory is specified by the
-parameter [term tcllibrary] in the [term ns/parameters] section and it
-defaults to [term /tcl] under NaviServer [term home] directory.
+[example_begin]
+ ns_section  ns/parameters
+     ns_param home        /usr/local/ns   ;# usual place
+ 
+ ns_section ns/server/myserver/tcl
+     ns_param library     modules/tcl     ;# default, full path: /usr/local/ns/modules/tcl
+ 
+[example_end]
+
+
 
 [list_end]
 
 
-Note that the specified directories need not reside under the
-NaviServer installation directory. This allows you to keep
-user-defined scripts physically separate from the scripts supplied by
-NaviServer. For example, OpenACS uses the per-server library directory
-to start the server with the OpenACS specific packages and
-request/templating processing.
-
+Note that the specified directories need not reside under [term home]
+(the NaviServer installation directory). Using a different directory
+tree allows you to keep site-specific scripts physically separate from
+the system-specific scripts supplied by NaviServer. For example,
+OpenACS uses the per-server library directory to start the server with
+the OpenACS specific packages and request/templating processing.
 
 [section {Tcl Script Order of Evaluation}]
 
@@ -136,7 +153,7 @@ directories and then the specified Tcl-only modules:
 
 [enum] For the specified Tcl library directories, the [term init.tcl] file in
  that directory is sourced first (if it exists), and then all the
- remaining .tcl files are sourced alphabetically.
+ remaining .tcl files are sourced in an alphabetical order.
 
 [enum] For each module (including any Tcl-only modules) in the server:
  If a private Tcl directory is specified, the [term init.tcl] file in the
