@@ -38,10 +38,6 @@
 
 #include "nsd.h"
 
-#ifdef LOG_DEBUG
-# undef LOG_DEBUG /* Because this is used by the syslog facility as well */
-#endif
-
 #include <syslog.h>
 #include <signal.h>
 #include <stdarg.h>
