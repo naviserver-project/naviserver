@@ -332,8 +332,8 @@ Ns_ListLength(const Ns_List *lPtr)
 {
     int i;
 
-    for (i = 0; lPtr != NULL; lPtr = lPtr->rest) {
-        i++;
+    for (i = 0; lPtr != NULL; lPtr = lPtr->rest, i++) {
+        ;
     }
     
     return i;

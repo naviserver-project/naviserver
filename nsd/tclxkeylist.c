@@ -60,7 +60,7 @@ static char *ckstrdup(const char *s) {
 /*
  * Used to return argument messages by most commands.
  */
-static const char *tclXWrongArgs = "wrong # args: ";
+static const char *const tclXWrongArgs = "wrong # args: ";
 
 /*
  * Those are used in TclX_IsNullObj() in read-only mode

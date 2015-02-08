@@ -413,49 +413,50 @@ ZFree(voidpf arg, voidpf address)
 #else /* ! HAVE_ZLIB_H */
 
 int
-Ns_CompressInit(Ns_CompressStream *cStream)
+Ns_CompressInit(Ns_CompressStream *UNUSED(cStream))
 {
     return NS_ERROR;
 }
 
 void
-Ns_CompressFree(Ns_CompressStream *cStream)
+Ns_CompressFree(Ns_CompressStream *UNUSED(cStream))
 {
     return;
 }
 
 int
-Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
-                    Ns_DString *dsPtr, int level, int flush)
+Ns_CompressBufsGzip(Ns_CompressStream *UNUSED(cStream), struct iovec *UNUSED(bufs), int UNUSED(nbufs),
+                    Ns_DString *UNUSED(dsPtr), int UNUSED(level), int UNUSED(flush))
 {
     return NS_ERROR;
 }
 
 int
-Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(const char *UNUSED(buf), int UNUSED(len), Tcl_DString *UNUSED(outPtr), int UNUSED(level))
 {
     return NS_ERROR;
 }
 
 int 
-Ns_InflateInit(Ns_CompressStream *cStream) 
+Ns_InflateInit(Ns_CompressStream *UNUSED(cStream)) 
 {
     return NS_ERROR;
 }
 
 int
-Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer), size_t UNUSED(inSize)) 
 {
     return NS_ERROR;
 }
 int
-Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer),
+		 size_t UNUSED(outSize), size_t *UNUSED(nrBytes)) 
 {
     return NS_ERROR;
 }
 
 int
-Ns_InflateEnd(Ns_CompressStream *cStream) 
+Ns_InflateEnd(Ns_CompressStream *UNUSED(cStream)) 
 {
     return NS_ERROR;
 }

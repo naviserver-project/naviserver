@@ -52,12 +52,12 @@ static int MakeMonth(char *s)
  * Static variables defined in this file
  */
 
-static const char *month_names[] = {
+static const char *const month_names[] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static const char *week_names[] = {
+static const char *const week_names[] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
@@ -193,6 +193,7 @@ Ns_ParseHttpTime(char *chars)
             timeInfo.tm_min = MakeNum(s + 13);
             timeInfo.tm_sec = MakeNum(s + 16);
         } else {
+            int century;
             if ((int) strlen(s) < 20) {
                 return 0;
             }
@@ -207,7 +208,8 @@ Ns_ParseHttpTime(char *chars)
 
             timeInfo.tm_mday = MakeNum(s);
             timeInfo.tm_mon = MakeMonth(s + 3);
-            timeInfo.tm_year = ((100 * MakeNum(s + 7)) - 1900) + MakeNum(s + 9);
+            century = ((100 * MakeNum(s + 7)) - 1900);
+            timeInfo.tm_year = century + MakeNum(s + 9);
             timeInfo.tm_hour = MakeNum(s + 12);
             timeInfo.tm_min = MakeNum(s + 15);
             timeInfo.tm_sec = MakeNum(s + 18);
