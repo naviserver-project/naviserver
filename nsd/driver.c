@@ -203,7 +203,7 @@ static Driver    *firstDrvPtr = NULL; /* First in list of all drivers */
 static void
 WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
 {
-    fprintf(stderr, "%s: Warning: wanted to write %" PRIdz
+    fprintf(stderr, "%s: Warning: wanted to write %" PRIuz
             " bytes, wrote %ld to file descriptor %d\n",
             msg, wantWrite, (long)written, fd);
 }

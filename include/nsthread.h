@@ -568,6 +568,21 @@ typedef struct DIR_ *DIR;
  * of size_t. Therefore, we invent here our own variant, trying to
  * stick to the naming conventions.
  */
+#if !defined(PRIuz) && defined(_WIN64)
+# define PRIuz "I64u"
+#endif
+#if !defined(PRIuz) && defined(_WIN32)
+# define PRIuz "I32u"
+#endif
+#if !defined(PRIuz)
+# define PRIuz "zu"
+#endif
+
+/*
+ * There is apparently no platform independent print format for items
+ * of ssize_t. Therefore, we invent here our own variant, trying to
+ * stick to the naming conventions.
+ */
 #if !defined(PRIdz) && defined(_WIN64)
 # define PRIdz PRId64
 #endif

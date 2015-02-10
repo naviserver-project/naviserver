@@ -331,7 +331,7 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
     if (doStream == 0) {
 	char buffer[TCL_INTEGER_SPACE];
 
-	snprintf(buffer, sizeof(buffer), "%" PRIdz, length);
+	snprintf(buffer, sizeof(buffer), "%" PRIuz, length);
 	Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
 	connPtr->responseLength = (ssize_t)length;
     } else {

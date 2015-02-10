@@ -449,7 +449,7 @@ SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     char *chars;
 
     chars = Tcl_GetString(objPtr);
-    if (sscanf(chars, "t%p-a%p", &type, &addr) != 2
+    if (sscanf(chars, "t%20p-a%20p", &type, &addr) != 2
         || type == NULL || addr == NULL) {
         Tcl_AppendResult(interp, "invalid address \"", chars, "\"", NULL);
         return TCL_ERROR;

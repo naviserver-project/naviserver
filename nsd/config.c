@@ -426,7 +426,7 @@ Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
     const char *s;
 
     s = Ns_ConfigGetValue(section, key);
-    if (s == NULL || sscanf(s, "%" PRId64, valuePtr) != 1) {
+    if (s == NULL || sscanf(s, "%24" PRId64, valuePtr) != 1) {
         return NS_FALSE;
     }
     return NS_TRUE;

@@ -864,7 +864,7 @@ Ns_SetGroup(const char *group)
         int gid = Ns_GetGid(group);
 
         if (gid == -1) {
-            if (sscanf(group, "%d%n", (int*)&gid, &nc) != 1
+            if (sscanf(group, "%24d%n", (int*)&gid, &nc) != 1
                 || nc != strlen(group)
                 || Ns_GetNameForGid(NULL, (gid_t)gid) == NS_FALSE) {
                 Ns_Log(Error, "Ns_GetGroup: unknown group '%s'", group);
@@ -919,7 +919,7 @@ Ns_SetUser(const char *user)
              * Hm, try see if given as numeric uid...
              */
 
-            if (sscanf(user, "%d%n", &uid, &nc) != 1
+            if (sscanf(user, "%24d%n", &uid, &nc) != 1
                 || nc != strlen(user)
                 || Ns_GetNameForUid(&ds, (uid_t)uid) == NS_FALSE) {
                 Ns_Log(Error, "Ns_SetUser: unknown user '%s'", user);
