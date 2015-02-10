@@ -791,7 +791,6 @@ NsTclThread(void *arg)
     Ns_DString       ds, *dsPtr;
     bool             detached;
     static bool      initialized = NS_FALSE;
-    static uintptr_t id = 0u;
 
     assert(arg != NULL);
 
@@ -814,6 +813,7 @@ NsTclThread(void *arg)
     Ns_TlsSet(&argtls, argPtr);
     
     if (argPtr->threadName != NULL) {
+        static uintptr_t id = 0u;
         Ns_ThreadSetName("-tcl-%s:%" PRIuPTR "-", argPtr->threadName, id++);
     }
 
