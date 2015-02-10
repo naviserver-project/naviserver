@@ -175,7 +175,7 @@ size_t
 Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
 {
     register int n;
-    unsigned char chars[4];
+    unsigned char chars[4] = {0u, 0u, 0u, 0u};
     register const unsigned char *p;
     register unsigned char *q;
 
