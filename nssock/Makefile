@@ -28,5 +28,5 @@
 # 
 
 MOD      =  nssock.so
-OBJS     =  nssock.o
+MODOBJS  =  nssock.o
 include  ../include/Makefile.build

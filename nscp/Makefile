@@ -29,5 +29,5 @@
 #
 
 MOD      =  nscp.so
-OBJS     =  nscp.o
+MODOBJS  =  nscp.o
 include  ../include/Makefile.build

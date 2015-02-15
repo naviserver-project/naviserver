@@ -29,5 +29,5 @@
 #
 
 MOD      =  nslog.so
-OBJS     =  nslog.o
+MODOBJS  =  nslog.o
 include  ../include/Makefile.build

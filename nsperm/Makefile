@@ -30,7 +30,7 @@
 
 MODNAME  =  nsperm
 MOD      =  nsperm.so
-OBJS     =  nsperm.o
+MODOBJS  =  nsperm.o
 TCL      =  init.tcl compat.tcl htaccess.tcl
 MODINST	 =  cpfiles
 

@@ -29,5 +29,5 @@
 #
 
 MOD      =  nscgi.so
-OBJS     =  nscgi.o
+MODOBJS  =  nscgi.o
 include  ../include/Makefile.build

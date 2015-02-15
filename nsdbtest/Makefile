@@ -4,5 +4,5 @@
 
 MODNAME  =  nsdbtest
 MOD      =  nsdbtest.so
-OBJS     =  nsdbtest.o
+MODOBJS  =  nsdbtest.o
 include  ../include/Makefile.build
