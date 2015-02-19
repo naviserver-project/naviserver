@@ -29,7 +29,7 @@
 
 MODNAME = nsdb
 MOD     = nsdb.so
-MODOBJS  = nsdb.o
+MODOBJS = nsdb.o
 LIBNM   = nsdb
 LIBOBJS = dbinit.o dbdrv.o dbtcl.o dbutil.o
 LIBHDRS = nsdb.h
