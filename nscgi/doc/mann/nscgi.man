@@ -1,6 +1,6 @@
 [include version_include.man]
 [manpage_begin {nscgi} n [vset version]]
-
+[moddesc {NaviServer Modules}]
 [titledesc {NaviServer CGI Interface Guide}]
 
 [description]
@@ -158,38 +158,33 @@ environment variables for each type of program you use.
 Note that if you're defining multiple servers, you will need to
 configure the CGI interface for each server.
 
-
 [para]
-
 
 To enable and configure CGI:
 
-
 [list_begin enum]
+[enum]
+Edit your NaviServer configuration file, usually named nsd.tcl.
 
-
-[enum]Edit your NaviServer configuration file, usually named nsd.tcl.
-
-[enum]Choose the server for which you want to enable CGI. Add the CGI
-    module to that server. For example:
+[enum]
+Choose the server for which you want to enable CGI. Add the CGI
+module to that server. For example:
 
 
 [example_begin]
 
-     ns_section "ns/server/Server1/modules"
-     ns_param nscgi nscgi.so
+   ns_section "ns/server/Server1/modules"
+      ns_param nscgi nscgi.so
 
 [example_end]
 
 
 [enum]Add a section for the server called
-    ns/server/server-name/modules/nscgi. For example:
-
+    [const "ns/server/server-name/module/nscgi"].
+    For example:
 
 [example_begin]
-
-     ns_section "ns/server/Server1/modules/nscgi"
-
+   ns_section "ns/server/Server1/module/nscgi"
 [example_end]
 
 
@@ -198,17 +193,17 @@ To enable and configure CGI:
 
 
 [example_begin]
-
-     ns_section "ns/server/Server1/modules/nscgi"
-     ns_param Map "GET /cgi /usr/local/cgi"
-     ns_param Map "POST /*.cgi"
-
+   ns_section "ns/server/Server1/module/nscgi"
+      ns_param Map  "GET /cgi /usr/local/cgi"
+      ns_param Map  "POST /*.cgi"
 [example_end]
 
 
-[enum]Modify other CGI parameters as needed.
+[enum]
+Modify other CGI parameters as needed.
 
-[enum]If you plan to use a program which requires an interpreter, e.g.,
+[enum]
+If you plan to use a program which requires an interpreter, e.g.,
     Perl or a shell script, you will need to define an Interpreter in
     the Interps section. Follow these steps:
 
@@ -217,38 +212,30 @@ To enable and configure CGI:
     [item] Add a definition for the Interps parameter to your CGI
         configuration section. For example:
 
-
 [example_begin]
-
-      ns_section "ns/server/Server1/modules/nscgi"
-      ns_param Map "GET /cgi /usr/local/cgi"
-      ns_param Map "POST /*.cgi"
+   ns_section "ns/server/Server1/module/nscgi"
+      ns_param Map  "GET /cgi /usr/local/cgi"
+      ns_param Map  "POST /*.cgi"
       ns_param Interps CGIinterps
-
 [example_end]
 
 
     [item] Then add an interpreter section containing interpreter
         definitions. For example:
 
-
 [example_begin]
-
-      ns_section "ns/interps/CGIinterps"
-      ns_param .pl "c:\perl\bin\perl.exe"
-      ns_param .sh "c:\mks\mksnt\sh.exe(MKSenv)"
-
+   ns_section "ns/interps/CGIinterps"
+      ns_param .pl  "c:\perl\bin\perl.exe"
+      ns_param .sh  "c:\mks\mksnt\sh.exe(MKSenv)"
 [example_end]
 
 
 
 [list_end]
 
-[para]
-
-
-[enum]If the interpreter requires environment variables, you will need
-    to define an Environment section. Follow these steps:
+[enum]
+If the interpreter requires environment variables, you will need
+    to define an environment section. Follow these steps:
 
     [list_begin itemized]
 
@@ -257,60 +244,51 @@ To enable and configure CGI:
 
 
 [example_begin]
-
-          ns_section "ns/server/Server1/modules/nscgi"
-          ns_param Map "GET /cgi /usr/local/cgi"
-          ns_param Map "POST /*.cgi"
-          ns_param Interps CGIinterps
-          ns_param Environment CGIenvironment
-
+   ns_section "ns/server/Server1/module/nscgi"
+      ns_param Map      "GET /cgi /usr/local/cgi"
+      ns_param Map      "POST /*.cgi"
+      ns_param Interps  CGIinterps
+      ns_param Environment CGIenvironment
 [example_end]
 
-
-
-   [item] Then add an environment section containing variable
+   [item]
+       Then add an environment section containing variable
        definitions. For example:
 
-
 [example_begin]
-
-         ns_section "ns/interps/CGIenvironment"
-         ns_param var1 var1-definition
-         ns_param var2 var2-definition
-
+   ns_section "ns/interps/CGIenvironment"
+      ns_param var1 var1-definition
+      ns_param var2 var2-definition
 [example_end]
 
 [list_end]
-
 [list_end]
 
-[section {How Web Pages Run CGI Programs}]
 
+[section {How Web Pages Run CGI Programs}]
 
 There are several ways a Web page can run a CGI program:
 
 [list_begin itemized]
-
-[item] Direct Link: A link in your page can reference a CGI program
+[item]
+    [emph {Direct Link:}] A link in your page can reference a CGI program
     directly. Normally, such links are used when you do not need to
     send any variables to the program.
 
-[item] ISINDEX Tag: This tag can be included in the <HEAD> section of
+[item]
+   [emph "[const ISINDEX] Tag:"] This tag can be included in the [const <HEAD>] section of
     the page. For example, you could add this tag:
-    <ISINDEX HREF="/cgi-bin/search.pl" PROMPT="Search for:">
 
+[example_begin]
+   <ISINDEX HREF="/cgi-bin/search.pl" PROMPT="Search for:">
+[example_end]
 
-[para]
-
-
-    Normally, the ISINDEX tag is used to run search programs, but
+    Normally, the [const ISINDEX] tag is used to run search programs, but
     this is not a requirement. You can use this tag to run CGI programs
     if you don't care where the field is located in your page and your
     program accepts a single variable.
 
-
 [para]
-
 
    When you use this tag, the browser adds a field to the Web page.
    Readers can type a string in this field. The server
@@ -318,18 +296,18 @@ There are several ways a Web page can run a CGI program:
    CGI program as separate command-line arguments. The
    advantage is you don't need to decode the input.
 
-[item] Form: You can create a form with multiple fields. Use forms to run
+[item] [emph {Form:}] You can create a form with multiple fields. Use forms to run
     CGI programs when your readers can choose or type values for one
-    or more variables.The METHOD attribute of the FORM can be either
-    "GET" or "POST".
+    or more variables.The [const METHOD] attribute of the HTML
+    form an be either [const GET] or [const POST].
 
     [list_begin itemized]
 
-    [item] The "GET" method causes the field names and values to be
-        passed to the program in the QUERY_STRING environment
+    [item] The [const GET] method causes the field names and values to be
+        passed to the program in the [const QUERY_STRING] environment
         variable.
 
-    [item] The "POST" method causes the field names and values to be
+    [item] The [const POST] method causes the field names and values to be
         passed to the program through standard input. If the input
         from your form may be long, it is best to use the POST method
         because long strings can be truncated when they are assigned
@@ -344,76 +322,62 @@ There are several ways a Web page can run a CGI program:
 
 [subsection {URLs that Run CGI Programs}]
 
-
 For each method of running a CGI program described in the previous
 section, the browser software sends a URL to the server. (In addition,
 the HTTP header sent with the URL includes some environment
 variables).
 
-
 [para]
-
 
 Generally the URL to run a CGI program can have these parts:
 
-
 [para]
 
-
-CGI path[lb]/extra path information [rb][lb]?query string[rb]
+[emph "CGI path[lb]/extra path information [rb][lb]?query string[rb]"]
 
 [list_begin itemized]
 
-[item] The CGI path is the location of the CGI program to run. The path
+[item] The [emph "CGI path"] is the location of the CGI program to run. The path
     can be a relative or absolute reference to the program file.
 
-[item] The optional extra path information can be included in the URL to
+[item] The optional [emph "extra path"] information can be included in the URL to
     provide either a directory location the CGI program should use or
     some extra information for the CGI program. The path is relative
     to the root directory for Web pages. The extra path information is
     available to the CGI program in the PATH_INFO environment
     variable.
 
-[item] The optional query string is preceded by a question mark (?) and
+[item] The optional [emph "query string"] is preceded by a question mark (?) and
     contains either a single variable or a set of field names and
     variables for the CGI program to use. The query string is
-    available to the CGI program in either the QUERY_STRING
+    available to the CGI program in either the [const QUERY_STRING]
     environment variable or the standard input location (if the form
-    method is POST).
-
-
+    method is [const POST]).
 [list_end]
 
 
-
 [para]
-
 
 For example, the query string from a form with 3 fields could be:
 
 
 [para]
 
-
-Field1=Value1&amp;Field2=Value2&amp;Field3=Value3
-
+[const Field1=Value1&Field2=Value2&Field3=Value3]
 
 [para]
-
 
 Spaces in the query string are replaced with plus signs (+). Any
 special characters (such as ?, =, &, +) are replaced with %xx, where
 xx is the hexadecimal value for that character.
 
-
 [para]
-
 
 Here are some examples of URLs that could run a CGI program:
 
 [list_begin itemized]
 
-[item] http://www.mysite.com/cgi-bin/gettime
+[item] [const http://www.mysite.com/cgi-bin/gettime]
 
 
 [para]
@@ -423,26 +387,23 @@ Here are some examples of URLs that could run a CGI program:
    the current time. There are no variables, so you might
    use this as a direct link.
 
-[item] http://www.mysite.com/cgi-bin/listdir/misc/mydir
-
+[item] [const http://www.mysite.com/cgi-bin/listdir/misc/mydir]
 
 [para]
-
 
    This URL runs the listdir program and passes it /misc/mydir as
    extra path information. This might be a direct link in a page.
 
-[item] http://www.mysite.com/cgi-bin/search?navigate
+[item] [const http://www.mysite.com/cgi-bin/search?navigate]
 
 
 [para]
-
 
    This URL runs the search program and passes it the word
    "navigate" as input. This URL doesn't include any field
    names, so it might be passed by pages with an ISINDEX tag.
 
-[item] http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word
+[item] [const http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word]
 
 
 [para]
@@ -490,17 +451,10 @@ CGI programs can get input from these sources:
 
 [item] Standard input: If the METHOD for a form is POST, the field names
     and values are sent to standard input.
-
-
 [list_end]
 
 
-
 [subsection {Accessing Environment Variables}]
-
-
-[para]
-
 
 Different languages allow you to access environment variables in
 different ways. Here are some examples:
@@ -509,21 +463,15 @@ different ways. Here are some examples:
 [emph  {C or C++}]
 
 [example_begin]
-
   #include <stdlib.h>;
   
   char *browser = getenv("HTTP_USER_AGENT");
-
 [example_end]
-
-
 
 [emph {Perl}]
 
 [example_begin]
-  
   $browser = $ENV{'HTTP_USER_AGENT'};
-  
 [example_end]
 
 
@@ -531,58 +479,40 @@ different ways. Here are some examples:
 
 
 [example_begin]
-  
   BROWSER=$HTTP_USER_AGENT
-  
 [example_end]
 
 
 [emph {C shell}]
 
-
 [example_begin]
-  
   set BROWSER = $HTTP_USER_AGENT
-  
 [example_end]
 
 
 [subsection {Standard Environment Variables}]
 
-
-[para]
-
-
 These standard environment variables are defined for all CGI programs
 by the NaviServer:
 
-
 [para]
-
 
 [emph AUTH_TYPE:]
 
-
 [para]
-
 
 If the server supports user authentication, and the script is
 protected, this is the protocol-specific authentication method used to
 validate the user. For CGI programs run by NaviServer, this is always
 "Basic".
 
-
 [para]
-
 
 Example: Basic
 
-
 [para]
 
-
 [emph CONTENT_LENGTH:]
-
 
 [para]
 
@@ -612,8 +542,8 @@ Example: 442
 If the CGI program is run by a form with the POST method, this
 variable contains the MIME type of the information sent by the
 browser. Currently, all browsers should send the information as
-application/x-www-form-urlencoded. Other types may be added in the
-future.
+[const application/x-www-form-urlencoded].
+Other types may be added in the future.
 
 
 [para]
@@ -650,51 +580,34 @@ the user has installed. If you want to send browser-specific output,
 you may also want to check the browser name, which is specified by the
 HTTP_USER_AGENT variable.
 
-
 [para]
-
 
 Examples:
 
-
-[para]
-
-
+[example_begin]
  */*, application/x-navidoc
-
-
-[para]
-
-
  */*, image/gif, image/x-xbitmap, image/jpeg
-
+[example_end]
 
 [para]
 
 
 [emph  HTTP_FROM:]
 
-
 [para]
-
 
 This variable may contain the email address of the reader who caused
 the CGI program to run. However, some browsers do not send the email
 address for privacy reasons. And, users may enter false email
 addresses in their preferences settings.
 
-
 [para]
 
-
-Example: itsme@mydomain.com
-
+Example: [const itsme@mydomain.com]
 
 [para]
-
 
 [emph  HTTP_IF_MODIFIED_SINCE:]
-
 
 [para]
 
@@ -708,7 +621,7 @@ information.
 [para]
 
 
-Example: Thursday, 23-Nov-95 17:00:00 GMT
+Example: [const "Thursday, 23-Nov-95 17:00:00 GMT"]
 
 
 [para]
@@ -729,7 +642,7 @@ URL of that form.
 [para]
 
 
-Example: http://www.mydomain.com/mydir/feedback.htm
+Example: [const http://www.mydomain.com/mydir/feedback.htm]
 
 
 [para]
@@ -740,25 +653,18 @@ Example: http://www.mydomain.com/mydir/feedback.htm
 
 [para]
 
-
 This variable tells which browser the reader is using to send the
 request. Normally, the format is "browser name/version".
 
-
 [para]
 
-
-Example: Mozilla/1.2N (Windows; I; 16bit)
-
+Example: [const "Mozilla/1.2N (Windows; I; 16bit)"]
 
 [para]
-
 
 [emph  PATH_INFO:]
 
-
 [para]
-
 
 This variable contains any extra path information included in the URL
 sent by the browser. Commonly, this type of URL is used to pass a
@@ -769,28 +675,21 @@ extra path information:
 
 [para]
 
-
- http://www.mysite.com/cgi-bin/listdir/misc/mydir
-
+[const http://www.mysite.com/cgi-bin/listdir/misc/mydir]
 
 [para]
-
 
 Another use for this type of URL is to pass information to the program
 without using a form or to pass form-specific variables in addition to
 the user-specified variables. For example:
 
+[para]
+
+[const http://www.mysite.com/cgi-bin/search/keyword=navigate]
 
 [para]
 
-
- http://www.mysite.com/cgi-bin/search/keyword=navigate
-
-
-[para]
-
-
-Examples: /misc/mydir/keyword=navigate
+Examples: [const /misc/mydir/keyword=navigate]
 
 
 [para]
@@ -812,7 +711,7 @@ server.
 [para]
 
 
-Example: /NaviServer/pages/misc/mydir
+Example: [const /NaviServer/pages/misc/mydir]
 
 
 [para]
@@ -853,7 +752,7 @@ The QUERY_STRING is encoded in a format like this:
 [para]
 
 
- Field1=Value1&Field2=Value2&Field3=Value3
+[const Field1=Value1&Field2=Value2&Field3=Value3]
 
 
 [para]
@@ -892,34 +791,28 @@ string encoding follows these rules:
 
 [para]
 
-
   Checkbox: The name and value usually appear in the list only if
  the box is checked. Some browsers may send the name of
  the checkbox only.
 
-
 [para]
-
 
   Selection List: The value of a selection list is the text of the
  item that is selected. If multiple items can be selected,
  there is a name/value pair with the same name for each
  item that is selected.
 
-
 [para]
-
 
   Image Field: Two name value pairs are sent. ".x" and ".y" are
  added to the field name and the values are the x and y
  coordinates (measured in pixels from an origin at the
  upper-left corner of the image). For example:
 
-
 [para]
 
 
- Figfield.x=185&Figfield.y=37
+[const Figfield.x=185&Figfield.y=37]
 
 
 [para]
@@ -961,14 +854,11 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
  hexadecimal value of the character. Here are some common
  characters and their hex values:
 
-
 [list_end]
-
-
 
 [para]
 
-
+[example_begin]
  # -- %23
  = -- %3D
  / -- %2F
@@ -981,9 +871,7 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
  + -- %2B
  ? -- %3F
  return -- %09
-
-
-[para]
+[example_end]
 
 
 [emph  REMOTE_ADDR:]
@@ -999,7 +887,7 @@ is making the request. This information is always available.
 [para]
 
 
-Example: 199.221.53.76
+Example: [const 199.221.53.76]
 
 
 [para]
@@ -1020,7 +908,7 @@ instead.
 [para]
 
 
-Example: mybox.company.com
+Example: [const mybox.company.com]
 
 
 [para]
@@ -1040,7 +928,7 @@ variable contains the username the reader provided.
 [para]
 
 
-Example: nsadmin
+Example: [const nsadmin]
 
 
 [para]
@@ -1076,7 +964,7 @@ run the program again -- for example, to search for another string.
 [para]
 
 
-Example: /cgi-bin/search
+Example: [const /cgi-bin/search]
 
 
 [para]
@@ -1087,20 +975,14 @@ Example: /cgi-bin/search
 
 [para]
 
-
 The full hostname, domain name alias, or IP address of the server that
 ran the CGI program.
 
-
 [para]
 
-
-Example: www.mysite.com
- 128.111.115.9
-
+Example: [const www.mysite.com]
 
 [para]
-
 
 [emph  SERVER_PORT:]
 
@@ -1116,7 +998,7 @@ The default is 80.
 [para]
 
 
-Example: 80
+Example: [const 80]
 
 
 [para]
@@ -1135,7 +1017,7 @@ this request from the client to the server.
 [para]
 
 
-Example: HTTP/1.0
+Example: [const HTTP/1.0]
 
 
 [para]
@@ -1154,7 +1036,7 @@ program.
 [para]
 
 
-Example: NaviServer/3.0
+Example: [const NaviServer/4.99.6]
 
 
 [para]
@@ -1311,35 +1193,21 @@ your program can add other information to the header.
 
  Header Information Generated by NaviServer
 
-
 [para]
-
 
 When your CGI program sends output to the standard output location,
 the server automatically adds the following HTTP header information
 before sending the output to the reader's browser:
 
-
-[para]
-
-
-
 [example_begin]
-
-
 HTTP/1.0 200 OK
 MIME-Version: 1.0
 Server: NaviServer/3.0
 Date: Monday, 06-Nov-95 17:50:15 GMT
 Content-length: 20134
-
-
 [example_end]
 
-
-
 [para]
-
 
 However, if the name of your CGI program begins with "nph-", the
 NaviServer will not parse the output you send. Instead, the output is
@@ -1351,15 +1219,11 @@ with non-parsed headers, the server does not interpret the output, so
 the response code and content length are written out as 0 (zero) and 0
 (zero) in the access log file.
 
-
 [para]
-
 
  Header Information Generated by Your Program
 
-
 [para]
-
 
 You can specify header information at the beginning of the output you
 send back to the client. After the header, add a blank line and then
@@ -1368,30 +1232,21 @@ required. Your program should always send the Content-type header
 (unless you are using the Location header). The other headers listed
 below it are optional. For example,
 
-
 [para]
 
 
 
 [example_begin]
-
-
 Content-type: text/html
-
+ 
 <HTML>
 <HEAD><TITLE>My title</TITLE></HEAD>
 <BODY>text goes here...</BODY>
 </HTML>
-
-
 [example_end]
 
 
-
-[para]
-
-
- Content-type:
+[const Content-type:]
 
 
 [para]
@@ -1408,15 +1263,11 @@ program -- just be sure to specify the correct MIME type.
 
 [para]
 
-
-Example: Content-type: text/html
-
+Example: [const "Content-type: text/html"]
 
 [para]
 
-
- Content-encoding:
-
+[const  Content-encoding:]
 
 [para]
 
@@ -1429,14 +1280,13 @@ standard UNIX compression.
 
 [para]
 
-
-Example: Content-encoding: x-compress
+Example: [const "Content-encoding: x-compress"]
 
 
 [para]
 
 
- Expires:
+[const  Expires:]
 
 
 [para]
@@ -1451,13 +1301,12 @@ the server.
 [para]
 
 
-Example: Expires: Monday, 06-Nov-95 17:50:15 GMT
+Example: [const "Expires: Monday, 06-Nov-95 17:50:15 GMT"]
 
 
 [para]
 
-
- Location:
+[const  Location:]
 
 
 [para]
@@ -1487,13 +1336,13 @@ For example, you can send an FTP, Gopher, or News URL.
 [para]
 
 
-Example: Location: http://www.my.org/outbox/accepted.html
+Example: [const "Location: http://www.my.org/outbox/accepted.html"]
 
 
 [para]
 
 
- Status:
+[const  Status:]
 
 
 [para]
@@ -1515,7 +1364,7 @@ error situations that occur.
 [para]
 
 
-Example: Status: 401 Unauthorized
+Example: [const "Status: 401 Unauthorized"]
 
 
 [para]
@@ -1530,12 +1379,9 @@ Example: Status: 401 Unauthorized
 To send a Web page to a reader's browser from a CGI program, first
 output this line followed by a blank line:
 
-
 [para]
 
-
- Content-type: text/html
-
+[const "Content-type: text/html"]
 
 [para]
 
@@ -1544,9 +1390,7 @@ Then, generate and output the HTML tags and content that make up the
 page. You can send any HTML tags you would normally use when creating
 pages.
 
-
 [para]
-
 
 If the file you want to send already exists, you can use the Location
 header described in the previous section to send that file as output
@@ -1556,12 +1400,9 @@ from the CGI program.
 [para]
 
 
-
 [section {Advice for CGI Programming}]
 
-
 [para]
-
 
 [list_begin itemized]
 

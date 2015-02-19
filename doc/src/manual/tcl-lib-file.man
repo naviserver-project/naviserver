@@ -5,21 +5,22 @@
 [titledesc {Support for .tcl-style dynamic pages}]
 
 [description]
-file.tcl is responsible for setting up all that's necessary for
-allowing you to use TCL files in your webserver directories.
+When a client requests a page, the page can be a static or dynamic,
+where the latter means that the content is computed at the time it is served. 
+The dynamic content can be provided as .adp files or via .tcl files.
 
 [para]
-
+By default Tcl pages are not enabled, but can be enabled over the
+configuration file of NaviServer.
 Notice the entries in your sample-config.tcl configuration file:
 
 [example_begin]
-
-ns_section "ns/server/${servername}"
-ns_param   enabletclpages  false         ;# Parse *.tcl files in pageroot.
+ 
+ ns_section "ns/server/${servername}"
+ ns_param   enabletclpages  false         ;# Parse *.tcl files in pageroot.
 
 [example_end]
 
-The default is to not enable TCL pages.
 
 [para]
 
@@ -71,6 +72,6 @@ ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.adp  ;# ADP error page
 [example_end]
 
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also nsd adp-overview]
+[keywords NaviServer configuration]
 [manpage_end]
