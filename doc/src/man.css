@@ -139,3 +139,9 @@ dl dt {
    float: right;
    margin: 1em;
 }
+
+
+b.const {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: normal;
+}
