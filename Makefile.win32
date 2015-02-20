@@ -1,0 +1,45 @@
+# Emacs mode:  -*-Makefile-*-
+
+# I first installed the required Visual C++ 2008 Redistributable
+# Package (x64) via its vcredist_x64.exe web installer:
+#   http://www.microsoft.com/en-us/download/details.aspx?id=15336
+# And then installed OpenSSL via Win64OpenSSL-1_0_1h.exe:
+#   http://www.slproweb.com/products/Win32OpenSSL.html
+# When it asked my where to "Copy OpenSSL DLLs to:" I picked "The
+# OpenSSL binaries (/bin) directory".
+# --atp@piskorski.com, 2014/10/11 09:13 EDT
+
+!if "x86" == "$(TARGET_CPU)"
+openssl_dir = C:\P\OpenSSL-Win32
+!elseif "x64" == "$(TARGET_CPU)"
+openssl_dir = C:\P\OpenSSL-Win64
+!endif
+
+# TODO: This ..\naviserver default does not work for linking, because
+# nsd.lib is in a different subdirectory in the build vs. installed
+# location.  Do we actually even need to link against nsd.lib?
+# --atp@piskorski.com, 2014/10/12 12:29 EDT
+!ifndef NAVISERVER
+NAVISERVER = ..\naviserver
+!endif
+
+DLL  =  nsssl
+OBJS = nsssl.o
+INCLUDE = $(INCLUDE);$(openssl_dir)\include
+LIBS = /LIBPATH:$(openssl_dir)\lib ssleay32.lib libeay32.lib
+
+# The Windows OpenSSL packages its libraries differently than on
+# Linux, and there are a LOT of different ones.  I'm not sure if the
+# above two are the only or best choices, but they do seem to work.
+# --atp@piskorski.com, 2014/10/11 09:13 EDT
+
+!include "$(NAVISERVER)\include\Makefile.win32"
+
+!message openssl_dir:  $(openssl_dir)
+!message INCLUDE:  $(INCLUDE)
+
+dhparams.h:
+	"$(openssl_dir)\openssl" dhparam -C -2 -noout  512 >> dhparams.h
+	"$(openssl_dir)\openssl" dhparam -C -2 -noout 1024 >> dhparams.h
+
+nsssl.o: dhparams.h
