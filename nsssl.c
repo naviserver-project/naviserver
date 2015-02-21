@@ -166,7 +166,7 @@ Ns_ModuleInit(char *server, char *module)
     init.closeProc = Close;
     init.opts = NS_DRIVER_SSL|NS_DRIVER_ASYNC;
     init.arg = drvPtr;
-    init.path = (char*)path;
+    init.path = path;
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
