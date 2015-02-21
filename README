@@ -53,7 +53,11 @@ Configuration:
      ns_param      protocols              "!SSLv2"
      ns_param      verify                 0
 
-     ns_param      extraheaders { Strict-Transport-Security "max-age=31536000; includeSubDomains"}
+     ns_param      extraheaders {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	X-Frame-Options SAMEORIGIN
+        X-Content-Type-Options nosniff
+     }
 
 
  * The parameter "certificate" is required, nsssl won't load without it; 
