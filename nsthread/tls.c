@@ -110,7 +110,6 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
     uintptr_t   key;
 
     assert(keyPtr != NULL);
-    assert(value != NULL);
 
     key = (uintptr_t) *keyPtr;
      

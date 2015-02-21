@@ -889,7 +889,7 @@ NS_EXTERN int  Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *result
  */
 
 NS_EXTERN void Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_TlsSet(Ns_Tls *tlsPtr, void *value) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void Ns_TlsSet(Ns_Tls *tlsPtr, void *value) NS_GNUC_NONNULL(1);
 NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr) NS_GNUC_NONNULL(1);
 
 /*
