@@ -533,7 +533,7 @@ typedef struct Ns_DriverInitData {
     Ns_DriverCloseProc    *closeProc;    /* Close a connection socket. */
     unsigned int           opts;         /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                  *arg;          /* Module's driver callback data */
-    char                  *path;         /* Path to find port, address, etc. */
+    const char            *path;         /* Path to find port, address, etc. */
 } Ns_DriverInitData;
 
 
