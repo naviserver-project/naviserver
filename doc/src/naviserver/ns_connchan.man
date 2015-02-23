@@ -1,0 +1,111 @@
+[include version_include.man]
+[manpage_begin ns_connchan n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Manage connection channels.}]
+
+[description] The command [cmd ns_connchan] allows to detach the
+ current channel from a connection thread and manage the connection
+ outside the initiating connection thread. It allows to write or read
+ to the channel, to define callbacks and to list open connections and
+ to close the connection. The read and write operations on this
+ channel will use directly the driver infrastructure which was in use
+ during the detach command.
+
+[para]
+ The command allows e.g. to read from and to write to all
+ network drivers (such as plain HTTP channels and from SSL/TLS
+ connections). It can be used to implement e.g. websockets or
+ ansynchronous deliveries (e.g. h264 streams) including secure
+ connections. This makes it more powerful than the approaches based on
+ [cmd "ns_conn channel"] using plain Tcl channels.
+
+[para]
+ NaviServer maintains an internal table per server to keep track of
+ the detached connection channels and to offer introspection to the
+ state of the detached channels.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+[call [cmd  "ns_connchan detach"]]
+
+ The command [cmd "connchan detach"] unplugs the connection channel from
+ the current connection thread and stores it with a fresh handle name
+ in a per-virtual-server private table. The command returns the
+ created handle as result.
+
+[para]
+ After this command was issued in a connection thread all attempts to
+ access the connection socket directly (e.g. via [cmd ns_write]) will fail.
+
+
+[call [cmd  "ns_connchan close"] [arg channel]]
+
+ Close the named connection channel.
+
+[call [cmd  "ns_connchan list"] \
+	[opt [option "-server [arg server]"]] ]
+
+  Return a list the currently detached connection channels for the
+  current or named [arg server].
+
+[para]
+ Every list entry contains
+ [list_begin itemized]
+	[item] name of the channel
+	[item] name of the thread
+	[item] start time of the initiating request, 
+	[item] driver, 
+	[item] the ip-address of the requestor, 
+	[item] sent bytes,
+	[item] received bytes, and
+	[item] the client data as provided via [lb]ns_conn clientdata[rb].
+ [list_end]
+
+[call [cmd  "ns_connchan callback"] \
+	[opt [option "-timeout [arg s]"]] \
+	[opt [option "-receivetimeout [arg s]"]] \
+	[opt [option "-sendtimeout [arg s]"]] \
+	[arg channel] \
+	[arg command] \
+	[arg when] \
+]
+
+Register a Tcl callback for the names connection [arg channel]. The argument
+[arg when] consist of one or more characters
+of r, w, e, or x, specifying, when the callback should fire.
+All timeouts are specified in the form secs:?microsecs?.
+
+When the callback is fired, the specified Tcl command will be called
+with two additional arguments, namely the [arg handle] and and
+indicator for the reson of the call [arg when]. The value of [arg when]  will be
+as follows:
+[list_begin itemized]
+[item] r - the socket is readable
+[item] w - the socket is writeable
+[item] e - the socket has an exceptional condition
+[item] x - the server is shutting down
+[item] t - timeout received
+[list_end]
+
+[call [cmd  "ns_connchan read"] \
+	[arg channel] \
+]
+
+Read from the specified connection channel.
+
+[call [cmd  "ns_connchan write"] \
+	[arg channel] \
+	[arg string] \	
+]
+
+Write to the specified connection channel.
+
+[list_end]
+
+[see_also ns_conn ns_chan ns_sockcallback ns_write]
+[keywords channels socket driver]
+
+[manpage_end]
+
