@@ -92,9 +92,9 @@ Bug Fixes:
       and "ns_http wait" is larger
   * Minor fixes in nscgi
   * Windows fixes
-    - Fixed wierd bugs when Tcl-functions are called during
+    - Fixed weird bugs when Tcl-functions are called during
       load of .dll files (showed up as hanging/crashing functions
-      returing time from Tcl)
+      returning time from Tcl)
     - Fixed Ns_NormalizePath() for //foo/bar paths on Win32 (bug #1162890)
     - Use distinct bit-patterns for signal detection under windows.
     - Fixed array unset bug
@@ -236,30 +236,33 @@ Code Changes:
 Changes in Modules worth to be noted:
 
   * websocket:
-    New module implementing a WebSocket interface.
-    This is a Tcl-only module defined with two sample
-    applications (chat and a file watcher for e.g error.log and access.log)
+    New module implementing a WebSocket interface.  This is a Tcl-only
+    module defined with two sample applications (chat and a file
+    watcher for e.g error.log and access.log).  It support ws://
+    (WebSocket over http) and wss:// (WebSocket over https).  For
+    details and configuration, see the README file of the module.
     
   * nszlib:
-    added commdands:
+    Added commands:
 
       ns_zlib deflate /data/
       ns_zlib inflate /data/
 
-   which are compatible with the same-named php functions.
-   [ns_zlib deflate ...] returns the raw compressed binary data.
-   These functions are e.g. needed e.g. when implementing
-   as sasl-interface for shibboleth.
+    which are compatible with the same-named php functions.
+    [ns_zlib deflate ...] returns the raw compressed binary data.
+    These functions are e.g. needed e.g. when implementing
+    as sasl interface for shibboleth.
 
  * nsssl:
     - Ability to load the module without listening to socket by
-     speciying 0 as port.  This is ueful for e.g. just using the HTTPS
+     specifying 0 as port.  This is useful for e.g. just using the HTTPS
      client command ns_ssl.
    - Update configuration recommendations 
 
  * nsoracle:
    Backport of the nsoracle driver from AOLserver to NaviServer with
    code cleanup.
+
 
 ======================================
 NaviServer 4.99.6, released 2014-06-29
