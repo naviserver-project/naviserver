@@ -1,4 +1,267 @@
 ======================================
+NaviServer 4.99.7, released 2015-02-23
+======================================
+
+Changes relative to 4.99.6
+    216 files changed, 20967 insertions(+), 13287 deletions(-)
+
+New Features:
+
+  * Added Interface to NaviServer to read/write directly
+    via driver routines. The new command "ns_connchan"
+    provides a higher level alternative to the idiom
+    "ns_conn channel" + Tcl-commands. The new command
+    uses the internal socketcallback infrastructure and allows to
+    
+      - detach the currently open connection channel from a
+        connection thread, to
+      - read/write/close the channel from other threads, and to
+      - query the states to then currently detached channels
+        (similar to "ns_writer list")
+      
+    By accessing the driver infrastructure, "ns_connchan" makes it
+    possible to read/write from/to SSL/TLS channels. The new command
+    makes it easy e.g.  to implement WebSockets over SSL/TLS
+    (ws://... and wss://...) which is not possible with the
+    pre-existing infrastructure.
+
+    Summary of Advantages:
+      * use the same interface for http and https (and other drivers)
+      * no (potential) problems with select() in Tcl when using
+        many (>1024) file descriptors
+      * less potential problems with Tcl-Sockets (buffering, translations)
+      * lower resource consumption
+
+    Implemented interface:
+       ns_connchan detach
+       ns_connchan close channel
+       ns_connchan list ?-server server?
+       ns_connchan callback ?-timeout s? ?-receivetimeout s? ?-sendtimeout s? channel command when
+       ns_connchan read channel
+       ns_connchan write channel string
+
+  * Improved ns_log handling
+    - New subcommand [ns_log stats] returns the statistics
+      from calls to ns_log by severity-level. This allows
+      to write monitoring tools to provide rough overviews
+      at which time at which server what kind of
+      servers/warnings/... were produced
+      
+    - Allow to modify logging of sql statements via
+         ns_logctl severity Debug(sql) on
+      at runtime
+      
+    - Add debugging severity for tasks "Debug(task)"
+
+  * Added ability to load a driver module without listening on a
+    port: This is useful in cases, where the driver registers
+    client commands (such as nssock or nsssl) and only these
+    are wanted. Loading the driver without listening can be
+    achieved by specifying "0" for the port.
+
+  * Improved support for windows compilation with native compilers
+    for 32 and 64 bit (Many thanks to Andreas Piskorski)
+
+
+Performance Improvements:
+  - Added more compiler hints likely/unlikely
+  - Made Ns_Encrypt threadsafe under Linux (reduce mutex)
+  - Use getpwnam_r, getpwuid_r, getgrnam_r, and getgrgid_r instead of
+    their thread-unsafe counterparts. This change allow these functions
+    to run without locking.
+  - Reduced size of compressed requests in several situations (empty io_vecs)
+
+
+Bug Fixes:
+  * Fixed encoding in [ns_conn content]
+  * Fixed incorrect result of "ns_conn protocol" (returned empty)
+  * Fixed crash when a thread was created with
+    "ns_thread begindetached" and an error occurred
+    during startup
+  * Fixed memory management for TclThread by moving TclThreadArg into
+    thread local storage
+  * Fixed race condition in TLS cleanup
+  * Fixed bug in argument parsing of "ns_cond"
+  * Fixed setting of private/shared in ns_module
+  * Fixed bug with "ns_adp_ctl stream on"
+  * Moved network module filtering to the front to avoid double loading
+    of Tcl modules (many thanks to William Scott Jordan for the fix)
+  * ns_http:
+    - Fixed trailing slashes in some urls
+    - Fixed possible race condition when time gap between "ns_http queue"
+      and "ns_http wait" is larger
+  * Minor fixes in nscgi
+  * Windows fixes
+    - Fixed wierd bugs when Tcl-functions are called during
+      load of .dll files (showed up as hanging/crashing functions
+      returing time from Tcl)
+    - Fixed Ns_NormalizePath() for //foo/bar paths on Win32 (bug #1162890)
+    - Use distinct bit-patterns for signal detection under windows.
+    - Fixed array unset bug
+  * Fixed a potential race condition in writer threads
+  * [ns_perm delperm]: Fixed ignoring of argument "-noinherit"
+  * Fixed reply headers in HEAD requests
+
+
+Documentation improvements:
+  - Improved typesetting, wording
+  - Removed more obsolete content (e.g. concerning CVS, old dummy parameters)
+  - Use examples from existing code basis
+  - Improved comment density in source code
+  - Documented missing subcommands, such as "ns_time format"
+
+
+Tcl API Changes:
+  * Marked "ns_geturl" as deprecated, use ns_http instead
+  * Marked redundant names of subcommands in "ns_thread" as deprecated
+    - ns_thread begin -> ns_thread create
+    - ns_thread getid -> ns_thread id
+    - ns_thread join -> ns_thread wait
+    - ns_thread get -> ns_thread handle
+  * Allow time interval of "-timeout" for "ns_db gethandle" to be
+    specified with second factions (in the usual "ns_time" format)
+
+
+C API Changes:
+  - [ns_conn content]: new flag "-binary" to return always the raw bytes
+  - [ns_thread begin|begindetached]: added flag "-name" for naming
+    thread explicit
+
+
+Configuration Changes:
+  - Updated Makefiles as recommended in documentation
+
+
+Code Changes:
+
+  * Many of the changes are the result of a (sometimes over-picky)
+    code-checkers on unix and windows systems, in particular pc-lint,
+    cppcheck and the clang static checkers. Many thanks to
+    Maurizio Martignano for setting up the testing framework
+    based on SonarQube and for eagerly pull in updates.
+  
+  * Function prototypes and API definition
+    - add missing function prototypes
+    - removed occurrences of old-style prototypes (when functions are defined without arguments)
+    - removed unneeded external references and symbols and unreferenced enumeration values
+    - aligned argument names in function prototypes with function definitions
+    - added non-null/returns non-null assertions for prototypes    
+    - added asserts to check non-null properties
+    - added "const" when appropriate
+    - added missing "static" declarations
+
+  * Improved and more consistent macro definitions
+    - use INT2PTR and PTR2INT consistently when converting between
+      integers and pointers
+    - use NS_TRUE/NS_FALSE instead of 1/0
+    - use NS_INVALID_FD instead of -1
+    - use NS_SOCKET and NS_INVALID_SOCKET instead of int/-1
+    - use NS_INVALID_PID for invalid pids
+    - change from usage of -1 or INVALID_SOCKET (windows predefined constant)
+      to NS_INVALID_SOCKET due to confusions
+    - use UNUSED consistently
+    - character properties and conversions
+       . new macro CHARTYPE for testing character properties
+       . new macro CHARCONV for converting characters
+    - added a new macros PTR2NSSOCK and NSSOCK2PTR in analogy to PTR2INT
+      and INT2PTR to mask more win incompatibilities       
+    - prefer "const" over "CONST" unless in Tcl interface
+    - improved consistency of variable and macro naming
+    - put macro values into parenthesis
+
+  * Improved general code quality
+    - reduced variable scopes
+    - remove cases of undefined C behavior
+    - prefer leaving a switch statement via "break", and not via "return"
+    - move assignments out of if-conditions
+    - brace body of "if" statements and "for" loops
+    - make ignoring of function results explicit
+    - avoid shadowing of variable names
+    - fix potentially uninitialized local and static variables
+
+  * Used more precise and consistent types
+    - prefer type "bool" over "int" when appropriate
+    - use unsigned types for bit operations
+    - prefer size_t, ssize_t, socklen_t, pid_t, nfds_t over int
+    - use consistently uintptr_t for nextids
+    - use enumerations instead of plain defines on some occasions    
+    - prefer boolean expression
+    - reduce implicit conversions
+      (signed/unsigned, signed constants, loss of precision, ...)
+    - removed many cases of casts of complex expressions
+    - reduce prohibited operations with plain (signed) chars
+    - recast results of <<
+    - standardize type definitions of objv in ObjCmds to the
+      variant recommended by Tcl man pages
+
+  * Improved C-standard compliance
+    - silence "-pedantic" compilation with -stc=c99 under linux on most cases
+    - avoid c90 identifiers starting with str[a-z], to[a-z], E[A-Z], _*
+    - avoid c90 reserved identifier "signal", "free", "remove", "time"
+    - added missing printf macros
+
+  * Improved usage of c-library functions and OS abstraction
+     - use arc4random() when available
+     - use crypt_r() when available
+     - prefer memcpy() over strncpy(), since it has in most cases the
+       appropriate semantics and it is faster
+    - new/fixed OS abstractions functions/macros:
+       ns_lseek, ns_dup, ns_dup2, use ns_open, ns_close, ns_lseek, ns_dup,
+       ns_dup2, ns_write, ns_read, ns_mkstemp
+
+  * Removed potential crashes from buffer overflows
+     - use memory bounded functions instead of potentially buffer
+       overflowing functions
+     - replace unsafe atof() by strtod()
+     - replace unsafe atoi() by strtol()
+     - replace call to deprecated function asctime() by a call to
+       asctime_s()
+     - remove hard-coded sizes of ip-addresses and replace it by NS_IPADDR_SIZE
+     - don't hardcode sizes for string arrays
+
+  * Use of modern-style argument parser Ns_ParseObjv() on several places
+    instead of manual argv parsing 
+	ns_job interface, ns_truncate, ns_ftruncate,
+	ns_addrbyhost, ns_hostbyaddr
+	
+  * Make mutex timings configurable via #define NS_NO_MUTEX_TIMING
+
+  * Improved code formatting
+    - add emacs editor hints to to keep formatting conventions
+    - prefer spaces over tabs
+    
+  * Extended regression test
+
+
+Changes in Modules worth to be noted:
+
+  * websocket:
+    New module implementing a WebSocket interface.
+    This is a Tcl-only module defined with two sample
+    applications (chat and a file watcher for e.g error.log and access.log)
+    
+  * nszlib:
+    added commdands:
+
+      ns_zlib deflate /data/
+      ns_zlib inflate /data/
+
+   which are compatible with the same-named php functions.
+   [ns_zlib deflate ...] returns the raw compressed binary data.
+   These functions are e.g. needed e.g. when implementing
+   as sasl-interface for shibboleth.
+
+ * nsssl:
+    - Ability to load the module without listening to socket by
+     speciying 0 as port.  This is ueful for e.g. just using the HTTPS
+     client command ns_ssl.
+   - Update configuration recommendations 
+
+ * nsoracle:
+   Backport of the nsoracle driver from AOLserver to NaviServer with
+   code cleanup.
+
+======================================
 NaviServer 4.99.6, released 2014-06-29
 ======================================
 
