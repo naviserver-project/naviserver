@@ -1517,29 +1517,31 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 contentLength = connPtr->reqPtr->length;
             }
 
-            if (requiredLength == -1 && offset == 0) {
-                /*
-                 * return full content
-                 */
-                if (binary == NS_FALSE) {
-                    Tcl_DStringResult(interp, &encDs);
+            if (contentLength > 0) {
+                if (requiredLength == -1 && offset == 0) {
+                    /*
+                     * return full content
+                     */
+                    if (binary == NS_FALSE) {
+                        Tcl_DStringResult(interp, &encDs);
+                    } else {
+                        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
+                                                                     (int)connPtr->reqPtr->length));
+                    }
                 } else {
-                   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
-                                                                (int)connPtr->reqPtr->length));
-                }
-            } else {
-                /*
-                 * return partial content
-                 */
-                if (binary == NS_FALSE) {
-                    Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
-                    
-                    Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));
-                    Tcl_DStringFree(&encDs);
-                    Tcl_DecrRefCount(contentObj);
-                } else {
-                    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)content + offset, 
-                                                                 (int)length));
+                    /*
+                     * return partial content
+                     */
+                    if (binary == NS_FALSE) {
+                        Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
+                        
+                        Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));
+                        Tcl_DStringFree(&encDs);
+                        Tcl_DecrRefCount(contentObj);
+                    } else {
+                        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)content + offset, 
+                                                                     (int)length));
+                    }
                 }
             }
             break;

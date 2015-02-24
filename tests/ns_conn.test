@@ -53,6 +53,15 @@ test ns_conn-1.3.5 {peeraddr} -setup {
     ns_unregister_op GET /conn
 } -result {200 /127.0.0.1/}
 
+test ns_conn-1.3.6 {content} -setup {
+    ns_register_proc GET /conn {ns_return 200 text/plain /[ns_conn content]/ }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 //}
+
+
 
 test ns_conn-2.1 {basic operation} -body {
      ns_conn close
