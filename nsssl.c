@@ -546,10 +546,11 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
      const Ns_Time *timeoutPtr, unsigned int flags)
 {
     SSLContext *sslPtr = sock->arg;
-    int rc, size, decork;
+    int         rc, size;
+    bool        decork;
 
     size = 0;
-    decork = Ns_SockCork(sock, 1);
+    decork = Ns_SockCork(sock, NS_TRUE);
     while (nbufs > 0) {
 	if (bufs->iov_len > 0) {
 	    ERR_clear_error();
@@ -562,7 +563,9 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 			continue;
 		    }
 		}
-		if (decork) {Ns_SockCork(sock, 0);}
+		if (decork == NS_TRUE) {
+                    Ns_SockCork(sock, NS_FALSE);
+                }
 		SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
 		return -1;
 	    }
@@ -576,7 +579,9 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 	bufs++;
     }
 
-    if (decork) {Ns_SockCork(sock, 0);}
+    if (decork == NS_TRUE) {
+        Ns_SockCork(sock, NS_FALSE);
+    }
     return size;
 }
 
