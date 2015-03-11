@@ -379,14 +379,14 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
  *      success (0 or 1)
  *
  * Side effects:
- *      Switch TCP send state, pothentially update sockPtr->flags
+ *      Switch TCP send state, potentially update sockPtr->flags
  *
  *----------------------------------------------------------------------
  */
 int
 Ns_SockCork(Ns_Sock *sock, int cork)
 {
-    int success = 1;
+    int success = 0;
 #ifdef TCP_CORK
     Sock *sockPtr = (Sock *)sock;
 
