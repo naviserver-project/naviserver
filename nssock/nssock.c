@@ -239,10 +239,10 @@ Send(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
      const Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t   n;
-    int       decork;
+    bool      decork;
     NS_SOCKET sock = sockPtr->sock;
 
-    decork = Ns_SockCork(sockPtr, 1);
+    decork = Ns_SockCork(sockPtr, NS_TRUE);
 
     {
 #ifdef _WIN32
@@ -268,8 +268,8 @@ Send(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 #endif
     }
 
-    if (decork != 0) {
-      Ns_SockCork(sockPtr, 0);
+    if (decork == NS_TRUE) {
+        Ns_SockCork(sockPtr, NS_FALSE);
     }
     return n;
 }

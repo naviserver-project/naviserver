@@ -2578,8 +2578,8 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
                     const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
-Ns_SockCork(Ns_Sock *sock, int cork)
+NS_EXTERN bool
+Ns_SockCork(Ns_Sock *sock, int bool)
     NS_GNUC_NONNULL(1);
 
 /*

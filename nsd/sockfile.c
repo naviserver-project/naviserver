@@ -383,10 +383,10 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
  *
  *----------------------------------------------------------------------
  */
-int
-Ns_SockCork(Ns_Sock *sock, int cork)
+bool
+Ns_SockCork(Ns_Sock *sock, bool cork)
 {
-    int success = 0;
+    bool success = NS_FALSE;
 #ifdef TCP_CORK
     Sock *sockPtr = (Sock *)sock;
 
@@ -394,11 +394,11 @@ Ns_SockCork(Ns_Sock *sock, int cork)
     
     /* fprintf(stderr, "### Ns_SockCork sock %d %d\n", sockPtr->sock, cork); */
 
-    if (cork == 1 && (sockPtr->flags & NS_CONN_SOCK_CORKED)) {
+    if (cork == NS_TRUE && (sockPtr->flags & NS_CONN_SOCK_CORKED)) {
 	/*
 	 * Don't cork an already corked connection.
 	 */
-    } else if (cork == 0 && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0) {
+    } else if (cork == NS_FALSE && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0) {
 	/*
 	 * Don't uncork an already uncorked connection.
 	 */
@@ -413,7 +413,7 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 		   ns_sockstrerror(ns_sockerrno));
 	} else {
 	    success = 1;
-	    if (cork != 0) {
+	    if (cork == NS_TRUE) {
 		sockPtr->flags |= NS_CONN_SOCK_CORKED;
 	    } else {
 		sockPtr->flags &= ~NS_CONN_SOCK_CORKED;
@@ -455,7 +455,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     ssize_t       nwrote = 0, toRead = (ssize_t)length;
     int           decork;
 
-    decork = Ns_SockCork(sock, 1);
+    decork = Ns_SockCork(sock, NS_TRUE);
     while (toRead > 0) {
 	ssize_t sent, nread;
 
@@ -478,7 +478,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     }
 
     if (decork != 0) {
-	(void) Ns_SockCork(sock, 0);
+	(void) Ns_SockCork(sock, NS_FALSE);
     }
 
     if (nwrote > 0) {
