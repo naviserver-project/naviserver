@@ -1,7 +1,7 @@
-SSL driver for NaviServer 4.99.6
-================================
-Release 0.6
------------
+# SSL driver for NaviServer 4.99.6 #
+
+## Release 0.6 ##
+
     vlad@crystalballinc.com
     neumann@wu-wien.ac.at
 
@@ -37,8 +37,7 @@ adds new ns_ssl command.
 
 ***
 
-Configuration:
--------------- 
+## Configuration: ##
 
    nsd.tcl
 
@@ -89,8 +88,7 @@ Configuration:
     openssl dhparam 2048 >> server.pem
 
 
-Usage:
-------
+## Usage: ##
 
    The module provides additionally the command "ns_ssl" 
    which is the http conterpart to "ns_http". 
@@ -104,9 +102,7 @@ Usage:
 
   See the naviserver documentation of "ns_http" for usage and details about the options.
 
-Authors:
---------
+## Authors: ##
 
     Vlad Seryakov vlad@crystalballinc.com
     Gustaf Neumann neumann@wu-wien.ac.at
-
