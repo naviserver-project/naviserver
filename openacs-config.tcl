@@ -393,15 +393,15 @@ ns_section    "ns/server/${server}/module/nsssl"
        ns_param		address    	$address
        ns_param		port       	$httpsport
        ns_param		hostname       	$hostname
-       ns_param		ciphers		"RC4:HIGH:!aNULL:!MD5;"
+       ns_param		ciphers		"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
        ns_param		protocols	"!SSLv2"
        ns_param		certificate	$serverroot/etc/certfile.pem
        ns_param		verify     	0
-       ns_param		writerthreads	5 
-       ns_param		writersize	10
+       ns_param		writerthreads	2
+       ns_param		writersize	4096
        ns_param		writerbufsize	16384	;# 8192, buffer size for writer threads
-       ns_param		writerstreaming	true	;# false
-       ns_param		deferaccept	true    ;# false, Performance optimization
+       #ns_param	writerstreaming	true	;# false
+       #ns_param	deferaccept	true    ;# false, Performance optimization
        ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
 
 
