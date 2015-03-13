@@ -40,7 +40,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.6"
+#define NSSSL_VERSION  "0.7"
 
 typedef struct {
     SSL_CTX     *ctx;
@@ -1045,7 +1045,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
 	return TCL_ERROR;
     }
-        /*
+    /*
      * Make a non-const copy of url, where we can replace the item separating
      * characters with '\0' characters.
      */
@@ -1059,6 +1059,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 
     portString = strchr(host, ':');
     if (portString != NULL) {
+        *portString = '\0';
 	portNr = (int) strtol(portString + 1, NULL, 10);
     } else {
         portNr = 443;
@@ -1081,11 +1082,12 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     httpPtr->sock            = sock;
     httpPtr->spoolLimit      = -1;
     httpPtr->url             = url2;
+
     Ns_MutexInit(&httpPtr->lock);
     /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
     Tcl_DStringInit(&httpPtr->ds);
 
-    //Ns_Log(Ns_LogTaskDebug, "url <%s> port %d sock %d host <%s> file <%s>", httpPtr->url, portNr, sock, hostBuffer, file);
+    /*Ns_Log(Ns_LogTaskDebug, "url <%s> port %d sock %d host <%s> file <%s>", httpPtr->url, portNr, sock, host, file);*/
 
     /*
      * Now initialize OpenSSL context
@@ -1149,7 +1151,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	return TCL_ERROR;
     }
     
-    Ns_DStringPrintf(&httpPtr->ds, "%s /%s HTTP/1.0\r\n", method, (file != NULL) ? file : "");
+    Ns_DStringPrintf(&httpPtr->ds, "%s /%s HTTP/1.0\r\n", method, (file != NULL) ? file + 1 : "");
 
     /*
      * Submit provided headers
