@@ -1,6 +1,6 @@
 # SSL driver for NaviServer 4.99.6 #
 
-## Release 0.6 ##
+## Release 0.7 ##
 
     vlad@crystalballinc.com
     neumann@wu-wien.ac.at
@@ -34,6 +34,10 @@ adds new ns_ssl command.
 * New in Version 0.6:
     - Ability to load the module without listening to socket by speciying 0 as port.
       This is ueful for e.g. just using the HTTPS client command ns_ssl.
+
+* New in Version 0.7:
+    - Fixed a bug with in https client commands (ns_ssl) when paths and parameters
+      are passed.
 
 ***
 
