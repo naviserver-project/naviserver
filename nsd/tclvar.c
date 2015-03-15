@@ -77,7 +77,7 @@ static int Unset(Array *arrayPtr, const char *key)
 static void Flush(Array *arrayPtr)
     NS_GNUC_NONNULL(1);
 
-static Array *LockArray(const NsServer *servPtr, const char *array, bool create)
+static Array *LockArray(const NsServer *servPtr, const char *arrayName, bool create)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void UnlockArray(const Array *arrayPtr)
