@@ -58,7 +58,7 @@ adds new ns_ssl command.
 
      ns_param      extraheaders {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
-	X-Frame-Options SAMEORIGIN
+        X-Frame-Options SAMEORIGIN
         X-Content-Type-Options nosniff
      }
 
