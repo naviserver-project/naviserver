@@ -122,7 +122,7 @@ NsInitInfo(void)
     }
     Ns_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
-        assert(addr.length < sizeof(nsconf.address));
+        assert(addr.length < (int)sizeof(nsconf.address));
         memcpy(nsconf.address, addr.string, (size_t)addr.length + 1u);
     } else {
         memcpy(nsconf.address, "0.0.0.0", 8u);
