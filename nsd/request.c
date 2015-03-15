@@ -575,20 +575,27 @@ GetQvalue(const char *str, int *lenPtr) {
     assert(str != NULL);
     assert(lenPtr != NULL);
 
-    for (; *str == ' '; str++);
+    for (; *str == ' '; str++) {
+        ;
+    }
     if (*str != ';') {
         return NULL;
     }
-    for (str ++; *str == ' '; str++);
-
+    for (str ++; *str == ' '; str++) {
+        ;
+    }
     if (*str != 'q') {
         return NULL;
     }
-    for (str ++; *str == ' '; str++);
+    for (str ++; *str == ' '; str++) {
+        ;
+    }
     if (*str != '=') {
         return NULL;
     }
-    for (str ++; *str == ' '; str++);
+    for (str ++; *str == ' '; str++) {
+        ;
+    }
     if (CHARTYPE(digit,*str) == 0) {
         return NULL;
     }
