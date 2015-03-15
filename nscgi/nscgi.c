@@ -792,8 +792,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
         p++;
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
-        for (j = 0; *p != '\0'; ++p) {
-            ++j;
+        for (j = 0; *p != '\0'; ++p, ++j) {
+            ;
         }
         Ns_DStringTrunc(dsPtr, j);
     }

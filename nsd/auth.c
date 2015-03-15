@@ -329,9 +329,13 @@ NsParseAuth(Conn *connPtr, char *auth)
                 }
                 /* Find end of the value, deal with quotes strings */
                 if (*p == '"') {
-                    for (q = ++p; *q != '\0' && *q != '"'; q++);
+                    for (q = ++p; *q != '\0' && *q != '"'; q++) {
+                        ;
+                    }
                 } else {
-                    for (q = p; *q != '\0' && *q != ',' && CHARTYPE(space, *q) == 0; q++);
+                    for (q = p; *q != '\0' && *q != ',' && CHARTYPE(space, *q) == 0; q++) {
+                        ;
+                    }
                 }
                 save2 = *q;
                 *q = '\0';
