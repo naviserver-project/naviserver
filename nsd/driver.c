@@ -913,7 +913,7 @@ NsFreeRequest(Request *reqPtr)
  *
  * NsSockClose --
  *
- *      Return a connction to the DriverThread for closing or keepalive.
+ *      Return a connection to the DriverThread for closing or keepalive.
  *      "keep" might be NS_TRUE/NS_FALSE or -1 if undecided.
  *
  * Results:
@@ -1298,6 +1298,7 @@ DriverThread(void *arg)
 
         if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], charBuffer, 1, 0) != 1) {
             const char *errstr = ns_sockstrerror(ns_sockerrno);
+            
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
         }
         /*
@@ -1350,12 +1351,16 @@ DriverThread(void *arg)
                      */
                     n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
+                        Ns_Log(DriverDebug, "poll closewait pollin; sockrelease SOCK_READERROR (sock %d)",
+                               sockPtr->sock);
                         SockRelease(sockPtr, SOCK_READERROR, 0);
                     } else {
                         Push(sockPtr, closePtr);
                     }
                 } else if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     /* no PollHup, no PollIn, maybe timeout */
+                    Ns_Log(DriverDebug, "poll closewait timeout; sockrelease SOCK_CLOSETIMEOUT (sock %d)",
+                           sockPtr->sock);
                     SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
                 } else {
                     /* too early, keep waiting */
@@ -1567,12 +1572,17 @@ DriverThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             if (sockPtr->keep != 0) {
+                Ns_Log(DriverDebug, "setting keepwait %ld for socket %d",
+                       sockPtr->drvPtr->keepwait,  sockPtr->sock);
+
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
                 if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
                 } else {
+                    Ns_Log(DriverDebug, "setting closewait %ld for socket %d",
+                           sockPtr->drvPtr->closewait,  sockPtr->sock);
                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
                     Push(sockPtr, closePtr);
                 }
@@ -1948,6 +1958,8 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
 {
     Driver *drvPtr;
 
+    Ns_Log(DriverDebug, "SockRelease reason %d err %d (sock %d)", reason, err, sockPtr->sock);
+    
     assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
@@ -3301,15 +3313,15 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
     wrSockPtr->refCount --;
 
-    Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d",
-           (void *)wrSockPtr, wrSockPtr->refCount);
+    Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d keep %d",
+           (void *)wrSockPtr, wrSockPtr->refCount, wrSockPtr->keep);
 
     if (wrSockPtr->refCount > 0) {
         return;
     }
 
     Ns_Log(DriverDebug,
-           "Writer: closed sock=%d, file fd=%d, error=%d/%d, "
+           "Writer: closed sock %d, file fd %d, error %d/%d, "
            "sent=%" TCL_LL_MODIFIER "d, flags=%X",
            wrSockPtr->sockPtr->sock, wrSockPtr->fd,
            wrSockPtr->status, wrSockPtr->err,
@@ -3317,6 +3329,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
     if (wrSockPtr->doStream != 0) {
         Conn *connPtr;
+        
         NsWriterLock();
         connPtr = wrSockPtr->connPtr;
         if (connPtr != NULL && connPtr->strWriter != NULL) {
