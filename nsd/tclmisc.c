@@ -622,7 +622,7 @@ NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
     char *death;
 
     death = NULL;
-    *death = 1;
+    *death = 'x';
 
     return TCL_ERROR;
 }
