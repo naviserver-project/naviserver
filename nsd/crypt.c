@@ -451,7 +451,8 @@ encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
 char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
-    register int    i, j;
+    register size_t i;
+    register int    j;
     unsigned char   c;
     unsigned char   block[66];
     struct sched    s;
