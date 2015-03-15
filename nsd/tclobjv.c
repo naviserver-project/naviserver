@@ -84,11 +84,11 @@ Ns_OptionString(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *
 
 int
 Ns_OptionBoolean(Tcl_Interp *interp, Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
-    int bool, result;
+    int boolValue, result;
 
-    result = Tcl_GetBooleanFromObj(interp, objPtr, &bool);
+    result = Tcl_GetBooleanFromObj(interp, objPtr, &boolValue);
     if (result == TCL_OK) {
-	*clientData = INT2PTR(bool);
+	*clientData = INT2PTR(boolValue);
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -824,13 +824,17 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     if (Tcl_ListObjGetElements(interp, argsObj, &argc, &argv) != TCL_OK
         || Tcl_ConvertToType(interp, objv[1], &specType) != TCL_OK) {
-        if (argsObj != objv[2]) {Tcl_DecrRefCount(argsObj);}
+        if (argsObj != objv[2]) {
+            Tcl_DecrRefCount(argsObj);
+        }
         return TCL_ERROR;
     }
     opts = objv[1]->internalRep.twoPtrValue.ptr1;
     args = objv[1]->internalRep.twoPtrValue.ptr2;
     if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
-        if (argsObj != objv[2]) {Tcl_DecrRefCount(argsObj);}
+        if (argsObj != objv[2]) {
+            Tcl_DecrRefCount(argsObj);
+        }
         return TCL_ERROR;
     }
 
@@ -856,7 +860,9 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         specPtr++;
     }
 
-    if (argsObj != objv[2]) {Tcl_DecrRefCount(argsObj);}
+    if (argsObj != objv[2]) {
+        Tcl_DecrRefCount(argsObj);
+    }
     return status;
 }
 
