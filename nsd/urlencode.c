@@ -549,7 +549,7 @@ int
 NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString          ds;
-    const char         *charset = NULL, *string;
+    const char         *charset = NULL, *chars;
     char                part = 'q';
     Tcl_Encoding        encoding = NULL;
     Ns_ObjvTable parts[] = {
@@ -564,7 +564,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"string", Ns_ObjvString, &string, NULL},
+        {"string", Ns_ObjvString, &chars, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -577,7 +577,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         encoding = Ns_GetCharsetEncoding(charset);
     }
     
-    UrlDecode(&ds, string, encoding, part);
+    UrlDecode(&ds, chars, encoding, part);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
