@@ -1,4 +1,4 @@
-# SSL driver for NaviServer 4.99.6 #
+# SSL driver for NaviServer 4.99.7 #
 
 ## Release 0.7 ##
 
