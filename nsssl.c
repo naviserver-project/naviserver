@@ -209,7 +209,7 @@ Ns_ModuleInit(char *server, char *module)
      */
     value = Ns_ConfigGetValue(path, "certificate");
     if (value == NULL) {
-        Ns_Log(Error, "nsssl: certificate parameter should be specified under %s",path);
+        Ns_Log(Error, "nsssl: certificate parameter should be specified under %s", path);
         return NS_ERROR;
     }
     if (SSL_CTX_use_certificate_chain_file(drvPtr->ctx, value) != 1) {
