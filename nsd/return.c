@@ -40,11 +40,11 @@
  * Local functions defined in this file
  */
 
-static int ReturnOpen(Ns_Conn *conn, int status, const char *type, Tcl_Channel chan,
+static int ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
                       FILE *fp, int fd, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-static int ReturnRange(Ns_Conn *conn, const char *type,
+static int ReturnRange(Ns_Conn *conn, const char *mimeType,
                        int fd, const void *data, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -255,9 +255,9 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
  */
 
 void
-Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *type)
+Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *mimeType)
 {
-    Ns_ConnUpdateHeaders(conn, "Content-Type", type);
+    Ns_ConnUpdateHeaders(conn, "Content-Type", mimeType);
 }
 
 
@@ -570,12 +570,12 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 }
 
 void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *type, size_t length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *mimeType, size_t length)
 {
     /* 
      * Deprecated
      */
-    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetLengthHeader(conn, length, 0);
 }
 
@@ -718,7 +718,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
 
 int
 Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data, 
-		  ssize_t len, const char *type)
+		  ssize_t len, const char *mimeType)
 {
     int result;
     size_t length;
@@ -727,11 +727,11 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
     assert(data != NULL);
     assert(type != NULL);
 
-    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetTypeHeader(conn, mimeType);
     length = (len < 0) ? strlen(data) : (size_t)len;
     Ns_ConnSetResponseStatus(conn, status);
 
-    result = ReturnRange(conn, type, -1, data, length);
+    result = ReturnRange(conn, mimeType, -1, data, length);
     (void) Ns_ConnClose(conn);
 
     return result;
@@ -757,7 +757,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
 
 int
 Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data, 
-		      ssize_t len, const char *type)
+		      ssize_t len, const char *mimeType)
 {
     struct iovec sbuf;
     int result;
@@ -765,8 +765,8 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
     assert(conn != NULL);
     assert(data != NULL);
     
-    if (type != NULL) {
-        Ns_ConnSetEncodedTypeHeader(conn, type);
+    if (mimeType != NULL) {
+        Ns_ConnSetEncodedTypeHeader(conn, mimeType);
     }
 
     sbuf.iov_base = (void *)data;
@@ -828,34 +828,34 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, const char *html, ssize_t len)
  */
 
 int
-Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *type,
+Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *mimeType,
                          Tcl_Channel chan, size_t len)
 {
     assert(conn != NULL);
     assert(type != NULL);
-    return ReturnOpen(conn, status, type, chan, NULL, -1, len);
+    return ReturnOpen(conn, status, mimeType, chan, NULL, -1, len);
 }
 
 int
-Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *type,
+Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *mimeType,
                       FILE *fp, size_t len)
 {
     assert(conn != NULL);
     assert(type != NULL);
-    return ReturnOpen(conn, status, type, NULL, fp, -1, len);
+    return ReturnOpen(conn, status, mimeType, NULL, fp, -1, len);
 }
 
 int
-Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *type,
+Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *mimeType,
                     int fd, size_t len)
 {
     assert(conn != NULL);
     assert(type != NULL);
-    return ReturnOpen(conn, status, type, NULL, NULL, fd, len);
+    return ReturnOpen(conn, status, mimeType, NULL, NULL, fd, len);
 }
 
 static int
-ReturnOpen(Ns_Conn *conn, int status, const char *type, Tcl_Channel chan,
+ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
            FILE *fp, int fd, size_t len)
 {
     int result;
@@ -863,7 +863,7 @@ ReturnOpen(Ns_Conn *conn, int status, const char *type, Tcl_Channel chan,
     assert(conn != NULL);
     assert(type != NULL);
 
-    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetResponseStatus(conn, status);
     
     if ((chan != NULL || fp != NULL) 
@@ -878,7 +878,7 @@ ReturnOpen(Ns_Conn *conn, int status, const char *type, Tcl_Channel chan,
         Ns_ConnSetLengthHeader(conn, len, 0);
         result = Ns_ConnSendFp(conn, fp, len);
     } else {
-        result = ReturnRange(conn, type, fd, NULL, len);
+        result = ReturnRange(conn, mimeType, fd, NULL, len);
     }
 
     (void) Ns_ConnClose(conn);
@@ -907,7 +907,7 @@ ReturnOpen(Ns_Conn *conn, int status, const char *type, Tcl_Channel chan,
  */
 
 static int
-ReturnRange(Ns_Conn *conn, const char *type,
+ReturnRange(Ns_Conn *conn, const char *mimeType,
             int fd, const void *data, size_t len)
 {
     Ns_DString  ds;
@@ -919,7 +919,7 @@ ReturnRange(Ns_Conn *conn, const char *type,
     assert(type != NULL);
 
     Ns_DStringInit(&ds);
-    rangeCount = NsConnParseRange(conn, type, fd, data, len,
+    rangeCount = NsConnParseRange(conn, mimeType, fd, data, len,
                                   bufs, &nbufs, &ds);
 
     /*

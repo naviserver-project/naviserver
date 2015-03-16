@@ -77,7 +77,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     NsInterp   *itPtr = arg;
     Ns_Conn    *conn = NULL;
     int         status, length = -1, binary = 0;
-    const char *type = NULL;
+    const char *mimeType = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
@@ -86,7 +86,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     };
     Ns_ObjvSpec args[] = {
         {"status",  Ns_ObjvInt,    &status, NULL},
-        {"?type",   Ns_ObjvString, &type, NULL},
+        {"?type",   Ns_ObjvString, &mimeType, NULL},
         {"?length", Ns_ObjvInt,    &length, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -97,11 +97,11 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 
     Ns_ConnSetResponseStatus(conn, status);
 
-    if (type != NULL) {
+    if (mimeType != NULL) {
         if (binary != 0) {
-            Ns_ConnSetTypeHeader(conn, type);
+            Ns_ConnSetTypeHeader(conn, mimeType);
         } else {
-            Ns_ConnSetEncodedTypeHeader(conn, type);
+            Ns_ConnSetEncodedTypeHeader(conn, mimeType);
         }
     } else if (binary != 0) {
         conn->flags |= NS_CONN_WRITE_ENCODED;
