@@ -725,7 +725,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
 
     assert(conn != NULL);
     assert(data != NULL);
-    assert(type != NULL);
+    assert(mimeType != NULL);
 
     Ns_ConnSetTypeHeader(conn, mimeType);
     length = (len < 0) ? strlen(data) : (size_t)len;
@@ -832,7 +832,7 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *mimeType,
                          Tcl_Channel chan, size_t len)
 {
     assert(conn != NULL);
-    assert(type != NULL);
+    assert(mimeType != NULL);
     return ReturnOpen(conn, status, mimeType, chan, NULL, -1, len);
 }
 
@@ -841,7 +841,7 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *mimeType,
                       FILE *fp, size_t len)
 {
     assert(conn != NULL);
-    assert(type != NULL);
+    assert(mimeType != NULL);
     return ReturnOpen(conn, status, mimeType, NULL, fp, -1, len);
 }
 
@@ -850,7 +850,7 @@ Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *mimeType,
                     int fd, size_t len)
 {
     assert(conn != NULL);
-    assert(type != NULL);
+    assert(mimeType != NULL);
     return ReturnOpen(conn, status, mimeType, NULL, NULL, fd, len);
 }
 
@@ -861,7 +861,7 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
     int result;
 
     assert(conn != NULL);
-    assert(type != NULL);
+    assert(mimeType != NULL);
 
     Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetResponseStatus(conn, status);
@@ -916,7 +916,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
     int         rangeCount, result = NS_ERROR;
 
     assert(conn != NULL);
-    assert(type != NULL);
+    assert(mimeType != NULL);
 
     Ns_DStringInit(&ds);
     rangeCount = NsConnParseRange(conn, mimeType, fd, data, len,
