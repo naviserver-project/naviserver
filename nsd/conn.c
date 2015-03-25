@@ -1517,7 +1517,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 contentLength = connPtr->reqPtr->length;
             }
 
-            if (contentLength > 0) {
+            if (contentLength > 0u) {
                 if (requiredLength == -1 && offset == 0) {
                     /*
                      * return full content
