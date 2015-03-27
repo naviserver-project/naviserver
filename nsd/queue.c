@@ -1049,6 +1049,9 @@ NsConnThread(void *arg)
                          id);
     }
 
+    Ns_ThreadSelf(&joinThread);
+    /*fprintf(stderr, "### starting conn thread %p <%s>\n", (void *)joinThread, Ns_ThreadGetName());*/
+    
     /*
      * See how many connections this thread should run.  Setting
      * connsperthread to > 0 will cause the thread to graceously exit,
@@ -1333,10 +1336,10 @@ NsConnThread(void *arg)
     {
         bool wakeup; 
 	/*
-	 * Record the fact that this driver is exiting by decrementing
-	 * the actually running threads and wakeup the driver to check
-	 * against thread starvation starvation (due to an insufficient
-	 * number of connection threads).
+	 * Record the fact that this driver is exiting by decrementing the
+	 * actually running threads and wakeup the driver to check against
+	 * thread starvation (due to an insufficient number of connection
+	 * threads).
 	 */
 	Ns_MutexLock(threadsLockPtr);
 	poolPtr->threads.current--;
@@ -1362,12 +1365,17 @@ NsConnThread(void *arg)
 	Ns_CondSignal(&poolPtr->wqueue.cond); 
     }
 
+    Ns_MutexLock(&servPtr->pools.lock);
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);
+    /*fprintf(stderr, "###stopping joinThread %p, self %p\n",
+      joinThread, servPtr->pools.joinThread);*/
+    
     if (joinThread != NULL) {
         JoinConnThread(&joinThread);
     }
-
+    Ns_MutexUnlock(&servPtr->pools.lock);
+    
     Ns_Log(Notice, "exiting: %s", exitMsg);
 
     Ns_MutexLock(tqueueLockPtr);
@@ -1681,11 +1689,9 @@ CreateConnThread(ConnPool *poolPtr)
 static void
 JoinConnThread(Ns_Thread *threadPtr)
 {
-    void *argArg;
-
     assert(threadPtr != NULL);
 
-    Ns_ThreadJoin(threadPtr, &argArg);
+    Ns_ThreadJoin(threadPtr, NULL);
     /*
      * There is no need to free ConnThreadArg here, since it is
      * allocated in the driver
