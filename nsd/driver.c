@@ -1428,12 +1428,13 @@ DriverThread(void *arg)
                         break;
 
                     case SOCK_READERROR:
+                    case SOCK_TOOMANYHEADERS:
+                    case SOCK_BADREQUEST:
                         Ns_Log(DriverDebug, "sockread returned error; close socket");
                         SockRelease(sockPtr, s, errno);
                         break;
 
                     case SOCK_BADHEADER:
-                    case SOCK_BADREQUEST:
                     case SOCK_CLOSE:
                     case SOCK_CLOSETIMEOUT:
                     case SOCK_ENTITYTOOLARGE:
@@ -1441,7 +1442,6 @@ DriverThread(void *arg)
                     case SOCK_READTIMEOUT:
                     case SOCK_SERVERREJECT:
                     case SOCK_SHUTERROR:
-                    case SOCK_TOOMANYHEADERS:
                     case SOCK_WRITEERROR:
                     case SOCK_WRITETIMEOUT:
                     default:
