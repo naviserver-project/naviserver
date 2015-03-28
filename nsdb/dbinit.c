@@ -60,7 +60,6 @@ typedef struct Pool {
     int             nhandles;
     struct Handle  *firstPtr;
     struct Handle  *lastPtr;
-    int             fVerbose;
     int             fVerboseError;
     time_t          maxidle;
     time_t          maxopen;
@@ -80,7 +79,7 @@ typedef struct Handle {
     void           *connection;
     const char     *poolname;
     int             connected;
-    int             verbose;
+    int             verbose;   /* kept just for backwards compatibility, should be replaced by Ns_LogSqlDebug */
     Ns_Set         *row;
     char            cExceptionCode[6];
     Ns_DString      dsExceptionMsg;
@@ -747,13 +746,13 @@ NsDbLogSql(Ns_DbHandle *handle, const char *sql)
     Handle *handlePtr = (Handle *) handle;
 
     if (handle->dsExceptionMsg.length > 0) {
-        if (handlePtr->poolPtr->fVerboseError == NS_TRUE || handle->verbose == NS_TRUE) {
+        if (handlePtr->poolPtr->fVerboseError == NS_TRUE) {
 	    
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
-    } else if (handle->verbose == NS_TRUE) {
-        Ns_Log(Notice, "dbinit: sql(%s): '%s'", handle->datasource, sql);
+    } else {
+        Ns_Log(Ns_LogSqlDebug, "dbinit: sql(%s): '%s'", handle->datasource, sql);
     }
 }
 
@@ -892,11 +891,10 @@ IsStale(const Handle *handlePtr, time_t now)
 	    (handlePtr->stale == NS_TRUE) ||
 	    (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
-	    if (handlePtr->poolPtr->fVerbose == NS_TRUE) {
-		Ns_Log(Notice, "dbinit: closing %s handle in pool '%s'",
-		       handlePtr->atime < minAccess ? "idle" : "old",
-		       handlePtr->poolname);
-	    }
+            Ns_Log(Ns_LogSqlDebug, "dbinit: closing %s handle in pool '%s'",
+                   handlePtr->atime < minAccess ? "idle" : "old",
+                   handlePtr->poolname);
+
 	    return NS_TRUE;
 	}
     }
@@ -1053,7 +1051,6 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->pass = Ns_ConfigGetValue(path, "password");
     poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
     poolPtr->stale_on_close = 0;
-    poolPtr->fVerbose = Ns_ConfigBool(path, "verbose", NS_FALSE);
     poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
     poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
     poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
@@ -1085,7 +1082,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
 	handlePtr->datasource = poolPtr->source;
 	handlePtr->user = poolPtr->user;
 	handlePtr->password = poolPtr->pass;
-	handlePtr->verbose = poolPtr->fVerbose;
+	handlePtr->verbose = NS_FALSE;
 	handlePtr->poolname = pool;
 	ReturnHandle(handlePtr);
     }
