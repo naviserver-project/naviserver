@@ -812,11 +812,8 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {"--",        Ns_ObjvBreak, NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec args[] = {
-        {NULL, NULL, NULL, NULL}
-    };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 

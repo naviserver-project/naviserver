@@ -419,11 +419,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            Ns_ObjvSpec args[] = {
-                {NULL, NULL, NULL, NULL}
-            };
 
-            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
             Ns_MutexLock(&tp.queuelock);
