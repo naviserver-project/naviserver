@@ -220,9 +220,12 @@ NsInitLog(void)
         
         (void) Ns_CreateLogSeverity(severityConfig[i].label);
         labelLength = strlen(severityConfig[i].label);
-        assert(labelLength < sizeof(buf));
-        
-        memcpy(buf, severityConfig[i].label, labelLength + 1u);
+        if (labelLength < sizeof(buf)) {
+            memcpy(buf, severityConfig[i].label, labelLength + 1u);
+        } else {
+            memcpy(buf, severityConfig[i].label, sizeof(buf) - 1u);
+            buf[sizeof(buf) - 1u] = '\0';
+        }
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
     }
@@ -383,7 +386,7 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
  *      Return true if the given severity level is enabled.
  *
  * Results:
- *      NS_TRUE / NS_FALSE.
+ *      Boolean
  *
  * Side effects:
  *      None.
@@ -394,10 +397,14 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
 bool
 Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
+    bool result;
+    
     if (likely(severity < severityMaxCount)) {
-        return severityConfig[severity].enabled;
+        result = severityConfig[severity].enabled;
+    } else {
+        result = NS_TRUE;
     }
-    return NS_TRUE;
+    return result;
 }
 
 
@@ -419,12 +426,17 @@ Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 bool
 Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
 {
+    bool result;
+    
     if (likely(severity < severityMaxCount)) {
-        bool prevState = severityConfig[severity].enabled;
+        result = severityConfig[severity].enabled;
+        
         severityConfig[severity].enabled = enabled;
-        return prevState;
+    } else {
+        result = NS_FALSE;
     }
-    return NS_FALSE;
+    
+    return result;
 }
 
 
@@ -1021,6 +1033,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
               enabled = Ns_LogSeverityEnabled(severity);
               if (objc == 4 && severity != Fatal) {
                   int boolValue;
+                  
                   if (Tcl_GetBooleanFromObj(interp, objv[3], &boolValue) == TCL_OK) {
                       severityConfig[severity].enabled = boolValue;
                   } else {
