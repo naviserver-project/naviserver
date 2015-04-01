@@ -1142,7 +1142,7 @@ NsConnThread(void *arg)
 	    /*
 	     * We put an entry into the thread queue. However, we must
 	     * take care, that signals are not sent, before this thread
-	     * is waiting for it. therefore. We lock the connection
+	     * is waiting for it. Therefore we lock the connection
 	     * thread specific lock right here, also the signal sending
 	     * code uses the same lock.
 	     */
