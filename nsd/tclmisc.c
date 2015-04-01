@@ -1321,7 +1321,13 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     MD5Transform(ctx->buf, (uint8_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16u);
-    memset(ctx, 0, sizeof(Ns_CtxMD5));	/* In case it's sensitive */
+    /*
+     * This memset should not be needed, since this is performed at the end of
+     * the operation. In case, it would be needed, it should be necessary at
+     * the initilization of the structure.
+     *
+     *     memset(ctx, 0, sizeof(Ns_CtxMD5));
+     */
 }
 
 /* The four core functions - F1 is optimized somewhat */
