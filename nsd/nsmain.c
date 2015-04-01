@@ -607,15 +607,15 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     } else {
         if (rl.rlim_max == RLIM_INFINITY) {
             Ns_Log(Notice, "nsmain: "
-                   "max files: FD_SETSIZE = %u, rl_cur = %u, rl_max = %s",
-                   FD_SETSIZE, (unsigned int)rl.rlim_cur, "infinity");
+                   "max files: soft limit %u, hard limit %s",
+                   (unsigned int)rl.rlim_cur, "infinity");
         } else {
             Ns_Log(Notice, "nsmain: "
-                   "max files: FD_SETSIZE = %u, rl_cur = %u, rl_max = %u",
-                   FD_SETSIZE, (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
+                   "max files: soft limit %u, hard limit %u",
+                   (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
         }
         if (rl.rlim_cur > FD_SETSIZE) {
-            Ns_Log(Warning, "nsmain: rl_cur > FD_SETSIZE");
+            Ns_Log(Warning, "nsmain: rl_cur > FD_SETSIZE, select() calls should not be used");
         }
     }
 

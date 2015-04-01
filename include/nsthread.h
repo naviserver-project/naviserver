@@ -489,14 +489,14 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifndef __linux
-#ifdef FD_SETSIZE
-#undef FD_SETSIZE
-#endif
-#define FD_SETSIZE                  1024
+# ifdef FD_SETSIZE
+#  undef FD_SETSIZE
+# endif
+# define FD_SETSIZE                  1024
 #endif
 
 #ifndef PATH_MAX
-#define PATH_MAX 1024
+# define PATH_MAX 1024
 #endif
 
 /* 
@@ -505,9 +505,9 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef LLONG_MAX
-#define LLONG_HALF                  (1LL << (sizeof (long long int) * CHAR_BIT - 2))
-#define LLONG_MAX                   (LLONG_HALF - 1 + LLONG_HALF)
-#define LLONG_MIN                   (-LLONG_MAX-1)
+# define LLONG_HALF                 (1LL << (sizeof (long long int) * CHAR_BIT - 2))
+# define LLONG_MAX                  (LLONG_HALF - 1 + LLONG_HALF)
+# define LLONG_MIN                  (-LLONG_MAX-1)
 #endif
 
 /*
