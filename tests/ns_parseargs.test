@@ -65,6 +65,7 @@ test ns_parseargs-3.1 {Arguments} -body {
 
 
 test ns_parseargs-4.1 {Options} -body {
+    unset -nocomplain a c e
     ns_parseargs {-a -b -c -d -e} {-b B -d D}
     list [info exists a] $b [info exists c] $d [info exists e]
 } -cleanup {
@@ -87,6 +88,7 @@ test ns_parseargs-5.2 {Defaults} -body {
 } -result [list aaa xxx yyy [list 3 2 1]]
 
 test ns_parseargs-5.3 {Defaults script} -body {
+    unset -nocomplain a c e
     ns_parseargs {-a -b -c -d -e {-l {[info level]}} } {-b B -d D}
     list [info exists a] $b [info exists c] $d [info exists e] [set l]
 } -cleanup {
