@@ -44,7 +44,7 @@ static int WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
 static void SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
-static void MD5Transform(uint32_t buf[4], uint32_t const in[16]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void MD5Transform(uint32_t buf[4], uint8_t const in[16]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 
@@ -991,7 +991,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     uint8_t *p = (uint8_t *) ctx->key + i;	/* First unused byte */
 
     /* Set the first char of padding to 0x80. There is always room. */
-    *p++ = (uint8_t)0x80;
+    *p++ = (uint8_t)0x80u;
 
     /* Bytes of padding needed to make 64 bytes (0..63) */
     i = SHA_BLOCKBYTES - 1u - i;
@@ -1247,7 +1247,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
 	}
 	memcpy(p, buf, t);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+	MD5Transform(ctx->buf, (uint8_t *) ctx->in);
 	buf += t;
 	len -= t;
     }
@@ -1256,7 +1256,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
     while (len >= 64u) {
 	memcpy(ctx->in, buf, 64u);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+	MD5Transform(ctx->buf, (uint8_t *) ctx->in);
 	buf += 64;
 	len -= 64u;
     }
@@ -1273,7 +1273,8 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
 void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 {
     unsigned count;
-    unsigned char *p;
+    uint8_t  *p;
+    uint32_t *words = (uint32_t *)ctx->in;
 
     assert(ctx != NULL);
     assert(digest != NULL);
@@ -1281,11 +1282,13 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     /* Compute number of bytes mod 64 */
     count = (ctx->bits[0] >> 3) & 0x3Fu;
 
-    /* Set the first char of padding to 0x80.  This is safe since there is
-       always at least one byte free */
+    /* 
+     * Set the first char of padding to 0x80.  This is safe since there is
+     * always at least one byte free
+     */
     p = ctx->in + count;
-    *p++ = (unsigned char)0x80;
-
+    *p++ = (uint8_t)0x80u;
+    
     /* Bytes of padding needed to make 64 bytes */
     count = 64u - 1u - count;
 
@@ -1294,7 +1297,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 	/* Two lots of padding:  Pad the first block to 64 bytes */
 	memset(p, 0, count);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+	MD5Transform(ctx->buf, (uint8_t *) ctx->in);
 
 	/* Now fill the next block with 56 bytes */
 	memset(ctx->in, 0, 56u);
@@ -1305,10 +1308,10 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     byteReverse(ctx->in, 14);
 
     /* Append length in bits and transform */
-    ctx->in[14] = (unsigned char)ctx->bits[0];
-    ctx->in[15] = (unsigned char)ctx->bits[1];
+    words[14] = ctx->bits[0];
+    words[15] = ctx->bits[1];
 
-    MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+    MD5Transform(ctx->buf, (uint8_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16u);
     memset(ctx, 0, sizeof(Ns_CtxMD5));	/* In case it's sensitive */
@@ -1327,16 +1330,32 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     ( (w) += f((x), (y), (z)) + (data),  (w) = (w)<<(s) | (w)>>(32-(s)),  (w) += (x) )
 
 /*
- * The core of the MD5 algorithm, this alters an existing MD5 hash to
- * reflect the addition of 16 longwords of new data.  MD5Update blocks
- * the data and converts bytes into longwords for this routine.
+ * The core of the MD5 algorithm, this alters an existing MD5 hash to reflect
+ * the addition of 16 32-bit words (64 bytes) of new data.  MD5Update blocks the
+ * data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
+static void MD5Transform(uint32_t buf[4], uint8_t const block[64])
 {
     register uint32_t a, b, c, d;
 
+#ifndef HIGHFIRST
+    uint32_t *in = (uint32_t *)block;
+#else
+    uint32_t in[16];
+    
+    memcpy(in, block, sizeof(in));
+
+    for (a = 0; a < 16; a++) {
+        in[a] = (uint32_t)(
+                            (uint32_t)(block[a * 4 + 0]) |
+                            (uint32_t)(block[a * 4 + 1]) <<  8 |
+                            (uint32_t)(block[a * 4 + 2]) << 16 |
+                            (uint32_t)(block[a * 4 + 3]) << 24);
+    }
+#endif
+
     assert(buf != NULL);
-    assert(in != NULL);
+    assert(block != NULL);
     
     a = buf[0];
     b = buf[1];
