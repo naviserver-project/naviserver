@@ -1460,16 +1460,26 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     unsigned char  digest[16];
     char           digestChars[33];
     const char    *str;
-    int            strLen;
+    int            length;
+    bool           binary;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
+    
+    binary = NsTclObjIsByteArray(objv[1]);
+    if (binary) {
+        fprintf(stderr, "binary\n");
+        str = (char*)Tcl_GetByteArrayFromObj(objv[1], &length);
+    } else {
+        str = Tcl_GetStringFromObj(objv[1], &length);
+    }
 
-    str = Tcl_GetStringFromObj(objv[1], &strLen);
+    fprintf(stderr, "len %d\n", length);
+   
     Ns_CtxMD5Init(&ctx);
-    Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)strLen);
+    Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
     Ns_CtxMD5Final(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 16);

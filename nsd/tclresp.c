@@ -286,7 +286,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         flags |= NS_CONN_STREAM;
     }
 
-    if (binary != 0) {
+    if (binary == NS_TRUE) {
         status = Ns_ConnWriteVData(conn, sbufs, n, flags);
     } else {
         status = Ns_ConnWriteVChars(conn, sbufs, n, flags);
