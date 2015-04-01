@@ -57,6 +57,14 @@ test ns_md5-2.6 {binary string} -body {
      ns_md5 [binary format H* 6501ff01]
 } -result "B501948B7A9E912E0ABF7DE3A34983DE"
 
+test ns_md5-2.7 {checksum from binary file} -body {
+    set f [open [ns_server pagedir]/ns_poweredby.png]
+    fconfigure $f -translation binary
+    set c [read $f]
+    close $f
+    ns_md5 $c
+} -result "C4024A17423FD3840C7816DDC6FE59F4"
+
 
 
 cleanupTests

@@ -43,5 +43,17 @@ test ns_sha1-2.4 {basic operation} -body {
      expr {($hash1 eq $hash2) == ($hash2 eq $hash3)}
 } -result 1
 
+test ns_sha1-2.5 {basic operation} -body {
+    ns_sha1 [binary format H* 6501ff01]
+} -result "97CE1CD8E5D85BA0913976868BC3EB024F6DD214"
+
+test ns_sha1-2.6 {checksum from binary file} -body {
+    set f [open [ns_server pagedir]/ns_poweredby.png]
+    fconfigure $f -translation binary
+    set c [read $f]
+    close $f
+    ns_sha1 $c
+} -result "1BFB30C1892435CA0AD6042FA80CE6B222E5121A"
+
 
 cleanupTests

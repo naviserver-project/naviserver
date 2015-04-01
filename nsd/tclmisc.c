@@ -44,7 +44,7 @@ static int WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
 static void SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
-static void MD5Transform(uint32_t buf[4], uint8_t const in[16]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void MD5Transform(uint32_t buf[4], uint8_t const block[64]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 
@@ -1070,16 +1070,23 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     unsigned char  digest[20];
     char           digestChars[41];
     const char    *str;
-    int            strLen;
+    int            length;
+    bool           binary;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
 
-    str = Tcl_GetStringFromObj(objv[1], &strLen);
+    binary = NsTclObjIsByteArray(objv[1]);
+    if (binary == NS_TRUE) {
+        str = (char*)Tcl_GetByteArrayFromObj(objv[1], &length);
+    } else {
+        str = Tcl_GetStringFromObj(objv[1], &length);
+    }    
+
     Ns_CtxSHAInit(&ctx);
-    Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) strLen);
+    Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
     Ns_CtxSHAFinal(&ctx, digest);
 
     Ns_CtxString(digest, digestChars, 20);
@@ -1469,15 +1476,12 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     }
     
     binary = NsTclObjIsByteArray(objv[1]);
-    if (binary) {
-        fprintf(stderr, "binary\n");
+    if (binary == NS_TRUE) {
         str = (char*)Tcl_GetByteArrayFromObj(objv[1], &length);
     } else {
         str = Tcl_GetStringFromObj(objv[1], &length);
     }
 
-    fprintf(stderr, "len %d\n", length);
-   
     Ns_CtxMD5Init(&ctx);
     Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
     Ns_CtxMD5Final(&ctx, digest);
