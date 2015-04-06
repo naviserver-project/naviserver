@@ -133,8 +133,8 @@ case "$system" in
     LDSO="\$(LDLIB)"
     CCRPATHS="\$(CCRPATH)"
     LDRPATHS="\$(LDRPATH)"
-    CCRFLAG=$TCL_CC_SEARCH_FLAGS
-    LDRFLAG=$TCL_LD_SEARCH_FLAGS
+    CCRFLAG=$CC_SEARCH_FLAGS
+    LDRFLAG=$LD_SEARCH_FLAGS
     if test "$CCRFLAG" = "" ; then
       CCRPATH=
     fi
