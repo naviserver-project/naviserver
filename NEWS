@@ -1,4 +1,54 @@
 ======================================
+NaviServer 4.99.8, released 2015-XX-XX
+======================================
+
+Changes relative to 4.99.7
+  37 files changed, 672 insertions(+), 377 deletions(-)
+
+New Features:
+  * ns_md5, ns_sha1: added binary support
+    When data passed to function, use Tcl byte-array operations instead
+    of string operations
+
+Bug Fixes:
+  * Fixed bug reported by Wolfgang Winkler, when " ns_urldecode --" was 
+    called (switched to regular argv parser)
+  * Fixed bug, when "ns_conn content" was called without content
+    potential race conditions on thread exits
+  * Fixed potential race conditions on thread exits
+  * ns_md5: Code generation was broken
+    (probably since a long time, due to a mix up of somewhat tricky casts)
+  * Fixed warning in interaction between TCP_CORK and nsssl
+  * Fixed bug, where one thread frees a nsv-array, but an internal
+    representation of an Tcl_Obj for this array was still active in
+    another thread
+  * Fixed a bug with in https client commands (ns_ssl) when paths and parameters
+    are passed.
+
+Configuration Changes:
+  * Improved sample configuration for OpenACS and nsssl
+  * Improved Makefiles (reduce redundancy for CFLAGS)
+  * Improved rpath handling in configure.ac for Linux distros,
+    where TCL_CC_SEARCH_FLAGS and TCL_LD_SEARCH_FLAGS are set
+    empty, like e.g.Debian  
+
+Command Line Changes:
+
+Code Changes:
+  * Extended Regression Test:
+    - Added test set for ns_md5, compared results with other implementations
+    - Added binary regression test for ns_md5 and ns_sha1
+    - Added test set for ns_md5
+    - Improved robustness of tests for ns_parseargs
+    - Added tests for "ns_urldecode --"
+    - Added test set infrastrucure (nstest::https, server setup) and
+      test cases for nsssl
+    
+  * Reduced implicit type conversions and other minor code cleanups
+  * Protect against potential buffer overruns
+
+
+======================================
 NaviServer 4.99.7, released 2015-02-23
 ======================================
 
