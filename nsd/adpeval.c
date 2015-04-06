@@ -1130,6 +1130,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
             } else if (objsPtr == NULL) {
                 result = Tcl_EvalEx(interp, ptr, len, 0);
             } else {
+                assert(nscript < objsPtr->nobjs);
                 objPtr = objsPtr->objs[nscript];
                 if (objPtr == NULL) {
                     objPtr = Tcl_NewStringObj(ptr, len);
