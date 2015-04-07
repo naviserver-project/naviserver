@@ -1,5 +1,5 @@
 ======================================
-NaviServer 4.99.8, released 2015-XX-XX
+NaviServer 4.99.8, released 2015-04-XX
 ======================================
 
 Changes relative to 4.99.7
@@ -24,6 +24,9 @@ Bug Fixes:
     another thread
   * Fixed a bug with in https client commands (ns_ssl) when paths and parameters
     are passed.
+  * Fixed nsphp compilation (and "make php").
+    Many thanks to Branden Graves for feedback and testing.
+    
 
 Configuration Changes:
   * Improved sample configuration for OpenACS and nsssl

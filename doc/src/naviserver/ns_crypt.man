@@ -38,8 +38,8 @@ which is reasonably attacked with modern computers with ordinary brute-force att
 [example_end]
 
 
-[see_also nsd ns_uuencode ns_uudecode ns_sha1]
-[keywords encoding]
+[see_also nsd ns_uuencode ns_uudecode ns_sha1 ns_md5]
+[keywords encoding crypt]
 
 [manpage_end]
 
