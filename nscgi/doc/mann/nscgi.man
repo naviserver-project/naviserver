@@ -167,9 +167,10 @@ To enable and configure CGI:
 Edit your NaviServer configuration file, usually named nsd.tcl.
 
 [enum]
-Choose the server for which you want to enable CGI. Add the CGI
-module to that server. For example:
-
+Choose the server for which you want to enable CGI (such as for
+example the server named [const Server1]). Then add the CGI
+module to that server such it will be loaded at start time.
+For example:
 
 [example_begin]
 
@@ -179,52 +180,71 @@ module to that server. For example:
 [example_end]
 
 
-[enum]Add a section for the server called
-    [const "ns/server/server-name/module/nscgi"].
+[enum]Add a section for the server with the suffix
+    [const "module/nscgi"] to configure the modules
+    with certain parameters. One has to define typically the
+    mappings via the parameter [const Map] to
+    indicate, what HTTP-method with which path
+    should be directed to a corresponding CGI program. Typically,
+    the mapping will point to a directory on the machine in which the
+    CGI scripts are located.
+
+    [para]
+    The value specified via the parameter [const map] is of the form
+    [para]
+      [arg method] [arg pattern] [arg ?path?]
+
+    [para]
+    where [arg method] refers to the HTTP request method (i.e., HEAD,
+        GET, POST, etc.), [arg pattern] refers to either a relative
+	URL or a glob pattern to match on the HTTP request.  This is how nscgi
+        determines whether a request is a CGI request.
+        [arg path] is optional and indicates either
+        the directory where the CGI executables can be found, or the
+        executable that should be used to fulfill the CGI request.
+	[para] If
+	[arg path] is not specified, then the URL must refer a file
+        which is the CGI executable.  If [arg path] is specified and is a
+        directory, then the filename portion of the URL must refer to a
+        CGI executable in that directory.  Otherwise, [arg path] must
+	refer to a CGI executable which will handle all requests for this
+	[arg pattern].
+	
     For example:
 
 [example_begin]
    ns_section "ns/server/Server1/module/nscgi"
-[example_end]
-
-
-[enum]Add CGI mappings for the server to define the method, URL, and
-    directory where the CGI programs reside. For example:
-
-
-[example_begin]
-   ns_section "ns/server/Server1/module/nscgi"
       ns_param Map  "GET /cgi /usr/local/cgi"
       ns_param Map  "POST /*.cgi"
 [example_end]
 
 
 [enum]
-Modify other CGI parameters as needed.
-
-[enum]
-If you plan to use a program which requires an interpreter, e.g.,
-    Perl or a shell script, you will need to define an Interpreter in
-    the Interps section. Follow these steps:
+If you want to call a CGI program (script) which requires an interpreter (e.g.,
+    Perl or bash), you will need to define the CGI interpreters via
+    the module parameter [const Interps].
 
     [list_begin itemized]
 
-    [item] Add a definition for the Interps parameter to your CGI
-        configuration section. For example:
+    [item] Add a definition for the [const Interps] parameter to your CGI
+        configuration section using e.g. the name [const cgi]. 
 
 [example_begin]
    ns_section "ns/server/Server1/module/nscgi"
-      ns_param Map  "GET /cgi /usr/local/cgi"
-      ns_param Map  "POST /*.cgi"
-      ns_param Interps CGIinterps
+      ns_param Map    "GET /cgi /usr/local/cgi"
+      ns_param Map    "POST /*.cgi"
+      ns_param Interps cgi
 [example_end]
 
 
-    [item] Then add an interpreter section containing interpreter
-        definitions. For example:
+    [item] Then add a section under [const ns/interps] for the chosen
+        name (here [const cgi]) and add there the mappings
+	from file extensions to the
+	script interpreters. When a CGI script with a specified extension
+	is to be executed, NaviServer will call it via the named executables.
 
 [example_begin]
-   ns_section "ns/interps/CGIinterps"
+   ns_section "ns/interps/cgi"
       ns_param .pl  "c:\perl\bin\perl.exe"
       ns_param .sh  "c:\mks\mksnt\sh.exe(MKSenv)"
 [example_end]
@@ -234,32 +254,68 @@ If you plan to use a program which requires an interpreter, e.g.,
 [list_end]
 
 [enum]
-If the interpreter requires environment variables, you will need
-    to define an environment section. Follow these steps:
+In case the CGI script or the script interpreter requires additional
+environment variables, one can define this via the module parameter
+[const Environment] and a matching section for the detail definitions.
 
     [list_begin itemized]
 
-    [item] Add a definition for the Environment parameter to your CGI
-        configuration section. For example:
+    [item] Add a definition for the [const Environment] parameter to your CGI
+        configuration section.
 
 
 [example_begin]
    ns_section "ns/server/Server1/module/nscgi"
-      ns_param Map      "GET /cgi /usr/local/cgi"
-      ns_param Map      "POST /*.cgi"
-      ns_param Interps  CGIinterps
-      ns_param Environment CGIenvironment
+      ns_param Map         "GET /cgi /usr/local/cgi"
+      ns_param Map         "POST /*.cgi"
+      ns_param Interps     cgi
+      ns_param Environment cgi
 [example_end]
 
-   [item]
-       Then add an environment section containing variable
-       definitions. For example:
+    [item] Then add a section under [const ns/environment] for the chosen
+       name (here [const cgi])
+       containing the required environment variable definitions.
 
 [example_begin]
-   ns_section "ns/interps/CGIenvironment"
-      ns_param var1 var1-definition
-      ns_param var2 var2-definition
+   ns_section "ns/environment/cgi"
+      ns_param FOO BAR     ;# defines environment variable "FOO=BAR"
+      ns_param TMP /tmp    ;# defines environment variable "TMP=/tmp"
 [example_end]
+
+[list_end]
+
+[enum]
+Further configuration parameter for [const module/nscgi] are:
+
+[list_begin itemized]
+
+[item] [const gethostbyaddr] is a boolean parameter to indicate
+whether to resolve the peer IP address to its hostname when setting
+the REMOTE_HOST environment variable.  If [const false], the peer IP address
+will be used instead.  Caution: turning this option on can negatively
+impact performance due to the overhead of having to perform a DNS
+look-up on every CGI request. Default: [const off]
+
+[item] [const limit] is an integer parameter to indicate the maximum
+number of concurrent CGI requests to execute. [const 0] means
+unlimited. Default: [const 0]
+
+[item] [const maxinput] is an integer parameter to indicate the
+maximum in bytes to accept in the HTTP request. [const 0] means unlimited.
+Mostly useful to limit the size of POST'ed data. Default: [const 1024000]
+      
+[item] [const maxwait] is an integer parameter to indicate the amount
+      of time to wait in seconds in the queue when the concurrency
+      limit has been reached.  Server will respond with a "503 Service
+      Unavailable" error on timeout.  If [const limit] is set to [const 0],
+      this setting will have no effect. Default: [const 30]
+
+[item] [const systemenvironment] is a boolean parameter to controls
+      whether the CGI will inherit the server process's environment
+      variables or not.  Enabling this could potentially leak
+      sensitive information from the parent's environment if the CGI
+      displays its environment variables which is the behavior of some
+      common error-handling code. Default: [const false]
 
 [list_end]
 [list_end]
@@ -1474,6 +1530,16 @@ from the CGI program.
 
   If your programs are not executed, make sure the program file
  allows read and execute access.
+
+
+[item]  How can I debug my nscgi configuration?
+[para]
+  For debugging the nsgci configuration, you one can turn on
+  logging for the error.log via the command:
+
+[example_begin]
+    ns_logctl severity Debug(cgi) on
+[example_end]
 
 
 [list_end]
