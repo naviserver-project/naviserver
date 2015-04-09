@@ -243,6 +243,9 @@ ns_section 	"ns/server/${servername}"
    # Maximum number of connection structures
    ns_param   	maxconnections  	100	;# 100; determines queue size as well
 
+   # pre-initialize per-connection compression streams
+   # ns_param   	compresspreinit  	false	;# default; if true then initialize and allocate buffers at startup
+
    # Minimal and maximal number of connection threads
    ns_param   	maxthreads      	10
    ns_param   	minthreads      	1
