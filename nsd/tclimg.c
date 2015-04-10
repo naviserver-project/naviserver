@@ -218,10 +218,9 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     if (status != TCL_OK) {
         SetObjDims(interp, 0u, 0u);
-        return TCL_ERROR;
+    } else {
+        SetObjDims(interp, w, h);
     }
-
-    SetObjDims(interp, w, h);
 
     return TCL_OK;
 }
