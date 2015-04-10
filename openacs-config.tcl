@@ -187,7 +187,9 @@ ns_section ns/server/${server}
 	#
 	ns_param	compressenable	on	;# false, use "ns_conn compress" to override
 	# ns_param	compresslevel	4	;# 4, 1-9 where 9 is high compression, high overhead
-	# ns_param	compressminsize	512	;# Compress responses larger than this
+        # ns_param	compressminsize	512	;# Compress responses larger than this
+        # ns_param   	compresspreinit true	;# false, if true then initialize and allocate buffers at startup
+
 	#
 	# Configuration of replies
 	#

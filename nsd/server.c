@@ -409,13 +409,14 @@ CreatePool(NsServer *servPtr, const char *pool)
      */
 
     maxconns = Ns_ConfigIntRange(path, "maxconnections", 100, 1, INT_MAX);
-    preinit = Ns_ConfigBool(path, "compresspreinit",NS_FALSE);
+    preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
     poolPtr->wqueue.maxconns = maxconns;
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
+    
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
         connPtr->nextPtr = &connBufPtr[n+1];
-        if (servPtr->compress.enable && preinit) {
+        if (servPtr->compress.enable == NS_TRUE && preinit == NS_TRUE) {
             (void) Ns_CompressInit(&connPtr->cStream);
         }
     }
