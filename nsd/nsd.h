@@ -905,6 +905,7 @@ typedef struct NsServer {
         bool enable;    /* on/off */
         int  level;     /* 1-9 */
         int  minsize;   /* min size of response to compress, in bytes */
+        bool preinit;   /* initialize the compression stream buffers in advance */
     } compress;
 
     /*

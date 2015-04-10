@@ -273,6 +273,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->compress.enable = Ns_ConfigBool(path, "compressenable", NS_FALSE);
     servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
     servPtr->compress.minsize = Ns_ConfigIntRange(path, "compressminsize", 512, 0, INT_MAX);
+    servPtr->compress.preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
 
     /*
      * Call the static server init proc, if any, which may register
@@ -363,7 +364,6 @@ CreatePool(NsServer *servPtr, const char *pool)
     ConnPool   *poolPtr;
     Conn       *connBufPtr, *connPtr;
     int         n, maxconns, lowwatermark, highwatermark, queueLength;
-    bool        preinit;
     const char *path;
 
     assert(servPtr != NULL);
@@ -409,14 +409,14 @@ CreatePool(NsServer *servPtr, const char *pool)
      */
 
     maxconns = Ns_ConfigIntRange(path, "maxconnections", 100, 1, INT_MAX);
-    preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
     poolPtr->wqueue.maxconns = maxconns;
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
     
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
         connPtr->nextPtr = &connBufPtr[n+1];
-        if (servPtr->compress.enable == NS_TRUE && preinit == NS_TRUE) {
+        if (servPtr->compress.enable == NS_TRUE
+	    && servPtr->compress.preinit == NS_TRUE) {
             (void) Ns_CompressInit(&connPtr->cStream);
         }
     }
