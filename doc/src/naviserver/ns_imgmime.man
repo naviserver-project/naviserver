@@ -33,12 +33,12 @@ not exist.
 
 [example_begin]
 % foreach f [lb]glob -nocomplain -types f /tmp/images/*[rb] {
-    if {[lb]lsearch [lb]list jpeg png gif[rb] [lb]ns_imgtype $f[rb][rb]} {
+    if {[lb]ns_imgtype $f[rb][rb] ne "unknown"} {
         puts -nonewline "supported image:  "
     } else {
         puts -nonewline "unsupported file: "
     }
-    foreach {width height} [lb]ns_imgsize $f[rb] { break }
+    lassign [lb]ns_imgsize $f[rb] width height
     set mimetype [lb]ns_imgmime $f[rb]
     set f [lb]file tail $f[rb]
     puts [lb]format "%30s width: %5i height: %5i MIME: %15s" \
@@ -49,8 +49,8 @@ supported image:  MARADONNA.jpg width:   294 height:   420 MIME:      image/jpeg
 
 [example_end]
 
-[see_also nsd]
-[keywords ns_gifsize ns_pngsize ns_imgsize ns_imgtype ns_guesstype]
+[see_also ns_gifsize ns_pngsize ns_imgsize ns_imgtype ns_guesstype]
+[keywords images]
 
 [manpage_end]
 

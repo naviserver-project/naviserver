@@ -28,8 +28,8 @@ An error is generated if the file does not exist or if it is not a GIF file.
    invalid GIF file: "test.html"
 [example_end]
 
-[see_also nsd]
-[keywords ns_jpegsize ns_pngsize ns_imgsize ns_imgmime ns_imgtype]
+[keywords images]
+[see_also ns_jpegsize ns_pngsize ns_imgsize ns_imgmime ns_imgtype]
 
 [manpage_end]
 

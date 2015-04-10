@@ -33,8 +33,8 @@ ns_jpegsize, ns_gifsize and ns_pngsize would generate an error).
    0 0
 [example_end]
 
-[see_also nsd]
-[keywords ns_gifsize ns_pngsize ns_jpegsize ns_imgtype]
+[keywords images]
+[see_also ns_gifsize ns_pngsize ns_jpegsize ns_imgtype ns_imgmime]
 
 [manpage_end]
 

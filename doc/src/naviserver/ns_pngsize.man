@@ -28,8 +28,8 @@
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_gifsize ns_jpegsize ns_imgsize ns_imgtype ns_imgmime]
+[keywords images]
+[see_also ns_gifsize ns_jpegsize ns_imgsize ns_imgtype ns_imgmime]
 
 
 [manpage_end]
