@@ -27,6 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
+int NS_finalshutdown = 0;
 
 #ifndef _WIN32
 

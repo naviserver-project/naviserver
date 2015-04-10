@@ -1586,6 +1586,8 @@ NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn)
 
 #endif /* NSD_H */
 
+EXTERN bool NS_shutdown;
+
 /*
  * Local Variables:
  * mode: c

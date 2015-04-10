@@ -932,6 +932,8 @@ NS_EXTERN ssize_t ns_send(NS_SOCKET socket, const void *buffer, size_t length, i
 #define Tcl_GetErrorLine(interp) ((interp)->errorLine)
 #endif
 
+EXTERN int NS_finalshutdown;
+
 #endif /* NSTHREAD_H */
 
 /*

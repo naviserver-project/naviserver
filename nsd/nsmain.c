@@ -696,7 +696,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      * Print a "server shutting down" status message, set
      * the nsconf.stopping flag for any threads calling
      * Ns_InfoShutdownPending(), and set the absolute
-     * timeout for all systems to complete shutown.
+     * timeout for all systems to complete shutdown.
      * If SIGQUIT signal was sent, make immediate shutdown
      * without waiting for all subsystems to exit gracefully
      */

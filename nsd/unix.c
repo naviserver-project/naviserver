@@ -280,6 +280,9 @@ NsHandleSignals(void)
 void
 NsSendSignal(int sig)
 {
+    if (sig == NS_SIGTERM) {
+        NS_finalshutdown = 1;
+    }
     if (kill(Ns_InfoPid(), sig) != 0) {
         Ns_Fatal("unix: kill() failed: '%s'", strerror(errno));
     }

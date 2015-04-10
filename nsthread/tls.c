@@ -179,26 +179,29 @@ Ns_TlsGet(Ns_Tls *keyPtr)
 void
 NsCleanupTls(void **slots)
 {
-    int trys, retry;
-    void *arg;
-
     assert(slots != NULL);
 
-    trys = 0;
-    do {
-	int i;
+    if (NS_finalshutdown != 1) {
+        int trys, retry;
+        
+        trys = 0;
+        do {
+            int i;
 
-	retry = 0;
-    	i = NS_THREAD_MAXTLS;
-    	while (i-- > 0) {
-	    if (cleanupProcs[i] != NULL && slots[i] != NULL) {
-	    	arg = slots[i];
-	    	slots[i] = NULL;
-	    	(*cleanupProcs[i])(arg);
-		retry = 1;
-	    }
-	}
-    } while (retry && trys++ < 5);
+            retry = 0;
+            i = NS_THREAD_MAXTLS;
+            while (i-- > 0) {
+                if (cleanupProcs[i] != NULL && slots[i] != NULL) {
+                    void *arg;
+                        
+                    arg = slots[i];
+                    slots[i] = NULL;
+                    (*cleanupProcs[i])(arg);
+                    retry = 1;
+                }
+            }
+        } while (retry && trys++ < 5);
+    }
     Tcl_FinalizeThread();
 }
 
