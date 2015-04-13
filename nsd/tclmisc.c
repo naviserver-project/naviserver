@@ -508,7 +508,9 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                     }
                     continue;
                 }
-                ++s;
+                if (*s != '\0') {
+                    ++s;
+                }
             }
         }
         *e++ = '>';
