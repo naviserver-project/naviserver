@@ -1,5 +1,5 @@
 ======================================
-NaviServer 4.99.8, released 2015-04-XX
+NaviServer 4.99.8, released 2015-04-13
 ======================================
 
 Changes relative to 4.99.7
@@ -14,7 +14,7 @@ New Features:
   * Added config parameter "compresspreinit": Setting this parameter
     to true (default is false) will cause the compression stream
     buffers to be allocated and initialized at server startup.
-    Without it, they will be allocated and initialied as needed.  This
+    Without it, they will be allocated and initialized as needed.  This
     change drops the initial memory footprint of a server with a
     default config significantly.
 
@@ -50,8 +50,6 @@ Configuration Changes:
     where TCL_CC_SEARCH_FLAGS and TCL_LD_SEARCH_FLAGS are set
     empty, like e.g.Debian  
 
-Command Line Changes:
-
 Code Changes:
   * Extended Regression Test:
     - Added test set for ns_md5, compared results with other implementations
@@ -59,7 +57,7 @@ Code Changes:
     - Added test set for ns_md5
     - Improved robustness of tests for ns_parseargs
     - Added tests for "ns_urldecode --"
-    - Added test set infrastrucure (nstest::https, server setup) and
+    - Added test set infrastructure (nstest::https, server setup) and
       test cases for nsssl
     - Added test set for ns_img* commands
     - Number of regression tests passed 1000
