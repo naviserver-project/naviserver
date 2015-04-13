@@ -3,12 +3,20 @@ NaviServer 4.99.8, released 2015-04-XX
 ======================================
 
 Changes relative to 4.99.7
-  37 files changed, 672 insertions(+), 377 deletions(-)
+  55 files changed, 1088 insertions(+), 527 deletions(-)
 
 New Features:
   * ns_md5, ns_sha1: added binary support
-    When data passed to function, use Tcl byte-array operations instead
-    of string operations
+    When binary data is passed to this function, use
+    Tcl byte-array operations instead of string operations
+  * Added ability to debug configuration of nscgi via
+    "ns_logctl severity Debug(cgi) on"    
+  * Added config parameter "compresspreinit": Setting this parameter
+    to true (default is false) will cause the compression stream
+    buffers to be allocated and initialized at server startup.
+    Without it, they will be allocated and initialied as needed.  This
+    change drops the initial memory footprint of a server with a
+    default config significantly.
 
 Bug Fixes:
   * Fixed bug reported by Wolfgang Winkler, when " ns_urldecode --" was 
@@ -22,12 +30,19 @@ Bug Fixes:
   * Fixed bug, where one thread frees a nsv-array, but an internal
     representation of an Tcl_Obj for this array was still active in
     another thread
+  * Fixed bug where ns_imgsize returned an error where it should return
+    success and width and height returned as 0 (according to documentation)
+  * Avoid potential access of string past null character
   * Fixed a bug with in https client commands (ns_ssl) when paths and parameters
     are passed.
   * Fixed nsphp compilation (and "make php").
     Many thanks to Branden Graves for feedback and testing.
     
-
+Documentation improvements:
+  * Added documentation for ns_md5
+  * Improved documentation for ns_img commands
+  * Improved documentation for nscgi
+  
 Configuration Changes:
   * Improved sample configuration for OpenACS and nsssl
   * Improved Makefiles (reduce redundancy for CFLAGS)
@@ -46,6 +61,8 @@ Code Changes:
     - Added tests for "ns_urldecode --"
     - Added test set infrastrucure (nstest::https, server setup) and
       test cases for nsssl
+    - Added test set for ns_img* commands
+    - Number of regression tests passed 1000
     
   * Reduced implicit type conversions and other minor code cleanups
   * Protect against potential buffer overruns
