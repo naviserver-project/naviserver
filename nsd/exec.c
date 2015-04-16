@@ -346,7 +346,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         Set2Argv(&eds, env);
         envp = eds.string;
     }
-    if (CreateProcess(exec, cds.string, NULL, NULL, TRUEu, 0, envp, dir, &si, &pi) != TRUE) {
+    if (CreateProcess(exec, cds.string, NULL, NULL, TRUE, 0, envp, dir, &si, &pi) != TRUE) {
         Ns_Log(Error, "exec: failed to create process: %s: %s",
         exec != NULL ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
         pid = NS_INVALID_PID;
