@@ -38,7 +38,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  * Local functions defined in this file.
  */
 
-static char   *DbType(Ns_DbHandle *handle);
+static const char *DbType(Ns_DbHandle *handle);
 static int     OpenDb(Ns_DbHandle *handle);
 static int     CloseDb(Ns_DbHandle *handle);
 static Ns_Set *BindRow(Ns_DbHandle *handle);
@@ -65,7 +65,7 @@ static const Ns_DbProc procs[] = {
     {(Ns_DbProcId)0, NULL}
 };
 
-static char *dbName = "nsdbtest";
+static const char *dbName = "nsdbtest";
 
 
 /*
@@ -107,7 +107,7 @@ Ns_DbDriverInit(const char *driver, const char *UNUSED(configPath))
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 DbType(Ns_DbHandle *UNUSED(handle))
 {
     return dbName;
