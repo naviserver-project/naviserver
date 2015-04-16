@@ -52,7 +52,7 @@ static int ReturnRange(Ns_Conn *conn, const char *mimeType,
  * This structure connections HTTP response codes to their descriptions.
  */
 
-static struct {
+static const struct {
     int         status;
     const char *reason;
 } reasons[] = {
