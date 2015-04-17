@@ -17,10 +17,9 @@ Sleeps for the number of seconds specified in seconds.
 [call [cmd ns_sleep] [arg seconds]]
 
 [arg seconds]
-The value of seconds should be a positive integer (or  zero,  in  which
-case  the  function returns immediately).  An error will result if seconds
-is not specified, if a negative integer is specified, or if a 
-non-integer is specified.
+The value of seconds can be any NaviServer time string, such as
+a positive integer (or  zero,  in  which case  the  function returns
+immediately), or the form sec:usec or sec.fraction.
 
 [list_end]
 
@@ -32,7 +31,7 @@ non-integer is specified.
 
 
 [see_also nsd]
-
+[keywords time]
 
 [manpage_end]
 

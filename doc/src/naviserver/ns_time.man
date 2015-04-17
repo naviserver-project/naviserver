@@ -6,14 +6,18 @@
 
 [description]
 
-This command provides various time-related functions.  The legal options (which may be abbreviated) are:
+This command provides various time-related functions.
+Tiems might be of the form "sec" (integer value),
+"sec:usec" (NaviServer internal format) or "sec.fraction"
+(such as the result of [const "ns_time format"]).
 
+The allowed options of ns_time are:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
- [call [cmd ns_time] [opt [arg {arg arg ...}]]]
+[call [cmd ns_time] [opt [arg {arg arg ...}]]]
 
 [list_end]
 
@@ -90,7 +94,7 @@ All times are relative to 00:00:00 UTC, January 1, 1970 aka the Unix epoch.
 
 
 [keywords time]
-[see_also ns_fmttime ns_gmtime ns_httptime ns_localtime ns_parsehttptime ns_parsetime]
+[see_also ns_fmttime ns_gmtime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_sleep]
 
 [manpage_end]
 

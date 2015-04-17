@@ -41,17 +41,20 @@
  * Local functions defined in this file
  */
 
-static void  SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
+static void SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int   SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
+static int SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void  UpdateStringOfTime(Tcl_Obj *objPtr)
+static void UpdateStringOfTime(Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1);
 
-static int   TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-        NS_GNUC_NONNULL(2);
+static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+    NS_GNUC_NONNULL(2);
+
+static int GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier, Ns_Time *tPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 /*
  * Local variables defined in this file.
@@ -168,7 +171,8 @@ Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
  *
  * Ns_TclGetTimeFromObj --
  *
- *      Return the internal value of an Ns_Time Tcl_Obj.
+ *      Return the internal value of an Ns_Time Tcl_Obj.  If the value is
+ *      specified as integer, the value is interpreted as seconds.
  *
  * Results:
  *      TCL_OK or TCL_ERROR if not a valid Ns_Time.
@@ -456,7 +460,7 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclSleepObjCmd --
  *
- *      Sleep with milisecond resolition.
+ *      Sleep with milisecond resolution.
  *
  * Results:
  *      Tcl Result.
@@ -470,23 +474,23 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Time t;
     int     ms;
+    Ns_Time *tPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"timespec", Ns_ObjvTime, &tPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;    
+    }
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "timespec");
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetTimeFromObj(interp, objv[1], &t) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    Ns_AdjTime(&t);
-    if (t.sec < 0 || (t.sec == 0 && t.usec < 0)) {
+    if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
         Tcl_AppendResult(interp, "invalid timespec: ",
                          Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    ms = (int)(t.sec * 1000 + t.usec / 1000);
+    ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
     Tcl_Sleep(ms);
 
     return TCL_OK;
@@ -586,9 +590,79 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * GetTimeFromString --
+ *
+ *      Try to fill ns_Time struct from a string based on a specified
+ *      separator and a multiplier for usec.
+ *
+ * Results:
+ *      TCL_OK, TCL_ERROR or TCL_CONTINUE
+ *
+ * Side effects:
+ *      Fill in sec und usec in the specified Ns_Time on success.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier, Ns_Time *tPtr)
+{
+    /*
+     * Look for the separator
+     */
+    char *sep;
+
+    assert(interp != NULL);
+    assert(str != NULL);
+    assert(tPtr != NULL);
+
+    sep = strchr(str, separator);
+    if (sep != NULL) {
+        int result, value;
+        
+        /*
+         * First get sec from the string.
+         */
+        if (unlikely(sep == str)) {
+            /*
+             * The first character was the separator, treat sec as 0.
+             */
+            tPtr->sec = 0l;
+        } else {
+            /*
+             * Overwrite the separator with a null-byte to make the
+             * first part null-terminated.
+             */
+            *sep = '\0';
+            result = Tcl_GetInt(interp, str, &value);
+            *sep = separator;
+            if (result != TCL_OK) {
+                return TCL_ERROR;
+            }
+            tPtr->sec = (long)value;
+        }
+
+        /*
+         * Get usec
+         */
+        if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        tPtr->usec = value * multiplier;
+        return TCL_OK;
+    }
+    return TCL_CONTINUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SetTimeFromAny --
  *
- *      Attempt to generate an Ns_Time internal form for the Tcl object.
+ *      Attempt to generate an Ns_Time internal respresentation for the Tcl
+ *      object. It interprets integer as seconds, but allows as well the form
+ *      sec:usec or sec.fraction.
  *
  * Results:
  *      The return value is a standard object Tcl result. If an error occurs
@@ -601,23 +675,19 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static int
 SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
-    char    *str, *sep;
     Ns_Time  t;
     long     sec;
-    int      value;
+    int      result = TCL_OK;
 
     assert(interp != NULL);
     assert(objPtr != NULL);
     
-    str = Tcl_GetString(objPtr);
-    sep = strchr(str, ':');
-    if (objPtr->typePtr == intTypePtr || sep == NULL) {
+    if (objPtr->typePtr == intTypePtr) {
         /*
-         * When the type is "int" or no ":" is found, usec is 0.
+         * When the type is "int", usec is 0.
          */
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
@@ -625,32 +695,33 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         t.sec = sec;
         t.usec = 0;
     } else {
-        int result;
-
+        char *str = Tcl_GetString(objPtr);
+        
         /*
-         * Get sec: Overwrite the separator with a null-byte to make the
-         * first part null-terminated.
+         * Check, if the string contains the classical NaviServer separator
+         * for sec:usec.  If not, check if this has a "." as separator.
          */
-        *sep = '\0';
-        result = Tcl_GetInt(interp, str, &value);
-        *sep = ':';
-        if (result != TCL_OK) {
-            return TCL_ERROR;
+        result = GetTimeFromString(interp, str, ':', 1, &t);
+        if (result == TCL_CONTINUE) {
+            result = GetTimeFromString(interp, str, '.', 100000, &t);
         }
-        t.sec = (long)value;
-
-        /*
-         * Get usec
-         */
-        if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
-            return TCL_ERROR;
+        if (result == TCL_CONTINUE) {
+            /*
+             * No separator found, so interpret the value as integer
+             */
+            result = Tcl_GetLongFromObj(interp, objPtr, &sec);
+            if (result == TCL_OK) {
+                t.sec = sec;
+                t.usec = 0;
+            }
         }
-        t.usec = value;
     }
-    Ns_AdjTime(&t);
-    SetTimeInternalRep(objPtr, &t);
+    if (result == TCL_OK) {
+        Ns_AdjTime(&t);
+        SetTimeInternalRep(objPtr, &t);
+    }
 
-    return TCL_OK;
+    return result;
 }
 
 
