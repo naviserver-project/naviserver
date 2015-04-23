@@ -786,6 +786,46 @@ Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ObjvServer --
+ *
+ *      Get server from argument, consume it, put result into "dest".
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST* objv)
+{
+    NsServer **dest = spec->dest;
+    int        result = TCL_OK;
+
+    if (likely(*objcPtr > 0) && likely(dest != NULL)) {
+        NsServer *servPtr = NsGetServer(Tcl_GetString(objv[0]));
+        
+        if (likely(servPtr != NULL)) {
+            *dest = servPtr;
+            *objcPtr -= 1;
+        } else {
+            Ns_TclPrintfResult(interp, "invalid server: '%s'", Tcl_GetString(objv[0]));
+            result = TCL_ERROR;
+        }
+    } else {
+        result = TCL_ERROR;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclParseArgsObjCmd --
  *
  *	    Implements the ns_parseargs command.

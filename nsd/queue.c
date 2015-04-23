@@ -526,71 +526,63 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 int
 NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int          subcmd, value = 0, nextArgIdx;
+    int          subcmd = 0, value = 0;
     NsInterp    *itPtr = arg;
-    NsServer    *servPtr;
+    NsServer    *servPtr = NULL;
     ConnPool    *poolPtr;
-    char        *pool, *optArg = NULL, buf[100];
+    char        *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
-
-    static const char * subcmds[] = {
-        "active", "all", "connections", 
-	"filters",
-	"keepalive", 
-	"maxthreads", "minthreads", 
-	"pagedir", "pools", "queued",
-	"requestprocs",
-	"serverdir", "stats", 
-	"tcllib", "threads", "traces",
-	"url2file", "waiting", 
-	NULL
-    };
 
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, 
-	SFiltersIdx,
-	SKeepaliveIdx, 
-	SMaxthreadsIdx, SMinthreadsIdx,
-	SPagedirIdx, SPoolsIdx, SQueuedIdx, 
-	SRequestprocsIdx,
-	SServerdirIdx, SStatsIdx, 
-	STcllibIdx, SThreadsIdx, STracesIdx,
-	SUrl2fileIdx, SWaitingIdx
+        SFiltersIdx,
+        SKeepaliveIdx, 
+        SMaxthreadsIdx, SMinthreadsIdx,
+        SPagedirIdx, SPoolsIdx, SQueuedIdx, 
+        SRequestprocsIdx,
+        SServerdirIdx, SStatsIdx, 
+        STcllibIdx, SThreadsIdx, STracesIdx,
+        SUrl2fileIdx, SWaitingIdx
+    };
+    
+    static Ns_ObjvTable subcmds[] = {
+        {"active",       SActiveIdx},
+        {"all",          SAllIdx},
+        {"connections",  SConnectionsIdx},
+        {"filters",      SFiltersIdx},
+        {"keepalive",    SKeepaliveIdx},
+        {"maxthreads",   SMaxthreadsIdx},
+        {"minthreads",   SMinthreadsIdx},
+        {"pagedir",      SPagedirIdx},
+        {"pools",        SPoolsIdx},
+        {"queued",       SQueuedIdx},
+        {"requestprocs", SRequestprocsIdx},
+        {"serverdir",    SServerdirIdx},
+        {"stats",        SStatsIdx},
+        {"tcllib",       STcllibIdx},
+        {"threads",      SThreadsIdx},
+        {"traces",       STracesIdx},
+        {"url2file",     SUrl2fileIdx},
+        {"waiting",      SWaitingIdx},
+        {NULL,           0}
+    };
+    
+    Ns_ObjvSpec opts[] = {
+        {"-server", Ns_ObjvServer,  &servPtr, NULL},
+        {"-pool",   Ns_ObjvString,  &pool,    NULL},
+        {"--",      Ns_ObjvBreak,   NULL,     NULL},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"subcmd",  Ns_ObjvIndex,  &subcmd,   &subcmds},
+        {"?arg",    Ns_ObjvString, &optArg,   NULL},
+        {NULL, NULL, NULL, NULL}
     };
 
-    static const char  *options[]           = {"-server", "-pool", NULL};
-    enum                                      {OServerIdx, OPoolIdx};
-    ClientData          optionClientData[2] = {NULL, NULL};
-    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionServer, Ns_OptionString};
-
-    if (objc < 2) {
-    usage_error:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-server server? ?-pool pool? ?--? subcmd ?arg?");
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-
-    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
-			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    servPtr = optionClientData[OServerIdx];
-    pool    = optionClientData[OPoolIdx];
-
-    if (objc <= nextArgIdx) {goto usage_error;}
-
-    Tcl_ResetResult(interp);
-    if (Tcl_GetIndexFromObj(interp, objv[nextArgIdx], subcmds, "subcmd", 0,
-                            &subcmd) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    if ((objc - nextArgIdx) > 2) {
-	goto usage_error;
-    } else if ((objc - nextArgIdx) == 2) {
-	optArg = Tcl_GetString(objv[nextArgIdx+1]);
-    }
-
+    
     if ((subcmd == SPoolsIdx 
 	 || subcmd == SFiltersIdx
 	 || subcmd == SPagedirIdx
@@ -607,7 +599,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	 * just for backwards compatibility
 	 */
 	if (optArg != NULL) {
-	    Ns_LogDeprecated(objv, nextArgIdx + 2, "ns_server ?-pool p? ...", 
+	    Ns_LogDeprecated(objv, objc, "ns_server ?-pool p? ...", 
 			     "Passing pool as second argument is deprected.");
 	    pool = optArg;
 	}
@@ -629,7 +621,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     } else {
 	poolPtr = servPtr->pools.defaultPtr;
     }
-
+    
     switch (subcmd) {
 	/* 
 	 * These subcommands are server specific (do not allow -pool option)
@@ -691,7 +683,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         break;
 
     case SKeepaliveIdx:
-	Ns_LogDeprecated(objv, nextArgIdx + 1, "ns_conn keepalive", NULL);
+	Ns_LogDeprecated(objv, objc, "ns_conn keepalive", NULL);
         Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
         break;
 

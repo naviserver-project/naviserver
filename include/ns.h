@@ -1671,6 +1671,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
 NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
 NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
+NS_EXTERN Ns_ObjvProc Ns_ObjvServer;
 NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
