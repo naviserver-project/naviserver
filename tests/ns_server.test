@@ -13,6 +13,11 @@ test ns_server-1.2 {basic syntax: wrong argument} -body {
      ns_server ?
 } -returnCodes error -result {bad subcmd "?": must be active, all, connections, filters, keepalive, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, url2file, or waiting}
 
+test ns_server-1.3 {plain call, option but no argument} -body {
+    ns_server -pool {}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+
+
 test ns_server-2.1 {basic operation} -body {
     string is int -strict [ns_server connections]
 } -match exact -result 1
