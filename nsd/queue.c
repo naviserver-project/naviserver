@@ -1164,19 +1164,38 @@ NsConnThread(void *arg)
 		
 		if (status == NS_TIMEOUT) {
 		    if (argPtr->connPtr != NULL) {
-			/* this should not happen; probably a signal was lost */
+			/* 
+                         * This should not happen: we had a timeout, but there
+                         * is a connection to be handled; when a connection
+                         * comes in, we get signaled and should see therefore
+                         * no timeout.  Maybe the signal was lost?
+                         */
 			Ns_Log(Warning, "signal lost, resuming after timeout");
 			status = NS_OK;
-		    }
-		    if (poolPtr->threads.current <= poolPtr->threads.min) {continue;}
-		    /* 
-		     * We have a timeout, and the thread can exit 
-		     */
-		    break;
+
+		    } else if (poolPtr->threads.current <= poolPtr->threads.min) {
+                        /* 
+                         * We have a timeout, but we should not reduce the
+                         * number of threads below min-threads.
+                         */
+                        continue;
+                        
+                    } else {
+                        /* 
+                         * We have a timeout, and the thread can exit 
+                         */
+                        break;
+                    }
 		}
-		if (argPtr->connPtr != NULL) {break;}
-		
-		Ns_Log(Debug, "CondTimedWait returned an unexpected result, maybe shutdown?");
+
+		if (argPtr->connPtr != NULL) {
+                    /*
+                     * We got something to do
+                     */
+                    break;
+                }
+
+                Ns_Log(Debug, "Unexpected condition after CondTimedWait; maybe shutdown?");
 	    }
 
 	    Ns_MutexUnlock(&argPtr->lock);
