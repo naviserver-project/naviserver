@@ -577,7 +577,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     servPtr = optionClientData[OServerIdx];
     pool    = optionClientData[OPoolIdx];
 
-    if (objc < nextArgIdx) {goto usage_error;}
+    if (objc <= nextArgIdx) {goto usage_error;}
 
     Tcl_ResetResult(interp);
     if (Tcl_GetIndexFromObj(interp, objv[nextArgIdx], subcmds, "subcmd", 0,
