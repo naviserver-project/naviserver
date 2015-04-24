@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -56,21 +56,21 @@ static const char six2pr[64] = {
  */
 
 static const int pr2six[256] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 
-    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, 
-    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 
-    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, 
-    -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 
-    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
+    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
+    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
+    -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
@@ -90,14 +90,14 @@ static const int pr2six[256] = {
  *
  * Side effects:
  *      Encoded characters are placed in output which must be
- *	large enough for the result, i.e., (1 + (len * 4) / 2)
- *	bytes, minimum outout buffer size is 4 bytes.
+ *    large enough for the result, i.e., (1 + (len * 4) / 2)
+ *    bytes, minimum outout buffer size is 4 bytes.
  *
  *----------------------------------------------------------------------
  */
 
 size_t
-Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
+Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
 {
     register const unsigned char *p;
     register unsigned char *q;
@@ -114,21 +114,21 @@ Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
 
     p = input;
     q = (unsigned char *) buf;
-    for (n = bufSize / 3u; n > 0u; --n) {
+    for (n = inputSize / 3u; n > 0u; --n) {
         /*
          * Add wrapping newline to be compatible with GNU uuencode
          * if line length exceeds max line length - without adding
          * extra newline character
          */
         if (line >= 60) {
-	    *q++ = UCHAR('\n'); 
-	    line = 0;
-        }       
-	*q++ = Encode(p[0] >> 2);
-	*q++ = Encode((UCHAR(p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+            *q++ = UCHAR('\n');
+            line = 0;
+        }
+        *q++ = Encode(p[0] >> 2);
+        *q++ = Encode((UCHAR(p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
         *q++ = Encode((UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
-	*q++ = Encode(p[2] & 0x3FU);
-	p += 3;
+        *q++ = Encode(p[2] & 0x3FU);
+        p += 3;
         line += 4;
     }
 
@@ -136,17 +136,17 @@ Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
      * Convert and pad any remaining bytes.
      */
 
-    n = bufSize % 3u;
+    n = inputSize % 3u;
     if (n > 0u) {
-	*q++ = Encode(p[0] >> 2);
-	if (n == 1u) {
-	    *q++ = Encode(UCHAR(p[0] << 4) & 0x30U);
-	    *q++ = UCHAR('=');
-	} else {
-	    *q++ = Encode((UCHAR(p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
-	    *q++ = Encode(UCHAR( p[1] << 2) & 0x3CU);
-	}
-	*q++ = UCHAR('=');
+        *q++ = Encode(p[0] >> 2);
+        if (n == 1u) {
+            *q++ = Encode(UCHAR(p[0] << 4) & 0x30U);
+            *q++ = UCHAR('=');
+        } else {
+            *q++ = Encode((UCHAR(p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+            *q++ = Encode(UCHAR( p[1] << 2) & 0x3CU);
+        }
+        *q++ = UCHAR('=');
     }
     *q = UCHAR('\0');
     return ((char *)q - buf);
@@ -165,8 +165,8 @@ Ns_HtuuEncode(const unsigned char *input, size_t bufSize, char *buf)
  *
  * Side effects:
  *      Decoded characters are placed in output which must be
- *	large enough for the result, i.e., (3 + (len * 3) / 4)
- *	bytes.
+ *    large enough for the result, i.e., (3 + (len * 3) / 4)
+ *    bytes.
  *
  *----------------------------------------------------------------------
  */
@@ -181,13 +181,13 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
 
     assert(input != NULL);
     assert(buf != NULL);
-    
+
     /*
      * Skip leading space, if any.
      */
 
     while (*input == ' ' || *input == '\t') {
-	++input;
+        ++input;
     }
 
     /*
@@ -200,14 +200,14 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
     while (*p) {
         if (pr2six[(int)(*p)] >= 0) {
             chars[n++] = *p;
-	    if (n == 4) {
-		*q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
-		*q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
-		*q++ = UCHAR(Decode(chars[2]) << 6) | Decode(chars[3]);
-		n = 0;
-	    }
+            if (n == 4) {
+                *q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
+                *q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
+                *q++ = UCHAR(Decode(chars[2]) << 6) | Decode(chars[3]);
+                n = 0;
+            }
         }
-	p++;
+        p++;
     }
 
     /*
@@ -215,13 +215,13 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
      */
 
     if (n > 1) {
-	*q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
+        *q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
     }
     if (n > 2) {
-	*q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
+        *q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
     }
     if ((size_t)(q - buf) < bufSize) {
-	*q = UCHAR('\0');
+        *q = UCHAR('\0');
     }
     return (size_t)(q - buf);
 }
