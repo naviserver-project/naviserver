@@ -419,7 +419,7 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
     char        buf[128];
     int         len;
 
-    len = snprintf(buf, sizeof(buf), "t%p-a%p-%s", type, addr, type);
+    len = snprintf(buf, sizeof(buf), "t%p-a%p-%s", (void *)type, (void *)addr, type);
     Ns_TclSetStringRep(objPtr, buf, len);
 }
 
