@@ -62,11 +62,11 @@
 #define ADP_OPTIONMAX                  0x1000000U /* watermark for flag values */
 
 typedef enum {
-  ADP_OK =                     0,
-  ADP_BREAK =                  1,
-  ADP_ABORT =                  2,
-  ADP_RETURN =                 3,
-  ADP_TIMEOUT =                4
+    ADP_OK =                     0,
+    ADP_BREAK =                  1,
+    ADP_ABORT =                  2,
+    ADP_RETURN =                 3,
+    ADP_TIMEOUT =                4
 } AdpResult;
 
 #define MAX_URLSPACES                  16
@@ -218,7 +218,7 @@ typedef struct FileMap {
 #else
     HANDLE handle;              /* OS handle of the opened/mapped file */
     void *mapobj;               /* Mapping object (Win32 only) */
-#endif    
+#endif
 } FileMap;
 
 /*
@@ -227,7 +227,7 @@ typedef struct FileMap {
 typedef struct WriterSock {
     struct WriterSock   *nextPtr;
     struct Sock         *sockPtr;
-    struct SpoolerQueue *queuePtr; 
+    struct SpoolerQueue *queuePtr;
     struct Conn         *connPtr;
     SpoolerState         status;
     int                  err;
@@ -239,27 +239,27 @@ typedef struct WriterSock {
     int                  doStream;
     int                  fd;
     char                 *headerString;
-    
-    union {
-	struct {
-	    struct iovec      *bufs;                 /* incoming bufs to be sent */
-	    int                nbufs;
-	    int                bufIdx; 
-	    struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
-	    int                nsbufs;
-	    int                sbufIdx;
-	    struct iovec       preallocated_bufs[UIO_SMALLIOV];
-	    struct FileMap     fmap;
-	} mem;
 
-	struct {
-	    size_t             maxsize;
-	    size_t             bufsize;
-	    off_t              bufoffset;
-	    size_t             toRead;
-	    unsigned char     *buf;
-	    Ns_Mutex           fdlock;
-	} file;
+    union {
+        struct {
+            struct iovec      *bufs;                 /* incoming bufs to be sent */
+            int                nbufs;
+            int                bufIdx;
+            struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
+            int                nsbufs;
+            int                sbufIdx;
+            struct iovec       preallocated_bufs[UIO_SMALLIOV];
+            struct FileMap     fmap;
+        } mem;
+
+        struct {
+            size_t             maxsize;
+            size_t             bufsize;
+            off_t              bufoffset;
+            size_t             toRead;
+            unsigned char     *buf;
+            Ns_Mutex           fdlock;
+        } file;
     } c;
 
     char              *clientData;
@@ -296,15 +296,15 @@ typedef struct AdpFrame {
     struct AdpFrame   *prevPtr;
     unsigned short     line;
     unsigned short     objc;
-    time_t    	       mtime;
-    off_t     	       size;
-    Tcl_Obj	      *ident;
+    time_t             mtime;
+    off_t              size;
+    Tcl_Obj          *ident;
     Tcl_Obj          **objv;
-    char	      *savecwd;
-    const char	      *file;
+    char              *savecwd;
+    const char        *file;
     unsigned int       flags;
     Ns_DString         cwdbuf;
-    Tcl_DString	      *outputPtr;
+    Tcl_DString       *outputPtr;
 } AdpFrame;
 
 
@@ -319,18 +319,18 @@ typedef struct AdpFrame {
  */
 
 typedef struct AdpCode {
-    int		nblocks;
-    int		nscripts;
-    int	       *len;
-    int	       *line;
+    int        nblocks;
+    int        nscripts;
+    int           *len;
+    int           *line;
     Tcl_DString text;
 } AdpCode;
 
-#define AdpCodeLen(cp,i)	((cp)->len[(i)])
-#define AdpCodeLine(cp,i)	((cp)->line[(i)])
-#define AdpCodeText(cp)		((cp)->text.string)
-#define AdpCodeBlocks(cp)	((cp)->nblocks)
-#define AdpCodeScripts(cp)	((cp)->nscripts)
+#define AdpCodeLen(cp,i)    ((cp)->len[(i)])
+#define AdpCodeLine(cp,i)    ((cp)->line[(i)])
+#define AdpCodeText(cp)        ((cp)->text.string)
+#define AdpCodeBlocks(cp)    ((cp)->nblocks)
+#define AdpCodeScripts(cp)    ((cp)->nscripts)
 
 
 /*
@@ -358,9 +358,9 @@ typedef struct Request {
     size_t avail;               /* Bytes avail in buffer */
     int leadblanks;             /* Number of leading blank lines read */
 
-   /*
-    * The following block is for chunked encodings
-    */
+    /*
+     * The following block is for chunked encodings
+     */
     size_t expectedLength;      /* Provided expected length */
     size_t chunkStartOff;       /* Offset pointing to start of chunk to be parsed */
     size_t chunkWriteOff;       /* Offset pointing to position were to write chunk */
@@ -529,7 +529,7 @@ typedef struct NsLimits {
     const char      *name;
     unsigned int     maxrun;    /* Max conns to run at once */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped */
-    size_t	     maxupload; /* Max data accepted */
+    size_t         maxupload; /* Max data accepted */
     long             timeout;   /* Seconds allowed for conn to complete */
 
     Ns_Mutex         lock;      /* Lock for state and stats */
@@ -600,8 +600,8 @@ typedef struct Conn {
     Ns_Time filterDoneTime;      /* time stamp, after filters */
 
     Ns_Time acceptTimeSpan;
-    Ns_Time queueTimeSpan; 
-    Ns_Time filterTimeSpan; 
+    Ns_Time queueTimeSpan;
+    Ns_Time filterTimeSpan;
     Ns_Time runTimeSpan;
 
     struct NsInterp *itPtr;
@@ -672,7 +672,7 @@ typedef struct ConnPool {
 
     struct {
         Conn *freePtr;
-	int maxconns;
+        int maxconns;
 
         struct {
             int   num;
@@ -704,7 +704,7 @@ typedef struct ConnPool {
         int idle;
         long timeout;
         int creating;
-	Ns_Mutex lock;
+        Ns_Mutex lock;
     } threads;
 
     /*
@@ -715,11 +715,11 @@ typedef struct ConnPool {
      */
 
     struct {
-	ConnThreadArg *nextPtr;
-	ConnThreadArg *args;
-	Ns_Mutex       lock;
+        ConnThreadArg *nextPtr;
+        ConnThreadArg *args;
+        Ns_Mutex       lock;
     } tqueue;
-    
+
     /*
      * Track "statistics" such as counts or aggregated times.
      */
@@ -727,12 +727,12 @@ typedef struct ConnPool {
     struct {
         unsigned long spool;
         unsigned long queued;
-	unsigned long processed;
+        unsigned long processed;
         unsigned long connthreads;
         Ns_Time acceptTime;
-	Ns_Time queueTime; 
-	Ns_Time filterTime; 
-	Ns_Time runTime;
+        Ns_Time queueTime;
+        Ns_Time filterTime;
+        Ns_Time runTime;
     } stats;
 
 } ConnPool;
@@ -927,7 +927,7 @@ typedef struct NsServer {
         Ns_Mutex lock;
         Tcl_HashTable table;
     } chans;
-    
+
     /*
      * The following struct maintains detached Tcl
      * channels for the benefit of the ns_connchan command.
@@ -990,21 +990,21 @@ typedef struct NsInterp {
      */
 
     struct adp {
-	unsigned int	   flags;
-	AdpResult	   exception;
-	int		   refresh;
-	size_t		   bufsize;
-	int                errorLevel;
-	int                debugLevel;
-	int                debugInit;
-	char              *debugFile;
-	Ns_Cache	  *cache;
-	int                depth;
-	const char	  *cwd;
-	struct AdpFrame	  *framePtr;
-	Ns_Conn		  *conn;
-	Tcl_Channel	   chan;
-	Tcl_DString	   output;
+        unsigned int       flags;
+        AdpResult       exception;
+        int           refresh;
+        size_t           bufsize;
+        int                errorLevel;
+        int                debugLevel;
+        int                debugInit;
+        char              *debugFile;
+        Ns_Cache      *cache;
+        int                depth;
+        const char      *cwd;
+        struct AdpFrame      *framePtr;
+        Ns_Conn          *conn;
+        Tcl_Channel       chan;
+        Tcl_DString       output;
     } adp;
 
     /*
@@ -1033,7 +1033,7 @@ typedef struct NsInterp {
  */
 
 NS_EXTERN Tcl_ObjCmdProc
-    NsTclAdpAbortObjCmd,
+NsTclAdpAbortObjCmd,
     NsTclAdpAppendObjCmd,
     NsTclAdpArgcObjCmd,
     NsTclAdpArgvObjCmd,
@@ -1229,7 +1229,7 @@ NS_EXTERN Tcl_ObjCmdProc
     TclX_KeylsetObjCmd;
 
 NS_EXTERN Tcl_CmdProc
-    NsTclAdpStatsCmd,
+NsTclAdpStatsCmd,
     NsTclHrefsCmd,
     NsTclLibraryCmd,
     NsTclMkTempCmd,
@@ -1290,8 +1290,8 @@ NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
-				 const char *url, int id, int fast)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+                                 const char *url, int id, int fast)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * Socket driver callbacks.
@@ -1331,11 +1331,11 @@ NS_EXTERN void NsWriterLock(void);
 NS_EXTERN void NsWriterUnlock(void);
 
 NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr)
-        NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int  NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
-			  FILE *fp, int fd, struct iovec *bufs, int nbufs, 
-			  int everysize)
+                             FILE *fp, int fd, struct iovec *bufs, int nbufs,
+                             int everysize)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -1452,8 +1452,8 @@ NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
-			       int fd, const void *data, size_t objLength,
-			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
+                               int fd, const void *data, size_t objLength,
+                               Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
     NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
 
@@ -1474,7 +1474,7 @@ NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr)
  */
 
 NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
 
@@ -1483,10 +1483,10 @@ NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
  * ADP routines.
  */
 
-NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len) 
+NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int doStream) 
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int doStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
@@ -1499,11 +1499,11 @@ NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			   const char *file, const Ns_Time *expiresPtr)
+                           const char *file, const Ns_Time *expiresPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
-			  unsigned int flags, const char* file)
+                          unsigned int flags, const char* file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr)
