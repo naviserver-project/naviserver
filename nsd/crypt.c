@@ -461,7 +461,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     assert(salt != NULL);
     assert(iobuf != NULL);
 
-    for (i = 0; i < 66; i++) {
+    for (i = 0u; i < 66u; i++) {
         block[i] = UCHAR('\0');
     }
     for (i = 0, c = UCHAR(*pw); c != UCHAR('\0') && i < 64; pw++, c = UCHAR(*pw)) {
@@ -474,11 +474,11 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 
     setkey_private(&s, block);
 
-    for (i = 0; i < 66; i++) {
+    for (i = 0u; i < 66u; i++) {
         block[i] = UCHAR('\0');
     }
 
-    for (i = 0; i < 2; i++) {
+    for (i = 0u; i < 2u; i++) {
         c = UCHAR(*salt++);
         iobuf[i] = (char)c;
         if (c > UCHAR('Z')) {
@@ -497,11 +497,11 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         }
     }
 
-    for (i = 0; i < 25; i++) {
+    for (i = 0u; i < 25u; i++) {
         encrypt_private(&s, block, 0);
     }
 
-    for (i = 0; i < 11; i++) {
+    for (i = 0u; i < 11u; i++) {
         c = UCHAR('\0');
         for (j = 0; j < 6; j++) {
             c <<= 1;

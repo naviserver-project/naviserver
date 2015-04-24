@@ -479,9 +479,9 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     const char  *charset = NULL;
     char         part = 'q';
     Ns_ObjvTable parts[] = {
-        {"query",    'q'},
-        {"path",     'p'},
-        {NULL,       0}
+        {"query",    UCHAR('q')},
+        {"path",     UCHAR('p')},
+        {NULL,       0u}
     };
     Ns_ObjvSpec lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
@@ -543,9 +543,9 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char                part = 'q';
     Tcl_Encoding        encoding = NULL;
     Ns_ObjvTable parts[] = {
-        {"query",    'q'},
-        {"path",     'p'},
-        {NULL,       0}
+        {"query",    UCHAR('q')},
+        {"path",     UCHAR('p')},
+        {NULL,       0u}
     };
     Ns_ObjvSpec lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},

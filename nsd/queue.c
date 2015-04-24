@@ -546,25 +546,25 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     };
     
     static Ns_ObjvTable subcmds[] = {
-        {"active",       SActiveIdx},
-        {"all",          SAllIdx},
-        {"connections",  SConnectionsIdx},
-        {"filters",      SFiltersIdx},
-        {"keepalive",    SKeepaliveIdx},
-        {"maxthreads",   SMaxthreadsIdx},
-        {"minthreads",   SMinthreadsIdx},
-        {"pagedir",      SPagedirIdx},
-        {"pools",        SPoolsIdx},
-        {"queued",       SQueuedIdx},
-        {"requestprocs", SRequestprocsIdx},
-        {"serverdir",    SServerdirIdx},
-        {"stats",        SStatsIdx},
-        {"tcllib",       STcllibIdx},
-        {"threads",      SThreadsIdx},
-        {"traces",       STracesIdx},
-        {"url2file",     SUrl2fileIdx},
-        {"waiting",      SWaitingIdx},
-        {NULL,           0}
+        {"active",       (unsigned int)SActiveIdx},
+        {"all",          (unsigned int)SAllIdx},
+        {"connections",  (unsigned int)SConnectionsIdx},
+        {"filters",      (unsigned int)SFiltersIdx},
+        {"keepalive",    (unsigned int)SKeepaliveIdx},
+        {"maxthreads",   (unsigned int)SMaxthreadsIdx},
+        {"minthreads",   (unsigned int)SMinthreadsIdx},
+        {"pagedir",      (unsigned int)SPagedirIdx},
+        {"pools",        (unsigned int)SPoolsIdx},
+        {"queued",       (unsigned int)SQueuedIdx},
+        {"requestprocs", (unsigned int)SRequestprocsIdx},
+        {"serverdir",    (unsigned int)SServerdirIdx},
+        {"stats",        (unsigned int)SStatsIdx},
+        {"tcllib",       (unsigned int)STcllibIdx},
+        {"threads",      (unsigned int)SThreadsIdx},
+        {"traces",       (unsigned int)STracesIdx},
+        {"url2file",     (unsigned int)SUrl2fileIdx},
+        {"waiting",      (unsigned int)SWaitingIdx},
+        {NULL,           0u}
     };
     
     Ns_ObjvSpec opts[] = {
@@ -574,7 +574,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"subcmd",  Ns_ObjvIndex,  &subcmd,   &subcmds},
+        {"subcmd",  Ns_ObjvIndex,  &subcmd,   subcmds},
         {"?arg",    Ns_ObjvString, &optArg,   NULL},
         {NULL, NULL, NULL, NULL}
     };

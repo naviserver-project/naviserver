@@ -53,7 +53,7 @@ static void UpdateStringOfTime(Tcl_Obj *objPtr)
 static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(2);
 
-static int GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier, Ns_Time *tPtr)
+static int GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, long multiplier, Ns_Time *tPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 /*
@@ -605,7 +605,7 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
  */
 
 static int
-GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier, Ns_Time *tPtr)
+GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, long multiplier, Ns_Time *tPtr)
 {
     /*
      * Look for the separator
@@ -616,9 +616,9 @@ GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier,
     assert(str != NULL);
     assert(tPtr != NULL);
 
-    sep = strchr(str, separator);
+    sep = strchr(str, UCHAR(separator));
     if (sep != NULL) {
-        int result, value;
+        int value;
         
         /*
          * First get sec from the string.
@@ -627,8 +627,10 @@ GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier,
             /*
              * The first character was the separator, treat sec as 0.
              */
-            tPtr->sec = 0l;
+            tPtr->sec = 0L;
         } else {
+            int result;
+            
             /*
              * Overwrite the separator with a null-byte to make the
              * first part null-terminated.
@@ -648,7 +650,7 @@ GetTimeFromString(Tcl_Interp *interp, char *str, char separator, int multiplier,
         if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
             return TCL_ERROR;
         }
-        tPtr->usec = value * multiplier;
+        tPtr->usec = (long)value * multiplier;
         return TCL_OK;
     }
     return TCL_CONTINUE;
@@ -695,7 +697,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         t.sec = sec;
         t.usec = 0;
     } else {
-        char *str = Tcl_GetString(objPtr);
+        const char *str = Tcl_GetString(objPtr);
         
         /*
          * Check, if the string contains the classical NaviServer separator
