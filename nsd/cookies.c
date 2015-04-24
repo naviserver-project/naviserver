@@ -411,47 +411,43 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 {
     Ns_Conn     *conn;
     Ns_DString   ds;
-    const char  *name;
-    int          status = TCL_OK, nextArgIdx, idx = -1;
+    const char  *nameString;
+    Tcl_Obj     *defaultObj = NULL;
+    int          idx = -1, status = TCL_OK;
+    int          withSetCookies = NS_FALSE;
 
-    static const char  *options[]           = {"-include_set_cookies", NULL};
-    enum                                      {OSetCookiesIdx};
-    ClientData          optionClientData[1] = {NULL};
-    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionBoolean};
-
-    if (unlikely(objc < 1)) {
-    usage_error:
-	if (*Tcl_GetStringResult(interp) == '\0') {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-include_set_cookies bool? ?--? name ?default?");
-	}
+    Ns_ObjvSpec opts[] = {
+        {"-include_set_cookies", Ns_ObjvBool,  &withSetCookies, NULL},
+        {"--",                   Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"name",      Ns_ObjvString, &nameString,  NULL},
+        {"?default",  Ns_ObjvObj,    &defaultObj,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-
-    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
-			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
-	goto usage_error;
-    }
-    if (objc - nextArgIdx < 1 || objc - nextArgIdx > 2) {goto usage_error;}
-
+    
     conn = GetConn(interp);
     if (unlikely(conn == NULL)) {
         return TCL_ERROR;
     }
 
     Ns_DStringInit(&ds);
-    name = Tcl_GetString(objv[nextArgIdx]);
 
-    if (PTR2INT(optionClientData[OSetCookiesIdx])) {
-	idx = SearchFirstCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", name);
+    if (withSetCookies == NS_TRUE) {
+	idx = SearchFirstCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", nameString);
     }
     if (idx == -1) {
-	idx = SearchFirstCookie(&ds, Ns_ConnHeaders(conn), "cookie", name);
+	idx = SearchFirstCookie(&ds, Ns_ConnHeaders(conn), "cookie", nameString);
     }
     
     if (idx != -1) {
         Tcl_DStringResult(interp, &ds);
-    } else if (nextArgIdx + 2 == objc) {
-        Tcl_SetObjResult(interp, objv[nextArgIdx + 1]);
+    } else if (defaultObj != NULL) {
+        Tcl_SetObjResult(interp, defaultObj);
     } else {
         Tcl_SetResult(interp, "no matching cookie", TCL_STATIC);
         status = TCL_ERROR;

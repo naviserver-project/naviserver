@@ -9,7 +9,7 @@ eval ::tcltest::configure $argv
 
 test cookie-1.1 {basic syntax} -body {
     ns_getcookie
-} -returnCodes error -result {wrong # args: should be "ns_getcookie ?-include_set_cookies bool? ?--? name ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_getcookie ?-include_set_cookies include_set_cookies? ?--? name ?default?"}
 
 test cookie-1.2 {basic syntax} -body {
     ns_setcookie

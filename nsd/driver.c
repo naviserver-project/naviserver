@@ -4145,7 +4145,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         }
 
         if (connPtr->fmap.addr != NULL) {
-            Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", connPtr->fmap.addr);
+            Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", (void *)connPtr->fmap.addr);
             /*
              * Deliver an mmapped file, no need to copy content
              */
@@ -4423,20 +4423,14 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             goto usage_error;
         } else if (objc > 2) {
 
-            int                 nextArgIdx;
-            static const char  *options[]           = {"-server", NULL};
-            enum                                      {OServerIdx};
-            ClientData          optionClientData[1] = {NULL};
-            Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};
+            Ns_ObjvSpec lopts[] = {
+                {"-server",  Ns_ObjvServer,    &servPtr, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
 
-            if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 2,
-                                Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+            if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
-            if (*Tcl_GetStringResult(interp) != '\0') {
-                return TCL_ERROR;
-            }
-            servPtr = optionClientData[OServerIdx];
         }
 
         Tcl_DStringInit(dsPtr);
