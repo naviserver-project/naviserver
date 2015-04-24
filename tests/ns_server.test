@@ -131,7 +131,6 @@ test ns_server-2.10 {basic operation} -body {
 } -result 1
 
 test ns_server-2.11 {basic operation} -body {
-    puts stderr "pagedir <[ns_server pagedir]>"
     expr {[llength [split [ns_server pagedir] "/"]]>1}
 } -result 1
 
