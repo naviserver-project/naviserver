@@ -164,10 +164,12 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
         Ns_DStringInit(&ds);
         Ns_DStringAppend(&ds, cbPtr->script);
         va_start(ap, result);
-        while ((arg = va_arg(ap, char *)) != NULL) {
+
+	for (arg = va_arg(ap, char *); arg != NULL; arg = va_arg(ap, char *)) {
             Ns_DStringAppendElement(&ds, arg);
         }
         va_end(ap);
+
         for (ii = 0; ii < cbPtr->argc; ii++) {
             Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
         }

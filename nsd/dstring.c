@@ -61,7 +61,7 @@ Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
     va_list              ap;
 
     va_start(ap, dsPtr);
-    while ((s = va_arg(ap, char *)) != NULL) {
+    for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {
         Ns_DStringAppend(dsPtr, s);
     }
     va_end(ap);

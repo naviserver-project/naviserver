@@ -505,7 +505,7 @@ Ns_ConfigGetPath(const char *server, const char *module, ...)
         Ns_DStringVarAppend(&ds, "/module/", module, NULL);
     }
     va_start(ap, module);
-    while ((s = va_arg(ap, char *)) != NULL) {
+    for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {
         Ns_DStringAppend(&ds, "/");
         while (*s != '\0' && ISSLASH(*s)) {
             ++s;
