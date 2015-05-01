@@ -182,7 +182,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     switch (opt) {
     case TCreateIdx:
         Ns_LogDeprecated(objv, 2, "ns_thread begin ...", NULL);
-        /* lint -fallthrough */
+        /* FALLTHROUGH */
     case TBeginIdx:
     case TBeginDetachedIdx:
         {
@@ -212,7 +212,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 
     case TJoinIdx:
         Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
-        /* lint -fallthrough */
+        /* FALLTHROUGH */
     case TWaitIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "tid");
@@ -229,7 +229,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 
     case TGetIdx:
         Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
-        /* lint -fallthrough */
+        /* FALLTHROUGH */
     case THandleIdx:
         Ns_ThreadSelf(&tid);
         Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
@@ -238,7 +238,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 
     case TGetIdIdx:
         Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
-        /* lint -fallthrough */
+        /* FALLTHROUGH */
     case TIdIdx:
         Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
         break;
