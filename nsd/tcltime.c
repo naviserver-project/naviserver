@@ -616,7 +616,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, long mult
     assert(str != NULL);
     assert(tPtr != NULL);
 
-    sep = strchr(str, UCHAR(separator));
+    sep = strchr(str, (int)UCHAR(separator));
     if (sep != NULL) {
         int value;
         
