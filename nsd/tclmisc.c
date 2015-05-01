@@ -1354,7 +1354,7 @@ static void MD5Transform(uint32_t buf[4], uint8_t const block[64])
     register uint32_t a, b, c, d;
 
 #ifndef HIGHFIRST
-    uint32_t *in = (uint32_t *)block;
+    const uint32_t *in = (const uint32_t *)block;
 #else
     uint32_t in[16];
     
