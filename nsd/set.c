@@ -117,6 +117,8 @@ Ns_SetFree(Ns_Set *set)
     if (set != NULL) {
         size_t i;
 
+        assert(set->size <  set->maxSize);
+
         for (i = 0U; i < set->size; ++i) {
             ns_free(set->fields[i].name);
             ns_free(set->fields[i].value);
@@ -151,11 +153,12 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 
     assert(set != NULL);
     assert(key != NULL);
-
+    assert(set->size <  set->maxSize);
+    
     index = set->size;
     set->size++;
-    if (set->size > set->maxSize) {
-        set->maxSize = set->size * 2U;
+    if (set->size >= set->maxSize) {
+        set->maxSize = set->size * 2u;
         set->fields = ns_realloc(set->fields,
 				 sizeof(Ns_SetField) * set->maxSize);
     }
