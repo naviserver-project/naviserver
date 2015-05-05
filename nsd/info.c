@@ -473,10 +473,11 @@ Ns_InfoTag(void)
 int
 NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         opt, result;
-    NsInterp    *itPtr = arg;
-    const char  *server;
-    const char  *elog;
+    int         opt, result = TCL_OK;
+    bool        done = NS_TRUE; 
+    NsInterp   *itPtr = arg;
+    const char *server;
+    const char *elog;
     Tcl_DString ds;
 
     static const char *opts[] = {
@@ -516,114 +517,114 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     switch (opt) {
     case IArgv0Idx:
         Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IStartedIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoStarted()));
-        return NS_OK;
-
+        break;
+        
     case IShutdownPendingIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoShutdownPending()));
-        return NS_OK;
+        break;
 
     case INsdIdx:
         Tcl_SetResult(interp, nsconf.nsd, TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case INameIdx:
         Tcl_SetResult(interp, Ns_InfoServerName(), TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IConfigIdx:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoConfigFile(), -1));
-        return TCL_OK;
+        break;
 
     case ICallbacksIdx:
         NsGetCallbacks(&ds);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case ISockCallbacksIdx:
         NsGetSockCallbacks(&ds);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IScheduledIdx:
         NsGetScheduled(&ds);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case ILocksIdx:
         Ns_MutexList(&ds);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IThreadsIdx:
         Ns_ThreadList(&ds, ThreadArgProc);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IPoolsIdx:
 #ifdef HAVE_TCL_GETMEMORYINFO
         Tcl_GetMemoryInfo(&ds);
         Tcl_DStringResult(interp, &ds);
 #endif
-        return TCL_OK;
+        break;
 
     case ILogIdx:
         elog = Ns_InfoErrorLog();
         Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, -1));
-        return TCL_OK;
+        break;
 
     case IPlatformIdx:
 	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
         Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IHostNameIdx:
         Tcl_SetResult(interp, Ns_InfoHostname(), TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IAddressIdx:
         Tcl_SetResult(interp, Ns_InfoAddress(), TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IUptimeIdx:
 	Tcl_SetObjResult(interp, Tcl_NewLongObj(Ns_InfoUptime()));
-        return TCL_OK;
+        break;
 
     case IBoottimeIdx:
         Tcl_SetObjResult(interp, Tcl_NewLongObj((long)Ns_InfoBootTime()));
-        return TCL_OK;
+        break;
 
     case IPidIdx:
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)Ns_InfoPid()));
-        return TCL_OK;
+        break;
 
     case IMajorIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MAJOR_VERSION));
-        return TCL_OK;
+        break;
 
     case IMinorIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MINOR_VERSION));
-        return TCL_OK;
+        break;
 
     case IMimeIdx:
         NsGetMimeTypes(&ds);
         Tcl_DStringResult(interp, &ds);
-        return TCL_OK;
+        break;
 
     case IVersionIdx:
         Tcl_SetResult(interp, NS_VERSION, TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IPatchLevelIdx:
         Tcl_SetResult(interp, NS_PATCH_LEVEL, TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IHomeIdx:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHomePath(), -1));
-        return TCL_OK;
+        break;
 
     case IWinntIdx:
 	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
@@ -632,39 +633,45 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 #else
         Tcl_SetResult(interp, "0", TCL_STATIC);
 #endif
-        return TCL_OK;
+        break;
 
     case IBuilddateIdx:
         Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case ITagIdx:
         Tcl_SetResult(interp, Ns_InfoTag(), TCL_STATIC);
-        return TCL_OK;
+        break;
 
     case IServersIdx:
         {
             Tcl_DString *dsPtr = &nsconf.servers;
             Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
-            return TCL_OK;
+            break;
         }
 
     default:
         /* cases handled below */
+        done = NS_FALSE;
         break;
     }
+
+    if (done == NS_TRUE) {
+        return result;
+        
+    }
+
 
     /*
      * The following subcommands require a virtual server.
      */
-
+    
     if (unlikely(itPtr->servPtr == NULL)) {
         Tcl_SetResult(interp, "no server", TCL_STATIC);
         return TCL_ERROR;
     }
 
     server = itPtr->servPtr->server;
-    result = TCL_OK;
 
     switch (opt) {
     case IPageDirIdx:
