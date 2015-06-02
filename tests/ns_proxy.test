@@ -314,6 +314,13 @@ test ns_proxy-5.12 {check maxruns == 0} -body {
     ns_proxy config testpool -maxruns 0
 } -result {0 1}
 
+test ns_proxy-6.0 {eval with errors} -body {
+    catch {ns_proxy eval [ns_proxy get testpool] "error a 1 {a b c}"} result options
+	dict get $options -errorcode
+} -cleanup {
+    ns_proxy cleanup
+} -result {a b c}
+
 ns_proxy cleanup
 foreach pool [ns_proxy pools] {
     ns_proxy clear $pool

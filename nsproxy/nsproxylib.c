@@ -1370,7 +1370,8 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
     ilen = ntohl(resPtr->ilen);
     rlen = ntohl(resPtr->rlen);
     if (clen > 0) {
-        Tcl_SetErrorCode(interp, str, NULL);
+        Tcl_Obj *err=Tcl_NewStringObj(str,-1);
+        Tcl_SetObjErrorCode(interp, err);
         str += clen;
     }
     if (ilen > 0) {
