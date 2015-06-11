@@ -219,27 +219,33 @@ Ns_ConnReturnOk(Ns_Conn *conn)
 int
 Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 {
-    Ns_DString ds, msg;
     int        result;
 
     assert(conn != NULL);
 
-    Ns_DStringInit(&ds);
-    Ns_DStringInit(&msg);
     if (url != NULL) {
+        Ns_DString urlDs, msgDs;
+        
+        Ns_DStringInit(&urlDs);
+        Ns_DStringInit(&msgDs);
+
         if (*url == '/') {
-            (void) Ns_ConnLocationAppend(conn, &ds);
+            (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-        Ns_DStringAppend(&ds, url);
-        Ns_ConnSetHeaders(conn, "Location", ds.string);
-        Ns_DStringVarAppend(&msg, "<A HREF=\"", ds.string,
-                            "\">The requested URL has moved permanently here.</A>", NULL);
-        result = Ns_ConnReturnNotice(conn, 301, "Redirection", msg.string);
+        Ns_DStringAppend(&urlDs, url);
+        Ns_ConnSetHeaders(conn, "Location", urlDs.string);
+        
+        Ns_DStringAppend(&msgDs, "<a href=\"");
+        Ns_QuoteHtml(&msgDs, urlDs.string);
+        Ns_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>");
+                            
+        result = Ns_ConnReturnNotice(conn, 301, "Redirection", msgDs.string);
+        
+        Ns_DStringFree(&msgDs);
+        Ns_DStringFree(&urlDs);
     } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", msg.string);
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", "");
     }
-    Ns_DStringFree(&msg);
-    Ns_DStringFree(&ds);
 
     return result;
 }
@@ -288,27 +294,34 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
 int
 Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 {
-    Ns_DString ds, msg;
     int        result;
 
     assert(conn != NULL);
 
-    Ns_DStringInit(&ds);
-    Ns_DStringInit(&msg);
     if (url != NULL) {
+        Ns_DString urlDs, msgDs;
+        
+        Ns_DStringInit(&urlDs);
+        Ns_DStringInit(&msgDs);
+
         if (*url == '/') {
-            (void) Ns_ConnLocationAppend(conn, &ds);
+            (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-        Ns_DStringAppend(&ds, url);
-        Ns_ConnSetHeaders(conn, "Location", ds.string);
-        Ns_DStringVarAppend(&msg, "<A HREF=\"", ds.string,
-                            "\">The requested URL has moved here.</A>", NULL);
-        result = Ns_ConnReturnNotice(conn, 302, "Redirection", msg.string);
+        Ns_DStringAppend(&urlDs, url);
+        Ns_ConnSetHeaders(conn, "Location", urlDs.string);
+        
+        Ns_DStringAppend(&msgDs, "<a href=\"");
+        Ns_QuoteHtml(&msgDs, urlDs.string);
+        Ns_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>");
+                            
+        result = Ns_ConnReturnNotice(conn, 302, "Redirection", msgDs.string);
+        
+        Ns_DStringFree(&msgDs);
+        Ns_DStringFree(&urlDs);
+
     } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", msg.string);
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", "");
     }
-    Ns_DStringFree(&msg);
-    Ns_DStringFree(&ds);
 
     return result;
 }

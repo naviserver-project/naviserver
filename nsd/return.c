@@ -633,7 +633,10 @@ Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status,
  *
  * Ns_ConnReturnNotice --
  *
- *      Return a short notice to a client.
+ *      Return a short notice to a client. The content of argument "title" is
+ *      plain text and HTML-quoted by this function, the content of argument
+ *      "notice" might be rich text that is assumed to be already properly
+ *      quoted.
  *
  * Results:
  *      See Ns_ReturnHtml.
@@ -659,25 +662,29 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
 
     servPtr = connPtr->poolPtr->servPtr;
     Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds,
-            "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
-            "<HTML>\n<HEAD>\n"
-            "<TITLE>", title, "</TITLE>\n"
-            "</HEAD>\n<BODY>\n"
-            "<H2>", title, "</H2>\n", NULL);
-    Ns_DStringVarAppend(&ds, notice, "\n", NULL);
+    Ns_DStringAppend(&ds,
+                     "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 4.01//EN\">\n"
+                     "<html>\n<head>\n"
+                     "<title>");
+    Ns_QuoteHtml(&ds, title);
+    Ns_DStringAppend(&ds,
+                     "</title>\n"
+                     "</head>\n<body>\n"
+                     "<h2>");
+    Ns_QuoteHtml(&ds, title);
+    Ns_DStringVarAppend(&ds, "</h2>\n", notice, "\n", NULL);
 
     /*
      * Detailed server information at the bottom of the page.
      */
 
     if (servPtr->opts.noticedetail != 0) {
-        Ns_DStringVarAppend(&ds, "<P ALIGN=RIGHT><SMALL><I>",
+        Ns_DStringVarAppend(&ds, "<p align='right'><small><i>",
                             Ns_InfoServerName(), "/",
                             Ns_InfoServerVersion(), " on ",
                             NULL);
         Ns_ConnLocationAppend(conn, &ds);
-        Ns_DStringAppend(&ds, "</I></SMALL></P>\n");
+        Ns_DStringAppend(&ds, "</i></small></p>\n");
     }
 
     /*
@@ -691,7 +698,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
         }
     }
 
-    Ns_DStringVarAppend(&ds, "\n</BODY></HTML>\n", NULL);
+    Ns_DStringVarAppend(&ds, "\n</body></html>\n", NULL);
 
     result = Ns_ConnReturnCharData(conn, status, ds.string, ds.length, "text/html");
     Ns_DStringFree(&ds);
