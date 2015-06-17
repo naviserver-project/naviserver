@@ -127,11 +127,16 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         directory.
 
 
-        To compile with Purify tool, set the variable $PURIFY to 
-        your Purify executable along with any options you desire, e.g.,
-
+    To compile with Purify tool, set the variable $PURIFY to 
+    your Purify executable along with any options you desire, e.g.,
+ 
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 
+    Alternatively, NaviServer can be installed directly from bitbucket
+    via the mercurial version control system installed.  Mercurial is
+    included in most Linux distributions: e.g. yum install
+    mercurial. For Windows and Mac OSX see:
+    http://www.selenic.com/mercurial
 
     If you checked out the source directly from bitbucket, replace
     "./configure" in the example above with "./autogen.sh" to get the
@@ -140,6 +145,10 @@ Mac OS/X 10.2+ and Windows. To compile and install:
     You will need recent versions of autoconf and automake installed.
     You will need 'dtplite' which is part of 'tcllib' installed if you
     want to build the documentation.
+
+    Checkouts from the source code repository have to generate
+    the documentation from the sources as well via "make build-doc",
+    otherwise a "make install" will complain.
 
     See: 'make help' for more help in the build process.
 
@@ -170,9 +179,19 @@ Mac OS/X 10.2+ and Windows. To compile and install:
 
 3f. To download and install additional modules:
 
-    You will need the Mercurial version control system installed. It is
+    For releases, usuall a distribution of the current modules is
+    provided ass well via sourceforge. To get e.g. a modules
+    named "nsfoo" installed
+
+        $ gunzip < naviserver-4.99.8-modules.tar.gz | tar xvf -
+	$ cd modules/nsfoo
+        $ make install NAVISERVER=/usr/local/ns
+
+    Alternatively, modules can be obtained from bitbucket:
     included in most Linux distributions: e.g. yum install mercurial. For
     Windows and Mac OSX see: http://www.selenic.com/mercurial
+
+    To get a module "nsfoo" via mercurial
 
         $ hg clone http://bitbucket.org/naviserver/nsfoo/
         $ cd nsfoo
