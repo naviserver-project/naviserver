@@ -46,8 +46,8 @@
  */
 
 typedef struct Mod {
-    char	   *server;
-    char	   *module;
+    const char	   *server;
+    const char	   *module;
     Ns_Set         *interps;
     Ns_Set         *mergeEnv;
     unsigned int    flags;
@@ -109,6 +109,7 @@ static int devNull;
 static Ns_LogSeverity Ns_LogCGIDebug;
 
 NS_EXPORT const int Ns_ModuleVersion = 1;
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 /*
  * Functions defined in this file.
@@ -150,7 +151,7 @@ static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value
  */
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     const char     *path, *section;
     size_t          i;
