@@ -79,7 +79,7 @@ static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 static void SSLLock(int mode, int n, const char *file, int line);
 static unsigned long SSLThreadId(void);
 static int HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
-			Tcl_Obj *bodyPtr, char *cert, char *caFile, char *caPath, int verify,
+			Tcl_Obj *bodyPtr, char *cert, char *caFile, char *caPath, int verify, int keep_host_header,
 			Https **httpsPtrPtr);
 static void HttpsClose(Https *httpsPtr);
 static void HttpsCancel(Https *httpsPtr);
@@ -751,6 +751,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         char *cert = NULL;
         char buf[32], *url = NULL, *method = "GET", *caFile = NULL, *caPath = NULL;
         Tcl_Obj *bodyPtr = NULL;
+	int keep_host_header = 0;
 
         Ns_ObjvSpec opts[] = {
             {"-timeout",  Ns_ObjvTime,    &timeoutPtr,  NULL},
@@ -761,6 +762,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             {"-capath",   Ns_ObjvString,  &caPath,      NULL},
             {"-body",     Ns_ObjvObj,     &bodyPtr,     NULL},
             {"-verify",   Ns_ObjvBool,    &verify,      NULL},
+	    {"-keep_host_header", Ns_ObjvBool, &keep_host_header,    (void *)NS_TRUE},
             {NULL, NULL,  NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
@@ -771,7 +773,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             return TCL_ERROR;
         }
 	if (HttpsConnect(interp, method, url, hdrPtr, bodyPtr, 
-			 cert, caFile, caPath, verify,
+			 cert, caFile, caPath, verify, keep_host_header,
 			 &httpsPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1028,7 +1030,7 @@ HttpsGet(Tcl_Interp *interp, char *id)
 
 int
 HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, 
-	     char *cert, char *caFile, char *caPath, int verify,
+	     char *cert, char *caFile, char *caPath, int verify, int keep_host_header,
 	     Https **httpsPtrPtr)
 {
     NS_SOCKET    sock;
@@ -1163,7 +1165,9 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	/*
 	 * Remove the header fields, we are providing
 	 */
-	Ns_SetIDeleteKey(hdrPtr, "Host");
+        if (keep_host_header == 0) {
+	    Ns_SetIDeleteKey(hdrPtr, "Host");
+        }
 	Ns_SetIDeleteKey(hdrPtr, "Connection");
 	Ns_SetIDeleteKey(hdrPtr, "Content-Length");
 
@@ -1190,10 +1194,12 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 			 Ns_InfoServerVersion());
     }
     
-    if (portString == NULL) {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
-    } else {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
+    if (keep_host_header == 0) {
+        if (portString == NULL) {
+	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
+        } else {
+	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
+        }
     }
 
     if (bodyPtr != NULL) {
