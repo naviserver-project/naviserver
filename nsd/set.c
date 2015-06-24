@@ -35,6 +35,34 @@
  */
 
 #include "nsd.h"
+#
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetIUpdate --
+ *
+ *	Remove a tuple and re-add it (case insensitive).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
+{
+    assert(set != NULL);
+    assert(key != NULL);
+    assert(value != NULL);
+
+    Ns_SetIDeleteKey(set, key);
+    (void)Ns_SetPut(set, key, value);
+}
 
 
 /*
