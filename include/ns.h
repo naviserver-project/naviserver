@@ -2359,6 +2359,10 @@ NS_EXTERN void
 Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+NS_EXTERN void
+Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 NS_EXTERN Ns_Set *
 Ns_SetCreate(const char *name)
     NS_GNUC_RETURNS_NONNULL;
