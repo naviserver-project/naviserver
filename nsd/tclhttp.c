@@ -44,7 +44,7 @@ static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
-			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
+			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, int keep_host_header, Ns_HttpTask **httpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 
 static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
@@ -202,12 +202,14 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     Ns_Set *hdrPtr = NULL;
     Tcl_Obj *bodyPtr = NULL;
     Ns_Time *incrPtr = NULL;
+    int keep_host_header = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",  Ns_ObjvTime,   &incrPtr,  NULL},
         {"-headers",  Ns_ObjvSet,    &hdrPtr,   NULL},
         {"-method",   Ns_ObjvString, &method,   NULL},
         {"-body",     Ns_ObjvObj,    &bodyPtr,  NULL},
+        {"-keep_host_header", Ns_ObjvBool, &keep_host_header,    (void *)NS_TRUE},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -221,7 +223,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, &httpPtr) != TCL_OK) {
+    if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, keep_host_header, &httpPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
     Ns_GetTime(&httpPtr->stime);
@@ -698,7 +700,7 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  */
 static int
 HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdrPtr,
-	    Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
+	    Tcl_Obj *bodyPtr, int keep_host_header, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock;
     Ns_HttpTask *httpPtr;
@@ -767,7 +769,9 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	/*
 	 * Remove the header fields, we are providing
 	 */
-	Ns_SetIDeleteKey(hdrPtr, "Host");
+        if (keep_host_header == 0) {
+	    Ns_SetIDeleteKey(hdrPtr, "Host");
+        }
 	Ns_SetIDeleteKey(hdrPtr, "Connection");
 	Ns_SetIDeleteKey(hdrPtr, "Content-Length");
 
@@ -794,10 +798,12 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 			 Ns_InfoServerVersion());
     }
     
-    if (portString == NULL) {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
-    } else {
-	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
+    if (keep_host_header == 0) {
+        if (portString == NULL) {
+	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
+        } else {
+	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
+        }
     }
 
     if (bodyPtr != NULL) {
