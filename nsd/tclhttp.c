@@ -44,8 +44,8 @@ static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
-			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, int keep_host_header, Ns_HttpTask **httpPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
+			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
 
 static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -202,7 +202,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     Ns_Set *hdrPtr = NULL;
     Tcl_Obj *bodyPtr = NULL;
     Ns_Time *incrPtr = NULL;
-    int keep_host_header = 0;
+    bool keep_host_header = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",  Ns_ObjvTime,   &incrPtr,  NULL},
@@ -700,7 +700,7 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  */
 static int
 HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdrPtr,
-	    Tcl_Obj *bodyPtr, int keep_host_header, Ns_HttpTask **httpPtrPtr)
+	    Tcl_Obj *bodyPtr, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock;
     Ns_HttpTask *httpPtr;
@@ -769,7 +769,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	/*
 	 * Remove the header fields, we are providing
 	 */
-        if (keep_host_header == 0) {
+        if (keep_host_header == NS_FALSE) {
 	    Ns_SetIDeleteKey(hdrPtr, "Host");
         }
 	Ns_SetIDeleteKey(hdrPtr, "Connection");
@@ -798,7 +798,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 			 Ns_InfoServerVersion());
     }
     
-    if (keep_host_header == 0) {
+    if (keep_host_header == NS_FALSE) {
         if (portString == NULL) {
 	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
         } else {
