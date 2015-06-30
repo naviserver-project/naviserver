@@ -1052,7 +1052,17 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
      * characters with '\0' characters.
      */
     url2 = ns_strdup(url);
-    
+   
+    /* 
+     * Check if Host: header is present if host_keep_header set.
+     */
+    if (hdrPtr != NULL) {
+        if (keep_host_header == NS_TRUE && Ns_SetIFind(hdrPtr, "Host") == -1 ) {
+	    Tcl_AppendResult(interp, "keep_host_header specified but no Host header given", NULL);
+	    return TCL_ERROR;
+        }
+    }
+
     host = url2 + 8;
     file = strchr(host, '/');
     if (file != NULL) {
