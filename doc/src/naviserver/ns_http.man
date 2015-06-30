@@ -32,6 +32,7 @@ id url done|running ....
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
 	[opt [arg {-timeout T}]] \
+	[opt [arg {-keep_host_header}]] \
 	[arg url] \
 	]
 
@@ -50,6 +51,11 @@ body is the value which will be sent as the HTTP request body.
 [arg -timeout]
 Timeout for how long to wait for finishing the whole request 
 (default 2:0, secs:microsesc)
+
+[para]
+[arg -keep_host_header]
+allows the Host: header field for the request to be passed in via the -headers arg. 
+Otherwise it is overwritten.
 
 [para]
 The command [cmd "ns_http queue"] opens a connection to the web server
