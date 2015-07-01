@@ -716,10 +716,23 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
         return TCL_ERROR;
     }
+
+    /* 
+     * If host_keep_header set then Host header must be present.
+     */
+
+    if (keep_host_header == NS_TRUE) {
+        if ( hdrPtr == NULL || Ns_SetIFind(hdrPtr, "Host") == -1 ) {
+	    Tcl_AppendResult(interp, "keep_host_header specified but no Host header given", NULL);
+	    return TCL_ERROR;
+        }
+    }
+
     /*
      * Make a non-const copy of url, where we can replace the item separating
      * characters with '\0' characters.
      */
+
     url2 = ns_strdup(url);
     
     host = url2 + 7;
