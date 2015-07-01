@@ -1047,21 +1047,23 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
 	return TCL_ERROR;
     }
+
+    /* 
+     * If host_keep_header set then Host header must be present.
+     */
+
+    if (keep_host_header == NS_TRUE) {
+        if ( hdrPtr == NULL || Ns_SetIFind(hdrPtr, "Host") == -1 ) {
+	    Tcl_AppendResult(interp, "keep_host_header specified but no Host header given", NULL);
+	    return TCL_ERROR;
+        }
+    }
+
     /*
      * Make a non-const copy of url, where we can replace the item separating
      * characters with '\0' characters.
      */
     url2 = ns_strdup(url);
-   
-    /* 
-     * Check if Host: header is present if host_keep_header set.
-     */
-    if (hdrPtr != NULL) {
-        if (keep_host_header == NS_TRUE && Ns_SetIFind(hdrPtr, "Host") == -1 ) {
-	    Tcl_AppendResult(interp, "keep_host_header specified but no Host header given", NULL);
-	    return TCL_ERROR;
-        }
-    }
 
     host = url2 + 8;
     file = strchr(host, '/');
