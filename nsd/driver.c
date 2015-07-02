@@ -1578,8 +1578,18 @@ DriverThread(void *arg)
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
-                if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
+
+                /*
+                 * Purely packet oriented drivers set on close the fd to
+                 * NS_INVALID_SOCKET. Since we cannot "shutdown" an udp-socket
+                 * for writing, we bypass this call.
+                 */
+                if (sockPtr->sock == NS_INVALID_SOCKET) {
+                    SockRelease(sockPtr, SOCK_CLOSE, errno);
+                    
+                } else if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
+                
                 } else {
                     Ns_Log(DriverDebug, "setting closewait %ld for socket %d",
                            sockPtr->drvPtr->closewait,  sockPtr->sock);
