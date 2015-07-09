@@ -154,7 +154,7 @@ Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 void
 Ns_ConnUpdateHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
-    Ns_SetUpdate(conn->outputheaders, field, value);
+    Ns_SetIUpdate(conn->outputheaders, field, value);
 }
 
 /*
