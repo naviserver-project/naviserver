@@ -409,7 +409,7 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
 	 * The cork state changes, try to alter the socket options.
 	 */
 #if defined(TCP_CORK)
-        if ((sockPtr->drvPtr->options & NS_DRIVER_UDP) == 0) {
+        if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) == 0) {
             if (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork)) == -1) {
                 Ns_Log(Error, "socket: setsockopt(TCP_CORK): %s",
                        ns_sockstrerror(ns_sockerrno));
@@ -419,7 +419,7 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
         }
 #endif
 #if defined(UDP_CORK)
-        if ((sockPtr->drvPtr->options & NS_DRIVER_UDP) != 0) {
+        if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) != 0) {
             if (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &cork, sizeof(cork)) == -1) {
                 Ns_Log(Error, "socket: setsockopt(UDP_CORK): %s",
                        ns_sockstrerror(ns_sockerrno));
