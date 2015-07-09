@@ -162,6 +162,7 @@ typedef enum {
 #define NS_DRIVER_ASYNC            0x01U /* Use async read-ahead. */
 #define NS_DRIVER_SSL              0x02U /* Use SSL port, protocol defaults. */
 #define NS_DRIVER_NOPARSE          0x04U /* Do not parse request */
+#define NS_DRIVER_UDP              0x08U /* UDP, can't use stream socket options */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* Current version. */

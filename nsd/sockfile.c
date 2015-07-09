@@ -387,7 +387,7 @@ bool
 Ns_SockCork(Ns_Sock *sock, bool cork)
 {
     bool success = NS_FALSE;
-#ifdef TCP_CORK
+#if defined(TCP_CORK) || defined(UDP_CORK)
     Sock *sockPtr = (Sock *)sock;
 
     assert(sock != NULL);
@@ -406,13 +406,32 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
 	       sockPtr->sock);
     } else {
 	/*
-	 * The cork state changes. On success, update the corked flag.
+	 * The cork state changes, try to alter the socket options.
 	 */
-	if (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork)) == -1) {
-	    Ns_Log(Error, "socket: setsockopt(TCP_CORK): %s",
-		   ns_sockstrerror(ns_sockerrno));
-	} else {
-	    success = 1;
+#if defined(TCP_CORK)
+        if ((sockPtr->drvPtr->options & NS_DRIVER_UDP) == 0) {
+            if (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork)) == -1) {
+                Ns_Log(Error, "socket: setsockopt(TCP_CORK): %s",
+                       ns_sockstrerror(ns_sockerrno));
+            } else {
+                success = NS_TRUE;
+            }
+        }
+#endif
+#if defined(UDP_CORK)
+        if ((sockPtr->drvPtr->options & NS_DRIVER_UDP) != 0) {
+            if (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &cork, sizeof(cork)) == -1) {
+                Ns_Log(Error, "socket: setsockopt(UDP_CORK): %s",
+                       ns_sockstrerror(ns_sockerrno));
+            } else {
+                success = NS_TRUE;
+            }
+        }
+#endif
+        if (success == NS_TRUE) {
+            /*
+             * On success, update the corked flag.
+             */
 	    if (cork == NS_TRUE) {
 		sockPtr->flags |= NS_CONN_SOCK_CORKED;
 	    } else {
