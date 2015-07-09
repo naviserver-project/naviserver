@@ -27,7 +27,6 @@
  * version of this file under either the License or the GPL.
  */
 
-int NS_finalshutdown = 0;
 
 #ifndef _WIN32
 
@@ -39,6 +38,8 @@ int NS_finalshutdown = 0;
 
 #include "thread.h"
 #include <pthread.h>
+
+int NS_finalshutdown = 0;
 
 
 /*
@@ -121,5 +122,16 @@ ns_sigwait(sigset_t *set, int *sig)
 
     return sigwait(set, sig);
 }
+#else
+/*
+ * _WIN32 
+ *
+ * we need just the defintion of NS_EXTERN
+ */
+
+#include <nsthread.h>
+
+NS_EXTERN int NS_finalshutdown;
+int NS_finalshutdown = 0;
 
 #endif
