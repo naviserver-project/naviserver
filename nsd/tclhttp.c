@@ -209,7 +209,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         {"-headers",  Ns_ObjvSet,    &hdrPtr,   NULL},
         {"-method",   Ns_ObjvString, &method,   NULL},
         {"-body",     Ns_ObjvObj,    &bodyPtr,  NULL},
-        {"-keep_host_header", Ns_ObjvBool, &keep_host_header,    (void *)NS_TRUE},
+        {"-keep_host_header", Ns_ObjvBool, &keep_host_header,  INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
