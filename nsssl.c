@@ -762,7 +762,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             {"-capath",   Ns_ObjvString,  &caPath,      NULL},
             {"-body",     Ns_ObjvObj,     &bodyPtr,     NULL},
             {"-verify",   Ns_ObjvBool,    &verify,      NULL},
-	    {"-keep_host_header", Ns_ObjvBool, &keep_host_header,    (void *)NS_TRUE},
+	    {"-keep_host_header", Ns_ObjvBool, &keep_host_header, INT2PTR(NS_TRUE)},
             {NULL, NULL,  NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
@@ -835,7 +835,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             {"-status",     Ns_ObjvObj,  &statusVarPtr,  NULL},
 	    {"-file",       Ns_ObjvObj,  &fileVarPtr,    NULL},
 	    {"-spoolsize",  Ns_ObjvInt,  &spoolLimit,    NULL},
-	    {"-decompress", Ns_ObjvBool, &decompress,    (void *)NS_TRUE},
+	    {"-decompress", Ns_ObjvBool, &decompress,    INT2PTR(NS_TRUE)},
             {NULL, NULL,  NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
