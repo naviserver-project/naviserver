@@ -126,7 +126,7 @@ ns_sigwait(sigset_t *set, int *sig)
 /*
  * _WIN32 
  *
- * we need just the defintion of NS_EXTERN
+ * We need just the definition of NS_EXTERN
  */
 
 #include <nsthread.h>
