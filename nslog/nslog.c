@@ -166,7 +166,7 @@ Ns_ModuleInit(const char *server, const char *module)
             status = Tcl_FSCreateDirectory(dirpath);
             Tcl_DecrRefCount(dirpath);
             if (status != 0 && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
-                Ns_Log(Error,"nslog: create directory (%s) failed: '%s'",
+                Ns_Log(Error, "nslog: create directory (%s) failed: '%s'",
                        ds.string, strerror(Tcl_GetErrno()));
                 Ns_DStringFree(&ds);
                 return NS_ERROR;
@@ -224,7 +224,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), NULL);
     if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders,
                       &logPtr->extheaders) != TCL_OK) {
-        Ns_Log(Error,"nslog: invalid %s/extendedHeaders parameter: '%s'",
+        Ns_Log(Error, "nslog: invalid %s/extendedHeaders parameter: '%s'",
                path, ds.string);
     }
     Ns_DStringFree(&ds);
@@ -585,7 +585,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     user = Ns_ConnAuthUser(conn);
     if (user == NULL) {
-        Ns_DStringAppend(&ds," - - ");
+        Ns_DStringNAppend(&ds, " - - ", 5);
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
@@ -594,7 +594,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         if (quote != 0) {
             Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
         } else {
-            Ns_DStringVarAppend(&ds," - ", user, " ", NULL);
+            Ns_DStringVarAppend(&ds, " - ", user, " ", NULL);
         }
     }
 
@@ -626,7 +626,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringNAppend(&ds, "\" ", 2);
 
     } else {
-        Ns_DStringAppend(&ds," \"\" ");
+        Ns_DStringNAppend(&ds, " \"\" ", 4);
     }
 
     /*
@@ -641,17 +641,18 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_COMBINED)) {
-        Ns_DStringAppend(&ds, " \"");
+        
+        Ns_DStringNAppend(&ds, " \"", 2);
         p = Ns_SetIGet(conn->headers, "referer");
         if (p != NULL) {
-            Ns_DStringAppend(&ds, p);
+            AppendEscaped(&ds, p);
         }
-        Ns_DStringAppend(&ds, "\" \"");
+        Ns_DStringNAppend(&ds, "\" \"", 3);
         p = Ns_SetIGet(conn->headers, "user-agent");
         if (p != NULL) {
-            Ns_DStringAppend(&ds, p);
+            AppendEscaped(&ds, p);
         }
-        Ns_DStringAppend(&ds, "\"");
+        Ns_DStringNAppend(&ds, "\"", 2);
     }
 
     /*
@@ -671,13 +672,13 @@ LogTrace(void *arg, Ns_Conn *conn)
 
 	Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
 
-        Ns_DStringAppend(&ds, " \"");
+        Ns_DStringNAppend(&ds, " \"", 2);
         Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)acceptTime.sec,    acceptTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,     queueTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)filterTime.sec,    filterTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,       runTime.usec);
-        Ns_DStringAppend(&ds, "\"");
+        Ns_DStringNAppend(&ds, "\"", 2);
     }
 
     /*
@@ -685,11 +686,12 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     for (h = logPtr->extheaders; *h != NULL; h++) {
+        Ns_DStringNAppend(&ds, " \"", 2);
         p = Ns_SetIGet(conn->headers, *h);
         if (p == NULL) {
-            p = "";
+            AppendEscaped(&ds, p);
         }
-        Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
+        Ns_DStringNAppend(&ds, "\"", 1);
     }
 
     for (i = 0; i < ds.length; i++) {
@@ -707,7 +709,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * flush the buffer
      */
 
-    Ns_DStringAppend(&ds, "\n");
+    Ns_DStringNAppend(&ds, "\n", 1);
 
     if (logPtr->maxlines == 0) {
         bufferSize = ds.length;
@@ -773,7 +775,7 @@ LogOpen(Log *logPtr)
 
     fd = ns_open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
     if (fd == NS_INVALID_FD) {
-        Ns_Log(Error,"nslog: error '%s' opening '%s'",
+        Ns_Log(Error, "nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->file);
         return NS_ERROR;
     }
@@ -782,7 +784,7 @@ LogOpen(Log *logPtr)
     }
 
     logPtr->fd = fd;
-    Ns_Log(Notice,"nslog: opened '%s'", logPtr->file);
+    Ns_Log(Notice, "nslog: opened '%s'", logPtr->file);
 
     return NS_OK;
 }
@@ -815,7 +817,7 @@ LogClose(Log *logPtr)
         ns_close(logPtr->fd);
         logPtr->fd = NS_INVALID_FD;
         Ns_DStringFree(&logPtr->buffer);
-        Ns_Log(Notice,"nslog: closed '%s'", logPtr->file);
+        Ns_Log(Notice, "nslog: closed '%s'", logPtr->file);
     }
 
     return status;
@@ -911,7 +913,7 @@ LogRoll(Log *logPtr)
             (void) strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
 
             Ns_DStringInit(&ds);
-            Ns_DStringVarAppend(&ds, logPtr->file,".", timeBuf, NULL);
+            Ns_DStringVarAppend(&ds, logPtr->file, ".", timeBuf, NULL);
             newpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(newpath);
             status = Tcl_FSAccess(newpath, F_OK);
@@ -975,7 +977,7 @@ LogCallback(int(proc)(Log *), void *arg, char *desc)
     Ns_MutexUnlock(&logPtr->lock);
 
     if (status != NS_OK) {
-        Ns_Log(Error,"nslog: failed: %s '%s': '%s'", desc, logPtr->file,
+        Ns_Log(Error, "nslog: failed: %s '%s': '%s'", desc, logPtr->file,
                strerror(Tcl_GetErrno()));
     }
 }
