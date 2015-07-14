@@ -82,6 +82,11 @@ static int LogOpen (Log *logPtr);
 static int LogRoll (Log *logPtr);
 static int LogClose(Log *logPtr);
 
+static void AppendEscaped(Ns_DString *dsPtr, const char *chars)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -476,7 +481,58 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendEscaped --
+ *
+ *	Append a string with escaped charaters
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	updated dstring
+ *
+ *----------------------------------------------------------------------
+ */
 
+static void
+AppendEscaped(Ns_DString *dsPtr, const char *chars)
+{
+    assert(dsPtr != NULL);
+    assert(chars != NULL);
+    
+    while (likely(*chars != '\0')) {
+        switch (*chars) {
+        case '\n':
+            Ns_DStringNAppend(dsPtr, "\\n", 2);
+            break;
+
+        case '\r':
+            Ns_DStringNAppend(dsPtr, "\\r", 2);
+            break;
+
+        case '\t':
+            Ns_DStringNAppend(dsPtr, "\\t", 2);
+            break;
+
+        case '"':
+            Ns_DStringNAppend(dsPtr, "\\\"", 2);
+            break;
+
+	case '\\':
+            Ns_DStringNAppend(dsPtr, "\\\\",2);
+            break;
+
+	default:
+            Ns_DStringNAppend(dsPtr, chars, 1);
+            break;
+        }
+        ++chars;
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -563,7 +619,12 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    conn->request->url : 
 	    conn->request->line;
 
-	Ns_DStringVarAppend(&ds, " \"", likely(string != NULL)  ? string  : "", "\" ", NULL);
+	Ns_DStringNAppend(&ds, " \"", 2);
+        if (likely(string != NULL)) {
+            AppendEscaped(&ds, string);
+        }
+        Ns_DStringNAppend(&ds, "\" ", 2);
+
     } else {
         Ns_DStringAppend(&ds," \"\" ");
     }
