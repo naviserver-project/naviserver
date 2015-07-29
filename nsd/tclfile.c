@@ -258,6 +258,8 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  *
  *  Implements ns_tmpnam as obj command. 
  *
+ *  The fallback definition of L_tmpnam was removed in Tcl on 2015-07-15
+ *
  * Results:
  *  Tcl result. 
  *
@@ -266,6 +268,9 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  *
  *----------------------------------------------------------------------
  */
+#ifndef L_tmpnam
+#   define L_tmpnam	100
+#endif
 
 int
 NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* objv)
