@@ -42,6 +42,8 @@
 
 #define NSSSL_VERSION  "0.8"
 
+NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
+
 typedef struct {
     SSL_CTX     *ctx;
     Ns_Mutex     lock;
@@ -1215,10 +1217,18 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     }
 
     if (bodyPtr != NULL) {
-        int len = 0;
-	const char *body = Tcl_GetStringFromObj(bodyPtr, &len);
-	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", len);
-        Tcl_DStringAppend(&httpPtr->ds, body, len);
+        int length = 0;
+	const char *body;
+        bool binary = NsTclObjIsByteArray(bodyPtr);
+
+	if (binary == NS_TRUE) {
+	    body = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
+        } else {
+            body = Tcl_GetStringFromObj(bodyPtr, &length);
+        }
+	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", length);
+        Tcl_DStringAppend(&httpPtr->ds, body, length);
+        
     } else {
         Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
     }
