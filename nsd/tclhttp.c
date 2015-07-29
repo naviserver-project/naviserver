@@ -820,10 +820,18 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     }
 
     if (bodyPtr != NULL) {
-        int len = 0;
-	const char *body = Tcl_GetStringFromObj(bodyPtr, &len);
-	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", len);
-        Tcl_DStringAppend(&httpPtr->ds, body, len);
+        int length = 0;
+	const char *body;
+        bool binary = NsTclObjIsByteArray(bodyPtr);
+
+	if (binary == NS_TRUE) {
+	    body = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
+        } else {
+            body = Tcl_GetStringFromObj(bodyPtr, &length);
+        }
+
+	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", length);
+        Tcl_DStringAppend(&httpPtr->ds, body, length);
     } else {
         Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
     }
