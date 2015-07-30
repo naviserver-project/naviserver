@@ -39,7 +39,7 @@
 
 set path ns/server/[ns_info server]/fastpath
 
-nsv_set _ns_fastpath type      [ns_config -set $path directorylisting   none]
+nsv_set _ns_fastpath type      [ns_config -set $path directorylisting   simple]
 nsv_set _ns_fastpath hidedot   [ns_config -bool -set $path hidedotfiles    1]
 
 # the following three lines are apparently not used anymore
