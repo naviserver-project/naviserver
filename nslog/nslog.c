@@ -688,7 +688,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     for (h = logPtr->extheaders; *h != NULL; h++) {
         Ns_DStringNAppend(&ds, " \"", 2);
         p = Ns_SetIGet(conn->headers, *h);
-        if (p == NULL) {
+        if (p != NULL) {
             AppendEscaped(&ds, p);
         }
         Ns_DStringNAppend(&ds, "\"", 1);
