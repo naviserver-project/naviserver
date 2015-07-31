@@ -116,7 +116,7 @@ Ns_CreateEventQueue(int maxevents)
 
     assert(maxevents > 0);
 
-    queuePtr = ns_calloc(1u, sizeof(EventQueue) + (sizeof(Event) * (size_t)maxevents));
+    queuePtr = ns_calloc(1u, sizeof(EventQueue) + (sizeof(Event) * ((size_t)maxevents + 1u)));
     queuePtr->pfds = ns_calloc((size_t)maxevents + 1u, sizeof(struct pollfd));
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
