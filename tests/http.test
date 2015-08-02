@@ -298,7 +298,7 @@ test http-5.3a {check encoding ns_conn content POST, complete content-type} -con
     set string "Testing <äöüß>"
     nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} POST /post $string
 } -cleanup {
-    ns_unregister_op PUT /post
+    ns_unregister_op POST /post
     unset -nocomplain r
 } -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß>ZÜZ}}
 
@@ -313,7 +313,7 @@ test http-5.3b {check encoding ns_conn content POST, complete content-type} -con
     set string "Testing <äöüß>"
     exec curl –s --data $string http://127.0.0.1:[ns_config test listenport]/post 2> /dev/null
 } -cleanup {
-    ns_unregister_op PUT /post
+    ns_unregister_op POST /post
     unset -nocomplain r
 } -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß>ZÜZ}
 
@@ -328,7 +328,7 @@ test http-5.4 {check encoding ns_conn content POST, incomplete content-type} -co
     set string "Testing <äöüß>"
     nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
-    ns_unregister_op PUT /post
+    ns_unregister_op POST /post
     unset -nocomplain r
 } -result {200 {utf-8 <text/html> AÄATesting <äöüß>ZÜZ}}
 
@@ -342,7 +342,7 @@ test http-5.5 {check encoding ns_conn content POST, binary} -constraints {server
     set string "Testing <äöüß>"
     nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
-    ns_unregister_op PUT /post
+    ns_unregister_op POST /post
     unset -nocomplain r
 } -result {200 {utf-8 <text/html> AÄATesting <äöüß>ZÜZ}}
 
@@ -356,7 +356,7 @@ test http-5.6 {check encoding ns_conn content POST, offset} -constraints {server
     set string "Testing <äöüß>"
     nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
-    ns_unregister_op PUT /post
+    ns_unregister_op POST /post
     unset -nocomplain r
 } -result {200 {utf-8 <text/html> AÄATest/üß>ZÜZ}}
 
