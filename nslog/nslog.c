@@ -652,7 +652,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         if (p != NULL) {
             AppendEscaped(&ds, p);
         }
-        Ns_DStringNAppend(&ds, "\"", 2);
+        Ns_DStringNAppend(&ds, "\"", 1);
     }
 
     /*
@@ -678,7 +678,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,     queueTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)filterTime.sec,    filterTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,       runTime.usec);
-        Ns_DStringNAppend(&ds, "\"", 2);
+        Ns_DStringNAppend(&ds, "\"", 1);
     }
 
     /*
