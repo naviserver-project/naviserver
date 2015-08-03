@@ -277,7 +277,7 @@ Index files for directory
 (string, defaults to index.adp index.tcl index.html index.htm)
 
 [def directorylisting]
-Style of directory listings, Can be [const fancy] or [const simple].
+Style of directory listings, Can be [const fancy], [const simple], or [const none].
 (string, defaults to simple)
 
 [def directoryproc]

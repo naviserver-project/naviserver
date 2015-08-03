@@ -155,11 +155,7 @@ ConfigServerFastpath(const char *server)
         servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
 
-    p = Ns_ConfigString(path, "directorylisting", "simple");
-    if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
-        p = "_ns_dirlist";
-    }
-    servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
+    servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", "_ns_dirlist");
     servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 
     Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0U);
