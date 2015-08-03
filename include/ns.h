@@ -1898,6 +1898,10 @@ Ns_GetMimeType(const char *file)
     NS_GNUC_NONNULL(1)
     NS_GNUC_RETURNS_NONNULL;
 
+NS_EXTERN bool
+Ns_IsBinaryMimeType(const char *contentType)
+    NS_GNUC_NONNULL(1);
+
 /*
  * encoding.c:
  */

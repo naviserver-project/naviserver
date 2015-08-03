@@ -18,7 +18,7 @@ for {set port 8000} {$port < 8100} {incr port} {
     }
 }
 ns_param   listenport	    [expr {$port < 8100 ? $port : 0}]
-
+ns_param   listenurl	    http://localhost:[ns_config test listenport]
 
 
 #

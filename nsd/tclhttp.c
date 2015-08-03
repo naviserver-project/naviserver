@@ -44,7 +44,8 @@ static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
-			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
+                       Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, bool keep_host_header,
+                       Ns_HttpTask **httpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
 
 static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
@@ -616,8 +617,16 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 	(void) ns_close(httpPtr->spoolFd);
 	valPtr = Tcl_NewObj();
     } else {
-	valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
-				     (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        const char *contentType = hdrPtr != NULL ? Ns_SetIGet(hdrPtr, "Content-Type") : NULL;
+        bool binary = (contentType == NULL ? NS_TRUE : Ns_IsBinaryMimeType(contentType));
+
+        if (binary == NS_TRUE)  {
+            valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
+                                         (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        } else {
+            valPtr = Tcl_NewStringObj(httpPtr->ds.string + httpPtr->replyHeaderSize, 
+                                      (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        }
     }
 
     if (fileVarPtr != NULL 
@@ -706,6 +715,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     Ns_HttpTask *httpPtr;
     int          portNr, uaFlag = -1;
     char        *url2, *host, *file, *portString;
+    const char  *contentType = NULL;
 
     assert(interp != NULL);
     assert(method != NULL);
@@ -756,6 +766,17 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	 		 ns_sockstrerror(ns_sockerrno), NULL);
         ns_free(url2);
 	return TCL_ERROR;
+    }
+
+    if (bodyPtr != NULL) {
+        if (hdrPtr != NULL) {
+            contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+        }
+        if (contentType == NULL) {
+            Tcl_AppendResult(interp, "header field Content-Type is required when body is provided", NULL);
+            ns_free(url2);
+            return TCL_ERROR;
+        }
     }
     
     httpPtr = ns_calloc(1U, sizeof(Ns_HttpTask));
@@ -821,17 +842,22 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 
     if (bodyPtr != NULL) {
         int length = 0;
-	const char *body;
+	const char *bodyString;
         bool binary = NsTclObjIsByteArray(bodyPtr);
 
+        if (contentType != NULL && binary == NS_FALSE) {
+            /*const Tcl_Encoding enc = Ns_GetTypeEncoding(contentType);*/
+            binary = Ns_IsBinaryMimeType(contentType);
+        }
+        
 	if (binary == NS_TRUE) {
-	    body = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
+	    bodyString = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
         } else {
-            body = Tcl_GetStringFromObj(bodyPtr, &length);
+            bodyString = Tcl_GetStringFromObj(bodyPtr, &length);
         }
 
 	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", length);
-        Tcl_DStringAppend(&httpPtr->ds, body, length);
+        Tcl_DStringAppend(&httpPtr->ds, bodyString, length);
     } else {
         Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
     }
@@ -850,7 +876,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	*portString = ':';
     }
 
-    Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);
+    Ns_Log(Ns_LogTaskDebug, "full request <%s>", httpPtr->ds.string);
 
     *httpPtrPtr = httpPtr;
     return TCL_OK;
@@ -1054,6 +1080,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 		(void) Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
 	    } else {
 		Ns_Log(Ns_LogTaskDebug, "Task got %d bytes", (int)n);
+                
 		(void) Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
 
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {

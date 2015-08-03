@@ -279,7 +279,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
     assert(cmp != NULL);
     
     if (likely(key != NULL)) {
-	for (i = 0u; i < set->size; ++i) {
+	for (i = 0u; i < set->size; i++) {
 	    const char *name = set->fields[i].name;
 
 	    if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
@@ -287,7 +287,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
 	    }
 	}
     } else {
-	for (i = 0u; i < set->size; ++i) {
+	for (i = 0u; i < set->size; i++) {
 	    if (unlikely(set->fields[i].name == NULL)) {
 	      return (int)i;
 	    }

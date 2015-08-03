@@ -836,6 +836,29 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 /*
  *----------------------------------------------------------------------
  *
+ * NsGetMimeTypesNs_IsBinaryMimeType --
+ *
+ *      Check, if the provided mimetime is a "binary" mimetype.
+ *
+ * Results:
+ *      boolean
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_IsBinaryMimeType(const char *contentType) {
+    
+    assert(contentType != NULL);
+    
+    return (strncmp("text/", contentType, 5u) != 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsGetMimeTypes --
  *
  *      Append list of configured extension / mime-type mappings to
@@ -946,3 +969,12 @@ LowerDString(Ns_DString *dsPtr, CONST char *ext)
 
     return dsPtr->string;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
