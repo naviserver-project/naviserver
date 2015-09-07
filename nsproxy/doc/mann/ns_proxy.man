@@ -221,6 +221,10 @@ If the timeout is exceeded, the reaper will send a SIGTERM
 signal and finally a SIGKILL signal (waiting [option -waittimeout]
 milliseconds in between) to ensure the process eventually exits.
 
+[opt def -env [arg setname]]
+Initializes the slave's process environment with keys/values
+passed in the named Naviserver set (see command [cmd ns_set]).
+
 [para]
 Slave processes whose handles are already attached to some Tcl
 interps by the means of the [cmd "ns_proxy get"] command) are not

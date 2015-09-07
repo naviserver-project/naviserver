@@ -165,6 +165,7 @@ typedef struct Pool {
     int            nused;    /* Current number of used proxy handles */
     uintptr_t      nextid;   /* Next in proxy unique ids */
     ProxyConf      conf;     /* Collection of config options to pass to proxy */
+    Ns_Set         *env;     /* Set with environment to pass to proxy */
     Ns_Mutex       lock;     /* Lock around the pool */
     Ns_Cond        cond;     /* Cond for use while allocating handles */
 } Pool;
@@ -246,7 +247,6 @@ static void   SetOpt(const char *str, char const** optPtr);
 static void   ReaperThread(void *ignored);
 static void   CloseSlave(Slave *slavePtr, int ms);
 static void   ReapProxies(void);
-static void   Kill(pid_t pid, int sig);
 static int    GetTimeDiff(Ns_Time *tsPtr);
 
 static void   AppendStr(Tcl_Interp *interp, const char *flag, const char *val);
@@ -790,7 +790,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
         return NULL;
     }
 
-    pid = Ns_ExecArgv(poolPtr->exec, NULL, rpipe[0], wpipe[1], argv, NULL);
+    pid = Ns_ExecArgv(poolPtr->exec, NULL, rpipe[0], wpipe[1], argv, poolPtr->env);
 
     ns_close(rpipe[0]);
     ns_close(wpipe[1]);
@@ -1678,12 +1678,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     int         flag, n, result, reap = 0;
 
     static const char *flags[] = {
-        "-init", "-reinit", "-maxslaves", "-exec",
+        "-init", "-reinit", "-maxslaves", "-exec", "-env",
         "-gettimeout", "-evaltimeout", "-sendtimeout", "-recvtimeout",
         "-waittimeout", "-idletimeout", "-maxruns", NULL
     };
     enum {
-        CInitIdx, CReinitIdx, CMaxslaveIdx, CExecIdx, CGetIdx,
+        CInitIdx, CReinitIdx, CMaxslaveIdx, CExecIdx, CGetIdx, CEnvIdx,
         CEvalIdx, CSendIdx, CRecvIdx, CWaitIdx, CIdleIdx, CMaxrunsIdx
     };
 
@@ -1775,6 +1775,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             case CExecIdx:
                 SetOpt(str, &poolPtr->exec);
                 break;
+            case CEnvIdx:
+                if (poolPtr->env) {
+                    Ns_SetFree(poolPtr->env);
+                }
+                poolPtr->env = Ns_SetCopy(Ns_TclGetSet(interp, str));
+                break;
             }
         }
 
@@ -1796,6 +1802,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      */
 
     if (objc == 3) {
+        Tcl_AppendElement(interp, flags[CEnvIdx]);
+        if (poolPtr->env) {
+            Ns_TclEnterSet(interp, poolPtr->env, 0);
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
         AppendStr(interp, flags[CExecIdx],     poolPtr->exec);
         AppendStr(interp, flags[CInitIdx],     poolPtr->init);
         AppendStr(interp, flags[CReinitIdx],   poolPtr->reinit);
@@ -1841,6 +1853,13 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             break;
         case CIdleIdx:
             AppendInt(interp, NULL, poolPtr->conf.tidle);
+            break;
+        case CEnvIdx:
+            if (poolPtr->env) {
+                Ns_TclEnterSet(interp, poolPtr->env, 0);
+            } else {
+                Tcl_AppendElement(interp, "");
+            }
             break;
         }
     } else if (objc == 5) {
@@ -2533,31 +2552,6 @@ CloseProxy(Proxy *proxyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Kill --
- *
- *      Kill the slave with the given signal.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-Kill(pid_t pid, int sig)
-{
-    if (kill(pid, sig) != 0 && errno != ESRCH) {
-        Ns_Log(Error, "kill(%ld, %d) failed: %s", (long)pid, sig, strerror(errno));
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * ReaperThread --
  *
  *      Detached thread which closes expired slaves or slaves
@@ -2743,8 +2737,11 @@ ReaperThread(void *ignored)
                 if (slavePtr->signal != slavePtr->sigsent) {
                     Ns_Log(Warning, "[%s]: pid %ld won't die, send signal %d",
                            slavePtr->poolPtr->name, (long)slavePtr->pid,
-                           (int)slavePtr->signal);
-                    Kill(slavePtr->pid, slavePtr->signal);
+                           slavePtr->signal);
+                    if (kill(slavePtr->pid, slavePtr->signal) != 0 && errno != ESRCH) {
+                        Ns_Log(Error, "kill(%ld, %d) failed: %s", 
+                               (long)slavePtr->pid, slavePtr->signal, strerror(errno));
+                    }
                     slavePtr->sigsent = slavePtr->signal;
                 }
                 prevSlavePtr = slavePtr;
@@ -2834,6 +2831,9 @@ FreePool(Pool *poolPtr)
     }
     if (poolPtr->reinit != NULL) {
         ns_free((char *)poolPtr->reinit);
+    }
+    if (poolPtr->env) {
+        Ns_SetFree(poolPtr->env);
     }
 
     Ns_CondDestroy(&poolPtr->cond);
