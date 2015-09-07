@@ -551,30 +551,32 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
      */
 
     if (itPtr != NULL) {
-      Tcl_HashTable *tablePtr = Ns_TlsGet(&tls);
-      Tcl_HashEntry *hPtr;
+        Tcl_HashTable *tablePtr = Ns_TlsGet(&tls);
+        Tcl_HashEntry *hPtr;
 
-      /*
-       * Run traces (behaves gracefully, if there is no server
-       * associated).
-       */
-      RunTraces(itPtr, NS_TCL_TRACE_DELETE);
+        /*
+         * Run traces (behaves gracefully, if there is no server
+         * associated).
+         */
+        RunTraces(itPtr, NS_TCL_TRACE_DELETE);
 
-      /*
-       * During shutdown, don't fetch entries via GetCacheEntry(),
-       * since this function might create new cache entries. Note,
-       * that the thread local cache table might contain as well
-       * entries with itPtr->servPtr == NULL.
-       */
-      hPtr = (tablePtr != NULL) ? Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, NULL) : NULL;
-      
-      /*
-       * Make sure to delete the entry in the thread local cache to
-       * avoid double frees in DeleteInterps()
-       */
-      if (hPtr != NULL) {
-        Tcl_SetHashValue(hPtr, NULL);
-      }
+        /*
+         * During shutdown, don't fetch entries via GetCacheEntry(),
+         * since this function might create new cache entries. Note,
+         * that the thread local cache table might contain as well
+         * entries with itPtr->servPtr == NULL.
+         */
+        if (tablePtr != NULL) {
+            int ignored;
+
+            /*
+             * Make sure to delete the entry in the thread local cache to
+             * avoid double frees in DeleteInterps()
+             */
+
+            hPtr = Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, &ignored);
+            Tcl_SetHashValue(hPtr, NULL);
+        }
     }
     
     /*
