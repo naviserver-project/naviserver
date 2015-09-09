@@ -50,10 +50,10 @@
     </release>
 
     <repository>
-        <CVSRepository>
-            <browse rdf:resource="http://naviserver.cvs.sourceforge.net/viewcvs.py/naviserver" />
-            <anon-root rdf:resource="naviserver.cvs.sourceforge.net:/cvsroot/naviserver" />
-        </CVSRepository>
+        <HgRepository>
+            <browse rdf:resource="https://bitbucket.org/naviserver/naviserver/" />
+            <anon-root rdf:resource="https://bitbucket.org/naviserver/naviserver/" />
+        </HgRepository>
     </repository>
 
 </Project>
