@@ -552,7 +552,6 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
 
     if (itPtr != NULL) {
         Tcl_HashTable *tablePtr = Ns_TlsGet(&tls);
-        Tcl_HashEntry *hPtr;
 
         /*
          * Run traces (behaves gracefully, if there is no server
@@ -568,6 +567,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
          */
         if (tablePtr != NULL) {
             int ignored;
+            Tcl_HashEntry *hPtr;
 
             /*
              * Make sure to delete the entry in the thread local cache to
