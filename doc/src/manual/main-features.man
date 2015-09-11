@@ -501,7 +501,7 @@ The NaviServer includes a complete C API. Using the C API you can write:
 [para]
 
 
-[item]New Tcl commands for use in your Tcl scripts. NaviServer provides
+[item]Rich Tcl API for use in your Tcl scripts. NaviServer provides
     initialization functions to ensure your command is available in
     all the Tcl interpreters in a virtual server Tcl interpreter pool.
 
@@ -524,6 +524,8 @@ The NaviServer includes a complete C API. Using the C API you can write:
        regular TCP/IP sockets just like other basic Web servers such
        as NCSA, CERN, or WebSite.
 
+   [item]Multi-Protocol support (e.g. smtp, nameserver, udp, ...)
+
 
 [para]
 
@@ -536,14 +538,15 @@ The NaviServer includes a complete C API. Using the C API you can write:
 [para]
 
 
-   [item]A scheduled procedure which runs at regular intervals. A scheduled
-       procedure can be used in conjunction with a filter function to
-       implement a statistics gathering system.
+   [item]Scheduled procedures which run in the background at regular
+   intervals. A scheduled procedure can be used in conjunction with a filter function to
+       implement a statistics gathering system, or is often used for
+   house-cleaning functions (similar to cron-jobs or at-jobs).
 
 
 [para]
 
-
+   [item]Configuratble job queues for heavy duty background work.
 
 [list_end]
 
@@ -641,7 +644,7 @@ to SQL databases:
 
 [subsection {Secure Sockets Layer}]
 
-SSL enables network encryption for e-commerce applications via openssl module.
+SSL enables network encryption for e-commerce applications via nsssl module.
 
 
 [para]
