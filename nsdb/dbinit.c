@@ -751,8 +751,8 @@ NsDbLogSql(Ns_DbHandle *handle, const char *sql)
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
-    } else {
-        Ns_Log(Ns_LogSqlDebug, "dbinit: sql(%s): '%s'", handle->datasource, sql);
+    } else if (handle->verbose == NS_TRUE) {
+        Ns_Log(Ns_LogSqlDebug, "dbinit: sql(%s): '%s'", handle->poolname, sql);
     }
 }
 
