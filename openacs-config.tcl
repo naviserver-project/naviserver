@@ -38,7 +38,6 @@ set proxy_mode		false
 #---------------------------------------------------------------------
 # Which database do you want? postgres or oracle
 set database              postgres 
-
 set db_name               $server
 
 if { $database eq "oracle" } {
@@ -53,12 +52,16 @@ if { $database eq "oracle" } {
 # if debug is false, all debugging will be turned off
 set debug false
 set dev   false
+set verboseSQL false
 
 set max_file_upload_mb        20
 set max_file_upload_min        5
 
 #---------------------------------------------------------------------
-# set environment variables HOME and LANG
+# Set environment variables HOME and LANG. HOME is needed since
+# otherwise some programms called via exec might try to write into the
+# root home directory.
+#
 set env(HOME) $homedir
 set env(LANG) en_US.UTF-8
 
@@ -69,7 +72,8 @@ set env(LANG) en_US.UTF-8
 # Nothing below this point need be changed in a default install.
 #
 ###################################################################### 
-
+#
+ns_logctl severity "Debug(ns:driver)" $debug
 
 #---------------------------------------------------------------------
 #
@@ -419,6 +423,8 @@ ns_section "ns/db/drivers"
 	ns_param	ora8           ${bindir}/ora8.so
     } else {
 	ns_param	postgres       ${bindir}/nsdbpg.so
+	#
+	ns_logctl severity "Debug(sql)" $verboseSQL
     }
 
     if { $database eq "oracle" } {
@@ -428,7 +434,7 @@ ns_section "ns/db/drivers"
     } else {
       ns_section "ns/db/driver/postgres"
 	# Set this parameter, when "psql" is not on your path (OpenACS specific)
-	# ns_param	pgbin	"/usr/local/pg920/bin/"
+	# ns_param	pgbin	"/usr/local/pg950/bin/"
     }
 
  
@@ -439,7 +445,7 @@ ns_section "ns/db/drivers"
 #
 # NaviServer can have different pools connecting to different databases 
 # and even different different database servers.  See
-# http://openacs.org/doc/tutorial-second-database.html
+# http://openacs.org/doc/tutorial-second-database
 # An example 'other db' configuration is included (and commented out) using other1_db_name
 # set other1_db_name "yourDBname"
 
@@ -452,7 +458,6 @@ ns_section ns/db/pool/pool1
 	# ns_param	maxidle            0
 	# ns_param	maxopen            0
 	ns_param	connections        15
-	ns_param	verbose            $debug
 	ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -470,7 +475,6 @@ ns_section ns/db/pool/pool2
 	# ns_param	maxidle            0
 	# ns_param	maxopen            0
 	ns_param	connections        5
-	ns_param	verbose            $debug
 	ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -488,7 +492,6 @@ ns_section ns/db/pool/pool3
 	# ns_param	maxidle            0
 	# ns_param	maxopen            0
 	ns_param	connections        5
-	ns_param	verbose            $debug
 	ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
