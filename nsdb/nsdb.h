@@ -93,14 +93,14 @@ typedef struct Ns_DbProc {
  */
 
 typedef struct Ns_DbHandle {
-    char       *driver;
-    char       *datasource;
-    char       *user;
-    char       *password;
+    const char *driver;
+    const char *datasource;
+    const char *user;
+    const char *password;
     void       *connection;
-    char       *poolname;
-    int         connected;
-    int         verbose;
+    const char *poolname;
+    bool        connected;
+    bool        verbose;
     Ns_Set     *row;
     char        cExceptionCode[6];
     Ns_DString  dsExceptionMsg;
@@ -165,6 +165,7 @@ NS_EXTERN int Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles,
 					       const char *pool,
 					       int nwant, const Ns_Time *wait);
 NS_EXTERN int Ns_DbBouncePool(const char *pool);
+NS_EXTERN int Ns_DbPoolStats(Tcl_Interp *interp);
 
 /*
  * dbtcl.c:

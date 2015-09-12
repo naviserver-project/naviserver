@@ -64,7 +64,8 @@ typedef struct Pool {
     time_t          maxidle;
     time_t          maxopen;
     int             stale_on_close;
-}               Pool;
+    Tcl_WideInt     statementCount;
+}  Pool;
 
 /*
  * The following structure defines the internal
@@ -78,8 +79,8 @@ typedef struct Handle {
     const char     *password;
     void           *connection;
     const char     *poolname;
-    int             connected;
-    int             verbose;   /* kept just for backwards compatibility, should be replaced by Ns_LogSqlDebug */
+    bool            connected;
+    bool            verbose;   /* kept just for backwards compatibility, should be replaced by Ns_LogSqlDebug */
     Ns_Set         *row;
     char            cExceptionCode[6];
     Ns_DString      dsExceptionMsg;
@@ -91,9 +92,10 @@ typedef struct Handle {
     struct Pool	   *poolPtr;
     time_t          otime;
     time_t          atime;
-    int             stale;
+    bool            stale;
     int             stale_on_close;
-}               Handle;
+    bool            used;
+} Handle;
 
 /*
  * The following structure maintains per-server data.
@@ -110,7 +112,7 @@ typedef struct ServData {
 
 static Pool     *GetPool(const char *pool)                    NS_GNUC_NONNULL(1);
 static void      ReturnHandle(Handle *handlePtr)              NS_GNUC_NONNULL(1);
-static int       IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
+static bool      IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
 static int	 Connect(Handle *handlePtr)                   NS_GNUC_NONNULL(1);
 static Pool     *CreatePool(const char *pool, const char *path, const char *driver)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -285,7 +287,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
      */
 
     time(&now);
-    if (IsStale(handlePtr, now)) {
+    if (IsStale(handlePtr, now) == NS_TRUE) {
         NsDbDisconnect(handle);
     } else {
         handlePtr->atime = now;
@@ -433,7 +435,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     }
     
     /*
-     * Wait until this thread can be the exclusive thread aquireing
+     * Wait until this thread can be the exclusive thread acquiring
      * handles and then wait until all requested handles are available,
      * watching for timeout in either of these waits.
      */
@@ -464,6 +466,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 		if (poolPtr->lastPtr == handlePtr) {
 		    poolPtr->lastPtr = NULL;
 		}
+                handlePtr->used = NS_TRUE;
 		handlesPtrPtr[ngot++] = handlePtr;
 	    }
 	}
@@ -538,8 +541,8 @@ Ns_DbBouncePool(const char *pool)
     poolPtr->stale_on_close++;
     handlePtr = poolPtr->firstPtr;
     while (handlePtr != NULL) {
-	if (handlePtr->connected != 0) {
-	    handlePtr->stale = 1;
+	if (handlePtr->connected == NS_TRUE) {
+	    handlePtr->stale = NS_TRUE;
 	}
 	handlePtr->stale_on_close = poolPtr->stale_on_close;
 	handlePtr = handlePtr->nextPtr;
@@ -605,6 +608,76 @@ NsDbInitPools(void)
     }
     Ns_RegisterProcInfo(CheckPool, "nsdb:check", CheckArgProc);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbPoolStats --
+ *
+ *	return usage statistics from pools
+ *
+ * Results:
+ *	Tcl result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_DbPoolStats(Tcl_Interp *interp)
+{
+    Ns_Set      *pools;
+    size_t       i;
+    Tcl_Obj     *resultObj;
+
+    resultObj = Tcl_NewListObj(0, NULL);
+    pools = Ns_ConfigGetSection("ns/db/pools");
+
+    for (i = 0u; pools != NULL && i < Ns_SetSize(pools); ++i) {
+        const char    *pool = Ns_SetKey(pools, i);
+        Pool	      *poolPtr;
+        
+        poolPtr = GetPool(pool);
+        if (poolPtr == NULL) {
+            Ns_Log(Warning, "Ignore invalid pool: %s", pool);
+        } else {
+            Handle	  *handlePtr;
+            Tcl_Obj       *valuesObj;
+            int            unused = 0;
+
+            /*
+             * Iterate over the handles of this pool, which are currently
+             * unused. Some of the currently unused handles might have been never
+             * used. by subtracting the never used handles from the total handles,
+             * we determine the used handles.
+             */
+            Ns_MutexLock(&poolPtr->lock);
+            for (handlePtr = poolPtr->firstPtr; handlePtr != NULL; handlePtr = handlePtr->nextPtr) {
+                if (handlePtr->used == NS_FALSE) {
+                    unused ++;
+                }
+            }
+            Ns_MutexUnlock(&poolPtr->lock);
+
+            valuesObj = Tcl_NewListObj(1, NULL);
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("statements", 10));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->statementCount));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->nhandles));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
+        
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
+            Tcl_ListObjAppendElement(interp, resultObj, valuesObj);
+        }
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    
+    return NS_OK;
+}
+
 
 
 /*
@@ -741,9 +814,13 @@ NsDbDisconnect(Ns_DbHandle *handle)
  */
 
 void
-NsDbLogSql(Ns_DbHandle *handle, const char *sql)
+NsDbLogSql(Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
 {
     Handle *handlePtr = (Handle *) handle;
+
+    assert(startTime != NULL);
+    assert(handle != NULL);
+    assert(sql != NULL);
 
     if (handle->dsExceptionMsg.length > 0) {
         if (handlePtr->poolPtr->fVerboseError == NS_TRUE) {
@@ -751,8 +828,15 @@ NsDbLogSql(Ns_DbHandle *handle, const char *sql)
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
-    } else if (handle->verbose == NS_TRUE) {
-        Ns_Log(Ns_LogSqlDebug, "dbinit: sql(%s): '%s'", handle->poolname, sql);
+    } else if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
+        Ns_Time end, diff;
+        
+        Ns_GetTime(&end);
+        Ns_DiffTime(&end, startTime, &diff);
+        handlePtr->poolPtr->statementCount++;
+
+        Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
+               handle->poolname, (int64_t)diff.sec, diff.usec, sql);
     }
 }
 
@@ -849,7 +933,7 @@ ReturnHandle(Handle *handlePtr)
     if (poolPtr->firstPtr == NULL) {
 	poolPtr->firstPtr = poolPtr->lastPtr = handlePtr;
     	handlePtr->nextPtr = NULL;
-    } else if (handlePtr->connected != 0) {
+    } else if (handlePtr->connected == NS_TRUE) {
 	handlePtr->nextPtr = poolPtr->firstPtr;
 	poolPtr->firstPtr = handlePtr;
     } else {
@@ -876,12 +960,12 @@ ReturnHandle(Handle *handlePtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 IsStale(const Handle *handlePtr, time_t now)
 {
     assert(handlePtr != NULL);
 
-    if (handlePtr->connected != 0) {
+    if (handlePtr->connected == NS_TRUE) {
         time_t    minAccess, minOpen;
 
 	minAccess = now - handlePtr->poolPtr->maxidle;
@@ -973,7 +1057,7 @@ CheckPool(void *arg)
     if (handlePtr != NULL) {
     	while (handlePtr != NULL) {
 	    nextPtr = handlePtr->nextPtr;
-	    if (IsStale(handlePtr, now)) {
+	    if (IsStale(handlePtr, now) == NS_TRUE) {
                 NsDbDisconnect((Ns_DbHandle *) handlePtr);
 	    }
 	    handlePtr->nextPtr = checkedPtr;
@@ -1050,11 +1134,12 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->user = Ns_ConfigGetValue(path, "user");
     poolPtr->pass = Ns_ConfigGetValue(path, "password");
     poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
-    poolPtr->stale_on_close = 0;
+    poolPtr->stale_on_close = NS_FALSE;
     poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
     poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
     poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
     poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
+    poolPtr->statementCount = 0;
 
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
     for (i = 0; i < poolPtr->nhandles; ++i) {

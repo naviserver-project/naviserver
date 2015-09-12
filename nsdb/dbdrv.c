@@ -341,7 +341,7 @@ Ns_DbDML(Ns_DbHandle *handle, const char *sql)
     if (driverPtr != NULL && handle->connected == NS_TRUE) {
 
 	if (driverPtr->execProc != NULL) {
-    	    status = Ns_DbExec(handle, sql);
+	  status = Ns_DbExec(handle, sql);
 	    if (status == NS_DML) {
 		status = NS_OK;
 	    } else {
@@ -353,8 +353,11 @@ Ns_DbDML(Ns_DbHandle *handle, const char *sql)
 		status = NS_ERROR;
 	    }
 	} else if (driverPtr->dmlProc != NULL) {
+	    Ns_Time startTime;
+	    
+	    Ns_GetTime(&startTime);
     	    status = (*driverPtr->dmlProc)(handle, sql);
-	    NsDbLogSql(handle, sql);
+	    NsDbLogSql(&startTime, handle, sql);
 	}
     }
     
@@ -396,9 +399,12 @@ Ns_DbSelect(Ns_DbHandle *handle, const char *sql)
 		}
 	    }
 	} else if (driverPtr->selectProc != NULL) {
+	    Ns_Time startTime;
+	    
+	    Ns_GetTime(&startTime);
     	    Ns_SetTrunc(handle->row, 0U);
     	    setPtr = (*driverPtr->selectProc)(handle, sql);	
-	    NsDbLogSql(handle, sql);
+	    NsDbLogSql(&startTime, handle, sql);
 	}
     }
     
@@ -431,9 +437,11 @@ Ns_DbExec(Ns_DbHandle *handle, const char *sql)
     if (handle->connected != NS_FALSE &&
 	driverPtr != NULL &&
 	driverPtr->execProc != NULL) {
-
+        Ns_Time startTime;
+	    
+	Ns_GetTime(&startTime);
     	status = (*driverPtr->execProc)(handle, sql);
-	NsDbLogSql(handle, sql);
+	NsDbLogSql(&startTime, handle, sql);
     }
 
     return status;

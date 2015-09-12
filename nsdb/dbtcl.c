@@ -187,7 +187,7 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * DbCmd --
+ * DbObjCmd --
  *
  *      Implement the Naviserver ns_db Tcl command.
  *
@@ -216,14 +216,14 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	PASSWORD, USER, DATASOURCE, DISCONNECT, DBTYPE, DRIVER, CANCEL, ROWCOUNT,
 	BINDROW, FLUSH, RELEASEHANDLE, RESETHANDLE, CONNECTED, SP_EXEC,
 	SP_GETPARAMS, SP_RETURNCODE, GETROW, DML, ONE_ROW, ZERO_OR_ONE_ROW, EXEC,
-	SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM
+	SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM, STATS
     };
     static const char *subcmd[] = {
         "pools", "bouncepool", "gethandle", "exception", "poolname",
 	"password", "user", "datasource", "disconnect", "dbtype", "driver", "cancel", "rowcount",
 	"bindrow", "flush", "releasehandle", "resethandle", "connected", "sp_exec",
 	"sp_getparams", "sp_returncode", "getrow", "dml", "1row", "0or1row", "exec",
-	"select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam",
+	"select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam", "stats",
         NULL
     };
 
@@ -356,6 +356,17 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         Tcl_AppendElement(interp, handlePtr->dsExceptionMsg.string);
         break;
 
+    case STATS: {
+        if (objc != 2) {
+            Tcl_WrongNumArgs(interp, 2, objv, NULL);
+            return TCL_ERROR;
+        }
+	if  (Ns_DbPoolStats(interp) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        break;
+    }
+
     case POOLNAME:
     case PASSWORD:
     case USER:
@@ -401,7 +412,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             break;
 
         case DATASOURCE:
-      	    Tcl_SetResult(interp, handlePtr->datasource, TCL_STATIC);
+      	    Tcl_SetResult(interp, (char *)handlePtr->datasource, TCL_STATIC);
             break;
 
         case DISCONNECT:
