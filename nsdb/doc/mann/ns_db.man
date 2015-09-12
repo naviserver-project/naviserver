@@ -237,7 +237,9 @@ below, for an example of this function.
 
 Returns statistics in form of a Tcl dict from all pools in form of a
 dict. The statistics contain the number of SQL statements executed,
-the total and the used handles from the pool.
+the total and the used handles from the pool, and the aggregated wait
+time for handles from this pool (including the connection setup time
+to the database server).
 
 
 [call [cmd "ns_db user"] [arg handle]]

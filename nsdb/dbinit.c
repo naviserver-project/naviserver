@@ -65,6 +65,7 @@ typedef struct Pool {
     time_t          maxopen;
     int             stale_on_close;
     Tcl_WideInt     statementCount;
+    Ns_Time         waitTime;
 }  Pool;
 
 /*
@@ -405,7 +406,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     Handle    *handlePtr;
     Handle   **handlesPtrPtr = (Handle **) handles;
     Pool      *poolPtr;
-    Ns_Time    timeout, *timePtr;
+    Ns_Time    timeout, *timePtr, startTime, endTime, diffTime;
     int        i, ngot, status;
 
     /*
@@ -439,7 +440,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
      * handles and then wait until all requested handles are available,
      * watching for timeout in either of these waits.
      */
-     
+    Ns_GetTime(&startTime);     
     if (wait == NULL) {
 	timePtr = NULL;
     } else {
@@ -507,6 +508,11 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 	Ns_MutexUnlock(&poolPtr->lock);
 	(void) IncrCount(poolPtr, -nwant);
     }
+    
+    Ns_GetTime(&endTime);     
+    Ns_DiffTime(&endTime, &startTime, &diffTime);
+    Ns_IncrTime(&poolPtr->waitTime, diffTime.sec, diffTime.usec);
+    
     return status;
 }
 
@@ -645,7 +651,8 @@ Ns_DbPoolStats(Tcl_Interp *interp)
         } else {
             Handle	  *handlePtr;
             Tcl_Obj       *valuesObj;
-            int            unused = 0;
+            int            unused = 0, len;
+            char           buf[100];
 
             /*
              * Iterate over the handles of this pool, which are currently
@@ -668,6 +675,9 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->nhandles));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("wait", 4));
+            len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
         
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
             Tcl_ListObjAppendElement(interp, resultObj, valuesObj);
@@ -829,14 +839,14 @@ NsDbLogSql(Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
     } else if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
-        Ns_Time end, diff;
+        Ns_Time endTime, diffTime;
         
-        Ns_GetTime(&end);
-        Ns_DiffTime(&end, startTime, &diff);
+        Ns_GetTime(&endTime);
+        Ns_DiffTime(&endTime, startTime, &diffTime);
         handlePtr->poolPtr->statementCount++;
 
         Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
-               handle->poolname, (int64_t)diff.sec, diff.usec, sql);
+               handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
     }
 }
 
@@ -1140,6 +1150,8 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
     poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
     poolPtr->statementCount = 0;
+    poolPtr->waitTime.sec = 0;
+    poolPtr->waitTime.usec = 0;
 
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
     for (i = 0; i < poolPtr->nhandles; ++i) {
