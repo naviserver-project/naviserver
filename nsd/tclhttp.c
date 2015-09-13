@@ -617,8 +617,27 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 	(void) ns_close(httpPtr->spoolFd);
 	valPtr = Tcl_NewObj();
     } else {
-        const char *contentType = hdrPtr != NULL ? Ns_SetIGet(hdrPtr, "Content-Type") : NULL;
-        bool binary = (contentType == NULL ? NS_TRUE : Ns_IsBinaryMimeType(contentType));
+        bool binary = NS_TRUE;
+
+        if (hdrPtr != NULL) {
+            const char *contentEncoding = Ns_SetIGet(hdrPtr, "Content-Encoding");
+            
+            /*
+             * Does the contentEncoding allow text transfers? Not, if the
+             * content is compressed.
+             */
+
+            if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
+                const char *contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+                
+                if (contentType != NULL) {
+                    /*
+                     * Determine binary via contentType
+                     */
+                    binary = Ns_IsBinaryMimeType(contentType);
+                }
+            }
+        }
 
         if (binary == NS_TRUE)  {
             valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
