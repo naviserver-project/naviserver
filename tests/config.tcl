@@ -31,3 +31,6 @@ ns_param   verify     	   0
 ns_param   writerthreads   2
 ns_param   writersize	   2048
 
+ns_section test
+ns_param listenport [ns_config "ns/server/test/module/nsssl" port]
+ns_param listenurl https://[ns_config "ns/server/test/module/nsssl" hostname]:[ns_config "ns/server/test/module/nsssl" port]

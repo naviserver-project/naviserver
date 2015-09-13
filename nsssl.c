@@ -912,9 +912,36 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	    close(httpPtr->spoolFd);
 	    valPtr = Tcl_NewObj();
 	} else {
-	  valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
-					 (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
-	}
+            bool binary = NS_TRUE;
+
+            if (hdrPtr != NULL) {
+                const char *contentEncoding = Ns_SetIGet(hdrPtr, "Content-Encoding");
+            
+                /*
+                 * Does the contentEncoding allow text transfers? Not, if the
+                 * content is compressed.
+                 */
+
+                if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
+                    const char *contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+                
+                    if (contentType != NULL) {
+                        /*
+                         * Determine binary via contentType
+                         */
+                        binary = Ns_IsBinaryMimeType(contentType);
+                    }
+                }
+            }
+
+            if (binary == NS_TRUE)  {
+                valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
+                                             (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+            } else {
+                valPtr = Tcl_NewStringObj(httpPtr->ds.string + httpPtr->replyHeaderSize, 
+                                          (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+            }
+        }
 
 	if (fileVarPtr && httpPtr->spoolFd > 0 
 	    && !Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1))) {
@@ -1040,6 +1067,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     Https       *httpsPtr = NULL;
     int          portNr, uaFlag = -1;
     char        *url2, *host, *file, *portString;
+    const char  *contentType = NULL;
     
     /*
      * Parse and split url
@@ -1080,7 +1108,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     } else {
         portNr = 443;
     }
-    
+
     /*
      * Connect to the host and allocate session struct
      */
@@ -1090,6 +1118,17 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	Tcl_AppendResult(interp, "connect to ", url, " failed: ", ns_sockstrerror(ns_sockerrno), NULL);
         ns_free(url2);
 	return TCL_ERROR;
+    }
+
+    if (bodyPtr != NULL) {
+        if (hdrPtr != NULL) {
+            contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+        }
+        if (contentType == NULL) {
+            Tcl_AppendResult(interp, "header field Content-Type is required when body is provided", NULL);
+            ns_free(url2);
+            return TCL_ERROR;
+        }
     }
 
     httpsPtr = ns_calloc(1, sizeof(Https));
@@ -1218,16 +1257,21 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 
     if (bodyPtr != NULL) {
         int length = 0;
-	const char *body;
+	const char *bodyString;
         bool binary = NsTclObjIsByteArray(bodyPtr);
 
+        if (contentType != NULL && binary == NS_FALSE) {
+            /*const Tcl_Encoding enc = Ns_GetTypeEncoding(contentType);*/
+            binary = Ns_IsBinaryMimeType(contentType);
+        }
+
 	if (binary == NS_TRUE) {
-	    body = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
+	    bodyString = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
         } else {
-            body = Tcl_GetStringFromObj(bodyPtr, &length);
+            bodyString = Tcl_GetStringFromObj(bodyPtr, &length);
         }
 	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", length);
-        Tcl_DStringAppend(&httpPtr->ds, body, length);
+        Tcl_DStringAppend(&httpPtr->ds, bodyString, length);
         
     } else {
         Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
@@ -1247,7 +1291,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	*portString = ':';
     }
     
-    Ns_Log(Ns_LogTaskDebug, "final request <%s>", httpPtr->ds.string);
+    Ns_Log(Ns_LogTaskDebug, "full request <%s>", httpPtr->ds.string);
     
     *httpsPtrPtr = httpsPtr;
     return TCL_OK;

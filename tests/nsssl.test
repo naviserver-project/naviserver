@@ -104,5 +104,90 @@ test nsssl-1.6 {with query} -constraints {serverListen} -setup {
     ns_unregister_op GET /get/foo
 } -result "200 q=1"
 
+test http-7.0 {ns_ssl with body and text datatype} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set string "Testing 'äöüß'"
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    puts stderr REQ=https://localhost:[ns_config test listenport]/post
+    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST \
+			   [ns_config test listenurl]/post]} errorMsg]} {
+	puts stderr ERROR-$errorMsg
+    }
+    set r [ns_ssl wait -result R -status S $h]
+    return [list $S $R]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {utf-8 <text/plain> AÄATesting 'äöüß'ZÜZ}}
+
+test http-7.1 {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	ns_log notice "post receives content-type '$contentType'"
+        ns_return 200 $contentType "<$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set encoding iso8859-1
+    set string [encoding convertto $encoding "Testing 'äöüß'"]
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type "text/plain; $encoding"
+    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST \
+			   [ns_config test listenurl]/post]} errorMsg]} {
+	puts stderr ERROR-$errorMsg
+    }
+    set r [ns_ssl wait -result R -status S $h]
+    return [list $S $R]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
+
+test http-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 application/octet-stream [ns_conn content -binary]
+    }
+} -body {
+    set string "\x00\x01\x02\r"
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type application/octet-stream
+    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
+	puts stderr ERROR-$errorMsg
+    }
+    set r [ns_ssl wait -result R -status S $h]
+    set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
+    return [list $S $R1]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {0000 0001 0002 000D}}
+
+test http-7.2b {ns_http with body and binary datataype} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	set content [ns_conn content -binary]
+	# the following command has the sole purpose to convert content to a different obj type than bytearray
+	if { $content ne "" } {set x 1}
+        ns_return -binary 200 application/octet-stream $content
+    }
+} -body {
+    set string "\x00\x01\x02\r"
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type application/octet-stream
+    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
+	puts stderr ERROR-$errorMsg
+    }
+    set r [ns_ssl wait -result R -status S $h]
+    set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
+    return [list $S $R1]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {0000 0001 0002 000D}}
 
 cleanupTests
