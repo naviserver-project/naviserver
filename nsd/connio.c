@@ -142,10 +142,11 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
     if (connPtr->compress < 0) {
         connPtr->compress = CheckCompress(connPtr, bufs, nbufs, flags);
     }
-    if (connPtr->compress > 0 && nbufs > 0) {
+    if (connPtr->compress > 0
+        && (nbufs > 0 || (flags & NS_CONN_STREAM_CLOSE) != 0u)
+        ) {
         int flush = ((flags & NS_CONN_STREAM) != 0u) ? 0 : 1;
 
-        assert(bufs != NULL);
         if (Ns_CompressBufsGzip(&connPtr->cStream, bufs, nbufs, &gzDs,
                                 connPtr->compress, flush) == NS_OK) {
             /* NB: Compression will always succeed. */

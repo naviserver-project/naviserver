@@ -12,7 +12,7 @@ set this_is_a_test      "74 68 69 73 20 69 73 20 61 20 74 65 73 74 0a"
 set this_is_a_test_gzip "1f 8b 08 00 00 00 00 00 04 03 2b c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 2e 00 12 13 05 72 0f 00 00 00"
 
 # The streaming case is different as it has synchronization markers after "this is".
-set this_is_a_test_gzip_stream "1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff"
+set this_is_a_test_gzip_stream "1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 03 00 12 13 05 72 0f 00 00 00"
 
 test compress-1.1 {HTTP 1.0: no Accept-Encoding} -body {
     nstest::http \
@@ -404,7 +404,7 @@ test compress-3.4 {streaming adp, compressed} -body {
         -setheaders {Accept-Encoding gzip} \
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp?stream=1
-} -result "200 gzip Accept-Encoding {2a 41 e5 02 00 00 00 ff ff}"
+} -result "200 gzip Accept-Encoding {1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 2e 00 00 00 00 ff ff 03 00 12 13 05 72 0f 00 00 00}"
 
 #
 # The output of the following test is tricky to match because it is:
@@ -437,7 +437,7 @@ test compress-3.5 {ns_write streaming + HTTP 1.1 chunking, compressed} -setup {
         GET /compress
 } -cleanup {
     ns_unregister_op GET /compress
-} -result "200 gzip Accept-Encoding chunked {} {38 0a 82 72 01 00 00 00 ff ff 0a 38 0a 82 c9 02 00 00 00 ff ff 0a 30 0a 0a}"
+} -result "200 gzip Accept-Encoding chunked {} {31 37 0a 1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 0a 65 0a 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 0a 61 0a 03 00 12 13 05 72 0f 00 00 00 0a 30 0a 0a}"
 
 
 test compress-4.1 {HTTP 1.0: no Accept-Encoding} -setup {

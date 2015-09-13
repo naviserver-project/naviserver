@@ -819,8 +819,8 @@ Ns_CompressFree(Ns_CompressStream *cStream)
 
 NS_EXTERN int
 Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs, 
-		    Ns_DString *dsPtr, int level, int flush)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+		    Ns_DString *dsPtr, int level, bool flush)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
 Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
