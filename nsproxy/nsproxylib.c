@@ -1683,7 +1683,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         "-waittimeout", "-idletimeout", "-maxruns", NULL
     };
     enum {
-        CInitIdx, CReinitIdx, CMaxslaveIdx, CExecIdx, CGetIdx, CEnvIdx,
+        CInitIdx, CReinitIdx, CMaxslaveIdx, CExecIdx, CEnvIdx, CGetIdx,
         CEvalIdx, CSendIdx, CRecvIdx, CWaitIdx, CIdleIdx, CMaxrunsIdx
     };
 

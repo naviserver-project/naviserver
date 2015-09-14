@@ -36,7 +36,7 @@
 #       command mode in this directory.
 #
 
-package require Tcl 8.4
+package require Tcl 8.5
 package require tcltest 2.2
 namespace import tcltest::*
 eval configure $argv -singleproc true -testdir [file dirname [info script]]

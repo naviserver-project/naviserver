@@ -19,7 +19,7 @@ test ns_proxy-2.1 {configuration syntax} -body {
 
 test ns_proxy-2.2 {configuration options} -body {
     ns_proxy configure testpool
-} -match glob -result {-exec * -init * -reinit * -maxslaves * -maxruns * -gettimeout * -evaltimeout * -sendtimeout * -recvtimeout * -waittimeout * -idletimeout *}
+} -match glob -result {-env * -exec * -init * -reinit * -maxslaves * -maxruns * -gettimeout * -evaltimeout * -sendtimeout * -recvtimeout * -waittimeout * -idletimeout *}
 
 test ns_proxy-2.3 {configuration options types} -body {
     ns_proxy configure testpool -gettimeout dummy
