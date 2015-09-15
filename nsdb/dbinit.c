@@ -65,6 +65,7 @@ typedef struct Pool {
     time_t          maxopen;
     int             stale_on_close;
     Tcl_WideInt     statementCount;
+    Tcl_WideInt     getHandleCount;
     Ns_Time         waitTime;
 }  Pool;
 
@@ -512,6 +513,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     Ns_GetTime(&endTime);     
     Ns_DiffTime(&endTime, &startTime, &diffTime);
     Ns_IncrTime(&poolPtr->waitTime, diffTime.sec, diffTime.usec);
+    poolPtr->getHandleCount++;
     
     return status;
 }
@@ -671,6 +673,8 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             valuesObj = Tcl_NewListObj(1, NULL);
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("statements", 10));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->statementCount));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("gethandles", 10));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->getHandleCount));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->nhandles));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
@@ -832,6 +836,8 @@ NsDbLogSql(Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
     assert(handle != NULL);
     assert(sql != NULL);
 
+    handlePtr->poolPtr->statementCount++;
+            
     if (handle->dsExceptionMsg.length > 0) {
         if (handlePtr->poolPtr->fVerboseError == NS_TRUE) {
 	    
@@ -843,7 +849,6 @@ NsDbLogSql(Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
         
         Ns_GetTime(&endTime);
         Ns_DiffTime(&endTime, startTime, &diffTime);
-        handlePtr->poolPtr->statementCount++;
 
         Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
                handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
@@ -1150,6 +1155,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
     poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
     poolPtr->statementCount = 0;
+    poolPtr->getHandleCount = 0;
     poolPtr->waitTime.sec = 0;
     poolPtr->waitTime.usec = 0;
 
