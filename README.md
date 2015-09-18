@@ -57,7 +57,7 @@ adds new ns_ssl command.
      ns_param      address    		0.0.0.0
      ns_param      port       		443
      ns_param      ciphers              "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-     ns_param      protocols            "!SSLv2"
+     ns_param      protocols            "!SSLv2:!SSLv3"
      ns_param      verify                0
 
      ns_param      extraheaders {
