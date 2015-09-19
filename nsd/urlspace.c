@@ -223,10 +223,10 @@ static void  NodeDestroy(Node *nodePtr)
 static void  BranchDestroy(Branch *branchPtr)
     NS_GNUC_NONNULL(1);
 
-static int   CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
+static int   CmpBranches(const Branch *const*leftPtrPtr, const Branch *const*rightPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int   CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr)
+static int   CmpKeyWithBranch(const char *key, const Branch *const*branchPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -278,14 +278,14 @@ static void  TrieDestroy(Trie *triePtr)
  */
 
 #ifndef __URLSPACE_OPTIMIZE__
-static int CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpChannels(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 #endif
 
-static int CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
+static int CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr)
+static int CmpKeyWithChannelAsStrings(const char *key, const Channel *const*channelPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -710,7 +710,7 @@ NodeDestroy(Node *nodePtr)
  */
 
 static int
-CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
+CmpBranches(const Branch *const*leftPtrPtr, const Branch *const*rightPtrPtr)
 {
     assert(leftPtrPtr != NULL);
     assert(rightPtrPtr != NULL);
@@ -737,7 +737,7 @@ CmpBranches(const Branch **leftPtrPtr, const Branch **rightPtrPtr)
  */
 
 static int
-CmpKeyWithBranch(const char *key, const Branch **branchPtrPtr)
+CmpKeyWithBranch(const char *key, const Branch *const*branchPtrPtr)
 {
     assert(key != NULL);
     assert(branchPtrPtr != NULL);
@@ -1256,7 +1256,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
  */
 
 static int
-CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
+CmpChannels(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
 {
     int lcontainsr, rcontainsl;
 
@@ -1299,7 +1299,7 @@ CmpChannels(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
  */
 
 static int
-CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
+CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)
 {
     int lcontainsr, rcontainsl;
 
@@ -1338,7 +1338,7 @@ CmpKeyWithChannel(const char *key, const Channel **channelPtrPtr)
  */
 
 static int
-CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
+CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
 {
     assert(leftPtrPtr != NULL);
     assert(rightPtrPtr != NULL);
@@ -1364,7 +1364,7 @@ CmpChannelsAsStrings(const Channel **leftPtrPtr, const Channel **rightPtrPtr)
  */
 
 static int
-CmpKeyWithChannelAsStrings(const char *key, const Channel **channelPtrPtr)
+CmpKeyWithChannelAsStrings(const char *key, const Channel *const*channelPtrPtr)
 {
     assert(key != NULL);
     assert(channelPtrPtr != NULL);
