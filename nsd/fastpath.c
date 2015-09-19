@@ -183,7 +183,7 @@ ConfigServerFastpath(const char *server)
  */
 
 int
-Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *type, const char *file)
+Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *file)
 {
     Conn        *connPtr = (Conn *) conn;
     int          rc;
@@ -195,7 +195,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *type, const char *file)
         return Ns_ConnReturnNotFound(conn);
     }
 
-    rc = FastReturn(conn, status, type, file);
+    rc = FastReturn(conn, status, mimeType, file);
     return rc;
 }
 
