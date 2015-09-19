@@ -2505,21 +2505,6 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
-static char *strnchr(char *buffer, size_t len, char c)
-    NS_GNUC_NONNULL(1);
-
-static char *strnchr(char *buffer, size_t len, char c) {
-    char *end;
-
-    assert(buffer != NULL);
-
-    for (end = buffer + len; buffer < end; buffer ++) {
-        if (unlikely(*buffer == c)) {
-            return buffer;
-        }
-    }
-    return NULL;
-}
 
 static SockState
 SockParse(Sock *sockPtr)
@@ -2549,7 +2534,7 @@ SockParse(Sock *sockPtr)
          * Find the next line.
          */
         s = bufPtr->string + reqPtr->roff;
-        e = strnchr(s, reqPtr->avail, '\n');
+        e = memchr(s, '\n', reqPtr->avail);
 
         if (unlikely(e == NULL)) {
             /*
