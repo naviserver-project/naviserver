@@ -597,7 +597,7 @@ NsDbInitPools(void)
     Tcl_InitHashTable(&poolsTable, TCL_STRING_KEYS);
     pools = Ns_ConfigGetSection("ns/db/pools");
 
-    for (i = 0U; pools != NULL && i < Ns_SetSize(pools); ++i) {
+    for (i = 0U; (pools != NULL) && (i < Ns_SetSize(pools)); ++i) {
 	const char    *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
@@ -828,7 +828,7 @@ NsDbDisconnect(Ns_DbHandle *handle)
  */
 
 void
-NsDbLogSql(Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
+NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
 {
     Handle *handlePtr = (Handle *) handle;
 
@@ -848,7 +848,7 @@ NsDbLogSql(Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
         Ns_Time endTime, diffTime;
         
         Ns_GetTime(&endTime);
-        Ns_DiffTime(&endTime, startTime, &diffTime);
+        (void)Ns_DiffTime(&endTime, startTime, &diffTime);
 
         Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
                handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
