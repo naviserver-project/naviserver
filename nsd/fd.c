@@ -193,7 +193,7 @@ Ns_CloseOnExec(int fd)
 #ifdef _WIN32
     intptr_t hh = _get_osfhandle(fd);
 
-    if (hh != INVALID_HANDLE_VALUE) {
+    if (hh != (intptr_t)INVALID_HANDLE_VALUE) {
         SetHandleInformation((HANDLE)hh, HANDLE_FLAG_INHERIT, 0);
     }
     return NS_OK;
@@ -233,7 +233,7 @@ Ns_NoCloseOnExec(int fd)
 #ifdef _WIN32
     intptr_t hh = _get_osfhandle(fd);
 
-    if (hh != INVALID_HANDLE_VALUE) {
+    if (hh != (intptr_t)INVALID_HANDLE_VALUE) {
         SetHandleInformation((HANDLE)hh, HANDLE_FLAG_INHERIT, 1);
     }
     return NS_OK;
