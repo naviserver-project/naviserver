@@ -26,13 +26,17 @@ This command provides a means for queueing Tcl scripts for evaluation by a pool 
 
 [list_begin definitions]
 
-[call [cmd  ns_job] [arg configure] [opt [arg {-jobsperthread N}]]]
+[call [cmd  ns_job] [arg configure] [opt [arg {-jobsperthread N}]] [opt [arg {-timeout T}]]]
 
 Configures jobs system, parameters are:
 
 [arg -jobsperthread] defines how many jobs each thread can process and then gracefully exit, this
 works the same way as connsperthread config parameter for connection threads to help reduce memory
 consumption and cleanup Tcl resources.
+
+[arg -timeout] defines maximum idle time for the job worker
+thread. When the timeout expires, the thread exits like when
+[arg -jobsperthread] runs out.
 
 [para]
 Without any arguments, the command just returns current settings values
@@ -60,17 +64,19 @@ and by default every new job is added to the end of the job list.
 [para]
 The new job's ID is returned.
 
-[call [cmd  ns_job] [arg wait] [opt [arg {-timeout seconds:microseconds}]] [arg queueId] [arg jobId]]
+[call [cmd  ns_job] [arg wait] [opt [arg {-timeout T}]] [arg queueId] [arg jobId]]
 
 Wait for the specified queued or running job to finish.  ns_job wait returns the results of the script.
+[para]
+An error is thrown if the specified timeout period (given in seconds and
+fractions of seconds) is reached.
 
-An error is thrown if the specified timeout period is reached.
-
-[call [cmd  ns_job] [arg waitany] [opt [arg {-timeout seconds:microseconds}]] [arg queueId]]
+[call [cmd  ns_job] [arg waitany] [opt [arg {-timeout T}]] [arg queueId]]
 
 Wait for any job on the queue complete.
-
-An error is thrown if the specified timeout period is reached.
+[para]
+An error is thrown if the specified timeout period (given in seconds and
+fractions of seconds) is reached.
 
 [call [cmd  ns_job] [arg exists] [arg queueId] [arg jobId]]
 

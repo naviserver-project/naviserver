@@ -448,13 +448,12 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     const char *host, *lhost = NULL;
     int         lport = 0, port, nonblock = 0, async = 0, msec = -1;
     NS_SOCKET   sock;
-    Ns_Time     timeout = {0,0};
-    Tcl_Obj    *timeoutObj = NULL;
+    Ns_Time     timeout = {0,0}, *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
 	{"-nonblock",  Ns_ObjvBool,   &nonblock,   INT2PTR(1)},
 	{"-async",     Ns_ObjvBool,   &async,      INT2PTR(1)},
-	{"-timeout",   Ns_ObjvObj,    &timeoutObj, NULL},
+        {"-timeout",   Ns_ObjvTime,   &timeoutPtr, NULL},                
 	{"-localhost", Ns_ObjvString, &lhost,      NULL},
 	{"-localport", Ns_ObjvInt,    &lport,      NULL},
         {"--",         Ns_ObjvBreak,  NULL,        NULL},
@@ -478,7 +477,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
      */
 
     if (nonblock != 0 || async != 0) {
-	if (timeoutObj != NULL) {
+	if (timeoutPtr != NULL) {
 	    Ns_TclPrintfResult(interp, "-timeout can't be specified when -async or -nonblock are used");
 	    return TCL_ERROR;
 	}
@@ -490,11 +489,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 	    return TCL_ERROR;
 	}
     }
-    if (timeoutObj != NULL) {
-	if (Ns_TclGetTimeFromObj(interp, timeoutObj, &timeout) != TCL_OK) {
-	    Ns_TclPrintfResult(interp, "invalid timeout");
-	    return TCL_ERROR;
-	}
+    if (timeoutPtr != NULL) {
 	msec = (int)(timeout.sec * 1000 + timeout.usec / 1000);
     }
     if (lport < 0) {
@@ -519,7 +514,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     } else if (msec < 0) {
         sock = Ns_SockConnect2(host, port, lhost, lport);
     } else {
-        sock = Ns_SockTimedConnect2(host, port, lhost, lport, &timeout);
+        sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeoutPtr);
     }
 
     if (sock == NS_INVALID_SOCKET) {

@@ -644,11 +644,11 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * Wait for the specified job.
              */
 
-            Ns_Time     timeout = {0,0}, delta_timeout;
+            Ns_Time     timeout = {0,0}, *deltaTimeoutPtr = NULL;
 	    const char *jobIdString, *queueIdString;
-	    Tcl_Obj    *timeoutObj = NULL;
+
             Ns_ObjvSpec lopts[] = {
-                {"-timeout",  Ns_ObjvObj,    &timeoutObj, NULL},
+                {"-timeout",  Ns_ObjvTime,   &deltaTimeoutPtr, NULL},                
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
@@ -661,17 +661,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 return TCL_ERROR;
             }
 
-	    if (timeoutObj != NULL) {
-		if (Ns_TclGetTimeFromObj(interp, timeoutObj, &delta_timeout) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		
+	    if (deltaTimeoutPtr != NULL) {
 		/*
 		 * Set the timeout time. This is an absolute time.
 		 */
 		
 		Ns_GetTime(&timeout);
-		Ns_IncrTime(&timeout, delta_timeout.sec, delta_timeout.usec);
+		Ns_IncrTime(&timeout, deltaTimeoutPtr->sec, deltaTimeoutPtr->usec);
             }
 	    
             if (LookupQueue(interp, queueIdString, &queue, 0) != TCL_OK) {
@@ -704,7 +700,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             jobPtr->req = JOB_WAIT;
 
-            if (timeoutObj != NULL) {
+            if (deltaTimeoutPtr != NULL) {
                 while (jobPtr->state != JOB_DONE) {
                     int timedOut = Ns_CondTimedWait(&queue->cond,
 						    &queue->lock, &timeout);
@@ -839,33 +835,28 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * Wait for any job on the queue complete.
              */
 
-            Ns_Time     timeout = {0,0}, delta_timeout;
-	    Tcl_Obj    *timeoutObj = NULL;
+            Ns_Time     timeout = {0,0}, *deltaTimeoutPtr = NULL;
 	    const char *queueIdString;
 
             Ns_ObjvSpec lopts[] = {
-                {"-timeout",  Ns_ObjvObj,    &timeoutObj, NULL},
+                {"-timeout",  Ns_ObjvTime,   &deltaTimeoutPtr, NULL},                
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
-                {"queueId",  Ns_ObjvString,  &queueIdString,  NULL},
+                {"queueId",  Ns_ObjvString,  &queueIdString,   NULL},
                 {NULL, NULL, NULL, NULL}
             };
             if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
 
-            if (timeoutObj != NULL) {
-		if (Ns_TclGetTimeFromObj(interp, timeoutObj, &delta_timeout) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-
+            if (deltaTimeoutPtr != NULL) {
 		/*
 		 * Set the timeout time. This is an absolute time.
 		 */
 		
 		Ns_GetTime(&timeout);
-		Ns_IncrTime(&timeout,delta_timeout.sec,delta_timeout.usec);
+		Ns_IncrTime(&timeout, deltaTimeoutPtr->sec, deltaTimeoutPtr->usec);
             }
 
             if (LookupQueue(interp, queueIdString, &queue, 0) != TCL_OK) {
@@ -878,7 +869,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * on the queue condition variable.
              */
 
-            if (timeoutObj != NULL) {
+            if (deltaTimeoutPtr != NULL) {
                 while ((Tcl_FirstHashEntry(&queue->jobs, &search) != NULL)
                        && AnyDone(queue) == 0) {
                     int timedOut = Ns_CondTimedWait(&queue->cond,
