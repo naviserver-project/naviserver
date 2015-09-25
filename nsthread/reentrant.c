@@ -315,6 +315,7 @@ ns_asctime(const struct tm *tmPtr)
     int errNum;
 
     assert(tmPtr != NULL);
+
     errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
     if (errNum != 0) {
         NsThreadFatal("ns_asctime","asctime_s", errNum);
@@ -323,14 +324,18 @@ ns_asctime(const struct tm *tmPtr)
     return tlsPtr->asbuf;
 
 #elif defined(_WIN32)
+    Tls *tlsPtr = GetTls();
     
     assert(tmPtr != NULL);
-    return asctime(tmPtr);
+    
+    (void)strftime(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), "%a %b %e %T %Y", tmPtr);
+    return tlsPtr->asbuf;
 
 #else
-
     Tls *tlsPtr = GetTls();
+
     assert(tmPtr != NULL);
+
     return asctime_r(tmPtr, tlsPtr->asbuf);
 
 #endif
