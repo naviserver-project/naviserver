@@ -851,12 +851,14 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     Ns_SetUpdate(cgiPtr->env, "AUTH_TYPE", "Basic");
     Ns_SetUpdate(cgiPtr->env, "REMOTE_USER", Ns_ConnAuthUser(conn));
+
     {
         const char *peer = Ns_ConnPeer(conn);
+        
         if (peer != NULL) {
             Ns_SetUpdate(cgiPtr->env, "REMOTE_ADDR", peer);
             if ((modPtr->flags & CGI_GETHOST)) {
-                if (Ns_GetHostByAddr(dsPtr, peer)) {
+                if (Ns_GetHostByAddr(dsPtr, peer) == NS_TRUE) {
                     Ns_SetUpdate(cgiPtr->env, "REMOTE_HOST", dsPtr->string);
                 }
                 Ns_DStringTrunc(dsPtr, 0);

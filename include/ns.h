@@ -1241,15 +1241,15 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
  * dns.c:
  */
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -2362,11 +2362,11 @@ Ns_UnscheduleProc(int id);
 
 NS_EXTERN void
 Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *
 Ns_SetCreate(const char *name)

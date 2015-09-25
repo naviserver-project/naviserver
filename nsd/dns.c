@@ -60,7 +60,7 @@ extern int h_errno;
 #endif
 
 
-typedef int (GetProc)(Ns_DString *dsPtr, const char *key);
+typedef bool (GetProc)(Ns_DString *dsPtr, const char *key);
 
 
 /*
@@ -69,8 +69,8 @@ typedef int (GetProc)(Ns_DString *dsPtr, const char *key);
 
 static GetProc GetAddr;
 static GetProc GetHost;
-static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
-                  Ns_Cache *cache, const char *key, int all)
+static bool DnsGet(GetProc *getProc, Ns_DString *dsPtr,
+                   Ns_Cache *cache, const char *key, int all)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 
@@ -145,7 +145,7 @@ NsConfigDNS(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
 {
     assert(dsPtr != NULL);
@@ -154,7 +154,7 @@ Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
     return DnsGet(GetHost, dsPtr, hostCache, addr, 0);
 }
 
-int
+bool
 Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 {
     assert(dsPtr != NULL);
@@ -163,7 +163,7 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
     return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
 }
 
-int
+bool
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
 {
     assert(dsPtr != NULL);
@@ -172,12 +172,13 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
     return DnsGet(GetAddr, dsPtr, addrCache, host, 1);
 }
 
-static int
+static bool
 DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, int all)
 {
     Ns_DString  ds;
     Ns_Time     t;
-    int         isNew, status;
+    int         isNew;
+    bool        status;
 
     assert(getProc != NULL);
     assert(dsPtr != NULL);
@@ -265,13 +266,13 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
 
 #if defined(HAVE_GETNAMEINFO)
 
-static int
+static bool
 GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     char buf[NI_MAXHOST];
     int result;
-    int status = NS_FALSE;
+    bool status = NS_FALSE;
 #ifndef HAVE_MTSAFE_DNS
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
@@ -303,14 +304,14 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 
 #elif defined(HAVE_GETHOSTBYADDR_R)
 
-static int
+static bool
 GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct hostent he, *hePtr;
     struct sockaddr_in sa;
     char buf[2048];
     int h_errnop;
-    int status = NS_FALSE;
+    bool status = NS_FALSE;
 
     sa.sin_addr.s_addr = inet_addr(addr);
     hePtr = gethostbyaddr_r((char *) &sa.sin_addr, sizeof(struct in_addr),
@@ -334,12 +335,12 @@ GetHost(Ns_DString *dsPtr, const char *addr)
  * the same time.
  */
 
-static int
+static bool
 GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     static Ns_Cs cs;
-    int status = NS_FALSE;
+    bool status = NS_FALSE;
 
     sa.sin_addr.s_addr = inet_addr(addr);
     if (sa.sin_addr.s_addr != INADDR_NONE) {
@@ -363,12 +364,13 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 
 #if defined(HAVE_GETADDRINFO)
 
-static int
+static bool
 GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct addrinfo hints;
     struct addrinfo *res, *ptr;
-    int result, status = NS_FALSE;
+    int result;
+    bool status = NS_FALSE;
 #ifndef HAVE_MTSAFE_DNS
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
@@ -400,14 +402,14 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 
 #elif defined(HAVE_GETHOSTBYNAME_R)
 
-static int
+static bool
 GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct in_addr ia, *ptr;
     char buf[2048];
     int result = 0;
     int h_errnop = 0;
-    int status = NS_FALSE;
+    bool status = NS_FALSE;
 #if defined(HAVE_GETHOSTBYNAME_R_6) || defined(HAVE_GETHOSTBYNAME_R_5)
     struct hostent he;
 #endif
@@ -457,13 +459,13 @@ GetAddr(Ns_DString *dsPtr, const char *host)
  * the same time.
  */
 
-static int
+static bool
 GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct hostent *he;
     struct in_addr ia, *ptr;
     static Ns_Cs cs;
-    int status = NS_FALSE;
+    bool status = NS_FALSE;
 
     Ns_CsEnter(&cs);
     he = gethostbyname(host);
