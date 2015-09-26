@@ -1639,7 +1639,7 @@ static void
 PollReset(PollData *pdata)
 {
     assert(pdata != NULL);
-    pdata->nfds = 0;
+    pdata->nfds = 0u;
     pdata->timeout.sec = TIME_T_MAX;
     pdata->timeout.usec = 0;
 }
@@ -2465,7 +2465,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             return SOCK_WRITEERROR;
         }
     } else {
-        Tcl_DStringSetLength(bufPtr, (int)(len + n));
+        Tcl_DStringSetLength(bufPtr, (int)(len + (size_t)n));
     }
 
     reqPtr->woff  += (size_t)n;
