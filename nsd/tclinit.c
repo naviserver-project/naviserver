@@ -95,7 +95,7 @@ static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 static int UpdateInterp(NsInterp *itPtr)
     NS_GNUC_NONNULL(1);
 
-static void RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
+static void RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
 static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
@@ -1807,7 +1807,7 @@ UpdateInterp(NsInterp *itPtr)
  */
 
 static void
-RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
+RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
 {
     TclTrace *tracePtr;
     NsServer *servPtr;
