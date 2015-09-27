@@ -81,9 +81,9 @@ typedef struct PollData {
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
 
-#define PollIn(ppd,i)           (((ppd)->pfds[(i)].revents & POLLIN)  == POLLIN )
-#define PollOut(ppd,i)          (((ppd)->pfds[(i)].revents & POLLOUT) == POLLOUT)
-#define PollHup(ppd,i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
+#define PollIn(ppd, i)           (((ppd)->pfds[(i)].revents & POLLIN)  == POLLIN )
+#define PollOut(ppd, i)          (((ppd)->pfds[(i)].revents & POLLOUT) == POLLOUT)
+#define PollHup(ppd, i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
  * Async writer definitons
@@ -277,7 +277,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      */
     if (server != NULL) {
         servPtr = NsGetServer(server);
-        if (servPtr == NULL) {
+        if (unlikely(servPtr == NULL)) {
             return NS_ERROR;
         }
     }
@@ -321,7 +321,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
         if (host == NULL && he != NULL && he->h_name != NULL &&
             strchr(he->h_name, '.') == NULL) {
-            he = gethostbyaddr(he->h_addr_list[0],he->h_length,he->h_addrtype);
+            he = gethostbyaddr(he->h_addr_list[0], he->h_length, he->h_addrtype);
         }
 
         /*
@@ -475,9 +475,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         drvPtr->location = ns_strdup(drvPtr->location);
     } else {
         Ns_DStringInit(dsPtr);
-        Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NULL);
+        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NULL);
         if (drvPtr->port != defport) {
-            Ns_DStringPrintf(dsPtr, ":%d", drvPtr->port);
+            (void) Ns_DStringPrintf(dsPtr, ":%d", drvPtr->port);
         }
         drvPtr->location = Ns_DStringExport(dsPtr);
     }
@@ -503,10 +503,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             } else {
                 Ns_DStringInit(dsPtr);
                 for (i = 0; i < objc; i +=2) {
-                    Ns_DStringVarAppend(dsPtr,
-                                        Tcl_GetString(objv[i]), ": ",
-                                        Tcl_GetString(objv[i+1]), "\r\n",
-                                        NULL);
+                    (void) Ns_DStringVarAppend(dsPtr,
+                                               Tcl_GetString(objv[i]), ": ",
+                                               Tcl_GetString(objv[i+1]), "\r\n",
+                                               NULL);
                 }
                 drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
             }
@@ -528,7 +528,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char buffer[100];
 
-            sprintf(buffer,"ns:driver:spooler:%d",i);
+            sprintf(buffer,"ns:driver:spooler:%d", i);
             Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
@@ -558,7 +558,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char buffer[100];
 
-            sprintf(buffer,"ns:driver:writer:%d",i);
+            sprintf(buffer,"ns:driver:writer:%d", i);
             Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
@@ -597,7 +597,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                 if (n == 0) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
-                    Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NULL);
+                    (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NULL);
                     mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
                     mapPtr->servPtr  = servPtr;
                     memcpy(mapPtr->location, ds.string, (size_t)ds.length + 1u);
@@ -1762,13 +1762,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 
     /*
      * SockSetServer returns always 1
-     *
-
-     if (SockSetServer(sockPtr) == 0) {
-     SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
-     return NS_ERROR;
-     }
-    */
+     */
     (void) SockSetServer(sockPtr);
     assert(sockPtr->servPtr != NULL);
 
@@ -1890,7 +1884,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 
     status = DriverAccept(sockPtr);
 
-    if (status == NS_DRIVER_ACCEPT_ERROR) {
+    if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
 
         Ns_MutexLock(&drvPtr->lock);
@@ -2380,7 +2374,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 
     len = (size_t)bufPtr->length;
     n = (ssize_t)(len + nread);
-    if (n > drvPtr->maxinput) {
+    if (unlikely(n > drvPtr->maxinput)) {
         n = (ssize_t)drvPtr->maxinput;
         nread = (size_t)n - len;
         if (nread == 0u) {
@@ -2428,7 +2422,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             sockPtr->tfd = Ns_GetTemp();
         }
 
-        if (sockPtr->tfd < 0) {
+        if (unlikely(sockPtr->tfd < 0)) {
             return SOCK_ERROR;
         }
         n = bufPtr->length - reqPtr->coff;
@@ -2805,7 +2799,7 @@ SockParse(Sock *sockPtr)
 
             if (reqPtr->request.query != NULL) {
                 Tcl_DStringSetLength(bufPtr, 0);
-                Tcl_DStringAppend(bufPtr, reqPtr->request.query, -1);
+                (void) Tcl_DStringAppend(bufPtr, reqPtr->request.query, -1);
                 ns_free((char *)reqPtr->request.method);
                 reqPtr->request.method = ns_strdup("GET");
                 reqPtr->content = bufPtr->string;
@@ -3920,7 +3914,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     assert(conn != NULL);
 
-    if (connPtr->sockPtr == NULL) {
+    if (unlikely(connPtr->sockPtr == NULL)) {
         return NS_ERROR;
     }
 
@@ -3931,7 +3925,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
            nsend, (void *)bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM,
            (void *)chan, fd, wrPtr->threads);
 
-    if (wrPtr->threads == 0) {
+    if (unlikely(wrPtr->threads == 0)) {
         Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
         return NS_ERROR;
     }
@@ -4283,12 +4277,12 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         cmdSubmitIdx, cmdSubmitFileIdx, cmdListIdx, cmdSizeIdx, cmdStreamingIdx
     };
 
-    if (objc < 2) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts,
-                            "option", 0, &opt) != TCL_OK) {
+    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts,
+                                      "option", 0, &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
     conn = Ns_GetConn();
@@ -4298,11 +4292,11 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         int size;
         unsigned char *data;
 
-        if (objc < 3) {
+        if (unlikely(objc < 3)) {
             Tcl_WrongNumArgs(interp, 2, objv, "data");
             return TCL_ERROR;
         }
-        if (conn == NULL) {
+        if (unlikely(conn == NULL)) {
             Tcl_AppendResult(interp, "no connection", NULL);
             return TCL_ERROR;
         }
@@ -4336,11 +4330,11 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             {NULL, NULL, NULL, NULL}
         };
 
-        if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)) {
             return TCL_ERROR;
         }
 
-        if (conn == NULL) {
+        if (unlikely(conn == NULL)) {
             Tcl_AppendResult(interp, "no connection", NULL);
             return TCL_ERROR;
         }
@@ -4348,31 +4342,31 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         name = Tcl_GetString(fileObj);
 
         rc = stat(name, &st);
-        if (rc != 0) {
+        if (unlikely(rc != 0)) {
             Tcl_AppendResult(interp, "file does not exist '", name, "'", NULL);
             return TCL_ERROR;
         }
 
         fd = ns_open(name, O_RDONLY, 0);
-        if (fd == NS_INVALID_FD) {
+        if (unlikely(fd == NS_INVALID_FD)) {
             Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
             return TCL_ERROR;
         }
 
-        if (size < 0 || size > st.st_size) {
+        if (unlikely(size < 0 || size > st.st_size)) {
             Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
             (void) ns_close(fd);
             return TCL_ERROR;
         }
 
-        if (offset < 0 || offset > st.st_size) {
+        if (unlikely(offset < 0 || offset > st.st_size)) {
             Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
             (void) ns_close(fd);
             return TCL_ERROR;
         }
 
         if (size > 0) {
-            if (size + offset > st.st_size) {
+            if (unlikely(size + offset > st.st_size)) {
                 Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
                 (void) ns_close(fd);
                 return TCL_ERROR;
@@ -4408,13 +4402,13 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     case cmdListIdx:
 
-        if (objc < 2) {
+        if (unlikely(objc < 2)) {
         usage_error:
             Tcl_WrongNumArgs(interp, 2, objv, "?-server server?");
             return TCL_ERROR;
         }
 
-        if (objc > 4) {
+        if (unlikely(objc > 4)) {
             goto usage_error;
         } else if (objc > 2) {
 
@@ -4423,7 +4417,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+            if (unlikely(Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK)) {
                 return TCL_ERROR;
             }
         }
@@ -4444,16 +4438,16 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 Ns_MutexLock(&queuePtr->lock);
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
-                    Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
-                                     "%" PRIdz " %" TCL_LL_MODIFIER "d ",
-                                     (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
-                                     queuePtr->threadname,
-                                     drvPtr->name,
-                                     ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
-                                     wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
-                    Ns_DStringAppendElement(dsPtr,
-                                            (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
-                    Ns_DStringAppend(dsPtr, "} ");
+                    (void) Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
+                                            "%" PRIdz " %" TCL_LL_MODIFIER "d ",
+                                            (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
+                                            queuePtr->threadname,
+                                            drvPtr->name,
+                                            ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
+                                            wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
+                    (void) Ns_DStringAppendElement(dsPtr,
+                                                   (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
+                    (void) Ns_DStringAppend(dsPtr, "} ");
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
                 Ns_MutexUnlock(&queuePtr->lock);
@@ -4467,7 +4461,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     case cmdStreamingIdx: {
         int driverNameLen;
 
-        if (objc < 3 || objc > 4) {
+        if (unlikely(objc < 3 || objc > 4)) {
             Tcl_WrongNumArgs(interp, 2, objv, "driver ?value?");
             return TCL_ERROR;
         }
@@ -4481,7 +4475,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
         }
 
-        if (wrPtr == NULL) {
+        if (unlikely(wrPtr == NULL)) {
             Tcl_AppendResult(interp, "no writer configured for a driver with name ", driverName, NULL);
             return TCL_ERROR;
         }
@@ -4503,7 +4497,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             if (objc == 4) {
                 int value = 0;
 
-                if (Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK) {
+                if (unlikely(Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK)) {
                     return TCL_ERROR;
                 }
                 wrPtr->doStream = value;
@@ -4871,7 +4865,7 @@ AsyncWriterThread(void *arg)
              * write the actual data and allow for partial write operations.
              */
             written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
-            if (written < 0) {
+            if (unlikely(written < 0)) {
                 status = NS_ERROR;
             } else {
                 curPtr->size -= (size_t)written;
@@ -4882,7 +4876,7 @@ AsyncWriterThread(void *arg)
                 }
             }
 
-            if (status != NS_OK) {
+            if (unlikely(status != NS_OK)) {
                 AsyncWriterRelease(curPtr);
                 queuePtr->queuesize--;
             } else {

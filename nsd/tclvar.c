@@ -539,11 +539,11 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     char           *pattern, *key;
     int             i;
 
-    if (objc != 1 && objc !=2) {
+    if (unlikely(objc != 1 && objc !=2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
         return TCL_ERROR;
     }
-    pattern = objc < 2 ? NULL : Tcl_GetString(objv[1]);
+    pattern = (objc < 2) ? NULL : Tcl_GetString(objv[1]);
 
     /*
      * Walk the bucket list for each array.

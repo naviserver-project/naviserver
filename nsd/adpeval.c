@@ -155,7 +155,7 @@ static int
 ConfigServerAdp(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server); 
-    CONST char *path;
+    const char *path;
 
     path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
 

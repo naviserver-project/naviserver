@@ -35,7 +35,6 @@
  */
 
 #include "nsd.h"
-#include <math.h>
 
 /*
  * Local functions defined in this file
@@ -68,7 +67,7 @@ static int    poolid = 0;
 /*
  * Debugging stuff
  */
-#define ThreadNr(poolPtr, argPtr) ((int)(((argPtr) != NULL) ? ((argPtr) - (poolPtr)->tqueue.args) : -1))
+#define ThreadNr(poolPtr, argPtr) (((argPtr) - (poolPtr)->tqueue.args))
 
 #if 0
 static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
@@ -579,7 +578,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (unlikely(Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK)) {
         return TCL_ERROR;
     }
     
@@ -614,7 +613,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         while (poolPtr != NULL && !STREQ(poolPtr->pool, pool)) {
             poolPtr = poolPtr->nextPtr;
         }
-        if (poolPtr == NULL) {
+        if (unlikely(poolPtr == NULL)) {
             Tcl_AppendResult(interp, "no such pool ", pool, " for server ", servPtr->server, NULL);
             return TCL_ERROR;
         }
@@ -1013,6 +1012,8 @@ NsConnThread(void *arg)
     Ns_Mutex      *wqueueLockPtr  = &poolPtr->wqueue.lock;
     Ns_Thread      joinThread;
 
+    assert(arg != NULL);
+
     /*
      * Set the ConnThreadArg into thread local storage and get the id
      * of the thread.
@@ -1051,7 +1052,7 @@ NsConnThread(void *arg)
      * Tcl-level garbage collection. 
      */
 
-    path   = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
+    path   = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
     cpt    = Ns_ConfigIntRange(path, "connsperthread", 10000, 0, INT_MAX);
     
     ncons   = cpt;
@@ -1660,24 +1661,29 @@ CreateConnThread(ConnPool *poolPtr)
      * is usually short...
      */
     Ns_MutexLock(&poolPtr->tqueue.lock);
-    for (i = 0; i < poolPtr->threads.max; i++) {
+    for (i = 0; likely(i < poolPtr->threads.max); i++) {
       if (poolPtr->tqueue.args[i].state == connThread_free) {
 	argPtr = &(poolPtr->tqueue.args[i]);
 	break;
       }
     }
-    assert(argPtr != NULL);
-    argPtr->state = connThread_initial;
-    poolPtr->stats.connthreads++;
-    Ns_MutexUnlock(&poolPtr->tqueue.lock);
+    if (likely(argPtr != NULL)) {
+        argPtr->state = connThread_initial;
+        poolPtr->stats.connthreads++;
+        Ns_MutexUnlock(&poolPtr->tqueue.lock);
 
-    /* Ns_Log(Notice, "CreateConnThread use thread slot [%d]", i);*/
+        /* Ns_Log(Notice, "CreateConnThread use thread slot [%d]", i);*/
 
-    argPtr->poolPtr = poolPtr;
-    argPtr->connPtr = NULL;
-    argPtr->nextPtr = NULL;
-    argPtr->cond = NULL;
-    Ns_ThreadCreate(NsConnThread, argPtr, 0, &thread);
+        argPtr->poolPtr = poolPtr;
+        argPtr->connPtr = NULL;
+        argPtr->nextPtr = NULL;
+        argPtr->cond = NULL;
+        
+        Ns_ThreadCreate(NsConnThread, argPtr, 0, &thread);
+    } else {
+        Ns_MutexUnlock(&poolPtr->tqueue.lock);
+        Ns_Log(Notice, "Cannot create connection thread, all available slots (%d) are used\n", i);
+    }
 }
 
 
@@ -1767,7 +1773,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
         Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
         snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
-        snprintf(buf, sizeof(buf), "%" PRIdz, connPtr->nContentSent);
+        snprintf(buf, sizeof(buf), "%" PRIuz, connPtr->nContentSent);
         Tcl_DStringAppendElement(dsPtr, buf);
     }
     Tcl_DStringEndSublist(dsPtr);
