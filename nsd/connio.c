@@ -723,10 +723,11 @@ Ns_ConnFlushContent(Ns_Conn *conn)
 int
 Ns_ConnClose(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn *connPtr;
 
     assert(conn != NULL);
-    
+
+    connPtr = (Conn *) conn;
     Ns_Log(Debug, "Ns_ConnClose %p stream %.6x chunk %.6x via writer %.6x sockPtr %p", 
 	   (void *)connPtr, 
 	   connPtr->flags & NS_CONN_STREAM, 
@@ -1067,13 +1068,14 @@ Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
 static int
 ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 {
-    Conn    *connPtr = (Conn *) conn;
+    Conn    *connPtr;
     Request *reqPtr;
     size_t   ncopy = toCopy;
     ssize_t  nwrote;
 
     assert(conn != NULL);
 
+    connPtr = (Conn *) conn;
     reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {

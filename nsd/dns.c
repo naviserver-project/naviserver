@@ -163,6 +163,7 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
     return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
 }
 
+
 bool
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
 {

@@ -464,7 +464,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	    idle = poolPtr->threads.idle;
 	    Ns_MutexUnlock(&poolPtr->threads.lock);
 
-	    Ns_Log(Debug, "[%d] dequeue thread connPtr %p idle %d state %d create %d", 
+	    Ns_Log(Debug, "[%ld] dequeue thread connPtr %p idle %d state %d create %d", 
 		   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, create);
 	}
 
@@ -477,8 +477,8 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
     } else {
 	if (Ns_LogSeverityEnabled(Debug)) {
-	    Ns_Log(Debug, "[%d] add waiting connPtr %p => waiting %d create %d", 
-		   ThreadNr(poolPtr, argPtr), (void *)connPtr, poolPtr->wqueue.wait.num, create);
+	    Ns_Log(Debug, "add waiting connPtr %p => waiting %d create %d", 
+		   (void *)connPtr, poolPtr->wqueue.wait.num, create);
 	}
     }
 
@@ -1294,7 +1294,7 @@ NsConnThread(void *arg)
 		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
 		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
 
-		Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+		Ns_Log(Debug, "[%ld] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
 		       " start %" PRIu64 ".%06ld"
 		       " %" PRIu64 ".%06ld"
 		       " accept %" PRIu64 ".%06ld"

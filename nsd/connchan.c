@@ -275,12 +275,15 @@ static int
 NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Tcl_DString  script;
-    Callback    *cbPtr = arg;
+    Callback    *cbPtr;
     Tcl_Interp  *interp;
     const char  *w;
     int          result;
 
     assert(arg != NULL);
+
+    cbPtr = arg;
+    
     assert(cbPtr->connChanPtr != NULL);
     assert(cbPtr->connChanPtr->sockPtr != NULL);
     assert(cbPtr->connChanPtr->sockPtr->servPtr != NULL);

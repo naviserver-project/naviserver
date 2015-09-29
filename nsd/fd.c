@@ -194,7 +194,7 @@ Ns_CloseOnExec(int fd)
     intptr_t hh = _get_osfhandle(fd);
 
     if (hh != (intptr_t)INVALID_HANDLE_VALUE) {
-        SetHandleInformation((HANDLE)hh, HANDLE_FLAG_INHERIT, 0);
+        SetHandleInformation((HANDLE)hh, HANDLE_FLAG_INHERIT, (DWORD)0);
     }
     return NS_OK;
 #else
@@ -234,7 +234,7 @@ Ns_NoCloseOnExec(int fd)
     intptr_t hh = _get_osfhandle(fd);
 
     if (hh != (intptr_t)INVALID_HANDLE_VALUE) {
-        SetHandleInformation((HANDLE)hh, HANDLE_FLAG_INHERIT, 1);
+        SetHandleInformation((HANDLE)hh, HANDLE_FLAG_INHERIT, (DWORD)1);
     }
     return NS_OK;
 #else
