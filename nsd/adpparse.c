@@ -154,7 +154,7 @@ NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_O
 static int
 RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
-    NsInterp       *itPtr = arg;
+    NsInterp       *itPtr;
     NsServer       *servPtr;
     char           *content, *end, *tag;
     Tcl_HashEntry  *hPtr;
@@ -165,6 +165,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     assert(arg != NULL);
     assert(interp != NULL);
 
+    itPtr = arg;
     servPtr = itPtr->servPtr;
 
     if (objc != 4 && objc != 3) {

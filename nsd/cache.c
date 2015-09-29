@@ -351,10 +351,11 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
 const char *
 Ns_CacheKey(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
+    Entry *ePtr;
 
     assert(entry != NULL);
 
+    ePtr = (Entry *) entry;
     return Tcl_GetHashKey(&ePtr->cachePtr->entriesTable, ePtr->hPtr);
 }
 
@@ -435,11 +436,12 @@ void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
                         const Ns_Time *timeoutPtr, int cost)
 {
-    Entry *ePtr = (Entry *) entry;
+    Entry *ePtr;
     Cache *cachePtr;
 
     assert(entry != NULL);
 
+    ePtr = (Entry *) entry;
     cachePtr = ePtr->cachePtr;
 
     Ns_CacheUnsetValue(entry);
@@ -490,11 +492,13 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
 void
 Ns_CacheUnsetValue(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
+    Entry *ePtr;
     void *value;
     Cache *cachePtr;
 
     assert(entry != NULL);
+
+    ePtr = (Entry *) entry;
     value = ePtr->value;
 
     if (value != NULL) {
@@ -540,10 +544,11 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 void
 Ns_CacheFlushEntry(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
+    Entry *ePtr;
 
     assert(entry != NULL);
 
+    ePtr = (Entry *) entry;
     ePtr->cachePtr->stats.nflushed++;
     Ns_CacheDeleteEntry(entry);
 }
@@ -551,10 +556,11 @@ Ns_CacheFlushEntry(Ns_Entry *entry)
 void
 Ns_CacheDeleteEntry(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
+    Entry *ePtr;
 
     assert(entry != NULL);
 
+    ePtr = (Entry *) entry;
     Ns_CacheUnsetValue(entry);
     Delink(ePtr);
     Tcl_DeleteHashEntry(ePtr->hPtr);
@@ -581,13 +587,14 @@ Ns_CacheDeleteEntry(Ns_Entry *entry)
 int
 Ns_CacheFlush(Ns_Cache *cache)
 {
-    Cache          *cachePtr = (Cache *) cache;
+    Cache          *cachePtr;
     Ns_CacheSearch  search;
     Ns_Entry       *entry;
     int             nflushed = 0;
 
     assert(cache != NULL);
 
+    cachePtr = (Cache *) cache;
     entry = Ns_CacheFirstEntry(cache, &search);
     while (entry != NULL) {
         Ns_CacheDeleteEntry(entry);

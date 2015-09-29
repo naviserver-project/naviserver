@@ -730,11 +730,12 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     int i, opipe[2];
     char *s, *e, *p;
     Ns_DString *dsPtr;
-    Mod *modPtr = cgiPtr->modPtr;
+    Mod *modPtr;
 
     assert(cgiPtr != NULL);
     assert(conn != NULL);
 
+    modPtr = cgiPtr->modPtr;
     /*
      * Get a dstring which will be used to setup env variables
      * and the arg list.

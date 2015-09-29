@@ -1202,11 +1202,12 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static int
 GetFrame(ClientData arg, AdpFrame **framePtrPtr)
 {
-    NsInterp *itPtr = arg;
+    NsInterp *itPtr;
 
     assert(arg != NULL);
     assert(framePtrPtr != NULL);
 
+    itPtr = arg;
     if (itPtr->adp.framePtr == NULL) {
         Tcl_SetResult(itPtr->interp, "no active adp", TCL_STATIC);
         return TCL_ERROR;

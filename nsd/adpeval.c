@@ -959,8 +959,8 @@ done:
 void
 NsAdpLogError(NsInterp *itPtr)
 {
-    Tcl_Interp  *interp = itPtr->interp;
-    Ns_Conn     *conn = itPtr->conn;
+    Tcl_Interp  *interp;
+    Ns_Conn     *conn;
     Ns_DString   ds;
     AdpFrame    *framePtr;
     char        *inc, *dot;
@@ -968,6 +968,9 @@ NsAdpLogError(NsInterp *itPtr)
     const char  *err, *adp;
 
     assert(itPtr != NULL);
+
+    interp = itPtr->interp;
+    conn = itPtr->conn;
 
     framePtr = itPtr->adp.framePtr;
     Ns_DStringInit(&ds);
