@@ -511,7 +511,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     }
     
     Ns_GetTime(&endTime);     
-    Ns_DiffTime(&endTime, &startTime, &diffTime);
+    (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
     Ns_IncrTime(&poolPtr->waitTime, diffTime.sec, diffTime.usec);
     poolPtr->getHandleCount++;
     

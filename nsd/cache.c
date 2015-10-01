@@ -880,7 +880,7 @@ Ns_CacheBroadcast(Ns_Cache *cache)
 char *
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 {
-    Cache          *cachePtr = (Cache *)cache;
+    Cache          *cachePtr;
     unsigned long   count, hitrate;
     Entry          *ePtr;
     Ns_CacheSearch  search;
@@ -889,6 +889,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     assert(cache != NULL);
     assert(dest != NULL);
 
+    cachePtr = (Cache *)cache;
     count = cachePtr->stats.nhit + cachePtr->stats.nmiss;
     hitrate = ((count != 0u) ? (cachePtr->stats.nhit * 100u) / count : 0u);
 
