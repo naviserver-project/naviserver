@@ -653,7 +653,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
         switch (err) {
         case NS_OK:
             len = (socklen_t)sizeof(err);
-            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) == -1) {
+            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) != -1) {
                 return sock;
             }
             break;
