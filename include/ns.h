@@ -370,9 +370,9 @@ typedef struct Ns_Index {
     void            **el;
     Ns_IndexCmpProc  *CmpEls;
     Ns_IndexCmpProc  *CmpKeyWithEl;
-    int               n;
-    int               max;
-    int               inc;
+    size_t            n;
+    size_t            max;
+    size_t            inc;
 } Ns_Index;
 
 /*
@@ -1426,7 +1426,7 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
  */
 
 NS_EXTERN void
-Ns_IndexInit(Ns_Index *indexPtr, int inc, int (*CmpEls) (const void *left, const void *right),
+Ns_IndexInit(Ns_Index *indexPtr, size_t inc, int (*CmpEls) (const void *left, const void *right),
      			         int (*CmpKeyWithEl) (const void *left, const void *right))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
@@ -1458,7 +1458,7 @@ NS_EXTERN void *
 Ns_IndexEl(const Ns_Index *indexPtr, int i) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexStringInit(Ns_Index *indexPtr, int inc) NS_GNUC_NONNULL(1);
+Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Index *
 Ns_IndexStringDup(const Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
@@ -1473,7 +1473,7 @@ NS_EXTERN void
 Ns_IndexStringTrunc(Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexIntInit(Ns_Index *indexPtr, int inc) NS_GNUC_NONNULL(1);
+Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc) NS_GNUC_NONNULL(1);
 
 /*
  * see macros above for:
