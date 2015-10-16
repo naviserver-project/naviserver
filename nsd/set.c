@@ -236,8 +236,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
     for (i = 0U; i < set->size; ++i) {
         char *name = set->fields[i].name;
 
-        if ((name == NULL) ||
-            (name != NULL && ((*cmp) (key, name)) == 0)) {
+        if ((name == NULL) || (((*cmp) (key, name)) == 0)) {
 
             if (found != 0) {
                 return NS_FALSE;
