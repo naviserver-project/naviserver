@@ -339,10 +339,9 @@ Ns_ConnServer(const Ns_Conn *conn)
 int
 Ns_ConnResponseStatus(const Ns_Conn *conn)
 {
-    const Conn *connPtr = (const Conn *) conn;
-
     assert(conn != NULL);
-    return connPtr->responseStatus;
+    
+    return ((const Conn *)conn)->responseStatus;
 
 }
 
