@@ -38,11 +38,11 @@
 #define NSTHREAD_H
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+# define _GNU_SOURCE
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include "nsconfig.h"
+# include "nsconfig.h"
 #endif
 
 #include <nscheck.h>
@@ -58,11 +58,11 @@
 /* Use gcc branch prediction hint to minimize cost of e.g. DTrace
  * ENABLED checks. 
  */
-#  define unlikely(x) (__builtin_expect((x), 0))
-#  define likely(x) (__builtin_expect((x), 1))
+# define unlikely(x) (__builtin_expect((x), 0))
+# define likely(x) (__builtin_expect((x), 1))
 #else
-#  define unlikely(x) (x)
-#  define likely(x) (x)
+# define unlikely(x) (x)
+# define likely(x) (x)
 #endif
 
 /***************************************************************
@@ -453,15 +453,15 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
+# include <inttypes.h>
 #endif
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+# include <stdint.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
+# include <sys/param.h>
 #endif
 
 #ifdef _WIN32
@@ -477,15 +477,15 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifndef S_ISREG
-#define S_ISREG(m)                  ((m) & _S_IFREG)
+# define S_ISREG(m)                 ((m) & _S_IFREG)
 #endif
 
 #ifndef S_ISDIR
-#define S_ISDIR(m)                  ((m) & _S_IFDIR)
+# define S_ISDIR(m)                 ((m) & _S_IFDIR)
 #endif
 
 #ifndef F_CLOEXEC
-#define F_CLOEXEC                   1
+# define F_CLOEXEC                  1
 #endif
 
 #ifndef __linux
