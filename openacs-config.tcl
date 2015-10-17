@@ -96,7 +96,8 @@ ns_section ns/parameters
 	# ns_param	logroll		on
         ns_param	logmaxbackup	100  ;# 10 is default
 	ns_param	logdebug	$debug
-	ns_param	logdev		$dev
+        ns_param	logdev		$dev
+        ns_param	logcolorize	true
 
 	# ns_param	mailhost	localhost 
 	# ns_param	jobsperthread	0
@@ -327,7 +328,7 @@ ns_section ns/server/${server}/module/nssock
 	# ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
 	# ns_param	maxupload	0	;# 0, when specified, spool uploads larger than this value to a temp file
 	ns_param	writerthreads	2	;# 0, number of writer threads
-	ns_param	writersize	4096	;# 1024*1024, use writer threads for files larger than this value
+	ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
 	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
 
@@ -404,7 +405,7 @@ ns_section    "ns/server/${server}/module/nsssl"
        ns_param		certificate	$serverroot/etc/certfile.pem
        ns_param		verify     	0
        ns_param		writerthreads	2
-       ns_param		writersize	4096
+       ns_param		writersize	1024
        ns_param		writerbufsize	16384	;# 8192, buffer size for writer threads
        #ns_param	writerstreaming	true	;# false
        #ns_param	deferaccept	true    ;# false, Performance optimization
@@ -424,7 +425,7 @@ ns_section "ns/db/drivers"
     } else {
 	ns_param	postgres       ${bindir}/nsdbpg.so
 	#
-	ns_logctl severity "Debug(sql)" $verboseSQL
+	ns_logctl severity "Debug(sql)" -color blue $verboseSQL
     }
 
     if { $database eq "oracle" } {
