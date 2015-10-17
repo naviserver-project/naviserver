@@ -110,16 +110,25 @@ levels and those created with [cmd ns_logctl] or via C code.
 [call [cmd ns_logctl] \
       [method severity] \
       [arg severity-level] \
+      [opt "[option -color] [arg color]"] \
+      [opt "[option -intensity] [arg intensity]"] \
       [opt [arg bool]] ]
 
 Return true if the given [arg severity-level] is enabled, false if it is
 disabled. If [arg bool] is given it enables/disables the given
 [arg severity-level] for all future log messages, server-wide.
+The options [option -color] and [option -intensity] can be used
+to set the coloring when the logfile is colorized. The color can be
+[term black], [term red], [term green], [term yellow],
+[term blue], [term magenta], [term cyan], [term gray],
+or [term default]. Intensity can be [term normal] or [term bright].
+The logfile colorization can be controlled by setting
+[term logcolorize] in section [term ns/parameters] of the
+configfile.
 
 [para]
-If [arg severity-level] does not already exist and [arg bool] is given, then the
-new severity is created, enabled or disabled according to [arg bool]. Future
-calls to [cmd ns_log] may use new [arg severity-level].
+If [arg severity-level] does not already exist and more arguments arg given, then the
+new severity is created. Future calls to [cmd ns_log] may use new [arg severity-level].
 
 [call [cmd ns_logctl] \
 	  [method stats] ]
@@ -188,6 +197,10 @@ Default: logs/nsd.log
 If true, messages of severity-level [emph Notice] are enabled.
 Default: true.
 
+[def logcolorize]
+If true, log entries will be colorized using ANSI color codes
+Default: false.
+
 [def logdev]
 If true, messages of severity-level [emph Dev] are enabled.
 Default: false.
@@ -238,7 +251,7 @@ nscp:1> [cmd ns_log] debug testing...
 
 nscp:2> [cmd ns_logctl] severity debug
 0
-nscp:3> [cmd ns_logctl] severity debug true
+nscp:3> [cmd ns_logctl] severity debug -color green true
 1
 nscp:4> [cmd ns_log] debug testing...
 [lb]01/April/1984:11:11:59[rb][lb]12257.40348b90[rb][lb]-nscp:1-[rb] testing...

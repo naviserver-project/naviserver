@@ -40,9 +40,10 @@
  * The following define available flags bits.
  */
 
-#define LOG_ROLL   0x01u
-#define LOG_EXPAND 0x02u
-#define LOG_USEC   0x04u
+#define LOG_ROLL     0x01u
+#define LOG_EXPAND   0x02u
+#define LOG_USEC     0x04u
+#define LOG_COLORIZE 0x08u
 
 /*
  * The following struct represents a log entry header as stored in
@@ -139,6 +140,31 @@ static LogFilter   *filters;
 static const char  *filterType = "ns:logfilter";
 static const char  *severityType = "ns:logseverity";
 
+
+#define LOG_COLORSTART "\033["
+#define LOG_COLOREND   "\033[0m"
+
+typedef enum {
+    COLOR_BLACK = 30,
+    COLOR_RED = 31,
+    COLOR_GREEN = 32,
+    COLOR_YELLOW = 33,
+    COLOR_BLUE = 34,
+    COLOR_MAGENTA = 35,
+    COLOR_CYAN = 36,
+    COLOR_GRAY = 37,
+    COLOR_DEFAULT = 39
+} LogColor;
+
+typedef enum {
+    COLOR_NORMAL = 0,
+    COLOR_BRIGHT = 1
+} LogColorIntensity;
+
+
+static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NONNULL(1); 
+
+
 /*
  * The following table defines which severity levels
  * are currently active. The order is important: keep
@@ -148,17 +174,19 @@ static const char  *severityType = "ns:logseverity";
  */
 
 static struct {
-    const char *label;
-    bool        enabled;
-    long        count;
+    const char       *label;
+    bool              enabled;
+    long              count;
+    LogColor          color;
+    LogColorIntensity intensity;
 } severityConfig[640] = {
-    { "Notice",  NS_TRUE,  0 },
-    { "Warning", NS_TRUE,  0 },
-    { "Error",   NS_TRUE,  0 },
-    { "Fatal",   NS_TRUE,  0 },
-    { "Bug",     NS_TRUE,  0 },
-    { "Debug",   NS_FALSE, 0 },
-    { "Dev",     NS_FALSE, 0 }
+    { "Notice",  NS_TRUE,  0, COLOR_DEFAULT, COLOR_NORMAL },
+    { "Warning", NS_TRUE,  0, COLOR_DEFAULT, COLOR_BRIGHT },
+    { "Error",   NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Fatal",   NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Bug",     NS_TRUE,  0, COLOR_RED,     COLOR_BRIGHT },
+    { "Debug",   NS_FALSE, 0, COLOR_BLUE,    COLOR_NORMAL },
+    { "Dev",     NS_FALSE, 0, COLOR_GREEN,   COLOR_NORMAL }
 };
 
 static const Ns_LogSeverity severityMaxCount = (Ns_LogSeverity)(sizeof(severityConfig) / sizeof(severityConfig[0]));
@@ -268,6 +296,9 @@ NsConfigLog(void)
     if (Ns_ConfigBool(path, "logexpanded", NS_FALSE) == NS_TRUE) {
         flags |= LOG_EXPAND;
     }
+    if (Ns_ConfigBool(path, "logcolorize", NS_FALSE) == NS_TRUE) {
+        flags |= LOG_COLORIZE;
+    }
 
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
@@ -340,9 +371,23 @@ Ns_CreateLogSeverity(const char *name)
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&severityTable, name, &isNew);
     if (isNew != 0) {
+        /*
+         * Create new severity.
+         */
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, INT2PTR(severity));
         severityConfig[severity].label = Tcl_GetHashKey(&severityTable, hPtr);
+        if (severity > Dev) {
+            /*
+             * For the lower severities, we have defaults
+             */
+            severityConfig[severity].enabled = NS_TRUE;
+            /* 
+             * Initialize new severity with default colors.
+             */
+            severityConfig[severity].color     = COLOR_DEFAULT;
+            severityConfig[severity].intensity = COLOR_NORMAL;
+        }
     } else {
 	severity = PTR2INT(Tcl_GetHashValue(hPtr));
     }
@@ -375,6 +420,33 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
         return severityConfig[severity].label;
     }
     return "Unknown";
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogSeverityColor --
+ *
+ *      Given a log severity, set color in terminal
+ *
+ * Results:
+ *      A print string for setting the color in the terminal.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+LogSeverityColor(char *buffer, Ns_LogSeverity severity)
+{
+    if (severity < severityMaxCount) {
+        sprintf(buffer, "\033[%d;%dm", severityConfig[severity].intensity, severityConfig[severity].color);
+        return buffer;
+    }
+    return "\033[0m";
 }
 
 
@@ -1007,43 +1079,99 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     case CSeverityIdx:
       {
-          Ns_LogSeverity severity = 0; /* default value for the error cases */
-          void  *addrPtr;
-          bool   enabled;
+          Ns_LogSeverity    severity = 0; /* default value for the error cases */
+          void             *addrPtr = NULL;
+          bool              enabled = -1;
+          int               color = -1;
+          int               intensity = -1;
 
-          if (objc != 3 && objc != 4) {
-              Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
+          static Ns_ObjvTable colors[] = {
+              {"black",    COLOR_BLACK},
+              {"red",      COLOR_RED},
+              {"green",    COLOR_GREEN},
+              {"yellow",   COLOR_YELLOW},
+              {"blue",     COLOR_BLUE},
+              {"magenta",  COLOR_MAGENTA},
+              {"cyan",     COLOR_CYAN},
+              {"gray",     COLOR_GRAY},
+              {"default",  COLOR_DEFAULT},
+              {NULL,       0u}
+          };
+          static Ns_ObjvTable intensities[] = {
+              {"normal",   COLOR_NORMAL},
+              {"bright",   COLOR_BRIGHT},
+              {NULL,       0u}
+          };
+          
+          Ns_ObjvSpec lopts[] = {
+              {"-color",     Ns_ObjvIndex,  &color,     &colors},
+              {"-intensity", Ns_ObjvIndex,  &intensity, &intensities},
+              {"--",         Ns_ObjvBreak,  NULL,       NULL},
+              {NULL, NULL, NULL, NULL}
+          };
+          Ns_ObjvSpec args[] = {
+              {"?enabled",   Ns_ObjvBool,   &enabled,   INT2PTR(NS_FALSE)},
+              {NULL, NULL, NULL, NULL}
+          };    
+
+          if (likely(objc < 3)) {
+              Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?-color color? ?-intensity intensity? ?bool?");
               result = TCL_ERROR;
+              
           } else if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
+              /*
+               * Severity lookup was ok
+               */
               severity = PTR2INT(addrPtr);
+              
+          } else if (objc > 3) {
+              /*
+               * Severity lookup failed, but more arguments are specified,
+               * we create a new severity.
+               */
+              severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
+              assert(severity < severityMaxCount);
+              
           } else {
-              if (objc == 3) {
-                  result = TCL_ERROR;
-              } else {
-                  severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
-              }
-          }
-
-          if (result == TCL_OK && severity >= severityMaxCount) {
-              Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
+              /*
+               * Probably a typo when querying the severity.
+               */
               result = TCL_ERROR;
           }
-          if (result == TCL_OK) {
-              assert(severity < severityMaxCount);
-              enabled = Ns_LogSeverityEnabled(severity);
-              if (objc == 4 && severity != Fatal) {
-                  int boolValue;
-                  
-                  if (Tcl_GetBooleanFromObj(interp, objv[3], &boolValue) == TCL_OK) {
-                      severityConfig[severity].enabled = boolValue;
-                  } else {
-                      result = TCL_ERROR;
-                  }
-              }
-              if (result == TCL_OK) {
-                  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
-              }
+
+          if (likely(result == TCL_OK) && Ns_ParseObjv(lopts, args, interp, 2, objc-1, objv+1) != NS_OK) {
+              result = TCL_ERROR;
           }
+
+          if (likely(result == TCL_OK)) {
+              
+              assert(severity < severityMaxCount);
+
+              /*
+               * Don't allow to deactivate Fatal.
+               */
+              if (enabled != -1 && severity != Fatal) {
+                  severityConfig[severity].enabled = enabled;
+              } else {
+                  enabled = Ns_LogSeverityEnabled(severity);
+              }
+              
+              /*
+               * Set color attributes, when available.
+               */
+              if (color != -1) {
+                  severityConfig[severity].color = color;
+              }
+              if (intensity != -1) {
+                  severityConfig[severity].intensity = intensity;
+              }
+
+              /*
+               * Return the new enabled state.
+               */
+              Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
+          }
+          
           break;
       }
 
@@ -1167,7 +1295,7 @@ NsLogOpen(void)
         Ns_Fatal("log: failed to open server log '%s': '%s'",
                  file, strerror(errno));
     }
-    if (flags & LOG_ROLL) {
+    if ((flags & LOG_ROLL) != 0u) {
         (void) Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
     }
 }
@@ -1354,7 +1482,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
  *
  *----------------------------------------------------------------------
  */
-
+                        
 static int
 LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
@@ -1375,14 +1503,22 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     timeStringLength = cachePtr->lbufSize;
         
     Ns_DStringNAppend(dsPtr, timeString, (int)timeStringLength);
-    if (flags & LOG_USEC) {
+    if ((flags & LOG_USEC) != 0u) {
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
-    Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
-                     (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
-                     Ns_LogSeverityName(severity));
-    if (flags & LOG_EXPAND) {
+    if ((flags & LOG_COLORIZE) != 0u) {
+        char buffer[255];
+        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s%s: ",
+                         (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+                         LogSeverityColor(buffer, severity),
+                         Ns_LogSeverityName(severity));
+    } else {
+        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
+                         (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+                         Ns_LogSeverityName(severity));
+    }
+    if ((flags & LOG_EXPAND) != 0u) {
         Ns_DStringNAppend(dsPtr, "\n    ", 5);
     }
 
@@ -1394,8 +1530,11 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         len = strlen(msg);
     }
     Ns_DStringNAppend(dsPtr, msg, (int)len);
+    if ((flags & LOG_COLORIZE) != 0u) {
+        Ns_DStringNAppend(dsPtr, LOG_COLOREND, 4);
+    }
     Ns_DStringNAppend(dsPtr, "\n", 1);
-    if (flags & LOG_EXPAND) {
+    if ((flags & LOG_EXPAND) != 0u) {
         Ns_DStringNAppend(dsPtr, "\n", 1);
     }
 
