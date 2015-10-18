@@ -379,9 +379,10 @@ Ns_CreateLogSeverity(const char *name)
         severityConfig[severity].label = Tcl_GetHashKey(&severityTable, hPtr);
         if (severity > Dev) {
             /*
-             * For the lower severities, we have defaults
+             * For the lower severities, we have already defaults; initialize
+             * just the higher ones.
              */
-            severityConfig[severity].enabled = NS_TRUE;
+            severityConfig[severity].enabled = NS_FALSE;
             /* 
              * Initialize new severity with default colors.
              */
