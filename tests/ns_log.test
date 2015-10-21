@@ -150,7 +150,7 @@ test ns_log-5.9 {flush} -body {
 
 test ns_log-6.1 {configuration} -body {
     ns_logctl severity
-} -returnCodes error -result {wrong # args: should be "ns_logctl severity severity-level ?bool?"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl severity severity-level ?-color color? ?-intensity intensity? ?bool?"}
 
 test ns_log-6.2 {configuration} -body {
     ns_logctl severity ?
@@ -159,7 +159,7 @@ test ns_log-6.2 {configuration} -body {
 test ns_log-6.3 {enable/disable} -body {
 	set orig [ns_logctl severity debug]
 	set old  [ns_logctl severity debug [expr {$orig ? 0 : 1}]]
-	set new  [ns_logctl severity debug $orig]
+        set new  [ns_logctl severity debug $orig]
 	expr {"$orig $old $new" eq "1 1 0" || "$orig $old $new" eq "0 0 1"}
 } -cleanup {
 	unset -nocomplain orig old new

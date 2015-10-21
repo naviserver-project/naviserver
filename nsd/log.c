@@ -1183,9 +1183,8 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
       {
           Ns_LogSeverity    severity = 0; /* default value for the error cases */
           void             *addrPtr = NULL;
-          bool              enabled = -1;
-          int               color = -1;
-          int               intensity = -1;
+          bool              enabled;
+          int               color = -1, intensity = -1, givenEnabled = -1;
 
           Ns_ObjvSpec lopts[] = {
               {"-color",     Ns_ObjvIndex,  &color,     &colors},
@@ -1194,7 +1193,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
               {NULL, NULL, NULL, NULL}
           };
           Ns_ObjvSpec args[] = {
-              {"?enabled",   Ns_ObjvBool,   &enabled,   INT2PTR(NS_FALSE)},
+              {"?enabled",   Ns_ObjvBool,   &givenEnabled, INT2PTR(NS_FALSE)},
               {NULL, NULL, NULL, NULL}
           };
 
@@ -1234,8 +1233,9 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
               /*
                * Don't allow to deactivate Fatal.
                */
-              if (enabled != -1 && severity != Fatal) {
-                  severityConfig[severity].enabled = enabled;
+              if (givenEnabled != -1 && severity != Fatal) {
+                  enabled = severityConfig[severity].enabled;
+                  severityConfig[severity].enabled = givenEnabled;
               } else {
                   enabled = Ns_LogSeverityEnabled(severity);
               }
