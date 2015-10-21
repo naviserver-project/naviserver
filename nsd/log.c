@@ -89,7 +89,7 @@ typedef struct LogCache {
     char        gbuf[100];    /* Buffer for GMT time string rep */
     char        lbuf[100];    /* Buffer for local time string rep */
     size_t      gbufSize;
-    size_t      lbufSize;    
+    size_t      lbufSize;
     LogEntry   *firstEntry;   /* First in the list of log entries */
     LogEntry   *currEntry;    /* Current in the list of log entries */
     Ns_DString  buffer;       /* The log entries cache text-cache */
@@ -114,7 +114,7 @@ static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
-                      int trunc, int locked) 
+                      int trunc, int locked)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int   LogOpen(void);
@@ -137,32 +137,54 @@ static unsigned int flags = 0u;
 static int          maxback;
 
 static LogFilter   *filters;
-static const char  *filterType = "ns:logfilter";
-static const char  *severityType = "ns:logseverity";
+static const char  *const filterType = "ns:logfilter";
+static const char  *const severityType = "ns:logseverity";
 
-
-#define LOG_COLORSTART "\033["
-#define LOG_COLOREND   "\033[0m"
+static const unsigned char LOG_COLOREND[]   = { 0x1bu, '[', '0', 'm', 0u };
+static const unsigned char LOG_COLORSTART[] = { 0x1bu, '[', 0u };
 
 typedef enum {
-    COLOR_BLACK = 30,
-    COLOR_RED = 31,
-    COLOR_GREEN = 32,
-    COLOR_YELLOW = 33,
-    COLOR_BLUE = 34,
-    COLOR_MAGENTA = 35,
-    COLOR_CYAN = 36,
-    COLOR_GRAY = 37,
-    COLOR_DEFAULT = 39
+    COLOR_BLACK   = 30u,
+    COLOR_RED     = 31u,
+    COLOR_GREEN   = 32u,
+    COLOR_YELLOW  = 33u,
+    COLOR_BLUE    = 34u,
+    COLOR_MAGENTA = 35u,
+    COLOR_CYAN    = 36u,
+    COLOR_GRAY    = 37u,
+    COLOR_DEFAULT = 39u
 } LogColor;
 
 typedef enum {
-    COLOR_NORMAL = 0,
-    COLOR_BRIGHT = 1
+    COLOR_NORMAL = 0u,
+    COLOR_BRIGHT = 1u
 } LogColorIntensity;
 
+static LogColor prefixColor = COLOR_GREEN;
+static LogColorIntensity prefixIntensity = COLOR_NORMAL;
 
-static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NONNULL(1); 
+static Ns_ObjvTable colors[] = {
+    {"black",    COLOR_BLACK},
+    {"red",      COLOR_RED},
+    {"green",    COLOR_GREEN},
+    {"yellow",   COLOR_YELLOW},
+    {"blue",     COLOR_BLUE},
+    {"magenta",  COLOR_MAGENTA},
+    {"cyan",     COLOR_CYAN},
+    {"gray",     COLOR_GRAY},
+    {"default",  COLOR_DEFAULT},
+    {NULL,       0u}
+};
+
+static Ns_ObjvTable intensities[] = {
+    {"normal",   COLOR_NORMAL},
+    {"bright",   COLOR_BRIGHT},
+    {NULL,       0u}
+};
+
+static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NONNULL(1);
+static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
 /*
@@ -170,7 +192,7 @@ static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NON
  * are currently active. The order is important: keep
  * it in sync with the Ns_LogSeverity enum.
  *
- * "640 (slots) should be enough for enyone..."
+ * "640 (slots) should be enough for everyone..."
  */
 
 static struct {
@@ -245,7 +267,7 @@ NsInitLog(void)
 
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
         size_t labelLength;
-        
+
         (void) Ns_CreateLogSeverity(severityConfig[i].label);
         labelLength = strlen(severityConfig[i].label);
         if (labelLength < sizeof(buf)) {
@@ -257,6 +279,72 @@ NsInitLog(void)
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
     }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvTableLookup --
+ *
+ *      Lookup a value from an Ns_ObjvTable and return its associated value
+ *      in the last parameter, if the lookup was successful.
+ *
+ * Results:
+ *      Tcl return code.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
+{
+    size_t       len;
+    int          result, pos = 1;
+    const char  *valueString;
+
+    assert(path != NULL);
+    assert(param != NULL);
+    assert(tablePtr != NULL);
+    assert(idxPtr != NULL);
+    
+    valueString = Ns_ConfigString(path, param, "");
+
+    len = strlen(valueString);
+    if (len > 0u) {
+        Ns_ObjvSpec  spec;
+        Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, len);
+
+        spec.arg  = tablePtr;
+        spec.dest = idxPtr;
+        result = Ns_ObjvIndex(&spec, NULL, &pos, &objPtr);
+
+        if (result != TCL_OK) {
+            Ns_DString ds, *dsPtr = &ds;
+
+            Ns_DStringInit(dsPtr);
+            while (tablePtr->key != NULL) {
+                Ns_DStringNAppend(dsPtr, tablePtr->key, -1);
+                Ns_DStringNAppend(dsPtr, " ", 1);
+                tablePtr++;
+            }
+            Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
+            Ns_Log(Warning, "ignoring invalid value '%s' for parameter '%s'; "
+                   "possible values are: %s",
+                   valueString, param, Ns_DStringValue(dsPtr));
+            Ns_DStringFree(dsPtr);
+        }
+        Tcl_DecrRefCount(objPtr);
+
+    } else {
+        result = TCL_ERROR;
+    }
+
+    return result;
 }
 
 
@@ -281,7 +369,7 @@ NsConfigLog(void)
 {
     Ns_DString  ds;
     const char *path = NS_CONFIG_PARAMETERS;
-    Ns_Set *set = Ns_ConfigCreateSection(path);
+    Ns_Set     *set  = Ns_ConfigCreateSection(path);
 
     severityConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
     severityConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
@@ -298,6 +386,18 @@ NsConfigLog(void)
     }
     if (Ns_ConfigBool(path, "logcolorize", NS_FALSE) == NS_TRUE) {
         flags |= LOG_COLORIZE;
+    }
+    if ((flags & LOG_COLORIZE) != 0u) {
+        int result, idx;
+
+        result = ObjvTableLookup(path, "logprefixcolor", colors, &idx);
+        if (result == TCL_OK) {
+            prefixColor = idx;
+        }
+        result = ObjvTableLookup(path, "logprefixintensity", intensities, &idx);
+        if (result == TCL_OK) {
+            prefixIntensity = idx;
+        }
     }
 
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
@@ -364,7 +464,7 @@ Ns_CreateLogSeverity(const char *name)
     int             isNew;
 
     assert(name != NULL);
-    
+
     if (severityIdx >= severityMaxCount) {
         Ns_Fatal("max log severities exceeded");
     }
@@ -383,7 +483,7 @@ Ns_CreateLogSeverity(const char *name)
              * just the higher ones.
              */
             severityConfig[severity].enabled = NS_FALSE;
-            /* 
+            /*
              * Initialize new severity with default colors.
              */
             severityConfig[severity].color     = COLOR_DEFAULT;
@@ -444,10 +544,11 @@ static char *
 LogSeverityColor(char *buffer, Ns_LogSeverity severity)
 {
     if (severity < severityMaxCount) {
-        sprintf(buffer, "\033[%d;%dm", severityConfig[severity].intensity, severityConfig[severity].color);
-        return buffer;
+        sprintf(buffer, "%s%d;%dm", LOG_COLORSTART, severityConfig[severity].intensity, severityConfig[severity].color);
+    } else {
+        sprintf(buffer, "%s0m", LOG_COLORSTART);
     }
-    return "\033[0m";
+    return buffer;
 }
 
 
@@ -471,7 +572,7 @@ bool
 Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
     bool result;
-    
+
     if (likely(severity < severityMaxCount)) {
         result = severityConfig[severity].enabled;
     } else {
@@ -500,15 +601,15 @@ bool
 Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
 {
     bool result;
-    
+
     if (likely(severity < severityMaxCount)) {
         result = severityConfig[severity].enabled;
-        
+
         severityConfig[severity].enabled = enabled;
     } else {
         result = NS_FALSE;
     }
-    
+
     return result;
 }
 
@@ -567,7 +668,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
     va_list ap;
 
     assert(fmt != NULL);
-    
+
     va_start(ap, fmt);
     Ns_VALog(severity, fmt, &ap);
     va_end(ap);
@@ -610,7 +711,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     severityConfig[severity].count ++;
 
     cachePtr = GetCache();
-        
+
     /*
      * Append new or reuse log entry record.
      */
@@ -675,7 +776,7 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 
     assert(procPtr != NULL);
     assert(arg != NULL);
-    
+
     Ns_MutexLock(&lock);
 
     if (filters != NULL) {
@@ -770,9 +871,9 @@ void
 Ns_Fatal(const char *fmt, ...)
 {
     va_list ap;
-    
+
     assert(fmt != NULL);
-    
+
     va_start(ap, fmt);
     Ns_VALog(Fatal, fmt, &ap);
     va_end(ap);
@@ -829,7 +930,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
     size_t      timeStringLength;
 
     assert(timeBuf != NULL);
-    
+
     /*
      * Add the log stamp
      */
@@ -865,7 +966,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
 {
     time_t    *tp;
     char      *bp;
-    size_t    *sizePtr; 
+    size_t    *sizePtr;
 
     assert(cachePtr != NULL);
     assert(timePtr != NULL);
@@ -873,11 +974,11 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     if (gmt != 0) {
         tp = &cachePtr->gtime;
         bp = cachePtr->gbuf;
-        sizePtr = &cachePtr->gbufSize; 
+        sizePtr = &cachePtr->gbufSize;
     } else {
         tp = &cachePtr->ltime;
         bp = cachePtr->lbuf;
-        sizePtr = &cachePtr->lbufSize; 
+        sizePtr = &cachePtr->lbufSize;
     }
     if (*tp != timePtr->sec) {
         size_t n;
@@ -1016,7 +1117,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     }
 
     switch (opt) {
-        
+
     case CRegisterIdx:
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
@@ -1086,24 +1187,6 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
           int               color = -1;
           int               intensity = -1;
 
-          static Ns_ObjvTable colors[] = {
-              {"black",    COLOR_BLACK},
-              {"red",      COLOR_RED},
-              {"green",    COLOR_GREEN},
-              {"yellow",   COLOR_YELLOW},
-              {"blue",     COLOR_BLUE},
-              {"magenta",  COLOR_MAGENTA},
-              {"cyan",     COLOR_CYAN},
-              {"gray",     COLOR_GRAY},
-              {"default",  COLOR_DEFAULT},
-              {NULL,       0u}
-          };
-          static Ns_ObjvTable intensities[] = {
-              {"normal",   COLOR_NORMAL},
-              {"bright",   COLOR_BRIGHT},
-              {NULL,       0u}
-          };
-          
           Ns_ObjvSpec lopts[] = {
               {"-color",     Ns_ObjvIndex,  &color,     &colors},
               {"-intensity", Ns_ObjvIndex,  &intensity, &intensities},
@@ -1113,18 +1196,18 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
           Ns_ObjvSpec args[] = {
               {"?enabled",   Ns_ObjvBool,   &enabled,   INT2PTR(NS_FALSE)},
               {NULL, NULL, NULL, NULL}
-          };    
+          };
 
           if (likely(objc < 3)) {
               Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?-color color? ?-intensity intensity? ?bool?");
               result = TCL_ERROR;
-              
+
           } else if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
               /*
                * Severity lookup was ok
                */
               severity = PTR2INT(addrPtr);
-              
+
           } else if (objc > 3) {
               /*
                * Severity lookup failed, but more arguments are specified,
@@ -1132,7 +1215,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                */
               severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
               assert(severity < severityMaxCount);
-              
+
           } else {
               /*
                * Probably a typo when querying the severity.
@@ -1145,7 +1228,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
           }
 
           if (likely(result == TCL_OK)) {
-              
+
               assert(severity < severityMaxCount);
 
               /*
@@ -1156,15 +1239,15 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
               } else {
                   enabled = Ns_LogSeverityEnabled(severity);
               }
-              
+
               /*
                * Set color attributes, when available.
                */
               if (color != -1) {
-                  severityConfig[severity].color = color;
+                  severityConfig[severity].color = (LogColor)color;
               }
               if (intensity != -1) {
-                  severityConfig[severity].intensity = intensity;
+                  severityConfig[severity].intensity = (LogColorIntensity)intensity;
               }
 
               /*
@@ -1172,7 +1255,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                */
               Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
           }
-          
+
           break;
       }
 
@@ -1187,7 +1270,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
         }
         break;
-        
+
     case CStatsIdx:
         Tcl_SetObjResult(interp, LogStats());
         break;
@@ -1219,7 +1302,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  */
 
 int
-NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
+NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 		   int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
@@ -1483,7 +1566,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
  *
  *----------------------------------------------------------------------
  */
-                        
+
 static int
 LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
@@ -1492,26 +1575,31 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     LogCache   *cachePtr = GetCache();
     const char *timeString;
     size_t      timeStringLength;
+    char        buffer[255];
 
     assert(arg != NULL);
     assert(stamp != NULL);
     assert(msg != NULL);
-    
+
     /*
      * Add the log stamp
      */
     timeString = LogTime(cachePtr, stamp, 0);
     timeStringLength = cachePtr->lbufSize;
-        
+
+    if ((flags & LOG_COLORIZE) != 0u) {
+        Ns_DStringPrintf(dsPtr, "%s%d;%dm", LOG_COLORSTART, prefixIntensity, prefixColor);
+    }
+
     Ns_DStringNAppend(dsPtr, timeString, (int)timeStringLength);
     if ((flags & LOG_USEC) != 0u) {
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
     if ((flags & LOG_COLORIZE) != 0u) {
-        char buffer[255];
-        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s%s: ",
+        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s%s%s: ",
                          (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+                         (const char *)LOG_COLOREND,
                          LogSeverityColor(buffer, severity),
                          Ns_LogSeverityName(severity));
     } else {
@@ -1532,7 +1620,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     }
     Ns_DStringNAppend(dsPtr, msg, (int)len);
     if ((flags & LOG_COLORIZE) != 0u) {
-        Ns_DStringNAppend(dsPtr, LOG_COLOREND, 4);
+        Ns_DStringNAppend(dsPtr, (const char *)LOG_COLOREND, 4);
     }
     Ns_DStringNAppend(dsPtr, "\n", 1);
     if ((flags & LOG_EXPAND) != 0u) {
@@ -1569,10 +1657,10 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     assert(arg != NULL);
     assert(stamp != NULL);
     assert(msg != NULL);
-    
+
     Ns_DStringInit(&ds);
 
-    LogToDString(&ds, severity, stamp, msg, len);      
+    LogToDString(&ds, severity, stamp, msg, len);
     (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);
@@ -1619,7 +1707,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     assert(arg != NULL);
     assert(stamp != NULL);
     assert(msg != NULL);
-    
+
     if (severity == Fatal) {
         return NS_OK;
     }
@@ -1773,7 +1861,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
     assert(interp != NULL);
     assert(objPtr != NULL);
     assert(addrPtrPtr != NULL);
-    
+
     if (Ns_TclGetOpaqueFromObj(objPtr, severityType, addrPtrPtr) != TCL_OK) {
 	Tcl_HashEntry *hPtr;
 

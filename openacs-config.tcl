@@ -98,6 +98,8 @@ ns_section ns/parameters
 	ns_param	logdebug	$debug
         ns_param	logdev		$dev
         ns_param	logcolorize	true
+        ns_param	logprefixcolor 	   green
+        ns_param	logprefixintensity normal
 
 	# ns_param	mailhost	localhost 
 	# ns_param	jobsperthread	0

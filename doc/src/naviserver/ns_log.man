@@ -201,6 +201,17 @@ Default: true.
 If true, log entries will be colorized using ANSI color codes
 Default: false.
 
+[def logprefixcolor]
+When logcolorize is true, provide a color for the timestamp prefix.
+Possible values are:
+[term "black red green yellow blue magenta cyan gray default"].
+Default: green.
+
+[def logprefixintensity]
+When logcolorize is true, provide a the intesity for the timestamp prefix.
+Possible values are: [term "normal bright"].
+Default: normal.
+
 [def logdev]
 If true, messages of severity-level [emph Dev] are enabled.
 Default: false.
