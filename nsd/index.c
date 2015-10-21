@@ -247,7 +247,7 @@ Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
           return NULL;
         }
 
-        if ((i > 0) && \
+        if ((i > 0) &&
             ((indexPtr->CmpKeyWithEl)(key, &(indexPtr->el[i])) != 0))  {
             return indexPtr->el[i - 1];
         } else {
@@ -453,7 +453,8 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 
     if (i < (int)indexPtr->n) {
         size_t j;
-        for (j = indexPtr->n; j > i; j--) {
+        
+        for (j = indexPtr->n; (int)j > i; j--) {
             indexPtr->el[j] = indexPtr->el[j - 1];
         }
     }
@@ -628,7 +629,7 @@ Ns_Index *
 Ns_IndexStringDup(const Ns_Index *indexPtr)
 {
     Ns_Index *newPtr;
-    int       i;
+    size_t    i;
 
     assert(indexPtr != NULL);
 
@@ -636,7 +637,7 @@ Ns_IndexStringDup(const Ns_Index *indexPtr)
     memcpy(newPtr, indexPtr, sizeof(Ns_Index));
     newPtr->el = (void **) ns_malloc(indexPtr->max * sizeof(void *));
 
-    for (i = 0; i < newPtr->n; i++) {
+    for (i = 0u; i < newPtr->n; i++) {
         newPtr->el[i] = ns_strdup(indexPtr->el[i]);
     }
 
@@ -663,12 +664,12 @@ Ns_IndexStringDup(const Ns_Index *indexPtr)
 void
 Ns_IndexStringAppend(Ns_Index *addtoPtr, const Ns_Index *addfromPtr)
 {
-    int i;
+    size_t i;
 
     assert(addtoPtr != NULL);
     assert(addfromPtr != NULL);
 
-    for (i = 0; i < addfromPtr->n; i++) {
+    for (i = 0u; i < addfromPtr->n; i++) {
         Ns_IndexAdd(addtoPtr, ns_strdup(addfromPtr->el[i]));
     }
 }
