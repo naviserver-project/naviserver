@@ -67,6 +67,7 @@ typedef struct Pool {
     Tcl_WideInt     statementCount;
     Tcl_WideInt     getHandleCount;
     Ns_Time         waitTime;
+    Ns_Time         sqlTime;
 }  Pool;
 
 /*
@@ -679,8 +680,11 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->nhandles));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
-            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("wait", 4));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("waittime", 8));
             len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
+            Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
+            len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
         
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
@@ -830,25 +834,27 @@ NsDbDisconnect(Ns_DbHandle *handle)
 void
 NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
 {
-    Handle *handlePtr = (Handle *) handle;
+    Pool   *poolPtr;
 
     assert(startTime != NULL);
     assert(handle != NULL);
     assert(sql != NULL);
 
-    handlePtr->poolPtr->statementCount++;
+    poolPtr = ((Handle *)handle)->poolPtr;
+    poolPtr->statementCount++;
             
     if (handle->dsExceptionMsg.length > 0) {
-        if (handlePtr->poolPtr->fVerboseError == NS_TRUE) {
+        if (poolPtr->fVerboseError == NS_TRUE) {
 	    
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
-    } else if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
+    } else {
         Ns_Time endTime, diffTime;
         
         Ns_GetTime(&endTime);
         (void)Ns_DiffTime(&endTime, startTime, &diffTime);
+        Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
 
         Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
                handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
@@ -1158,6 +1164,8 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->getHandleCount = 0;
     poolPtr->waitTime.sec = 0;
     poolPtr->waitTime.usec = 0;
+    poolPtr->sqlTime.sec = 0;
+    poolPtr->sqlTime.usec = 0;
 
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
     for (i = 0; i < poolPtr->nhandles; ++i) {
