@@ -305,7 +305,7 @@ Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt def,
  *      Return a config file value for a given key
  *
  * Results:
- *      ASCIIZ ptr to a value
+ *      char ptr to a value
  *
  * Side effects:
  *      None.

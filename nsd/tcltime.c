@@ -53,8 +53,8 @@ static void UpdateStringOfTime(Tcl_Obj *objPtr)
 static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(2);
 
-static int GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, long multiplier, Ns_Time *tPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+static int GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *tPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 /*
  * Local variables defined in this file.
@@ -593,7 +593,9 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
  * GetTimeFromString --
  *
  *      Try to fill ns_Time struct from a string based on a specified
- *      separator and a multiplier for usec.
+ *      separator (':' or '.'). The colon separater is for the classical
+ *      NaviServer time format "sec:usec", whereas the dot is used for the
+ *      floating point format.
  *
  * Results:
  *      TCL_OK, TCL_ERROR or TCL_CONTINUE
@@ -605,20 +607,19 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
  */
 
 static int
-GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, long multiplier, Ns_Time *tPtr)
+GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *tPtr)
 {
     /*
      * Look for the separator
      */
     char *sep;
 
-    assert(interp != NULL);
     assert(str != NULL);
     assert(tPtr != NULL);
 
     sep = strchr(str, (int)UCHAR(separator));
     if (sep != NULL) {
-        int value;
+        int intValue;
         
         /*
          * First get sec from the string.
@@ -636,21 +637,31 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, long mult
              * first part null-terminated.
              */
             *sep = '\0';
-            result = Tcl_GetInt(interp, str, &value);
+            result = Tcl_GetInt(interp, str, &intValue);
             *sep = separator;
             if (result != TCL_OK) {
                 return TCL_ERROR;
             }
-            tPtr->sec = (long)value;
+            tPtr->sec = (long)intValue;
         }
 
         /*
          * Get usec
          */
-        if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
-            return TCL_ERROR;
+        if (separator == '.') {
+            double dblValue;
+            
+            if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            tPtr->usec = (long)(dblValue * 1000000.0);
+            
+        } else {
+            if (Tcl_GetInt(interp, sep+1, &intValue) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            tPtr->usec = (long)intValue;
         }
-        tPtr->usec = (long)value * multiplier;
         return TCL_OK;
     }
     return TCL_CONTINUE;
@@ -697,32 +708,78 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         t.sec = sec;
         t.usec = 0;
     } else {
-        const char *str = Tcl_GetString(objPtr);
-        
-        /*
-         * Check, if the string contains the classical NaviServer separator
-         * for sec:usec.  If not, check if this has a "." as separator.
-         */
-        result = GetTimeFromString(interp, str, ':', 1, &t);
-        if (result == TCL_CONTINUE) {
-            result = GetTimeFromString(interp, str, '.', 100000, &t);
-        }
-        if (result == TCL_CONTINUE) {
-            /*
-             * No separator found, so interpret the value as integer
-             */
-            result = Tcl_GetLongFromObj(interp, objPtr, &sec);
-            if (result == TCL_OK) {
-                t.sec = sec;
-                t.usec = 0;
-            }
-        }
+        result = Ns_GetTimeFromString(interp, Tcl_GetString(objPtr), &t);
     }
+    
     if (result == TCL_OK) {
         Ns_AdjTime(&t);
         SetTimeInternalRep(objPtr, &t);
     }
 
+    return result;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_GetTimeFromString --
+ *
+ *      Convert string to time structure.  Check, if the string contains the
+ *      classical NaviServer separator for sec:usec and interprete the string
+ *      in this format.  If not, check if this has a "." as separator, and use
+ *      a floating point notation. 
+ *
+ * Results: 
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      If an error occurs and interp is given, leave error message in the
+ *      interp.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
+{
+    int result;
+
+    assert(str != NULL);
+    assert(tPtr != NULL);
+
+    result = GetTimeFromString(interp, str, ':', tPtr);
+    
+    if (result == TCL_CONTINUE) {
+        result = GetTimeFromString(interp, str, '.', tPtr);
+    }
+    if (result == TCL_CONTINUE) {
+        char *ptr = NULL;
+        long sec;
+        
+        /*
+         * No separator found, so try to interprete the string as integer
+         */
+        sec = strtol(str, &ptr, 10);
+        
+        if (likely(str != ptr)) {
+            /*
+             * We could parse at least a part of the string as integer.
+             */
+            tPtr->sec = sec;
+            tPtr->usec = 0;
+            result = TCL_OK;
+
+        } else {
+            /*
+             * Still no success. If we have an interp, leave error message.
+             */ 
+            if (interp != NULL) {
+                Ns_TclPrintfResult(interp, "Invalid time value '%s'", str);
+            }
+            result = TCL_ERROR;
+        }
+    }
     return result;
 }
 
@@ -753,6 +810,7 @@ SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));
 }
+
 
 /*
  * Local Variables:

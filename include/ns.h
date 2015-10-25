@@ -1710,6 +1710,10 @@ NS_EXTERN int
 Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+int
+Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 /*
  * tclxkeylist.c:
  */
