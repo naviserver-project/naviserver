@@ -133,6 +133,12 @@ set returned by the ns_db select. It returns "1" if there are more rows waiting
 and returns "0" otherwise. If you call ns_db getrow again after already
 receiving "0" on the previous call, an error is returned.
 
+[call [cmd "ns_db logminduration"] [arg pool] [opt [arg duration]]]
+
+Query or set a threshold for logging of sql statements. Log only
+statements in the error.log, when sql logging is turned on in general
+(via "ns_logctl severity Debug(sql) ...") and the statement took
+at least the specified duration (specified in seconds, e.g. "0.1").
 
 [call [cmd "ns_db open"] [arg driver] [arg datasource] [arg user] [arg password]]
 
@@ -316,6 +322,104 @@ set ret [lb]ns_db sp_exec $db[rb]
 
 [example_end]
 
+
+[section CONFIGURATION]
+
+The nsdb module is typically loaded per-server, where every server
+might use multiple database pools. Below is a sample configuration for
+PostgreSQL using the [term nsdbpg] driver, using two database pools
+where [term pool1] is the default pool.
+
+[example_begin]
+ns_section "ns/db/drivers" 
+    ns_param	postgres        ${bindir}/nsdbpg.so
+ 	
+ns_section ns/server/${server}/modules 
+    ns_param	nsdb		${bindir}/nsdb.so
+ 
+ns_section ns/server/${server}/db
+    ns_param	pools           pool1,pool2
+    ns_param	defaultpool     pool1
+ 
+ns_section ns/db/pools 
+    ns_param	pool1           "Pool 1"
+    ns_param	pool2           "Pool 2"
+ 
+ns_section ns/db/pool/pool1
+    ns_param	...
+[example_end]
+
+For every pool the following configuation options might be used:
+
+[list_begin definitions]
+
+[def CheckInterval] Integer: Check after this number of seconds for
+stale connections. Default: 600.
+
+[def Connections] Integer: The maximum number of connections that can
+be established at any one time. The server automatically makes
+connections as needed up to this maximum number. If additional
+connections are requested during processing, the requests must wait.
+Default: 2
+
+[def Datasource] Name specific to the database management system that
+might be necessary for opening database connections. For PostgreSQL,
+datasousce has the form "${db_host}:${db_port}:${db_name}".
+
+[def Driver] Name of the driver for this pool as specified in
+[term ns/db/drivers].
+
+[def LogMinDuration] Seconds in floating point format. When SQL
+logging is turned on, log only SQL queries that take longer than the
+specified duration (similar to log_min_duration_statement in PostgreSQL)
+
+[def LogSQLErrors] Boolean value: If set to [term On], SQL errors are
+written to the server log along with the offending SQL statement(s).
+
+[def MaxIdle] Integer: The maximum time in seconds that a database
+connection within this pool can remain open and idle.  The default
+setting of 600 causes connections that are idle for 10 minutes to be
+closed. Note that [term MaxIdle] will not have an effect if it is
+equal to [term MaxOpen]. Setting [term MaxIdle] to 0 deactivates the
+automatic closing feature on idle connections.
+
+[def MaxOpen] Integer: The maximum time in seconds that a database
+connection within this pool can remain open.  The default setting of
+3600 causes connections to keep open for one hour regardless of
+activity level. Database connections will then be opened again as
+needed up to the value of the [term Connections] parameter.  It is
+recommended that [term MaxOpen] be a multiple of [term MaxIdle];
+otherwise, [term MaxOpen] may be off by as much as (MaxOpen mod MaxIdle).
+Setting [term MaxOpen] to 0 deactivates the automatic closing feature.
+
+[def Password] Password to log into the database.
+
+[def User] Username to log into the database. 
+
+[list_end]
+
+Below is a sample configuration for two pools. The referenced Tcl
+variables have to be set earlier to appropriate values.
+
+[example_begin]
+ns_section ns/db/pool/pool1
+        ns_param	Connections        15
+        ns_param        LogMinDuration     0.01   
+	ns_param	LogSQLerrors       $debug
+	ns_param	driver             postgres 
+	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
+	ns_param	user               $db_user
+	ns_param	password           ""
+ 
+ns_section ns/db/pool/pool2
+	ns_param	Connections        5
+        ns_param        LogMinDuration     0.01
+        ns_param	LogSQLerrors       $debug
+	ns_param	driver             postgres 
+	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
+	ns_param	user               $db_user
+	ns_param	password           ""
+[example_end]
 
 
 [see_also ns_buildsqldate ns_dbquotevalue]

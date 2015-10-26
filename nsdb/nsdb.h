@@ -167,6 +167,11 @@ NS_EXTERN int Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles,
 NS_EXTERN int Ns_DbBouncePool(const char *pool);
 NS_EXTERN int Ns_DbPoolStats(Tcl_Interp *interp);
 
+NS_EXTERN Tcl_Obj *Ns_DbListMinDurations(Tcl_Interp *interp, const char *server);
+NS_EXTERN int Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration);
+NS_EXTERN int Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time *minDuration);
+
+
 /*
  * dbtcl.c:
  */

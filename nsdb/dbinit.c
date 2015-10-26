@@ -68,6 +68,7 @@ typedef struct Pool {
     Tcl_WideInt     getHandleCount;
     Ns_Time         waitTime;
     Ns_Time         sqlTime;
+    Ns_Time         minDuration;
 }  Pool;
 
 /*
@@ -681,8 +682,14 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("waittime", 8));
+            /* 
+             * We could use Ns_TclNewTimeObj here (2x), when the default representation 
+             * of the obj would be floating point format
+             *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
+            */
             len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
+            
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
             len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
@@ -842,7 +849,7 @@ NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
 
     poolPtr = ((Handle *)handle)->poolPtr;
     poolPtr->statementCount++;
-            
+
     if (handle->dsExceptionMsg.length > 0) {
         if (poolPtr->fVerboseError == NS_TRUE) {
 	    
@@ -856,8 +863,14 @@ NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
         (void)Ns_DiffTime(&endTime, startTime, &diffTime);
         Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
 
-        Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
-               handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
+        if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
+            int delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
+
+            if (delta < 1) {
+                Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
+                       handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
+            }
+        }
     }
 }
 
@@ -1124,7 +1137,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
     Handle          *handlePtr;
     struct DbDriver *driverPtr;
     int              i;
-    const char	    *source;
+    const char	    *source, *minDurationString;
 
     assert(pool != NULL);
     assert(path != NULL);
@@ -1166,6 +1179,20 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->waitTime.usec = 0;
     poolPtr->sqlTime.sec = 0;
     poolPtr->sqlTime.usec = 0;
+    
+    poolPtr->minDuration.sec = 0;
+    poolPtr->minDuration.usec = 0;
+    minDurationString = Ns_ConfigGetValue(path, "logminduration");
+    if (minDurationString != NULL) {
+        if (Ns_GetTimeFromString(NULL, minDurationString, &poolPtr->minDuration) != TCL_OK) {
+            Ns_Log(Error, "dbinit: invalid LogMinDuration '%s' specified", minDurationString);
+        } else {
+            Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s over %s to %" PRIu64 ".%06ld",
+                   pool, minDurationString,
+                   (int64_t)poolPtr->minDuration.sec,
+                   poolPtr->minDuration.usec);
+        }
+    }
 
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
     for (i = 0; i < poolPtr->nhandles; ++i) {
@@ -1341,6 +1368,128 @@ FreeTable(void *arg)
 
     Tcl_DeleteHashTable(tablePtr);
     ns_free(tablePtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbListMinDurations --
+ *
+ *	Introspection function to list min duration for every available pool
+ *
+ * Results:
+ *	Tcl_ListObj containing pairs of pool names and minDurations
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
+{
+    Tcl_Obj *resultObj;
+    char    *pool;
+    
+    resultObj = Tcl_NewListObj(0, NULL);
+    pool = Ns_DbPoolList(server);
+    if (pool != NULL) {
+        while (*pool != '\0') {
+            char    buffer[100];
+            Pool   *poolPtr;
+            int     len;
+            
+            poolPtr = GetPool(pool);
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
+            len = snprintf(buffer, sizeof(buffer), "%" PRIu64 ".%06ld",
+                           (int64_t) poolPtr->minDuration.sec, poolPtr->minDuration.usec);
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
+            pool = pool + strlen(pool) + 1;
+        }
+    }
+    return resultObj;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbGetMinDuration --
+ *
+ *	Return the minDuration of the specified pool in the third argument
+ *
+ * Results:
+ *	Tcl result code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int 
+Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
+{
+    Pool *poolPtr;
+    int   result;
+
+    /*
+     * Get the poolPtr
+     */
+    poolPtr = GetPool(pool);
+    if (poolPtr == NULL) {
+        Ns_TclPrintfResult(interp,"Invalid pool '%s'", pool);
+        result = TCL_ERROR;
+    } else {
+        /*
+         * Return the duration.
+         */
+        *minDuration = &poolPtr->minDuration;
+        result = TCL_OK;
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbSetMinDuration --
+ *
+ *	Set the minDuration of the specified pool
+ *
+ * Results:
+ *	Tcl result code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int 
+Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time *minDuration)
+{
+    Pool *poolPtr;
+    int   result;
+
+    /*
+     * Get the poolPtr
+     */
+    poolPtr = GetPool(pool);
+    if (poolPtr == NULL) {
+        Ns_TclPrintfResult(interp,"Invalid pool '%s'", pool);
+        result = TCL_ERROR;
+    } else {
+        /*
+         * Set the duration.
+         */
+        poolPtr->minDuration = *minDuration;
+        result = TCL_OK;
+    }
+    return result;
 }
 
 /*

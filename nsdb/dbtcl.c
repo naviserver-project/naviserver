@@ -216,14 +216,16 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	PASSWORD, USER, DATASOURCE, DISCONNECT, DBTYPE, DRIVER, CANCEL, ROWCOUNT,
 	BINDROW, FLUSH, RELEASEHANDLE, RESETHANDLE, CONNECTED, SP_EXEC,
 	SP_GETPARAMS, SP_RETURNCODE, GETROW, DML, ONE_ROW, ZERO_OR_ONE_ROW, EXEC,
-	SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM, STATS
+	SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM,
+        STATS, LOGMINDURATION
     };
     static const char *subcmd[] = {
         "pools", "bouncepool", "gethandle", "exception", "poolname",
 	"password", "user", "datasource", "disconnect", "dbtype", "driver", "cancel", "rowcount",
 	"bindrow", "flush", "releasehandle", "resethandle", "connected", "sp_exec",
 	"sp_getparams", "sp_returncode", "getrow", "dml", "1row", "0or1row", "exec",
-	"select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam", "stats",
+	"select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam",
+        "stats", "logminduration",
         NULL
     };
 
@@ -278,6 +280,8 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         };
 
         if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+            int length;
+            fprintf(stderr, "GET HANDLE ERROR '%s'\n", Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length));
             return TCL_ERROR;
         }
 
@@ -342,6 +346,53 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	  return TCL_ERROR;
 	}
 	break;
+    }
+
+    case LOGMINDURATION: {
+        const char  *pool;
+        Ns_Time     *minDurationPtr = NULL;
+        
+        Ns_ObjvSpec args[] = {
+            {"?pool", 	     Ns_ObjvString, &pool, NULL},
+            {"?minduration", Ns_ObjvTime,   &minDurationPtr,  NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        }
+        if (pool == NULL) {
+            /*
+             * No argument, list min duration for every pool.
+             */
+            Tcl_SetObjResult(interp, Ns_DbListMinDurations(interp, idataPtr->server));
+            return TCL_OK;
+	}
+
+        /*
+         * In this case, minduration was not given, return the actual
+         * minduration of this pool.
+         */
+        if (minDurationPtr == NULL) {
+
+            if (Ns_DbGetMinDuration(interp, pool, &minDurationPtr) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            Tcl_SetObjResult(interp, Ns_TclNewTimeObj(minDurationPtr));
+
+            return TCL_OK;
+        }
+        
+        /*
+         * Set the minduration the the specified value.
+         */
+        if (Ns_DbSetMinDuration(interp, pool, minDurationPtr) != TCL_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Ns_TclNewTimeObj(minDurationPtr));
+        }
+        
+        break;
     }
 
     case EXCEPTION:
@@ -622,8 +673,10 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             Tcl_WrongNumArgs(interp, 2, objv, "dbId ?on|off?");
         }
 	assert(handlePtr != NULL);
+        Ns_LogDeprecated(objv, 2, "ns_logctl debug(sql) ...", NULL);
         if (objc == 4) {
             int verbose;
+            
             if (Tcl_GetBoolean(interp, Tcl_GetString(objv[3]), &verbose) != TCL_OK) {
                 return TCL_ERROR;
             }
