@@ -140,8 +140,8 @@ static LogFilter   *filters;
 static const char  *const filterType = "ns:logfilter";
 static const char  *const severityType = "ns:logseverity";
 
-static const unsigned char LOG_COLOREND[]   = { 0x1bu, '[', '0', 'm', 0u };
-static const unsigned char LOG_COLORSTART[] = { 0x1bu, '[', 0u };
+static const unsigned char LOG_COLOREND[]   = { 0x1bu, UCHAR('['), UCHAR('0'), UCHAR('m'), 0u };
+static const unsigned char LOG_COLORSTART[] = { 0x1bu, UCHAR('['), 0u };
 
 typedef enum {
     COLOR_BLACK   = 30u,
@@ -317,7 +317,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
     len = strlen(valueString);
     if (len > 0u) {
         Ns_ObjvSpec  spec;
-        Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, len);
+        Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, (int)len);
 
         spec.arg  = tablePtr;
         spec.dest = idxPtr;
@@ -392,11 +392,11 @@ NsConfigLog(void)
 
         result = ObjvTableLookup(path, "logprefixcolor", colors, &idx);
         if (result == TCL_OK) {
-            prefixColor = idx;
+            prefixColor = (LogColor)idx;
         }
         result = ObjvTableLookup(path, "logprefixintensity", intensities, &idx);
         if (result == TCL_OK) {
-            prefixIntensity = idx;
+            prefixIntensity = (LogColorIntensity)idx;
         }
     }
 
