@@ -255,7 +255,7 @@ to false)
 
 [def gzip_cmd]
 Command for gzip-ing files, used by [cmd ::ns_gzipfile].  
-Teh value of [term gzip_cmd] is used in [cmd ::ns_gzipfile]
+The value of [term gzip_cmd] is used in [cmd ::ns_gzipfile]
 to locate the gzip command in the OS.  If [term gzip_cmd] 
 is not defined, and [cmd ::ns_gzipfile] is called, an error 
 is written to the error.log. 
