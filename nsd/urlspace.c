@@ -584,7 +584,8 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 {
     Branch      *branchPtr;
     Node        *nodePtr;
-    int          i, depth;
+    int          depth;
+    size_t       i;
     Tcl_DString  subDs;
 
     assert(triePtr != NULL);
@@ -593,7 +594,7 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
     assert(stack != NULL);
     assert(filter != NULL);
 
-    for (i = 0; i < triePtr->branches.n; i++) {
+    for (i = 0u; i < triePtr->branches.n; i++) {
         branchPtr = Ns_IndexEl(&triePtr->branches, i);
 
         /*
