@@ -839,7 +839,7 @@ NsDbDisconnect(Ns_DbHandle *handle)
  */
 
 void
-NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
+NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
 {
     Pool   *poolPtr;
 
@@ -1470,7 +1470,7 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
  */
 
 int 
-Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time *minDuration)
+Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDuration)
 {
     Pool *poolPtr;
     int   result;

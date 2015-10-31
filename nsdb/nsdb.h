@@ -169,7 +169,7 @@ NS_EXTERN int Ns_DbPoolStats(Tcl_Interp *interp);
 
 NS_EXTERN Tcl_Obj *Ns_DbListMinDurations(Tcl_Interp *interp, const char *server);
 NS_EXTERN int Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration);
-NS_EXTERN int Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time *minDuration);
+NS_EXTERN int Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDuration);
 
 
 /*
