@@ -280,8 +280,6 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         };
 
         if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
-            int length;
-            fprintf(stderr, "GET HANDLE ERROR '%s'\n", Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length));
             return TCL_ERROR;
         }
 
@@ -349,7 +347,6 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     }
 
     case LOGMINDURATION: {
-        const char  *pool;
         Ns_Time     *minDurationPtr = NULL;
         
         Ns_ObjvSpec args[] = {
