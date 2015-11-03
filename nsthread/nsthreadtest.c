@@ -155,11 +155,11 @@ WorkThread(void *arg)
 
     if (i == 2) {
         Ns_RWLockWrLock(&rwlock);
-        Msg("rwlock write aquired");
+        Msg("rwlock write acquired");
         sleep(2);
     } else {
         Ns_RWLockRdLock(&rwlock);
-        Msg("rwlock read aquired");
+        Msg("rwlock read acquired");
         sleep(1);
     }
     Ns_CsEnter(&cs);

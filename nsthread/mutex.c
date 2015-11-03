@@ -213,7 +213,7 @@ Ns_MutexDestroy(Ns_Mutex *mutex)
  * Ns_MutexLock --
  *
  *	Lock a mutex, tracking the number of locks and the number of
- *	which were not aquired immediately.
+ *	which were not acquired immediately.
  *
  * Results:
  *	None.
