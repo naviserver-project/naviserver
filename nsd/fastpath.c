@@ -491,7 +491,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 	     * We have a .gz file
 	     */
 	    if (gzStat.st_mtime < connPtr->fileInfo.st_mtime 
-		&& useGzipRefresh == NS_TRUE) {
+		&& (useGzipRefresh == NS_TRUE)) {
 		/*
 		 * The modification time of the .gz file is older than
 		 * the modification time of the source, and the config

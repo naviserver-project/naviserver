@@ -642,7 +642,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     }
 
     if (NsWriterQueue(conn, toWrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
-	Ns_Log(Debug, "==== writer sent %" PRIdz " bytes\n", toWrite);
+	Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", toWrite);
 	return (ssize_t)toWrite;
     }
     
@@ -1081,7 +1081,7 @@ ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         return NS_ERROR;
     }
-    while (ncopy > 0) {
+    while (ncopy > 0u) {
         if (chan != NULL) {
             nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
         } else if (fp != NULL) {

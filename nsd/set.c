@@ -113,8 +113,8 @@ Ns_SetCreate(const char *name)
     Ns_Set *setPtr;
 
     setPtr = ns_malloc(sizeof(Ns_Set));
-    setPtr->size = 0U;
-    setPtr->maxSize = 10U;
+    setPtr->size = 0u;
+    setPtr->maxSize = 10u;
     setPtr->name = ns_strcopy(name);
     setPtr->fields = ns_malloc(sizeof(Ns_SetField) * setPtr->maxSize);
     return setPtr;
@@ -145,7 +145,7 @@ Ns_SetFree(Ns_Set *set)
 
         assert(set->size <  set->maxSize);
 
-        for (i = 0U; i < set->size; ++i) {
+        for (i = 0u; i < set->size; ++i) {
             ns_free(set->fields[i].name);
             ns_free(set->fields[i].value);
         }
@@ -233,7 +233,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
     assert(cmp != NULL);
 
     found = 0;
-    for (i = 0U; i < set->size; ++i) {
+    for (i = 0u; i < set->size; ++i) {
         char *name = set->fields[i].name;
 
         if ((name == NULL) || (((*cmp) (key, name)) == 0)) {
@@ -781,7 +781,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
     Ns_DStringInit(&ds);
     Ns_DStringNAppend(&ds, (char *) &end, (int)sizeof(Ns_Set *));
 
-    for (i = 0U; i < set->size; ++i) {
+    for (i = 0u; i < set->size; ++i) {
         Ns_Set     *next;
         const char *name;
         char       *key;
@@ -868,7 +868,7 @@ Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
     assert(high != NULL);
     assert(low != NULL);
 
-    for (i = 0U; i < low->size; ++i) {
+    for (i = 0u; i < low->size; ++i) {
         int j = Ns_SetFind(high, low->fields[i].name);
         if (j == -1) {
             (void)Ns_SetPut(high, low->fields[i].name, low->fields[i].value);
@@ -903,7 +903,7 @@ Ns_SetCopy(const Ns_Set *old)
         return NULL;
     }
     new = Ns_SetCreate(old->name);
-    for (i = 0U; i < old->size; ++i) {
+    for (i = 0u; i < old->size; ++i) {
         (void)Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
     }
 
@@ -936,10 +936,10 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
     assert(from != NULL);
     assert(to != NULL);
 
-    for (i = 0U; i < from->size; i++) {
+    for (i = 0u; i < from->size; i++) {
 	(void)Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
     }
-    Ns_SetTrunc(from, 0U);
+    Ns_SetTrunc(from, 0u);
 }
 
 
@@ -966,8 +966,7 @@ Ns_SetPrint(const Ns_Set *set)
 
     assert(set != NULL);
 
-    fprintf(stderr, "%s:\n", (set->name != NULL) ? set->name : "<Unamed set>");
-    for (i = 0U; i < set->size; ++i) {
+    for (i = 0u; i < set->size; ++i) {
         if (set->fields[i].name == NULL) {
             fprintf(stderr, "\t(null) = ");
         } else {

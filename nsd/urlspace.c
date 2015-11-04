@@ -555,7 +555,7 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
 {
     Junction *juncPtr;
     Channel  *channelPtr;
-    int       n, i;
+    size_t    n, i;
     char     *stack[STACK_SIZE];
 
     assert(server != NULL);
@@ -567,11 +567,11 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
 
 #ifndef __URLSPACE_OPTIMIZE__
     n = Ns_IndexCount(&juncPtr->byuse);
-    for (i = 0; i < n; i++) {
+    for (i = 0u; i < n; i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     n = Ns_IndexCount(&juncPtr->byname);
-    for (i = (n - 1); i >= 0; i--) {
+    for (i = (n - 1u); i >= 0u; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
         WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
@@ -794,7 +794,7 @@ TrieInit(Trie *triePtr)
 {
     assert(triePtr != NULL);
 
-    Ns_IndexInit(&triePtr->branches, 25,
+    Ns_IndexInit(&triePtr->branches, 25u,
         (int (*) (const void *left, const void *right)) CmpBranches,
         (int (*) (const void *left, const void *right)) CmpKeyWithBranch);
     triePtr->node = NULL;
@@ -919,19 +919,19 @@ static void
 TrieTrunc(Trie *triePtr)
 {
     Branch *branchPtr;
-    int     n;
+    size_t  n;
 
     assert(triePtr != NULL);
 
     n = Ns_IndexCount(&triePtr->branches);
-    if (n > 0) {
-        int i;
+    if (n > 0u) {
+        size_t i;
 
         /*
          * Loop over each branch and recurse.
          */
 
-        for (i = 0; i < n; i++) {
+        for (i = 0u; i < n; i++) {
             branchPtr = Ns_IndexEl(&triePtr->branches, i);
             TrieTrunc(&branchPtr->trie);
         }
@@ -1012,19 +1012,19 @@ TrieTruncBranch(Trie *triePtr, char *seq)
 static void
 TrieDestroy(Trie *triePtr)
 {
-    int n;
+    size_t n;
 
     assert(triePtr != NULL);
 
     n = Ns_IndexCount(&triePtr->branches);
-    if (n > 0) {
-        int i;
+    if (n > 0u) {
+        size_t i;
 
         /*
          * Loop over each branch and delete it
          */
 
-        for (i = 0; i < n; i++) {
+        for (i = 0u; i < n; i++) {
 	    Branch *branchPtr = Ns_IndexEl(&triePtr->branches, i);
             BranchDestroy(branchPtr);
         }
@@ -1438,8 +1438,7 @@ static void
 JunctionTruncBranch(const Junction *juncPtr, char *seq)
 {
     Channel *channelPtr;
-    int      i;
-    int      n;
+    size_t   i, n;
 
     assert(juncPtr != NULL);
     assert(seq != NULL);
@@ -1451,13 +1450,13 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
 
 #ifndef __URLSPACE_OPTIMIZE__
     n = Ns_IndexCount(&juncPtr->byuse);
-    for (i = 0; i < n; i++) {
+    for (i = 0u; i < n; i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
         (void) TrieTruncBranch(&channelPtr->trie, seq);
     }
 #else
     n = Ns_IndexCount(&juncPtr->byname);
-    for (i = (n - 1); i >= 0; i--) {
+    for (i = (n - 1u); i >= 0u; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
         (void) TrieTruncBranch(&channelPtr->trie, seq);
     }
@@ -1616,9 +1615,9 @@ JunctionFind(const Junction *juncPtr, char *seq, int fast)
 
     data = NULL;
 #ifndef __URLSPACE_OPTIMIZE__
-    l = (size_t)Ns_IndexCount(&juncPtr->byuse);
+    l = Ns_IndexCount(&juncPtr->byuse);
 #else
-    l = (size_t)Ns_IndexCount(&juncPtr->byname);
+    l = Ns_IndexCount(&juncPtr->byname);
 #endif
 
 #ifdef DEBUG
@@ -1748,12 +1747,12 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
      */
 
 #ifndef __URLSPACE_OPTIMIZE__
-    l = (size_t)Ns_IndexCount(&juncPtr->byuse);
+    l = Ns_IndexCount(&juncPtr->byuse);
 
     for (i = 0; i < (ssize_t)l; i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
-	l = (size_t)Ns_IndexCount(&juncPtr->byname);
+	l = Ns_IndexCount(&juncPtr->byname);
 
     for (i = (l - 1); i >= 0; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
@@ -1836,11 +1835,11 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
     }
 
 #ifndef __URLSPACE_OPTIMIZE__
-    l = (size_t)Ns_IndexCount(&juncPtr->byuse);
+    l = Ns_IndexCount(&juncPtr->byuse);
     for (i = 0; i < (ssize_t)l && data == NULL; i++) {
       channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
-      l = (size_t)Ns_IndexCount(&juncPtr->byname);
+      l = Ns_IndexCount(&juncPtr->byname);
     for (i = (l - 1); (i >= 0) && (data == NULL); i--) {
       channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
 #endif

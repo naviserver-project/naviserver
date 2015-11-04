@@ -464,7 +464,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     for (i = 0u; i < 66u; i++) {
         block[i] = UCHAR('\0');
     }
-    for (i = 0, c = UCHAR(*pw); c != UCHAR('\0') && i < 64; pw++, c = UCHAR(*pw)) {
+    for (i = 0u, c = UCHAR(*pw); c != UCHAR('\0') && i < 64u; pw++, c = UCHAR(*pw)) {
 	for (j = 0; j < 7; j++, i++) {
             assert(i < sizeof(block));
             block[i] = (c >> (6 - j)) & 1u;
@@ -490,9 +490,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         c -= UCHAR('.');
         for (j = 0; j < 6; j++) {
             if ((c >> j) & 1u) {
-                unsigned char temp = s.E[6 * i + j];
-                s.E[6 * i + j] = s.E[6 * i + j + 24];
-                s.E[6 * i + j + 24] = temp;
+                unsigned char temp = s.E[6u * i + j];
+                s.E[6u * i + j] = s.E[6u * i + j + 24];
+                s.E[6u * i + j + 24] = temp;
             }
         }
     }
@@ -505,7 +505,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         c = UCHAR('\0');
         for (j = 0; j < 6; j++) {
             c <<= 1;
-            c |= block[6 * i + j];
+            c |= block[6u * i + j];
         }
         c += UCHAR('.');
         if (c > UCHAR('9')) {
@@ -514,9 +514,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         if (c > UCHAR('Z')) {
             c += 6u;
 	}
-        iobuf[i + 2] = (char)c;
+        iobuf[i + 2u] = (char)c;
     }
-    iobuf[i + 2] = '\0';
+    iobuf[i + 2u] = '\0';
     if (iobuf[1] == '\0') {
         iobuf[1] = iobuf[0];
     }

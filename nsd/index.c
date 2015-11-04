@@ -40,9 +40,9 @@
  * Local functions defined in this file
  */
 
-static int BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+static int BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static int BinSearchKey(const void *key, void *const*listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+static int BinSearchKey(const void *key, void *const*listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static int CmpStr(const char *const*leftPtr, const char *const*rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -240,7 +240,7 @@ Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
     if (indexPtr->n > 0u) {
         int i;
 
-        i = BinSearchKey(key, indexPtr->el, indexPtr->n,
+        i = BinSearchKey(key, indexPtr->el, (ssize_t)indexPtr->n,
 			 indexPtr->CmpKeyWithEl);
 
         if (i >= (int)indexPtr->n) {
@@ -345,9 +345,9 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
  */
 
 static int
-BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
 {
-    int low = 0, high = n-1, mid = 0;
+    ssize_t low = 0, high = n-1, mid = 0;
 
     assert(elPtrPtr != NULL);
     assert(listPtrPtr != NULL);
@@ -388,9 +388,9 @@ BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, int n, Ns_IndexCmpProc
  */
 
 static int
-BinSearchKey(const void *key, void *const* listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
+BinSearchKey(const void *key, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
 {
-    int low = 0, high = n-1, mid = 0;
+    ssize_t low = 0, high = n-1, mid = 0;
 
     assert(key != NULL);
     assert(listPtrPtr != NULL);
@@ -446,7 +446,7 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
         indexPtr->el = (void **) ns_malloc(indexPtr->max * sizeof(void *));
     }
     if (indexPtr->n > 0u) {
-        i = BinSearch(&el, indexPtr->el, indexPtr->n, indexPtr->CmpEls);
+        i = BinSearch(&el, indexPtr->el, (ssize_t)indexPtr->n, indexPtr->CmpEls);
     } else {
         i = 0;
     }
@@ -455,7 +455,7 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
         size_t j;
         
         for (j = indexPtr->n; (int)j > i; j--) {
-            indexPtr->el[j] = indexPtr->el[j - 1];
+            indexPtr->el[j] = indexPtr->el[j - 1u];
         }
     }
     indexPtr->el[i] = el;
@@ -494,7 +494,7 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
             indexPtr->n--;
             if (i < indexPtr->n) {
                 for (j = i; j < indexPtr->n; j++) {
-                    indexPtr->el[j] = indexPtr->el[j + 1];
+                    indexPtr->el[j] = indexPtr->el[j + 1u];
                 }
             }
             done = NS_TRUE;
