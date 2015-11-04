@@ -160,6 +160,8 @@ ns_section      "ns/fastpath"
     #ns_param        gzip_static         true       ;# check for static gzip; default: false
     #ns_param        gzip_refresh        true       ;# refresh stale .gz files on the fly using ::ns_gzipfile
     #ns_param        gzip_cmd            "/usr/bin/gzip -9"  ;# use for re-compressing
+    #ns_param        minify_css_cmd      "/usr/bin/yui-compressor --type css"
+    #ns_param        minify_js_cmd       "/usr/bin/yui-compressor --type js"
 
 #---------------------------------------------------------------------
 # 

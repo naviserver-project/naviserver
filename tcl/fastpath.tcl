@@ -169,8 +169,8 @@ $uptree
 #
 # ns_zipfile --
 #
-#   call gzip on a file to produce a same-named file
-#   in the same directory
+#   call gzip and optionally a minify command on a file to produce a
+#   same-named file in the same directory
 #
 # Results:
 #   None.
@@ -182,7 +182,21 @@ $uptree
 proc ns_gzipfile {source target} {
     set gzipCmd [ns_config ns/fastpath gzip_cmd]
     if {$gzipCmd eq ""} {error "no ns/fastpath gzip_cmd configured"}
-    exec {*}$gzipCmd < $source > $target
+    switch [file extension $source] {
+	.css {set minifyCmd [ns_config ns/fastpath minify_css_cmd]}
+	.js  {set minifyCmd [ns_config ns/fastpath minify_js_cmd]}
+	default {set minifyCmd ""}
+    }
+    if {$minifyCmd ne ""} {
+	if {[catch {
+	    exec {*}$minifyCmd < $source | {*}$gzipCmd > $target
+	} errorMsg]} {
+	    ns_log warning "mininfy returned error: $errorMsg"
+	    exec {*}$gzipCmd < $source > $target
+	}
+    } else {
+	exec {*}$gzipCmd < $source > $target
+    }
 }
 
 

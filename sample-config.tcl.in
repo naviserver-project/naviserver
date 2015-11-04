@@ -368,6 +368,13 @@ ns_section	"ns/fastpath"
    # Return the specified command for re-compressing when gzip file is outdated
    #ns_param	gzip_cmd		"/usr/bin/gzip -9"
 
+   # When recompressing outdated gzip files, do also minify css or js when
+   # these cmds are specified. The configured commands must be able to
+   # read from stdin and to write to stdout.
+   #
+   #ns_param        minify_css_cmd      "/usr/bin/yui-compressor --type css"
+   #ns_param        minify_js_cmd       "/usr/bin/yui-compressor --type js"
+
 
 ########################################################################
 # Socket driver module (HTTP)  -- nssock

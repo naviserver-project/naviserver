@@ -1,5 +1,4 @@
 [include version_include.man]
-[include version_include.man]
 
 [manpage_begin ns_return n [vset version]]
 [moddesc   {NaviServer Built-in Commands}]
@@ -243,7 +242,7 @@ source file, use the gzip-ed file for delivery.
 [def gzip_refresh]
 Refresh gzip file (i.e. re-gzip source) when the modification time of
 the compressed file is older than the modification time of the source.
-Note, that the command is just used for re-gzip-ing outdated files; it
+Note, that the command is just used for re-gzip-ing outdated .gz-files; it
 does not actively compress files, which were previously not compressed
 (this would be wasteful for e.g. large tmp files, there is not
 cleanup, etc.).  For refreshing gzip files, the Tcl command
@@ -260,6 +259,24 @@ to locate the gzip command in the OS.  If [term gzip_cmd]
 is not defined, and [cmd ::ns_gzipfile] is called, an error 
 is written to the error.log. 
 Example setting: "/usr/bin/gzip -9".  (string, defaults to "")
+
+[def minify_css_cmd] Command for minifying css files.  When
+recompressing outdated gzip files (see parameters [term gzip_refresh] and
+[term gzip_cmd]), NaviServer will optionally minify
+css files on the fly, when [term minify_css_cmd] is specified.
+In these cases, the returned file will be minified and compressed.
+The configured command must read css files from stdin and
+to write the minified content to stdout.
+Example setting: "/usr/bin/yui-compressor --type css".  (string, defaults to "")
+
+[def minify_js_cmd] Command for minifying css files.  When
+recompressing outdated gzip files (see parameters [term gzip_refresh] and
+[term gzip_cmd]), NaviServer will optionally minify
+JavaScript files on the fly, when [term minify_js_cmd] is specified.
+In these cases, the returned file will be minified and compressed.
+The configured command must read JavaScript files from stdin and
+to write the minified content to stdout.
+Example setting: "/usr/bin/yui-compressor --type js".  (string, defaults to "")
 
 [list_end]
 
@@ -308,5 +325,5 @@ Defines absolute path to server's home directory.
 	ns_register ns_adp_puts ns_conn ns_writer]
 
 [keywords return response status charset encoding configuration \
-fastpath mmap cache gzip serverdir pagedir writer]
+	fastpath mmap cache gzip serverdir pagedir writer minify]
 [manpage_end]
