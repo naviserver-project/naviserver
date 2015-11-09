@@ -847,7 +847,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
     assert(handle != NULL);
     assert(sql != NULL);
 
-    poolPtr = ((Handle *)handle)->poolPtr;
+    poolPtr = ((const Handle *)handle)->poolPtr;
     poolPtr->statementCount++;
 
     if (handle->dsExceptionMsg.length > 0) {
