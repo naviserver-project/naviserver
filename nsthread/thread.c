@@ -335,8 +335,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     assert(dsPtr != NULL);
 
     Ns_MasterLock();
-    thrPtr = firstThreadPtr;
-    while (thrPtr != NULL) {
+    for (thrPtr = firstThreadPtr; (thrPtr != NULL); thrPtr = thrPtr->nextPtr) {
 
         if ((thrPtr->flags & NS_THREAD_EXITED) == 0u) {
             int written;
@@ -344,9 +343,9 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
             Tcl_DStringStartSublist(dsPtr);
             Tcl_DStringAppendElement(dsPtr, thrPtr->name);
             Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
-            snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRIu64,
-                     thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
-            Tcl_DStringAppend(dsPtr, buf, -1);
+            written = snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRIu64,
+                               thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
+            Tcl_DStringAppend(dsPtr, buf, written);
             if (proc != NULL) {
                 (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
             } else {
@@ -370,7 +369,6 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
 
             Tcl_DStringEndSublist(dsPtr);
         }
-        thrPtr = thrPtr->nextPtr;
     }
     Ns_MasterUnlock();
 }
