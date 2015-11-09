@@ -322,6 +322,16 @@ ShutdownThread(void *arg)
 
     for (cbPtr = arg; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
 	Ns_ShutdownProc  *proc = (Ns_ShutdownProc *)cbPtr->proc;
+
+        if (Ns_LogSeverityEnabled(Debug)) {
+            Ns_DString ds;
+            
+            Ns_DStringInit(&ds);
+            Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
+            Ns_Log(Debug, "ns:callback:shutdown: %s", Ns_DStringValue(&ds));
+            Ns_DStringFree(&ds);
+        }
+        
         (*proc)(NULL, cbPtr->arg);
     }
 
