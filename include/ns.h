@@ -1455,7 +1455,7 @@ NS_EXTERN void
 Ns_IndexDel(Ns_Index *indexPtr, const void *el) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void *
-Ns_IndexEl(const Ns_Index *indexPtr, int i) NS_GNUC_NONNULL(1);
+Ns_IndexEl(const Ns_Index *indexPtr, size_t i) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc) NS_GNUC_NONNULL(1);

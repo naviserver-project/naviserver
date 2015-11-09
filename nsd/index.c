@@ -520,7 +520,7 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
  */
 
 void *
-Ns_IndexEl(const Ns_Index *indexPtr, int i)
+Ns_IndexEl(const Ns_Index *indexPtr, size_t i)
 {
     assert(indexPtr != NULL);
 
