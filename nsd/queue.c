@@ -53,9 +53,12 @@ static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *stat
 static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-static int 
-neededAdditionalConnectionThreads(const ConnPool *poolPtr) 
-     NS_GNUC_NONNULL(1);
+static int neededAdditionalConnectionThreads(const ConnPool *poolPtr) 
+    NS_GNUC_NONNULL(1);
+
+static void WakeupConnThreads(ConnPool *poolPtr) 
+    NS_GNUC_NONNULL(1);
+
 
 /*
  * Static variables defined in this file.
@@ -837,7 +840,7 @@ NsStartServer(const NsServer *servPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsWakeupConnThreads --
+ * WakeupConnThreads --
  *
  *      Wake up every idle connection thread of the specified pool.
  *
@@ -851,11 +854,7 @@ NsStartServer(const NsServer *servPtr)
  */
 
 static void
-NsWakeupConnThreads(ConnPool *poolPtr) 
-    NS_GNUC_NONNULL(1);
-
-static void
-NsWakeupConnThreads(ConnPool *poolPtr) {
+WakeupConnThreads(ConnPool *poolPtr) {
     int i;
 
     assert(poolPtr != NULL);
@@ -902,7 +901,7 @@ NsStopServer(NsServer *servPtr)
     servPtr->pools.shutdown = NS_TRUE;
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
-	NsWakeupConnThreads(poolPtr);
+	WakeupConnThreads(poolPtr);
         poolPtr = poolPtr->nextPtr;
     }
 }
