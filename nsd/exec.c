@@ -145,7 +145,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 #ifdef _WIN32
     HANDLE process = (HANDLE) pid;
     int status = NS_OK;
-    DWORD exitcode = 0U;
+    DWORD exitcode = 0u;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
         (GetExitCodeProcess(process, &exitcode) != TRUE)) {
@@ -162,7 +162,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
         if (exitcodePtr != NULL) {
             *exitcodePtr = exitcode;
         }
-        if (nsconf.exec.checkexit == TRUE && exitcode != 0) {
+        if (nsconf.exec.checkexit == TRUE && exitcode != 0u) {
             Ns_Log(Error, "exec: process %d exited with non-zero status: %d",
                    pid, exitcode);
             status = NS_ERROR;
