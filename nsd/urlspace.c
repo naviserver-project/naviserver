@@ -571,7 +571,7 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     n = Ns_IndexCount(&juncPtr->byname);
-    for (i = (n - 1u); i >= 0u; i--) {
+    for (i = (n - 1u); i > 0u; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
         WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
@@ -1456,7 +1456,7 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
     }
 #else
     n = Ns_IndexCount(&juncPtr->byname);
-    for (i = (n - 1u); i >= 0u; i--) {
+    for (i = (n - 1u); i > 0u; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
         (void) TrieTruncBranch(&channelPtr->trie, seq);
     }
