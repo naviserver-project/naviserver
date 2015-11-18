@@ -113,7 +113,7 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
     assert(url != NULL);
     
     Ns_MutexLock(&lock);
-    limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0);
+    limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0u, NS_URLSPACE_DEFAULT);
     Ns_MutexUnlock(&lock);
 
     return ((limitsPtr != NULL) ? limitsPtr : defLimitsPtr);

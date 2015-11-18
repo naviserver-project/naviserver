@@ -346,7 +346,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
-                                   poolid, 0);
+                                   poolid, 0u, NS_URLSPACE_DEFAULT);
     }
     if (poolPtr == NULL) {
         poolPtr = servPtr->pools.defaultPtr;

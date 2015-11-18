@@ -447,7 +447,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int length = 0;
+    off_t length = 0;
     const char *fileString;
 
     Ns_ObjvSpec args[] = {
@@ -490,7 +490,8 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 int
 NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int length = 0, fd;
+    int         fd;
+    off_t       length = 0;
     const char *fileIdString;
     
     Ns_ObjvSpec args[] = {

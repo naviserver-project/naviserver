@@ -3136,7 +3136,7 @@ Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int i
 
 NS_EXTERN void *
 Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_DEPRECATED_FOR(Ns_UrlSpecificGet);
 
 NS_EXTERN void *
 Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,

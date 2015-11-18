@@ -263,6 +263,7 @@ static const Cmd servCmds[] = {
     {"ns_unregister_url2file", NULL, NsTclUnRegisterUrl2FileObjCmd},
     {"ns_upload_stats", NULL, NsTclProgressObjCmd},
     {"ns_url2file", NULL, NsTclUrl2FileObjCmd},
+    {"ns_urlspace", NULL, NsTclUrlSpaceObjCmd},
     {"ns_write", NULL, NsTclWriteObjCmd},
     {"ns_writecontent", NULL, NsTclWriteContentObjCmd},
     {"ns_writer", NULL, NsTclWriterObjCmd},
@@ -276,7 +277,6 @@ static const Cmd servCmds[] = {
     {"nsv_names", NULL, NsTclNsvNamesObjCmd},
     {"nsv_set", NULL, NsTclNsvSetObjCmd},
     {"nsv_unset", NULL, NsTclNsvUnsetObjCmd},
-
     /*
      * Add more server Tcl commands here.
      */

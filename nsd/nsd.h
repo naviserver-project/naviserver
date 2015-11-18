@@ -69,6 +69,12 @@ typedef enum {
     ADP_TIMEOUT =                4
 } AdpResult;
 
+typedef enum {
+    NS_URLSPACE_DEFAULT =        0,
+    NS_URLSPACE_FAST =           1,
+    NS_URLSPACE_EXACT =          2,
+} NsUrlSpaceOp;
+
 #define MAX_URLSPACES                  16
 #define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
 #define NS_IPADDR_SIZE                 16u
@@ -840,7 +846,10 @@ typedef struct NsServer {
      * The following array maintains url-specific data.
      */
 
-    struct Junction *urlspace[MAX_URLSPACES];
+    struct {
+        struct Junction *junction[MAX_URLSPACES];
+        Ns_Mutex lock;
+    } urlspace;
 
     /*
      * The following struct maintains the core Tcl config.
@@ -1219,6 +1228,7 @@ NsTclAdpAbortObjCmd,
     NsTclUrl2FileObjCmd,
     NsTclUrlDecodeObjCmd,
     NsTclUrlEncodeObjCmd,
+    NsTclUrlSpaceObjCmd,
     NsTclWriteContentObjCmd,
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
@@ -1290,7 +1300,7 @@ NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
-                                 const char *url, int id, int fast)
+                                 const char *url, int id, unsigned int flags, NsUrlSpaceOp op)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
