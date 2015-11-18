@@ -635,6 +635,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     Ns_Entry       *entry;
     const char     *key;
     Tcl_Obj        *varNameObj = NULL, *resultObj;
+    int             result = TCL_OK;
 
     Ns_ObjvSpec args[] = {
         {"cache",    ObjvCache,     &cPtr,        NULL},
@@ -658,7 +659,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(resultObj != NULL));
 	if (likely(resultObj != NULL)) {
 	    if (unlikely(Tcl_ObjSetVar2(interp, varNameObj, NULL, resultObj, TCL_LEAVE_ERR_MSG) == NULL)) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
 	}
     } else {
@@ -667,10 +668,10 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 	} else {
 	    Tcl_AppendResult(interp, "no such key: ",
 			     Tcl_GetString(objv[2]), NULL);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
 	}
     }
-    return TCL_OK;
+    return result;
 }
 
 
