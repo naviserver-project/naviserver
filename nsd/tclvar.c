@@ -151,6 +151,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
     Tcl_Obj       *resultObj;
+    int            result = TCL_OK;
 
     if (unlikely(objc < 3 || objc > 4)) {
         Tcl_WrongNumArgs(interp, 1, objv, "array key ?varName?");
@@ -171,18 +172,18 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 	} else {
 	    Tcl_AppendResult(interp, "no such key: ",
 			     Tcl_GetString(objv[2]), NULL);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
 	}
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(resultObj != NULL));
 	if (likely(resultObj != NULL)) {
 	    if (unlikely(Tcl_ObjSetVar2(interp, objv[3], NULL, resultObj, TCL_LEAVE_ERR_MSG) == NULL)) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
 	}
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
