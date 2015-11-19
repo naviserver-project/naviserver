@@ -130,7 +130,10 @@
 #include "nsd.h"
 
 #define STACK_SIZE      512 /* Max depth of URL hierarchy. */
-//#define DEBUG 1
+
+/*
+#define DEBUG 1
+*/
 
 /*
  * This optimization, when turned on, prevents the server from doing a
@@ -141,28 +144,30 @@
  * the introduction of ns_urlspace it became easy to write test cases. The
  * __URLSPACE_OPTIMIZE__ option can be turned on, since it passes all tests.
  */
+
 /* 
- * #define __URLSPACE_OPTIMIZE__ 
+#define __URLSPACE_OPTIMIZE__ 
  */
 
 /*
  * There is still room for improvements. a simple lookup for "/a/c/a.html"
  * takes 10 strlen operations and 14 strcmp operations. One could alter the
- * static function MkSeq() to calculate strlen operations once, and to make it
- * easier to access the last element.
+ * static function MkSeq() to produce a more intelligent structure, to
+ * calculate strlen operations once, and to make it easier to access the last
+ * element.
  *
  * Currently, the performance of "ns_urlspace get" is about twice the time of
  * "nsv_get".
 
-   ns_urlspace unset -recurse /x
-   ns_urlspace set /x 1
-   lappend _ [time {ns_urlspace get /x} 1000]
-   lappend _ [time {ns_urlspace get /x/y} 1000]
-   lappend _ [time {ns_urlspace get /x/y/z} 1000]
-   nsv_set a b 1
-   lappend _ [time {nsv_get a b} 1000]
+     ns_urlspace unset -recurse /x
+     ns_urlspace set /x 1
+     lappend _ [time {ns_urlspace get /x} 1000]
+     lappend _ [time {ns_urlspace get /x/y} 1000]
+     lappend _ [time {ns_urlspace get /x/y/z} 1000]
+     nsv_set a b 1
+     lappend _ [time {nsv_get a b} 1000]
 
- ns_urlspace -> 0.69-0.72, nsv_get 0.39
+ * ns_urlspace -> 0.69-0.72, nsv_get 0.39
  */
 
 
@@ -2231,12 +2236,12 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     char        *key = ".";
 
     static const char *opts[] = {
-        "add", "get", "list", "new", "set", "unset", 
+        "get", "list", "new", "set", "unset", 
         NULL
     };
 
     enum {
-        CAddIdx, CGetIdx, CListIdx, CNewIdx, CSetIdx, CUnsetIdx, CWalkIdx
+        CGetIdx, CListIdx, CNewIdx, CSetIdx, CUnsetIdx
     };
 
     if (objc < 2) {
