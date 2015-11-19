@@ -721,6 +721,13 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
         depth = 0;
         Tcl_DStringAppendElement(&subDs, stack[depth++]);
         Tcl_DStringAppend(&subDs, " ", 1);
+
+#if 0
+        {char buffer[100];
+            sprintf(buffer, "%p:", (void*)nodePtr);
+            Tcl_DStringAppend(&subDs, buffer, -1);
+        }
+#endif        
         if (stack[depth] == NULL) {
             Tcl_DStringAppendElement(&subDs, "/");
         } else {
@@ -1167,19 +1174,24 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
     assert(seq != NULL);
     assert(depthPtr != NULL);
 
-#ifdef DEBUG    
-    fprintf(stderr, "...    TrieFind seq '%s'\n", seq);
-#endif
-
     nodePtr = triePtr->node;
     ldepth = *depthPtr;
 
+#ifdef DEBUG    
+    fprintf(stderr, "...    TrieFind seq '%s' nodePtr %p ldepth %d\n", seq, (void*)nodePtr, ldepth);
+#endif
+
     if (nodePtr != NULL) {
-        if ((*seq == '\0') && (nodePtr->dataNoInherit != NULL)) {
+        if (
+            (*seq == '\0') /* this makes "set -noinherit /x/ *.html foo" + "get /x/a.html" fail */
+            && (nodePtr->dataNoInherit != NULL)) {
             data = nodePtr->dataNoInherit;
         } else {
             data = nodePtr->dataInherit;
         }
+#ifdef DEBUG    
+        fprintf(stderr, "...    TrieFind seq '%s' nodePtr %p -> data %p\n", seq, (void*)nodePtr, data);
+#endif
     }
     if (*seq != '\0') {
 
@@ -1190,6 +1202,9 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         ldepth += 1;
+#ifdef DEBUG    
+        fprintf(stderr, "...    TrieFind seq '%s' recurse on branch %p\n", seq, (void*)branchPtr);
+#endif
         if (branchPtr != NULL) {
             void *p = TrieFind(&branchPtr->trie, seq + __strlen(seq) + 1u, &ldepth);
             if (p != NULL) {
@@ -1717,7 +1732,7 @@ JunctionFind(const Junction *juncPtr, char *seq)
     Channel *channelPtr;
     char    *p;
     size_t   i, l;
-    int      depth = 0, doit;
+    int      depth = 0;
     void    *data;
 
     assert(juncPtr != NULL);
@@ -1757,9 +1772,13 @@ JunctionFind(const Junction *juncPtr, char *seq)
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0u; i < l; i++) {
+        int doit;
+        
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = l; i > 0u; i--) {
+        int doit;
+        
         channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
 #endif
 
