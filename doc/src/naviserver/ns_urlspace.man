@@ -35,7 +35,7 @@
 ]
 
  Assign a value to a node in the URL space. Per default,
- the value is inherited to all subnodes, unless the option
+ the value is inherited to all sub-nodes, unless the option
  [option "-noinherit"] is specified.
 
 [call [cmd  "ns_urlspace get"] \
@@ -107,7 +107,7 @@ Every URL has a key assigned, which is logically part of the URL
 space. Using this key, one could for example use the HTTP methods
 [term GET] or [term POST] to assign different values to an URL
 for GET or POST requests. The key can be used as well for other
-purposes. If no key is sepcified, it default to the constant
+purposes. If no key is specified, it default to the constant
 "[const .]" (dot character).
 
 [list_end]
