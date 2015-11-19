@@ -30,7 +30,7 @@
 [list_begin definitions]
 [call [cmd  "ns_connchan detach"]]
 
- The command [cmd "connchan detach"] unplugs the connection channel from
+ The command [cmd "ns_connchan detach"] unplugs the connection channel from
  the current connection thread and stores it with a fresh handle name
  in a per-virtual-server private table. The command returns the
  created handle as result.

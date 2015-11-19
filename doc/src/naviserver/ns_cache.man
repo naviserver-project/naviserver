@@ -297,7 +297,7 @@ ns_return 200 text/html [lb]example_personalized_page $user $ad[rb]
 [example_end]
 
 
-[see_also ns_memoize nsv ns_time]
+[see_also ns_memoize nsv ns_time ns_urlspace]
 [keywords cache fastpath]
 
 [manpage_end]

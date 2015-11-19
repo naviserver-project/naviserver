@@ -393,33 +393,20 @@ The number of buckets to be used can be configured by setting the
 "nsvbuckets" tcl parameters, e.g.:
 
 [example_begin]
-
-
-	[lb]ns/server/server1/tcl[rb]
-        nsvbuckets=20
-
+    ns_section      "ns/server/${servername}/tcl"
+ 
+       # Number of buckets in Tcl hash table for nsv vars
+       ns_param        nsvbuckets              16
 [example_end]
 
 
 The default is 8 which should be reasonalbe.  Note that you can monitor
-the lock contention, if any, by enabling mutex metering:
-
-
-[example_begin]
-
-	[lb]ns/threads[rb]
-        mutexmetering=on
-
-[example_end]
-
-and then viewing the results of "ns_info locks" command after the server
+the lock contention by viewing the results of "ns_info locks" command after the server
 has been running for some time.  The nsv locks all have names of the
 form "nsv:##".  If you find many lock attempts which did not successed
 immediately, try increasing nsvbuckets.
 
-
-
-[see_also nsd ns_cache_get]
+[see_also nsd ns_cache ns_urlspace]
 [keywords nsv shared variables]
 
 [manpage_end]
