@@ -30,7 +30,7 @@ test ns_urlspace-1.5 {nothing set} -body {
 } -result {}
 
 
-test ns_urlspace-2.1 {flat set/get/delete/list} -setup {
+test ns_urlspace-2.1 {flat set/get/unset/list} -setup {
     ns_urlspace set / foo
 } -body {
     lappend _ \
@@ -58,7 +58,7 @@ test ns_urlspace-2.2 {flat noinherit set/list/unset/list} -setup {
 	unset _
     } -result {{{. /x * inherit foo} {. /y * noinherit bar}} 1 0 {{. /y * noinherit bar}} 1 {}}
 
-test ns_urlspace-2.3 {tree set/list/unset/list} -setup {
+test ns_urlspace-2.3 {tree set/get/unset/list} -setup {
     ns_urlspace set /x foo
 } -body {
     lappend _ \
@@ -76,7 +76,7 @@ test ns_urlspace-2.3 {tree set/list/unset/list} -setup {
 	unset _
     } -result {{} foo foo foo foo 1 {} {} {} {}}
 
-test ns_urlspace-2.4 {tree noinherit set/list/unset/list} -setup {
+test ns_urlspace-2.4 {tree noinherit set/get/unset/list} -setup {
     ns_urlspace set -noinherit /x foo
 } -body {
     lappend _ \
@@ -94,7 +94,7 @@ test ns_urlspace-2.4 {tree noinherit set/list/unset/list} -setup {
 	unset _
     } -result {{} foo {} {} {} 1 {} {} {} {}}
 
-test ns_urlspace-2.5 {tree+constant-filter set/list/unset/list} -setup {
+test ns_urlspace-2.5 {tree+constant-filter set/get/unset/list} -setup {
     ns_urlspace set /x/a.html foo
 } -body {
     lappend _ \
@@ -114,7 +114,7 @@ test ns_urlspace-2.5 {tree+constant-filter set/list/unset/list} -setup {
 	unset _
     } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
 
-test ns_urlspace-2.6 {tree+constant-filter noinherit set/list/unset/list} -setup {
+test ns_urlspace-2.6 {tree+constant-filter noinherit set/get/unset/list} -setup {
     ns_urlspace set -noinherit /x/a.html foo
 } -body {
     lappend _ \
@@ -211,11 +211,79 @@ test ns_urlspace-2.10 {tree+wild-card-filter with ext} -setup {
 	unset _
     } -result {234 {} 234 {} {} 0 1 {}}
 
-
-
+test ns_urlspace-2.11 {tree+wild-card-filter exact set/list/unset/list} -setup {
+    ns_urlspace set /x/*.html foo
+} -body {
+    lappend _ \
+	[ns_urlspace get -exact /] \
+	[ns_urlspace get -exact /x] \
+	[ns_urlspace get -exact /x/a] \
+	[ns_urlspace get -exact /x/a.tcl] \
+	[ns_urlspace get -exact /x/a.html] \
+	[ns_urlspace get -exact /x/*.html] \
+	[ns_urlspace unset /x] \
+	[ns_urlspace unset /x/bar.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{} {} {} {} {} foo 0 0 1 {}}
 
 #
-# missing: exact, key, id
+# key
 #
+
+test ns_urlspace-3.1 {tree+wild-card-filter key set/list/unset/list} -setup {
+    ns_urlspace set -key . /x/*.html foo
+    ns_urlspace set -key a /x/*.html bar
+} -body {
+    lappend _ \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace get /x/*.html] \
+	[ns_urlspace get /x/y/a.html] \
+	[ns_urlspace get -key a /x/a.html] \
+	[ns_urlspace get -key a /x/y/a.html] \
+	[ns_urlspace get -key b /x/a.html] \
+	[ns_urlspace get -key b /x/y/a.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace unset -key a /x/*.html] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{} foo foo foo bar bar {} {} 1 1 {}}
+
+test ns_urlspace-3.2 {tree+wild-card-filter key-with-spaces set/list/unset/list} -setup {
+    ns_urlspace set -key "a b c" /x/*.html "d e f"
+} -body {
+    lappend _ \
+	[ns_urlspace list] \
+	[ns_urlspace unset -key "a b c" /x/*.html] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{{{a b c} /x *.html inherit {d e f}}} 1 {}}
+
+#
+# id
+#
+test ns_urlspace-4.1 {id set/list/unset/list} -setup {
+    set ID [ns_urlspace new]
+    ns_urlspace set /x/*.html foo
+    ns_urlspace set -id $ID /x/*.html bar
+} -body {
+    lappend _ \
+	[ns_urlspace get /x/x.html] \
+	[ns_urlspace get -id $ID /x/x.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace unset -id $ID /x/*.html] \
+	[ns_urlspace list] \
+	[ns_urlspace list -id $ID] \
+    } -cleanup {
+	unset _
+	unset ID
+    } -result {foo bar 1 1 {} {}}
+
+
 
 cleanupTests
