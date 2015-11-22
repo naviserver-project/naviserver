@@ -1770,7 +1770,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
 	}
 	Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
-        snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) diff.sec, diff.usec);
+        snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
         snprintf(buf, sizeof(buf), "%" PRIuz, connPtr->nContentSent);
         Tcl_DStringAppendElement(dsPtr, buf);

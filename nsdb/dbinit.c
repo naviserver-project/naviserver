@@ -687,11 +687,11 @@ Ns_DbPoolStats(Tcl_Interp *interp)
              * of the obj would be floating point format
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
             */
-            len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
+            len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
-            len = snprintf(buf, sizeof(buf), "%" PRIu64 ".%06ld", (int64_t) poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
+            len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
             Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
         
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
@@ -1403,7 +1403,7 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
             
             poolPtr = GetPool(pool);
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
-            len = snprintf(buffer, sizeof(buffer), "%" PRIu64 ".%06ld",
+            len = snprintf(buffer, sizeof(buffer), "%" PRId64 ".%06ld",
                            (int64_t) poolPtr->minDuration.sec, poolPtr->minDuration.usec);
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
             pool = pool + strlen(pool) + 1;
