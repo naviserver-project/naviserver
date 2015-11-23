@@ -177,9 +177,9 @@ test ns_urlspace-2.8 {tree+wild-card-filter noinherit set/list/unset/list} -setu
 	unset _
     } -result {{} {} {} {} {} {} 0 0 1 {} {} {} {}}
 
-### why can we not unset via "/foo*"? since the cmd fails, cleanup happens via -recurse
 test ns_urlspace-2.9 {tree+wild-card-filter} -setup {
     ns_urlspace set /foo* 123
+    ns_urlspace set /TOP/foo* 345
 } -body {
     lappend _ \
 	[ns_urlspace get /foo] \
@@ -187,16 +187,19 @@ test ns_urlspace-2.9 {tree+wild-card-filter} -setup {
 	[ns_urlspace get /foo/] \
 	[ns_urlspace get /foo/bar] \
 	[ns_urlspace get /foobar/abc] \
+	[ns_urlspace get /TOP/foo] \
+	[ns_urlspace get /TOP/foo1] \
+	[ns_urlspace get /TOP/foo/abc] \
 	[ns_urlspace unset /foo*] \
-	[ns_urlspace unset -recurse /] \
+	[ns_urlspace unset /TOP/foo*] \
 	[ns_urlspace list] \
     } -cleanup {
 	unset _
-    } -result {123 123 123 {} {} 0 1 {}}
+    } -result {123 123 123 {} {} 345 345 {} 1 1 {}}
 
-### why can we not unset via "/foo*.tcl"? since the cmd fails, cleanup happens via -recurse
 test ns_urlspace-2.10 {tree+wild-card-filter with ext} -setup {
     ns_urlspace set /foo*.tcl 234
+    ns_urlspace set /TOP/foo*.tcl 345
 } -body {
     lappend _ \
 	[ns_urlspace get /foo.tcl] \
@@ -204,12 +207,16 @@ test ns_urlspace-2.10 {tree+wild-card-filter with ext} -setup {
 	[ns_urlspace get /foo1.tcl] \
 	[ns_urlspace get /foo/bar.tcl] \
 	[ns_urlspace get /foo1/bar.tcl] \
+	[ns_urlspace get /TOP/foo.tcl] \
+	[ns_urlspace get /TOP/foo1.tcl] \
+	[ns_urlspace get /TOP/foo1.html] \
+	[ns_urlspace get /TOP/foo/bar/1.tcl] \
 	[ns_urlspace unset /foo*.tcl] \
-	[ns_urlspace unset -recurse /] \
+	[ns_urlspace unset /TOP/foo*.tcl] \
     	[ns_urlspace list] \
     } -cleanup {
 	unset _
-    } -result {234 {} 234 {} {} 0 1 {}}
+    } -result {234 {} 234 {} {} 345 345 {} {} 1 1 {}}
 
 test ns_urlspace-2.11 {tree+wild-card-filter exact set/list/unset/list} -setup {
     ns_urlspace set /x/*.html foo

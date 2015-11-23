@@ -1988,8 +1988,10 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
     for (i = l; (i > 0u) && (data == NULL); i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
 #endif
-        if (depth == 2 && STREQ(p, channelPtr->filter)) {
-
+        if (
+            /* (depth == 2) && */
+            STREQ(p, channelPtr->filter)
+            ) {
             /*
              * This filter exactly matches the last element of the
              * sequence, so get the node and delete it. (This is
@@ -2002,7 +2004,6 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
                 (void) TrieDelete(&channelPtr->trie, seq, flags);
             }
         } else if (__Tcl_StringMatch(p, channelPtr->filter)) {
-
             /*
              * The filter matches, so get the node and delete it.
              */
