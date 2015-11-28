@@ -269,8 +269,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     NsServer       *servPtr = NULL;
     Ns_Set         *set;
 
-    assert(module != NULL);
-    assert(init != NULL);
+    NS_NONNULL_ASSERT(module != NULL);
+    NS_NONNULL_ASSERT(init != NULL);
 
     /*
      * If a server is provided, servPtr must be set.
@@ -757,7 +757,7 @@ NsStopSpoolers(void)
  */
 void
 NsWakeupDriver(const Driver *drvPtr) {
-    assert(drvPtr != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
     SockTrigger(drvPtr->trigger[1]);
 }
 
@@ -828,7 +828,7 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     Request *reqPtr;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     if (sockPtr->reqPtr == NULL) {
         SockState status;
@@ -931,7 +931,7 @@ NsSockClose(Sock *sockPtr, int keep)
     Driver *drvPtr;
     int     trigger = 0;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
     Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", (void *)sockPtr, keep);
@@ -973,7 +973,7 @@ DriverListen(Driver *drvPtr)
 {
     NS_SOCKET sock;
 
-    assert(drvPtr != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
 
     sock = (*drvPtr->listenProc)((Ns_Driver *) drvPtr,
                                  drvPtr->bindaddr,
@@ -1016,7 +1016,7 @@ DriverAccept(Sock *sockPtr)
 {
     socklen_t n = (socklen_t)sizeof(struct sockaddr_in);
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     return (*sockPtr->drvPtr->acceptProc)((Ns_Sock *) sockPtr,
                                           sockPtr->drvPtr->sock,
@@ -1045,7 +1045,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
     Ns_Time timeout;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     timeout.sec = sockPtr->drvPtr->recvwait;
     timeout.usec = 0;
@@ -1076,7 +1076,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 {
     Ns_Time timeout;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
 
     timeout.sec = sockPtr->drvPtr->sendwait;
@@ -1158,7 +1158,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 static bool
 DriverKeep(Sock *sockPtr)
 {
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     return (*sockPtr->drvPtr->keepProc)((Ns_Sock *) sockPtr);
 }
 
@@ -1182,7 +1182,7 @@ DriverKeep(Sock *sockPtr)
 static void
 DriverClose(Sock *sockPtr)
 {
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     (*sockPtr->drvPtr->closeProc)((Ns_Sock *) sockPtr);
 }
 
@@ -1623,14 +1623,14 @@ DriverThread(void *arg)
 static void
 PollCreate(PollData *pdata)
 {
-    assert(pdata != NULL);
+    NS_NONNULL_ASSERT(pdata != NULL);
     memset(pdata, 0, sizeof(PollData));
 }
 
 static void
 PollFree(PollData *pdata)
 {
-    assert(pdata != NULL);
+    NS_NONNULL_ASSERT(pdata != NULL);
     ns_free(pdata->pfds);
     memset(pdata, 0, sizeof(PollData));
 }
@@ -1638,7 +1638,7 @@ PollFree(PollData *pdata)
 static void
 PollReset(PollData *pdata)
 {
-    assert(pdata != NULL);
+    NS_NONNULL_ASSERT(pdata != NULL);
     pdata->nfds = 0u;
     pdata->timeout.sec = TIME_T_MAX;
     pdata->timeout.usec = 0;
@@ -1647,7 +1647,7 @@ PollReset(PollData *pdata)
 static NS_POLL_NFDS_TYPE
 PollSet(PollData *pdata, NS_SOCKET sock, short type, const Ns_Time *timeoutPtr)
 {
-    assert(pdata != NULL);
+    NS_NONNULL_ASSERT(pdata != NULL);
     /*
      * Grow the pfds array if necessary.
      */
@@ -1681,7 +1681,7 @@ PollWait(const PollData *pdata, int waittime)
 {
     int n;
 
-    assert(pdata != NULL);
+    NS_NONNULL_ASSERT(pdata != NULL);
 
     do {
         n = ns_poll(pdata->pfds, pdata->nfds, waittime);
@@ -1715,7 +1715,7 @@ SockPrepare(Sock *sockPtr)
 {
     Request *reqPtr;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     if (sockPtr->reqPtr != NULL) {
         return;
@@ -1758,7 +1758,7 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     /*
      *  Verify the conditions, Request struct should exists already
      */
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     /*
      * SockSetServer returns always 1
@@ -1798,8 +1798,8 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 static void
 SockPoll(Sock *sockPtr, short type, PollData *pdata)
 {
-    assert(sockPtr != NULL);
-    assert(pdata != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(pdata != NULL);
 
     sockPtr->pidx = PollSet(pdata, sockPtr->sock, type, &sockPtr->timeout);
 }
@@ -1823,7 +1823,7 @@ SockPoll(Sock *sockPtr, short type, PollData *pdata)
 static void
 SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
 {
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     sockPtr->timeout = *nowPtr;
     Ns_IncrTime(&sockPtr->timeout, timeout, 0);
 }
@@ -1853,7 +1853,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     SockState sockStatus;
     NS_DRIVER_ACCEPT_STATUS status;
 
-    assert(drvPtr != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
 
     /*
      * Allocate and/or initialize a Sock structure.
@@ -1962,10 +1962,12 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
 {
     Driver *drvPtr;
 
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+        
     Ns_Log(DriverDebug, "SockRelease reason %d err %d (sock %d)", reason, err, sockPtr->sock);
     
-    assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
+    assert(drvPtr != NULL);
 
     SockError(sockPtr, reason, err);
     SockClose(sockPtr, NS_FALSE);
@@ -2107,7 +2109,7 @@ SockSendResponse(Sock *sockPtr, int code)
     char header[32], *response = NULL;
     ssize_t sent;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     switch (code) {
     case 413:
@@ -2181,7 +2183,7 @@ SockTrigger(NS_SOCKET sock)
 static void
 SockClose(Sock *sockPtr, int keep)
 {
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     if (keep != 0) {
         keep = DriverKeep(sockPtr);
@@ -2327,7 +2329,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     ssize_t       n;
     SockState     resultState;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
     tbuf[0] = '\0';
@@ -2508,7 +2510,7 @@ SockParse(Sock *sockPtr)
     char          save;
     Driver       *drvPtr;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
     NsUpdateProgress((Ns_Sock *) sockPtr);
@@ -2880,7 +2882,7 @@ SockSetServer(Sock *sockPtr)
     const char    *host = NULL;
     int            status = 1;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
     sockPtr->location = sockPtr->drvPtr->location;
@@ -3133,7 +3135,7 @@ SpoolerThread(void *arg)
 static void
 SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 {
-    assert(proc != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
     while (queuePtr != NULL) {
         if (ns_sockpair(queuePtr->pipe)) {
             Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
@@ -3147,8 +3149,8 @@ static void
 SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *name)
 {
 
-    assert(timeoutPtr != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(timeoutPtr != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     while (queuePtr != NULL) {
         int status;
@@ -3187,8 +3189,8 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     int trigger = 0;
     SpoolerQueue *queuePtr;
 
-    assert(drvPtr != NULL);
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     /*
      * Get the next spooler thread from the list, all spooler requests are
      * rotated between all spooler threads
@@ -3283,7 +3285,7 @@ static WriterSock *
 WriterSockRequire(const Conn *connPtr) {
     WriterSock *wrSockPtr;
 
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
 
     NsWriterLock();
     wrSockPtr = connPtr->strWriter;
@@ -3298,7 +3300,7 @@ static void
 WriterSockRelease(WriterSock *wrSockPtr) {
     SpoolerQueue *queuePtr;
 
-    assert(wrSockPtr != NULL);
+    NS_NONNULL_ASSERT(wrSockPtr != NULL);
 
     wrSockPtr->refCount --;
 
@@ -3418,7 +3420,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     size_t         maxsize, toRead;
     unsigned char *bufPtr;
 
-    assert(curPtr != NULL);
+    NS_NONNULL_ASSERT(curPtr != NULL);
 
     doStream = curPtr->doStream;
     if (doStream != 0) {
@@ -3525,8 +3527,8 @@ WriterSend(WriterSock *curPtr, int *err) {
     size_t        toWrite;
     ssize_t       n;
 
-    assert(curPtr != NULL);
-    assert(err != NULL);
+    NS_NONNULL_ASSERT(curPtr != NULL);
+    NS_NONNULL_ASSERT(err != NULL);
 
     /*
      * Prepare send operation
@@ -3873,7 +3875,7 @@ WriterThread(void *arg)
 void
 NsWriterFinish(WriterSock *wrSockPtr) {
 
-    assert(wrSockPtr != NULL);
+    NS_NONNULL_ASSERT(wrSockPtr != NULL);
 
     Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)wrSockPtr);
     wrSockPtr->doStream = NS_WRITER_STREAM_FINISH;
@@ -3912,7 +3914,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     int            trigger = 0;
     size_t         headerSize;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (unlikely(connPtr->sockPtr == NULL)) {
         return NS_ERROR;
@@ -4659,7 +4661,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     bool           trigger = NS_FALSE;
     AsyncWriteData *wdPtr, *newWdPtr;
 
-    assert(buffer != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
 
     /*
      * If the async writer has not started or is deactivated, behave
@@ -4737,7 +4739,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 static void
 AsyncWriterRelease(AsyncWriteData *wdPtr)
 {
-    assert(wdPtr != NULL);
+    NS_NONNULL_ASSERT(wdPtr != NULL);
 
     ns_free(wdPtr->data);
     ns_free(wdPtr);

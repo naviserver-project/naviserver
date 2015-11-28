@@ -162,8 +162,8 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_DString     tbuf;
     Tag            *tagPtr;
 
-    assert(arg != NULL);
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     itPtr = arg;
     servPtr = itPtr->servPtr;
@@ -277,9 +277,9 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     } state;
     Parse parse;
 
-    assert(codePtr != NULL);
-    assert(servPtr != NULL);
-    assert(adp != NULL);
+    NS_NONNULL_ASSERT(codePtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(adp != NULL);
 
     /*
      * Initialize the code and parse structures.
@@ -535,7 +535,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 void
 NsAdpFreeCode(AdpCode *codePtr)
 {
-    assert(codePtr != NULL);
+    NS_NONNULL_ASSERT(codePtr != NULL);
 
     Tcl_DStringFree(&codePtr->text);
     codePtr->nblocks = codePtr->nscripts = 0;
@@ -565,10 +565,10 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
     AdpCode   *codePtr;
     ptrdiff_t  len;
 
-    assert(parsePtr != NULL);
-    assert(s != NULL);
-    assert(e != NULL);
-    assert(s <= e);
+    NS_NONNULL_ASSERT(parsePtr != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(e != NULL);
+    NS_NONNULL_ASSERT(s <= e);
 
     if (unlikely(s == e)) {
 	/* false alarm */
@@ -645,9 +645,9 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
 {
     char *t;
 
-    assert(dsPtr != NULL);
-    assert(s != NULL);
-    assert(e != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(e != NULL);
 
     ++s;
     while (s < e && CHARTYPE(space, *s) != 0) {
@@ -693,8 +693,8 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
     char *vs = NULL, *as = NULL, *ve = NULL;
     char end = '\0', vsave = '\0';
 
-    assert(s != NULL);
-    assert(e != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(e != NULL);
 
     if (flagsPtr != NULL) {
         *flagsPtr = 0U;
@@ -826,10 +826,10 @@ GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
 {
     unsigned int flags;
 
-    assert(tag != NULL);
-    assert(a != NULL);
-    assert(e != NULL);
-    assert(flagPtr != NULL);
+    NS_NONNULL_ASSERT(tag != NULL);
+    NS_NONNULL_ASSERT(a != NULL);
+    NS_NONNULL_ASSERT(e != NULL);
+    NS_NONNULL_ASSERT(flagPtr != NULL);
 
     if (a < e && STRIEQ(tag, "script")) {
         ParseAtts(a, e, &flags, NULL, 1);
@@ -863,9 +863,9 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
 {
     Tcl_DString script;
 
-    assert(parsePtr != NULL);
-    assert(tagPtr != NULL);
-    assert(ae != NULL);
+    NS_NONNULL_ASSERT(parsePtr != NULL);
+    NS_NONNULL_ASSERT(tagPtr != NULL);
+    NS_NONNULL_ASSERT(ae != NULL);
 
     Tcl_DStringInit(&script);
     Tcl_DStringAppend(&script, "ns_adp_append [", -1);
@@ -932,9 +932,9 @@ AppendLengths(AdpCode *codePtr, const int *length, const int *line)
     Tcl_DString *textPtr;
     int          start, ncopy;
 
-    assert(codePtr != NULL);
-    assert(length != NULL);
-    assert(line != NULL);
+    NS_NONNULL_ASSERT(codePtr != NULL);
+    NS_NONNULL_ASSERT(length != NULL);
+    NS_NONNULL_ASSERT(line != NULL);
 
     textPtr = &codePtr->text;
     /* 

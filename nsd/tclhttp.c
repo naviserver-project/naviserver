@@ -218,7 +218,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         {NULL, NULL, NULL, NULL}
     };
 
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
     interp = itPtr->interp;
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
@@ -289,9 +289,9 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
     char *p, *eol;
     int firsthdr = 1, major, minor;
 
-    assert(hdrPtr != NULL);
-    assert(response != NULL);
-    assert(statusPtr != NULL);
+    NS_NONNULL_ASSERT(hdrPtr != NULL);
+    NS_NONNULL_ASSERT(response != NULL);
+    NS_NONNULL_ASSERT(statusPtr != NULL);
 
     sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
     p = response;
@@ -338,7 +338,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 {
     const char *encString;
 
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "ProcessReplyHeaderFields %p", (void *)httpPtr->replyHeaders);
 
@@ -381,7 +381,7 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 {
     char *eoh;
     
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->replyHeaderSize == 0) {
 	Ns_MutexLock(&httpPtr->lock);
@@ -429,7 +429,7 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 void
 Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 {
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     /*
      * There is a header, but it is not parsed yet. We are already waiting for
@@ -531,8 +531,8 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Interp  *interp;
     Tcl_Obj     *valPtr, 
-	*elapsedVarPtr = NULL, *resultVarPtr = NULL, 
-	*statusVarPtr = NULL, *fileVarPtr = NULL;
+	        *elapsedVarPtr = NULL, *resultVarPtr = NULL, 
+	        *statusVarPtr = NULL, *fileVarPtr = NULL;
     Ns_Time     *timeoutPtr = NULL;
     const char  *id = NULL;
     Ns_Set      *hdrPtr = NULL;
@@ -556,7 +556,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
         {NULL, NULL, NULL, NULL}
     };
 
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
     interp = itPtr->interp;
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
@@ -692,9 +692,9 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
 {
     Tcl_HashEntry *hPtr;
 
-    assert(itPtr != NULL);
-    assert(id != NULL);
-    assert(httpPtrPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(id != NULL);
+    NS_NONNULL_ASSERT(httpPtrPtr != NULL);
 
     hPtr = Tcl_FindHashEntry(&itPtr->httpRequests, id);
     if (hPtr == NULL) {
@@ -736,10 +736,10 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     char        *url2, *host, *file, *portString;
     const char  *contentType = NULL;
 
-    assert(interp != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
-    assert(httpPtrPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(httpPtrPtr != NULL);
 
     if (strncmp(url, "http://", 7u) != 0 || url[7] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
@@ -926,8 +926,8 @@ HttpAppendRawBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t outSize)
 {
     int status = TCL_OK;
 
-    assert(httpPtr != NULL);
-    assert(buffer != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
 
     if (httpPtr->spoolFd > 0) {
 	ssize_t written = ns_write(httpPtr->spoolFd, buffer, outSize);
@@ -947,8 +947,8 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 {
     int status = TCL_OK;
 
-    assert(httpPtr != NULL);
-    assert(buffer != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "Ns_HttpAppendBuffer: got %" PRIdz " bytes flags %.6x", inSize, httpPtr->flags);
     
@@ -1001,7 +1001,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 static void
 HttpClose(Ns_HttpTask *httpPtr)
 {
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->task != NULL)          {(void) Ns_TaskFree(httpPtr->task);}
     if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
@@ -1021,7 +1021,7 @@ HttpClose(Ns_HttpTask *httpPtr)
 static void
 HttpCancel(const Ns_HttpTask *httpPtr)
 {
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     (void) Ns_TaskCancel(httpPtr->task);
     (void) Ns_TaskWait(httpPtr->task, NULL);
@@ -1031,7 +1031,7 @@ HttpCancel(const Ns_HttpTask *httpPtr)
 static void
 HttpAbort(Ns_HttpTask *httpPtr)
 {
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     HttpCancel(httpPtr);
     HttpClose(httpPtr);
@@ -1062,8 +1062,8 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
     char buf[16384];
     ssize_t n;
 
-    assert(task != NULL);
-    assert(httpPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     switch (why) {
     case NS_SOCK_INIT:

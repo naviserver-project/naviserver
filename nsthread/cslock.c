@@ -81,7 +81,7 @@ Ns_CsInit(Ns_Cs *csPtr)
     CsLock     *lockPtr;
     static uintptr_t nextid = 0u;
 
-    assert(csPtr != NULL);
+    NS_NONNULL_ASSERT(csPtr != NULL);
 
     lockPtr = ns_malloc(sizeof(CsLock));
     NsMutexInitNext(&lockPtr->mutex, "cs", &nextid);
@@ -202,7 +202,7 @@ Ns_CsLeave(Ns_Cs *csPtr)
 {
     CsLock *lockPtr = (CsLock *) *csPtr;
 
-    assert(csPtr != NULL);
+    NS_NONNULL_ASSERT(csPtr != NULL);
 
     Ns_MutexLock(&lockPtr->mutex);
     if (--lockPtr->count == 0) {

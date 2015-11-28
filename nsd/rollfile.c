@@ -89,7 +89,7 @@ Ns_RollFile(const char *file, int max)
     char *first;
     int   err;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
     
     if (max < 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
@@ -184,7 +184,7 @@ Ns_PurgeFiles(const char *file, int max)
     File *fiPtr, *files = NULL;
     int   nfiles, status = NS_ERROR;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
     
     /*
      * Get all files matching "file*" pattern.
@@ -262,8 +262,8 @@ MatchFiles(const char *fileName, File **files)
     int               numElems, code;
     const char       *pattern;
 
-    assert(fileName != NULL);
-    assert(files != NULL);
+    NS_NONNULL_ASSERT(fileName != NULL);
+    NS_NONNULL_ASSERT(files != NULL);
     
     /*
      * Obtain fully qualified path of the passed filename
@@ -402,7 +402,7 @@ Unlink(const char *file)
     int err;
     Tcl_Obj *fileObj;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
     
     fileObj = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(fileObj);
@@ -422,8 +422,8 @@ Rename(const char *from, const char *to)
     int err;
     Tcl_Obj *fromObj, *toObj;
 
-    assert(from != NULL);
-    assert(to != NULL);
+    NS_NONNULL_ASSERT(from != NULL);
+    NS_NONNULL_ASSERT(to != NULL);
     
     fromObj = Tcl_NewStringObj(from, -1);
     Tcl_IncrRefCount(fromObj);
@@ -448,7 +448,7 @@ Exists(const char *file)
 {
     int exists;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
     
     if (Tcl_Access(file, F_OK) == 0) {
         exists = 1;

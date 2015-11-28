@@ -87,7 +87,7 @@ ConfigServerVhost(const char *server)
     Ns_DString  ds;
     const char *path;
 
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
 
     path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
 
@@ -138,7 +138,7 @@ ConfigServerVhost(const char *server)
 bool
 Ns_PathIsAbsolute(const char *path)
 {
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
 
 #ifdef _WIN32
     if (CHARTYPE(alpha, *path) != 0 && path[1] == ':') {
@@ -175,8 +175,8 @@ Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
     register char *src, *slash;
     Ns_DString tmp;
 
-    assert(dsPtr != NULL);
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
     
     Ns_DStringInit(&tmp);
     src = Ns_DStringAppend(&tmp, path);
@@ -277,7 +277,7 @@ Ns_MakePath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
@@ -316,8 +316,8 @@ Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
     const char *p = path;
     int         i;
 
-    assert(dsPtr != NULL);
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
     
     for (i = 0; i < levels; ++i) {
         if (dsPtr->string[dsPtr->length] != '/') {
@@ -362,7 +362,7 @@ Ns_LibPath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), "lib", NULL);
     va_start(ap, dsPtr);
@@ -397,7 +397,7 @@ Ns_BinPath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), "bin", NULL);
     va_start(ap, dsPtr);
@@ -430,7 +430,7 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
     va_list  ap;
     char    *path;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
     va_start(ap, dsPtr);
@@ -465,7 +465,7 @@ Ns_HomePathExists(const char *path, ...)
     Ns_DString ds;
     Tcl_StatBuf *stPtr;
 
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
 
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, Ns_InfoHomePath(), path, NULL);
@@ -509,8 +509,8 @@ Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...)
     va_list   ap;
     char     *path;
 
-    assert(dsPtr != NULL);
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
     
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
@@ -548,8 +548,8 @@ Ns_PagePath(Ns_DString *dsPtr, const char *server, ...)
     va_list   ap;
     char     *path;
 
-    assert(dsPtr != NULL);
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
 
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
@@ -588,7 +588,7 @@ Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...)
     va_list         ap;
     char           *path;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
     if (server != NULL) {
@@ -658,8 +658,8 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
 {
     char *path;
 
-    assert(dsPtr != NULL);
-    assert(servPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
         path = Ns_DStringAppend(dsPtr, servPtr->fastpath.pagedir);
@@ -806,7 +806,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         {"?path", Ns_ObjvArgs, &npaths, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
@@ -925,7 +925,7 @@ MakePath(Ns_DString *dest, va_list *pap)
     char *s;
     int len;
 
-    assert(dest != NULL);
+    NS_NONNULL_ASSERT(dest != NULL);
 
     for (s = va_arg(*pap, char *); s != NULL; s = va_arg(*pap, char *)) {
         if (CHARTYPE(alpha, *s) != 0 && s[1] == ':') {
@@ -981,8 +981,8 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     Ns_Set     *headers;
     Ns_DString  ds;
 
-    assert(dest != NULL);
-    assert(servPtr != NULL);
+    NS_NONNULL_ASSERT(dest != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     if (servPtr->vhost.serverRootProc != NULL) {
 

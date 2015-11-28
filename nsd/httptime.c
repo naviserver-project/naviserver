@@ -90,7 +90,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
     time_t     now;
     struct tm *tmPtr;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     if (when == NULL) {
         now = time(0);
@@ -141,7 +141,7 @@ Ns_ParseHttpTime(char *chars)
     struct tm  timeInfo;
     time_t     t;
 
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
     
     /*
      * Find the comma after day-of-week
@@ -372,7 +372,7 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static int
 MakeNum(const char *s)
 {
-    assert(s != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
     
     if (CHARTYPE(digit, *s)) {
         return (10 * ((int)UCHAR(*s) - (int)UCHAR('0'))) + ((int)UCHAR(*(s + 1)) - (int)UCHAR('0'));
@@ -404,7 +404,7 @@ MakeMonth(char *s)
 {
     int i;
 
-    assert(s != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
 
     /*
      * Make sure it's capitalized like this:

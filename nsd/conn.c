@@ -66,7 +66,7 @@ static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 Ns_Set *
 Ns_ConnHeaders(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return conn->headers;
 }
 
@@ -90,7 +90,7 @@ Ns_ConnHeaders(const Ns_Conn *conn)
 Ns_Set *
 Ns_ConnOutputHeaders(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return conn->outputheaders;
 }
 
@@ -114,7 +114,7 @@ Ns_ConnOutputHeaders(const Ns_Conn *conn)
 Ns_Set *
 Ns_ConnAuth(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return conn->auth;
 }
 
@@ -138,7 +138,7 @@ Ns_ConnAuth(const Ns_Conn *conn)
 const char *
 Ns_ConnAuthUser(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return conn->auth != NULL ? Ns_SetIGet(conn->auth, "Username") : NULL;
 }
 
@@ -162,7 +162,7 @@ Ns_ConnAuthUser(const Ns_Conn *conn)
 const char *
 Ns_ConnAuthPasswd(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return conn->auth != NULL ? Ns_SetIGet(conn->auth, "Password") : NULL;
 }
 
@@ -186,7 +186,7 @@ Ns_ConnAuthPasswd(const Ns_Conn *conn)
 size_t
 Ns_ConnContentLength(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return conn->contentLength;
 }
 
@@ -234,7 +234,7 @@ Ns_ConnContent(const Ns_Conn *conn)
 size_t
 Ns_ConnContentSize(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->reqPtr->length;
 }
@@ -260,7 +260,7 @@ Ns_ConnContentFile(const Ns_Conn *conn)
 {
     Sock *sockPtr;
     
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     sockPtr = ((const Conn *)conn)->sockPtr;
     return sockPtr != NULL ? sockPtr->tfile : NULL;
@@ -287,7 +287,7 @@ Ns_ConnContentFd(const Ns_Conn *conn)
 {
     Sock *sockPtr;
     
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     sockPtr = ((const Conn *)conn)->sockPtr;
 
@@ -314,7 +314,7 @@ Ns_ConnContentFd(const Ns_Conn *conn)
 const char *
 Ns_ConnServer(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->server;
 }
@@ -339,7 +339,7 @@ Ns_ConnServer(const Ns_Conn *conn)
 int
 Ns_ConnResponseStatus(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->responseStatus;
 
@@ -348,7 +348,7 @@ Ns_ConnResponseStatus(const Ns_Conn *conn)
 void
 Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     if (newStatus != 200) {
         ((Conn *)conn)->responseStatus = newStatus;
@@ -375,7 +375,7 @@ Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus)
 size_t
 Ns_ConnContentSent(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->nContentSent;
 }
@@ -399,7 +399,7 @@ Ns_ConnContentSent(const Ns_Conn *conn)
 void
 Ns_ConnSetContentSent(Ns_Conn *conn, size_t length)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     ((Conn *)conn)->nContentSent = length;
 }
@@ -424,7 +424,7 @@ Ns_ConnSetContentSent(Ns_Conn *conn, size_t length)
 ssize_t
 Ns_ConnResponseLength(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->responseLength;
 }
@@ -449,7 +449,7 @@ Ns_ConnResponseLength(const Ns_Conn *conn)
 const char *
 Ns_ConnPeer(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->reqPtr->peer;
 }
@@ -475,8 +475,8 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
 {
     Conn *connPtr;
 
-    assert(conn != NULL);
-    assert(saPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
 
     connPtr = ((Conn *)conn);
     connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
@@ -505,7 +505,7 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
 int
 Ns_ConnPeerPort(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->reqPtr->port;
 }
@@ -532,8 +532,8 @@ Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetInitServer();
 
-    assert(proc != NULL);
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
     
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_SetConnLocationProc: no initializing server");
@@ -570,8 +570,8 @@ Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
 {
     NsServer *servPtr = NsGetServer(server);
 
-    assert(server != NULL);
-    assert(proc != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
     
     if (servPtr != NULL) {
         servPtr->vhost.locationProc = proc;
@@ -642,8 +642,8 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     Ns_Set     *headers;
     char       *location, *host;
 
-    assert(conn != NULL);
-    assert(dest != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(dest != NULL);
     
     connPtr = ((Conn *)conn);
     assert(connPtr->poolPtr != NULL);
@@ -726,7 +726,7 @@ Ns_ConnHost(const Ns_Conn *conn)
 {
     const Driver *drvPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     drvPtr = ((const Conn *)conn)->drvPtr;
     assert(drvPtr != NULL);
@@ -756,7 +756,7 @@ Ns_ConnPort(const Ns_Conn *conn)
 {
     const Driver *drvPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     drvPtr = ((const Conn *)conn)->drvPtr;
     assert(drvPtr != NULL);
@@ -786,7 +786,7 @@ Ns_ConnSock(const Ns_Conn *conn)
 {
     Sock *sockPtr;
     
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     sockPtr = ((const Conn *)conn)->sockPtr;
     
@@ -812,7 +812,7 @@ Ns_ConnSock(const Ns_Conn *conn)
 Ns_Sock *
 Ns_ConnSockPtr(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return (Ns_Sock *)(((const Conn *)conn))->sockPtr;
 }
@@ -838,7 +838,7 @@ Ns_ConnSockContent(const Ns_Conn *conn)
 {
     const Conn *connPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     connPtr = ((const Conn *)conn);
     if (connPtr->reqPtr != NULL) {
@@ -869,7 +869,7 @@ Ns_ConnDriverName(const Ns_Conn *conn)
 {
     const Driver *drvPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     drvPtr = ((const Conn *)conn)->drvPtr;
     assert(drvPtr != NULL);
@@ -907,7 +907,7 @@ Ns_ConnStartTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return &connPtr->requestQueueTime;
 }
 
@@ -916,7 +916,7 @@ Ns_ConnAcceptTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return &connPtr->acceptTime;
 }
 
@@ -925,7 +925,7 @@ Ns_ConnQueueTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return &connPtr->requestQueueTime;
 }
 
@@ -934,7 +934,7 @@ Ns_ConnDequeueTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return &connPtr->requestDequeueTime;
 }
 
@@ -943,7 +943,7 @@ Ns_ConnFilterTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     return &connPtr->filterDoneTime;
 }
 
@@ -970,11 +970,11 @@ Ns_ConnTimeSpans(const Ns_Conn *conn,
 		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
     const Conn *connPtr;
 
-    assert(conn != NULL);
-    assert(acceptTimeSpanPtr != NULL);
-    assert(queueTimeSpanPtr != NULL);
-    assert(filterTimeSpanPtr != NULL);
-    assert(runTimeSpanPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(acceptTimeSpanPtr != NULL);
+    NS_NONNULL_ASSERT(queueTimeSpanPtr != NULL);
+    NS_NONNULL_ASSERT(filterTimeSpanPtr != NULL);
+    NS_NONNULL_ASSERT(runTimeSpanPtr != NULL);
 
     connPtr = (const Conn *) conn;
     *acceptTimeSpanPtr = connPtr->acceptTimeSpan;
@@ -1015,7 +1015,7 @@ Ns_ConnTimeStats(Ns_Conn *conn) {
     ConnPool   *poolPtr;
     Ns_Time     now;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     connPtr = (Conn *) conn;
     poolPtr = connPtr->poolPtr;
@@ -1058,7 +1058,7 @@ Ns_ConnTimeStats(Ns_Conn *conn) {
 Ns_Time *
 Ns_ConnTimeout(Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return &((Conn *)conn)->timeout;
 }
@@ -1083,7 +1083,7 @@ Ns_ConnTimeout(Ns_Conn *conn)
 uintptr_t
 Ns_ConnId(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->id;
 }
@@ -1091,7 +1091,7 @@ Ns_ConnId(const Ns_Conn *conn)
 const char *
 NsConnIdStr(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *)conn)->idstr;
 }
@@ -1124,7 +1124,7 @@ Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
 {
     ConnPool   *poolPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     poolPtr = ((const Conn *)conn)->poolPtr;
     assert(poolPtr != NULL);
@@ -1190,7 +1190,7 @@ Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 Tcl_Encoding
 Ns_ConnGetEncoding(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *) conn)->outputEncoding;
 }
@@ -1198,7 +1198,7 @@ Ns_ConnGetEncoding(const Ns_Conn *conn)
 void
 Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     ((Conn *) conn)->outputEncoding = encoding;
 }
@@ -1224,7 +1224,7 @@ Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 Tcl_Encoding
 Ns_ConnGetUrlEncoding(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *) conn)->urlEncoding;
 }
@@ -1232,7 +1232,7 @@ Ns_ConnGetUrlEncoding(const Ns_Conn *conn)
 void
 Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     ((Conn *) conn)->urlEncoding = encoding;
 }
@@ -1260,7 +1260,7 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 int
 Ns_ConnGetCompression(const Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     return ((const Conn *) conn)->requestCompress;
 }
@@ -1268,7 +1268,7 @@ Ns_ConnGetCompression(const Ns_Conn *conn)
 void
 Ns_ConnSetCompression(Ns_Conn *conn, int level)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
 #ifdef HAVE_ZLIB_H
     ((Conn *) conn)->requestCompress = MIN(MAX(level, 0), 9);
@@ -2003,9 +2003,9 @@ GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
     Tcl_Channel chan;
     int mode;
 
-    assert(interp != NULL);
-    assert(id != NULL);
-    assert(chanPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(id != NULL);
+    NS_NONNULL_ASSERT(chanPtr != NULL);
 
     chan = Tcl_GetChannel(interp, id, &mode);
     if (chan == (Tcl_Channel) NULL) {
@@ -2046,8 +2046,8 @@ GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *o
 {
     int off, len;
 
-    assert(interp != NULL);
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
 
     if (Tcl_GetIntFromObj(interp, objv[0], &off) != TCL_OK
         || Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
@@ -2093,8 +2093,8 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     Conn       *connPtr;
     Tcl_Channel chan;
 
-    assert(conn != NULL);
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     connPtr = (Conn *) conn;
     if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {

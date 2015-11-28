@@ -131,7 +131,7 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     size_t nameLength;
     const char *name;
 
-    assert(proc != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
 
     Ns_MasterLock();
 
@@ -275,7 +275,7 @@ Ns_ThreadSetName(const char *name,...)
     Thread *thisPtr = GetThread();
     va_list ap;
 
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
     
     Ns_MasterLock();
     va_start(ap, name);
@@ -332,7 +332,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     Thread *thrPtr;
     char buf[100];
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     Ns_MasterLock();
     for (thrPtr = firstThreadPtr; (thrPtr != NULL); thrPtr = thrPtr->nextPtr) {
@@ -529,7 +529,7 @@ static void
 SetBottomOfStack(void *ptr) {
     Thread *thisPtr = GetThread();
 
-    assert(ptr != NULL);
+    NS_NONNULL_ASSERT(ptr != NULL);
     
     thisPtr->bottomOfStack = ptr;
 }
@@ -554,8 +554,8 @@ void
 Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize) {
   Thread *thisPtr = GetThread();
 
-  assert(maxStackSize != NULL);
-  assert(estimatedSize != NULL);
+  NS_NONNULL_ASSERT(maxStackSize != NULL);
+  NS_NONNULL_ASSERT(estimatedSize != NULL);
   
   Ns_MasterLock();
   *maxStackSize = defstacksize;

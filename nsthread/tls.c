@@ -73,7 +73,7 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
     static uintptr_t nextkey = 1u;
     uintptr_t        key;
 
-    assert(keyPtr != NULL);
+    NS_NONNULL_ASSERT(keyPtr != NULL);
     
     Ns_MasterLock();
     if (nextkey == nsThreadMaxTls) {
@@ -109,7 +109,7 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
     void      **slots = NsGetTls();
     uintptr_t   key;
 
-    assert(keyPtr != NULL);
+    NS_NONNULL_ASSERT(keyPtr != NULL);
 
     key = (uintptr_t) *keyPtr;
      
@@ -144,7 +144,7 @@ Ns_TlsGet(Ns_Tls *keyPtr)
     void      **slots = NsGetTls();
     uintptr_t   key;
 
-    assert(keyPtr != NULL);
+    NS_NONNULL_ASSERT(keyPtr != NULL);
     
     key = (uintptr_t) *keyPtr;
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
@@ -179,7 +179,7 @@ Ns_TlsGet(Ns_Tls *keyPtr)
 void
 NsCleanupTls(void **slots)
 {
-    assert(slots != NULL);
+    NS_NONNULL_ASSERT(slots != NULL);
 
     if (NS_finalshutdown != 1) {
         int trys, retry;

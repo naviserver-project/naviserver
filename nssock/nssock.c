@@ -343,6 +343,8 @@ Keep(Ns_Sock *sock)
 static void
 Close(Ns_Sock *sock)
 {
+    NS_NONNULL_ASSERT(sock != NULL);
+    
     if (sock->sock != NS_INVALID_SOCKET) {
         ns_sockclose(sock->sock);
         sock->sock = NS_INVALID_SOCKET;
@@ -356,7 +358,7 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 #ifdef TCP_NODELAY
     Config *cfg;
 
-    assert(driver != NULL);
+    NS_NONNULL_ASSERT(driver != NULL);
     
     cfg = driver->arg;
     if (cfg->nodelay != 0) {

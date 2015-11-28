@@ -141,8 +141,8 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
     Info          *infoPtr;
     int            isNew;
 
-    assert(procAddr != NULL);
-    assert(desc != NULL);
+    NS_NONNULL_ASSERT(procAddr != NULL);
+    NS_NONNULL_ASSERT(desc != NULL);
     
     hPtr = Tcl_CreateHashEntry(&infoHashTable, (char *)procAddr, &isNew);
     if (isNew == 0) {
@@ -180,7 +180,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
     Info                   *infoPtr;
     static Info nullInfo =  {NULL, NULL};
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     hPtr = Tcl_FindHashEntry(&infoHashTable, (char *) procAddr);
     if (hPtr != NULL) {
@@ -222,7 +222,7 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
 {
     char *str = arg;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     Tcl_DStringAppendElement(dsPtr, (str != NULL) ? str : "");
 }
@@ -272,8 +272,9 @@ ServerArgProc(Tcl_DString *dsPtr, const void *arg)
 static void
 AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
 {
-    assert(dsPtr != NULL);
-    assert(prefix != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(prefix != NULL);
+    
     Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
 }
 

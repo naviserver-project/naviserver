@@ -334,8 +334,8 @@ Ns_GetUrlEncoding(const char *charset)
 char *
 Ns_UrlPathEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return UrlEncode(dsPtr, urlSegment, encoding, 'p');
 }
@@ -343,8 +343,8 @@ Ns_UrlPathEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodin
 char *
 Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return UrlDecode(dsPtr, urlSegment, encoding, 'p');
 }
@@ -372,8 +372,8 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodin
 char *
 Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return UrlEncode(dsPtr, urlSegment, encoding, 'q');
 }
@@ -381,8 +381,8 @@ Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodi
 char *
 Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return UrlDecode(dsPtr, urlSegment, encoding, 'q');
 }
@@ -409,8 +409,8 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodi
 char *
 Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return Ns_UrlQueryEncode(dsPtr, urlSegment, encoding);
 }
@@ -420,8 +420,8 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *chars
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return Ns_UrlQueryEncode(dsPtr, urlSegment, encoding);
 
@@ -430,8 +430,8 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *chars
 char *
 Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
 {
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding);
 }
@@ -441,8 +441,8 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *chars
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding);
 }
@@ -600,8 +600,8 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     Tcl_DString    ds;
     ByteKey       *enc;
 
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     if (encoding != NULL) {
         urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, -1, &ds);
@@ -672,8 +672,8 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     Tcl_DString    ds;
     ByteKey       *enc;
 
-    assert(dsPtr != NULL);
-    assert(urlSegment != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(urlSegment != NULL);
 
     /*
      * Copy the decoded characters directly to the dstring,

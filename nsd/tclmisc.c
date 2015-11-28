@@ -70,8 +70,8 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
     va_list     ap;
     Tcl_DString ds;
 
-    assert(interp != NULL);
-    assert(fmt != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(fmt != NULL);
 
     Tcl_DStringInit(&ds);
     va_start(ap, fmt);
@@ -649,7 +649,7 @@ NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
 static int
 WordEndsInSemi(const char *ip)
 {
-    assert(ip != NULL);
+    NS_NONNULL_ASSERT(ip != NULL);
     
     /* advance past the first '&' so we can check for a second
        (i.e. to handle "ben&jerry&nbsp;")
@@ -824,7 +824,7 @@ SHATransform(Ns_CtxSHA1 *sha)
     register uint32_t t;
 #endif
 
-    assert(sha != NULL);
+    NS_NONNULL_ASSERT(sha != NULL);
 
     /* Set up first buffer */
     A = sha->iv[0];
@@ -931,8 +931,8 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 {
     unsigned i;
 
-    assert(ctx != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(ctx != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     /* Update bitcount */
 
@@ -1230,8 +1230,8 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
 {
     uint32_t t;
 
-    assert(ctx != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(ctx != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     /* Update bitcount */
 
@@ -1283,11 +1283,13 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 {
     unsigned count;
     uint8_t  *p;
-    uint32_t *words = (uint32_t *)ctx->in;
+    uint32_t *words;
 
-    assert(ctx != NULL);
-    assert(digest != NULL);
+    NS_NONNULL_ASSERT(ctx != NULL);
+    NS_NONNULL_ASSERT(digest != NULL);
 
+    words = (uint32_t *)ctx->in;
+    
     /* Compute number of bytes mod 64 */
     count = (ctx->bits[0] >> 3) & 0x3Fu;
 
@@ -1369,8 +1371,8 @@ static void MD5Transform(uint32_t buf[4], uint8_t const block[64])
     }
 #endif
 
-    assert(buf != NULL);
-    assert(block != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
+    NS_NONNULL_ASSERT(block != NULL);
     
     a = buf[0];
     b = buf[1];

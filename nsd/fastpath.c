@@ -188,8 +188,8 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *f
     Conn        *connPtr = (Conn *) conn;
     int          rc;
 
-    assert(conn != NULL);
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
 
     if (FastStat(file, &connPtr->fileInfo) == NS_FALSE) {
         return Ns_ConnReturnNotFound(conn);
@@ -308,8 +308,8 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 bool
 Ns_UrlIsFile(const char *server, const char *url)
 {
-    assert(server != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     return UrlIs(server, url, NS_FALSE);
 }
@@ -317,8 +317,8 @@ Ns_UrlIsFile(const char *server, const char *url)
 bool
 Ns_UrlIsDir(const char *server, const char *url)
 {
-    assert(server != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     return UrlIs(server, url, NS_TRUE);
 }
@@ -330,8 +330,8 @@ UrlIs(const char *server, const char *url, int isDir)
     struct stat  st;
     bool         is = NS_FALSE;
 
-    assert(server != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK
@@ -369,7 +369,7 @@ Ns_PageRoot(const char *server)
 {
     NsServer *servPtr;
 
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
     
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
@@ -404,9 +404,9 @@ GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
     int result;
     Tcl_DString ds, *dsPtr = &ds;
 
-    assert(interp != NULL);
-    assert(fileName != NULL);
-    assert(gzFileName != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(fileName != NULL);
+    NS_NONNULL_ASSERT(gzFileName != NULL);
 
     Tcl_DStringInit(dsPtr);
     Tcl_DStringAppend(dsPtr, "::ns_gzipfile ", 13);
@@ -445,8 +445,8 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
     int         isNew, fd, result = NS_ERROR;
     Tcl_DString ds, *dsPtr = &ds;
 
-    assert(conn != NULL);
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
 
     /*
      * Determine the mime type if not given.
@@ -679,8 +679,8 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 static bool
 FastStat(const char *path, struct stat *stPtr)
 {
-    assert(path != NULL);
-    assert(stPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
+    NS_NONNULL_ASSERT(stPtr != NULL);
     
     if (stat(path, stPtr) != 0) {
         if (errno != ENOENT && errno != EACCES) {
@@ -715,8 +715,8 @@ FastGetRestart(Ns_Conn *conn, const char *page)
     int        status;
     Ns_DString ds;
 
-    assert(conn != NULL);
-    assert(page != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(page != NULL);
 
     Ns_DStringInit(&ds);
     status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request->url, page, NULL));
@@ -745,7 +745,7 @@ FastGetRestart(Ns_Conn *conn, const char *page)
 static void
 DecrEntry(File *filePtr)
 {
-    assert(filePtr != NULL);
+    NS_NONNULL_ASSERT(filePtr != NULL);
     
     if (--filePtr->refcnt == 0) {
         ns_free(filePtr);

@@ -484,7 +484,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     servPtr = connPtr->poolPtr->servPtr;
     request = conn->request;
@@ -533,8 +533,8 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
 {
     NsServer *servPtr;
 
-    assert(dsPtr != NULL);
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
     
     servPtr = NsGetServer(server);
     assert(servPtr != NULL);
@@ -549,8 +549,8 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
      const Req *reqPtr = arg;
 
-     assert(dsPtr != NULL);
-     assert(arg != NULL);
+     NS_NONNULL_ASSERT(dsPtr != NULL);
+     NS_NONNULL_ASSERT(arg != NULL);
      
      Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
 }
@@ -577,7 +577,7 @@ FreeReq(void *arg)
 {
     Req *reqPtr = (Req *) arg;
 
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
     if (--reqPtr->refcnt == 0) {
         if (reqPtr->deleteCallback != NULL) {

@@ -72,8 +72,8 @@ Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
 {
     NsInterp *itPtr;
 
-    assert(interp != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     if (GetInterp(interp, &itPtr) != TCL_OK) {
         return TCL_ERROR;
@@ -86,8 +86,8 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
 {
     Tcl_DString *bufPtr;
 
-    assert(itPtr != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     if (GetOutput(itPtr, &bufPtr) != TCL_OK) {
         return TCL_ERROR;
@@ -360,7 +360,7 @@ NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc, Tcl
 static int
 EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     if (objc < 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "page ?args ...?");
@@ -688,7 +688,7 @@ NsTclAdpAbortObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc,  Tcl_O
 static int
 ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, AdpResult exception)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "?retval?");
@@ -1204,8 +1204,8 @@ GetFrame(ClientData arg, AdpFrame **framePtrPtr)
 {
     NsInterp *itPtr;
 
-    assert(arg != NULL);
-    assert(framePtrPtr != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(framePtrPtr != NULL);
 
     itPtr = arg;
     if (itPtr->adp.framePtr == NULL) {
@@ -1239,8 +1239,8 @@ GetOutput(ClientData arg, Tcl_DString **dsPtrPtr)
 {
     AdpFrame *framePtr = NULL;
 
-    assert(arg != NULL);
-    assert(dsPtrPtr != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(dsPtrPtr != NULL);
 
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;
@@ -1272,8 +1272,8 @@ GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
 {
     NsInterp *itPtr;
 
-    assert(interp != NULL);
-    assert(itPtrPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(itPtrPtr != NULL);
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {

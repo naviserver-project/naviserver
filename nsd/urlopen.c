@@ -81,9 +81,9 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
     Tcl_Channel chan;
     int result = NS_OK;
 
-    assert(dsPtr != NULL);
-    assert(url != NULL);
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
 
     Ns_DStringInit(&ds);
     (void) Ns_UrlToFile(&ds, server, url);
@@ -134,8 +134,8 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     int             status;
     size_t          toSend;
 
-    assert(dsPtr != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     sock = NS_INVALID_SOCKET;
     Ns_DStringInit(&ds);
@@ -338,7 +338,7 @@ FillBuf(Stream *sPtr)
 {
     ssize_t n;
     
-    assert(sPtr != NULL);
+    NS_NONNULL_ASSERT(sPtr != NULL);
 
     n = ns_recv(sPtr->sock, sPtr->buf, BUFSIZE, 0);
     if (n <= 0) {
@@ -387,8 +387,8 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
     char   *eol;
     size_t  n;
 
-    assert(sPtr != NULL);
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(sPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     Ns_DStringSetLength(dsPtr, 0);
     do {

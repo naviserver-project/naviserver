@@ -152,7 +152,7 @@ Ns_SumVec(const struct iovec *bufs, int nbufs)
     int     i;
     size_t  sum = 0u;
 
-    assert(bufs != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
     
     for (i = 0; i < nbufs; i++) {
         if (bufs[i].iov_len > 0U) {
@@ -223,7 +223,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
     Sock         *sock = (Sock *)sockPtr;
     void         *data;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(nbufs < 1 || bufs != NULL);
 
     sbufPtr = sbufs;
@@ -314,7 +314,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
 {
     ssize_t nread;
 
-    assert(buffer != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
     
     nread = ns_recv(sock, buffer, length, 0);
     if (nread == -1
@@ -349,7 +349,7 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 {
     ssize_t nwrote;
 
-    assert(buffer != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
 
     nwrote = ns_send(sock, buffer, length, 0);
     if (nwrote == -1
@@ -521,7 +521,7 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
     NS_SOCKET sock;
     int       n;
 
-    assert(saPtr != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -563,14 +563,16 @@ Ns_SockBind(const struct sockaddr_in *saPtr)
 NS_SOCKET
 Ns_SockConnect(const char *host, int port)
 {
-    assert(host != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    
     return SockConnect(host, port, NULL, 0, NS_FALSE);
 }
 
 NS_SOCKET
 Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 {
-    assert(host != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    
     return SockConnect(host, port, lhost, lport, NS_FALSE);
 }
 
@@ -594,14 +596,16 @@ Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 NS_SOCKET
 Ns_SockAsyncConnect(const char *host, int port)
 {
-    assert(host != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    
     return SockConnect(host, port, NULL, 0, NS_TRUE);
 }
 
 NS_SOCKET
 Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 {
-    assert(host != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    
     return SockConnect(host, port, lhost, lport, NS_TRUE);
 }
 
@@ -625,8 +629,8 @@ Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 NS_SOCKET
 Ns_SockTimedConnect(const char *host, int port, const Ns_Time *timeoutPtr)
 {
-    assert(host != NULL);
-    assert(timeoutPtr != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(timeoutPtr != NULL);
 
     return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr);
 }
@@ -639,8 +643,8 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
     int       err;
     socklen_t len;
 
-    assert(host != NULL);
-    assert(timeoutPtr != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(timeoutPtr != NULL);
 
     /*
      * Connect to the host asynchronously and wait for
@@ -811,7 +815,7 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
     struct in_addr ia;
     Ns_DString     ds;
 
-    assert(saPtr != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
            
     if (host == NULL) {
         ia.s_addr = htonl(INADDR_ANY);
@@ -857,7 +861,7 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
 int
 Ns_SockPipe(NS_SOCKET socks[2])
 {
-    assert(socks != NULL);
+    NS_NONNULL_ASSERT(socks != NULL);
     
     if (ns_sockpair(socks) != 0) {
         return NS_ERROR;

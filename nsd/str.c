@@ -57,7 +57,7 @@
 char *
 Ns_StrTrim(char *chars)
 {
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     return Ns_StrTrimLeft(Ns_StrTrimRight(chars));
 }
@@ -84,7 +84,7 @@ Ns_StrTrim(char *chars)
 char *
 Ns_StrTrimLeft(char *chars)
 {
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     while (CHARTYPE(space, *chars) != 0) {
         ++chars;
@@ -117,7 +117,7 @@ Ns_StrTrimRight(char *chars)
 {
     int len;
     
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
     
     len = (int)strlen(chars);
 
@@ -151,7 +151,7 @@ Ns_StrToLower(char *chars)
 {
     char *p;
     
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     p = chars;
     while (*p != '\0') {
@@ -185,7 +185,7 @@ Ns_StrToUpper(char *chars)
 {
     char *s;
 
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     s = chars;
     while (*s != '\0') {
@@ -223,8 +223,8 @@ Ns_StrToInt(const char *chars, int *intPtr)
     long  lval;
     char *ep;
 
-    assert(chars != NULL);
-    assert(intPtr != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(intPtr != NULL);
 
     errno = 0;
     lval = strtol(chars, &ep, chars[0] == '0' && chars[1] == 'x' ? 16 : 10);
@@ -364,8 +364,8 @@ Ns_NextWord(const char *line)
 const char *
 Ns_StrNStr(const char *chars, const char *subString)
 {
-    assert(chars != NULL);
-    assert(subString != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(subString != NULL);
 
     return Ns_StrCaseFind(chars, subString);
 }
@@ -373,8 +373,8 @@ Ns_StrNStr(const char *chars, const char *subString)
 const char *
 Ns_StrCaseFind(const char *chars, const char *subString)
 {
-    assert(chars != NULL);
-    assert(subString != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(subString != NULL);
 
     if (strlen(chars) > strlen(subString)) {
         while (*chars != '\0') {

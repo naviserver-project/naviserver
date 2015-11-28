@@ -56,8 +56,8 @@
 void
 Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     Ns_SetIDeleteKey(set, key);
     (void)Ns_SetPut(set, key, value);
@@ -83,8 +83,8 @@ Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
 void
 Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     Ns_SetDeleteKey(set, key);
     (void)Ns_SetPut(set, key, value);
@@ -177,9 +177,9 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 {
     size_t index;
 
-    assert(set != NULL);
-    assert(key != NULL);
-    assert(set->size <  set->maxSize);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(set->size <  set->maxSize);
     
     index = set->size;
     set->size++;
@@ -197,8 +197,8 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 size_t
 Ns_SetPut(Ns_Set *set, const char *key, const char *value)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetPutSz(set, key, value, -1);
 }
@@ -228,9 +228,9 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
     size_t i;
     int    found;
 
-    assert(set != NULL);
-    assert(key != NULL);
-    assert(cmp != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(cmp != NULL);
 
     found = 0;
     for (i = 0u; i < set->size; ++i) {
@@ -272,8 +272,8 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
 {
     size_t i;
 
-    assert(set != NULL);
-    assert(cmp != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(cmp != NULL);
     
     if (likely(key != NULL)) {
 	for (i = 0u; i < set->size; i++) {
@@ -318,9 +318,9 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key,
 {
     int             i;
 
-    assert(set != NULL);
-    assert(key != NULL);
-    assert(cmp != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(cmp != NULL);
 
     i = Ns_SetFindCmp(set, key, cmp);
     if (i == -1) {
@@ -349,8 +349,8 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key,
 int
 Ns_SetUnique(const Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetUniqueCmp(set, key,
                            (int (*) (const char *left, const char *right)) strcmp);
@@ -376,8 +376,8 @@ Ns_SetUnique(const Ns_Set *set, const char *key)
 int
 Ns_SetIUnique(const Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetUniqueCmp(set, key,
                            (int (*) (const char *s1, const char *s2)) strcasecmp);
@@ -403,8 +403,8 @@ Ns_SetIUnique(const Ns_Set *set, const char *key)
 int
 Ns_SetFind(const Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetFindCmp(set, key,
                          (int (*) (const char *s1, const char *s2)) strcmp);
@@ -430,8 +430,8 @@ Ns_SetFind(const Ns_Set *set, const char *key)
 int
 Ns_SetIFind(const Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetFindCmp(set, key,
                          (int (*) (const char *s1, const char *s2)) strcasecmp);
@@ -457,8 +457,8 @@ Ns_SetIFind(const Ns_Set *set, const char *key)
 char *
 Ns_SetGet(const Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetGetCmp(set, key,
                         (int (*) (const char *s1, const char *s2)) strcmp);
@@ -484,8 +484,8 @@ Ns_SetGet(const Ns_Set *set, const char *key)
 char *
 Ns_SetIGet(const Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     return Ns_SetGetCmp(set, key,
                         (int (*) (const char *s1, const char *s2)) strcasecmp);
@@ -513,8 +513,8 @@ Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
 {
     const char *value;
 
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     value = Ns_SetGet(set, key);
 
@@ -546,8 +546,8 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
 {
     const char *value;
 
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     value = Ns_SetIGet(set, key);
 
@@ -577,7 +577,7 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
 void
 Ns_SetTrunc(Ns_Set *set, size_t size)
 {
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     if (size < set->size) {
 	size_t index;
@@ -611,7 +611,7 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
 void
 Ns_SetDelete(Ns_Set *set, int index)
 {
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     if ((index != -1) && (index < (int)set->size)) {
 	size_t i;
@@ -646,8 +646,8 @@ Ns_SetDelete(Ns_Set *set, int index)
 void
 Ns_SetPutValue(const Ns_Set *set, size_t index, const char *value)
 {
-    assert(set != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
 
     if (index < set->size) {
         ns_free(set->fields[index].value);
@@ -675,8 +675,8 @@ Ns_SetPutValue(const Ns_Set *set, size_t index, const char *value)
 void
 Ns_SetDeleteKey(Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     Ns_SetDelete(set, Ns_SetFind(set, key));
 }
@@ -701,8 +701,8 @@ Ns_SetDeleteKey(Ns_Set *set, const char *key)
 void
 Ns_SetIDeleteKey(Ns_Set *set, const char *key)
 {
-    assert(set != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     Ns_SetDelete(set, Ns_SetIFind(set, key));
 }
@@ -728,7 +728,7 @@ Ns_SetIDeleteKey(Ns_Set *set, const char *key)
 Ns_Set *
 Ns_SetListFind(Ns_Set *const*sets, const char *name)
 {
-    assert(sets != NULL);
+    NS_NONNULL_ASSERT(sets != NULL);
 
     while (*sets != NULL) {
         if (name == NULL) {
@@ -776,7 +776,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
     Ns_DString  ds;
     Ns_Set     *end = NULL;
 
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     Ns_DStringInit(&ds);
     Ns_DStringNAppend(&ds, (char *) &end, (int)sizeof(Ns_Set *));
@@ -833,7 +833,7 @@ Ns_SetListFree(Ns_Set **sets)
 {
     Ns_Set        **s;
 
-    assert(sets != NULL);
+    NS_NONNULL_ASSERT(sets != NULL);
 
     s = sets;
     while (*s != NULL) {
@@ -865,8 +865,8 @@ Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
 {
     size_t i;
 
-    assert(high != NULL);
-    assert(low != NULL);
+    NS_NONNULL_ASSERT(high != NULL);
+    NS_NONNULL_ASSERT(low != NULL);
 
     for (i = 0u; i < low->size; ++i) {
         int j = Ns_SetFind(high, low->fields[i].name);
@@ -933,8 +933,8 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
 {
     size_t       i;
 
-    assert(from != NULL);
-    assert(to != NULL);
+    NS_NONNULL_ASSERT(from != NULL);
+    NS_NONNULL_ASSERT(to != NULL);
 
     for (i = 0u; i < from->size; i++) {
 	(void)Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
@@ -964,7 +964,7 @@ Ns_SetPrint(const Ns_Set *set)
 {
     size_t  i;
 
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     for (i = 0u; i < set->size; ++i) {
         if (set->fields[i].name == NULL) {

@@ -231,9 +231,9 @@ Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 {
     NsServer *servPtr;
 
-    assert(dsPtr != NULL);
-    assert(server != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
     
     servPtr = NsGetServer(server);
     return NsUrlToFile(dsPtr, servPtr, url);
@@ -244,9 +244,9 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
 {
     int       status = NS_ERROR;
 
-    assert(dsPtr != NULL);
-    assert(servPtr != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     if (servPtr->fastpath.url2file != NULL) {
         status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
@@ -636,8 +636,8 @@ NsMountUrl2FileArgProc(Tcl_DString *dsPtr, const void *arg)
 void
 NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
 {
-    assert(dsPtr != NULL);
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
     
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificWalk(uid, server, WalkCallback, dsPtr);

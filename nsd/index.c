@@ -80,9 +80,9 @@ Ns_IndexInit(Ns_Index *indexPtr, size_t inc,
 	     int (*CmpKeyWithEl) (const void *left, const void *right))
 {
 
-    assert(indexPtr != NULL);
-    assert(CmpEls != NULL);
-    assert(CmpKeyWithEl != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
+    NS_NONNULL_ASSERT(CmpEls != NULL);
+    NS_NONNULL_ASSERT(CmpKeyWithEl != NULL);
     
     indexPtr->n = 0u;
     indexPtr->max = inc;
@@ -114,7 +114,7 @@ Ns_IndexInit(Ns_Index *indexPtr, size_t inc,
 void
 Ns_IndexTrunc(Ns_Index* indexPtr)
 {
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
     
     indexPtr->n = 0u;
     ns_free(indexPtr->el);
@@ -142,7 +142,7 @@ Ns_IndexTrunc(Ns_Index* indexPtr)
 void
 Ns_IndexDestroy(Ns_Index *indexPtr)
 {
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
     
     indexPtr->CmpEls = NULL;
     indexPtr->CmpKeyWithEl = NULL;
@@ -171,7 +171,7 @@ Ns_IndexDup(const Ns_Index *indexPtr)
 {
     Ns_Index *newPtr;
 
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
 
     newPtr = (Ns_Index *) ns_malloc(sizeof(Ns_Index));
     memcpy(newPtr, indexPtr, sizeof(Ns_Index));
@@ -203,8 +203,8 @@ Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
 {
     void **pPtrPtr;
 
-    assert(indexPtr != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     pPtrPtr = (void **) bsearch(key, indexPtr->el, indexPtr->n, 
                                 sizeof(void *), indexPtr->CmpKeyWithEl);
@@ -234,8 +234,8 @@ Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
 void *
 Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
 {
-    assert(indexPtr != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
   
     if (indexPtr->n > 0u) {
         int i;
@@ -281,8 +281,8 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
 {
     void **firstPtrPtr;
 
-    assert(indexPtr != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     /*
      * Find a place in the array that matches the key
@@ -349,9 +349,9 @@ BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmp
 {
     ssize_t low = 0, high = n-1, mid = 0;
 
-    assert(elPtrPtr != NULL);
-    assert(listPtrPtr != NULL);
-    assert(cmpProc != NULL);
+    NS_NONNULL_ASSERT(elPtrPtr != NULL);
+    NS_NONNULL_ASSERT(listPtrPtr != NULL);
+    NS_NONNULL_ASSERT(cmpProc != NULL);
 
     while (low <= high) {
 	int cond;
@@ -392,9 +392,9 @@ BinSearchKey(const void *key, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpPro
 {
     ssize_t low = 0, high = n-1, mid = 0;
 
-    assert(key != NULL);
-    assert(listPtrPtr != NULL);
-    assert(cmpProc != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(listPtrPtr != NULL);
+    NS_NONNULL_ASSERT(cmpProc != NULL);
 
     while (low <= high) {
 	int cond;
@@ -434,8 +434,8 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 {
     int i;
 
-    assert(indexPtr != NULL);
-    assert(el != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
+    NS_NONNULL_ASSERT(el != NULL);
 
     if (indexPtr->n == indexPtr->max) {
         indexPtr->max += indexPtr->inc;
@@ -485,8 +485,8 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
     bool   done;
     size_t i, j;
 
-    assert(indexPtr != NULL);
-    assert(el != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
+    NS_NONNULL_ASSERT(el != NULL);
 
     done = NS_FALSE;
     for (i = 0u; i < indexPtr->n && done == NS_FALSE; i++) {
@@ -522,7 +522,7 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
 void *
 Ns_IndexEl(const Ns_Index *indexPtr, size_t i)
 {
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
 
     return indexPtr->el[i];
 }
@@ -547,8 +547,8 @@ Ns_IndexEl(const Ns_Index *indexPtr, size_t i)
 static int
 CmpStr(const char *const*leftPtr, const char *const*rightPtr)
 {
-    assert(leftPtr != NULL);
-    assert(rightPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtr != NULL);
 
     return strcmp(*leftPtr, *rightPtr);
 }
@@ -573,8 +573,8 @@ CmpStr(const char *const*leftPtr, const char *const*rightPtr)
 static int
 CmpKeyWithStr(const char *key, const char *const*elPtr)
 {
-    assert(key != NULL);
-    assert(elPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(elPtr != NULL);
 
     return strcmp(key, *elPtr);
 }
@@ -600,7 +600,7 @@ CmpKeyWithStr(const char *key, const char *const*elPtr)
 void
 Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc)
 {
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
 
     Ns_IndexInit(indexPtr, inc, 
 		 (int (*) (const void *left, const void *right)) CmpStr,
@@ -631,7 +631,7 @@ Ns_IndexStringDup(const Ns_Index *indexPtr)
     Ns_Index *newPtr;
     size_t    i;
 
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
 
     newPtr = (Ns_Index *) ns_malloc(sizeof(Ns_Index));
     memcpy(newPtr, indexPtr, sizeof(Ns_Index));
@@ -666,8 +666,8 @@ Ns_IndexStringAppend(Ns_Index *addtoPtr, const Ns_Index *addfromPtr)
 {
     size_t i;
 
-    assert(addtoPtr != NULL);
-    assert(addfromPtr != NULL);
+    NS_NONNULL_ASSERT(addtoPtr != NULL);
+    NS_NONNULL_ASSERT(addfromPtr != NULL);
 
     for (i = 0u; i < addfromPtr->n; i++) {
         Ns_IndexAdd(addtoPtr, ns_strdup(addfromPtr->el[i]));
@@ -696,7 +696,7 @@ Ns_IndexStringDestroy(Ns_Index *indexPtr)
 {
     size_t i;
 
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
     
     for (i = 0u; i < indexPtr->n; i++) {
         ns_free(indexPtr->el[i]);
@@ -727,7 +727,7 @@ Ns_IndexStringTrunc(Ns_Index *indexPtr)
 {
     size_t i;
 
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
 
     for (i = 0u; i < indexPtr->n; i++) {
         ns_free(indexPtr->el[i]);
@@ -757,8 +757,8 @@ static int
 CmpInts(const int *leftPtr, const int *rightPtr)
 {
 
-    assert(leftPtr != NULL);
-    assert(rightPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtr != NULL);
 
     if (*leftPtr == *rightPtr) {
         return 0;
@@ -787,8 +787,8 @@ CmpInts(const int *leftPtr, const int *rightPtr)
 static int
 CmpKeyWithInt(const int *keyPtr, const int *elPtr)
 {
-    assert(keyPtr != NULL);
-    assert(elPtr != NULL);
+    NS_NONNULL_ASSERT(keyPtr != NULL);
+    NS_NONNULL_ASSERT(elPtr != NULL);
 
     if (*keyPtr == *elPtr) {
         return 0;
@@ -817,7 +817,7 @@ CmpKeyWithInt(const int *keyPtr, const int *elPtr)
 void
 Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc)
 {
-    assert(indexPtr != NULL);
+    NS_NONNULL_ASSERT(indexPtr != NULL);
     
     Ns_IndexInit(indexPtr, inc, 
 		 (int (*) (const void *left, const void *right)) CmpInts,

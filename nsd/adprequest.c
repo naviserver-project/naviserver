@@ -102,8 +102,8 @@ static Ns_ObjvTable adpOpts[] = {
 int
 Ns_AdpRequest(Ns_Conn *conn, const char *file)
 {
-    assert(conn != NULL);
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
 
     return PageRequest(conn, file, NULL, 0U);
 }
@@ -111,8 +111,8 @@ Ns_AdpRequest(Ns_Conn *conn, const char *file)
 int
 Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
 {
-    assert(conn != NULL);
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
 
     return PageRequest(conn, file, expiresPtr, 0U);
 }
@@ -129,7 +129,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     Tcl_Obj      *objv[2];
     int           result;
 
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
 
     /*
      * Verify the file exists.
@@ -273,9 +273,9 @@ RegisterPage(ClientData arg,
     AdpRequest *adp;
     size_t fileLength;
 
-    assert(itPtr != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     fileLength = (file == NULL) ? 0u : strlen(file);
     adp = ns_calloc(1u, sizeof(AdpRequest) + fileLength + 1u);
@@ -428,7 +428,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
     unsigned int flags;
     char        *buf;
 
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     interp = itPtr->interp;
     flags = itPtr->adp.flags;

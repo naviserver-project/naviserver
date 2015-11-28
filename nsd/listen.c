@@ -111,8 +111,8 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
     int                 isNew, status;
     struct sockaddr_in  sa;
 
-    assert(proc != NULL);
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
     if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
         return NS_ERROR;

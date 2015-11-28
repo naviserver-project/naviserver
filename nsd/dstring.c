@@ -93,7 +93,7 @@ Ns_DStringExport(Ns_DString *dsPtr)
 {
     char *s;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     if (dsPtr->string != dsPtr->staticSpace) {
         s = dsPtr->string;
@@ -126,8 +126,8 @@ Ns_DStringExport(Ns_DString *dsPtr)
 char *
 Ns_DStringAppendArg(Ns_DString *dsPtr, const char *bytes)
 {
-    assert(dsPtr != NULL);
-    assert(bytes != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(bytes != NULL);
     
     return Ns_DStringNAppend(dsPtr, bytes, (int) strlen(bytes) + 1);
 }
@@ -154,7 +154,7 @@ Ns_DStringPrintf(Ns_DString *dsPtr, const char *fmt, ...)
     char           *str;
     va_list         ap;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     va_start(ap, fmt);
     str = Ns_DStringVPrintf(dsPtr, fmt, ap);
@@ -188,8 +188,8 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
     size_t   bufLength;
     va_list  ap;
 
-    assert(dsPtr != NULL);
-    assert(fmt != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(fmt != NULL);
     
     origLength = dsPtr->length;
 
@@ -283,7 +283,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
      * Determine the number of strings.
      */
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     argc = 0;
     s = dsPtr->string;

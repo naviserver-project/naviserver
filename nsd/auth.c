@@ -69,9 +69,9 @@ Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
 {
     NsServer *servPtr;
 
-    assert(server != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
     
     servPtr = NsGetServer(server);
     if (unlikely(servPtr == NULL) || servPtr->request.authProc == NULL) {
@@ -102,8 +102,8 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
 {
     NsServer *servPtr;
 
-    assert(server != NULL);
-    assert(procPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(procPtr != NULL);
     
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
@@ -194,8 +194,8 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 Ns_AuthorizeUser(const char *user, const char *passwd)
 {
-    assert(user != NULL);
-    assert(passwd != NULL);
+    NS_NONNULL_ASSERT(user != NULL);
+    NS_NONNULL_ASSERT(passwd != NULL);
     
     if (userProcPtr == NULL) {
 	return NS_ERROR;
@@ -223,7 +223,7 @@ Ns_AuthorizeUser(const char *user, const char *passwd)
 void
 Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 {
-    assert(procPtr != NULL);
+    NS_NONNULL_ASSERT(procPtr != NULL);
     
     userProcPtr = procPtr;
 }
@@ -249,8 +249,8 @@ NsParseAuth(Conn *connPtr, char *auth)
 {
     register char *p;
 
-    assert(connPtr != NULL);
-    assert(auth != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
+    NS_NONNULL_ASSERT(auth != NULL);
     
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NULL);

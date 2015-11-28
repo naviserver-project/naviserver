@@ -264,7 +264,7 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
 
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
@@ -332,7 +332,7 @@ Ns_SockBindUdp(const struct sockaddr_in *saPtr)
     NS_SOCKET sock;
     int       n = 1;
 
-    assert(saPtr != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
     
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -377,7 +377,7 @@ Ns_SockBindUnix(const char *path, int socktype, int mode)
     struct sockaddr_un addr;
     size_t pathLength;
 
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
     pathLength = strlen(path);
 
     if (pathLength >= sizeof(addr.sun_path)) {
@@ -648,7 +648,7 @@ PreBind(const char *line)
     char               *next, *str;
     struct sockaddr_in sa;
 
-    assert(line != NULL);
+    NS_NONNULL_ASSERT(line != NULL);
 
     for (; line != NULL; line = next) {
         const char *addr, *proto;

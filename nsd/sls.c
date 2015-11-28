@@ -438,7 +438,7 @@ NsSlsCleanup(Sock *sockPtr)
     void *arg;
     int   trys, retry;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     
     trys = 0;
     do {

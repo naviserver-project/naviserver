@@ -843,9 +843,9 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
 {
     Pool   *poolPtr;
 
-    assert(startTime != NULL);
-    assert(handle != NULL);
-    assert(sql != NULL);
+    NS_NONNULL_ASSERT(startTime != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(sql != NULL);
 
     poolPtr = ((const Handle *)handle)->poolPtr;
     poolPtr->statementCount++;
@@ -925,7 +925,7 @@ GetPool(const char *pool)
 {
     Tcl_HashEntry   *hPtr;
 
-    assert(pool != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
 
     hPtr = Tcl_FindHashEntry(&poolsTable, pool);
     if (hPtr == NULL) {
@@ -961,7 +961,7 @@ ReturnHandle(Handle *handlePtr)
 {
     Pool         *poolPtr;
 
-    assert(handlePtr != NULL);
+    NS_NONNULL_ASSERT(handlePtr != NULL);
 
     poolPtr = handlePtr->poolPtr;
     if (poolPtr->firstPtr == NULL) {
@@ -997,7 +997,7 @@ ReturnHandle(Handle *handlePtr)
 static bool
 IsStale(const Handle *handlePtr, time_t now)
 {
-    assert(handlePtr != NULL);
+    NS_NONNULL_ASSERT(handlePtr != NULL);
 
     if (handlePtr->connected == NS_TRUE) {
         time_t    minAccess, minOpen;
@@ -1139,8 +1139,8 @@ CreatePool(const char *pool, const char *path, const char *driver)
     int              i;
     const char	    *source, *minDurationString;
 
-    assert(pool != NULL);
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
 
     if (driver == NULL) {
 	Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);
@@ -1251,7 +1251,7 @@ Connect(Handle *handlePtr)
 {
     int status;
 
-    assert(handlePtr != NULL);
+    NS_NONNULL_ASSERT(handlePtr != NULL);
 
     status = NsDbOpen((Ns_DbHandle *) handlePtr);
     if (status != NS_OK) {
@@ -1290,7 +1290,7 @@ IncrCount(const Pool *poolPtr, int incr)
     Tcl_HashEntry *hPtr;
     int prev, count, isNew;
 
-    assert(poolPtr != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
 
     tablePtr = Ns_TlsGet(&tls);
     if (tablePtr == NULL) {
@@ -1335,7 +1335,7 @@ GetServer(const char *server)
 {
     Tcl_HashEntry *hPtr;
 
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
 
     hPtr = Tcl_FindHashEntry(&serversTable, server);
     if (hPtr != NULL) {

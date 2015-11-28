@@ -287,7 +287,7 @@ Ns_GetFileEncoding(const char *file)
     const char    *ext;
     Tcl_Encoding   encoding = NULL;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
 
     ext = strrchr(file, '.');
     if (ext != NULL) {
@@ -333,7 +333,7 @@ Ns_GetTypeEncoding(const char *mimeType)
     const char *charset;
     size_t      len;
 
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
 
     charset = NsFindCharset(mimeType, &len);
     return (charset != NULL) ? Ns_GetCharsetEncodingEx(charset, (int)len) : NULL;
@@ -360,7 +360,7 @@ Ns_GetTypeEncoding(const char *mimeType)
 Tcl_Encoding
 Ns_GetCharsetEncoding(const char *charset)
 {
-    assert(charset != NULL);
+    NS_NONNULL_ASSERT(charset != NULL);
 
     return Ns_GetCharsetEncodingEx(charset, -1);
 }
@@ -372,7 +372,7 @@ Ns_GetCharsetEncodingEx(const char *charset, int len)
     Tcl_Encoding   encoding;
     Ns_DString     ds;
 
-    assert(charset != NULL);
+    NS_NONNULL_ASSERT(charset != NULL);
 
     /*
      * Cleanup the charset name and check for an
@@ -424,7 +424,7 @@ Ns_GetEncodingCharset(Tcl_Encoding encoding)
     const char    *encname, *charset = NULL;
     Tcl_HashEntry *hPtr;
 
-    assert(encoding != NULL);
+    NS_NONNULL_ASSERT(encoding != NULL);
 
     encname = Tcl_GetEncodingName(encoding);
     hPtr = Tcl_FindHashEntry(&encnames, encname);
@@ -456,8 +456,8 @@ NsFindCharset(const char *mimetype, size_t *lenPtr)
 {
     const char *start;
 
-    assert(mimetype != NULL);
-    assert(lenPtr != NULL);
+    NS_NONNULL_ASSERT(mimetype != NULL);
+    NS_NONNULL_ASSERT(lenPtr != NULL);
 
     start = Ns_StrCaseFind(mimetype, "charset");
     if (start != NULL) {
@@ -597,7 +597,7 @@ LoadEncoding(const char *name)
     Tcl_Encoding   encoding;
     int            isNew;
 
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     Ns_MutexLock(&lock);
     hPtr = Tcl_CreateHashEntry(&encodings, name, &isNew);
@@ -646,8 +646,8 @@ AddExtension(const char *ext, const char *name)
     Tcl_HashEntry  *hPtr;
     int             isNew;
 
-    assert(ext != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(ext != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     hPtr = Tcl_CreateHashEntry(&extensions, ext, &isNew);
     Tcl_SetHashValue(hPtr, name);
@@ -660,8 +660,8 @@ AddCharset(const char *charset, const char *name)
     Ns_DString      ds;
     int             isNew;
 
-    assert(charset != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(charset != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     Ns_DStringInit(&ds);
     charset = Ns_StrToLower(Ns_DStringAppend(&ds, charset));

@@ -160,8 +160,8 @@ NsMapPool(ConnPool *poolPtr, const char *map)
     const char *server;
     int  mc;
 
-    assert(poolPtr != NULL);
-    assert(map != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+    NS_NONNULL_ASSERT(map != NULL);
 
     server = poolPtr->servPtr->server;
 
@@ -197,7 +197,7 @@ static int
 neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
     int wantCreate;
 
-    assert(poolPtr != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
 
     /* 
      * Create new connection threads, if
@@ -275,7 +275,7 @@ void
 NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     int create;
 
-    assert(servPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     if (poolPtr == NULL) {
         /* 
@@ -333,8 +333,8 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     Conn     *connPtr = NULL;
     int       create = 0;
 
-    assert(sockPtr != NULL);
-    assert(nowPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(nowPtr != NULL);
 
     servPtr = sockPtr->servPtr;
 
@@ -821,7 +821,7 @@ NsStartServer(const NsServer *servPtr)
     ConnPool *poolPtr;
     int       n;
 
-    assert(servPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
@@ -857,7 +857,7 @@ static void
 WakeupConnThreads(ConnPool *poolPtr) {
     int i;
 
-    assert(poolPtr != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
 
     Ns_MutexLock(&poolPtr->tqueue.lock);
     for (i = 0; i < poolPtr->threads.max; i++) {
@@ -895,7 +895,7 @@ NsStopServer(NsServer *servPtr)
 {
     ConnPool *poolPtr;
 
-    assert(servPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     Ns_Log(Notice, "server [%s]: stopping", servPtr->server);
     servPtr->pools.shutdown = NS_TRUE;
@@ -913,8 +913,8 @@ NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr)
     Ns_Thread  joinThread;
     int        status;
 
-    assert(servPtr != NULL);
-    assert(toPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(toPtr != NULL);
 
     status = NS_OK;
     poolPtr = servPtr->pools.firstPtr;
@@ -963,7 +963,7 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
 {
     const ConnThreadArg *argPtr = arg;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     if (arg != NULL) {
         ConnPool     *poolPtr = argPtr->poolPtr;
@@ -1011,7 +1011,7 @@ NsConnThread(void *arg)
     Ns_Mutex      *wqueueLockPtr  = &poolPtr->wqueue.lock;
     Ns_Thread      joinThread;
 
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
     /*
      * Set the ConnThreadArg into thread local storage and get the id
@@ -1422,8 +1422,8 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     Sock     *sockPtr = connPtr->sockPtr;
     char     *auth;
 
-    assert(argPtr != NULL);
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(argPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
 
     /*
      * Re-initialize and run the connection. 
@@ -1648,7 +1648,7 @@ CreateConnThread(ConnPool *poolPtr)
     }
 #endif
 
-    assert(poolPtr != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
 
     /*
      * Get first free connection thread slot; selecting a slot and
@@ -1705,7 +1705,7 @@ CreateConnThread(ConnPool *poolPtr)
 static void
 JoinConnThread(Ns_Thread *threadPtr)
 {
-    assert(threadPtr != NULL);
+    NS_NONNULL_ASSERT(threadPtr != NULL);
 
     Ns_ThreadJoin(threadPtr, NULL);
     /*
@@ -1736,8 +1736,8 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
 {
     Ns_Time now, diff;
 
-    assert(dsPtr != NULL);
-    assert(state != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(state != NULL);
 
     Tcl_DStringStartSublist(dsPtr);
 
@@ -1798,8 +1798,8 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
 static void
 AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state)
 {
-    assert(dsPtr != NULL);
-    assert(state != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(state != NULL);
 
     while (firstPtr != NULL) {
         AppendConn(dsPtr, firstPtr, state);

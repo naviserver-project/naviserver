@@ -89,7 +89,7 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
     RwLock *lockPtr;
     static uintptr_t nextid = 0;
 
-    assert(rwPtr != NULL);
+    NS_NONNULL_ASSERT(rwPtr != NULL);
     
     lockPtr = ns_calloc(1U, sizeof(RwLock));
     NsMutexInitNext(&lockPtr->mutex, "rw", &nextid);
@@ -156,7 +156,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr;
 
-    assert(rwPtr != NULL);
+    NS_NONNULL_ASSERT(rwPtr != NULL);
 
     lockPtr = GetRwLock(rwPtr);
     Ns_MutexLock(&lockPtr->mutex);
@@ -199,7 +199,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr;
 
-    assert(rwPtr != NULL);
+    NS_NONNULL_ASSERT(rwPtr != NULL);
 
     lockPtr = GetRwLock(rwPtr);
     
@@ -235,7 +235,7 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr = (RwLock *) *rwPtr;
 
-    assert(rwPtr != NULL);
+    NS_NONNULL_ASSERT(rwPtr != NULL);
     
     Ns_MutexLock(&lockPtr->mutex);
     if (--lockPtr->lockcnt < 0) {
@@ -269,7 +269,7 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 static RwLock *
 GetRwLock(Ns_RWLock *rwPtr)
 {
-    assert(rwPtr != NULL);
+    NS_NONNULL_ASSERT(rwPtr != NULL);
     
     if (*rwPtr == NULL) {
 	Ns_MasterLock();

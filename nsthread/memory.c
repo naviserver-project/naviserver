@@ -120,7 +120,7 @@ ns_strdup(const char *old)
     size_t length = strlen(old) + 1u;
     char *p = ns_malloc(length);
 
-    assert(old != NULL);
+    NS_NONNULL_ASSERT(old != NULL);
     
     memcpy(p, old, length);
     

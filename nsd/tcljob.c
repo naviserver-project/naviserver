@@ -1429,8 +1429,8 @@ NewQueue(const char *queueName, const char *queueDesc, int maxThreads)
 {
     Queue *queue;
 
-    assert(queueName != NULL);
-    assert(queueDesc != NULL);
+    NS_NONNULL_ASSERT(queueName != NULL);
+    NS_NONNULL_ASSERT(queueDesc != NULL);
 
     queue = ns_calloc(1U, sizeof(Queue));
     queue->req = QUEUE_REQ_NONE;
@@ -1469,7 +1469,7 @@ NewQueue(const char *queueName, const char *queueDesc, int maxThreads)
 static void
 FreeQueue(Queue *queue)
 {
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
 
     Ns_MutexDestroy(&queue->lock);
     Tcl_DeleteHashTable(&queue->jobs);
@@ -1500,8 +1500,8 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
 {
     Job *jobPtr;
 
-    assert(queueName != NULL);
-    assert(script != NULL);
+    NS_NONNULL_ASSERT(queueName != NULL);
+    NS_NONNULL_ASSERT(script != NULL);
 
     jobPtr = ns_calloc(1U, sizeof(Job));
 
@@ -1541,7 +1541,7 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
 static void
 FreeJob(Job *jobPtr)
 {
-    assert(jobPtr != NULL);
+    NS_NONNULL_ASSERT(jobPtr != NULL);
 
     Tcl_DStringFree(&jobPtr->results);
     Tcl_DStringFree(&jobPtr->script);
@@ -1586,8 +1586,8 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
 {
     Tcl_HashEntry *hPtr;
     
-    assert(queuePtr != NULL);
-    assert(queueName != NULL);
+    NS_NONNULL_ASSERT(queuePtr != NULL);
+    NS_NONNULL_ASSERT(queueName != NULL);
 
     if (locked == 0) {
         Ns_MutexLock(&tp.queuelock);
@@ -1642,7 +1642,7 @@ ReleaseQueue(Queue *queue, int locked)
     Tcl_HashSearch  search;
     int             deleted = 0;
 
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
 
     --queue->refCount;
 
@@ -1703,7 +1703,7 @@ AnyDone(Queue *queue)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
 
     hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
 
@@ -1936,9 +1936,9 @@ AppendField(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
 {
     Tcl_Obj *elObj;
 
-    assert(list != NULL);
-    assert(name != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(list != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
 
     /*
      * Note: If there is an error occurs within Tcl_ListObjAppendElement
@@ -1977,8 +1977,8 @@ AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, const char *name, int value)
 {
     Tcl_Obj *elObj;
 
-    assert(list != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(list != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     /*
      * Note: If there is an error occurs within Tcl_ListObjAppendElement
@@ -2020,8 +2020,8 @@ AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
 {
     Tcl_Obj *elObj;
 
-    assert(list != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(list != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     elObj = Tcl_NewStringObj(name, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
@@ -2058,8 +2058,8 @@ AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
 {
     Tcl_Obj *elObj;
 
-    assert(list != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(list != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     elObj = Tcl_NewStringObj(name, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
@@ -2095,8 +2095,8 @@ ComputeDelta(const Ns_Time *start, const Ns_Time *end)
 {
     Ns_Time diff;
 
-    assert(start != NULL);
-    assert(end != NULL);
+    NS_NONNULL_ASSERT(start != NULL);
+    NS_NONNULL_ASSERT(end != NULL);
 
     Ns_DiffTime(end, start, &diff);
 

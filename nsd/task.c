@@ -141,7 +141,7 @@ Ns_CreateTaskQueue(const char *name)
     TaskQueue *queuePtr;
     size_t nameLength;
 
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
     
     nameLength = strlen(name);
     queuePtr = ns_calloc(1u, sizeof(TaskQueue) + nameLength);
@@ -183,7 +183,7 @@ Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
     TaskQueue  *queuePtr = (TaskQueue *) queue;
     TaskQueue **nextPtrPtr;
 
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
     
     /*
      * Remove queue from list of all queues.
@@ -227,7 +227,7 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
 {
     Task *taskPtr;
 
-    assert(proc != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
 
     taskPtr = ns_calloc(1U, sizeof(Task));
     taskPtr->sock = sock;
@@ -259,8 +259,8 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     Task      *taskPtr = (Task *) task;
     TaskQueue *queuePtr = (TaskQueue *) queue;
 
-    assert(task != NULL);
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
     
     taskPtr->queuePtr = queuePtr;
     if (SignalQueue(taskPtr, TASK_INIT) == NS_FALSE) {
@@ -293,7 +293,7 @@ Ns_TaskRun(Ns_Task *task)
     Ns_Time        now, *timeoutPtr;
     struct pollfd  pfd;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
@@ -338,7 +338,7 @@ Ns_TaskCancel(Ns_Task *task)
 {
     Task *taskPtr = (Task *) task;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
@@ -375,7 +375,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     int        status = NS_OK;
     Ns_Time    atime;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
     
     if (queuePtr == NULL) {
         if ((taskPtr->signalFlags & TASK_DONE) == 0U) {
@@ -422,7 +422,7 @@ Ns_TaskCompleted(Ns_Task *task)
     TaskQueue *queuePtr;
     bool       status;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     queuePtr = taskPtr->queuePtr;
     if (queuePtr == NULL) {
@@ -461,7 +461,7 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
     Task *taskPtr = (Task *) task;
     int   i;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     /*
      * Map from sock when bits to poll event bits.
@@ -520,7 +520,7 @@ Ns_TaskDone(Ns_Task *task)
 {
     Task *taskPtr = (Task *) task;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     taskPtr->flags |= TASK_DONE;
 }
@@ -551,7 +551,7 @@ Ns_TaskFree(Ns_Task *task)
     Task      *taskPtr = (Task *) task;
     NS_SOCKET  sock;
 
-    assert(task != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     sock = taskPtr->sock;
     ns_free(taskPtr);
@@ -668,8 +668,8 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
 static void
 RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 {
-    assert(taskPtr != NULL);
-    assert(nowPtr != NULL);
+    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(nowPtr != NULL);
     /*
      * NB: Treat POLLHUP as POLLIN on systems which return it.
      */
@@ -716,7 +716,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
     bool       pending = NS_FALSE;
     bool       shutdown;
 
-    assert(taskPtr != NULL);
+    NS_NONNULL_ASSERT(taskPtr != NULL);
 
     queuePtr = taskPtr->queuePtr;
     
@@ -767,7 +767,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 static void
 TriggerQueue(const TaskQueue *queuePtr)
 {
-    assert(queuePtr != NULL);
+    NS_NONNULL_ASSERT(queuePtr != NULL);
     
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("task queue: trigger send() failed: %s",
@@ -796,7 +796,7 @@ TriggerQueue(const TaskQueue *queuePtr)
 static void
 StopQueue(TaskQueue *queuePtr)
 {
-    assert(queuePtr != NULL);
+    NS_NONNULL_ASSERT(queuePtr != NULL);
     
     Ns_MutexLock(&queuePtr->lock);
     queuePtr->shutdown = NS_TRUE;
@@ -824,7 +824,7 @@ StopQueue(TaskQueue *queuePtr)
 static void
 JoinQueue(TaskQueue *queuePtr)
 {
-    assert(queuePtr != NULL);
+    NS_NONNULL_ASSERT(queuePtr != NULL);
 
     Ns_ThreadJoin(&queuePtr->tid, NULL);
     ns_sockclose(queuePtr->trigger[0]);

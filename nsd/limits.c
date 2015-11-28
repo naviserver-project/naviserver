@@ -108,9 +108,9 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
 {
     NsLimits *limitsPtr;
 
-    assert(servPtr != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
     
     Ns_MutexLock(&lock);
     limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0u, NS_URLSPACE_DEFAULT);
@@ -327,7 +327,7 @@ FindLimits(const char *limits, int create)
     Tcl_HashEntry *hPtr;
     int            isNew;
 
-    assert(limits != NULL);
+    NS_NONNULL_ASSERT(limits != NULL);
     
     Ns_MutexLock(&lock);
     if (create == 0) {
@@ -416,8 +416,8 @@ LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
 {
     Ns_DString ds;
 
-    assert(interp != NULL);
-    assert(limitsPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(limitsPtr != NULL);
     
     Ns_DStringInit(&ds);
     Ns_DStringPrintf(&ds, "nrunning %u nwaiting %u"

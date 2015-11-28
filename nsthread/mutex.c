@@ -95,7 +95,7 @@ Ns_MutexInit(Ns_Mutex *mutex)
     Mutex *mutexPtr;
     static uintptr_t nextid = 0u;
 
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
 
     mutexPtr = ns_calloc(1U, sizeof(Mutex));
     mutexPtr->lock = NsLockAlloc();
@@ -128,8 +128,8 @@ Ns_MutexInit(Ns_Mutex *mutex)
 void
 Ns_MutexSetName(Ns_Mutex *mutex, const char *name)
 {
-    assert(mutex != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     Ns_MutexSetName2(mutex, name, NULL);
 }
@@ -141,8 +141,8 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
     size_t prefixLength, nameLength;
     char *p;
 
-    assert(mutex != NULL);
-    assert(prefix != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
+    NS_NONNULL_ASSERT(prefix != NULL);
 
     mutexPtr = GETMUTEX(mutex);
     prefixLength = strlen(prefix);
@@ -234,7 +234,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
     Ns_GetTime(&startTime);
 #endif
 
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
     
     mutexPtr = GETMUTEX(mutex);
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
@@ -296,7 +296,7 @@ Ns_MutexTryLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
 
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
 
     mutexPtr = GETMUTEX(mutex);
     if (!NsLockTry(mutexPtr->lock)) {
@@ -413,9 +413,9 @@ NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
     uintptr_t id;
     char buf[NS_THREAD_NAMESIZE];
 
-    assert(mutex != NULL);
-    assert(prefix != NULL);
-    assert(nextPtr != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
+    NS_NONNULL_ASSERT(prefix != NULL);
+    NS_NONNULL_ASSERT(nextPtr != NULL);
     
     Ns_MasterLock();
     id = *nextPtr;
@@ -448,7 +448,7 @@ NsGetLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
 
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
     
     mutexPtr = GETMUTEX(mutex);
     return mutexPtr->lock;
@@ -474,7 +474,7 @@ NsGetLock(Ns_Mutex *mutex)
 static Mutex *
 GetMutex(Ns_Mutex *mutex)
 {
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
     
     Ns_MasterLock();
     if (*mutex == NULL) {
@@ -504,7 +504,7 @@ Ns_MutexGetName(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
     
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
     
     mutexPtr = GETMUTEX(mutex);
     return mutexPtr->name;

@@ -75,7 +75,7 @@ Ns_SemaInit(Ns_Sema *semaPtr, int count)
     static uintptr_t nextid = 0u;
     Sema *sPtr;
 
-    assert(semaPtr != NULL);
+    NS_NONNULL_ASSERT(semaPtr != NULL);
     
     sPtr = ns_malloc(sizeof(Sema));
     sPtr->count = count;
@@ -106,7 +106,7 @@ Ns_SemaInit(Ns_Sema *semaPtr, int count)
 void
 Ns_SemaDestroy(Ns_Sema *semaPtr)
 {
-    assert(semaPtr != NULL);
+    NS_NONNULL_ASSERT(semaPtr != NULL);
 
     if (*semaPtr != NULL) {
     	Sema *sPtr = (Sema *) *semaPtr;
@@ -138,10 +138,11 @@ Ns_SemaDestroy(Ns_Sema *semaPtr)
 void
 Ns_SemaWait(Ns_Sema *semaPtr)
 {
-    Sema *sPtr = (Sema *) *semaPtr;
+    Sema *sPtr;
 
-    assert(semaPtr != NULL);
+    NS_NONNULL_ASSERT(semaPtr != NULL);
     
+    sPtr = (Sema *) *semaPtr;
     Ns_MutexLock(&sPtr->lock);
     while (sPtr->count == 0) {
 	Ns_CondWait(&sPtr->cond, &sPtr->lock);
@@ -170,10 +171,11 @@ Ns_SemaWait(Ns_Sema *semaPtr)
 void
 Ns_SemaPost(Ns_Sema *semaPtr, int count)
 {
-    Sema *sPtr = (Sema *) *semaPtr;
+    Sema *sPtr;
 
-    assert(semaPtr != NULL);
+    NS_NONNULL_ASSERT(semaPtr != NULL);
 
+    sPtr = (Sema *) *semaPtr;
     Ns_MutexLock(&sPtr->lock);
     sPtr->count += count;
     if (count == 1) {

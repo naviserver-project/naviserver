@@ -78,9 +78,9 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
 {
     int mode;
 
-    assert(interp != NULL);
-    assert(chanId != NULL);
-    assert(chanPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(chanId != NULL);
+    NS_NONNULL_ASSERT(chanPtr != NULL);
 
     *chanPtr = Tcl_GetChannel(interp, chanId, &mode);
 
@@ -126,9 +126,9 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
     Tcl_Channel chan;
     ClientData  data;
 
-    assert(interp != NULL);
-    assert(chanId != NULL);
-    assert(fdPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(chanId != NULL);
+    NS_NONNULL_ASSERT(fdPtr != NULL);
 
     if (Ns_TclGetOpenChannel(interp, chanId, write, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
@@ -167,8 +167,8 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
 {
     int max, status;
 
-    assert(interp != NULL);
-    assert(cmd != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(cmd != NULL);
     
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "file backupMax");
@@ -766,8 +766,8 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static void 
 SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
-    assert(interp != NULL);
-    assert(chan != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
     
     Tcl_SpliceChannel(chan);
     Tcl_RegisterChannel(interp, chan);
@@ -797,8 +797,8 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
     Tcl_ChannelType *chanTypePtr;
     Tcl_DriverWatchProc *watchProc;
 
-    assert(interp != NULL);
-    assert(chan != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
 
     Tcl_ClearChannelHandlers(chan);
 

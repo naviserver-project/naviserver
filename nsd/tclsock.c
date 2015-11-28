@@ -899,8 +899,8 @@ SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 {
     Tcl_Channel chan;
 
-    assert(value != NULL);
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
@@ -944,8 +944,8 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flis
     NS_SOCKET     sock;
     Tcl_DString   ds;
 
-    assert(interp != NULL);
-    assert(flist != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(flist != NULL);
 
     Tcl_DStringInit(&ds);
     if (dsPtr == NULL) {
@@ -998,11 +998,11 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
     NS_SOCKET    sock;
     const char **fargv = NULL;
 
-    assert(interp != NULL);
-    assert(flist != NULL);
-    assert(setPtrPtr != NULL);
-    assert(setPtr != NULL);
-    assert(maxPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(flist != NULL);
+    NS_NONNULL_ASSERT(setPtrPtr != NULL);
+    NS_NONNULL_ASSERT(setPtr != NULL);
+    NS_NONNULL_ASSERT(maxPtr != NULL);
     
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) != TCL_OK) {
         return TCL_ERROR;
@@ -1066,7 +1066,7 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
     Tcl_Channel chan;
     int result;
 
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     chan = Tcl_MakeTcpClientChannel(INT2PTR(sock));
     if (chan == NULL) {
@@ -1086,7 +1086,7 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 static int
 EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 {
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     sock = ns_sockdup(sock);
     if (sock == NS_INVALID_SOCKET) {
@@ -1101,7 +1101,7 @@ EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 static int
 EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
 {
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     if (EnterSock(interp, sock) != TCL_OK ||
         EnterDup(interp, sock) != TCL_OK) {

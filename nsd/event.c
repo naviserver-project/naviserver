@@ -163,9 +163,9 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
     EventQueue *queuePtr = (EventQueue *) queue;
     Event      *evPtr;
 
-    assert(queue != NULL);
-    assert(proc != NULL);
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
     
     evPtr = queuePtr->firstFreePtr;
     if (evPtr != NULL) {
@@ -204,7 +204,7 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
     Event *evPtr = (Event *) event;
     int    i;
 
-    assert(event != NULL);
+    NS_NONNULL_ASSERT(event != NULL);
 
     /*
      * Map from sock when bits to poll event bits.
@@ -263,7 +263,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     int         i, n, nfds;
     char        c;
 
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
 
     /*
      * Process any new events.
@@ -390,7 +390,7 @@ Ns_TriggerEventQueue(Ns_EventQueue *queue)
 {
     EventQueue *queuePtr = (EventQueue *) queue;
 
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
 
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("event queue: trigger send() failed: %s",
@@ -422,7 +422,7 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
     Event      *evPtr;
     Ns_Time     now;
 
-    assert(queue != NULL);
+    NS_NONNULL_ASSERT(queue != NULL);
 
     Ns_GetTime(&now);
     evPtr = queuePtr->firstWaitPtr;

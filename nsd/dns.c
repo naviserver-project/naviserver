@@ -148,8 +148,8 @@ NsConfigDNS(void)
 bool
 Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
 {
-    assert(dsPtr != NULL);
-    assert(addr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(addr != NULL);
     
     return DnsGet(GetHost, dsPtr, hostCache, addr, 0);
 }
@@ -157,8 +157,8 @@ Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
 bool
 Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 {
-    assert(dsPtr != NULL);
-    assert(host != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
 
     return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
 }
@@ -167,8 +167,8 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 bool
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
 {
-    assert(dsPtr != NULL);
-    assert(host != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
     
     return DnsGet(GetAddr, dsPtr, addrCache, host, 1);
 }
@@ -181,9 +181,9 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     int         isNew;
     bool        status;
 
-    assert(getProc != NULL);
-    assert(dsPtr != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(getProc != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
         
     /*
      * Call getProc directly or through cache.

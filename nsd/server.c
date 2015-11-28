@@ -172,7 +172,7 @@ NsStopServers(const Ns_Time *toPtr)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
-    assert(toPtr != NULL);
+    NS_NONNULL_ASSERT(toPtr != NULL);
 
     hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
     while (hPtr != NULL) {
@@ -217,7 +217,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     size_t             i;
     int                n;
 
-    assert(server != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
 
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (n == 0) {
@@ -327,7 +327,7 @@ NsRegisterServerInit(Ns_ServerInitProc *proc)
 {
     ServerInit *initPtr;
 
-    assert(proc != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
 
     initPtr = ns_malloc(sizeof(ServerInit));
     initPtr->proc = proc;
@@ -366,8 +366,8 @@ CreatePool(NsServer *servPtr, const char *pool)
     int         n, maxconns, lowwatermark, highwatermark, queueLength;
     const char *path;
 
-    assert(servPtr != NULL);
-    assert(pool != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
 
     poolPtr = ns_calloc(1U, sizeof(ConnPool));
     poolPtr->pool = pool;

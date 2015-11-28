@@ -71,7 +71,7 @@ pid_t
 Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *args,
 	       const Ns_Set *env)
 {
-    assert(exec != NULL);
+    NS_NONNULL_ASSERT(exec != NULL);
 
     return Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
 }
@@ -96,7 +96,7 @@ Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *arg
 pid_t
 Ns_ExecProc(const char *exec, char **argv)
 {
-    assert(exec != NULL);
+    NS_NONNULL_ASSERT(exec != NULL);
     
     return Ns_ExecArgv(exec, NULL, 0, 1, argv, NULL);
 }
@@ -232,7 +232,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
     pid_t  pid;
     char **argv, *argList[256]; /* maximum 256 arguments */
 
-    assert(exec != NULL);
+    NS_NONNULL_ASSERT(exec != NULL);
     
     if (args == NULL) {
         argv = NULL;
@@ -411,7 +411,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
     char *argvSh[4], **envp;
     pid_t pid;
 
-    assert(exec != NULL);
+    NS_NONNULL_ASSERT(exec != NULL);
 
     if (argv == NULL) {
         argv = argvSh;

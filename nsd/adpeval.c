@@ -220,7 +220,7 @@ ConfigServerAdp(const char *server)
 int
 NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     return AdpEval(itPtr, objc, objv, resvar);
 }
@@ -228,7 +228,7 @@ NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 int
 NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     itPtr->adp.flags |= ADP_ADPFILE;
     return AdpEval(itPtr, objc, objv, resvar);
@@ -243,7 +243,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
     int           result;
     char         *obj0;
 
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     interp = itPtr->interp;
     /*
@@ -307,8 +307,8 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file, 
 {
     Ns_DString *outputPtr;
 
-    assert(itPtr != NULL);
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
 
     /*
      * If an ADP execution is already active, use the current output
@@ -343,7 +343,7 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file, 
 void
 NsAdpInit(NsInterp *itPtr)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     Tcl_DStringInit(&itPtr->adp.output);
     NsAdpReset(itPtr);
@@ -352,7 +352,7 @@ NsAdpInit(NsInterp *itPtr)
 void
 NsAdpFree(NsInterp *itPtr)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     if (itPtr->adp.cache != NULL) {
         Ns_CacheDestroy(itPtr->adp.cache);
@@ -382,7 +382,7 @@ NsAdpFree(NsInterp *itPtr)
 void
 NsAdpReset(NsInterp *itPtr)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     itPtr->adp.exception = ADP_OK;
     itPtr->adp.debugLevel = 0;
@@ -436,9 +436,9 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     const char     *p;
     int             result;
 
-    assert(itPtr != NULL);
-    assert(file != NULL);
-    assert(outputPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
+    NS_NONNULL_ASSERT(outputPtr != NULL);
 
     servPtr = itPtr->servPtr;
     interp = itPtr->interp;
@@ -730,7 +730,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
     Tcl_DString  ds;
     int          code;
 
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     interp = itPtr->interp;
 
@@ -848,9 +848,9 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
     size_t        size;
     Page         *pagePtr;
 
-    assert(itPtr != NULL);
-    assert(file != NULL);
-    assert(stPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
+    NS_NONNULL_ASSERT(stPtr != NULL);
 
     interp = itPtr->interp;
 
@@ -967,7 +967,7 @@ NsAdpLogError(NsInterp *itPtr)
     int          len;
     const char  *err, *adp;
 
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     interp = itPtr->interp;
     conn = itPtr->conn;
@@ -1072,9 +1072,9 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     int         nscript, nblocks, result, i;
     const char *ptr, *savecwd;
 
-    assert(itPtr != NULL);
-    assert(codePtr != NULL);
-    assert(outputPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(codePtr != NULL);
+    NS_NONNULL_ASSERT(outputPtr != NULL);
 
     interp = itPtr->interp;
 
@@ -1234,8 +1234,8 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
     Ns_DString  ds;
     int         code, fd;
 
-    assert(itPtr != NULL);
-    assert(ptr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(ptr != NULL);
 
     interp = itPtr->interp;
     level  = itPtr->adp.debugLevel;
@@ -1365,7 +1365,7 @@ FreeObjs(Objs *objsPtr)
 {
     int i;
 
-    assert(objsPtr != NULL);
+    NS_NONNULL_ASSERT(objsPtr != NULL);
 
     for (i = 0; i < objsPtr->nobjs; ++i) {
         if (objsPtr->objs[i] != NULL) {
@@ -1396,7 +1396,7 @@ FreeObjs(Objs *objsPtr)
 static void
 DecrCache(AdpCache *cachePtr)
 {
-    assert(cachePtr != NULL);
+    NS_NONNULL_ASSERT(cachePtr != NULL);
 
     if (--cachePtr->refcnt == 0) {
         NsAdpFreeCode(&cachePtr->code);
@@ -1426,8 +1426,8 @@ AdpTrace(const NsInterp *itPtr, const char *ptr, int len)
 {
     char type;
     
-    assert(itPtr != NULL);
-    assert(ptr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(ptr != NULL);
 
     if (len >= 0) {
         type = 'T';

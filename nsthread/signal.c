@@ -61,7 +61,7 @@ int NS_finalshutdown = 0;
 int
 ns_sigmask(int how, sigset_t *set, sigset_t *oset)
 {
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     return pthread_sigmask(how, set, oset);
 }
@@ -117,8 +117,8 @@ ns_signal(int sig, void (*proc) (int))
 int
 ns_sigwait(sigset_t *set, int *sig)
 {
-    assert(set != NULL);
-    assert(sig != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(sig != NULL);
 
     return sigwait(set, sig);
 }

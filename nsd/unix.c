@@ -312,8 +312,8 @@ NsSendSignal(int sig)
 int
 NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
-    assert(path != NULL);
-    assert(mapPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
+    NS_NONNULL_ASSERT(mapPtr != NULL);
     
     /*
      * Open the file according to map mode
@@ -372,7 +372,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 void
 NsMemUmap(const FileMap *mapPtr)
 {
-    assert(mapPtr != NULL);
+    NS_NONNULL_ASSERT(mapPtr != NULL);
     munmap(mapPtr->addr, mapPtr->size);
 }
 
@@ -395,7 +395,7 @@ NsMemUmap(const FileMap *mapPtr)
 int
 ns_sockpair(int *socks)
 {
-    assert(socks != NULL);
+    NS_NONNULL_ASSERT(socks != NULL);
     
     return Pipe(socks, 1);
 }
@@ -403,7 +403,7 @@ ns_sockpair(int *socks)
 int
 ns_pipe(int *fds)
 {
-    assert(fds != NULL);
+    NS_NONNULL_ASSERT(fds != NULL);
     return Pipe(fds, 0);
 }
 
@@ -412,7 +412,7 @@ Pipe(int *fds, int sockpair)
 {
     int err;
 
-    assert(fds != NULL);
+    NS_NONNULL_ASSERT(fds != NULL);
     
     if (sockpair != 0) {
         err = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
@@ -484,8 +484,8 @@ GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, ch
     char *buffer;
     size_t bufSize = 4096u;
 
-    assert(user != NULL);
-    assert(freePtr != NULL);
+    NS_NONNULL_ASSERT(user != NULL);
+    NS_NONNULL_ASSERT(freePtr != NULL);
     
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
@@ -499,8 +499,8 @@ GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, ch
     } while (1);
     *freePtr = buffer;
 #else
-    assert(user != NULL);
-    assert(freePtr != NULL);
+    NS_NONNULL_ASSERT(user != NULL);
+    NS_NONNULL_ASSERT(freePtr != NULL);
 
     Ns_MutexLock(&lock);
     pwPtr = getpwnam(user);
@@ -634,7 +634,7 @@ Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
     char *ptr = NULL;
     bool success;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     success = GetPwUID(uid, PwNAME, NULL, dsPtr, &ptr);
     if (ptr != NULL) {
@@ -716,7 +716,7 @@ Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
     char *ptr = NULL;
     bool success;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     success = GetPwNam(user, PwDIR, NULL, dsPtr, &ptr);
     if (ptr != NULL) {
@@ -747,7 +747,7 @@ Ns_GetUserGid(const char *user)
     char *ptr = NULL;
     int retcode = -1;
 
-    assert(user != NULL);
+    NS_NONNULL_ASSERT(user != NULL);
     
     (void) GetPwNam(user, PwGID, &retcode, NULL, &ptr);
     if (ptr != NULL) {
@@ -778,7 +778,7 @@ Ns_GetUid(const char *user)
     char *ptr = NULL;
     int retcode = -1;
 
-    assert(user != NULL);
+    NS_NONNULL_ASSERT(user != NULL);
 
     (void) GetPwNam(user, PwUID, &retcode, NULL, &ptr);
     if (ptr != NULL) {
@@ -814,7 +814,7 @@ Ns_GetGid(const char *group)
     char *buffer;
     int errorCode = 0;
 
-    assert(group != NULL);
+    NS_NONNULL_ASSERT(group != NULL);
 
     grPtr = NULL;
     buffer = ns_malloc(bufSize);
@@ -828,7 +828,7 @@ Ns_GetGid(const char *group)
     retcode = (grPtr == NULL) ? -1 : (int) grPtr->gr_gid;
     ns_free(buffer);
 #else
-    assert(group != NULL);
+    NS_NONNULL_ASSERT(group != NULL);
 
     Ns_MutexLock(&lock);
     grPtr = getgrnam(group);
@@ -959,7 +959,7 @@ Ns_SetUser(const char *user)
 int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 {
-    assert(fds != NULL);
+    NS_NONNULL_ASSERT(fds != NULL);
     return poll(fds, nfds, timo);
 }
 #else
@@ -986,7 +986,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     fd_set ifds, ofds, efds;
     int i, rc, n = -1;
 
-    assert(fds != NULL);
+    NS_NONNULL_ASSERT(fds != NULL);
 
     FD_ZERO(&ifds);
     FD_ZERO(&ofds);

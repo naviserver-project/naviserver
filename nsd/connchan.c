@@ -104,8 +104,8 @@ static ssize_t DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, un
 static void
 CallbackFree(Callback *cbPtr)
 {
-    assert(cbPtr != NULL);
-    assert(cbPtr->connChanPtr != NULL);
+    NS_NONNULL_ASSERT(cbPtr != NULL);
+    NS_NONNULL_ASSERT(cbPtr->connChanPtr != NULL);
     
     Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
     cbPtr->connChanPtr->cbPtr = NULL;
@@ -133,8 +133,8 @@ static NsConnChan *
 ConnChanCreate(const char *name, Conn *connPtr) {
     NsConnChan  *connChanPtr = NULL;
     
-    assert(name != NULL);
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
     assert(connPtr->sockPtr != NULL);
     assert(connPtr->reqPtr != NULL);
 
@@ -179,7 +179,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
     NsServer *servPtr;
     Tcl_HashEntry  *hPtr;
     
-    assert(connChanPtr != NULL);
+    NS_NONNULL_ASSERT(connChanPtr != NULL);
     assert(connChanPtr->sockPtr != NULL);
     assert(connChanPtr->sockPtr->servPtr != NULL);
 
@@ -235,8 +235,8 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
     Tcl_HashEntry  *hPtr;
     NsConnChan     *connChanPtr = NULL;
 
-    assert(servPtr != NULL);
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
     
     Ns_MutexLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
@@ -280,7 +280,7 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
     const char  *w;
     int          result;
 
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
     cbPtr = arg;
     
@@ -360,8 +360,8 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int w
     size_t    scriptLength;
     int       result;
 
-    assert(connChanPtr != NULL);
-    assert(script != NULL);
+    NS_NONNULL_ASSERT(connChanPtr != NULL);
+    NS_NONNULL_ASSERT(script != NULL);
 
     /*
      * If there is already a callback registered, free and cancel it. This
@@ -417,9 +417,9 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
     Ns_Time timeout;
 
-    assert(sockPtr != NULL);
-    assert(bufs != NULL);
-    assert(timeoutPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
+    NS_NONNULL_ASSERT(timeoutPtr != NULL);
 
     if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
         /*
@@ -453,7 +453,7 @@ DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flag
 {
     Ns_Time timeout;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
 
     if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {

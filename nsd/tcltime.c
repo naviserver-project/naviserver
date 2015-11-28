@@ -126,7 +126,7 @@ Ns_TclNewTimeObj(const Ns_Time *timePtr)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
-    assert(timePtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
     
     Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
@@ -155,8 +155,8 @@ void
 Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
 
-    assert(timePtr != NULL);
-    assert(objPtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
 
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetTimeObj called with shared object");
@@ -188,9 +188,9 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
     long sec;
 
-    assert(interp != NULL);
-    assert(objPtr != NULL);
-    assert(timePtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
 
     if (objPtr->typePtr == intTypePtr) {
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
@@ -230,9 +230,9 @@ int
 Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr)
 {
 
-    assert(interp != NULL);
-    assert(objPtr != NULL);
-    assert(timePtrPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(timePtrPtr != NULL);
     
     if (objPtr->typePtr != &timeType) {
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
@@ -416,7 +416,7 @@ TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     struct tm *ptm;
     Tcl_Obj   *objPtr[9];
 
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
     
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -573,7 +573,7 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
     int      len;
     char     buf[(TCL_INTEGER_SPACE * 2) + 1];
 
-    assert(objPtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
 
     timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     Ns_AdjTime(timePtr);
@@ -614,8 +614,8 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
      */
     char *sep;
 
-    assert(str != NULL);
-    assert(tPtr != NULL);
+    NS_NONNULL_ASSERT(str != NULL);
+    NS_NONNULL_ASSERT(tPtr != NULL);
 
     sep = strchr(str, (int)UCHAR(separator));
     if (sep != NULL) {
@@ -695,8 +695,8 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     long     sec;
     int      result = TCL_OK;
 
-    assert(interp != NULL);
-    assert(objPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
     
     if (objPtr->typePtr == intTypePtr) {
         /*
@@ -745,8 +745,8 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
 {
     int result;
 
-    assert(str != NULL);
-    assert(tPtr != NULL);
+    NS_NONNULL_ASSERT(str != NULL);
+    NS_NONNULL_ASSERT(tPtr != NULL);
 
     result = GetTimeFromString(interp, str, ':', tPtr);
     
@@ -804,8 +804,8 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
 static void
 SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
-    assert(objPtr != NULL);
-    assert(timePtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
     
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));

@@ -141,7 +141,7 @@ Ns_GetTime(Ns_Time *timePtr)
 void
 Ns_AdjTime(Ns_Time *timePtr)
 {
-    assert(timePtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
 
     if (unlikely(timePtr->usec < 0)) {
         timePtr->sec += (timePtr->usec / 1000000L) - 1;
@@ -175,8 +175,8 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
 {
     Ns_Time diff;
 
-    assert(t0 != NULL);
-    assert(t1 != NULL);
+    NS_NONNULL_ASSERT(t0 != NULL);
+    NS_NONNULL_ASSERT(t1 != NULL);
     
     if (diffPtr == NULL) {
         diffPtr = &diff;
@@ -220,7 +220,7 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
 void
 Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
 {
-    assert(timePtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
 
     timePtr->usec += usec;
     timePtr->sec += sec;
@@ -249,7 +249,7 @@ Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
 Ns_Time *
 Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
 {
-    assert(absPtr != NULL);
+    NS_NONNULL_ASSERT(absPtr != NULL);
 
     if (adjPtr != NULL) {
         if (adjPtr->sec < 1000000000) {

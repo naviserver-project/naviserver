@@ -105,7 +105,7 @@ Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
 {
     const Tcl_ObjType *typePtr;
 
-    assert(objPtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
 
     typePtr = objPtr->typePtr;
     if (typePtr != NULL && typePtr->freeIntRepProc != NULL) {
@@ -136,7 +136,7 @@ void
 Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
                      void *ptr1, void *ptr2)
 {
-    assert(objPtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
     
     Ns_TclResetObjType(objPtr, newTypePtr);
     objPtr->internalRep.twoPtrValue.ptr1 = ptr1;
@@ -164,9 +164,9 @@ Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
 void
 Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
 {
-    assert(objPtr != NULL);
-    assert(newTypePtr != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(newTypePtr != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
     
     Ns_TclResetObjType(objPtr, newTypePtr);
     objPtr->internalRep.otherValuePtr = value;
@@ -194,8 +194,8 @@ Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
 void
 Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
 {
-    assert(objPtr != NULL);
-    assert(bytes != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(bytes != NULL);
     
     if (length < 1) {
         length = (int)strlen(bytes);
@@ -256,9 +256,9 @@ int
 Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                      const char *type, void **addrPtrPtr)
 {
-    assert(objPtr != NULL);
-    assert(type != NULL);
-    assert(addrPtrPtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(type != NULL);
+    NS_NONNULL_ASSERT(addrPtrPtr != NULL);
     
     if (Tcl_ConvertToType(interp, objPtr, &addrType) != TCL_OK) {
         return TCL_ERROR;
@@ -292,9 +292,9 @@ Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 void
 Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
 {
-    assert(objPtr != NULL);
-    assert(type != NULL);
-    assert(addr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(type != NULL);
+    NS_NONNULL_ASSERT(addr != NULL);
     
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetAddrObj called with shared object");
@@ -323,9 +323,9 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
 int
 Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
 {
-    assert(objPtr != NULL);
-    assert(type != NULL);
-    assert(addrPtrPtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(type != NULL);
+    NS_NONNULL_ASSERT(addrPtrPtr != NULL);
     
     if (objPtr->typePtr != &addrType
         || objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
@@ -358,8 +358,8 @@ Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPt
 void
 Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
 {
-    assert(objPtr != NULL);
-    assert(type != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(type != NULL);
         
     Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
 }
@@ -387,7 +387,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
 bool
 NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
-    assert(objPtr != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
   
     return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes == NULL)) ? NS_TRUE : NS_FALSE;
 }

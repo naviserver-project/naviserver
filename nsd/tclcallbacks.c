@@ -71,9 +71,9 @@ Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbProc, Tcl_Obj *scriptObjPtr
 {
     Ns_TclCallback *cbPtr;
 
-    assert(interp != NULL);
-    assert(cbProc != NULL);
-    assert(scriptObjPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(cbProc != NULL);
+    NS_NONNULL_ASSERT(scriptObjPtr != NULL);
     
     cbPtr = ns_malloc(sizeof(Ns_TclCallback) + (size_t)objc * sizeof(char *));
     cbPtr->cbProc = cbProc;
@@ -150,7 +150,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
     int          deallocInterp = 0;
     int          status = TCL_ERROR;
 
-    assert(cbPtr != NULL);
+    NS_NONNULL_ASSERT(cbPtr != NULL);
     
     if (interp == NULL) {
         interp = Ns_TclAllocateInterp(cbPtr->server);

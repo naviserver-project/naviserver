@@ -386,9 +386,9 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
     unsigned char count, buf[0x300];
     unsigned int  depth, colormap;
 
-    assert(chan != NULL);
-    assert(wPtr != NULL);
-    assert(hPtr != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
+    NS_NONNULL_ASSERT(wPtr != NULL);
+    NS_NONNULL_ASSERT(hPtr != NULL);
 
     /*
      * Skip the magic as caller has already
@@ -469,9 +469,9 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned int w, h;
 
-    assert(chan != NULL);
-    assert(wPtr != NULL);
-    assert(hPtr != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
+    NS_NONNULL_ASSERT(wPtr != NULL);
+    NS_NONNULL_ASSERT(hPtr != NULL);
 
     if (Tcl_Seek(chan, 16LL, SEEK_SET) == -1 || Tcl_Eof(chan) == 1) {
         return TCL_ERROR;
@@ -510,9 +510,9 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 static int
 JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
-    assert(chan != NULL);
-    assert(wPtr != NULL);
-    assert(hPtr != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
+    NS_NONNULL_ASSERT(wPtr != NULL);
+    NS_NONNULL_ASSERT(hPtr != NULL);
     
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
@@ -565,8 +565,8 @@ JpegRead2Bytes(Tcl_Channel chan, uint32_t *value)
 {
     int c1, c2;
 
-    assert(chan != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
 
     c1 = ChanGetc(chan);
     c2 = ChanGetc(chan);
@@ -607,7 +607,7 @@ JpegNextMarker(Tcl_Channel chan)
 {
     int c;
 
-    assert(chan != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
     
     /*
      * Find 0xFF byte; count and skip any non-FFs.
@@ -657,7 +657,7 @@ GetImageType(Tcl_Channel chan)
     static const          char gif89_magic [] = {'G','I','F','8','9','a'};
     static const unsigned char png_magic   [] = {0x89u,0x50u,0x4eu,0x47u,0xdu,0x0au,0x1au,0x0au};
 
-    assert(chan != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
     
     (void)Tcl_Seek(chan, 0LL, SEEK_SET);
 
@@ -711,7 +711,7 @@ ChanGetc(Tcl_Channel chan)
 {
     unsigned char buf[1];
 
-    assert(chan != NULL);
+    NS_NONNULL_ASSERT(chan != NULL);
 
     if (Tcl_Read(chan, (char *) buf, 1) != 1) {
         return EOF;
@@ -742,7 +742,7 @@ SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
 {
     Tcl_Obj *objv[2];
 
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
     
     objv[0] = Tcl_NewIntObj((int)w);
     objv[1] = Tcl_NewIntObj((int)h);
@@ -771,8 +771,8 @@ GetFileChan(Tcl_Interp *interp, const char *path)
 {
     Tcl_Channel chan;
 
-    assert(interp != NULL);
-    assert(path != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
     
     chan = Tcl_OpenFileChannel(interp, path, "r", 0);
     if (chan != NULL) {

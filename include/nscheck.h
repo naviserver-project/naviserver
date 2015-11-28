@@ -136,4 +136,10 @@
 # define NS_GNUC_RETURNS_NONNULL
 #endif
 
+#if __GNUC_PREREQ(6, 0)
+# define NS_NONNULL_ASSERT(assertion) 
+#else
+# define NS_NONNULL_ASSERT(assertion) assert((assertion))
+#endif
+
 #endif /* NSCHECK_H */

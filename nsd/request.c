@@ -140,7 +140,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     char       *url, *l, *p;
     Ns_DString  ds;
 
-    assert(line != NULL);
+    NS_NONNULL_ASSERT(line != NULL);
 
     if (request == NULL) {
         return NS_ERROR;
@@ -292,7 +292,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
 {
     size_t skip;
 
-    assert(request != NULL);
+    NS_NONNULL_ASSERT(request != NULL);
 
     if (n > request->urlc) {
         return NULL;
@@ -326,8 +326,8 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
 {
     Ns_DString      ds;
 
-    assert(request != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(request != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     FreeUrl(request);
     Ns_DStringInit(&ds);
@@ -356,7 +356,7 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
 static void
 FreeUrl(Ns_Request *request)
 {
-    assert(request != NULL);
+    NS_NONNULL_ASSERT(request != NULL);
 
     if (request->url != NULL) {
 	ns_free((char *)request->url);
@@ -392,8 +392,8 @@ SetUrl(Ns_Request *request, char *url)
     Tcl_DString  ds1, ds2;
     char       *p;
 
-    assert(request != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(request != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     Tcl_DStringInit(&ds1);
     Tcl_DStringInit(&ds2);
@@ -499,8 +499,8 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
      * they must be in well form key: value form.
      */
 
-    assert(set != NULL);
-    assert(line != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(line != NULL);
 
     if (CHARTYPE(space, *line) != 0) {
         if (Ns_SetSize(set) == 0u) {
@@ -572,8 +572,8 @@ static const char *
 GetQvalue(const char *str, int *lenPtr) {
     const char *resultString;
 
-    assert(str != NULL);
-    assert(lenPtr != NULL);
+    NS_NONNULL_ASSERT(str != NULL);
+    NS_NONNULL_ASSERT(lenPtr != NULL);
 
     for (; *str == ' '; str++) {
         ;
@@ -649,9 +649,9 @@ static const char *
 GetEncodingFormat(const char *encodingString, const char *encodingFormat, double *qValue) {
     const char *encodingStr;
 
-    assert(encodingString != NULL);
-    assert(encodingFormat != NULL);
-    assert(qValue != NULL);
+    NS_NONNULL_ASSERT(encodingString != NULL);
+    NS_NONNULL_ASSERT(encodingFormat != NULL);
+    NS_NONNULL_ASSERT(qValue != NULL);
 
     encodingStr = strstr(encodingString, encodingFormat);
 
@@ -695,7 +695,7 @@ NsParseAcceptEncoding(double version, const char *hdr)
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
     int gzip = 0;
 
-    assert(hdr != NULL);
+    NS_NONNULL_ASSERT(hdr != NULL);
 
     if (GetEncodingFormat(hdr, "gzip", &gzipQvalue) != NULL) {
 	/* we have gzip specified in accept-encoding */

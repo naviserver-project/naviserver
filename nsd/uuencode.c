@@ -104,8 +104,8 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
     register int line = 0;
     register size_t n;
 
-    assert(input != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(input != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     /*
      * Convert every three input bytes into four output
@@ -179,8 +179,8 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
     register const unsigned char *p;
     register unsigned char *q;
 
-    assert(input != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(input != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     /*
      * Skip leading space, if any.

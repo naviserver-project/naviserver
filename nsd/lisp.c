@@ -238,7 +238,8 @@ Ns_IntPrint(int d)
 void
 Ns_StringPrint(const char *s)
 {
-    assert(s != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
+    
     fputs(s, stdout);
 }
 

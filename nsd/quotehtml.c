@@ -56,8 +56,8 @@
 void
 Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
 {
-    assert(dsPtr != NULL);
-    assert(htmlString != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(htmlString != NULL);
     
     while (likely(*htmlString != '\0')) {
         switch (*htmlString) {

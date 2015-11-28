@@ -171,7 +171,7 @@ test ns_proxy-4.3 {ping dead proxy} -body {
 } -cleanup {
     ns_proxy cleanup
     ns_proxy configure testpool -evaltimeout 0
-} -match glob -result {1 {could not send script "<empty>" to proxy "testpool-*": currently evaluating a script} {NSPROXY EBusy {currently evaluating a script}}}
+} -match glob -result {1 {could not send script "" to proxy "testpool-*": currently evaluating a script} {NSPROXY EBusy {currently evaluating a script}}}
 
 test ns_proxy-5.0 {eval over handle} -body {
     ns_proxy eval [ns_proxy get testpool] "set a 1"

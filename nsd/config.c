@@ -77,8 +77,8 @@ Ns_ConfigString(const char *section, const char *key, const char *def)
 {
     const char *value;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     
     value = ConfigGet(section, key, 0, def);
     Ns_Log(Dev, "config: %s:%s value=\"%s\" default=\"%s\" (string)", 
@@ -113,8 +113,8 @@ Ns_ConfigBool(const char *section, const char *key, int def)
     const char *s;
     int value = NS_FALSE, found = NS_FALSE;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     s = ConfigGet(section, key, 0, (def != NS_FALSE) ? "true" : "false");
     if (s != NULL && ToBool(s, &value) == NS_TRUE) {
@@ -153,8 +153,8 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
     const char *s;
     int value = 0, found = NS_FALSE;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     s = ConfigGet(section, key, 0, (def != 0) ? "true" : "false");
     if (s != NULL && ToBool(s, &value) == NS_TRUE) {
@@ -204,8 +204,8 @@ Ns_ConfigIntRange(const char *section, const char *key, int def,
     char defstr[TCL_INTEGER_SPACE];
     int value;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     snprintf(defstr, sizeof(defstr), "%d", def);
     s = ConfigGet(section, key, 0, defstr);
@@ -268,8 +268,8 @@ Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt def,
     char defstr[TCL_INTEGER_SPACE];
     Tcl_WideInt value;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     snprintf(defstr, sizeof(defstr), "%" TCL_LL_MODIFIER "d", def);
     s = ConfigGet(section, key, 0, defstr);
@@ -318,8 +318,8 @@ Ns_ConfigGetValue(const char *section, const char *key)
 {
     const char *value;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     
     value = ConfigGet(section, key, 0, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string)", 
@@ -350,8 +350,8 @@ Ns_ConfigGetValueExact(const char *section, const char *key)
 {
     const char *value;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
     
     value = ConfigGet(section, key, 1, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string, exact match)", 
@@ -385,8 +385,8 @@ Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
     const char *s;
     int found;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     s = ConfigGet(section, key, 0, NULL);
     if (s != NULL && Ns_StrToInt(s, valuePtr) == NS_OK) {
@@ -456,9 +456,9 @@ Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
     const char *s;
     int found = NS_FALSE;
 
-    assert(section != NULL);
-    assert(key != NULL);
-    assert(valuePtr != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
 
     s = ConfigGet(section, key, 0, NULL);
     if (s != NULL && ToBool(s, valuePtr) == NS_TRUE) {
@@ -670,7 +670,7 @@ NsConfigRead(const char *file)
     const char  *call = "open", *data, *conf;
     int          length;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
     /*
      * Open the channel for reading the config file
      */
@@ -739,7 +739,7 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
     Ns_Set     *set;
     int i;
 
-    assert(config != NULL);
+    NS_NONNULL_ASSERT(config != NULL);
 
     /*
      * Create an interp with a few config-related commands.
@@ -858,8 +858,8 @@ ConfigGet(const char *section, const char *key, int exact, const char *defstr)
     char    *s;
     Ns_Set  *set;
 
-    assert(section != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     s = NULL;
     set = GetSection(section, 0);
@@ -910,7 +910,7 @@ GetSection(const char *section, int create)
     const char    *p;
     char          *s;
 
-    assert(section != NULL);
+    NS_NONNULL_ASSERT(section != NULL);
 
     /*
      * Clean up section name to all lowercase, trimming space
@@ -982,8 +982,8 @@ ToBool(const char *value, int *valuePtr)
 {
     int boolValue;
 
-    assert(value != NULL);
-    assert(valuePtr != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
 
     if (STREQ(value, "1")
         || STRIEQ(value, "y")

@@ -63,8 +63,8 @@
 void
 Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
 {
-    assert(dsPtr != NULL);
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     while (*chars != '\0') {
         if (*chars == '\'') {
@@ -101,9 +101,9 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 {
     Ns_Set *row;
 
-    assert(handle != NULL);
-    assert(sql != NULL);
-    assert(nrows != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(sql != NULL);
+    NS_NONNULL_ASSERT(nrows != NULL);
 
     row = Ns_DbSelect(handle, sql);
     if (row != NULL) {
@@ -158,8 +158,8 @@ Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
     Ns_Set         *row;
     int             nrows;
 
-    assert(handle != NULL);
-    assert(sql != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(sql != NULL);
 
     row = Ns_Db0or1Row(handle, sql, &nrows);
     if (row != NULL) {
@@ -200,8 +200,8 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     int             i, status, inquote;
     char            c, lastc;
 
-    assert(handle != NULL);
-    assert(filename != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(filename != NULL);
 
     fp = fopen(filename, "rt");
     if (fp == NULL) {
@@ -312,9 +312,9 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
 void
 Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
 {
-    assert(handle != NULL);
-    assert(code != NULL);
-    assert(msg != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(code != NULL);
+    NS_NONNULL_ASSERT(msg != NULL);
 
     strncpy(handle->cExceptionCode, code, sizeof(handle->cExceptionCode));
     Ns_DStringFree(&(handle->dsExceptionMsg));

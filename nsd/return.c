@@ -365,8 +365,8 @@ Ns_ConnSetLastModifiedHeader(const Ns_Conn *conn, const time_t *mtime)
 {
     Ns_DString ds;
 
-    assert(conn != NULL);
-    assert(mtime != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(mtime != NULL);
 
     Ns_DStringInit(&ds);
     Ns_ConnCondSetHeaders(conn, "Last-Modified", Ns_HttpTime(&ds, mtime));
@@ -656,9 +656,9 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     Ns_DString  ds;
     int         result;
 
-    assert(conn != NULL);
-    assert(title != NULL);
-    assert(notice != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(title != NULL);
+    NS_NONNULL_ASSERT(notice != NULL);
 
     servPtr = connPtr->poolPtr->servPtr;
     Ns_DStringInit(&ds);
@@ -730,9 +730,9 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
     int result;
     size_t length;
 
-    assert(conn != NULL);
-    assert(data != NULL);
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(data != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
 
     Ns_ConnSetTypeHeader(conn, mimeType);
     length = (len < 0) ? strlen(data) : (size_t)len;
@@ -769,8 +769,8 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
     struct iovec sbuf;
     int result;
 
-    assert(conn != NULL);
-    assert(data != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(data != NULL);
     
     if (mimeType != NULL) {
         Ns_ConnSetEncodedTypeHeader(conn, mimeType);
@@ -838,8 +838,9 @@ int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *mimeType,
                          Tcl_Channel chan, size_t len)
 {
-    assert(conn != NULL);
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
+    
     return ReturnOpen(conn, status, mimeType, chan, NULL, -1, len);
 }
 
@@ -847,8 +848,9 @@ int
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *mimeType,
                       FILE *fp, size_t len)
 {
-    assert(conn != NULL);
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
+    
     return ReturnOpen(conn, status, mimeType, NULL, fp, -1, len);
 }
 
@@ -856,8 +858,9 @@ int
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *mimeType,
                     int fd, size_t len)
 {
-    assert(conn != NULL);
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
+    
     return ReturnOpen(conn, status, mimeType, NULL, NULL, fd, len);
 }
 
@@ -867,8 +870,8 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
 {
     int result;
 
-    assert(conn != NULL);
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
 
     Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetResponseStatus(conn, status);
@@ -922,8 +925,8 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
     int         nbufs = (int)(sizeof(bufs) / sizeof(bufs[0]));
     int         rangeCount, result = NS_ERROR;
 
-    assert(conn != NULL);
-    assert(mimeType != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(mimeType != NULL);
 
     Ns_DStringInit(&ds);
     rangeCount = NsConnParseRange(conn, mimeType, fd, data, len,

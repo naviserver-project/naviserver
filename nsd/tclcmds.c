@@ -312,8 +312,8 @@ static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 static void
 AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 {
-    assert(cmdPtr != NULL);
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(cmdPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
 
     while (cmdPtr->name != NULL) {
 	/*
@@ -348,14 +348,16 @@ AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 void
 NsTclAddBasicCmds(NsInterp *itPtr)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    
     AddCmds(basicCmds, itPtr);
 }
 
 void
 NsTclAddServerCmds(NsInterp *itPtr)
 {
-    assert(itPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    
     AddCmds(servCmds, itPtr);
 }
 

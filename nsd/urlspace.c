@@ -442,10 +442,10 @@ Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int i
     NsServer   *servPtr;
     Ns_DString  ds;
 
-    assert(server != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
-    assert(data != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(data != NULL);
 
     servPtr = NsGetServer(server);
 
@@ -484,9 +484,9 @@ Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int i
 void *
 Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
 {
-    assert(server != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0u, NS_URLSPACE_DEFAULT);
 }
@@ -497,9 +497,9 @@ Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, i
    /*
     * Depreacated Function. Use Ns_UrlSpecificGet()
     */
-    assert(server != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0u, NS_URLSPACE_FAST);
 }
@@ -508,9 +508,9 @@ void *
 Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
                        int id, unsigned int flags)
 {
-    assert(server != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     return NsUrlSpecificGet(NsGetServer(server), method, url, id, flags, NS_URLSPACE_EXACT);
 }
@@ -543,9 +543,9 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
     void       *data;
     Junction   *junction;
         
-    assert(servPtr != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     junction = JunctionGet(servPtr, id);
     
@@ -614,9 +614,9 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
     Ns_DString  ds;
     void       *data = NULL;
 
-    assert(server != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     servPtr = NsGetServer(server);
 
@@ -658,9 +658,9 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
     size_t    n, i;
     char     *stack[STACK_SIZE];
 
-    assert(server != NULL);
-    assert(func != NULL);
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(func != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     juncPtr = JunctionGet(NsGetServer(server), id);
     memset(stack, 0, sizeof(stack));
@@ -688,11 +688,11 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
     size_t       i;
     Tcl_DString  subDs;
 
-    assert(triePtr != NULL);
-    assert(func != NULL);
-    assert(dsPtr != NULL);
-    assert(stack != NULL);
-    assert(filter != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
+    NS_NONNULL_ASSERT(func != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(stack != NULL);
+    NS_NONNULL_ASSERT(filter != NULL);
 
     for (i = 0u; i < triePtr->branches.n; i++) {
         branchPtr = Ns_IndexEl(&triePtr->branches, i);
@@ -789,7 +789,7 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 static void
 NodeDestroy(Node *nodePtr)
 {
-    assert(nodePtr != NULL);
+    NS_NONNULL_ASSERT(nodePtr != NULL);
 
     if (nodePtr->deletefuncNoInherit != NULL) {
         (*nodePtr->deletefuncNoInherit) (nodePtr->dataNoInherit);
@@ -820,8 +820,8 @@ NodeDestroy(Node *nodePtr)
 static int
 CmpBranches(const Branch *const*leftPtrPtr, const Branch *const*rightPtrPtr)
 {
-    assert(leftPtrPtr != NULL);
-    assert(rightPtrPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtrPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtrPtr != NULL);
 
 #ifdef DEBUG
     fprintf(stderr, "CmpBranches '%s' with '%s' -> %d\n", (*leftPtrPtr)->word, (*rightPtrPtr)->word,
@@ -851,8 +851,8 @@ CmpBranches(const Branch *const*leftPtrPtr, const Branch *const*rightPtrPtr)
 static int
 CmpKeyWithBranch(const char *key, const Branch *const*branchPtrPtr)
 {
-    assert(key != NULL);
-    assert(branchPtrPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(branchPtrPtr != NULL);
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithBranch '%s' with '%s' -> %d\n",
@@ -907,7 +907,7 @@ BranchDestroy(Branch *branchPtr)
 static void
 TrieInit(Trie *triePtr)
 {
-    assert(triePtr != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
 
     Ns_IndexInit(&triePtr->branches, 25u,
         (int (*) (const void *left, const void *right)) CmpBranches,
@@ -943,9 +943,9 @@ static void
 TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
         void (*deletefunc)(void *data))
 {
-    assert(triePtr != NULL);
-    assert(seq != NULL);
-    assert(data != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
+    NS_NONNULL_ASSERT(data != NULL);
 
     if (*seq != '\0') {
         Branch *branchPtr;
@@ -1036,7 +1036,7 @@ TrieTrunc(Trie *triePtr)
     Branch *branchPtr;
     size_t  n;
 
-    assert(triePtr != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
 
     n = Ns_IndexCount(&triePtr->branches);
     if (n > 0u) {
@@ -1079,8 +1079,8 @@ TrieTruncBranch(Trie *triePtr, char *seq)
 {
     Branch *branchPtr;
 
-    assert(triePtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     if (*seq != '\0') {
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
@@ -1129,7 +1129,7 @@ TrieDestroy(Trie *triePtr)
 {
     size_t n;
 
-    assert(triePtr != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
 
     n = Ns_IndexCount(&triePtr->branches);
     if (n > 0u) {
@@ -1177,9 +1177,9 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
     void   *data = NULL;
     int     ldepth;
 
-    assert(triePtr != NULL);
-    assert(seq != NULL);
-    assert(depthPtr != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
+    NS_NONNULL_ASSERT(depthPtr != NULL);
 
     nodePtr = triePtr->node;
     ldepth = *depthPtr;
@@ -1251,8 +1251,8 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
     Branch *branchPtr;
     void   *data = NULL;
 
-    assert(triePtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     nodePtr = triePtr->node;
 
@@ -1314,8 +1314,8 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
     Branch *branchPtr;
     void   *data = NULL;
 
-    assert(triePtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(triePtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     nodePtr = triePtr->node;
 
@@ -1392,8 +1392,8 @@ CmpChannels(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
     fprintf(stderr, "======= CmpChannels\n");
 #endif
 
-    assert(leftPtrPtr != NULL);
-    assert(rightPtrPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtrPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtrPtr != NULL);
 
     lcontainsr = NS_Tcl_StringMatch((*rightPtrPtr)->filter,
                                  (*leftPtrPtr)->filter);
@@ -1438,8 +1438,8 @@ CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)
 #ifdef DEBUG
     fprintf(stderr, "======= CmpKeyWithChannel %s\n", key);
 #endif    
-    assert(key != NULL);
-    assert(channelPtrPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(channelPtrPtr != NULL);
 
     lcontainsr = NS_Tcl_StringMatch((*channelPtrPtr)->filter, key);
     rcontainsl = NS_Tcl_StringMatch(key, (*channelPtrPtr)->filter);
@@ -1475,8 +1475,8 @@ CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)
 static int
 CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
 {
-    assert(leftPtrPtr != NULL);
-    assert(rightPtrPtr != NULL);
+    NS_NONNULL_ASSERT(leftPtrPtr != NULL);
+    NS_NONNULL_ASSERT(rightPtrPtr != NULL);
 
 #ifdef DEBUG
     fprintf(stderr, "CmpChannelsAsStrings '%s' with '%s' -> %d\n",
@@ -1505,8 +1505,8 @@ CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*right
 static int
 CmpKeyWithChannelAsStrings(const char *key, const Channel *const*channelPtrPtr)
 {
-    assert(key != NULL);
-    assert(channelPtrPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(channelPtrPtr != NULL);
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithChannelAsStrings key '%s' with '%s' -> %d\n",
@@ -1539,7 +1539,7 @@ JunctionGet(NsServer *servPtr, int id)
 {
     Junction *juncPtr;
 
-    assert(servPtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     juncPtr = servPtr->urlspace.junction[id];
     if (juncPtr == NULL) {
@@ -1583,8 +1583,8 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
     Channel *channelPtr;
     size_t   i, n;
 
-    assert(juncPtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(juncPtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     /*
      * Loop over every channel in a junction and truncate the sequence in
@@ -1643,8 +1643,8 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
     int         depth;
     size_t      l;
     
-    assert(juncPtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(juncPtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     depth = 0;
     Ns_DStringInit(&dsFilter);
@@ -1742,8 +1742,8 @@ JunctionFind(const Junction *juncPtr, char *seq)
     int      depth = 0;
     void    *data;
 
-    assert(juncPtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(juncPtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     /*
      * After this loop, p will point at the last element in the sequence.
@@ -1878,8 +1878,8 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
     size_t  l, i;
     void   *data = NULL;
 
-    assert(juncPtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(juncPtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     /*
      * Set p to the last element of the sequence.
@@ -1974,8 +1974,8 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
     /*int      depth = 0;*/
     void    *data = NULL;
 
-    assert(juncPtr != NULL);
-    assert(seq != NULL);
+    NS_NONNULL_ASSERT(juncPtr != NULL);
+    NS_NONNULL_ASSERT(seq != NULL);
 
     /*
      * Set p to the last element of the sequence, and
@@ -2051,9 +2051,9 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
     int         done;
     size_t      l;
 
-    assert(dsPtr != NULL);
-    assert(method != NULL);
-    assert(url != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     Ns_DStringNAppend(dsPtr, method, (int)NS_strlen(method) + 1);
 
@@ -2149,8 +2149,8 @@ AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
 {
     int result;
 
-    assert(interp != NULL);
-    assert(idPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(idPtr != NULL);
     
     if (nextid < MAX_URLSPACES-1) {
         *idPtr =  Ns_UrlSpecificAlloc();
@@ -2186,9 +2186,9 @@ CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
 {
     int result = TCL_OK;
 
-    assert(interp != NULL);
-    assert(servPtr != NULL);
-    assert(idPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(idPtr != NULL);
 
     if (*idPtr == -1) {
         

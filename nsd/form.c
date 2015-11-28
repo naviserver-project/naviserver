@@ -83,7 +83,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
     Tcl_DString     bound;
     char           *form, *s, *e;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -155,7 +155,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     if (connPtr->query == NULL) {
         return;
@@ -196,8 +196,8 @@ Ns_ConnClearQuery(Ns_Conn *conn)
 int
 Ns_QueryToSet(char *query, Ns_Set *set)
 {
-    assert(query != NULL);
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(query != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
     
     ParseQuery(query, set, NULL);
     return NS_OK;
@@ -264,8 +264,8 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
     Tcl_DString  kds, vds;
     char  *p;
 
-    assert(form != NULL);
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(form != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
@@ -328,9 +328,9 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
     Ns_Set      *set;
     int          isNew;
 
-    assert(connPtr != NULL);
-    assert(start != NULL);
-    assert(end != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
+    NS_NONNULL_ASSERT(start != NULL);
+    NS_NONNULL_ASSERT(end != NULL);
 
     encoding = connPtr->urlEncoding;
     
@@ -432,8 +432,8 @@ GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
 {
     const char *type, *bs;
 
-    assert(dsPtr != NULL);
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     type = Ns_SetIGet(conn->headers, "content-type");
     if (type != NULL
@@ -477,9 +477,9 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
     const char *find;
     size_t len;
 
-    assert(dsPtr != NULL);
-    assert(s != NULL);
-    assert(e != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
+    NS_NONNULL_ASSERT(e != NULL);
 
     find = dsPtr->string;
     c = *find++;
@@ -521,11 +521,11 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 {
     const char *s, *e;
 
-    assert(hdr != NULL);
-    assert(att != NULL);
-    assert(vsPtr != NULL);
-    assert(vePtr != NULL);
-    assert(uPtr != NULL);
+    NS_NONNULL_ASSERT(hdr != NULL);
+    NS_NONNULL_ASSERT(att != NULL);
+    NS_NONNULL_ASSERT(vsPtr != NULL);
+    NS_NONNULL_ASSERT(vePtr != NULL);
+    NS_NONNULL_ASSERT(uPtr != NULL);
 
     s = Ns_StrCaseFind(hdr, att);
     if (s == NULL) {
@@ -588,8 +588,8 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 static char *
 Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
 {
-    assert(dsPtr != NULL);
-    assert(start != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(start != NULL);
 
     if (encoding == NULL) {
         Tcl_DStringSetLength(dsPtr, 0);

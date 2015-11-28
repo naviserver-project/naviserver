@@ -547,7 +547,7 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
 {
     Tcl_HashSearch  search;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     Ns_MutexLock(&lock);
     if (running == NS_TRUE) {

@@ -42,9 +42,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     char *enc;
     struct crypt_data data;
 
-    assert(pw != NULL);
-    assert(salt != NULL);
-    assert(iobuf != NULL);
+    NS_NONNULL_ASSERT(pw != NULL);
+    NS_NONNULL_ASSERT(salt != NULL);
+    NS_NONNULL_ASSERT(iobuf != NULL);
     
     data.initialized = 0;
     enc = crypt_r(pw, salt, &data);
@@ -69,9 +69,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     char *enc;
 
-    assert(pw != NULL);
-    assert(salt != NULL);
-    assert(iobuf != NULL);
+    NS_NONNULL_ASSERT(pw != NULL);
+    NS_NONNULL_ASSERT(salt != NULL);
+    NS_NONNULL_ASSERT(iobuf != NULL);
     
     Ns_MutexLock(&lock);
     enc = crypt(pw, salt);
@@ -215,8 +215,8 @@ setkey_private(struct sched *sp, const unsigned char *key)
 {
     register int    i;
 
-    assert(sp != NULL);
-    assert(key != NULL);
+    NS_NONNULL_ASSERT(sp != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
 
     /*
      * First, generate C and D by permuting the key.  The low order bit of
@@ -347,8 +347,8 @@ encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
     int             i, ii;
     register int    j;
 
-    assert(sp != NULL);
-    assert(block != NULL);
+    NS_NONNULL_ASSERT(sp != NULL);
+    NS_NONNULL_ASSERT(block != NULL);
 
     /*
      * First, permute the bits in the input
@@ -457,9 +457,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     unsigned char   block[66];
     struct sched    s;
 
-    assert(pw != NULL);
-    assert(salt != NULL);
-    assert(iobuf != NULL);
+    NS_NONNULL_ASSERT(pw != NULL);
+    NS_NONNULL_ASSERT(salt != NULL);
+    NS_NONNULL_ASSERT(iobuf != NULL);
 
     for (i = 0u; i < 66u; i++) {
         block[i] = UCHAR('\0');

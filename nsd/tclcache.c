@@ -453,7 +453,7 @@ noGlobChars(const char *pattern)
     register char c;
     const char *p = pattern;
 
-    assert(pattern != NULL);
+    NS_NONNULL_ASSERT(pattern != NULL);
 
     for (c = *p; likely(c != '\0'); c = *++p) {
 	if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {
@@ -782,10 +782,10 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key, int *newPtr,
     Ns_Entry *entry;
     Ns_Time   t;
 
-    assert(itPtr != NULL);
-    assert(cPtr != NULL);
-    assert(key != NULL);
-    assert(newPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(cPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(newPtr != NULL);
 
     cache = cPtr->cache;
 
@@ -831,9 +831,9 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
     size_t      length;
     Ns_Time     t;
 
-    assert(cPtr != NULL);
-    assert(entry != NULL);
-    assert(valObj != NULL);
+    NS_NONNULL_ASSERT(cPtr != NULL);
+    NS_NONNULL_ASSERT(entry != NULL);
+    NS_NONNULL_ASSERT(valObj != NULL);
 
     bytes = Tcl_GetStringFromObj(valObj, &len);
     assert(len >= 0);

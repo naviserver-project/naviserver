@@ -48,7 +48,7 @@ static char *ckstrdup(const char *s) NS_GNUC_NONNULL(1) NS_GNUC_MALLOC NS_GNUC_W
 static char *ckstrdup(const char *s) {
     size_t len;
 
-    assert(s != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
 
     len = strlen(s) + 1u;
     return memcpy(ckalloc(len), s, len);
@@ -518,7 +518,7 @@ static Tcl_ObjType keyedListType = {
 static void 
 DupSharedKeyListChild(const keylIntObj_t *keylIntPtr, int idx) 
 {
-    assert(keylIntPtr != NULL);
+    NS_NONNULL_ASSERT(keylIntPtr != NULL);
 
     if (Tcl_IsShared(keylIntPtr->entries[idx].valuePtr)) {
 	keylIntPtr->entries[idx].valuePtr =

@@ -393,9 +393,9 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     const char     *url = conn->request->url;
     const char	   *server = Ns_ConnServer(conn);
 
-    assert(cgiPtr != NULL);
-    assert(mapPtr != NULL);
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(mapPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     modPtr = mapPtr->modPtr;
     memset(cgiPtr, 0, (size_t)((char *)&cgiPtr->ds[0] - (char *)cgiPtr));
@@ -586,8 +586,8 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     size_t  len;
     const char   *content, *err;
 
-    assert(cgiPtr != NULL);
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     err = NULL;
     len = conn->contentLength;
@@ -632,7 +632,7 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 static Ns_DString *
 CgiDs(Cgi *cgiPtr)
 {
-    assert(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
 
     if (cgiPtr->nextds < NDSTRINGS) {
         return &cgiPtr->ds[cgiPtr->nextds++];
@@ -662,7 +662,7 @@ CgiDs(Cgi *cgiPtr)
 static void
 CgiFree(Cgi *cgiPtr)
 {
-    assert(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
 
     /*
      * Close the pipe.
@@ -732,8 +732,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_DString *dsPtr;
     Mod *modPtr;
 
-    assert(cgiPtr != NULL);
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     modPtr = cgiPtr->modPtr;
     /*
@@ -1005,7 +1005,7 @@ CgiRead(Cgi *cgiPtr)
 {
     ssize_t n;
 
-    assert(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
 
     cgiPtr->ptr = cgiPtr->buf;
     do {
@@ -1043,8 +1043,8 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
     char    c;
     ssize_t n;
 
-    assert(cgiPtr != NULL);
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     do {
 	while (cgiPtr->cnt > 0) {
@@ -1090,8 +1090,8 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_Set         *hdrs;
     ssize_t         n;
 
-    assert(cgiPtr != NULL);
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(cgiPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     /*
      * Skip to copy for nph CGI's.
@@ -1195,7 +1195,7 @@ copy:
 static char    *
 NextWord(char *s)
 {
-    assert(s != NULL);
+    NS_NONNULL_ASSERT(s != NULL);
 
     while (*s != '\0' && CHARTYPE(space, *s) == 0) {
         ++s;
@@ -1235,8 +1235,8 @@ CgiRegister(Mod *modPtr, const char *map)
     Ns_DString      ds1, ds2;
     Map     	   *mapPtr;
 
-    assert(modPtr != NULL);
-    assert(map != NULL);
+    NS_NONNULL_ASSERT(modPtr != NULL);
+    NS_NONNULL_ASSERT(map != NULL);
 
     Ns_DStringInit(&ds1);
     Ns_DStringInit(&ds2);
@@ -1324,9 +1324,9 @@ SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
 {
     Ns_DString ds;
 
-    assert(set != NULL);
-    assert(sep != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(sep != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, Ns_SetValue(set, index),

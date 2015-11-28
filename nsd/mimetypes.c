@@ -779,7 +779,7 @@ Ns_GetMimeType(const char *file)
     Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 
-    assert(file != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
     
     start = strrchr(file, '/');
     if (start == NULL) {
@@ -851,7 +851,7 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 bool
 Ns_IsBinaryMimeType(const char *contentType) {
     
-    assert(contentType != NULL);
+    NS_NONNULL_ASSERT(contentType != NULL);
     
     return (strncmp("text/", contentType, 5u) != 0);
 }
@@ -879,7 +879,7 @@ NsGetMimeTypes(Ns_DString *dsPtr)
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
 
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     
     hPtr = Tcl_FirstHashEntry(&types, &search);
     while (hPtr != NULL) {

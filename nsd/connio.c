@@ -189,7 +189,7 @@ CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int i
     NsServer *servPtr;
     int       level, compress = 0;
 
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
 
     servPtr = connPtr->poolPtr->servPtr;
 
@@ -262,7 +262,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     ssize_t       nwrote;
     struct iovec  sbufs[32], *sbufPtr;
 
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
     assert(nbufs < 1 || bufs != NULL);
 
     Ns_DStringInit(&ds);
@@ -322,7 +322,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
                 sbufPtr = bufs;
                 nsbufs = nbufs;
             } else if (nbufs > 0) {
-		assert(bufs != NULL);
+		NS_NONNULL_ASSERT(bufs != NULL);
                 (void) memcpy(sbufPtr + sbufIdx, bufs, (size_t)nbufs * sizeof(struct iovec));
                 nsbufs += nbufs;
             }
@@ -441,7 +441,7 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
     int          nread;
     char         buf[IOBUFSZ];
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     /*
      * Even if nsend is 0 ensure HTTP response headers get written.
@@ -725,7 +725,7 @@ Ns_ConnClose(Ns_Conn *conn)
 {
     Conn *connPtr;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     connPtr = (Conn *) conn;
     Ns_Log(Debug, "Ns_ConnClose %p stream %.6x chunk %.6x via writer %.6x sockPtr %p", 
@@ -1073,7 +1073,7 @@ ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
     size_t   ncopy = toCopy;
     ssize_t  nwrote;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     connPtr = (Conn *) conn;
     reqPtr = connPtr->reqPtr;
@@ -1127,8 +1127,8 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     Conn       *connPtr = (Conn *) conn;
     const char *keepString;
 
-    assert(conn != NULL);
-    assert(dsPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     if ((conn->flags & NS_CONN_SKIPHDRS) != 0u) {
         return NS_FALSE;
@@ -1194,7 +1194,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
 static bool
 CheckKeep(const Conn *connPtr)
 {
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
 
     if (connPtr->drvPtr->keepwait > 0) {
 
@@ -1290,9 +1290,9 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
 {
     const char *hdrvalue;
 
-    assert(set != NULL);
-    assert(name != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
 
     hdrvalue = Ns_SetIGet(set, name);
 

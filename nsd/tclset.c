@@ -81,8 +81,8 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
 {
     NsInterp *itPtr;
 
-    assert(interp != NULL);
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
@@ -114,8 +114,8 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
 {
     Ns_Set *set = NULL;
 
-    assert(interp != NULL);
-    assert(setId != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(setId != NULL);
 	
     if (LookupInterpSet(interp, setId, 0, &set) != TCL_OK) {
         set = NULL;
@@ -143,9 +143,9 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
 int
 Ns_TclGetSet2(Tcl_Interp *interp, const char *setId, Ns_Set **setPtr)
 {
-    assert(interp != NULL);
-    assert(setId != NULL);
-    assert(setPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(setId != NULL);
+    NS_NONNULL_ASSERT(setPtr != NULL);
 
     return LookupInterpSet(interp, setId, 0, setPtr);
 }
@@ -173,8 +173,8 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
 {
     Ns_Set  *set = NULL;
 
-    assert(interp != NULL);
-    assert(setId != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(setId != NULL);
 
     if (LookupInterpSet(interp, setId, 1, &set) != TCL_OK) {
         return TCL_ERROR;
@@ -707,8 +707,8 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
     char            type;
     char            buf[TCL_INTEGER_SPACE + 1];
 
-    assert(itPtr != NULL);
-    assert(set != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
 
     tablePtr = &itPtr->sets;
     type = (flags & NS_TCL_SET_DYNAMIC) != 0U ? SET_DYNAMIC : SET_STATIC;
@@ -751,9 +751,9 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
 static int
 LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set **setPtr)
 {
-    assert(itPtr != NULL);
-    assert(idPtr != NULL);
-    assert(setPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(idPtr != NULL);
+    NS_NONNULL_ASSERT(setPtr != NULL);
 
     return LookupSet(itPtr, Tcl_GetString(idPtr), deleteEntry, setPtr);
 }
@@ -763,9 +763,9 @@ LookupInterpSet(Tcl_Interp *interp, const char *id, int deleteEntry, Ns_Set **se
 {
     NsInterp *itPtr;
 
-    assert(interp != NULL);
-    assert(id != NULL);
-    assert(setPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(id != NULL);
+    NS_NONNULL_ASSERT(setPtr != NULL);
 
     itPtr = NsGetInterpData(interp);
     if (unlikely(itPtr == NULL)) {
@@ -781,9 +781,9 @@ LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr)
     Tcl_HashEntry *hPtr;
     Ns_Set        *set = NULL;
 
-    assert(itPtr != NULL);
-    assert(id != NULL);
-    assert(setPtr != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(id != NULL);
+    NS_NONNULL_ASSERT(setPtr != NULL);
 
     hPtr = Tcl_FindHashEntry(&itPtr->sets, id);
     if (likely(hPtr != NULL)) {

@@ -152,7 +152,7 @@ NsClsCleanup(Conn *connPtr)
     int trys, retry;
     void *arg;
 
-    assert(connPtr != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
     
     trys = 0;
     do {

@@ -614,7 +614,7 @@ NsTclTimeoutException(Tcl_Interp *interp)
 {
     const char *errorCode;
 
-    assert(interp != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
     
     errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
     if (strncmp(errorCode, "NS_TIMEOUT", 10u) == 0) {

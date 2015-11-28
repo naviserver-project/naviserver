@@ -307,10 +307,10 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
     int          result, pos = 1;
     const char  *valueString;
 
-    assert(path != NULL);
-    assert(param != NULL);
-    assert(tablePtr != NULL);
-    assert(idxPtr != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
+    NS_NONNULL_ASSERT(param != NULL);
+    NS_NONNULL_ASSERT(tablePtr != NULL);
+    NS_NONNULL_ASSERT(idxPtr != NULL);
     
     valueString = Ns_ConfigString(path, param, "");
 
@@ -463,7 +463,7 @@ Ns_CreateLogSeverity(const char *name)
     Tcl_HashEntry  *hPtr;
     int             isNew;
 
-    assert(name != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
 
     if (severityIdx >= severityMaxCount) {
         Ns_Fatal("max log severities exceeded");
@@ -667,7 +667,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
 {
     va_list ap;
 
-    assert(fmt != NULL);
+    NS_NONNULL_ASSERT(fmt != NULL);
 
     va_start(ap, fmt);
     Ns_VALog(severity, fmt, &ap);
@@ -698,7 +698,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     LogCache *cachePtr;
     LogEntry *entryPtr = NULL;
 
-    assert(fmt != NULL);
+    NS_NONNULL_ASSERT(fmt != NULL);
 
     /*
      * Skip if logging for selected severity is disabled
@@ -774,8 +774,8 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 {
     LogFilter *filterPtr = ns_calloc(1U, sizeof *filterPtr);
 
-    assert(procPtr != NULL);
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(procPtr != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
     Ns_MutexLock(&lock);
 
@@ -818,8 +818,8 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *const arg)
 {
     LogFilter *filterPtr;
 
-    assert(procPtr != NULL);
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(procPtr != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
     Ns_MutexLock(&lock);
     filterPtr = filters;
@@ -872,7 +872,7 @@ Ns_Fatal(const char *fmt, ...)
 {
     va_list ap;
 
-    assert(fmt != NULL);
+    NS_NONNULL_ASSERT(fmt != NULL);
 
     va_start(ap, fmt);
     Ns_VALog(Fatal, fmt, &ap);
@@ -916,7 +916,7 @@ Panic(CONST char *fmt, ...)
 char *
 Ns_LogTime(char *timeBuf)
 {
-    assert(timeBuf != NULL);
+    NS_NONNULL_ASSERT(timeBuf != NULL);
 
     return Ns_LogTime2(timeBuf, 1);
 }
@@ -929,7 +929,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
     const char *timeString;
     size_t      timeStringLength;
 
-    assert(timeBuf != NULL);
+    NS_NONNULL_ASSERT(timeBuf != NULL);
 
     /*
      * Add the log stamp
@@ -968,8 +968,8 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     char      *bp;
     size_t    *sizePtr;
 
-    assert(cachePtr != NULL);
-    assert(timePtr != NULL);
+    NS_NONNULL_ASSERT(cachePtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
 
     if (gmt != 0) {
         tp = &cachePtr->gtime;
@@ -1474,11 +1474,12 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
 {
     int        status, nentry = 0;
     LogFilter *cPtr;
-    LogEntry  *ePtr = cachePtr->firstEntry;
+    LogEntry  *ePtr;
 
-    assert(cachePtr != NULL);
-    assert(listPtr != NULL);
+    NS_NONNULL_ASSERT(cachePtr != NULL);
+    NS_NONNULL_ASSERT(listPtr != NULL);
 
+    ePtr = cachePtr->firstEntry;
     while (ePtr != NULL && cachePtr->currEntry != NULL) {
         const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
@@ -1577,9 +1578,9 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     size_t      timeStringLength;
     char        buffer[255];
 
-    assert(arg != NULL);
-    assert(stamp != NULL);
-    assert(msg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(stamp != NULL);
+    NS_NONNULL_ASSERT(msg != NULL);
 
     /*
      * Add the log stamp
@@ -1654,9 +1655,9 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     int        fd = PTR2INT(arg);
     Ns_DString ds;
 
-    assert(arg != NULL);
-    assert(stamp != NULL);
-    assert(msg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(stamp != NULL);
+    NS_NONNULL_ASSERT(msg != NULL);
 
     Ns_DStringInit(&ds);
 
@@ -1704,9 +1705,9 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     Tcl_Interp     *interp;
     Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
-    assert(arg != NULL);
-    assert(stamp != NULL);
-    assert(msg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(stamp != NULL);
+    NS_NONNULL_ASSERT(msg != NULL);
 
     if (severity == Fatal) {
         return NS_OK;
@@ -1858,9 +1859,9 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
 {
     int            i;
 
-    assert(interp != NULL);
-    assert(objPtr != NULL);
-    assert(addrPtrPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objPtr != NULL);
+    NS_NONNULL_ASSERT(addrPtrPtr != NULL);
 
     if (Ns_TclGetOpaqueFromObj(objPtr, severityType, addrPtrPtr) != TCL_OK) {
 	Tcl_HashEntry *hPtr;

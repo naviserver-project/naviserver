@@ -501,8 +501,8 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 static void
 AppendEscaped(Ns_DString *dsPtr, const char *chars)
 {
-    assert(dsPtr != NULL);
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
     
     while (likely(*chars != '\0')) {
         switch (*chars) {

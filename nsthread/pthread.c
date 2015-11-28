@@ -217,7 +217,7 @@ NsLockFree(void *lock)
 {
     int err;
 
-    assert(lock != NULL);
+    NS_NONNULL_ASSERT(lock != NULL);
 
     err = pthread_mutex_destroy((pthread_mutex_t *) lock);
     if (err != 0) {
@@ -248,7 +248,7 @@ NsLockSet(void *lock)
 {
     int err;
 
-    assert(lock != NULL);
+    NS_NONNULL_ASSERT(lock != NULL);
 
     err = pthread_mutex_lock((pthread_mutex_t *) lock);
     if (err != 0) {
@@ -278,7 +278,7 @@ NsLockTry(void *lock)
 {
     int err;
 
-    assert(lock != NULL);
+    NS_NONNULL_ASSERT(lock != NULL);
 
     err = pthread_mutex_trylock((pthread_mutex_t *) lock);
     if (unlikely(err == EBUSY)) {
@@ -311,7 +311,7 @@ NsLockUnset(void *lock)
 {
     int err;
 
-    assert(lock != NULL);
+    NS_NONNULL_ASSERT(lock != NULL);
 
     err = pthread_mutex_unlock((pthread_mutex_t *) lock);
     if (unlikely(err != 0)) {
@@ -452,7 +452,7 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
     pthread_t thr = (pthread_t) *thread;
     int err;
 
-    assert(thread != NULL);
+    NS_NONNULL_ASSERT(thread != NULL);
 
     err = pthread_join(thr, argPtr);
     if (err != 0) {
@@ -526,7 +526,7 @@ Ns_ThreadId(void)
 void
 Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
-    assert(threadPtr != NULL);
+    NS_NONNULL_ASSERT(threadPtr != NULL);
     
     *threadPtr = (Ns_Thread) pthread_self();
 }
@@ -556,7 +556,7 @@ Ns_CondInit(Ns_Cond *cond)
     pthread_cond_t *condPtr;
     int             err;
 
-    assert(cond != NULL);
+    NS_NONNULL_ASSERT(cond != NULL);
     
     condPtr = ns_malloc(sizeof(pthread_cond_t));
     err = pthread_cond_init(condPtr, NULL);
@@ -624,7 +624,7 @@ Ns_CondSignal(Ns_Cond *cond)
 {
     int             err;
 
-    assert(cond != NULL);
+    NS_NONNULL_ASSERT(cond != NULL);
     
     err = pthread_cond_signal(GetCond(cond));
     if (err != 0) {
@@ -654,7 +654,7 @@ Ns_CondBroadcast(Ns_Cond *cond)
 {
     int             err;
 
-    assert(cond != NULL);
+    NS_NONNULL_ASSERT(cond != NULL);
 
     err = pthread_cond_broadcast(GetCond(cond));
     if (err != 0) {
@@ -684,8 +684,8 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
 {
     int err;
 
-    assert(cond != NULL);
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(cond != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
 
     err = pthread_cond_wait(GetCond(cond), NsGetLock(mutex));
     if (err != 0) {
@@ -716,8 +716,8 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     int              err, status = NS_ERROR;
     struct timespec  ts;
 
-    assert(cond != NULL);
-    assert(mutex != NULL);
+    NS_NONNULL_ASSERT(cond != NULL);
+    NS_NONNULL_ASSERT(mutex != NULL);
     
     if (timePtr == NULL) {
 	Ns_CondWait(cond, mutex);
@@ -774,7 +774,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 static pthread_cond_t *
 GetCond(Ns_Cond *cond)
 {
-    assert(cond != NULL);
+    NS_NONNULL_ASSERT(cond != NULL);
     
     if (*cond == NULL) {
     	Ns_MasterLock();
@@ -835,7 +835,7 @@ CleanupTls(void *arg)
     void **slots = arg;
     Ns_Thread thread = NULL;
     
-    assert(arg != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
     
     /*
      * Restore the current slots during cleanup so handlers can access

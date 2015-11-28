@@ -165,7 +165,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     if (ReturnRedirect(conn, status, &result)) {
         return result;
@@ -194,7 +194,8 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 int
 Ns_ConnReturnOk(Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    
     return Ns_ConnReturnStatus(conn, 200);
 }
 
@@ -221,7 +222,7 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 {
     int        result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (url != NULL) {
         Ns_DString urlDs, msgDs;
@@ -269,7 +270,8 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 int
 Ns_ConnReturnNoResponse(Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    
     return Ns_ConnReturnStatus(conn, 204);
 }
 
@@ -296,7 +298,7 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 {
     int        result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (url != NULL) {
         Ns_DString urlDs, msgDs;
@@ -350,7 +352,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
     Ns_DString ds;
     int        result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (ReturnRedirect(conn, 400, &result)) {
         return result;
@@ -392,7 +394,7 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     Ns_DString  ds;
     int         result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
         Ns_DStringInit(&ds);
@@ -432,7 +434,7 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (ReturnRedirect(conn, 403, &result)) {
         return result;
@@ -464,7 +466,7 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     
     if (ReturnRedirect(conn, 404, &result)) {
         return result;
@@ -493,7 +495,7 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 int
 Ns_ConnReturnNotModified(Ns_Conn *conn)
 {
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     return Ns_ConnReturnStatus(conn, 304);
 }
@@ -518,7 +520,7 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (ReturnRedirect(conn, 413, &result)) {
         return result;
@@ -547,7 +549,7 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (ReturnRedirect(conn, 414, &result)) {
         return result;
@@ -577,7 +579,7 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (ReturnRedirect(conn, 431, &result)) {
         return result;
@@ -608,7 +610,7 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     if (ReturnRedirect(conn, 501, &result)) {
         return result;
@@ -641,7 +643,7 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0u);
     if (ReturnRedirect(conn, 500, &result)) {
@@ -675,7 +677,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
 {
     int result;
 
-    assert(conn != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0u);
     if (ReturnRedirect(conn, 503, &result)) {
@@ -712,8 +714,8 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
     Conn          *connPtr = (Conn *) conn;
     NsServer      *servPtr;
 
-    assert(conn != NULL);
-    assert(resultPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(resultPtr != NULL);
 
     servPtr = connPtr->poolPtr->servPtr;
     assert(servPtr != NULL);
