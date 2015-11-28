@@ -165,6 +165,8 @@ Ns_CacheDestroy(Ns_Cache *cache)
 {
     Cache      *cachePtr = (Cache *) cache;
 
+    assert(cache != NULL);
+    
     (void) Ns_CacheFlush(cache);
     Ns_MutexDestroy(&cachePtr->lock);
     Ns_CondDestroy(&cachePtr->cond);
