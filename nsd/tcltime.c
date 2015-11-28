@@ -268,7 +268,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     long sec;
     int opt;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
 	"adjust", "diff", "format", "get", "incr", "make",
 	"seconds", "microseconds", NULL
     };

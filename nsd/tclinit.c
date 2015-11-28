@@ -951,7 +951,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     Ns_TclTraceType when = NS_TCL_TRACE_NONE;
     unsigned int    flags = 0u;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
         "gettraces", "markfordelete", "oncreate", "oncleanup", "ondelete",
         "oninit", "runtraces", "save", "trace", "update",

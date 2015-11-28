@@ -339,7 +339,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     const char *data;
     int         cmd;
 
-    static const char *cmds[] = {
+    static const char *const cmds[] = {
         "array", "get", "set", "unset", NULL
     };
     enum ISubCmdIdx {

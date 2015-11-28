@@ -1415,7 +1415,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "get", "put", "release", "eval", "cleanup", "configure",
         "ping", "free", "active", "handles", "clear", "stop",
         "send", "wait", "recv", "pools", NULL
@@ -1677,7 +1677,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     Proxy      *proxyPtr;
     int         flag, n, result, reap = 0;
 
-    static const char *flags[] = {
+    static const char *const flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", "-env",
         "-gettimeout", "-evaltimeout", "-sendtimeout", "-recvtimeout",
         "-waittimeout", "-idletimeout", "-maxruns", NULL
@@ -1945,7 +1945,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     Err            err;
     Pool          *poolPtr;
 
-    static const char *flags[] = {
+    static const char *const flags[] = {
         "-timeout", "-handles", NULL
     };
     enum {

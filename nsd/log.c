@@ -1096,7 +1096,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     void           *addr;
     Ns_TclCallback *cbPtr;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "hold", "count", "get", "peek", "flush", "release",
         "truncate", "severity", "severities", "stats",
         "register", "unregister", NULL

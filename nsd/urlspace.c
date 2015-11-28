@@ -2263,7 +2263,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     int          opt, id = -1;
     char        *key = ".";
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "get", "list", "new", "set", "unset", 
         NULL
     };

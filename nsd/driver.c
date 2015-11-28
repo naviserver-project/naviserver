@@ -4269,7 +4269,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     const char   *driverName;
     NsServer     *servPtr = NULL;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "submit", "submitfile", "list", "size", "streaming", NULL
     };
 

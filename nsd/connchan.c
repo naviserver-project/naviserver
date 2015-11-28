@@ -495,7 +495,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     Tcl_HashEntry  *hPtr;
     NsConnChan     *connChanPtr;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "detach", "close", "list", 
         "callback",
         "write", "read", NULL

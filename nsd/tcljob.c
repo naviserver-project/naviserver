@@ -380,7 +380,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "cancel", "create", "delete", "genid", "jobs", "joblist",
         "threadlist", "queue", "queues", "queuelist", "wait",
         "waitany",  "exists", "configure", NULL
@@ -1740,7 +1740,7 @@ static const char*
 GetJobCodeStr(int code)
 {
     static const int max_code_index = 5;
-    static const char *codeArr[] = {
+    static const char *const codeArr[] = {
         "TCL_OK",       /* 0 */
         "TCL_ERROR",    /* 1 */
         "TCL_RETURN",   /* 2 */
@@ -1777,7 +1777,7 @@ GetJobCodeStr(int code)
 static const char*
 GetJobStateStr(JobStates state)
 {
-    static const char *stateArr[] = {
+    static const char *const stateArr[] = {
         "scheduled",        /* 0 */
         "running",          /* 1 */
         "done",             /* 2 */
@@ -1809,7 +1809,7 @@ GetJobStateStr(JobStates state)
 static const char*
 GetJobTypeStr(JobTypes type)
 {
-    static const char *typeArr[] = {
+    static const char *const typeArr[] = {
         "nondetached",     /* 0 */
         "detached",        /* 1 */
         "unknown"          /* 2 */
@@ -1840,7 +1840,7 @@ GetJobTypeStr(JobTypes type)
 static const char*
 GetJobReqStr(JobRequests req)
 {
-    static const char *reqArr[] = {
+    static const char *const reqArr[] = {
         "none",     /* 0 */
         "wait",     /* 1 */
         "unknown"   /* 2 */
@@ -1871,7 +1871,7 @@ GetJobReqStr(JobRequests req)
 static const char*
 GetQueueReqStr(QueueRequests req)
 {
-    static const char *reqArr[] = {
+    static const char *const reqArr[] = {
         "none",      /* 0 */
         "delete",    /* 1 */
         "unknown"    /* 2 */
@@ -1902,7 +1902,7 @@ GetQueueReqStr(QueueRequests req)
 static const char*
 GetTpReqStr(ThreadPoolRequests req)
 {
-    static const char *reqArr[] = {
+    static const char *const reqArr[] = {
         "none",      /* 0 */
         "stop",      /* 1 */
         "unknown"    /* 2 */

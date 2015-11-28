@@ -282,7 +282,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS,
         FLAGS, FILE, ROLL
     };
-    static const char *subcmd[] = {
+    static const char *const subcmd[] = {
         "rollfmt", "maxbackup", "maxbuffer", "extendedheaders",
         "flags", "file", "roll", NULL
     };

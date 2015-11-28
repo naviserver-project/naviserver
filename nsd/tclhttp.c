@@ -95,7 +95,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     Tcl_HashSearch search;
     int result, opt, run = 0;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
        "cancel", "cleanup", "run", "queue", "wait", "list",
        NULL
     };

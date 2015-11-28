@@ -599,7 +599,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int             i, opt, lobjc, size;
     Tcl_Obj       **lobjv;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "set", "reset", "get", "names", "size", "exists", NULL
     };
     enum ISubCmdIdx {

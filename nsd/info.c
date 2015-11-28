@@ -480,7 +480,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     const char *elog;
     Tcl_DString ds;
 
-    static const char *opts[] = {
+    static const char *const opts[] = {
         "address", "argv0", "boottime", "builddate", "callbacks",
         "config", "home", "hostname", "locks", "log",
         "major", "minor", "mimetypes", "name", "nsd", "pagedir", 
