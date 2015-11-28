@@ -72,7 +72,7 @@ typedef enum {
 typedef enum {
     NS_URLSPACE_DEFAULT =        0,
     NS_URLSPACE_FAST =           1,
-    NS_URLSPACE_EXACT =          2,
+    NS_URLSPACE_EXACT =          2
 } NsUrlSpaceOp;
 
 #define MAX_URLSPACES                  16
