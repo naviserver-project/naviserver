@@ -138,7 +138,7 @@
 /*
  * This optimization, when turned on, prevents the server from doing a
  * whole lot of calls to Tcl_StringMatch on every lookup in urlspace.
- * Instead, a __strcmp is done. 
+ * Instead, a NS_strcmp is done. 
  *
  * GN 2015/11: This optimization was developed more than 10 years ago. With
  * the introduction of ns_urlspace it became easy to write test cases. The
@@ -172,25 +172,25 @@
 
 
 #ifdef DEBUG
-static int __Tcl_StringMatch(const char *a, const char *b) {
+static int NS_Tcl_StringMatch(const char *a, const char *b) {
     int r = Tcl_StringMatch(a,b);
     fprintf(stderr, "__TclStringMatch '%s' '%s' => %d\n", a,b, r);
     return r;
 }
-static size_t __strlen(const char *a) {
+static size_t NS_strlen(const char *a) {
     size_t r = strlen(a);
-    fprintf(stderr, "__strlen '%s' => %lu\n", a, r);
+    fprintf(stderr, "NS_strlen '%s' => %" PRIuz "\n", a, r);
     return r;
 }
-static int __strcmp(const char *a, const char *b) {
+static int NS_strcmp(const char *a, const char *b) {
     int r = strcmp(a,b);
-    fprintf(stderr, "__strcmp '%s' '%s' => %d\n", a,b, r);
+    fprintf(stderr, "NS_strcmp '%s' '%s' => %d\n", a,b, r);
     return r;
 }
 #else
-#define __Tcl_StringMatch Tcl_StringMatch
-#define __strlen strlen
-#define __strcmp strcmp
+#define NS_Tcl_StringMatch Tcl_StringMatch
+#define NS_strlen strlen
+#define NS_strcmp strcmp
 #endif
 
 
@@ -369,7 +369,7 @@ static void JunctionTruncBranch(const Junction *juncPtr, char *seq)
  */
 static int CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-static int AllocTclUrlSpaceId(Tcl_Interp *interp,  int *id)
+static int AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_ArgProc WalkCallback;
@@ -572,6 +572,13 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
          * Deprecated branch.
          */
         data = JunctionFind(junction, dsPtr->string);
+        break;
+        
+    default:
+        /*
+         * should never happen
+         */
+        data = NULL;
         break;
     }
     
@@ -818,9 +825,9 @@ CmpBranches(const Branch *const*leftPtrPtr, const Branch *const*rightPtrPtr)
 
 #ifdef DEBUG
     fprintf(stderr, "CmpBranches '%s' with '%s' -> %d\n", (*leftPtrPtr)->word, (*rightPtrPtr)->word,
-            __strcmp((*leftPtrPtr)->word, (*rightPtrPtr)->word));
+            NS_strcmp((*leftPtrPtr)->word, (*rightPtrPtr)->word));
 #endif
-    return __strcmp((*leftPtrPtr)->word, (*rightPtrPtr)->word);
+    return NS_strcmp((*leftPtrPtr)->word, (*rightPtrPtr)->word);
 }
 
 
@@ -849,9 +856,9 @@ CmpKeyWithBranch(const char *key, const Branch *const*branchPtrPtr)
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithBranch '%s' with '%s' -> %d\n",
-            key, (*branchPtrPtr)->word, __strcmp(key, (*branchPtrPtr)->word));
+            key, (*branchPtrPtr)->word, NS_strcmp(key, (*branchPtrPtr)->word));
 #endif
-    return __strcmp(key, (*branchPtrPtr)->word);
+    return NS_strcmp(key, (*branchPtrPtr)->word);
 }
 
 
@@ -959,7 +966,7 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
 
             Ns_IndexAdd(&triePtr->branches, branchPtr);
         }
-        TrieAdd(&branchPtr->trie, seq + __strlen(seq) + 1u, data, flags,
+        TrieAdd(&branchPtr->trie, seq + NS_strlen(seq) + 1u, data, flags,
                 deletefunc);
 
     } else {
@@ -1084,7 +1091,7 @@ TrieTruncBranch(Trie *triePtr, char *seq)
          */
 
         if (branchPtr != NULL) {
-            return TrieTruncBranch(&branchPtr->trie, seq + __strlen(seq) + 1u);
+            return TrieTruncBranch(&branchPtr->trie, seq + NS_strlen(seq) + 1u);
         } else {
             return -1;
         }
@@ -1206,7 +1213,7 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
         fprintf(stderr, "...    TrieFind seq '%s' recurse on branch %p\n", seq, (void*)branchPtr);
 #endif
         if (branchPtr != NULL) {
-            void *p = TrieFind(&branchPtr->trie, seq + __strlen(seq) + 1u, &ldepth);
+            void *p = TrieFind(&branchPtr->trie, seq + NS_strlen(seq) + 1u, &ldepth);
             if (p != NULL) {
                 data = p;
                 *depthPtr = ldepth;
@@ -1258,7 +1265,7 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieFindExact(&branchPtr->trie, seq + __strlen(seq) + 1u, flags);
+            data = TrieFindExact(&branchPtr->trie, seq + NS_strlen(seq) + 1u, flags);
         }
     } else if (nodePtr != NULL) {
 
@@ -1321,7 +1328,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieDelete(&branchPtr->trie, seq + __strlen(seq) + 1u, flags);
+            data = TrieDelete(&branchPtr->trie, seq + NS_strlen(seq) + 1u, flags);
         }
     } else if (nodePtr != NULL) {
 
@@ -1388,9 +1395,9 @@ CmpChannels(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
     assert(leftPtrPtr != NULL);
     assert(rightPtrPtr != NULL);
 
-    lcontainsr = __Tcl_StringMatch((*rightPtrPtr)->filter,
+    lcontainsr = NS_Tcl_StringMatch((*rightPtrPtr)->filter,
                                  (*leftPtrPtr)->filter);
-    rcontainsl = __Tcl_StringMatch((*leftPtrPtr)->filter,
+    rcontainsl = NS_Tcl_StringMatch((*leftPtrPtr)->filter,
                                  (*rightPtrPtr)->filter);
 
     if (lcontainsr != 0 && rcontainsl != 0) {
@@ -1434,8 +1441,8 @@ CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)
     assert(key != NULL);
     assert(channelPtrPtr != NULL);
 
-    lcontainsr = __Tcl_StringMatch((*channelPtrPtr)->filter, key);
-    rcontainsl = __Tcl_StringMatch(key, (*channelPtrPtr)->filter);
+    lcontainsr = NS_Tcl_StringMatch((*channelPtrPtr)->filter, key);
+    rcontainsl = NS_Tcl_StringMatch(key, (*channelPtrPtr)->filter);
     if (lcontainsr != 0 && rcontainsl != 0) {
         return 0;
     } else if (lcontainsr != 0) {
@@ -1457,7 +1464,7 @@ CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)
  *      Compare the filters of two channels.
  *
  * Results:
- *      Same as __strcmp.
+ *      Same as NS_strcmp.
  *
  * Side effects:
  *      None.
@@ -1473,9 +1480,9 @@ CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*right
 
 #ifdef DEBUG
     fprintf(stderr, "CmpChannelsAsStrings '%s' with '%s' -> %d\n",
-            (*leftPtrPtr)->filter, (*rightPtrPtr)->filter, __strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter));
+            (*leftPtrPtr)->filter, (*rightPtrPtr)->filter, NS_strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter));
 #endif
-    return __strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter);
+    return NS_strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter);
 }
 
 
@@ -1487,7 +1494,7 @@ CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*right
  *      Compare a string key to a channel's filter 
  *
  * Results:
- *      Same as __strcmp. 
+ *      Same as NS_strcmp. 
  *
  * Side effects:
  *      None. 
@@ -1503,10 +1510,10 @@ CmpKeyWithChannelAsStrings(const char *key, const Channel *const*channelPtrPtr)
 
 #ifdef DEBUG
     fprintf(stderr, "CmpKeyWithChannelAsStrings key '%s' with '%s' -> %d\n",
-            key, (*channelPtrPtr)->filter, __strcmp(key, (*channelPtrPtr)->filter));
+            key, (*channelPtrPtr)->filter, NS_strcmp(key, (*channelPtrPtr)->filter));
 #endif
 
-    return __strcmp(key, (*channelPtrPtr)->filter);
+    return NS_strcmp(key, (*channelPtrPtr)->filter);
 }
 
 
@@ -1647,7 +1654,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
      * beginning of the last word in the sequence.
      */
 
-    for (p = seq; p[l = __strlen(p) + 1u] != '\0'; p += l) {
+    for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
         depth++;
     }
 
@@ -1713,7 +1720,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
  *      Locate a node for a given sequence in a junction.
  *      As usual sequence is "method\0urltoken\0...\0\0".
  *
- *      The "fast" boolean switch makes it do __strcmp instead of
+ *      The "fast" boolean switch makes it do NS_strcmp instead of
  *      Tcl string matches on the filters. Not useful for wildcard
  *      matching.
  *
@@ -1742,7 +1749,7 @@ JunctionFind(const Junction *juncPtr, char *seq)
      * After this loop, p will point at the last element in the sequence.
      */
     
-    for (p = seq; p[l = __strlen(p) + 1u] != '\0'; p += l) {
+    for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
 	;
     }
 
@@ -1784,7 +1791,7 @@ JunctionFind(const Junction *juncPtr, char *seq)
 
         doit = (
                 (*(channelPtr->filter) == '*' && *(channelPtr->filter + 1) == '\0')
-                || __Tcl_StringMatch(p, channelPtr->filter)
+                || (NS_Tcl_StringMatch(p, channelPtr->filter) == 1)
                 );
 
 #ifdef DEBUG        
@@ -1878,7 +1885,7 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
      * Set p to the last element of the sequence.
      */
 
-    for (p = seq; p[l = __strlen(p) + 1u] != '\0'; p += l) {
+    for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
 	;
     }
 
@@ -1964,7 +1971,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
     Channel *channelPtr;
     char    *p;
     size_t   i, l;
-    int      depth = 0;
+    /*int      depth = 0;*/
     void    *data = NULL;
 
     assert(juncPtr != NULL);
@@ -1975,13 +1982,14 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
      * depth to the number of elements in the sequence.
      */
 
-    for (p = seq; p[l = __strlen(p) + 1u] != '\0'; p += l) {
-        depth++;
+    for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
+        /*depth++;*/
+        ;
     }
 
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
-    for (i = 0; i < l && data == NULL; i++) {
+    for (i = 0; (i < l) && (data == NULL); i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     l = Ns_IndexCount(&juncPtr->byname);
@@ -2003,7 +2011,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
             if (data != NULL) {
                 (void) TrieDelete(&channelPtr->trie, seq, flags);
             }
-        } else if (__Tcl_StringMatch(p, channelPtr->filter)) {
+        } else if (NS_Tcl_StringMatch(p, channelPtr->filter)) {
             /*
              * The filter matches, so get the node and delete it.
              */
@@ -2047,7 +2055,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
     assert(method != NULL);
     assert(url != NULL);
 
-    Ns_DStringNAppend(dsPtr, method, (int)__strlen(method) + 1);
+    Ns_DStringNAppend(dsPtr, method, (int)NS_strlen(method) + 1);
 
     /*
      * Loop over each directory in the URL and turn the slashes
@@ -2061,7 +2069,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
             if (p != NULL) {
 		l = (size_t)(p - url);
             } else {
-                l = __strlen(url);
+                l = NS_strlen(url);
                 done = 1;
             }
 
@@ -2105,7 +2113,7 @@ PrintSeq(const char *seq)
     const char *p;
 
     fprintf(stderr, "PrintSeq: <");
-    for (p = seq; *p != '\0'; p += __strlen(p) + 1u) {
+    for (p = seq; *p != '\0'; p += NS_strlen(p) + 1u) {
         if (p != seq) {
             fputs(", ", stderr);
         }
@@ -2197,7 +2205,7 @@ CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
             *idPtr = defaultTclUrlSpaceId;
         }
         
-    } else if (*idPtr < 0 || (*idPtr >= MAX_URLSPACES) || (tclUrlSpaces[*idPtr] == NS_FALSE)) {
+    } else if ((*idPtr < 0) || (*idPtr >= MAX_URLSPACES) || (tclUrlSpaces[*idPtr] == NS_FALSE)) {
         Ns_TclPrintfResult(interp, "provided urlspace id %d is invalid", *idPtr);
         result = TCL_ERROR;
     }
@@ -2302,7 +2310,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
                 return TCL_ERROR;
             }
-            if (__strlen(key) < 1u) {
+            if (NS_strlen(key) < 1u) {
                 Ns_TclPrintfResult(interp, "provided key must be at least one character");
                 return TCL_ERROR;
             }
@@ -2360,7 +2368,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
     case CNewIdx:
         {
-            int  result = TCL_OK;
+            int  result;
             
             if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
@@ -2404,7 +2412,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
                 return TCL_ERROR;
             }
-            if (__strlen(key) < 1u) {
+            if (NS_strlen(key) < 1u) {
                 Ns_TclPrintfResult(interp, "provided key must be at least one character");
                 return TCL_ERROR;
             }
@@ -2450,7 +2458,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
                 return TCL_ERROR;
             }
-            if (__strlen(key) < 1u) {
+            if (NS_strlen(key) < 1u) {
                 Ns_TclPrintfResult(interp, "provided key must be at least one character");
                 return TCL_ERROR;
             }
@@ -2472,6 +2480,14 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || (recurse == NS_TRUE)));
 
             break;
+            
+        default: {
+            /*
+             * Should not be reached.
+             */
+            break;
+        }
+                    
         }
 
     }
