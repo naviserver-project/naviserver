@@ -1430,7 +1430,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CAuthIdx:
-        if ((itPtr->nsconn.flags & CONN_TCLAUTH) != 0U) {
+        if ((itPtr->nsconn.flags & CONN_TCLAUTH) != 0u) {
             Tcl_SetResult(interp, itPtr->nsconn.auth, TCL_STATIC);
         } else {
             if (connPtr->auth == NULL) {
@@ -1478,7 +1478,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 return TCL_ERROR;
             }
 
-            if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {
+            if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
                 /* 
                  * In cases, the content is allocated via mmap, the content
                  * is unmapped when the socket is closed. Accessing the
@@ -1595,7 +1595,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
              * the previous form data.
              */
             if ((connPtr->urlEncoding != encoding)
-                && (itPtr->nsconn.flags & CONN_TCLFORM) != 0U) {
+                && (itPtr->nsconn.flags & CONN_TCLFORM) != 0u) {
 
                 Ns_ConnClearQuery(conn);
                 itPtr->nsconn.flags ^= CONN_TCLFORM;
@@ -1617,7 +1617,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CHeadersIdx:
-        if (likely((itPtr->nsconn.flags & CONN_TCLHDRS) != 0U)) {
+        if (likely((itPtr->nsconn.flags & CONN_TCLHDRS) != 0u)) {
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
@@ -1629,7 +1629,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case COutputHeadersIdx:
-        if (likely((itPtr->nsconn.flags & CONN_TCLOUTHDRS) != 0U)) {
+        if (likely((itPtr->nsconn.flags & CONN_TCLOUTHDRS) != 0u)) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
@@ -1641,7 +1641,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CFormIdx:
-	if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0U) {
+	if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0u) {
             Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
         } else {
 	    Ns_Set *form = Ns_ConnGetQuery(conn);
@@ -1830,7 +1830,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	break;
 
     case CZipacceptedIdx:
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0U));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u));
 	break;
 
     default:
@@ -2097,7 +2097,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     NS_NONNULL_ASSERT(itPtr != NULL);
 
     connPtr = (Conn *) conn;
-    if ((connPtr->flags & NS_CONN_CLOSED) != 0U) {
+    if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
         Tcl_AppendResult(itPtr->interp, "connection closed", NULL);
         return NULL;
     }
@@ -2131,8 +2131,8 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
      * them now before the conn socket is dissociated.
      */
 
-    if ((conn->flags & NS_CONN_SENTHDRS) == 0U) {
-        if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0U) {
+    if ((conn->flags & NS_CONN_SENTHDRS) == 0u) {
+        if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0u) {
             conn->flags |= NS_CONN_SKIPHDRS;
         } else {
             if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != TCL_OK) {

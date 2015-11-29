@@ -1545,11 +1545,11 @@ JunctionGet(NsServer *servPtr, int id)
     if (juncPtr == NULL) {
         juncPtr = ns_malloc(sizeof *juncPtr);
 #ifndef __URLSPACE_OPTIMIZE__
-        Ns_IndexInit(&juncPtr->byuse, 5,
+        Ns_IndexInit(&juncPtr->byuse, 5u,
                      (int (*) (const void *left, const void *right)) CmpChannels,
                      (int (*) (const void *left, const void *right)) CmpKeyWithChannel);
 #endif
-        Ns_IndexInit(&juncPtr->byname, 5,
+        Ns_IndexInit(&juncPtr->byname, 5u,
                      (int (*) (const void *left, const void *right)) CmpChannelsAsStrings,
                      (int (*) (const void *left, const void *right)) CmpKeyWithChannelAsStrings);
         servPtr->urlspace.junction[id] = juncPtr;
@@ -1930,7 +1930,7 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
      */
 
 #ifndef __URLSPACE_OPTIMIZE__
-    for (i = 0; i < l; i++) {
+    for (i = 0u; i < l; i++) {
       channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = l; i > 0u; i--) {
@@ -1989,7 +1989,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
 
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
-    for (i = 0; (i < l) && (data == NULL); i++) {
+    for (i = 0u; (i < l) && (data == NULL); i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     l = Ns_IndexCount(&juncPtr->byname);

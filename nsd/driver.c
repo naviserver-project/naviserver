@@ -1296,7 +1296,7 @@ DriverThread(void *arg)
 
         n = PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], charBuffer, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1) {
             const char *errstr = ns_sockstrerror(ns_sockerrno);
             
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
@@ -2999,7 +2999,7 @@ SpoolerThread(void *arg)
 
         /*n =*/ (void) PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1, 0) != 1)) {
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1u, 0) != 1)) {
             Ns_Fatal("spooler: trigger ns_recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -3703,7 +3703,7 @@ WriterThread(void *arg)
          */
         (void) PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1, 0) != 1)) {
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1u, 0) != 1)) {
             Ns_Fatal("writer: trigger ns_recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
