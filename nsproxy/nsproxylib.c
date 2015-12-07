@@ -2555,7 +2555,7 @@ ResetProxy(Proxy *proxyPtr)
 static void
 CloseSlave(Slave *slavePtr, int ms)
 {
-    NS_NONNULL_ASSERT(savePtr != NULL);
+    NS_NONNULL_ASSERT(slavePtr != NULL);
         
     /*
      * Set the time to kill the slave. Reaper thread will
