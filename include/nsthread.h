@@ -54,7 +54,7 @@
  */
 #define NSTHREAD_EXPORTS
 
-#if defined(__GNUC__) && __GNUC__ > 2
+#if defined(__GNUC__) && (__GNUC__ > 2)
 /* Use gcc branch prediction hint to minimize cost of e.g. DTrace
  * ENABLED checks. 
  */
@@ -358,11 +358,11 @@ typedef struct DIR_ *DIR;
 #  include <sys/filio.h>
 # endif
 
-# if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+# if defined(__sgi) && (!defined(_SGI_MP_SOURCE))
 #  define _SGI_MP_SOURCE
 # endif
 
-# if defined(__sun) && !defined(_POSIX_PTHREAD_SEMANTICS)
+# if defined(__sun) && (!defined(_POSIX_PTHREAD_SEMANTICS))
 #  define _POSIX_PTHREAD_SEMANTICS
 # endif
 
@@ -583,10 +583,10 @@ typedef struct DIR_ *DIR;
  * of ssize_t. Therefore, we invent here our own variant, trying to
  * stick to the naming conventions.
  */
-#if !defined(PRIdz) && defined(_WIN64)
+#if (!defined(PRIdz)) && defined(_WIN64)
 # define PRIdz PRId64
 #endif
-#if !defined(PRIdz) && defined(_WIN32)
+#if (!defined(PRIdz)) && defined(_WIN32)
 # define PRIdz PRId32
 #endif
 #if !defined(PRIdz)
@@ -653,7 +653,7 @@ typedef struct DIR_ *DIR;
 # endif
 #endif
 
-#if !defined(INT2PTR) && !defined(PTR2INT)
+#if (!defined(INT2PTR)) && (!defined(PTR2INT))
 #   if defined(HAVE_INTPTR_T) || defined(intptr_t)
 #       define INT2PTR(p)  ((void *)(intptr_t)(p))
 #       define PTR2INT(p)  ((int)(intptr_t)(p))
@@ -928,7 +928,7 @@ NS_EXTERN ssize_t ns_send(NS_SOCKET socket, const void *buffer, size_t length, i
  * Tcl 8.6 and TIP 330/336 compatability
  */
 
-#if (TCL_MAJOR_VERSION < 8) || (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6)
+#if (TCL_MAJOR_VERSION < 8) || ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6))
 #define Tcl_GetErrorLine(interp) ((interp)->errorLine)
 #endif
 
