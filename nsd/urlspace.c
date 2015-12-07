@@ -2480,17 +2480,16 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || (recurse == NS_TRUE)));
 
             break;
-            
-        default: {
-            /*
-             * Should not be reached.
-             */
-            break;
         }
-                    
-        }
-
+        
+    default: 
+        /*
+         * Should not be reached.
+         */
+        break;
     }
+
+
     return TCL_OK;
 }
 
