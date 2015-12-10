@@ -918,7 +918,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * GetCsvCmd --
  *
- *	Implement the ns_getcvs command to read a line from a CSV file
+ *	Implement the ns_getcsv command to read a single line from a CSV file
  *	and parse the results into a Tcl list variable.
  *
  * Results:
@@ -996,12 +996,19 @@ loopstart:
             }
         } else {
             if ((c == '\n') || (c == '\r')) {
+#if 0
+                /*
+                 * Not sure, what the intention of the following block was,
+                 * since the final break after this block jumps out of the
+                 * loop.
+                 */
                 while ((c = *p++) != '\0') {
                     if ((c != '\n') && (c != '\r')) {
-			--p;
+                        *--p;
                         break;
                     }
                 }
+#endif                
                 break;
             }
             if (c == '"') {
