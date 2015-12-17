@@ -756,11 +756,11 @@ ns_pipe(int *fds)
 #include <share.h>
 
 int
-ns_mkstemp(char *template) 
+ns_mkstemp(char *charTemplate) 
 {
     int err, fd = NS_INVALID_FD;
 
-    err = _mktemp_s(template, strlen(template));
+    err = _mktemp_s(charTemplate, strlen(charTemplate));
 
     if (err == 0) {
 	err = _sopen_s(&fd, template, 

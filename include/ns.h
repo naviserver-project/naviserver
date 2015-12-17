@@ -250,7 +250,9 @@ typedef struct _Ns_Task         *Ns_Task;
 typedef struct _Ns_EventQueue   *Ns_EventQueue;
 typedef struct _Ns_Event        *Ns_Event;
 
+#if !defined(__cplusplus)
 typedef int bool;
+#endif
 
 /*
  * This is used for logging messages.
@@ -3184,7 +3186,7 @@ ns_pipe(int *fds)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-ns_mkstemp(char *template);
+ns_mkstemp(char *charTemplate);
 
 NS_EXTERN int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
