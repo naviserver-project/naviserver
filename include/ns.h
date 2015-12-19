@@ -53,12 +53,24 @@
 #endif
 #endif
 
-/*
- * Boolean result.
- */
 
-#define NS_TRUE                    1
-#define NS_FALSE                   0
+/*
+ * Boolean type "bool" and constants
+ */
+#if __STDC_VERSION__ >= 199901L
+/* C99 */
+# include <stdbool.h>
+# define NS_TRUE                    true
+# define NS_FALSE                   false
+#else
+/* Not C99 */
+# if !defined(__cplusplus)
+typedef int bool;
+# endif
+# define NS_TRUE                    1
+# define NS_FALSE                   0
+#endif
+
 
 /*
  * The following describe various properties of a connection. Used in the
@@ -250,9 +262,6 @@ typedef struct _Ns_Task         *Ns_Task;
 typedef struct _Ns_EventQueue   *Ns_EventQueue;
 typedef struct _Ns_Event        *Ns_Event;
 
-#if !defined(__cplusplus)
-typedef int bool;
-#endif
 
 /*
  * This is used for logging messages.

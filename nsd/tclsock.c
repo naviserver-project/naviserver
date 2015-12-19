@@ -1129,7 +1129,7 @@ EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Tcl_DString  script;

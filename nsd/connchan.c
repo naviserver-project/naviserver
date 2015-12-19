@@ -74,8 +74,6 @@ static void ConnChanFree(NsConnChan *connChanPtr)
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why);
-
 static int SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -84,6 +82,8 @@ static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time 
 
 static ssize_t DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
+
+static Ns_SockProc NsTclConnChanProc;
 
 
 /*
@@ -271,7 +271,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Tcl_DString  script;
