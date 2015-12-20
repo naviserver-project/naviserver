@@ -294,7 +294,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
         Ns_DStringAppend(dsPtr, buf);
         status = NS_TRUE;
     } else if (result != EAI_NONAME) {
-        Ns_Log(Error, "dns: getnameinfo failed: %s (%s)", gai_strerror(result), addr);
+        Ns_Log(Warning, "dns: getnameinfo failed: %s (%s)", gai_strerror(result), addr);
     }
 #ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);
