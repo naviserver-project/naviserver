@@ -151,7 +151,6 @@ typedef int32_t ssize_t;
 #  define chsize                      _chsize
 #  define close                       _close
 #  define fileno                      _fileno
-#  define getpid                      GetCurrentProcessId
 #  define mktemp                      _mktemp
 #  define open                        _open
 #  define putenv                      _putenv
@@ -159,6 +158,7 @@ typedef int32_t ssize_t;
 #  define unlink                      _unlink
 #  define vsnprintf                   _vsnprintf
 
+#  define getpid()                    (pid_t)GetCurrentProcessId()
 #  define ftruncate(f,s)              _chsize((f),(s))
 
 # else
