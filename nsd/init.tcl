@@ -632,7 +632,7 @@ if {$use_trace_inits} {
             }
             set didsaveproc 1
         }
-        set code [catch {uplevel 1 [eval concat $args]} result]
+        set code [catch {uplevel 1 $args} result]
         if {$didsaveproc} {
             rename ns_eval ""
             rename _saved_ns_eval ns_eval
