@@ -754,7 +754,7 @@ Ns_ConnClose(Ns_Conn *conn)
 	 * writer thread.
 	 */
 	if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0u) {
-	    bool keep = connPtr->keep > 0 ? NS_TRUE : NS_FALSE;
+	    bool keep = (connPtr->keep > 0) ? NS_TRUE : NS_FALSE;
 	    NsSockClose(connPtr->sockPtr, keep);
 	}
 

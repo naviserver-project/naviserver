@@ -741,9 +741,9 @@ ns_pipe(int *fds)
  *
  * ns_mkstemp --
  *
- *      Create a temporary file based on the provided template and
- *      return its fd.  This is a cheap replacement for mkstemp()
- *      under unix-like systems.
+ *      Create a temporary file based on the provided character template and
+ *      return its fd.  This is a cheap replacement for mkstemp() under
+ *      unix-like systems.
  *
  * Results:
  *      fd if ok, NS_INVALID_FD on error.
@@ -763,7 +763,7 @@ ns_mkstemp(char *charTemplate)
     err = _mktemp_s(charTemplate, strlen(charTemplate));
 
     if (err == 0) {
-	err = _sopen_s(&fd, template, 
+	err = _sopen_s(&fd, charTemplate, 
 		       O_RDWR | O_CREAT |_O_TEMPORARY | O_EXCL, 
 		       _SH_DENYRW,
 		       _S_IREAD | _S_IWRITE);
