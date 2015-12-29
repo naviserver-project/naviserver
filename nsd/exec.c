@@ -171,7 +171,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
     return status;
     
 #else
-    int status;
+    int status = 0;
     pid_t p;
     
     do {
