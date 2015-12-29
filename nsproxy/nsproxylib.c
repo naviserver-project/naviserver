@@ -2000,8 +2000,10 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         Tcl_WrongNumArgs(interp, 2, objv, "pool ?-opt val -opt val ...?");
         return TCL_ERROR;
     }
-    poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
     assert(idataPtr != NULL);
+    poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+    assert(poolPtr != NULL);
+    
     cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &isNew);
     if ((intptr_t) Tcl_GetHashValue(cntPtr) > 0) {
         err = EDeadlock;
