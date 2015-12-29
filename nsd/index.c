@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * index.c --
  *
- *	Implement the index data type. 
+ *	Implement the index data type.
  */
 
 #include "nsd.h"
@@ -51,7 +51,7 @@ static int CmpInts(const int *leftPtr, const int *rightPtr)    NS_GNUC_NONNULL(1
 static int CmpKeyWithInt(const int *keyPtr, const int *elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 #ifdef _MSC_VER_VERY_OLD
-static void * 
+static void *
 NsBsearch (register const void *key, register const void *base,
            register size_t nmemb, register size_t size,
            int (*compar)(const void *left, const void *right));
@@ -63,13 +63,13 @@ NsBsearch (register const void *key, register const void *base,
  *
  * Ns_IndexInit --
  *
- *	Initialize a new index. 
+ *	Initialize a new index.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will allocate space for the index elements from the heap. 
+ *	Will allocate space for the index elements from the heap.
  *
  *----------------------------------------------------------------------
  */
@@ -83,7 +83,7 @@ Ns_IndexInit(Ns_Index *indexPtr, size_t inc,
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(CmpEls != NULL);
     NS_NONNULL_ASSERT(CmpKeyWithEl != NULL);
-    
+
     indexPtr->n = 0u;
     indexPtr->max = inc;
     indexPtr->inc = inc;
@@ -100,13 +100,13 @@ Ns_IndexInit(Ns_Index *indexPtr, size_t inc,
  *
  * Ns_IndexTrunc --
  *
- *	Remove all elements from an index. 
+ *	Remove all elements from an index.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Frees and mallocs element memory. 
+ *	Frees and mallocs element memory.
  *
  *----------------------------------------------------------------------
  */
@@ -115,7 +115,7 @@ void
 Ns_IndexTrunc(Ns_Index* indexPtr)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
-    
+
     indexPtr->n = 0u;
     ns_free(indexPtr->el);
     indexPtr->max = indexPtr->inc;
@@ -128,13 +128,13 @@ Ns_IndexTrunc(Ns_Index* indexPtr)
  *
  * Ns_IndexDestroy --
  *
- *	Release all of an index's memory. 
+ *	Release all of an index's memory.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Frees elements. 
+ *	Frees elements.
  *
  *----------------------------------------------------------------------
  */
@@ -143,7 +143,7 @@ void
 Ns_IndexDestroy(Ns_Index *indexPtr)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
-    
+
     indexPtr->CmpEls = NULL;
     indexPtr->CmpKeyWithEl = NULL;
     ns_free(indexPtr->el);
@@ -155,13 +155,13 @@ Ns_IndexDestroy(Ns_Index *indexPtr)
  *
  * Ns_IndexDup --
  *
- *	Make a copy of an index. 
+ *	Make a copy of an index.
  *
  * Results:
- *	A pointer to a copy of the index. 
+ *	A pointer to a copy of the index.
  *
  * Side effects:
- *	Mallocs memory for index and elements. 
+ *	Mallocs memory for index and elements.
  *
  *----------------------------------------------------------------------
  */
@@ -187,13 +187,13 @@ Ns_IndexDup(const Ns_Index *indexPtr)
  *
  * Ns_IndexFind --
  *
- *	Find a key in an index. 
+ *	Find a key in an index.
  *
  * Results:
- *	A pointer to the element, or NULL if none found. 
+ *	A pointer to the element, or NULL if none found.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -206,7 +206,7 @@ Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    pPtrPtr = (void **) bsearch(key, indexPtr->el, indexPtr->n, 
+    pPtrPtr = (void **) bsearch(key, indexPtr->el, indexPtr->n,
                                 sizeof(void *), indexPtr->CmpKeyWithEl);
 
     return (pPtrPtr != NULL) ? *pPtrPtr : NULL;
@@ -218,15 +218,15 @@ Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
  *
  * Ns_IndexFindInf --
  *
- *	Find the elment with the key, or if none exists, the element 
- *	before which the key would appear. 
+ *	Find the elment with the key, or if none exists, the element
+ *	before which the key would appear.
  *
  * Results:
- *	An element, or NULL if the key is not there AND would be the 
- *	last element in the list. 
+ *	An element, or NULL if the key is not there AND would be the
+ *	last element in the list.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -236,7 +236,7 @@ Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(key != NULL);
-  
+
     if (indexPtr->n > 0u) {
         int i;
 
@@ -264,14 +264,14 @@ Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
  *
  * Ns_IndexFindMultiple --
  *
- *	Find all elements that match key. 
+ *	Find all elements that match key.
  *
  * Results:
- *	An array of pointers to matching elements, termianted with a 
- *	null poitner. 
+ *	An array of pointers to matching elements, terminated with a
+ *	null pointer.
  *
  * Side effects:
- *	Will allocate memory for the return result. 
+ *	Will allocate memory for the return result.
  *
  *----------------------------------------------------------------------
  */
@@ -287,7 +287,7 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
     /*
      * Find a place in the array that matches the key
      */
-    
+
     firstPtrPtr = (void **) bsearch(key, indexPtr->el, indexPtr->n,
 				    sizeof(void *), indexPtr->CmpKeyWithEl);
 
@@ -305,19 +305,20 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
             && indexPtr->CmpKeyWithEl(key, firstPtrPtr - 1) == 0) {
             firstPtrPtr--;
         }
+
         /*
 	 * Search linearly forward to find out how many there are
 	 */
-	
         n = indexPtr->n - (size_t)(firstPtrPtr - indexPtr->el);
-        for (i = 1u; i < n &&
-                 indexPtr->CmpKeyWithEl(key, firstPtrPtr + i) == 0; i++) {
+        for (i = 1u;
+             i < n && indexPtr->CmpKeyWithEl(key, firstPtrPtr + i) == 0;
+             i++) {
 	    ;
 	}
+
         /*
 	 * Build array of values to return
 	 */
-	
         retPtrPtr = ns_malloc((i + 1u) * sizeof(void *));
         memcpy(retPtrPtr, firstPtrPtr, i * sizeof(void *));
         retPtrPtr[i] = NULL;
@@ -332,14 +333,14 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
  *
  * BinSearch --
  *
- *	Modified from BinSearch in K&R. 
+ *	Modified from BinSearch in K&R.
  *
  * Results:
- *	The position where an element should be inserted even if it 
- *	does not already exist. bsearch will just return NULL. 
+ *	The position where an element should be inserted even if it
+ *	does not already exist. bsearch will just return NULL.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -375,14 +376,14 @@ BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmp
  *
  * BinSearchKey --
  *
- *	Like BinSearch, but takes a key instead of an element 
- *	pointer. 
+ *	Like BinSearch, but takes a key instead of an element
+ *	pointer.
  *
  * Results:
- *	See BinSearch. 
+ *	See BinSearch.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -418,13 +419,13 @@ BinSearchKey(const void *key, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpPro
  *
  * Ns_IndexAdd --
  *
- *	Add an element to an index. 
+ *	Add an element to an index.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	May allocate extra element memory. 
+ *	May allocate extra element memory.
  *
  *----------------------------------------------------------------------
  */
@@ -453,7 +454,7 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 
     if (i < (int)indexPtr->n) {
         size_t j;
-        
+
         for (j = indexPtr->n; (int)j > i; j--) {
             indexPtr->el[j] = indexPtr->el[j - 1u];
         }
@@ -468,13 +469,13 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
  *
  * Ns_IndexDel --
  *
- *	Remove an element from an index. 
+ *	Remove an element from an index.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -508,13 +509,13 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
  *
  * Ns_IndexEl --
  *
- *	Find the i'th element of an index. 
+ *	Find the i'th element of an index.
  *
  * Results:
- *	Element. 
+ *	Element.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -533,13 +534,13 @@ Ns_IndexEl(const Ns_Index *indexPtr, size_t i)
  *
  * CmpStr --
  *
- *	Default comparison function. 
+ *	Default comparison function.
  *
  * Results:
- *	See strcmp. 
+ *	See strcmp.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -559,13 +560,13 @@ CmpStr(const char *const*leftPtr, const char *const*rightPtr)
  *
  * CmpKeyWithStr --
  *
- *	Default comparison function, with key. 
+ *	Default comparison function, with key.
  *
  * Results:
- *	See strcmp. 
+ *	See strcmp.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -585,14 +586,14 @@ CmpKeyWithStr(const char *key, const char *const*elPtr)
  *
  * Ns_IndexStringInit --
  *
- *	Initialize an index where the elements themselves are 
- *	strings. 
+ *	Initialize an index where the elements themselves are
+ *	strings.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	See Ns_IndexInit. 
+ *	See Ns_IndexInit.
  *
  *----------------------------------------------------------------------
  */
@@ -602,7 +603,7 @@ Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
 
-    Ns_IndexInit(indexPtr, inc, 
+    Ns_IndexInit(indexPtr, inc,
 		 (int (*) (const void *left, const void *right)) CmpStr,
 		 (int (*) (const void *left, const void *right)) CmpKeyWithStr);
 }
@@ -613,14 +614,14 @@ Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc)
  *
  * Ns_IndexStringDup --
  *
- *	Make a copy of an index, using ns_strdup to duplicate the 
- *	keys. 
+ *	Make a copy of an index, using ns_strdup to duplicate the
+ *	keys.
  *
  * Results:
- *	A new index. 
+ *	A new index.
  *
  * Side effects:
- *	Wil make memory copies of the elements. 
+ *	Wil make memory copies of the elements.
  *
  *----------------------------------------------------------------------
  */
@@ -650,10 +651,10 @@ Ns_IndexStringDup(const Ns_Index *indexPtr)
  *
  * Ns_IndexStringAppend --
  *
- *	Append one index of strings to another. 
+ *	Append one index of strings to another.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
  *	Will append to the first index.
@@ -680,13 +681,13 @@ Ns_IndexStringAppend(Ns_Index *addtoPtr, const Ns_Index *addfromPtr)
  *
  * Ns_IndexStringDestroy --
  *
- *	Free an index of strings. 
+ *	Free an index of strings.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	See Ns_IndexDestroy. 
+ *	See Ns_IndexDestroy.
  *
  *----------------------------------------------------------------------
  */
@@ -697,7 +698,7 @@ Ns_IndexStringDestroy(Ns_Index *indexPtr)
     size_t i;
 
     NS_NONNULL_ASSERT(indexPtr != NULL);
-    
+
     for (i = 0u; i < indexPtr->n; i++) {
         ns_free(indexPtr->el[i]);
     }
@@ -711,13 +712,13 @@ Ns_IndexStringDestroy(Ns_Index *indexPtr)
  *
  * Ns_IndexStringTrunc --
  *
- *	Remove all elements from an index of strings. 
+ *	Remove all elements from an index of strings.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	See Ns_IndexTrunc. 
+ *	See Ns_IndexTrunc.
  *
  *----------------------------------------------------------------------
  */
@@ -742,13 +743,13 @@ Ns_IndexStringTrunc(Ns_Index *indexPtr)
  *
  * CmpInts --
  *
- *	Default comparison function for an index of ints. 
+ *	Default comparison function for an index of ints.
  *
  * Results:
- *	-1: left < right; 1: left > right; 0: left == right 
+ *	-1: left < right; 1: left > right; 0: left == right
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -773,13 +774,13 @@ CmpInts(const int *leftPtr, const int *rightPtr)
  *
  * CmpKeyWithInt --
  *
- *	Default comparison function for an index of ints, with key. 
+ *	Default comparison function for an index of ints, with key.
  *
  * Results:
- *	-1: key < el; 1: key > el; 0: key == el 
+ *	-1: key < el; 1: key > el; 0: key == el
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -803,13 +804,13 @@ CmpKeyWithInt(const int *keyPtr, const int *elPtr)
  *
  * Ns_IndexIntInit --
  *
- *	Initialize an index whose elements will be integers. 
+ *	Initialize an index whose elements will be integers.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	See Ns_IndexInit. 
+ *	See Ns_IndexInit.
  *
  *----------------------------------------------------------------------
  */
@@ -818,8 +819,8 @@ void
 Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
-    
-    Ns_IndexInit(indexPtr, inc, 
+
+    Ns_IndexInit(indexPtr, inc,
 		 (int (*) (const void *left, const void *right)) CmpInts,
 		 (int (*) (const void *left, const void *right)) CmpKeyWithInt);
 }
@@ -846,7 +847,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc)
  *----------------------------------------------------------------------
  */
 
-static void * 
+static void *
 NsBsearch (register const void *key, register const void *base,
            register size_t nmemb, register size_t size,
            int (*compar)(const void *key, const void *value))
