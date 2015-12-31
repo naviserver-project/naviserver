@@ -138,26 +138,26 @@ struct Sock;
 struct NsServer;
 
 struct nsconf {
-    char *argv0;
-    char *nsd;
-    char *name;
-    char *version;
+    const char *argv0;
+    const char *nsd;
+    const char *name;
+    const char *version;
     const char *home;
     const char *tmpDir;
     const char *config;
-    char *build;
-    pid_t pid;
-    time_t boot_t;
-    char hostname[255];
-    char address[NS_IPADDR_SIZE];
-    long shutdowntimeout;  /* same type as seconds in Ns_Time */
-    int backlog;
+    const char *build;
+    pid_t       pid;
+    time_t      boot_t;
+    char        hostname[255];
+    char        address[NS_IPADDR_SIZE];
+    long        shutdowntimeout;  /* same type as seconds in Ns_Time */
+    int         backlog;
 
     /*
      * Slot IDs for socket local storage.
      */
 
-    uintptr_t nextSlsId;
+    uintptr_t   nextSlsId;
 
     /*
      * The following table holds the configured virtual servers.
@@ -165,8 +165,8 @@ struct nsconf {
      */
 
     Tcl_HashTable servertable;
-    Tcl_DString servers;
-    const char *defaultServer;
+    Tcl_DString   servers;
+    const char   *defaultServer;
 
     /*
      * The following table holds config section sets from
@@ -199,8 +199,8 @@ struct nsconf {
 
     struct {
         const char *sharedlibrary;
-        char *version;
-        bool lockoninit;
+        const char *version;
+        bool        lockoninit;
     } tcl;
 
     struct {
@@ -217,7 +217,7 @@ NS_EXTERN struct nsconf nsconf;
  */
 
 typedef struct FileMap {
-    char *addr;                 /* Mapped to this virtual address */
+    void  *addr;           /* Mapped to this virtual address */
     size_t size;                /* Size of the mapped region */
 #ifndef _WIN32
     int handle;                 /* OS handle of the opened/mapped file */
@@ -244,7 +244,7 @@ typedef struct WriterSock {
     unsigned int         flags;
     int                  doStream;
     int                  fd;
-    char                 *headerString;
+    char                *headerString;
 
     union {
         struct {
@@ -325,18 +325,18 @@ typedef struct AdpFrame {
  */
 
 typedef struct AdpCode {
-    int        nblocks;
-    int        nscripts;
-    int           *len;
-    int           *line;
+    int         nblocks;
+    int         nscripts;
+    int        *len;
+    int        *line;
     Tcl_DString text;
 } AdpCode;
 
 #define AdpCodeLen(cp,i)    ((cp)->len[(i)])
-#define AdpCodeLine(cp,i)    ((cp)->line[(i)])
-#define AdpCodeText(cp)        ((cp)->text.string)
-#define AdpCodeBlocks(cp)    ((cp)->nblocks)
-#define AdpCodeScripts(cp)    ((cp)->nscripts)
+#define AdpCodeLine(cp,i)   ((cp)->line[(i)])
+#define AdpCodeText(cp)     ((cp)->text.string)
+#define AdpCodeBlocks(cp)   ((cp)->nblocks)
+#define AdpCodeScripts(cp)  ((cp)->nscripts)
 
 
 /*
@@ -449,7 +449,7 @@ typedef struct Driver {
     int backlog;                        /* listen() backlog */
     Tcl_WideInt maxinput;               /* Maximum request bytes to read */
     Tcl_WideInt maxupload;              /* Uploads that exceed will go into temp file without parsing */
-    char *uploadpath;                   /* Path where uploaded files will be spooled */
+    const char *uploadpath;             /* Path where uploaded files will be spooled */
     int maxline;                        /* Maximum request line size */
     int maxheaders;                     /* Maximum number of request headers */
     Tcl_WideInt readahead;              /* Maximum request size in memory */
@@ -999,18 +999,18 @@ typedef struct NsInterp {
      */
 
     struct adp {
-        unsigned int       flags;
-        AdpResult       exception;
-        int           refresh;
-        size_t           bufsize;
-        int                errorLevel;
-        int                debugLevel;
-        int                debugInit;
-        char              *debugFile;
-        Ns_Cache      *cache;
-        int                depth;
-        const char      *cwd;
-        struct AdpFrame      *framePtr;
+        unsigned int      flags;
+        AdpResult         exception;
+        int               refresh;
+        size_t            bufsize;
+        int               errorLevel;
+        int               debugLevel;
+        int               debugInit;
+        const char       *debugFile;
+        Ns_Cache         *cache;
+        int               depth;
+        const char       *cwd;
+        struct AdpFrame  *framePtr;
         Ns_Conn          *conn;
         Tcl_Channel       chan;
         Tcl_DString       output;

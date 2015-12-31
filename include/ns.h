@@ -489,7 +489,7 @@ typedef enum {
  */
 
 typedef NS_SOCKET
-(Ns_DriverListenProc)(Ns_Driver *driver, CONST char *address, int port, int backlog)
+(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, int port, int backlog)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef NS_DRIVER_ACCEPT_STATUS
@@ -531,7 +531,7 @@ typedef void
 
 typedef struct Ns_DriverInitData {
     int                   version;       /* Version 2. */
-    char                  *name;         /* This will show up in log file entries */
+    const char            *name;         /* This will show up in log file entries */
     Ns_DriverListenProc   *listenProc;   /* Open listening socket for conns. */
     Ns_DriverAcceptProc   *acceptProc;   /* Accept a new non-blocking socket. */
     Ns_DriverRecvProc     *recvProc;     /* Read bytes from conn into iovec. */
@@ -1859,10 +1859,10 @@ Ns_StopServer(char *server);
 NS_EXTERN const char *
 Ns_InfoHomePath(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoServerName(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoServerVersion(void);
 
 NS_EXTERN const char *
@@ -1871,10 +1871,10 @@ Ns_InfoConfigFile(void);
 NS_EXTERN pid_t
 Ns_InfoPid(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoNameOfExecutable(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoPlatform(void);
 
 NS_EXTERN long
@@ -1889,7 +1889,7 @@ Ns_InfoHostname(void);
 NS_EXTERN char *
 Ns_InfoAddress(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoBuildDate(void);
 
 NS_EXTERN int
@@ -1901,7 +1901,7 @@ Ns_InfoStarted(void);
 NS_EXTERN int
 Ns_InfoServersStarted(void);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoTag(void);
 
 /*
@@ -2400,7 +2400,7 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 
 NS_EXTERN int
 Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
-                              int (*cmp) (CONST char *s1, CONST char *s2))
+                              int (*cmp) (const char *s1, const char *s2))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int

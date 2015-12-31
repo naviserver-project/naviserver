@@ -81,7 +81,7 @@ Ns_InfoHomePath(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoServerName(void)
 {
     return nsconf.name;
@@ -104,7 +104,7 @@ Ns_InfoServerName(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoServerVersion(void)
 {
     return nsconf.version;
@@ -173,7 +173,7 @@ Ns_InfoPid(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoNameOfExecutable(void)
 {
     return nsconf.nsd;
@@ -196,7 +196,7 @@ Ns_InfoNameOfExecutable(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoPlatform(void)
 {
 
@@ -343,7 +343,7 @@ Ns_InfoAddress(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoBuildDate(void)
 {
     return nsconf.build;
@@ -447,7 +447,7 @@ Ns_InfoServersStarted(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoTag(void)
 {
     return PACKAGE_TAG;
@@ -516,7 +516,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     switch (opt) {
     case IArgv0Idx:
-        Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
+        Tcl_SetResult(interp, (char *)nsconf.argv0, TCL_STATIC);
         break;
 
     case IStartedIdx:
@@ -528,11 +528,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
 
     case INsdIdx:
-        Tcl_SetResult(interp, nsconf.nsd, TCL_STATIC);
+        Tcl_SetResult(interp, (char *)nsconf.nsd, TCL_STATIC);
         break;
 
     case INameIdx:
-        Tcl_SetResult(interp, Ns_InfoServerName(), TCL_STATIC);
+        Tcl_SetResult(interp, (char *)Ns_InfoServerName(), TCL_STATIC);
         break;
 
     case IConfigIdx:
@@ -578,15 +578,15 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case IPlatformIdx:
 	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
-        Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
+        Tcl_SetResult(interp, (char *)Ns_InfoPlatform(), TCL_STATIC);
         break;
 
     case IHostNameIdx:
-        Tcl_SetResult(interp, Ns_InfoHostname(), TCL_STATIC);
+        Tcl_SetResult(interp, (char *)Ns_InfoHostname(), TCL_STATIC);
         break;
 
     case IAddressIdx:
-        Tcl_SetResult(interp, Ns_InfoAddress(), TCL_STATIC);
+        Tcl_SetResult(interp, (char *)Ns_InfoAddress(), TCL_STATIC);
         break;
 
     case IUptimeIdx:
@@ -636,11 +636,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
 
     case IBuilddateIdx:
-        Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
+        Tcl_SetResult(interp, (char *)Ns_InfoBuildDate(), TCL_STATIC);
         break;
 
     case ITagIdx:
-        Tcl_SetResult(interp, Ns_InfoTag(), TCL_STATIC);
+        Tcl_SetResult(interp, (char *)Ns_InfoTag(), TCL_STATIC);
         break;
 
     case IServersIdx:
