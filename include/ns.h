@@ -316,7 +316,7 @@ typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (const char *server);
 typedef int   (Ns_ModuleInitProc) (const char *server, const char *module);
 typedef int   (Ns_RequestAuthorizeProc) (const char *server, const char *method,
-			const char *url, const char *user, const char *pass, const char *peer);
+                                         const char *url, const char *user, const char *pass, const char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (const char *user, const char *passwd);
 struct Ns_ObjvSpec;
@@ -857,25 +857,25 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
  * For HTTP tasks (in ns_http and ns_https)
  */
 typedef struct {
-    Ns_Task    *task;
-    NS_SOCKET   sock;
-    int         status;
-    const char *url;
-    char       *error;
-    char       *next;             /* write to client */
-    size_t      len;              /* size of request */
-    int         replyHeaderSize;
-    Ns_Set     *replyHeaders;     /* ns_set for header fields of the reply */
-    int         spoolLimit;       /* spool to file, when this body > this size */
-    int         spoolFd;          /* fd of spool file */
-    char       *spoolFileName;    /* filename of spoolfile */
-    Ns_Mutex    lock;             /* needed for switching modes (spooling to file/memory) */
+    Ns_Task           *task;
+    NS_SOCKET          sock;
+    int                status;
+    const char        *url;
+    char              *error;
+    char              *next;             /* write to client */
+    size_t             len;              /* size of request */
+    int                replyHeaderSize;
+    Ns_Set            *replyHeaders;     /* ns_set for header fields of the reply */
+    int                spoolLimit;       /* spool to file, when this body > this size */
+    int                spoolFd;          /* fd of spool file */
+    char              *spoolFileName;    /* filename of spoolfile */
+    Ns_Mutex           lock;             /* needed for switching modes (spooling to file/memory) */
     unsigned int       flags;
     Ns_CompressStream *compress;
-    Ns_Time     timeout;
-    Ns_Time     stime;
-    Ns_Time     etime;
-    Tcl_DString ds;
+    Ns_Time            timeout;
+    Ns_Time            stime;
+    Ns_Time            etime;
+    Tcl_DString        ds;
 } Ns_HttpTask;
 
 #define NS_HTTP_FLAG_DECOMPRESS    0x0001U

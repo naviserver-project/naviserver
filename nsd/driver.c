@@ -90,19 +90,19 @@ typedef struct PollData {
  */
 
 typedef struct AsyncWriter {
-    Ns_Mutex lock;             /* Lock around writer queues */
+    Ns_Mutex      lock;        /* Lock around writer queues */
     SpoolerQueue *firstPtr;    /* List of writer threads */
 } AsyncWriter;
 
 /* AsyncWriteData is similar to WriterSock */
 typedef struct AsyncWriteData {
     struct AsyncWriteData *nextPtr;
-    char              *data;
-    int                fd;
-    Tcl_WideInt        nsent;
-    size_t             size;
-    size_t             bufsize;
-    const char        *buf;
+    char                  *data;
+    int                    fd;
+    Tcl_WideInt            nsent;
+    size_t                 size;
+    size_t                 bufsize;
+    const char            *buf;
 } AsyncWriteData;
 
 static AsyncWriter *asyncWriter = NULL;
