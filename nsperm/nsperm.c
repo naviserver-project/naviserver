@@ -254,7 +254,7 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *C
         cmdAllowUser, cmdAllowGroup,
         cmdDenyUser, cmdDenyGroup,
         cmdCheckPass, cmdSetPass,
-        cmdDelUser, cmdDelGroup, cmdDelPerm,
+        cmdDelUser, cmdDelGroup, cmdDelPerm
     };
 
     if (objc < 2) {
