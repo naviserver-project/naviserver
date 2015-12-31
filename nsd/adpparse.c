@@ -35,16 +35,16 @@
 
 #include "nsd.h"
 
-#define SERV_STREAM 0x01U
-#define SERV_RUNAT  0x02U
-#define SERV_NOTTCL 0x04U
+#define SERV_STREAM 0x01u
+#define SERV_RUNAT  0x02u
+#define SERV_NOTTCL 0x04u
 
 #define TAG_ADP     1
 #define TAG_PROC    2
 #define TAG_SCRIPT  3
 
 #define APPEND      "ns_adp_append "
-#define APPEND_LEN  (sizeof(APPEND) - 1U)
+#define APPEND_LEN  (sizeof(APPEND) - 1u)
 
 #define LENSZ       ((int)(sizeof(int)))
 
@@ -294,7 +294,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      * Tcl proc and save in ADP block with cache enabled or
      * just execute the Tcl code in case of cache disabled
      */
-    if ((flags & ADP_TCLFILE) != 0U) {
+    if ((flags & ADP_TCLFILE) != 0u) {
         int size;
 
         if ((flags & ADP_CACHE) == 0u) {
@@ -323,7 +323,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      */
     text = adp;
     scriptStreamDone = 0;
-    scriptFlags = 0U;
+    scriptFlags = 0u;
     level = 0;
     state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
@@ -366,7 +366,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 		    if (s > text) {
 			AppendBlock(&parse, text, s, 't', flags);
 		    }
-                    if ((flags & ADP_SAFE) == 0U) {
+                    if ((flags & ADP_SAFE) == 0u) {
                         if (s[2] != '=') {
                             AppendBlock(&parse, s + 2, e, 's', flags);
                         } else {
@@ -435,8 +435,8 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      * for next ADP tag.
                      */
 
-                    if ((flags & ADP_SAFE) == 0U) {
-                        if (((scriptFlags & SERV_STREAM) != 0U) && (scriptStreamDone == 0)) {
+                    if ((flags & ADP_SAFE) == 0u) {
+                        if (((scriptFlags & SERV_STREAM) != 0u) && (scriptStreamDone == 0)) {
 			    static char *buffer = "ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
@@ -492,7 +492,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     assert(text != NULL);
     { 
 	size_t len = strlen(text);
-	if (len > 0U) {
+	if (len > 0u) {
 	    AppendBlock(&parse, text, text + len, 't', flags);
 	}
     }
@@ -501,13 +501,13 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      * and complete the parse code structure.
      */
 
-    if ((flags & ADP_SINGLE) != 0U) {
+    if ((flags & ADP_SINGLE) != 0u) {
         int line = 0, len = -codePtr->text.length;
         codePtr->nscripts = codePtr->nblocks = 1;
         AppendLengths(codePtr, &len, &line);
     } else {
-        AppendLengths(codePtr, (int *) parse.lens.string,
-                      (int *) parse.lines.string);
+        AppendLengths(codePtr, (const int *) parse.lens.string,
+                      (const int *) parse.lines.string);
     }
 
     Tcl_DStringFree(&parse.lens);
@@ -577,7 +577,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
 
     codePtr = parsePtr->codePtr;
 
-    if ((flags & ADP_SINGLE) != 0U) {
+    if ((flags & ADP_SINGLE) != 0u) {
         char     save;
 
         switch (type) {
@@ -697,7 +697,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
     NS_NONNULL_ASSERT(e != NULL);
 
     if (flagsPtr != NULL) {
-        *flagsPtr = 0U;
+        *flagsPtr = 0u;
     }
     while (s < e) {
 	char asave, *ae;
@@ -833,7 +833,7 @@ GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
 
     if (a < e && STRIEQ(tag, "script")) {
         ParseAtts(a, e, &flags, NULL, 1);
-        if ((flags & SERV_RUNAT) != 0U && (flags & SERV_NOTTCL) == 0U) {
+        if ((flags & SERV_RUNAT) != 0u && (flags & SERV_NOTTCL) == 0u) {
             *flagPtr = (flags & SERV_STREAM);
             return (e + 1);
         }
