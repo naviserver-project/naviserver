@@ -266,6 +266,9 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
 
     NS_NONNULL_ASSERT(path != NULL);
 
+    /*
+     * Check if already prebound
+     */
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
@@ -279,6 +282,7 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
         hPtr = Tcl_NextHashEntry(&search);
     }
     Ns_MutexUnlock(&lock);
+    
     if (hPtr == NULL) {
         /* 
          * Not prebound, bind now 
@@ -396,6 +400,7 @@ Ns_SockBindUnix(const char *path, int socktype, int mode)
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
         || (mode && chmod(path, mode) == -1)) {
         int err = errno;
+        
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
@@ -432,6 +437,7 @@ Ns_SockBindRaw(int proto)
 
     if (sock == NS_INVALID_SOCKET) {
         int err = errno;
+        
         ns_sockclose(sock);
         Ns_SetSockErrno(err);
     }
@@ -497,7 +503,7 @@ NsPreBind(const char *args, const char *file)
         } else {
             Tcl_DString line;
             Tcl_DStringInit(&line);
-            while(Tcl_Eof(chan) == 0) {
+            while (Tcl_Eof(chan) == 0) {
                 Tcl_DStringSetLength(&line, 0);
                 if (Tcl_Gets(chan, &line) > 0) {
                     PreBind(Tcl_DStringValue(&line));
@@ -657,6 +663,10 @@ PreBind(const char *line)
         if (next != NULL) {
             *next++ = '\0';
         }
+
+        /*
+         * Set default proto and addr.
+         */
         proto = "tcp";
         addr = "0.0.0.0";
 
@@ -739,12 +749,13 @@ PreBind(const char *line)
         if (strncmp(proto, "icmp", 4U) == 0) {
             int count = 1;
             /* Parse count */
+            
             str = strchr(str,'/');
             if (str != NULL) {
                 *(str++) = '\0';
                 count = strtol(str, NULL, 10);
             }
-            while(count--) {
+            while (count--) {
                 sock = Ns_SockBindRaw(IPPROTO_ICMP);
                 if (sock == NS_INVALID_SOCKET) {
                     Ns_Log(Error, "prebind: icmp: %s",strerror(errno));
