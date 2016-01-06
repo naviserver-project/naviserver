@@ -752,8 +752,12 @@ void
 Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 {
 #ifdef TCP_FASTOPEN
+# if defined(__APPLE__) && defined(__MACH__)
+    int qlen = 1;
+# else
     int qlen = 5;
-  
+# endif
+    
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
 		   &qlen, sizeof(qlen)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
