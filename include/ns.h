@@ -2339,13 +2339,13 @@ NS_EXTERN int
 Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
     NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_Cancel(int id);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_Pause(int id);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_Resume(int id);
 
 NS_EXTERN int
