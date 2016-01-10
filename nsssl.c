@@ -150,7 +150,7 @@ Ns_ModuleInit(char *server, char *module)
 
     Ns_DStringInit(&ds);
 
-    path = Ns_ConfigGetPath(server, module, NULL);
+    path = Ns_ConfigGetPath(server, module, (char *)0);
 
     drvPtr = ns_calloc(1, sizeof(SSLDriver));
     drvPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
@@ -195,7 +195,7 @@ Ns_ModuleInit(char *server, char *module)
 
     drvPtr->ctx = SSL_CTX_new(SSLv23_server_method());
     if (drvPtr->ctx == NULL) {
-        Ns_Log(Error, "nsssl: init error [%s]",strerror(errno));
+        Ns_Log(Error, "nsssl: init error [%s]", strerror(errno));
         return NS_ERROR;
     }
     SSL_CTX_set_app_data(drvPtr->ctx, drvPtr);
