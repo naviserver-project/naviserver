@@ -229,7 +229,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      * Create a new NsServer.
      */
 
-    servPtr = ns_calloc(1U, sizeof(NsServer));
+    servPtr = ns_calloc(1u, sizeof(NsServer));
     servPtr->server = server;
 
     Tcl_SetHashValue(hPtr, servPtr);
@@ -296,7 +296,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     CreatePool(servPtr, "");
     path = Ns_ConfigGetPath(server, NULL, "pools", NULL);
     set = Ns_ConfigGetSection(path);
-    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
     NsTclInitServer(server);
@@ -369,7 +369,7 @@ CreatePool(NsServer *servPtr, const char *pool)
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(pool != NULL);
 
-    poolPtr = ns_calloc(1U, sizeof(ConnPool));
+    poolPtr = ns_calloc(1u, sizeof(ConnPool));
     poolPtr->pool = pool;
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
@@ -385,7 +385,7 @@ CreatePool(NsServer *servPtr, const char *pool)
 
         path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, NULL);
         set = Ns_ConfigGetSection(path);
-        for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+        for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
                 NsMapPool(poolPtr, Ns_SetValue(set, i));
             }
@@ -460,10 +460,11 @@ CreatePool(NsServer *servPtr, const char *pool)
 	if (*pool == '\0') {
 	    pool = "default";
 	}
-	strncat(name, pool, 120U);
+	strncat(name, pool, 120u);
 	
 	for (j = 0; j < maxconns; j++) {
 	    char buffer[64];
+	    
 	    sprintf(buffer, "connthread:%d", j);
 	    Ns_MutexInit(&poolPtr->tqueue.args[j].lock);
 	    Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, name, buffer);
