@@ -496,7 +496,6 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 {
     Entry *ePtr;
     void *value;
-    Cache *cachePtr;
 
     NS_NONNULL_ASSERT(entry != NULL);
 
@@ -504,6 +503,8 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
     value = ePtr->value;
 
     if (value != NULL) {
+        Cache *cachePtr;
+
 	/*
 	 * In case, the freeProc() wants to allocate itself
 	 * (indirectly) a cache entry, we have to make sure, that

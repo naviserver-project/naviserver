@@ -379,13 +379,13 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 void
 Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 {
-    char *eoh;
-    
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->replyHeaderSize == 0) {
 	Ns_MutexLock(&httpPtr->lock);
 	if (httpPtr->replyHeaderSize == 0) {
+            char *eoh;
+
 	    eoh = strstr(httpPtr->ds.string, "\r\n\r\n");
 	    if (eoh != NULL) {
 		httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 4;

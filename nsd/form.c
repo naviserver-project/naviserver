@@ -80,8 +80,7 @@ Ns_Set  *
 Ns_ConnGetQuery(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
-    Tcl_DString     bound;
-    char           *form, *s, *e;
+    char           *form;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -100,14 +99,19 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 		   (connPtr->flags & NS_CONN_CLOSED ) == 0U
 		   && (form = connPtr->reqPtr->content) != NULL
 		   ) {
+            Tcl_DString     bound;
+                
   	    Tcl_DStringInit(&bound);
             if (GetBoundary(&bound, conn) == 0) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             } else {
 		const char *formend = form + connPtr->reqPtr->length;
+                char       *s;
 
                 s = NextBoundry(&bound, form, formend);
                 while (s != NULL) {
+                    char  *e;
+                    
                     s += bound.length;
                     if (*s == '\r') {
                         ++s;
