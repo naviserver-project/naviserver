@@ -110,6 +110,15 @@ adds new ns_ssl command.
 
   See the naviserver documentation of "ns_http" for usage and details about the options.
 
+## Compile and Install: ##
+
+   To compile and install one might use commands like the following
+   (passing SSLINCLUDE - the path to the OpenSSL includes - is
+   optional)
+	
+    make SSLINCLUDE=/opt/local/include/
+    make install
+
 ## Authors: ##
 
     Vlad Seryakov vlad@crystalballinc.com
