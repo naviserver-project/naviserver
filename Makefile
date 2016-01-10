@@ -2,6 +2,12 @@ ifndef NAVISERVER
     NAVISERVER  = /usr/local/ns
 endif
 
+# ability to pass path to openssl include library
+ifdef SSLINCLUDE
+    CFLAGS     = -I$(SSLINCLUDE)
+endif
+
+
 #
 # Filename of loadable binary of the module
 #
@@ -46,3 +52,6 @@ clean-cert:
 
 test: certificate all 
 	export $(LD_LIBRARY_PATH); $(NSD) $(NS_TEST_CFG) $(NS_TEST_ALL)
+
+cppcheck:
+	cppcheck --verbose --enable=all $(CFLAGS_INCLUDE) *.c
