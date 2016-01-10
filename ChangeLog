@@ -1,3 +1,331 @@
+2016-01-10 20:08 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3b33483c669c [tip])
+
+	* README.md:
+	- added optionional SSLINCLUDE to Makefile to point to openssl
+	include files
+
+2016-01-10 20:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8c2d306ba9a1)
+
+	* nsssl.c:
+	- don't use NULL in sentinel
+
+2016-01-10 20:06 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f53f33c4944d)
+
+	* Makefile:
+	- include target cppcheck
+
+2015-09-13 19:59 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (02e6e4391345 [tip])
+
+	* nsssl.c, tests/config.tcl, tests/nsssl.test:
+	- include content-encoding, when determining binary content in http
+	client requests
+	- update to same level as in naviserver http client requests
+	- add regression tests
+
+2015-07-29 14:49 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (84e95c376909)
+
+	* nsssl.c:
+	- handle binary data when "-body" is specified in nsssl command
+
+2015-07-09 17:25 -0500  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6dc749c9caf5)
+
+	* nsssl.c:
+	- use always macro INT2PTR to convert integer to pointer
+
+2015-07-01 11:36 +0100  David Osborne  <david@qcode.co.uk>  (70b4af5c2430)
+
+	* nsssl.c:
+	Check for host header when keep_host_header is specified. Move check
+	to before strdup.
+
+2015-06-30 16:21 +0100  David Osborne  <david@qcode.co.uk>  (f0e9e8b6492d)
+
+	* nsssl.c:
+	Possibly should check for cases where Host header is expected by
+	isnt given
+
+2015-06-30 15:32 +0100  David Osborne  <david@qcode.co.uk>  (1c80f02687ae)
+
+	* README.md:
+	Readme update
+
+2015-06-30 15:09 +0100  David Osborne  <david@qcode.co.uk>  (affa997ac4f7)
+
+	* nsssl.c:
+	Use bool rather than int.
+
+2015-06-23 12:56 +0100  David Osborne  <david@qcode.co.uk>  (a6f72d59d50b)
+
+	* nsssl.c:
+	optionally keep Host header intact
+
+2015-04-06 16:37 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (391bd75ee6ad)
+
+	* README.md, nsssl.c:
+	- updated README and version number
+
+2015-03-15 17:04 +0000  gustafn  <neumann@wu-wien.ac.at>  (d5807281cec7)
+
+	* README.md:
+	README.md edited online with Bitbucket
+
+2015-03-15 17:03 +0000  gustafn  <neumann@wu-wien.ac.at>  (69bf552f23b8)
+
+	* README.md:
+	README.md edited online with Bitbucket
+
+2015-03-15 18:00 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2c3892afbb20)
+
+	* README.md: new file.
+	* README: deleted file.
+	* README, README.md:
+	- use .md as extension for README to provide a nicer start page on
+	bitbucket
+
+2015-03-15 05:28 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6b68731c136e)
+
+	* tests/all.tcl, tests/config.tcl, tests/etc/openssl.cnf,
+	tests/modules/testhttps.tcl, tests/nsssl.test: new file.
+	* Makefile, nsssl.c, tests/all.tcl, tests/config.tcl,
+	tests/etc/openssl.cnf, tests/modules/testhttps.tcl,
+	tests/nsssl.test:
+	- added test cases for nsssl
+	- new command nstest::https to provide support for running regression
+	test over ssl
+
+2015-03-13 13:17 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (507b98ed746c)
+
+	* README:
+	- update README
+
+2015-03-13 13:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (48012bf29685)
+
+	* - merge
+
+2015-03-12 07:50 +0000  gustafn  <neumann@wu-wien.ac.at>  (03af97afb670)
+
+	* README:
+	README edited online with Bitbucket
+
+2015-03-13 13:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (57f71eb17508)
+
+	* nsssl.c:
+	- fix off by 1 bug leading to incorrect urls when https client was
+	used with url path
+	- align logic more closer with tclhhtp.c
+	- bump version number to identify fixed versions
+
+2015-03-11 11:36 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (b50a346080e2)
+
+	* nsssl.c:
+	- prefer bool and NS_TRUE/NS_FALSE over int and 1/0
+
+2015-02-23 18:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bacb1a9bfb9a)
+
+	* README:
+	- update recommended ciphers to exclude RC4
+
+2015-02-21 19:23 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (7050367529c1)
+
+	* nsssl.c:
+	- define path as const
+
+2015-02-21 17:54 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (87f7657e95bd)
+
+	* Makefile.win32: new file.
+	* - merge
+
+2015-02-21 17:53 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0cb31c93e338)
+
+	* README:
+	- improve security options in README file
+
+2015-02-21 17:52 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (68c95d55c736)
+
+	* Makefile:
+	- use documented MODOBJS instead of older-style OBJS in Makefiles
+
+2015-02-20 10:44 +0100  gustafn  <neumann@wu-wien.ac.at>  (f0d7b54f0ca8)
+
+	* Makefile.win32: new file.
+	* Merged in apiskors/nsssl (pull request #1)
+
+	add Windows nmake support
+
+2014-10-12 12:30 -0400  Andrew Piskorski  <atp@piskorski.com>  (9d50ab753afd)
+
+	* Makefile.win32:
+	Add 32-bit build support.
+
+2014-10-11 09:15 -0400  Andrew Piskorski  <atp@piskorski.com>  (fee5416920ff)
+
+	* Makefile.win32: new file.
+	* Makefile.win32:
+	Add new Windows-only nmake file.
+
+2015-01-07 11:59 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (de4e2dedd1f3)
+
+	* nsssl.c:
+	- fix freshly introduced bug while eliminating write operations to
+	const strings
+
+2015-01-05 15:11 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (65ed17e6c4e4)
+
+	* README:
+	- improve markdown
+
+2015-01-05 15:09 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5704fb6305ae)
+
+	* README:
+	- improve markdown
+
+2015-01-05 15:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (991aeb7b616f)
+
+	* README:
+	- improve markdown
+
+2015-01-05 14:34 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (33e988f03d88)
+
+	* README:
+	- improve markdown
+
+2015-01-05 14:33 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6377f125323b)
+
+	* README:
+	- improve markdown
+
+2015-01-05 14:28 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cafebec3856a)
+
+	* README:
+	- improve markdown
+
+2015-01-05 14:25 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (475429fa2f7f)
+
+	* README:
+	- improve markup on bitbucket via markdown
+
+2015-01-05 14:25 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8f1726375239)
+
+	* nsssl.c:
+	- reduce modifications of const strings
+
+2014-11-25 11:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (08fcaf364d86)
+
+	* nsssl.c:
+	- use Ns_LogTaskDebug to be able to turn debugging selectively
+	on/off (via ns_logctl)
+
+2014-11-25 10:34 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (9cd48cc6a72a)
+
+	* nsssl.c:
+	- adjust to new prototypes
+
+2014-11-14 14:13 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1d5db8f80dea)
+
+	* nsssl.c:
+	- use Ns_SockState
+	- handle NS_SOCK_EXCEPTION
+	- adjust variable size for ssl options
+
+2014-11-01 00:49 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d16974a3f98d)
+
+	* nsssl.c:
+	- adjust to current tip
+
+2014-10-29 09:51 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (60b866e0e9ce)
+
+	* nsssl.c:
+	- use socklen_t for accept
+
+2014-10-22 09:04 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (447ed6d63987)
+
+	* nsssl.c:
+	- add const for send operation
+
+2014-10-19 11:36 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (ca63fbdc2891)
+
+	* nsssl.c:
+	- use NS_INVALID_SOCKET instead of INVALID_SOCKET
+
+2014-09-29 10:25 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d243c4e04722)
+
+	* nsssl.c:
+	- adjust types
+
+2014-09-23 08:29 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (add6ed223751)
+
+	* nsssl.c:
+	- make flags "unsigned int"
+
+2014-07-02 18:04 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0ba2fcde26cd)
+
+	* README:
+	- change advertised version number
+
+2014-05-02 11:28 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (02550f47d7f5)
+
+	* nsssl.c:
+	Make sure to initialize all members of Ns_DriverInitData to zero
+
+2014-04-12 14:39 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (b152ac8cfdf6)
+
+	* README:
+	- update documentation with HSTS (HTTP Strict Transport Security)
+
+2014-04-12 14:38 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (341fa67cee67)
+
+	* nsssl.c:
+	- remove debug line
+
+2014-04-10 11:38 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (54c424a9b419)
+
+	* README:
+	- fix typos in README
+
+2014-04-10 11:33 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d465b85aa4be)
+
+	* dhparams.h: new file.
+	* Makefile, README, dhparams.h, nsssl.c:
+	- added support for Eliptic Curve Cryptograpy (such as Elliptic
+	Curve Diffie-Hellman (ECDH))
+	- provide compiled-in defaults for DH parmeters
+	- add flags for handling several SSL and TLS bugs.
+	- deactivate SSLv2
+	- bumped version number to 0.5
+
+2014-04-05 11:47 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f22f00eda35a)
+
+	* nsssl.c:
+	- Added OpenSSL version number to startup message
+
+2014-03-31 11:17 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (400e637a96e3)
+
+	* README:
+	- mention adding of diffie hellman parameters to server.pem in
+	README file
+
+2014-02-14 11:38 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5165ff9750b1)
+
+	* README, nsssl.c:
+	- added addtional parameter "-decompress" for "ns_ssl wait" to
+	compress the result on the fly (incrementally) in case it is content
+	encoding is "gzip"
+
+2014-01-27 20:33 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (07cae509cc89)
+
+	* README, nsssl.c:
+	bump version number to 0.4
+
+2014-01-27 20:31 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e13f5225231c)
+
+	* README, nsssl.c:
+	- added support for perfect forward secrecy (PFS) to nsssl
+
+2013-08-22 11:52 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c486fa36b36f)
+
+	* nsssl.c:
+	- return headers + status also, when no spoolsize is specified
+
 2013-06-18 11:34 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6e361d738631 [tip])
 
 	* nsssl.c:
