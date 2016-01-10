@@ -303,7 +303,7 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         Ns_CacheUnlock(cPtr->cache);
         return TCL_ERROR;
     }
-    valObj = Tcl_NewIntObj(cur += incr);
+    valObj = Tcl_NewIntObj(cur + incr);
     SetEntry(cPtr, entry, valObj, expPtr, 0);
     Tcl_SetObjResult(interp, valObj);
     Ns_CacheUnlock(cPtr->cache);
