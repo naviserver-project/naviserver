@@ -195,4 +195,7 @@ clean-alib:
 clean-pgm:
 	$(RM) $(PGM) $(PGMOBJS)
 
+cppcheck:
+	cppcheck --verbose --force --enable=all $(CFLAGS_INCLUDE) *.c
+
 .PHONY: clean-mod clean-lib clean-alib clean-pgm
