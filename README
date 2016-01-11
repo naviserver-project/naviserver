@@ -92,8 +92,8 @@ Mac OS/X 10.2+ and Windows. To compile and install:
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.8.tar.gz | tar xvf -
-        $ cd naviserver-4.99.8
+        $ gunzip < naviserver-4.99.9.tar.gz | tar xvf -
+        $ cd naviserver-4.99.9
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -183,7 +183,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
     provided ass well via sourceforge. To get e.g. a modules
     named "nsfoo" installed
 
-        $ gunzip < naviserver-4.99.8-modules.tar.gz | tar xvf -
+        $ gunzip < naviserver-4.99.9-modules.tar.gz | tar xvf -
 	$ cd modules/nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
@@ -223,7 +223,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.8
+        $ cd /c/naviserver-4.99.9
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 
