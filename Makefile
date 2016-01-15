@@ -220,6 +220,9 @@ gdbtest: all
 	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
+lldbtest: all
+	$(LD_LIBRARY_PATH) lldb -o run -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
+
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
 	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
