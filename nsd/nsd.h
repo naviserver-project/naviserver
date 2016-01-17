@@ -708,6 +708,7 @@ typedef struct ConnPool {
         int max;
         int current;
         int idle;
+        int connsperthread;
         long timeout;
         int creating;
         Ns_Mutex lock;
@@ -769,12 +770,12 @@ typedef struct NsServer {
      */
 
     struct {
-        bool flushcontent;
-        bool modsince;
-        bool noticedetail;
         int  errorminsize;
         const char *realm;
         Ns_HeaderCaseDisposition hdrcase;
+        bool flushcontent;
+        bool modsince;
+        bool noticedetail;
     } opts;
 
     /*

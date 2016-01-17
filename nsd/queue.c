@@ -1005,7 +1005,7 @@ NsConnThread(void *arg)
     bool           shutdown;
     int            status = NS_OK, cpt, ncons, current, fromQueue;
     long           timeout;
-    const char    *path, *exitMsg;
+    const char    *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
     Ns_Mutex      *tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_Mutex      *wqueueLockPtr  = &poolPtr->wqueue.lock;
@@ -1044,16 +1044,7 @@ NsConnThread(void *arg)
     Ns_ThreadSelf(&joinThread);
     /*fprintf(stderr, "### starting conn thread %p <%s>\n", (void *)joinThread, Ns_ThreadGetName());*/
     
-    /*
-     * See how many connections this thread should run.  Setting
-     * connsperthread to > 0 will cause the thread to graceously exit,
-     * after processing that many requests, thus initiating kind-of
-     * Tcl-level garbage collection. 
-     */
-
-    path   = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
-    cpt    = Ns_ConfigIntRange(path, "connsperthread", 10000, 0, INT_MAX);
-    
+    cpt     = poolPtr->threads.connsperthread;
     ncons   = cpt;
     timeout = poolPtr->threads.timeout;
 

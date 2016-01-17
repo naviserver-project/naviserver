@@ -423,6 +423,14 @@ CreatePool(NsServer *servPtr, const char *pool)
     connBufPtr[n].nextPtr = NULL;
     poolPtr->wqueue.freePtr = &connBufPtr[0];
 
+    /*
+     * Setting connsperthread to > 0 will cause the thread to graceously exit,
+     * after processing that many requests, thus initiating kind-of Tcl-level
+     * garbage collection.
+     */
+    poolPtr->threads.connsperthread =
+        Ns_ConfigIntRange(path, "connsperthread", 10000, 0, INT_MAX);
+
     poolPtr->threads.max =
         Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
     poolPtr->threads.min =
@@ -479,3 +487,12 @@ CreatePool(NsServer *servPtr, const char *pool)
 	Ns_MutexSetName2(&poolPtr->threads.lock, name, "threads");
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
