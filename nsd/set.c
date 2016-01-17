@@ -188,7 +188,7 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
         set->fields = ns_realloc(set->fields,
 				 sizeof(Ns_SetField) * set->maxSize);
     }
-    set->fields[index].name = ns_strcopy(key);
+    set->fields[index].name = ns_strdup(key);
     set->fields[index].value = ns_strncopy(value, size);
 
     return index;
@@ -277,9 +277,9 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
     
     if (likely(key != NULL)) {
 	for (i = 0u; i < set->size; i++) {
-	    /* const char *name = set->fields[i].name;*/
+	    const char *name = set->fields[i].name;
 
-	    if (likely(set->fields[i].name != NULL) && ((*cmp) (key, set->fields[i].name)) == 0) {
+	    if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
 	      return (int)i;
 	    }
 	}
@@ -651,7 +651,7 @@ Ns_SetPutValue(const Ns_Set *set, size_t index, const char *value)
 
     if (index < set->size) {
         ns_free(set->fields[index].value);
-        set->fields[index].value = ns_strcopy(value);
+        set->fields[index].value = ns_strdup(value);
     }
 }
 
