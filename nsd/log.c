@@ -1187,8 +1187,8 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
           int               color = -1, intensity = -1, givenEnabled = -1;
 
           Ns_ObjvSpec lopts[] = {
-              {"-color",     Ns_ObjvIndex,  &color,     &colors},
-              {"-intensity", Ns_ObjvIndex,  &intensity, &intensities},
+              {"-color",     Ns_ObjvIndex,  &color,     colors},
+              {"-intensity", Ns_ObjvIndex,  &intensity, intensities},
               {"--",         Ns_ObjvBreak,  NULL,       NULL},
               {NULL, NULL, NULL, NULL}
           };

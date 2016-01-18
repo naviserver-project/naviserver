@@ -485,7 +485,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     };
     Ns_ObjvSpec lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
-        {"-part",    Ns_ObjvIndex,  &part,    &parts},
+        {"-part",    Ns_ObjvIndex,  &part,    parts},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -549,7 +549,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     };
     Ns_ObjvSpec lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
-        {"-part",    Ns_ObjvIndex,  &part,    &parts},
+        {"-part",    Ns_ObjvIndex,  &part,    parts},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
