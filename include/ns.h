@@ -54,10 +54,16 @@
 #endif
 
 
+#if defined(__STDC_VERSION__)
+# if __STDC_VERSION__ >= 199901L
+#  define NS_HAVE_C99
+# endif
+#endif
+
 /*
  * Boolean type "bool" and constants
  */
-#if __STDC_VERSION__ >= 199901L
+#ifdef NS_HAVE_C99
 /* C99 */
 # include <stdbool.h>
 # define NS_TRUE                    true
