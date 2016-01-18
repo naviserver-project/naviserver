@@ -74,13 +74,13 @@ static void ConnChanFree(NsConnChan *connChanPtr)
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, Ns_Time *timeoutPtr)
+static int SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static ssize_t DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, Ns_Time *timeoutPtr)
+static ssize_t DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 static Ns_SockProc NsTclConnChanProc;
@@ -354,7 +354,7 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
  */
 
 static int
-SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, Ns_Time *timeoutPtr)
+SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
 {
     Callback *cbPtr;
     size_t    scriptLength;
@@ -449,7 +449,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
  */
 
 static ssize_t
-DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, Ns_Time *timeoutPtr)
+DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
 {
     Ns_Time timeout;
 
