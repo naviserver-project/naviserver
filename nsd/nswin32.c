@@ -36,6 +36,7 @@
  */
 
 #include "nsd.h"
+#include <share.h>
 
 static Ns_ThreadProc ServiceTicker;
 static void StopTicker(void);
@@ -753,7 +754,6 @@ ns_pipe(int *fds)
  *
  *----------------------------------------------------------------------
  */
-#include <share.h>
 
 int
 ns_mkstemp(char *charTemplate) 

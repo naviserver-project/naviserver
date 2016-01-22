@@ -865,7 +865,6 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
         bool binary = NsTclObjIsByteArray(bodyPtr);
 
         if (contentType != NULL && binary == NS_FALSE) {
-            /*const Tcl_Encoding enc = Ns_GetTypeEncoding(contentType);*/
             binary = Ns_IsBinaryMimeType(contentType);
         }
         

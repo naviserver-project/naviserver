@@ -3989,7 +3989,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                 if (j > 0) {
                     wrote += (size_t)j;
                     Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %" PRIdz " of %" PRIiovlen " OK %d",
-                           connPtr->fd, i, j, bufs[i].iov_len, j == (ssize_t)bufs[i].iov_len);
+                           connPtr->fd, i, j, bufs[i].iov_len, (j == (ssize_t)bufs[i].iov_len));
                 } else {
                     Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed",
                            connPtr->fd);
