@@ -28,7 +28,10 @@ Custom error pages may be specified in the server configuration file to
 override the default HTML message which is returned, for those commands which
 return one.
 
-
+[para]
+NOTE: The script does not end at the time these commands are invoked.
+When used in an adp page, [cmd ns_adp_abort] or [cmd ns_adp_return]
+should be called to end script processing after ns_returnredirect. 
 
 
 [section COMMANDS]
@@ -64,7 +67,6 @@ header will be set to the [arg url] if given.
 Use this response to signal that the resource identified by the requested URL has
 temporarily moved to a new location. The client should continue to request the
 old URL.
-
 
 
 [call [cmd ns_returnbadrequest] \
