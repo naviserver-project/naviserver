@@ -64,17 +64,30 @@
  * Boolean type "bool" and constants
  */
 #ifdef NS_HAVE_C99
-/* C99 */
+   /* 
+    * C99 
+    */
 # include <stdbool.h>
 # define NS_TRUE                    true
 # define NS_FALSE                   false
 #else
-/* Not C99 */
-# if !defined(__cplusplus)
+   /* 
+    * Not C99 
+    */
+# if defined(__cplusplus)
+   /* 
+    * C++ is similar to C99, but no include necessary
+    */
+#  define NS_TRUE                    true
+#  define NS_FALSE                   false
+# else
+   /* 
+    * If everything fails, use int type and int values for bool
+    */
 typedef int bool;
+#  define NS_TRUE                    1
+#  define NS_FALSE                   0
 # endif
-# define NS_TRUE                    1
-# define NS_FALSE                   0
 #endif
 
 
