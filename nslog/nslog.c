@@ -137,7 +137,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Ns_DStringInit(&logPtr->buffer);
 
-    path = Ns_ConfigGetPath(server, module, NULL);
+    path = Ns_ConfigGetPath(server, module, (char *)0);
 
     /*
      * Determine the name of the log file
@@ -153,7 +153,7 @@ Ns_ModuleInit(const char *server, const char *module)
          * specific directory, which is created if necessary.
          */
 
-        if (Ns_HomePathExists("logs", NULL)) {
+        if (Ns_HomePathExists("logs", (char *)0)) {
             (void) Ns_HomePath(&ds, "logs", "/", file, NULL);
         } else {
             Tcl_Obj *dirpath;
