@@ -157,6 +157,8 @@ Ns_DbPoolDescription(const char *pool)
 {
     Pool         *poolPtr;
 
+    NS_NONNULL_ASSERT(pool != NULL);
+
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
         return NULL;
@@ -184,8 +186,11 @@ Ns_DbPoolDescription(const char *pool)
 const char *
 Ns_DbPoolDefault(const char *server)
 {
-    ServData *sdataPtr = GetServer(server);
+    ServData *sdataPtr;
 
+    NS_NONNULL_ASSERT(server != NULL);
+
+    sdataPtr = GetServer(server);
     return ((sdataPtr != NULL) ? sdataPtr->defpool : NULL);
 }
 
@@ -209,8 +214,11 @@ Ns_DbPoolDefault(const char *server)
 char *
 Ns_DbPoolList(const char *server)
 {
-    ServData *sdataPtr = GetServer(server);
+    ServData *sdataPtr;
 
+    NS_NONNULL_ASSERT(server != NULL);
+    
+    sdataPtr = GetServer(server);
     return ((sdataPtr != NULL) ? sdataPtr->allowed : NULL);
 }
 
@@ -235,6 +243,9 @@ int
 Ns_DbPoolAllowable(const char *server, const char *pool)
 {
     register char *p;
+
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
 
     p = Ns_DbPoolList(server);
     if (p != NULL) {
@@ -271,6 +282,8 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     Handle	*handlePtr;
     Pool	*poolPtr;
     time_t	 now;
+
+    NS_NONNULL_ASSERT(handle != NULL);
 
     handlePtr = (Handle *) handle;
     poolPtr = handlePtr->poolPtr;
@@ -328,6 +341,8 @@ Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)
 {
     Ns_DbHandle       *handle;
 
+    NS_NONNULL_ASSERT(pool != NULL);
+
     if (Ns_DbPoolTimedGetMultipleHandles(&handle, pool, 1, wait) != NS_OK) {
         return NULL;
     }
@@ -354,6 +369,8 @@ Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)
 Ns_DbHandle *
 Ns_DbPoolGetHandle(const char *pool)
 {
+    NS_NONNULL_ASSERT(pool != NULL);
+    
     return Ns_DbPoolTimedGetHandle(pool, NULL);
 }
 
@@ -378,6 +395,9 @@ Ns_DbPoolGetHandle(const char *pool)
 int
 Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
 {
+    NS_NONNULL_ASSERT(handles != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
+
     return Ns_DbPoolTimedGetMultipleHandles(handles, pool, nwant, NULL);
 }
 
@@ -411,6 +431,9 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     Pool      *poolPtr;
     Ns_Time    timeout, *timePtr, startTime, endTime, diffTime;
     int        i, ngot, status;
+
+    NS_NONNULL_ASSERT(pool != NULL);
+    NS_NONNULL_ASSERT(handles != NULL);
 
     /*
      * Verify the pool, the number of available handles in the pool,
@@ -542,7 +565,9 @@ Ns_DbBouncePool(const char *pool)
 {
     Pool	*poolPtr;
     Handle	*handlePtr;
-    
+
+    NS_NONNULL_ASSERT(pool != NULL);
+
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
 	return NS_ERROR;
@@ -641,6 +666,8 @@ Ns_DbPoolStats(Tcl_Interp *interp)
     Ns_Set      *pools;
     size_t       i;
     Tcl_Obj     *resultObj;
+
+    NS_NONNULL_ASSERT(interp != NULL);
 
     resultObj = Tcl_NewListObj(0, NULL);
     pools = Ns_ConfigGetSection("ns/db/pools");
@@ -1392,7 +1419,10 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
 {
     Tcl_Obj *resultObj;
     char    *pool;
-    
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
+
     resultObj = Tcl_NewListObj(0, NULL);
     pool = Ns_DbPoolList(server);
     if (pool != NULL) {
@@ -1435,6 +1465,10 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
     Pool *poolPtr;
     int   result;
 
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
+    NS_NONNULL_ASSERT(minDuration != NULL);
+
     /*
      * Get the poolPtr
      */
@@ -1474,6 +1508,10 @@ Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDura
 {
     Pool *poolPtr;
     int   result;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
+    NS_NONNULL_ASSERT(minDuration != NULL);
 
     /*
      * Get the poolPtr
