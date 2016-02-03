@@ -614,42 +614,62 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef PRIdPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIdPTR                     "ld"
+# if defined(defined(_WIN64))
+#  define PRIdPTR                      "lld"
 # else
-#  define PRIdPTR                     "d"
+#  if defined(_LP64) || defined(_I32LPx)
+#   define PRIdPTR                     "ld"
+#  else
+#   define PRIdPTR                     "d"
+#  endif
 # endif
 #endif
 
 #ifndef PRIoPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIoPTR                     "lo"
+# if defined(defined(_WIN64))
+#  define PRIoPTR                      "llo"
 # else
-#  define PRIoPTR                     "o"
+#  if defined(_LP64) || defined(_I32LPx)
+#   define PRIoPTR                     "lo"
+#  else
+#   define PRIoPTR                     "o"
+#  endif
 # endif
 #endif
 
 #ifndef PRIiPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIiPTR                     "li"
+# if defined(defined(_WIN64))
+#  define PRIiPTR                     "lli"
 # else
-#  define PRIiPTR                     "i"
+#  if defined(_LP64) || defined(_I32LPx)
+#   define PRIiPTR                     "li"
+#  else
+#   define PRIiPTR                     "i"
+#  endif
 # endif
 #endif
 
 #ifndef PRIuPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIuPTR                     "lu"
+# if defined(defined(_WIN64))
+#   define PRIuPTR                     "llu"
 # else
-#  define PRIuPTR                     "u"
+#  if defined(_LP64) || defined(_I32LPx) 
+#   define PRIuPTR                     "lu"
+#  else
+#   define PRIuPTR                     "u"
+#  endif
 # endif
 #endif
 
 #ifndef PRIxPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIxPTR                     "lx"
+# if defined(defined(_WIN64))
+#   define PRIxPTR                     "llx"
 # else
-#  define PRIxPTR                     "x"
+#  if defined(_LP64) || defined(_I32LPx)
+#   define PRIxPTR                     "lx"
+#  else
+#   define PRIxPTR                     "x"
+#  endif
 # endif
 #endif
 
