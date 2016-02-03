@@ -54,10 +54,20 @@
 #endif
 
 
+/*
+ * Well behaved compiler with C99 support should define __STDC_VERSION__
+ */
 #if defined(__STDC_VERSION__)
 # if __STDC_VERSION__ >= 199901L
 #  define NS_HAVE_C99
 # endif
+#endif
+
+/* 
+ * Starting with Visual Studio 2013, Microsoft provides C99 library support.
+ */
+#if (!defined(NS_HAVE_C99)) && defined(_MSC_VER) && (_MSC_VER >= 1800)
+# define NS_HAVE_C99
 #endif
 
 /*
