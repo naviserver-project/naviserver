@@ -614,7 +614,7 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef PRIdPTR
-# if defined(defined(_WIN64))
+# if defined(_WIN64)
 #  define PRIdPTR                      "lld"
 # else
 #  if defined(_LP64) || defined(_I32LPx)
@@ -626,7 +626,7 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifndef PRIoPTR
-# if defined(defined(_WIN64))
+# if defined(_WIN64)
 #  define PRIoPTR                      "llo"
 # else
 #  if defined(_LP64) || defined(_I32LPx)
@@ -638,7 +638,7 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifndef PRIiPTR
-# if defined(defined(_WIN64))
+# if defined(_WIN64)
 #  define PRIiPTR                     "lli"
 # else
 #  if defined(_LP64) || defined(_I32LPx)
@@ -650,7 +650,7 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifndef PRIuPTR
-# if defined(defined(_WIN64))
+# if defined(_WIN64)
 #   define PRIuPTR                     "llu"
 # else
 #  if defined(_LP64) || defined(_I32LPx) 
@@ -662,7 +662,7 @@ typedef struct DIR_ *DIR;
 #endif
 
 #ifndef PRIxPTR
-# if defined(defined(_WIN64))
+# if defined(_WIN64)
 #   define PRIxPTR                     "llx"
 # else
 #  if defined(_LP64) || defined(_I32LPx)
