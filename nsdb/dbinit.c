@@ -672,7 +672,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
     resultObj = Tcl_NewListObj(0, NULL);
     pools = Ns_ConfigGetSection("ns/db/pools");
 
-    for (i = 0u; pools != NULL && i < Ns_SetSize(pools); ++i) {
+    for (i = 0u; (pools != NULL) && (i < Ns_SetSize(pools)); ++i) {
         const char    *pool = Ns_SetKey(pools, i);
         Pool	      *poolPtr;
         
