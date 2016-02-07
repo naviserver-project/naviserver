@@ -376,12 +376,10 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int w
     scriptLength = strlen(script);
 
     cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
-    cbPtr->connChanPtr = connChanPtr;
+    memcpy(cbPtr->script, script, scriptLength + 1u);
     cbPtr->scriptLength = scriptLength;
     cbPtr->when = when;
     cbPtr->threadName = NULL;
-    memcpy(cbPtr->script, script, scriptLength + 1u);
-
     cbPtr->connChanPtr = connChanPtr;
     
     result = Ns_SockCallbackEx(connChanPtr->sockPtr->sock, NsTclConnChanProc, cbPtr,
