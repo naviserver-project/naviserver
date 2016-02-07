@@ -468,7 +468,7 @@ CreatePool(NsServer *servPtr, const char *pool)
 	if (*pool == '\0') {
 	    pool = "default";
 	}
-	strncat(name, pool, 120u);
+	strncat(name + 4, pool, 120u);
 	
 	for (j = 0; j < maxconns; j++) {
 	    char buffer[64];
