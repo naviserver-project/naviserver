@@ -478,13 +478,13 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
      */
     if (useGzip == NS_TRUE && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
 	struct stat gzStat;
-	const char *gzFile;
+	const char *gzFileName;
 
 	Tcl_DStringAppend(dsPtr, file, -1);
 	Tcl_DStringAppend(dsPtr, ".gz", 3);
-	gzFile = Tcl_DStringValue(dsPtr);
+	gzFileName = Tcl_DStringValue(dsPtr);
 
-	if (FastStat(gzFile, &gzStat) == NS_TRUE) {
+	if (FastStat(gzFileName, &gzStat) == NS_TRUE) {
 	    Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
 
 	    /*
@@ -498,9 +498,9 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 		 * file indicates the we have to try to refresh the
 		 * gzip file (rezip the source).
 		 */
-		result = GzipFile(Ns_GetConnInterp(conn), file, gzFile);
+		result = GzipFile(Ns_GetConnInterp(conn), file, gzFileName);
 		if (result == NS_OK) {
-		    (void)FastStat(gzFile, &gzStat);
+		    (void)FastStat(gzFileName, &gzStat);
 		}
 	    }
 	    if (gzStat.st_mtime >= connPtr->fileInfo.st_mtime) {
@@ -509,11 +509,11 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 		 * equal, so use it for delivery.
 		 */
 		connPtr->fileInfo = gzStat;
-		file = gzFile;
+		file = gzFileName;
 		Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
 	    } else {
 		Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file", 
-		       gzFile);
+		       gzFileName);
 	    }
 	}
     }
