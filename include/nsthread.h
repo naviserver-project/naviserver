@@ -612,65 +612,33 @@ typedef struct DIR_ *DIR;
  * Older Solaris version (2.8-) have older definitions
  * of pointer formatting macros.
  */
+#if !defined(__PRIPTR_PREFIX)
+# if defined(_LP64) || defined(_I32LPx) || defined(HAVE_64BIT)
+#  define __PRIPTR_PREFIX "l"
+# else
+#  define __PRIPTR_PREFIX
+# endif
+#endif
+
 
 #ifndef PRIdPTR
-# if defined(_WIN64)
-#  define PRIdPTR                      "lld"
-# else
-#  if defined(_LP64) || defined(_I32LPx)
-#   define PRIdPTR                     "ld"
-#  else
-#   define PRIdPTR                     "d"
-#  endif
-# endif
+# define PRIdPTR    __PRIPTR_PREFIX "d"
 #endif
 
 #ifndef PRIoPTR
-# if defined(_WIN64)
-#  define PRIoPTR                      "llo"
-# else
-#  if defined(_LP64) || defined(_I32LPx)
-#   define PRIoPTR                     "lo"
-#  else
-#   define PRIoPTR                     "o"
-#  endif
-# endif
+# define PRIoPTR    __PRIPTR_PREFIX "o"
 #endif
 
 #ifndef PRIiPTR
-# if defined(_WIN64)
-#  define PRIiPTR                     "lli"
-# else
-#  if defined(_LP64) || defined(_I32LPx)
-#   define PRIiPTR                     "li"
-#  else
-#   define PRIiPTR                     "i"
-#  endif
-# endif
+# define PRIiPTR    __PRIPTR_PREFIX "i"
 #endif
 
 #ifndef PRIuPTR
-# if defined(_WIN64)
-#   define PRIuPTR                     "llu"
-# else
-#  if defined(_LP64) || defined(_I32LPx) 
-#   define PRIuPTR                     "lu"
-#  else
-#   define PRIuPTR                     "u"
-#  endif
-# endif
+# define PRIuPTR    __PRIPTR_PREFIX "u"
 #endif
 
 #ifndef PRIxPTR
-# if defined(_WIN64)
-#   define PRIxPTR                     "llx"
-# else
-#  if defined(_LP64) || defined(_I32LPx)
-#   define PRIxPTR                     "lx"
-#  else
-#   define PRIxPTR                     "x"
-#  endif
-# endif
+# define PRIxPTR    __PRIPTR_PREFIX "x"
 #endif
 
 #if (!defined(INT2PTR)) && (!defined(PTR2INT))
