@@ -563,6 +563,16 @@ typedef struct DIR_ *DIR;
 # define PRIu64      "I64u"
 #endif
 
+#if !defined(SCNd64)
+# if !defined __PRI64_PREFIX
+#  if defined(HAVE_64BIT)
+#   define __PRI64_PREFIX  "l"
+#  else
+#   define __PRI64_PREFIX  "ll"
+#  endif
+# endif
+# define SCNd64      __PRI64_PREFIX "d"
+#endif
 /*
  * There is apparently no platform independent print format for items
  * of size_t. Therefore, we invent here our own variant, trying to
