@@ -350,7 +350,7 @@ locking is required.  This feature can be used to construct a new nsv
 array by first filling up an ordinary temporary Tcl array via some time
 consuming process and then swapping it into place as above.  While the
 new temporary array is being constructed, other threads can access the
-old array without delay or inconsistant data.  You can even reset a
+old array without delay or inconsistent data.  You can even reset a
 complete nsv array in one step with "reset".  For example, instead of:
 
 

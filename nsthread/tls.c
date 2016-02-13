@@ -77,7 +77,7 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
     
     Ns_MasterLock();
     if (nextkey == nsThreadMaxTls) {
-        Tcl_Panic("Ns_TlsAlloc: exceded max tls: %" PRIuPTR, nsThreadMaxTls);
+        Tcl_Panic("Ns_TlsAlloc: exceeded max tls: %" PRIuPTR, nsThreadMaxTls);
     }
     key = nextkey++;
     cleanupProcs[key] = cleanup;

@@ -903,7 +903,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
     } while ((size_t)n != size && ++trys < 10);
 
     if ((size_t)n != size) {
-        Tcl_AppendResult(interp, "inconsistant file: ", file, NULL);
+        Tcl_AppendResult(interp, "inconsistent file: ", file, NULL);
     } else {
         char *page;
 
