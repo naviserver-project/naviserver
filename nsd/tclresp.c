@@ -159,6 +159,8 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
         return TCL_ERROR;
     }
 
+    Ns_LogDeprecated(objv, 1, "ns_headers ...", NULL);
+
     itPtr->nsconn.flags |= CONN_TCLHTTP;
 
     if (charset != NULL && type != NULL) {
