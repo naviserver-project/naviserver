@@ -1,3 +1,196 @@
+=======================================
+NaviServer 4.99.10, released 2016-02-16
+=======================================
+
+Changes relative to 4.99.9
+ 32 files changed, 404 insertions(+), 123 deletions(-)
+
+Bug Fixes:
+- fix potential race condidion for configure value "connsperthread"
+- fix conflicting prototypes in nsdbpg (on some compilers)
+
+Documentation improvements:
+ * add list of deprecated tcl-commands to documentation
+ * fix spelling errors
+
+Code Changes:
+ * added log entries, when deprecated tcl-commands are called
+ * remove obsolete .cvsignore files from repo
+ * use SCNd64 instread of PRId64 for scanning numbers
+ * further cleanup of the compatibility layer of the PRI*PTR macros
+ * add parallel checks and inconclusive results to cppcheck options
+ * use native bool definition when available
+ * add target to makefile for testing under lldb
+ * further code cleanup
+
+Important changes in modules:
+ * nsdbpg: fix conflicting prototype
+ * nsssl: don't crash when fetching obtaining DH parameters from pem file fails
+
+
+======================================
+NaviServer 4.99.9, released 2016-01-11
+======================================
+
+Changes relative to 4.99.8
+ 146 files changed, 5595 insertions(+), 4389 deletions(-)
+
+New Features:
+
+  * New command "ns_urlspace": this command allows to attach and
+    retrieve arbitrary data to URLs in a hierarchical manner form the
+    Tcl level. The command allows e.g.  to write ns-perm like access
+    control in Tcl without much hassle.
+
+       ns_urlspace set ?-id i? ?-key k? ?-noinherit? /url/ string
+       ns_urlspace get ?-exact? ?-id i? ?-key k? ?-noinherit? /url/
+       ns_urlspace list
+       ns_urlspace new
+       ns_urlspace unset ?-id i? ?-key k? ?-noinherit? ?-recurse? /url/
+
+  * Added ability to optionally minify css and js files on the fly
+    when gzipped content is requested. This is an extension of the
+    gzip_static/gzip_refresh feature (for details see "fastpath" section
+    in "ns_return" man page.
+
+  * New statistics from nsdb interface: "ns_db stats" returns
+    number and time of handle and sql operations (can be used
+    in connection with e.g. munin for monitoring db health)
+
+  * Added ability to pass env to ns_proxy (for details see
+    man page of ns_proxy)
+
+  * Added ability to keep "Host:" header in http client requests
+    (for details, see man page of ns_http)
+
+  * Improved logging support:
+
+    - Added log colorization based on ANSI color codes. This feature
+      makes it easier to spot error and warning in the error log
+      file. Log colorization is turned on via configuration parameter
+      "logcolorize" in the "ns/parameters" section in the NaviServer
+      config file. Fine-tuning is possible via "logprefixcolor",
+      "logprefixintensity" and per severity via
+      
+          ns_logctl severity severity-level ?-color color? \
+             ?-intensity intensity? ?bool?
+
+      When viewing a colorized error.log with less, use "less -r".
+
+    - Added ability to log selectively SQL statements depending on
+      pool and duration of the SQL command (configuration parameter
+      "logMinDuration" for per-pool configuration sections,
+      new command "ns_db logminduration ...").
+      
+    - Provide context in error log entries, when Tcl eval raises
+      an error (this allows better distinction from where the
+      exception was raised)
+
+    - Added TCP_FASTOPEN support for Mac OS X 10.11
+
+Bug Fixes:
+  * the urlspace code now can be compiled with and without
+    __URLSPACE_OPTIMIZE__. The performance difference is
+    probably for most application little.
+  * fix "floating-point" format for Ns_ObjvTime():
+    1.05 was interpreted as 1.5 before
+  * fix binary handling and content-type in http client
+    requests (e.g. for -body in ns_http command)
+  * fix bad interaction between chunked encoding and gzipped
+    content (when closing gzip stream)
+  * Added config option for disabling directorylisting
+    (fastpath config option "directorylisting none")
+  * fix quoted entries in access log, when quotes are contained
+    in the content
+  * Don't use TCP_CORK on UDP sockets
+  * Ensure list nature of errorCode is preserved in proxy calls
+  * Remove potential xss attack (mostly false positives) on error
+    messages that are directly generated from user strings by NaviServer
+  * Improved "signal lost" handling (timeout happens, but connPtr is
+    provided). On some sites the previous approach was leading to a
+    state stuck in a while in the error state.
+  * Fixed off-by-one error in ns_server.  NsTclServerObjCmd was
+    incorrectly checking argc after parsing options. As a result,
+    "ns_server -pool {}" (pool given, no subcommand) would segfault.
+
+
+Documentation improvements:
+  * fix obsolete documentation for ns_register_proc
+  * new man page for "ns_urlspace"
+  * improve documentation for main-features, ns_cache, ns_connchan,
+    ns_db, ns_http, ns_job, ns_log, ns_normalizepath, ns_proxy,
+    ns_register, ns_return, ns_sleep, ns_time, nsv,
+  * include logo of generated html docs via css to ease Debian
+    packaging (silence lintian)
+
+
+Tcl API Changes:
+  * improve compatibility of ns_eval with Tcl's eval.
+  * new API functions
+    - ns_urlspace set|get|list|new|unset ...
+    - ns_logctl severity severity-level ?-color color? ?-intensity intensity? ?bool?
+    - ns_db logminduration ...
+    - ns_db stats
+    - ns_proxy config ... -env ns-set ...
+    - ns_http queue .... -keep_host_header
+    
+  
+C API Changes:
+  * Added Ns_GetTimeFromString: provide API callable from config file to
+    convert strings to ns_time (supporting "sec:usec" and "sec.fraction"
+    formats)
+  * Mark broken and unused function Ns_UrlSpecificGetFast() as deprecated
+  * Added Ns_(No)CloseOnExec implementation for Win32
+  * Added Ns_SetIUpdate()
+  * Ns_Cancel(), Ns_Pause(), Ns_Resume() return "bool" instead of "int"
+
+
+Incompatible API Changes:
+  * Potential incompatibility: "ns_eval" behaves now closer to
+    Tcl "eval" (e.g. allows to define procs with comments)
+
+
+Configuration Changes:
+  * Improved sample configuration for OpenACS, sample-config
+    and nsssl
+  * Added cppcheck target to Makefile.module
+
+
+Code Changes:
+  * Updated list of known HTTP status codes  
+  * Code cleanup:
+    - use real boolean type when C99 is available
+      (necessary for modules implemented in C++)
+    - add const declarations
+    - reduce implicit signed/unsigned conversions
+    - reduce variable scopes
+    - make code more uniform
+    - better handling of nonnull asserts
+      (don't raise warnings for these cases
+       for most-recent gcc6 versions, when -pedantic is used)
+    - prefer single returns from functions when possible
+    - use NaviServer argv passing Ns_ParseObjv() on more
+      occasions
+    - replaced obsolete function 'asctime' by strftime
+    - added fallback for definition of L_tmpnam, since the fallback
+      from Tcl was removed on 2015-07-15
+    - various changes for further silencing of static checkers
+      (cppcheck and clang static checker)
+ * Extended regression tests
+
+
+Important changes in modules:
+ * nsdbpg: fixes for "ns_pg blob*"
+ * nsstats: added db-pool statistics, improved formatting
+ * nsssl:
+   - improved binary handling for "-body" (client procs),
+   - ability to keep "Host:" header field
+ * nsdbpg, nssmtpd, nsdns, nssnmp, nsudp, nsphp,nsdhcpd, nsssl, nsdbi:
+   - code cleanup
+ * changes in modules:  
+    13 files changed, 116 insertions(+), 856 deletions(-)
+
+
 ======================================
 NaviServer 4.99.8, released 2015-04-13
 ======================================
