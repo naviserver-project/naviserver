@@ -96,7 +96,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 		    * connection is already closed due to potentially
 		    * unmmapped memory.
 		    */
-		   (connPtr->flags & NS_CONN_CLOSED ) == 0U
+		   (connPtr->flags & NS_CONN_CLOSED ) == 0u
 		   && (form = connPtr->reqPtr->content) != NULL
 		   ) {
             Tcl_DString     bound;
