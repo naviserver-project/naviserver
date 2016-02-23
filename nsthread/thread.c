@@ -349,16 +349,16 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
             if (proc != NULL) {
                 (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
             } else {
-                /* 
-                 * The only legal way to print a function pointer is by
-                 * printing the bytes via casting to a character array.
-                 */
-                unsigned char *p = (unsigned char *)thrPtr->proc;
+                unsigned char addrBuffer[sizeof(thrPtr->proc)];
                 int i;
-                
+
+                /*
+                 * Obtain the hex value of the function pointer;
+                 */
+                memcpy(addrBuffer, &thrPtr->proc, sizeof(thrPtr->proc));
                 Tcl_DStringAppend(dsPtr, " 0x", 3);
-                for (i = 0; i < sizeof(thrPtr->proc); i++) {
-                    written = snprintf(buf, sizeof(buf), "%02x", p != NULL ? p[i] : 0);
+                for (i = sizeof(thrPtr->proc) - 1; i >= 0 ; i--) {
+                    written = snprintf(buf, sizeof(buf), "%02x", addrBuffer[i]);
                     Tcl_DStringAppend(dsPtr, buf, written);
                 }
                 written = snprintf(buf, sizeof(buf), " %p", thrPtr->arg);
