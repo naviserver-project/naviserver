@@ -76,14 +76,19 @@ namespace eval ::nstest {
 	} else {
 	    ns_set icput $hdrs Host $host:$port
 	}
-
+	if {[string is true $getbinary]} {
+	    set binaryFlag "-binary"
+	} else {
+	    set binaryFlag ""
+	}
+	
 	log url https://$host:$port/$url
 	set r [ns_ssl queue -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
 	
 	ns_set cleanup $hdrs 
 	set hdrs [ns_set create]
 	
-	ns_ssl wait -result body -status status  -headers $hdrs $r
+	ns_ssl wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
 	log status $status
 
 	set response [list $status]
