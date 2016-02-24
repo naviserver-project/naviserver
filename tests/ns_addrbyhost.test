@@ -32,11 +32,10 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-
-
 test ns_addrbyhost-1.1 {good host} -body {
-    ns_addrbyhost localhost
-} -result 127.0.0.1
+    set addr [ns_addrbyhost localhost]
+    expr {[string match *.*.*.* $addr] || [string match *:* $addr]}
+} -result 1
 
 test ns_addrbyhost-1.2 {bad host} -body {
     ns_addrbyhost this_should_not_resolve

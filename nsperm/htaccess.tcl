@@ -93,6 +93,8 @@ proc ns_perm_load { file url callback } {
 }
 
 proc ns_perm_adduser { file url line } {
+    
+    ns_log debug "--- ns_perm_adduser [list $file $url $line]"
 
     if { [llength $line] < 2 } {
        return
@@ -116,6 +118,7 @@ proc ns_perm_adduser { file url line } {
 }
 
 proc ns_perm_addperm { file url line } {
+    ns_log debug "--- ns_perm_addperm [list $file $url $line]"
 
     set op [lindex $line 0]
     if { $op != "allow" && $op != "deny" } {
@@ -139,15 +142,15 @@ proc ns_perm_addperm { file url line } {
 
 ns_runonce {
 
-   set path ns/server/[ns_info server]/module/nsperm
+    set path ns/server/[ns_info server]/module/nsperm
 
-   if { [ns_config -bool -set $path htaccess 0] } {
-      nsv_set nsperm lock [ns_mutex create]
-      nsv_set nsperm passwdfile [ns_config -set $path passwdfile [file join [ns_info home] modules nsperm passwd]]
-      ns_register_filter preauth GET /* ns_perm_filter
+    if { [ns_config -bool -set $path htaccess 0] } {
+	nsv_set nsperm lock [ns_mutex create]
+	nsv_set nsperm passwdfile [ns_config -set $path passwdfile [file join [ns_info home] modules nsperm passwd]]
+	ns_register_filter preauth GET /* ns_perm_filter
 
-      ns_log Notice nsperm: enabling .htaccess support
-   }
+	ns_log Notice "nsperm: enabling .htaccess support"
+    }
 
 }
 

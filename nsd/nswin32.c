@@ -776,6 +776,64 @@ ns_mkstemp(char *charTemplate)
     return fd;
 }
 
+const char *
+inet_ntop(int af, const void *src, char *dst, socklen_t size)
+{
+    return InetNtop(af, src, dst, size);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockAddrEqual --
+ *
+ *      Compare two sockaddr structures. This is just 
+ *      a helper for ns_sockpair
+ *
+ * Results:
+ *      NS_TRUE if the two structures are equal
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static bool
+SockAddrEqual(struct sockaddr *saPtr1, struct sockaddr *saPtr2)
+{
+#ifdef HAVE_IPV6
+    if (saPtr1->sa_family != saPtr2->sa_family) {
+        return NS_FALSE;
+    }
+    if (saPtr1->sa_family == AF_INET) {
+        if (((struct sockaddr_in *)saPtr1)->sin_addr.s_addr !=
+            ((struct sockaddr_in *)saPtr2)->sin_addr.s_addr) {
+            return NS_FALSE;
+        }
+    } else if (saPtr1->sa_family == AF_INET6) {
+        struct in6_addr *sa1Bits = &(((struct sockaddr_in6 *)saPtr1)->sin6_addr);
+        struct in6_addr *sa2Bits = &(((struct sockaddr_in6 *)saPtr2)->sin6_addr);
+        int i;
+        
+        for (i = 0; i < 4; i++) {
+            if (sa1Bits->s6_addr32[i] != sa2Bits->s6_addr32[i]) {
+                return NS_FALSE;
+            }
+        }
+    } else {
+        return NS_FALSE;
+    }
+#else
+    if (((struct sockaddr_in *)saPtr1)->sin_addr.s_addr !=
+        ((struct sockaddr_in *)saPtr2)->sin_addr.s_addr) {
+        return NS_FALSE;
+    }
+#endif
+    return NS_TRUE;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -798,31 +856,31 @@ int
 ns_sockpair(NS_SOCKET socks[2])
 {
     NS_SOCKET sock;
-    struct sockaddr_in ia[2];
+    struct NS_SOCKADDR_STORAGE ia[2];
     int size;
 
-    size = (int)sizeof(struct sockaddr_in);
-    sock = Ns_SockListen("127.0.0.1", 0);
+    size = (int)sizeof(struct NS_SOCKADDR_STORAGE);
+    sock = Ns_SockListen(NS_IP_LOOPBACK, 0);
     if (sock == NS_INVALID_SOCKET ||
         getsockname(sock, (struct sockaddr *) &ia[0], &size) != 0) {
         return -1;
     }
-    size = (int)sizeof(struct sockaddr_in);
-    socks[1] = Ns_SockConnect("127.0.0.1", (int) ntohs(ia[0].sin_port));
+    size = (int)sizeof(struct NS_SOCKADDR_STORAGE);
+    socks[1] = Ns_SockConnect(NS_IP_LOOPBACK, (int) NsSockGetPort((struct sockaddr *)&ia[0]));
     if (socks[1] == NS_INVALID_SOCKET ||
         getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
         ns_sockclose(sock);
         return -1;
     }
-    size = (int)sizeof(struct sockaddr_in);
+    size = (int)sizeof(struct NS_SOCKADDR_STORAGE);
     socks[0] = accept(sock, (struct sockaddr *) &ia[0], &size);
     ns_sockclose(sock);
     if (socks[0] == NS_INVALID_SOCKET) {
         ns_sockclose(socks[1]);
         return -1;
     }
-    if (ia[0].sin_addr.s_addr != ia[1].sin_addr.s_addr ||
-        ia[0].sin_port != ia[1].sin_port) {
+    if (!(SockAddrEqual((struct sockaddr *)&ia[0], (struct sockaddr *)&ia[1])) ||
+        Ns_SockaddrGetPort((struct sockaddr *)&ia[0]) != Ns_SockaddrGetPort((struct sockaddr *)&ia[1])) {
         ns_sockclose(socks[0]);
         ns_sockclose(socks[1]);
         return -1;

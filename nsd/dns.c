@@ -245,6 +245,115 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     return status;
 }
 
+
+/**********************************************************************
+ * Begin IPv6
+ **********************************************************************/
+#ifdef HAVE_IPV6
+
+/*
+ *----------------------------------------------------------------------
+ * GetHost, GetAddr --
+ *
+ *      Perform the actual lookup by host or address.
+ *
+ * Results:
+ *      If a name can be found, the function returns NS_TRUE; otherwise,
+ *      it returns NS_FALSE.
+ *
+ * Side effects:
+ *      Result is appended to dsPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static bool
+GetHost(Ns_DString *dsPtr, const char *addr)
+{
+    int    r;
+    struct sockaddr_storage sa;
+    struct sockaddr        *saPtr = (struct sockaddr *)&sa;
+    char  *host = NULL;
+    bool   result = NS_FALSE;
+
+    //fprintf(stderr, "# GetHost: addr <%s>\n", addr);
+    r = ns_inet_pton(saPtr, addr);
+    if (r > 0) {
+        char buf[NI_MAXHOST];
+        //fprintf(stderr, "# GetHost: .... r %d familiy %d\n", r, sa.ss_family);
+        int err = getnameinfo(saPtr,
+                              sa.ss_family == AF_INET6 ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+                              buf, sizeof(buf),
+                              NULL, 0, NI_NAMEREQD);
+        if (err != 0) {
+            Ns_Log(Error, "dns: getnameinfo failed for addr <%s>: %s", addr, gai_strerror(err));
+        } else {
+            host = buf;
+        }
+
+        if (host != NULL) {
+            Ns_DStringAppend(dsPtr, host);
+            result = NS_TRUE;
+        }
+    }
+    //fprintf(stderr, "# GetHost %s -> %d\n", addr, result);
+    return result;
+}
+
+static bool
+GetAddr(Ns_DString *dsPtr, const char *host)
+{
+    struct addrinfo hints;
+    struct addrinfo *res, *ptr;
+    int result;
+    bool status = NS_FALSE;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_flags = AI_ADDRCONFIG;
+    hints.ai_socktype = SOCK_STREAM;
+
+    result = getaddrinfo(host, NULL, &hints, &res);
+    if (result == 0) {
+        ptr = res;
+        while (ptr != NULL) {
+            char ipString[NS_IPADDR_SIZE];
+
+            /*
+             * Getaddrinfo with flag AF_UNSPEC returns both AF_INET and
+             * AF_INET6 addresses.
+             */
+            /*fprintf(stderr, "##### getaddrinfo <%s> -> %d family %s\n",
+                    host,
+                    ptr->ai_family,
+                    (ptr->ai_family == AF_INET6) ? "AF_INET6" : "AF_INET");*/
+            if (ptr->ai_family != AF_INET && ptr->ai_family != AF_INET6) {
+                Ns_Log(Error, "dns: getaddrinfo failed for %s: unknown address family %d",
+                       host, ptr->ai_family);
+                freeaddrinfo(res);
+                return NS_FALSE;
+            }
+            Tcl_DStringAppendElement(dsPtr,
+                                     ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString)));
+                
+            status = NS_TRUE;
+            ptr = ptr->ai_next;
+        }
+        freeaddrinfo(res);
+        //fprintf(stderr, "##### getaddrinfo for host <%s> -> %s\n", host, dsPtr->string);
+
+    } else if (result != EAI_NONAME) {
+        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
+               gai_strerror(result));
+    }
+    
+    return status;
+}
+    
+#else
+/**********************************************************************
+ * Begin no IPv6
+ **********************************************************************/
 
 /*
  *----------------------------------------------------------------------
@@ -360,11 +469,10 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     }
     return status;
 }
-
 #endif
 
-#if defined(HAVE_GETADDRINFO)
 
+#if defined(HAVE_GETADDRINFO)
 static bool
 GetAddr(Ns_DString *dsPtr, const char *host)
 {
@@ -382,11 +490,15 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     hints.ai_socktype = SOCK_STREAM;
 
     result = getaddrinfo(host, NULL, &hints, &res);
+    //fprintf(stderr, "### getaddrinfo called for host <%s> returns %d\n", host, result);
     if (result == 0) {
         ptr = res;
         while (ptr != NULL) {
-            Tcl_DStringAppendElement(dsPtr,
-                ns_inet_ntoa(((struct sockaddr_in *) ptr->ai_addr)->sin_addr));
+            char ipString[NS_IPADDR_SIZE];
+            
+            ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString));
+            //fprintf(stderr, "### getaddrinfo ... got addr <%s>\n", ipString);
+            Tcl_DStringAppendElement(dsPtr, ipString);
             status = NS_TRUE;
             ptr = ptr->ai_next;
         }
@@ -442,8 +554,12 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     } else {
         int i = 0;
         while ((ptr = (struct in_addr *) he.h_addr_list[i++]) != NULL) {
+            /*
+             * This is legacy code and works probably just under IPv4, IPv6 requires
+             * HAVE_GETADDRINFO.
+             */
             ia.s_addr = ptr->s_addr;
-            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
+            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa((struct sockaddr *)(ptr->ai_addr)));
             status = NS_TRUE;
         }
     }
@@ -475,8 +591,12 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     } else {
         int i = 0;
         while ((ptr = (struct in_addr *) he->h_addr_list[i++]) != NULL) {
+            /*
+             * This is legacy code and works probably just under IPv4, IPv6 requires
+             * HAVE_GETADDRINFO.
+             */
             ia.s_addr = ptr->s_addr;
-            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
+            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa((struct sockaddr *)(ptr->ai_addr)));
             status = NS_TRUE;
         }
     }
@@ -486,6 +606,17 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 }
 
 #endif
+
+/* 
+ * End no IPv6
+ */
+
+#endif /* HAVE_IPV6 */
+
+
+
+
+
 
 
 /*

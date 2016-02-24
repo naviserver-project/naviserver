@@ -77,7 +77,6 @@ typedef enum {
 
 #define MAX_URLSPACES                  16
 #define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
-#define NS_IPADDR_SIZE                 16u
 
 #define CONN_TCLFORM                   0x01U  /* Query form set is registered for interp */
 #define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
@@ -345,12 +344,12 @@ typedef struct AdpCode {
  */
 
 typedef struct Request {
-    struct Request *nextPtr;    /* Next on free list */
-    Ns_Request request;         /* Parsed request line */
-    Ns_Set *headers;            /* Input headers */
-    Ns_Set *auth;               /* Auth user/password and parameters */
-    char peer[NS_IPADDR_SIZE];  /* Client peer address */
-    int port;                   /* Client peer port */
+    struct Request *nextPtr;     /* Next on free list */
+    Ns_Request request;          /* Parsed request line */
+    Ns_Set *headers;             /* Input headers */
+    Ns_Set *auth;                /* Auth user/password and parameters */
+    char peer[NS_IPADDR_SIZE];   /* Client peer address */
+    int port;                    /* Client peer port */
 
     /*
      * The following pointers are used to access the
@@ -486,10 +485,10 @@ typedef struct Sock {
      * Visible in Ns_Sock.
      */
 
-    struct Driver      *drvPtr;
-    NS_SOCKET           sock;
-    struct sockaddr_in  sa;              /* Actual peer address */
-    void               *arg;             /* Driver context. */
+    struct Driver         *drvPtr;
+    NS_SOCKET              sock;
+    struct NS_SOCKADDR_STORAGE  sa;              /* Actual peer address */
+    void                  *arg;             /* Driver context. */
 
     /*
      * Private to Sock.

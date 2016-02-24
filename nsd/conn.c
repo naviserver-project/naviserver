@@ -471,16 +471,17 @@ Ns_ConnPeer(const Ns_Conn *conn)
  */
 
 char *
-Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
+Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr)
 {
     Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    connPtr = ((Conn *)conn);
-    connPtr->reqPtr->port = (int)ntohs(saPtr->sin_port);
-    strncpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr), NS_IPADDR_SIZE);
+    connPtr = (Conn *)conn;
+    
+    connPtr->reqPtr->port = Ns_SockaddrGetPort(saPtr);
+    ns_inet_ntop(saPtr, connPtr->reqPtr->peer, NS_IPADDR_SIZE);
     
     return connPtr->reqPtr->peer;
 }

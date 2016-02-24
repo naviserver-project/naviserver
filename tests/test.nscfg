@@ -10,17 +10,27 @@
 ns_section "test"
 ns_param   home            [pwd]/tests
 
+set loopback [expr {[ns_info ipv6] ? "::1" : "127.0.0.1"}]
+
 for {set port 8000} {$port < 8100} {incr port} {
     if {![catch {
-        close [ns_socklisten 127.0.0.1 $port]
+	close [ns_socklisten $loopback $port]
     } msg]} {
         break
     }
 }
+
 ns_param   listenport	    [expr {$port < 8100 ? $port : 0}]
-ns_param   listenurl	    http://127.0.0.1:[ns_config test listenport]
+ns_param   loopback	    $loopback
 
+if {[ns_info ipv6]} {
+    ns_param   listenurl    http://\[$loopback\]:[ns_config test listenport]
+} else {
+    ns_param   listenurl    http://$loopback:[ns_config test listenport]
+}
 
+ns_log notice "configure LOOPBACK  $loopback"
+ns_log notice "configure LISTENURL [ns_config test listenurl]"
 #
 # The following are for the tests in tests/ns_config.test.
 #
@@ -46,7 +56,7 @@ if {[ns_config "test" listenport]} {
 ns_section "ns/module/nssock"
 ns_param   port            [ns_config "test" listenport]
 ns_param   hostname        localhost
-ns_param   address         127.0.0.1
+ns_param   address         [ns_config "test" loopback]
 ns_param   defaultserver   test
 # The following odd buffer sizes chose to flush out bugs...
 ns_param   maxline         1024

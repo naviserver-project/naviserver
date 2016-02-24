@@ -206,7 +206,8 @@ typedef enum {
 #define NS_DRIVER_UDP              0x08U /* UDP, can't use stream socket options */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
-#define NS_DRIVER_VERSION_2        2    /* Current version. */
+#define NS_DRIVER_VERSION_2        2    /* IPv4 only */
+#define NS_DRIVER_VERSION_3        3    /* IPv4 and IPv6, Current version. */
 
 /*
  * The following are valid Tcl interp traces types.
@@ -484,10 +485,10 @@ typedef struct Ns_Driver {
  */
 
 typedef struct Ns_Sock {
-    Ns_Driver          *driver;
-    NS_SOCKET           sock;           /* Connection socket */
-    struct sockaddr_in  sa;             /* Actual peer address */
-    void               *arg;            /* Driver context. */
+    Ns_Driver                  *driver;
+    NS_SOCKET                   sock;     /* Connection socket */
+    struct NS_SOCKADDR_STORAGE  sa;       /* Actual peer address */
+    void                       *arg;      /* Driver context. */
 } Ns_Sock;
 
 /*
@@ -523,7 +524,7 @@ typedef NS_SOCKET
 
 typedef NS_DRIVER_ACCEPT_STATUS
 (Ns_DriverAcceptProc)(Ns_Sock *sock, NS_SOCKET listensock,
-                      struct sockaddr *sockaddr, socklen_t *socklen)
+                      struct sockaddr *saPtr, socklen_t *socklen)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef ssize_t
@@ -1069,7 +1070,7 @@ NS_EXTERN const char *
 Ns_ConnPeer(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
@@ -1292,6 +1293,7 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 NS_EXTERN bool
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  * driver.c:
@@ -2550,7 +2552,7 @@ Ns_SockListenUnix(const char *path, int backlog, int mode)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBindUdp(const struct sockaddr_in *saPtr)
+Ns_SockBindUdp(const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
@@ -2667,11 +2669,11 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_BindSock(const struct sockaddr_in *saPtr) 
+Ns_BindSock(const struct sockaddr *saPtr) 
     NS_GNUC_DEPRECATED_FOR(Ns_SockBind);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBind(const struct sockaddr_in *saPtr)
+Ns_SockBind(const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
@@ -2715,10 +2717,6 @@ NS_EXTERN void
 Ns_SockSetDeferAccept(NS_SOCKET sock, int secs);
 
 NS_EXTERN int
-Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
 Ns_SockCloseLater(NS_SOCKET sock);
 
 NS_EXTERN char *
@@ -2749,6 +2747,48 @@ ns_sockdup(NS_SOCKET sock);
 NS_EXTERN int
 ns_socknbclose(NS_SOCKET sock);
 #endif
+
+/*
+ * sockaddr.c:
+ */
+
+NS_EXTERN void
+Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *maskedAddr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN int
+ns_inet_pton(struct sockaddr *saPtr, const char *addr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN const char *
+ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN unsigned short
+Ns_SockaddrGetPort(const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
+    NS_GNUC_NONNULL(1);
+
+socklen_t
+Ns_SockaddrGetSockLen(const struct sockaddr *saPtr)
+        NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+
 
 /*
  * sockcallback.c:
@@ -2960,6 +3000,10 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 NS_EXTERN int
 Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2); 
+
+NS_EXTERN void
+Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 /*
  * tclmisc.c

@@ -128,7 +128,8 @@ ns_param        maxbackup           7        ;# default: 10; max number of backu
 
 ns_section     "ns/server/default/module/nssock"
 ns_param        port                8080
-ns_param        address             0.0.0.0
+#ns_param        address             0.0.0.0
+ns_param        address             ::0   ;# ::1 corresponds to 127.0.0.1, ::0 is the "unspecified address"
 ns_param        hostname            [ns_info hostname]
 ns_param        maxinput            [expr 1024*1024*10] ;# default: 1024*1024, maximum size for inputs (uploads)
 ns_param        readahead           [expr 1024*1024*1]  ;# default: 16384; size of readahead for requests
@@ -151,7 +152,9 @@ ns_param        keepalivemaxdownloadsize 1000000 ;# 0, don't allow keep-alive fo
 
 ns_section     "ns/server/default/module/nscp"
 ns_param        port                4080
-ns_param        address             127.0.0.1
+#ns_param        address             127.0.0.1
+ns_param        address             ::1   ;# ::1 corresponds to 127.0.0.1, ::0 is the "unspecified address"
+
 
 ns_section     "ns/server/default/module/nscp/users"
 ns_param        user                "::"

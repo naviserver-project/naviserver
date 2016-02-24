@@ -125,7 +125,7 @@ NsInitInfo(void)
         assert(addr.length < (int)sizeof(nsconf.address));
         memcpy(nsconf.address, addr.string, (size_t)addr.length + 1u);
     } else {
-        memcpy(nsconf.address, "0.0.0.0", 8u);
+        memcpy(nsconf.address, NS_IP_UNSPECIFIED, strlen(NS_IP_UNSPECIFIED));
     }
     Ns_DStringFree(&addr);
 }

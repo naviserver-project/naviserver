@@ -161,8 +161,8 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             /*
              * Look for a port number, which is optional.
              */
-
-            end = strchr(url, ':');
+            Ns_HttpParseHost(url, phost, &end);
+                
             if (end != NULL) {
 
                 /*

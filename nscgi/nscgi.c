@@ -826,8 +826,9 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     s = Ns_ConnLocationAppend(conn, dsPtr);
     s = strchr(s, ':');
-    s += 3;               /* Get past the protocol://  */
-    p = strchr(s, ':');   /* Get to the port number    */
+    s += 3;                        /* Get past the protocol://  */
+    Ns_HttpParseHost(s, NULL, &p); /* Get to the port number    */
+
     if (p != NULL) {
 	int j;
 

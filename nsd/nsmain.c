@@ -1005,7 +1005,7 @@ UsageError(const char *msg, ...)
         "  -u  run as <user>\n"
         "  -g  run as <group>\n"
         "  -r  chroot to <path>\n"
-        "  -b  bind <address:port>\n"
+        "  -b  bind <address:port>  (Example: 192.168.0.1:80,[::1]:80)\n"
         "  -B  bind address:port list from <file>\n"
 #endif
         "  -s  use server named <server> in config file\n"

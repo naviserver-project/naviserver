@@ -62,7 +62,7 @@ typedef struct Sess {
     const char *user;
     int id;
     NS_SOCKET sock;
-    struct sockaddr_in sa;
+    struct NS_SOCKADDR_STORAGE sa;
 } Sess;
 
 /*
@@ -136,7 +136,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
-    addr = Ns_ConfigString(path, "address", "127.0.0.1");
+    addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
     port = Ns_ConfigInt(path, "port", 2080);
 
     if ((addr == NULL) || (port <= 0 ))  {
@@ -178,7 +178,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * In default local mode just create empty user without password
      */
 
-    if (set == NULL && STREQ(addr, "127.0.0.1")) {
+    if (set == NULL && STREQ(addr, NS_IP_LOOPBACK)) {
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
@@ -359,10 +359,10 @@ EvalThread(void *arg)
     Tcl_Interp *interp;
     Tcl_DString ds;
     Tcl_DString unameDS;
-    char buf[64];
-    int ncmd, stop;
-    size_t len;
-    Sess *sessPtr = arg;
+    char        buf[64], ipString[NS_IPADDR_SIZE];
+    int         ncmd, stop;
+    size_t      len;
+    Sess       *sessPtr = arg;
     const char *res, *server = sessPtr->modPtr->server;
 
     /*
@@ -374,7 +374,9 @@ EvalThread(void *arg)
     Tcl_DStringInit(&unameDS);
     snprintf(buf, sizeof(buf), "-nscp:%d-", sessPtr->id);
     Ns_ThreadSetName(buf);
-    Ns_Log(Notice, "nscp: %s connected", ns_inet_ntoa(sessPtr->sa.sin_addr));
+    Ns_Log(Notice, "nscp: %s connected",
+           ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
+
     if (Login(sessPtr, &unameDS) == 0) {
 	goto done;
     }
@@ -446,7 +448,8 @@ done:
     if (interp != NULL) {
     	Ns_TclDeAllocateInterp(interp);
     }
-    Ns_Log(Notice, "nscp: %s disconnected", ns_inet_ntoa(sessPtr->sa.sin_addr));
+    Ns_Log(Notice, "nscp: %s disconnected",
+           ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
     ns_sockclose(sessPtr->sock);
     ns_free(sessPtr);
 }

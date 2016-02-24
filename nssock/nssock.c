@@ -88,7 +88,7 @@ Ns_ModuleInit(const char *server, const char *module)
     cfg->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
     cfg->nodelay = Ns_ConfigBool(path, "nodelay", NS_FALSE);
 
-    init.version = NS_DRIVER_VERSION_2;
+    init.version = NS_DRIVER_VERSION_3;
     init.name = "nssock";
     init.listenProc = Listen;
     init.acceptProc = Accept;

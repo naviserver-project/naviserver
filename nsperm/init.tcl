@@ -44,16 +44,17 @@ proc init_nsperm { } {
             set line [gets $file]
             if {[string range $line 0 0] != "#"} {
                 if {$line ne ""} {
-                    set list [split $line :,]
-                    if {[llength $list] < 2} {
+		    set pos [string first : $line]
+                    if {$pos < 0} {
                         ns_log error "init_nsperm: bad line in $filename: $line"
                     } else {
-                        set user [lindex $list 0]
-                        set addrs [lindex $list 1]
-                        foreach addr $addrs {
+                        set user [string trim [string range $line 0 $pos-1]]
+                        set addrs [string trim [string range $line $pos+1 end]]
+                        foreach addr [split $addrs ,] {
                             set addr [string trim $addr]
                             lappend _ns_allow($user) $addr
                         }
+			ns_log notice "... user <$user> addrs <$addrs> --> $_ns_allow($user)"
                     }
                 }
             }
@@ -70,13 +71,13 @@ proc init_nsperm { } {
             set line [gets $file]
             if {[string range $line 0 0] != "#"} {
                 if {$line ne ""} {
-                    set list [split $line :,]
-                    if {[llength $list] < 2} {
+		    set pos [string first : $line]
+                    if {$pos < 0} {
                         ns_log error "init_nsperm: bad line in $filename: $line"
                     } else {
-                        set user [lindex $list 0]
-                        set addrs [lindex $list 1]
-                        foreach addr $addrs {
+			set user [string trim [string range $line 0 $pos-1]]
+                        set addrs [string trim [string range $line $pos+1 end]]
+                        foreach addr [split $addrs ,] {
                             set addr [string trim $addr]
                             if {[info exists _ns_allow($user)]} {
                                 ns_log error "init_nsperm: both allow and deny entries exist for user \"$user\""
@@ -122,7 +123,8 @@ proc init_nsperm { } {
                           append params " [list $a]"
                         }
                     }
-                    if {[catch { eval ns_perm adduser $flag $params } errmsg]} {
+		    ns_log notice "PASSWD call <ns_perm adduser $flag $params>"
+                    if {[catch { ns_perm adduser {*}$flag {*}$params } errmsg]} {
                         ns_log Error init_nsperm: $errmsg
                     }
                 }

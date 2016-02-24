@@ -411,8 +411,11 @@ Ns_StrIsHost(const char *chars)
 {
     register const char *p;
 
+    NS_NONNULL_ASSERT(chars != NULL);
+
     for (p = chars; *p != '\0'; p++) {
 	if (CHARTYPE(alnum, *p) == 0 && *p != ':'
+            && *p != '[' && *p != ']'                           /* IP-literal notation */
             && (*p != '.' || (p[0] == '.' && p[1] == '.'))) {
 	    
             return NS_FALSE;

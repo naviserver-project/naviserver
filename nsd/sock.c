@@ -510,31 +510,50 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
  */
 
 NS_SOCKET
-Ns_BindSock(const struct sockaddr_in *saPtr)
+Ns_BindSock(const struct sockaddr *saPtr)
 {
     return Ns_SockBind(saPtr);
 }
 
 NS_SOCKET
-Ns_SockBind(const struct sockaddr_in *saPtr)
+Ns_SockBind(const struct sockaddr *saPtr)
 {
     NS_SOCKET sock;
-    int       n;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    //Ns_LogSockaddr(Notice, "Ns_SockBind called", (const struct sockaddr *) saPtr);
+
+    sock = socket(saPtr->sa_family, SOCK_STREAM, 0);
+
+    //fprintf(stderr, "# Ns_SockBind socket() returned %d requested port %d\n",
+    //        sock, Ns_SockaddrGetPort((const struct sockaddr *)saPtr));
 
     if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);
     }
     if (sock != NS_INVALID_SOCKET) {
-        n = 1;
-        if (saPtr->sin_port != 0U) {
+        
+        if (Ns_SockaddrGetPort((const struct sockaddr *)saPtr) != 0u) {
+            int n = 1;
+            
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n));
+#ifdef HAVE_IPV6
+            /*
+             * IPv4 connectivity through AF_INET6 can be disabled by default, for
+             * example by /proc/sys/net/ipv6/bindv6only to 1 on Linux. We
+             * explicitely enable IPv4 so we don't need to bind separate sockets
+             * for v4 and v6.
+             */
+            n = 0;
+            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &n, sizeof(n));
+#endif            
         }
-        if (bind(sock, (const struct sockaddr *) saPtr,
-                 (socklen_t)sizeof(struct sockaddr_in)) != 0) {
+
+        if (bind(sock, (const struct sockaddr *)saPtr,
+                 Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr)) != 0) {
+            Ns_Log(Notice, "bind operation on sock %d lead to error: %s", sock, ns_sockstrerror(ns_sockerrno));
+            Ns_LogSockaddr(Warning, "bind on", (const struct sockaddr *) saPtr);
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
         }
@@ -799,56 +818,6 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GetSockAddr --
- *
- *      Take a host/port and fill in a sockaddr_in structure
- *      appropriately. Host may be an IP address or a DNS name.
- *
- * Results:
- *      NS_OK/NS_ERROR
- *
- * Side effects:
- *      May perform DNS query.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
-{
-    struct in_addr ia;
-    Ns_DString     ds;
-
-    NS_NONNULL_ASSERT(saPtr != NULL);
-           
-    if (host == NULL) {
-        ia.s_addr = htonl(INADDR_ANY);
-    } else {
-        ia.s_addr = inet_addr(host);
-        if (ia.s_addr == INADDR_NONE) {
-            Ns_DStringInit(&ds);
-            if (Ns_GetAddrByHost(&ds, host) == NS_TRUE) {
-                ia.s_addr = inet_addr(ds.string);
-            }
-            Ns_DStringFree(&ds);
-            if (ia.s_addr == INADDR_NONE) {
-                return NS_ERROR;
-            }
-        }
-    }
-
-    memset(saPtr, 0, sizeof(struct sockaddr_in));
-    saPtr->sin_family = AF_INET;
-    saPtr->sin_addr = ia;
-    saPtr->sin_port = htons((unsigned short) port);
-
-    return NS_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_SockPipe --
  *
  *      Create a pair of unix-domain sockets.
@@ -1047,25 +1016,43 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
 static NS_SOCKET
 SockConnect(const char *host, int port, const char *lhost, int lport, bool async)
 {
-    NS_SOCKET          sock;
-    struct sockaddr_in lsa;
-    struct sockaddr_in sa;
+    NS_SOCKET             sock;
+    struct NS_SOCKADDR_STORAGE sa, lsa;
+    struct sockaddr      *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
+    int                   result;
 
-    if (Ns_GetSockAddr(&sa, host, port) != NS_OK ||
-        Ns_GetSockAddr(&lsa, lhost, lport) != NS_OK) {
+    //fprintf(stderr, "# SockConnect (%s %d / %s %d) calls Ns_GetSockAddr %s\n", host, port, lhost, lport, host);
+    result = Ns_GetSockAddr(saPtr, host, port);
+    //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s ==> %d\n", host, result);
+    
+    if (result == NS_OK) {
+        //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s (2nd)\n", lhost);
+        result = Ns_GetSockAddr(lsaPtr, lhost, lport);
+        //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s (2nd) => %d\n", lhost, result);
+    }
+    if (result != NS_OK) {
+        fprintf(stderr, "# ... SockConnect fails\n");
         return NS_INVALID_SOCKET;
     }
-    sock = Ns_SockBind(&lsa);
+    sock = Ns_SockBind(lsaPtr);
+    /*
+      fprintf(stderr, "# ... SockConnect Ns_SockBind returns %d\n", sock);
+      Ns_LogSockaddr(Notice, "SockConnect lsa", lsaPtr);
+      Ns_LogSockaddr(Notice, "SockConnect  sa", saPtr);
+    */
+
     if (sock != NS_INVALID_SOCKET) {
         if (async == NS_TRUE) {
             if (Ns_SockSetNonBlocking(sock) != TCL_OK) {
                 Ns_Log(Warning, "attempt to set socket nonblocking failed");
             }
         }
-        if (connect(sock, (struct sockaddr *) &sa, (socklen_t)sizeof(sa)) != 0) {
+        if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
             unsigned int err = ns_sockerrno;
+
             if (async == NS_FALSE || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
+                Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
                 sock = NS_INVALID_SOCKET;
             }
         }
@@ -1075,7 +1062,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
             }
         }
     }
-
+    
     return sock;
 }
 

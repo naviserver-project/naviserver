@@ -6,6 +6,5 @@
 #
 # Example:
 #
-# nsadmin: 10.0.0.0/255.0.0.0, .internal.mycompany.com, home.me.com
+# nsadmin: ::1/64, 10.0.0.0/24, .internal.mycompany.com, home.me.com
 #
-

@@ -243,15 +243,18 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
                 && (*p++ == '/') && (*p != '\0') && (*p != '/')) {
                 char *h;
 
-                h = p;
-                while (*p != '\0' && *p != '/') {
-                    ++p;
+                for (h = p; (*p != '\0') && (*p != '/'); p++) {
+                    ;
                 }
                 if (*p == '/') {
                     *p++ = '\0';
                 }
                 url = p;
-                p = strchr(h, ':');
+                
+                /*
+                 * Check for port
+                 */
+                Ns_HttpParseHost(h, NULL, &p);
                 if (p != NULL) {
                     *p++ = '\0';
                     request->port = (unsigned short)strtol(p, NULL, 10);
@@ -408,7 +411,9 @@ SetUrl(Ns_Request *request, char *url)
         if (request->query != NULL) {
             ns_free(request->query);
         }
-        request->query = ns_strdup(p);
+        if (*p != '\0') {
+            request->query = ns_strdup(p);
+        }
     }
 
     /*

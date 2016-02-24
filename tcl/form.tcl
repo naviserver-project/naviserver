@@ -168,8 +168,6 @@ proc ns_queryexists {key} {
 
 proc ns_getform {{charset ""}}  {
 
-    global _ns_form _ns_formfiles
-    
     if {![ns_conn isconnected]} {
         return
     }
@@ -193,30 +191,45 @@ proc ns_getform {{charset ""}}  {
     # is not needed any as all is done on C-level.
     #
 
-    if {![info exists _ns_form]} {
-        set _ns_form [ns_conn form]
-        foreach {file} [ns_conn files] {
-            set off [ns_conn fileoffset $file]
-            set len [ns_conn filelength $file]
-            set hdr [ns_conn fileheaders $file]
-            set fp ""
-            while {$fp eq {}} {
-                set tmpfile [ns_mktemp]
-                set fp [ns_openexcl $tmpfile]
-            }
-            ns_atclose [list file delete $tmpfile]
-            fconfigure $fp -translation binary 
-            ns_conn copy $off $len $fp
-            close $fp
-            set _ns_formfiles($file) $tmpfile
-            set type [ns_set get $hdr content-type]
-            ns_set put $_ns_form $file.content-type $type
-            # NB: Insecure, access via ns_getformfile.
-            ns_set put $_ns_form $file.tmpfile $tmpfile
-        }
+    if {![info exists ::_ns_form]} {
+
+	set tmpfile [ns_conn contentfile]
+	if { $tmpfile eq "" } {
+	    #
+	    # Get the content via memory (indirectly via [ns_conn
+	    # content], the command [ns_conn form] does this)
+	    #
+	    set ::_ns_form [ns_conn form]
+	    foreach {file} [ns_conn files] {
+		set off [ns_conn fileoffset $file]
+		set len [ns_conn filelength $file]
+		set hdr [ns_conn fileheaders $file]
+		set fp ""
+		while {$fp eq {}} {
+		    set tmpfile [ns_mktemp]
+		    set fp [ns_openexcl $tmpfile]
+		}
+		ns_atclose [list file delete $tmpfile]
+		fconfigure $fp -translation binary 
+		ns_conn copy $off $len $fp
+		close $fp
+		set ::_ns_formfiles($file) $tmpfile
+		set type [ns_set get $hdr content-type]
+		ns_set put $::_ns_form $file.content-type $type
+		# NB: Insecure, access via ns_getformfile.
+		ns_set put $::_ns_form $file.tmpfile $tmpfile
+	    }
+	} else {
+	    #
+	    # Get the content via external content file
+	    #
+	    set ::_ns_form [ns_set create]
+	    ns_parseformfile $tmpfile $::_ns_form [ns_set iget [ns_conn headers] content-type]
+	    ns_atclose [list file delete $tmpfile]
+	}
     }
 
-    return $_ns_form
+    return $::_ns_form
 }
 
 
@@ -234,12 +247,10 @@ proc ns_getform {{charset ""}}  {
 
 proc ns_getformfile {name} {
 
-    global _ns_formfiles
-
     ns_getform
 
-    if {[info exists _ns_formfiles($name)]} {
-        return $_ns_formfiles($name)
+    if {[info exists ::_ns_formfiles($name)]} {
+        return $::_ns_formfiles($name)
     }
 }
 
@@ -393,9 +404,9 @@ proc ns_parseformfile { file form contentType } {
 	    }
 	    set length [expr {$end - $start - 2}]
 
-	    # create a temp file for the content, which will be deleted
+	    # Create a temp file for the content, which will be deleted
 	    # when the connection close.  ns_openexcl can fail, hence why 
-	    # we keep spinning
+	    # we keep spinning.
 
 	    set tmp ""
 	    while { $tmp eq "" } {
@@ -407,7 +418,7 @@ proc ns_parseformfile { file form contentType } {
 
 	    if { $length > 0 } {
 		seek $fp $start
-		ns_cpfp $fp $tmp $length
+		fcopy $fp $tmp -size $length
 	    }
 
 	    close $tmp

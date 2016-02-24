@@ -457,6 +457,33 @@ Ns_InfoTag(void)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_InfoIPv6 --
+ *
+ *      Returns revision tag of this build
+ *
+ * Results:
+ *      A string version name.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+bool
+Ns_InfoIPv6(void)
+{
+#ifdef HAVE_IPV6
+    return NS_TRUE;
+#else
+    return NS_FALSE;
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclInfoObjCmd --
  *
  *      Implements ns_info.
@@ -482,7 +509,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     static const char *const opts[] = {
         "address", "argv0", "boottime", "builddate", "callbacks",
-        "config", "home", "hostname", "locks", "log",
+        "config", "home", "hostname", "ipv6", "locks", "log",
         "major", "minor", "mimetypes", "name", "nsd", "pagedir", 
 	"pageroot", "patchlevel", "pid", "platform", "pools", 
 	"scheduled", "server", "servers",
@@ -493,7 +520,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     enum {
         IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
-        IConfigIdx, IHomeIdx, IHostNameIdx, ILocksIdx, ILogIdx,
+        IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx,
         IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx, 
 	IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
         IPidIdx, IPlatformIdx, IPoolsIdx, 
@@ -585,6 +612,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         Tcl_SetResult(interp, (char *)Ns_InfoHostname(), TCL_STATIC);
         break;
 
+    case IIpv6Idx:
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Ns_InfoIPv6()));
+        break;
+        
     case IAddressIdx:
         Tcl_SetResult(interp, (char *)Ns_InfoAddress(), TCL_STATIC);
         break;

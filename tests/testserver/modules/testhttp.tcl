@@ -50,7 +50,7 @@ namespace eval ::nstest {
 	    method {url ""} {body ""}
 	} $args
 
-	set host localhost
+	set host [ns_config "test" loopback]
 	set port [ns_config "ns/module/nssock" port]
 	set timeout 3
 	set state send
@@ -59,12 +59,10 @@ namespace eval ::nstest {
 	#
 	# Open a TCP connection to the host:port
 	#
-	
-	set fds [ns_sockopen -nonblock $host $port]
-	set rfd [lindex $fds 0]
-	set wfd [lindex $fds 1]
 
+	lassign [ns_sockopen -nonblock $host $port] rfd wfd
 	set sockerr [fconfigure $rfd -error]
+	
 	if {$sockerr ne {}} {
 	    return -code error $sockerr
 	}
@@ -82,7 +80,7 @@ namespace eval ::nstest {
 
 	fconfigure $rfd -encoding $encoding
 	fconfigure $wfd -encoding $encoding
-
+	
 	if {[catch {
 
 	    #
@@ -129,9 +127,9 @@ namespace eval ::nstest {
 	    } else {
 		set request "$method $url HTTP/$http"
 	    }
-
+	    
 	    http_puts $timeout $wfd $request
-
+	    
 	    for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
 		set key [ns_set key $hdrs $i]
 		set val [ns_set value $hdrs $i]
@@ -385,5 +383,126 @@ namespace eval ::nstest {
 	} else {
 	    puts stderr "... $what: <$msg>"
 	}
+    }
+}
+
+
+return
+# 
+# Below is an implementation of nstest::http based on "ns_http"
+# instead of the low level socket commands above. The only difference
+# is that the version below does not support modified encodings for
+# sending an http requests (the importance is questionable).
+#
+
+# ::nstest::http -
+#     Routines for opening HTTP connections through
+#     the Tcl socket interface.
+#
+
+namespace eval ::nstest {
+
+    proc http {args} {
+	ns_parseargs {
+	    {-http 1.0} 
+	    -setheaders 
+	    -getheaders
+	    -encoding
+	    -getmultiheaders 
+	    {-getbody 0} 
+	    {-getbinary 0}
+	    {-verbose 0}
+	    --
+	    method {url ""} {body ""}
+	} $args
+
+	set host [ns_config "test" loopback]
+	set port [ns_config "ns/module/nssock" port]
+	set timeout 3
+	set ::nstest::verbose $verbose
+
+	#
+	# We can't control currently the encoding of the request. Not
+	# sure, of this is really needed.
+	#
+	
+	set hdrs [ns_set create]
+	if {[info exists setheaders]} {
+	    foreach {k v} $setheaders {
+		ns_set put $hdrs $k $v
+	    }
+	}
+
+	#
+	# Default Headers.
+	#
+
+	ns_set icput $hdrs Accept */*
+	ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+
+	if {$http eq "1.0"} {
+	    ns_set icput $hdrs Connection close
+	}
+
+	if {$port eq "80"} {
+	    ns_set icput $hdrs Host $host
+	} else {
+	    ns_set icput $hdrs Host $host:$port
+	}
+
+	log url http://$host:$port/$url
+	set r [ns_http queue -timeout $timeout -method $method -headers $hdrs http://$host:$port/$url]
+	
+	ns_set cleanup $hdrs 
+	set hdrs [ns_set create]
+
+	if {[string is true $getbinary]} {
+	    set binaryFlag "-binary"
+	} else {
+	    set binaryFlag ""
+	}
+	
+	ns_http wait {*}$binaryFlag -result body -status status -headers $hdrs $r
+	log status $status
+
+	set response [list $status]
+
+	if {[info exists getheaders]} {
+	    foreach h $getheaders {
+		lappend response [ns_set iget $hdrs $h]
+	    }
+	}
+	if {[info exists getmultiheaders]} {
+	    foreach h $getmultiheaders {
+		for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
+		    set key [ns_set key $hdrs $i]
+		    if {[string tolower $h] eq [string tolower $key]} {
+			lappend response [ns_set value $hdrs $i]
+		    }
+		}
+	    }
+	}
+	
+	if {[string is true $getbody] && $body ne {}} {
+	    lappend response $body
+	}
+	
+	if {[string is true $getbinary] && $body ne {}} {
+	    binary scan $body "H*" binary
+	    lappend response [regexp -all -inline {..} $binary]
+	}
+
+	return $response
+    }
+
+    proc log {what {msg ""}} {
+        if {!$::nstest::verbose} {return}
+
+        set length [string length $msg]
+        if {$length > 40} {
+            puts stderr "... $what: <[string range $msg 0 40]...> ($length bytes)"
+        } else {
+            puts stderr "... $what: <$msg>"
+        }
     }
 }

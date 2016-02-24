@@ -708,6 +708,75 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
     return NS_TRUE;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HttpParseHost --
+ *
+ *	Obtain the host name from a writable string from a syntax as specified
+ *	in RFC 3986 section 3.2.2. 
+ *      Examples: 
+ *          [2001:db8:1f70::999:de8:7648:6e8]:8000    (IP-literal notation)
+ *          openacs.org:80                            (reg-name notation)
+ *
+ * Results:
+ *
+ *	As a result, "portStart" will point to the terminating 
+ *      char (e.g. ':') if the host name. If a port is indicated after the host
+ *	name, the variable "portStart" will return a string starting with ":",
+ *	otherwise NULL. If "hostStart" is non-null, a pointer will point to the
+ *	host name, which will be terminated by char 0 in case of a IPv6 address
+ *      in IP-literal notation.
+ *
+ * Side effects:
+ *
+ *	Will potentially write a null character into the string passed in
+ *	"hostString".
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
+{
+    bool ipv6 = NS_FALSE;
+    
+    NS_NONNULL_ASSERT(hostString != NULL);
+    NS_NONNULL_ASSERT(portStart != NULL);
+    
+    if (*hostString == '[') {
+        char *p;
+        
+        /*
+         * Maybe this is an IPv6 address in square braces
+         */
+        p = strchr(hostString + 1, ']');
+        if (p != NULL) {
+            ipv6 = NS_TRUE;
+            
+            /*
+             * Terminate the IP-literal if hostStart is given.
+             */
+            if (hostStart != NULL) {
+                *p = '\0';
+                *hostStart = hostString + 1;
+            }
+            p++;
+            if (*p == ':') {
+                *portStart = p;
+            } else {
+                *portStart = NULL;
+            }
+        }
+    }
+    if (ipv6 == NS_FALSE) {
+        *portStart = strchr(hostString, ':');
+        if (hostStart != NULL) {
+            *hostStart = hostString;
+        }
+    }
+}
+ 
 
 /*
  *----------------------------------------------------------------------
@@ -741,6 +810,9 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(httpPtrPtr != NULL);
 
+    /*
+     * Parse and split url
+     */
     if (strncmp(url, "http://", 7u) != 0 || url[7] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
         return TCL_ERROR;
@@ -769,17 +841,41 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     if (file != NULL) {
         *file = '\0';
     }
-    
-    portString = strchr(host, ':');
+
+    Ns_HttpParseHost(host, &host, &portString);
+
     if (portString != NULL) {
         *portString = '\0';
         portNr = (int) strtol(portString + 1, NULL, 10);
     } else {
         portNr = 80;
     }
-
+    //fprintf(stderr, "### HttpConnect ---> host '%s' %d ==> \n", host, portNr);
     sock = Ns_SockAsyncConnect(host, portNr);
 
+#if DEACTIVATED__WAIT_FOR_ASYNC_CONNECT_UNTIL_SOCKET_IS_WRITEABLE
+    if (sock != NS_INVALID_SOCKET) {
+          struct pollfd  pollfd;
+          int retval;
+
+          pollfd.events = POLLOUT;
+          pollfd.fd = sock;
+
+          while (1) {
+              fprintf(stderr, "# call poll on %d\n", sock);
+              retval = poll(&pollfd, 1, 1000);
+              fprintf(stderr, "# call poll on %d => %d\n", sock, retval);
+              if (retval != 0) {
+                  break;
+              }
+          }
+          if (retval != 1) {
+              fprintf(stderr, "# ... make sock %d invalid \n", sock);
+              sock = NS_INVALID_SOCKET;
+          }
+    }
+#endif
+    
     if (sock == NS_INVALID_SOCKET) {
 	Tcl_AppendResult(interp, "connect to \"", url, "\" failed: ",
 	 		 ns_sockstrerror(ns_sockerrno), NULL);
@@ -1057,13 +1153,15 @@ HttpAbort(Ns_HttpTask *httpPtr)
 static void
 HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 {
-    Ns_HttpTask *httpPtr = arg;
+    Ns_HttpTask *httpPtr;
     char buf[16384];
     ssize_t n;
 
     NS_NONNULL_ASSERT(task != NULL);
-    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(arg != NULL);
 
+    httpPtr = arg;
+    
     switch (why) {
     case NS_SOCK_INIT:
 	Ns_TaskCallback(task, NS_SOCK_WRITE, &httpPtr->timeout);
@@ -1086,6 +1184,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 
     case NS_SOCK_READ:
     	n = ns_recv(sock, buf, sizeof(buf), 0);
+
     	if (likely(n > 0)) {
 
 	    /* 
@@ -1113,6 +1212,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 	    return;
 	}
 	if (n < 0) {
+            Ns_Log(Warning, "client http request: receive failed, error: %s\n", strerror(errno));
 	    httpPtr->error = "recv failed";
 	}
 	break;

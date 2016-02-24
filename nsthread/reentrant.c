@@ -43,7 +43,7 @@
  */
 
 typedef struct Tls {
-    char        nabuf[16];
+    char        nabuf[NS_IPADDR_SIZE];
     char        asbuf[27];
     char       *stbuf;
     char        ctbuf[27];
@@ -118,42 +118,48 @@ GetTls(void)
  *
  *----------------------------------------------------------------------
  */
+#ifdef HAVE_IPV6
+# if defined(__APPLE__) || defined(__darwin__)
+/* OSX seems not to define these. */
+#  ifndef s6_addr16
+#   define s6_addr16 __u6_addr.__u6_addr16
+#  endif
+#  ifndef s6_addr32
+#   define s6_addr32 __u6_addr.__u6_addr32
+#  endif
+# endif
+#endif
 
-#ifdef _MSC_VER
 char *
-ns_inet_ntoa(struct in_addr addr)
+ns_inet_ntoa(struct sockaddr *saPtr)
 {
     Tls *tlsPtr = GetTls();
-
-    /*
-     * InetNtop supports AF_INET and AF_INET6.
-     */
-    InetNtop(AF_INET, &addr, tlsPtr->nabuf, sizeof(tlsPtr->nabuf)); 
-
-    return tlsPtr->nabuf;
-}
-#else 
-char *
-ns_inet_ntoa(struct in_addr addr)
-{
-    Tls *tlsPtr = GetTls();
-
-#if defined(HAVE_INET_NTOP)
-    inet_ntop(AF_INET, &addr, tlsPtr->nabuf, sizeof(tlsPtr->nabuf)); 
-#else
     union {
-        unsigned long l;
-        unsigned char b[4];
-    } u;
-    
-    u.l = (unsigned long) addr.s_addr;
-    snprintf(tlsPtr->nabuf, sizeof(tlsPtr->nabuf), "%u.%u.%u.%u",
-             u.b[0], u.b[1], u.b[2], u.b[3]);
-#endif
-    return tlsPtr->nabuf;
-}
+        unsigned int i;
+    	unsigned char b[4];
+    } addr4;
+
+    NS_NONNULL_ASSERT(saPtr != NULL);
+
+#ifdef HAVE_IPV6
+    if (saPtr->sa_family == AF_INET6) {
+        struct in6_addr addr = (((struct sockaddr_in6 *)saPtr)->sin6_addr);
+        sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+                ntohs(addr.s6_addr16[0]), ntohs(addr.s6_addr16[1]),
+                ntohs(addr.s6_addr16[2]), ntohs(addr.s6_addr16[3]),
+                ntohs(addr.s6_addr16[4]), ntohs(addr.s6_addr16[5]),
+                ntohs(addr.s6_addr16[6]), ntohs(addr.s6_addr16[7]));
+    } else {
+        addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
+        sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
+    }
+#else    
+    addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
+    sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
 #endif
 
+    return tlsPtr->nabuf;
+}
 
 /*
  *----------------------------------------------------------------------

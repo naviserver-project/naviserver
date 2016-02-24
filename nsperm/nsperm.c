@@ -35,10 +35,6 @@
 
 #include "ns.h"
 
-#ifndef INADDR_NONE
-#define INADDR_NONE (-1)
-#endif
-
 /*
  * The following flags are for user record
  */
@@ -119,13 +115,17 @@ static Tcl_ObjCmdProc SetPassObjCmd;
 
 static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user);
 
-static int ValidateUserAddr(User * userPtr, const char *peer);
-static int AuthProc(const char *server, const char *method, const char *url, 
+static bool ValidateUserAddr(User * userPtr, const char *peer);
+static int AuthProc(const char *server, const char *method, const char *url,
 		    const char *user, const char *pwd, const char *peer);
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, char *uri);
 static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale);
 /*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
+
+static void FreeUserInfo(User *userPtr, char *name)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  * Static variables defined in this file.
@@ -356,7 +356,7 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *C
  *----------------------------------------------------------------------
  */
 
-static int AuthProc(const char *server, const char *method, const char *url, 
+static int AuthProc(const char *server, const char *method, const char *url,
 		    const char *user, const char *pwd, const char *peer)
 {
     int status;
@@ -451,12 +451,12 @@ static int AuthProc(const char *server, const char *method, const char *url,
 
 	}
     }
-    
+
     /*
      * Check for a vaild user address.
      */
 
-    if (!ValidateUserAddr(userPtr, peer)) {
+    if (ValidateUserAddr(userPtr, peer) == NS_FALSE) {
         /*
          * Null user never gets forbidden--give a chance to enter password.
          */
@@ -542,8 +542,8 @@ static int AuthProc(const char *server, const char *method, const char *url,
     Ns_RWLockUnlock(&servPtr->lock);
     return status;
 }
-
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -559,20 +559,25 @@ static int AuthProc(const char *server, const char *method, const char *url,
  *
  *----------------------------------------------------------------------
  */
-
-static int ValidateUserAddr(User *userPtr, const char *peer)
+static bool
+ValidateUserAddr(User *userPtr, const char *peer)
 {
-    struct in_addr peerip, ip, mask;
-    int retval;
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
+    int                    validIp;
+    bool                   success;
+    Tcl_HashSearch         search;
+    Tcl_HashEntry         *hPtr;
+    struct NS_SOCKADDR_STORAGE  peerStruct, ipStruct;
+    struct sockaddr       *peerPtr = (struct sockaddr *)&peerStruct,
+                          *ipPtr = (struct sockaddr *)&ipStruct;
 
     if (peer == NULL) {
         return NS_TRUE;
     }
 
-    peerip.s_addr = inet_addr(peer);
-    if (peerip.s_addr == INADDR_NONE) {
+    memset(peerPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
+
+    validIp = ns_inet_pton(peerPtr, peer);
+    if (validIp < 1) {
         return NS_FALSE;
     }
 
@@ -583,32 +588,46 @@ static int ValidateUserAddr(User *userPtr, const char *peer)
 
     hPtr = Tcl_FirstHashEntry(&userPtr->masks, &search);
     while (hPtr != NULL) {
+        struct sockaddr *maskPtr;
 	Tcl_HashEntry *entryPtr;
 
-        mask.s_addr = (unsigned long) Tcl_GetHashKey(&userPtr->masks, hPtr);
-        ip.s_addr = peerip.s_addr & mask.s_addr;
+        maskPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->masks, hPtr);
+
+        Ns_SockaddrMask(peerPtr, maskPtr, ipPtr);
+        /*
+          Ns_LogSockaddr(Notice, "FOUND: mask", maskPtr);
+          Ns_LogSockaddr(Notice, "FOUND: peer", peerPtr);
+          Ns_LogSockaddr(Notice, "FOUND: ====", ipPtr);
+        */
 
         /*
          * There is a potential match. Now make sure it works with the
          * right address's mask.
          */
+        entryPtr = Tcl_FindHashEntry(&userPtr->nets, (char *)ipPtr);
 
-        entryPtr = Tcl_FindHashEntry(&userPtr->nets, (char *) (intptr_t) ip.s_addr);
-        if (entryPtr != NULL && mask.s_addr == (unsigned long) (intptr_t) Tcl_GetHashValue(entryPtr)) {
+        if (entryPtr != NULL) {
+            char maskString[NS_IPADDR_SIZE];
 
-            if (userPtr->flags & USER_FILTER_ALLOW) {
-                return NS_TRUE;
-            } else {
-                return NS_FALSE;
+            ns_inet_ntop(maskPtr, maskString, NS_IPADDR_SIZE);
+            /*fprintf(stderr, "### we have an entry, does it really match with saved mask <%s> <%s>\n",
+              (char *)Tcl_GetHashValue(entryPtr), maskString);*/
+
+            if (STREQ((char *)Tcl_GetHashValue(entryPtr), maskString)) {
+                if (userPtr->flags & USER_FILTER_ALLOW) {
+                    return NS_TRUE;
+                } else {
+                    return NS_FALSE;
+                }
             }
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     if (userPtr->flags & USER_FILTER_ALLOW) {
-        retval = NS_FALSE;
+        success = NS_FALSE;
     } else {
-        retval = NS_TRUE;
+        success = NS_TRUE;
     }
     if (userPtr->hosts.numEntries > 0) {
         Ns_DString addr;
@@ -642,9 +661,9 @@ static int ValidateUserAddr(User *userPtr, const char *peer)
                 hPtr = Tcl_FindHashEntry(&userPtr->hosts, start);
                 if (hPtr != NULL) {
                     if (userPtr->flags & USER_FILTER_ALLOW) {
-                        retval = NS_TRUE;
+                        success = NS_TRUE;
                     } else {
-                        retval = NS_FALSE;
+                        success = NS_FALSE;
                     }
                     break;
                 }
@@ -660,36 +679,63 @@ static int ValidateUserAddr(User *userPtr, const char *peer)
         }
     }
 
-    return retval;
+    return success;
 }
-
 
-#if !defined(HAVE_INET_PTON)
+
 /*
  *----------------------------------------------------------------------
  *
- * inet_aton --
+ * FreeUserInfo --
  *
- *	inet_aton for windows. 
+ *	Free the user information.
  *
  * Results:
- *	0/1
+ *	none.
  *
  * Side effects:
- *	None
+ *	free memory.
  *
  *----------------------------------------------------------------------
  */
-# ifdef _WIN32
-# include <winsock.h>
 
-int inet_aton(const char *addrString, struct in_addr *addr) {
-  addr->s_addr = inet_addr(addrString);
-  return (addr->s_addr == INADDR_NONE) ? 0 : 1;
+static void
+FreeUserInfo(User *userPtr, char *name)
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+
+    NS_NONNULL_ASSERT(userPtr != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    
+    hPtr = Tcl_FirstHashEntry(&userPtr->groups, &search);
+    while (hPtr != NULL) {
+        Group *groupPtr = Tcl_GetHashValue(hPtr);
+        
+        hPtr = Tcl_FindHashEntry(&groupPtr->users, name);
+        if (hPtr != NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    hPtr = Tcl_FirstHashEntry(&userPtr->nets, &search);
+    while (hPtr != NULL) {
+        char *maskString = Tcl_GetHashValue(hPtr);
+        
+        if (maskString != NULL) {
+            ns_free(maskString);
+        }
+        Tcl_DeleteHashEntry(hPtr);
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(&userPtr->groups);
+    Tcl_DeleteHashTable(&userPtr->masks);
+    Tcl_DeleteHashTable(&userPtr->nets);
+    Tcl_DeleteHashTable(&userPtr->hosts);
+    ns_free(userPtr);
 }
-# endif
-#endif
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -710,10 +756,9 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 {
     Server *servPtr = data;
     User *userPtr;
-    Group *groupPtr;
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    struct in_addr ip, mask;
+    struct NS_SOCKADDR_STORAGE ip, mask;
+    struct sockaddr     *ipPtr = (struct sockaddr *)&ip, *maskPtr = (struct sockaddr *)&mask;
     char buf[NS_ENCRYPT_BUFSIZE];
     char *name, *slash, *net, *pwd;
     char *field = NULL, *salt = NULL;
@@ -748,10 +793,15 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
         userPtr->flags &= ~USER_CLEAR_TEXT;
     }
     snprintf(userPtr->pwd, sizeof(userPtr->pwd), "%s", pwd);
-    Tcl_InitHashTable(&userPtr->nets, TCL_ONE_WORD_KEYS);
-    Tcl_InitHashTable(&userPtr->masks, TCL_ONE_WORD_KEYS);
+
+    Tcl_InitHashTable(&userPtr->nets, (int)(sizeof(struct NS_SOCKADDR_STORAGE) / sizeof(int)));
+    Tcl_InitHashTable(&userPtr->masks, (int)(sizeof(struct NS_SOCKADDR_STORAGE) / sizeof(int)));
     Tcl_InitHashTable(&userPtr->hosts, TCL_STRING_KEYS);
     Tcl_InitHashTable(&userPtr->groups, TCL_STRING_KEYS);
+
+    /*
+      fprintf(stderr, "============= add user <%s> pwd <%s> field <%s> nrags %d\n", name, pwd, field, nargs);
+    */
 
     /*
      * Both -allow and -deny can be used for consistency, but
@@ -769,25 +819,42 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
      */
 
     for (i = objc - nargs; i < objc; ++i) {
-        mask.s_addr = INADDR_NONE;
+        int validIp;
         net = Tcl_GetString(objv[i]);
+
+        memset(ipPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
+        memset(maskPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
+
         slash = strchr(net, '/');
         if (slash == NULL) {
-	  (void)Tcl_CreateHashEntry(&userPtr->hosts, net, &isNew);
-        } else {
-
             /*
-             * Try to conver the IP address/netmask into binary
-             * values.
+             * No mask is given
+             */
+            validIp = ns_inet_pton(ipPtr, net);
+            if (validIp > 0) {
+                maskPtr->sa_family = ipPtr->sa_family;
+                Ns_SockaddrMaskBits(maskPtr, (maskPtr->sa_family == AF_INET6) ? 128 :32);
+            }
+        } else {
+            int validMask;
+            /*
+             * Mask is given, try to convert the masked address into
+             * binary values.
              */
 
             *slash = '\0';
-#if defined(HAVE_INET_PTON)
-            if (inet_pton(AF_INET, net, &ip) == 0 || inet_pton(AF_INET, slash+1, &mask) == 0) 
-#else
-            if (inet_aton(net, &ip) == 0 || inet_aton(slash+1, &mask) == 0) 
-#endif
-	    {
+            slash++;
+
+            validIp = ns_inet_pton(ipPtr, net);
+            if (strchr(slash, '.') == NULL && strchr(slash, ':') == NULL) {
+                maskPtr->sa_family = ipPtr->sa_family;
+                Ns_SockaddrMaskBits(maskPtr, strtol(slash, NULL, 10));
+                validMask = 1;
+            } else {
+                validMask = ns_inet_pton(maskPtr, slash);
+            }
+
+	    if (validIp <= 0 || validMask <= 0) {
                 Tcl_AppendResult(interp, "invalid address or hostname \"",
                                  net, "\". " "should be ipaddr/netmask or hostname", NULL);
                 goto fail;
@@ -799,9 +866,11 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
              * saves us from doing this operation every time a
              * connection comes in.
              */
+            Ns_SockaddrMask(ipPtr, maskPtr, ipPtr);
+            /*Ns_LogSockaddr(Notice, "NSPERM: maskedAddress", ipPtr);*/
+        }
 
-            ip.s_addr &= mask.s_addr;
-
+        if (validIp > 0) {
             /*
              * Is this a new netmask? If so, add it to the list.
              * A list of netmasks is maintained and every time a
@@ -809,15 +878,21 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
              * each of them and a lookup on that address is done
              * on the hash table of networks.
              */
+            (void) Tcl_CreateHashEntry(&userPtr->masks, (char *)maskPtr, &isNew);
 
-            (void) Tcl_CreateHashEntry(&userPtr->masks, (char *) (intptr_t) mask.s_addr, &isNew);
-
-            hPtr = Tcl_CreateHashEntry(&userPtr->nets, (char *) (intptr_t) ip.s_addr, &isNew);
-            Tcl_SetHashValue(hPtr, (ClientData) (intptr_t) mask.s_addr);
-        }
-        if (isNew == 0) {
-            Tcl_AppendResult(interp, "duplicate entry: ", net, NULL);
-            goto fail;
+            /*
+             * Add the potentially masked IpAddress to the nets table.
+             */
+            hPtr = Tcl_CreateHashEntry(&userPtr->nets,  (char *)ipPtr, &isNew);
+            if (hPtr != NULL) {
+                char ipString[NS_IPADDR_SIZE];
+                Tcl_SetHashValue(hPtr,
+                                 (ClientData)ns_strdup(ns_inet_ntop(maskPtr, ipString, sizeof(ipString))));
+            }
+            if (isNew == 0) {
+                Tcl_AppendResult(interp, "duplicate entry: ", net, NULL);
+                goto fail;
+            }
         }
     }
 
@@ -839,22 +914,11 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     Ns_RWLockUnlock(&servPtr->lock);
 
   fail:
-    hPtr = Tcl_FirstHashEntry(&userPtr->groups, &search);
-    while (hPtr != NULL) {
-        groupPtr = Tcl_GetHashValue(hPtr);
-        hPtr = Tcl_FindHashEntry(&groupPtr->users, name);
-        if (hPtr != NULL) {
-            Tcl_DeleteHashEntry(hPtr);
-        }
-        hPtr = Tcl_NextHashEntry(&search);
-    }
-    Tcl_DeleteHashTable(&userPtr->groups);
-    Tcl_DeleteHashTable(&userPtr->masks);
-    Tcl_DeleteHashTable(&userPtr->nets);
-    Tcl_DeleteHashTable(&userPtr->hosts);
-    ns_free(userPtr);
+    FreeUserInfo(userPtr, name);
+
     return TCL_ERROR;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -874,12 +938,10 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 
 static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Server *servPtr = data;
-    char *name = NULL;
-    User *userPtr = NULL;
-    Group *groupPtr;
+    Server        *servPtr = data;
+    char          *name = NULL;
+    User          *userPtr = NULL;
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
 
     Ns_ObjvSpec args[] = {
         {"name", Ns_ObjvString, &name, NULL},
@@ -897,20 +959,7 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     Ns_RWLockUnlock(&servPtr->lock);
 
     if (userPtr != NULL) {
-        hPtr = Tcl_FirstHashEntry(&userPtr->groups, &search);
-        while (hPtr != NULL) {
-            groupPtr = Tcl_GetHashValue(hPtr);
-            hPtr = Tcl_FindHashEntry(&groupPtr->users, name);
-            if (hPtr != NULL) {
-                Tcl_DeleteHashEntry(hPtr);
-            }
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        Tcl_DeleteHashTable(&userPtr->groups);
-        Tcl_DeleteHashTable(&userPtr->masks);
-        Tcl_DeleteHashTable(&userPtr->nets);
-        Tcl_DeleteHashTable(&userPtr->hosts);
-        ns_free(userPtr);
+        FreeUserInfo(userPtr, name);
     }
     return TCL_OK;
 }
@@ -933,17 +982,18 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 
 static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Server *servPtr = data;
-    struct in_addr ip;
-    Tcl_HashSearch search, msearch;
-    Tcl_HashEntry *hPtr;
+    Server         *servPtr = data;
+    Tcl_HashSearch  search, msearch;
+    Tcl_HashEntry  *hPtr;
 
     Ns_RWLockRdLock(&servPtr->lock);
     hPtr = Tcl_FirstHashEntry(&servPtr->users, &search);
 
     while (hPtr != NULL) {
-	Tcl_HashEntry *mPtr;
-	User          *userPtr = Tcl_GetHashValue(hPtr);
+        char              ipString[NS_IPADDR_SIZE];
+	User             *userPtr = Tcl_GetHashValue(hPtr);
+        Tcl_HashEntry    *mPtr;
+        struct sockaddr  *netPtr;
 
         Tcl_AppendResult(interp, "{", Tcl_GetHashKey(&servPtr->users, hPtr), "} {", userPtr->pwd, "} {", NULL);
 
@@ -951,20 +1001,29 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
             Tcl_AppendResult(interp,
                              ((userPtr->flags & USER_FILTER_ALLOW) != 0u) ? " -allow " : " -deny ", NULL);
         }
+        /*
+         * Append all values from networks
+         */
         mPtr = Tcl_FirstHashEntry(&userPtr->nets, &msearch);
         while (mPtr != NULL) {
-            ip.s_addr = (unsigned long) Tcl_GetHashKey(&userPtr->nets, mPtr);
-            Tcl_AppendResult(interp, ns_inet_ntoa(ip), " ", NULL);
+            netPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->nets, hPtr);
+            Tcl_AppendResult(interp, ns_inet_ntop(netPtr, ipString, sizeof(ipString)), " ", NULL);
             mPtr = Tcl_NextHashEntry(&msearch);
         }
 
+        /*
+         * Append all values from masks
+         */
         mPtr = Tcl_FirstHashEntry(&userPtr->masks, &msearch);
         while (mPtr != NULL) {
-            ip.s_addr = (unsigned long) Tcl_GetHashKey(&userPtr->masks, mPtr);
-            Tcl_AppendResult(interp, ns_inet_ntoa(ip), " ", NULL);
+            netPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->nets, hPtr);
+            Tcl_AppendResult(interp, ns_inet_ntop(netPtr, ipString, sizeof(ipString)), " ", NULL);
             mPtr = Tcl_NextHashEntry(&msearch);
         }
 
+        /*
+         * Append all values from hosts
+         */
         mPtr = Tcl_FirstHashEntry(&userPtr->hosts, &msearch);
         while (mPtr != NULL) {
             Tcl_AppendResult(interp, Tcl_GetHashKey(&userPtr->hosts, mPtr), " ", NULL);

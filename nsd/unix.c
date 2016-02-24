@@ -1044,6 +1044,37 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 /*
  *----------------------------------------------------------------------
  *
+ * inet_ntop --
+ *
+ *      In case, we have no inet_ntop(), define it in terms of ns_inet_ntoa
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      A core file will be left wherever the server was running.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#if !defined(HAVE_INET_NTOP) && !defined(_WIN32)
+const char *
+inet_ntop(int af, const void *src, char *dst, socklen_t size)
+{
+    char *ipString;
+
+    ((struct sockaddr *)src)->sa_family = af;
+    ipString = ns_inet_ntoa((struct sockaddr *)src);
+    memcpy(dst, ipString, (size_t)size);
+    return dst;
+}
+#endif
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Abort --
  *
  *      Ensure that we drop core on fatal signals like SIGBUS and

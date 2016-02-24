@@ -261,8 +261,6 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     int             i, n, defport, noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;
-    struct in_addr  ia;
-    struct hostent *he;
     Driver         *drvPtr;
     DrvWriter      *wrPtr;
     DrvSpooler     *spPtr;
@@ -282,8 +280,15 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         }
     }
 
-    if (init->version != NS_DRIVER_VERSION_2) {
-        Ns_Log(Error, "%s: version field of init argument is invalid: %d",
+#ifdef HAVE_IPV6
+    if (init->version < NS_DRIVER_VERSION_3) {
+        Ns_Log(Error, "%s: driver module is too old (version %d) and does not support IPv6",
+               module, init->version);
+        return NS_ERROR;
+    }
+#endif    
+    if (init->version < NS_DRIVER_VERSION_2) {
+        Ns_Log(Error, "%s: version field of driver is invalid: %d",
                module, init->version);
         return NS_ERROR;
     }
@@ -306,53 +311,35 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      * through a DNS lookup of the specified hostname or the server's
      * primary hostname.
      */
-
+    //fprintf(stderr, "##### Ns_DriverInit server <%s> module <%s>, host <%s> address <%s>\n", server, module, host, address);
     if (address == NULL) {
-        he = gethostbyname(host != NULL ? host : Ns_InfoHostname());
+        Tcl_DString  ds;
 
-        /*
-         * If the lookup suceeded but the resulting hostname does not
-         * appear to be fully qualified, attempt a reverse lookup on the
-         * address which often returns the fully qualified name.
-         *
-         * NB: This is a common but sloppy configuration for a Unix
-         * network.
-         */
-
-        if (host == NULL && he != NULL && he->h_name != NULL &&
-            strchr(he->h_name, '.') == NULL) {
-            he = gethostbyaddr(he->h_addr_list[0], he->h_length, he->h_addrtype);
-        }
-
-        /*
-         * If the lookup suceeded, use the first address in host entry list.
-         */
-
-        if (he == NULL || he->h_name == NULL) {
-            Ns_Log(Error, "%s: could not resolve %s", module,
-                   host != NULL ? host : Ns_InfoHostname());
-            return NS_ERROR;
-        }
-        if (*(he->h_addr_list) == NULL) {
-            Ns_Log(Error, "%s: no addresses for %s", module, he->h_name);
-            return NS_ERROR;
-        }
-
-        memcpy(&ia.s_addr, he->h_addr_list[0], sizeof(ia.s_addr));
-        address = ns_inet_ntoa(ia);
-
-        if (address != NULL && path != NULL) {
-            Ns_SetUpdate(set, "address", address);
+        Tcl_DStringInit(&ds);
+        const char *hostName = noHostNameGiven ? Ns_InfoHostname() : host;
+        //fprintf(stderr, "##### Ns_DriverInit, address == NULL, noHostNameGiven hostInfoName %s\n", hostName);
+        
+        if (Ns_GetAddrByHost(&ds, hostName) == NS_TRUE) {
+            if (path != NULL) {
+                //fprintf(stderr, "##### Ns_DriverInit, setting address = %s\n", Tcl_DStringValue(&ds));
+                address = ns_strdup(Tcl_DStringValue(&ds));
+                Ns_SetUpdate(set, "address", address);
+            }
         }
 
         /*
          * Finally, if no hostname was specified, set it to the hostname
          * derived from the lookup(s) above.
          */
-
+        
         if (host == NULL) {
-            host = he->h_name;
+            Tcl_DStringTrunc(&ds, 0);
+        
+            if (Ns_GetHostByAddr(&ds, address) == NS_TRUE) {
+                host = ns_strdup(Tcl_DStringValue(&ds));
+            }
         }
+        Tcl_DStringFree(&ds);
     }
 
     /*
@@ -980,11 +967,16 @@ DriverListen(Driver *drvPtr)
                                  drvPtr->port,
                                  drvPtr->backlog);
     if (sock == NS_INVALID_SOCKET) {
-        Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
+        Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
                drvPtr->name, drvPtr->address, drvPtr->port,
                ns_sockstrerror(ns_sockerrno));
     } else {
-        Ns_Log(Notice, "%s: listening on %s:%d",
+        Ns_Log(Notice,
+#ifdef HAVE_IPV6               
+               "%s: listening on [%s]:%d",
+#else
+               "%s: listening on %s:%d",
+#endif               
                drvPtr->name, drvPtr->address, drvPtr->port);
     }
     return sock;
@@ -1014,7 +1006,7 @@ DriverListen(Driver *drvPtr)
 static NS_DRIVER_ACCEPT_STATUS
 DriverAccept(Sock *sockPtr)
 {
-    socklen_t n = (socklen_t)sizeof(struct sockaddr_in);
+    socklen_t n = (socklen_t)sizeof(struct NS_SOCKADDR_STORAGE);
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -2075,12 +2067,14 @@ SockError(Sock *sockPtr, SockState reason, int err)
         break;
     }
     if (errMsg != NULL) {
+        char ipString[NS_IPADDR_SIZE];
+        
         Ns_Log(DriverDebug, "SockError: %s (%d: %s), sock: %d, peer: %s:%d, request: %.99s",
                errMsg,
                err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
-               ns_inet_ntoa(sockPtr->sa.sin_addr),
-               ntohs(sockPtr->sa.sin_port),
+               ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), ipString, sizeof(ipString)),
+               Ns_SockaddrGetPort((struct sockaddr *)&sockPtr),
                (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
     }
 }
@@ -4440,12 +4434,14 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 Ns_MutexLock(&queuePtr->lock);
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
+                    char ipString[NS_IPADDR_SIZE];
+                    
                     (void) Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
                                             "%" PRIdz " %" TCL_LL_MODIFIER "d ",
                                             (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
                                             queuePtr->threadname,
                                             drvPtr->name,
-                                            ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
+                                            ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa), ipString, sizeof(ipString)),
                                             wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
                     (void) Ns_DStringAppendElement(dsPtr,
                                                    (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");

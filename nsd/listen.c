@@ -105,31 +105,33 @@ NsInitListen(void)
 int
 Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 {
-    Tcl_HashTable      *tablePtr = NULL;
-    Tcl_HashEntry      *hPtr;
-    NS_SOCKET           sock;
-    int                 isNew, status;
-    struct sockaddr_in  sa;
+    Tcl_HashTable        *tablePtr = NULL;
+    Tcl_HashEntry        *hPtr;
+    NS_SOCKET             sock;
+    int                   isNew, status;
+    struct NS_SOCKADDR_STORAGE sa;
+    struct sockaddr      *saPtr = (struct sockaddr *)&sa;
 
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
 
-    if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
+    if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
         return NS_ERROR;
     }
+
     if (addr != NULL) {
         /*
 	 * Make sure we can bind to the specified interface.
 	 */
-	
-        sa.sin_port = 0u;
-        sock = Ns_SockBind(&sa);
+        Ns_SockaddrSetPort(saPtr, 0u);
+        sock = Ns_SockBind(saPtr);
         if (sock == NS_INVALID_SOCKET) {
             return NS_ERROR;
         }
         ns_sockclose(sock);
     }
     status = NS_OK;
+
     Ns_MutexLock(&lock);
 
     /*
@@ -141,6 +143,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
     if (isNew == 0) {
         tablePtr = Tcl_GetHashValue(hPtr);
     } else {
+        
         sock = Ns_SockListen(NULL, port);
         if (sock == NS_INVALID_SOCKET) {
             Tcl_DeleteHashEntry(hPtr);
@@ -149,22 +152,26 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 	    status = Ns_SockSetNonBlocking(sock);
 	}
 	if (status == NS_OK) {
-	    tablePtr = ns_malloc(sizeof(Tcl_HashTable));
-            Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
+            tablePtr = ns_malloc(sizeof(Tcl_HashTable));
+            Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
             Tcl_SetHashValue(hPtr, tablePtr);
             status = Ns_SockCallback(sock, ListenCallback, tablePtr,
 				     (unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT);
         }
     }
     if (status == NS_OK) {
+        char ipString[NS_IPADDR_SIZE] = {'\0'};
 
 	assert(tablePtr != NULL);
-        hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(sa.sin_addr.s_addr), &isNew);
+        
+        ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
+        hPtr = Tcl_CreateHashEntry(tablePtr, ipString, &isNew);
 
         if (isNew == 0) {
+            Ns_Log(Error, "listen callback: there is already a listen callback registered");
             status = NS_ERROR;
         } else {
-	     ListenData *ldPtr;
+            ListenData *ldPtr;
 
             ldPtr = ns_malloc(sizeof(ListenData));
             ldPtr->proc = proc;
@@ -227,42 +234,59 @@ Ns_SockPortBound(int port)
 static bool
 ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 {
-    struct sockaddr_in  sa;
+    struct NS_SOCKADDR_STORAGE sa;
     socklen_t           len;
     Tcl_HashTable      *tablePtr;
     NS_SOCKET           newSock;
     bool                success;
 
     tablePtr = arg;
+
     if (why == (unsigned int)NS_SOCK_EXIT) {
         (void) ns_sockclose(sock);
         return NS_FALSE;
     }
 
     newSock = Ns_SockAccept(sock, NULL, NULL);
+    
     if (likely(newSock != NS_INVALID_SOCKET)) {
         Tcl_HashEntry *hPtr;
         ListenData    *ldPtr;
+        int            retVal;
+        char           ipString[NS_IPADDR_SIZE] = {'\0'};
 
         (void) Ns_SockSetBlocking(newSock);
         len = (socklen_t)sizeof(sa);
-        getsockname(newSock, (struct sockaddr *) &sa, &len);
+        retVal = getsockname(newSock, (struct sockaddr *) &sa, &len);
+        if (retVal == -1) {
+            Ns_Log(Warning, "listencallback: can't obtain socket info %s", ns_sockstrerror(ns_sockerrno));
+            (void) ns_sockclose(sock);
+            return NS_FALSE;
+        }
         ldPtr = NULL;
+        
+        ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
+        
         Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(tablePtr, INT2PTR(sa.sin_addr.s_addr));
+        hPtr = Tcl_FindHashEntry(tablePtr, ipString);
         if (hPtr == NULL) {
-            hPtr = Tcl_FindHashEntry(tablePtr, (char *) INADDR_ANY);
+            hPtr = Tcl_FindHashEntry(tablePtr, NS_IP_UNSPECIFIED);
         }
         if (hPtr != NULL) {
             ldPtr = Tcl_GetHashValue(hPtr);
         }
         Ns_MutexUnlock(&lock);
+
         if (ldPtr == NULL) {
+            /*
+             * There was no hash entry for the listen callback
+             */
             int result = ns_sockclose(newSock);
             success = (result == 0) ? NS_TRUE : NS_FALSE;
         } else {
             /*
-             * For the time being
+             * The hash entry was found, so fire the callback (e.g. exec tcl
+             * code).
              */
             success = (*ldPtr->proc) (newSock, ldPtr->arg, why);
         }

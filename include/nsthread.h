@@ -464,6 +464,34 @@ typedef struct DIR_ *DIR;
 # include <sys/param.h>
 #endif
 
+
+#ifdef HAVE_IPV6
+# ifndef AF_INET6
+#  warning "Strange System: have no AF_INET6. Deactivating IPv6 support."
+#  undef HAVE_IPV6
+# endif
+#endif
+
+#ifdef HAVE_IPV6
+# ifndef HAVE_INET_PTON
+#  warning "Strange System: have AF_INET6 but no HAVE_INET_PTON. Deactivating IPv6 support."
+#  undef HAVE_IPV6
+# endif
+#endif
+
+
+#ifdef HAVE_IPV6
+# define NS_IP_LOOPBACK     "::1"
+# define NS_IP_UNSPECIFIED  "::"
+# define NS_SOCKADDR_STORAGE     sockaddr_storage
+# define NS_IPADDR_SIZE     INET6_ADDRSTRLEN
+#else
+# define NS_IP_LOOPBACK     "127.0.0.1"
+# define NS_IP_UNSPECIFIED  "0.0.0.0"
+# define NS_SOCKADDR_STORAGE     sockaddr_in
+# define NS_IPADDR_SIZE     INET_ADDRSTRLEN
+#endif
+
 #ifdef _WIN32
 # ifndef EINPROGRESS
 #  define EINPROGRESS                WSAEINPROGRESS
@@ -831,7 +859,7 @@ NS_EXTERN struct tm *ns_gmtime(const time_t *clock)      NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_ctime(const time_t *clock)            NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_asctime(const struct tm *tmPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_strtok(char *s1, const char *s2)      NS_GNUC_NONNULL(1);
-NS_EXTERN char *ns_inet_ntoa(struct in_addr addr);
+NS_EXTERN char *ns_inet_ntoa(struct sockaddr *saPtr)     NS_GNUC_NONNULL(1);
 
 /*
  * sema.c:
