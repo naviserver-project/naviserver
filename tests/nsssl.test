@@ -113,7 +113,7 @@ test http-7.0 {ns_ssl with body and text datatype} -constraints {serverListen} -
     set string "Testing 'äöüß'"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
-    puts stderr REQ=https://localhost:[ns_config test listenport]/post
+    ns_log notice "queueing request for [ns_config test listenurl]/post"
     if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST \
 			   [ns_config test listenurl]/post]} errorMsg]} {
 	puts stderr ERROR-$errorMsg

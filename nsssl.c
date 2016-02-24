@@ -40,7 +40,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.8"
+#define NSSSL_VERSION  "0.9"
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
@@ -82,7 +82,8 @@ static void SSLLock(int mode, int n, const char *file, int line);
 static unsigned long SSLThreadId(void);
 static int HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
 			Tcl_Obj *bodyPtr, char *cert, char *caFile, char *caPath, int verify, bool keep_host_header,
-			Https **httpsPtrPtr);
+			Https **httpsPtrPtr)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
 static void HttpsClose(Https *httpsPtr);
 static void HttpsCancel(Https *httpsPtr);
 static void HttpsAbort(Https *httpsPtr);
@@ -156,7 +157,7 @@ Ns_ModuleInit(char *server, char *module)
     drvPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
     drvPtr->verify = Ns_ConfigBool(path, "verify", 0);
 
-    init.version = NS_DRIVER_VERSION_2;
+    init.version = NS_DRIVER_VERSION_3;
     init.name = "nsssl";
     init.listenProc = Listen;
     init.acceptProc = Accept;
@@ -370,10 +371,10 @@ Ns_ModuleInit(char *server, char *module)
  *----------------------------------------------------------------------
  */
 
-static SOCKET
+static NS_SOCKET
 Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 {
-    SOCKET sock;
+    NS_SOCKET sock;
 
     sock = Ns_SockListenEx((char*)address, port, backlog);
     if (sock != NS_INVALID_SOCKET) {
@@ -405,7 +406,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
  */
  
 static NS_DRIVER_ACCEPT_STATUS
-Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
+Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
@@ -427,9 +428,10 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t
             sslPtr = ns_calloc(1, sizeof(SSLContext));
             sslPtr->ssl = SSL_new(drvPtr->ctx);
             if (sslPtr->ssl == NULL) {
+                char ipString[NS_IPADDR_SIZE];
                 Ns_Log(Error, "%d: SSL session init error for %s: [%s]", 
 		       sock->sock, 
-		       ns_inet_ntoa(sock->sa.sin_addr), 
+		       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)),
 		       strerror(errno));
                 ns_free(sslPtr);
                 return NS_DRIVER_ACCEPT_ERROR;
@@ -480,13 +482,15 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
         if ((peer = SSL_get_peer_certificate(sslPtr->ssl))) {
              X509_free(peer);
              if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
-                 Ns_Log(Error, "nsssl: client certificate not valid by %s", 
-			ns_inet_ntoa(sock->sa.sin_addr));
+                 char ipString[NS_IPADDR_SIZE];
+                 Ns_Log(Error, "nsssl: client certificate not valid by %s",
+                        ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)));
                  return NS_ERROR;
              }
         } else {
-            Ns_Log(Error, "nsssl: no client certificate provided by %s", 
-		   ns_inet_ntoa(sock->sa.sin_addr));
+            char ipString[NS_IPADDR_SIZE];
+            Ns_Log(Error, "nsssl: no client certificate provided by %s",
+                   ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)));
             return NS_ERROR;
         }
         sslPtr->verified = 1;
@@ -1070,11 +1074,15 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     int          portNr, uaFlag = -1;
     char        *url2, *host, *file, *portString;
     const char  *contentType = NULL;
-    
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(httpPtrPtr != NULL);
+
     /*
      * Parse and split url
      */
-    
     if (strncmp(url, "https://", 8u) != 0 || url[8] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
 	return TCL_ERROR;
@@ -1103,7 +1111,8 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
 	*file = '\0';
     }
 
-    portString = strchr(host, ':');
+    Ns_HttpParseHost(host, &host, &portString);
+
     if (portString != NULL) {
         *portString = '\0';
 	portNr = (int) strtol(portString + 1, NULL, 10);
@@ -1375,7 +1384,7 @@ HttpsAbort(Https *httpsPtr)
  */
 
 static void
-HttpsProc(Ns_Task *task, SOCKET sock, void *arg, Ns_SockState why)
+HttpsProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 {
     Https       *httpsPtr = arg;
     Ns_HttpTask *httpPtr  = &httpsPtr->http;
