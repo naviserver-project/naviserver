@@ -376,7 +376,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
  *      able to handle nesting calls.
  *
  * Results:
- *      success (0 or 1)
+ *      success (NS_TRUE or NS_FALSE)
  *
  * Side effects:
  *      Switch TCP send state, potentially update sockPtr->flags
@@ -389,6 +389,7 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
     bool success = NS_FALSE;
 #if defined(TCP_CORK) || defined(UDP_CORK)
     Sock *sockPtr = (Sock *)sock;
+    int corkInt = (int)cork;
 
     assert(sock != NULL);
     
@@ -410,7 +411,7 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
 	 */
 #if defined(TCP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) == 0) {
-            if (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork)) == -1) {
+            if (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &corkInt, sizeof(corkInt)) == -1) {
                 Ns_Log(Error, "socket: setsockopt(TCP_CORK): %s",
                        ns_sockstrerror(ns_sockerrno));
             } else {
@@ -420,7 +421,7 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
 #endif
 #if defined(UDP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) != 0) {
-            if (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &cork, sizeof(cork)) == -1) {
+            if (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1) {
                 Ns_Log(Error, "socket: setsockopt(UDP_CORK): %s",
                        ns_sockstrerror(ns_sockerrno));
             } else {
