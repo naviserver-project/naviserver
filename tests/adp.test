@@ -31,7 +31,11 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
 
 
 #
