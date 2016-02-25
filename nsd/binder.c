@@ -40,7 +40,7 @@
 # include <sys/un.h>
 # include <sys/uio.h>
 
-# define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
+# define REQUEST_SIZE  (sizeof(int) + sizeof(int) + sizeof(int) + NS_IPADDR_SIZE)
 # define RESPONSE_SIZE (sizeof(int))
 #endif
 
@@ -123,6 +123,12 @@ Ns_SockListenEx(const char *address, int port, int backlog)
             sock = NS_INVALID_SOCKET;
             Ns_SetSockErrno(err);
         }
+    } else {
+        /*
+         * We could not even get the sockaddr, so make clear, that saPtr is
+         * invalid.
+         */
+        saPtr = NULL;
     }
     
     //fprintf(stderr, "# Ns_SockListenEx ... will return %d ok\n", sock);
@@ -130,8 +136,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
      * If forked binder is running and we could not allocate socket
      * directly, try to do it through the binder
      */
-
-    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
+    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE && saPtr != NULL) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
     //fprintf(stderr, "# Ns_SockListenEx ... returns %d ok\n", sock);
@@ -144,8 +149,9 @@ Ns_SockListenEx(const char *address, int port, int backlog)
  *
  * Ns_SockListenUdp --
  *
- *      Listen on the UDP socket for the given IP address and port.
- *      The given address might be NULL, which implies "0.0.0.0";
+ *      Listen on the UDP socket for the given IP address and port.  The given
+ *      address might be NULL, which implies the inspecified IP address
+ *      ("0.0.0.0" or "::").
  *
  * Results:
  *      Socket descriptor or -1 on error.
@@ -848,12 +854,12 @@ Ns_SockBinderListen(int type, const char *address, int port, int options)
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
     int           n, err;
-    char          data[64];
+    char          data[NS_IPADDR_SIZE];
     struct msghdr msg;
     struct iovec  iov[4];
 
     if (address == NULL) {
-        address = "0.0.0.0";
+        address = NS_IP_UNSPECIFIED;
     }
     iov[0].iov_base = (caddr_t) &options;
     iov[0].iov_len = sizeof(options);
@@ -883,7 +889,6 @@ Ns_SockBinderListen(int type, const char *address, int port, int options)
 #ifdef HAVE_CMMSG
     msg.msg_control = (void *) data;
     msg.msg_controllen = sizeof(data);
-    msg.msg_flags = 0U;
 #else
     msg.msg_accrights = (caddr_t) &sock;
     msg.msg_accrightslen = sizeof(sock);
@@ -898,7 +903,7 @@ Ns_SockBinderListen(int type, const char *address, int port, int options)
 #ifdef HAVE_CMMSG
     {
       struct cmsghdr *c = CMSG_FIRSTHDR(&msg);
-      if (c && c->cmsg_type == SCM_RIGHTS) { 
+      if ((c != NULL) && c->cmsg_type == SCM_RIGHTS) { 
 	  int *ptr = (int*)CMSG_DATA(c);
           sock = *ptr;
       }
@@ -1049,7 +1054,7 @@ static void
 Binder(void)
 {
     int           options, type, port, n, err, sock;
-    char          address[64];
+    char          address[NS_IPADDR_SIZEZZ];
     struct msghdr msg;
     struct iovec  iov[4];
 
@@ -1119,10 +1124,6 @@ Binder(void)
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
-#ifdef HAVE_CMMSG
-        msg.msg_control = address;
-        msg.msg_controllen = sizeof(address); 
-#endif
 
         if (sock != -1) {
 #ifdef HAVE_CMMSG
@@ -1134,12 +1135,14 @@ Binder(void)
             pfd = (int*)CMSG_DATA(c); 
             *pfd = sock;
             c->cmsg_len = CMSG_LEN(sizeof(int));
+            msg.msg_control = address;   /* do we really need this? */
             msg.msg_controllen = c->cmsg_len; 
 #else
             msg.msg_accrights = (caddr_t) &sock;
             msg.msg_accrightslen = sizeof(sock);
 #endif
         }
+            
         do {
             n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
         } while (n == -1 && errno == EINTR);
