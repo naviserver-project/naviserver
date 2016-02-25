@@ -1078,7 +1078,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
-    NS_NONNULL_ASSERT(httpPtrPtr != NULL);
+    NS_NONNULL_ASSERT(httpsPtrPtr != NULL);
 
     /*
      * Parse and split url
