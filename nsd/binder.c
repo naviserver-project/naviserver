@@ -1054,7 +1054,7 @@ static void
 Binder(void)
 {
     int           options, type, port, n, err, sock;
-    char          address[NS_IPADDR_SIZEZZ];
+    char          address[NS_IPADDR_SIZE];
     struct msghdr msg;
     struct iovec  iov[4];
 
