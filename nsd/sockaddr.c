@@ -87,9 +87,15 @@ Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *m
          * Perform bitwise masking over the full array. Maybe we need
          * something special for IN6_IS_ADDR_V4MAPPED.
          */
+#ifndef _WIN32
         for (i = 0; i < 4; i++) {
             maskedBits->s6_addr32[i] = addrBits->s6_addr32[i] & maskBits->s6_addr32[i];
         }
+#else        
+        for (i = 0; i < 8; i++) {
+            maskedBits->u.Word[i] = addrBits->u.Word[i] & maskBits->u.Word[i];
+        }
+#endif        
         /*
           fprintf(stderr, "#### addr   %s\n",ns_inet_ntoa(addr));
           fprintf(stderr, "#### mask   %s\n",ns_inet_ntoa(mask));
@@ -135,6 +141,7 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
             Ns_Log(Warning, "Invalid bitmask /%d: can be most 128 bits", nrBits);
             nrBits = 128;
         }
+#ifndef _WIN32        
         /*
          * Set the mask bits in the leading 32 bit ints to 1.
          */
@@ -154,6 +161,28 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
         for (; i < 4; i++) {
             addr->s6_addr32[i] = 0u;
         }
+#else
+        /*
+         * Windows does not have 32bit members, so process in 16bit
+         * chunks: Set the mask bits in the leading 16 bit Words to 1.
+         */
+        for (i = 0; i < 8 && nrBits >= 16; i++, nrBits -= 16) {
+            addr->u.Word[i] = (~0u);
+        }
+        /*
+         * Set the partial mask.
+         */
+        if (i < 8 && nrBits > 0) {
+            addr->u.Word[i] = htonl((~0u) << (16 - nrBits));
+            i++;
+        }
+        /*
+         * Clear trailing 16 bit Words.
+         */
+        for (; i < 8; i++) {
+            addr->u.Word[i] = 0u;
+        }        
+#endif        
         /*fprintf(stderr, "#### FINAL mask %s\n",ns_inet_ntoa(mask));*/
     } else if (mask->sa_family == AF_INET) {
         if (nrBits > 32) {

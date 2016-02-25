@@ -788,8 +788,9 @@ inet_ntop(int af, const void *src, char *dst, socklen_t size)
  *
  * SockAddrEqual --
  *
- *      Compare two sockaddr structures. This is just 
- *      a helper for ns_sockpair
+ *      Compare two sockaddr structures. This is just a helper for ns_sockpair
+ *      (we have here a windows only version based um u.Word, see
+ *      https://msdn.microsoft.com/en-us/library/windows/desktop/ms738560%28v=vs.85%29.aspx )
  *
  * Results:
  *      NS_TRUE if the two structures are equal
@@ -817,8 +818,8 @@ SockAddrEqual(struct sockaddr *saPtr1, struct sockaddr *saPtr2)
         struct in6_addr *sa2Bits = &(((struct sockaddr_in6 *)saPtr2)->sin6_addr);
         int i;
         
-        for (i = 0; i < 4; i++) {
-            if (sa1Bits->s6_addr32[i] != sa2Bits->s6_addr32[i]) {
+        for (i = 0; i < 8; i++) {
+            if (sa1Bits->u.Word[i] != sa2Bits->u.Word[i]) {
                 return NS_FALSE;
             }
         }
@@ -866,7 +867,7 @@ ns_sockpair(NS_SOCKET socks[2])
         return -1;
     }
     size = (int)sizeof(struct NS_SOCKADDR_STORAGE);
-    socks[1] = Ns_SockConnect(NS_IP_LOOPBACK, (int) NsSockGetPort((struct sockaddr *)&ia[0]));
+    socks[1] = Ns_SockConnect(NS_IP_LOOPBACK, (int) Ns_SockaddrGetPort((struct sockaddr *)&ia[0]));
     if (socks[1] == NS_INVALID_SOCKET ||
         getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
         ns_sockclose(sock);
