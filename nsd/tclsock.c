@@ -339,8 +339,8 @@ NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     sock = Ns_SockListen(addr, port);
     if (sock == NS_INVALID_SOCKET) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-                               "could not listen on \"",
-                               Tcl_GetString(objv[1]), ":", 
+                               "could not listen on [\"",
+                               Tcl_GetString(objv[1]), "]:", 
                                Tcl_GetString(objv[2]), "\"", NULL);
         return TCL_ERROR;
     }
