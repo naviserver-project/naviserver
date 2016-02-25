@@ -1,3 +1,27 @@
+
+#
+# Set the IP-address and port, on which the server listens. Since we
+# want this script to run in IPv4 and IPv6 environments (and in IPv6
+# environments, where IPv6 is deactivated) independent of the OS, we
+# probe the interfaces here before we set the final IP address.
+#
+set port 8080
+set loopback "127.0.0.1"
+
+if {[ns_info ipv6]} {
+    #
+    # The version of NaviServer supports IPv6. Probe if we can revese
+    # lookup the loopback interface.
+    #
+    if {![catch {ns_hostbyaddr ::1}]} {
+	#
+	# Yes we can. So use the IPv6 style loopback address
+	#
+	set loopback ::1
+    }
+}
+set address $loopback
+
 #set             home                /usr/local/ns
 set             home                [file dirname [file dirname [info nameofexecutable]]]
 
@@ -127,9 +151,10 @@ ns_param        maxbackup           7        ;# default: 10; max number of backu
 #ns_param       rollfmt		    %Y-%m-%d-%H:%M	;# format appendend to log file name
 
 ns_section     "ns/server/default/module/nssock"
-ns_param        port                8080
+ns_param        port                 $port
 #ns_param        address             0.0.0.0
-ns_param        address             ::0   ;# ::1 corresponds to 127.0.0.1, ::0 is the "unspecified address"
+#ns_param        address             ::0   ;# ::1 corresponds to 127.0.0.1, ::0 is the "unspecified address"
+ns_param        address             $address
 ns_param        hostname            [ns_info hostname]
 ns_param        maxinput            [expr 1024*1024*10] ;# default: 1024*1024, maximum size for inputs (uploads)
 ns_param        readahead           [expr 1024*1024*1]  ;# default: 16384; size of readahead for requests
@@ -153,8 +178,7 @@ ns_param        keepalivemaxdownloadsize 1000000 ;# 0, don't allow keep-alive fo
 ns_section     "ns/server/default/module/nscp"
 ns_param        port                4080
 #ns_param        address             127.0.0.1
-ns_param        address             ::1   ;# ::1 corresponds to 127.0.0.1, ::0 is the "unspecified address"
-
+ns_param        address             $address
 
 ns_section     "ns/server/default/module/nscp/users"
 ns_param        user                "::"
