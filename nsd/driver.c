@@ -1013,7 +1013,7 @@ DriverAccept(Sock *sockPtr)
 
     return (*sockPtr->drvPtr->acceptProc)((Ns_Sock *) sockPtr,
                                           sockPtr->drvPtr->sock,
-                                          (struct sockaddr *) &sockPtr->sa, &n);
+                                          (struct sockaddr *) &(sockPtr->sa), &n);
 }
 
 
