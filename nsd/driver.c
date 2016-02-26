@@ -314,9 +314,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     //fprintf(stderr, "##### Ns_DriverInit server <%s> module <%s>, host <%s> address <%s>\n", server, module, host, address);
     if (address == NULL) {
         Tcl_DString  ds;
+        const char *hostName;
 
         Tcl_DStringInit(&ds);
-        const char *hostName = noHostNameGiven ? Ns_InfoHostname() : host;
+        hostName = noHostNameGiven ? Ns_InfoHostname() : host;
         //fprintf(stderr, "##### Ns_DriverInit, address == NULL, noHostNameGiven hostInfoName %s\n", hostName);
         
         if (Ns_GetAddrByHost(&ds, hostName) == NS_TRUE) {
@@ -1341,7 +1342,7 @@ DriverThread(void *arg)
                     /*
                      * Got some data
                      */
-                    n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
+                    ssize_t n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
                         Ns_Log(DriverDebug, "poll closewait pollin; sockrelease SOCK_READERROR (sock %d)",
                                sockPtr->sock);
