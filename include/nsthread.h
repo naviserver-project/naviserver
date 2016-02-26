@@ -233,6 +233,9 @@ typedef int32_t ssize_t;
 #  define PACKAGE_VERSION             (NS_VERSION)
 #  define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
 #  define TIME_T_MAX                  (LONG_MAX)
+#  define HAVE_IPV6                   1
+#  define HAVE_INET_NTOP              1
+#  define HAVE_INET_PTON              1
 # endif
 
 /*

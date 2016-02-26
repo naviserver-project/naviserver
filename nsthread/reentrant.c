@@ -144,11 +144,19 @@ ns_inet_ntoa(struct sockaddr *saPtr)
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
         struct in6_addr addr = (((struct sockaddr_in6 *)saPtr)->sin6_addr);
+# ifndef _WIN32        
         sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                 ntohs(addr.s6_addr16[0]), ntohs(addr.s6_addr16[1]),
                 ntohs(addr.s6_addr16[2]), ntohs(addr.s6_addr16[3]),
                 ntohs(addr.s6_addr16[4]), ntohs(addr.s6_addr16[5]),
                 ntohs(addr.s6_addr16[6]), ntohs(addr.s6_addr16[7]));
+# else
+        sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+                ntohs(addr.u.Word[0]), ntohs(addr.u.Word[1]),
+                ntohs(addr.u.Word[2]), ntohs(addr.u.Word[3]),
+                ntohs(addr.u.Word[4]), ntohs(addr.u.Word[5]),
+                ntohs(addr.u.Word[6]), ntohs(addr.u.Word[7]));
+# endif
     } else {
         addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
         sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);

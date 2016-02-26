@@ -167,13 +167,13 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
          * chunks: Set the mask bits in the leading 16 bit Words to 1.
          */
         for (i = 0; i < 8 && nrBits >= 16; i++, nrBits -= 16) {
-            addr->u.Word[i] = (~0u);
+            addr->u.Word[i] = (unsigned short)(~0u);
         }
         /*
          * Set the partial mask.
          */
         if (i < 8 && nrBits > 0) {
-            addr->u.Word[i] = htonl((~0u) << (16 - nrBits));
+            addr->u.Word[i] = htons((~0u) << (16 - nrBits));
             i++;
         }
         /*

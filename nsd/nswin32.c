@@ -776,12 +776,6 @@ ns_mkstemp(char *charTemplate)
     return fd;
 }
 
-const char *
-inet_ntop(int af, const void *src, char *dst, socklen_t size)
-{
-    return InetNtop(af, src, dst, size);
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -912,12 +906,13 @@ NS_SOCKET
 Ns_SockListenEx(const char *address, int port, int backlog)
 {
     NS_SOCKET sock;
-    struct sockaddr_in sa;
+    struct NS_SOCKADDR_STORAGE sa;
+    struct sockaddr *saPtr = (struct sockaddr *)&sa;
 
-    if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
+    if (Ns_GetSockAddr(saPtr, address, port) != NS_OK) {
         return NS_INVALID_SOCKET;
     }
-    sock = Ns_SockBind(&sa);
+    sock = Ns_SockBind(saPtr);
     if (sock != NS_INVALID_SOCKET && listen(sock, backlog) != 0) {
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
