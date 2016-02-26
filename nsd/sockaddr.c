@@ -482,8 +482,8 @@ Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockadd
 
     ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
     
-    Ns_Log(severity, "%s: SockAddr %p, family %s, ip %s, port %d",
-           prefix, (void*)saPtr, family, ipStrPtr, Ns_SockaddrGetPort(saPtr));
+    Ns_Log(severity, "%s: SockAddr family %s, ip %s, port %d",
+           prefix, family, ipStrPtr, Ns_SockaddrGetPort(saPtr));
 }
 
 /*

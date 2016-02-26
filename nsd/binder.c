@@ -97,15 +97,16 @@ Ns_SockListenEx(const char *address, int port, int backlog)
     if (Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
         Tcl_HashEntry *hPtr;
 
-        //fprintf(stderr, "# Ns_SockListenEx ... Ns_GetSockAddr ok\n");
         Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(&preboundTcp, (char *) &sa);
+        hPtr = Tcl_FindHashEntry(&preboundTcp, (char *)saPtr);
+        //fprintf(stderr, "#### ... found hash entry %p\n", hPtr);
         if (hPtr != NULL) {
 	    sock = PTR2INT(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&lock);
         if (hPtr == NULL) {
+            //fprintf(stderr, "#### ... NOT prebound\n");
             /* 
              * Not prebound, bind now 
              */
@@ -676,6 +677,7 @@ PreBind(const char *spec)
     NS_NONNULL_ASSERT(spec != NULL);
 
     line = ns_strdup(spec);
+    Ns_Log(Notice, "trying to prebind <%s>", line);
 
     for (; line != NULL; line = next) {
         const char *proto;
@@ -716,6 +718,8 @@ PreBind(const char *spec)
 	/*
 	 * TCP
 	 */
+        Ns_Log(Notice, "prebind: proto %s addr %s port %d", proto, addr, port);
+
         if (STREQ(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: [%s]:%d",
@@ -728,6 +732,9 @@ PreBind(const char *spec)
                        addr, port);
                 continue;
             }
+
+            Ns_LogSockaddr(Notice, "prebind adds", (const struct sockaddr *)saPtr);
+
             sock = Ns_SockBind(saPtr);
             if (sock == NS_INVALID_SOCKET) {
                 Ns_Log(Error, "prebind: tcp: [%s]:%d: %s", addr, port,
@@ -1114,6 +1121,8 @@ Binder(void)
         default:
             sock = Ns_SockListenEx(address, port, options);
         }
+        Ns_Log(Notice, "bind type %c addr %s port %d options %d to socket %d",
+               type, address, port, options, sock);
 
         if (sock < 0) {
             err = errno;
@@ -1129,13 +1138,14 @@ Binder(void)
 #ifdef HAVE_CMMSG
 	    int *pfd;
 
+            msg.msg_control = address;
+            msg.msg_controllen = sizeof(address);
             c = CMSG_FIRSTHDR(&msg);
             c->cmsg_level = SOL_SOCKET;
             c->cmsg_type  = SCM_RIGHTS;
             pfd = (int*)CMSG_DATA(c); 
             *pfd = sock;
             c->cmsg_len = CMSG_LEN(sizeof(int));
-            msg.msg_control = address;   /* do we really need this? */
             msg.msg_controllen = c->cmsg_len; 
 #else
             msg.msg_accrights = (caddr_t) &sock;
