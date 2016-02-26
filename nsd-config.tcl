@@ -10,12 +10,16 @@ set loopback "127.0.0.1"
 
 if {[ns_info ipv6]} {
     #
-    # The version of NaviServer supports IPv6. Probe if we can revese
-    # lookup the loopback interface.
+    # The version of NaviServer supports IPv6. Probe if we can reverse
+    # lookup the loopback interface and bind to the IPv6 loopback
+    # address with the port specified above.
     #
-    if {![catch {ns_hostbyaddr ::1}]} {
+    if {
+	![catch {ns_hostbyaddr ::1}]
+	&& ![catch {close [ns_socklisten ::1 $port]}]
+    } {
 	#
-	# Yes we can. So use the IPv6 style loopback address
+	# Yes we can. So use the IPv6 loopback address
 	#
 	set loopback ::1
     }
