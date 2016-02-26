@@ -241,10 +241,10 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
             url = p;
             if ((strlen(url) > 3u) && (*p++ == '/')
                 && (*p++ == '/') && (*p != '\0') && (*p != '/')) {
-                char *h;
+                char *h = p;
 
-                for (h = p; (*p != '\0') && (*p != '/'); p++) {
-                    ;
+                while ((*p != '\0') && (*p != '/')) {
+                    p++;
                 }
                 if (*p == '/') {
                     *p++ = '\0';
