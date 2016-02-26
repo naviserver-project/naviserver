@@ -1031,7 +1031,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
         //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s (2nd) => %d\n", lhost, result);
     }
     if (result != NS_OK) {
-        fprintf(stderr, "# ... SockConnect fails\n");
+        //fprintf(stderr, "# ... SockConnect fails\n");
         return NS_INVALID_SOCKET;
     }
     sock = Ns_SockBind(lsaPtr);
@@ -1056,7 +1056,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
                 sock = NS_INVALID_SOCKET;
             }
         }
-        if (async == NS_TRUE && sock != NS_INVALID_SOCKET) {
+        if ((async == NS_TRUE) && (sock != NS_INVALID_SOCKET)) {
             if (Ns_SockSetBlocking(sock) != TCL_OK) {
                 Ns_Log(Warning, "attempt to set socket blocking failed");
             }

@@ -313,7 +313,6 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      */
     //fprintf(stderr, "##### Ns_DriverInit server <%s> module <%s>, host <%s> address <%s>\n", server, module, host, address);
     if (address == NULL) {
-        Tcl_DString  ds;
         const char *hostName;
 
         Tcl_DStringInit(&ds);

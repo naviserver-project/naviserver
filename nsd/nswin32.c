@@ -46,6 +46,8 @@ static VOID WINAPI ServiceHandler(DWORD code);
 static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
 static char *GetServiceName(Ns_DString *dsPtr, char *service);
+static bool SockAddrEqual(struct sockaddr *saPtr1, struct sockaddr *saPtr2);
+
 
 /*
  * Static variables used in this file
@@ -874,8 +876,10 @@ ns_sockpair(NS_SOCKET socks[2])
         ns_sockclose(socks[1]);
         return -1;
     }
-    if (!(SockAddrEqual((struct sockaddr *)&ia[0], (struct sockaddr *)&ia[1])) ||
-        Ns_SockaddrGetPort((struct sockaddr *)&ia[0]) != Ns_SockaddrGetPort((struct sockaddr *)&ia[1])) {
+    if ((!(SockAddrEqual((struct sockaddr *)&ia[0],
+                         (struct sockaddr *)&ia[1]))) ||
+        (Ns_SockaddrGetPort((struct sockaddr *)&ia[0]) != Ns_SockaddrGetPort((struct sockaddr *)&ia[1]))
+        ) {
         ns_sockclose(socks[0]);
         ns_sockclose(socks[1]);
         return -1;
