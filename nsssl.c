@@ -685,9 +685,11 @@ SSLInterpInit(Tcl_Interp *interp, const void *arg)
 static int
 SSLPassword(char *buf, int num, int rwflag, void *userdata)
 {
+    const char *pwd;
+    
     fprintf(stdout, "Enter SSL password:");
-    (void) fgets(buf, num, stdin);
-    return(strlen(buf));
+    pwd = fgets(buf, num, stdin);
+    return (pwd != NULL ? (int)strlen(buf) : 0);
 }
 
 static void
