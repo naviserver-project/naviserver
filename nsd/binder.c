@@ -722,8 +722,7 @@ PreBind(const char *spec)
 
         if (STREQ(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
-                Ns_Log(Error, "prebind: tcp: invalid address: [%s]:%d",
-                       addr, port);
+                Ns_Log(Error, "prebind: tcp: invalid address: [%s]:%d", addr, port);
                 continue;
             }
             hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &isNew);
