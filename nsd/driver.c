@@ -1341,8 +1341,8 @@ DriverThread(void *arg)
                     /*
                      * Got some data
                      */
-                    ssize_t n = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
-                    if (n <= 0) {
+                    ssize_t recieved = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
+                    if (recieved <= 0) {
                         Ns_Log(DriverDebug, "poll closewait pollin; sockrelease SOCK_READERROR (sock %d)",
                                sockPtr->sock);
                         SockRelease(sockPtr, SOCK_READERROR, 0);
