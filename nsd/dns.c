@@ -273,20 +273,21 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     int    r;
     struct sockaddr_storage sa;
     struct sockaddr        *saPtr = (struct sockaddr *)&sa;
-    char  *host = NULL;
     bool   result = NS_FALSE;
 
     //fprintf(stderr, "# GetHost: addr <%s>\n", addr);
     r = ns_inet_pton(saPtr, addr);
     if (r > 0) {
         char buf[NI_MAXHOST];
+        const char  *host;
         //fprintf(stderr, "# GetHost: .... r %d familiy %d\n", r, sa.ss_family);
         int err = getnameinfo(saPtr,
-                              sa.ss_family == AF_INET6 ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+                              (sa.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
                               buf, sizeof(buf),
                               NULL, 0, NI_NAMEREQD);
         if (err != 0) {
             Ns_Log(Error, "dns: getnameinfo failed for addr <%s>: %s", addr, gai_strerror(err));
+            host = NULL;
         } else {
             host = buf;
         }
@@ -327,7 +328,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
                     host,
                     ptr->ai_family,
                     (ptr->ai_family == AF_INET6) ? "AF_INET6" : "AF_INET");*/
-            if (ptr->ai_family != AF_INET && ptr->ai_family != AF_INET6) {
+            if ((ptr->ai_family != AF_INET) && (ptr->ai_family != AF_INET6)) {
                 Ns_Log(Error, "dns: getaddrinfo failed for %s: unknown address family %d",
                        host, ptr->ai_family);
                 freeaddrinfo(res);
