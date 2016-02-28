@@ -447,6 +447,18 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", nsconf.tmpDir));
 
     /*
+     * If activated, maxupload has to be at least readahead bytes. Tell the
+     * user in case the config values are overruled.
+     */
+    if ((drvPtr->maxupload > 0) &&
+        (drvPtr->maxupload < drvPtr->readahead)) {
+        Ns_Log(Warning,
+               "parameter %s maxupload can be either 0 or must be >= %" TCL_LL_MODIFIER "d (size of readahead)",
+               path, drvPtr->readahead);
+        drvPtr->maxupload = drvPtr->readahead;
+    }
+    
+    /*
      * Determine the port and then set the HTTP location string either
      * as specified in the config file or constructed from the
      * protocol, hostname and port.
@@ -2404,7 +2416,6 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
          * we will spool raw uploads into normal temp file (no deleted) in case
          * content size exceeds the configured value.
          */
-
         if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16U);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
