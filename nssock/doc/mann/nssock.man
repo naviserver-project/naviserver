@@ -103,9 +103,12 @@ default: 8192)
 Size of the queue of accepted requests waiting for a connection thread
 (integer, default 1024).
 
-[def maxupload]
-When spooler threads are activated, use spooler threads for uploads
-larger than this size in bytes (see as well [term spoolerthreads])
+[def maxupload] Spool uploads to tmp-files for uploads larger than
+this size in bytes in order to keep the memory footprint small. This
+is especially important when large upoads are allowed via [term maxinput]. If
+this value is 0, this feature is deactivated. When spool-to-file is
+activated, the minimal size is the size of [term readahead]
+(see as well [term spoolerthreads]).
 
 [def nodelay]
 TCP Performance option; use TCP_NODELAY (OS-default on
@@ -135,8 +138,9 @@ Timeout in seconds for receive operations. (integer, default: 30)
 Timeout in seconds for send operations. (integer, default: 30)
 
 [def spoolerthreads]
-Number of spooler threads, which spool uploads to a file rather than
-to memory; see as well [term maxupload] (integer, default: 0)
+Number of spooler threads used when content larger than
+[term maxupload] is received. when spoolerthreads are set to 0, the driver
+threads handles upload-spooling as wellto memory; (integer, default: 0)
 
 [def uploadpath]
 Directory for uploads, defaults to the setting of [term "ns/parameter tmpdir"].
