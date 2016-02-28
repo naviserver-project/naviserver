@@ -330,7 +330,7 @@ ns_section ns/server/${server}/module/nssock
 	# Spooling Threads
 	#
 	# ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
-	# ns_param	maxupload	0	;# 0, when specified, spool uploads larger than this value to a temp file
+	ns_param	maxupload	100000	;# 0, when specified, spool uploads larger than this value to a temp file
 	ns_param	writerthreads	2	;# 0, number of writer threads
 	ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
