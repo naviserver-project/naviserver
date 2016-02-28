@@ -307,7 +307,7 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     int         status;
 
     /*
-     * Copy the URL's to allow Ns_ParseUrl to destory them.
+     * Copy the URL's to allow Ns_ParseUrl to destroy them.
      */
 
     Ns_DStringInit(&urlDs);
