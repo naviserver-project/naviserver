@@ -1023,12 +1023,23 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
 
     //fprintf(stderr, "# SockConnect (%s %d / %s %d) calls Ns_GetSockAddr %s\n", host, port, lhost, lport, host);
     result = Ns_GetSockAddr(saPtr, host, port);
-    //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s ==> %d\n", host, result);
+    //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s ==> ok %d\n", host, (result == TCL_OK));
     
     if (result == NS_OK) {
-        //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s (2nd)\n", lhost);
-        result = Ns_GetSockAddr(lsaPtr, lhost, lport);
-        //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s (2nd) => %d\n", lhost, result);
+        /*
+         * The conversion of host to sockaddr was ok. We have to make sure
+         * that the local address (where the local bind happens) is of the
+         * same address family, which is especially important for (lhost ==
+         * NULL), where the caller has no chance to influence the behavior,
+         * and we assume per default AF_INET6.
+         */
+        result = Ns_GetSockAddr(lsaPtr,
+#ifdef HAVE_IPV6                                
+                                ((saPtr->sa_family == AF_INET) && (lhost == NULL)) ? "0.0.0.0" : lhost,
+#else
+                                lhost,
+#endif                                
+                                lport);
     }
     if (result != NS_OK) {
         //fprintf(stderr, "# ... SockConnect fails\n");
@@ -1036,17 +1047,16 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
     }
     sock = Ns_SockBind(lsaPtr);
     /*
-      fprintf(stderr, "# ... SockConnect Ns_SockBind returns %d\n", sock);
-      Ns_LogSockaddr(Notice, "SockConnect lsa", lsaPtr);
       Ns_LogSockaddr(Notice, "SockConnect  sa", saPtr);
+      Ns_LogSockaddr(Notice, "SockConnect lsa", lsaPtr);
     */
-
     if (sock != NS_INVALID_SOCKET) {
         if (async == NS_TRUE) {
             if (Ns_SockSetNonBlocking(sock) != TCL_OK) {
                 Ns_Log(Warning, "attempt to set socket nonblocking failed");
             }
         }
+
         if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
             unsigned int err = ns_sockerrno;
 
@@ -1063,6 +1073,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
         }
     }
     
+    //fprintf(stderr, "# ... SockConnect Ns_SockBind returns finally %d\n", sock);    
     return sock;
 }
 
