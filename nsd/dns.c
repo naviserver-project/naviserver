@@ -286,7 +286,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
                               buf, sizeof(buf),
                               NULL, 0, NI_NAMEREQD);
         if (err != 0) {
-            Ns_Log(Error, "dns: getnameinfo failed for addr <%s>: %s", addr, gai_strerror(err));
+            Ns_Log(Notice, "dns: getnameinfo failed for addr <%s>: %s", addr, gai_strerror(err));
             host = NULL;
         } else {
             host = buf;
