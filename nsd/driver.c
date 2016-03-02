@@ -138,7 +138,7 @@ static void  SockPrepare(Sock *sockPtr)
 static void  SockRelease(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
 static void  SockError(Sock *sockPtr, SockState reason, int err);
-static void  SockSendResponse(Sock *sockPtr, int code)
+static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
@@ -453,8 +453,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     if ((drvPtr->maxupload > 0) &&
         (drvPtr->maxupload < drvPtr->readahead)) {
         Ns_Log(Warning,
-               "parameter %s maxupload can be either 0 or must be >= %" TCL_LL_MODIFIER "d (size of readahead)",
-               path, drvPtr->readahead);
+               "parameter %s maxupload % " TCL_LL_MODIFIER
+               "d invalid; can be either 0 or must be >= %" TCL_LL_MODIFIER
+               "d (size of readahead)",
+               path, drvPtr->maxupload, drvPtr->readahead);
         drvPtr->maxupload = drvPtr->readahead;
     }
     
@@ -2056,26 +2058,26 @@ SockError(Sock *sockPtr, SockState reason, int err)
 
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        SockSendResponse(sockPtr, 400);
+        SockSendResponse(sockPtr, 400, errMsg);
         break;
 
     case SOCK_TOOMANYHEADERS:
         errMsg = "Too Many Request Headers";
-        SockSendResponse(sockPtr, 414);
+        SockSendResponse(sockPtr, 414, errMsg);
         break;
 
     case SOCK_BADHEADER:
         errMsg = "Invalid Request Header";
-        SockSendResponse(sockPtr, 400);
+        SockSendResponse(sockPtr, 400, errMsg);
         break;
 
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
-        SockSendResponse(sockPtr, 413);
+        SockSendResponse(sockPtr, 413, errMsg);
         break;
     case SOCK_ERROR:
         errMsg = "Unknown Error";
-        SockSendResponse(sockPtr, 400);
+        SockSendResponse(sockPtr, 400, errMsg);
         break;
     }
     if (errMsg != NULL) {
@@ -2109,7 +2111,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
  */
 
 static void
-SockSendResponse(Sock *sockPtr, int code)
+SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 {
     struct iovec iov[3];
     char header[32], *response = NULL;
@@ -2119,7 +2121,7 @@ SockSendResponse(Sock *sockPtr, int code)
 
     switch (code) {
     case 413:
-        response = "Bad Request";
+        response = "Request Entity Too Large";
         break;
     case 414:
         response = "Request-URI Too Long";
@@ -2129,7 +2131,7 @@ SockSendResponse(Sock *sockPtr, int code)
         response = "Bad Request";
         break;
     }
-    snprintf(header, sizeof(header),"HTTP/1.0 %d ", code);
+    snprintf(header, sizeof(header), "HTTP/1.0 %d ", code);
     iov[0].iov_base = header;
     iov[0].iov_len = strlen(header);
     iov[1].iov_base = response;
@@ -2140,6 +2142,8 @@ SockSendResponse(Sock *sockPtr, int code)
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
         Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
+    Ns_Log(Notice, "invalid request: %d (%s) content '%s'",
+           code, errMsg, sockPtr->reqPtr->buffer.string);
 }
 
 
