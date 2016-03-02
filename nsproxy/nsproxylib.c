@@ -238,8 +238,8 @@ static Slave* ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) 
 static Err    CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void   SetExpire(Slave *slavePtr, int ms) NS_GNUC_NONNULL(1);
-static int    SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static int    RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static bool   SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static bool   RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int    WaitFd(int fd, short events, int ms);
 
 static int    Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr) \
@@ -471,7 +471,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_DStringInit(&in);
     Tcl_DStringInit(&out);
 
-    while (RecvBuf(&proc, -1, &in)) {
+    while (RecvBuf(&proc, -1, &in) == NS_TRUE) {
         Req *reqPtr;
 	int  len;
 
@@ -505,7 +505,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         } else {
             Ns_Fatal("nsproxy: invalid length");
         }
-        if (!SendBuf(&proc, -1, &out)) {
+        if (SendBuf(&proc, -1, &out) == NS_FALSE) {
             break;
         }
         Tcl_DStringTrunc(&in, 0);
@@ -956,8 +956,8 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             proxyPtr->poolPtr->runPtr = proxyPtr;
             Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
 
-            if (!SendBuf(proxyPtr->slavePtr, proxyPtr->conf.tsend,
-                         &proxyPtr->in)) {
+            if (SendBuf(proxyPtr->slavePtr, proxyPtr->conf.tsend,
+                         &proxyPtr->in) == NS_FALSE) {
                 err = ESend;
             }
         }
@@ -1057,8 +1057,8 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
         err = ENoWait;
     } else {
         Tcl_DStringTrunc(&proxyPtr->out, 0);
-        if (!RecvBuf(proxyPtr->slavePtr, proxyPtr->conf.trecv,
-                     &proxyPtr->out)) {
+        if (RecvBuf(proxyPtr->slavePtr, proxyPtr->conf.trecv,
+                    &proxyPtr->out) == NS_FALSE) {
             err = ERecv;
         } else if (Import(interp, &proxyPtr->out, resultPtr) != TCL_OK) {
             err = EImport;
@@ -1085,7 +1085,7 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
  *      Send a dstring buffer.
  *
  * Results:
- *      1 if sent, 0 on error.
+ *      NS_TRUE if sent, NS_FALSE on error.
  *
  * Side effects:
  *      None.
@@ -1093,7 +1093,7 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
     int          n, ms;
@@ -1120,25 +1120,25 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         } while (n == -1 && errno == EINTR);
         if (n == -1) {
             if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                return 0;
+                return NS_FALSE;
             }
             if (msec > 0) {
                 ms = GetTimeDiff(&end);
                 if (ms < 0) {
-                    return 0;
+                    return NS_FALSE;
                 }
             } else {
                 ms = msec;
             }
             if (WaitFd(slavePtr->wfd, POLLOUT, ms) == 0) {
-                return 0;
+                return NS_FALSE;
             }
         } else if (n > 0) {
             UpdateIov(iov, n);
         }
     }
 
-    return 1;
+    return NS_TRUE;
 }
 
 
@@ -1150,7 +1150,7 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
  *      Receive a dstring buffer.
  *
  * Results:
- *      1 if received, 0 on error.
+ *      NS_TRUE if sent, NS_FALSE on error.
  *
  * Side effects:
  *      Will resize output dstring as needed.
@@ -1158,7 +1158,7 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
     uint32       ulen;
@@ -1185,21 +1185,21 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
             n = readv(slavePtr->rfd, iov, 2);
         } while (n == -1 && errno == EINTR);
         if (n == 0) {
-            return 0; /* EOF */
+            return NS_FALSE; /* EOF */
         } else if (n < 0) {
             if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                return 0;
+                return NS_FALSE;
             }
             if (msec > 0) {
                 ms = GetTimeDiff(&end);
                 if (ms < 0) {
-                    return 0;
+                    return NS_FALSE;
                 }
             } else {
                 ms = msec;
             }
             if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
-                return 0;
+                return NS_FALSE;
             }
         } else if (n > 0) {
             UpdateIov(iov, n);
@@ -1216,21 +1216,21 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
             n = ns_read(slavePtr->rfd, ptr, len);
         } while (n == -1 && errno == EINTR);
         if (n == 0) {
-            return 0; /* EOF */
+            return NS_FALSE; /* EOF */
         } else if (n < 0) {
             if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                return 0;
+                return NS_FALSE;
             }
             if (msec > 0) {
                 ms = GetTimeDiff(&end);
                 if (ms < 0) {
-                    return 0;
+                    return NS_FALSE;
                 }
             } else {
                 ms = msec;
             }
             if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
-                return 0;
+                return NS_FALSE;
             }
         } else if (n > 0) {
             len -= n;
@@ -1238,7 +1238,7 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         }
     }
 
-    return 1;
+    return NS_TRUE;
 }
 
 
