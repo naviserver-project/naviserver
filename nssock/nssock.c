@@ -210,7 +210,14 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     
     n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
     if (n == 0) {
-	/* this means usually eof, return value of 0 means in the driver SOCK_MORE */
+	/* 
+         * n == 0 this means usually eof (peer closed connection), return
+         * value of 0 means in the driver SOCK_MORE. In order to cause a close
+         * of the socket, return -1, but clear the errno. This might not be
+         * the cleanest solution, but lets us to perform a proper close
+         * operation without logging an error.
+         */
+        errno = 0;
 	n = -1;
     }
     return n;

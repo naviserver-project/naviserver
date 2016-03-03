@@ -1433,17 +1433,22 @@ DriverThread(void *arg)
                         }
                         break;
 
-                    case SOCK_READERROR:
+                        /*
+                         * Already handled or normal cases
+                         */
+                    case SOCK_ENTITYTOOLARGE:                       
                     case SOCK_TOOMANYHEADERS:
-                    case SOCK_BADREQUEST:
-                        Ns_Log(DriverDebug, "sockread returned error; close socket");
+                    case SOCK_CLOSE:
                         SockRelease(sockPtr, s, errno);
                         break;
-
+                        
+                        /*
+                         * Exceptions
+                         */
+                    case SOCK_BADREQUEST:
+                    case SOCK_READERROR:
                     case SOCK_BADHEADER:
-                    case SOCK_CLOSE:
                     case SOCK_CLOSETIMEOUT:
-                    case SOCK_ENTITYTOOLARGE:
                     case SOCK_ERROR:
                     case SOCK_READTIMEOUT:
                     case SOCK_SERVERREJECT:
@@ -1456,8 +1461,9 @@ DriverThread(void *arg)
                         break;
                     }
                 } else {
-                    /* potentially blocking driver, NS_DRIVER_ASYNC is not defined */
-
+                    /* 
+                     * Potentially blocking driver, NS_DRIVER_ASYNC is not defined 
+                     */
                     if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                         Ns_Log(Notice, "read-ahead have some data no async sock read, setting sock more  ===== diff time %d",
                                Ns_DiffTime(&sockPtr->timeout, &now, &diff));
@@ -2019,7 +2025,6 @@ SockError(Sock *sockPtr, SockState reason, int err)
     case SOCK_READY:
     case SOCK_SPOOL:
     case SOCK_MORE:
-        break;
     case SOCK_CLOSE:
     case SOCK_CLOSETIMEOUT:
         /* This is normal, never log. */
@@ -2312,6 +2317,7 @@ ChunkedDecode(Request *reqPtr, int update)
  *      SOCK_MORE:  More input is required.
  *      SOCK_ERROR: Client drop or timeout.
  *      SOCK_SPOOL: Pass input handling to spooler
+ *      SOCK_CLOSE: peer closed connection
  *      SOCK_BADREQUEST
  *      SOCK_BADHEADER
  *      SOCK_TOOMANYHEADERS
@@ -2454,10 +2460,17 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     n = DriverRecv(sockPtr, &buf, 1);
-
+    
     if (n < 0) {
         Tcl_DStringSetLength(bufPtr, (int)len);
-        return (errno == EAGAIN) ? SOCK_MORE : SOCK_READERROR;
+        /*
+         * The driver returns -1 when the peer closed the connection, but
+         * clears the errno such we can distinguish form error conditons.
+         */
+        if (errno == 0) {
+            return SOCK_CLOSE;
+        }
+        return SOCK_READERROR;
     }
 
     if (n == 0) {

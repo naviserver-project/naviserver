@@ -46,7 +46,7 @@
  * can't include here (testing with FC18)
  */
 #ifdef HAVE_TCP_FASTOPEN
-# ifndef TCP_FASTOPEN 
+# ifndef TCP_FASTOPEN
 #  define TCP_FASTOPEN           23      /* Enable FastOpen on listeners */
 # endif
 #endif
@@ -153,7 +153,7 @@ Ns_SumVec(const struct iovec *bufs, int nbufs)
     size_t  sum = 0u;
 
     NS_NONNULL_ASSERT(bufs != NULL);
-    
+
     for (i = 0; i < nbufs; i++) {
         if (bufs[i].iov_len > 0U) {
             sum += bufs[i].iov_len;
@@ -187,7 +187,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 
     n = SockRecv(sock, bufs, nbufs, flags);
     if (n < 0
-        && ns_sockerrno == EWOULDBLOCK
+        && (ns_sockerrno == EWOULDBLOCK)
         && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ, timeoutPtr) == NS_OK) {
         n = SockRecv(sock, bufs, nbufs, flags);
     }
@@ -315,7 +315,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
     ssize_t nread;
 
     NS_NONNULL_ASSERT(buffer != NULL);
-    
+
     nread = ns_recv(sock, buffer, length, 0);
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
@@ -533,10 +533,10 @@ Ns_SockBind(const struct sockaddr *saPtr)
         sock = SockSetup(sock);
     }
     if (sock != NS_INVALID_SOCKET) {
-        
+
         if (Ns_SockaddrGetPort((const struct sockaddr *)saPtr) != 0u) {
             int n = 1;
-            
+
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n));
 #ifdef HAVE_IPV6
             /*
@@ -547,7 +547,7 @@ Ns_SockBind(const struct sockaddr *saPtr)
              */
             n = 0;
             setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &n, sizeof(n));
-#endif            
+#endif
         }
 
         if (bind(sock, (const struct sockaddr *)saPtr,
@@ -583,7 +583,7 @@ NS_SOCKET
 Ns_SockConnect(const char *host, int port)
 {
     NS_NONNULL_ASSERT(host != NULL);
-    
+
     return SockConnect(host, port, NULL, 0, NS_FALSE);
 }
 
@@ -591,7 +591,7 @@ NS_SOCKET
 Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
 {
     NS_NONNULL_ASSERT(host != NULL);
-    
+
     return SockConnect(host, port, lhost, lport, NS_FALSE);
 }
 
@@ -616,7 +616,7 @@ NS_SOCKET
 Ns_SockAsyncConnect(const char *host, int port)
 {
     NS_NONNULL_ASSERT(host != NULL);
-    
+
     return SockConnect(host, port, NULL, 0, NS_TRUE);
 }
 
@@ -624,7 +624,7 @@ NS_SOCKET
 Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
 {
     NS_NONNULL_ASSERT(host != NULL);
-    
+
     return SockConnect(host, port, lhost, lport, NS_TRUE);
 }
 
@@ -669,7 +669,7 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
      * Connect to the host asynchronously and wait for
      * it to connect.
      */
-    
+
     sock = SockConnect(host, port, lhost, lport, NS_TRUE);
     if (sock != NS_INVALID_SOCKET) {
         err = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
@@ -776,7 +776,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 # else
     int qlen = 5;
 # endif
-    
+
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
 		   &qlen, sizeof(qlen)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
@@ -797,7 +797,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 #  ifdef SO_ACCEPTFILTER
     struct accept_filter_arg afa;
     int n;
-    
+
     memset(&afa, 0, sizeof(afa));
     strcpy(afa.af_name, "httpready");
     n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa));
@@ -835,7 +835,7 @@ int
 Ns_SockPipe(NS_SOCKET socks[2])
 {
     NS_NONNULL_ASSERT(socks != NULL);
-    
+
     if (ns_sockpair(socks) != 0) {
         return NS_ERROR;
     }
@@ -1024,7 +1024,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
     //fprintf(stderr, "# SockConnect (%s %d / %s %d) calls Ns_GetSockAddr %s\n", host, port, lhost, lport, host);
     result = Ns_GetSockAddr(saPtr, host, port);
     //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s ==> ok %d\n", host, (result == TCL_OK));
-    
+
     if (result == NS_OK) {
         /*
          * The conversion of host to sockaddr was ok. We have to make sure
@@ -1034,11 +1034,11 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
          * and we assume per default AF_INET6.
          */
         result = Ns_GetSockAddr(lsaPtr,
-#ifdef HAVE_IPV6                                
+#ifdef HAVE_IPV6
                                 ((saPtr->sa_family == AF_INET) && (lhost == NULL)) ? "0.0.0.0" : lhost,
 #else
                                 lhost,
-#endif                                
+#endif
                                 lport);
     }
     if (result != NS_OK) {
@@ -1072,8 +1072,8 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
             }
         }
     }
-    
-    //fprintf(stderr, "# ... SockConnect Ns_SockBind returns finally %d\n", sock);    
+
+    //fprintf(stderr, "# ... SockConnect Ns_SockBind returns finally %d\n", sock);
     return sock;
 }
 
