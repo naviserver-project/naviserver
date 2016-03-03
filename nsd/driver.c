@@ -2457,7 +2457,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 
     if (n < 0) {
         Tcl_DStringSetLength(bufPtr, (int)len);
-        return SOCK_READERROR;
+        return (errno == EAGAIN) ? SOCK_MORE : SOCK_READERROR;
     }
 
     if (n == 0) {
