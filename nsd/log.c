@@ -114,7 +114,7 @@ static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
-                      int trunc, int locked)
+                      bool trunc, bool locked)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int   LogOpen(void);
@@ -748,7 +748,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      */
 
     if (cachePtr->hold == 0 || severity == Fatal) {
-        LogFlush(cachePtr, filters, -1, 1, 1);
+        LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
     }
 }
 
@@ -980,6 +980,11 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
         bp = cachePtr->lbuf;
         sizePtr = &cachePtr->lbufSize;
     }
+    
+    /*
+     * Check if the value for seconds in the cache is the same as the required
+     * value. If not, recompute the string and store it in the cache.x
+     */
     if (*tp != timePtr->sec) {
         size_t n;
 	time_t secs;
@@ -1152,7 +1157,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         filterPtr->proc = LogToDString;
         filterPtr->arg  = &ds;
         Ns_DStringInit(&ds);
-        LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), 0);
+        LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx) ? NS_TRUE : NS_FALSE, NS_FALSE);
         Tcl_DStringResult(interp, &ds);
         Ns_DStringFree(&ds);
         break;
@@ -1162,7 +1167,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         /* FALLTHROUGH */
 
     case CFlushIdx:
-        LogFlush(cachePtr, filters, -1, 1, 1);
+        LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
         break;
 
     case CCountIdx:
@@ -1175,7 +1180,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             result = TCL_ERROR;
         } else {
             memset(filterPtr, 0, sizeof *filterPtr);
-            LogFlush(cachePtr, filterPtr, count, 1, 0);
+            LogFlush(cachePtr, filterPtr, count, NS_TRUE, NS_FALSE);
         }
         break;
 
@@ -1260,6 +1265,9 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
       }
 
     case CSeveritiesIdx:
+        /*
+         * Return all registered severites in a list
+         */
         objPtr = Tcl_GetObjResult(interp);
         for (i = 0; i < severityIdx; i++) {
             if (Tcl_ListObjAppendElement(interp, objPtr,
@@ -1276,7 +1284,9 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         break;
 
     default:
-        /* unexpected value */
+        /* 
+         * Unexpected value, raise an exception in development mode.
+         */
         assert(opt && 0);
         break;
     }
@@ -1425,7 +1435,6 @@ LogOpen(void)
         /*
          * Route stderr to the file
          */
-
         if (fd != STDERR_FILENO && ns_dup2(fd, STDERR_FILENO) == -1) {
             status = NS_ERROR;
         }
@@ -1433,7 +1442,6 @@ LogOpen(void)
         /*
          * Route stdout to the file
          */
-
         if (ns_dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
             Ns_Log(Error, "log: failed to route stdout to file: '%s'",
                    strerror(errno));
@@ -1443,7 +1451,6 @@ LogOpen(void)
         /*
          * Clean up dangling 'open' reference to the fd
          */
-
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
             (void) ns_close(fd);
         }
@@ -1470,7 +1477,7 @@ LogOpen(void)
  */
 
 static void
-LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locked)
+LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool locked)
 {
     int        status, nentry = 0;
     LogFilter *cPtr;
@@ -1486,8 +1493,13 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
         if (locked != 0) {
             Ns_MutexLock(&lock);
         }
+        
+        /*
+         * Since listPtr is never NULL, a repeat-unil loop is sufficient to
+         * guarantee that the initial cPtr is not NULL either.
+         */
         cPtr = listPtr;
-        while (cPtr != NULL) {
+        do {
             if (cPtr->proc != NULL) {
                 if (locked != 0) {
                     cPtr->refcnt++;
@@ -1514,7 +1526,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                 }
             }
             cPtr = cPtr->prevPtr;
-        }
+        } while (cPtr != NULL);
+        
         if (locked != 0) {
             Ns_MutexUnlock(&lock);
         }
@@ -1525,7 +1538,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
         ePtr = ePtr->nextPtr;
     }
 
-    if (trunc != 0) {
+    if (trunc == NS_TRUE) {
         if (count > 0) {
 	    size_t length = (ePtr != NULL) ? (ePtr->offset + ePtr->length) : 0u;
             cachePtr->count = (length != 0u) ? nentry : 0;
@@ -1825,7 +1838,7 @@ FreeCache(void *arg)
     LogCache *cachePtr = (LogCache *)arg;
     LogEntry *entryPtr, *tmpPtr;
 
-    LogFlush(cachePtr, filters, -1, 1, 1);
+    LogFlush(cachePtr, filters, -1, NS_TRUE, 1);
     entryPtr = cachePtr->firstEntry;
     while (entryPtr != NULL) {
         tmpPtr = entryPtr->nextPtr;
