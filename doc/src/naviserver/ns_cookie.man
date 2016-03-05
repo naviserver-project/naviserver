@@ -54,14 +54,14 @@ The [arg data] will be URL-encoded to escape special characters.
 
 
 [call [cmd ns_getcookie] \
-	[opt [option "-include_set_cookie [arg bool]"]] \
+	[opt [option "-include_set_cookies [arg bool]"]] \
 	[opt [arg --]] \
 	[arg name]	\
 	[opt [arg default]]  ]
 
 Get the cookie data identified by [arg name]. If no such cookie exists then
 [arg default] is returned. If [arg default] is not given and no such cookie
-exists, an error is raised. When the option -include_set_cookie is set
+exists, an error is raised. When the option [opt -include_set_cookies] is set
 true, then this command will search as well in the cookies being
 currently set in the output headers.
 
