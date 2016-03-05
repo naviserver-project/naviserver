@@ -6,7 +6,7 @@
 # probe the interfaces here before we set the final IP address.
 #
 set port 8080
-set loopback "127.0.0.1"
+set address "0.0.0.0"
 
 if {[ns_info ipv6]} {
     #
@@ -19,12 +19,11 @@ if {[ns_info ipv6]} {
 	&& ![catch {close [ns_socklisten ::1 $port]}]
     } {
 	#
-	# Yes we can. So use the IPv6 loopback address
+	# Yes we can. So use the IPv6 any address
 	#
-	set loopback ::1
+	set address ::
     }
 }
-set address $loopback
 
 #set             home                /usr/local/ns
 set             home                [file dirname [file dirname [info nameofexecutable]]]
