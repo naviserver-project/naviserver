@@ -1436,7 +1436,9 @@ DriverThread(void *arg)
                         /*
                          * Already handled or normal cases
                          */
-                    case SOCK_ENTITYTOOLARGE:                       
+                    case SOCK_ENTITYTOOLARGE:
+                    case SOCK_BADREQUEST:
+                    case SOCK_BADHEADER:                        
                     case SOCK_TOOMANYHEADERS:
                     case SOCK_CLOSE:
                         SockRelease(sockPtr, s, errno);
@@ -1445,9 +1447,7 @@ DriverThread(void *arg)
                         /*
                          * Exceptions
                          */
-                    case SOCK_BADREQUEST:
                     case SOCK_READERROR:
-                    case SOCK_BADHEADER:
                     case SOCK_CLOSETIMEOUT:
                     case SOCK_ERROR:
                     case SOCK_READTIMEOUT:
@@ -2147,8 +2147,10 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
         Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
-    Ns_Log(Notice, "invalid request: %d (%s) content '%s'",
-           code, errMsg, sockPtr->reqPtr->buffer.string);
+
+    ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
+    Ns_Log(Notice, "invalid request: %d (%s) from peer %s buffer '%s'",
+           code, errMsg, sockPtr->reqPtr->peer, sockPtr->reqPtr->buffer.string);
 }
 
 
