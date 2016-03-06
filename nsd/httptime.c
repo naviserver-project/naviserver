@@ -93,7 +93,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
     if (when == NULL) {
-        now = time(0);
+        now = time(NULL);
         when = &now;
     }
     tmPtr = ns_gmtime(when);

@@ -903,7 +903,7 @@ LogRoll(Log *logPtr)
         if (logPtr->rollfmt == NULL) {
             status = Ns_RollFile(logPtr->file, logPtr->maxbackup);
         } else {
-            time_t      now = time(0);
+            time_t      now = time(NULL);
             char        timeBuf[512];
             Ns_DString  ds;
 	    Tcl_Obj    *newpath;
