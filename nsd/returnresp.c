@@ -359,9 +359,9 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
     }
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds,
-        "The HTTP request presented by your browser is invalid.");
+        "<p>The HTTP request presented by your browser is invalid.");
     if (reason != NULL) {
-        Ns_DStringVarAppend(&ds, "<P>\n", reason, NULL);
+        Ns_DStringVarAppend(&ds, "<p>\n", reason, NULL);
     }
     result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
     Ns_DStringFree(&ds);
