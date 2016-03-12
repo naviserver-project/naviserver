@@ -105,6 +105,9 @@ namespace eval ::nstest {
 		ns_set icput $hdrs Connection close
 	    }
 
+	    if {[string match *:* $host]} {
+		set host "\[$host\]"
+	    }
 	    if {$port eq "80"} {
 		ns_set icput $hdrs Host $host
 	    } else {

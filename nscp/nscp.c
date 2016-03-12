@@ -145,10 +145,10 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     lsock = Ns_SockListen(addr, port);
     if (lsock == NS_INVALID_SOCKET) {
-	Ns_Log(Error, "nscp: could not listen on %s:%d", addr, port);
+	Ns_Log(Error, "nscp: could not listen on [%s]:%d", addr, port);
 	return NS_ERROR;
     }
-    Ns_Log(Notice, "nscp: listening on %s:%d", addr, port);
+    Ns_Log(Notice, "nscp: listening on [%s]:%d", addr, port);
 
     /*
      * Create a new Mod structure for this instance.
