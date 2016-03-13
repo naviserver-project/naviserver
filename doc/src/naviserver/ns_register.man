@@ -150,7 +150,7 @@ This example shows how to expire all HTML files after an hour:
 [example_end]
 
 The command [cmd ns_info] [arg requestprocs] can be used to list the
-currently registerd procs.
+currently registered procs.
 
 
 [call [cmd ns_register_proc] \
