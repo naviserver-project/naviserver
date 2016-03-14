@@ -164,10 +164,11 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      */
     
     request->line = ns_strdup(l);
-    /*Ns_Log(Notice, "Ns_ParseRequest %p %s", request, request->line);*/
 
     /*
      * Look for the minimum of method and url.
+     *
+     * Collect non-space characters as first token.
      */
     
     url = l;
@@ -177,42 +178,67 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     if (*url == '\0') {
         goto done;
     }
+
+    /*
+     * Mark the end of the first token and remember it as HTTP-method.
+     */
     *url++ = '\0';
+    request->method = ns_strdup(l);
+    
+    /*
+     * Skip spaces.
+     */
     while (*url != '\0' && CHARTYPE(space, *url) != 0)  {
         ++url;
     }
     if (*url == '\0') {
         goto done;
     }
-    request->method = ns_strdup(l);
+
 
     /*
-     * Look for a valid version.
+     * Look for a valid version. Typically, the HTTP-version number is of the
+     * form "HTTP/1.0". However, in HTTP 0.9, the HTTP-version number was not
+     * specified.
      */
-
     request->version = 0.0;
-    p = url + strlen(url);
-    while (p-- > url) {
-        if (CHARTYPE(digit, *p) == 0 && *p != '.') {
-            break;
-        }
-    }
-    p -= (sizeof(HTTP) - 2u);
-    if (p >= url) {
-        if (strncmp(p, HTTP, sizeof(HTTP) - 1u) == 0) {
 
+    /*
+     * Search from the end for the last space.
+     */
+    p = strrchr(url, ' ');
+    if (likely(p != NULL)) {
+        /*
+         * We have a final token. Let see, if this a HTTP-version string.
+         */
+        if (likely(strncmp(p + 1, HTTP, sizeof(HTTP) - 1u) == 0)) {
             /*
-             * If atof fails, version will be set to 0 and the server
-             * will treat the connection as if it had no HTTP/n.n keyword.
+             * The HTTP-Version string starts really with HTTP/
+             *
+             * If strtod fails, version will be set to 0 and the server will
+             * treat the connection as if it had no HTTP/n.n keyword.
              */
-
             *p = '\0';
-            p += sizeof(HTTP) - 1u;
+            p += sizeof(HTTP);
             request->version = strtod(p, NULL);
+        } else {
+            /*
+             * The last token does not have the form of an HTTP-version
+             * string. Report result as invalid request.
+             */
+            goto done;
+        }
+    } else {
+        /*
+         * Let us assume, the request is HTTP 0.9, when the url starts with a
+         * slash. HTTP 0.9 did not have proxy functionality.
+         */
+        if (*url != '/') {
+            goto done;
         }
     }
 
-    url = Ns_StrTrim(url);
+    url = Ns_StrTrimRight(url);
     if (*url == '\0') {
         goto done;
     }
@@ -220,7 +246,6 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     /*
      * Look for a protocol in the URL.
      */
-
     request->protocol = NULL;
     request->host = NULL;
     request->port = 0u;
@@ -263,12 +288,12 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
             }
         }
     }
+
     SetUrl(request, url);
     Ns_DStringFree(&ds);
     return NS_OK;
 
 done:
-    Ns_ResetRequest(request);
     Ns_DStringFree(&ds);
     return NS_ERROR;
 }
