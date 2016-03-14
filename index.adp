@@ -1,47 +1,41 @@
 <html>
- <head>
-  <title>Default Page for Naviserver Installation</title>
+<head>
+  <link rel="stylesheet" href="doc/naviserver/man.css" type="text/css">
+  <title>NaviServer <%=[ns_info patchlevel]%></title>
   <style>
- strong {color: #000080;}
+   strong {color: #000080;}
+   #man-header strong {color: #ffffff;}
   </style>
 </head>
- <body
-  bgcolor="#FFFFFF"
-  text="#000000"
-  link="#0000FF"
-  vlink="#000080"
-  alink="#FF0000"
- >
-<div style='float: right'>
-  <a href="http://naviserver.sourceforge.net/"><img src="/doc/ns_logosmall.png"></a>
-</div>
-<div style='clear: both'></div>
+<body>
+ <div id="man-header">
+  <a href="http://wiki.tcl.tk/2090"><span class="logo"></span><strong>NaviServer</strong></a>
+  - programmable web server
+ </div>
 
-  <h1 align="CENTER">
-   Welcome to <a href="http://naviserver.sourceforge.net/">Naviserver
-   <%=[ns_info patchlevel]%>
-   </a> under
+  <h1>
+   Welcome to <a href="http://naviserver.sourceforge.net/">NaviServer
+   <%=[ns_info patchlevel]%></a> under
    <%=[set . "$::tcl_platform(os) $::tcl_platform(osVersion)"]%>
   </h1>
   <p>
   If you can see this page, then the <a
- href="http://naviserver.sourceforge.net/">Naviserver</a> web server
- was activated on this machine.
+  href="http://naviserver.sourceforge.net/">NaviServer</a> web server
+  was activated on this machine.
   The server installation contains currently just the default content provided by
-  the standard Naviserver distribution. In a next step, this placeholder page should be
+  the standard NaviServer distribution. In a next step, this placeholder page should be
   replaced, or the configuration should point to a directory with real
- content. The current configuration file is <i><%=[ns_info config]%></i>.
+  content. The current configuration file is <i><%=[ns_info config]%></i>.
   </p>
   <hr>
   <p>
   <ul>
+  <li>The NaviServer <a href="doc/toc.html">Documentation<a> has been included with this distribution.<p>
 
-  <li>The Naviserver <a href="doc/toc.html">Documentation<a> has been included with this distribution.<p>
-
-  <li>The Naviserver <a href="examples/">Examples<a> include a few useful scripts and tricks.<p>
+  <li>The NaviServer <a href="examples/">Examples<a> include a few useful scripts and tricks.<p>
 
   <%
-   ns_adp_puts {<li>The Naviserver <a href="nsstats.tcl">Statistics page</a> can be
+   ns_adp_puts {<li>The NaviServer <a href="nsstats.tcl">Statistics page</a> can be
                     useful in resolving performance issues.}
 
    if { ![file exists [ns_server pagedir]/nsstats.tcl] } {
@@ -54,7 +48,7 @@
   %>
     <p>
 
-  <li>The Naviserver runtime <a href="nsconf.tcl">Config page</a> can be
+  <li>The NaviServer runtime <a href="nsconf.tcl">Config page</a> can be
     useful in reviewing server's setup.<br>
   <%
    if { ![file exists [ns_server pagedir]/nsconf.tcl] } {

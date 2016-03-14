@@ -1,28 +1,25 @@
-<HTML>
-<HEAD>
-<TITLE>Example applications and script for NaviServer</TITLE>
-</HEAD>
+<html>
+<head>
+  <link rel="stylesheet" href="/doc/naviserver/man.css" type="text/css">
+  <title>Example applications and script for NaviServer</title>
+</head>
 
-<BODY
-  BGCOLOR="#FFFFFF"
-  TEXT="#000000"
-  LINK="#0000FF"
-  VLINK="#000080"
-  ALINK="#FF0000"
->
+<body>
+ <div id="man-header">
+  <a href="http://wiki.tcl.tk/2090"><span class="logo"></span><strong>NaviServer</strong></a>
+  - programmable web server
+ </div>
 
-</BODY>
+<h1>Example applications and scripts for NaviServer</h1>
 
-<H1>Example applications and scripts for NaviServer</H1>
-
-<UL>
-<LI> <A HREF=upload.tcl>Upload</A> page with progress statistcs, shows percentage
+<ul>
+<li> <a href="upload.tcl">Upload</a> page with progress statistcs, shows percentage
      of completion during the upload.
 
-<LI> <A HREF=writer.tcl>Writer</A> page with example how writer threads can be used
+<li> <a href="writer.tcl">Writer</A> page with example how writer threads can be used
      to return huge files. It shows all files that are in <%=[ns_info home]%>/modules/movies
      directory.
 
-</UL>
-
-</HTML>
+</ul>
+</body>
+</html>
