@@ -185,3 +185,12 @@ ns_param        address             $address
 
 ns_section     "ns/server/default/module/nscp/users"
 ns_param        user                "::"
+
+#
+# For debugging, you might activate one of the following flags
+#
+#ns_logctl severity Debug(ns:driver) on
+#ns_logctl severity Debug(task) on
+#ns_logctl severity Debug(sql) on
+#ns_logctl severity Debug on
+
