@@ -237,7 +237,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     initServPtr = servPtr;
 
     /*
-     * Run the library init procs in the order they were registerd.
+     * Run the library init procs in the order they were registered.
      */
 
     initPtr = firstInitPtr;
