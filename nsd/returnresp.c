@@ -480,6 +480,37 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnReturnInvalidMethod --
+ *
+ *      Return a 405 Not Found response.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR
+ *
+ * Side effects:
+ *      Will close the connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
+{
+    int result;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+    
+    if (ReturnRedirect(conn, 405, &result)) {
+        return result;
+    }
+
+    return Ns_ConnReturnNotice(conn, 405, "Method Not Allowed",
+               "The requested method is not allowed on this server.");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConnReturnNotModified --
  *
  *      Return a 304 Not Modified response.

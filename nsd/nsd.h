@@ -43,23 +43,23 @@
  * Various ADP option bits.
  */
 
-#define ADP_SAFE                       0x01U    /* Use Tcl_SafeEval for ADP */
-#define ADP_SINGLE                     0x02U    /* Combine blocks into a single script */
-#define ADP_DEBUG                      0x04U    /* Enable debugging */
-#define ADP_EXPIRE                     0x08U    /* Send Expires: now header on output */
-#define ADP_CACHE                      0x10U    /* Enable output caching */
-#define ADP_TRACE                      0x20U    /* Trace execution */
-#define ADP_DETAIL                     0x80U    /* Log connection details on error */
-#define ADP_STRICT                     0x100U   /* Strict error handling */
-#define ADP_DISPLAY                    0x200U   /* Display error messages in output stream */
-#define ADP_TRIM                       0x400U   /* Display error messages in output stream */
-#define ADP_FLUSHED                    0x800U   /* Some output has been sent */
-#define ADP_ERRLOGGED                  0x1000U  /* Error message has already been logged */
-#define ADP_AUTOABORT                  0x2000U  /* Raise abort on flush error */
-#define ADP_ADPFILE                    0x4000U  /* Object to evaluate is a file */
-#define ADP_STREAM                     0x8000U  /* Enable ADP streaming */
-#define ADP_TCLFILE                    0x10000U /* Object to evaluate is a Tcl file */
-#define ADP_OPTIONMAX                  0x1000000U /* watermark for flag values */
+#define ADP_SAFE                       0x01u    /* Use Tcl_SafeEval for ADP */
+#define ADP_SINGLE                     0x02u    /* Combine blocks into a single script */
+#define ADP_DEBUG                      0x04u    /* Enable debugging */
+#define ADP_EXPIRE                     0x08u    /* Send Expires: now header on output */
+#define ADP_CACHE                      0x10u    /* Enable output caching */
+#define ADP_TRACE                      0x20u    /* Trace execution */
+#define ADP_DETAIL                     0x80u    /* Log connection details on error */
+#define ADP_STRICT                     0x100u   /* Strict error handling */
+#define ADP_DISPLAY                    0x200u   /* Display error messages in output stream */
+#define ADP_TRIM                       0x400u   /* Display error messages in output stream */
+#define ADP_FLUSHED                    0x800u   /* Some output has been sent */
+#define ADP_ERRLOGGED                  0x1000u  /* Error message has already been logged */
+#define ADP_AUTOABORT                  0x2000u  /* Raise abort on flush error */
+#define ADP_ADPFILE                    0x4000u  /* Object to evaluate is a file */
+#define ADP_STREAM                     0x8000u  /* Enable ADP streaming */
+#define ADP_TCLFILE                    0x10000u /* Object to evaluate is a Tcl file */
+#define ADP_OPTIONMAX                  0x1000000u /* watermark for flag values */
 
 typedef enum {
     ADP_OK =                     0,
@@ -76,13 +76,13 @@ typedef enum {
 } NsUrlSpaceOp;
 
 #define MAX_URLSPACES                  16
-#define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2U)
+#define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2u)
 
-#define CONN_TCLFORM                   0x01U  /* Query form set is registered for interp */
-#define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
-#define CONN_TCLOUTHDRS                0x04U  /* Output headers set is registered for interp */
-#define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
-#define CONN_TCLHTTP                   0x10U  /* HTTP headers requested by ns_headers */
+#define CONN_TCLFORM                   0x01u  /* Query form set is registered for interp */
+#define CONN_TCLHDRS                   0x02u  /* Input headers set is registered for interp */
+#define CONN_TCLOUTHDRS                0x04u  /* Output headers set is registered for interp */
+#define CONN_TCLAUTH                   0x08u  /* 'auth' headers set is registered for interp */
+#define CONN_TCLHTTP                   0x10u  /* HTTP headers requested by ns_headers */
 
 /*
  * The following is the default text/html content type
@@ -91,7 +91,7 @@ typedef enum {
 
 #define NSD_TEXTHTML                   "text/html"
 /*
- * constants for SockState return and reason codes.
+ * Constants for SockState return and reason codes.
  */
 
 typedef enum {
@@ -103,18 +103,17 @@ typedef enum {
     SOCK_CLOSETIMEOUT =       -3,
     SOCK_READTIMEOUT =        -4,
     SOCK_WRITETIMEOUT =       -5,
-    SOCK_SERVERREJECT =       -6,
-    SOCK_READERROR =          -7,
-    SOCK_WRITEERROR =         -8,
-    SOCK_SHUTERROR =          -9,
-    SOCK_BADREQUEST =         -11,
-    SOCK_ENTITYTOOLARGE =     -12,
-    SOCK_BADHEADER =          -13,
-    SOCK_TOOMANYHEADERS =     -14
+    SOCK_READERROR =          -6,
+    SOCK_WRITEERROR =         -7,
+    SOCK_SHUTERROR =          -8,
+    SOCK_BADREQUEST =         -9,
+    SOCK_ENTITYTOOLARGE =     -10,
+    SOCK_BADHEADER =          -11,
+    SOCK_TOOMANYHEADERS =     -12
 } SockState;
 
 /*
- * subset for spooler states
+ * Subset for spooler states
  */
 typedef enum {
     SPOOLER_CLOSE =             SOCK_CLOSE,

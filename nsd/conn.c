@@ -688,14 +688,13 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         if (Ns_StrIsHost(host) == 0) {
             goto deflocation;
         }
-
-        location = Ns_DStringVarAppend(dest,
-            connPtr->drvPtr->protocol, "://", host, NULL);
+        /* we have here no port and no default port */
+        location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0, 0);
 
     } else {
 
         /*
-         * If all else fails, append the static driver location.
+         * If everything else fails, append the static driver location.
          */
 
     deflocation:

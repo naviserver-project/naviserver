@@ -129,6 +129,11 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
 {
     Req *reqPtr;
 
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
+
     reqPtr = ns_malloc(sizeof(Req));
     reqPtr->proc = proc;
     reqPtr->deleteCallback = deleteCallback;
@@ -164,6 +169,13 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
 	      unsigned int *flagsPtr)
 {
     Req *reqPtr;
+
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(procPtr != NULL);
+    NS_NONNULL_ASSERT(argPtr != NULL);
+    NS_NONNULL_ASSERT(flagsPtr != NULL);
 
     Ns_MutexLock(&ulock);
     reqPtr = NsUrlSpecificGet(NsGetServer(server), method, url, uid,
@@ -204,6 +216,10 @@ void
 Ns_UnRegisterRequest(const char *server, const char *method, const char *url,
                      int inherit)
 {
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+
     Ns_UnRegisterRequestEx(server, method, url, (inherit != 0) ? 0u : NS_OP_NOINHERIT);
 }
 
@@ -229,6 +245,10 @@ void
 Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
                        unsigned int flags)
 {
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    
     Ns_MutexLock(&ulock);
     (void)Ns_UrlSpecificDestroy(server, method, url, uid, flags);
     Ns_MutexUnlock(&ulock);
@@ -255,9 +275,13 @@ Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
 int
 Ns_ConnRunRequest(Ns_Conn *conn)
 {
-    int         status  = NS_OK;
-    Conn       *connPtr = (Conn *) conn;
-    const char *server  = Ns_ConnServer(conn);
+    int         status = NS_OK;
+    Conn       *connPtr;
+    Ns_Request *requestPtr;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    connPtr = (Conn *) conn;
 
     /*
      * Return error messages for invalid headers and 
@@ -273,22 +297,28 @@ Ns_ConnRunRequest(Ns_Conn *conn)
         connPtr->flags &= ~NS_CONN_LINETOOLONG;
         return Ns_ConnReturnHeaderLineTooLong(conn);
     }
+
     /*
-     * true requests.
+     * True requests.
      */
+    requestPtr = conn->request;
+    assert(requestPtr != NULL);
+    
+    if ((requestPtr->method != NULL) && (requestPtr->url != NULL)) {
+        Req        *reqPtr;
 
-    if (conn->request->method != NULL && conn->request->url != NULL) {
-        Req  *reqPtr;
-
+        Ns_Log(Debug, "Ns_ConnRunRequest: method <%s> url <%s>", requestPtr->method, requestPtr->url);
+        
         Ns_MutexLock(&ulock);
-        reqPtr = NsUrlSpecificGet(NsGetServer(server), conn->request->method, conn->request->url, uid,
+        reqPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
+                                  requestPtr->method, requestPtr->url, uid,
                                   0u, NS_URLSPACE_DEFAULT);
         if (reqPtr == NULL) {
             Ns_MutexUnlock(&ulock);
-            if (STREQ(conn->request->method, "BAD")) {
+            if (STREQ(requestPtr->method, "BAD")) {
                 return Ns_ConnReturnBadRequest(conn, NULL);
             } else {
-                return Ns_ConnReturnNotFound(conn);
+                return Ns_ConnReturnInvalidMethod(conn);
             }
         }
         ++reqPtr->refcnt;
@@ -326,6 +356,9 @@ int
 Ns_ConnRedirect(Ns_Conn *conn, const char *url)
 {
     int status;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
 
     /*
      * Update the request URL.
@@ -390,6 +423,11 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
     int            isNew;
     Tcl_HashEntry *hPtr;
 
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(protocol != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
+
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_RegisterProxyRequest: no such server: %s", server);
@@ -436,7 +474,11 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
                           const char *protocol)
 {
     NsServer      *servPtr;
-
+    
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(protocol != NULL);
+    
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr;

@@ -46,9 +46,24 @@ test http-1.1 {bad request} -constraints serverListen -body {
     nstest::http -getbody 1 bogus
 } -result {400}
 
+
+
 test http-1.2 {HTTP/0.9 GET} -constraints serverListen -body {
     nstest::http -http "" -getbody 1 GET /noexist
 } -match glob -result {*Not Found*}
+
+test http-1.2a {HTTP/0.9 no url} -constraints serverListen -body {
+    nstest::http -http "" -getbody 1 GET a
+} -result {400}
+
+test http-1.2b {strange request starting with GET (no http-version)} -constraints serverListen -body {
+    nstest::http -http "" -getbody 1 GET "a b"
+} -result {400}
+
+test http-1.2c {strange request starting with GET + three tokens} -constraints serverListen -body {
+    nstest::http -http "" -getbody 1 GET "a b c"
+} -result {400}
+
 
 test http-1.3 {HTTP/1.0 GET} -constraints serverListen -body {
     nstest::http -getbody 1 GET /noexist
@@ -58,6 +73,17 @@ test http-1.4 {HTTP/1.1 GET} -constraints serverListen -body {
     nstest::http -http 1.1 -getbody 1 GET /noexist
 } -match glob -result {404 *Not Found*}
 
+test http-1.5a {bad method} -constraints serverListen -body {
+    nstest::http -getbody 1 a /
+} -match glob -result {405 *Not Allowed*}
+
+test http-1.5b {bad method 0.9} -constraints serverListen -body {
+    nstest::http -http "" -getbody 1 a b
+} -result {400}
+
+test http-1.5c {bad method 3 args} -constraints serverListen -body {
+    nstest::http -http "" -getbody 1 a "b c"
+} -result {400}
 
 
 test http-2.1 {HTTP/1.1 GET small file} -constraints serverListen -body {
@@ -74,6 +100,11 @@ test http-2.2 {HTTP/1.1 GET large file sent via writer threads} \
 test http-2.3 {HTTP/1.1 GET file larger than IOBUFSZ (connio.c)} -body {
     nstest::http -http 1.1 -getbody 0 -getheaders {Content-Length} GET /16480bytes
 } -result {200 16480}
+
+test http-2.4 {HTTP/0.9 GET small} -constraints serverListen -body {
+    nstest::http -http "" -getbody 1 GET /10bytes
+} -result {0123456789}
+
 
 
 

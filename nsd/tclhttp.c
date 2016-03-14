@@ -708,6 +708,46 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
     return NS_TRUE;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HttpLocationString --
+ *
+ *	Build a http location string following the IP literation notation in
+ *	RFC 3986 section 3.2.2 if needed. In case protoString is non-null,
+ *	perpend the protocol. In case port != defPort, append the the port.
+ *
+ * Results:
+ *
+ *	location strings such as e.g.
+ *          [2001:db8:1f70::999:de8:7648:6e8]:8000    (IP-literal notation)
+ *          https://openacs.org                       (reg-name notation)
+ *
+ * Side effects:
+ *
+ *	Updating DString
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString, int port, int defPort)
+{
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(hostString != NULL);
+
+    if (protoString != NULL) {
+        Ns_DStringVarAppend(dsPtr, protoString, "://", NULL);
+    }
+    if (strchr(hostString, ':') != NULL) {
+        Ns_DStringVarAppend(dsPtr, "[", hostString, "]", NULL);
+    } else {
+        Ns_DStringVarAppend(dsPtr, hostString, NULL);
+    }
+    if (port != defPort) {
+        (void) Ns_DStringPrintf(dsPtr, ":%d", port);
+    }
+    return dsPtr->string;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -948,11 +988,9 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     }
     
     if (keep_host_header == NS_FALSE) {
-        if (portString == NULL) {
-	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
-        } else {
-	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
-        }
+        Ns_DStringNAppend(&httpPtr->ds, "Host: ", 6);
+        Ns_HttpLocationString(&httpPtr->ds, NULL, host, portNr, 80);
+        Ns_DStringNAppend(&httpPtr->ds, "\r\n", 2);
     }
 
     if (bodyPtr != NULL) {

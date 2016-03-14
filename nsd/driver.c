@@ -127,7 +127,7 @@ static bool    DriverKeep(Sock *sockPtr)
 static void    DriverClose(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 
-static int   SockSetServer(Sock *sockPtr)
+static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static SockState SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
@@ -476,10 +476,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         drvPtr->location = ns_strdup(drvPtr->location);
     } else {
         Ns_DStringInit(dsPtr);
-        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NULL);
-        if (drvPtr->port != defport) {
-            (void) Ns_DStringPrintf(dsPtr, ":%d", drvPtr->port);
-        }
+        Ns_HttpLocationString(dsPtr, drvPtr->protocol, host, drvPtr->port, defport);
         drvPtr->location = Ns_DStringExport(dsPtr);
     }
 
@@ -1451,7 +1448,6 @@ DriverThread(void *arg)
                     case SOCK_CLOSETIMEOUT:
                     case SOCK_ERROR:
                     case SOCK_READTIMEOUT:
-                    case SOCK_SERVERREJECT:
                     case SOCK_SHUTERROR:
                     case SOCK_WRITEERROR:
                     case SOCK_WRITETIMEOUT:
@@ -1540,7 +1536,6 @@ DriverThread(void *arg)
                 case SOCK_ERROR:
                 case SOCK_READERROR:
                 case SOCK_READTIMEOUT:
-                case SOCK_SERVERREJECT:
                 case SOCK_SHUTERROR:
                 case SOCK_TOOMANYHEADERS:
                 case SOCK_WRITEERROR:
@@ -1768,18 +1763,16 @@ static int
 SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 {
     /*
-     *  Verify the conditions, Request struct should exists already
+     *  Verify the conditions. Request struct must exist already.
      */
     NS_NONNULL_ASSERT(sockPtr != NULL);
+    assert(sockPtr->reqPtr != NULL);
 
-    /*
-     * SockSetServer returns always 1
-     */
-    (void) SockSetServer(sockPtr);
+    SockSetServer(sockPtr);
     assert(sockPtr->servPtr != NULL);
 
     /*
-     *  Actual queueing, if not ready spool to the waiting list
+     *  Actual queueing, if not ready spool to the waiting list.
      */
 
     if (NsQueueConn(sockPtr, timePtr) == 0) {
@@ -1899,6 +1892,8 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
 
+        Ns_Log(DriverDebug, "DriverAccept returned DRIVER_ACCEPT_ERROR");
+        
         Ns_MutexLock(&drvPtr->lock);
         sockPtr->nextPtr = drvPtr->sockPtr;
         drvPtr->sockPtr = sockPtr;
@@ -1919,6 +1914,8 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
             if (drvPtr->opts & NS_DRIVER_ASYNC) {
                 sockStatus = SockRead(sockPtr, 0, nowPtr);
                 if ((int)sockStatus < 0) {
+                    Ns_Log(DriverDebug, "SockRead returned error %d", sockStatus);
+
                     SockRelease(sockPtr, sockStatus, errno);
                     sockStatus = SOCK_ERROR;
                     sockPtr = NULL;
@@ -2045,10 +2042,6 @@ SockError(Sock *sockPtr, SockState reason, int err)
         errMsg = "Timeout during write";
         break;
 
-    case SOCK_SERVERREJECT:
-        errMsg = "No Server found for request";
-        break;
-
     case SOCK_READERROR:
         errMsg = "Unable to read request";
         break;
@@ -2088,7 +2081,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
     if (errMsg != NULL) {
         char ipString[NS_IPADDR_SIZE];
         
-        Ns_Log(DriverDebug, "SockError: %s (%d: %s), sock: %d, peer: %s:%d, request: %.99s",
+        Ns_Log(DriverDebug, "SockError: %s (%d: %s), sock: %d, peer: [%s]:%d, request: %.99s",
                errMsg,
                err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
@@ -2149,8 +2142,8 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     }
 
     ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
-    Ns_Log(Notice, "invalid request: %d (%s) from peer %s buffer '%s'",
-           code, errMsg, sockPtr->reqPtr->peer, sockPtr->reqPtr->buffer.string);
+    Ns_Log(Notice, "invalid request: %d (%s) from peer %s request '%s'",
+           code, errMsg, sockPtr->reqPtr->peer, sockPtr->reqPtr ? sockPtr->reqPtr->request.line : "(null)");
 }
 
 
@@ -2433,7 +2426,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
             if (sockPtr->tfd == NS_INVALID_FD) {
-                Ns_Log(Error, "nssock: cannot create spool file with template '%s': %s",
+                Ns_Log(Error, "SockRead: cannot create spool file with template '%s': %s",
                        sockPtr->tfile, strerror(errno));
             }
         } else {
@@ -2442,6 +2435,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         }
 
         if (unlikely(sockPtr->tfd < 0)) {
+            Ns_Log(DriverDebug, "SockRead: spool fd invalid");
             return SOCK_ERROR;
         }
         n = bufPtr->length - reqPtr->coff;
@@ -2608,9 +2602,19 @@ SockParse(Sock *sockPtr)
              * Look for a blank line on its own prior to any "real"
              * data. We eat up to 2 of these before closing the
              * connection.
+             *
+             * GN: Maybe this is obsolete code. I could not find a (test)
+             * case, where this appears to be necessary. If we recieve an
+             * empty buffer should only happen in error cases.
              */
-
             if (bufPtr->length == 0) {
+               /*
+                * The following Ns_Log statement is a weak form of an
+                * assert(). After some time, we hope to be able to remove this
+                * clause.
+                */
+                Ns_Log(Bug, "SockParse: ================= bufPtr->length == 0, how could this happen? ============");
+                
                 if (++reqPtr->leadblanks > 2) {
                     return SOCK_ERROR;
                 }
@@ -2722,12 +2726,13 @@ SockParse(Sock *sockPtr)
             *e = '\0';
 
             if (unlikely(reqPtr->request.line == NULL)) {
+                Ns_Log(DriverDebug, "SockParse: parse request line <%s>", s);
+
                 if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
 
                     /*
                      * Invalid request.
                      */
-
                     return SOCK_BADREQUEST;
                 }
 
@@ -2751,7 +2756,7 @@ SockParse(Sock *sockPtr)
             }
 
             *e = save;
-            if (unlikely(reqPtr->request.version <= 0.0)) {
+            if (unlikely(reqPtr->request.version < 1.0)) {
 
                 /*
                  * Pre-HTTP/1.0 request.
@@ -2831,7 +2836,12 @@ SockParse(Sock *sockPtr)
                 reqPtr->content = bufPtr->string;
             }
 
-            return (reqPtr->request.line != NULL ? SOCK_READY : SOCK_ERROR);
+            if (unlikely(reqPtr->request.line != NULL)) {
+                Ns_Log(DriverDebug, "SockParse: no request line");
+                return SOCK_BADREQUEST;
+            }
+            
+            return SOCK_READY;
         }
 
         if (sockPtr->tfd > 0) {
@@ -2874,7 +2884,12 @@ SockParse(Sock *sockPtr)
             reqPtr->content[reqPtr->length] = '\0';
         }
 
-        return (reqPtr->request.line != NULL ? SOCK_READY : SOCK_ERROR);
+        if (unlikely(reqPtr->request.line == NULL)) {
+            Ns_Log(DriverDebug, "SockParse: no request line");
+            return SOCK_BADREQUEST;
+        }
+
+        return SOCK_READY;
     }
 
     /*
@@ -2891,35 +2906,46 @@ SockParse(Sock *sockPtr)
  *      Set virtual server from driver context or Host header.
  *
  * Results:
- *      1 if valid server set, 0 otherwise.
+ *      void. 
  *
  * Side effects:
- *      Will update sockPtr->servPtr.
+ *
+ *      Updates sockPtr->servPtr. In case an invalid server set, or the
+ *      required host field in HTTP/1.1 is missing the HTTP-method is set to
+ *      the constant "BAD".
  *
  *----------------------------------------------------------------------
  */
 
-static int
+static void
 SockSetServer(Sock *sockPtr)
 {
     ServerMap     *mapPtr = NULL;
     const char    *host = NULL;
     int            status = 1;
+    Request       *reqPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    reqPtr = sockPtr->reqPtr;
+    assert(reqPtr != NULL);
 
     sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
     sockPtr->location = sockPtr->drvPtr->location;
 
-    if (sockPtr->reqPtr != NULL) {
-        host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
-        if (host == NULL && sockPtr->reqPtr->request.version >= 1.1) {
-            status = 0;
-        }
+    host = Ns_SetIGet(reqPtr->headers, "Host");
+    if (unlikely(host == NULL && reqPtr->request.version >= 1.1)) {
+        /*
+         * HTTP/1.1 requires host header
+         */
+        Ns_Log(Notice, "request header field \"Host\" is missing in HTTP/1.1 request: \"%s\"\n",
+               reqPtr->request.line);
+        status = 0;
     }
     if (sockPtr->servPtr == NULL) {
         if (host != NULL) {
             Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&hosts, host);
+
             if (hPtr != NULL) {
                 mapPtr = Tcl_GetHashValue(hPtr);
             }
@@ -2932,16 +2958,17 @@ SockSetServer(Sock *sockPtr)
             sockPtr->location = mapPtr->location;
         }
         if (sockPtr->servPtr == NULL) {
+            Ns_Log(Warning, "cannot determine server for request: \"%s\" (host \"%s\")\n",
+                   reqPtr->request.line, host);
             status = 0;
         }
     }
 
-    if (status == 0 && sockPtr->reqPtr != NULL) {
-        ns_free((char *)sockPtr->reqPtr->request.method);
-        sockPtr->reqPtr->request.method = ns_strdup("BAD");
+    if (unlikely(status == 0)) {
+        ns_free((char *)reqPtr->request.method);
+        reqPtr->request.method = ns_strdup("BAD");
     }
 
-    return 1;
 }
 
 /*
@@ -3067,12 +3094,9 @@ SpoolerThread(void *arg)
                     break;
 
                 case SOCK_READY:
-                    if (SockSetServer(sockPtr) == 0) {
-                        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
-                        queuePtr->queuesize--;
-                    } else {
-                        Push(sockPtr, waitPtr);
-                    }
+                    assert(sockPtr->reqPtr != NULL);
+                    SockSetServer(sockPtr);
+                    Push(sockPtr, waitPtr);
                     break;
 
                 case SOCK_BADHEADER:
@@ -3083,7 +3107,6 @@ SpoolerThread(void *arg)
                 case SOCK_ERROR:
                 case SOCK_READERROR:
                 case SOCK_READTIMEOUT:
-                case SOCK_SERVERREJECT:
                 case SOCK_SHUTERROR:
                 case SOCK_SPOOL:
                 case SOCK_TOOMANYHEADERS:

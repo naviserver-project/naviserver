@@ -2309,6 +2309,10 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
+Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
+        NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
 Ns_ConnReturnNotModified(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
@@ -3003,6 +3007,10 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 
 NS_EXTERN void
 Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+NS_EXTERN char *
+Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString, int port, int defPort)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 /*
