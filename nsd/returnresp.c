@@ -482,7 +482,7 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
  *
  * Ns_ConnReturnInvalidMethod --
  *
- *      Return a 405 Not Found response.
+ *      Return a 405 "Method Not Allowed" response.
  *
  * Results:
  *      NS_OK/NS_ERROR
