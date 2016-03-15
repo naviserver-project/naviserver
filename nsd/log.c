@@ -1490,7 +1490,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
     while (ePtr != NULL && cachePtr->currEntry != NULL) {
         const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
-        if (locked != 0) {
+        if (locked == NS_TRUE) {
             Ns_MutexLock(&lock);
         }
         
@@ -1501,13 +1501,13 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
         cPtr = listPtr;
         do {
             if (cPtr->proc != NULL) {
-                if (locked != 0) {
+                if (locked == NS_TRUE) {
                     cPtr->refcnt++;
                     Ns_MutexUnlock(&lock);
                 }
                 status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
                                        &ePtr->stamp, logString, ePtr->length);
-                if (locked != 0) {
+                if (locked == NS_TRUE) {
                     Ns_MutexLock(&lock);
                     cPtr->refcnt--;
                     Ns_CondBroadcast(&cond);
@@ -1528,7 +1528,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
             cPtr = cPtr->prevPtr;
         } while (cPtr != NULL);
         
-        if (locked != 0) {
+        if (locked == NS_TRUE) {
             Ns_MutexUnlock(&lock);
         }
         nentry++;
@@ -1838,7 +1838,7 @@ FreeCache(void *arg)
     LogCache *cachePtr = (LogCache *)arg;
     LogEntry *entryPtr, *tmpPtr;
 
-    LogFlush(cachePtr, filters, -1, NS_TRUE, 1);
+    LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
     entryPtr = cachePtr->firstEntry;
     while (entryPtr != NULL) {
         tmpPtr = entryPtr->nextPtr;
