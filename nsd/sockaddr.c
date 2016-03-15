@@ -111,7 +111,68 @@ Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *m
         Ns_Log(Error, "nsperm: invalid address family %d detected (Ns_SockaddrMask mask)", mask->sa_family);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockaddrSameIP --
+ *
+ *	Check, if to sockaddrs refer to the same IP address
+ *	(for IPv4 and IPv6 addresses).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_SockaddrSameIP(struct sockaddr *addr1, struct sockaddr *addr2)
+{
+    NS_NONNULL_ASSERT(addr1 != NULL);
+    NS_NONNULL_ASSERT(addr2 != NULL);
 
+    if (addr1 == addr2) {
+        return NS_TRUE;
+    }
+    
+    if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET6) {
+        struct in6_addr *addr1Bits  = &(((struct sockaddr_in6 *)addr1)->sin6_addr);
+        struct in6_addr *addr2Bits  = &(((struct sockaddr_in6 *)addr2)->sin6_addr);
+        int i;
+        
+        /*
+         * Perform bitwise comparison. Maybe something special is needed for
+         * comparing IPv4 address with IN6_IS_ADDR_V4MAPPED
+         */
+
+#ifndef _WIN32
+        for (i = 0; i < 4; i++) {
+            if (addr1Bits->s6_addr32[i] != addr2Bits->s6_addr32[i]) {
+                return NS_FALSE;
+            }
+        }
+#else        
+        for (i = 0; i < 8; i++) {
+            if (addr1Bits->u.Word[i] != addr2Bits->u.Word[i]) {
+                return NS_FALSE;
+            }
+        }
+#endif
+    } else if (addr1->sa_family == AF_INET && addr2->sa_family == AF_INET) {
+        return (((struct sockaddr_in *)addr1)->sin_addr.s_addr
+                == ((struct sockaddr_in *)addr2)->sin_addr.s_addr);
+    } else {
+        /*
+         * Family mismatch.
+         */
+        return NS_FALSE;
+    }
+    
+    return NS_TRUE;
+}
 
 /*
  *----------------------------------------------------------------------

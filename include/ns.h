@@ -2764,6 +2764,10 @@ NS_EXTERN void
 Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *maskedAddr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+NS_EXTERN bool
+Ns_SockaddrSameIP(struct sockaddr *addr1, struct sockaddr *addr2)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN int
 ns_inet_pton(struct sockaddr *saPtr, const char *addr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
