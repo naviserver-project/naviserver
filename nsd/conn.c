@@ -1685,11 +1685,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         }
         filePtr = Tcl_GetHashValue(hPtr);
         if (opt == (int)CFileOffIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)filePtr->off));
+            Tcl_SetObjResult(interp, filePtr->offObj != NULL ? filePtr->offObj : Tcl_NewObj());
         } else if (opt == (int)CFileLenIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)filePtr->len));
+            Tcl_SetObjResult(interp, filePtr->sizeObj != NULL ? filePtr->sizeObj : Tcl_NewObj());
         } else {
-            Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
+            Tcl_SetObjResult(interp, filePtr->hdrObj != NULL ? filePtr->hdrObj : Tcl_NewObj() );
         }
         break;
 

@@ -201,23 +201,26 @@ proc ns_getform {{charset ""}}  {
 	    #
 	    set ::_ns_form [ns_conn form]
 	    foreach {file} [ns_conn files] {
-		set off [ns_conn fileoffset $file]
-		set len [ns_conn filelength $file]
-		set hdr [ns_conn fileheaders $file]
-		set fp ""
-		while {$fp eq {}} {
-		    set tmpfile [ns_mktemp]
-		    set fp [ns_openexcl $tmpfile]
+		set offs [ns_conn fileoffset $file]
+		set lens [ns_conn filelength $file]
+		set hdrs [ns_conn fileheaders $file]
+		foreach off $offs len $lens hdr $hdrs {
+		    set fp ""
+		    while {$fp eq {}} {
+			set tmpfile [ns_mktemp]
+			set fp [ns_openexcl $tmpfile]
+		    }
+		    ns_atclose [list file delete $tmpfile]
+		    fconfigure $fp -translation binary 
+		    ns_conn copy $off $len $fp
+		    close $fp
+
+		    lappend ::_ns_formfiles($file) $tmpfile
+		    set type [ns_set get $hdr content-type]
+		    ns_set put $::_ns_form $file.content-type $type
+		    # NB: Insecure, access via ns_getformfile.
+		    ns_set put $::_ns_form $file.tmpfile $tmpfile
 		}
-		ns_atclose [list file delete $tmpfile]
-		fconfigure $fp -translation binary 
-		ns_conn copy $off $len $fp
-		close $fp
-		set ::_ns_formfiles($file) $tmpfile
-		set type [ns_set get $hdr content-type]
-		ns_set put $::_ns_form $file.content-type $type
-		# NB: Insecure, access via ns_getformfile.
-		ns_set put $::_ns_form $file.tmpfile $tmpfile
 	    }
 	} else {
 	    #

@@ -172,8 +172,17 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     while (hPtr != NULL) {
 	FormFile *filePtr = Tcl_GetHashValue(hPtr);
 
-        Ns_SetFree(filePtr->hdrs);
+        if (filePtr->hdrObj) {
+            Tcl_DecrRefCount(filePtr->hdrObj);
+        }
+        if (filePtr->offObj) {
+            Tcl_DecrRefCount(filePtr->offObj);
+        }
+        if (filePtr->sizeObj) {
+            Tcl_DecrRefCount(filePtr->sizeObj);
+        }
         ns_free(filePtr);
+        
         hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&connPtr->files);
@@ -386,19 +395,40 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 	    value = Ext2Utf(&vds, start, (size_t)(end - start), encoding, unescape);
         } else {
 	    Tcl_HashEntry *hPtr;
+            FormFile      *filePtr;
+            Tcl_Interp    *interp = connPtr->itPtr->interp;
 
             value = Ext2Utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew != 0) {
-	        FormFile *filePtr = ns_malloc(sizeof(FormFile));
-
-                filePtr->hdrs = set;
-                filePtr->off = (off_t)(start - connPtr->reqPtr->content);
-                filePtr->len = (size_t)(end - start);
+                
+                filePtr = ns_malloc(sizeof(FormFile));
                 Tcl_SetHashValue(hPtr, filePtr);
-                set = NULL;
+                
+                filePtr->hdrObj = Tcl_NewListObj(1, NULL);
+                filePtr->offObj = Tcl_NewListObj(1, NULL);
+                filePtr->sizeObj = Tcl_NewListObj(1, NULL);
+                
+                Tcl_IncrRefCount(filePtr->hdrObj);
+                Tcl_IncrRefCount(filePtr->offObj);
+                Tcl_IncrRefCount(filePtr->sizeObj);
+            } else {
+                filePtr = Tcl_GetHashValue(hPtr);
             }
+
+            Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
+            Tcl_ListObjAppendElement(interp, filePtr->hdrObj,
+                                     Tcl_GetObjResult(interp));
+            Tcl_ResetResult(connPtr->itPtr->interp);
+                
+            Tcl_ListObjAppendElement(interp, filePtr->offObj,
+                                     Tcl_NewIntObj((int)(start - connPtr->reqPtr->content)));
+            
+            Tcl_ListObjAppendElement(interp, filePtr->sizeObj,
+                                     Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
+            set = NULL;
         }
+        //fprintf(stderr, "ParseMultiInput sets key <%s> value <%s>\n", key, value);
         (void) Ns_SetPut(connPtr->query, key, value);
     }
 

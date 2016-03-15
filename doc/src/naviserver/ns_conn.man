@@ -111,19 +111,24 @@ Query or set the encoding for the current connection.
 
 [call [cmd  "ns_conn fileheaders"]  [arg file]]
 
-Return the header information for the uploaded file with the specified
-name (returned via [lb]ns_conn files[rb]).
+Return the ns_set with header information for the uploaded file with
+the specified name (returned via [lb]ns_conn files[rb]).  If the file
+was uploaded with the HTML5 [term multiple] attribute a list of ns_sets
+is returned.
 
 [call [cmd  "ns_conn filelength"]  [arg file]]
 
 Return the length of the uploaded file with the specified
-name (returned via [lb]ns_conn files[rb]).
+name (returned via [lb]ns_conn files[rb]). If the file was
+uploaded with the HTML5 [term multiple] attribute a list of 
+file lengths is returned.
 
 [call [cmd  "ns_conn fileoffset"]  [arg file]]
 
 Return the offset of the uploaded file with the specified
-name (returned via [lb]ns_conn files[rb]).
-
+name (returned via [lb]ns_conn files[rb]). If the file was
+uploaded with the HTML5 [term multiple] attribute a list of offsets
+is returned.
 
 [call [cmd  "ns_conn files"]]
 

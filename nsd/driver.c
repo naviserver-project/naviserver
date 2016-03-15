@@ -2821,11 +2821,13 @@ SockParse(Sock *sockPtr)
                    reqPtr->length, sockPtr->tfile);
 
             /*
-             * To make huge uploads easy to handle, we put query into content and change method to GET so
-             * Ns_ConnGetQuery will parse it and return as query parameters. If later the conn Tcl page
-             * will decide to parse multipart/data file manually it may replace query with new parsed data
-             * but in case of batch processing with external tools it is good to know additional info
-             * about the uploaded content beforehand.
+             * To make huge uploads easy to handle, we put query into content
+             * and change method to GET so Ns_ConnGetQuery will parse it and
+             * return as query parameters. If later the conn Tcl page will
+             * decide to parse multipart/data file manually it may replace
+             * query with new parsed data but in case of batch processing with
+             * external tools it is good to know additional info about the
+             * uploaded content beforehand.
              */
 
             if (reqPtr->request.query != NULL) {
@@ -2834,11 +2836,6 @@ SockParse(Sock *sockPtr)
                 ns_free((char *)reqPtr->request.method);
                 reqPtr->request.method = ns_strdup("GET");
                 reqPtr->content = bufPtr->string;
-            }
-
-            if (unlikely(reqPtr->request.line != NULL)) {
-                Ns_Log(DriverDebug, "SockParse: no request line");
-                return SOCK_BADREQUEST;
             }
             
             return SOCK_READY;
@@ -2921,7 +2918,7 @@ static void
 SockSetServer(Sock *sockPtr)
 {
     ServerMap     *mapPtr = NULL;
-    const char    *host = NULL;
+    const char    *host;
     int            status = 1;
     Request       *reqPtr;
 
@@ -2934,7 +2931,7 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = sockPtr->drvPtr->location;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    if (unlikely(host == NULL && reqPtr->request.version >= 1.1)) {
+    if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
          * HTTP/1.1 requires host header
          */

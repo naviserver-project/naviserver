@@ -520,9 +520,9 @@ typedef struct Sock {
  */
 
 typedef struct FormFile {
-    Ns_Set *hdrs;
-    off_t   off;
-    size_t  len;
+    Tcl_Obj *hdrObj;
+    Tcl_Obj *offObj;
+    Tcl_Obj *sizeObj;
 } FormFile;
 
 /*
