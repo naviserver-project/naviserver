@@ -2820,24 +2820,6 @@ SockParse(Sock *sockPtr)
             Ns_Log(Debug, "spooling content to file: size=%" PRIdz ", file=%s",
                    reqPtr->length, sockPtr->tfile);
 
-            /*
-             * To make huge uploads easy to handle, we put query into content
-             * and change method to GET so Ns_ConnGetQuery will parse it and
-             * return as query parameters. If later the conn Tcl page will
-             * decide to parse multipart/data file manually it may replace
-             * query with new parsed data but in case of batch processing with
-             * external tools it is good to know additional info about the
-             * uploaded content beforehand.
-             */
-
-            if (reqPtr->request.query != NULL) {
-                Tcl_DStringSetLength(bufPtr, 0);
-                (void) Tcl_DStringAppend(bufPtr, reqPtr->request.query, -1);
-                ns_free((char *)reqPtr->request.method);
-                reqPtr->request.method = ns_strdup("GET");
-                reqPtr->content = bufPtr->string;
-            }
-            
             return SOCK_READY;
         }
 
