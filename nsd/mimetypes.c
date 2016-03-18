@@ -89,10 +89,10 @@ static const struct exttype {
     { ".726",     "audio/32kadpcm"},                         /* http://www.iana.org/go/rfc2421 */
     { ".7z",      "application/x-7z-compressed" },
     { ".a",       "text/vnd-a"},                             
-    { ".a2l",     "application/A2L"},                        
+    { ".a2l",     "application/a2l"},                        
     { ".aab",     "application/x-authorware-bin" },
-    { ".aac",     "audio/x-aac"},                          /* Wikipedia: AAC */
-    { ".aal",     "audio/ATRAC-ADVANCED-LOSSLESS"},          /* http://www.iana.org/go/rfc5584 */
+    { ".aac",     "audio/x-aac"},                            /* wikipedia: aac */
+    { ".aal",     "audio/atrac-advanced-lossless"},          /* http://www.iana.org/go/rfc5584 */
     { ".aam",     "application/x-authorware-map" },
     { ".aas",     "application/x-authorware-seg" },
     { ".abc",     "text/vnd.abc"},                           
@@ -112,7 +112,7 @@ static const struct exttype {
     { ".aip",     "text/x-audiosoft-intra" },
     { ".ait",     "application/vnd.dvb.ait"},                
     { ".ami",     "application/vnd.amiga.ami"},              
-    { ".aml",     "application/AML"},                        
+    { ".aml",     "application/aml"},                        
     { ".ani",     "application/x-navi-animation" },
     { ".anx",     "application/annodex" },
     { ".any",     "application/vnd.mitsubishi.misty-guard.trustweb"}, 
@@ -134,16 +134,16 @@ static const struct exttype {
     { ".asp",     "text/asp" },
     { ".asr",     "video/x-ms-asf" },
     { ".asx",     "video/x-ms-asf" },
-    { ".at3",     "audio/ATRAC3"},                           /* http://www.iana.org/go/rfc5584 */
+    { ".at3",     "audio/atrac3"},                           /* http://www.iana.org/go/rfc5584 */
     { ".atc",     "application/vnd.acucorp"},                
-    { ".atf",     "application/ATF"},                        
-    { ".atfx",    "application/ATFX"},                       
+    { ".atf",     "application/atf"},                        
+    { ".atfx",    "application/atfx"},                       
     { ".atom",    "application/atom+xml" },
-    { ".atomcat", "application/atomcat+xml"},                /* RFC 5023 */
+    { ".atomcat", "application/atomcat+xml"},                /* rfc 5023 */
     { ".atomdeleted", "application/atomdeleted+xml"},        /* http://www.iana.org/go/rfc6721 */
-    { ".atomsvc", "application/atomsvc+xml"},                /* RFC 5023 */
-    { ".atx",     "audio/ATRAC-X"},                          /* http://www.iana.org/go/rfc5584 */
-    { ".atxml",   "application/ATXML"},                      
+    { ".atomsvc", "application/atomsvc+xml"},                /* rfc 5023 */
+    { ".atx",     "audio/atrac-x"},                          /* http://www.iana.org/go/rfc5584 */
+    { ".atxml",   "application/atxml"},                      
     { ".au",      "audio/basic" },
     { ".auc",     "application/tamp-apex-update-confirm"},   /* http://www.iana.org/go/rfc5934 */
     { ".avi",     "video/x-msvideo" },
@@ -172,7 +172,7 @@ static const struct exttype {
     { ".boz",     "application/x-bzip2" },
     { ".bsh",     "application/x-bsh" },
     { ".bsp",     "model/vnd.valve.source.compiled-map"},    
-    { ".btif",    "image/prs.btif"},                       /* IANA: BTIF */
+    { ".btif",    "image/prs.btif"},                          /* iana: btif */
     { ".bz",      "application/x-bzip" },
     { ".bz2",     "application/x-bzip2" },
     { ".c",       "text/plain" },
@@ -190,7 +190,7 @@ static const struct exttype {
     { ".cco",     "application/x-cocoa" },
     { ".cdbcmsg", "application/vnd.contact.cmsg"},           
     { ".cdf",     "application/x-cdf" },
-    { ".cdfx",    "application/CDFX+XML"},                   
+    { ".cdfx",    "application/cdfx+xml"},                   
     { ".cdkey",   "application/vnd.mediastation.cdkey"},     
     { ".cdmia",   "application/cdmi-capability"},            /* http://www.iana.org/go/rfc6208 */
     { ".cdmic",   "application/cdmi-container"},             /* http://www.iana.org/go/rfc6208 */
@@ -199,7 +199,7 @@ static const struct exttype {
     { ".cdmiq",   "application/cdmi-queue"},                 /* http://www.iana.org/go/rfc6208 */
     { ".cdxml",   "application/vnd.chemdraw+xml"},           
     { ".cdy",     "application/vnd.cinderella"},             
-    { ".cea",     "application/CEA"},                        
+    { ".cea",     "application/cea"},                        
     { ".cer",     "application/pkix-cert"},                  /* http://www.iana.org/go/rfc2585 */
     { ".cha",     "application/x-chat" },
     { ".chat",    "application/x-chat" },
@@ -239,10 +239,10 @@ static const struct exttype {
     { ".cw",      "application/prs.cww"},                    
     { ".cxx",     "text/plain" },
     { ".dae",     "model/vnd.collada+xml"},                  
-    { ".daf",     "application/vnd.Mobius.DAF"},             
+    { ".daf",     "application/vnd.mobius.daf"},             
     { ".dart",    "application/vnd-dart"},                   
-    { ".davmount","application/davmount+xml"},            /* RFC 4918 */
-    { ".dcd",     "application/DCD"},                        
+    { ".davmount","application/davmount+xml"},            /* rfc 4918 */
+    { ".dcd",     "application/dcd"},                        
     { ".dcm",     "application/dicom"},                      /* http://www.iana.org/go/rfc3240 */
     { ".dcr",     "application/x-director" },
     { ".ddd",     "application/vnd.fujixerox.ddd"},          
@@ -254,30 +254,30 @@ static const struct exttype {
     { ".dfac",    "application/vnd.dreamfactory"},           
     { ".dia",     "application/x-dia" },
     { ".dif",     "video/x-dv" },
-    { ".dii",     "application/DII"},                        
+    { ".dii",     "application/dii"},                        
     { ".dim",     "application/vnd.fastcopy-disk-image"},    
     { ".dir",     "application/x-director" },
-    { ".dis",     "application/vnd.Mobius.DIS"},             
+    { ".dis",     "application/vnd.mobius.dis"},             
     { ".dist",    "application/vnd.apple.installer+xml"},    
-    { ".dit",     "application/DIT"},                        
+    { ".dit",     "application/dit"},                        
     { ".djvu",    "image/vnd-djvu"},                         
     { ".dl",      "video/x-dl" },
     { ".dll",     "application/x-msdownload" },
     { ".dls",     "audio/dls"},                              /* http://www.iana.org/go/rfc4613 */
-    { ".dms",     "text/vnd.DMClientScript"},                
+    { ".dms",     "text/vnd.dmclientscript"},                
     { ".dna",     "application/vnd.dna"},                    
     { ".doc",     "application/msword" },
     { ".docjson", "application/vnd.document+json"},          
-    { ".docm",    "application/vnd.ms-word.document.macroEnabled.12"}, 
+    { ".docm",    "application/vnd.ms-word.document.macroenabled.12"}, 
     { ".docx",    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}, 
     { ".dot",     "application/msword" },
-    { ".dotm",    "application/vnd.ms-word.template.macroEnabled.12"}, 
+    { ".dotm",    "application/vnd.ms-word.template.macroenabled.12"}, 
     { ".dotx",    "application/vnd.openxmlformats-officedocument.wordprocessingml-template"}, 
     { ".dp",      "application/vnd.osgi.dp"},                
     { ".dpg",     "application/vnd.dpgraph"},                
     { ".dpkg",    "application/vnd.xmpie.dpkg"},             
     { ".drw",     "application/drafting" },
-    { ".dsc",     "text/prs.lines.tag"},                     /* IANA: PRS Lines Tag */
+    { ".dsc",     "text/prs.lines.tag"},                     /* iana: prs lines tag */
     { ".dssc",    "application/dssc+der"},                   /* http://www.iana.org/go/rfc5698 */
     { ".dtd",     "application/xml-dtd"},                    /* http://www.iana.org/go/rfc7303 */
     { ".dtshd",   "audio/vnd.dts.hd"},                       
@@ -293,8 +293,8 @@ static const struct exttype {
     { ".dzr",     "application/vnd.dzr"},                    
     { ".e",       "application/vnd.picsel"},                 
     { ".ecelp",   "audio/vnd.nuera.ecelp9600"},              
-    { ".edm",     "application/vnd.novadigm.EDM"},           
-    { ".edx",     "application/vnd.novadigm.EDX"},           
+    { ".edm",     "application/vnd.novadigm.edm"},           
+    { ".edx",     "application/vnd.novadigm.edx"},           
     { ".el",      "text/x-script.elisp" },
     { ".elc",     "application/x-elc" },
     { ".elm",     "text/plain" },
@@ -313,7 +313,7 @@ static const struct exttype {
     { ".etx",     "text/x-setext" },
     { ".evy",     "application/x-envoy" },
     { ".exe",     "application/vnd.microsoft.portable-executable"}, 
-    { ".ext",     "application/vnd.novadigm.EXT"},           
+    { ".ext",     "application/vnd.novadigm.ext"},           
     { ".ez2",     "application/vnd.ezpix-album"},            
     { ".ez3",     "application/vnd.ezpix-package"},          
     { ".f",       "text/plain" },
@@ -366,11 +366,11 @@ static const struct exttype {
     { ".gim",     "application/vnd.groove-identity-message"}, 
     { ".gl",      "video/gl" },
     { ".gmx",     "application/vnd.gmx"},                    
-    { ".gph",     "application/vnd.FloGraphIt"},             
+    { ".gph",     "application/vnd.flographit"},             
     { ".gqf",     "application/vnd.grafeq"},                 
-    { ".gram",    "application/srgs"},                     /* W3C Speech Grammar */
+    { ".gram",    "application/srgs"},                     /* w3c speech grammar */
     { ".grv",     "application/vnd.groove-injector"},        
-    { ".grxml",   "application/srgs+xml"},                 /* W3C Speech Grammar */
+    { ".grxml",   "application/srgs+xml"},                 /* w3c speech grammar */
     { ".gsd",     "audio/x-gsm" },
     { ".gsheet",  "application/urc-grpsheet+xml"},           
     { ".gsm",     "audio/x-gsm" },
@@ -390,11 +390,11 @@ static const struct exttype {
     { ".hdt",     "application/vnd.hdt"},                    
     { ".heldxml", "application/held+xml"},                   /* http://www.iana.org/go/rfc5985 */
     { ".help",    "application/x-helpfile" },
-    { ".hgl",     "application/vnd.hp-HPGL" },
+    { ".hgl",     "application/vnd.hp-hpgl" },
     { ".hh",      "text/plain" },
     { ".hlb",     "text/x-script" },
     { ".hlp",     "application/winhlp" },
-    { ".hpg",     "application/vnd.hp-HPGL" },
+    { ".hpg",     "application/vnd.hp-hpgl" },
     { ".hpgl",    "application/vnd.hp-hpgl" },
     { ".hps",     "application/vnd.hp-hps"},                 
     { ".hpub",    "application/prs.hpub+zip"},               
@@ -463,7 +463,7 @@ static const struct exttype {
     { ".jpeg",    "image/jpeg" },
     { ".jpf",     "image/jpx"},                              /* http://www.iana.org/go/rfc3745 */
     { ".jpg",     "image/jpeg" },
-    { ".jpgv",    "video/jpeg"},                             /* RFC 3555 */
+    { ".jpgv",    "video/jpeg"},                             /* rfc 3555 */
     { ".jpm",     "image/jpm"},                              /* http://www.iana.org/go/rfc3745 */
     { ".jps",     "image/x-jps" },
     { ".jrd",     "application/jrd+json"},                   /* http://www.iana.org/go/rfc7033 */
@@ -476,7 +476,7 @@ static const struct exttype {
     { ".kia",     "application/vnd.kidspiration"},           
     { ".kml",     "application/vnd.google-earth.kml+xml"},   
     { ".kmz",     "application/vnd.google-earth.kmz"},       
-    { ".kne",     "application/vnd.Kinar"},                  
+    { ".kne",     "application/vnd.kinar"},                  
     { ".koz",     "audio/vnd.audiokoz"},                     
     { ".ksh",     "application/x-ksh" },
     { ".ktz",     "application/vnd.kahootz"},                
@@ -505,7 +505,7 @@ static const struct exttype {
     { ".ltx",     "application/x-latex" },
     { ".lvp",     "audio/vnd.lucent.voice"},                 
     { ".lwp",     "application/vnd.lotus-wordpro"},          
-    { ".lxf",     "application/LXF"},                        
+    { ".lxf",     "application/lxf"},                        
     { ".lzh",     "application/x-lzh" },
     { ".lzx",     "application/lzx" },
     { ".m",       "application/vnd.wolfram.mathematica.package"}, 
@@ -519,16 +519,16 @@ static const struct exttype {
     { ".m4a",     "audio/mp4" },
     { ".m4p",     "audio/mp4" },
     { ".m4s",     "video/iso.segment"},                      
-    { ".m4v",     "video/x-m4v"},                          /* Wikipedia: M4v */
-    { ".ma",      "application/mathematica"},              /* IANA - Mathematica */
+    { ".m4v",     "video/x-m4v"},                          /* wikipedia: m4v */
+    { ".ma",      "application/mathematica"},              /* iana - mathematica */
     { ".mads",    "application/mads+xml"},                   /* http://www.iana.org/go/rfc6207 */
     { ".mag",     "application/vnd.ecowin.chart"},           
     { ".man",     "application/x-troff-man" },
     { ".map",     "application/x-navimap" },
     { ".mar",     "text/plain" },
-    { ".mathml",  "application/mathml+xml"},               /* W3C Math Home */
+    { ".mathml",  "application/mathml+xml"},               /* w3c math home */
     { ".mbd",     "application/mbedlet" },
-    { ".mbk",     "application/vnd.Mobius.MBK"},             
+    { ".mbk",     "application/vnd.mobius.mbk"},             
     { ".mbox",    "application/mbox"},                       /* http://www.iana.org/go/rfc4155 */
     { ".mc$",     "application/x-magic-cap-package-1.0" },
     { ".mc1",     "application/vnd.medcalcdata"},            
@@ -541,7 +541,7 @@ static const struct exttype {
     { ".mdi",     "image/vnd.ms-modi"},                      
     { ".me",      "application/x-troff-me" },
     { ".mets",    "application/mets+xml"},                   /* http://www.iana.org/go/rfc6207 */
-    { ".mf4",     "application/MF4"},                        
+    { ".mf4",     "application/mf4"},                        
     { ".mfm",     "application/vnd.mfmp"},                   
     { ".mft",     "application/rpki-manifest"},              /* http://www.iana.org/go/rfc6481 */
     { ".mgp",     "application/vnd.osgeo.mapguide.package"}, 
@@ -554,7 +554,7 @@ static const struct exttype {
     { ".mime",    "message/rfc822" },
     { ".miz",     "text/mizar"},                             
     { ".mj2",     "video/mj2"},                              /* http://www.iana.org/go/rfc3745 */
-    { ".mjf",     "audio/x-vnd.AudioExplosion.MjuiceMediaFile" },
+    { ".mjf",     "audio/x-vnd.audioexplosion.mjuicemediafile" },
     { ".mjpg",    "video/x-motion-jpeg" },
     { ".mlp",     "audio/vnd.dolby.mlp"},                    
     { ".mm",      "application/base64" },
@@ -592,24 +592,24 @@ static const struct exttype {
     { ".mpv",     "application/x-project" },
     { ".mpv2",    "video/mpeg" },
     { ".mpx",     "application/x-project" },
-    { ".mpy",     "application/vnd.ibm.MiniPay"},            
-    { ".mqy",     "application/vnd.Mobius.MQY"},             
+    { ".mpy",     "application/vnd.ibm.minipay"},            
+    { ".mqy",     "application/vnd.mobius.mqy"},             
     { ".mrc",     "application/marc" },
     { ".mrcx",    "application/marcxml+xml"},                /* http://www.iana.org/go/rfc6207 */
     { ".ms",      "application/x-troff-ms" },
     { ".msa",     "application/vnd.msa-disk-image"},         
-    { ".mscml",   "application/mediaservercontrol+xml"},   /* RFC 5022 */
+    { ".mscml",   "application/mediaservercontrol+xml"},   /* rfc 5022 */
     { ".msd",     "application/vnd.fdsn.mseed"},             
     { ".mseq",    "application/vnd.mseq"},                   
     { ".msf",     "application/vnd.epson.msf"},              
-    { ".msh",     "model/mesh"},                           /* RFC 2077 */
-    { ".msl",     "application/vnd.Mobius.MSL"},             
+    { ".msh",     "model/mesh"},                           /* rfc 2077 */
+    { ".msl",     "application/vnd.mobius.msl"},             
     { ".msty",    "application/vnd.muvee.style"},            
     { ".mts",     "model/vnd.mts"},                          
     { ".mv",      "video/x-sgi-movie" },
     { ".mvb",     "application/x-msmediaview" },
     { ".mvt",     "application/vnd.mapbox-vector-tile"},     
-    { ".mwf",     "application/vnd.MFER"},                   
+    { ".mwf",     "application/vnd.mfer"},                   
     { ".mxf",     "application/mxf"},                        /* http://www.iana.org/go/rfc4539 */
     { ".mxl",     "application/vnd.recordare.musicxml"},     
     { ".mxmf",    "audio/mobile-xmf"},                       /* http://www.iana.org/go/rfc4723 */
@@ -617,7 +617,7 @@ static const struct exttype {
     { ".mxs",     "application/vnd.triscape.mxs"},           
     { ".mxu",     "video/vnd-mpegurl"},                      
     { ".my",      "audio/make" },
-    { ".mzz",     "application/x-vnd.AudioExplosion.mzz" },
+    { ".mzz",     "application/x-vnd.audioexplosion.mzz" },
     { ".n-gage",  "application/vnd.nokia.n-gage.symbian.install"}, 
     { ".nap",     "image/naplps" },
     { ".naplps",  "image/naplps" },
@@ -659,7 +659,7 @@ static const struct exttype {
     { ".odp",     "application/vnd.oasis.opendocument.presentation"}, 
     { ".ods",     "application/vnd.oasis.opendocument.spreadsheet"}, 
     { ".odt",     "application/vnd.oasis.opendocument.text"}, 
-    { ".odx",     "application/ODX"},                        
+    { ".odx",     "application/odx"},                        
     { ".oeb",     "application/vnd.openeye.oeb"},            
     { ".oga",     "audio/ogg"},                              /* http://www.iana.org/go/draft-ietf-codec-oggopus-14 */
     { ".ogex",    "model/vnd.opengex"},                      
@@ -695,7 +695,7 @@ static const struct exttype {
     { ".p7m",     "application/x-pkcs7-mime" },
     { ".p7r",     "application/x-pkcs7-certreqresp" },
     { ".p7s",     "application/x-pkcs7-signature" },
-    { ".p8",      "application/pkcs8"},                    /* RFC 5208 */
+    { ".p8",      "application/pkcs8"},                    /* rfc 5208 */
     { ".pac",     "application/x-ns-proxy-autoconfig" },
     { ".package", "application/vnd.autopackage"},            
     { ".part",    "application/pro_eng" },
@@ -708,28 +708,28 @@ static const struct exttype {
     { ".pcx",     "image/vnd.zbrush.pcx"},                   
     { ".pdb",     "chemical/x-pdb" },
     { ".pdf",     "application/pdf" },
-    { ".pdx",     "application/PDX"},                        
+    { ".pdx",     "application/pdx"},                        
     { ".pfr",     "application/font-tdpfr"},                 /* http://www.iana.org/go/rfc3073 */
     { ".pfunk",   "audio/make" },
     { ".pfx",     "application/x-pkcs12" },
     { ".pgb",     "image/vnd.globalgraphics.pgb"},           
     { ".pgm",     "image/x-portable-graymap" },
-    { ".pgp",     "application/pgp-signature"},            /* RFC 2015 */
+    { ".pgp",     "application/pgp-signature"},            /* rfc 2015 */
     { ".pic",     "image/vnd.radiance"},                     
     { ".pict",    "image/pict" },
     { ".pil",     "application/vnd.piaccess.application-licence"}, 
     { ".pkg",     "application/x-newton-compatible-pkg" },
-    { ".pki",     "application/pkixcmp"},                  /* RFC 2585 */
+    { ".pki",     "application/pkixcmp"},                  /* rfc 2585 */
     { ".pkipath", "application/pkix-pkipath"},               /* http://www.iana.org/go/rfc6066 */
     { ".pko",     "application/vnd.ms-pki.pko" },
     { ".pl",      "text/plain" },
     { ".plb",     "application/vnd.3gpp.pic-bw-large"},      
-    { ".plc",     "application/vnd.Mobius.PLC"},             
+    { ".plc",     "application/vnd.mobius.plc"},             
     { ".plf",     "application/vnd.pocketlearn"},            
     { ".plj",     "audio/vnd.everad.plj"},                   
     { ".plp",     "application/vnd.panoply"},                
-    { ".pls",     "application/pls+xml"},                  /* RFC 4267 */
-    { ".plx",     "application/x-PiXCLscript" },
+    { ".pls",     "application/pls+xml"},                  /* rfc 4267 */
+    { ".plx",     "application/x-pixclscript" },
     { ".pm",      "image/x-xpixmap" },
     { ".pm4",     "application/x-pagemaker" },
     { ".pm5",     "application/x-pagemaker" },
@@ -742,19 +742,19 @@ static const struct exttype {
     { ".pnm",     "image/x-portable-anymap" },
     { ".portpkg", "application/vnd.macports.portpkg"},       
     { ".pot",     "application/vnd.ms-powerpoint" },
-    { ".potm",    "application/vnd.ms-powerpoint.template.macroEnabled.12"}, 
+    { ".potm",    "application/vnd.ms-powerpoint.template.macroenabled.12"}, 
     { ".potx",    "application/vnd.openxmlformats-officedocument.presentationml-template"}, 
     { ".pov",     "model/x-pov" },
     { ".ppa",     "application/vnd.ms-powerpoint" },
-    { ".ppam",    "application/vnd.ms-powerpoint.addin.macroEnabled.12"}, 
+    { ".ppam",    "application/vnd.ms-powerpoint.addin.macroenabled.12"}, 
     { ".ppd",     "application/vnd.cups-ppd"},               
     { ".ppkg",    "application/vnd.xmpie.ppkg"},             
     { ".ppm",     "image/x-portable-pixmap" },
     { ".pps",     "application/vnd.ms-powerpoint" },
-    { ".ppsm",    "application/vnd.ms-powerpoint.slideshow.macroEnabled.12"}, 
+    { ".ppsm",    "application/vnd.ms-powerpoint.slideshow.macroenabled.12"}, 
     { ".ppsx",    "application/vnd.openxmlformats-officedocument.presentationml.slideshow"}, 
     { ".ppt",     "application/vnd.ms-powerpoint" },
-    { ".pptm",    "application/vnd.ms-powerpoint.presentation.macroEnabled.12"}, 
+    { ".pptm",    "application/vnd.ms-powerpoint.presentation.macroenabled.12"}, 
     { ".pptx",    "application/vnd.openxmlformats-officedocument.presentationml.presentation"}, 
     { ".ppz",     "application/vnd.ms-powerpoint" },
     { ".prc",     "application/vnd.palm"},                   
@@ -767,12 +767,12 @@ static const struct exttype {
     { ".ps",      "application/postscript" },
     { ".psb",     "application/vnd.3gpp.pic-bw-small"},      
     { ".psd",     "image/vnd.adobe.photoshop" },
-    { ".pskcxml", "application/pskc+xml"},                 /* RFC 6030 */
+    { ".pskcxml", "application/pskc+xml"},                 /* rfc 6030 */
     { ".pti",     "image/prs.pti"},                          
     { ".pub",     "application/x-mspublisher" },
     { ".pvb",     "application/vnd.3gpp.pic-bw-var"},        
     { ".pvu",     "paleovu/x-pv" },
-    { ".pwn",     "application/vnd.3M.Post-it-Notes"},       
+    { ".pwn",     "application/vnd.3m.post-it-notes"},       
     { ".pwz",     "application/vnd.ms-powerpoint" },
     { ".py",      "text/x-script.python" },
     { ".pya",     "audio/vnd.ms-playready.media.pya"},       
@@ -792,7 +792,7 @@ static const struct exttype {
     { ".qti",     "image/x-quicktime" },
     { ".qtif",    "image/quicktime" },
     { ".quox",    "application/vnd.quobject-quoxdocument"},  
-    { ".qxd",     "application/vnd.Quark.QuarkXPress"},      
+    { ".qxd",     "application/vnd.quark.quarkxpress"},      
     { ".ra",      "audio/x-pn-realaudio" },
     { ".ram",     "audio/x-pn-realaudio" },
     { ".rar",     "application/x-rar-compressed" },
@@ -808,9 +808,9 @@ static const struct exttype {
     { ".rf",      "image/vnd.rn-realflash" },
     { ".rgb",     "image/x-rgb" },
     { ".rip",     "audio/vnd.rip"},                          
-    { ".rl",      "application/resource-lists+xml"},       /* RFC 4826 */
+    { ".rl",      "application/resource-lists+xml"},       /* rfc 4826 */
     { ".rlc",     "image/vnd.fujixerox.edmics-rlc"},         
-    { ".rld",     "application/resource-lists-diff+xml"},  /* RFC 4826 */
+    { ".rld",     "application/resource-lists-diff+xml"},  /* rfc 4826 */
     { ".rm",      "audio/vnd.hns.audio"},                    
     { ".rmi",     "audio/midi" },
     { ".rmm",     "audio/x-pn-realaudio" },
@@ -827,8 +827,8 @@ static const struct exttype {
     { ".rpm",     "application/octet-stream" },
     { ".rpss",    "application/vnd.nokia.radio-presets"},    
     { ".rpst",    "application/vnd.nokia.radio-preset"},     
-    { ".rq",      "application/sparql-query"},             /* W3C SPARQL */
-    { ".rs",      "application/rls-services+xml"},         /* RFC 4826 */
+    { ".rq",      "application/sparql-query"},             /* w3c sparql */
+    { ".rs",      "application/rls-services+xml"},         /* rfc 4826 */
     { ".rsheet",  "application/urc-ressheet+xml"},           
     { ".rss",     "application/rss+xml" },
     { ".rt",      "text/richtext" },
@@ -841,7 +841,7 @@ static const struct exttype {
     { ".saf",     "application/vnd.yamaha.smaf-audio"},      
     { ".saveme",  "application/octet-stream" },
     { ".sbk",     "application/x-tbook" },
-    { ".sbml",    "application/sbml+xml"},                 /* RFC 3823 */
+    { ".sbml",    "application/sbml+xml"},                 /* rfc 3823 */
     { ".sc",      "application/vnd.ibm.secure-container"},   
     { ".scd",     "application/vnd.scribus"},                
     { ".scim",    "application/scim+json"},                  /* http://www.iana.org/go/rfc7644 */
@@ -872,7 +872,7 @@ static const struct exttype {
     { ".sgml",    "text/sgml" },
     { ".sh",      "application/x-sh" },
     { ".shar",    "application/x-shar" },
-    { ".shf",     "application/shf+xml"},                  /* RFC 4194 */
+    { ".shf",     "application/shf+xml"},                  /* rfc 4194 */
     { ".si",      "text/vnd.wap.si"},                        
     { ".sic",     "application/vnd.wap.sic"},                
     { ".sid",     "audio/prs.sid"},                          
@@ -885,7 +885,7 @@ static const struct exttype {
     { ".skt",     "application/x-koan" },
     { ".sl",      "text/vnd.wap.sl"},                        
     { ".slc",     "application/vnd.wap-slc"},                
-    { ".sldm",    "application/vnd.ms-powerpoint.slide.macroEnabled.12"}, 
+    { ".sldm",    "application/vnd.ms-powerpoint.slide.macroenabled.12"}, 
     { ".sldx",    "application/vnd.openxmlformats-officedocument.presentationml.slide"}, 
     { ".slt",     "application/vnd.epson.salt"},             
     { ".sm",      "application/vnd.stepmania.stepchart"},    
@@ -916,11 +916,11 @@ static const struct exttype {
     { ".sql",     "application/sql"},                        /* http://www.iana.org/go/rfc6922 */
     { ".src",     "application/x-wais-source" },
     { ".sru",     "application/sru+xml"},                    /* http://www.iana.org/go/rfc6207 */
-    { ".srx",     "application/sparql-results+xml"},       /* W3C SPARQL */
+    { ".srx",     "application/sparql-results+xml"},       /* w3c sparql */
     { ".sse",     "application/vnd.kodak-descriptor"},       
     { ".ssf",     "application/vnd.epson.ssf"},              
     { ".ssm",     "application/streamingmedia" },
-    { ".ssml",    "application/ssml+xml"},                 /* W3C Speech Synthesis */
+    { ".ssml",    "application/ssml+xml"},                 /* w3c speech synthesis */
     { ".sst",     "application/vnd.ms-pki.certstore" },
     { ".sswf",    "video/vnd.sealed-swf"},                   
     { ".st",      "application/vnd.sailingtracker.track"},   
@@ -930,7 +930,7 @@ static const struct exttype {
     { ".stf",     "application/vnd.wt.stf"},                 
     { ".sti",     "application/vnd.sun.xml.impress.template" },
     { ".stif",    "application/vnd.sealed-tiff"},            
-    { ".stk",     "application/hyperstudio"},              /* IANA - Hyperstudio */
+    { ".stk",     "application/hyperstudio"},              /* iana - hyperstudio */
     { ".stl",     "application/x-navistyle" },
     { ".stm",     "text/html" },
     { ".stml",    "application/vnd.sealedmedia.softseal-html"}, 
@@ -969,13 +969,13 @@ static const struct exttype {
     { ".tcu",     "application/tamp-community-update"},      /* http://www.iana.org/go/rfc5934 */
     { ".td",      "application/urc-targetdesc+xml"},         
     { ".teacher", "application/vnd.smart.teacher"},          
-    { ".tei",     "application/tei+xml"},                  /* RFC 6129 */
+    { ".tei",     "application/tei+xml"},                  /* rfc 6129 */
     { ".ter",     "application/tamp-error"},                 /* http://www.iana.org/go/rfc5934 */
     { ".tex",     "application/x-tex" },
     { ".texi",    "application/x-texinfo" },
     { ".texinfo", "application/x-texinfo" },
     { ".text",    "text/plain" },
-    { ".tfi",     "application/thraud+xml"},               /* RFC 5941 */
+    { ".tfi",     "application/thraud+xml"},               /* rfc 5941 */
     { ".tfx",     "image/tiff-fx"},                          /* http://www.iana.org/go/rfc3950 */
     { ".tgz",     "application/x-gzip" },
     { ".thmx",    "application/vnd.ms-officetheme"},         
@@ -1002,9 +1002,9 @@ static const struct exttype {
     { ".tuc",     "application/tamp-update-confirm"},        /* http://www.iana.org/go/rfc5934 */
     { ".tur",     "application/tamp-update"},                /* http://www.iana.org/go/rfc5934 */
     { ".turbot",  "image/florian" },
-    { ".twd",     "application/vnd.SimTech-MindMapper"},     
+    { ".twd",     "application/vnd.simtech-mindmapper"},     
     { ".txd",     "application/vnd.genomatix.tuxedo"},       
-    { ".txf",     "application/vnd.Mobius.TXF"},             
+    { ".txf",     "application/vnd.mobius.txf"},             
     { ".txt",     "text/plain" },
     { ".u8dsn",   "message/global-delivery-status"},         /* http://www.iana.org/go/rfc6533 */
     { ".u8mdn",   "message/global-disposition-notification"}, /* http://www.iana.org/go/rfc6533 */
@@ -1072,23 +1072,23 @@ static const struct exttype {
     { ".vsw",     "application/x-visio" },
     { ".vtf",     "image/vnd.valve.source.texture"},         
     { ".vtu",     "model/vnd.vtu"},                          
-    { ".vxml",    "application/voicexml+xml"},             /* RFC 4267 */
+    { ".vxml",    "application/voicexml+xml"},             /* rfc 4267 */
     { ".w60",     "application/wordperfect6.0" },
     { ".w61",     "application/wordperfect6.1" },
     { ".w6w",     "application/msword" },
     { ".wadl",    "application/vnd.sun.wadl+xml"},           
-    { ".wav",     "audio/L16"},                              /* http://www.iana.org/go/rfc4856 */
+    { ".wav",     "audio/l16"},                              /* http://www.iana.org/go/rfc4856 */
     { ".wb1",     "application/x-qpro" },
     { ".wbmp",    "image/vnd-wap-wbmp"},                     
     { ".wbs",     "application/vnd.criticaltools.wbs+xml"},  
     { ".wcm",     "application/vnd.ms-works" },
     { ".wdb",     "application/vnd.ms-works" },
     { ".web",     "application/vnd.xara" },
-    { ".weba",    "audio/webm"},                           /* WebM Project */
-    { ".webm",    "video/webm"},                           /* WebM Project */
-    { ".webp",    "image/webp"},                           /* Wikipedia: WebP */
+    { ".weba",    "audio/webm"},                           /* webm project */
+    { ".webm",    "video/webm"},                           /* webm project */
+    { ".webp",    "image/webp"},                           /* wikipedia: webp */
     { ".wg",      "application/vnd.pmi.widget"},             
-    { ".wgt",     "application/widget"},                   /* W3C Widget Packaging and XML Configuration */
+    { ".wgt",     "application/widget"},                   /* w3c widget packaging and xml configuration */
     { ".wiz",     "application/msword" },
     { ".wk1",     "application/x-123" },
     { ".wks",     "application/vnd.ms-works" },
@@ -1100,7 +1100,7 @@ static const struct exttype {
     { ".wmlc",    "application/vnd-wap-wmlc"},               
     { ".wmls",    "text/vnd.wap.wmlscript"},                 
     { ".wmlsc",   "application/vnd.wap.wmlscript" },
-    { ".woff",    "application/x-font-woff"},              /* Wikipedia: Web Open Font Format */
+    { ".woff",    "application/x-font-woff"},              /* wikipedia: web open font format */
     { ".word",    "application/msword" },
     { ".wp",      "application/wordperfect" },
     { ".wp5",     "application/wordperfect" },
@@ -1114,8 +1114,8 @@ static const struct exttype {
     { ".wrl",     "x-world/x-vrml" },
     { ".wrz",     "x-world/x-vrml" },
     { ".wsc",     "application/vnd.wfa.wsc"},                
-    { ".wsdl",    "application/wsdl+xml"},                 /* W3C Web Service Description Language */
-    { ".wspolicy","application/wspolicy+xml"},            /* W3C Web Services Policy */
+    { ".wsdl",    "application/wsdl+xml"},                 /* w3c web service description language */
+    { ".wspolicy","application/wspolicy+xml"},            /* w3c web services policy */
     { ".wsrc",    "application/x-wais-source" },
     { ".wtk",     "application/x-wintalk" },
     { ".wv",      "application/vnd.wv.csp+wbxml"},           
@@ -1138,8 +1138,8 @@ static const struct exttype {
     { ".xdr",     "video/x-amt-demorun" },
     { ".xdssc",   "application/dssc+xml"},                   /* http://www.iana.org/go/rfc5698 */
     { ".xdw",     "application/vnd.fujixerox.docuworks"},    
-    { ".xenc",    "application/xenc+xml"},                 /* W3C XML Encryption Syntax and Processing */
-    { ".xer",     "application/patch-ops-error+xml"},      /* RFC 5261 */
+    { ".xenc",    "application/xenc+xml"},                 /* w3c xml encryption syntax and processing */
+    { ".xer",     "application/patch-ops-error+xml"},      /* rfc 5261 */
     { ".xfdf",    "application/vnd.adobe.xfdf"},             
     { ".xfdl",    "application/vnd.xfdl"},                   
     { ".xgz",     "xgl/drawing" },
@@ -1148,7 +1148,7 @@ static const struct exttype {
     { ".xif",     "image/vnd.xiff"},                         
     { ".xl",      "application/excel" },
     { ".xla",     "application/vnd.ms-excel" },
-    { ".xlam",    "application/vnd.ms-excel.addin.macroEnabled.12"}, 
+    { ".xlam",    "application/vnd.ms-excel.addin.macroenabled.12"}, 
     { ".xlb",     "application/vnd.ms-excel" },
     { ".xlc",     "application/vnd.ms-excel" },
     { ".xld",     "application/vnd.ms-excel" },
@@ -1157,11 +1157,11 @@ static const struct exttype {
     { ".xll",     "application/vnd.ms-excel" },
     { ".xlm",     "application/vnd.ms-excel" },
     { ".xls",     "application/vnd.ms-excel" },
-    { ".xlsb",    "application/vnd.ms-excel.sheet.binary.macroEnabled.12"}, 
-    { ".xlsm",    "application/vnd.ms-excel.sheet.macroEnabled.12"}, 
+    { ".xlsb",    "application/vnd.ms-excel.sheet.binary.macroenabled.12"}, 
+    { ".xlsm",    "application/vnd.ms-excel.sheet.macroenabled.12"}, 
     { ".xlsx",    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},    
     { ".xlt",     "application/vnd.ms-excel" },
-    { ".xltm",    "application/vnd.ms-excel.template.macroEnabled.12"}, 
+    { ".xltm",    "application/vnd.ms-excel.template.macroenabled.12"}, 
     { ".xltx",    "application/vnd.openxmlformats-officedocument.spreadsheetml.template"},
     { ".xlv",     "application/vnd.ms-excel" },
     { ".xlw",     "application/vnd.ms-excel" },
@@ -1172,7 +1172,7 @@ static const struct exttype {
     { ".xmz",     "xgl/movie" },
     { ".xo",      "application/vnd.olpc-sugar"},             
     { ".xof",     "x-world/x-vrml" },
-    { ".xop",     "application/xop+xml"},                  /* W3C XOP */
+    { ".xop",     "application/xop+xml"},                  /* w3c xop */
     { ".xpix",    "application/x-vnd.ls-xpix" },
     { ".xpm",     "image/x-xpixmap" },
     { ".xpr",     "application/vnd.is-xpr"},                 
@@ -1193,7 +1193,7 @@ static const struct exttype {
     { ".zfo",     "application/vnd.software602.filler.form-xml-zip"}, 
     { ".zip",     "application/zip" },
     { ".zir",     "application/vnd.zul"},                    
-    { ".zmm",     "application/vnd.HandHeld-Entertainment+xml"}, 
+    { ".zmm",     "application/vnd.handheld-entertainment+xml"}, 
     { ".zoo",     "application/octet-stream" },
     { ".zsh",     "text/x-script.zsh" },
 
