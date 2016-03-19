@@ -367,35 +367,53 @@ proc ns_parseformfile { file form contentType } {
 	    continue
 	}
 
-	# fetch the disposition line and field name
+	#
+	# Fetch the disposition line and field name.
+	#
 	set disposition [string trim [gets $fp]]
 	if { $disposition eq "" } {
 	    break
 	}
 
-	set disposition [split $disposition \;]
+	set disposition [split [encoding convertfrom utf-8 $disposition] \;]
 	set name [string trim [lindex [split [lindex $disposition 1] =] 1] \"]
 
-	# fetch and save any field headers (usually just content-type for files)
+	#
+	# Fetch and save any field headers (usually just content-type
+	# for files).
+	#
+	set content_type ""
 	
 	while { ![eof $fp] } {
 	    set line [string trim [gets $fp]]
 	    if { $line eq "" } {
 		break
 	    }
-	    set header [split $line :]
+	    set header [split [encoding convertfrom utf-8 $line] :]
 	    set key [string tolower [string trim [lindex $header 0]]]
 	    set value [string trim [lindex $header 1]]
-	    
+
+	    if {$key eq "content-type"} {
+		#
+		# Remember content_type to decide later, if content is
+		# binary.
+		#
+		set content_type $value
+	    }
+
 	    ns_set put $form $name.$key $value
 	}
 
 	if { [llength $disposition] == 3 } {
-	    # uploaded file -- save the original filename as the value
+	    #
+	    # Uploaded file -- save the original filename as the value
+	    #
 	    set filename [string trim [lindex [split [lindex $disposition 2] =] 1] \"]
 	    ns_set put $form $name $filename
 
-	    # read lines of data until another boundary is found
+	    #
+	    # Read lines of data until another boundary is found.
+	    #
 	    set start [tell $fp]
 	    set end $start
 	    
@@ -433,7 +451,9 @@ proc ns_parseformfile { file form contentType } {
             }
 
 	} else {
-	    # ordinary field - read lines until next boundary
+	    #
+	    # Ordinary field - read lines until next boundary
+	    #
 	    set first 1
 	    set value ""
 	    set start [tell $fp]
@@ -452,6 +472,10 @@ proc ns_parseformfile { file form contentType } {
 		set start [tell $fp]
 	    }
 	    seek $fp $start
+	    
+	    if {$content_type eq "" || [string match text/* $content_type]} {
+		set value [encoding convertfrom utf-8 $value]
+	    }
 	    ns_set put $form $name $value
 	}
     }
