@@ -323,7 +323,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
         spec.dest = idxPtr;
         result = Ns_ObjvIndex(&spec, NULL, &pos, &objPtr);
 
-        if (result != TCL_OK) {
+        if (unlikely(result != TCL_OK)) {
             Ns_DString ds, *dsPtr = &ds;
 
             Ns_DStringInit(dsPtr);
@@ -391,11 +391,11 @@ NsConfigLog(void)
         int result, idx;
 
         result = ObjvTableLookup(path, "logprefixcolor", colors, &idx);
-        if (result == TCL_OK) {
+        if (likely(result == TCL_OK)) {
             prefixColor = (LogColor)idx;
         }
         result = ObjvTableLookup(path, "logprefixintensity", intensities, &idx);
-        if (result == TCL_OK) {
+        if (likely(result == TCL_OK)) {
             prefixIntensity = (LogColorIntensity)idx;
         }
     }
@@ -604,7 +604,6 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
 
     if (likely(severity < severityMaxCount)) {
         result = severityConfig[severity].enabled;
-
         severityConfig[severity].enabled = enabled;
     } else {
         result = NS_FALSE;
@@ -708,14 +707,16 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     if (Ns_LogSeverityEnabled(severity) == NS_FALSE) {
         return;
     }
+    
+    /*
+     * Track usage to provide statistics.
+     */
     severityConfig[severity].count ++;
-
-    cachePtr = GetCache();
 
     /*
      * Append new or reuse log entry record.
      */
-
+    cachePtr = GetCache();
     if (cachePtr->currEntry != NULL) {
         entryPtr = cachePtr->currEntry->nextPtr;
     } else {
@@ -1051,12 +1052,12 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
         return TCL_ERROR;
     }
-    if (GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK) {
+    if (unlikely(GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK)) {
         return TCL_ERROR;
     }
     severity = PTR2INT(addrPtr);
 
-    if (objc == 3) {
+    if (likely(objc == 3)) {
         Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
     } else {
         int i;

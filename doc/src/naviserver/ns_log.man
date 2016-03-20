@@ -28,24 +28,33 @@ process log messages.
       [arg message] \
       [opt [arg "message ..."]] ]
 
-Queue a message for the error log file if the given [arg severity-level] is
-enabled. The [arg message] arguments are concatenated with connecting spaces.
-The message will reach the log file when the per-thread cache is flushed.
+Write a message to the error log file if the given [arg
+severity-level] is enabled (see [cmd ns_logctl]). The [arg message]
+arguments are concatenated with connecting spaces. Note that this only
+queues messages for the log and does not actually guarantee that the
+message is immediately written to the log. The server can be
+instructed to queue messages in the cache via [cmd "ns_logctl hold"].
 
 [para]
 The following are the predefined values of [arg severity-level].
 
 [list_begin definitions]
 
-[def Notice]
-Something interesting occurred.
+[def Notice] Something interesting occurred.  A "notice" shows
+typically a state change, start/end of some jobs, etc.  This level can
+be as well used of temporary debugging, but such messages should be
+removed after some time.
 
-[def Warning]
-Something that could mean something bad occurred.
+[def Warning] Something that could mean something bad occurred.  A
+"warning" indicates an unexpected situation, which requires attention
+of an developer and an corrective measure in the not-to-distant
+future. Usage of deprecated code or code using not following the
+engineering guidelines are of such type.
 
-[def Error]
-Something bad occurred.
-
+[def Error] Something bad occurred.  An "error" is a malfunction, that
+must be investigated by a developer. An error is an unhandled
+exception.  The error.log file should be free of errors.
+   
 [def Fatal]
 Something extremely bad occurred. The server will shut down after
 logging this message.
@@ -124,7 +133,7 @@ to set the coloring when the logfile is colorized. The color can be
 or [term default]. Intensity can be [term normal] or [term bright].
 The logfile colorization can be controlled by setting
 [term logcolorize] in section [term ns/parameters] of the
-configfile.
+config file.
 
 [para]
 If [arg severity-level] does not already exist and more arguments arg given, then the
