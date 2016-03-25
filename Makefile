@@ -223,6 +223,10 @@ gdbtest: all
 lldbtest: all
 	$(LD_LIBRARY_PATH) lldb -o run -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
 
+lldb-sample: all
+	lldb -o run -- $(DESTDIR)$(NAVISERVER)/bin/nsd -f -u nsadmin -t $(DESTDIR)$(NAVISERVER)/conf/nsd-config.tcl
+
+
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
 	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
