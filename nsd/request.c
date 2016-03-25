@@ -80,25 +80,22 @@ Ns_ResetRequest(Ns_Request *request)
 {
     NS_NONNULL_ASSERT(request != NULL);
 
-    if (request->line != NULL || 1) {
+    if (request->line != NULL) {
         Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
-        
-        ns_free((char *)request->line);
-        ns_free((char *)request->method);
-        ns_free((char *)request->protocol);
-        ns_free((char *)request->host);
-        ns_free(request->query);
-        FreeUrl(request);
-        
-        /*
-         * There is no need to clear the full structuce, since
-         * Ns_ParseRequest() clears all fields. However, we have to clear
-         * always the request->line, since this field is used to test, whether
-         * a Ns_ParseRequest has to be called or not.
-         */
-        /* memset(request, 0, sizeof(Ns_Request)); */
-        request->line = NULL;
     }
+    ns_free((char *)request->line);
+    ns_free((char *)request->method);
+    ns_free((char *)request->protocol);
+    ns_free((char *)request->host);
+    ns_free(request->query);
+    FreeUrl(request);
+        
+    /*
+     * There is no need to clear the full structuce, since
+     * Ns_ParseRequest() clears all fields. However, we have to protect
+     * against multiple invocations.
+     */
+    memset(request, 0, sizeof(Ns_Request));
 }
 
 /*
