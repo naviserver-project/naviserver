@@ -1334,7 +1334,8 @@ NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr);
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void NsFreeRequest(Request *reqPtr);
+NS_EXTERN void NsFreeRequest(Request *reqPtr)
+        NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsWriterLock(void);
 NS_EXTERN void NsWriterUnlock(void);
