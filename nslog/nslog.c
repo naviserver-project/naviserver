@@ -559,9 +559,9 @@ LogTrace(void *arg, Ns_Conn *conn)
     char         buffer[PIPE_BUF], *bufferPtr = NULL;
     int          n, status, i;
     size_t	 bufferSize = 0u;
-    Ns_DString   ds;
+    Ns_DString   ds, *dsPtr = &ds;
 
-    Ns_DStringInit(&ds);
+    Ns_DStringInit(dsPtr);
     Ns_MutexLock(&logPtr->lock);
 
     /*
@@ -576,7 +576,9 @@ LogTrace(void *arg, Ns_Conn *conn)
             p = NULL;
         }
     }
-    Ns_DStringAppend(&ds, p && *p ? p : Ns_ConnPeer(conn));
+    Ns_DStringAppend(dsPtr,
+                     ((p != NULL) && (*p != '\0')) ?
+                     p : Ns_ConnPeer(conn));
 
     /*
      * Append the authorized user, if any. Watch usernames
@@ -585,16 +587,16 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     user = Ns_ConnAuthUser(conn);
     if (user == NULL) {
-        Ns_DStringNAppend(&ds, " - - ", 5);
+        Ns_DStringNAppend(dsPtr, " - - ", 5);
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
 	    quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote != 0) {
-            Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
+            Ns_DStringVarAppend(dsPtr, " - \"", user, "\" ", NULL);
         } else {
-            Ns_DStringVarAppend(&ds, " - ", user, " ", NULL);
+            Ns_DStringVarAppend(dsPtr, " - ", user, " ", NULL);
         }
     }
 
@@ -603,11 +605,11 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (!(logPtr->flags & LOG_FMTTIME)) {
-        Ns_DStringPrintf(&ds, "[%" PRIu64 "]", (int64_t) time(NULL));
+        Ns_DStringPrintf(dsPtr, "[%" PRIu64 "]", (int64_t) time(NULL));
     } else {
         char buf[41]; /* Big enough for Ns_LogTime(). */
         Ns_LogTime(buf);
-        Ns_DStringAppend(&ds, buf);
+        Ns_DStringAppend(dsPtr, buf);
     }
 
     /*
@@ -619,14 +621,14 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    conn->request->url : 
 	    conn->request->line;
 
-	Ns_DStringNAppend(&ds, " \"", 2);
+	Ns_DStringNAppend(dsPtr, " \"", 2);
         if (likely(string != NULL)) {
-            AppendEscaped(&ds, string);
+            AppendEscaped(dsPtr, string);
         }
-        Ns_DStringNAppend(&ds, "\" ", 2);
+        Ns_DStringNAppend(dsPtr, "\" ", 2);
 
     } else {
-        Ns_DStringNAppend(&ds, " \"\" ", 4);
+        Ns_DStringNAppend(dsPtr, " \"\" ", 4);
     }
 
     /*
@@ -634,7 +636,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     n = Ns_ConnResponseStatus(conn);
-    Ns_DStringPrintf(&ds, "%d %" PRIdz, (n != 0) ? n : 200, Ns_ConnContentSent(conn));
+    Ns_DStringPrintf(dsPtr, "%d %" PRIdz, (n != 0) ? n : 200, Ns_ConnContentSent(conn));
 
     /*
      * Append the referer and user-agent headers (if any)
@@ -642,43 +644,43 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if ((logPtr->flags & LOG_COMBINED)) {
         
-        Ns_DStringNAppend(&ds, " \"", 2);
+        Ns_DStringNAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, "referer");
         if (p != NULL) {
-            AppendEscaped(&ds, p);
+            AppendEscaped(dsPtr, p);
         }
-        Ns_DStringNAppend(&ds, "\" \"", 3);
+        Ns_DStringNAppend(dsPtr, "\" \"", 3);
         p = Ns_SetIGet(conn->headers, "user-agent");
         if (p != NULL) {
-            AppendEscaped(&ds, p);
+            AppendEscaped(dsPtr, p);
         }
-        Ns_DStringNAppend(&ds, "\"", 1);
+        Ns_DStringNAppend(dsPtr, "\"", 1);
     }
 
     /*
      * Append the request's elapsed time and queue time (if enabled)
      */
 
-    if ((logPtr->flags & LOG_REQTIME)) {
+    if ((logPtr->flags & LOG_REQTIME) != 0u) {
 	Ns_Time reqTime, now;
 	Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)reqTime.sec, reqTime.usec);
+        Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", (int64_t)reqTime.sec, reqTime.usec);
     }
 
-    if ((logPtr->flags & LOG_PARTIALTIMES)) {
+    if ((logPtr->flags & LOG_PARTIALTIMES) != 0u) {
 	Ns_Time  acceptTime, queueTime, filterTime, runTime;
         Ns_Time *startTimePtr =  Ns_ConnStartTime(conn);
 
 	Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
 
-        Ns_DStringNAppend(&ds, " \"", 2);
-        Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)acceptTime.sec,    acceptTime.usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,     queueTime.usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)filterTime.sec,    filterTime.usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,       runTime.usec);
-        Ns_DStringNAppend(&ds, "\"", 1);
+        Ns_DStringNAppend(dsPtr, " \"", 2);
+        Ns_DStringPrintf(dsPtr, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);
+        Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", (int64_t)acceptTime.sec,    acceptTime.usec);
+        Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,     queueTime.usec);
+        Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", (int64_t)filterTime.sec,    filterTime.usec);
+        Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,       runTime.usec);
+        Ns_DStringNAppend(dsPtr, "\"", 1);
     }
 
     /*
@@ -686,22 +688,22 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     for (h = logPtr->extheaders; *h != NULL; h++) {
-        Ns_DStringNAppend(&ds, " \"", 2);
+        Ns_DStringNAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, *h);
         if (p != NULL) {
-            AppendEscaped(&ds, p);
+            AppendEscaped(dsPtr, p);
         }
-        Ns_DStringNAppend(&ds, "\"", 1);
+        Ns_DStringNAppend(dsPtr, "\"", 1);
     }
-
+    
     for (i = 0; i < ds.length; i++) {
-      /* 
-       * Quick fix to disallow terminal escape characters in the log
-       * file. See e.g. http://www.securityfocus.com/bid/37712/info
-       */
-      if (ds.string[i] == 0x1b) {
-	ds.string[i] = 7; /* bell */
-      }
+        /* 
+         * Quick fix to disallow terminal escape characters in the log
+         * file. See e.g. http://www.securityfocus.com/bid/37712/info
+         */
+        if (unlikely(ds.string[i] == 0x1b)) {
+            ds.string[i] = 7; /* bell */
+        }
     }
 
     /*
@@ -709,24 +711,28 @@ LogTrace(void *arg, Ns_Conn *conn)
      * flush the buffer
      */
 
-    Ns_DStringNAppend(&ds, "\n", 1);
+    Ns_DStringNAppend(dsPtr, "\n", 1);
 
     if (logPtr->maxlines == 0) {
         bufferSize = ds.length;
 	if (bufferSize < PIPE_BUF) {
-	  /* only those ns_write() operations are guaranteed to be atomic */
+	  /* 
+           * Only ns_write() operations < PIPE_BUF are guaranteed to be atomic
+           */
 	    bufferPtr = ds.string;
            status = NS_OK;
 	} else {
-	    status = LogFlush(logPtr, &ds);
+	    status = LogFlush(logPtr, dsPtr);
 	}
     } else {
         Ns_DStringNAppend(&logPtr->buffer, ds.string, ds.length);
         if (++logPtr->curlines > logPtr->maxlines) {
 	    bufferSize = logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {
-              /* only those ns_write() are guaranteed to be atomic */
-              /* in most cases, we will fall into the other branch */
+                /* 
+                 * Only ns_write() operations < PIPE_BUF are guaranteed to be
+                 * atomic.  In most cases, the other branch is used.
+                 */
 	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
 	      bufferPtr = buffer;
 	      Ns_DStringTrunc(&logPtr->buffer, 0);
@@ -747,7 +753,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
     }
 
-    Ns_DStringFree(&ds);
+    Ns_DStringFree(dsPtr);
 }
 
 
