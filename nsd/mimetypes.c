@@ -402,7 +402,6 @@ static const struct exttype {
     { ".hta",     "application/hta" },
     { ".htc",     "text/x-component" },
     { ".htke",    "application/vnd.kenameaapp"},             
-    { ".html",    "text/html"},                              
     { ".htt",     "text/webviewhtml" },
     { ".htx",     "text/html" },
     { ".hvd",     "application/vnd.yamaha.hv-dic"},          
