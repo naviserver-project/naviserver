@@ -483,7 +483,7 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 {
     sock = accept(sock, saPtr, lenPtr);
 
-    if (sock != NS_INVALID_SOCKET) {
+    if (likely(sock != NS_INVALID_SOCKET)) {
         sock = SockSetup(sock);
     } else if (errno != 0 && errno != EAGAIN) {
         Ns_Log(Notice, "accept() fails, reason: %s", strerror(errno));
@@ -1089,7 +1089,8 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
  *      Current or duped socket.
  *
  * Side effects:
- *      Original socket is closed if duped.
+ *      When USE_DUPHIGH is activated the original socket is closed.
+ *
  *
  *----------------------------------------------------------------------
  */
@@ -1106,8 +1107,8 @@ SockSetup(NS_SOCKET sock)
       sock = nsock;
     }
 #endif
-#ifndef _WIN32
-    (void) fcntl(sock, F_SETFD, 1);
+#if !defined(_WIN32)
+    (void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
     return sock;
 }
