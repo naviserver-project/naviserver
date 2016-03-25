@@ -188,6 +188,7 @@ static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t writte
  */
 
 Ns_LogSeverity Ns_LogTaskDebug;
+Ns_LogSeverity Ns_LogRequestDebug;
 
 static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
 static Tcl_HashTable hosts;           /* Host header to server table */
@@ -232,6 +233,7 @@ NsInitDrivers(void)
     Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
     Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
+    Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
     Ns_MutexInit(&reqLock);
     Ns_MutexSetName2(&reqLock, "ns:driver","freelist");
     Ns_MutexSetName2(&writerlock, "ns:writer","stream");
@@ -871,38 +873,37 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 void
 NsFreeRequest(Request *reqPtr)
 {
-    if (reqPtr != NULL) {
+    NS_NONNULL_ASSERT(reqPtr != NULL);
+    
+    reqPtr->next           = NULL;
+    reqPtr->content        = NULL;
+    reqPtr->length         = 0u;
+    reqPtr->contentLength  = 0u;
+    reqPtr->avail          = 0u;
+    reqPtr->leadblanks     = 0;
 
-        reqPtr->next           = NULL;
-        reqPtr->content        = NULL;
-        reqPtr->length         = 0u;
-        reqPtr->contentLength  = 0u;
-        reqPtr->avail          = 0u;
-        reqPtr->leadblanks     = 0;
+    reqPtr->expectedLength = 0u;
+    reqPtr->chunkStartOff  = 0u;
+    reqPtr->chunkWriteOff  = 0u;
 
-        reqPtr->expectedLength = 0u;
-        reqPtr->chunkStartOff  = 0u;
-        reqPtr->chunkWriteOff  = 0u;
+    reqPtr->woff           = 0u;
+    reqPtr->roff           = 0u;
+    reqPtr->coff           = 0u;
 
-        reqPtr->woff           = 0u;
-        reqPtr->roff           = 0u;
-        reqPtr->coff           = 0u;
+    Tcl_DStringFree(&reqPtr->buffer);
+    Ns_SetTrunc(reqPtr->headers, 0u);
 
-        Tcl_DStringFree(&reqPtr->buffer);
-        Ns_SetTrunc(reqPtr->headers, 0u);
-
-        if (reqPtr->auth != NULL) {
-            Ns_SetFree(reqPtr->auth);
-            reqPtr->auth = NULL;
-        }
-
-        Ns_ResetRequest(&reqPtr->request);
-
-        Ns_MutexLock(&reqLock);
-        reqPtr->nextPtr = firstReqPtr;
-        firstReqPtr = reqPtr;
-        Ns_MutexUnlock(&reqLock);
+    if (reqPtr->auth != NULL) {
+        Ns_SetFree(reqPtr->auth);
+        reqPtr->auth = NULL;
     }
+
+    Ns_ResetRequest(&reqPtr->request);
+
+    Ns_MutexLock(&reqLock);
+    reqPtr->nextPtr = firstReqPtr;
+    firstReqPtr = reqPtr;
+    Ns_MutexUnlock(&reqLock);
 }
 
 
@@ -1736,7 +1737,7 @@ SockPrepare(Sock *sockPtr)
     if (reqPtr == NULL) {
         reqPtr = ns_calloc(1u, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
-        reqPtr->headers    = Ns_SetCreate(NULL);
+        reqPtr->headers = Ns_SetCreate(NULL);
     }
     sockPtr->reqPtr = reqPtr;
 }
@@ -1866,7 +1867,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 
     Ns_MutexLock(&drvPtr->lock);
     sockPtr = drvPtr->sockPtr;
-    if (sockPtr != NULL) {
+    if (likely(sockPtr != NULL)) {
         drvPtr->sockPtr = sockPtr->nextPtr;
     }
     Ns_MutexUnlock(&drvPtr->lock);
@@ -1892,7 +1893,11 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
 
-        Ns_Log(DriverDebug, "DriverAccept returned DRIVER_ACCEPT_ERROR");
+        /*
+         * We reach the place frequently, especially on Linux, when we try to
+         * accept multiple connection in one sweep. Usually, the errno is
+         * EAGAIN.
+         */
         
         Ns_MutexLock(&drvPtr->lock);
         sockPtr->nextPtr = drvPtr->sockPtr;
@@ -1911,7 +1916,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
              * polling if we're in async mode.
              */
 
-            if (drvPtr->opts & NS_DRIVER_ASYNC) {
+            if ((drvPtr->opts & NS_DRIVER_ASYNC) != 0u) {
                 sockStatus = SockRead(sockPtr, 0, nowPtr);
                 if ((int)sockStatus < 0) {
                     Ns_Log(DriverDebug, "SockRead returned error %d", sockStatus);
@@ -1923,8 +1928,9 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
             } else {
 
                 /*
-                 * Queue this socket without reading, NsGetRequest in
-                 * the connection thread will perform actual reading of the request
+                 * Queue this socket without reading, NsGetRequest in the
+                 * connection thread will perform actual reading of the
+                 * request.
                  */
                 sockStatus = SOCK_READY;
             }
@@ -1932,8 +1938,9 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
             if (status == NS_DRIVER_ACCEPT_QUEUE) {
 
                 /*
-                 *  We need to call SockPrepare to make sure socket has request structure allocated,
-                 *  otherwise NsGetRequest will call SockRead which is not what this driver wants
+                 *  We need to call SockPrepare to make sure socket has
+                 *  request structure allocated, otherwise NsGetRequest will
+                 *  call SockRead which is not what this driver wants.
                  */
 
                 SockPrepare(sockPtr);
@@ -2142,8 +2149,15 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     }
 
     ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
-    Ns_Log(Notice, "invalid request: %d (%s) from peer %s request '%s'",
-           code, errMsg, sockPtr->reqPtr->peer, sockPtr->reqPtr ? sockPtr->reqPtr->request.line : "(null)");
+    if (sockPtr->reqPtr != NULL) {
+        Ns_Log(Notice, "invalid request: %d (%s) from peer %s request '%s'",
+               code, errMsg,
+               sockPtr->reqPtr->peer,
+               sockPtr->reqPtr->request.line);
+    } else {
+        Ns_Log(Notice, "invalid request: %d (%s) - no request information available",
+               code, errMsg);
+    }
 }
 
 
@@ -2259,10 +2273,14 @@ SockClose(Sock *sockPtr, int keep)
 static int
 ChunkedDecode(Request *reqPtr, int update)
 {
-    Tcl_DString *bufPtr = &reqPtr->buffer;
-    char
-        *end = bufPtr->string + bufPtr->length,
-        *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
+    Tcl_DString *bufPtr;
+    char        *end, *chunkStart;
+
+    NS_NONNULL_ASSERT(reqPtr != NULL);
+
+    bufPtr = &reqPtr->buffer;
+    end = bufPtr->string + bufPtr->length,
+    chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
         char *p = strstr(chunkStart, "\r\n");
@@ -2283,6 +2301,7 @@ ChunkedDecode(Request *reqPtr, int update)
         }
         if (update != 0) {
             char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
+            
             memmove(writeBuffer, p + 2, chunk_length);
             reqPtr->chunkWriteOff += chunk_length;
             *(writeBuffer + chunk_length) = '\0';
@@ -2726,7 +2745,7 @@ SockParse(Sock *sockPtr)
             *e = '\0';
 
             if (unlikely(reqPtr->request.line == NULL)) {
-                Ns_Log(DriverDebug, "SockParse: parse request line <%s>", s);
+                Ns_Log(DriverDebug, "SockParse (%d): parse request line <%s>", sockPtr->sock, s);
 
                 if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
 
@@ -2750,8 +2769,8 @@ SockParse(Sock *sockPtr)
              */
 
             if (unlikely(Ns_SetSize(reqPtr->headers) > (size_t)drvPtr->maxheaders)) {
-                Ns_Log(DriverDebug, "SockParse: maxheaders reached of %d bytes",
-                       drvPtr->maxheaders);
+                Ns_Log(DriverDebug, "SockParse (%d): maxheaders reached of %d bytes",
+                       sockPtr->sock, drvPtr->maxheaders);
                 return SOCK_TOOMANYHEADERS;
             }
 
@@ -4838,7 +4857,7 @@ AsyncWriterThread(void *arg)
         }
 
         /*
-         * wait for data
+         * Wait for data
          */
         /*n =*/ (void) PollWait(&pdata, pollto);
 
@@ -4892,7 +4911,7 @@ AsyncWriterThread(void *arg)
             status = NS_OK;
 
             /*
-             * write the actual data and allow for partial write operations.
+             * Write the actual data and allow for partial write operations.
              */
             written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
             if (unlikely(written < 0)) {

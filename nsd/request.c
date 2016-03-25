@@ -62,7 +62,9 @@ static const char *GetEncodingFormat(const char *encodingString,
  *
  * Ns_ResetRequest --
  *
- *	Free an Ns_Request members.
+ *	Free the Ns_Request members. This function is usually called on
+ *	embedded Ns_Request structures, such as these part of the Request
+ *	structure. 
  *
  * Results:
  *	None. 
@@ -76,14 +78,26 @@ static const char *GetEncodingFormat(const char *encodingString,
 void
 Ns_ResetRequest(Ns_Request *request)
 {
-    if (request != NULL) {
+    NS_NONNULL_ASSERT(request != NULL);
+
+    if (request->line != NULL || 1) {
+        Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
+        
         ns_free((char *)request->line);
         ns_free((char *)request->method);
         ns_free((char *)request->protocol);
         ns_free((char *)request->host);
         ns_free(request->query);
         FreeUrl(request);
-        memset(request, 0, sizeof(Ns_Request));
+        
+        /*
+         * There is no need to clear the full structuce, since
+         * Ns_ParseRequest() clears all fields. However, we have to clear
+         * always the request->line, since this field is used to test, whether
+         * a Ns_ParseRequest has to be called or not.
+         */
+        /* memset(request, 0, sizeof(Ns_Request)); */
+        request->line = NULL;
     }
 }
 
@@ -107,6 +121,11 @@ void
 Ns_FreeRequest(Ns_Request *request)
 {
     if (request != NULL) {
+        
+        if (request->line != NULL) {
+            Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
+        }
+
         ns_free((char *)request->line);
         ns_free((char *)request->method);
         ns_free((char *)request->protocol);
@@ -121,7 +140,7 @@ Ns_FreeRequest(Ns_Request *request)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ParseRequest --
+ * Ns_ParseRequests --
  *
  *	Parse a request from a browser into an Ns_Request structure. 
  *
@@ -145,7 +164,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     if (request == NULL) {
         return NS_ERROR;
     }
-
+    
     memset(request, 0, sizeof(Ns_Request));
     Ns_DStringInit(&ds);
 
@@ -164,6 +183,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      */
     
     request->line = ns_strdup(l);
+    
+    Ns_Log(Ns_LogRequestDebug, "begin %s", request->line);
 
     /*
      * Look for the minimum of method and url.
@@ -290,10 +311,12 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     }
 
     SetUrl(request, url);
+
     Ns_DStringFree(&ds);
     return NS_OK;
 
 done:
+    Ns_Log(Warning, "Ns_ParseRequest <%s> -> ERROR", line);
     Ns_DStringFree(&ds);
     return NS_ERROR;
 }

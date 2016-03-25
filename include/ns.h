@@ -2141,7 +2141,8 @@ NS_EXTERN void
 Ns_FreeRequest(Ns_Request *request);
 
 NS_EXTERN void
-Ns_ResetRequest(Ns_Request *request);
+Ns_ResetRequest(Ns_Request *request)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ParseRequest(Ns_Request *request, const char *line)

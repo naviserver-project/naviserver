@@ -1238,13 +1238,15 @@ NsTclAdpAbortObjCmd,
     TclX_KeylsetObjCmd;
 
 NS_EXTERN Tcl_CmdProc
-NsTclAdpStatsCmd,
+    NsTclAdpStatsCmd,
     NsTclHrefsCmd,
     NsTclLibraryCmd,
     NsTclMkTempCmd,
     NsTclParseHeaderCmd,
     NsTclQuoteHtmlCmd,
     NsTclStripHtmlCmd;
+
+NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;    /* Severity at which to log verbose. */
 
 /*
  * Libnsd initialization routines.
