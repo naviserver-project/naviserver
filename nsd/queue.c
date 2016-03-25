@@ -1597,8 +1597,10 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->auth = NULL;
     Ns_SetFree(connPtr->outputheaders);
     connPtr->outputheaders = NULL;
-    NsFreeRequest(connPtr->reqPtr);
-    connPtr->reqPtr = NULL;
+    if (connPtr->reqPtr != NULL) {
+        NsFreeRequest(connPtr->reqPtr);
+        connPtr->reqPtr = NULL;
+    }
     if (connPtr->clientData != NULL) {
         ns_free(connPtr->clientData);
         connPtr->clientData = NULL;
