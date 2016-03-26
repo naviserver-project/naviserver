@@ -612,7 +612,8 @@ typedef void (Ns_ArgProc)
     (Tcl_DString *dsPtr, const void *arg);
 
 typedef int (Ns_OpProc)
-    (void *arg, Ns_Conn *conn);
+    (void *arg, Ns_Conn *conn)
+    NS_GNUC_NONNULL(2);
 
 typedef void (Ns_TraceProc)
     (void *arg, Ns_Conn *conn);

@@ -317,9 +317,12 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
     AdpRequest *adp = arg;
     Ns_Time    *expiresPtr;
     Ns_DString  ds;
-    const char *file = NULL, *server = Ns_ConnServer(conn);
+    const char *file = NULL, *server;
     int         status;
 
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    server = Ns_ConnServer(conn);
     Ns_DStringInit(&ds);
 
     if (adp->file[0] == '\0') {

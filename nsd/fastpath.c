@@ -219,12 +219,18 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *f
 int
 Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 {
-    Conn        *connPtr = (Conn *) conn;
-    NsServer    *servPtr = connPtr->poolPtr->servPtr;
-    const char  *url = conn->request->url;
+    Conn        *connPtr;
+    NsServer    *servPtr;
+    const char  *url;
     Ns_DString   ds;
     int          result;
 
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    connPtr = (Conn *) conn;
+    servPtr = connPtr->poolPtr->servPtr;
+    url = conn->request->url;
+    
     Ns_DStringInit(&ds);
 
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK
@@ -253,10 +259,17 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            if ((stat(ds.string, &connPtr->fileInfo) == 0) && S_ISREG(connPtr->fileInfo.st_mode)) {
-                if (url[strlen(url) - 1U] != '/') {
+            if ((stat(ds.string, &connPtr->fileInfo) == 0)
+                && S_ISREG(connPtr->fileInfo.st_mode)
+                ) {
+                if (url[strlen(url) - 1u] != '/') {
+                    const char* query = conn->request->query;
+                    
                     Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
+                    if (query != NULL) {
+                        Ns_DStringVarAppend(&ds, "?", query, NULL);
+                    }
                     result = Ns_ConnReturnRedirect(conn, ds.string);
                 } else {
                     result = FastGetRestart(conn, servPtr->fastpath.dirv[i]);

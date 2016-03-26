@@ -437,6 +437,8 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
     Ns_DString      ds;
     int             status = NS_OK;
 
+    NS_NONNULL_ASSERT(conn != NULL);
+    
     interp = Ns_GetConnInterp(conn);
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0) != TCL_OK) {
         if (NsTclTimeoutException(interp) == NS_TRUE) {
