@@ -288,8 +288,8 @@ NsInitLog(void)
  *
  * ObjvTableLookup --
  *
- *      Lookup a value from an Ns_ObjvTable and return its associated value
- *      in the last parameter, if the lookup was successful.
+ *      Lookup a value from an Ns_ObjvTable and return its associated value in
+ *      the last parameter, if the lookup was successful.
  *
  * Results:
  *      Tcl return code.
@@ -745,9 +745,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
     Ns_GetTime(&entryPtr->stamp);
 
     /*
-     * Flush it out if not held
+     * Flush it out if not held or severity is "Fatal"
      */
-
     if (cachePtr->hold == 0 || severity == Fatal) {
         LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
     }
@@ -983,8 +982,10 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     }
     
     /*
-     * Check if the value for seconds in the cache is the same as the required
-     * value. If not, recompute the string and store it in the cache.x
+     * LogTime has a granularity of seconds. For frequent updates the print
+     * string is therefore cached. Check if the value for seconds in the cache
+     * is the same as the required value. If not, recompute the string and
+     * store it in the cache.
      */
     if (*tp != timePtr->sec) {
         size_t n;
