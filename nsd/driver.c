@@ -2279,7 +2279,7 @@ ChunkedDecode(Request *reqPtr, int update)
     NS_NONNULL_ASSERT(reqPtr != NULL);
 
     bufPtr = &reqPtr->buffer;
-    end = bufPtr->string + bufPtr->length,
+    end = bufPtr->string + bufPtr->length;
     chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
