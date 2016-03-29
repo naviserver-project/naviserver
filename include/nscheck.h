@@ -136,10 +136,16 @@
 # define NS_GNUC_RETURNS_NONNULL
 #endif
 
-#if __GNUC_PREREQ(6, 0)
-# define NS_NONNULL_ASSERT(assertion) 
-#else
-# define NS_NONNULL_ASSERT(assertion) assert((assertion))
-#endif
+/*
+ * In earlier version of GCC6, it complained when there was a nonnull
+ * declaration on the argument followed by a assert checking the
+ * argument for NULL that this is a redundant check. This note is left
+ * here as a reference in case other compilers take similar roads.
+ *
+ * #if __GNUC_PREREQ(6, 0)
+ * # define NS_NONNULL_ASSERT(assertion) 
+ * #endif
+ */
+#define NS_NONNULL_ASSERT(assertion) assert((assertion))
 
 #endif /* NSCHECK_H */
