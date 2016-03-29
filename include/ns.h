@@ -344,7 +344,7 @@ typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockSt
 typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, Ns_SockState why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (const char *server);
-typedef int   (Ns_ModuleInitProc) (const char *server, const char *module);
+typedef int   (Ns_ModuleInitProc) (const char *server, const char *module) NS_GNUC_NONNULL(2);
 typedef int   (Ns_RequestAuthorizeProc) (const char *server, const char *method,
                                          const char *url, const char *user, const char *pass, const char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);

@@ -160,6 +160,8 @@ Ns_ModuleInit(char *server, char *module)
     Tcl_HashEntry *hPtr;
     int isNew, result;
 
+    NS_NONNULL_ASSERT(module != NULL);
+
     if (uskey < 0) {
         double d;
         char buf[TCL_INTEGER_SPACE];

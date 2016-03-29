@@ -115,6 +115,8 @@ Ns_ModuleInit(const char *server, const char *module)
     static int  first = 1;
     int         result;
 
+    NS_NONNULL_ASSERT(module != NULL);
+
     /*
      * Register the info callbacks just once. This assumes we are
      * called w/o locking from within the server startup.
@@ -130,7 +132,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     Ns_DStringInit(&ds);
 
-    logPtr = ns_calloc(1U, sizeof(Log));
+    logPtr = ns_calloc(1u, sizeof(Log));
     logPtr->module = module;
     logPtr->fd = NS_INVALID_FD;
     Ns_MutexInit(&logPtr->lock);

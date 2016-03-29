@@ -160,6 +160,8 @@ Ns_ModuleInit(const char *server, const char *module)
     Mod		   *modPtr;
     static int	    initialized = 0;
 
+    NS_NONNULL_ASSERT(module != NULL);
+
     /*
      * On the first (and likely only) load, register
      * the temp file cleanup routine and open devNull

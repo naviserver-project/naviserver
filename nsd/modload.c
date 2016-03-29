@@ -117,6 +117,10 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
     Tcl_LoadHandle        lh = NULL;
     Tcl_FSUnloadFileProc *uPtr;
 
+    NS_NONNULL_ASSERT(module != NULL);
+    NS_NONNULL_ASSERT(file != NULL);
+    NS_NONNULL_ASSERT(init != NULL);
+    
     Ns_Log(Notice, "modload: loading module %s from file %s", module, file);
 
     Ns_DStringInit(&ds);
@@ -234,7 +238,7 @@ NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         Tcl_SetResult(interp, "server already started", TCL_STATIC);
         return TCL_ERROR;
     }
-    if (global != 0) {
+    if (global == NS_TRUE) {
         server = NULL;
     } else {
         server = itPtr->servPtr->server;

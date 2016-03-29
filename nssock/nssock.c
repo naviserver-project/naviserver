@@ -83,6 +83,8 @@ Ns_ModuleInit(const char *server, const char *module)
     Config            *cfg;
     const char        *path;
 
+    NS_NONNULL_ASSERT(module != NULL);
+    
     path = Ns_ConfigGetPath(server, module, (char *)0);
     cfg = ns_malloc(sizeof(Config));
     cfg->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);

@@ -677,6 +677,8 @@ NsDbLoadDriver(const char *driver)
     DbDriver	   *driverPtr;
     static int 	    initialized = NS_FALSE;
 
+    NS_NONNULL_ASSERT(driver != NULL);
+    
     if (initialized == NS_FALSE) {
 	Tcl_InitHashTable(&driversTable, TCL_STRING_KEYS);
 	initialized = NS_TRUE;
@@ -698,6 +700,15 @@ NsDbLoadDriver(const char *driver)
 	} else {
 	    const char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
 
+	    /*
+	     * For unknown reasons, Ns_ModuleLoad is called with a
+	     * argument meanings. Typically, the argument list is
+	     *
+	     *    interp,server,module,file,init
+	     *
+	     * here it the 2nd arg is "driver" (like e.g. "postgres")
+	     * and the 3rd argument is "path" (like e.g. "ns/db/driver/postgres")
+	     */
             if (Ns_ModuleLoad(NULL, driver, path, module, "Ns_DbDriverInit")
 		    != NS_OK) {
 		Ns_Log(Error, "dbdrv: failed to load driver '%s'",

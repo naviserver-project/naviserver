@@ -131,6 +131,8 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_HashEntry *hPtr;
     Ns_Set        *set;
 
+    NS_NONNULL_ASSERT(module != NULL);
+
     /*
      * Create the listening socket and callback.
      */
