@@ -27,9 +27,9 @@ file id's, and file id's with exceptions, respectively.
 
 [example_begin]
 # Start nonblocking connect()'s to www01 through
-#www09.foo.com and remember the read fileid which
-#corresponds to each write fileid.
-
+# www09.foo.com and remember the read fileid which
+# corresponds to each write fileid.
+ 
 for {set n 1} {$n < 10} {incr n} {
   set host [lb]format "www%2d.foo.com" $n[rb]
   set fds [lb]ns_sockopen -nonblock $host 80[rb]
@@ -38,27 +38,27 @@ for {set n 1} {$n < 10} {incr n} {
   set w2r($w) $r
   lappend wfds $w
 }
-
+ 
 # All connect()'s are in progress, use select to wait for one or
-# more to become writable in the next two seconds which means #
+# more to become writable in the next two seconds which means 
 # they may have connected.  We're not interested in readable or
 # exception sockets so the corresponding lists are empty
 # (i.e., {}).
-
+ 
 set sel [lb]ns_sockselect -timeout 2 {} $wfds {}[rb]
-
+ 
 # Select returned - get the sockets ready to write to.
-
+ 
 set wfds [lb]lindex $sel 1[rb]
-
+ 
 # Use ns_sockcheck to see if the sockets actually connected and
 # didn't become writable because the connect() failed (e.g., no
 # Web server was running on port 80 on the corresponding machine).
 # Note that the wfds list may be empty, meaning all sockets timed
 # out on connect.
-
+ 
 set ok ""
-
+ 
 foreach w $wfds {
   if [lb]ns_sockcheck $w[rb] {
     # Socket is connected - send a GET HTTP request.
@@ -70,34 +70,33 @@ foreach w $wfds {
     flush $w
   }
 }
-
+ 
 # Get the read ids for each socket which we sent the GET request to.
-
+ 
 foreach w $ok {
    lappend rfds $w2r($w)
 }
-
+ 
 # Use select again to wait for the read sockets to have data
 # available in response to the GET request.
-
+ 
 set sel [lb]ns_sockselect -timeout 2 $rfds {} {}[rb]
 set rfds [lb]lindex $sel 0[rb]
-
+ 
 # Read the pages which came back.
-
+ 
 foreach r $rfds {
   if [lb]ns_sockcheck $r[rb] {
     set page($r) [lb]read $r[rb]
   }  
 }
-
+ 
 # Close all the sockets
-
+ 
 foreach w [lb]array names w2r[rb] {
    close $w
    close $w2r($w)
 }
-
 [example_end]
 
 
