@@ -47,7 +47,7 @@ removed after some time.
 
 [def Warning] Something that could mean something bad occurred.  A
 "warning" indicates an unexpected situation, which requires attention
-of an developer and an corrective measure in the not-to-distant
+of a developer and a corrective measure in the not-to-distant
 future. Usage of deprecated code or code using not following the
 engineering guidelines are of such type.
 
@@ -64,6 +64,7 @@ Something occurred that implies that there is a bug in the code.
 
 [def Debug]
 If debug level logging is enabled the the message is logged.
+This logging level is typically just activated during debugging. 
 
 [def Dev]
 If dev level logging is enabled the message is logged.
@@ -217,7 +218,7 @@ Possible values are:
 Default: green.
 
 [def logprefixintensity]
-When logcolorize is true, provide a the intesity for the timestamp prefix.
+When logcolorize is true, provide a the intensity for the timestamp prefix.
 Possible values are: [term "normal bright"].
 Default: normal.
 
