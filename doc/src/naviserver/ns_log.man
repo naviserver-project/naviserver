@@ -28,8 +28,9 @@ process log messages.
       [arg message] \
       [opt [arg "message ..."]] ]
 
-Write a message to the error log file if the given [arg
-severity-level] is enabled (see [cmd ns_logctl]). The [arg message]
+Write a message to the error log file if the given
+[arg severity-level] is enabled (see [cmd ns_logctl]).
+The [arg message]
 arguments are concatenated with connecting spaces. Note that this only
 queues messages for the log and does not actually guarantee that the
 message is immediately written to the log. The server can be
@@ -40,18 +41,18 @@ The following are the predefined values of [arg severity-level].
 
 [list_begin definitions]
 
-[def Notice] Something interesting occurred.  A "notice" shows
+[def Notice] Something interesting occurred.  A [term notice] shows
 typically a state change, start/end of some jobs, etc.  This level can
 be as well used of temporary debugging, but such messages should be
 removed after some time.
 
 [def Warning] Something that could mean something bad occurred.  A
-"warning" indicates an unexpected situation, which requires attention
+[term warning] indicates an unexpected situation, which requires attention
 of a developer and a corrective measure in the not-to-distant
 future. Usage of deprecated code or code using not following the
 engineering guidelines are of such type.
 
-[def Error] Something bad occurred.  An "error" is a malfunction, that
+[def Error] Something bad occurred.  An [term error] is a malfunction, that
 must be investigated by a developer. An error is an unhandled
 exception.  The error.log file should be free of errors.
    
@@ -61,13 +62,16 @@ logging this message.
 
 [def Bug]
 Something occurred that implies that there is a bug in the code.
+This condition could never happen when the code is behaving correctly.
 
 [def Debug]
-If debug level logging is enabled the the message is logged.
 This logging level is typically just activated during debugging. 
 
 [def Dev]
-If dev level logging is enabled the message is logged.
+This logging level is typically just activated during development
+to introspect the behavior of new code.
+Such logging statements are typically removed once development has
+reached a stable point.
 
 [list_end]
 
