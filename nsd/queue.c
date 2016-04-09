@@ -1589,7 +1589,6 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
      * 
      */
     if (sockPtr->keep == NS_TRUE && connPtr->reqPtr->leftover > 0u) {
-        Ns_Log(Notice, "=== ConnRun WakeupDriver"); // TODO: remove me or downgrade logging
         NsWakeupDriver(sockPtr->drvPtr);
     }
 
