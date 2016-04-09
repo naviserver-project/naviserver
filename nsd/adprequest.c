@@ -159,8 +159,8 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
 
     servPtr = connPtr->poolPtr->servPtr;
     if ((servPtr->adp.flags & ADP_DEBUG) != 0u &&
-        conn->request->method != NULL &&
-        STREQ(conn->request->method, "GET")) {
+        conn->request.method != NULL &&
+        STREQ(conn->request.method, "GET")) {
         Ns_Set *query = Ns_ConnGetQuery(conn);
         
         if (query != NULL) {
@@ -326,7 +326,7 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
     Ns_DStringInit(&ds);
 
     if (adp->file[0] == '\0') {
-        if (Ns_UrlToFile(&ds, server, conn->request->url) != NS_OK) {
+        if (Ns_UrlToFile(&ds, server, conn->request.url) != NS_OK) {
             file = NULL;
         } else {
             file = ds.string;

@@ -360,7 +360,6 @@ typedef struct Request {
     size_t length;              /* Length of content */
     size_t contentLength;       /* Provided content length */
     size_t avail;               /* Bytes avail in buffer */
-    int leadblanks;             /* Number of leading blank lines read */
 
     /*
      * The following block is for chunked encodings
@@ -377,7 +376,9 @@ typedef struct Request {
     size_t woff;                  /* Next write buffer offset */
     size_t roff;                  /* Next read buffer offset */
     size_t coff;                  /* Content buffer offset */
+    size_t leftover;              /* Leftover bytes from earlier requests */
     Tcl_DString buffer;           /* Request and content buffer */
+    char   savedChar;             /* Character potentially clobbered by null character */
 
 } Request;
 
@@ -562,7 +563,7 @@ typedef struct Conn {
      * Visible in an Ns_Conn:
      */
 
-    Ns_Request *request;
+    Ns_Request request;
 
     Ns_Set *headers;
     Ns_Set *outputheaders;
@@ -1335,9 +1336,6 @@ NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr);
 
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
-
-NS_EXTERN void NsFreeRequest(Request *reqPtr)
-        NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsWriterLock(void);
 NS_EXTERN void NsWriterUnlock(void);

@@ -1009,7 +1009,7 @@ NsAdpLogError(NsInterp *itPtr)
 
         Ns_DStringPrintf(&ds, "\n    while processing connection %s:\n%8s%s",
                          NsConnIdStr(conn), "",
-                         conn->request->line);
+                         conn->request.line);
         for (i = 0U; i < Ns_SetSize(conn->headers); ++i) {
             Ns_DStringPrintf(&ds, "\n        %s: %s",
                              Ns_SetKey(conn->headers, i),

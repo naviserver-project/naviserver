@@ -1379,7 +1379,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return TCL_ERROR;
     }
 
-    request = connPtr->request;
+    request = &connPtr->request;
     switch (opt) {
 
     case CIsConnectedIdx:

@@ -758,6 +758,7 @@ Ns_ConnClose(Ns_Conn *conn)
 	    NsSockClose(connPtr->sockPtr, keep);
 	}
 
+        
         connPtr->sockPtr = NULL;
         connPtr->flags |= NS_CONN_CLOSED;
 
@@ -1143,7 +1144,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
         conn->flags |= NS_CONN_STREAM;
 
         if (connPtr->responseLength < 0
-            && conn->request->version > 1.0
+            && conn->request.version > 1.0
             && connPtr->keep != 0
             && HdrEq(connPtr->outputheaders, "Content-Type",
                                               "multipart/byteranges") == NS_FALSE) {
@@ -1211,14 +1212,14 @@ CheckKeep(const Conn *connPtr)
          */
 
         if (connPtr->keep == -1
-            && connPtr->request != NULL) {
+            && connPtr->request.line != NULL) {
 
             /*
              * HTTP 1.0/1.1 keep-alive header checks.
              */
-            if ((connPtr->request->version == 1.0
+            if ((connPtr->request.version == 1.0
                  && HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE)
-                || (connPtr->request->version > 1.0
+                || (connPtr->request.version > 1.0
                     && HdrEq(connPtr->headers, "connection", "close") == NS_FALSE)) {
 
                 /*
@@ -1235,7 +1236,7 @@ CheckKeep(const Conn *connPtr)
 			   "Disallow keep-alive, content-Length %" PRIdz 
 			   " larger keepmaxuploadsize %" PRIdz ": %s",
 			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
-			   connPtr->request->line);
+			   connPtr->request.line);
 		    return NS_FALSE;
 		} else if (connPtr->drvPtr->keepmaxdownloadsize > 0u
 			   && connPtr->responseLength > 0
@@ -1244,7 +1245,7 @@ CheckKeep(const Conn *connPtr)
 			   "Disallow keep-alive response length %" PRIdz " "
 			   "larger keepmaxdownloadsize %" PRIdz ": %s",
 			   connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
-			   connPtr->request->line);
+			   connPtr->request.line);
 		    return NS_FALSE;
 		}
 		

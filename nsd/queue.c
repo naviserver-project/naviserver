@@ -1354,7 +1354,7 @@ NsConnThread(void *arg)
 	 */
 	if (wakeup == NS_TRUE && connPtr != NULL && shutdown == NS_FALSE) {
             assert(connPtr->drvPtr != NULL);
-	    NsWakeupDriver(connPtr->drvPtr); 
+	    NsWakeupDriver(connPtr->drvPtr);
 	} 
     }
     
@@ -1407,41 +1407,56 @@ NsConnThread(void *arg)
 static void
 ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 {
-    Ns_Conn  *conn = (Ns_Conn *) connPtr;
-    NsServer *servPtr = connPtr->poolPtr->servPtr;
+    Ns_Conn  *conn;
+    NsServer *servPtr;
     int       status = NS_OK;
-    Sock     *sockPtr = connPtr->sockPtr;
+    Sock     *sockPtr;
     char     *auth;
 
     NS_NONNULL_ASSERT(argPtr != NULL);
     NS_NONNULL_ASSERT(connPtr != NULL);
 
+    conn = (Ns_Conn *) connPtr;
+    servPtr = connPtr->poolPtr->servPtr;
+    sockPtr = connPtr->sockPtr;
+    
     /*
      * Re-initialize and run the connection. 
      */
     if (sockPtr != NULL) {
-	connPtr->reqPtr = NsGetRequest(sockPtr, &connPtr->requestDequeueTime);
+        connPtr->reqPtr = NsGetRequest(sockPtr, &connPtr->requestDequeueTime);
     } else {
-	connPtr->reqPtr = NULL;
+        connPtr->reqPtr = NULL;
     }
 
     if (connPtr->reqPtr == NULL) {
-	Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
+        Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
         (void) Ns_ConnClose(conn);
         return;
     }
     assert(sockPtr != NULL);
+    assert(sockPtr->reqPtr != NULL);
+
+    //Ns_Log(Notice, "=== ConnRun has request with line <%s>", connPtr->reqPtr->request.line);
+
+    assert(sockPtr->reqPtr != NULL);
 
     /*
      * Make sure we update peer address with actual remote IP address
      */
     (void) Ns_ConnSetPeer(conn, (struct sockaddr *)&(sockPtr->sa));
 
-    connPtr->request = &connPtr->reqPtr->request;
+    /*
+     * Get the request data from the reqPtr to ease life-time management in
+     * connection threads. It would be probably sufficient to clear just the
+     * request line, but we want to play it safe and clear everything.
+     */
+    connPtr->request = connPtr->reqPtr->request;
+    memset(&(connPtr->reqPtr->request), 0, sizeof(struct Ns_Request));
 
     /*{ConnPool *poolPtr = argPtr->poolPtr;
-    Ns_Log(Notice,"ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request->line);
-    } */   
+      Ns_Log(Notice,"ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
+      } */   
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->contentLength = connPtr->reqPtr->length;
 
@@ -1462,11 +1477,11 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
     snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%" PRIuPTR, connPtr->id);
     connPtr->outputheaders = Ns_SetCreate(NULL);
-    if (connPtr->request->version < 1.0) {
+    if (connPtr->request.version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;
     }
     if (servPtr->opts.hdrcase != Preserve) {
-	size_t i;
+        size_t i;
 
         for (i = 0U; i < Ns_SetSize(connPtr->headers); ++i) {
             if (servPtr->opts.hdrcase == ToLower) {
@@ -1480,7 +1495,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     if (auth != NULL) {
         NsParseAuth(connPtr, auth);
     }
-    if (conn->request->method != NULL && STREQ(conn->request->method, "HEAD")) {
+    if (conn->request.method != NULL && STREQ(conn->request.method, "HEAD")) {
         conn->flags |= NS_CONN_SKIPBODY;
     }
 
@@ -1488,7 +1503,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
      * Run the driver's private handler
      */
 
-    if (connPtr->sockPtr->drvPtr->requestProc != NULL) {
+    if (sockPtr->drvPtr->requestProc != NULL) {
         status = (*sockPtr->drvPtr->requestProc)(sockPtr->drvPtr->arg, conn);
     }
 
@@ -1500,25 +1515,25 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Run the rest of the request.
      */
-
-    if (connPtr->request->protocol != NULL && connPtr->request->host != NULL) {
+    if (connPtr->request.protocol != NULL && connPtr->request.host != NULL) {
         status = NsConnRunProxyRequest((Ns_Conn *) connPtr);
     } else {
+            
         if (status == NS_OK) {
             status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
-	    Ns_GetTime(&connPtr->filterDoneTime);
+            Ns_GetTime(&connPtr->filterDoneTime);
         }
         if (status == NS_OK) {
             status = Ns_AuthorizeRequest(servPtr->server,
-                                         connPtr->request->method,
-                                         connPtr->request->url,
+                                         connPtr->request.method,
+                                         connPtr->request.url,
                                          Ns_ConnAuthUser(conn),
                                          Ns_ConnAuthPasswd(conn),
                                          Ns_ConnPeer(conn));
             switch (status) {
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
-		Ns_GetTime(&connPtr->filterDoneTime);
+                Ns_GetTime(&connPtr->filterDoneTime);
                 if (status == NS_OK) {
                     status = Ns_ConnRunRequest(conn);
                 }
@@ -1549,9 +1564,6 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
         }
     }
 
-    (void) Ns_ConnClose(conn);
-    Ns_ConnTimeStats(conn);
-
     if (status == NS_OK || status == NS_FILTER_RETURN) {
         status = NsRunFilters(conn, NS_FILTER_TRACE);
         if (status == NS_OK) {
@@ -1572,21 +1584,42 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     NsFreeConnInterp(connPtr);
 
     /*
+     * In case some leftover is in the buffer, signal the driver to
+     * process the remaining bytes.
+     * 
+     */
+    if (sockPtr->keep == NS_TRUE && connPtr->reqPtr->leftover > 0u) {
+        Ns_Log(Notice, "=== ConnRun WakeupDriver"); // TODO: remove me or downgrade logging
+        NsWakeupDriver(sockPtr->drvPtr);
+    }
+
+    /*
+     * Close the connection. This might free as well the content of
+     * connPtr->reqPtr, so set it to NULL to avoid surprises, if someone might
+     * want to access these structures.
+     */
+
+    (void) Ns_ConnClose(conn);
+
+    Ns_ConnTimeStats(conn);
+    connPtr->reqPtr = NULL;
+
+    /*
      * Deactivate stream writer, if defined
      */
     if (connPtr->fd != 0) {
-	connPtr->fd = 0;
+        connPtr->fd = 0;
     }
     if (connPtr->strWriter != NULL) {
-	WriterSock *wrPtr;
+        WriterSock *wrPtr;
 
-	NsWriterLock();
-	wrPtr = connPtr->strWriter;
-	if (wrPtr != NULL) {
-	    NsWriterFinish(wrPtr);
-	    connPtr->strWriter = NULL;
-	}
-	NsWriterUnlock();
+        NsWriterLock();
+        wrPtr = connPtr->strWriter;
+        if (wrPtr != NULL) {
+            NsWriterFinish(wrPtr);
+            connPtr->strWriter = NULL;
+        }
+        NsWriterUnlock();
     }
 
     /*
@@ -1597,14 +1630,20 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->auth = NULL;
     Ns_SetFree(connPtr->outputheaders);
     connPtr->outputheaders = NULL;
-    if (connPtr->reqPtr != NULL) {
-        NsFreeRequest(connPtr->reqPtr);
-        connPtr->reqPtr = NULL;
+    
+    if (connPtr->request.line != NULL) {
+        /*
+         * reqPtr is freed by FreeRequest() in the driver.
+         */
+        Ns_ResetRequest(&connPtr->request);
+        assert(connPtr->request.line == NULL);
     }
+
     if (connPtr->clientData != NULL) {
         ns_free(connPtr->clientData);
         connPtr->clientData = NULL;
     }
+
 }
 
 
@@ -1753,9 +1792,9 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
 	}
         Tcl_DStringAppendElement(dsPtr, state);
 
-        if (connPtr->request != NULL) {
-            Tcl_DStringAppendElement(dsPtr, (connPtr->request->method != NULL) ? connPtr->request->method : "?");
-            Tcl_DStringAppendElement(dsPtr, (connPtr->request->url    != NULL) ? connPtr->request->url : "?");
+        if (connPtr->request.line != NULL) {
+            Tcl_DStringAppendElement(dsPtr, (connPtr->request.method != NULL) ? connPtr->request.method : "?");
+            Tcl_DStringAppendElement(dsPtr, (connPtr->request.url    != NULL) ? connPtr->request.url : "?");
 	} else {
 	    Ns_Log(Notice, "AppendConn: no request in state %s; ignore conn in output", state);
 	    Tcl_DStringAppendElement(dsPtr, "unknown");

@@ -1,8 +1,7 @@
 /*
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://mozilla.org/.
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -70,7 +69,7 @@ static int  FastGetRestart(Ns_Conn *conn, const char *page)
 static int  FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
-static int  GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName) 
+static int  GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static Ns_Callback FreeEntry;
@@ -158,9 +157,9 @@ ConfigServerFastpath(const char *server)
     servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", "_ns_dirlist");
     servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 
-    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0U);
-    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0U);
-    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0U);
+    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u);
+    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u);
+    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0u);
 
     return NS_OK;
 }
@@ -229,20 +228,20 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 
     connPtr = (Conn *) conn;
     servPtr = connPtr->poolPtr->servPtr;
-    url = conn->request->url;
-    
+    url = conn->request.url;
+
     Ns_DStringInit(&ds);
 
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK
         || FastStat(ds.string, &connPtr->fileInfo) == NS_FALSE) {
         goto notfound;
     }
+
     if (S_ISREG(connPtr->fileInfo.st_mode)) {
 
         /*
          * Return ordinary files as with Ns_ConnReturnFile.
          */
-
         result = FastReturn(conn, 200, NULL, ds.string);
 
     } else if (S_ISDIR(connPtr->fileInfo.st_mode)) {
@@ -263,8 +262,8 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
                 && S_ISREG(connPtr->fileInfo.st_mode)
                 ) {
                 if (url[strlen(url) - 1u] != '/') {
-                    const char* query = conn->request->query;
-                    
+                    const char* query = conn->request.query;
+
                     Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
                     if (query != NULL) {
@@ -291,6 +290,7 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
             goto notfound;
         }
     } else {
+
     notfound:
         result = Ns_ConnReturnNotFound(conn);
     }
@@ -383,7 +383,7 @@ Ns_PageRoot(const char *server)
     NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
         return servPtr->fastpath.pageroot;
@@ -412,7 +412,7 @@ Ns_PageRoot(const char *server)
  *----------------------------------------------------------------------
  */
 static int
-GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName) 
+GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
 {
     int result;
     Tcl_DString ds, *dsPtr = &ds;
@@ -483,9 +483,8 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
         return Ns_ConnReturnStatus(conn, 412); /* Precondition Failed. */
     }
 
-
     Tcl_DStringInit(dsPtr);
-    
+
     /*
      * Check gzip version
      */
@@ -503,7 +502,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 	    /*
 	     * We have a .gz file
 	     */
-	    if (gzStat.st_mtime < connPtr->fileInfo.st_mtime 
+	    if (gzStat.st_mtime < connPtr->fileInfo.st_mtime
 		&& (useGzipRefresh == NS_TRUE)) {
 		/*
 		 * The modification time of the .gz file is older than
@@ -525,7 +524,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 		file = gzFileName;
 		Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
 	    } else {
-		Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file", 
+		Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file",
 		       gzFileName);
 	    }
 	}
@@ -536,22 +535,22 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
      * headers.
      */
 
-    if ((conn->flags & NS_CONN_SKIPBODY) != 0U) {
+    if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
 	Ns_DStringFree(dsPtr);
         return Ns_ConnReturnData(conn, status, "",
                                  (ssize_t)connPtr->fileInfo.st_size, type);
     }
-    
+
     /*
      * Depending on the size of the content and state of the fastpath cache,
      * either return the data directly, or cache it first and return the
      * cached copy.
      */
 
-    if (cache == NULL 
-	|| connPtr->fileInfo.st_size > maxentry
-        || connPtr->fileInfo.st_ctime >= (time_t)(connPtr->acceptTime.sec - 1) ) {
-
+    if ((cache == NULL)
+	|| (connPtr->fileInfo.st_size > maxentry)
+        || (connPtr->fileInfo.st_ctime >= (time_t)(connPtr->acceptTime.sec - 1))
+        ) {
         /*
          * The cache is not enabled or the entry is too large for the
 	 * cache, or the inode has been changed too recently (within 1
@@ -564,7 +563,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
                         NS_MMAP_READ, &connPtr->fmap) == NS_OK) {
             result = Ns_ConnReturnData(conn, status, connPtr->fmap.addr,
                                        (ssize_t)connPtr->fmap.size, type);
-	    if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0U) {
+	    if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0u) {
 		NsMemUmap(&connPtr->fmap);
 	    }
 	    connPtr->fmap.addr = NULL;
@@ -694,7 +693,7 @@ FastStat(const char *path, struct stat *stPtr)
 {
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(stPtr != NULL);
-    
+
     if (stat(path, stPtr) != 0) {
         if (errno != ENOENT && errno != EACCES) {
             Ns_Log(Error, "fastpath: stat(%s) failed: %s",
@@ -732,7 +731,7 @@ FastGetRestart(Ns_Conn *conn, const char *page)
     NS_NONNULL_ASSERT(page != NULL);
 
     Ns_DStringInit(&ds);
-    status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request->url, page, NULL));
+    status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request.url, page, NULL));
     Ns_DStringFree(&ds);
 
     return status;
@@ -759,7 +758,7 @@ static void
 DecrEntry(File *filePtr)
 {
     NS_NONNULL_ASSERT(filePtr != NULL);
-    
+
     if (--filePtr->refcnt == 0) {
         ns_free(filePtr);
     }

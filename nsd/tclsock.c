@@ -166,7 +166,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *      Tcl result. 
  *
  * Side effects:
- *      Puts a sing or multiple IP addresses the Tcl result. 
+ *      Puts a single or multiple IP addresses the Tcl result. 
  *
  *----------------------------------------------------------------------
  */

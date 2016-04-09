@@ -284,8 +284,8 @@ CgiRequest(void *arg, Ns_Conn *conn)
     if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {
 	return Ns_ConnReturnNotFound(conn);
     } else if (cgi.interp == NULL && access(cgi.exec, X_OK) != 0) {
-        if (STREQ(conn->request->method, "GET") ||
-	    STREQ(conn->request->method, "HEAD")) {
+        if (STREQ(conn->request.method, "GET") ||
+	    STREQ(conn->request.method, "HEAD")) {
 
 	    /*
 	     * Evidently people are storing images and such in
@@ -392,7 +392,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     size_t          ulen, plen;
     struct stat     st;
     char           *e, *s;
-    const char     *url = conn->request->url;
+    const char     *url = conn->request.url;
     const char	   *server = Ns_ConnServer(conn);
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
@@ -818,7 +818,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
     Ns_SetUpdate(cgiPtr->env, "SERVER_SOFTWARE", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
-    Ns_DStringPrintf(dsPtr, "HTTP/%2.1f", conn->request->version);
+    Ns_DStringPrintf(dsPtr, "HTTP/%2.1f", conn->request.version);
     Ns_SetUpdate(cgiPtr->env, "SERVER_PROTOCOL", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
 
@@ -876,12 +876,12 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      * Provide request information.
      */
 
-    Ns_SetUpdate(cgiPtr->env, "REQUEST_METHOD", conn->request->method);
-    Ns_SetUpdate(cgiPtr->env, "QUERY_STRING", conn->request->query);
+    Ns_SetUpdate(cgiPtr->env, "REQUEST_METHOD", conn->request.method);
+    Ns_SetUpdate(cgiPtr->env, "QUERY_STRING", conn->request.query);
 
     s = Ns_SetIGet(conn->headers, "Content-Type");
     if (s == NULL) {
-        if (STREQ("POST", conn->request->method)) {
+        if (STREQ("POST", conn->request.method)) {
             s = "application/x-www-form-urlencoded";
         } else {
             s = "";
@@ -937,7 +937,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     if (cgiPtr->path != NULL) {
         Ns_DStringAppendArg(dsPtr, cgiPtr->path);
     }
-    s = conn->request->query;
+    s = conn->request.query;
     if (s != NULL) {
 	if (strchr(s, '=') == NULL) {
     	    do {

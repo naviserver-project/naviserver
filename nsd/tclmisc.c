@@ -170,11 +170,11 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     if (itPtr != NULL && itPtr->conn != NULL) {
         Ns_Conn *conn = itPtr->conn;
         Ns_DStringInit(&ds);
-        if (conn->request->method != NULL) {
-            Ns_DStringVarAppend(&ds, conn->request->method, " ", NULL);
+        if (conn->request.method != NULL) {
+            Ns_DStringVarAppend(&ds, conn->request.method, " ", NULL);
         }
-        if (conn->request->url != NULL) {
-            Ns_DStringVarAppend(&ds, conn->request->url, ", ", NULL);
+        if (conn->request.url != NULL) {
+            Ns_DStringVarAppend(&ds, conn->request.url, ", ", NULL);
         }
         Ns_DStringVarAppend(&ds, "PeerAddress: ", Ns_ConnPeer(conn), NULL);
 

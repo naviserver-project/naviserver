@@ -451,7 +451,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     }
 
     Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
-                     MIN(connPtr->request->version, 1.1),
+                     MIN(connPtr->request.version, 1.1),
                      connPtr->responseStatus,
                      reason);
 
@@ -891,7 +891,7 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
 
     Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetResponseStatus(conn, status);
-    
+
     if ((chan != NULL || fp != NULL) 
 	&& (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, 0) == NS_OK)) {
 	return NS_OK;

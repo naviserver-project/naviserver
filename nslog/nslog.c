@@ -618,10 +618,10 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append the request line plus query data (if configured)
      */
 
-    if (likely(conn->request != NULL)) {
+    if (likely(conn->request.line != NULL)) {
 	const char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ? 
-	    conn->request->url : 
-	    conn->request->line;
+	    conn->request.url : 
+	    conn->request.line;
 
 	Ns_DStringNAppend(dsPtr, " \"", 2);
         if (likely(string != NULL)) {

@@ -277,7 +277,6 @@ Ns_ConnRunRequest(Ns_Conn *conn)
 {
     int         status = NS_OK;
     Conn       *connPtr;
-    Ns_Request *requestPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -301,21 +300,17 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     /*
      * True requests.
      */
-    requestPtr = conn->request;
-    assert(requestPtr != NULL);
     
-    if ((requestPtr->method != NULL) && (requestPtr->url != NULL)) {
+    if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
         Req        *reqPtr;
 
-        Ns_Log(Debug, "Ns_ConnRunRequest: method <%s> url <%s>", requestPtr->method, requestPtr->url);
-        
         Ns_MutexLock(&ulock);
         reqPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
-                                  requestPtr->method, requestPtr->url, uid,
+                                  conn->request.method, conn->request.url, uid,
                                   0u, NS_URLSPACE_DEFAULT);
         if (reqPtr == NULL) {
             Ns_MutexUnlock(&ulock);
-            if (STREQ(requestPtr->method, "BAD")) {
+            if (STREQ(conn->request.method, "BAD")) {
                 return Ns_ConnReturnBadRequest(conn, NULL);
             } else {
                 return Ns_ConnReturnInvalidMethod(conn);
@@ -324,6 +319,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
         ++reqPtr->refcnt;
         Ns_MutexUnlock(&ulock);
         status = (*reqPtr->proc) (reqPtr->arg, conn);
+
         Ns_MutexLock(&ulock);
         FreeReq(reqPtr);
         Ns_MutexUnlock(&ulock);
@@ -364,15 +360,15 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
      * Update the request URL.
      */
 
-    Ns_SetRequestUrl(conn->request, url);
+    Ns_SetRequestUrl(&conn->request, url);
 
     /*
      * Re-authorize and run the request.
      */
 
     status = Ns_AuthorizeRequest(Ns_ConnServer(conn),
-                                 conn->request->method,
-                                 conn->request->url,
+                                 conn->request.method,
+                                 conn->request.url,
                                  Ns_ConnAuthUser(conn),
                                  Ns_ConnAuthPasswd(conn),
                                  Ns_ConnPeer(conn));
@@ -520,7 +516,6 @@ NsConnRunProxyRequest(Ns_Conn *conn)
 {
     Conn          *connPtr = (Conn *) conn;
     NsServer      *servPtr;
-    Ns_Request    *request;
     Req           *reqPtr = NULL;
     int            status;
     Ns_DString     ds;
@@ -529,10 +524,9 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     NS_NONNULL_ASSERT(conn != NULL);
     
     servPtr = connPtr->poolPtr->servPtr;
-    request = conn->request;
 
     Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, request->method, request->protocol, NULL);
+    Ns_DStringVarAppend(&ds, conn->request.method, conn->request.protocol, NULL);
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
     if (hPtr != NULL) {

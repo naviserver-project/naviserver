@@ -183,6 +183,13 @@ static void AsyncWriterRelease(AsyncWriteData *wdPtr)
 static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
     NS_GNUC_NONNULL(1);
 
+static size_t EndOfHeader(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static void FreeRequest(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *p, size_t len)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 /*
  * Static variables defined in this file.
  */
@@ -235,8 +242,8 @@ NsInitDrivers(void)
     Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
     Ns_MutexInit(&reqLock);
-    Ns_MutexSetName2(&reqLock, "ns:driver","freelist");
-    Ns_MutexSetName2(&writerlock, "ns:writer","stream");
+    Ns_MutexSetName2(&reqLock, "ns:driver", "freelist");
+    Ns_MutexSetName2(&writerlock, "ns:writer", "stream");
 }
 
 
@@ -528,8 +535,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char buffer[100];
 
-            sprintf(buffer,"ns:driver:spooler:%d", i);
-            Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
+            sprintf(buffer, "ns:driver:spooler:%d", i);
+            Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
         }
@@ -558,8 +565,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char buffer[100];
 
-            sprintf(buffer,"ns:driver:writer:%d", i);
-            Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
+            sprintf(buffer, "ns:driver:writer:%d", i);
+            Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
         }
@@ -810,10 +817,9 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
  *
  * NsGetRequest --
  *
- *      Return the request buffer, reading it if necessary (i.e., if
- *      not an async read-ahead connection).  This function is called
- *      at the start of connection processing.
- *
+ *      Return the request buffer, reading it if necessary (i.e., if not an
+ *      async read-ahead connection). This function is called at the start of
+ *      connection processing. 
  * Results:
  *      Pointer to Request structure or NULL on error.
  *
@@ -822,7 +828,6 @@ NsWaitDriversShutdown(const Ns_Time *toPtr)
  *
  *----------------------------------------------------------------------
  */
-
 Request *
 NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 {
@@ -830,23 +835,46 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    if (sockPtr->reqPtr == NULL) {
-        SockState status;
-
-        do {
-            status = SockRead(sockPtr, 0, nowPtr);
-        } while (status == SOCK_MORE);
-        if (status != SOCK_READY) {
-            if (sockPtr->reqPtr != NULL) {
-                NsFreeRequest(sockPtr->reqPtr);
-            }
-            sockPtr->reqPtr = NULL;
-        }
-    }
+    /*
+     * The underlying Request structure is allocated by SockPrepare(), which
+     * must be called for the sockPtr prior to calling this function. reqPtr
+     * should be NULL just in error cases.
+     */
     reqPtr = sockPtr->reqPtr;
 
-    /* NB: Sock is no longer responsible for freeing request. */
-    sockPtr->reqPtr = NULL;
+    if (likely(reqPtr != NULL)) {
+        
+        if (likely(reqPtr->request.line != NULL)) {
+            Ns_Log(DriverDebug, "NsGetRequest got the preparsed request <%s> from the driver",
+                   reqPtr->request.line);
+
+        } else {
+            SockState status;
+
+            Ns_Log(DriverDebug, "NsGetRequest has to read+parse the request");
+            /*
+             * We have no parsed request so far. So, do it now.
+             */
+            do {
+                Ns_Log(DriverDebug, "NsGetRequest calls SockRead");
+                status = SockRead(sockPtr, 0, nowPtr);
+            } while (status == SOCK_MORE);
+            
+            /*
+             * If anything went wrong, clean the request provided by
+             * SockRead() and flag the error by returing NULL.
+             */
+            if (status != SOCK_READY) {
+                if (sockPtr->reqPtr != NULL) {
+                    Ns_Log(DriverDebug, "NsGetRequest calls FreeRequest");
+                    FreeRequest(sockPtr);
+                }
+                reqPtr = NULL;
+            }
+        }
+    } else {
+        Ns_Log(DriverDebug, "NsGetRequest has reqPtr NULL");
+    }
 
     return reqPtr;
 }
@@ -855,9 +883,9 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsFreeRequest --
+ * FreeRequest --
  *
- *      Free a connection request structure.  This routine is called
+ *      Free/clean a connection request structure.  This routine is called
  *      at the end of connection processing or on a socket which
  *      times out during async read-ahead.
  *
@@ -870,27 +898,59 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
  *----------------------------------------------------------------------
  */
 
-void
-NsFreeRequest(Request *reqPtr)
+static void
+FreeRequest(Sock *sockPtr)
 {
-    NS_NONNULL_ASSERT(reqPtr != NULL);
+    Request *reqPtr;
+    bool keep;
+    
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    
+    reqPtr = sockPtr->reqPtr;
+    assert(reqPtr != NULL);
+
+    Ns_Log(DriverDebug, "=== FreeRequest cleans %p (avail %lu keep %d length %lu contentLength %lu)",
+           (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
+
+    keep = (sockPtr->keep) > 0 && (reqPtr->avail > reqPtr->contentLength);
+    if (keep) {
+        size_t leftover = reqPtr->avail - reqPtr->contentLength;
+        char  *offset = reqPtr->buffer.string + (reqPtr->buffer.length - leftover);
+
+        Ns_Log(DriverDebug, "=== setting leftover to %lu bytes", leftover);
+        /*
+         * Here it is save to move the data in the buffer, although the
+         * reqPtr->content might point to it, since we reinit the content. In
+         * case the terminating null character was written to the end of the
+         * previous buffer, we have to restore the first character.
+         */
+        memmove(reqPtr->buffer.string, offset, leftover);
+        if (reqPtr->savedChar != '\0') {
+            reqPtr->buffer.string[0] = reqPtr->savedChar;
+        }
+        Tcl_DStringSetLength(&reqPtr->buffer, (int)leftover);
+        LogBuffer(Notice, "KEEP BUFFER", reqPtr->buffer.string, leftover); // TODO: change to DriverDebug        
+        reqPtr->leftover = leftover;
+    } else {
+        Tcl_DStringInit(&reqPtr->buffer);
+        reqPtr->leftover = 0u;
+    }
     
     reqPtr->next           = NULL;
     reqPtr->content        = NULL;
     reqPtr->length         = 0u;
     reqPtr->contentLength  = 0u;
-    reqPtr->avail          = 0u;
-    reqPtr->leadblanks     = 0;
 
     reqPtr->expectedLength = 0u;
     reqPtr->chunkStartOff  = 0u;
     reqPtr->chunkWriteOff  = 0u;
 
-    reqPtr->woff           = 0u;
     reqPtr->roff           = 0u;
+    reqPtr->woff           = 0u;
     reqPtr->coff           = 0u;
+    reqPtr->avail          = 0u;
+    reqPtr->savedChar      = '\0';
 
-    Tcl_DStringFree(&reqPtr->buffer);
     Ns_SetTrunc(reqPtr->headers, 0u);
 
     if (reqPtr->auth != NULL) {
@@ -898,12 +958,31 @@ NsFreeRequest(Request *reqPtr)
         reqPtr->auth = NULL;
     }
 
-    Ns_ResetRequest(&reqPtr->request);
+    if (reqPtr->request.line) {
+        Ns_Log(DriverDebug, "FreeRequest calls Ns_ResetRequest on %p", (void*)&reqPtr->request);
+        Ns_ResetRequest(&reqPtr->request);
+    } else {
+        Ns_Log(DriverDebug, "FreeRequest does not call Ns_ResetRequest on %p", (void*)&reqPtr->request);
+    }
 
-    Ns_MutexLock(&reqLock);
-    reqPtr->nextPtr = firstReqPtr;
-    firstReqPtr = reqPtr;
-    Ns_MutexUnlock(&reqLock);
+    //Ns_ResetRequest(&reqPtr->request);
+
+    if (keep == NS_FALSE) {
+        /*
+         * Push the reqPtr to the pool for reuse in other connections.
+         */
+        sockPtr->reqPtr = NULL;
+        
+        Ns_MutexLock(&reqLock);
+        reqPtr->nextPtr = firstReqPtr;
+        firstReqPtr = reqPtr;
+        Ns_MutexUnlock(&reqLock);
+    } else {
+        /*
+         * Keep the partly cleaned up reqPtr associated with the connection.
+         */
+        Ns_Log(DriverDebug, "=== KEEP request structure in sockPtr (don't push into the pool)");
+    }
 }
 
 
@@ -928,7 +1007,7 @@ void
 NsSockClose(Sock *sockPtr, int keep)
 {
     Driver *drvPtr;
-    int     trigger = 0;
+    bool    trigger = NS_FALSE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
@@ -936,16 +1015,17 @@ NsSockClose(Sock *sockPtr, int keep)
     Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", (void *)sockPtr, keep);
 
     SockClose(sockPtr, keep);
+    FreeRequest(sockPtr);
 
     Ns_MutexLock(&drvPtr->lock);
     if (drvPtr->closePtr == NULL) {
-        trigger = 1;
+        trigger = NS_TRUE;
     }
     sockPtr->nextPtr = drvPtr->closePtr;
     drvPtr->closePtr = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
 
-    if (trigger != 0) {
+    if (trigger == NS_TRUE) {
         SockTrigger(drvPtr->trigger[1]);
     }
 }
@@ -1300,13 +1380,15 @@ DriverThread(void *arg)
 
         n = PollWait(&pdata, pollto);
 
+        Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", n, PollIn(&pdata, 0));
+
         if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1) {
             const char *errstr = ns_sockstrerror(ns_sockerrno);
             
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
         }
         /*
-         * Check whether we should reanimate some connection threads,
+         * Check whether we should re-animate some connection threads,
          * when e.g. the number of current threads dropped blow the
          * minimal value.  Perform this test on timeouts (n == 0;
          * just for safety reasons) or on explicit wakeup calls.
@@ -1390,14 +1472,14 @@ DriverThread(void *arg)
                  */
                 SockRelease(sockPtr, SOCK_CLOSE, 0);
 
-            } else if (unlikely(PollIn(&pdata, sockPtr->pidx) == 0)) {
+            } else if (unlikely(PollIn(&pdata, sockPtr->pidx) == 0)
+                       && ((sockPtr->reqPtr == NULL) || (sockPtr->reqPtr->leftover == 0u))) {
                 /*
                  * Got no data
                  */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
-                    /* too early, keep waiting */
                     Push(sockPtr, readPtr);
                 }
 
@@ -1462,7 +1544,7 @@ DriverThread(void *arg)
                      * Potentially blocking driver, NS_DRIVER_ASYNC is not defined 
                      */
                     if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                        Ns_Log(Notice, "read-ahead have some data no async sock read, setting sock more  ===== diff time %d",
+                        Ns_Log(Notice, "read-ahead has some data, no async sock read ===== diff time %d",
                                Ns_DiffTime(&sockPtr->timeout, &now, &diff));
                         sockPtr->keep = NS_FALSE;
                         SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
@@ -1706,8 +1788,9 @@ PollWait(const PollData *pdata, int waittime)
  *
  * SockPrepare
  *
- *      Prepares for reading from the socket, allocates new request struct
- *      for the given socket
+ *      Prepares for reading from the socket, allocates a Request struct for
+ *      the given socket. It might be reused from the pool or freshly
+ *      allocated.
  *
  * Results:
  *      None
@@ -1725,16 +1808,22 @@ SockPrepare(Sock *sockPtr)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    if (sockPtr->reqPtr != NULL) {
-        return;
-    }
+    /*
+     * Try to get a request from the pool of allocated Requests.
+     */
     Ns_MutexLock(&reqLock);
     reqPtr = firstReqPtr;
     if (reqPtr != NULL) {
+        Ns_Log(DriverDebug, "SockPrepare reuses a Request");
         firstReqPtr = reqPtr->nextPtr;
     }
     Ns_MutexUnlock(&reqLock);
+
+    /*
+     * In case we failed, allocate a new Request.
+     */
     if (reqPtr == NULL) {
+        Ns_Log(DriverDebug, "SockPrepare gets a fresh Request");
         reqPtr = ns_calloc(1u, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers = Ns_SetCreate(NULL);
@@ -1934,20 +2023,20 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
                  */
                 sockStatus = SOCK_READY;
             }
-        } else
-            if (status == NS_DRIVER_ACCEPT_QUEUE) {
-
-                /*
-                 *  We need to call SockPrepare to make sure socket has
-                 *  request structure allocated, otherwise NsGetRequest will
-                 *  call SockRead which is not what this driver wants.
-                 */
-
+        } else if (status == NS_DRIVER_ACCEPT_QUEUE) {
+            
+            /*
+             *  We need to call SockPrepare to make sure socket has
+             *  request structure allocated, otherwise NsGetRequest will
+             *  call SockRead which is not what this driver wants.
+             */
+            if (sockPtr->reqPtr == NULL) {
                 SockPrepare(sockPtr);
-                sockStatus = SOCK_READY;
-            } else {
-                sockStatus = SOCK_MORE;
             }
+            sockStatus = SOCK_READY;
+        } else {
+            sockStatus = SOCK_MORE;
+        }
     }
 
     *sockPtrPtr = sockPtr;
@@ -1992,8 +2081,8 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     drvPtr->queuesize--;
 
     if (sockPtr->reqPtr != NULL) {
-        NsFreeRequest(sockPtr->reqPtr);
-        sockPtr->reqPtr = NULL;
+        Ns_Log(DriverDebug, "SockRelease calls FreeRequest");
+        FreeRequest(sockPtr);
     }
 
     Ns_MutexLock(&drvPtr->lock);
@@ -2150,12 +2239,19 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 
     ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
     if (sockPtr->reqPtr != NULL) {
-        Ns_Log(Notice, "invalid request: %d (%s) from peer %s request '%s'",
+        Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
                code, errMsg,
                sockPtr->reqPtr->peer,
-               sockPtr->reqPtr->request.line);
+               sockPtr->reqPtr->request.line,
+               sockPtr->reqPtr->roff,
+               sockPtr->reqPtr->woff,
+               sockPtr->reqPtr->coff,
+               sockPtr->reqPtr->avail);
+
+        LogBuffer(Warning, "REQ BUFFER", sockPtr->reqPtr->buffer.string, sockPtr->reqPtr->buffer.length);
+
     } else {
-        Ns_Log(Notice, "invalid request: %d (%s) - no request information available",
+        Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
                code, errMsg);
     }
 }
@@ -2230,18 +2326,28 @@ SockClose(Sock *sockPtr, int keep)
 #endif
         ns_free(sockPtr->tfile);
         sockPtr->tfile = NULL;
-    }
 
-    /*
-     * Close and unmmap temp file used for large content
-     */
-
-    if (sockPtr->tfd > 0) {
-        (void) ns_close(sockPtr->tfd);
+        if (sockPtr->tfd > 0) {
+            /*
+             * Close and reset fd. The fd should be > 0 unless we are in error
+             * conditions.
+             */
+            (void) ns_close(sockPtr->tfd);
+        }
+        sockPtr->tfd = 0;
+        
+    } else if (sockPtr->tfd > 0) {
+        /*
+         * This must be a fd allocated via Ns_GetTemp();
+         */
+        Ns_ReleaseTemp(sockPtr->tfd);
+        sockPtr->tfd = 0;
     }
-    sockPtr->tfd = 0;
 
 #ifndef _WIN32
+    /*
+     * Unmmap temp file used for spooled content.
+     */
     if (sockPtr->taddr != NULL) {
         munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
     }
@@ -2296,7 +2402,7 @@ ChunkedDecode(Request *reqPtr, int update)
         *p = '\r';
 
         if (p + 2 + chunk_length > end) {
-            Ns_Log(DriverDebug,"ChunkedDecode: chunk length past end of buffer");
+            Ns_Log(DriverDebug, "ChunkedDecode: chunk length past end of buffer");
             return -1;
         }
         if (update != 0) {
@@ -2355,7 +2461,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     Tcl_DString  *bufPtr;
     struct iovec  buf;
     char          tbuf[16384];
-    size_t        len, nread;
+    size_t        buflen, nread;
     ssize_t       n;
     SockState     resultState;
 
@@ -2381,10 +2487,11 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     /*
-     * Initialize Request structure
+     * Initialize Request structure if needed
      */
-
-    SockPrepare(sockPtr);
+    if (sockPtr->reqPtr == NULL) {
+        SockPrepare(sockPtr);
+    }
 
     /*
      * On the first read, attempt to read-ahead bufsize bytes.
@@ -2404,11 +2511,11 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      * Grow the buffer to include space for the next bytes.
      */
 
-    len = (size_t)bufPtr->length;
-    n = (ssize_t)(len + nread);
+    buflen = (size_t)bufPtr->length;
+    n = (ssize_t)(buflen + nread);
     if (unlikely(n > drvPtr->maxinput)) {
         n = (ssize_t)drvPtr->maxinput;
-        nread = (size_t)n - len;
+        nread = (size_t)n - buflen;
         if (nread == 0u) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
                    drvPtr->maxinput);
@@ -2419,13 +2526,17 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     /*
      * Use temp file for content larger than readahead bytes.
      */
-
 #ifndef _WIN32
-    if (reqPtr->coff > 0u &&
-        !reqPtr->chunkStartOff /* never spool chunked encoded data since we decode in memory */ &&
-        reqPtr->length > drvPtr->readahead && sockPtr->tfd <= 0) {
-        DrvSpooler   *spPtr  = &drvPtr->spooler;
+    if (reqPtr->coff > 0u                     /* We are in the content part (after the header) */
+        && !reqPtr->chunkStartOff             /* Never spool chunked encoded data since we decode in memory */
+        && reqPtr->length > drvPtr->readahead /* We need more data */
+        && sockPtr->tfd <= 0                  /* We have no spool fd */
+        ) {
+        DrvSpooler *spPtr  = &drvPtr->spooler;
 
+        Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %lu > readahead %lu)",
+               reqPtr->length, drvPtr->readahead);
+        
         /*
          * In driver mode send this Sock to the spooler thread if
          * it is running
@@ -2436,12 +2547,14 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         }
 
         /*
-         * In spooler mode dump data into temp file, if maxupload is specified
-         * we will spool raw uploads into normal temp file (no deleted) in case
-         * content size exceeds the configured value.
+         * If maxupload is specified and content size exceeds the configured
+         * values, spool uploads into normal temp file (not deleted).  We do
+         * not want to map such large files into memory.
          */
-        if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
-            sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16U);
+        if (drvPtr->maxupload > 0
+            && reqPtr->length > drvPtr->maxupload
+            ) {
+            sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16u);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
             if (sockPtr->tfd == NS_INVALID_FD) {
@@ -2449,14 +2562,17 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
                        sockPtr->tfile, strerror(errno));
             }
         } else {
-            /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
+            /* 
+             * Get a temporary fd. These FDs are used for mmapping.
+             */
             sockPtr->tfd = Ns_GetTemp();
         }
 
-        if (unlikely(sockPtr->tfd < 0)) {
+        if (unlikely(sockPtr->tfd == NS_INVALID_FD)) {
             Ns_Log(DriverDebug, "SockRead: spool fd invalid");
             return SOCK_ERROR;
         }
+        
         n = bufPtr->length - reqPtr->coff;
         assert(n >= 0);
         if (ns_write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
@@ -2469,15 +2585,23 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         buf.iov_base = tbuf;
         buf.iov_len = MIN(nread, sizeof(tbuf));
     } else {
-        Tcl_DStringSetLength(bufPtr, (int)(len + nread));
+        Tcl_DStringSetLength(bufPtr, (int)(buflen + nread));
         buf.iov_base = bufPtr->string + reqPtr->woff;
         buf.iov_len = nread;
     }
 
-    n = DriverRecv(sockPtr, &buf, 1);
+    if (reqPtr->leftover > 0u) {
+        n = reqPtr->leftover;
+        reqPtr->leftover = 0u;
+        buflen = 0u;
+        Ns_Log(DriverDebug, "SockRead receive from leftover %ld bytes", n);
+    } else {
+        n = DriverRecv(sockPtr, &buf, 1);
+        Ns_Log(DriverDebug, "SockRead receive from network %ld bytes", n);
+    }
     
     if (n < 0) {
-        Tcl_DStringSetLength(bufPtr, (int)len);
+        Tcl_DStringSetLength(bufPtr, (int)buflen);
         /*
          * The driver returns -1 when the peer closed the connection, but
          * clears the errno such we can distinguish form error conditons.
@@ -2489,7 +2613,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     if (n == 0) {
-        Tcl_DStringSetLength(bufPtr, (int)len);
+        Tcl_DStringSetLength(bufPtr, (int)buflen);
         return SOCK_MORE;
     }
 
@@ -2498,7 +2622,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             return SOCK_WRITEERROR;
         }
     } else {
-        Tcl_DStringSetLength(bufPtr, (int)(len + (size_t)n));
+        Tcl_DStringSetLength(bufPtr, (int)(buflen + (size_t)n));
     }
 
     reqPtr->woff  += (size_t)n;
@@ -2516,6 +2640,190 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 
     return resultState;
 }
+
+/*----------------------------------------------------------------------
+ *
+ * LogBuffer --
+ *
+ *      Debug function to output buffer content when the provided severity is
+ *      enabled. The function prints just visible characters and space as is
+ *      and prints the hex code otherwise.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Writes to error.log
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+LogBuffer(Ns_LogSeverity severity, const char *msg, const char *p, size_t len)
+{
+    size_t      i;
+    Tcl_DString ds;
+
+    NS_NONNULL_ASSERT(msg != NULL);
+    NS_NONNULL_ASSERT(p != NULL);
+    
+    if (Ns_LogSeverityEnabled(severity)) {
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, msg, -1);
+        Tcl_DStringAppend(&ds, ": ", 2);
+        for (i = 0; i < len; i++) {
+            char c = *(p+i);
+            
+            if (CHARTYPE(graph, c) == 0 && c != 32) {
+                Ns_DStringPrintf(&ds, "\\x%.2x", c);
+            } else {
+                Ns_DStringPrintf(&ds, "%c", c);
+            }
+        }
+        Ns_Log(severity, "%s", ds.string);
+        Tcl_DStringFree(&ds);
+    }
+}
+
+
+/*----------------------------------------------------------------------
+ *
+ * EndOfHeader --
+ *
+ *      Function to be called (once), when end of header is reached. At this
+ *      time, all request header lines were parsed already correctly.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Update various reqPtr fields and signal error conditions via
+ *      sockPtr->flags.
+ *
+ *----------------------------------------------------------------------
+ */
+static size_t
+EndOfHeader(Sock *sockPtr)
+{
+    int         gzip;
+    Request    *reqPtr;
+    const char *s;
+
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    reqPtr = sockPtr->reqPtr;
+    assert(reqPtr != NULL);
+    
+    reqPtr->chunkStartOff = 0u;
+
+    /*
+     * Handle content-length, which might be provided or not,
+     */
+    s = Ns_SetIGet(reqPtr->headers, "content-length");
+    if (s == NULL) {
+        s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
+
+        if (s != NULL) {
+            /* Lower case is in the standard, capitalized by Mac OS X */
+            if (STREQ(s, "chunked") || STREQ(s, "Chunked")) {
+                Tcl_WideInt expected;
+                
+                reqPtr->chunkStartOff = reqPtr->roff;
+                reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
+                reqPtr->contentLength = 0u;
+                
+                /* We need expectedLength for safely terminating read loop */
+
+                s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
+
+                if ((s != NULL)
+                    && (Ns_StrToWideInt(s, &expected) == NS_OK)
+                    && (expected > 0) ) {
+                    reqPtr->expectedLength = (size_t)expected;
+                }
+                s = NULL;
+            }
+        }
+    }
+            
+    if (s != NULL) {
+        Tcl_WideInt length;
+        
+        /*
+         * Content-length was provided. We honor just meaningful
+         * content-length hints only.
+         */
+        
+        if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
+            reqPtr->length = (size_t)length;
+            /*
+             * Handle too large input requests
+             */
+            if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
+                Ns_Log(DriverDebug, "SockParse: request too large, length=%"
+                       PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
+                       reqPtr->length, sockPtr->drvPtr->maxinput);
+                /*
+                 * We have to read the full request (although it is
+                 * too large) to drain the channel. Otherwise, the
+                 * server might close the connection *before* it has
+                 * received full request with its body. Such a
+                 * premature close leads to an error message in
+                 * clients like firefox. Therefore we do not return
+                 * SOCK_ENTITYTOOLARGE here, but just flag the
+                 * condition. ...
+                 *
+                 * Possible future improvements: Currently, the
+                 * content is really received and kept. We might
+                 * simply drain the input and ignore the read content,
+                 * but this requires handling for the various input
+                 * modes (spooling, chunked content, etc.). We should
+                 * make the same for the other reply-codes in
+                 * SockError().
+                 */
+                sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
+                sockPtr->keep = NS_FALSE;
+
+            }
+            reqPtr->contentLength = (size_t)length;
+        }
+    }
+
+    /*
+     * Clear NS_CONN_ZIPACCEPTED flag
+     */
+    sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED);
+
+    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
+    if (s != NULL) {
+        /* get gzip from accept-encoding header */
+        gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
+    } else {
+        /* no accept-encoding header; don't allow gzip */
+        gzip = 0;
+    }
+    if (gzip != 0) {
+        /*
+         * Don't allow gzip results for Range requests.
+         */
+        s = Ns_SetIGet(reqPtr->headers, "Range");
+        if (s == NULL) {
+            sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+        }
+    }
+
+    /*
+     * Set up request length for spooling and further read operations
+     */
+    if (reqPtr->contentLength != 0u) {
+        /*
+         * Content-Length was provided, use it
+         */
+        reqPtr->length = reqPtr->contentLength;
+    }
+    
+    return reqPtr->roff;
+}
+
 
 /*----------------------------------------------------------------------
  *
@@ -2564,14 +2872,14 @@ SockParse(Sock *sockPtr)
         size_t cnt;
 
         /*
-         * Find the next line.
+         * Find the next header line.
          */
         s = bufPtr->string + reqPtr->roff;
         e = memchr(s, '\n', reqPtr->avail);
 
         if (unlikely(e == NULL)) {
             /*
-             * Input not yet newline terminated - request more.
+             * Input not yet newline terminated - request more data.
              */
             return SOCK_MORE;
         }
@@ -2607,6 +2915,11 @@ SockParse(Sock *sockPtr)
         cnt = (size_t)(e - s) + 1u;
         reqPtr->roff  += cnt;
         reqPtr->avail -= cnt;
+
+        /*
+         * Adjust end pointer to the last content character before the line
+         * terminator.
+         */
         if (likely(e > s) && likely(*(e-1) == '\r')) {
             --e;
         }
@@ -2615,193 +2928,81 @@ SockParse(Sock *sockPtr)
          * Check for end of headers.
          */
         if (unlikely(e == s)) {
-            int gzip;
-
             /*
-             * Look for a blank line on its own prior to any "real"
-             * data. We eat up to 2 of these before closing the
-             * connection.
-             *
-             * GN: Maybe this is obsolete code. I could not find a (test)
-             * case, where this appears to be necessary. If we recieve an
-             * empty buffer should only happen in error cases.
+             * We are at end of headers
              */
-            if (bufPtr->length == 0) {
-               /*
-                * The following Ns_Log statement is a weak form of an
-                * assert(). After some time, we hope to be able to remove this
-                * clause.
-                */
-                Ns_Log(Bug, "SockParse: ================= bufPtr->length == 0, how could this happen? ============");
-                
-                if (++reqPtr->leadblanks > 2) {
-                    return SOCK_ERROR;
-                }
-                reqPtr->woff = reqPtr->roff = 0u;
-                Tcl_DStringSetLength(bufPtr, 0);
-                return SOCK_MORE;
-            }
-
-            reqPtr->coff = reqPtr->roff;
-            reqPtr->chunkStartOff = 0u;
-
-            s = Ns_SetIGet(reqPtr->headers, "content-length");
-            if (s == NULL) {
-                s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
-
-                if (s != NULL) {
-                    /* Lower case is in the standard, capitalized by Mac OS X */
-                    if (STREQ(s, "chunked") || STREQ(s, "Chunked")) {
-                        Tcl_WideInt expected;
-
-                        reqPtr->chunkStartOff = reqPtr->coff;
-                        reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
-                        reqPtr->contentLength = 0u;
-
-                        /* We need expectedLength for safely terminating read loop */
-
-                        s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
-
-                        if ((s != NULL)
-                            && (Ns_StrToWideInt(s, &expected) == NS_OK)
-                            && (expected > 0) ) {
-                            reqPtr->expectedLength = (size_t)expected;
-                        }
-                        s = NULL;
-                    }
-                }
-            }
-
-            if (s != NULL) {
-                Tcl_WideInt length;
-
-                /*
-                 * Honor meaningful remote content-length hints only.
-                 */
-
-                if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
-                    reqPtr->length = (size_t)length;
-                    /*
-                     * Handle too large input requests
-                     */
-                    if (reqPtr->length > (size_t)drvPtr->maxinput) {
-                        Ns_Log(DriverDebug, "SockParse: request too large, length=%"
-                               PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
-                               reqPtr->length, drvPtr->maxinput);
-                        /*
-                         * We have to read the full request (although
-                         * it is too large) to drain the
-                         * channel. Otherwise, the server might close
-                         * the connection *before* it has received
-                         * full request with its body. Such a
-                         * premature close leads to an error message
-                         * in clients like firefox. Therefore we do
-                         * not return SOCK_ENTITYTOOLARGE here, but
-                         * just flag the condition. ...
-                         *
-                         * Possible future improvements: Currently,
-                         * the content is really received and kept. We
-                         * might simply drain the input and ignore the
-                         * read content, but this requires handling
-                         * for the various input modes (spooling,
-                         * chunked content, etc.). We should make the
-                         * same for the other reply-codes in
-                         * SockError().
-                         */
-                        sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
-                        sockPtr->keep = NS_FALSE;
-
-                    }
-                    reqPtr->contentLength = (size_t)length;
-                }
-
-            }
-
-            /*
-             * Clear NS_CONN_ZIPACCEPTED flag
-             */
-            sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED);
-
-            s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
-            if (s != NULL) {
-                /* get gzip from accept-encoding header */
-                gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
-            } else {
-                /* no accept-encoding header; don't allow gzip */
-                gzip = 0;
-            }
-            if (gzip != 0) {
-                /*
-                 * Don't allow gzip results for Range requests.
-                 */
-                s = Ns_SetIGet(reqPtr->headers, "Range");
-                if (s == NULL) {
-                    sockPtr->flags |= NS_CONN_ZIPACCEPTED;
-                }
-            }
+            reqPtr->coff = EndOfHeader(sockPtr);
 
         } else {
+            /*
+             * We have the request-line or a header line to process.
+             */
             save = *e;
             *e = '\0';
 
             if (unlikely(reqPtr->request.line == NULL)) {
+                /*
+                 * There is no request-line set. The received line must the
+                 * the request-line.
+                 */
                 Ns_Log(DriverDebug, "SockParse (%d): parse request line <%s>", sockPtr->sock, s);
 
                 if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
-
                     /*
                      * Invalid request.
                      */
                     return SOCK_BADREQUEST;
                 }
+                
+                /*
+                 * HTTP 0.9 did not have a HTTP-version number or request headers
+                 * and no empty line terminating the request header.
+                 */
+                if (unlikely(reqPtr->request.version < 1.0)) {
+                    /*
+                     * Pre-HTTP/1.0 request.
+                     */
+                    reqPtr->coff = reqPtr->roff;
+                    Ns_Log(Notice, "pre-HTTP/1.0 request <%s>", reqPtr->request.line);
+                }
 
             } else if (Ns_ParseHeader(reqPtr->headers, s, Preserve) != NS_OK) {
-
                 /*
                  * Invalid header.
                  */
-
                 return SOCK_BADHEADER;
-            }
 
-            /*
-             * Check for max number of headers
-             */
-
-            if (unlikely(Ns_SetSize(reqPtr->headers) > (size_t)drvPtr->maxheaders)) {
-                Ns_Log(DriverDebug, "SockParse (%d): maxheaders reached of %d bytes",
-                       sockPtr->sock, drvPtr->maxheaders);
-                return SOCK_TOOMANYHEADERS;
-            }
-
-            *e = save;
-            if (unlikely(reqPtr->request.version < 1.0)) {
-
+            } else {
                 /*
-                 * Pre-HTTP/1.0 request.
+                 * Check for max number of headers
                  */
-
-                reqPtr->coff = reqPtr->roff;
+                if (unlikely(Ns_SetSize(reqPtr->headers) > (size_t)drvPtr->maxheaders)) {
+                    Ns_Log(DriverDebug, "SockParse (%d): maxheaders reached of %d bytes",
+                           sockPtr->sock, drvPtr->maxheaders);
+                    return SOCK_TOOMANYHEADERS;
+                }
             }
+            
+            *e = save;
         }
     }
 
     /*
-     * Set up request length for spooling and further read operations
+     * We are in the request body
      */
-    if (reqPtr->contentLength != 0u) {
-        /*
-         * Content-Length was provided, use it
-         */
-        reqPtr->length = reqPtr->contentLength;
-    }
-
+    assert(reqPtr->coff > 0u);
+    assert(reqPtr->request.line != NULL);
+    
     /*
      * Check if all content has arrived.
      */
+    Ns_Log(Dev, "=== length < avail (length %lu, avail %lu) tfd %d tfile %p chunkStartOff %lu",
+           reqPtr->length, reqPtr->avail,sockPtr->tfd, (void *)sockPtr->tfile, reqPtr->chunkStartOff);
 
     if (reqPtr->chunkStartOff != 0u) {
-        /* Chunked encoding was provided */
+        /* 
+         * Chunked encoding was provided 
+         */
         int complete;
         size_t currentContentLength;
 
@@ -2817,83 +3018,109 @@ SockParse(Sock *sockPtr)
          */
         if ((complete == 0)
             || (reqPtr->expectedLength != 0u && currentContentLength < reqPtr->expectedLength)) {
-            /* ChunkedDecode wants more data */
+            /* 
+             * ChunkedDecode wants more data 
+             */
             return SOCK_MORE;
         }
-        /* ChunkedDecode has enough data */
+        /* 
+         * ChunkedDecode has enough data 
+         */
         reqPtr->length = (size_t)currentContentLength;
     }
 
-    if (reqPtr->coff > 0u && reqPtr->length <= reqPtr->avail) {
-
+    if (reqPtr->avail < reqPtr->length) {
+        Ns_Log(DriverDebug, "SockRead wait for more input");
         /*
-         * With very large uploads we have to put them into regular temporary file
-         * and make it available to the connection thread. No parsing of the request
-         * will be performed by the server.
+         * Wait for more input.
          */
+        return SOCK_MORE;
+    }
+    
+    Ns_Log(Dev, "=== all required data is available (avail %lu, length %lu, "
+           "readahead %lu maxupload %lu) tfd %d",
+           reqPtr->avail, reqPtr->length, drvPtr->readahead, drvPtr->maxupload,
+           sockPtr->tfd);
 
-        if (sockPtr->tfile != NULL) {
-            reqPtr->content = NULL;
-            reqPtr->next = NULL;
-            reqPtr->avail = 0u;
-            Ns_Log(Debug, "spooling content to file: size=%" PRIdz ", file=%s",
-                   reqPtr->length, sockPtr->tfile);
-
-            return SOCK_READY;
-        }
-
-        if (sockPtr->tfd > 0) {
-#ifndef _WIN32
-            int prot = PROT_READ | PROT_WRITE;
-            /*
-             * Add a byte to make sure, the \0 assignment below falls
-             * always into the mmapped area. Might lead to crashes
-             * when we hitting page boundaries.
-             */
-            int result = ns_write(sockPtr->tfd, "\0", 1);
-            if (result == -1) {
-                Ns_Log(Error, "socket: could not append terminating 0-byte");
-            }
-            sockPtr->tsize = reqPtr->length + 1;
-            sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
-                                  sockPtr->tfd, 0);
-            if (sockPtr->taddr == MAP_FAILED) {
-                sockPtr->taddr = NULL;
-                return SOCK_ERROR;
-            }
-            reqPtr->content = sockPtr->taddr;
-            Ns_Log(Debug, "spooling content to file: readahead=%"
-                   TCL_LL_MODIFIER "d, filesize=%" PRIdz,
-                   drvPtr->readahead, sockPtr->tsize);
-#endif
-        } else {
-            reqPtr->content = bufPtr->string + reqPtr->coff;
-        }
-        reqPtr->next = reqPtr->content;
-        reqPtr->avail = reqPtr->length;
-
-        /*
-         * Ensure that there are no 'bonus' crlf chars left visible
-         * in the buffer beyond the specified content-length.
-         * This happens from some browsers on POST requests.
-         */
-
-        if (reqPtr->length > 0u) {
-            reqPtr->content[reqPtr->length] = '\0';
-        }
-
-        if (unlikely(reqPtr->request.line == NULL)) {
-            Ns_Log(DriverDebug, "SockParse: no request line");
-            return SOCK_BADREQUEST;
-        }
-
+    /*
+     * We have all required data in the receive buffer or in a temporary file.
+     *
+     * - Uploads > drvPtr->readahead: these are put into temporary files.
+     *
+     * - Uploads > drvPtr->maxupload: these are put into temporary files
+     *   without mmapping, no content parsing will be performed in memory.
+     */
+    if (sockPtr->tfile != NULL) {
+        reqPtr->content = NULL;
+        reqPtr->next = NULL;
+        reqPtr->avail = 0u;
+        Ns_Log(DriverDebug, "content spooled to file: size %" PRIdz ", file %s",
+               reqPtr->length, sockPtr->tfile);
+        
         return SOCK_READY;
     }
 
     /*
-     * Wait for more input.
+     * Uploads < maxupload are spooled to files and mmapped in order to
+     * provide the usual interface via [ns_conn content].
      */
-    return SOCK_MORE;
+    if (sockPtr->tfd > 0) {
+#ifdef _WIN32
+        /* 
+         * For _WIN32, tfd should never be set, since tfd-spooling is not
+         * implemented for windows.
+         */
+        assert(0); 
+#else
+        int prot = PROT_READ | PROT_WRITE;
+        /*
+         * Add a byte to make sure, the string termination with \0 below falls
+         * always into the mmapped area. On some older OSes this might lead to
+         * crashes when we hitting page boundaries.
+         */
+        int result = ns_write(sockPtr->tfd, "\0", 1);
+        if (result == -1) {
+            Ns_Log(Error, "socket: could not append terminating 0-byte");
+        }
+        sockPtr->tsize = reqPtr->length + 1;
+        sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
+                              sockPtr->tfd, 0);
+        if (sockPtr->taddr == MAP_FAILED) {
+            sockPtr->taddr = NULL;
+            return SOCK_ERROR;
+        }
+        reqPtr->content = sockPtr->taddr;
+        Ns_Log(Debug, "content spooled to mmapped file: readahead=%"
+               TCL_LL_MODIFIER "d, filesize=%" PRIdz,
+               drvPtr->readahead, sockPtr->tsize);
+#endif
+    } else {
+        /*
+         * Set the content the begin of the remaining buffer (content offset).
+         * This happens as well when reqPtr->contentLength is 0, but it is
+         * needed for chunked input processing.
+         */
+        reqPtr->content = bufPtr->string + reqPtr->coff;
+    }
+    reqPtr->next = reqPtr->content;
+
+    /*
+     * Add a terminating null character. The content might be from the receive
+     * buffer (DString) or from the mmaped file. Non-mmapped files are handled
+     * above.
+     */
+    if (reqPtr->length > 0u) {
+        assert(sockPtr->tfile == NULL);
+        Ns_Log(DriverDebug, "SockRead adds null terminating character at content[%lu]", reqPtr->length);
+        
+        reqPtr->savedChar = reqPtr->content[reqPtr->length];
+        reqPtr->content[reqPtr->length] = '\0';
+        if (sockPtr->taddr == NULL) {
+            LogBuffer(DriverDebug, "UPDATED BUFFER", sockPtr->reqPtr->buffer.string, reqPtr->buffer.length);
+        }
+    }
+    
+    return SOCK_READY;
 }
 
 /*
@@ -2925,6 +3152,7 @@ SockSetServer(Sock *sockPtr)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
+
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
 
@@ -2932,6 +3160,8 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = sockPtr->drvPtr->location;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
+    Ns_Log(DriverDebug, "SockSetServer host %s req %s", host, reqPtr->request.line);
+    
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
          * HTTP/1.1 requires host header
@@ -3231,7 +3461,7 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
 static int
 SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
 {
-    int trigger = 0;
+    bool          trigger = NS_FALSE;
     SpoolerQueue *queuePtr;
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
@@ -3254,7 +3484,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
 
     Ns_MutexLock(&queuePtr->lock);
     if (queuePtr->sockPtr == NULL) {
-        trigger = 1;
+        trigger = NS_TRUE;
     }
     Push(sockPtr, queuePtr->sockPtr);
     Ns_MutexUnlock(&queuePtr->lock);
@@ -3263,7 +3493,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
      * Wake up spooler thread
      */
 
-    if (trigger != 0) {
+    if (trigger == NS_TRUE) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -3956,12 +4186,16 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     WriterSock    *wrSockPtr;
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
-    int            trigger = 0;
+    bool           trigger = NS_FALSE;
     size_t         headerSize;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
     if (unlikely(connPtr->sockPtr == NULL)) {
+        Ns_Log(Warning,
+               "NsWriterQueue: called without sockPtr size %" PRIdz " bufs %d flags %.6x stream %.6x chan %p fd %d",
+               nsend, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM,
+               (void *)chan, fd);
         return NS_ERROR;
     }
 
@@ -4171,7 +4405,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         if (nbufs+headerbufs < UIO_SMALLIOV) {
             wrSockPtr->c.mem.bufs = wrSockPtr->c.mem.preallocated_bufs;
         } else {
-            Ns_Log(Notice, "NsWriterQueue: alloc %d iovecs", nbufs);
+            Ns_Log(DriverDebug, "NsWriterQueue: alloc %d iovecs", nbufs);
             wrSockPtr->c.mem.bufs = ns_calloc((size_t)nbufs + (size_t)headerbufs, sizeof(struct iovec));
         }
         wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
@@ -4286,7 +4520,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     Ns_MutexLock(&queuePtr->lock);
     if (queuePtr->sockPtr == NULL) {
-        trigger = 1;
+        trigger = NS_TRUE;
     }
 
     Push(wrSockPtr, queuePtr->sockPtr);
@@ -4296,7 +4530,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      * Wake up writer thread
      */
 
-    if (trigger != 0) {
+    if (trigger == NS_TRUE) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -4607,12 +4841,12 @@ NsAsyncWriterQueueEnable(void)
              */
             asyncWriter = ns_calloc(1u, sizeof(AsyncWriter));
             Ns_MutexUnlock(&reqLock);
-            Ns_MutexSetName2(&asyncWriter->lock, "ns:driver","async-writer");
+            Ns_MutexSetName2(&asyncWriter->lock, "ns:driver", "async-writer");
             /*
              * Allocate and initialize a Spooler Queue for this thread.
              */
             queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
-            Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer","queue");
+            Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer", "queue");
             asyncWriter->firstPtr = queuePtr;
             /*
              * Start the spooler queue

@@ -395,7 +395,7 @@ typedef struct Ns_Request {
  */
 
 typedef struct Ns_Conn {
-    Ns_Request  *request;
+    Ns_Request   request;
     Ns_Set      *headers;
     Ns_Set      *outputheaders;
     Ns_Set      *auth;

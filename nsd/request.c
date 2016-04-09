@@ -79,7 +79,7 @@ void
 Ns_ResetRequest(Ns_Request *request)
 {
     NS_NONNULL_ASSERT(request != NULL);
-
+    
     if (request->line != NULL) {
         Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
     }
