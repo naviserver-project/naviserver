@@ -1724,7 +1724,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
-        itPtr = ns_calloc(1U, sizeof(NsInterp));
+        itPtr = ns_calloc(1u, sizeof(NsInterp));
         itPtr->interp = interp;
         itPtr->servPtr = servPtr;
         Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);

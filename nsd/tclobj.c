@@ -201,8 +201,8 @@ Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
         length = (int)strlen(bytes);
     }
     objPtr->length = length;
-    objPtr->bytes = ckalloc((size_t) length + 1U);
-    memcpy(objPtr->bytes, bytes, (size_t) length + 1U);
+    objPtr->bytes = ckalloc((size_t) length + 1u);
+    memcpy(objPtr->bytes, bytes, (size_t) length + 1u);
 }
 
 

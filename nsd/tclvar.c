@@ -989,7 +989,7 @@ BucketIndex(const char *arrayName) {
 	if (unlikely(i == 0u)) {
             break;
         }
-        index += (index << 3U) + i;
+        index += (index << 3u) + i;
     }
     return index;
 }

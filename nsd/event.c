@@ -51,8 +51,8 @@ typedef struct Event {
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;
 
-#define NS_EVENT_WAIT 1U  /* Event callback has requested a wait. */
-#define NS_EVENT_DONE 2U  /* Event callback has signaled Event done. */
+#define NS_EVENT_WAIT 1u  /* Event callback has requested a wait. */
+#define NS_EVENT_DONE 2u  /* Event callback has signaled Event done. */
 
 /*
  * The following defines an event queue of sockets waiting for
@@ -273,7 +273,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     while ((evPtr = queuePtr->firstInitPtr) != NULL) {
         queuePtr->firstInitPtr = evPtr->nextPtr;
         Call(evPtr, &now, NS_SOCK_INIT);
-        if (evPtr->status == 0U) {
+        if (evPtr->status == 0u) {
             Ns_Log(Bug, "Ns_RunEventQueue: callback init failed");
             Push(evPtr, queuePtr->firstFreePtr);
         }

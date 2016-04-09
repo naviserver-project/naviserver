@@ -277,7 +277,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     NsLimits    *limitsPtr;
     const char  *method, *url, *server = itPtr->servPtr->server;
     int          noinherit = 0;
-    unsigned int flags = 0U;
+    unsigned int flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(1)},
@@ -335,12 +335,12 @@ FindLimits(const char *limits, int create)
     } else {
         hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);
         if (isNew != 0) {
-            limitsPtr = ns_calloc(1U, sizeof(NsLimits));
+            limitsPtr = ns_calloc(1u, sizeof(NsLimits));
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);
             Ns_MutexSetName2(&limitsPtr->lock, "ns:limits", limits);
-            limitsPtr->maxrun = limitsPtr->maxwait = 100U;
-            limitsPtr->maxupload = 10U * 1024U * 1000U; /* NB: 10meg limit. */
+            limitsPtr->maxrun = limitsPtr->maxwait = 100u;
+            limitsPtr->maxupload = 10u * 1024u * 1000u; /* NB: 10meg limit. */
             limitsPtr->timeout = 60;
             Tcl_SetHashValue(hPtr, limitsPtr);
         }

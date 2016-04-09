@@ -45,7 +45,7 @@ static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 static void ParseMultiInput(Conn *connPtr, const char *start, char *end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static char *Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
+static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
@@ -388,17 +388,17 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 
     disp = Ns_SetGet(set, "content-disposition");
     if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == NS_TRUE) {
-	const char *key = Ext2Utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
+	const char *key = Ext2utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
 	const char *value, *fs = NULL, *fe = NULL;
 
         if (GetValue(disp, "filename=", &fs, &fe, &unescape) == NS_FALSE) {
-	    value = Ext2Utf(&vds, start, (size_t)(end - start), encoding, unescape);
+	    value = Ext2utf(&vds, start, (size_t)(end - start), encoding, unescape);
         } else {
 	    Tcl_HashEntry *hPtr;
             FormFile      *filePtr;
             Tcl_Interp    *interp = connPtr->itPtr->interp;
 
-            value = Ext2Utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
+            value = Ext2utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew != 0) {
                 
@@ -605,7 +605,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 /*
  *----------------------------------------------------------------------
  *
- * Ext2Utf --
+ * Ext2utf --
  *
  *      Convert input string to UTF.
  *
@@ -620,7 +620,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
  */
 
 static char *
-Ext2Utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
+Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(start != NULL);

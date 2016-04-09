@@ -181,7 +181,7 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     Tcl_Obj        *scriptObj;
     int             id, hour, minute;
     int             remain = 0, once = 0, thread = 0;
-    unsigned int    flags = 0U;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-once",   Ns_ObjvBool,  &once,   INT2PTR(1)},
@@ -247,7 +247,7 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Tcl_Obj        *scriptObj;
     int             id, day, hour, minute;
     int             remain = 0, once = 0, thread = 0;
-    unsigned int    flags = 0U;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
 	{"-once",   Ns_ObjvBool,  &once,   INT2PTR(1)},
@@ -318,7 +318,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     Tcl_Obj        *scriptObj;
     int             id, interval;
     int             remain = 0, once = 0, thread = 0;
-    unsigned int    flags = 0U;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-once",    Ns_ObjvBool,  &once,   INT2PTR(1)},

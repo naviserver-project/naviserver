@@ -1483,7 +1483,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     if (servPtr->opts.hdrcase != Preserve) {
         size_t i;
 
-        for (i = 0U; i < Ns_SetSize(connPtr->headers); ++i) {
+        for (i = 0u; i < Ns_SetSize(connPtr->headers); ++i) {
             if (servPtr->opts.hdrcase == ToLower) {
                 Ns_StrToLower(Ns_SetKey(connPtr->headers, i));
             } else {
@@ -1672,10 +1672,10 @@ CreateConnThread(ConnPool *poolPtr)
 
 #if !defined(NDEBUG)
     { const char *threadName = Ns_ThreadGetName();
-      assert(strncmp("-driver:", threadName, 8U) == 0 
-	     || strncmp("-main-", threadName, 6U) == 0
-	     || strncmp("-spooler", threadName, 8U) == 0
-	     || strncmp("-service-", threadName, 9U) == 0
+      assert(strncmp("-driver:", threadName, 8u) == 0 
+	     || strncmp("-main-", threadName, 6u) == 0
+	     || strncmp("-spooler", threadName, 8u) == 0
+	     || strncmp("-service-", threadName, 9u) == 0
 	     );
     }
 #endif

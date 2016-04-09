@@ -416,7 +416,7 @@ MakeMonth(char *s)
     *(s + 2) = CHARCONV(lower, *(s + 2));
 
     for (i = 0; i < 12; i++) {
-        if (strncmp(month_names[i], s, 3U) == 0) {
+        if (strncmp(month_names[i], s, 3u) == 0) {
             return i;
         }
     }

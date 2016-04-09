@@ -94,7 +94,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
     }
     Ns_DStringNAppend(bufPtr, buf, len);
     if (
-	((itPtr->adp.flags & ADP_STREAM) != 0U
+	((itPtr->adp.flags & ADP_STREAM) != 0u
 	 || (size_t)bufPtr->length > itPtr->adp.bufsize
 	 ) 
 	&& NsAdpFlush(itPtr, 1) != TCL_OK) {
@@ -134,7 +134,7 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
         return TCL_ERROR;
     }
     if (doStreamPtr != NULL) {
-        *doStreamPtr = (itPtr->adp.flags & ADP_STREAM) != 0U ? 1 : 0;
+        *doStreamPtr = (itPtr->adp.flags & ADP_STREAM) != 0u ? 1 : 0;
     }
     if (maxBufferPtr != NULL) {
         *maxBufferPtr = itPtr->adp.bufsize;
@@ -236,7 +236,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         { "stricterror",  ADP_STRICT },
         { "trace",        ADP_TRACE },
         { "trimspace",    ADP_TRIM },
-        { NULL, 0U}
+        { NULL, 0u}
     };
 
 
@@ -317,7 +317,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
                 itPtr->adp.flags &= ~flag;
             }
         }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag != 0U));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag != 0u));
         break;
     }
 
@@ -436,7 +436,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             return TCL_ERROR;
         }
         Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
-        if ((itPtr->adp.flags & ADP_TCLFILE) != 0U) {
+        if ((itPtr->adp.flags & ADP_TCLFILE) != 0u) {
             Tcl_DStringAppendElement(dsPtr, "-tcl");
         }
         for (i = 0; i < objc; ++i) {

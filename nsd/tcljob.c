@@ -270,7 +270,7 @@ NsTclInitQueueType(void)
     Tcl_InitHashTable(&tp.queues, TCL_STRING_KEYS);
     Ns_MutexSetName(&tp.queuelock, "jobThreadPool");
     tp.nextThreadId = 0;
-    tp.nextQueueId = 0U;
+    tp.nextQueueId = 0u;
     tp.maxThreads = 0;
     tp.nthreads = 0;
     tp.nidle = 0;
@@ -1252,7 +1252,7 @@ JobThread(void *UNUSED(arg))
 
         jobPtr->state  = JOB_DONE;
         jobPtr->code   = code;
-        jobPtr->tid    = 0U;
+        jobPtr->tid    = 0u;
         jobPtr->async  = NULL;
 
         Ns_GetTime(&jobPtr->endTime);
@@ -1432,7 +1432,7 @@ NewQueue(const char *queueName, const char *queueDesc, int maxThreads)
     NS_NONNULL_ASSERT(queueName != NULL);
     NS_NONNULL_ASSERT(queueDesc != NULL);
 
-    queue = ns_calloc(1U, sizeof(Queue));
+    queue = ns_calloc(1u, sizeof(Queue));
     queue->req = QUEUE_REQ_NONE;
 
     queue->name = ns_strdup(queueName);
@@ -1503,7 +1503,7 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
     NS_NONNULL_ASSERT(queueName != NULL);
     NS_NONNULL_ASSERT(script != NULL);
 
-    jobPtr = ns_calloc(1U, sizeof(Job));
+    jobPtr = ns_calloc(1u, sizeof(Job));
 
     jobPtr->server = server;
     jobPtr->type   = type;

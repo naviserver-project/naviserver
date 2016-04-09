@@ -191,10 +191,10 @@ NsConfigEncodings(void)
      * Add default charsets and file mappings.
      */
 
-    for (i = 0U; builtinChar[i].charset != NULL; ++i) {
+    for (i = 0u; builtinChar[i].charset != NULL; ++i) {
         AddCharset(builtinChar[i].charset, builtinChar[i].name);
     }
-    for (i = 0U; builtinExt[i].extension != NULL; ++i) {
+    for (i = 0u; builtinExt[i].extension != NULL; ++i) {
         AddExtension(builtinExt[i].extension, builtinExt[i].name);
     }
 
@@ -203,11 +203,11 @@ NsConfigEncodings(void)
      */
 
     set = Ns_ConfigGetSection("ns/charsets");
-    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         AddCharset(Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
     set = Ns_ConfigGetSection("ns/encodings");
-    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         AddExtension(Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
 

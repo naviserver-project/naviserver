@@ -37,8 +37,8 @@
 
 #ifdef HAVE_ZLIB_H
 
-# define COMPRESS_SENT_HEADER 0x01U
-# define COMPRESS_FLUSHED     0x02U
+# define COMPRESS_SENT_HEADER 0x01u
+# define COMPRESS_FLUSHED     0x02u
 
 
 /*
@@ -72,7 +72,7 @@ Ns_CompressInit(Ns_CompressStream *cStream)
     z_stream *z = &cStream->z;
     int       status;
 
-    cStream->flags = 0U;
+    cStream->flags = 0u;
     z->zalloc = ZAlloc;
     z->zfree = ZFree;
     z->opaque = Z_NULL;

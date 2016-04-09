@@ -97,7 +97,7 @@ Ns_MutexInit(Ns_Mutex *mutex)
 
     NS_NONNULL_ASSERT(mutex != NULL);
 
-    mutexPtr = ns_calloc(1U, sizeof(Mutex));
+    mutexPtr = ns_calloc(1u, sizeof(Mutex));
     mutexPtr->lock = NsLockAlloc();
     Ns_MasterLock();
     mutexPtr->nextPtr = firstMutexPtr;

@@ -774,7 +774,7 @@ PreBind(const char *spec)
 	/*
 	 * ICMP
 	 */
-        if (strncmp(proto, "icmp", 4U) == 0) {
+        if (strncmp(proto, "icmp", 4u) == 0) {
             int count = 1;
             /* Parse count */
             

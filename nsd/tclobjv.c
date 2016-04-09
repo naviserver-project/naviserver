@@ -1212,7 +1212,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     len = strlen(value);
     if (value[0] == '[' && value[len - 1u] == ']') {
         value++;
-        len -= 2U;
+        len -= 2u;
 
         if (Tcl_EvalEx(interp, value, (int)len, 0) == TCL_ERROR) {
             return TCL_ERROR;

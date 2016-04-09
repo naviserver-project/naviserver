@@ -161,7 +161,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
         /* FALLTHROUGH */
 
     case DLL_THREAD_ATTACH:
-        wPtr = ns_calloc(1U, sizeof(WinThread));
+        wPtr = ns_calloc(1u, sizeof(WinThread));
         wPtr->event = CreateEvent(NULL, TRUE, FALSE, NULL);
         if (wPtr->event == NULL) {
             NsThreadFatal("DllMain", "CreateEvent", GetLastError());
@@ -271,7 +271,7 @@ NsLockAlloc(void)
 {
     CRITICAL_SECTION *csPtr;
 
-    csPtr = (CRITICAL_SECTION *)ns_calloc(1U, sizeof(CRITICAL_SECTION));
+    csPtr = (CRITICAL_SECTION *)ns_calloc(1u, sizeof(CRITICAL_SECTION));
     InitializeCriticalSection(csPtr);
 
     return (void *)csPtr;
@@ -396,7 +396,7 @@ Ns_CondInit(Ns_Cond *cond)
 {
     Cond *condPtr;
 
-    condPtr = ns_calloc(1U, sizeof(Cond));
+    condPtr = ns_calloc(1u, sizeof(Cond));
     InitializeCriticalSection(&condPtr->critsec);
     *cond = (Ns_Cond)condPtr;
 }
@@ -694,12 +694,12 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
     unsigned   tid, flags;
     uintptr_t  hdl;
 
-    flags = ((resultPtr != NULL) ? CREATE_SUSPENDED : 0U);
+    flags = ((resultPtr != NULL) ? CREATE_SUSPENDED : 0u);
     argPtr = ns_malloc(sizeof(ThreadArg));
     argPtr->arg = arg;
     argPtr->self = NULL;
     hdl = _beginthreadex(NULL, stacksize, ThreadMain, argPtr, flags, &tid);
-    if (hdl == 0U) {
+    if (hdl == 0u) {
         NsThreadFatal("NsCreateThread", "_beginthreadex", errno);
     }
     if (resultPtr == NULL) {
@@ -733,7 +733,7 @@ void
 Ns_ThreadExit(void *arg)
 {
     NsThreadShutdownStarted();
-    _endthreadex( PTR2UINT(arg) ); 
+    _endthreadex( PTR2uINT(arg) ); 
 }
 
 

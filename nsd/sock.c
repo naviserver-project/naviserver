@@ -112,14 +112,14 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 {
     int     i;
 
-    for (i = 0; i < nbufs && sent > 0U; i++) {
+    for (i = 0; i < nbufs && sent > 0u; i++) {
         char   *data = bufs[i].iov_base;
 	size_t  len  = bufs[i].iov_len;
 
-        if (len > 0U) {
+        if (len > 0u) {
             if (sent >= len) {
                 sent -= len;
-                (void) Ns_SetVec(bufs, i, NULL, 0U);
+                (void) Ns_SetVec(bufs, i, NULL, 0u);
             } else {
                 (void) Ns_SetVec(bufs, i, data + sent, len - sent);
                 break;
@@ -155,7 +155,7 @@ Ns_SumVec(const struct iovec *bufs, int nbufs)
     NS_NONNULL_ASSERT(bufs != NULL);
 
     for (i = 0; i < nbufs; i++) {
-        if (bufs[i].iov_len > 0U) {
+        if (bufs[i].iov_len > 0u) {
             sum += bufs[i].iov_len;
         }
     }
@@ -229,7 +229,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
 
-    while (bufIdx < nbufs || toWrite > 0U) {
+    while (bufIdx < nbufs || toWrite > 0u) {
 
         /*
          * Send up to UIO_MAXIOV buffers of data at a time and strip out
@@ -241,7 +241,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
             data = bufs[bufIdx].iov_base;
             len  = bufs[bufIdx].iov_len;
 
-            if (len > 0U && data != NULL) {
+            if (len > 0u && data != NULL) {
                 toWrite += Ns_SetVec(sbufPtr, sbufIdx++, data, len);
                 nsbufs++;
             }
@@ -265,7 +265,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
         toWrite -= (size_t)sent;
         nWrote  += (size_t)sent;
 
-        if (toWrite > 0U) {
+        if (toWrite > 0u) {
 
             sbufIdx = Ns_ResetVec(sbufPtr, nsbufs, (size_t)sent);
             nsbufs -= sbufIdx;
@@ -895,7 +895,7 @@ void
 Ns_ClearSockErrno(void)
 {
 #ifdef _WIN32
-    SetLastError(0U);
+    SetLastError(0u);
 #else
     errno = 0;
 #endif

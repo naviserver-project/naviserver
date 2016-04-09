@@ -674,7 +674,7 @@ GetImageType(Tcl_Channel chan)
         (void)Tcl_Seek(chan,  0LL, SEEK_END);
         (void)Tcl_Seek(chan, -2LL, SEEK_CUR);
         (void)Tcl_Read(chan, (char*)trail, 2);
-        if (memcmp(trail, jpeg_trail, 2U) == 0) {
+        if (memcmp(trail, jpeg_trail, 2u) == 0) {
             type = jpeg;
         }
     } else if (   memcmp(gif87_magic, buf, sizeof(gif87_magic)) == 0

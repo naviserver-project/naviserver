@@ -80,14 +80,14 @@ static Ns_ArgProc ArgProc;
  * and disable password prompt echo.
  */
 
-#define TN_IAC  255U
-#define TN_WILL 251U
-#define TN_WONT 252U
-#define TN_DO   253U
-#define TN_DONT 254U
-#define TN_EOF  236U
-#define TN_IP   244U
-#define TN_ECHO   1U
+#define TN_IAC  255u
+#define TN_WILL 251u
+#define TN_WONT 252u
+#define TN_DO   253u
+#define TN_DONT 254u
+#define TN_EOF  236u
+#define TN_IP   244u
+#define TN_ECHO   1u
 
 static const unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
 static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
@@ -193,7 +193,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Process the setup ns_set
      */
-    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
 	const char *key  = Ns_SetKey(set, i);
 	const char *user = Ns_SetValue(set, i);
         const char *passPart;

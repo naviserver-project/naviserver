@@ -91,7 +91,7 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
     
-    lockPtr = ns_calloc(1U, sizeof(RwLock));
+    lockPtr = ns_calloc(1u, sizeof(RwLock));
     NsMutexInitNext(&lockPtr->mutex, "rw", &nextid);
     Ns_CondInit(&lockPtr->rcond);
     Ns_CondInit(&lockPtr->wcond);

@@ -772,7 +772,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
 void
 Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 {
-    LogFilter *filterPtr = ns_calloc(1U, sizeof *filterPtr);
+    LogFilter *filterPtr = ns_calloc(1u, sizeof *filterPtr);
 
     NS_NONNULL_ASSERT(procPtr != NULL);
     NS_NONNULL_ASSERT(arg != NULL);

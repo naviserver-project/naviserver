@@ -195,7 +195,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-	    sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0U);
+	    sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0u);
 
             nsbufs = 0;
             if (sent > 0) {

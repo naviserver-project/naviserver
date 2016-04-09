@@ -44,7 +44,7 @@ static Ns_ObjvTable filters[] = {
     {"preauth",  (unsigned int)NS_FILTER_PRE_AUTH},
     {"postauth", (unsigned int)NS_FILTER_POST_AUTH},
     {"trace",    (unsigned int)NS_FILTER_TRACE},
-    {NULL, 0U}
+    {NULL, 0u}
 };
 
 
@@ -103,7 +103,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     Tcl_Obj        *scriptObj;
     const char     *method, *url;
     int             remain = 0, noinherit = 0;
-    unsigned int    flags = 0U;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
@@ -203,7 +203,7 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     NsInterp       *itPtr = arg;
     const char     *method, *url;
     int             noinherit = 0;
-    unsigned int    flags = 0U;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
@@ -298,7 +298,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     const char      *method, *urlPattern;
     Tcl_Obj         *scriptObj;
     int              remain = 0, first = 0;
-    unsigned int     when = 0U;
+    unsigned int     when = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-first", Ns_ObjvBool,  &first, INT2PTR(1)},
@@ -348,7 +348,7 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     NsInterp    *itPtr = arg;
     const char  *server = itPtr->servPtr->server;
     const char  *method, *urlPattern;
-    unsigned int when = 0U;
+    unsigned int when = 0u;
 
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},

@@ -348,7 +348,7 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
       httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
 
       if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
-	  httpPtr->compress = ns_calloc(1U, sizeof(Ns_CompressStream));
+	  httpPtr->compress = ns_calloc(1u, sizeof(Ns_CompressStream));
 	  (void) Ns_InflateInit(httpPtr->compress);
       }
     }
@@ -467,7 +467,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		     * in httpPtr->spoolFd to flag that later receives
 		     * will write there.
 		     */
-		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13U);
+		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13u);
 		    sprintf(httpPtr->spoolFileName, "%s/http.XXXXXX", nsconf.tmpDir);
 		    fd = ns_mkstemp(httpPtr->spoolFileName);
 		    
@@ -934,7 +934,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
         }
     }
     
-    httpPtr = ns_calloc(1U, sizeof(Ns_HttpTask));
+    httpPtr = ns_calloc(1u, sizeof(Ns_HttpTask));
     httpPtr->sock            = sock;
     httpPtr->spoolLimit      = -1;
     httpPtr->url             = url2;
@@ -964,7 +964,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	Ns_SetIDeleteKey(hdrPtr, "Connection");
 	Ns_SetIDeleteKey(hdrPtr, "Content-Length");
 
-	for (i = 0U; i < Ns_SetSize(hdrPtr); i++) {
+	for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
 	    const char *key = Ns_SetKey(hdrPtr, i);
 	    if (uaFlag != 0) {
 		uaFlag = strcasecmp(key, "User-Agent");

@@ -74,7 +74,7 @@ static Ns_Sls        kslot;        /* Sls slot for keyed data. */
 void
 NsInitSls(void)
 {
-    cleanupProcs = ns_calloc(1U, sizeof(Ns_Callback *));
+    cleanupProcs = ns_calloc(1u, sizeof(Ns_Callback *));
     Ns_SlsAlloc(&kslot, CleanupKeyed);
 }
 
@@ -202,8 +202,8 @@ Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
     hPtr = Tcl_CreateHashEntry(tblPtr, key, &created);
     len = strlen(value);
     old = Tcl_GetHashValue(hPtr);
-    new = ns_realloc(old, len + 1U);
-    memcpy(new, value, len + 1U);
+    new = ns_realloc(old, len + 1u);
+    memcpy(new, value, len + 1u);
     Tcl_SetHashValue(hPtr, new);
 }
 

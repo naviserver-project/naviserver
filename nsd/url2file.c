@@ -109,7 +109,7 @@ ConfigServerUrl2File(const char *server)
     NsServer *servPtr;
 
     servPtr = NsGetServer(server);
-    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0U);
+    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0u);
     Ns_SetUrlToFileProc(server, NsUrlToFileProc);
 
     return NS_OK;
@@ -391,7 +391,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     char           *url;
     Tcl_Obj        *scriptObj;
     int             remain = 0, noinherit = 0;
-    unsigned int    flags = 0U;
+    unsigned int    flags = 0u;
     
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(1)},
@@ -440,7 +440,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_
     NsInterp     *itPtr = arg;
     const char   *url = NULL;
     int           noinherit = 0, recurse = 0;
-    unsigned int  flags = 0U;
+    unsigned int  flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
@@ -487,7 +487,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
     NsInterp     *itPtr = arg;
     const char   *url = NULL, *basepath = NULL;
     int           noinherit = 0;
-    unsigned int  flags = 0U;
+    unsigned int  flags = 0u;
 
     Ns_ObjvSpec opts[] = {
 	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},

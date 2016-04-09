@@ -153,8 +153,8 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
         Ns_Log(Notice, "urlopen: invalid url '%s'", url);
         goto done;
     }
-    if (request.port == 0U) {
-        request.port = 80U;
+    if (request.port == 0u) {
+        request.port = 80u;
     }
     sock = Ns_SockConnect(request.host, (int)request.port);
     if (sock == NS_INVALID_SOCKET) {

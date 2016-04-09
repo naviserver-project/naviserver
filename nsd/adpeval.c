@@ -181,7 +181,7 @@ ConfigServerAdp(const char *server)
     servPtr->adp.cachesize = (size_t)Ns_ConfigInt(path, "cachesize", 5000 * 1024);
     servPtr->adp.bufsize   = (size_t)Ns_ConfigInt(path, "bufsize",   1 * 1024 * 1000);
 
-    servPtr->adp.flags = 0U;
+    servPtr->adp.flags = 0u;
     (void) Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
     (void) Ns_ConfigFlag(path, "stream",       ADP_STREAM,    0, &servPtr->adp.flags);
     (void) Ns_ConfigFlag(path, "enableexpire", ADP_EXPIRE,    0, &servPtr->adp.flags);
@@ -253,7 +253,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *resvar)
 
     Tcl_DStringInit(&output);
     obj0 = Tcl_GetString(objv[0]);
-    if ((itPtr->adp.flags & ADP_ADPFILE) != 0U) {
+    if ((itPtr->adp.flags & ADP_ADPFILE) != 0u) {
         result = AdpSource(itPtr, objc, objv, obj0, NULL, &output);
     } else {
         NsAdpParse(&code, itPtr->servPtr, obj0, itPtr->adp.flags, NULL);
@@ -394,8 +394,8 @@ NsAdpReset(NsInterp *itPtr)
         itPtr->adp.bufsize = itPtr->servPtr->adp.bufsize;
         itPtr->adp.flags = itPtr->servPtr->adp.flags;
     } else {
-        itPtr->adp.bufsize = 1024U * 1000U;
-        itPtr->adp.flags = 0U;
+        itPtr->adp.bufsize = 1024u * 1000u;
+        itPtr->adp.flags = 0u;
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 }
@@ -469,7 +469,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 
     if (itPtr->adp.debugLevel > 0) {
         ++itPtr->adp.debugLevel;
-    } else if (((itPtr->adp.flags & ADP_DEBUG) != 0U)
+    } else if (((itPtr->adp.flags & ADP_DEBUG) != 0u)
                    && itPtr->adp.debugFile != NULL
                    && (p = strrchr(file, '/')) != NULL
                    && Tcl_StringMatch(p+1, itPtr->adp.debugFile) != 0) {
@@ -588,7 +588,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 	int   cacheGen = 0;
 
         pagePtr = ipagePtr->pagePtr;
-        if (expiresPtr == NULL || (itPtr->adp.flags & ADP_CACHE) == 0U) {
+        if (expiresPtr == NULL || (itPtr->adp.flags & ADP_CACHE) == 0u) {
             cachePtr = NULL;
         } else {
 
@@ -631,7 +631,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                  * inside the script
                  */
 
-                if (result == TCL_OK && (itPtr->adp.flags & ADP_CACHE) != 0U) {
+                if (result == TCL_OK && (itPtr->adp.flags & ADP_CACHE) != 0u) {
                     cachePtr = ns_malloc(sizeof(AdpCache));
 
                     /*
@@ -876,13 +876,13 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
             goto done;
         }
         size = (size_t)stPtr->st_size;
-        buf = ns_realloc(buf, size + 1U);
+        buf = ns_realloc(buf, size + 1u);
 
         /*
          * Attempt to read +1 byte to catch the file growing.
          */
 
-        n = ns_read(fd, buf, size + 1U);
+        n = ns_read(fd, buf, size + 1u);
         if (n < 0) {
             Tcl_AppendResult(interp, "could not read \"", file,
                              "\": ", Tcl_PosixError(interp), NULL);
@@ -993,7 +993,7 @@ NsAdpLogError(NsInterp *itPtr)
                 len = 150;
                 dot = "...";
             }
-            while (((unsigned char)adp[len] & 0xC0U) == 0x80U) {
+            while (((unsigned char)adp[len] & 0xC0u) == 0x80u) {
                 /* NB: Avoid truncating multi-byte UTF-8 character. */
                 len--;
                 dot = "...";
@@ -1004,20 +1004,20 @@ NsAdpLogError(NsInterp *itPtr)
         framePtr = framePtr->prevPtr;
         inc = "\n    included from ";
     }
-    if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL) != 0U) {
+    if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL) != 0u) {
 	size_t i;
 
         Ns_DStringPrintf(&ds, "\n    while processing connection %s:\n%8s%s",
                          NsConnIdStr(conn), "",
                          conn->request.line);
-        for (i = 0U; i < Ns_SetSize(conn->headers); ++i) {
+        for (i = 0u; i < Ns_SetSize(conn->headers); ++i) {
             Ns_DStringPrintf(&ds, "\n        %s: %s",
                              Ns_SetKey(conn->headers, i),
                              Ns_SetValue(conn->headers, i));
         }
     }
     err = Ns_TclLogErrorInfo(interp, ds.string);
-    if ((itPtr->adp.flags & ADP_DISPLAY) != 0U) {
+    if ((itPtr->adp.flags & ADP_DISPLAY) != 0u) {
         Ns_DStringTrunc(&ds, 0);
         Ns_DStringAppend(&ds, "<br><pre>\n");
         Ns_QuoteHtml(&ds, err);
@@ -1121,7 +1121,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 
         frame.line = (unsigned short)AdpCodeLine(codePtr, i);
         len = AdpCodeLen(codePtr, i);
-        if ((itPtr->adp.flags & ADP_TRACE) != 0U) {
+        if ((itPtr->adp.flags & ADP_TRACE) != 0u) {
             AdpTrace(itPtr, ptr, len);
         }
         if (len > 0) {
@@ -1162,10 +1162,10 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
          */
 
         if (result != TCL_OK && itPtr->adp.exception == ADP_OK) {
-            if ((itPtr->adp.flags & ADP_ERRLOGGED) == 0U) {
+            if ((itPtr->adp.flags & ADP_ERRLOGGED) == 0u) {
                 NsAdpLogError(itPtr);
             }
-            if ((itPtr->adp.flags & ADP_STRICT) != 0U) {
+            if ((itPtr->adp.flags & ADP_STRICT) != 0u) {
                 itPtr->adp.flags |= ADP_ERRLOGGED;
                 break;
             }
@@ -1337,7 +1337,7 @@ AllocObjs(int nobjs)
 {
     Objs *objsPtr;
 
-    objsPtr = ns_calloc(1U, sizeof(Objs) + ((size_t)nobjs * sizeof(Tcl_Obj *)));
+    objsPtr = ns_calloc(1u, sizeof(Objs) + ((size_t)nobjs * sizeof(Tcl_Obj *)));
     objsPtr->nobjs = nobjs;
 
     return objsPtr;

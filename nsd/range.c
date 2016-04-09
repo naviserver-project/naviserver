@@ -183,7 +183,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
      */
 
     dsbase = 0;
-    len = 0U;
+    len = 0u;
 
     for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
 
@@ -195,7 +195,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
 
         /* Combine the footer with the next header. */
         Ns_DStringAppend(dsPtr, "\r\n");
-        len = 2U;
+        len = 2u;
     }
     len += (size_t)AppendMultipartRangeTrailer(dsPtr);
     (void) Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
@@ -205,7 +205,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
      * the rebased trailer.
      */
 
-    responseLength = 0U;
+    responseLength = 0u;
 
     for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
 

@@ -278,7 +278,7 @@ NsParseAuth(Conn *connPtr, char *auth)
                 q++;
             }
 
-            size = strlen(q) + 3U;
+            size = strlen(q) + 3u;
             v = ns_malloc(size);
             size = Ns_HtuuDecode(q, (unsigned char *) v, size);
             v[size] = '\0';

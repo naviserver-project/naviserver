@@ -229,7 +229,7 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
 
     NS_NONNULL_ASSERT(proc != NULL);
 
-    taskPtr = ns_calloc(1U, sizeof(Task));
+    taskPtr = ns_calloc(1u, sizeof(Task));
     taskPtr->sock = sock;
     taskPtr->proc = proc;
     taskPtr->arg = arg;
@@ -297,7 +297,7 @@ Ns_TaskRun(Ns_Task *task)
 
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
-    while ((taskPtr->flags & TASK_DONE) == 0U) {
+    while ((taskPtr->flags & TASK_DONE) == 0u) {
         if (taskPtr->flags & TASK_TIMEOUT) {
             timeoutPtr = &taskPtr->timeout;
         } else {
@@ -378,7 +378,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     NS_NONNULL_ASSERT(task != NULL);
     
     if (queuePtr == NULL) {
-        if ((taskPtr->signalFlags & TASK_DONE) == 0U) {
+        if ((taskPtr->signalFlags & TASK_DONE) == 0u) {
             status = NS_TIMEOUT;
         }
     } else {
@@ -386,7 +386,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
             timeoutPtr = Ns_AbsoluteTime(&atime, timeoutPtr);
         }
         Ns_MutexLock(&queuePtr->lock);
-        while (status == NS_OK && (taskPtr->signalFlags & TASK_DONE) == 0U) {
+        while (status == NS_OK && (taskPtr->signalFlags & TASK_DONE) == 0u) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock,
                                       timeoutPtr);
         }
@@ -862,7 +862,7 @@ TaskThread(void *arg)
     Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Ns_LogTaskDebug, "starting");
 
-    max = 100U;
+    max = 100u;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     firstWaitPtr = NULL;
 
@@ -939,7 +939,7 @@ TaskThread(void *arg)
             }
             if (taskPtr->flags & TASK_WAIT) {
 		if (max <= (size_t)nfds) {
-                    max  = (size_t)nfds + 100U;
+                    max  = (size_t)nfds + 100u;
                     pfds = ns_realloc(pfds, max);
                 }
                 taskPtr->idx = nfds;

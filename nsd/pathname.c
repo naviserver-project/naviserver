@@ -38,8 +38,8 @@
 
 #define ISSLASH(c)  ((c) == '/' || (c) == '\\')
 
-#define NSD_STRIP_WWW                  0x01U
-#define NSD_STRIP_PORT                 0x02U
+#define NSD_STRIP_WWW                  0x01u
+#define NSD_STRIP_PORT                 0x02u
 
 /*
  * Local functions defined in this file.
@@ -1019,7 +1019,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 
         (void) Ns_StrToLower(safehost);
         if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0u
-            && strncmp(safehost, "www.", 4U) == 0) {
+            && strncmp(safehost, "www.", 4u) == 0) {
             safehost = &safehost[4];
         }
         if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u) {

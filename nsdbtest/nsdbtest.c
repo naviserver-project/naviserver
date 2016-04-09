@@ -238,7 +238,7 @@ Exec(const Ns_DbHandle *handle, char *sql)
 static int
 GetRow(Ns_DbHandle *UNUSED(handle), const Ns_Set *row)
 {
-    Ns_SetPutValue(row, 0U, "ok");
+    Ns_SetPutValue(row, 0u, "ok");
 
     return NS_END_DATA;
 }

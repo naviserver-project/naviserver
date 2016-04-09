@@ -105,7 +105,7 @@ Ns_AdpRequest(Ns_Conn *conn, const char *file)
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
 
-    return PageRequest(conn, file, NULL, 0U);
+    return PageRequest(conn, file, NULL, 0u);
 }
 
 int
@@ -114,7 +114,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
 
-    return PageRequest(conn, file, expiresPtr, 0U);
+    return PageRequest(conn, file, expiresPtr, 0u);
 }
 
 static int
@@ -216,7 +216,7 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 {
     char         *method, *url, *file = NULL;
     int           noinherit = 0;
-    unsigned int  rflags = 0U, aflags = 0U;
+    unsigned int  rflags = 0u, aflags = 0u;
     Ns_Time      *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -243,7 +243,7 @@ int
 NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          noinherit = 0;
-    unsigned int rflags = 0U;
+    unsigned int rflags = 0u;
     char        *method, *url, *file = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -380,7 +380,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, const void *arg)
     Tcl_DStringAppendElement(dsPtr, adp->file);
 
     Tcl_DStringStartSublist(dsPtr);
-    if ((adp->flags & ADP_TCLFILE) != 0U) {
+    if ((adp->flags & ADP_TCLFILE) != 0u) {
         Tcl_DStringAppendElement(dsPtr, "tcl");
     }
     for (i = 0u; i < (sizeof(adpOpts) / sizeof(adpOpts[0])); i++) {
@@ -457,7 +457,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
      * if this is the last flush.
      */
 
-    if (len < 1 && (flags & ADP_FLUSHED) != 0U) {
+    if (len < 1 && (flags & ADP_FLUSHED) != 0u) {
         if (doStream == 0) {
             NsAdpReset(itPtr);
         }
@@ -468,7 +468,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
      * If enabled, trim leading whitespace if no content has been sent yet.
      */
 
-    if ((flags & ADP_TRIM) != 0U && (flags & ADP_FLUSHED) == 0U) {
+    if ((flags & ADP_TRIM) != 0u && (flags & ADP_FLUSHED) == 0u) {
         while (len > 0 && CHARTYPE(space, *buf) != 0) {
             ++buf;
             --len;
@@ -489,7 +489,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0U || (len == 0 && doStream != 0)) {
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream != 0)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {

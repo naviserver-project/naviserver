@@ -35,10 +35,10 @@
 #define BUFSIZE	    4096
 #define NDSTRINGS   5
 
-#define CGI_NPH	    	0x01U
-#define CGI_GETHOST	0x02U
-#define CGI_ECONTENT	0x04U
-#define CGI_SYSENV	0x08U
+#define CGI_NPH	    	0x01u
+#define CGI_GETHOST	0x02u
+#define CGI_ECONTENT	0x04u
+#define CGI_SYSENV	0x08u
 
 /*
  * The following structure is allocated for each instance the module is
@@ -188,7 +188,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
-    modPtr = ns_calloc(1U, sizeof(Mod));
+    modPtr = ns_calloc(1u, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
     Ns_MutexInit(&modPtr->lock);
@@ -233,7 +233,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Register all requested mappings.
      */
     set = Ns_ConfigGetSection(path);
-    for (i = 0U; set != NULL && i < Ns_SetSize(set); ++i) {
+    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key   = Ns_SetKey(set, i);
         const char *value = Ns_SetValue(set, i);
 
@@ -527,7 +527,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     *s = '\0';
     cgiPtr->dir = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->path);
     *s++ = '/';
-    if (strncmp(s, "nph-", 4U) == 0) {
+    if (strncmp(s, "nph-", 4u) == 0) {
         cgiPtr->flags |= CGI_NPH;
     }
 

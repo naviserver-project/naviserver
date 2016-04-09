@@ -171,7 +171,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
         return result;
     }
     Ns_ConnSetResponseStatus(conn, status);
-    return Ns_ConnWriteVData(conn, NULL, 0, 0U);
+    return Ns_ConnWriteVData(conn, NULL, 0, 0u);
 }
 
 

@@ -285,7 +285,7 @@ Roulette(void)
     select(0, NULL, NULL, NULL, &tv);
     fCount = 0;
     counter ^= (counter >> 3) ^ (counter >> 6) ^ (ocount);
-    counter &= 0x7U;
+    counter &= 0x7u;
     ocount = counter;
     randbuf = (randbuf<<3) ^ counter;
     return randbuf;

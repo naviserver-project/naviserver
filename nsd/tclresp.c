@@ -283,7 +283,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
      * as chunking would alter this.
      */
 
-    flags = 0U;
+    flags = 0u;
     if (Ns_ConnResponseLength(conn) < 0) {
         flags |= NS_CONN_STREAM;
     }

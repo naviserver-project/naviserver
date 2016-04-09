@@ -427,7 +427,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
     } else {
 	size_t i;
 
-	for (i = 0U; i < Ns_SetSize(env); ++i) {
+	for (i = 0u; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
 				Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
             Ns_DStringNAppend(&eds, "", 1);
@@ -609,7 +609,7 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 {
     size_t i;
 
-    for (i = 0U; i < Ns_SetSize(env); ++i) {
+    for (i = 0u; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
                             Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
         Ns_DStringNAppend(dsPtr, "", 1);

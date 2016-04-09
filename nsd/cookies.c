@@ -176,7 +176,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value, tim
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(name != NULL);
     
-    if ((flags & NS_COOKIE_REPLACE) != 0U) {
+    if ((flags & NS_COOKIE_REPLACE) != 0u) {
 	(void)DeleteNamedCookies(Ns_ConnOutputHeaders(conn), "set-cookie", name);
     }
 
@@ -186,7 +186,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value, tim
         Ns_UrlQueryEncode(&cookie, value, NULL);
     }
     Ns_DStringAppend(&cookie, "\"");
-    if ((flags & NS_COOKIE_EXPIRENOW) != 0U) {
+    if ((flags & NS_COOKIE_EXPIRENOW) != 0u) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT");
     } else if (maxage == TIME_T_MAX) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT");
@@ -204,13 +204,13 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value, tim
     if (path != NULL) {
         Ns_DStringVarAppend(&cookie, "; Path=", path, NULL);
     }
-    if ((flags & NS_COOKIE_SECURE) != 0U) {
+    if ((flags & NS_COOKIE_SECURE) != 0u) {
         Ns_DStringAppend(&cookie, "; Secure");
     }
-    if ((flags & NS_COOKIE_DISCARD) != 0U) {
+    if ((flags & NS_COOKIE_DISCARD) != 0u) {
         Ns_DStringAppend(&cookie, "; Discard");
     }
-    if ((flags & NS_COOKIE_SCRIPTABLE) == 0U) {
+    if ((flags & NS_COOKIE_SCRIPTABLE) == 0u) {
         Ns_DStringAppend(&cookie, "; HttpOnly");
     }
 
@@ -224,7 +224,7 @@ Ns_ConnSetCookie(const Ns_Conn *conn, const char *name, const char *value, time_
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(name != NULL);
     
-    Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, 0U);
+    Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, 0u);
 }
 
 void

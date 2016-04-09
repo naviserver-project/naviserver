@@ -1236,7 +1236,7 @@ NsConfigMimeTypes(void)
          * Add default system types first from above
          */
 
-        for (i = 0U; typetab[i].ext != NULL; ++i) {
+        for (i = 0u; typetab[i].ext != NULL; ++i) {
             AddType(typetab[i].ext, typetab[i].type);
         }
     }
@@ -1256,7 +1256,7 @@ NsConfigMimeTypes(void)
         noextType = defaultType;
     }
 
-    for (i = 0U; i < Ns_SetSize(set); i++) {
+    for (i = 0u; i < Ns_SetSize(set); i++) {
         AddType(Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
 }

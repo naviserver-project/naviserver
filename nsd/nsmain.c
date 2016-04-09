@@ -458,7 +458,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      */
 
     servers = Ns_ConfigCreateSection("ns/servers");
-    if (Ns_SetSize(servers) == 0U) {
+    if (Ns_SetSize(servers) == 0u) {
         Ns_SetPut(servers, "default", "Default NaviServer");
     }
 
@@ -636,7 +636,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     } else {
 	size_t i;
 
-        for (i = 0U; i < Ns_SetSize(servers); ++i) {
+        for (i = 0u; i < Ns_SetSize(servers); ++i) {
             server = Ns_SetKey(servers, i);
             NsInitServer(server, initProc);
         }
