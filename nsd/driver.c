@@ -902,7 +902,7 @@ static void
 FreeRequest(Sock *sockPtr)
 {
     Request *reqPtr;
-    bool keep;
+    bool     keep;
     
     NS_NONNULL_ASSERT(sockPtr != NULL);
     
@@ -912,10 +912,10 @@ FreeRequest(Sock *sockPtr)
     Ns_Log(DriverDebug, "=== FreeRequest cleans %p (avail %lu keep %d length %lu contentLength %lu)",
            (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
 
-    keep = (sockPtr->keep) > 0 && (reqPtr->avail > reqPtr->contentLength);
+    keep = (sockPtr->keep > 0) && (reqPtr->avail > reqPtr->contentLength);
     if (keep) {
         size_t leftover = reqPtr->avail - reqPtr->contentLength;
-        char  *offset = reqPtr->buffer.string + (reqPtr->buffer.length - leftover);
+        char  *offset = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
 
         Ns_Log(DriverDebug, "=== setting leftover to %lu bytes", leftover);
         /*
@@ -1382,7 +1382,7 @@ DriverThread(void *arg)
 
         Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", n, PollIn(&pdata, 0));
 
-        if (PollIn(&pdata, 0) && ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1) {
+        if (PollIn(&pdata, 0) && unlikely(ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1)) {
             const char *errstr = ns_sockstrerror(ns_sockerrno);
             
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
@@ -2248,7 +2248,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
                sockPtr->reqPtr->coff,
                sockPtr->reqPtr->avail);
 
-        LogBuffer(Warning, "REQ BUFFER", sockPtr->reqPtr->buffer.string, sockPtr->reqPtr->buffer.length);
+        LogBuffer(Warning, "REQ BUFFER", sockPtr->reqPtr->buffer.string, (size_t)sockPtr->reqPtr->buffer.length);
 
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
@@ -2591,7 +2591,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     if (reqPtr->leftover > 0u) {
-        n = reqPtr->leftover;
+        n = (ssize_t)reqPtr->leftover;
         reqPtr->leftover = 0u;
         buflen = 0u;
         Ns_Log(DriverDebug, "SockRead receive from leftover %ld bytes", n);
@@ -2660,21 +2660,22 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 static void
 LogBuffer(Ns_LogSeverity severity, const char *msg, const char *p, size_t len)
 {
-    size_t      i;
     Tcl_DString ds;
 
     NS_NONNULL_ASSERT(msg != NULL);
     NS_NONNULL_ASSERT(p != NULL);
     
     if (Ns_LogSeverityEnabled(severity)) {
+        size_t i;
+    
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, msg, -1);
         Tcl_DStringAppend(&ds, ": ", 2);
         for (i = 0; i < len; i++) {
-            char c = *(p+i);
+            unsigned char c = UCHAR(*(p+i));
             
-            if (CHARTYPE(graph, c) == 0 && c != 32) {
-                Ns_DStringPrintf(&ds, "\\x%.2x", (UCHAR(c) & 0xff));
+            if ((CHARTYPE(print, c) == 0) || (c > 127)) {
+                Ns_DStringPrintf(&ds, "\\x%.2x", (c & 0xffu));
             } else {
                 Ns_DStringPrintf(&ds, "%c", c);
             }
@@ -2753,7 +2754,7 @@ EndOfHeader(Sock *sockPtr)
          * content-length hints only.
          */
         
-        if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
+        if ((Ns_StrToWideInt(s, &length) == NS_OK) && (length > 0)) {
             reqPtr->length = (size_t)length;
             /*
              * Handle too large input requests
@@ -3116,7 +3117,7 @@ SockParse(Sock *sockPtr)
         reqPtr->savedChar = reqPtr->content[reqPtr->length];
         reqPtr->content[reqPtr->length] = '\0';
         if (sockPtr->taddr == NULL) {
-            LogBuffer(DriverDebug, "UPDATED BUFFER", sockPtr->reqPtr->buffer.string, reqPtr->buffer.length);
+            LogBuffer(DriverDebug, "UPDATED BUFFER", sockPtr->reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
         }
     }
     

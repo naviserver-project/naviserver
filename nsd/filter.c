@@ -148,13 +148,13 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
     servPtr = connPtr->poolPtr->servPtr;
 
     status = NS_OK;
-    if (conn->request.method != NULL && conn->request.url != NULL) {
+    if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
         Ns_MutexLock(&servPtr->filter.lock);
 	fPtr = servPtr->filter.firstFilterPtr;
 	while (fPtr != NULL && status == NS_OK) {
 	    if (unlikely(fPtr->when == why)
-		&& Tcl_StringMatch(conn->request.method, fPtr->method) != 0
-		&& Tcl_StringMatch(conn->request.url, fPtr->url) != 0) {
+		&& (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
+		&& (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)) {
 	        Ns_MutexUnlock(&servPtr->filter.lock);
 		status = (*fPtr->proc)(fPtr->arg, conn, why);
 		Ns_MutexLock(&servPtr->filter.lock);

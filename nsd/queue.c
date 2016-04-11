@@ -1495,7 +1495,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     if (auth != NULL) {
         NsParseAuth(connPtr, auth);
     }
-    if (conn->request.method != NULL && STREQ(conn->request.method, "HEAD")) {
+    if ((conn->request.method != NULL) && STREQ(conn->request.method, "HEAD")) {
         conn->flags |= NS_CONN_SKIPBODY;
     }
 
@@ -1515,7 +1515,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Run the rest of the request.
      */
-    if (connPtr->request.protocol != NULL && connPtr->request.host != NULL) {
+    if ((connPtr->request.protocol != NULL) && (connPtr->request.host != NULL)) {
         status = NsConnRunProxyRequest((Ns_Conn *) connPtr);
     } else {
             
@@ -1564,7 +1564,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
         }
     }
 
-    if (status == NS_OK || status == NS_FILTER_RETURN) {
+    if ((status == NS_OK) || (status == NS_FILTER_RETURN)) {
         status = NsRunFilters(conn, NS_FILTER_TRACE);
         if (status == NS_OK) {
             (void) NsRunFilters(conn, NS_FILTER_VOID_TRACE);
@@ -1588,7 +1588,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
      * process the remaining bytes.
      * 
      */
-    if (sockPtr->keep == NS_TRUE && connPtr->reqPtr->leftover > 0u) {
+    if ((sockPtr->keep == NS_TRUE) && (connPtr->reqPtr->leftover > 0u)) {
         NsWakeupDriver(sockPtr->drvPtr);
     }
 

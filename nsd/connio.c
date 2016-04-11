@@ -1143,11 +1143,11 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
 
         conn->flags |= NS_CONN_STREAM;
 
-        if (connPtr->responseLength < 0
-            && conn->request.version > 1.0
-            && connPtr->keep != 0
-            && HdrEq(connPtr->outputheaders, "Content-Type",
-                                              "multipart/byteranges") == NS_FALSE) {
+        if ((connPtr->responseLength < 0)
+            && (conn->request.version > 1.0)
+            && (connPtr->keep != 0)
+            && (HdrEq(connPtr->outputheaders, "Content-Type",
+                      "multipart/byteranges") == NS_FALSE)) {
             conn->flags |= NS_CONN_CHUNK;
         }
 
@@ -1211,36 +1211,38 @@ CheckKeep(const Conn *connPtr)
          * Apply default rules.
          */
 
-        if (connPtr->keep == -1
-            && connPtr->request.line != NULL) {
+        if ((connPtr->keep == -1)
+            && (connPtr->request.line != NULL)) {
 
             /*
              * HTTP 1.0/1.1 keep-alive header checks.
              */
-            if ((connPtr->request.version == 1.0
-                 && HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE)
-                || (connPtr->request.version > 1.0
-                    && HdrEq(connPtr->headers, "connection", "close") == NS_FALSE)) {
+            if ((   (connPtr->request.version == 1.0)
+                 && (HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE) )
+                ||
+                (   (connPtr->request.version > 1.0)
+                 && (HdrEq(connPtr->headers, "connection", "close") == NS_FALSE) )
+                ) {
 
                 /*
                  * POST, PUT etc. require a content-length header to allow keep-alive
                  */
-                if (connPtr->contentLength > 0u
-		    && Ns_SetIGet(connPtr->headers, "Content-Length") == NULL) {
+                if ((connPtr->contentLength > 0u)
+		    && (Ns_SetIGet(connPtr->headers, "Content-Length") == NULL)) {
                     return NS_FALSE;
                 }
 
-		if (connPtr->drvPtr->keepmaxuploadsize > 0u
-		    && connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) {
+		if (   (connPtr->drvPtr->keepmaxuploadsize > 0u)
+		    && (connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) ) {
 		    Ns_Log(Notice, 
 			   "Disallow keep-alive, content-Length %" PRIdz 
 			   " larger keepmaxuploadsize %" PRIdz ": %s",
 			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
 			   connPtr->request.line);
 		    return NS_FALSE;
-		} else if (connPtr->drvPtr->keepmaxdownloadsize > 0u
-			   && connPtr->responseLength > 0
-			   && (size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
+		} else if (   (connPtr->drvPtr->keepmaxdownloadsize > 0u)
+			   && (connPtr->responseLength > 0)
+			   && ((size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) ) {
 		    Ns_Log(Notice, 
 			   "Disallow keep-alive response length %" PRIdz " "
 			   "larger keepmaxdownloadsize %" PRIdz ": %s",
@@ -1254,8 +1256,8 @@ CheckKeep(const Conn *connPtr)
                  * content-length header.
                  */
 		if (((connPtr->flags & NS_CONN_CHUNK) != 0u)
-                        || Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL
-                        || HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") == NS_TRUE) {
+                    || (Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL)
+                    || (HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") == NS_TRUE)) {
 		    return NS_TRUE;
                 }
             }
@@ -1297,7 +1299,7 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
 
     hdrvalue = Ns_SetIGet(set, name);
 
-    if ((hdrvalue != NULL) && strncasecmp(hdrvalue, value, strlen(value)) == 0) {
+    if ((hdrvalue != NULL) && (strncasecmp(hdrvalue, value, strlen(value)) == 0)) {
         return NS_TRUE;
     }
     return NS_FALSE;
