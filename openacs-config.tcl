@@ -16,7 +16,8 @@ set httpsport		8443
 # The hostname and address should be set to actual values.
 # setting the address to 0.0.0.0 means aolserver listens on all interfaces
 set hostname		localhost
-set address		127.0.0.1
+set address_v4		127.0.0.1
+#set address_v6		::1
 
 # Note: If port is privileged (usually < 1024), OpenACS must be
 # started by root, and the run script must contain the flag 
@@ -305,8 +306,9 @@ ns_section ns/server/${server}/tdav/share/share1
 # Socket driver module (HTTP)  -- nssock 
 # 
 #---------------------------------------------------------------------
-ns_section ns/server/${server}/module/nssock
-	ns_param	address		$address
+if {[info exists address_v4]} {
+ns_section ns/server/${server}/module/nssock_v4
+	ns_param	address		$address_v4
 	ns_param	hostname	$hostname
 	ns_param	port		$httpport	;# 80 or 443
 	ns_param	maxinput	[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
@@ -326,16 +328,24 @@ ns_section ns/server/${server}/module/nssock
 	# ns_param	nodelay		true	;# false; activate TCP_NODELAY if not activated per default on your OS
 	# ns_param	keepalivemaxuploadsize	  500000  ;# 0, don't allow keep-alive for upload content larger than this
 	# ns_param	keepalivemaxdownloadsize  1000000 ;# 0, don't allow keep-alive for download content larger than this
-	#
-	# Spooling Threads
-	#
 	# ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
 	ns_param	maxupload	100000	;# 0, when specified, spool uploads larger than this value to a temp file
 	ns_param	writerthreads	2	;# 0, number of writer threads
 	ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
 	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
-
+}
+if {[info exists address_v6]} {
+ns_section ns/server/${server}/module/nssock_v6
+	ns_param	address		$address_v6
+	ns_param	hostname	$hostname
+	ns_param	port		$httpport	;# 80 or 443
+	ns_param	maxinput	[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
+	ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
+	ns_param	maxupload	100000	;# 0, when specified, spool uploads larger than this value to a temp file
+	ns_param	writerthreads	2	;# 0, number of writer threads
+	ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
+}
 
 #---------------------------------------------------------------------
 # 
@@ -525,10 +535,11 @@ ns_section ns/db/pool/pool3
 # don't uncomment modules unless they have been installed.
 
 ns_section ns/server/${server}/modules 
-	ns_param	nssock		${bindir}/nssock.so 
 	ns_param	nslog		${bindir}/nslog.so 
 	ns_param	nsdb		${bindir}/nsdb.so
 	ns_param	nsproxy		${bindir}/nsproxy.so
+        if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock.so }
+        if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock.so }
 	# ns_param	nsssl		${bindir}/nsssl.so 
 
 	#
