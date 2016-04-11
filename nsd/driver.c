@@ -2674,7 +2674,7 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *p, size_t len)
             char c = *(p+i);
             
             if (CHARTYPE(graph, c) == 0 && c != 32) {
-                Ns_DStringPrintf(&ds, "\\x%.2x", c);
+                Ns_DStringPrintf(&ds, "\\x%.2x", (UCHAR(c) & 0xff));
             } else {
                 Ns_DStringPrintf(&ds, "%c", c);
             }
