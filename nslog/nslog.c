@@ -77,6 +77,8 @@ static Ns_ArgProc      LogArg;
 static Ns_TclTraceProc AddCmds;
 static Tcl_ObjCmdProc  LogObjCmd;
 
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+
 static int LogFlush(Log *logPtr, Ns_DString *dsPtr);
 static int LogOpen (Log *logPtr);
 static int LogRoll (Log *logPtr);

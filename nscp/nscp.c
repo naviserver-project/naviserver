@@ -75,6 +75,7 @@ static int Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
 static int GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo);
 static Ns_ArgProc ArgProc;
 
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 /*
  * The following values are sent to the telnet client to enable
  * and disable password prompt echo.

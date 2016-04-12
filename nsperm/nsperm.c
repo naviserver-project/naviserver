@@ -56,7 +56,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  */
 
 typedef struct Server {
-    char *server;
+    const char *server;
     Tcl_HashTable users;
     Tcl_HashTable groups;
     Ns_RWLock lock;
@@ -113,6 +113,8 @@ static Tcl_ObjCmdProc DelPermObjCmd;
 static Tcl_ObjCmdProc CheckPassObjCmd;
 static Tcl_ObjCmdProc SetPassObjCmd;
 
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+
 static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user);
 
 static bool ValidateUserAddr(User * userPtr, const char *peer);
@@ -153,7 +155,7 @@ static Tcl_HashTable serversTable;
  */
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     Server *servPtr;
     /*char *path;*/

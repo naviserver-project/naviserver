@@ -56,6 +56,8 @@ static Ns_DriverSendFileProc SendFile;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+
 static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
 

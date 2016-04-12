@@ -49,6 +49,8 @@ typedef struct {
 
 static Ns_TclTraceProc InitInterp;
 
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+
 
 
 /*
