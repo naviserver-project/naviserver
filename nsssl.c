@@ -10,7 +10,7 @@
  * under the License.
  *
  * Copyright (C) 2001-2012 Vlad Seryakov
- * Copyright (C) 2012 Gustaf Neumann
+ * Copyright (C) 2012-2016 Gustaf Neumann
  * All rights reserved.
  *
  * Alternatively, the contents of this file may be used under the terms
@@ -40,7 +40,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.9"
+#define NSSSL_VERSION  "1.0"
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
@@ -102,6 +102,7 @@ static Tcl_HashTable session_table;
 static Ns_Mutex session_lock;
 
 NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 static void 
 SSL_infoCB(const SSL *ssl, int where, int ret) {
@@ -1261,12 +1262,10 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
     }
     
     if (keep_host_header == NS_FALSE) {
-        if (portString == NULL) {
-	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", host);
-        } else {
-	    Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", host, portNr);
-        }
-    }
+        Ns_DStringNAppend(&httpPtr->ds, "Host: ", 6);
+        Ns_HttpLocationString(&httpPtr->ds, NULL, host, portNr, 443);
+        Ns_DStringNAppend(&httpPtr->ds, "\r\n", 2);
+   }
 
     if (bodyPtr != NULL) {
         int length = 0;

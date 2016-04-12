@@ -1,6 +1,6 @@
-# SSL driver for NaviServer 4.99.8 #
+# SSL driver for NaviServer 4.99.11 #
 
-## Release 0.8 ##
+## Release 1.0 ##
 
     vlad@crystalballinc.com
     neumann@wu-wien.ac.at
@@ -42,6 +42,9 @@ adds new ns_ssl command.
 * New in Version 0.8:
     - Added regression test infrastructure (nstest::https and test server
 	  setup) and test cases
+
+* New in Version 1.0:
+    - Support for IPv6
 
 ***
 
