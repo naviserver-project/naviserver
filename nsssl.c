@@ -75,8 +75,9 @@ static Ns_DriverSendProc Send;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 
-static int SSLInterpInit(Tcl_Interp *interp, const void *arg);
-static int SSLObjCmd(ClientData arg, Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+static Ns_TclTraceProc SSLInterpInit;
+static Tcl_ObjCmdProc SSLObjCmd;
+
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 static void SSLLock(int mode, int n, const char *file, int line);
 static unsigned long SSLThreadId(void);
@@ -142,7 +143,7 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
 }
 
 NS_EXPORT int
-Ns_ModuleInit(char *server, char *module)
+Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_DString ds;
     int num;
