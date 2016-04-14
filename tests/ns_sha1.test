@@ -3,13 +3,9 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
 
 test ns_sha1-1.1 {basic syntax: plain call} -body {
-     ns_sha1
-} -returnCodes error -result {wrong # args: should be "ns_sha1 string"}
-
-test ns_sha1-1.2 {basic syntax: plain call} -body {
      ns_sha1
 } -returnCodes error -result {wrong # args: should be "ns_sha1 string"}
 
@@ -55,5 +51,28 @@ test ns_sha1-2.6 {checksum from binary file} -body {
     ns_sha1 $c
 } -result "1BFB30C1892435CA0AD6042FA80CE6B222E5121A"
 
+
+test ns_sha2-1.1 {basic syntax: plain call} -body {
+     ns_sha2
+} -returnCodes error -result {wrong # args: should be "ns_sha2 ?-length length? data"}
+test ns_sha2-1.2 {basic syntax: plain call} -body {
+     ns_sha2 -length 123 x
+} -returnCodes error -result {bad option "123": must be 256, 384, or 512}
+
+test ns_sha2-2.1 {basic operation} -body {
+     ns_sha2 foo
+} -result "3263323662343662363866666336386666393962343533633164333034313334"
+
+test ns_sha2-2.2 {basic operation} -body {
+     ns_sha2 -length 256 foo
+} -result "3263323662343662363866666336386666393962343533633164333034313334"
+
+test ns_sha2-2.3 {basic operation} -body {
+     ns_sha2 -length 384 foo
+} -result "393863313166666466646435343036373662316131333763623161323262326137303335306339613434313731643662"
+
+test ns_sha2-2.4 {basic operation} -body {
+     ns_sha2 -length 512 foo
+} -result "66376662626136653036333666383930653536666262663332383365353234633666613332303461653239383338326436323437343164306463363633383332"
 
 cleanupTests

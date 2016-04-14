@@ -119,6 +119,7 @@ static const Cmd basicCmds[] = {
     {"ns_serverrootproc", NULL, NsTclServerRootProcObjCmd},
     {"ns_set", NULL, NsTclSetObjCmd},
     {"ns_sha1", NULL, NsTclSHA1ObjCmd},
+    {"ns_sha2", NULL, NsTclSHA2ObjCmd},
     {"ns_md5", NULL, NsTclMD5ObjCmd},
     {"ns_shortcut_filter", NULL, NsTclShortcutFilterObjCmd},
     {"ns_sleep", NULL, NsTclSleepObjCmd},

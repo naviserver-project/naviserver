@@ -1097,6 +1097,102 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     return NS_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SHA2Cmd --
+ *
+ *      Returns a 40-character, hex-encoded string containing the SHA2
+ *      hash of the first argument.
+ *
+ * Results:
+ *	NS_OK
+ *
+ * Side effects:
+ *	Tcl result is set to a string value.
+ *
+ *----------------------------------------------------------------------
+ */
+#include "sha2.h"
+int
+NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    char           digestChars[16384];
+    Tcl_Obj       *data;
+    const char    *str;
+    int            length;
+    bool           binary;
+    char           digestLength = '2';
+    Ns_ObjvTable   digestLengths[] = {
+        {"256",    UCHAR('2')},
+        {"384",    UCHAR('3')},
+        {"512",    UCHAR('5')},
+        {NULL,     0u}
+    };
+    Ns_ObjvSpec lopts[] = {
+        {"-length",  Ns_ObjvIndex, &digestLength, digestLengths},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"data", Ns_ObjvObj, &data, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }    
+
+    binary = NsTclObjIsByteArray(data);
+    if (binary == NS_TRUE) {
+        str = (char*)Tcl_GetByteArrayFromObj(data, &length);
+    } else {
+        str = Tcl_GetStringFromObj(data, &length);
+    }
+
+    switch (digestLength) {
+        
+    case '2': {
+        SHA256_CTX ctx256;
+        char       digest256[SHA256_DIGEST_LENGTH];
+
+        SHA256_Init(&ctx256);
+        SHA256_Update(&ctx256, (const u_int8_t *)str, (size_t) length);
+        SHA256_End(&ctx256, digest256);
+
+        Ns_CtxString((unsigned char *)digest256, digestChars, SHA256_DIGEST_LENGTH);
+        break;
+    }
+    case '3': {
+        SHA384_CTX ctx384;
+        char       digest384[SHA384_DIGEST_LENGTH];
+
+        SHA384_Init(&ctx384);
+        SHA384_Update(&ctx384, (const u_int8_t *)str, (size_t) length);
+        SHA384_End(&ctx384, digest384);
+        
+        Ns_CtxString((unsigned char *)digest384, digestChars, SHA384_DIGEST_LENGTH);
+        break;
+    }
+   case '5': {
+        SHA512_CTX ctx512;
+        char       digest512[SHA512_DIGEST_LENGTH];
+
+        SHA512_Init(&ctx512);
+        SHA512_Update(&ctx512, (const u_int8_t *)str, (size_t) length);
+        SHA512_End(&ctx512, digest512);
+        
+        Ns_CtxString((unsigned char *)digest512, digestChars, SHA512_DIGEST_LENGTH);
+        break;
+    }
+    }
+
+    Tcl_AppendResult(interp, digestChars, NULL);
+
+    return NS_OK;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
