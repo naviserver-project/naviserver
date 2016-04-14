@@ -484,15 +484,15 @@ typedef struct DIR_ *DIR;
 
 
 #ifdef HAVE_IPV6
-# define NS_IP_LOOPBACK     "::1"
-# define NS_IP_UNSPECIFIED  "::"
-# define NS_SOCKADDR_STORAGE     sockaddr_storage
-# define NS_IPADDR_SIZE     INET6_ADDRSTRLEN
+# define NS_IP_LOOPBACK      "::1"
+# define NS_IP_UNSPECIFIED   "::"
+# define NS_SOCKADDR_STORAGE sockaddr_storage
+# define NS_IPADDR_SIZE      INET6_ADDRSTRLEN
 #else
-# define NS_IP_LOOPBACK     "127.0.0.1"
-# define NS_IP_UNSPECIFIED  "0.0.0.0"
-# define NS_SOCKADDR_STORAGE     sockaddr_in
-# define NS_IPADDR_SIZE     INET_ADDRSTRLEN
+# define NS_IP_LOOPBACK      "127.0.0.1"
+# define NS_IP_UNSPECIFIED   "0.0.0.0"
+# define NS_SOCKADDR_STORAGE sockaddr_in
+# define NS_IPADDR_SIZE      INET_ADDRSTRLEN
 #endif
 
 #ifdef _WIN32
