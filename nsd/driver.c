@@ -291,7 +291,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
 #ifdef HAVE_IPV6
     if (init->version < NS_DRIVER_VERSION_3) {
-        Ns_Log(Error, "%s: driver module is too old (version %d) and does not support IPv6",
+        Ns_Log(Error, "%s: driver version is too old (version %d) and does not support IPv6",
                module, init->version);
         return NS_ERROR;
     }
@@ -1393,7 +1393,7 @@ DriverThread(void *arg)
          * minimal value.  Perform this test on timeouts (n == 0;
          * just for safety reasons) or on explicit wakeup calls.
          */
-        if (n == 0 || PollIn(&pdata, 0)) {
+        if ((n == 0) || PollIn(&pdata, 0)) {
             if (drvPtr->servPtr != NULL) {
                 NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
             } else {
