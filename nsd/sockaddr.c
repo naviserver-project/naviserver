@@ -252,7 +252,7 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
         }
         ((struct sockaddr_in *)mask)->sin_addr.s_addr = htonl((~0u) << (32 - nrBits));
     } else {
-        Ns_Log(Error, "nsperm: invalid address family %d detected (Ns_SockaddrMaskBits)", mask->sa_family);
+        Ns_Log(Error, "invalid address family %d detected (Ns_SockaddrMaskBits)", mask->sa_family);
     }
 }
 
