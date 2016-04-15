@@ -17,8 +17,8 @@ SHA2 generates an almost-unique signature for a text.
 [para]
 [arg length]
 The length determines the size of the SHA2 checksum. The function
-support currently as arguments "256", "384" and "512". The returned
-hex strings have a length of 64, 96 or 128 bytes.
+support currently as arguments "224", "256", "384" and "512". The returned
+hex strings have a length of 56, 64, 96 or 128 bytes.
 
 [para]
 [arg string]
@@ -29,7 +29,7 @@ String from which hash should be produced
 [example_begin]
   
   nscp 2> ns_sha2 foo
-  3263323662343662363866666336386666393962343533633164333034313334
+  2C26B46B68FFC68FF99B453C1D30413413422D706483BFA0F98A5E886266E7AE
   
 [example_end]
 
