@@ -1118,7 +1118,9 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char           digestChars[16384];
+    char           digest256[SHA256_DIGEST_LENGTH*2+1];
+    char           digest384[SHA384_DIGEST_LENGTH*2+1];
+    char           digest512[SHA512_DIGEST_LENGTH*2+1];
     Tcl_Obj       *data;
     const char    *str;
     int            length;
@@ -1154,40 +1156,35 @@ NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         
     case '2': {
         SHA256_CTX ctx256;
-        char       digest256[SHA256_DIGEST_LENGTH];
 
         SHA256_Init(&ctx256);
         SHA256_Update(&ctx256, (const u_int8_t *)str, (size_t) length);
         SHA256_End(&ctx256, digest256);
-
-        Ns_CtxString((unsigned char *)digest256, digestChars, SHA256_DIGEST_LENGTH);
+        
+        Tcl_AppendResult(interp, digest256, NULL);
         break;
     }
     case '3': {
         SHA384_CTX ctx384;
-        char       digest384[SHA384_DIGEST_LENGTH];
 
         SHA384_Init(&ctx384);
         SHA384_Update(&ctx384, (const u_int8_t *)str, (size_t) length);
         SHA384_End(&ctx384, digest384);
         
-        Ns_CtxString((unsigned char *)digest384, digestChars, SHA384_DIGEST_LENGTH);
+        Tcl_AppendResult(interp, digest384, NULL);
         break;
     }
    case '5': {
         SHA512_CTX ctx512;
-        char       digest512[SHA512_DIGEST_LENGTH];
 
         SHA512_Init(&ctx512);
         SHA512_Update(&ctx512, (const u_int8_t *)str, (size_t) length);
         SHA512_End(&ctx512, digest512);
         
-        Ns_CtxString((unsigned char *)digest512, digestChars, SHA512_DIGEST_LENGTH);
+        Tcl_AppendResult(interp, digest512, NULL);
         break;
     }
     }
-
-    Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
 }
