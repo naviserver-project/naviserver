@@ -1,0 +1,5 @@
+NS_EXPORT Ns_DriverListenProc Ns_DriverSockListen;
+NS_EXPORT Ns_DriverAcceptProc Ns_DriverSockAccept;
+NS_EXPORT Ns_DriverRecvProc Ns_DriverSockRecv;
+NS_EXPORT Ns_DriverSendProc Ns_DriverSockSend;
+NS_EXPORT Ns_DriverCloseProc Ns_DriverSockClose;
