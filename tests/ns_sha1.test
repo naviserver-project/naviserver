@@ -57,22 +57,26 @@ test ns_sha2-1.1 {basic syntax: plain call} -body {
 } -returnCodes error -result {wrong # args: should be "ns_sha2 ?-length length? data"}
 test ns_sha2-1.2 {basic syntax: plain call} -body {
      ns_sha2 -length 123 x
-} -returnCodes error -result {bad option "123": must be 256, 384, or 512}
+} -returnCodes error -result {bad option "123": must be 224, 256, 384, or 512}
+
+test ns_sha2-2.0 {basic operation} -body {
+     ns_sha2 foo
+} -result "2C26B46B68FFC68FF99B453C1D30413413422D706483BFA0F98A5E886266E7AE"
 
 test ns_sha2-2.1 {basic operation} -body {
-     ns_sha2 foo
-} -result "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+     ns_sha2 -length 224 foo
+} -result "0808F64E60D58979FCB676C96EC938270DEA42445AEEFCD3A4E6F8DB"
 
 test ns_sha2-2.2 {basic operation} -body {
      ns_sha2 -length 256 foo
-} -result "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+} -result "2C26B46B68FFC68FF99B453C1D30413413422D706483BFA0F98A5E886266E7AE"
 
 test ns_sha2-2.3 {basic operation} -body {
      ns_sha2 -length 384 foo
-} -result "98c11ffdfdd540676b1a137cb1a22b2a70350c9a44171d6b1180c6be5cbb2ee3f79d532c8a1dd9ef2e8e08e752a3babb"
+} -result "98C11FFDFDD540676B1A137CB1A22B2A70350C9A44171D6B1180C6BE5CBB2EE3F79D532C8A1DD9EF2E8E08E752A3BABB"
 
 test ns_sha2-2.4 {basic operation} -body {
      ns_sha2 -length 512 foo
-} -result "f7fbba6e0636f890e56fbbf3283e524c6fa3204ae298382d624741d0dc6638326e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7"
+} -result "F7FBBA6E0636F890E56FBBF3283E524C6FA3204AE298382D624741D0DC6638326E282C41BE5E4254D8820772C5518A2C5A8C0C7F7EDA19594A7EB539453E1ED7"
 
 cleanupTests
