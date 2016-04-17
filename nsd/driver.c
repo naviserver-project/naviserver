@@ -3173,7 +3173,7 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = sockPtr->drvPtr->location;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer host %s req %s", host, reqPtr->request.line);
+    Ns_Log(DriverDebug, "SockSetServer host %s request line %s", host, reqPtr->request.line);
     
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
@@ -3206,6 +3206,7 @@ SockSetServer(Sock *sockPtr)
     }
 
     if (unlikely(status == 0)) {
+        Ns_Log(DriverDebug, "SockSetServer sets method to BAD");
         ns_free((char *)reqPtr->request.method);
         reqPtr->request.method = ns_strdup("BAD");
     }
