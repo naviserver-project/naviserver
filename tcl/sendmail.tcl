@@ -47,7 +47,22 @@
 #   None.
 #
 
-proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
+proc ns_sendmail args {
+    
+    lassign $args to from subject body headers bcc cc
+    if {![string match -* $to]} {
+	ns_log warning "Deprecated syntax. Use: [list ns_sendmail -to $to -from $from -subject $subject -body $body -headers $headers -bcc $bcc -cc $cc]"
+    } else {
+	ns_parseargs {
+	    {-to ""}
+	    {-from ""}
+	    {-subject ""}
+	    {-body ""}
+	    {-headers ""}
+	    {-bcc ""}
+	    {-cc ""}
+	} $args
+    }
 
     #
     # Flag: need to cleanup after ourselves
@@ -254,10 +269,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
         set smtphost [ns_config -set ns/parameters mailhost "localhost"]
     }
 
-    set fds [ns_sockopen -timeout $timeout $smtphost $smtpport]
-    set rfd [lindex $fds 0]
-    set wfd [lindex $fds 1]
-
+    lassign [ns_sockopen -timeout $timeout $smtphost $smtpport] rfd wfd
     fconfigure $rfd -translation auto -blocking 0
     fconfigure $wfd -translation crlf
 
@@ -503,10 +515,11 @@ proc _ns_smtp_send {mode sock string} {
     set tout [ns_config -set ns/parameters smtptimeout 60]
 
     foreach line [split $string "\n"] {
-      if {[lindex [ns_sockselect -timeout $tout {} $sock {}] 1] eq {}} {
-          return -code error "$mode: Timeout writing to SMTP host"
-      }
-      puts $sock $line
+	set fds [ns_sockselect -timeout $tout {} $sock {}]
+	if {[lindex $fds 1] eq {}} {
+	    return -code error "$mode: Timeout writing to SMTP host"
+	}
+	puts $sock $line
     }
     flush $sock
 }
@@ -537,7 +550,8 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
     set tout [ns_config -set ns/parameters smtptimeout 60]
 
     while (1) {
-        if {[lindex [ns_sockselect -timeout $tout $sock {} {}] 0] eq {}} {
+	set fds [ns_sockselect -timeout $tout $sock {} {}]
+        if {[lindex $fds 0] eq {}} {
             return -code error "$mode: timeout reading from SMTP host"
         }
         if {[gets $sock line] == -1} {
@@ -545,7 +559,7 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
                 return -code error "$mode: remote peer closed connection"
             }
         } else {
-
+	    #puts stderr "#### _ns_smtp_recv reveived <$line>"
             #
             # Examine line of code returned by the server.
             # Normally the line has this form:

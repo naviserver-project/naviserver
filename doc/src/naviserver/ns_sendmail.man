@@ -31,34 +31,42 @@ In case of an error the error code and message are returned.
 
 [section COMMANDS]
 [list_begin definitions]
-[call [cmd ns_sendmail] [arg to] [arg from] [arg subject] [arg body] [opt headers] [opt bcc] [opt cc]]
+[call [cmd ns_sendmail] \
+	[option "-to to"] \
+	[option "-from from"] \
+	[option "-subject subject"] \
+	[option "-body body"] \
+	[opt [option "-headers headers"]] \
+	[opt [option "-bcc bcc"]] \
+	[opt [option "-cc cc"]]]
 
-[arg to]
+[option -to]
 	Email address of recipient. To send a real name along with the address
 	give the name and place the latter between "<" and ">" like "John Foo <j.foo@example.com>".
 	This also applies to [emph from], [emph cc] and [emph bcc].
 	Can be a comma-separated string with multiple recipients.
 [para]
-[arg from]
+[option -from]
 	Email address of sender.
 [para]
-[arg subject]
+[option -subject]
 	Subject of the mail.
 [para]
-[arg body]
+[option -body]
 	Body of the mail.
 [para]
-[arg ?headers?]
+[opt [option -headers]]
 	An ns_set of key-value pairs. The set will become part of the email header.
 	May be left empty.
 [para]
-[arg ?bcc?]
+[opt [option -bcc]]
 	Email address of undisclosed recipient.
 	Can be a comma-separated string with multiple undisclosed recipients.
 [para]
-[arg ?cc?]
+[opt [option -cc]]
 	Email address of additional recipient.
 	Can be a comma-separated string with multiple recipients.
+
 
 [call [cmd ns_sendmail_config] [opt log]]
 
