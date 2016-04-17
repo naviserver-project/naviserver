@@ -951,7 +951,7 @@ Ns_ConnFilterTime(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnTimeStats --
+ * Ns_ConnTimeSpans --
  *
  *      Return for a given connection the time spans computed by
  *      Ns_ConnTimeStats()
