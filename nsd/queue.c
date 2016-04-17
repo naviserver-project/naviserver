@@ -339,10 +339,11 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     servPtr = sockPtr->servPtr;
 
     /*
-     * Select server connection pool.
+     * Select server connection pool. For non-HTTP drivers, the request.method
+     * won't be provided.
      */
 
-    if (sockPtr->reqPtr != NULL) {
+    if (sockPtr->reqPtr != NULL && sockPtr->reqPtr->request.method != NULL) {
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
@@ -1498,26 +1499,23 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     if ((conn->request.method != NULL) && STREQ(conn->request.method, "HEAD")) {
         conn->flags |= NS_CONN_SKIPBODY;
     }
-
-    /*
-     * Run the driver's private handler
-     */
-
+ 
     if (sockPtr->drvPtr->requestProc != NULL) {
+        /*
+         * Run the driver's private handler
+         */
+        Ns_GetTime(&connPtr->filterDoneTime);
         status = (*sockPtr->drvPtr->requestProc)(sockPtr->drvPtr->arg, conn);
-    }
-
-    /*
-     * provide a default filterDoneTime
-     */
-    Ns_GetTime(&connPtr->filterDoneTime);
-
-    /*
-     * Run the rest of the request.
-     */
-    if ((connPtr->request.protocol != NULL) && (connPtr->request.host != NULL)) {
+    } else if ((connPtr->request.protocol != NULL) && (connPtr->request.host != NULL)) {
+        /*
+         * Run proxy request
+         */
+        Ns_GetTime(&connPtr->filterDoneTime);
         status = NsConnRunProxyRequest((Ns_Conn *) connPtr);
     } else {
+        /*
+         * Run classical HTTP requests
+         */
             
         if (status == NS_OK) {
             status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);

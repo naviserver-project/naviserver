@@ -848,7 +848,11 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
             Ns_Log(DriverDebug, "NsGetRequest got the preparsed request <%s> from the driver",
                    reqPtr->request.line);
 
-        } else {
+        } else if (sockPtr->drvPtr->requestProc == NULL) {
+            /*
+             * Non-HTTP driver can send the drvPtr->requestProc to perform
+             * their own request handling.
+             */
             SockState status;
 
             Ns_Log(DriverDebug, "NsGetRequest has to read+parse the request");
@@ -871,6 +875,8 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
                 }
                 reqPtr = NULL;
             }
+        } else {
+            Ns_Log(DriverDebug, "NsGetRequest found driver specific request Proc, probably from a non-HTTP driver");
         }
     } else {
         Ns_Log(DriverDebug, "NsGetRequest has reqPtr NULL");
@@ -1015,7 +1021,13 @@ NsSockClose(Sock *sockPtr, int keep)
     Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", (void *)sockPtr, keep);
 
     SockClose(sockPtr, keep);
-    FreeRequest(sockPtr);
+    /*
+     * Free the request, unless it is from a non-HTTP driver (who might not
+     * fill out the request structure).
+     */
+    if (sockPtr->reqPtr) {
+        FreeRequest(sockPtr);
+    }
 
     Ns_MutexLock(&drvPtr->lock);
     if (drvPtr->closePtr == NULL) {
