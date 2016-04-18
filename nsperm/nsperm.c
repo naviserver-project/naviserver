@@ -183,7 +183,7 @@ Ns_ModuleInit(const char *server, const char *module)
         snprintf(buf, sizeof(buf), "%lu", result);
         Ns_CtxMD5Update(&md5, (unsigned char *) buf, strlen(buf));
         Ns_CtxMD5Final(&md5, sig);
-        Ns_CtxString(sig, usdigest, 16);
+        Ns_HexString(sig, usdigest, 16);
     }
     servPtr = ns_malloc(sizeof(Server));
     servPtr->server = server;
@@ -1636,7 +1636,7 @@ static int CreateNonce(const char *privatekey, char **nonce, char *uri)
     Ns_CtxMD5Init(&md5);
     Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
     Ns_CtxMD5Final(&md5, sig);
-    Ns_CtxString(sig, buf, 16);
+    Ns_HexString(sig, buf, 16);
 
     /* encode the current time and MD5 string into the nonce */
     Ns_DStringTrunc(&ds, 0);
@@ -1706,7 +1706,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
 
     Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
     Ns_CtxMD5Final(&md5, sig);
-    Ns_CtxString(sig, buf, 16);
+    Ns_HexString(sig, buf, 16);
 
     /* Check for a stale time stamp. If the time stamp is stale we still check
      * to see if the user sent the proper digest password. The stale flag

@@ -1036,7 +1036,23 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     memset(ctx, 0, sizeof(Ns_CtxSHA1)); 			/* In case it's sensitive */
 }
 
-void Ns_CtxString(const unsigned char *digest, char *buf, int size)
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HexString --
+ *
+ *      Transform binary data to hex. The provided buffer must be
+ *      at least size*2 + 1 bytes long.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates passed-in buffer (2nd argument).
+ *
+ *----------------------------------------------------------------------
+ */
+void Ns_HexString(const unsigned char *digest, char *buf, int size)
 {
     int i;
 
@@ -1091,7 +1107,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
     Ns_CtxSHAFinal(&ctx, digest);
 
-    Ns_CtxString(digest, digestChars, 20);
+    Ns_HexString(digest, digestChars, 20);
     Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
@@ -1155,22 +1171,22 @@ NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     switch (digestSpec) {
     case '1': {
         sha224( (const unsigned char *)str, (unsigned int)length, digest);
-        Ns_CtxString( digest, digestChars, SHA224_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA224_DIGEST_SIZE);
         break;
     }
     case '2': {
         sha256( (const unsigned char *)str, (unsigned int)length, digest);
-        Ns_CtxString( digest, digestChars, SHA256_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA256_DIGEST_SIZE);
         break;
     }
     case '3': {
         sha384( (const unsigned char *)str, (unsigned int)length, digest);
-        Ns_CtxString( digest, digestChars, SHA384_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA384_DIGEST_SIZE);
         break;
     }
     case '5': {
        sha512( (const unsigned char *)str, (unsigned int)length, digest);
-       Ns_CtxString( digest, digestChars, SHA512_DIGEST_SIZE);
+       Ns_HexString( digest, digestChars, SHA512_DIGEST_SIZE);
        break;
     }
     }
@@ -1247,28 +1263,28 @@ NsTclHMACSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         hmac_sha224( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA224_DIGEST_SIZE);
-        Ns_CtxString( digest, digestChars, SHA224_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA224_DIGEST_SIZE);
         break;
     }
     case '2': {
         hmac_sha256( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA256_DIGEST_SIZE);
-        Ns_CtxString( digest, digestChars, SHA256_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA256_DIGEST_SIZE);
         break;
     }
     case '3': {
         hmac_sha384( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA384_DIGEST_SIZE);
-        Ns_CtxString( digest, digestChars, SHA384_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA384_DIGEST_SIZE);
         break;
     }
     case '5': {
         hmac_sha512( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA512_DIGEST_SIZE);
-        Ns_CtxString( digest, digestChars, SHA512_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA512_DIGEST_SIZE);
         break;
     }
     }
@@ -1678,7 +1694,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
     Ns_CtxMD5Final(&ctx, digest);
 
-    Ns_CtxString(digest, digestChars, 16);
+    Ns_HexString(digest, digestChars, 16);
     Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
