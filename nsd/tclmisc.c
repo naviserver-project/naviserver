@@ -1154,22 +1154,22 @@ NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     switch (digestSpec) {
     case '1': {
-        sha224( (unsigned char *)str, length, digest);
+        sha224( (const unsigned char *)str, (unsigned int)length, digest);
         Ns_CtxString( digest, digestChars, SHA224_DIGEST_SIZE);
         break;
     }
     case '2': {
-        sha256( (unsigned char *)str, length, digest);
+        sha256( (const unsigned char *)str, (unsigned int)length, digest);
         Ns_CtxString( digest, digestChars, SHA256_DIGEST_SIZE);
         break;
     }
     case '3': {
-        sha384( (unsigned char *)str, length, digest);
+        sha384( (const unsigned char *)str, (unsigned int)length, digest);
         Ns_CtxString( digest, digestChars, SHA384_DIGEST_SIZE);
         break;
     }
-   case '5': {
-       sha512( (unsigned char *)str, length, digest);
+    case '5': {
+       sha512( (const unsigned char *)str, (unsigned int)length, digest);
        Ns_CtxString( digest, digestChars, SHA512_DIGEST_SIZE);
        break;
     }
@@ -1244,26 +1244,30 @@ NsTclHMACSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
     switch (digestSpec) {
     case '1': {
-        hmac_sha224( (unsigned char *)key, keyLength,
-                     (unsigned char *)message, messageLength, digest, SHA224_DIGEST_SIZE);
+        hmac_sha224( (const unsigned char *)key, (unsigned int)keyLength,
+                     (const unsigned char *)message, (unsigned int)messageLength,
+                     digest, SHA224_DIGEST_SIZE);
         Ns_CtxString( digest, digestChars, SHA224_DIGEST_SIZE);
         break;
     }
     case '2': {
-        hmac_sha256( (unsigned char *)key, keyLength,
-                     (unsigned char *)message, messageLength, digest, SHA256_DIGEST_SIZE);
+        hmac_sha256( (const unsigned char *)key, (unsigned int)keyLength,
+                     (const unsigned char *)message, (unsigned int)messageLength,
+                     digest, SHA256_DIGEST_SIZE);
         Ns_CtxString( digest, digestChars, SHA256_DIGEST_SIZE);
         break;
     }
     case '3': {
-        hmac_sha384( (unsigned char *)key, keyLength,
-                     (unsigned char *)message, messageLength, digest, SHA384_DIGEST_SIZE);
+        hmac_sha384( (const unsigned char *)key, (unsigned int)keyLength,
+                     (const unsigned char *)message, (unsigned int)messageLength,
+                     digest, SHA384_DIGEST_SIZE);
         Ns_CtxString( digest, digestChars, SHA384_DIGEST_SIZE);
         break;
     }
     case '5': {
-        hmac_sha512( (unsigned char *)key, keyLength,
-                     (unsigned char *)message, messageLength, digest, SHA512_DIGEST_SIZE);
+        hmac_sha512( (const unsigned char *)key, (unsigned int)keyLength,
+                     (const unsigned char *)message, (unsigned int)messageLength,
+                     digest, SHA512_DIGEST_SIZE);
         Ns_CtxString( digest, digestChars, SHA512_DIGEST_SIZE);
         break;
     }
