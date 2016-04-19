@@ -691,8 +691,6 @@ WordEndsInSemi(const char *ip)
  *
  */
 
-static const char hexChars[] = "0123456789ABCDEF";
-
 /*
  * Define to 1 for FIPS 180.1 version (with extra rotate in prescheduling),
  * 0 for FIPS 180 version (with the mysterious "weakness" that the NSA
@@ -1052,13 +1050,22 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
  *
  *----------------------------------------------------------------------
  */
-void Ns_HexString(const unsigned char *digest, char *buf, int size)
+void Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper)
 {
     int i;
-
-    for (i = 0; i < size; ++i) {
-        buf[i * 2] = hexChars[digest[i] >> 4];
-        buf[i * 2 + 1] = hexChars[digest[i] & 0xFu];
+    static const char hexCharsUpper[] = "0123456789ABCDEF";
+    static const char hexCharsLower[] = "0123456789abcdef";
+    
+    if (isUpper == NS_TRUE) {
+        for (i = 0; i < size; ++i) {
+            buf[i * 2] = hexCharsUpper[digest[i] >> 4];
+            buf[i * 2 + 1] = hexCharsUpper[digest[i] & 0xFu];
+        }
+    } else {
+        for (i = 0; i < size; ++i) {
+            buf[i * 2] = hexCharsLower[digest[i] >> 4];
+            buf[i * 2 + 1] = hexCharsLower[digest[i] & 0xFu];
+        }
     }
     buf[size * 2] = '\0';
 }
@@ -1107,7 +1114,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
     Ns_CtxSHAFinal(&ctx, digest);
 
-    Ns_HexString(digest, digestChars, 20);
+    Ns_HexString(digest, digestChars, 20, NS_TRUE);
     Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
@@ -1171,22 +1178,22 @@ NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     switch (digestSpec) {
     case '1': {
         sha224( (const unsigned char *)str, (unsigned int)length, digest);
-        Ns_HexString( digest, digestChars, SHA224_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA224_DIGEST_SIZE, NS_FALSE);
         break;
     }
     case '2': {
         sha256( (const unsigned char *)str, (unsigned int)length, digest);
-        Ns_HexString( digest, digestChars, SHA256_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA256_DIGEST_SIZE, NS_FALSE);
         break;
     }
     case '3': {
         sha384( (const unsigned char *)str, (unsigned int)length, digest);
-        Ns_HexString( digest, digestChars, SHA384_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA384_DIGEST_SIZE, NS_FALSE);
         break;
     }
     case '5': {
        sha512( (const unsigned char *)str, (unsigned int)length, digest);
-       Ns_HexString( digest, digestChars, SHA512_DIGEST_SIZE);
+       Ns_HexString( digest, digestChars, SHA512_DIGEST_SIZE, NS_FALSE);
        break;
     }
     }
@@ -1263,28 +1270,28 @@ NsTclHMACSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         hmac_sha224( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA224_DIGEST_SIZE);
-        Ns_HexString( digest, digestChars, SHA224_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA224_DIGEST_SIZE, NS_FALSE);
         break;
     }
     case '2': {
         hmac_sha256( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA256_DIGEST_SIZE);
-        Ns_HexString( digest, digestChars, SHA256_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA256_DIGEST_SIZE, NS_FALSE);
         break;
     }
     case '3': {
         hmac_sha384( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA384_DIGEST_SIZE);
-        Ns_HexString( digest, digestChars, SHA384_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA384_DIGEST_SIZE, NS_FALSE);
         break;
     }
     case '5': {
         hmac_sha512( (const unsigned char *)key, (unsigned int)keyLength,
                      (const unsigned char *)message, (unsigned int)messageLength,
                      digest, SHA512_DIGEST_SIZE);
-        Ns_HexString( digest, digestChars, SHA512_DIGEST_SIZE);
+        Ns_HexString( digest, digestChars, SHA512_DIGEST_SIZE, NS_FALSE);
         break;
     }
     }
@@ -1694,7 +1701,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
     Ns_CtxMD5Final(&ctx, digest);
 
-    Ns_HexString(digest, digestChars, 16);
+    Ns_HexString(digest, digestChars, 16, NS_TRUE);
     Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
