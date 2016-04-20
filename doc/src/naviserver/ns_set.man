@@ -40,6 +40,9 @@ the same as the original ns_set as keys in an array are unique.
 [call [cmd  "ns_set cleanup"]]
 
 Frees all sets in the current interp.
+This command is autoamtically executed by [cmd ns_cleanup],
+which runs after every request, freeing all sets created via
+[cmd ns_set].
 
 [call [cmd  "ns_set copy"] [arg setId]]
 
@@ -380,7 +383,7 @@ amounts of data into an ns_set, performance will be very poor - use a
 Tcl Array or a Tcl dict instead.
 
 
-[see_also ns_findset]
+[see_also ns_findset ns_ictl ns_cleanup]
 [keywords ns_set]
 
 [manpage_end]
