@@ -55,7 +55,7 @@ static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int LookupInterpSet(Tcl_Interp *interp, const char *id, int deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
+static int EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -64,7 +64,12 @@ static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
  *
  * Ns_TclEnterSet --
  *
- *      Give this Tcl interpreter access to an existing Ns_Set.
+ *      Let this Tcl interpreter manage lifecycle of an existing Ns_Set.  The
+ *      last argument determines the the lifespan of the Ns_Set. When the type
+ *      is NS_TCL_SET_STATIC, the Ns_Set is deleted, when the interp is
+ *      freed. When the value is NS_TCL_SET_DYNAMIC, it is deleted via "ns_set
+ *      free|cleanup". Effectively, this means that a "dynamic" ns_set is
+ *      freed at the end a request, since ns_cleanup issues "ns_set cleanup".
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -77,7 +82,7 @@ static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
  */
 
 int
-Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
+Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
 {
     NsInterp *itPtr;
 
@@ -89,7 +94,7 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
         Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
         return TCL_ERROR;
     }
-    return EnterSet(itPtr, set, flags);
+    return EnterSet(itPtr, set, type);
 }
 
 
@@ -274,7 +279,6 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     case SCopyIdx:
     case SSplitIdx: {
         int           offset = 2;
-        unsigned int  flags = NS_TCL_SET_DYNAMIC;
         const char   *name;
 
         /*
@@ -290,7 +294,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 val = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
                 Ns_SetPut(set, key, val);
             }
-            EnterSet(itPtr, set, flags);
+            EnterSet(itPtr, set, NS_TCL_SET_DYNAMIC);
             break;
 
         case SCopyIdx:
@@ -301,7 +305,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             if (LookupObjSet(itPtr, objv[offset], 0, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
-            EnterSet(itPtr, Ns_SetCopy(set), flags);
+            EnterSet(itPtr, Ns_SetCopy(set), NS_TCL_SET_DYNAMIC);
             break;
 
         case SSplitIdx: {
@@ -319,7 +323,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
             sets = Ns_SetSplit(set, *split);
             for (i = 0; sets[i] != NULL; i++) {
-                EnterSet(itPtr, sets[i], flags);
+                EnterSet(itPtr, sets[i], NS_TCL_SET_DYNAMIC);
             }
             ns_free(sets);
             break;
@@ -698,20 +702,20 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *
  */
 
 static int
-EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
+EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
 {
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;
     int             isNew;
     int             next;
-    char            type;
+    char            typeChar;
     char            buf[TCL_INTEGER_SPACE + 1];
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(set != NULL);
 
     tablePtr = &itPtr->sets;
-    type = (flags & NS_TCL_SET_DYNAMIC) != 0u ? SET_DYNAMIC : SET_STATIC;
+    typeChar = (type == NS_TCL_SET_DYNAMIC) ? SET_DYNAMIC : SET_STATIC;
 
     /*
      * Allocate a new set IDs until we find an unused one.
@@ -719,7 +723,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
 
     next = tablePtr->numEntries;
     do {
-        snprintf(buf, sizeof(buf), "%c%d", type, next);
+        snprintf(buf, sizeof(buf), "%c%d", typeChar, next);
         ++next;
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
     } while (isNew == 0);

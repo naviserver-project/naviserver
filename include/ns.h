@@ -234,8 +234,10 @@ typedef enum {
  * The following flags define how Ns_Set's are managed by Tcl. Used in the
  * public interface by Ns_TclEnterSet()
  */
-#define NS_TCL_SET_STATIC          0U /* Ns_Set managed elsewhere, maintain a Tcl reference */
-#define NS_TCL_SET_DYNAMIC         1U /* Tcl owns the Ns_Set and will free when finished */
+typedef enum {
+    NS_TCL_SET_STATIC,          /* The Ns_Set is deleted, when the interp is freed */
+    NS_TCL_SET_DYNAMIC          /* The Ns_Set is deleted at the end of a request (or via "ns_set free|cleanup") */
+} Ns_TclSetType;
 
 /*
  * C API macros.
@@ -3090,7 +3092,7 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
  * tclset.c:
  */
 
-NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
+NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
