@@ -482,4 +482,111 @@ proc ns_parseformfile { file form contentType } {
     close $fp
 }
 
-# EOF 
+#
+# ns_getcontent --
+#
+#   Return the content of a request as file or as string, no matter,
+#   whether it was spooled during upload into a file or not. The user
+#   can specify, whether the result should treated as binary or not.
+#   The default is "-as_file true", since this will not run into
+#   memory problems on huge files.
+#
+# Result:
+#   Returns the content the file name of the tmp file (default) or the
+#   content of the file (when as_file is false).
+#
+
+proc ns_getcontent {args} {
+    ns_parseargs {
+        {-as_file true}
+        {-binary true}
+    } $args
+
+    if {![string is boolean -strict $as_file]} {
+        return -code error "value of '$as_file' is not boolean"
+    }
+    if {![string is boolean -strict $binary]} {
+        return -code error "value of '$binary' is not boolean"
+    }
+
+    set contentfile [ns_conn contentfile]
+    if {$as_file} {
+        #
+        # Return the result as a file
+        #
+        if {$contentfile eq ""} {
+            #
+            # There is no content file, we have to create it and write
+            # the content from [ns_conn content] into it.
+            #
+            set contentfile [ns_mktemp [ns_config ns/parameters tmpdir]/nsd-XXXXXX]
+            set F [open $contentfile w]
+            if {$binary} {
+                fconfigure $F -translation binary
+                puts -nonewline $F [ns_conn content -binary]
+            } else {
+                puts -nonewline $F [ns_conn content]
+            }
+            close $F
+        } else {
+            #
+            # We have already a content file
+            #
+            if {!$binary} {
+                #
+                # We have binary content but want text to be readable,
+                # so we have to recode. We use here as well utf-8
+                # (like in ns_parseformfile), maybe this has to be
+                # parameterized in the future.
+                #
+                set ncontentfile [ns_mktemp [ns_config ns/parameters tmpdir]/nsd-XXXXXX]
+                set F [open $contentfile r]
+                set N [open $ncontentfile w]
+                fconfigure $F -translation binary
+                fconfigure $N -encoding utf-8
+                while {1} {
+                    set c [read $F 64000]
+                    puts -nonewline $N $c
+                    if {[eof $F]} break
+                }
+                close $F
+                close $N
+                #
+                # We cannot delete the old contentfile, since maybe
+                # some other part of the code might require it as well
+                # via [ns_conn contentfile]
+                #
+                set contentfile $ncontentfile
+            }
+        }
+        set result $contentfile
+    } else {
+        #
+        # Return the result as a string. Note that in cases, where the
+        # file is huge, this might bloat the memory or crash (running
+        # in the current max 2 GB limit on Tcl).
+        #
+        if {$contentfile eq ""} {
+            if {$binary} {
+                set result [ns_conn content -binary]
+            } else {
+                set result [ns_conn content]
+            }
+        } else {
+            set F [open $contentfile r]
+            if {$binary} {
+                fconfigure $F -translation binary
+            }
+            set result [read $F]
+            close $F
+        }
+    }
+    return $result
+}
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
+
