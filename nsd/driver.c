@@ -320,17 +320,14 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      * through a DNS lookup of the specified hostname or the server's
      * primary hostname.
      */
-    //fprintf(stderr, "##### Ns_DriverInit server <%s> module <%s>, host <%s> address <%s>\n", server, module, host, address);
     if (address == NULL) {
         const char *hostName;
 
         Tcl_DStringInit(&ds);
         hostName = noHostNameGiven ? Ns_InfoHostname() : host;
-        //fprintf(stderr, "##### Ns_DriverInit, address == NULL, noHostNameGiven hostInfoName %s\n", hostName);
         
         if (Ns_GetAddrByHost(&ds, hostName) == NS_TRUE) {
             if (path != NULL) {
-                //fprintf(stderr, "##### Ns_DriverInit, setting address = %s\n", Tcl_DStringValue(&ds));
                 address = ns_strdup(Tcl_DStringValue(&ds));
                 Ns_SetUpdate(set, "address", address);
             }
@@ -935,7 +932,7 @@ FreeRequest(Sock *sockPtr)
             reqPtr->buffer.string[0] = reqPtr->savedChar;
         }
         Tcl_DStringSetLength(&reqPtr->buffer, (int)leftover);
-        LogBuffer(Notice, "KEEP BUFFER", reqPtr->buffer.string, leftover); // TODO: change to DriverDebug        
+        LogBuffer(Notice, "KEEP BUFFER", reqPtr->buffer.string, leftover); /* TODO: change to DriverDebug */
         reqPtr->leftover = leftover;
     } else {
         Tcl_DStringInit(&reqPtr->buffer);
@@ -970,8 +967,6 @@ FreeRequest(Sock *sockPtr)
     } else {
         Ns_Log(DriverDebug, "FreeRequest does not call Ns_ResetRequest on %p", (void*)&reqPtr->request);
     }
-
-    //Ns_ResetRequest(&reqPtr->request);
 
     if (keep == NS_FALSE) {
         /*

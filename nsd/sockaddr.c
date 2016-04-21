@@ -344,7 +344,7 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr) {
  * Ns_GetSockAddr --
  *
  *      Take a host/port and fill in a NS_SOCKADDR_STORAGE structure
- *      appropriately. Host may be an IP address or a DNS name.
+ *      appropriately. The passed in host may be an IP address or a DNS name.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -359,8 +359,9 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
 {
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    //fprintf(stderr, "# GetSockAddr host '%s' port %d\n", host, port);
-    
+    /*
+     * We return always a fresh sockaddr, so clear content first.
+     */
     memset(saPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
     
 #ifdef HAVE_IPV6
@@ -375,14 +376,11 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
             Ns_DString ds;
 
             Ns_DStringInit(&ds);
-            //fprintf(stderr, "# GetSockAddr ... calls Ns_GetAddrByHost\n");
             if (Ns_GetAddrByHost(&ds, host) == NS_TRUE) {
-                //fprintf(stderr, "# GetAddrByHost returns <%s>\n", ds.string);
                 r = ns_inet_pton((struct sockaddr *)saPtr, ds.string);
             }
             Ns_DStringFree(&ds);
             if (r <= 0) {
-                //fprintf(stderr, "# GetSockAddr ... fails\n");
                 return NS_ERROR;
             }
         }
@@ -411,7 +409,6 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
 #endif
 
     Ns_SockaddrSetPort((struct sockaddr *)saPtr, port);
-    /*Ns_LogSockaddr(Notice, "Ns_GetSockAddr returns", (const struct sockaddr *)saPtr);*/
 
     return NS_OK;
 }

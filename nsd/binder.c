@@ -93,25 +93,25 @@ Ns_SockListenEx(const char *address, int port, int backlog)
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr     *saPtr = (struct sockaddr *)&sa;
 
-    //fprintf(stderr, "# Ns_SockListenEx <%s> %d\n", address, port);
     if (Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
         Tcl_HashEntry *hPtr;
 
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&preboundTcp, (char *)saPtr);
-        //fprintf(stderr, "#### ... found hash entry %p\n", hPtr);
         if (hPtr != NULL) {
+            /*
+             * Found prebound entry, consume it...
+             */
 	    sock = PTR2INT(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&lock);
+        
         if (hPtr == NULL) {
-            //fprintf(stderr, "#### ... NOT prebound\n");
             /* 
-             * Not prebound, bind now 
+             * Not prebound, try to bind now.
              */
             sock = Ns_SockBind(saPtr);
-            //fprintf(stderr, "# Ns_SockListenEx ... not prebound, Ns_SockBind returns sock %d\n", sock);
         }
         if (sock != NS_INVALID_SOCKET && listen(sock, backlog) == -1) {
             /* 
@@ -132,7 +132,6 @@ Ns_SockListenEx(const char *address, int port, int backlog)
         saPtr = NULL;
     }
     
-    //fprintf(stderr, "# Ns_SockListenEx ... will return %d ok\n", sock);
     /*
      * If forked binder is running and we could not allocate socket
      * directly, try to do it through the binder
@@ -140,7 +139,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
     if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE && saPtr != NULL) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
-    //fprintf(stderr, "# Ns_SockListenEx ... returns %d ok\n", sock);
+
     return sock;
 }
 #endif /* _WIN32 */

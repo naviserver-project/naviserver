@@ -1438,10 +1438,6 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     assert(sockPtr != NULL);
     assert(sockPtr->reqPtr != NULL);
 
-    //Ns_Log(Notice, "=== ConnRun has request with line <%s>", connPtr->reqPtr->request.line);
-
-    assert(sockPtr->reqPtr != NULL);
-
     /*
      * Make sure we update peer address with actual remote IP address
      */

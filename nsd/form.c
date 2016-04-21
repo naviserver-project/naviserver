@@ -428,7 +428,6 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
                                      Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
             set = NULL;
         }
-        //fprintf(stderr, "ParseMultiInput sets key <%s> value <%s>\n", key, value);
         (void) Ns_SetPut(connPtr->query, key, value);
     }
 

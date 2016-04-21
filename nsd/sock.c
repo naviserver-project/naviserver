@@ -522,12 +522,7 @@ Ns_SockBind(const struct sockaddr *saPtr)
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    //Ns_LogSockaddr(Notice, "Ns_SockBind called", (const struct sockaddr *) saPtr);
-
     sock = socket(saPtr->sa_family, SOCK_STREAM, 0);
-
-    //fprintf(stderr, "# Ns_SockBind socket() returned %d requested port %d\n",
-    //        sock, Ns_SockaddrGetPort((const struct sockaddr *)saPtr));
 
     if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);
@@ -1001,7 +996,8 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
  *
  * SockConnect --
  *
- *      Open a TCP connection to a host/port sync or async.
+ *      Open a TCP connection to a host/port sync or async.  host/port refers
+ *      to the remote, lhost/lport to the local communication endpoint.
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.
@@ -1021,9 +1017,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
     struct sockaddr      *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
     int                   result;
 
-    //fprintf(stderr, "# SockConnect (%s %d / %s %d) calls Ns_GetSockAddr %s\n", host, port, lhost, lport, host);
     result = Ns_GetSockAddr(saPtr, host, port);
-    //fprintf(stderr, "# ... SockConnect calls Ns_GetSockAddr %s ==> ok %d\n", host, (result == TCL_OK));
 
     if (result == NS_OK) {
         /*
@@ -1042,7 +1036,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
                                 lport);
     }
     if (result != NS_OK) {
-        //fprintf(stderr, "# ... SockConnect fails\n");
+        Ns_Log(Debug, "SockConnect %s %d (local %s %d) fails", host, port, lhost, lport);
         return NS_INVALID_SOCKET;
     }
     sock = Ns_SockBind(lsaPtr);
@@ -1073,7 +1067,6 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
         }
     }
 
-    //fprintf(stderr, "# ... SockConnect Ns_SockBind returns finally %d\n", sock);
     return sock;
 }
 

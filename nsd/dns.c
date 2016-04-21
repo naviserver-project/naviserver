@@ -275,12 +275,11 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     struct sockaddr        *saPtr = (struct sockaddr *)&sa;
     bool   result = NS_FALSE;
 
-    //fprintf(stderr, "# GetHost: addr <%s>\n", addr);
     r = ns_inet_pton(saPtr, addr);
     if (r > 0) {
         char buf[NI_MAXHOST];
         const char  *host;
-        //fprintf(stderr, "# GetHost: .... r %d familiy %d\n", r, sa.ss_family);
+
         int err = getnameinfo(saPtr,
                               (sa.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
                               buf, sizeof(buf),
@@ -297,7 +296,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
             result = NS_TRUE;
         }
     }
-    //fprintf(stderr, "# GetHost %s -> %d\n", addr, result);
+
     return result;
 }
 
@@ -341,7 +340,6 @@ GetAddr(Ns_DString *dsPtr, const char *host)
             ptr = ptr->ai_next;
         }
         freeaddrinfo(res);
-        //fprintf(stderr, "##### getaddrinfo for host <%s> -> %s\n", host, dsPtr->string);
 
     } else if (result != EAI_NONAME) {
         Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
@@ -491,14 +489,12 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     hints.ai_socktype = SOCK_STREAM;
 
     result = getaddrinfo(host, NULL, &hints, &res);
-    //fprintf(stderr, "### getaddrinfo called for host <%s> returns %d\n", host, result);
     if (result == 0) {
         ptr = res;
         while (ptr != NULL) {
             char ipString[NS_IPADDR_SIZE];
             
             ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString));
-            //fprintf(stderr, "### getaddrinfo ... got addr <%s>\n", ipString);
             Tcl_DStringAppendElement(dsPtr, ipString);
             status = NS_TRUE;
             ptr = ptr->ai_next;

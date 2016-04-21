@@ -890,7 +890,6 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
     } else {
         portNr = 80;
     }
-    //fprintf(stderr, "### HttpConnect ---> host '%s' %d ==> \n", host, portNr);
     sock = Ns_SockAsyncConnect(host, portNr);
 
 #if DEACTIVATED__WAIT_FOR_ASYNC_CONNECT_UNTIL_SOCKET_IS_WRITEABLE
