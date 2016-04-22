@@ -1287,7 +1287,6 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
                      * All data from ds has been sent. Check, if the is a file to
                      * append, and if yes, which to sendSpoolMode.
                      */
-                    Tcl_DStringTrunc(&httpPtr->ds, 0);
                     if (httpPtr->bodyFileFd > 0) {
                         httpPtr->sendSpoolMode = NS_TRUE;
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d", httpPtr->bodyFileFd);
