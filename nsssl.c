@@ -1163,7 +1163,7 @@ HttpsConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hd
             struct stat bodyStat;
             
             if (Ns_Stat(bodyFileName, &bodyStat) == NS_FALSE) {
-                Tcl_AppendResult(interp, "cannot stat file ", bodyFileName);
+                Tcl_AppendResult(interp, "cannot stat file ", bodyFileName, NULL);
                 ns_free(url2);
                 return TCL_ERROR;
             }
@@ -1171,7 +1171,7 @@ HttpsConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hd
 
             bodyFileFd = ns_open(bodyFileName, O_RDONLY, 0);
             if (unlikely(bodyFileFd == NS_INVALID_FD)) {
-                Tcl_AppendResult(interp, "cannot open file ", bodyFileName);
+                Tcl_AppendResult(interp, "cannot open file ", bodyFileName, NULL);
                 ns_free(url2);
                 return TCL_ERROR;
             }
