@@ -46,6 +46,9 @@ adds new ns_ssl command.
 * New in Version 1.0:
     - Support for IPv6
 
+* New in Version 1.1:
+    - Support for "-body_file" in ns_ssl.
+
 ***
 
 ## Configuration: ##
@@ -107,8 +110,8 @@ adds new ns_ssl command.
     ns_ssl cancel id
     ns_ssl cleanup
     ns_ssl list
-    ns_ssl queue ?-method M? ?-headers S? ?-body B? ?-timeout T? ?-cert C? ?-cafile CA? ?-capath CP? ?-verify? ?-keep_host_header? -url
-    ns_ssl run ?-method M? ?-headers S? ?-body B? ?-timeout T? url
+    ns_ssl queue ?-method M? ?-headers S? ?-body B? ?-body_file fn? ?-timeout T? ?-cert C? ?-cafile CA? ?-capath CP? ?-verify? ?-keep_host_header? -url
+    ns_ssl run ?-method M? ?-headers S? ?-body B? ?-body_file fn? ?-timeout T? url
     ns_ssl wait ?-elapsed varName? ?-file varName? ?-headers H? ?-result varName? ?-spoolsize int? ?-status varName? ?-timeout t? ?-decompress? id
 
   See the naviserver documentation of "ns_http" for usage and details about the options.
