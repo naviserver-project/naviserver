@@ -31,6 +31,7 @@ id url done|running ....
 	[opt [arg {-method M}]] \
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
+	[opt [arg {-body_file fn}]] \	
 	[opt [arg {-timeout T}]] \
 	[opt [arg {-keep_host_header}]] \
 	[arg url] \
@@ -46,6 +47,12 @@ headers is the ns_set ID containing the additional headers to include in the HTT
 [para]
 [arg -body]
 body is the value which will be sent as the HTTP request body.
+This option is mutual exclusive with [arg -body_file].
+
+[para]
+[arg -body_file]
+transmit the file specified via filename as the HTTP request body.
+This option is mutual exclusive with [arg -body].
 
 [para]
 [arg -timeout]
@@ -68,6 +75,7 @@ or [cmd "ns_http cancel"] command to refer to this request.
 	[opt [arg {-method M}]] \
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
+	[opt [arg {-body_file fn}]] \	
 	[opt [arg {-timeout T}]] \
 	[arg url] \
 	]

@@ -724,4 +724,26 @@ test http-7.2b {ns_http with body and binary datataype, no bytearray} -constrain
     unset -nocomplain r
 } -result {200 {0000 0001 0002 000D}}
 
+
+test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+    }
+} -body {
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
+			   [ns_config test listenurl]/put]} errorMsg]} {
+	puts stderr ERROR-$errorMsg
+    }
+    set r [ns_http wait -result R -status S $h]
+    return [list $S $R]
+} -cleanup {
+    ns_unregister_op PUT /put
+    unset -nocomplain r
+} -result {200 {utf-8 <text/plain> <123>}}
+
+
 cleanupTests
