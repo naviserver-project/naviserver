@@ -44,9 +44,9 @@ static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
-                       Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, bool keep_host_header,
-                       Ns_HttpTask **httpPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(7);
+                       Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
+                       bool keep_host_header, Ns_HttpTask **httpPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(8);
 
 static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -199,7 +199,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     Tcl_HashEntry *hPtr;
     Ns_HttpTask *httpPtr;
     char buf[TCL_INTEGER_SPACE + 4];
-    const char *method = "GET", *url = NULL;
+    const char *method = "GET", *url = NULL, *bodyFileName = NULL;
     Ns_Set *hdrPtr = NULL;
     Tcl_Obj *bodyPtr = NULL;
     Ns_Time *incrPtr = NULL;
@@ -210,6 +210,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         {"-headers",  Ns_ObjvSet,    &hdrPtr,   NULL},
         {"-method",   Ns_ObjvString, &method,   NULL},
         {"-body",     Ns_ObjvObj,    &bodyPtr,  NULL},
+        {"-body_file",Ns_ObjvString, &bodyFileName, NULL},
         {"-keep_host_header", Ns_ObjvBool, &keep_host_header,  INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
@@ -224,7 +225,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, keep_host_header, &httpPtr) != TCL_OK) {
+    if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, bodyFileName, keep_host_header, &httpPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
     Ns_GetTime(&httpPtr->stime);
@@ -837,11 +838,13 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
  */
 static int
 HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdrPtr,
-	    Tcl_Obj *bodyPtr, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
+	    Tcl_Obj *bodyPtr, const char *bodyFileName,
+            bool keep_host_header, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock;
     Ns_HttpTask *httpPtr;
     int          portNr, uaFlag = -1;
+    int          bodyFileSize = 0, bodyFileFd = 0;
     char        *url2, *host, *file, *portString;
     const char  *contentType = NULL;
 
@@ -922,7 +925,13 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	return TCL_ERROR;
     }
 
-    if (bodyPtr != NULL) {
+    if (bodyPtr != NULL || bodyFileName != NULL) {
+        if ((bodyPtr != NULL) && bodyFileName != NULL) {
+            Tcl_AppendResult(interp, "either -body or -body_file may be specified", NULL);
+            ns_free(url2);
+            return TCL_ERROR;
+        }
+        
         if (hdrPtr != NULL) {
             contentType = Ns_SetIGet(hdrPtr, "Content-Type");
         }
@@ -931,12 +940,36 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
             ns_free(url2);
             return TCL_ERROR;
         }
+        if (bodyFileName != NULL) {
+            struct stat bodyStat;
+            
+            if (Ns_Stat(bodyFileName, &bodyStat) == NS_FALSE) {
+                Tcl_AppendResult(interp, "cannot stat file %s", bodyFileName);
+                ns_free(url2);
+                return TCL_ERROR;
+            }
+            bodyFileSize = bodyStat.st_size;
+
+            bodyFileFd = ns_open(bodyFileName, O_RDONLY, 0);
+            if (unlikely(bodyFileFd == NS_INVALID_FD)) {
+                Tcl_AppendResult(interp, "cannot open file %s", bodyFileName);
+                ns_free(url2);
+                return TCL_ERROR;
+            }
+        }
     }
+    /*
+     * All error checking from parameter processing is done, allocate the
+     * Ns_HttpTask structure.
+     */
     
     httpPtr = ns_calloc(1u, sizeof(Ns_HttpTask));
-    httpPtr->sock            = sock;
-    httpPtr->spoolLimit      = -1;
-    httpPtr->url             = url2;
+    httpPtr->sock           = sock;
+    httpPtr->spoolLimit     = -1;
+    httpPtr->url            = url2;
+    httpPtr->bodyFileFd     = bodyFileFd;
+    httpPtr->sendSpoolMode  = NS_FALSE;
+
     Ns_MutexInit(&httpPtr->lock);
     /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
     Tcl_DStringInit(&httpPtr->ds);
@@ -992,23 +1025,33 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
         Ns_DStringNAppend(&httpPtr->ds, "\r\n", 2);
     }
 
-    if (bodyPtr != NULL) {
-        int length = 0;
-	const char *bodyString;
-        bool binary = NsTclObjIsByteArray(bodyPtr);
+    /*
+     * The body of the request might be specified via Tcl_Obj containing the
+     * content, or via filename.
+     */
+    if (bodyPtr != NULL || bodyFileName != NULL) {
 
-        if (contentType != NULL && binary == NS_FALSE) {
-            binary = Ns_IsBinaryMimeType(contentType);
-        }
+        if (bodyFileName == NULL) {
+            int length = 0;
+            const char *bodyString;
+            bool binary = NsTclObjIsByteArray(bodyPtr);
+
+            if (contentType != NULL && binary == NS_FALSE) {
+                binary = Ns_IsBinaryMimeType(contentType);
+            }
         
-	if (binary == NS_TRUE) {
-	    bodyString = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
+            if (binary == NS_TRUE) {
+                bodyString = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
+            } else {
+                bodyString = Tcl_GetStringFromObj(bodyPtr, &length);
+            }
+            Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", length);
+            Tcl_DStringAppend(&httpPtr->ds, bodyString, length);
+
         } else {
-            bodyString = Tcl_GetStringFromObj(bodyPtr, &length);
+            Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", bodyFileSize);
         }
 
-	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n\r\n", length);
-        Tcl_DStringAppend(&httpPtr->ds, bodyString, length);
     } else {
         Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
     }
@@ -1063,6 +1106,7 @@ HttpAppendRawBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t outSize)
 
     if (httpPtr->spoolFd > 0) {
 	ssize_t written = ns_write(httpPtr->spoolFd, buffer, outSize);
+
 	if (written == -1) {
 	    Ns_Log(Error, "task: spooling of received content failed");
 	    status = TCL_ERROR;
@@ -1139,6 +1183,7 @@ HttpClose(Ns_HttpTask *httpPtr)
     if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
     if (httpPtr->spoolFileName != NULL) {ns_free(httpPtr->spoolFileName);}
     if (httpPtr->spoolFd > 0)           {(void) ns_close(httpPtr->spoolFd);}
+    if (httpPtr->bodyFileFd > 0)        {(void) ns_close(httpPtr->bodyFileFd);}
     if (httpPtr->compress != NULL)      {
 	(void) Ns_InflateEnd(httpPtr->compress);
 	ns_free(httpPtr->compress);
@@ -1198,25 +1243,64 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
     NS_NONNULL_ASSERT(arg != NULL);
 
     httpPtr = arg;
-    
+
     switch (why) {
     case NS_SOCK_INIT:
 	Ns_TaskCallback(task, NS_SOCK_WRITE, &httpPtr->timeout);
 	return;
 
     case NS_SOCK_WRITE:
-        n = ns_send(sock, httpPtr->next, httpPtr->len, 0);
-    	if (n < 0) {
-	    httpPtr->error = "send failed";
-	} else {
-    	    httpPtr->next += n;
-    	    httpPtr->len -= (size_t)n;
-    	    if (httpPtr->len == 0u) {
-            	Tcl_DStringTrunc(&httpPtr->ds, 0);
-	    	Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
-	    }
-	    return;
-	}
+        /*
+         * Send the request data either from the DString, or from a file. The
+         * latter case is flagged via member sendSpoolMode.
+         */
+        if (httpPtr->sendSpoolMode == NS_TRUE) {
+            Ns_Log(Ns_LogTaskDebug, "HttpProc read data from file, buffer size %d", Tcl_DStringLength(&httpPtr->ds));
+            n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, 32768);
+            if (n < 0) {
+                httpPtr->error = "read failed";
+            } else {
+                Ns_Log(Ns_LogTaskDebug, "HttpProc send read data from file");
+                n = ns_send(sock, httpPtr->ds.string, n, 0);
+                if (n < 0) {
+                    httpPtr->error = "send failed";
+                } else {
+                    if (n < 32768) {
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data spooled, switch to read reply");
+                        Tcl_DStringTrunc(&httpPtr->ds, 0);
+                        Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
+                    }
+                    return;
+                }
+            }
+        } else {
+            n = ns_send(sock, httpPtr->next, httpPtr->len, 0);            
+            if (n < 0) {
+                httpPtr->error = "send failed";
+            } else {
+                httpPtr->next += n;
+                httpPtr->len -= (size_t)n;
+                Ns_Log(Ns_LogTaskDebug, "HttpProc sent %ld bytes from memory, remaining %lu", n, httpPtr->len);
+
+                if (httpPtr->len == 0u) {
+                    /*
+                     * All data from ds has been sent. Check, if the is a file to
+                     * append, and if yes, which to sendSpoolMode.
+                     */
+                    Tcl_DStringTrunc(&httpPtr->ds, 0);
+                    if (httpPtr->bodyFileFd > 0) {
+                        httpPtr->sendSpoolMode = NS_TRUE;
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d", httpPtr->bodyFileFd);
+                        Tcl_DStringTrunc(&httpPtr->ds, 32768);
+                    } else {
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
+                        Tcl_DStringTrunc(&httpPtr->ds, 0);
+                        Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
+                    }
+                }
+                return;
+            }
+        }
 	break;
 
     case NS_SOCK_READ:

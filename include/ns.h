@@ -106,33 +106,33 @@ typedef int bool;
  * public interface in e.g. Ns_ConnWriteVChars() or Ns_ConnWriteData()
  */
 
-#define NS_CONN_CLOSED             0x001U /* The underlying socket is closed */
-#define NS_CONN_SKIPHDRS           0x002U /* Client is HTTP/0.9, do not send HTTP headers  */
-#define NS_CONN_SKIPBODY           0x004U /* HTTP HEAD request, do not send body */
-#define NS_CONN_READHDRS           0x008U /* Unused */
-#define NS_CONN_SENTHDRS           0x010U /* Response headers have been sent to client */
-#define NS_CONN_WRITE_ENCODED      0x020U /* Character data mode requested mime-type header. */
-#define NS_CONN_STREAM             0x040U /* Data is to be streamed when ready.  */
-#define NS_CONN_STREAM_CLOSE       0x080U /* Writer Stream should be closed.  */
-#define NS_CONN_CHUNK              0x100U /* Streamed data is to be chunked. */
-#define NS_CONN_SENT_LAST_CHUNK    0x200U /* Marks that the last chunk was sent in chunked mode */
-#define NS_CONN_SENT_VIA_WRITER    0x400U /* Response data has been sent via writer thread */
-#define NS_CONN_SOCK_CORKED        0x800U /* underlying socket is corked */
-#define NS_CONN_ZIPACCEPTED       0x1000U /* the request accepts zip encoding */
-#define NS_CONN_ENTITYTOOLARGE    0x2000U /* the sent Entity was too large */
-#define NS_CONN_REQUESTURITOOLONG 0x4000U /* request-URI too long */
-#define NS_CONN_LINETOOLONG       0x8000U /* request Header line too long */
+#define NS_CONN_CLOSED             0x001u /* The underlying socket is closed */
+#define NS_CONN_SKIPHDRS           0x002u /* Client is HTTP/0.9, do not send HTTP headers  */
+#define NS_CONN_SKIPBODY           0x004u /* HTTP HEAD request, do not send body */
+#define NS_CONN_READHDRS           0x008u /* Unused */
+#define NS_CONN_SENTHDRS           0x010u /* Response headers have been sent to client */
+#define NS_CONN_WRITE_ENCODED      0x020u /* Character data mode requested mime-type header. */
+#define NS_CONN_STREAM             0x040u /* Data is to be streamed when ready.  */
+#define NS_CONN_STREAM_CLOSE       0x080u /* Writer Stream should be closed.  */
+#define NS_CONN_CHUNK              0x100u /* Streamed data is to be chunked. */
+#define NS_CONN_SENT_LAST_CHUNK    0x200u /* Marks that the last chunk was sent in chunked mode */
+#define NS_CONN_SENT_VIA_WRITER    0x400u /* Response data has been sent via writer thread */
+#define NS_CONN_SOCK_CORKED        0x800u /* underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED       0x1000u /* the request accepts zip encoding */
+#define NS_CONN_ENTITYTOOLARGE    0x2000u /* the sent Entity was too large */
+#define NS_CONN_REQUESTURITOOLONG 0x4000u /* request-URI too long */
+#define NS_CONN_LINETOOLONG       0x8000u /* request Header line too long */
 
 /*
  * Coockie creation options.  For NaviServer and the current set of NaviServer
  * modules, these constants would not be needed here. As long we have
  * Ns_ConnSetCookieEx() in the public interface, we these flags here as well.
  */
-#define NS_COOKIE_SECURE           0x01U  /* The cookie should only be sent using HTTPS */
-#define NS_COOKIE_SCRIPTABLE       0x02U  /* Available to javascript on the client. */
-#define NS_COOKIE_DISCARD          0x04U  /* Discard the cookie at the end of the current session. */
-#define NS_COOKIE_REPLACE          0x08U  /* Replace the cookie in the output headers. */
-#define NS_COOKIE_EXPIRENOW        0x10U  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_SECURE           0x01u  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE       0x02u  /* Available to javascript on the client. */
+#define NS_COOKIE_DISCARD          0x04u  /* Discard the cookie at the end of the current session. */
+#define NS_COOKIE_REPLACE          0x08u  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_EXPIRENOW        0x10u  /* Replace the cookie in the output headers. */
 
 /*
  * The following are the valid attributes of a scheduled event. For NaviServer
@@ -140,20 +140,20 @@ typedef int bool;
  * needed here. As long Ns_ScheduleProcEx() is in the public interface and
  * uses the flags, we these constants here as well.
  */
-#define NS_SCHED_THREAD            0x01U /* Ns_SchedProc will run in detached thread */
-#define NS_SCHED_ONCE              0x02U /* Call cleanup proc after running once */
-#define NS_SCHED_DAILY             0x04U /* Event is scheduled to occur daily */
-#define NS_SCHED_WEEKLY            0x08U /* Event is scheduled to occur weekly */
-#define NS_SCHED_PAUSED            0x10U /* Event is currently paused */
-#define NS_SCHED_RUNNING           0x20U /* Event is currently running, perhaps in detached thread */
+#define NS_SCHED_THREAD            0x01u /* Ns_SchedProc will run in detached thread */
+#define NS_SCHED_ONCE              0x02u /* Call cleanup proc after running once */
+#define NS_SCHED_DAILY             0x04u /* Event is scheduled to occur daily */
+#define NS_SCHED_WEEKLY            0x08u /* Event is scheduled to occur weekly */
+#define NS_SCHED_PAUSED            0x10u /* Event is currently paused */
+#define NS_SCHED_RUNNING           0x20u /* Event is currently running, perhaps in detached thread */
 
 /*
  * The following are valid options when manipulating
  * URL specific data.
  */
-#define NS_OP_NOINHERIT            0x02U /* Match URL exactly */
-#define NS_OP_NODELETE             0x04U /* Do call previous procs Ns_OpDeleteProc */
-#define NS_OP_RECURSE              0x08U /* Also destroy registered procs below given URL */
+#define NS_OP_NOINHERIT            0x02u /* Match URL exactly */
+#define NS_OP_NODELETE             0x04u /* Do call previous procs Ns_OpDeleteProc */
+#define NS_OP_RECURSE              0x08u /* Also destroy registered procs below given URL */
 
 
 
@@ -161,10 +161,10 @@ typedef int bool;
  * The following types of filters may be registered.
  */
 typedef enum {
-    NS_FILTER_PRE_AUTH =        0x01U, /* Runs before any Ns_UserAuthProc */
-    NS_FILTER_POST_AUTH =       0x02U, /* Runs after any Ns_UserAuthProc */
-    NS_FILTER_TRACE =           0x04U, /* Runs after Ns_OpProc completes successfully */
-    NS_FILTER_VOID_TRACE =      0x08U  /* Run ns_register_trace procs after previous traces */
+    NS_FILTER_PRE_AUTH =        0x01u, /* Runs before any Ns_UserAuthProc */
+    NS_FILTER_POST_AUTH =       0x02u, /* Runs after any Ns_UserAuthProc */
+    NS_FILTER_TRACE =           0x04u, /* Runs after Ns_OpProc completes successfully */
+    NS_FILTER_VOID_TRACE =      0x08u  /* Run ns_register_trace procs after previous traces */
 } Ns_FilterType;
 
 
@@ -908,11 +908,13 @@ typedef struct {
     Ns_Time            timeout;
     Ns_Time            stime;
     Ns_Time            etime;
+    bool               sendSpoolMode;    /* flag, whether a file is to be transmitted via bodyFileFd */
+    int                bodyFileFd;       /* fd of a file which is sent as body */
     Tcl_DString        ds;
 } Ns_HttpTask;
 
-#define NS_HTTP_FLAG_DECOMPRESS    0x0001U
-#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002U
+#define NS_HTTP_FLAG_DECOMPRESS    0x0001u
+#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002u
 #define NS_HTTP_FLAG_GUNZIP        (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 
 
@@ -1412,6 +1414,9 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr);
 /*
  * fastpath.c:
  */
+NS_EXTERN bool
+Ns_Stat(const char *path, struct stat *stPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *file)

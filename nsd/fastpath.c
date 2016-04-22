@@ -60,9 +60,6 @@ static void DecrEntry(File *filePtr)
 static bool UrlIs(const char *server, const char *url, int isDir)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static bool FastStat(const char *path, struct stat *stPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 static int  FastGetRestart(Ns_Conn *conn, const char *page)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -190,7 +187,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *f
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
 
-    if (FastStat(file, &connPtr->fileInfo) == NS_FALSE) {
+    if (Ns_Stat(file, &connPtr->fileInfo) == NS_FALSE) {
         return Ns_ConnReturnNotFound(conn);
     }
 
@@ -233,7 +230,7 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
     Ns_DStringInit(&ds);
 
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK
-        || FastStat(ds.string, &connPtr->fileInfo) == NS_FALSE) {
+        || Ns_Stat(ds.string, &connPtr->fileInfo) == NS_FALSE) {
         goto notfound;
     }
 
@@ -496,7 +493,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 	Tcl_DStringAppend(dsPtr, ".gz", 3);
 	gzFileName = Tcl_DStringValue(dsPtr);
 
-	if (FastStat(gzFileName, &gzStat) == NS_TRUE) {
+	if (Ns_Stat(gzFileName, &gzStat) == NS_TRUE) {
 	    Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
 
 	    /*
@@ -512,7 +509,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 		 */
 		result = GzipFile(Ns_GetConnInterp(conn), file, gzFileName);
 		if (result == NS_OK) {
-		    (void)FastStat(gzFileName, &gzStat);
+		    (void)Ns_Stat(gzFileName, &gzStat);
 		}
 	    }
 	    if (gzStat.st_mtime >= connPtr->fileInfo.st_mtime) {
@@ -675,7 +672,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 /*
  *----------------------------------------------------------------------
  *
- * FastStat --
+ * Ns_Stat --
  *
  *      Stat a file, logging an error on unexpected results.
  *
@@ -688,8 +685,8 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
  *----------------------------------------------------------------------
  */
 
-static bool
-FastStat(const char *path, struct stat *stPtr)
+bool
+Ns_Stat(const char *path, struct stat *stPtr)
 {
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(stPtr != NULL);
