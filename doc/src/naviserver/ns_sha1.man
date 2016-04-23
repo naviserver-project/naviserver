@@ -16,18 +16,18 @@ SHA1 generates an almost-unique 160-bit signature for a text.
 
 [para]
 [arg string]
-String from which hash should be produced
+String from which hash should be produced.
 
 [list_end]
 
 [example_begin]
-
-oss2:nscp 2> ns_sha1 test   
-A94A8FE5CCB19BA61C4C0873D391E987982FBBD3
-
+   
+   nscp 2> ns_sha1 test   
+   A94A8FE5CCB19BA61C4C0873D391E987982FBBD3
+   
 [example_end]
 
-[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_sha2]
+[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_sha2 ns_hmac_sha2]
 [keywords encoding crypt]
 
 [manpage_end]

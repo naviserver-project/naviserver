@@ -21,11 +21,13 @@ String from which hash should be produced
 [list_end]
 
 [example_begin]
-% ns_md5 test   
-098F6BCD4621D373CADE4E832627B4F6
+   
+   nscp 2> ns_md5 test   
+   098F6BCD4621D373CADE4E832627B4F6
+   
 [example_end]
 
-[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_sha1 ns_rand]
+[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_sha1 ns_rand ns_sha2 ns_hmac_sha2]
 [keywords encoding crypt]
 
 [manpage_end]
