@@ -40,7 +40,7 @@ ns_cache_create ns:memoize \
 #
 # ns_memoize --
 #
-#	Evaluate the given script or proc and cache the result. Future calls
+#   Evaluate the given script or proc and cache the result. Future calls
 #   will return the cached value (if not expired).
 #
 #   See ns_cache_eval for details.
@@ -70,7 +70,7 @@ proc ns_memoize {args} {
 #
 # ns_memoize_flush --
 #
-#	Flush memoized results which match given glob pattern.
+#    Flush memoized results which match given glob pattern.
 #
 # Results:
 #   Number of results flushed.
@@ -91,7 +91,7 @@ proc ns_memoize_flush {{pattern ""}} {
 #
 # ns_memoize_stats --
 #
-#	Returns the stats for the memoize cache.
+#    Returns the stats for the memoize cache.
 #
 # Results:
 #   List of stats in array get format.
@@ -104,4 +104,8 @@ proc ns_memoize_stats {} {
     return [ns_cache_stats ns:memoize]
 }
 
-# EOF 
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

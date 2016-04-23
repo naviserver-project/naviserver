@@ -183,23 +183,24 @@ proc ns_gzipfile {source target} {
     set gzipCmd [ns_config ns/fastpath gzip_cmd]
     if {$gzipCmd eq ""} {error "no ns/fastpath gzip_cmd configured"}
     switch [file extension $source] {
-	.css {set minifyCmd [ns_config ns/fastpath minify_css_cmd]}
-	.js  {set minifyCmd [ns_config ns/fastpath minify_js_cmd]}
-	default {set minifyCmd ""}
+        .css {set minifyCmd [ns_config ns/fastpath minify_css_cmd]}
+        .js  {set minifyCmd [ns_config ns/fastpath minify_js_cmd]}
+        default {set minifyCmd ""}
     }
     if {$minifyCmd ne ""} {
-	if {[catch {
-	    exec {*}$minifyCmd < $source | {*}$gzipCmd > $target
-	} errorMsg]} {
-	    ns_log warning "mininfy returned error: $errorMsg"
-	    exec {*}$gzipCmd < $source > $target
-	}
+        if {[catch {
+            exec {*}$minifyCmd < $source | {*}$gzipCmd > $target
+        } errorMsg]} {
+            ns_log warning "mininfy returned error: $errorMsg"
+            exec {*}$gzipCmd < $source > $target
+        }
     } else {
-	exec {*}$gzipCmd < $source > $target
+        exec {*}$gzipCmd < $source > $target
     }
 }
 
-
-
-
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

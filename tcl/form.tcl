@@ -122,7 +122,7 @@ proc ns_querygetall {key {def_result ""}} {
         }
     }
 
-     return $result
+    return $result
 }
 
 
@@ -193,43 +193,43 @@ proc ns_getform {{charset ""}}  {
 
     if {![info exists ::_ns_form]} {
 
-	set tmpfile [ns_conn contentfile]
-	if { $tmpfile eq "" } {
-	    #
-	    # Get the content via memory (indirectly via [ns_conn
-	    # content], the command [ns_conn form] does this)
-	    #
-	    set ::_ns_form [ns_conn form]
-	    foreach {file} [ns_conn files] {
-		set offs [ns_conn fileoffset $file]
-		set lens [ns_conn filelength $file]
-		set hdrs [ns_conn fileheaders $file]
-		foreach off $offs len $lens hdr $hdrs {
-		    set fp ""
-		    while {$fp eq {}} {
-			set tmpfile [ns_mktemp]
-			set fp [ns_openexcl $tmpfile]
-		    }
-		    ns_atclose [list file delete $tmpfile]
-		    fconfigure $fp -translation binary 
-		    ns_conn copy $off $len $fp
-		    close $fp
+        set tmpfile [ns_conn contentfile]
+        if { $tmpfile eq "" } {
+            #
+            # Get the content via memory (indirectly via [ns_conn
+            # content], the command [ns_conn form] does this)
+            #
+            set ::_ns_form [ns_conn form]
+            foreach {file} [ns_conn files] {
+                set offs [ns_conn fileoffset $file]
+                set lens [ns_conn filelength $file]
+                set hdrs [ns_conn fileheaders $file]
+                foreach off $offs len $lens hdr $hdrs {
+                    set fp ""
+                    while {$fp eq {}} {
+                        set tmpfile [ns_mktemp]
+                        set fp [ns_openexcl $tmpfile]
+                    }
+                    ns_atclose [list file delete $tmpfile]
+                    fconfigure $fp -translation binary 
+                    ns_conn copy $off $len $fp
+                    close $fp
 
-		    lappend ::_ns_formfiles($file) $tmpfile
-		    set type [ns_set get $hdr content-type]
-		    ns_set put $::_ns_form $file.content-type $type
-		    # NB: Insecure, access via ns_getformfile.
-		    ns_set put $::_ns_form $file.tmpfile $tmpfile
-		}
-	    }
-	} else {
-	    #
-	    # Get the content via external content file
-	    #
-	    set ::_ns_form [ns_set create]
-	    ns_parseformfile $tmpfile $::_ns_form [ns_set iget [ns_conn headers] content-type]
-	    ns_atclose [list file delete $tmpfile]
-	}
+                    lappend ::_ns_formfiles($file) $tmpfile
+                    set type [ns_set get $hdr content-type]
+                    ns_set put $::_ns_form $file.content-type $type
+                    # NB: Insecure, access via ns_getformfile.
+                    ns_set put $::_ns_form $file.tmpfile $tmpfile
+                }
+            }
+        } else {
+            #
+            # Get the content via external content file
+            #
+            set ::_ns_form [ns_set create]
+            ns_parseformfile $tmpfile $::_ns_form [ns_set iget [ns_conn headers] content-type]
+            ns_atclose [list file delete $tmpfile]
+        }
     }
 
     return $::_ns_form
@@ -362,122 +362,122 @@ proc ns_parseformfile { file form contentType } {
     set boundary "--$b"
 
     while { ![eof $fp] } {
-	# skip past the next boundary line
-	if { ![string match $boundary* [string trim [gets $fp]]] } {
-	    continue
-	}
+        # skip past the next boundary line
+        if { ![string match $boundary* [string trim [gets $fp]]] } {
+            continue
+        }
 
-	#
-	# Fetch the disposition line and field name.
-	#
-	set disposition [string trim [gets $fp]]
-	if { $disposition eq "" } {
-	    break
-	}
+        #
+        # Fetch the disposition line and field name.
+        #
+        set disposition [string trim [gets $fp]]
+        if { $disposition eq "" } {
+            break
+        }
 
-	set disposition [split [encoding convertfrom utf-8 $disposition] \;]
-	set name [string trim [lindex [split [lindex $disposition 1] =] 1] \"]
+        set disposition [split [encoding convertfrom utf-8 $disposition] \;]
+        set name [string trim [lindex [split [lindex $disposition 1] =] 1] \"]
 
-	#
-	# Fetch and save any field headers (usually just content-type
-	# for files).
-	#
-	set content_type ""
-	
-	while { ![eof $fp] } {
-	    set line [string trim [gets $fp]]
-	    if { $line eq "" } {
-		break
-	    }
-	    set header [split [encoding convertfrom utf-8 $line] :]
-	    set key [string tolower [string trim [lindex $header 0]]]
-	    set value [string trim [lindex $header 1]]
+        #
+        # Fetch and save any field headers (usually just content-type
+        # for files).
+        #
+        set content_type ""
+        
+        while { ![eof $fp] } {
+            set line [string trim [gets $fp]]
+            if { $line eq "" } {
+                break
+            }
+            set header [split [encoding convertfrom utf-8 $line] :]
+            set key [string tolower [string trim [lindex $header 0]]]
+            set value [string trim [lindex $header 1]]
 
-	    if {$key eq "content-type"} {
-		#
-		# Remember content_type to decide later, if content is
-		# binary.
-		#
-		set content_type $value
-	    }
-
-	    ns_set put $form $name.$key $value
-	}
-
-	if { [llength $disposition] == 3 } {
-	    #
-	    # Uploaded file -- save the original filename as the value
-	    #
-	    set filename [string trim [lindex [split [lindex $disposition 2] =] 1] \"]
-	    ns_set put $form $name $filename
-
-	    #
-	    # Read lines of data until another boundary is found.
-	    #
-	    set start [tell $fp]
-	    set end $start
-	    
-	    while { ![eof $fp] } {
-		if { [string match $boundary* [string trim [gets $fp]]] } {
-		    break
-		}
-		set end [tell $fp]
-	    }
-	    set length [expr {$end - $start - 2}]
-
-	    # Create a temp file for the content, which will be deleted
-	    # when the connection close.  ns_openexcl can fail, hence why 
-	    # we keep spinning.
-
-	    set tmp ""
-	    while { $tmp eq "" } {
-		set tmpfile [ns_mktemp]
-		set tmp [ns_openexcl $tmpfile]
-	    }
-
-	    catch {fconfigure $tmp -encoding binary -translation binary}
-
-	    if { $length > 0 } {
-		seek $fp $start
-		fcopy $fp $tmp -size $length
-	    }
-
-	    close $tmp
-	    seek $fp $end
-	    ns_set put $form $name.tmpfile $tmpfile
-
-            if { [ns_conn isconnected] } {
-	      ns_atclose [list file delete $tmpfile]
+            if {$key eq "content-type"} {
+                #
+                # Remember content_type to decide later, if content is
+                # binary.
+                #
+                set content_type $value
             }
 
-	} else {
-	    #
-	    # Ordinary field - read lines until next boundary
-	    #
-	    set first 1
-	    set value ""
-	    set start [tell $fp]
+            ns_set put $form $name.$key $value
+        }
 
-	    while { [gets $fp line] >= 0 } {
-		set line [string trimright $line \r]
-		if { [string match $boundary* $line] } {
-		    break
-		}
-		if { $first } {
-		    set first 0
-		} else {
-		    append value \n
-		}
-		append value $line
-		set start [tell $fp]
-	    }
-	    seek $fp $start
-	    
-	    if {$content_type eq "" || [string match text/* $content_type]} {
-		set value [encoding convertfrom utf-8 $value]
-	    }
-	    ns_set put $form $name $value
-	}
+        if { [llength $disposition] == 3 } {
+            #
+            # Uploaded file -- save the original filename as the value
+            #
+            set filename [string trim [lindex [split [lindex $disposition 2] =] 1] \"]
+            ns_set put $form $name $filename
+
+            #
+            # Read lines of data until another boundary is found.
+            #
+            set start [tell $fp]
+            set end $start
+            
+            while { ![eof $fp] } {
+                if { [string match $boundary* [string trim [gets $fp]]] } {
+                    break
+                }
+                set end [tell $fp]
+            }
+            set length [expr {$end - $start - 2}]
+
+            # Create a temp file for the content, which will be deleted
+            # when the connection close.  ns_openexcl can fail, hence why 
+            # we keep spinning.
+
+            set tmp ""
+            while { $tmp eq "" } {
+                set tmpfile [ns_mktemp]
+                set tmp [ns_openexcl $tmpfile]
+            }
+
+            catch {fconfigure $tmp -encoding binary -translation binary}
+
+            if { $length > 0 } {
+                seek $fp $start
+                fcopy $fp $tmp -size $length
+            }
+
+            close $tmp
+            seek $fp $end
+            ns_set put $form $name.tmpfile $tmpfile
+
+            if { [ns_conn isconnected] } {
+                ns_atclose [list file delete $tmpfile]
+            }
+
+        } else {
+            #
+            # Ordinary field - read lines until next boundary
+            #
+            set first 1
+            set value ""
+            set start [tell $fp]
+
+            while { [gets $fp line] >= 0 } {
+                set line [string trimright $line \r]
+                if { [string match $boundary* $line] } {
+                    break
+                }
+                if { $first } {
+                    set first 0
+                } else {
+                    append value \n
+                }
+                append value $line
+                set start [tell $fp]
+            }
+            seek $fp $start
+            
+            if {$content_type eq "" || [string match text/* $content_type]} {
+                set value [encoding convertfrom utf-8 $value]
+            }
+            ns_set put $form $name $value
+        }
     }
     close $fp
 }

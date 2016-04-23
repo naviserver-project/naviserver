@@ -31,7 +31,7 @@
 #
 # charsets.tcl --
 #
-#	Routines for working with character set encodings
+#   Routines for working with character set encodings
 #   for support of internationalized character sets.
 #
 
@@ -39,13 +39,13 @@
 #
 # ns_urlcharset -
 #
-#	Set the current connections' urlcharset.
+#    Set the current connections' urlcharset.
 #
 # Results:
 #   Returns the encoding value for the specified charset.
 #
 # Side effects:
-#	If the connection's urlencoding value is being changed
+#   If the connection's urlencoding value is being changed
 #   then flush any form set cached locally (ns_conn will
 #   do the same).
 #
@@ -66,14 +66,14 @@ proc ns_urlcharset {charset} {
 #
 # ns_setformencoding --
 #
-#	Set the 'form encoding' of the current connection.
+#   Set the 'form encoding' of the current connection.
 #   This turns similar to ns_urlcharset.
 #
 # Results:
-#	None.
+#    None.
 #
 # Side effects:
-#	See ns_urlcharset.
+#    See ns_urlcharset.
 #
 
 proc ns_setformencoding {charset} {
@@ -84,17 +84,16 @@ proc ns_setformencoding {charset} {
 #
 # ns_formfieldcharset --
 #
-#	This function will examine the incoming form for a field
-#   with the given name, which is expected to contain the
-#   character set that the data is encoded.  If this field
-#   is found, use that charset to set the urlencoding for the
-#   current connection.
+#   This function will examine the incoming form for a field with the
+#   given name, which is expected to contain the character set that
+#   the data is encoded.  If this field is found, use that charset to
+#   set the urlencoding for the current connection.
 #
 # Results:
-#	None.
+#    None.
 #
 # Side effects:
-#	Sets the urlencoding for the current connection.
+#    Sets the urlencoding for the current connection.
 #
 
 proc ns_formfieldcharset {name} {
@@ -122,17 +121,17 @@ proc ns_formfieldcharset {name} {
 #
 # ns_cookiecharset --
 #
-#	This function will examine the incoming request for a cookie
+#   This function will examine the incoming request for a cookie
 #   with the given name, which is expected to contain the
 #   character set that the data is encoded.  If this cookie
 #   is found, use that charset to set the urlencoding for the
 #   current connection.
 #
 # Results:
-#	None.
+#    None.
 #
 # Side effects:
-#	Sets the urlencoding for the current connection.
+#    Sets the urlencoding for the current connection.
 #
 
 proc ns_cookiecharset {name} {
@@ -156,12 +155,12 @@ proc ns_cookiecharset {name} {
 #
 # ns_encodingfortype --
 #
-#	Parses the given mime-type string to determine the character
+#   Parses the given mime-type string to determine the character
 #   encoding implied by it.  Will use the configured OutputCharset
 #   if no charset is explicitly specified in the given string.
 #
 # Results:
-#	Encoding name
+#    Encoding name
 #
 # Side effects:
 #   None.
@@ -185,15 +184,15 @@ proc ns_encodingfortype {type} {
 #
 # ns_choosecharset --
 #
-#	Performs an analysis of the request's accepted charsets, against
+#   Performs an analysis of the request's accepted charsets, against
 #   either the given charset list, or the configured default preferred
 #   character set list (ns/parameters/PreferredCharsets).
 #
 # Results:
-#	One character set name.
+#    One character set name.
 #
 # Side effects:
-#	None.
+#    None.
 #
 
 proc ns_choosecharset {args} {
@@ -320,13 +319,13 @@ proc ns_choosecharset {args} {
 #
 # _ns_multipartformdata_p --
 #
-#	Helper to check whether current request has multi-part form data.
+#    Helper to check whether current request has multi-part form data.
 #
 # Results:
-#	True, if form is a multi-part post.
+#    True, if form is a multi-part post.
 #
 # Side effects:
-#	None.
+#    None.
 #
 
 proc _ns_multipartformdata_p {} {
@@ -337,4 +336,8 @@ proc _ns_multipartformdata_p {} {
     return [expr {[ns_conn method] eq {POST} && [string match $glob $type]}]
 }
 
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

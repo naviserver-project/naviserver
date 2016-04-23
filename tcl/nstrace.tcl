@@ -376,29 +376,29 @@ ns_runonce {
             # XOTcl 1.* and the Next Scripting Framework (i.e. XOTcl
             # 2.0 and NX).
             #
-	    set nsps [list]
-	    if {[info commands ::nsf::object::exists] ne ""} {
-	      # NX, XOTcl 2
-	      set xotcl 2
-	      foreach n [namespaces] {
-		if {$n eq "::nsf" 
-		    || [string match "::nsf::*" $n]
-		    || [::nsf::object::exists $n]} { continue }
-		lappend nsps $n
-	      }
-	    } elseif {[info commands ::xotcl::Object] ne ""} {
-	      # XOTcl 1
-	      set xotcl 1
-	      foreach n [namespaces] {
-		if {[string match "::xotcl*" $n]
-		    || [::xotcl::Object isobject $n]} { continue} 
-		lappend nsps $n
-	      }
-	    } else {
-	      set xotcl 0
-	      set nsps [namespaces]
-	    }
-	  
+            set nsps [list]
+            if {[info commands ::nsf::object::exists] ne ""} {
+                # NX, XOTcl 2
+                set xotcl 2
+                foreach n [namespaces] {
+                    if {$n eq "::nsf" 
+                        || [string match "::nsf::*" $n]
+                        || [::nsf::object::exists $n]} { continue }
+                    lappend nsps $n
+                }
+            } elseif {[info commands ::xotcl::Object] ne ""} {
+                # XOTcl 1
+                set xotcl 1
+                foreach n [namespaces] {
+                    if {[string match "::xotcl*" $n]
+                        || [::xotcl::Object isobject $n]} { continue} 
+                    lappend nsps $n
+                }
+            } else {
+                set xotcl 0
+                set nsps [namespaces]
+            }
+            
             #puts stderr "remaining namespaces [join [lsort $nsps] \n]"
 
             # Serialize the remaining namespaces
@@ -423,22 +423,22 @@ ns_runonce {
             #
             foreach cmd $scripts {
                 if {$cmd eq {rename}} {
-                  append script [script::_$cmd] \n
+                    append script [script::_$cmd] \n
                 }
             }
 
-	    if {$xotcl > 0} {
-	      #
-	      # Serialize XOTcl/NX content
-	      # 
-	      if {[catch {::Serializer all} objects]} {
-		ns_log notice "NX/XOTcl extension not loaded; will not copy objects\
-              		(error: $objects; $::errorInfo)."
-		set objects ""
-	      } else {
-		append script \n "namespace import -force ::xotcl::*" \n $objects \n
-	      }
-	    }
+            if {$xotcl > 0} {
+                #
+                # Serialize XOTcl/NX content
+                # 
+                if {[catch {::Serializer all} objects]} {
+                    ns_log notice "NX/XOTcl extension not loaded; will not copy objects\
+                      (error: $objects; $::errorInfo)."
+                    set objects ""
+                } else {
+                    append script \n "namespace import -force ::xotcl::*" \n $objects \n
+                }
+            }
 
             #
             # Import commands from other namespaces
@@ -462,10 +462,10 @@ ns_runonce {
             # Script is output to file mainly for
             # interactive debugging purposes. The first line
             # gives you always the latest version, the second
-	    # one is useful for debugging e.g. ns_eval.
-	  
-	    #if {1} {_savescript /tmp/__ns_blueprint.tcl $script}
-	    #if {1} {_savescript /tmp/__ns_blueprint[clock format [clock seconds] -format %d-%b-%Y-%H:%M:%S].tcl $script}
+            # one is useful for debugging e.g. ns_eval.
+            
+            #if {1} {_savescript /tmp/__ns_blueprint.tcl $script}
+            #if {1} {_savescript /tmp/__ns_blueprint[clock format [clock seconds] -format %d-%b-%Y-%H:%M:%S].tcl $script}
 
             if {$file ne ""} {
                 _savescript $file $script
@@ -574,21 +574,21 @@ ns_runonce {
 
         proc getentry {store var} {
             variable epoch
-	    
-	    if {[info exists ::errorInfo]} {set savedErrorInfo $::errorInfo}
-	    if {[info exists ::errorCode]} {set savedErrorCode $::errorCode}
+            
+            if {[info exists ::errorInfo]} {set savedErrorInfo $::errorInfo}
+            if {[info exists ::errorCode]} {set savedErrorCode $::errorCode}
 
             if {[catch {nsv_set nstrace-${store}-${epoch} $var} val]} {
-		if {[info exists savedErrorInfo]} {
-		    set ::errorInfo $savedErrorInfo
-		} else {
-		    unset -nocomplain ::errorInfo
-		}
-		if {[info exists savedErrorCode]} {
-		    set ::errorCode $savedErrorCode
-		} else {
-		    unset -nocomplain ::errorCode
-		}
+                if {[info exists savedErrorInfo]} {
+                    set ::errorInfo $savedErrorInfo
+                } else {
+                    unset -nocomplain ::errorInfo
+                }
+                if {[info exists savedErrorCode]} {
+                    set ::errorCode $savedErrorCode
+                } else {
+                    unset -nocomplain ::errorCode
+                }
                 set val ""
             }
             return $val
@@ -645,50 +645,50 @@ ns_runonce {
             variable nsplist
             lappend nsplist $top
             foreach nsp [namespace children $top] {
-		#if {$nsp eq "::tcl"} {continue}
+                #if {$nsp eq "::tcl"} {continue}
                 _namespaces $nsp
             }
         }
 
-	#
-	# helper proc for ensembles
-	# reconfigures rather than recreates existing ensembles
-	# to prevent loss of bytecoding
-	# 
+        #
+        # helper proc for ensembles
+        # reconfigures rather than recreates existing ensembles
+        # to prevent loss of bytecoding
+        # 
 
-	proc _create_or_config_ensemble {cmd cfg} {
-	    if {[info commands $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
-	       uplevel 1 [list ::namespace ensemble configure $cmd {*}$cfg]
-	    } else {
-	       uplevel 1 [list ::namespace ensemble create -command $cmd {*}$cfg]
-	    }
-	}
-
-	#
-	# helper proc for ensemble serialization
-	#
-	# Tcl versions before 8.5 do not have a namespace ensemble
-	# command.  NaviServer does not support on the Tcl layer older
-	# versions than 8.5, but if someone wants to check e.g. some
-	# basic properties with a Tcl 8.4 version, it should not break
-	# due to this small change. So we guard the definition of the
-	# ensemble serialization by checking Tcl's version number.
-	
-	if {$::tcl_version >= 8.5} {
-	    proc _getensemble {cmd} {
-		if {[namespace ensemble exists $cmd]} {
-		    set _cfg [namespace ensemble configure $cmd]
-		    set _enns [dict get $_cfg -namespace]
-		    dict unset _cfg -namespace
-		    set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
-		    return [list namespace eval $_enns $_encmd]\n
-		}
-	    }
-	} else {
-	    proc _getensemble {cmd} {
-		# Do nothing.
+        proc _create_or_config_ensemble {cmd cfg} {
+            if {[info commands $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
+                uplevel 1 [list ::namespace ensemble configure $cmd {*}$cfg]
+            } else {
+                uplevel 1 [list ::namespace ensemble create -command $cmd {*}$cfg]
             }
-	}
+        }
+
+        #
+        # helper proc for ensemble serialization
+        #
+        # Tcl versions before 8.5 do not have a namespace ensemble
+        # command.  NaviServer does not support on the Tcl layer older
+        # versions than 8.5, but if someone wants to check e.g. some
+        # basic properties with a Tcl 8.4 version, it should not break
+        # due to this small change. So we guard the definition of the
+        # ensemble serialization by checking Tcl's version number.
+        
+        if {$::tcl_version >= 8.5} {
+            proc _getensemble {cmd} {
+                if {[namespace ensemble exists $cmd]} {
+                    set _cfg [namespace ensemble configure $cmd]
+                    set _enns [dict get $_cfg -namespace]
+                    dict unset _cfg -namespace
+                    set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
+                    return [list namespace eval $_enns $_encmd]\n
+                }
+            }
+        } else {
+            proc _getensemble {cmd} {
+                # Do nothing.
+            }
+        }
 
         #
         # Generates scipts to re-generate namespace definition.
@@ -718,19 +718,19 @@ ns_runonce {
             #    namespace eval $nsp {}
             # entry by adding the space.
             append script " "
-	    
-	    #
-	    # Keep the variables of all namespaces except these of "::"
-	    #
-	    if {$nsp ne "::"} {
-		foreach vn [info vars ${nsp}::*] {
-		    append script [_varscript $vn]
-		}
-	    }
+            
+            #
+            # Keep the variables of all namespaces except these of "::"
+            #
+            if {$nsp ne "::"} {
+                foreach vn [info vars ${nsp}::*] {
+                    append script [_varscript $vn]
+                }
+            }
 
-	    #
-	    # Save procs and command of all namespaces
-	    #
+            #
+            # Save procs and command of all namespaces
+            #
             foreach pn [info procs ${nsp}::*] {
                 set orig [namespace origin $pn]
                 if {$orig ne [namespace which -command $pn]} {
@@ -742,7 +742,7 @@ ns_runonce {
 
             # Add aliases
             foreach cmd [interp aliases {}] {
-		if {[namespace qualifiers $cmd] eq $nsp} {
+                if {[namespace qualifiers $cmd] eq $nsp} {
                     append script "interp alias {} $cmd {} [interp alias {} $cmd]" \n
                 }
             }    
@@ -753,7 +753,7 @@ ns_runonce {
                     $orig ne [namespace which -command $cn]} {
                     append import "namespace import -force [list $orig]" \n
                 }
-		append import [_getensemble $cn]
+                append import [_getensemble $cn]
             }
             foreach ex [namespace eval $nsp [list namespace export]] {
                 append script "namespace export [list $ex]" \n
@@ -797,7 +797,7 @@ ns_runonce {
             } elseif {[info exists $var]} {
                 append script "variable [list $vname] [list [set $var]]" \n
             } else {
-               # maybe a variable without a value; no need to preserve it
+                # maybe a variable without a value; no need to preserve it
             }
         }
 
@@ -1189,7 +1189,7 @@ ns_runonce {
             # parts of the serialized blueprint.
             #
             if {"[info procs $old][info procs $new]" eq ""} {
-              append script "rename [list $old] [list $new]" \n
+                append script "rename [list $old] [list $new]" \n
             }
         }
         return $script
@@ -1210,39 +1210,39 @@ ns_runonce {
     #
 
     nstrace::addtrace proc {cmdline code args} {
-        if {$code != 0} {
-            if {$code == [nstrace::enablecode]} {
-                trace add execution proc leave $cmdline
-            } elseif {$code == [nstrace::disablecode]} {
-                trace remove execution proc leave $cmdline
-            }
-            return
-        }
-        set cns [uplevel namespace current]
-        if {$cns eq {::}} {
-            set cns {}
-        }
-        set cmd [lindex $cmdline 1]
-        if {![string match {::*} $cmd]} {
-            set cmd ${cns}::$cmd
-        }
-        set pbody [info body $cmd]
-        set pargs {}
-        foreach arg [info args $cmd] {
-            if {![info default $cmd $arg def]} {
-                lappend pargs $arg
-            } else {
-                lappend pargs [list $arg $def]
-            }
-        }
-        set pdef [nstrace::getentry proc $cmd]
-        if {$pdef eq {}} {
-            set epoch -1 ; # never traced before
-        } else {
-            set epoch [lindex $pdef 0]
-        }
-        nstrace::addentry proc $cmd [list [incr epoch] {} $pargs $pbody]
-    }
+                                                if {$code != 0} {
+                                                    if {$code == [nstrace::enablecode]} {
+                                                        trace add execution proc leave $cmdline
+                                                    } elseif {$code == [nstrace::disablecode]} {
+                                                        trace remove execution proc leave $cmdline
+                                                    }
+                                                    return
+                                                }
+                                                set cns [uplevel namespace current]
+                                                if {$cns eq {::}} {
+                                                    set cns {}
+                                                }
+                                                set cmd [lindex $cmdline 1]
+                                                if {![string match {::*} $cmd]} {
+                                                    set cmd ${cns}::$cmd
+                                                }
+                                                set pbody [info body $cmd]
+                                                set pargs {}
+                                                foreach arg [info args $cmd] {
+                                                    if {![info default $cmd $arg def]} {
+                                                        lappend pargs $arg
+                                                    } else {
+                                                        lappend pargs [list $arg $def]
+                                                    }
+                                                }
+                                                set pdef [nstrace::getentry proc $cmd]
+                                                if {$pdef eq {}} {
+                                                    set epoch -1 ; # never traced before
+                                                } else {
+                                                    set epoch [lindex $pdef 0]
+                                                }
+                                                nstrace::addentry proc $cmd [list [incr epoch] {} $pargs $pbody]
+                                            }
 
     nstrace::addscript proc {
         if {[llength [nstrace::getentries proc]] == 0} {
@@ -1353,5 +1353,8 @@ ns_runonce {
     }
 }
 
-# EOF
-
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

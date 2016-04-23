@@ -51,17 +51,17 @@ proc ns_sendmail args {
     
     lassign $args to from subject body headers bcc cc
     if {![string match -* $to]} {
-	ns_log warning "Deprecated syntax. Use: [list ns_sendmail -to $to -from $from -subject $subject -body $body -headers $headers -bcc $bcc -cc $cc]"
+        ns_log warning "Deprecated syntax. Use: [list ns_sendmail -to $to -from $from -subject $subject -body $body -headers $headers -bcc $bcc -cc $cc]"
     } else {
-	ns_parseargs {
-	    {-to ""}
-	    {-from ""}
-	    {-subject ""}
-	    {-body ""}
-	    {-headers ""}
-	    {-bcc ""}
-	    {-cc ""}
-	} $args
+        ns_parseargs {
+            {-to ""}
+            {-from ""}
+            {-subject ""}
+            {-body ""}
+            {-headers ""}
+            {-bcc ""}
+            {-cc ""}
+        } $args
     }
 
     #
@@ -515,11 +515,11 @@ proc _ns_smtp_send {mode sock string} {
     set tout [ns_config -set ns/parameters smtptimeout 60]
 
     foreach line [split $string "\n"] {
-	set fds [ns_sockselect -timeout $tout {} $sock {}]
-	if {[lindex $fds 1] eq {}} {
-	    return -code error "$mode: Timeout writing to SMTP host"
-	}
-	puts $sock $line
+        set fds [ns_sockselect -timeout $tout {} $sock {}]
+        if {[lindex $fds 1] eq {}} {
+            return -code error "$mode: Timeout writing to SMTP host"
+        }
+        puts $sock $line
     }
     flush $sock
 }
@@ -550,7 +550,7 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
     set tout [ns_config -set ns/parameters smtptimeout 60]
 
     while (1) {
-	set fds [ns_sockselect -timeout $tout $sock {} {}]
+        set fds [ns_sockselect -timeout $tout $sock {} {}]
         if {[lindex $fds 0] eq {}} {
             return -code error "$mode: timeout reading from SMTP host"
         }
@@ -559,7 +559,7 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
                 return -code error "$mode: remote peer closed connection"
             }
         } else {
-	    #puts stderr "#### _ns_smtp_recv reveived <$line>"
+            #puts stderr "#### _ns_smtp_recv reveived <$line>"
             #
             # Examine line of code returned by the server.
             # Normally the line has this form:
@@ -596,4 +596,8 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
     }
 }
 
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

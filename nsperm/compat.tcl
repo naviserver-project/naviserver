@@ -29,14 +29,20 @@
 
 #
 # compat.tcl -
-#	Compatibility functions
+#    Compatibility functions
 #
 
 proc ns_passwordcheck { user password } {
     set ret [catch {ns_perm checkpass $user $password} err]
     if {$ret == 0} {
-	return 0
+        return 0
     } else {
-	return 1
+        return 1
     }
 }
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

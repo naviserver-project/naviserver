@@ -84,7 +84,7 @@ proc __ns_sourcelibs {{modname ""}} {
 
     set sharedlib  [ns_library shared  $modname]
     set privatelib [ns_library private $modname]
- 
+    
     set files ""
 
     #
@@ -207,7 +207,7 @@ if {$use_trace_inits} {
 #
 
 proc ns_init {} {
-	ns_ictl update;  # Run the initialisation script
+    ns_ictl update;  # Run the initialisation script
 }
 
 ns_ictl trace allocate ns_init
@@ -319,9 +319,9 @@ proc ns_module {key {val ""}} {
         clear {
             unset -nocomplain _module
         }
-	network {
-	    set val [regexp {nssock|nsssl} $val]
-	}
+        network {
+            set val [regexp {nssock|nsssl} $val]
+        }
         default {
             error "ns_module: invalid command: $key"
         }
@@ -334,10 +334,10 @@ proc _ns_load_server_modules {{network 0}} {
     set modules [ns_configsection ns/server/[ns_info server]/modules]
     if {$modules ne ""} {
         foreach {module file} [ns_set array $modules] {
-	    if {$network != [ns_module network $module]} continue
-	    ns_ictl addmodule $module
-	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
-	    ns_moduleload $module $file 
+            if {$network != [ns_module network $module]} continue
+            ns_ictl addmodule $module
+            if {[string tolower $file] eq "tcl" || $file eq ""} continue
+            ns_moduleload $module $file 
         }
     }
 }
@@ -346,11 +346,11 @@ proc _ns_load_global_modules {{network 0}} {
     set modules [ns_configsection ns/modules]
 
     if {$modules ne ""} {
-	foreach {module file} [ns_set array $modules] {
-	    if {$network != [ns_module network $module]} continue
-	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
-	    ns_moduleload -global $module $file
-	}
+        foreach {module file} [ns_set array $modules] {
+            if {$network != [ns_module network $module]} continue
+            if {[string tolower $file] eq "tcl" || $file eq ""} continue
+            ns_moduleload -global $module $file
+        }
     }
 }
 
@@ -375,45 +375,45 @@ ns_runonce -global {ns_atprestartup _ns_load_global_modules 1}
 # for a single server. If the driver is not installed, return empty
 #
 proc ns_driversection {args} {
-  set driver ""
-  set server [ns_info server]
-  set l [llength $args]
-  if {$l > 1} {
-    array set vars {-driver driver -server server}
-    for {set i 0} {$i < $l} {incr i} {
-      set opt [lindex $args $i]
-      switch -exact -- $opt {
-	-driver -
-	-server {
-	  incr i
-	  if {$i < $l} {
-	    set $vars($opt) [lindex $args $i]
-	    continue
-	  }
-	}
-      }
-      error "usage: ns_driversection ?-driver drv? ?-server s?"
+    set driver ""
+    set server [ns_info server]
+    set l [llength $args]
+    if {$l > 1} {
+        array set vars {-driver driver -server server}
+        for {set i 0} {$i < $l} {incr i} {
+            set opt [lindex $args $i]
+            switch -exact -- $opt {
+                -driver -
+                -server {
+                    incr i
+                    if {$i < $l} {
+                        set $vars($opt) [lindex $args $i]
+                        continue
+                    }
+                }
+            }
+            error "usage: ns_driversection ?-driver drv? ?-server s?"
+        }
     }
-  }
-  if {$driver eq ""} {
-    if {[ns_conn isconnected]} {
-      set driver [ns_conn driver]
+    if {$driver eq ""} {
+        if {[ns_conn isconnected]} {
+            set driver [ns_conn driver]
+        } else {
+            set driver nssock
+        }
+    }
+    if {[ns_config ns/modules $driver] ne ""} {
+        # driver is installed globally
+        set section ns/module/$driver
+    } elseif {[ns_config ns/server/$server/modules $driver] ne ""} {
+        # driver is installed for the server
+        set section ns/server/$server/module/$driver
     } else {
-      set driver nssock
+        # "driver $driver is not installed (server $server)"
+        set section ""
     }
-  }
-  if {[ns_config ns/modules $driver] ne ""} {
-    # driver is installed globally
-    set section ns/module/$driver
-  } elseif {[ns_config ns/server/$server/modules $driver] ne ""} {
-    # driver is installed for the server
-    set section ns/server/$server/module/$driver
-  } else {
-    # "driver $driver is not installed (server $server)"
-    set section ""
-  }
 
-  return $section
+    return $section
 }
 
 #
@@ -675,4 +675,8 @@ if {$use_trace_inits} {
 
 ns_ictl markfordelete
 
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

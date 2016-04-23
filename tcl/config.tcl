@@ -50,8 +50,8 @@ proc _ns_config_global {} {
 
 proc _ns_config_server {server} {
     _ns_config_server_limits $server
-	_ns_config_server_adp_pages $server
-	_ns_config_server_tcl_pages $server
+    _ns_config_server_adp_pages $server
+    _ns_config_server_tcl_pages $server
 }
 
 #
@@ -72,11 +72,11 @@ proc _ns_config_global_limits {} {
 
             if {[catch {
                 array set l [ns_limits_set \
-                    -maxrun    [ns_config -int -set $path maxrun    100] \
-                    -maxwait   [ns_config -int -set $path maxwait   100] \
-                    -maxupload [ns_config -int -set $path maxupload 10240000] \
-                    -timeout   [ns_config -int -set $path timeout   60] \
-                    $limit ]
+                                 -maxrun    [ns_config -int -set $path maxrun    100] \
+                                 -maxwait   [ns_config -int -set $path maxwait   100] \
+                                 -maxupload [ns_config -int -set $path maxupload 10240000] \
+                                 -timeout   [ns_config -int -set $path timeout   60] \
+                                 $limit ]
             } errmsg]} {
                 ns_log error limits: $errmsg
             } else {
@@ -127,15 +127,15 @@ proc _ns_config_server_adp_pages {server} {
     set adps [ns_configsection $path]
 
     if {$adps eq "" || [ns_config -bool $path disabled false]} {
-	return
+        return
     }
     foreach {key url} [ns_set array $adps] {
-	if {$key eq "map"} {
-	    foreach {method} {GET HEAD POST} {
-		ns_register_adp $method $url
-	    }
-	    ns_log notice "adp\[$server\]: mapped {GET HEAD POST} $url"
-	}
+        if {$key eq "map"} {
+            foreach {method} {GET HEAD POST} {
+                ns_register_adp $method $url
+            }
+            ns_log notice "adp\[$server\]: mapped {GET HEAD POST} $url"
+        }
     }
 }
 
@@ -146,12 +146,12 @@ proc _ns_config_server_adp_pages {server} {
 
 proc _ns_config_server_tcl_pages {server} {
 
-	if {[ns_config -bool -set "ns/server/$server/adp" enabletclpages false]} {
-		foreach {method} {GET HEAD POST} {
-			ns_register_tcl $method /*.tcl
-		}
-		ns_log notice "tcl\[$server\]: mapped {GET HEAD POST} *.tcl"
-	}
+    if {[ns_config -bool -set "ns/server/$server/adp" enabletclpages false]} {
+        foreach {method} {GET HEAD POST} {
+            ns_register_tcl $method /*.tcl
+        }
+        ns_log notice "tcl\[$server\]: mapped {GET HEAD POST} *.tcl"
+    }
 }
 
 #
@@ -160,3 +160,9 @@ proc _ns_config_server_tcl_pages {server} {
 
 _ns_config_global
 _ns_config_server [ns_info server]
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -30,7 +30,7 @@
 #
 # util.tcl --
 #
-#	Various utility procedures. Couple of please's in advance:
+#   Various utility procedures. Couple of please's in advance:
 #
 #   o. DO NOT use this file as general purpose sink, if possible
 #
@@ -86,7 +86,7 @@ proc ns_setexpires {args} {
         set cache_control [lindex $args 1]
         ns_set update $headers Cache-Control "max-age=$secs, [lindex $args 1]"
     } elseif {[llength $args] > 1} {
-	error "usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs"
+        error "usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs"
     }
     set when [ns_httptime [expr {$secs + [clock seconds]}]]
     ns_set update $headers Expires $when
@@ -548,4 +548,8 @@ proc ns_updateheader {key value} {
     ns_set update [ns_conn outputheaders] $key $value
 }
 
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
