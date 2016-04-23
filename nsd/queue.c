@@ -343,7 +343,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
      * won't be provided.
      */
 
-    if (sockPtr->reqPtr != NULL && sockPtr->reqPtr->request.method != NULL) {
+    if ((sockPtr->reqPtr != NULL) && (sockPtr->reqPtr->request.method != NULL)) {
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,

@@ -1105,7 +1105,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     binary = NsTclObjIsByteArray(objv[1]);
     if (binary == NS_TRUE) {
-        str = (char*)Tcl_GetByteArrayFromObj(objv[1], &length);
+        str = (char *)Tcl_GetByteArrayFromObj(objv[1], &length);
     } else {
         str = Tcl_GetStringFromObj(objv[1], &length);
     }    
@@ -1170,7 +1170,7 @@ NsTclSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     binary = NsTclObjIsByteArray(data);
     if (binary == NS_TRUE) {
-        str = (char*)Tcl_GetByteArrayFromObj(data, &length);
+        str = (char *)Tcl_GetByteArrayFromObj(data, &length);
     } else {
         str = Tcl_GetStringFromObj(data, &length);
     }
@@ -1253,14 +1253,14 @@ NsTclHMACSHA2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
     binary = NsTclObjIsByteArray(keyObj);
     if (binary == NS_TRUE) {
-        key = (char*)Tcl_GetByteArrayFromObj(keyObj, &keyLength);
+        key = (char *)Tcl_GetByteArrayFromObj(keyObj, &keyLength);
     } else {
         key = Tcl_GetStringFromObj(keyObj, &keyLength);
     }
 
     binary = NsTclObjIsByteArray(messageObj);
     if (binary == NS_TRUE) {
-        message = (char*)Tcl_GetByteArrayFromObj(messageObj, &messageLength);
+        message = (char *)Tcl_GetByteArrayFromObj(messageObj, &messageLength);
     } else {
         message = Tcl_GetStringFromObj(messageObj, &messageLength);
     }
@@ -1692,7 +1692,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     
     binary = NsTclObjIsByteArray(objv[1]);
     if (binary == NS_TRUE) {
-        str = (char*)Tcl_GetByteArrayFromObj(objv[1], &length);
+        str = (char *)Tcl_GetByteArrayFromObj(objv[1], &length);
     } else {
         str = Tcl_GetStringFromObj(objv[1], &length);
     }
