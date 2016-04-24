@@ -42,6 +42,13 @@
 
 #define NSSSL_VERSION  "1.1"
 
+/* 
+ * The maximum chunk size from TLS is 2^14 => 16384 (see RFC 5246). OpenSSL
+ * can't send more than this number of bytes in one attempt.
+ */
+#define CHUNK_SIZE 16384 
+
+
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
 typedef struct {
@@ -1503,7 +1510,7 @@ HttpsProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
 {
     Https       *httpsPtr = arg;
     Ns_HttpTask *httpPtr  = &httpsPtr->http;
-    char buf[16384];
+    char buf[CHUNK_SIZE];
     int n, err, got;
 
     switch (why) {
@@ -1518,7 +1525,7 @@ HttpsProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
          */
         if (httpPtr->sendSpoolMode == NS_TRUE) {
             Ns_Log(Ns_LogTaskDebug, "HttpsProc read data from file, buffer size %d", Tcl_DStringLength(&httpPtr->ds));
-            n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, 32768);
+            n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, CHUNK_SIZE);
             if (n < 0) {
                 httpPtr->error = "read failed";
             } else {
@@ -1527,7 +1534,7 @@ HttpsProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
                 if (n < 0) {
                     httpPtr->error = "send failed";
                 } else {
-                    if (n < 32768) {
+                    if (n < CHUNK_SIZE) {
                         Ns_Log(Ns_LogTaskDebug, "HttpsProc all data spooled, switch to read reply");
                         
                         SSL_set_shutdown(httpsPtr->ssl, SSL_SENT_SHUTDOWN);
@@ -1554,7 +1561,7 @@ HttpsProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
                     if (httpPtr->bodyFileFd > 0) {
                         httpPtr->sendSpoolMode = NS_TRUE;
                         Ns_Log(Ns_LogTaskDebug, "HttpsProc all data sent, switch to spool mode using fd %d", httpPtr->bodyFileFd);
-                        Tcl_DStringTrunc(&httpPtr->ds, 32768);
+                        Tcl_DStringTrunc(&httpPtr->ds, CHUNK_SIZE);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpsProc all data sent, switch to read reply");
                     
