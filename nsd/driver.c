@@ -187,7 +187,7 @@ static size_t EndOfHeader(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void FreeRequest(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *p, size_t len)
+static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
@@ -2244,18 +2244,24 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
         Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
 
-    ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
     if (sockPtr->reqPtr != NULL) {
+        Request     *reqPtr = sockPtr->reqPtr;
+        Tcl_DString  dsReqLine;
+        
+        ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
+        
+        Tcl_DStringInit(&dsReqLine);
         Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
                code, errMsg,
-               sockPtr->reqPtr->peer,
-               sockPtr->reqPtr->request.line,
-               sockPtr->reqPtr->roff,
-               sockPtr->reqPtr->woff,
-               sockPtr->reqPtr->coff,
-               sockPtr->reqPtr->avail);
-
-        LogBuffer(Warning, "REQ BUFFER", sockPtr->reqPtr->buffer.string, (size_t)sockPtr->reqPtr->buffer.length);
+               reqPtr->peer,
+               Ns_DStringAppendPrintable(&dsReqLine, reqPtr->request.line, strlen(reqPtr->request.line)),
+               reqPtr->roff,
+               reqPtr->woff,
+               reqPtr->coff,
+               reqPtr->avail);
+        Tcl_DStringFree(&dsReqLine);
+        
+        LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
 
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
@@ -2648,6 +2654,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     return resultState;
 }
 
+
 /*----------------------------------------------------------------------
  *
  * LogBuffer --
@@ -2665,28 +2672,20 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
  *----------------------------------------------------------------------
  */
 static void
-LogBuffer(Ns_LogSeverity severity, const char *msg, const char *p, size_t len)
+LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
 {
     Tcl_DString ds;
 
     NS_NONNULL_ASSERT(msg != NULL);
-    NS_NONNULL_ASSERT(p != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
     
     if (Ns_LogSeverityEnabled(severity)) {
-        size_t i;
     
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, msg, -1);
         Tcl_DStringAppend(&ds, ": ", 2);
-        for (i = 0; i < len; i++) {
-            unsigned char c = UCHAR(*(p+i));
-            
-            if ((CHARTYPE(print, c) == 0) || (c > 127)) {
-                Ns_DStringPrintf(&ds, "\\x%.2x", (c & 0xffu));
-            } else {
-                Ns_DStringPrintf(&ds, "%c", c);
-            }
-        }
+        (void)Ns_DStringAppendPrintable(&ds, buffer, len);
+
         Ns_Log(severity, "%s", ds.string);
         Tcl_DStringFree(&ds);
     }

@@ -172,14 +172,14 @@ typedef enum {
  * The following define socket events for the Ns_Sock* APIs.
  */
 typedef enum {
-    NS_SOCK_READ =              0x01U, /* Socket is readable */
-    NS_SOCK_WRITE =             0x02U, /* Socket is writeable */
-    NS_SOCK_EXCEPTION =         0x04U, /* Socket has OOB data */
-    NS_SOCK_EXIT =              0x08U, /* The server is shutting down */
-    NS_SOCK_DONE =              0x10U, /* Task processing is done */
-    NS_SOCK_CANCEL =            0x20U, /* Remove event from sock callback thread */
-    NS_SOCK_TIMEOUT =           0x40U, /* Timeout waiting for socket event. */
-    NS_SOCK_INIT =              0x80U /* Initialise a Task callback. */
+    NS_SOCK_READ =              0x01u, /* Socket is readable */
+    NS_SOCK_WRITE =             0x02u, /* Socket is writeable */
+    NS_SOCK_EXCEPTION =         0x04u, /* Socket has OOB data */
+    NS_SOCK_EXIT =              0x08u, /* The server is shutting down */
+    NS_SOCK_DONE =              0x10u, /* Task processing is done */
+    NS_SOCK_CANCEL =            0x20u, /* Remove event from sock callback thread */
+    NS_SOCK_TIMEOUT =           0x40u, /* Timeout waiting for socket event. */
+    NS_SOCK_INIT =              0x80u /* Initialise a Task callback. */
 } Ns_SockState;
 
 /*
@@ -200,10 +200,10 @@ typedef enum {
 /*
  * The following are valid comm driver options.
  */
-#define NS_DRIVER_ASYNC            0x01U /* Use async read-ahead. */
-#define NS_DRIVER_SSL              0x02U /* Use SSL port, protocol defaults. */
-#define NS_DRIVER_NOPARSE          0x04U /* Do not parse request */
-#define NS_DRIVER_UDP              0x08U /* UDP, can't use stream socket options */
+#define NS_DRIVER_ASYNC            0x01u /* Use async read-ahead. */
+#define NS_DRIVER_SSL              0x02u /* Use SSL port, protocol defaults. */
+#define NS_DRIVER_NOPARSE          0x04u /* Do not parse request */
+#define NS_DRIVER_UDP              0x08u /* UDP, can't use stream socket options */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
@@ -1346,6 +1346,10 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
 NS_EXTERN char **
 Ns_DStringAppendArgv(Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN char *
+Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_DString *
 Ns_DStringPop(void)

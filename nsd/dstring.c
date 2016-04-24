@@ -366,6 +366,45 @@ Ns_DStringPush(Ns_DString *dsPtr)
     ns_free(dsPtr);
 }
 
+/*----------------------------------------------------------------------
+ *
+ * Ns_DStringAppendPrintable --
+ *
+ *      Append buffer containing potentially non-printable characters in
+ *      printable way to an already initialized DString. The function appends
+ *      printable characters and space as is, and appends otherwise the hex
+ *      code if the bytes with a \x prefix.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appends to the Dstring
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
+{
+    size_t i;
+    
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
+    
+    for (i = 0; i < len; i++) {
+        unsigned char c = UCHAR(*(buffer+i));
+            
+        if ((CHARTYPE(print, c) == 0) || (c > 127)) {
+            Ns_DStringPrintf(dsPtr, "\\x%.2x", (c & 0xffu));
+        } else {
+            Ns_DStringPrintf(dsPtr, "%c", c);
+        }
+    }
+
+    return Ns_DStringValue(dsPtr);
+}
+
+ 
 
 /*
  *----------------------------------------------------------------------
