@@ -203,7 +203,7 @@ NsUpdateProgress(Ns_Sock *sock)
         }
 
         if (pPtr->hPtr == NULL) {
-	    CONST char *key = NULL;
+	    const char *key = NULL;
 	    Ns_Set *set = NULL;
 	    Ns_DString *dsPtr = NULL;
 
