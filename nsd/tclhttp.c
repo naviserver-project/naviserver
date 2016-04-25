@@ -578,6 +578,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
        * length of the reply.
        */
       hdrPtr = Ns_SetCreate("outputHeaders");
+      Ns_TclEnterSet(interp, hdrPtr, NS_TCL_SET_DYNAMIC);
     }
     httpPtr->spoolLimit = spoolLimit;
     httpPtr->replyHeaders = hdrPtr;
