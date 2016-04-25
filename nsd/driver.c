@@ -920,7 +920,7 @@ FreeRequest(Sock *sockPtr)
         size_t leftover = reqPtr->avail - reqPtr->contentLength;
         char  *offset = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
 
-        Ns_Log(DriverDebug, "=== setting leftover to %lu bytes", leftover);
+        Ns_Log(DriverDebug, "setting leftover to %lu bytes", leftover);
         /*
          * Here it is save to move the data in the buffer, although the
          * reqPtr->content might point to it, since we reinit the content. In
@@ -935,7 +935,15 @@ FreeRequest(Sock *sockPtr)
         LogBuffer(Notice, "KEEP BUFFER", reqPtr->buffer.string, leftover); /* TODO: change to DriverDebug */
         reqPtr->leftover = leftover;
     } else {
-        Tcl_DStringInit(&reqPtr->buffer);
+        /*
+         * Clean large buffers in order to avoid memory growth on huge
+         * uploads (when maxipload is huge)
+         */
+        if (Tcl_DStringLength(&reqPtr->buffer) > 200000) {
+            Tcl_DStringFree(&reqPtr->buffer);
+        } else {
+            Tcl_DStringSetLength(&reqPtr->buffer, 0);
+        }
         reqPtr->leftover = 0u;
     }
     
@@ -1020,7 +1028,7 @@ NsSockClose(Sock *sockPtr, int keep)
      * Free the request, unless it is from a non-HTTP driver (who might not
      * fill out the request structure).
      */
-    if (sockPtr->reqPtr) {
+    if (sockPtr->reqPtr != NULL) {
         FreeRequest(sockPtr);
     }
 
@@ -2301,7 +2309,7 @@ SockTrigger(NS_SOCKET sock)
  *
  * SockClose --
  *
- *      Closes connection socket, does all cleanups.
+ *      Closes connection socket, does all cleanups. The input parameter
  *      "keep" might be NS_TRUE/NS_FALSE or -1 if undecided.
  *
  * Results:
@@ -2356,7 +2364,7 @@ SockClose(Sock *sockPtr, int keep)
         Ns_ReleaseTemp(sockPtr->tfd);
         sockPtr->tfd = 0;
     }
-
+    
 #ifndef _WIN32
     /*
      * Unmmap temp file used for spooled content.
