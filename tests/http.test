@@ -342,7 +342,7 @@ test http-5.3b {check encoding ns_conn content POST, complete content-type} -con
     }
 } -body {
     set string "Testing <äöüß>"
-    exec curl –s --data $string [ns_config test listenurl]/post 2> /dev/null
+    exec curl -g -s --data $string [ns_config test listenurl]/post 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
