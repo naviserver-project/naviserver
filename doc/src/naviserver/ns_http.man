@@ -31,7 +31,7 @@ id url done|running ....
 	[opt [arg {-method M}]] \
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
-	[opt [arg {-body_file fn}]] \	
+	[opt [arg {-body_file fn}]] \
 	[opt [arg {-timeout T}]] \
 	[opt [arg {-keep_host_header}]] \
 	[arg url] \
@@ -75,7 +75,7 @@ or [cmd "ns_http cancel"] command to refer to this request.
 	[opt [arg {-method M}]] \
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
-	[opt [arg {-body_file fn}]] \	
+	[opt [arg {-body_file fn}]] \
 	[opt [arg {-timeout T}]] \
 	[arg url] \
 	]
