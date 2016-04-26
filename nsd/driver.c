@@ -937,11 +937,17 @@ FreeRequest(Sock *sockPtr)
     } else {
         /*
          * Clean large buffers in order to avoid memory growth on huge
-         * uploads (when maxipload is huge)
+         * uploads (when maxupload is huge)
          */
-        if (Tcl_DStringLength(&reqPtr->buffer) > 200000) {
+        /*fprintf(stderr, "=== reuse buffer size %d avail %d dynamic %d\n",
+                reqPtr->buffer.length, reqPtr->buffer.spaceAvl,
+                reqPtr->buffer.string == reqPtr->buffer.staticSpace);*/
+        if (Tcl_DStringLength(&reqPtr->buffer) > 65536) {
             Tcl_DStringFree(&reqPtr->buffer);
         } else {
+            /*
+             * Reuse buffer, but set length to 0.
+             */
             Tcl_DStringSetLength(&reqPtr->buffer, 0);
         }
         reqPtr->leftover = 0u;
