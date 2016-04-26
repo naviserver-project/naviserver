@@ -40,8 +40,13 @@ namespace eval ::tcltest {
 	    #puts stderr "### rest <$rest>"
 	    regexp {Content-Length:\s+(\d+)\s} $head . contentLength
 	    if {$contentLength > 0} {
-		set bytes $head\n\n[string range $rest 0 $contentLength-1]
-		set toparse [string range $rest $contentLength end]
+		if {[string length $rest] >= $contentLength} {
+		    set bytes $head\n\n[string range $rest 0 $contentLength-1]
+		    set toparse [string range $rest $contentLength end]
+		} else {
+		    #puts stderr "### need more content-length $contentLength <$rest>"
+		    set toparse $::tcltest::received
+		}
 	    } else {
 		set bytes $head\n\n
 		set toparse $rest
