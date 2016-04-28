@@ -229,8 +229,8 @@ Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 
     Ns_DStringInit(&ds);
 
-    if (NsUrlToFile(&ds, servPtr, url) != NS_OK
-        || Ns_Stat(ds.string, &connPtr->fileInfo) == NS_FALSE) {
+    if ((NsUrlToFile(&ds, servPtr, url) != NS_OK)
+        || (Ns_Stat(ds.string, &connPtr->fileInfo) == NS_FALSE)) {
         goto notfound;
     }
 

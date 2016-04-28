@@ -926,8 +926,8 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
 	return TCL_ERROR;
     }
 
-    if (bodyPtr != NULL || bodyFileName != NULL) {
-        if ((bodyPtr != NULL) && bodyFileName != NULL) {
+    if ((bodyPtr != NULL) || (bodyFileName != NULL)) {
+        if ((bodyPtr != NULL) && (bodyFileName != NULL)) {
             Tcl_AppendResult(interp, "either -body or -body_file may be specified", NULL);
             ns_free(url2);
             return TCL_ERROR;
@@ -1030,7 +1030,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hdr
      * The body of the request might be specified via Tcl_Obj containing the
      * content, or via filename.
      */
-    if (bodyPtr != NULL || bodyFileName != NULL) {
+    if ((bodyPtr != NULL) || (bodyFileName != NULL)) {
 
         if (bodyFileName == NULL) {
             int length = 0;
@@ -1262,7 +1262,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
                 httpPtr->error = "read failed";
             } else {
                 Ns_Log(Ns_LogTaskDebug, "HttpProc send read data from file");
-                n = ns_send(sock, httpPtr->ds.string, n, 0);
+                n = ns_send(sock, httpPtr->ds.string, (size_t)n, 0);
                 if (n < 0) {
                     httpPtr->error = "send failed";
                 } else {

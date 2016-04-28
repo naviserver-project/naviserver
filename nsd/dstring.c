@@ -392,7 +392,7 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
     NS_NONNULL_ASSERT(buffer != NULL);
     
     for (i = 0; i < len; i++) {
-        unsigned char c = UCHAR(*(buffer+i));
+        unsigned char c = UCHAR(buffer[i]);
             
         if ((CHARTYPE(print, c) == 0) || (c > 127)) {
             Ns_DStringPrintf(dsPtr, "\\x%.2x", (c & 0xffu));
