@@ -354,6 +354,10 @@ proc ns_parseformfile { file form contentType } {
         return
     }
 
+    #
+    # Note: Currently there is no parsing performed, when the content
+    # type is *www-form-urlencoded.
+    #
     if { ![regexp -nocase {boundary=(.*)$} $contentType 1 b] } {
         return
     }

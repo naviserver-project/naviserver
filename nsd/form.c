@@ -48,7 +48,7 @@ static void ParseMultiInput(Conn *connPtr, const char *start, char *end)
 static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
+static int GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
@@ -87,6 +87,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
         if (connPtr->request.method != NULL && !STREQ(connPtr->request.method, "POST")) {
+
             form = connPtr->request.query;
             if (form != NULL) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
@@ -99,34 +100,40 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 		   (connPtr->flags & NS_CONN_CLOSED ) == 0u
 		   && (form = connPtr->reqPtr->content) != NULL
 		   ) {
-            Tcl_DString     bound;
-                
-  	    Tcl_DStringInit(&bound);
-            if (GetBoundary(&bound, conn) == 0) {
-                ParseQuery(form, connPtr->query, connPtr->urlEncoding);
-            } else {
-		const char *formend = form + connPtr->reqPtr->length;
-                char       *s;
+            Tcl_DString   bound;
+            const char   *contentType = Ns_SetIGet(conn->headers, "content-type");
 
-                s = NextBoundry(&bound, form, formend);
-                while (s != NULL) {
-                    char  *e;
+            if (contentType != NULL) {
+                Tcl_DStringInit(&bound);
+                
+                if (GetBoundary(&bound, contentType) == 0) {
+                    if (Ns_StrCaseFind(contentType, "www-form-urlencoded") != NULL) {
+                        ParseQuery(form, connPtr->query, connPtr->urlEncoding);
+                    }
+                } else {
+                    const char *formend = form + connPtr->reqPtr->length;
+                    char       *s;
                     
-                    s += bound.length;
-                    if (*s == '\r') {
-                        ++s;
+                    s = NextBoundry(&bound, form, formend);
+                    while (s != NULL) {
+                        char  *e;
+                        
+                        s += bound.length;
+                        if (*s == '\r') {
+                            ++s;
+                        }
+                        if (*s == '\n') {
+                            ++s;
+                        }
+                        e = NextBoundry(&bound, s, formend);
+                        if (e != NULL) {
+                            ParseMultiInput(connPtr, s, e);
+                        }
+                        s = e;
                     }
-                    if (*s == '\n') {
-                        ++s;
-                    }
-                    e = NextBoundry(&bound, s, formend);
-                    if (e != NULL) {
-                        ParseMultiInput(connPtr, s, e);
-                    }
-                    s = e;
                 }
+                Tcl_DStringFree(&bound);
             }
-            Tcl_DStringFree(&bound);
         }
     }
     return connPtr->query;
@@ -461,17 +468,15 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
  */
 
 static int
-GetBoundary(Tcl_DString *dsPtr, const Ns_Conn *conn)
+GetBoundary(Tcl_DString *dsPtr, const char *contentType)
 {
-    const char *type, *bs;
+    const char *bs;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(contentType != NULL);
 
-    type = Ns_SetIGet(conn->headers, "content-type");
-    if (type != NULL
-        && Ns_StrCaseFind(type, "multipart/form-data") != NULL
-        && (bs = Ns_StrCaseFind(type, "boundary=")) != NULL) {
+    if (Ns_StrCaseFind(contentType, "multipart/form-data") != NULL
+        && (bs = Ns_StrCaseFind(contentType, "boundary=")) != NULL) {
         const char *be;
 
         bs += 9;
