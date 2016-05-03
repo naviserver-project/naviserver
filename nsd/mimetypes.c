@@ -382,7 +382,7 @@ static const struct exttype {
     { ".gv",      "text/vnd.graphviz"},                      
     { ".gxt",     "application/vnd.geonext"},                
     { ".gz",      "application/gzip"},                       /* http://www.iana.org/go/rfc6713 */
-    { ".gzip",    "application/x-gzip" },
+    { ".gzip",    "application/gzip" },
     { ".h",       "text/plain" },
     { ".hal",     "application/vnd.hal+xml"},                
     { ".hbci",    "application/vnd.hbci"},                   
@@ -976,7 +976,7 @@ static const struct exttype {
     { ".text",    "text/plain" },
     { ".tfi",     "application/thraud+xml"},               /* rfc 5941 */
     { ".tfx",     "image/tiff-fx"},                          /* http://www.iana.org/go/rfc3950 */
-    { ".tgz",     "application/x-gzip" },
+    { ".tgz",     "application/gzip" },
     { ".thmx",    "application/vnd.ms-officetheme"},         
     { ".tif",     "image/tiff"},                             /* http://www.iana.org/go/rfc3302 */
     { ".tiff",    "image/tiff" },
