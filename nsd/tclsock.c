@@ -418,7 +418,7 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 1, (int *) &sock) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (send(sock, NULL, 0, 0) != 0) {
+    if (ns_send(sock, NULL, 0, 0) != 0) {
         objPtr = Tcl_NewBooleanObj(0);
     } else {
         objPtr = Tcl_NewBooleanObj(1);
