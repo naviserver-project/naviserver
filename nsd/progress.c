@@ -92,7 +92,7 @@ NsConfigProgress(void)
         Ns_SlsAlloc(&slot, ResetProgress);
         Tcl_InitHashTable(&urlTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
-        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %" PRIdz " bytes",
+        Ns_Log(Notice, "nsmain: enable progress statistics for uploads >= %" PRIdz " bytes",
                progressMinSize);
     }
 }

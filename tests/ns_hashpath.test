@@ -12,15 +12,15 @@ test ns_hashpath-1.1 {basic syntax} -body {
 
 test ns_hashpath-1.2 {basic syntax} -body {
     ns_hashpath "" 0
-} -returnCodes error -result {levels must be an interger greater than zero}
+} -returnCodes error -result {levels must be an integer greater than zero}
 
 test ns_hashpath-1.3 {basic syntax} -body {
     ns_hashpath "" -1
-} -returnCodes error -result {levels must be an interger greater than zero}
+} -returnCodes error -result {levels must be an integer greater than zero}
 
 test ns_hashpath-1.4 {basic syntax} -body {
     ns_hashpath "" notanum
-} -returnCodes error -result {levels must be an interger greater than zero}
+} -returnCodes error -result {levels must be an integer greater than zero}
 
 
 

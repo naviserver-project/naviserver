@@ -702,7 +702,7 @@ NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (Tcl_GetIntFromObj(interp, objv[2], &levels) != TCL_OK
         || levels <= 0) {
 
-        Tcl_SetResult(interp, "levels must be an interger greater than zero",
+        Tcl_SetResult(interp, "levels must be an integer greater than zero",
                       TCL_STATIC);
         return TCL_ERROR;
     }

@@ -447,7 +447,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     }
 
     if (connPtr == NULL) {
-	Ns_Log(Notice, "[%s] All avaliable connections are used, waiting %d idle %d current %d",
+	Ns_Log(Notice, "[%s] All avalaible connections are used, waiting %d idle %d current %d",
 	       poolPtr->servPtr->server, 
 	       poolPtr->wqueue.wait.num,
 	       poolPtr->threads.idle, 
@@ -603,7 +603,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	 */
 	if (optArg != NULL) {
 	    Ns_LogDeprecated(objv, objc, "ns_server ?-pool p? ...", 
-			     "Passing pool as second argument is deprected.");
+			     "Passing pool as second argument is deprecated.");
 	    pool = optArg;
 	}
     }
