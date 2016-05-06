@@ -440,7 +440,7 @@ The following demonstrates using multiple proxies:
 [cmd ns_proxy] config myproxy -maxslaves 10
 set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
 foreach h $handles {
-    $h {puts "alive: [pid]"}
+    $h {puts "alive: [lb]pid[rb]"}
 }
 [cmd ns_proxy] cleanup
 [example_end]
