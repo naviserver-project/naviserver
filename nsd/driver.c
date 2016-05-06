@@ -133,10 +133,12 @@ static SockState SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *no
     NS_GNUC_NONNULL(1);
 static int   SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
-static void  SockPrepare(Sock *sockPtr)
-    NS_GNUC_NONNULL(1);
+
+static Sock *SockNew(Driver *drvPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 static void  SockRelease(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
+
 static void  SockError(Sock *sockPtr, SockState reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     NS_GNUC_NONNULL(1);
@@ -185,7 +187,9 @@ static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t writte
 
 static size_t EndOfHeader(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static void FreeRequest(Sock *sockPtr)
+static void RequestNew(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static void RequestFree(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -196,6 +200,7 @@ static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buff
 
 Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
+Ns_LogSeverity Ns_LogConnchanDebug;
 
 static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
 static Tcl_HashTable hosts;           /* Host header to server table */
@@ -241,6 +246,7 @@ NsInitDrivers(void)
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
     Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
+    Ns_LogConnchanDebug = Ns_CreateLogSeverity("Debug(connchan)");
     Ns_MutexInit(&reqLock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "freelist");
     Ns_MutexSetName2(&writerlock, "ns:writer", "stream");
@@ -833,7 +839,7 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     /*
-     * The underlying Request structure is allocated by SockPrepare(), which
+     * The underlying Request structure is allocated by RequestNew(), which
      * must be called for the sockPtr prior to calling this function. reqPtr
      * should be NULL just in error cases.
      */
@@ -867,8 +873,8 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
              */
             if (status != SOCK_READY) {
                 if (sockPtr->reqPtr != NULL) {
-                    Ns_Log(DriverDebug, "NsGetRequest calls FreeRequest");
-                    FreeRequest(sockPtr);
+                    Ns_Log(DriverDebug, "NsGetRequest calls RequestFree");
+                    RequestFree(sockPtr);
                 }
                 reqPtr = NULL;
             }
@@ -882,123 +888,6 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     return reqPtr;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * FreeRequest --
- *
- *      Free/clean a connection request structure.  This routine is called
- *      at the end of connection processing or on a socket which
- *      times out during async read-ahead.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeRequest(Sock *sockPtr)
-{
-    Request *reqPtr;
-    bool     keep;
-    
-    NS_NONNULL_ASSERT(sockPtr != NULL);
-    
-    reqPtr = sockPtr->reqPtr;
-    assert(reqPtr != NULL);
-
-    Ns_Log(DriverDebug, "=== FreeRequest cleans %p (avail %lu keep %d length %lu contentLength %lu)",
-           (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
-
-    keep = (sockPtr->keep > 0) && (reqPtr->avail > reqPtr->contentLength);
-    if (keep) {
-        size_t leftover = reqPtr->avail - reqPtr->contentLength;
-        char  *offset = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
-
-        Ns_Log(DriverDebug, "setting leftover to %lu bytes", leftover);
-        /*
-         * Here it is save to move the data in the buffer, although the
-         * reqPtr->content might point to it, since we reinit the content. In
-         * case the terminating null character was written to the end of the
-         * previous buffer, we have to restore the first character.
-         */
-        memmove(reqPtr->buffer.string, offset, leftover);
-        if (reqPtr->savedChar != '\0') {
-            reqPtr->buffer.string[0] = reqPtr->savedChar;
-        }
-        Tcl_DStringSetLength(&reqPtr->buffer, (int)leftover);
-        LogBuffer(Notice, "KEEP BUFFER", reqPtr->buffer.string, leftover); /* TODO: change to DriverDebug */
-        reqPtr->leftover = leftover;
-    } else {
-        /*
-         * Clean large buffers in order to avoid memory growth on huge
-         * uploads (when maxupload is huge)
-         */
-        /*fprintf(stderr, "=== reuse buffer size %d avail %d dynamic %d\n",
-                reqPtr->buffer.length, reqPtr->buffer.spaceAvl,
-                reqPtr->buffer.string == reqPtr->buffer.staticSpace);*/
-        if (Tcl_DStringLength(&reqPtr->buffer) > 65536) {
-            Tcl_DStringFree(&reqPtr->buffer);
-        } else {
-            /*
-             * Reuse buffer, but set length to 0.
-             */
-            Tcl_DStringSetLength(&reqPtr->buffer, 0);
-        }
-        reqPtr->leftover = 0u;
-    }
-    
-    reqPtr->next           = NULL;
-    reqPtr->content        = NULL;
-    reqPtr->length         = 0u;
-    reqPtr->contentLength  = 0u;
-
-    reqPtr->expectedLength = 0u;
-    reqPtr->chunkStartOff  = 0u;
-    reqPtr->chunkWriteOff  = 0u;
-
-    reqPtr->roff           = 0u;
-    reqPtr->woff           = 0u;
-    reqPtr->coff           = 0u;
-    reqPtr->avail          = 0u;
-    reqPtr->savedChar      = '\0';
-
-    Ns_SetTrunc(reqPtr->headers, 0u);
-
-    if (reqPtr->auth != NULL) {
-        Ns_SetFree(reqPtr->auth);
-        reqPtr->auth = NULL;
-    }
-
-    if (reqPtr->request.line) {
-        Ns_Log(DriverDebug, "FreeRequest calls Ns_ResetRequest on %p", (void*)&reqPtr->request);
-        Ns_ResetRequest(&reqPtr->request);
-    } else {
-        Ns_Log(DriverDebug, "FreeRequest does not call Ns_ResetRequest on %p", (void*)&reqPtr->request);
-    }
-
-    if (keep == NS_FALSE) {
-        /*
-         * Push the reqPtr to the pool for reuse in other connections.
-         */
-        sockPtr->reqPtr = NULL;
-        
-        Ns_MutexLock(&reqLock);
-        reqPtr->nextPtr = firstReqPtr;
-        firstReqPtr = reqPtr;
-        Ns_MutexUnlock(&reqLock);
-    } else {
-        /*
-         * Keep the partly cleaned up reqPtr associated with the connection.
-         */
-        Ns_Log(DriverDebug, "=== KEEP request structure in sockPtr (don't push into the pool)");
-    }
-}
 
 
 /*
@@ -1035,7 +924,7 @@ NsSockClose(Sock *sockPtr, int keep)
      * fill out the request structure).
      */
     if (sockPtr->reqPtr != NULL) {
-        FreeRequest(sockPtr);
+        RequestFree(sockPtr);
     }
 
     Ns_MutexLock(&drvPtr->lock);
@@ -1807,11 +1696,11 @@ PollWait(const PollData *pdata, int waittime)
 /*
  *----------------------------------------------------------------------
  *
- * SockPrepare
+ * RequestNew
  *
  *      Prepares for reading from the socket, allocates a Request struct for
  *      the given socket. It might be reused from the pool or freshly
- *      allocated.
+ *      allocated. Counterpart of RequestFree.
  *
  * Results:
  *      None
@@ -1823,7 +1712,7 @@ PollWait(const PollData *pdata, int waittime)
  */
 
 static void
-SockPrepare(Sock *sockPtr)
+RequestNew(Sock *sockPtr)
 {
     Request *reqPtr;
 
@@ -1835,7 +1724,7 @@ SockPrepare(Sock *sockPtr)
     Ns_MutexLock(&reqLock);
     reqPtr = firstReqPtr;
     if (reqPtr != NULL) {
-        Ns_Log(DriverDebug, "SockPrepare reuses a Request");
+        Ns_Log(DriverDebug, "RequestNew reuses a Request");
         firstReqPtr = reqPtr->nextPtr;
     }
     Ns_MutexUnlock(&reqLock);
@@ -1844,12 +1733,130 @@ SockPrepare(Sock *sockPtr)
      * In case we failed, allocate a new Request.
      */
     if (reqPtr == NULL) {
-        Ns_Log(DriverDebug, "SockPrepare gets a fresh Request");
+        Ns_Log(DriverDebug, "RequestNew gets a fresh Request");
         reqPtr = ns_calloc(1u, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers = Ns_SetCreate(NULL);
     }
     sockPtr->reqPtr = reqPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequestFree --
+ *
+ *      Free/clean a socket request structure.  This routine is called
+ *      at the end of connection processing or on a socket which
+ *      times out during async read-ahead. Counterpart of RequestNew.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RequestFree(Sock *sockPtr)
+{
+    Request *reqPtr;
+    bool     keep;
+    
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    
+    reqPtr = sockPtr->reqPtr;
+    assert(reqPtr != NULL);
+
+    Ns_Log(DriverDebug, "=== RequestFree cleans %p (avail %lu keep %d length %lu contentLength %lu)",
+           (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
+
+    keep = (sockPtr->keep > 0) && (reqPtr->avail > reqPtr->contentLength);
+    if (keep) {
+        size_t leftover = reqPtr->avail - reqPtr->contentLength;
+        char  *offset = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
+
+        Ns_Log(DriverDebug, "setting leftover to %lu bytes", leftover);
+        /*
+         * Here it is save to move the data in the buffer, although the
+         * reqPtr->content might point to it, since we reinit the content. In
+         * case the terminating null character was written to the end of the
+         * previous buffer, we have to restore the first character.
+         */
+        memmove(reqPtr->buffer.string, offset, leftover);
+        if (reqPtr->savedChar != '\0') {
+            reqPtr->buffer.string[0] = reqPtr->savedChar;
+        }
+        Tcl_DStringSetLength(&reqPtr->buffer, (int)leftover);
+        LogBuffer(Notice, "KEEP BUFFER", reqPtr->buffer.string, leftover); /* TODO: change to DriverDebug */
+        reqPtr->leftover = leftover;
+    } else {
+        /*
+         * Clean large buffers in order to avoid memory growth on huge
+         * uploads (when maxupload is huge)
+         */
+        /*fprintf(stderr, "=== reuse buffer size %d avail %d dynamic %d\n",
+                reqPtr->buffer.length, reqPtr->buffer.spaceAvl,
+                reqPtr->buffer.string == reqPtr->buffer.staticSpace);*/
+        if (Tcl_DStringLength(&reqPtr->buffer) > 65536) {
+            Tcl_DStringFree(&reqPtr->buffer);
+        } else {
+            /*
+             * Reuse buffer, but set length to 0.
+             */
+            Tcl_DStringSetLength(&reqPtr->buffer, 0);
+        }
+        reqPtr->leftover = 0u;
+    }
+    
+    reqPtr->next           = NULL;
+    reqPtr->content        = NULL;
+    reqPtr->length         = 0u;
+    reqPtr->contentLength  = 0u;
+
+    reqPtr->expectedLength = 0u;
+    reqPtr->chunkStartOff  = 0u;
+    reqPtr->chunkWriteOff  = 0u;
+
+    reqPtr->roff           = 0u;
+    reqPtr->woff           = 0u;
+    reqPtr->coff           = 0u;
+    reqPtr->avail          = 0u;
+    reqPtr->savedChar      = '\0';
+
+    Ns_SetTrunc(reqPtr->headers, 0u);
+
+    if (reqPtr->auth != NULL) {
+        Ns_SetFree(reqPtr->auth);
+        reqPtr->auth = NULL;
+    }
+
+    if (reqPtr->request.line) {
+        Ns_Log(DriverDebug, "RequestFree calls Ns_ResetRequest on %p", (void*)&reqPtr->request);
+        Ns_ResetRequest(&reqPtr->request);
+    } else {
+        Ns_Log(DriverDebug, "RequestFree does not call Ns_ResetRequest on %p", (void*)&reqPtr->request);
+    }
+
+    if (keep == NS_FALSE) {
+        /*
+         * Push the reqPtr to the pool for reuse in other connections.
+         */
+        sockPtr->reqPtr = NULL;
+        
+        Ns_MutexLock(&reqLock);
+        reqPtr->nextPtr = firstReqPtr;
+        firstReqPtr = reqPtr;
+        Ns_MutexUnlock(&reqLock);
+    } else {
+        /*
+         * Keep the partly cleaned up reqPtr associated with the connection.
+         */
+        Ns_Log(DriverDebug, "=== KEEP request structure in sockPtr (don't push into the pool)");
+    }
 }
 
 /*
@@ -1944,6 +1951,7 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
     Ns_IncrTime(&sockPtr->timeout, timeout, 0);
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -1971,29 +1979,8 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    /*
-     * Allocate and/or initialize a Sock structure.
-     */
-
-    Ns_MutexLock(&drvPtr->lock);
-    sockPtr = drvPtr->sockPtr;
-    if (likely(sockPtr != NULL)) {
-        drvPtr->sockPtr = sockPtr->nextPtr;
-    }
-    Ns_MutexUnlock(&drvPtr->lock);
-
-    if (sockPtr == NULL) {
-        size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
-        sockPtr = ns_calloc(1u, sockSize);
-        sockPtr->drvPtr = drvPtr;
-    } else {
-        sockPtr->tfd    = 0;
-        sockPtr->taddr  = 0;
-        sockPtr->keep   = NS_FALSE;
-        sockPtr->flags  = 0u;
-        sockPtr->arg    = NULL;
-    }
-
+    sockPtr = SockNew(drvPtr);
+    
     /*
      * Accept the new connection.
      */
@@ -2047,12 +2034,12 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
         } else if (status == NS_DRIVER_ACCEPT_QUEUE) {
             
             /*
-             *  We need to call SockPrepare to make sure socket has
-             *  request structure allocated, otherwise NsGetRequest will
-             *  call SockRead which is not what this driver wants.
+             *  We need to call RequestNew to make sure socket has
+             *  request structure allocated, otherwise NsGetRequest will call
+             *  SockRead which is not what this driver wants.
              */
             if (sockPtr->reqPtr == NULL) {
-                SockPrepare(sockPtr);
+                RequestNew(sockPtr);
             }
             sockStatus = SOCK_READY;
         } else {
@@ -2063,6 +2050,52 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     *sockPtrPtr = sockPtr;
 
     return sockStatus;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockNew --
+ *
+ *      Allocate and/or initialize a Sock structure. Counterpart of
+ *      SockRelease;
+ *
+ * Results:
+ *      SockPtr
+ *
+ * Side effects:
+ *      Potentially new memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Sock *
+SockNew(Driver *drvPtr)
+{
+    Sock *sockPtr;
+
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    Ns_MutexLock(&drvPtr->lock);
+    sockPtr = drvPtr->sockPtr;
+    if (likely(sockPtr != NULL)) {
+        drvPtr->sockPtr = sockPtr->nextPtr;
+    }
+    Ns_MutexUnlock(&drvPtr->lock);
+
+    if (sockPtr == NULL) {
+        size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
+        sockPtr = ns_calloc(1u, sockSize);
+        sockPtr->drvPtr = drvPtr;
+    } else {
+        sockPtr->tfd    = 0;
+        sockPtr->taddr  = 0;
+        sockPtr->keep   = NS_FALSE;
+        sockPtr->flags  = 0u;
+        sockPtr->arg    = NULL;
+    }
+    return sockPtr;
 }
 
 
@@ -2102,8 +2135,8 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     drvPtr->queuesize--;
 
     if (sockPtr->reqPtr != NULL) {
-        Ns_Log(DriverDebug, "SockRelease calls FreeRequest");
-        FreeRequest(sockPtr);
+        Ns_Log(DriverDebug, "SockRelease calls RequestFree");
+        RequestFree(sockPtr);
     }
 
     Ns_MutexLock(&drvPtr->lock);
@@ -2517,7 +2550,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      * Initialize Request structure if needed
      */
     if (sockPtr->reqPtr == NULL) {
-        SockPrepare(sockPtr);
+        RequestNew(sockPtr);
     }
 
     /*
@@ -4773,7 +4806,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         driverName = Tcl_GetStringFromObj(objv[2], &driverNameLen);
 
         /* look up driver with the specified name */
-        for (drvPtr = firstDrvPtr; drvPtr; drvPtr = drvPtr->nextPtr) {
+        for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
             if (strncmp(driverName, drvPtr->name, (size_t)driverNameLen) == 0) {
                 if (drvPtr->writer.firstPtr != NULL) {wrPtr = &drvPtr->writer;}
                 break;
@@ -5245,6 +5278,130 @@ AsyncWriterThread(void *arg)
     Ns_Log(Notice, "exiting");
 
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncWriterThread --
+ *
+ *      Thread that implements non-blocking write operations to files
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Write to files.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, Ns_Time *timeoutPtr, Sock **sockPtrPtr)
+{
+    char       *protocol, *host, *portString, *path, *tail, *url2, *query;
+    Driver     *drvPtr = NULL;
+    Tcl_DString ds, *dsPtr = &ds;
+    int         result, portNr;
+    NS_SOCKET   sock;
+    Sock       *sockPtr;
+    Request    *reqPtr;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(sockPtrPtr != NULL);
+    
+    url2 = ns_strdup(url);
+    result = Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail);
+
+    assert(protocol != NULL);
+    assert(host != NULL);
+    assert(path != NULL);
+    assert(tail != NULL);
+    
+    if (unlikely(result != TCL_OK)) {
+        goto fail;
+    }
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        if (STREQ(drvPtr->protocol, protocol)) {
+            break;
+        }
+    }
+    if (drvPtr == NULL) {
+        Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
+        goto fail;
+    }
+
+    if (portString != NULL) {
+        portNr = (int) strtol(portString, NULL, 10);
+    } else if (STREQ(drvPtr->protocol, "http")) {
+        /* the default port should be in the driver structure */
+        portNr = 80;
+    } else if (STREQ(drvPtr->protocol, "https")) {
+        portNr = 443;
+    } else {
+        Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", protocol);
+        goto fail;
+    }
+    
+    sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, timeoutPtr);
+
+    if (sock == NS_INVALID_SOCKET) {
+	Ns_TclPrintfResult(interp, "connect to '%s' failed: %s", url, 
+                           ns_sockstrerror(ns_sockerrno));
+        goto fail;
+    }
+
+    sockPtr = SockNew(drvPtr);
+    sockPtr->sock = sock;
+    sockPtr->servPtr  = drvPtr->servPtr;
+
+    RequestNew(sockPtr);
+
+    Ns_GetTime(&sockPtr->acceptTime);
+    reqPtr = sockPtr->reqPtr;
+
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringAppend(dsPtr, method, -1);
+    Tcl_DStringAppend(dsPtr, " ", 1);
+    if (*path != '\0') {
+        Tcl_DStringAppend(dsPtr, "/", 1);
+        Tcl_DStringAppend(dsPtr, path, -1);
+    }
+    if (*tail != '\0') {
+        Tcl_DStringAppend(dsPtr, "/", 1);
+        Tcl_DStringAppend(dsPtr, tail, -1);
+    } else if (*path == '\0') {
+        /* 
+         * Path and tail are empty.
+         */
+        Tcl_DStringAppend(dsPtr, "/", 1);
+    }
+    Tcl_DStringAppend(dsPtr, " HTTP/1.0", 9);
+    
+    reqPtr->request.line = Ns_DStringExport(dsPtr);
+    reqPtr->request.method = ns_strdup(method);
+    reqPtr->request.protocol = ns_strdup(protocol);
+    reqPtr->request.host = ns_strdup(host);
+    query = strchr(tail, '?');
+    if (query != NULL) {
+        reqPtr->request.query = ns_strdup(query+1);
+    } else {
+        reqPtr->request.query = NULL;
+    }
+    /*Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);*/
+    
+    ns_free(url2);
+    *sockPtrPtr = sockPtr;
+    
+    return TCL_OK;
+    
+ fail:
+    ns_free(url2);
+    return TCL_ERROR;
+}
+
 
 /*
  * Local Variables:

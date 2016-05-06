@@ -487,7 +487,7 @@ typedef struct Sock {
 
     struct Driver         *drvPtr;
     NS_SOCKET              sock;
-    struct NS_SOCKADDR_STORAGE  sa;              /* Actual peer address */
+    struct NS_SOCKADDR_STORAGE  sa;         /* Actual peer address */
     void                  *arg;             /* Driver context. */
 
     /*
@@ -1250,6 +1250,7 @@ NS_EXTERN Tcl_CmdProc
     NsTclStripHtmlCmd;
 
 NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;    /* Severity at which to log verbose. */
+NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;   /* Severity at which to log verbose. */
 
 /*
  * Libnsd initialization routines.
@@ -1315,11 +1316,13 @@ NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbuf
     NS_GNUC_NONNULL(1);
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
+NS_EXTERN int NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, Ns_Time *timeoutPtr, Sock **sockPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
-NS_EXTERN ssize_t
-NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                           const Ns_Time *timeoutPtr, unsigned int flags,
-                           Ns_DriverSendProc *sendProc)
+
+NS_EXTERN ssize_t NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
+                                             const Ns_Time *timeoutPtr, unsigned int flags,
+                                             Ns_DriverSendProc *sendProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 NS_EXTERN int  NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)

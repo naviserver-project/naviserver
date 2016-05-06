@@ -298,7 +298,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
  *
  * NsSockRecv --
  *
- *      Timed recv() from a non-blocking socket.
+ *      Timed recv operation from a non-blocking socket.
  *
  * Results:
  *      Number of bytes read
@@ -332,7 +332,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
  *
  * Ns_SockSend --
  *
- *      Timed send() to a non-blocking socket.
+ *      Timed send operation to a non-blocking socket.
  *      NOTE: This may not write all of the data you send it!
  *
  * Results:
