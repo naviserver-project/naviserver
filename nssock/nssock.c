@@ -105,6 +105,8 @@ Ns_ModuleInit(const char *server, const char *module)
     init.opts = NS_DRIVER_ASYNC;
     init.arg = cfg;
     init.path = (char*)path;
+    init.protocol = "http";
+    init.defport = 80;
 
     return Ns_DriverInit(server, module, &init);
 }

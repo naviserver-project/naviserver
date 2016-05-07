@@ -618,6 +618,31 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 struct iovec buf[4];
                 ssize_t      nSent;
 
+                if (STREQ(sockPtr->drvPtr->protocol, "https")) {
+                    Ns_ClientConnectionContext ccc;
+
+                    assert(sockPtr->drvPtr->clientInitProc != NULL);
+
+                    /* 
+                     * For the time being, just pass NULL
+                     * structures. Probably, we could create the SSLcontext
+                     * here and pass it on to reduce the number of members,
+                     * ... when we link against OpenSSL similar as against
+                     * zlib (with stubs in case it is not available).
+                     */
+                    ccc.ctx.https.cert = NULL;
+                    ccc.ctx.https.caFile = NULL;
+                    ccc.ctx.https.caPath = NULL;
+                    ccc.ctx.https.verify = 0;
+
+                    result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &ccc);
+                    
+                    if (unlikely(result != TCL_OK)) {
+                        if (sockPtr->sock > 0) {ns_sockclose(sockPtr->sock);}
+                        return TCL_ERROR;
+                    }
+                }
+                
                 Ns_GetTime(&now);
                 connChanPtr = ConnChanCreate(servPtr,
                                              sockPtr,
@@ -645,6 +670,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 buf[2].iov_len = Tcl_DStringLength(&sockPtr->reqPtr->buffer);
                 buf[3].iov_base = (void *)"\r\n";
                 buf[3].iov_len = 2u;
+                
                 nSent = DriverSend(connChanPtr->sockPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
                 Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
 

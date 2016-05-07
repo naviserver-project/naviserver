@@ -207,7 +207,8 @@ typedef enum {
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
-#define NS_DRIVER_VERSION_3        3    /* IPv4 and IPv6, Current version. */
+#define NS_DRIVER_VERSION_3        3    /* IPv4 and IPv6 */
+#define NS_DRIVER_VERSION_4        4    /* Client support, current version */
 
 /*
  * The following are valid Tcl interp traces types.
@@ -506,6 +507,24 @@ typedef struct Ns_FileVec {
 } Ns_FileVec;
 
 /*
+ * Client connection structure.
+ */
+
+typedef struct Ns_ClientConnectionContext {
+    union {
+        struct {
+            char *cert;
+            char *caFile;
+            char *caPath;
+            int   verify;
+            void *ctx;
+            void *ssl;
+        } https;
+    } ctx;
+} Ns_ClientConnectionContext;
+
+
+/*
  * The following are the valid return values of an Ns_DriverAcceptProc.
  */
 
@@ -556,25 +575,32 @@ typedef void
 (Ns_DriverCloseProc)(Ns_Sock *sock)
      NS_GNUC_NONNULL(1);
 
+typedef int
+(Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, Ns_ClientConnectionContext *cccPtr);
+
+
 /*
  * The following structure defines the values to initialize the driver. This is
  * passed to Ns_DriverInit.
  */
 
 typedef struct Ns_DriverInitData {
-    int                   version;       /* Version 2. */
-    const char            *name;         /* This will show up in log file entries */
-    Ns_DriverListenProc   *listenProc;   /* Open listening socket for conns. */
-    Ns_DriverAcceptProc   *acceptProc;   /* Accept a new non-blocking socket. */
-    Ns_DriverRecvProc     *recvProc;     /* Read bytes from conn into iovec. */
-    Ns_DriverSendProc     *sendProc;     /* Write bytes to conn from iovec. */
-    Ns_DriverSendFileProc *sendFileProc; /* Optional: write bytes from files/buffers. */
-    Ns_DriverKeepProc     *keepProc;     /* Keep a socket open after conn done? */
-    Ns_DriverRequestProc  *requestProc;  /* First proc to be called by a connection thread. */
-    Ns_DriverCloseProc    *closeProc;    /* Close a connection socket. */
-    unsigned int           opts;         /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
-    void                  *arg;          /* Module's driver callback data */
-    const char            *path;         /* Path to find port, address, etc. */
+    int                      version;          /* Version 4. */
+    const char              *name;             /* This will show up in log file entries */
+    Ns_DriverListenProc     *listenProc;       /* Open listening socket for conns. */
+    Ns_DriverAcceptProc     *acceptProc;       /* Accept a new non-blocking socket. */
+    Ns_DriverRecvProc       *recvProc;         /* Read bytes from conn into iovec. */
+    Ns_DriverSendProc       *sendProc;         /* Write bytes to conn from iovec. */
+    Ns_DriverSendFileProc   *sendFileProc;     /* Optional: write bytes from files/buffers. */
+    Ns_DriverKeepProc       *keepProc;         /* Keep a socket open after conn done? */
+    Ns_DriverRequestProc    *requestProc;      /* First proc to be called by a connection thread. */
+    Ns_DriverCloseProc      *closeProc;        /* Close a connection socket. */
+    Ns_DriverClientInitProc *clientInitProc;   /* Initialize a client connection*/
+    unsigned int             opts;             /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
+    void                    *arg;              /* Module's driver callback data */
+    const char              *path;             /* Path to find config parameter such as port, address, etc. */
+    int                      defport;          /* Default port */
+    const char              *protocol;         /* Protocol */
 } Ns_DriverInitData;
 
 

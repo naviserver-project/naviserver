@@ -426,16 +426,18 @@ typedef struct Driver {
      * Private to Driver.
      */
 
-    struct Driver         *nextPtr;     /* Next in list of drivers */
-    struct NsServer       *servPtr;     /* Driver virtual server */
-    Ns_DriverListenProc   *listenProc;
-    Ns_DriverAcceptProc   *acceptProc;
-    Ns_DriverRecvProc     *recvProc;
-    Ns_DriverSendProc     *sendProc;
-    Ns_DriverSendFileProc *sendFileProc; /* Optional - optimize direct file send. */
-    Ns_DriverKeepProc     *keepProc;
-    Ns_DriverRequestProc  *requestProc;
-    Ns_DriverCloseProc    *closeProc;
+    struct Driver           *nextPtr;     /* Next in list of drivers */
+    struct NsServer         *servPtr;     /* Driver virtual server */
+    Ns_DriverListenProc     *listenProc;
+    Ns_DriverAcceptProc     *acceptProc;
+    Ns_DriverRecvProc       *recvProc;
+    Ns_DriverSendProc       *sendProc;
+    Ns_DriverSendFileProc   *sendFileProc; /* Optional - optimize direct file send. */
+    Ns_DriverKeepProc       *keepProc;
+    Ns_DriverRequestProc    *requestProc;
+    Ns_DriverCloseProc      *closeProc;
+    Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
+
     unsigned int opts;                  /* NS_DRIVER_* options */
     long closewait;                     /* Graceful close timeout */
     long keepwait;                      /* Keepalive timeout */

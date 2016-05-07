@@ -284,7 +284,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
     NS_NONNULL_ASSERT(module != NULL);
     NS_NONNULL_ASSERT(init != NULL);
-
+    
     /*
      * If a server is provided, servPtr must be set.
      */
@@ -295,6 +295,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         }
     }
 
+    if (init->version < NS_DRIVER_VERSION_4) {
+        Ns_Log(Warning, "%s: driver version is too old (version %d), Version 4 is recommended",
+               module, init->version);
+    }
 #ifdef HAVE_IPV6
     if (init->version < NS_DRIVER_VERSION_3) {
         Ns_Log(Error, "%s: driver version is too old (version %d) and does not support IPv6",
@@ -370,15 +374,16 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     /*
      * Set the protocol and port defaults.
      */
-
-    if (init->opts & NS_DRIVER_SSL) {
-        defproto = "https";
-        defport = 443;
+    if (init->protocol != NULL) {
+        defproto = init->protocol;
+        defport = init->defport;
     } else {
-        defproto = "http";
-        defport = 80;
+        defproto = "unknown";
+        defport = 0;
     }
-
+    Ns_Log(DriverDebug, "DriverInit server <%s> module %s proto %s port %d",
+           server, module, defproto, defport);
+    
     /*
      * Allocate a new driver instance and set configurable parameters.
      */
@@ -391,21 +396,21 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
     }
 
-    drvPtr->server       = server;
-    drvPtr->module       = ns_strdup(module);
-    /*drvPtr->name         = init->name;*/
-    drvPtr->name         = drvPtr->module;
-    drvPtr->listenProc   = init->listenProc;
-    drvPtr->acceptProc   = init->acceptProc;
-    drvPtr->recvProc     = init->recvProc;
-    drvPtr->sendProc     = init->sendProc;
-    drvPtr->sendFileProc = init->sendFileProc;
-    drvPtr->keepProc     = init->keepProc;
-    drvPtr->requestProc  = init->requestProc;
-    drvPtr->closeProc    = init->closeProc;
-    drvPtr->arg          = init->arg;
-    drvPtr->opts         = init->opts;
-    drvPtr->servPtr      = servPtr;
+    drvPtr->server         = server;
+    drvPtr->module         = ns_strdup(module);
+    drvPtr->name           = drvPtr->module;
+    drvPtr->listenProc     = init->listenProc;
+    drvPtr->acceptProc     = init->acceptProc;
+    drvPtr->recvProc       = init->recvProc;
+    drvPtr->sendProc       = init->sendProc;
+    drvPtr->sendFileProc   = init->sendFileProc;
+    drvPtr->keepProc       = init->keepProc;
+    drvPtr->requestProc    = init->requestProc;
+    drvPtr->closeProc      = init->closeProc;
+    drvPtr->clientInitProc = init->clientInitProc;
+    drvPtr->arg            = init->arg;
+    drvPtr->opts           = init->opts;
+    drvPtr->servPtr        = servPtr;
 
     drvPtr->maxinput     = Ns_ConfigWideIntRange(path, "maxinput",
                                                  (Tcl_WideInt)1024*1024,
@@ -5324,6 +5329,8 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, Ns_T
     }
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
+               drvPtr->protocol, drvPtr->server, drvPtr->name, drvPtr->location);
         if (STREQ(drvPtr->protocol, protocol)) {
             break;
         }
@@ -5356,6 +5363,10 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, Ns_T
     sockPtr = SockNew(drvPtr);
     sockPtr->sock = sock;
     sockPtr->servPtr  = drvPtr->servPtr;
+    if (sockPtr->servPtr == NULL) {
+        NsInterp  *itPtr = NsGetInterpData(interp);
+        sockPtr->servPtr = itPtr->servPtr;
+    }
 
     RequestNew(sockPtr);
 
