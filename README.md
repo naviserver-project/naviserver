@@ -1,6 +1,6 @@
-# SSL driver for NaviServer 4.99.11 #
+# SSL driver for NaviServer 4.99.12 #
 
-## Release 1.0 ##
+## Release 1.2 ##
 
     vlad@crystalballinc.com
     neumann@wu-wien.ac.at
