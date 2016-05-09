@@ -1,6 +1,6 @@
 # SSL driver for NaviServer 4.99.12 #
 
-## Release 1.2 ##
+## Release 2.0 ##
 
     vlad@crystalballinc.com
     neumann@wu-wien.ac.at
@@ -49,6 +49,8 @@ adds new ns_ssl command.
 * New in Version 1.1:
     - Support for "-body_file" in ns_ssl.
 
+* New in Version 2.0:
+    - OpenSSL support in core.
 ***
 
 ## Configuration: ##
@@ -119,10 +121,8 @@ adds new ns_ssl command.
 ## Compile and Install: ##
 
    To compile and install one might use commands like the following
-   (passing SSLINCLUDE - the path to the OpenSSL includes - is
-   optional)
 	
-    make SSLINCLUDE=/opt/local/include/
+    make
     make install
 
 ## Authors: ##

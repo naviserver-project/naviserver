@@ -4,7 +4,7 @@ endif
 
 # ability to pass path to openssl include library
 ifdef SSLINCLUDE
-    CFLAGS     = -I$(SSLINCLUDE)
+#    CFLAGS     = -I$(SSLINCLUDE)
 endif
 
 
@@ -19,7 +19,7 @@ MOD      =  nsssl.so
 MODOBJS     = nsssl.o
 
 #MODLIBS = -L/usr/local/ssl/lib -Wl,-rpath,/usr/local/ssl/lib
-MODLIBS  += -lssl -lcrypto
+#MODLIBS  += -lssl -lcrypto
 
 CLEAN	 += clean-cert
 

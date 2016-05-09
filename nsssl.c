@@ -40,7 +40,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "1.2"
+#define NSSSL_VERSION  "2.0"
 
 /* 
  * The maximum chunk size from TLS is 2^14 => 16384 (see RFC 5246). OpenSSL
@@ -204,11 +204,8 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
-    CRYPTO_set_mem_functions(ns_malloc, ns_realloc, ns_free);
 
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-    SSL_library_init();
+    Ns_Log(Notice, "OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
 
     drvPtr->ctx = SSL_CTX_new(SSLv23_server_method());
     if (drvPtr->ctx == NULL) {
@@ -1070,115 +1067,25 @@ HttpsGet(Tcl_Interp *interp, const char *id)
     return httpsPtr;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ClientSockInit --
- *
- *   Initialize OpenSSL context on a NS_SOCKET. 
- *
- * Results:
- *   Result code.
- *
- * Side effects:
- *  None
- *
- *----------------------------------------------------------------------
- */
 
 static int
-ClientSockInit(Tcl_Interp *interp, NS_SOCKET sock, Ns_ClientConnectionContext *cccPtr)
+ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
 {
-    SSL_CTX *ctx;
-    SSL     *ssl;
-
-    ctx = SSL_CTX_new(SSLv23_client_method());
-    cccPtr->ctx.https.ctx = ctx;
-    if (ctx == NULL) {
-	Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
-	return TCL_ERROR;
-    }
-
-    SSL_CTX_set_default_verify_paths(ctx);
-    SSL_CTX_load_verify_locations(ctx, cccPtr->ctx.https.caFile, cccPtr->ctx.https.caPath);
-    SSL_CTX_set_verify(ctx, cccPtr->ctx.https.verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
-    SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
-    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-    
-    if (cccPtr->ctx.https.cert != NULL) {
-	if (SSL_CTX_use_certificate_chain_file(ctx, cccPtr->ctx.https.cert) != 1) {
-            Ns_TclPrintfResult(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
-	    return TCL_ERROR;
-	}
-
-	if (SSL_CTX_use_PrivateKey_file(ctx, cccPtr->ctx.https.cert, SSL_FILETYPE_PEM) != 1) {
-	    Ns_TclPrintfResult(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
-	    return TCL_ERROR;
-	}
-    }
-    
-    ssl = SSL_new(ctx);
-    cccPtr->ctx.https.ssl = ssl;
-    if (ssl == NULL) {
-	Ns_TclPrintfResult(interp, "ssl init failed: %s", ERR_error_string(ERR_get_error(), NULL));
-	return TCL_ERROR;
-    }
-    
-    SSL_set_fd(ssl, sock);
-    SSL_set_connect_state(ssl);
-    
-    while (1) {
-	int rc, err;
-
-	Ns_Log(Debug, "ssl connect");
-	rc  = SSL_connect(ssl);
-	err = SSL_get_error(ssl, rc);
-
-	if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-	    Ns_Time timeout = { 0, 10000 }; /* 10ms */
-	    Ns_SockTimedWait(sock, NS_SOCK_WRITE|NS_SOCK_READ, &timeout);
-	    continue;
-	}
-	break;
-    }
-
-    if (!SSL_is_init_finished(ssl)) {
-	Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
-	return TCL_ERROR;
-    }
-
-    return TCL_OK;
-}
-
-
-static int
-ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, Ns_ClientConnectionContext *cccPtr)
-{
-    SSL_CTX    *ctx;
     SSL        *ssl;
-    int         result;
     SSLContext *sslPtr;
+    int         result;
+        
+    result = Ns_TLS_SSLCreate(interp, sockPtr->sock, ctx, &ssl);
 
-    result = ClientSockInit(interp, sockPtr->sock, cccPtr);
-    ssl = cccPtr->ctx.https.ssl;
-    ctx = cccPtr->ctx.https.ctx;
-    
-    if (result != TCL_OK) {
-        if (ctx != NULL)  {SSL_CTX_free(ctx);}
-        if (ssl != NULL) {
-            SSL_shutdown(ssl);
-            SSL_free(ssl);
-        }
-        return result;
+    if (likely(result == TCL_OK)) {
+        sslPtr = ns_calloc(1, sizeof(SSLContext));
+        sslPtr->ssl = ssl;
+        sockPtr->arg = sslPtr;
+    } else if (ssl != NULL) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
     }
 
-    sslPtr = ns_calloc(1, sizeof(SSLContext));
-    sslPtr->ssl = ssl;
-
-    SSL_CTX_free(ctx);
-
-    sockPtr->arg = sslPtr;
     return TCL_OK;
 }
 
@@ -1329,17 +1236,16 @@ HttpsConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hd
      * Initialize OpenSSL context
      */
     {
-        Ns_ClientConnectionContext ccc;
+        NS_TLS_SSL_CTX *ctx;
+        NS_TLS_SSL     *ssl;
         
-        ccc.ctx.https.cert = cert;
-        ccc.ctx.https.caFile = caFile;
-        ccc.ctx.https.caPath = caPath;
-        ccc.ctx.https.verify = verify;
-        
-        result = ClientSockInit(interp, sock, &ccc);
-        httpsPtr->ctx = ccc.ctx.https.ctx;
-        httpsPtr->ssl = ccc.ctx.https.ssl;
-        
+        result = Ns_TLS_CtxCreate(interp, cert, caFile, caPath, verify, &ctx);
+        httpsPtr->ctx = ctx;
+            
+        if (likely(result == TCL_OK)) {
+            result = Ns_TLS_SSLCreate(interp, sock, ctx, &ssl);
+            httpsPtr->ssl = ssl;
+        }
         if (unlikely(result != TCL_OK)) {
             HttpsClose(httpsPtr);
             return TCL_ERROR;
