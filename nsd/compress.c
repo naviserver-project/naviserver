@@ -459,3 +459,12 @@ Ns_InflateEnd(Ns_CompressStream *UNUSED(cStream))
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
