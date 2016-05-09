@@ -475,13 +475,13 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(contentType != NULL);
 
-    if (Ns_StrCaseFind(contentType, "multipart/form-data") != NULL
-        && (bs = Ns_StrCaseFind(contentType, "boundary=")) != NULL) {
+    if ((Ns_StrCaseFind(contentType, "multipart/form-data") != NULL)
+        && ((bs = Ns_StrCaseFind(contentType, "boundary=")) != NULL)) {
         const char *be;
 
         bs += 9;
         be = bs;
-        while (*be != '\0' && CHARTYPE(space, *be) == 0) {
+        while ((*be != '\0') && (CHARTYPE(space, *be) == 0)) {
             ++be;
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
@@ -572,7 +572,9 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
     s += strlen(att);
     e = s;
     if (*s != '"' && *s != '\'') {
-        /* NB: End of unquoted att=value is next space. */
+        /* 
+         * End of unquoted att=value is next space. 
+         */
         while (*e != '\0' && CHARTYPE(space, *e) == 0) {
             ++e;
         }
@@ -633,7 +635,9 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
         Tcl_DStringSetLength(dsPtr, 0);
         Tcl_DStringAppend(dsPtr, start, (int)len);
     } else {
-        /* NB: ExternalToUtfDString will re-init dstring. */
+        /* 
+         * ExternalToUtfDString will re-init dstring. 
+         */
         Tcl_DStringFree(dsPtr);
         (void) Tcl_ExternalToUtfDString(encoding, start, (int)len, dsPtr);
     }
