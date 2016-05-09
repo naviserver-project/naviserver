@@ -65,7 +65,7 @@ static void CallbackFree(Callback *cbPtr)
     NS_GNUC_NONNULL(1);
 
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
-                                  Ns_Time *startTime, const char *peer, bool binary, 
+                                  const Ns_Time *startTime, const char *peer, bool binary, 
                                   const char *clientData) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
     NS_GNUC_RETURNS_NONNULL;
@@ -132,7 +132,7 @@ CallbackFree(Callback *cbPtr)
  *----------------------------------------------------------------------
  */
 static NsConnChan *
-ConnChanCreate(NsServer *servPtr, Sock *sockPtr, Ns_Time *startTime, const char *peer, bool binary, const char *clientData) {
+ConnChanCreate(NsServer *servPtr, Sock *sockPtr, const Ns_Time *startTime, const char *peer, bool binary, const char *clientData) {
     static uintptr_t  connchanCount = 0;
     NsConnChan       *connChanPtr;
     Tcl_HashEntry    *hPtr;
@@ -348,7 +348,7 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
 
         Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: Tcl eval returned <%s>", Tcl_GetString(objPtr));
         result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
-        if (result == TCL_OK && ok == 0) {
+        if ((result == TCL_OK) && (ok == 0)) {
             result = TCL_ERROR;
         }
     }
@@ -517,7 +517,6 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, opt;
     const char     *name = NULL;
-    Tcl_HashEntry  *hPtr;
     NsConnChan     *connChanPtr;
 
     static const char *const opts[] = {
@@ -614,7 +613,6 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             result = NSDriverClientOpen(interp, url, method, timeoutPtr, &sockPtr);
             if (likely(result == TCL_OK)) {
                 Ns_Time      now;
-                NsConnChan  *connChanPtr;
                 struct iovec buf[4];
                 ssize_t      nSent;
 
@@ -651,7 +649,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                                              NS_TRUE /* binary, fixed for the time being */,
                                              NULL);
                 if (hdrPtr != NULL) {
-                    int i;
+                    size_t i;
                     
                     for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
                         const char *key = Ns_SetKey(hdrPtr, i);
@@ -667,7 +665,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 buf[1].iov_base = (void *)"\r\n";
                 buf[1].iov_len = 2u;
                 buf[2].iov_base = (void *)sockPtr->reqPtr->buffer.string;
-                buf[2].iov_len = Tcl_DStringLength(&sockPtr->reqPtr->buffer);
+                buf[2].iov_len = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
                 buf[3].iov_base = (void *)"\r\n";
                 buf[3].iov_len = 2u;
                 
@@ -692,6 +690,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              * ns_connchan list
              */
             Tcl_HashSearch  search;
+            Tcl_HashEntry  *hPtr;
             const char     *server = NULL;
             Tcl_DString     ds, *dsPtr = &ds;
             

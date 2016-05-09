@@ -5301,7 +5301,7 @@ AsyncWriterThread(void *arg)
  */
 
 int
-NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, Ns_Time *timeoutPtr, Sock **sockPtrPtr)
+NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
     char       *protocol, *host, *portString, *path, *tail, *url2, *query;
     Driver     *drvPtr = NULL;
