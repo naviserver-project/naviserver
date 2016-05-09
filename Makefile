@@ -203,25 +203,25 @@ build-doc:
 
 NS_TEST_CFG	= -u root -c -d -t $(srcdir)/tests/test.nscfg
 NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
-LD_LIBRARY_PATH	= \
+NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
    DYLD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$DYLD_LIBRARY_PATH"
 
 check: test
 
 test: all
-	$(LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 runtest: all
-	$(LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
+	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
 
 gdbtest: all
 	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
-	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
+	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 lldbtest: all
-	$(LD_LIBRARY_PATH) lldb -o run -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
+	$(NS_LD_LIBRARY_PATH) lldb -o run -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
 
 lldb-sample: all
 	lldb -o run -- $(DESTDIR)$(NAVISERVER)/bin/nsd -f -u nsadmin -t $(DESTDIR)$(NAVISERVER)/conf/nsd-config.tcl
@@ -229,13 +229,13 @@ lldb-sample: all
 
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
-	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
+	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 memcheck: all
-	$(LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 helgrind: all
-	$(LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+	$(NS_LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 cppcheck:
 	cppcheck --verbose --inconclusive -j4 --enable=all nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
