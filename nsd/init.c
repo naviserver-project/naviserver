@@ -68,6 +68,7 @@ Nsd_LibInit(void)
         NsInitSls();  /* Checks if server started. */
     	NsInitConf(); /* <- Server marked 'started' during library load. */
     	NsInitLog();
+	NsInitOpenSSL();
         NsInitFd();
     	NsInitBinder();
     	NsInitListen();

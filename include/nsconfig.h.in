@@ -97,8 +97,14 @@
 /* Are we building NaviServer with IPv6 support? */
 #undef HAVE_IPV6
 
+/* Define to 1 if you have the `crypto' library (-lcrypto). */
+#undef HAVE_LIBCRYPTO
+
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `ssl' library (-lssl). */
+#undef HAVE_LIBSSL
 
 /* Define to 1 if you have the `z' library (-lz). */
 #undef HAVE_LIBZ
@@ -132,6 +138,9 @@
 
 /* Define to 1 if you have the `open64' function. */
 #undef HAVE_OPEN64
+
+/* Define to 1 if you have the <openssl/evp.h> header file. */
+#undef HAVE_OPENSSL_EVP_H
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL

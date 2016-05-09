@@ -89,12 +89,14 @@ endif
 
 ifndef NSBUILD
     LDFLAGS += -L$(NAVISERVER)/lib
-    NSLIBS  += -lnsthread -lnsd
+    NSLIBS  += -lnsthread -lnsd @OPENSSL_LIBS@
     INCDIR   = $(NAVISERVER)/include
-    CFLAGS  += @ZLIB_INCLUDES@
+    CFLAGS  += @ZLIB_INCLUDES@ @OPENSSL_INCLUDES@
 else
     LDFLAGS += -L../nsthread -L../nsd -L../nsdb
     INCDIR   = ../include
+    CFLAGS  += @OPENSSL_INCLUDES@
+    NSLIBS  += @OPENSSL_LIBS@
 	ifeq (nsd,$(LIBNM))
 		CFLAGS += @ZLIB_INCLUDES@
 		NSLIBS += @ZLIB_LIBS@ @CRYPT_LIBS@

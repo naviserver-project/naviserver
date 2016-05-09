@@ -1260,20 +1260,21 @@ NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;   /* Severity at which to log verb
 
 NS_EXTERN void NsInitBinder(void);
 NS_EXTERN void NsInitConf(void);
+NS_EXTERN void NsInitDrivers(void);
 NS_EXTERN void NsInitFd(void);
+NS_EXTERN void NsInitInfo(void);
+NS_EXTERN void NsInitLimits(void);
 NS_EXTERN void NsInitListen(void);
 NS_EXTERN void NsInitLog(void);
-NS_EXTERN void NsInitInfo(void);
 NS_EXTERN void NsInitModLoad(void);
+NS_EXTERN void NsInitOpenSSL(void);
 NS_EXTERN void NsInitProcInfo(void);
 NS_EXTERN void NsInitQueue(void);
-NS_EXTERN void NsInitLimits(void);
-NS_EXTERN void NsInitDrivers(void);
-NS_EXTERN void NsInitServers(void);
+NS_EXTERN void NsInitRequests(void);
 NS_EXTERN void NsInitSched(void);
+NS_EXTERN void NsInitServers(void);
 NS_EXTERN void NsInitSls(void);
 NS_EXTERN void NsInitTcl(void);
-NS_EXTERN void NsInitRequests(void);
 NS_EXTERN void NsInitUrl2File(void);
 
 NS_EXTERN void NsConfigAdp(void);

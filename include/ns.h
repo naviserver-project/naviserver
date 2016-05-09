@@ -44,6 +44,17 @@
 # include <zlib.h>
 #endif
 
+#ifdef HAVE_OPENSSL_EVP_H
+# include <openssl/ssl.h>
+# ifdef HAVE_OPENSSL_EVP_H
+#  define NS_TLS_SSL_CTX SSL_CTX
+#  define NS_TLS_SSL SSL
+# else
+#  define NS_TLS_SSL_CTX void*
+#  define NS_TLS_SSL void*
+# endif
+#endif
+
 #ifdef NSD_EXPORTS
 #undef NS_EXTERN
 #ifdef __cplusplus
@@ -507,24 +518,6 @@ typedef struct Ns_FileVec {
 } Ns_FileVec;
 
 /*
- * Client connection structure.
- */
-
-typedef struct Ns_ClientConnectionContext {
-    union {
-        struct {
-            char *cert;
-            char *caFile;
-            char *caPath;
-            int   verify;
-            void *ctx;
-            void *ssl;
-        } https;
-    } ctx;
-} Ns_ClientConnectionContext;
-
-
-/*
  * The following are the valid return values of an Ns_DriverAcceptProc.
  */
 
@@ -576,7 +569,7 @@ typedef void
      NS_GNUC_NONNULL(1);
 
 typedef int
-(Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, Ns_ClientConnectionContext *cccPtr);
+(Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, NS_TLS_SSL_CTX *ctx);
 
 
 /*
@@ -3368,6 +3361,22 @@ Ns_ConnClearQuery(Ns_Conn *conn)
 NS_EXTERN int
 Ns_QueryToSet(char *query, Ns_Set *set)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
+/*
+ * tls.c:
+ */
+
+NS_EXTERN int
+Ns_TLS_CtxCreate(Tcl_Interp *interp,
+                 const char *cert, const char *caFile, const char *caPath, int verify,
+                 NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
+
+NS_EXTERN int
+Ns_TLS_SSLCreate(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
+                 NS_TLS_SSL **sslPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 #endif /* NS_H */
 

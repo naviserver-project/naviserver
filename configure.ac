@@ -35,7 +35,7 @@
 
 AC_PREREQ([2.68])
 
-AC_INIT([NaviServer],[4.99.12d1],[naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer],[4.99.12d2],[naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 #AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
@@ -192,6 +192,7 @@ AX_HAVE_MTSAFE_DNS
 AX_HAVE_GETTID
 AX_HAVE_TCP_FASTOPEN
 AX_CHECK_ZLIB
+AX_CHECK_OPENSSL
 AX_HAVE_GETPWNAM_R
 AX_HAVE_GETPWUID_R
 AX_HAVE_GETGRNAM_R

@@ -617,23 +617,31 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 ssize_t      nSent;
 
                 if (STREQ(sockPtr->drvPtr->protocol, "https")) {
-                    Ns_ClientConnectionContext ccc;
+                    NS_TLS_SSL_CTX *ctx;
 
                     assert(sockPtr->drvPtr->clientInitProc != NULL);
 
                     /* 
                      * For the time being, just pass NULL
                      * structures. Probably, we could create the SSLcontext
-                     * here and pass it on to reduce the number of members,
-                     * ... when we link against OpenSSL similar as against
-                     * zlib (with stubs in case it is not available).
                      */
-                    ccc.ctx.https.cert = NULL;
-                    ccc.ctx.https.caFile = NULL;
-                    ccc.ctx.https.caPath = NULL;
-                    ccc.ctx.https.verify = 0;
-
-                    result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &ccc);
+                    result = Ns_TLS_CtxCreate(interp,
+                                              NULL /*cert*/, NULL /*caFile*/,
+                                              NULL /* caPath*/, 0 /*verify*/,
+                                              &ctx);
+                    
+                    if (likely(result == TCL_OK)) {
+                        result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, ctx);
+                        
+                        /*
+                         * For the time being, we create/delete the ctx in an
+                         * eager fashion. We could probably make it reusable
+                         * and keep it around.
+                         */
+                        if (ctx != NULL)  {
+                            SSL_CTX_free(ctx);
+                        }
+                    }
                     
                     if (unlikely(result != TCL_OK)) {
                         if (sockPtr->sock > 0) {ns_sockclose(sockPtr->sock);}
