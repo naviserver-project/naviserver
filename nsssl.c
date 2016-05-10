@@ -185,7 +185,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.arg = drvPtr;
     init.path = path;
     init.protocol = "https";
-    init.defport = 443;
+    init.defaultPort = 443;
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
@@ -800,8 +800,8 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             return TCL_ERROR;
         }
 	if (HttpsConnect(interp, method, url, hdrPtr, bodyPtr, bodyFileName,
-			 cert, caFile, caPath, verify, keep_host_header,
-			 &httpsPtr) != TCL_OK) {
+			 cert, caFile, caPath, verify,
+                         keep_host_header, &httpsPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -1075,7 +1075,7 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
     SSLContext *sslPtr;
     int         result;
         
-    result = Ns_TLS_SSLCreate(interp, sockPtr->sock, ctx, &ssl);
+    result = Ns_TLS_SSLConnect(interp, sockPtr->sock, ctx, &ssl);
 
     if (likely(result == TCL_OK)) {
         sslPtr = ns_calloc(1, sizeof(SSLContext));
@@ -1239,11 +1239,11 @@ HttpsConnect(Tcl_Interp *interp, const char *method, const char *url, Ns_Set *hd
         NS_TLS_SSL_CTX *ctx;
         NS_TLS_SSL     *ssl;
         
-        result = Ns_TLS_CtxCreate(interp, cert, caFile, caPath, verify, &ctx);
+        result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath, verify, &ctx);
         httpsPtr->ctx = ctx;
             
         if (likely(result == TCL_OK)) {
-            result = Ns_TLS_SSLCreate(interp, sock, ctx, &ssl);
+            result = Ns_TLS_SSLConnect(interp, sock, ctx, &ssl);
             httpsPtr->ssl = ssl;
         }
         if (unlikely(result != TCL_OK)) {
@@ -1378,7 +1378,7 @@ HttpsClose(Https *httpsPtr)
     }
     if (httpsPtr->ctx != NULL)   {SSL_CTX_free(httpsPtr->ctx);}
     if (httpPtr->sock > 0)       {ns_sockclose(httpPtr->sock);}
-    if (httpPtr->spoolFileName)  {ns_free(httpPtr->spoolFileName);}
+    if (httpPtr->spoolFileName)  {ns_free((char*)httpPtr->spoolFileName);}
     if (httpPtr->spoolFd > 0)    {(void) ns_close(httpPtr->spoolFd);}
     if (httpPtr->bodyFileFd > 0) {(void) ns_close(httpPtr->bodyFileFd);}
     if (httpPtr->compress)       {
