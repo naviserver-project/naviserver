@@ -54,6 +54,10 @@ Returns the current working directory of the server
 
 Returns the value of gethostname(), or "localhost" if that fails
 
+[call [cmd  ns_info] [arg ipv6]]
+
+Returns information if the binary was compiled with IPv6 support.
+
 [call [cmd  ns_info] [arg locks]]
 
 Lists the mutexes that currently exist.  A 5-element list is returned
@@ -161,7 +165,13 @@ Returns returns a list of all socket callbacks such as the socket
 listening callback for the nscp module. Each list element is itself a
 4-element list like this: 
 
+[example_begin]
  {11 {read exit} nscp {127.0.0.1 9999} 0}
+[example_end]
+
+[call [cmd  ns_info] [arg ssl]]
+
+Returns information if the binary was compiled with OpenSSL support.
 
 
 [call [cmd  ns_info] [arg started]]

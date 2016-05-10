@@ -459,10 +459,10 @@ Ns_InfoTag(void)
  *
  * Ns_InfoIPv6 --
  *
- *      Returns revision tag of this build
+ *      Returns information if the binary was compiled with IPv6 support
  *
  * Results:
- *      A string version name.
+ *      Boolean result.
  *
  * Side effects:
  *      None.
@@ -474,6 +474,33 @@ bool
 Ns_InfoIPv6(void)
 {
 #ifdef HAVE_IPV6
+    return NS_TRUE;
+#else
+    return NS_FALSE;
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InfoSSL --
+ *
+ *      Returns information if the binary was compiled with OpenSSL support
+ *
+ * Results:
+ *      Boolean result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+bool
+Ns_InfoSSL(void)
+{
+#ifdef HAVE_OPENSSL_EVP_H
     return NS_TRUE;
 #else
     return NS_FALSE;
@@ -503,8 +530,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     int         opt, result = TCL_OK;
     bool        done = NS_TRUE; 
     NsInterp   *itPtr = arg;
-    const char *server;
-    const char *elog;
+    const char *server, *elog;
     Tcl_DString ds;
 
     static const char *const opts[] = {
@@ -513,7 +539,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         "major", "minor", "mimetypes", "name", "nsd", "pagedir", 
 	"pageroot", "patchlevel", "pid", "platform", "pools", 
 	"scheduled", "server", "servers",
-        "sockcallbacks", "tag", "tcllib", "threads", "uptime",
+        "sockcallbacks", "ssl", "tag", "tcllib", "threads", "uptime",
         "version", "winnt", "filters", "traces", "requestprocs",
         "url2file", "shutdownpending", "started", NULL
     };
@@ -525,7 +551,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
         IPidIdx, IPlatformIdx, IPoolsIdx, 
 	IScheduledIdx, IServerIdx, IServersIdx,
-        ISockCallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
+        ISockCallbacksIdx, ISSLIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
         IUrl2FileIdx, IShutdownPendingIdx, IStartedIdx
     };
@@ -680,6 +706,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
             break;
         }
+
+    case ISSLIdx:
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Ns_InfoSSL()));
+        break;
 
     default:
         /* cases handled below */

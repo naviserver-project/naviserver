@@ -168,7 +168,7 @@ when the result is larger than 100 bytes.
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $queryHeaders Host localhost
  
- set h [lb]ns_http queue -headers $queryHeaders -timeout 10:0 http://www.google.com[rb]
+ set h [lb]ns_http queue -headers $queryHeaders -timeout 10.0 http://www.google.com[rb]
  ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1000 -file F $h
  
  if {[lb]info exists F[rb]} {
