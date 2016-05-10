@@ -76,7 +76,7 @@ void NsInitOpenSSL(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TLS_CtxCreate --
+ * Ns_TLS_CtxClientCreate --
  *
  *   Crete and Initialize OpenSSL context
  *
@@ -90,7 +90,7 @@ void NsInitOpenSSL(void)
  */
 
 int
-Ns_TLS_CtxCreate(Tcl_Interp *interp,
+Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                  const char *cert, const char *caFile, const char *caPath, int verify,
                  NS_TLS_SSL_CTX **ctxPtr)
 {
@@ -132,7 +132,7 @@ Ns_TLS_CtxCreate(Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TLS_SSLCreate --
+ * Ns_TLS_SSLConnect --
  *
  *   Initialize a socket as ssl socket and wait until the socket is usable (is
  *   connected, handshake performed)
@@ -147,8 +147,8 @@ Ns_TLS_CtxCreate(Tcl_Interp *interp,
  */
 
 int
-Ns_TLS_SSLCreate(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                 NS_TLS_SSL **sslPtr)
+Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
+                  NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;
 

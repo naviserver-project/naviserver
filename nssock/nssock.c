@@ -106,7 +106,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.arg = cfg;
     init.path = (char*)path;
     init.protocol = "http";
-    init.defport = 80;
+    init.defaultPort = 80;
 
     return Ns_DriverInit(server, module, &init);
 }

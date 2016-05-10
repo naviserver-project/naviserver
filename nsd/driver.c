@@ -376,7 +376,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      */
     if (init->protocol != NULL) {
         defproto = init->protocol;
-        defport = init->defport;
+        defport = init->defaultPort;
     } else {
         defproto = "unknown";
         defport = 0;
@@ -5374,22 +5374,15 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     reqPtr = sockPtr->reqPtr;
 
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringAppend(dsPtr, method, -1);
-    Tcl_DStringAppend(dsPtr, " ", 1);
+    Ns_DStringAppend(dsPtr, method);
+    Ns_StrToUpper(Ns_DStringValue(dsPtr));
+    Tcl_DStringAppend(dsPtr, " /", 2);        
     if (*path != '\0') {
-        Tcl_DStringAppend(dsPtr, "/", 1);
         Tcl_DStringAppend(dsPtr, path, -1);
-    }
-    if (*tail != '\0') {
-        Tcl_DStringAppend(dsPtr, "/", 1);
-        Tcl_DStringAppend(dsPtr, tail, -1);
-    } else if (*path == '\0') {
-        /* 
-         * Path and tail are empty.
-         */
         Tcl_DStringAppend(dsPtr, "/", 1);
     }
-    Tcl_DStringAppend(dsPtr, " HTTP/1.0", 9);
+    Tcl_DStringAppend(dsPtr, tail, -1);        
+    Tcl_DStringAppend(dsPtr, " HTTP/1.0\r\n", 11);
     
     reqPtr->request.line = Ns_DStringExport(dsPtr);
     reqPtr->request.method = ns_strdup(method);

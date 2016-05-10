@@ -592,7 +592,7 @@ typedef struct Ns_DriverInitData {
     unsigned int             opts;             /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                    *arg;              /* Module's driver callback data */
     const char              *path;             /* Path to find config parameter such as port, address, etc. */
-    int                      defport;          /* Default port */
+    int                      defaultPort;      /* Default port */
     const char              *protocol;         /* Protocol */
 } Ns_DriverInitData;
 
@@ -920,7 +920,7 @@ typedef struct {
     Ns_Set            *replyHeaders;     /* ns_set for header fields of the reply */
     int                spoolLimit;       /* spool to file, when this body > this size */
     int                spoolFd;          /* fd of spool file */
-    char              *spoolFileName;    /* filename of spoolfile */
+    const char        *spoolFileName;    /* filename of spoolfile */
     Ns_Mutex           lock;             /* needed for switching modes (spooling to file/memory) */
     unsigned int       flags;
     Ns_CompressStream *compress;
@@ -929,6 +929,8 @@ typedef struct {
     Ns_Time            etime;
     bool               sendSpoolMode;    /* flag, whether a file is to be transmitted via bodyFileFd */
     int                bodyFileFd;       /* fd of a file which is sent as body */
+    NS_TLS_SSL_CTX    *ctx;
+    NS_TLS_SSL        *ssl;    
     Tcl_DString        ds;
 } Ns_HttpTask;
 
@@ -3368,14 +3370,14 @@ Ns_QueryToSet(char *query, Ns_Set *set)
  */
 
 NS_EXTERN int
-Ns_TLS_CtxCreate(Tcl_Interp *interp,
-                 const char *cert, const char *caFile, const char *caPath, int verify,
-                 NS_TLS_SSL_CTX **ctxPtr)
+Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath, int verify,
+                       NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
 
 NS_EXTERN int
-Ns_TLS_SSLCreate(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                 NS_TLS_SSL **sslPtr)
+Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
+                  NS_TLS_SSL **sslPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 #endif /* NS_H */

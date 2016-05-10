@@ -625,10 +625,10 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                      * For the time being, just pass NULL
                      * structures. Probably, we could create the SSLcontext
                      */
-                    result = Ns_TLS_CtxCreate(interp,
-                                              NULL /*cert*/, NULL /*caFile*/,
-                                              NULL /* caPath*/, 0 /*verify*/,
-                                              &ctx);
+                    result = Ns_TLS_CtxClientCreate(interp,
+                                                    NULL /*cert*/, NULL /*caFile*/,
+                                                    NULL /* caPath*/, 0 /*verify*/,
+                                                    &ctx);
                     
                     if (likely(result == TCL_OK)) {
                         result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, ctx);
