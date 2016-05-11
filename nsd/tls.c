@@ -67,7 +67,7 @@ void NsInitOpenSSL(void)
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
     SSL_library_init();
-    Ns_Log(Notice, "OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
+    Ns_Log(Notice, "%s initialized", SSLeay_version(SSLEAY_VERSION));
 #endif
 }
 
