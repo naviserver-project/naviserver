@@ -520,19 +520,20 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     NsConnChan     *connChanPtr;
 
     static const char *const opts[] = {
-        "close",
         "callback",
+        "close",
         "detach",
         "exists",
         "list", 
         "open",
         "read",
-        "write",  NULL
+        "write",
+        NULL
     };
 
     enum {
-        CCloseIdx,
         CCallbackIdx,
+        CCloseIdx,
         CDetachIdx,
         CExistsIdx,
         CListIdx, 
@@ -765,7 +766,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 
             connChanPtr = ConnChanGet(interp, servPtr, name);
-            Ns_Log(Notice, "ns_connchan %s close connChanPtr %p", name, (void*)connChanPtr);
+            Ns_Log(Ns_LogConnchanDebug, "ns_connchan %s close connChanPtr %p", name, (void*)connChanPtr);
 
             if (connChanPtr != NULL) {
                 ConnChanFree(connChanPtr);
