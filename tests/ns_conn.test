@@ -76,7 +76,7 @@ test ns_connchan-1.0 {basic operation} -body {
 
 test ns_connchan-1.1 {basic operation} -body {
      ns_connchan x
-} -returnCodes error -result {bad option "x": must be detach, close, list, callback, write, or read}
+} -returnCodes error -result {bad option "x": must be callback, close, detach, exists, list, open, read, or write}
 
 test ns_connchan-1.2 {detach without connection} -body {
      ns_connchan detach
