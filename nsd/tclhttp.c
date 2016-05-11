@@ -987,8 +987,6 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     Ns_Log(Ns_LogTaskDebug, "connect to [%s]:%d", host, portNr);
 
     sock = Ns_SockAsyncConnect(host, portNr);
-    fprintf(stderr, "===== connect returned %d\n", sock);
-
     if (sock == NS_INVALID_SOCKET) {
 	Ns_TclPrintfResult(interp, "connect to \"%s\" failed: %s",
                            url, ns_sockstrerror(ns_sockerrno));

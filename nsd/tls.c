@@ -100,7 +100,6 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     NS_NONNULL_ASSERT(ctxPtr != NULL);
         
     ctx = SSL_CTX_new(SSLv23_client_method());
-    fprintf(stderr, "SSL_CTX_new returned %p\n", (void*)ctx);
     *ctxPtr = ctx;
     if (ctx == NULL) {
 	Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
