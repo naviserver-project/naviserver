@@ -6,8 +6,7 @@
 
 [description]
 
-This command provides a simple HTTP client mechanism. For https client
-requests, use the [term ns_ssl] defined by the [term nsssl] module.
+This command provides a simple HTTP and HTTPS client functionality.
 
 [section {COMMANDS}]
 
@@ -16,11 +15,11 @@ requests, use the [term ns_ssl] defined by the [term nsssl] module.
 [call [cmd "ns_http cancel"] \
 	[arg id]]
 
-Cancel queued http request by id (ns_set id of request).
+Cancel queued http/https request by id (ns_set id of request).
 
 [call [cmd "ns_http cleanup"]]
 
-Cancel all pending http requests
+Cancel all pending http/https requests
 
 [call [cmd "ns_http list"]]
 
@@ -28,20 +27,24 @@ Return the list of currently running or pending requests in format:
 id url done|running ....
 
 [call [cmd "ns_http queue"] \
-	[opt [arg {-method M}]] \
-	[opt [arg {-headers S}]] \
-	[opt [arg {-body B}]] \
-	[opt [arg {-body_file fn}]] \
-	[opt [arg {-timeout T}]] \
-	[opt [arg {-keep_host_header}]] \
+	[opt [option "-method [arg M]"]] \
+	[opt [option "-headers [arg S]"]] \
+	[opt [option "-body [arg B]"]] \
+	[opt [option "-body_file [arg fn]"]] \
+	[opt [option "-timeout [arg T]"]] \
+	[opt [option "-keep_host_header"]] \
+	[opt [option "-cert [arg C]"]] \
+	[opt [option "-cafile [arg CA ]"]] \
+	[opt [option "-capath [arg CP ]"]] \
+	[opt [option "-verify"]] \
 	[arg url] \
 	]
 
-[arg -method]
+[option -method]
 use the specified HTTP method such as GET or POST or HEAD
 
 [para]
-[arg -headers]
+[option -headers]
 headers is the ns_set ID containing the additional headers to include in the HTTP request.
 
 [para]
@@ -50,33 +53,71 @@ body is the value which will be sent as the HTTP request body.
 This option is mutual exclusive with [arg -body_file].
 
 [para]
-[arg -body_file]
+[option -body_file]
 transmit the file specified via filename as the HTTP request body.
 This option is mutual exclusive with [arg -body].
 
 [para]
-[arg -timeout]
+[option -timeout]
 Timeout for how long to wait for finishing the whole request 
 (default 2:0, secs:microsesc)
 
 [para]
-[arg -keep_host_header]
+[option -keep_host_header]
 allows the Host: header field for the request to be passed in via the -headers arg. 
 Otherwise it is overwritten.
+
+[para]
+[option "-cert"]
+allows for https URIs to use the specified client certificate. The
+certificates must be in PEM format and must be sorted starting with
+the subject's certificate (actual client or server certificate),
+followed by intermediate CA certificates if applicable, and ending at
+the highest level (root) CA.
+
+[para]
+[option "-cafile"]
+allows for https URIs to specify the locations, at which CA
+certificates for verification purposes are located. The certificates
+available via cafile and capath are trusted. The cafile points to a
+file of CA certificates in PEM format. The file can contain several CA
+certificates.
+
+[para]
+[option "-capath"]
+allows for https URIs to specify the locations, at which CA
+certificates for verification purposes are located. capath points to a
+directory containing CA certificates in PEM format. The files each
+contain one CA certificate. For more details, see
+https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html
+
+[para]
+[option -verify]
+allows for https URIs to specify that the server certificate should be
+verified. If the verification process fails, the TLS/SSL handshake is
+immediately terminated with an alert message containing the reason for
+the verification failure. If no server certificate is sent, because an
+anonymous cipher is used, this option is ignored.
 
 [para]
 The command [cmd "ns_http queue"] opens a connection to the web server
 denoted in the [arg url] and returns on success the [arg id] of the HTTP
 request, which might be used later in a [cmd "ns_http wait"] 
-or [cmd "ns_http cancel"] command to refer to this request.
+or [cmd "ns_http cancel"] command to refer to this request. The
+command supports HTTP and HTTPS URIs.
 
 
 [call [cmd "ns_http run"] \
-	[opt [arg {-method M}]] \
-	[opt [arg {-headers S}]] \
-	[opt [arg {-body B}]] \
-	[opt [arg {-body_file fn}]] \
-	[opt [arg {-timeout T}]] \
+	[opt [option "-method [arg M]"]] \
+	[opt [option "-headers [arg S]"]] \
+	[opt [option "-body [arg B]"]] \
+	[opt [option "-body_file [arg fn]"]] \
+	[opt [option "-timeout [arg T]"]] \
+	[opt [option "-keep_host_header"]] \
+	[opt [option "-cert [arg C]"]] \
+	[opt [option "-cafile [arg CA ]"]] \
+	[opt [option "-capath [arg CP ]"]] \
+	[opt [option "-verify"]] \
 	[arg url] \
 	]
 
@@ -87,51 +128,51 @@ Send a HTTP reuqest and wait for the result.  The command
 
 
 [call [cmd "ns_http wait"] \
-	[opt [arg {-elapsed varName}]] \
-	[opt [arg {-file varName}]] \
-	[opt [arg {-headers H}]] \
-	[opt [arg {-result varName}]] \
-	[opt [arg {-spoolsize int}]] \
-	[opt [arg {-status varName}]] \
-	[opt [arg {-timeout t}]] \
-	[opt [arg {-decompress}]] \
+	[opt [option "-elapsed [arg varName]"]] \
+	[opt [option "-file [arg varName]"]] \
+	[opt [option "-headers [arg H]"]] \
+	[opt [option "-result [arg varName]"]] \
+	[opt [option "-spoolsize [arg int]"]] \
+	[opt [option "-status [arg varName]"]] \
+	[opt [option "-timeout [arg t]"]] \
+	[opt [option "-decompress"]] \
 	[arg id]]
 
 [para]
-[arg -elapsed]
+[option -elapsed]
 varName is the name of a variable that should be used to store the elapsed
 time for the request from beginning to finish
 
 [para]
-[arg -file]
+[option -file]
 varName is the name of a variable that will contain the name of the 
 temporary file in case the request was larger than [arg -spoolsize]
 
 [para]
-[arg -headers]
+[option -headers]
 headers is the ns_set ID which will receive the headers from the HTTP response.
 
 [para]
-[arg -result]
+[option -result]
 varName is the name of a variable that should be used to store the HTTP response body.
 
 [para]
-[arg -spoolsize]
+[option -spoolsize]
 In case the result is larger than spoolsize, it will be spooled to a
 temporary file returned in the variable denoted by [arg -file].
 
 [para]
-[arg -status]
+[option -status]
 varName is the name of a variable that should be used to store the HTTP response status
 
 [para] 
-[arg -timeout] 
+[option -timeout] 
 Optional timeout for the [cmd wait] subcommand. The task
 might wait for input until the specified timeout for input. Might be
 governed by the total timeout specified in the [cmd queue] subcommand.
 
 [para]
-[arg -decompress]
+[option -decompress]
 In case the response has a content encoding of gzip, automatically
 decompress the result
 
@@ -180,7 +221,7 @@ when the result is larger than 100 bytes.
 [example_end]
 
 
-[see_also ns_ssl ns_httpget ns_httppost ns_httptime]
+[see_also ns_httpget ns_httppost ns_httptime]
 [keywords http-client nssock] 
 
 [manpage_end]
