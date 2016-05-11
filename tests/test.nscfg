@@ -10,13 +10,18 @@
 ns_section "test"
 ns_param   home            [pwd]/tests
 
-set loopback [expr {[ns_info ipv6] ? "::1" : "127.0.0.1"}]
-
-for {set port 8000} {$port < 8100} {incr port} {
-    if {![catch {
-	close [ns_socklisten $loopback $port]
-    } msg]} {
-        break
+foreach loopback [expr {[ns_info ipv6] ? [list ::1 "127.0.0.1"] : "127.0.0.1"}] {
+    for {set port 8000} {$port < 8100} {incr port} {
+	if {![catch {
+	    ns_log notice "try $loopback $port"
+	    close [ns_socklisten $loopback $port]
+	} msg]} {
+	    set ok 1
+	    break
+	}
+    }
+    if {[info exists ok]} {
+	break
     }
 }
 
