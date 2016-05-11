@@ -661,5 +661,12 @@ proc ns_proxy_handler_http {args} {
     close $rfd
 }
 
+proc ns_ssl {args} {
+
+    ns_deprecated "ns_http"
+    uplevel [list ns_http {*}$args]
+}
+
+
 # EOF
 
