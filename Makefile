@@ -16,11 +16,7 @@ MOD      =  nsssl.so
 #
 # Objects to build.
 #
-MODOBJS     = nsssl.o
-
-#MODLIBS = -L/usr/local/ssl/lib -Wl,-rpath,/usr/local/ssl/lib
-#MODLIBS  += -lssl -lcrypto
-
+MODOBJS   = nsssl.o
 CLEAN	 += clean-cert
 
 include  $(NAVISERVER)/include/Makefile.module

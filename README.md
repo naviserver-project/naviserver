@@ -104,23 +104,10 @@ adds new ns_ssl command.
     openssl dhparam 2048 >> server.pem
 
 
-## Usage: ##
-
-   The module provides additionally the command "ns_ssl" 
-   which is the http conterpart to "ns_http". 
-
-    ns_ssl cancel id
-    ns_ssl cleanup
-    ns_ssl list
-    ns_ssl queue ?-method M? ?-headers S? ?-body B? ?-body_file fn? ?-timeout T? ?-cert C? ?-cafile CA? ?-capath CP? ?-verify? ?-keep_host_header? -url
-    ns_ssl run ?-method M? ?-headers S? ?-body B? ?-body_file fn? ?-timeout T? url
-    ns_ssl wait ?-elapsed varName? ?-file varName? ?-headers H? ?-result varName? ?-spoolsize int? ?-status varName? ?-timeout t? ?-decompress? id
-
-  See the naviserver documentation of "ns_http" for usage and details about the options.
-
 ## Compile and Install: ##
 
    To compile and install one might use commands like the following
+   (assuming that NaviServer was compiled with openssl support)
 	
     make
     make install

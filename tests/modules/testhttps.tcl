@@ -83,12 +83,12 @@ namespace eval ::nstest {
 	}
 	
 	log url https://$host:$port/$url
-	set r [ns_ssl queue -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
+	set r [ns_http queue -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
 	
 	ns_set cleanup $hdrs 
 	set hdrs [ns_set create]
 	
-	ns_ssl wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
+	ns_http wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
 	log status $status
 
 	set response [list $status]

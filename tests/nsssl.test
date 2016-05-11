@@ -104,7 +104,7 @@ test nsssl-1.6 {with query} -constraints {serverListen} -setup {
     ns_unregister_op GET /get/foo
 } -result "200 q=1"
 
-test http-7.0 {ns_ssl with body and text datatype} -constraints {serverListen} -setup {
+test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
 	set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
@@ -114,11 +114,11 @@ test http-7.0 {ns_ssl with body and text datatype} -constraints {serverListen} -
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     ns_log notice "queueing request for [ns_config test listenurl]/post"
-    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST \
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST \
 			   [ns_config test listenurl]/post]} errorMsg]} {
 	puts stderr ERROR-$errorMsg
     }
-    set r [ns_ssl wait -result R -status S $h]
+    set r [ns_http wait -result R -status S $h]
     return [list $S $R]
 } -cleanup {
     ns_unregister_op POST /post
@@ -136,11 +136,11 @@ test http-7.1 {ns_http with body and text datatype with encoding} -constraints {
     set string [encoding convertto $encoding "Testing 'äöüß'"]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
-    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST \
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST \
 			   [ns_config test listenurl]/post]} errorMsg]} {
 	puts stderr ERROR-$errorMsg
     }
-    set r [ns_ssl wait -result R -status S $h]
+    set r [ns_http wait -result R -status S $h]
     return [list $S $R]
 } -cleanup {
     ns_unregister_op POST /post
@@ -156,10 +156,10 @@ test http-7.2a {ns_http with body and binary datataype} -constraints {serverList
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type application/octet-stream
-    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
 	puts stderr ERROR-$errorMsg
     }
-    set r [ns_ssl wait -result R -status S $h]
+    set r [ns_http wait -result R -status S $h]
     set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
     return [list $S $R1]
 } -cleanup {
@@ -179,10 +179,10 @@ test http-7.2b {ns_http with body and binary datataype} -constraints {serverList
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type application/octet-stream
-    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
 	puts stderr ERROR-$errorMsg
     }
-    set r [ns_ssl wait -result R -status S $h]
+    set r [ns_http wait -result R -status S $h]
     set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
     return [list $S $R1]
 } -cleanup {
@@ -191,7 +191,7 @@ test http-7.2b {ns_http with body and binary datataype} -constraints {serverList
 } -result {200 {0000 0001 0002 000D}}
 
 
-test http-8.0 {ns_ssl with body_file} -constraints {serverListen} -setup {
+test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
 	set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
@@ -200,11 +200,11 @@ test http-8.0 {ns_ssl with body_file} -constraints {serverListen} -setup {
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
-    if {[catch {set h [ns_ssl queue -headers $queryHeaders -body_file pages/123 -method PUT \
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body_file pages/123 -method PUT \
 			   [ns_config test listenurl]/put]} errorMsg]} {
 	puts stderr ERROR-$errorMsg
     }
-    set r [ns_ssl wait -result R -status S $h]
+    set r [ns_http wait -result R -status S $h]
     return [list $S $R]
 } -cleanup {
     ns_unregister_op PUT /put
