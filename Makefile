@@ -32,7 +32,7 @@
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl
 
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
@@ -168,6 +168,7 @@ build-doc:
 		       nscp \
 		       nsperm \
 		       nssock \
+		       nsssl \
                        doc/src/manual \
                        doc/src/naviserver \
                        modules/nsexpat \
