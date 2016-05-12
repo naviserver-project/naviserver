@@ -1,0 +1,167 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_config-1.1 {basic syntax} -body {
+    ns_config
+} -returnCodes error -result \
+    {wrong # args: should be "ns_config ?-bool? ?-int? ?-min min? ?-max max? ?-exact? ?-set? ?--? section key ?default?"}
+
+
+
+test ns_config-2.1 {bool} -body {
+    expr {[ns_config -bool ns/testconfig trueval] ? 1 : 0}
+} -result 1
+
+test ns_config-2.2 {missing bool} -body {
+    ns_config -bool ns/testconfig missing
+} -result {}
+
+test ns_config-2.3 {bool default} -body {
+    expr {[ns_config -bool ns/testconfig missing y] ? 1 : 0}
+} -result 1
+
+test ns_config-2.4 {bool default} -body {
+    expr {[ns_config -bool ns/testconfig missing off] ? 1 : 0}
+} -result 0
+
+test ns_config-2.5 {bool default, not a bool} -body {
+    ns_config -bool ns/testconfig missing huh?
+} -returnCodes error -result {expected boolean value but got "huh?"}
+
+test ns_config-2.6 {not a bool} -body {
+    ns_config -bool ns/testconfig notbool
+} -returnCodes error -result {expected boolean value but got "this-is-not-a-bool"}
+
+test ns_config-2.7 {not a bool, bool default} -body {
+    expr {[ns_config -bool ns/testconfig notbool on] ? 1 : 0}
+} -result 1
+
+test ns_config-2.8 {not a bool, bool default} -body {
+    ns_config -bool ns/testconfig notbool huh?
+} -returnCodes error -result {expected boolean value but got "huh?"}
+
+
+
+test ns_config-3.1 {int} -body {
+    ns_config -int ns/testconfig intval
+} -result 42
+
+test ns_config-3.2 {missing int} -body {
+    ns_config -int ns/testconfig missing
+} -result {}
+
+test ns_config-3.3 {int default} -body {
+    ns_config -int ns/testconfig missing 42
+} -result 42
+
+test ns_config-3.4 {not an int} -body {
+    ns_config -int ns/testconfig missing huh?
+} -returnCodes error -result {expected integer but got "huh?"}
+
+test ns_config-3.5 {not an int} -body {
+    ns_config -int ns/testconfig notint
+} -returnCodes error -result {expected integer but got "this-is-not-an-int"}
+
+test ns_config-3.6 {wide int} -body {
+    ns_config -int ns/testconfig wideint
+} -result {12345678900}
+
+
+
+test ns_config-4.1 {int min} -body {
+    ns_config -min 41 ns/testconfig intval
+} -result 42
+
+test ns_config-4.2 {int min} -body {
+    ns_config -min 43 ns/testconfig intval
+} -returnCodes error -result {value out of range}
+
+test ns_config-4.3 {int max} -body {
+    ns_config -max 43 ns/testconfig intval
+} -result 42
+
+test ns_config-4.4 {int max} -body {
+    ns_config -max 41 ns/testconfig intval
+} -returnCodes error -result {value out of range}
+
+test ns_config-4.5 {int min max} -body {
+    ns_config -min 41 -max 43 ns/testconfig intval
+} -result 42
+
+test ns_config-4.6 {int min def} -body {
+    ns_config -min 43 ns/testconfig intval 43
+} -result 43
+
+test ns_config-4.7 {int max def} -body {
+    ns_config -max 41 ns/testconfig intval 41
+} -result 41
+
+test ns_config-4.8 {int max def oob} -body {
+    ns_config -max 41 ns/testconfig missing 42
+} -returnCodes error -result {value out of range}
+
+
+
+
+test ns_config-5.1 {exact} -body {
+    ns_config ns/testconfig camelcase
+} -result ok
+
+test ns_config-5.2 {exact} -body {
+    ns_config -exact ns/testconfig CamelCase
+} -result ok
+
+test ns_config-5.3 {exact} -body {
+    ns_config -exact ns/testconfig camelcase
+} -result {}
+
+test ns_config-5.4 {exact} -body {
+    ns_config -exact ns/testconfig camelcase default
+} -result default
+
+
+
+test ns_config-6.1 {sections} -body {
+    lindex [ns_configsections] 0
+} -match regexp -result {t[0-9]+}
+
+
+
+test ns_config-7.1 {section} -body {
+    ns_configsection
+} -returnCodes error -result {wrong # args: should be "ns_configsection section"}
+
+test ns_config-7.2 {section} -body {
+    ns_set array [ns_configsection ns/testconfig]
+} -match glob -result {trueval yes intval 42 *}
+
+test ns_config-7.3 {section missing} -body {
+    ns_configsection does/not/exist
+} -result {}
+
+
+test ns_config-8.1 {missing -set} -body {
+    ns_config ns/testconfig missing missing
+} -result {missing}
+
+test ns_config-8.2 {missing -set} -body {
+    ns_config ns/testconfig missing 
+} -result {}
+
+test ns_config-8.3 {missing -set} -body {
+    ns_config ns/testconfig missing here 
+} -result {here}
+
+test ns_config-8.4 {missing -set} -body {
+    ns_config ns/testconfig missing here 
+} -result {here}
+
+
+
+cleanupTests

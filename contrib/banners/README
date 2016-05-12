@@ -1,0 +1,22 @@
+
+To indicate that your Web site or Product is powered by
+NaviServer you are encouraged to use one of the
+Logos found in this directory.
+
+Choose between two sets:
+
+GIF-Format (white background):
+
+    ns_poweredby.gif  ("Powered by NaviServer."), 135x24 px
+    ns_logosmall.gif  106x28 px
+    ns_logobig.gif    156x38 px
+
+and PNG-Format suitable for many different backgrounds:
+
+    ns_poweredby.png  ("Powered by NaviServer."), 133x22 px
+    ns_logosmall.png  104x26 px
+    ns_logobig.png    154x36 px
+
+If you want to use a PNG version in the MS IE browsers
+and experience problems with alpha channel transparency 
+take the file 'msie.html' as an example for a workaround.

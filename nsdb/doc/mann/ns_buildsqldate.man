@@ -1,0 +1,79 @@
+[include version_include.man]
+
+[manpage_begin ns_buildsqldate n [vset version]]
+[moddesc {NaviServer Module Commands}]
+
+[titledesc {SQL date and time manipulation commands}]
+
+[description]
+
+The following commands build SQL dates and timestamps for inclusion in
+SQL queries.
+
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_buildsqldate] [arg month] [arg day] [arg year]]
+
+This command builds a SQL date string out of the specified [arg month],
+[arg day], and [arg year]. The month can be the month number (1 - 12) or
+the full, capitalized month name (January, February, ..., December). The
+day must be a number from 1 - 31, and the year must be a 4-digit year
+(e.g., 1957). An error is returned if any of the argument values are
+invalid. The resulting string can be used in an SQL statement.
+
+
+
+
+[call [cmd ns_localsqltimestamp]]
+
+This command returns a timestamp value that encodes the local time in ANSI SQL
+format (YYYY-MM-DD hh24:mm:ss).
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+% ns_buildsqldate "01" "15" "1929"
+1929-01-15
+[example_end]
+
+[example_begin]
+% ns_buildsqldate "13" "31" "2000"
+Invalid date: 13 31 2000
+while executing ...
+[example_end]
+
+[example_begin]
+% set thedate
+[example_end]
+
+[example_begin]
+% ns_localsqltimestamp
+2004-06-22 23:00:27
+[example_end]
+
+This command is equivalent to the following:
+
+[example_begin]
+% ns_fmttime ns_time "%Y-%m-%d %H:%M:%S"
+[example_end]
+
+[example_begin]
+% clock format ns_time -format "%Y-%m-%d %H:%M:%S"
+[example_end]
+
+
+
+[see_also ns_db]
+[keywords database sql date time]
+
+[manpage_end]
+

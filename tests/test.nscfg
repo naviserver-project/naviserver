@@ -1,0 +1,305 @@
+# -*- Tcl -*-
+#
+# Configuration file for server to run tests in command mode.
+#
+
+#
+# Parameters for test scripts.
+#
+
+ns_section "test"
+ns_param   home            [pwd]/tests
+
+foreach loopback [expr {[ns_info ipv6] ? [list ::1 "127.0.0.1"] : "127.0.0.1"}] {
+    for {set port 8000} {$port < 8100} {incr port} {
+	if {![catch {
+	    ns_log notice "try $loopback $port"
+	    close [ns_socklisten $loopback $port]
+	} msg]} {
+	    set ok 1
+	    break
+	}
+    }
+    if {[info exists ok]} {
+	break
+    }
+}
+
+ns_param   listenport	    [expr {$port < 8100 ? $port : 0}]
+ns_param   loopback	    $loopback
+
+if {[ns_info ipv6]} {
+    ns_param   listenurl    http://\[$loopback\]:[ns_config test listenport]
+} else {
+    ns_param   listenurl    http://$loopback:[ns_config test listenport]
+}
+
+ns_log notice "configure LOOPBACK  $loopback"
+ns_log notice "configure LISTENURL [ns_config test listenurl]"
+#
+# The following are for the tests in tests/ns_config.test.
+#
+
+ns_section "ns/testconfig"
+ns_param   trueval    yes
+ns_param   intval     42
+ns_param   notbool    this-is-not-a-bool
+ns_param   notint     this-is-not-an-int
+ns_param   CamelCase  ok
+ns_param   wideint    12345678900
+ns_param   isTestServer true
+
+#
+# Global config.
+#
+
+ns_section "ns/modules"
+if {[ns_config "test" listenport]} {
+    ns_param   nssock      [ns_config "test" home]/../nssock/nssock.so
+}
+
+ns_section "ns/module/nssock"
+ns_param   port            [ns_config "test" listenport]
+ns_param   hostname        localhost
+ns_param   address         [ns_config "test" loopback]
+ns_param   defaultserver   test
+# The following odd buffer sizes chose to flush out bugs...
+ns_param   maxline         1024
+ns_param   maxheaders      16
+ns_param   maxinput        1000001
+ns_param   bufsize         1024
+ns_param   readahead       1025
+ns_param   spoolerthreads  3
+ns_param   uploadsize      1027
+ns_param   writerthreads   3
+ns_param   writersize      1026
+ns_param   writerbufsize   512
+ns_param   deferaccept     0
+#ns_param   writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
+
+ns_section "ns/module/nssock/servers"
+ns_param   test            test
+ns_param   test            test:[ns_config "test" listenport]
+ns_param   testvhost       testvhost
+ns_param   testvhost       testvhost:[ns_config "test" listenport]
+ns_param   testvhost2      testvhost2
+ns_param   testvhost2      testvhost2:[ns_config "test" listenport]
+
+ns_section	"ns/mimetypes"
+ns_param    .html             "text/html"
+ns_param    .utf_adp          "text/plain"
+ns_param    .iso_adp          "text/plain"
+ns_param    .utf2iso_adp      "text/plain; charset=iso-8859-1"
+ns_param    .iso2iso_adp      "text/plain; charset=iso-8859-1"
+ns_param    .iso-8859-2_adp   "text/plain; charset=iso-8859-2"
+ns_param    .utf2utf_adp      "text/plain; charset=utf-8"
+ns_param    .iso2utf_adp      "text/plain; charset=utf-8"
+
+ns_section "ns/encodings"
+ns_param   default         "utf-8"
+ns_param   .utf_adp        "utf-8"
+ns_param   .iso_adp        "iso-8859-1"
+ns_param   .utf2iso_adp    "utf-8"
+ns_param   .iso2iso_adp    "iso-8859-1"
+ns_param   .iso-8859-2_adp "iso-8859-2"
+ns_param   .utf2utf_adp    "utf-8"
+ns_param   .iso2utf_adp    "iso-8859-1"
+
+ns_section "ns/parameters"
+ns_param   home            [ns_config "test" home]
+ns_param   tcllibrary      [ns_config "test" home]/../tcl
+ns_param   pidfile         [ns_config "test" home]/testserver/nsd.pid
+ns_param   logdebug        false
+ns_param   logdev          false
+ns_param   progressminsize 1
+
+ns_section "ns/fastpath"
+set v cache
+#set v mmap
+#set v none
+switch $v {
+    cache {
+	ns_param   cache           true
+	ns_param   cachemaxsize    2055
+	ns_param   cachemaxentry   32
+	ns_param   mmap            false
+    }
+    mmap {
+	ns_param   cache           false
+	ns_param   mmap            true
+    }
+    none {
+	ns_param   cache           false
+	ns_param   mmap            false
+    }
+}
+unset v
+
+
+ns_section "ns/limits"
+ns_param   confLimit1      "Config File Limit One"
+ns_param   confLimit2      "Config File Limit Two"
+
+ns_section "ns/limit/confLimit1"
+ns_param   maxrun          99
+
+ns_section "ns/limit/confLimit2"
+# unspecified, use defaults.
+
+ns_section "ns/servers"
+ns_param   testvhost       "Virtual Host Test Server"
+ns_param   testvhost2      "Virtual Host Test Server with custom procs"
+ns_param   test            "Main Test Server"
+
+
+
+#
+# Main test server config.
+#
+
+ns_section "ns/server/test"
+#ns_param   URLCharset      iso-8859-1
+#ns_param   OutputCharset   iso-8859-1
+
+ns_param   URLCharset      utf-8
+ns_param   OutputCharset   utf-8
+#ns_param   HackContentType true
+
+ns_param   compressenable  true  ;# turned on as needed for tests
+ns_param   compresslevel   4     ;# default
+ns_param   compressminsize 3     ;# for testing, compress almost everything
+ns_param   minthreads 2
+ns_param   maxthreads 10
+
+ns_section "ns/server/test/pools"
+ns_param emergency "Emergency pool"
+
+ns_section "ns/server/test/pool/emergency"
+ns_param   minthreads 1
+ns_param   maxthreads 1
+
+ns_section "ns/server/test/fastpath"
+ns_param   serverdir       testserver
+ns_param   pagedir         pages
+
+ns_section "ns/server/test/limits"
+ns_param   confLimit1      "GET /confLimit1"
+
+ns_section "ns/server/test/tcl"
+ns_param   initfile        ../nsd/init.tcl
+ns_param   library         [ns_config "test" home]/testserver/modules
+ns_param   cachetimeout    360
+
+ns_section "ns/server/test/adp"
+ns_param   map             *.adp
+ns_param   map             *_adp
+ns_param   nocache         true
+ns_param   enabletclpages  true
+
+ns_section "ns/server/test/redirects"
+ns_param   400             "/400return.adp"
+
+ns_section "ns/server/test/module/nslog"
+ns_param   file            [ns_config "test" home]/testserver/access.log
+ns_param   formattedtime   true
+ns_param   logreqtime      true
+ns_param   logcombined     true
+ns_param   maxbuffer       0
+ns_param   maxbackup       1
+ns_param   rollhour        0
+ns_param   rolllog         false
+ns_param   rollonsignal    false
+ns_param   suppressquery   false
+ns_param   checkforproxy   true
+ns_param   extendedheaders "X-Test"
+
+ns_section "ns/server/test/db"
+ns_param   pools           a,b
+ns_param   defaultpool     a
+
+ns_section "ns/server/test/module/nsproxy"
+ns_param   exec            [ns_config "test" home]/../nsproxy/test-nsproxy.sh
+
+ns_section "ns/server/test/modules"
+ns_param   nslog           [ns_config "test" home]/../nslog/nslog.so
+ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb.so
+ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy.so
+
+#
+# Virtual host test server config.
+#
+
+ns_section "ns/server/testvhost"
+ns_param   enabletclpages  true
+ns_param   minthreads 1
+ns_param   maxthreads 3
+
+ns_section "ns/server/testvhost/fastpath"
+ns_param   serverdir       testserver
+ns_param   pagedir         pages
+
+ns_section "ns/server/testvhost/vhost"
+ns_param   enabled         true
+ns_param   hostprefix      vhosts
+ns_param   hosthashlevel   3
+ns_param   stripport       yes
+ns_param   stripwww        yes
+
+ns_section "ns/server/testvhost/tcl"
+ns_param   initfile        ../nsd/init.tcl
+ns_param   library         [ns_config "test" home]/testserver/modules
+
+
+
+#
+# Custom location/serverroot proc test server config.
+#
+
+ns_section "ns/server/testvhost2"
+ns_param   enabletclpages  true
+ns_param   minthreads 1
+ns_param   maxthreads 4
+
+ns_section "ns/server/testvhost2/fastpath"
+ns_param   serverdir       testserver
+ns_param   pagedir         pages
+
+ns_section "ns/server/testvhost2/tcl"
+ns_param   initfile        ../nsd/init.tcl
+ns_param   library         [ns_config "test" home]/testserver/modules
+
+
+
+#
+# nsdb module testing.
+#
+
+ns_section "ns/db/drivers"
+ns_param   nsdbtest        [ns_config "test" home]/../nsdbtest/nsdbtest.so
+
+ns_section "ns/db/pools"
+ns_param   a               A
+ns_param   b               B
+
+ns_section "ns/db/pool/a"
+ns_param   verbose         off
+ns_param   driver          nsdbtest
+ns_param   connections     2
+ns_param   user            username
+ns_param   password        password
+ns_param   logsqlerrors    off
+ns_param   datasource      datasource_poola
+ns_param   maxidle         1
+ns_param   maxopen         1
+
+ns_section "ns/db/pool/b"
+ns_param   verbose         off
+ns_param   driver          nsdbtest
+ns_param   connections     2
+ns_param   user            username
+ns_param   password        password
+ns_param   logsqlerrors    off
+ns_param   datasource      datasource_poolb
+ns_param   maxidle         1
+ns_param   maxopen         1
+

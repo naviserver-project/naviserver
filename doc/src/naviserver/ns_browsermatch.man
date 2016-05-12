@@ -1,0 +1,34 @@
+[include version_include.man]
+[manpage_begin ns_browsermatch n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Match against the User-Agent header}]
+
+[description]
+
+ This command returns a boolean indicating if the pattern matches the User-Agent header on the current HTTP request.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_browsermatch] [opt [arg connId]] [arg pattern]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_browsermatch *Mozilla*
+ 1
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_browsertype {ns_conn headers}]
+
+[manpage_end]
+

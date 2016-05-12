@@ -1,0 +1,52 @@
+[include version_include.man]
+[manpage_begin ns_urlencode n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc {Encode a string to its URL-encoded representation}]
+
+[description]
+
+ This command encodes a string according to the rules for URL encoding defined in
+ RFC #1738, Uniform Resource Locators.
+
+ ns_urlencode codes essentially all non-alphanumeric characters in the
+ specified components.  The epcial octets are encoded by a "%"
+ followed by the two-character hexa- decimal representation for the
+ octet.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+ [call [cmd ns_urlencode] \
+     [opt [option "-charset [arg charset]"]] \
+     [opt [option "-part [arg part]"]] \
+     [opt [arg "--"]] \
+     [arg components]]
+
+[list_end]
+
+The option [arg charset] can be used to specify the character set of
+the encode operation. Option [arg part] is used to specify the 
+[arg query] (default) or [arg path] encoding. In the query mode, the
+components will be concatenated via "&", in the path mode the
+components are concatenated with "/".
+
+[section {EXAMPLES}]
+
+[example_begin]
+  ns_urlencode http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3
+[example_end]
+
+The example outputs the following line
+[example_begin]
+   http%3a%2f%2fwww%2eaolserver%2ecom%2fredirect%2eadp%3furl%3dhttp%3a%2f%2fwww%2eaol%2ecom%26t%3d1%2c2%2c3
+[example_end]
+
+[see_also nsd ns_urldecode ns_charsets ns_urlcharset]
+[keywords encoding charset url]
+
+[manpage_end]
+

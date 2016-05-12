@@ -1,0 +1,218 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+# rfc2396 unreserved URI characters, except for + which receives
+# special treatment by the HTTP URL scheme.
+set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+test ns_urlencode-1.1.1 {basic syntax} -body {
+    ns_urlencode
+} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part part? ?--? args"}
+
+test ns_urlencode-1.1.2 {basic syntax} -body {
+    ns_urlencode -part x y
+} -returnCodes error -result {bad option "x": must be query or path}
+
+test ns_urlencode-1.2.1 {basic syntax} -body {
+    ns_urldecode
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part part? ?--? string"}
+
+test ns_urlencode-1.2.2 {basic syntax} -body {
+    ns_urldecode -part x y
+} -returnCodes error -result {bad option "x": must be query or path}
+
+
+test ns_urlencode-2.1.1a {basic operation} -body {
+    ns_urlencode ""
+} -result {}
+
+test ns_urlencode-2.1.1b {basic operation} -body {
+    ns_urlencode --
+} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part part? ?--? args"}
+
+test ns_urlencode-2.1.1c {basic operation} -body {
+    ns_urlencode -- --
+} -result {--}
+
+test ns_urlencode-2.1.1d {basic operation} -body {
+    ns_urldecode --
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part part? ?--? string"}
+
+test ns_urlencode-2.1.1e {basic operation} -body {
+    ns_urldecode -- --
+} -result {--}
+
+test ns_urlencode-2.1.2 {basic operation} -body {
+    ns_urlencode -part path ""
+} -result {}
+
+test ns_urlencode-2.1.3 {basic operation} -body {
+    ns_urlencode -part query ""
+} -result {}
+
+test ns_urlencode-2.2.1 {basic operation} -body {
+    ns_urldecode ""
+} -result {}
+
+test ns_urlencode-2.2.2 {basic operation} -body {
+    ns_urldecode -part path ""
+} -result {}
+
+test ns_urlencode-2.2.3 {basic operation} -body {
+    ns_urldecode -part query ""
+} -result {}
+
+test ns_urlencode-2.2.4 {basic operation} -body {
+    ns_urldecode "1"
+} -result {1}
+
+test ns_urlencode-2.2.5 {basic operation} -body {
+    ns_urldecode -part path "1"
+} -result {1}
+
+test ns_urlencode-2.2.6 {basic operation} -body {
+    ns_urldecode -part query "1"
+} -result {1}
+
+
+
+test ns_urlencode-2.3.1 {unreserved characters} -body {
+    ns_urlencode $unreservedChars
+} -result $unreservedChars
+
+test ns_urlencode-2.3.2 {unreserved characters} -body {
+    ns_urldecode $unreservedChars
+} -result $unreservedChars
+
+
+test ns_urlencode-2.4.1 {multiple args} -body {
+    ns_urlencode -part path 1 2 3
+} -result {1/2/3}
+
+test ns_urlencode-2.4.2 {multiple args} -body {
+    ns_urlencode -part query 1 2 3
+} -result {1&2&3}
+
+test ns_urlencode-2.4.3 {multiple args} -body {
+    ns_urlencode 1 2 3
+} -result {1&2&3}
+
+
+test ns_urlencode-2.5.1 {spaces and plus signs} -body {
+    ns_urlencode -part path +
+} -result {+}
+
+test ns_urlencode-2.5.2 {spaces and plus signs} -body {
+    ns_urlencode -part query +
+} -result {%2b}
+
+test ns_urlencode-2.5.3 {spaces and plus signs} -body {
+    ns_urlencode +
+} -result {%2b}
+
+test ns_urlencode-2.5.4 {spaces and plus signs} -body {
+    ns_urlencode -part path " "
+} -result {%20}
+
+test ns_urlencode-2.5.5 {spaces and plus signs} -body {
+    ns_urlencode -part query " "
+} -result {+}
+
+test ns_urlencode-2.5.6 {spaces and plus signs} -body {
+    ns_urlencode " "
+} -result {+}
+
+test ns_urlencode-2.5.7 {spaces and plus signs} -body {
+    ns_urldecode -part path +
+} -result {+}
+
+test ns_urlencode-2.5.8 {spaces and plus signs} -body {
+    ns_urldecode -part query +
+} -result { }
+
+test ns_urlencode-2.5.9 {spaces and plus signs} -body {
+    ns_urldecode +
+} -result { }
+
+test ns_urlencode-2.5.10 {spaces and plus signs} -body {
+    ns_urldecode -part path " "
+} -result { }
+
+test ns_urlencode-2.5.11 {spaces and plus signs} -body {
+    ns_urldecode -part query " "
+} -result { }
+
+test ns_urlencode-2.5.12 {spaces and plus signs} -body {
+    ns_urldecode " "
+} -result { }
+
+test ns_urlencode-2.5.10 {spaces and plus signs} -body {
+    ns_urldecode -part path "%20"
+} -result { }
+
+test ns_urlencode-2.5.11 {spaces and plus signs} -body {
+    ns_urldecode -part query "%20"
+} -result { }
+
+test ns_urlencode-2.5.12 {spaces and plus signs} -body {
+    ns_urldecode "%20"
+} -result { }
+
+test ns_urlencode-2.5.13 {spaces and plus signs} -body {
+    ns_urldecode -part path "%2b"
+} -result {+}
+
+test ns_urlencode-2.5.14 {spaces and plus signs} -body {
+    ns_urldecode -part query "%2b"
+} -result {+}
+
+test ns_urlencode-2.5.15 {spaces and plus signs} -body {
+    ns_urldecode "%2b"
+} -result {+}
+
+test ns_urlencode-2.5.16 {spaces and plus signs} -body {
+    ns_urldecode "%2B"
+} -result {+}
+
+
+test ns_urlencode-2.6.1 {rfc2396 section 2.4.3 URI 'delim' characters} -body {
+    ns_urlencode -part path "<>\#%\""
+} -result {%3c%3e%23%25%22}
+
+
+test ns_urlencode-2.7.1 {rfc2396 section 2.4.3 URI 'unwise' characters} -body {
+    ns_urlencode -part path {{}|\^[]`}
+} -result {%7b%7d%7c%5c%5e%5b%5d%60}
+
+
+test ns_urlencode-2.8.1 {rfc2396 section 3.3 URI path component reserved characters} -body {
+    ns_urlencode -part path {/?;=}
+} -result {%2f%3f%3b%3d}
+
+test ns_urlencode-2.8.2 {path component unreserved characters} -body {
+    ns_urlencode -part path {:@&+$,}
+} -result {:@&+$,}
+
+
+test ns_urlencode-2.9.1 {rfc2396 section 3.4 URI query component reserved characters} -body {
+    ns_urlencode -part query {;/?:@&=+,$}
+} -result {%3b%2f%3f%3a%40%26%3d%2b%2c%24}
+
+test ns_urlencode-2.10.1 {charset decode} -body {
+    ns_urldecode -charset iso8859-1 "%FA"
+} -result {ú}
+test ns_urlencode-2.10.2 {charset encode} -body {
+    ns_urlencode -charset iso8859-1 "ú"
+} -result {%fa}
+
+
+unset unreservedChars
+
+
+
+cleanupTests

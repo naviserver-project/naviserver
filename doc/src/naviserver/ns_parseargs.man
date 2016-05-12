@@ -1,0 +1,32 @@
+[include version_include.man]
+[manpage_begin ns_parseargs n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Parse list of arguments and store them into local Tcl variables}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parseargs] [arg args]]
+
+[para]
+[arg args]
+List of arguments, can be flags or parameters
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

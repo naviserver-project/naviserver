@@ -1,0 +1,43 @@
+[include version_include.man]
+[manpage_begin ns_runonce n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Run Tcl script only once}]
+
+[description]
+This command ensirres that the script will be run only one time even if the
+file will be loaded several times
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_runonce] [arg ?-global?] [arg ?--?] [arg script]]
+
+[para]
+[arg -global]
+If specified run the command in global context
+otherwise in current virtual server
+
+[para]
+[arg script]
+Tcl script to run
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+ns_runonce {
+
+    ns_cache_create mycache 0
+}
+
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

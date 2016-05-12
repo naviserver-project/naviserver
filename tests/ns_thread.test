@@ -1,0 +1,222 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_thread-1.1 {basic syntax} -body {
+    ns_thread ?
+} -returnCodes error -result {bad cmd "?": must be begin, begindetached, create, wait, join, name, get, getid, handle, id, yield, or stackinfo}
+
+test ns_thread-1.2 {basic syntax} -body {
+    ns_mutex ?
+} -returnCodes error -result {bad cmd "?": must be create, destroy, eval, lock, trylock, or unlock}
+
+test ns_thread-1.3 {basic syntax} -body {
+    ns_critsec ?
+} -returnCodes error -result {bad cmd "?": must be create, destroy, enter, eval, or leave}
+
+test ns_thread-1.4 {basic syntax} -body {
+    ns_sema ?
+} -returnCodes error -result {bad cmd "?": must be create, destroy, release, or wait}
+
+test ns_thread-1.5 {basic syntax} -body {
+    ns_cond ?
+} -returnCodes error -result {bad cmd "?": must be abswait, broadcast, create, destroy, set, signal, or wait}
+
+test ns_thread-1.6 {basic syntax} -body {
+    ns_rwlock ?
+} -returnCodes error -result {bad cmd "?": must be create, destroy, readlock, readunlock, readeval, writelock, writeunlock, writeeval, or unlock}
+
+
+
+test ns_thread-2.1 {detached thread} -body {
+    ns_thread begindetached {return ok}
+} -result {}
+
+test ns_thread-2.2 {wait for thread thread} -body {
+     set tid [ns_thread begin {return ok}]
+     set result [ns_thread wait $tid]
+     list $tid $result
+} -cleanup {
+    unset -nocomplain -- tid result
+} -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:thread ok}
+
+test ns_thread-2.3 {get thread id of self} -body {
+    ns_thread id
+} -match regexp -result {[0-9]+}
+
+test ns_thread-2.4 {thread name} -body {
+    ns_thread wait [ns_thread begin {ns_thread name threadtest}]
+} -result {threadtest}
+
+test ns_thread-2.5 {thread yield} -body {
+    for {set i 0} {$i < 100} {incr i} {
+        ns_thread begindetached {
+            for {set i 0} {$i < 100} {incr i} {
+                set x y
+                ns_thread yield
+            }
+        }
+    }
+} -cleanup {
+    unset -nocomplain -- i
+} -result {}
+
+test ns_thread-2.6 {get thread handle of self} -body {
+    ns_thread handle
+} -match regexp -result {^t.*ns:thread$}
+
+
+test ns_thread-3.1 {create and destroy a mutex} -body {
+    set mutex [ns_mutex create]
+    ns_mutex destroy $mutex
+    set mutex
+}  -cleanup {
+    unset -nocomplain -- mutex
+} -match regexp -result {ns:mutex:tcl:[0-9]+}
+
+test ns_thread-3.2 {mutex locking} -body {
+    set mutex [ns_mutex create]
+    ns_mutex lock $mutex
+    ns_mutex unlock $mutex
+    ns_mutex destroy $mutex
+}  -cleanup {
+    unset -nocomplain -- mutex
+} -match glob -result {ns:mutex*}
+
+test ns_thread-3.3 {named mutex locking} -body {
+    ns_mutex lock test:mutex
+    ns_mutex unlock test:mutex
+    ns_mutex destroy test:mutex
+} -result test:mutex
+
+test ns_thread-3.4 {destroy a named mutex which doesn't exist} -body {
+    ns_mutex destroy test:namedoesnotexist
+} -result test:namedoesnotexist
+
+test ns_thread-3.5 {mutex eval locked} -body {
+    ns_mutex eval test:evalmutex {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-3.6 {mutex eval args} -body {
+    ns_mutex eval test:evalmutex
+} -returnCodes error -result {wrong # args: should be "ns_mutex eval test:evalmutex script"}
+
+
+
+test ns_thread-4.1 {create and destroy a critical section} -body {
+    set cs [ns_critsec create]
+    ns_critsec destroy $cs
+    set cs
+}  -cleanup {
+    unset -nocomplain -- cs
+} -match regexp -result {ns:critsec:tcl:[0-9]+}
+
+test ns_thread-4.2 {enter and then leave a critical section} -body {
+    set cs [ns_critsec create]
+    ns_critsec enter $cs
+    ns_critsec leave $cs
+    ns_critsec destroy $cs
+}  -cleanup {
+    unset -nocomplain -- cs
+} -match glob -result ns:critsec*
+
+test ns_thread-4.3 {enter and then leave a named critical section} -body {
+    ns_critsec enter test:cs
+    ns_critsec leave test:cs
+    ns_critsec destroy test:cs
+} -result test:cs
+
+test ns_thread-4.4 {critical section eval} -body {
+    ns_critsec eval test:evalcs {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-4.5 {critical section eval args} -body {
+    ns_critsec eval test:evalcs
+} -returnCodes error -result {wrong # args: should be "ns_critsec eval test:evalcs script"}
+
+
+
+test ns_thread-5.1 {create and destroy a semaphore} -body {
+    set sema [ns_sema create]
+    ns_sema destroy $sema
+    set sema
+}  -cleanup {
+    unset -nocomplain -- sema
+} -match regexp -result {ns:semaphore:tcl:[0-9]+}
+
+
+
+test ns_thread-6.1 {create and destroy a read-write lock} -body {
+    set rw [ns_rwlock create]
+    ns_rwlock destroy $rw
+    set rw
+}  -cleanup {
+    unset -nocomplain -- rw
+} -match regexp -result {ns:rwlock:tcl:[0-9]+}
+
+test ns_thread-6.2 {read lock} -body {
+    set rw [ns_rwlock create]
+    ns_rwlock readlock $rw
+    ns_rwlock unlock $rw
+    ns_rwlock destroy $rw
+} -cleanup {
+    unset -nocomplain -- rw
+} -match glob -result ns:rwlock*
+
+test ns_thread-6.3 {write lock} -body {
+    set rw [ns_rwlock create]
+    ns_rwlock writelock $rw
+    ns_rwlock unlock $rw
+    ns_rwlock destroy $rw
+} -cleanup {
+    unset -nocomplain -- rw
+} -match glob -result ns:rwlock*
+
+test ns_thread-6.4 {named rw lock} -body {
+    ns_rwlock readlock test:rwlock
+    ns_rwlock unlock test:rwlock
+    ns_rwlock writelock test:rwlock
+    ns_rwlock unlock test:rwlock
+    ns_rwlock destroy test:rwlock
+} -result test:rwlock
+
+test ns_thread-6.5 {rwlock eval read-locked} -body {
+    ns_rwlock readeval test:rwlock {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-6.6 {rwlock eval write-locked} -body {
+    ns_rwlock writeeval test:rwlock {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-6.7 {rwlock readeval args} -body {
+    ns_rwlock readeval test:rwlock
+} -returnCodes error -result {wrong # args: should be "ns_rwlock readeval test:rwlock script"}
+
+test ns_thread-6.8 {rwlock writeeval args} -body {
+    ns_rwlock writeeval test:rwlock
+} -returnCodes error -result {wrong # args: should be "ns_rwlock writeeval test:rwlock script"}
+
+
+
+cleanupTests

@@ -1,0 +1,27 @@
+[include version_include.man]
+[manpage_begin ns_adp_append n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Append data to the output buffer for the current connection}]
+
+[description]
+
+ This command appends its arguments to the output buffer of the current connection.  The result is identical to calling ns_adp_puts -nonewline once for each string argument.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_append] [arg string] [opt [arg {string ...}]]]
+
+
+[list_end]
+
+
+[see_also nsd]
+[keywords ADP]
+
+[manpage_end]
+

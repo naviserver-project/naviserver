@@ -1,0 +1,46 @@
+[include version_include.man]
+[manpage_begin ns_geturl n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Fetch a URL}]
+
+[description]
+This function retrieves the contents of the passed-in URL. If headersSetIdVar is passed in 
+and it is a valid ns_set, then the header information received along with the request is 
+inserted into it.
+
+[para]
+Notes: This function should be used with caution. If the server is running with 1 thread, 
+and you perform ns_geturl back to the originating server, the server may deadlock.
+
+Also, ns_geturl does not follow redirects or handle relative URLs. URLs that are server-relative 
+(begin with "/") are translated into filenames, and the content of the file is returned.
+
+[para]
+The functions was deprecated in favor of [cmd ns_http].
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_geturl] [arg URL] [opt [arg headersSetIdVar]]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+ns_register_proc GET /wais getwais
+
+proc getwais { } {
+  ns_return 200 text/html [lb]ns_geturl http://www.wais.com/[rb]
+}
+
+[example_end]
+
+[see_also ns_http]
+[keywords http-client]
+[manpage_end]
+
+

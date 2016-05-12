@@ -1,0 +1,85 @@
+[include version_include.man]
+[manpage_begin ns_thread n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Operate on threads}]
+
+[description]
+
+This command provides a mechanism to manipulate threads.  The legal options (which may be abbreviated) are:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd  "ns_thread begin"] \
+	[opt [option "-name [arg threadName]"]] \
+	[opt [option "--"]] \
+	[arg script]]
+
+Initializes a new thread and starts it executing script. 
+When the option  [option -name] is specified, then the thread is named
+as "-tcl-$name:$nr-", where $nr is a counter to ensure unique names.
+
+[para] Threads created this way
+are joinable and must be ns_thread joined, otherwise the resources held by the thread
+will not be freed until the thread is joined.  Returns a handle to the
+new thread, which can be used in [cmd "ns_thread wait"].
+
+[call [cmd  "ns_thread begindetached"] \
+	[opt [option "-name [arg threadName]"]] \
+	[opt [option "--"]] \
+	[arg script]]
+
+Initializes a new thread and starts it executing script.
+Initializes a new thread and starts it executing script. 
+When the option  [option -name] is specified, then the thread is named
+as "-tcl-$name:$nr-", where $nr is a counter to ensure unique names.
+
+[para] Threads created this way are detached and do not need to be
+(nor can be) joined (no thread can wait for this thread). In contrary
+to [cmd "ns_thread begin"] this command returns an empty result.
+
+[call [cmd  "ns_thread handle"]]
+
+Returns the handle for the current thread.
+
+[call [cmd  "ns_thread id"]]
+
+Returns the current thread's thread ID as an integer.  This thread ID corresponds
+to the third element in the sub-list returned from [cmd "ns_info threads"].
+
+[call [cmd  "ns_thread name"] \
+	[opt [arg name]]]
+
+Returns the name of the current thread.  Optionally sets the thread
+name if [arg name] is specified.
+
+[call [cmd  "ns_thread stackinfo"]]
+
+Returns the maximum available size of the C stack and the currently free size of the
+C stack from the current thread in a form usable for "array set".  For
+example the command might return "max 2048000 free 2024408"
+
+[call [cmd  "ns_thread wait"] \
+	[arg handle]]
+
+Attempts to wait for the the thread with the specified [arg handle].  If the thread is still executing,
+the caller will block until the thread being joined completes.  Returns the return value of
+the script that the thread being joined was executing.
+
+[para] NOTE: Calling [cmd "ns_thread wait"] on an invalid [arg handle]
+or a [arg handle] that has already been waited for will cause the
+server to abort with a fatal error.
+
+[call [cmd  "ns_thread yield"]]
+
+Causes the current thread to yield its CPU to other running threads.
+
+[list_end]
+
+[para]
+[keywords stack thread]
+[see_also ns_info]
+[manpage_end]
+

@@ -1,0 +1,208 @@
+[include version_include.man]
+[include version_include.man]
+
+[manpage_begin ns_config n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Configuration parameters}]
+
+[description]
+The NaviServer process reads a Tcl configuration file (specified with the
+[emph -t] command line option) during early start-up. After it has changed to the
+correct [term "user id"] and [term "group id"], bound to port 80, and possibly
+performed a [term chroot], it evaluates the configuration file as a Tcl script.
+
+[para]
+The configuration file may contain standard Tcl and NaviServer commands, plus
+the [cmd ns_section] and [cmd ns_param] commands used to define a configuration
+structure. Parameters are key-value pairs and are grouped into sections. Section
+names must be unique -- parameter keys may be duplicates.
+
+[para]
+The configuration is global and read-only. Parameters may be retrieved at
+run-time using [cmd ns_config], although usually configuration parameters are
+used by Tcl library files at start-up.
+
+
+
+
+[section {COMMANDS}]
+
+The following commands are available at run-time to retrieve information from the
+configuration file.
+
+
+[list_begin definitions]
+
+[call [cmd ns_config] \
+      [opt "[option -bool] | [option -int]" ] \
+      [opt [option "-min [arg minint]"] ] \
+      [opt [option "-max [arg maxint]"] ] \
+      [opt [option -exact] ] \
+      [opt [option -set] ]\
+      [arg section] \
+      [arg key] \
+      [opt [arg default] ] ]
+
+Returns the parameter value associated with the given [arg section] and [arg key] from
+the configuration file.  If the parameter is not found then the optional [arg default]
+is returned, otherwise the empty string is returned.
+
+[para]
+Parameter keys are matched case-insensitively. The first parameter is returned
+if duplicate keys are present.
+
+
+[list_begin options]
+
+[opt_def -bool]
+Specifies that the parameter should be a valid boolean value, using any form
+understood by [cmd "string is boolean"]. An error will be thrown if this is not
+the case, unless a valid [arg default] is given.
+
+[opt_def -int]
+Specifies that the parameter should be a valid integer value, using any form
+understood by [cmd "string is integer"]. An error will be thrown is this is not
+the case, unless a valid [arg default] is given.
+
+[opt_def -min minint]
+Specifies the lower bound for an integer parameter value. An error will be thrown
+if the parameter < [arg minint], unless a valid default value is given.
+
+[opt_def -max maxint]
+Specifies the upper bound for an integer parameter value. An error will be thrown
+if the parameter > [arg maxint], unless a valid default value is given.
+
+[opt_def -exact]
+Specifies case-sensitive parameter key matching. Not recommended.
+
+[opt_def -set]
+Specifies that the parameter is set to the default value,
+when this parameter was not provided earlier. This makes
+the default later retrievable via ns_config.
+
+[list_end]
+
+
+
+
+[call [cmd ns_configsection] \
+      [arg section] ]
+
+Return the [cmd ns_set] which contains all the parameter key-value pairs for the
+specified [arg section] of the configuration file.  If there is no matching section,
+an empty string is returned.
+
+
+
+
+[call [cmd ns_configsections] ]
+
+Return a list of [cmd ns_set]s, one for every section in the configuration
+file.  The sets contain the key-value pairs for the configuration section that
+the set represents. The [cmd ns_set] name contains the [arg section].
+
+
+
+[list_end]
+
+
+
+[section {CONFIGURATION FILE COMMANDS}]
+
+The following commands are only available within the Tcl configuration file,
+evaluated once at server start-up.
+
+[list_begin definitions]
+
+
+[call [cmd ns_section] \
+      [arg section]]
+
+Begin a new section. Following calls to [cmd ns_param] place their
+parameters in this section, until another call to [cmd ns_section] with a
+different [arg section].
+
+[para]
+Multiple calls to [cmd ns_section] with the same [arg section] name may be used
+to build up a section in pieces.
+
+
+
+[call [cmd ns_param] \
+      [arg key] \
+      [arg value]]
+
+Set the given [arg key] and [arg value] in the currently active  section. Keys
+need not be unique. Key matching is case-insensitive by default.
+
+
+
+[list_end]
+
+
+
+
+[section EXAMPLES]
+
+The following example shows how to set parameter values for the [emph foo]
+module.
+
+[example_begin]
+[cmd ns_section] "ns/server/server1/modules/foo"
+[cmd ns_param]   enabled   true
+[cmd ns_param]   map       /some/url
+[cmd ns_param]   map       /some-other/url
+[example_end]
+
+
+
+The following example shows how to read configuration parameters for the
+[emph foo] module. The [cmd ns_config] command is used to check for a boolean
+[arg enabled] parameter -- it defaults to false. If enabled, the parameters in
+that section are iterated over and all the entries with the key [arg map] are
+used to register a handler for the [arg url], which is the parameter value.
+
+[example_begin]
+set path ns/server/[lb][cmd ns_info] server[rb]/modules/foo
+
+if {[lb][cmd ns_config] -bool $path enabled false[rb]} {
+
+    set section [lb][cmd ns_configsection] $path[rb]
+
+    foreach {key value} [lb][cmd ns_set] array $section[rb] {
+        if {$key eq "map"} {
+            [cmd ns_register_proc] GET $value foo_module_handler
+        }
+    }
+}
+[example_end]
+
+
+
+The following example prints out all configuration parameters in all sections of
+the configuration file.
+
+[example_begin]
+[cmd ns_register_proc] GET /config-print {
+
+    set config ""
+
+    foreach section [lb][cmd ns_configsections][rb] {
+
+        append config "section: [lb][cmd ns_set] name $section[rb]\n"
+
+        foreach {key value} [lb][cmd ns_set] array $section[rb] {
+            append config "$key: $value\n"
+        }
+    }
+
+    [cmd ns_return] 200 text/plain $config
+}
+[example_end]
+
+
+
+
+[see_also ns_set ns_env ns_info]
+[keywords configuration parameter interp startup]
+[manpage_end]

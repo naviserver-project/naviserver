@@ -1,0 +1,34 @@
+[include version_include.man]
+[manpage_begin ns_md5 n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Returns a 32-character, hex-encoded string containing the MD5 hash of the first argument}]
+
+[description]
+A cryptographic hash (sometimes called digest) is a kind of signature for a text or a data file.
+MD5 generates an almost-unique 128-bit signature for a text.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_md5] [arg string]]
+
+[para]
+[arg string]
+String from which hash should be produced
+
+[list_end]
+
+[example_begin]
+   
+   nscp 2> ns_md5 test   
+   098F6BCD4621D373CADE4E832627B4F6
+   
+[example_end]
+
+[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_sha1 ns_rand ns_sha2 ns_hmac_sha2]
+[keywords encoding crypt]
+
+[manpage_end]
+

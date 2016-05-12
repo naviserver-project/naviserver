@@ -1,0 +1,240 @@
+[include version_include.man]
+[manpage_begin {tcl-libraries} n [vset version]]
+[moddesc {NaviServer Manual}]
+
+[titledesc {NaviServer Tcl Libraries}]
+
+[description]
+
+[section {What Are Tcl Libraries?}]
+
+A Tcl library is simply a directory containing Tcl scripts that are
+sourced at startup by a virtual server. You can create private
+libraries for individual virtual servers and public libraries that
+affect all or some of an installation's virtual servers.
+
+[para]
+
+Each Tcl file in a library often contains one or more calls to
+ns_register_proc, ns_schedule_proc, or ns_register_filter to bind a
+script to a specific URL or URL hierarchy, plus the Tcl scripts that
+will handle the URL(s). This example shows the ns_register_proc
+function being used to bind the Tcl procedure [term hello] to handle a GET
+request for /example/hello, plus the [term hello] procedure itself:
+
+[example_begin]
+
+ ns_register_proc GET /example/hello hello
+ 
+ proc hello {} {
+   ns_return 200 text/plain "Hello World"
+ }
+
+[example_end]
+
+After the function is loaded (typically from a Tcl library directory)
+and the server is started, one can test the function by visiting the URL
+
+[example_begin]
+ http://yourserver/example/hello
+[example_end]
+
+When NaviServer processes a method/URL request, it checks to see if
+there is a Tcl script in the virtual server's private or shared
+library to handle the method and URL. A private Tcl script registered
+to handle a URL overrides a shared Tcl script registered to handle the
+same URL.
+
+[para]
+
+Tcl libraries can also be created that contain no registration
+functions; they may just contain Tcl functions that are called from
+ADPs or from scheduled procedures.
+
+[section {When to Use Tcl Libraries}]
+
+The alternative to embedding Tcl scripts in HTML pages using ADPs (see
+Chapter 2), is to store Tcl scripts in Tcl libraries. The situations
+listed below are well-suited to the Tcl libraries approach.
+
+[list_begin definitions]
+
+[def Inheritance:] If you want one Tcl script to handle an URL and all
+ of its sub-URLs, it's better to store the script in a Tcl library
+ and register it using ns_register_proc to handle an URL hierarchy.
+ For example, you may want to manage a server domain name change by
+ redirecting every response to the corresponding domain name on
+ another server.
+
+[def "Special Extensions:"] If you want one Tcl script to handle all files
+ with a specific extension, like /*.csv, you would register the
+ script with ns_register_proc to handle those files.
+
+[def "Scheduled Procedures:"] If you want a Tcl script to be run at
+ specific intervals, you can use the ns_schedule_* functions to run
+ a script from the Tcl library at scheduled intervals. These
+ procedures do not normally involve returning HTML pages and so are
+ not well suited to ADPs.
+
+[def "Filters:"] If you want a Tcl script to be called at
+ pre-authorization, post-authorization, or trace time for a group
+ of URLs, you would register a filter using the ns_register_filter
+ function.
+
+[def "Re-using Tcl Scripts:"] If there are Tcl scripts that you want to
+ use in multiple situations, you can store them in a Tcl library
+ and invoke them from within any ADP or Tcl script.
+
+[list_end]
+
+
+[section {Tcl Libraries}]
+
+Tcl libraries contain Tcl files, which are loaded at startup time. The
+functions defined in these Tcl files are available at runtime without
+any function loading overhead. 
+
+Naviserver distinguishes between global (shared) and per-server
+(private) library directories.
+
+[list_begin itemized]
+
+[item] The [emph "global (shared)"] Tcl libray directory is specified by the
+parameter [term tcllibrary] in the [term ns/parameters] section and it
+defaults to [term tcl] under NaviServer [term home] directory.
+
+[example_begin]
+ ns_section  ns/parameters
+     ns_param home        /usr/local/ns   ;# usual place
+     ns_param tcllibrary  tcl             ;# default, full path: /usr/local/ns/tcl
+ 
+[example_end]
+
+[item ]The [emph "per-server (private)"] Tcl library directory is
+specified by the parameter [term library] in the
+[term ns/server/servername/tcl] section.  It defaults to
+[term modules/tcl]
+under NaviServer [term home].  One can specify a
+different Tcl library directory for each server.
+
+[example_begin]
+ ns_section  ns/parameters
+     ns_param home        /usr/local/ns   ;# usual place
+ 
+ ns_section ns/server/myserver/tcl
+     ns_param library     modules/tcl     ;# default, full path: /usr/local/ns/modules/tcl
+ 
+[example_end]
+
+
+
+[list_end]
+
+
+Note that the specified directories need not reside under [term home]
+(the NaviServer installation directory). Using a different directory
+tree allows you to keep site-specific scripts physically separate from
+the system-specific scripts supplied by NaviServer. For example,
+OpenACS uses the per-server library directory to start the server with
+the OpenACS specific packages and request/templating processing.
+
+[section {Tcl Script Order of Evaluation}]
+
+The Tcl library directories are a flat structure, from which all
+contained Tcl files are loaded. Sometimes several Tcl files should be
+handled together and might not be necessary for all managed
+servers. For these purpose, Tcl-only modules can be used.
+
+[para]
+At server startup time, NaviServer initializes first the Tcl library
+directories and then the specified Tcl-only modules:
+
+[list_begin enum]
+
+[enum] For the specified Tcl library directories, the [term init.tcl] file in
+ that directory is sourced first (if it exists), and then all the
+ remaining .tcl files are sourced in an alphabetical order.
+
+[enum] For each module (including any Tcl-only modules) in the server:
+ If a private Tcl directory is specified, the [term init.tcl] file in the
+ module-name subdirectory of the private directory is sourced first
+ (if it exists), and then all the remaining .tcl files are sourced
+ alphabetically.
+
+[list_end]
+
+
+[section {Tcl-only Modules}]
+
+NaviServer supports C-based modules and Tcl-only modules. Tcl-only
+modules are directories, containing potentially multiple Tcl source
+files. When a Tcl-only module [term mymodule] is configured to be
+loaded, during starutp NaviServer searches in the subdirectory of the
+global (shared) library directory, and if not found the per-server
+(privated) library directory for a directory with that name.  When it
+is found the subdirectory [term mymodule] is initialized (as described
+above).
+
+To load a Tcl-only module named [term mymodule], add the following
+line to the per-server modules section in the configuration file:
+
+[example_begin]
+ ns_section ns/server/servername/modules
+      ns_param mymodule Tcl
+[example_end]
+
+Note that when Tcl modules are specified, only the named
+subdirectories of the Tcl library directory are initialized (loaded).
+Otherwise, all subdirectories of the Tcl library directories are
+ignored. For example, if a server named [term myserver] has a Tcl
+library directory defined as [term /home/mydir/tcl/myserver-lib], and
+the modules [term foo] and [term bar] are loaded,
+
+[example_begin]
+ ns_section ns/server/myserver/tcl
+      ns_param library /home/mydir/tcl/myserver-lib
+ 
+ ns_section ns/server/myserver/modules
+      ns_param foo tcl
+      ns_param bar tcl
+[example_end]
+
+... then the following
+directories will be initialized as server start-up:
+
+[example_begin]
+  /home/mydir/tcl/myserver-lib
+  /home/mydir/tcl/myserver-lib/foo
+  /home/mydir/tcl/myserver-lib/bar
+[example_end]
+
+
+Assume the library directory for module [term foo] contains these
+files:
+
+[example_begin]
+  init.tcl
+  aa.tcl
+  zz.tcl
+[example_end]
+
+The Tcl files will be sourced in this order:
+
+[example_begin]
+  /home/mydir/tcl/myserver-lib/...
+  /home/mydir/tcl/myserver-lib/foo/init.tcl
+  /home/mydir/tcl/myserver-lib/foo/aa.tcl
+  /home/mydir/tcl/myserver-lib/foo/zz.tcl
+[example_end]
+
+For a loaded Tcl-only module [term foo] the paths of the actual files
+can by queried via [term ns_library] as shown in the following example.
+
+[example_begin]
+   set shared [lb]ns_library shared foo[rb]
+   set priv [lb]ns_library private foo[rb]
+[example_end]
+
+[see_also ns_config ns_library]
+[keywords configuration paths resolution]
+[manpage_end]

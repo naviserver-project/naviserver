@@ -1,0 +1,65 @@
+[include version_include.man]
+[manpage_begin ns_sockcallback n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Register a socket callback script}]
+
+[description]
+ns_sockcallback registers a socket callback script. 
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_sockcallback] [arg sockid] [arg script] [arg when] [opt [arg timeout]]]
+
+The optional argument [arg when] can consist of one or more characters
+of r, w, e, or x, specifying, when the callback should fire.
+
+The optional argument [arg timeout] can be of the form
+secs:?microsecs?.
+
+When the callback is fired, the script will be called with additional
+[arg sockid] and [arg when]. The value of [arg when]  will be
+as follows:
+
+Value of, when Condition under which the script will be called:
+[list_begin itemized]
+
+[item] r - the socket is readable
+[item] w - the socket is writeable
+[item] e - the socket has an exceptional condition
+[item] x - the server is shutting down
+[item] t - timeout received
+[list_end]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+set sock [lb]ns_socklisten * 9000[rb]
+ns_sockcallback $sock newconn r
+
+# Keep $sock from closing after connection ends
+detach $sock
+
+# When a connection arrives, newconn will be called as:
+# newconn $sock r
+proc newconn {sock when} {
+  set fds [lb]ns_sockaccept $sock[rb]
+  set rfd [lb]lindex $fds 0[rb]
+  set wfd [lb]lindex $fds 1[rb]
+  puts $wfd "Hello!"
+  close $rfd
+  close $wfd
+}
+
+[example_end]
+
+
+[see_also ns_connchan ns_socklisten]
+[keywords NaviServer socket callback]
+[manpage_end]
+
+

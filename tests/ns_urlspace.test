@@ -1,0 +1,296 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#
+# ns_urlspace
+#
+test ns_urlspace-1.0 {basic operation} -body {
+     ns_urlspace
+} -returnCodes error -result {wrong # args: should be "ns_urlspace command ?args?"}
+
+test ns_urlspace-1.1 {basic operation} -body {
+     ns_urlspace x
+} -returnCodes error -result {bad option "x": must be get, list, new, set, or unset}
+
+test ns_urlspace-1.2 {basic operation get} -body {
+     ns_urlspace get
+} -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-exact? ?-id id? ?-key key? ?-noinherit? URL"}
+test ns_urlspace-1.3 {basic operation set} -body {
+     ns_urlspace set
+} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-id id? ?-key key? ?-noinherit? URL data"}
+test ns_urlspace-1.4 {basic operation unset} -body {
+     ns_urlspace unset
+} -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-id id? ?-key key? ?-noinherit? ?-recurse? URL"}
+test ns_urlspace-1.5 {nothing set} -body {
+     ns_urlspace get /
+} -result {}
+
+
+test ns_urlspace-2.1 {flat set/get/unset/list} -setup {
+    ns_urlspace set / foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace unset /] \
+	[ns_urlspace unset /] \
+	[ns_urlspace get /] \
+	[ns_urlspace list]
+} -cleanup {
+    unset _
+} -result {foo 1 0 {} {}}
+
+test ns_urlspace-2.2 {flat noinherit set/list/unset/list} -setup {
+    ns_urlspace set /x foo
+    ns_urlspace set -noinherit /y bar
+} -body {
+    lappend _ \
+	[ns_urlspace list] \
+	[ns_urlspace unset /x] \
+	[ns_urlspace unset /y] \
+	[ns_urlspace list] \
+	[ns_urlspace unset -noinherit /y] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{{. /x * inherit foo} {. /y * noinherit bar}} 1 0 {{. /y * noinherit bar}} 1 {}}
+
+test ns_urlspace-2.3 {tree set/get/unset/list} -setup {
+    ns_urlspace set /x foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace unset /x] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html]
+    } -cleanup {
+	unset _
+    } -result {{} foo foo foo foo 1 {} {} {} {}}
+
+test ns_urlspace-2.4 {tree noinherit set/get/unset/list} -setup {
+    ns_urlspace set -noinherit /x foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace unset -noinherit /x] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html]
+    } -cleanup {
+	unset _
+    } -result {{} foo {} {} {} 1 {} {} {} {}}
+
+test ns_urlspace-2.5 {tree+constant-filter set/get/unset/list} -setup {
+    ns_urlspace set /x/a.html foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace unset /x] \
+	[ns_urlspace unset /x/bar.html] \
+	[ns_urlspace unset /x/a.html] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html]
+    } -cleanup {
+	unset _
+    } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
+
+test ns_urlspace-2.6 {tree+constant-filter noinherit set/get/unset/list} -setup {
+    ns_urlspace set -noinherit /x/a.html foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace unset -noinherit /x] \
+	[ns_urlspace unset -noinherit /x/bar.html] \
+	[ns_urlspace unset -noinherit /x/a.html] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html]
+    } -cleanup {
+	unset _
+    } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
+
+test ns_urlspace-2.6 {tree+wild-card-filter set/list/unset/list} -setup {
+    ns_urlspace set /x/*.html foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace unset /x] \
+	[ns_urlspace unset /x/bar.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html]
+    } -cleanup {
+	unset _
+    } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
+
+### i would expect in test 2-8 in element 5 and 6 a value
+### "... set -noinherit /x/*.html foo" + ".... get /x/a.html"  ... should return a value
+test ns_urlspace-2.8 {tree+wild-card-filter noinherit set/list/unset/list} -setup {
+    ns_urlspace set -noinherit /x/*.html foo
+} -body {
+    lappend _ \
+	[ns_urlspace get /] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace get /x/*.html] \
+	[ns_urlspace unset -noinherit /x] \
+	[ns_urlspace unset -noinherit /x/bar.html] \
+	[ns_urlspace unset -noinherit /x/*.html] \
+	[ns_urlspace get /x] \
+	[ns_urlspace get /x/a] \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html]
+    } -cleanup {
+	unset _
+    } -result {{} {} {} {} {} {} 0 0 1 {} {} {} {}}
+
+test ns_urlspace-2.9 {tree+wild-card-filter} -setup {
+    ns_urlspace set /foo* 123
+    ns_urlspace set /TOP/foo* 345
+} -body {
+    lappend _ \
+	[ns_urlspace get /foo] \
+	[ns_urlspace get /foobar] \
+	[ns_urlspace get /foo/] \
+	[ns_urlspace get /foo/bar] \
+	[ns_urlspace get /foobar/abc] \
+	[ns_urlspace get /TOP/foo] \
+	[ns_urlspace get /TOP/foo1] \
+	[ns_urlspace get /TOP/foo/abc] \
+	[ns_urlspace unset /foo*] \
+	[ns_urlspace unset /TOP/foo*] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {123 123 123 {} {} 345 345 {} 1 1 {}}
+
+test ns_urlspace-2.10 {tree+wild-card-filter with ext} -setup {
+    ns_urlspace set /foo*.tcl 234
+    ns_urlspace set /TOP/foo*.tcl 345
+} -body {
+    lappend _ \
+	[ns_urlspace get /foo.tcl] \
+	[ns_urlspace get /bar.tcl] \
+	[ns_urlspace get /foo1.tcl] \
+	[ns_urlspace get /foo/bar.tcl] \
+	[ns_urlspace get /foo1/bar.tcl] \
+	[ns_urlspace get /TOP/foo.tcl] \
+	[ns_urlspace get /TOP/foo1.tcl] \
+	[ns_urlspace get /TOP/foo1.html] \
+	[ns_urlspace get /TOP/foo/bar/1.tcl] \
+	[ns_urlspace unset /foo*.tcl] \
+	[ns_urlspace unset /TOP/foo*.tcl] \
+    	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {234 {} 234 {} {} 345 345 {} {} 1 1 {}}
+
+test ns_urlspace-2.11 {tree+wild-card-filter exact set/list/unset/list} -setup {
+    ns_urlspace set /x/*.html foo
+} -body {
+    lappend _ \
+	[ns_urlspace get -exact /] \
+	[ns_urlspace get -exact /x] \
+	[ns_urlspace get -exact /x/a] \
+	[ns_urlspace get -exact /x/a.tcl] \
+	[ns_urlspace get -exact /x/a.html] \
+	[ns_urlspace get -exact /x/*.html] \
+	[ns_urlspace unset /x] \
+	[ns_urlspace unset /x/bar.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{} {} {} {} {} foo 0 0 1 {}}
+
+#
+# key
+#
+
+test ns_urlspace-3.1 {tree+wild-card-filter key set/list/unset/list} -setup {
+    ns_urlspace set -key . /x/*.html foo
+    ns_urlspace set -key a /x/*.html bar
+} -body {
+    lappend _ \
+	[ns_urlspace get /x/a.tcl] \
+	[ns_urlspace get /x/a.html] \
+	[ns_urlspace get /x/*.html] \
+	[ns_urlspace get /x/y/a.html] \
+	[ns_urlspace get -key a /x/a.html] \
+	[ns_urlspace get -key a /x/y/a.html] \
+	[ns_urlspace get -key b /x/a.html] \
+	[ns_urlspace get -key b /x/y/a.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace unset -key a /x/*.html] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{} foo foo foo bar bar {} {} 1 1 {}}
+
+test ns_urlspace-3.2 {tree+wild-card-filter key-with-spaces set/list/unset/list} -setup {
+    ns_urlspace set -key "a b c" /x/*.html "d e f"
+} -body {
+    lappend _ \
+	[ns_urlspace list] \
+	[ns_urlspace unset -key "a b c" /x/*.html] \
+	[ns_urlspace list] \
+    } -cleanup {
+	unset _
+    } -result {{{{a b c} /x *.html inherit {d e f}}} 1 {}}
+
+#
+# id
+#
+test ns_urlspace-4.1 {id set/list/unset/list} -setup {
+    set ID [ns_urlspace new]
+    ns_urlspace set /x/*.html foo
+    ns_urlspace set -id $ID /x/*.html bar
+} -body {
+    lappend _ \
+	[ns_urlspace get /x/x.html] \
+	[ns_urlspace get -id $ID /x/x.html] \
+	[ns_urlspace unset /x/*.html] \
+	[ns_urlspace unset -id $ID /x/*.html] \
+	[ns_urlspace list] \
+	[ns_urlspace list -id $ID] \
+    } -cleanup {
+	unset _
+	unset ID
+    } -result {foo bar 1 1 {} {}}
+
+
+
+cleanupTests

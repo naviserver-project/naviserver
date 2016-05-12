@@ -1,0 +1,46 @@
+[include version_include.man]
+[manpage_begin ns_addrbyhost n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Forward lookup a hostname to its IP address}]
+
+[description]
+
+ This command resolves a hostname to its IP address.  If the hostname cannot be resolved, it throws an error.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call \
+	[cmd ns_addrbyhost] \
+	[opt [option -all]] \
+	[arg hostname]]
+
+[para]
+[arg hostname]
+Name of the hostname to be resolved into IP address. When the option
+[option -all] is used, the function returns all resolved IP addresses
+for this host.
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_addrbyhost -all www.aol.com
+ 205.188.18.208 205.188.19.16 64.12.107.131 64.12.21.3
+[example_end]
+
+[example_begin]
+ % ns_addrbyhost bogus.domain
+ could not lookup bogus.domain
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_hostbyaddr]
+
+[manpage_end]
+

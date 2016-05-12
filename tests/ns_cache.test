@@ -1,0 +1,494 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+
+ns_cache_create -maxentry 10 -- c1 1024
+ns_cache_create -expires 100 -- c2 [expr 1024 * 1024]
+
+
+
+test cache-1.1 {basic syntax} -body {
+    ns_cache_keys
+} -returnCodes error -result {wrong # args: should be "ns_cache_keys ?-exact? ?--? cache ?pattern?"}
+
+test cache-1.2 {basic syntax} -body {
+    ns_cache_flush
+} -returnCodes error -result {wrong # args: should be "ns_cache_flush ?-glob? ?--? cache ?args?"}
+
+test cache-1.3 {basic syntax} -body {
+    ns_cache_stats
+} -returnCodes error -result {wrong # args: should be "ns_cache_stats ?-contents? ?-reset? ?--? cache"}
+
+test cache-1.4 {basic syntax} -body {
+    ns_cache_create
+} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-timeout timeout? ?-expires expires? ?-maxentry maxentry? ?--? cache size"}
+
+test cache-1.5 {basic syntax} -body {
+    ns_cache_eval
+} -returnCodes error -result {wrong # args: should be "ns_cache_eval ?-timeout timeout? ?-expires expires? ?-force? ?--? cache key args"}
+
+test cache-1.6 {basic syntax} -body {
+    ns_cache_incr
+} -returnCodes error -result {wrong # args: should be "ns_cache_incr ?-timeout timeout? ?-expires expires? ?--? cache key ?incr?"}
+
+test cache-1.7 {basic syntax} -body {
+    ns_cache_append
+} -returnCodes error -result {wrong # args: should be "ns_cache_append ?-timeout timeout? ?-expires expires? ?--? cache key args"}
+
+test cache-1.8 {basic syntax} -body {
+    ns_cache_lappend
+} -returnCodes error -result {wrong # args: should be "ns_cache_lappend ?-timeout timeout? ?-expires expires? ?--? cache key args"}
+
+test cache-1.10 {basic syntax} -body {
+    ns_memoize
+} -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-expires expires? ?--? script ?args?"}
+
+
+
+test cache-2.1 {cache names} -body {
+    lsort [ns_cache_names]
+} -match glob -result {c1 c2 *}
+
+
+
+test cache-3.1 {cache create} -body {
+    ns_cache_create -expires 3 -- c3 1024
+} -result {}
+
+
+
+test cache-4.1 {cache keys} -body {
+    ns_cache_keys noexist
+} -returnCodes error -result {no such cache: noexist}
+
+test cache-4.2 {cache keys} -body {
+    ns_cache_keys c1
+} -result {}
+
+test cache-4.3 {cache keys} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_keys c1
+} -cleanup {
+    ns_cache_flush c1
+} -result k1
+
+test cache-4.4 {cache keys} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k2 {return a}
+    lsort [ns_cache_keys c1]
+} -cleanup {
+    ns_cache_flush c1
+} -result {k1 k2}
+
+
+
+test cache-5.1 {flush empty cache} -body {
+    ns_cache_flush c1
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.2 {full cache flush} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k2 {return a}
+    ns_cache_flush c1
+} -result 2
+
+test cache-5.3 {flush single key} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k2 {return a}
+    ns_cache_flush c1 k1
+    ns_cache_keys c1
+} -cleanup {
+    ns_cache_flush c1
+} -result k2
+
+test cache-5.4 {flush multiple keys} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k2 {return a}
+    ns_cache_eval c1 k3 {return a}
+    ns_cache_flush c1 k1 k2
+    ns_cache_keys c1
+} -cleanup {
+    ns_cache_flush c1
+} -result k3
+
+test cache-5.4.1 {flush expired key absolute time (Ns_CacheFindEntry)} -body {
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
+    after 2000
+    ns_cache_flush c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.4.1.1 {flush expired key relative time (Ns_CacheFindEntry)} -body {
+    ns_cache_eval -expires 1 -- c1 k1 {return a}
+    after 2000
+    ns_cache_flush c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.4.2 {flush expired key, abs time (Ns_CacheFirstEntry, Ns_CacheNextEntry)} -body {
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k2 {return b}
+    after 2000
+    ns_cache_flush c1
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.4.2.1 {flush expired key, rel time (Ns_CacheFirstEntry, Ns_CacheNextEntry)} -body {
+    ns_cache_eval -expires 1 -- c1 k1 {return a}
+    ns_cache_eval -expires 1 -- c1 k2 {return b}
+    after 2000
+    ns_cache_flush c1
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.5 {cache flush glob keys} -body {
+    ns_cache_eval c1 kx1 {return a}
+    ns_cache_eval c1 kx2 {return a}
+    ns_cache_eval c1 ky3 {return a}
+    ns_cache_flush -glob c1 kx*
+    ns_cache_keys c1
+} -cleanup {
+    ns_cache_flush c1
+} -result ky3
+
+test cache-5.6 {cache flush multiple glob keys} -body {
+    ns_cache_eval c1 kx1 {return a}
+    ns_cache_eval c1 kx2 {return a}
+    ns_cache_eval c1 ky3 {return a}
+    ns_cache_flush -glob c1 kx1 kx*
+    ns_cache_keys c1
+} -cleanup {
+    ns_cache_flush c1
+} -result ky3
+
+test cache-5.7 {flush expired key w/glob (Ns_CacheFirstEntry, Ns_CacheNextEntry)} -body {
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k2 {return a}
+    after 2000
+    ns_cache_flush -glob -- c1 *
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.8 {cache flush concurrent} -body {
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] c1 k1 {return a}
+    ns_thread begindetached {
+        after 1200
+        ns_cache_eval c1 k1 {after 1000; return b}
+    }
+    ns_thread yield
+    after 1500
+    ns_cache_flush c1
+    ns_thread yield
+    after 1000
+    ns_cache_eval c1 k1 {return c}
+} -cleanup {
+    ns_cache_flush c1
+} -result b
+
+
+
+
+test cache-6.1 {eval with arg} -body {
+    ns_cache_eval c1 k1 {return a}
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.2 {eval with args} -body {
+    ns_cache_eval c1 k1 concat a b c
+} -cleanup {
+    ns_cache_flush c1
+} -result {a b c}
+
+test cache-6.3 {eval, same value} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k1 {return a}
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.4 {eval, different value} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k1 {return b}
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.4.1 {eval force replacement} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval -force -- c1 k1 {return b}
+} -cleanup {
+    ns_cache_flush c1
+} -result b
+
+test cache-6.4.1 {eval maxentry size} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k2 {return 01234567891}
+    ns_cache_keys c1
+} -cleanup {
+    ns_cache_flush c1
+} -result k1
+
+test cache-6.5 {eval: wait timeout absolute} -body {
+    ns_thread begindetached {
+        ns_cache_eval -- c1 k1 {after 3000; return a}
+    }
+    after 1000
+    ns_cache_eval -timeout [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
+} -cleanup {
+    after 3200
+    ns_cache_flush c1
+} -returnCodes error -result "timeout waiting for concurrent update: k1"
+
+test cache-6.5.1 {eval: wait timeout relative} -body {
+    ns_thread begindetached {
+        ns_cache_eval -- c1 k1 {after 3000; return a}
+    }
+    after 1000
+    ns_cache_eval -timeout 1 -- c1 k1 {return a}
+} -cleanup {
+    after 3200
+    ns_cache_flush c1
+} -returnCodes error -result "timeout waiting for concurrent update: k1"
+
+test cache-6.6 {eval expires} -body {
+    ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
+    after 2000
+    ns_cache_eval c1 k1 {return b}
+} -cleanup {
+    ns_cache_flush c1
+} -result b
+
+test cache-6.7 {nested eval} -body {
+    ns_cache_eval c1 k1 {
+        ns_cache_eval c1 k2 {
+            ns_cache_eval c1 k3 return a
+        }
+    }
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.8 {pruning} -body {
+    ns_cache_stats -reset -- c1
+    for {set i 0} {$i < 1030} {incr i} {
+        ns_cache_eval c1 $i {return a}
+    }
+    array set s [ns_cache_stats c1]
+    set s(pruned)
+} -cleanup {
+    ns_cache_flush c1
+    unset -nocomplain s
+} -result 6
+
+
+
+test cache-7.1 {cache stats entries} -body {
+    array set stats [ns_cache_stats c1]
+    lsort [array names stats]
+} -cleanup {
+    unset -nocomplain stats
+} -result {entries expired flushed hitrate hits maxsize missed pruned saved size}
+
+test cache-7.2 {cache stats contents} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_stats -contents -- c1
+} -cleanup {
+    ns_cache_flush c1
+} -match regexp -result {1 0}
+
+test cache-7.3 {cache stats contents w/expirey} -body {
+    ns_cache_eval -expires [ns_time incr [ns_time get] 100] -- c1 k1 {return aaa}
+    ns_cache_stats -contents -- c1
+} -cleanup {
+    ns_cache_flush c1
+} -match regexp -result {3 [0-9]+.*}
+
+test cache-7.4 {cache stats contents w/default ttl} -body {
+    ns_cache_eval c2 k1 {return a}
+    ns_cache_stats -contents -- c2
+} -cleanup {
+    ns_cache_flush c2
+} -match regexp -result {1 [0-9][0-9][0-9].*}
+
+
+
+test cache-8.1 {cache incr} -body {
+    ns_cache_incr c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result 1
+
+test cache-8.2 {cache incr} -body {
+    ns_cache_incr c1 k1
+    ns_cache_incr c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result 2
+
+test cache-8.3 {cache incr: negative number} -body {
+    ns_cache_incr c1 k1 -1
+} -cleanup {
+    ns_cache_flush c1
+} -result -1
+
+test cache-8.4 {cache incr: positive multiple} -body {
+    ns_cache_incr c1 k1 2
+} -cleanup {
+    ns_cache_flush c1
+} -result 2
+
+
+
+test cache-9.1 {cache append} -body {
+    ns_cache_append c1 k1 a
+    ns_cache_append c1 k1 b
+} -cleanup {
+    ns_cache_flush c1
+} -result ab
+
+test cache-9.2 {cache append multiple values} -body {
+    ns_cache_append c1 k1 a
+    ns_cache_append c1 k1 b c
+} -cleanup {
+    ns_cache_flush c1
+} -result {abc}
+
+test cache-9.4 {cache lappend} -body {
+    ns_cache_lappend c1 k1 a
+    ns_cache_lappend c1 k1 b
+} -cleanup {
+    ns_cache_flush c1
+} -result {a b}
+
+test cache-9.5 {cache lappend multiple values} -body {
+    ns_cache_lappend c1 k1 a
+    ns_cache_lappend c1 k1 b c
+} -cleanup {
+    ns_cache_flush c1
+} -result {a b c}
+
+test cache-9.6 {cache get} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result {a}
+
+test cache-9.7 {cache get varname} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k1 v
+} -cleanup {
+    ns_cache_flush c1
+} -result {1}
+
+test cache-9.8 {cache get varname value} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k1 v
+    set v
+} -cleanup {
+    ns_cache_flush c1
+} -result {a}
+
+test cache-9.9 {cache get varname non-existing} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k2
+} -cleanup {
+    ns_cache_flush c1
+} -returnCodes error -result {no such key: k2}
+
+test cache-9.10 {cache get varname non-existing varname} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k2 v
+} -cleanup {
+    ns_cache_flush c1
+} -result {0}
+
+test cache-10.1 {memoize} -body {
+    ns_cache_eval c1 k1 {return a}
+} -cleanup {
+    ns_memoize_flush
+} -result a
+
+test cache-10.2 {memoize with multiple args} -body {
+    ns_memoize return b
+} -cleanup {
+    ns_memoize_flush
+} -result b
+
+test cache-10.3 {memoize timeout} -body {
+    ns_memoize -timeout 2 -- {return c}
+} -cleanup {
+    ns_memoize_flush
+} -result c
+
+test cache-10.4 {memoize flush} -body {
+    ns_memoize {return d}
+    ns_memoize_flush {return d}
+} -cleanup {
+    ns_memoize_flush
+} -result 1
+
+test cache-10.5 {memoize flush glob} -body {
+    ns_memoize return e1
+    ns_memoize return e2
+    ns_memoize return f1
+    ns_memoize_flush {return e*}
+} -cleanup {
+    ns_memoize_flush
+} -result 2
+
+
+
+
+
+
+test ns_cache-11.1 {stability} -constraints stress -body {
+
+    ns_log Notice Begin cache stress test.
+
+    ns_cache_stats -reset -- c1
+    set nt   64
+
+    for {set i 0} {$i < $nt} {incr i} {
+        lappend threads [ns_thread begin {  
+            for {set j 0} {$j < 10000} {incr j} {
+                ns_cache_eval -force -- c1 k1 {
+                    ns_cache_eval -- c1 $j return 01234567890123456789
+                    return 01234567890123456789
+                }
+                #ns_thread yield
+            }
+        }]
+    }
+    lappend threads [ns_thread begin {
+        for {set j 0} {$j < 10000} {incr j} {
+            ns_cache_flush c1 $j
+            #ns_thread yield
+        }
+    }]
+
+    foreach t $threads {
+        ns_thread wait $t
+    }
+
+    ns_log Notice [ns_cache_stats c1]
+
+} -cleanup {
+    unset -nocomplain a i j nt
+    ns_cache_flush c1
+} -result {}
+
+
+
+cleanupTests

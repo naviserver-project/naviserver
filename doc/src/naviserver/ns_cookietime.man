@@ -1,0 +1,24 @@
+[include version_include.man]
+[manpage_begin ns_cookietime n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Convert seconds to Netscape's cookie date format}]
+
+[description]
+
+ This command converts the time, specified as the number of seconds from 00:00:00 UTC Jan 1, 1970,
+ to a string in Netscape's old cookie "Expires" date format (see
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_cookietime] [arg time]]
+
+
+[list_end]
+
+[manpage_end]
+

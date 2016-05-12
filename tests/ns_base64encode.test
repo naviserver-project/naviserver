@@ -1,0 +1,81 @@
+# -*- Tcl -*-
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2.2
+    namespace import -force ::tcltest::*
+}
+
+eval configure $argv
+
+test ns_base64encoding-1.1 {ns_base64encode basic functionality} -body {
+    ns_base64encode "this is a test\n"
+} -result "dGhpcyBpcyBhIHRlc3QK"
+
+test ns_base64encoding-1.2 {ns_base64encode wraps lines at 60 characters} -body {
+    set str "The short red fox ran quickly through the green field "
+    append str "and jumped over the tall brown bear\n"
+    ns_base64encode $str
+} -result  "VGhlIHNob3J0IHJlZCBmb3ggcmFuIHF1aWNrbHkgdGhyb3VnaCB0aGUgZ3Jl
+ZW4gZmllbGQgYW5kIGp1bXBlZCBvdmVyIHRoZSB0YWxsIGJyb3duIGJlYXIK"
+
+test ns_base64encoding-1.6 {ns_base64encode call w/out args, error} -body {
+    list [catch {ns_base64encode} msg] $msg
+} -result  [list 1 "wrong # args: should be \"ns_base64encode string\""]
+
+test ns_base64encoding-2.1 {ns_base64decode basic functionality} -body {
+    ns_base64decode "dGhpcyBpcyBhIHRlc3QK"
+} -result  "this is a test\n"
+
+test ns_base64encoding-2.2 {ns_base64decode ignores newlines} -body {
+    set str "VGhlIHNob3J0IHJlZCBmb3ggcmFuIHF1aWNrbHkgdGhyb3VnaCB0aGUgZ3Jl\n"
+    append str "ZW4gZmllbGQgYW5kIGp1bXBlZCBvdmVyIHRoZSB0YWxsIGJyb3duIGJlYXIK"
+    ns_base64decode $str
+} -result  "The short red fox ran quickly through the green field and jumped over the tall brown bear\n"
+
+test ns_base64encoding-2.3 {ns_base64decode handles equal sign padding} -body {
+    # decode the encoding of a string that will be padded in the encoding with
+    # one padding char
+    ns_base64decode [ns_base64encode "01234"]
+} -result  "01234"
+
+test ns_base64encoding-2.4 {ns_base64decode handles equal sign padding} -body {
+    # decode the encoding of a string that will be padded in the encoding with
+    # two padding chars
+    ns_base64decode [ns_base64encode "0123"]
+} -result  "0123"
+
+test ns_base64encoding-2.5 {ns_base64decode empty string} -body {
+    ns_base64decode ""
+} -result  ""
+
+test ns_base64encoding-2.6 {ns_base64decode space} -body {
+    ns_base64decode " "
+} -result  ""
+
+test ns_base64encoding-3.1 {ns_base64decode identity test} -body {
+    ns_base64decode [ns_base64encode "this is a test"]
+} -result "this is a test"
+
+test ns_base64encoding-4.1 {ns_base64encode embedded nulls} -body {
+    ns_base64encode "test\0test\0testpass"
+} -result  "dGVzdAB0ZXN0AHRlc3RwYXNz"
+
+test ns_base64encoding-4.2 {ns_base64encode embedded nulls with range} -body {
+    set l [list]
+    for { set i -1 } { $i < 33 } { incr i +1 } {
+        lappend l [ns_base64encode "$i\0$i\0"]
+    }
+    set l
+} -result [list "LTEALTEA" "MAAwAA==" "MQAxAA==" "MgAyAA==" "MwAzAA==" "NAA0AA==" "NQA1AA==" "NgA2AA==" "NwA3AA==" "OAA4AA==" "OQA5AA==" "MTAAMTAA" "MTEAMTEA" "MTIAMTIA" "MTMAMTMA" "MTQAMTQA" "MTUAMTUA" "MTYAMTYA" "MTcAMTcA" "MTgAMTgA" "MTkAMTkA" "MjAAMjAA" "MjEAMjEA" "MjIAMjIA" "MjMAMjMA" "MjQAMjQA" "MjUAMjUA" "MjYAMjYA" "MjcAMjcA" "MjgAMjgA" "MjkAMjkA" "MzAAMzAA" "MzEAMzEA" "MzIAMzIA"]
+
+test ns_base64encoding-5.1 {ns_base64encode mass encoding} -body {
+    string length [ns_base64encode [string repeat "x\0\n" 100000]]    
+} -result 406666
+
+test ns_base64encoding-5.2 {ns_base64encode identity mass encoding} -body {
+    string length [ns_base64decode [ns_base64encode [string repeat "x\0\n" 100000]]]
+} -result 300000
+
+
+cleanupTests
+

@@ -1,0 +1,26 @@
+[include version_include.man]
+[manpage_begin ns_adp_trunc n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Truncate the ADP output buffer}]
+
+[description]
+
+ This command truncates the ADP output buffer.  Any data that was previously queued
+ for sending using ns_adp_puts or other means is cleared from the buffer and will not be sent.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_trunc]]
+
+[list_end]
+
+[see_also nsd]
+[keywords ADP]
+
+[manpage_end]
+

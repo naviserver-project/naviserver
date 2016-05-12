@@ -1,0 +1,42 @@
+[include version_include.man]
+[manpage_begin ns_adp_argc n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return the number of arguments to the current ADP}]
+
+[description]
+
+ This command returns an integer representing the number of arguments passed to the current ADP.  The number of arguments includes the name of the ADP itself, which is located at index zero.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_argc]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   # In a.adp:
+   <% ns_adp_include b.adp example a b c %>
+[example_end]
+
+[example_begin]
+   # In b.adp:
+   <%
+     ns_adp_argc      &nbsp;;# => 5
+   %>
+[example_end]
+
+[see_also nsd]
+
+[keywords ADP]
+
+
+[manpage_end]
+

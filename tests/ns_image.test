@@ -1,0 +1,108 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_img-1.1 {basic syntax: plain call} -body {
+     ns_imgsize
+} -returnCodes error -result {wrong # args: should be "ns_imgsize file"}
+
+test ns_img-1.2 {basic syntax: plain call} -body {
+     ns_imgtype
+} -returnCodes error -result {wrong # args: should be "ns_imgtype file"}
+
+test ns_img-1.3 {basic syntax: plain call} -body {
+     ns_imgmime
+} -returnCodes error -result {wrong # args: should be "ns_imgmime file"}
+
+test ns_img-1.4 {basic syntax: plain call} -body {
+     ns_pngsize
+} -returnCodes error -result {wrong # args: should be "ns_pngsize png_file"}
+
+test ns_img-1.5 {basic syntax: plain call} -body {
+     ns_gifsize
+} -returnCodes error -result {wrong # args: should be "ns_gifsize gif_file"}
+
+test ns_img-1.6 {basic syntax: plain call} -body {
+     ns_jpegsize
+} -returnCodes error -result {wrong # args: should be "ns_jpegsize jpeg_file"}
+
+
+test ns_img-2.1 {basic syntax: plain call} -body {
+     ns_imgsize [ns_server pagedir]/ns_poweredby.png
+} -result {133 22}
+
+test ns_img-2.2 {basic syntax: plain call} -body {
+     ns_imgtype [ns_server pagedir]/ns_poweredby.png
+} -result {png}
+
+test ns_img-2.3 {basic syntax: plain call} -body {
+     ns_imgmime [ns_server pagedir]/ns_poweredby.png
+}  -result {image/png}
+
+test ns_img-2.4 {basic syntax: plain call} -body {
+     ns_pngsize [ns_server pagedir]/ns_poweredby.png
+}  -result {133 22}
+
+test ns_img-2.5 {basic syntax: plain call} -body {
+     ns_gifsize [ns_server pagedir]/ns_poweredby.png
+} -returnCodes error -match glob -result {invalid GIF file *}
+
+test ns_img-2.6 {basic syntax: plain call} -body {
+     ns_jpegsize [ns_server pagedir]/ns_poweredby.png
+} -returnCodes error -match glob -result {invalid JPEG file *}
+
+
+test ns_img-3.1 {basic syntax: plain call} -body {
+     ns_imgsize [ns_server pagedir]/10bytes
+} -result {0 0}
+
+test ns_img-3.2 {basic syntax: plain call} -body {
+     ns_imgtype [ns_server pagedir]/10bytes
+} -result {unknown}
+
+test ns_img-3.3 {basic syntax: plain call} -body {
+     ns_imgmime [ns_server pagedir]/10bytes
+}  -result {image/unknown}
+
+test ns_img-3.4 {basic syntax: plain call} -body {
+     ns_pngsize [ns_server pagedir]/10bytes
+} -returnCodes error -match glob -result {invalid PNG file *}
+
+test ns_img-3.5 {basic syntax: plain call} -body {
+     ns_gifsize [ns_server pagedir]/10bytes
+} -returnCodes error -match glob -result {invalid GIF file *}
+
+test ns_img-3.6 {basic syntax: plain call} -body {
+     ns_jpegsize [ns_server pagedir]/10bytes
+} -returnCodes error -match glob -result {invalid JPEG file *}
+
+
+
+test ns_img-4.1 {basic syntax: plain call} -body {
+     ns_imgsize [ns_server pagedir]/non-existing-file
+} -returnCodes error -match glob -result {couldn't open *}
+
+test ns_img-4.2 {basic syntax: plain call} -body {
+     ns_imgtype [ns_server pagedir]/non-existing-file
+} -returnCodes error -match glob -result {couldn't open *}
+
+test ns_img-4.3 {basic syntax: plain call} -body {
+     ns_imgmime [ns_server pagedir]/non-existing-file
+} -returnCodes error -match glob -result {couldn't open *}
+
+test ns_img-4.4 {basic syntax: plain call} -body {
+     ns_pngsize [ns_server pagedir]/non-existing-file
+} -returnCodes error -match glob -result {couldn't open *}
+
+test ns_img-4.5 {basic syntax: plain call} -body {
+     ns_gifsize [ns_server pagedir]/non-existing-file
+} -returnCodes error -match glob -result {couldn't open *}
+
+test ns_img-4.6 {basic syntax: plain call} -body {
+     ns_jpegsize [ns_server pagedir]/non-existing-file
+} -returnCodes error -match glob -result {couldn't open *}
+
+cleanupTests

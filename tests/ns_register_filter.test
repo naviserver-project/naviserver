@@ -1,0 +1,254 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test filter-1.1 {basic syntax} -body {
+    ns_register_filter
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? when method urlPattern script ?args?"}
+
+test filter-1.2 {basic syntax} -body {
+    ns_register_filter when GET / aproc
+} -returnCodes error -result {bad flag "when": must be preauth, postauth, or trace}
+
+test filter-1.3 {basic syntax} -body {
+    ns_register_trace
+} -returnCodes error -result {wrong # args: should be "ns_register_trace method urlPattern script ?args?"}
+
+
+
+test filter-2.1 {correct order} -setup {
+    ns_register_filter preauth  GET /filter-2.1 {
+        nsv_lappend . . preauth-2.1
+        return filter_ok
+    }
+    ns_register_filter postauth GET /filter-2.1 {
+        nsv_lappend . . postauth-2.1
+        return filter_ok
+    }
+    ns_register_filter trace GET /filter-2.1 {
+        nsv_lappend . . trace-2.1
+        return filter_ok
+    }
+    ns_register_trace GET /filter-2.1 {
+        nsv_lappend . . voidtrace-2.1
+        return filter_ok
+    }
+    ns_register_proc GET /filter-2.1 {ns_return 200 text/plain ok ;#}
+} -body {
+    set result [nstest::http -getbody 1 GET /filter-2.1]
+    after 2000
+    list $result [nsv_get . .]
+} -cleanup {
+    ns_unregister_op GET /filter-2.1
+    nsv_unset -nocomplain . .
+} -result {{200 ok} {preauth-2.1 postauth-2.1 trace-2.1 voidtrace-2.1}}
+
+
+test filter-2.1a {filter -first} -setup {
+    ns_register_proc GET /filter-2.1a {
+	set fields 0
+	foreach f [ns_server filters] {incr fields [llength $f]}
+        ns_return 200 text/plain "[llength [ns_server filters]] $fields"
+    }
+} -body {
+    nstest::http -getbody 1 GET /filter-2.1a
+} -cleanup {
+    ns_unregister_op GET /filter-2.1a
+} -result {200 {4 20}}
+
+
+
+test filter-2.2 {stacked filters} -setup {
+    ns_register_filter preauth  GET /filter-2.2 {
+        nsv_lappend . . preauth-2.2-1
+        return filter_ok
+    }
+    ns_register_filter preauth  GET /filter-2.2 {
+        nsv_lappend . . preauth-2.2-2
+        return filter_ok
+    }
+    ns_register_proc GET /filter-2.2 {
+	ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-2.2] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {{200 ok} {preauth-2.2-1 preauth-2.2-2}}
+
+test filter-2.3 {void trace always runs} -setup {
+    ns_register_filter preauth  GET /filter-2.3 {
+	error filter-2.3
+    }
+    ns_register_trace GET /filter-2.3 {
+        nsv_lappend . . voidtrace-2.3
+        return filter_ok
+    }
+    ns_register_proc GET /filter-2.3 {
+	error filter-2.3
+    }
+} -body {
+    ns_logctl severity Error off
+    set result [nstest::http GET /filter-2.3]
+    ns_logctl severity Error on
+    after 2000 ;# wait for conn thread to run trace code
+    list $result [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-2.3
+} -result {500 voidtrace-2.3}
+
+
+
+test filter-3.1 {return filter_break} -setup {
+    ns_register_filter preauth GET /filter-3.1 {
+        nsv_lappend . . filter_break-3.1
+        return filter_break
+    }
+    ns_register_filter preauth GET /filter-3.1 {
+        nsv_lappend . . filter_ok-3.1
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.1 {
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.1] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.1
+} -result {{200 ok} filter_break-3.1}
+
+test filter-3.2 {return filter_return} -setup {
+    ns_register_filter preauth GET /filter-3.2 {
+        nsv_lappend . . filter_return-3.2
+        ns_return 200 text/plain filter_return
+        return filter_return
+    }
+    ns_register_filter preauth GET /filter-3.2 {
+        nsv_lappend . . filter_ok-3.2
+        return filter_ok
+    }
+    ns_register_proc GET /filter-3.2 {
+        nsv_lappend . . proc-3.2
+        ns_return 200 text/plain ok
+    }
+} -body {
+    list [nstest::http -getbody 1 GET /filter-3.2] [nsv_get . .]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-3.2
+} -result {{200 filter_return} filter_return-3.2}
+
+
+
+test filter-4.1 {glob} -setup {
+    ns_register_filter preauth GET /filter-4.1/*/literal/* {
+        nsv_lappend . . filter-4.1
+        return filter_ok
+    }
+    ns_register_proc GET /filter-4.1 {
+        ns_return 200 text/plain [nsv_get . .]
+    }
+} -body {
+    nstest::http -getbody 1 GET /filter-4.1/X/literal/Y]
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-4.1
+} -result {200 filter-4.1}
+
+
+test filter-5.1 {filter -first} -setup {
+    ns_register_filter preauth GET /filter-5.1 {
+        nsv_lappend . . filter-5.1-1
+        return filter_ok
+    }
+    ns_register_filter -first preauth GET /filter-5.1 {
+        nsv_lappend . . filter-5.1-2
+        return filter_ok
+    }
+    ns_register_proc GET /filter-5.1 {
+        ns_return 200 text/plain [nsv_get . .]
+    }
+} -body {
+    nstest::http -getbody 1 GET /filter-5.1
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_op GET /filter-5.1
+} -result {200 {filter-5.1-2 filter-5.1-1}}
+
+
+test filter-5.2 {filter -first} -setup {
+    ns_register_proc GET /filter-5.2 {
+	# Since filters are not unregistered, we have all filters from
+	# before included.
+	set fields 0
+	foreach f [ns_server filters] {incr fields [llength $f]}
+        ns_return 200 text/plain "[llength [ns_server filters]] $fields"
+    }
+} -body {
+    nstest::http -getbody 1 GET /filter-5.2
+} -cleanup {
+    ns_unregister_op GET /filter-5.2
+} -result {200 {15 75}}
+
+
+
+test filter-6.1 {no filter scriptarg} -setup {
+    ns_register_filter preauth  GET /filter-6.1 {
+        nsv_lappend . . }
+} -body {
+    ns_logctl severity Error off
+    nstest::http -getbody 1 GET /filter-6.1
+    ns_logctl severity Error on
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {preauth}
+
+test filter-6.2 {filter scriptargs} -setup {
+    ns_register_filter preauth  GET /filter-6.2 {
+        nsv_lappend . . } x y z
+} -body {
+    ns_logctl severity Error off
+    nstest::http -getbody 1 GET /filter-6.2
+    ns_logctl severity Error on
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {preauth x y z}
+
+test filter-6.3 {no trace scriptargs} -setup {
+    ns_register_trace GET /trace-6.3 {
+        nsv_lappend . . ignore }
+} -body {
+    ns_logctl severity Error on
+    nstest::http -getbody 1 GET /trace-6.3
+    ns_logctl severity Error on
+    after 2500
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {ignore}
+
+test filter-6.4 {trace scriptargs} -setup {
+    ns_register_trace GET /trace-6.4 {
+        nsv_lappend . . ignore } x y z
+} -body {
+    ns_logctl severity Error on
+    nstest::http -getbody 1 GET /trace-6.4
+    ns_logctl severity Error on
+    after 2500
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {ignore x y z}
+
+
+
+cleanupTests

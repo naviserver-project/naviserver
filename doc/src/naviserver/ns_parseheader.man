@@ -1,0 +1,28 @@
+[include version_include.man]
+[manpage_begin ns_parseheader n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Parse HTTP header}]
+
+[description]
+This function parses the HTTP header specified by header into an ns_set specified by set.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parseheader] [arg set] [arg header]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

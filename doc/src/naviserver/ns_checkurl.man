@@ -1,0 +1,28 @@
+[include version_include.man]
+[manpage_begin ns_checkurl n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Checks url for authorization}]
+
+[description]
+
+User supplied routine is expected to return OK if authorization
+is allowed, UNAUTHORIZED if a correct username/passwd could
+allow authorization, FORBIDDEN if no username/passwd would ever
+allow access, or ERROR on error.
+
+[para]
+ns_perm module registers such routine to perform basich HTTP authorization
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_checkurl] [arg method] [arg url] [arg authuser] [arg authpasswd] [opt [arg ipaddr]]]
+
+[list_end]
+
+[keywords ns_requestauthorize ns_perm]
+
+[manpage_end]
+

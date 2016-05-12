@@ -1,0 +1,42 @@
+[include version_include.man]
+[manpage_begin ns_upload_stats n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return realtime statistic about being uploaded file}]
+
+[description]
+This command is useful in case of uploading big files and giving users some
+progress statistics about the process. It works by creating special counter for
+the uploaded url and keeps updating it while the file is being uploaded. Once
+file is uploaded completely this statistics is removed from the local cache.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_upload_stats] [arg key]]
+
+[para]
+[arg key]
+The key is either the value provided via the query parameter
+"X-Progress-ID" (if provided) or the url with the query
+parameters. The convention with the query parameter "X-Progress-ID" is
+supported by nginx, lighttpd and by apache (mod_passenger).
+
+[list_end]
+
+[section CONFIGURATION]
+
+ns_section ns/parameters
+ns_param        progressminsize           2048
+
+[section EXAMPLES]
+
+[example_begin]
+Put some examples here to illustrate command usage.
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer upload progress configuration]
+[manpage_end]

@@ -1,0 +1,37 @@
+[include version_include.man]
+[manpage_begin ns_sleep n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Sleep for a specified number of seconds}]
+
+[description]
+
+Sleeps for the number of seconds specified in seconds.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_sleep] [arg seconds]]
+
+[arg seconds]
+The value of seconds can be any NaviServer time string, such as
+a positive integer (or  zero,  in  which case  the  function returns
+immediately), or the form sec:usec or sec.fraction.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_sleep 2
+[example_end]
+
+
+[see_also nsd]
+[keywords time]
+
+[manpage_end]
+

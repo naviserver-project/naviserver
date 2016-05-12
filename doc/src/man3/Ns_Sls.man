@@ -1,0 +1,165 @@
+[include version_include.man]
+
+[manpage_begin Ns_Sls 3 [vset version]]
+[moddesc   {NaviServer Library Procedures}]
+[titledesc {Socket local storage}]
+
+[description]
+
+The underlying TCP socket used by a NaviServer connection may be kept open and
+reused by following connections, e.g. during HTTP keep-alive. Using SLS you
+can save data with the socket, for the lifetime of the TCP connection.
+
+[para]
+There are two ways to save data: 1) by allocating a slot you can save
+a pointer to arbitrary private data; 2) using a string key you can save string
+data, which is easily available using the same key via the Tcl [cmd ns_sls]
+command.
+
+[para]
+The following functions require an active connection -- they should be called
+from e.g. a registered proc, [term filter] or [term ADP] page.
+
+
+[section FUNCTIONS]
+[list_begin definitions]
+
+
+[call [fun Ns_SlsAlloc]([type Ns_Sls] *[arg sls], [type Ns_Callback] *[arg cleanup])]
+
+Allocate a new SLS slot. Must be called before the server completes startup. A
+good place to do this is in your Ns_ModuleInit() routine.
+
+
+[call [fun Ns_SlsSet]([type Ns_Sls] *[arg sls], [type Ns_Sock] *[arg sock], [type void] *[arg data])]
+
+Save data in an SLS slot for the given connection socket. Any previously saved
+data for this slot will be freed using the registered cleanup function. The
+data will be freed automatically when the socket is closed.
+
+
+[call [fun Ns_SlsGet](Ns_Sls *[arg sls], Ns_Sock *[arg sock])]
+
+Get the data associated with the given SLS slot and connection socket. If the
+slsPtr is invalid, the socket is invalid or closed, or no data has been saved
+in this slot then NULL is returned.
+
+
+[call [fun Ns_SlsSetKeyed]([type Ns_Sock] *[arg sock], \
+	  	   		           CONST [const [type char]] *[arg key], \
+                           CONST [const [type char]] *[arg value]) ]
+
+Copy the NUL terminated c-string [arg value] into SLS storage identified by
+[arg key]. The copied string will be automatically freed when the TCP socket
+closes, or when a new value is set with the same key. Data set using this
+API is available to Tcl code using the [cmd "ns_sls get"] command.
+
+
+[call [fun Ns_SlsGetKeyed](Ns_Sock *[arg sock], CONST [const char] *[arg key]) ]
+
+Returns a pointer to a NUL terminated c-string -- data previously saved via
+[fun Ns_SlsSetKeyed]() or [cmd ns_sls] [emph set]. NULL is returned if the connection
+socket is invalid, the key does not exist, or the saved data actually is NULL.
+
+[list_end]
+
+
+
+[section ARGUMENTS]
+[list_begin arguments]
+
+[arg_def [type Ns_Sls] *sls in/out]
+
+An opaque SLS slot handle.
+
+
+[arg_def [type Ns_Sock] *sock in]
+
+Pointer to the Ns_Sock structure associated with the current connection.
+
+
+[arg_def [type void] *data in]
+
+The data to save in an SLS slot.
+
+
+[arg_def [const [type char]] *key in]
+
+Keye identifying string data.
+
+
+[arg_def [const [type char]] *value in]
+
+\0 terminated c-string value stored using the keyed data API. Memory is
+allocated and a copy is made. The [arg value] is also available via the
+[cmd ns_sls] [emph get] command.
+
+
+[arg_def Ns_Callback *cleanup in]
+
+An optional callback function to free slot data. The original data will be
+passed as the callback argument.
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+Log the number of connections handled by a single TCP socket:
+
+[example_begin]
+#include "ns.h"
+
+typedef struct Data {
+    int counter;
+} Data;
+
+static Ns_Callback   Cleanup;
+static Ns_FilterProc Filter;
+
+static [type Ns_Sls] slot;
+
+int
+Ns_ModuleInit(CONST char *server, CONST char *module)
+{
+    [fun Ns_SlsAlloc](&slot, Cleanup);
+    (void) Ns_RegisterFilter(server, "GET", "/*", Filter,
+                             NS_FILTER_PRE_AUTH, NULL);
+    return NS_OK;
+}
+
+static int
+Filter(void *arg, Ns_Conn *conn, int why)
+{
+    Ns_Sock *sock = Ns_ConnSockPtr(conn);
+    [type Ns_Sls]  *slot;
+    Data    *data;
+
+    data = [fun Ns_SlsGet](&slot, sock);
+    if (data == NULL) {
+        data = ns_malloc(sizeof *data);
+        data->counter = 0;
+        [fun Ns_SlsSet](&slot, sock, data)
+    }
+    data->counter++;
+
+    return NS_OK;
+}
+
+static int
+Cleanup(void *arg)
+{
+    Data *data = arg;
+
+    Ns_Log(Notice, "Example: sls counter: %d", data->counter);
+    ns_free(data);
+}
+
+[example_end]
+
+
+[see_also ns_sls Ns_Cls Ns_Tls]
+[keywords sls storage data]
+
+[manpage_end]

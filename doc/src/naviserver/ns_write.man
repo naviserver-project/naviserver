@@ -1,0 +1,129 @@
+[include version_include.man]
+[include version_include.man]
+
+[manpage_begin ns_write n [vset version]]
+[moddesc   {NaviServer Built-in Commands}]
+[titledesc {Return data to client}]
+
+
+[description]
+
+These commands are used to manually construct and send a complete HTTP
+response, or some other non-HTTP response type, to the client.
+
+
+
+[section {COMMANDS}]
+[list_begin definitions]
+
+
+
+[call [cmd ns_headers] \
+     [opt [option -binary]] \
+     [opt --] \
+     [arg status] \
+     [opt [arg mime-type]] ]
+
+Set the HTTP response [arg status] code and [arg mime-type] header for the data
+which is to be sent. The headers, including any extra headers set via the 
+[cmd "ns_conn"] outputheaders command, may not be flushed to the client until the
+first body data is written.
+
+[para]
+The [option -binary] switch indicates that binary data is to be written, in
+which case the [arg mime-type] will be sent as given. Without this switch the
+[arg mime-type] will have the [term charset] for the current connection's
+encoding appended.
+
+[para]
+Returns 0.
+
+
+
+[call [cmd  ns_write] \
+     [arg data] \
+     [opt [arg "data ..."]] ]
+
+Write all [arg data] directly to the client. No HTTP headers are sent unless
+[cmd ns_headers] has been called.
+
+[para]
+If [arg data] is a Tcl byte-array object or the [option -binary] option was
+given to [cmd ns_headers] then no transcoding will take place. Otherwise, the
+[term encoding] in effect for the current connection will be used to encode
+[arg data].
+
+[para]
+If an HTTP response is being constructed ([cmd ns_headers] has been called) and
+the client supports it, HTTP chunking will be used to stream [arg data] on each
+call to [cmd ns_write]. If the client does not support HTTP chunking, connection
+keep-alive is disabled. Prefer to send a complete response using e.g.
+[cmd ns_return] if possible.
+
+[para]
+[cmd ns_write] returns [term true] if all the data was written successfully and
+[term false] otherwise. On failure, no more writes should be attempted.
+
+[para]
+After the command completes the connection remains open and available in
+the calling connection thread.
+
+
+
+[call [cmd ns_connsendfp] \
+     [arg channel] \
+     [arg length] ]
+
+Send [arg length] bytes from [arg channel] directly to the client. No headers
+are sent unless [cmd ns_headers] has been called. No character encoding is done.
+
+[para]
+An error is raised if all of [arg length] bytes could not be sent or if the
+[arg channel] is invalid.
+
+[para]
+After the command completes the connection remains open and available in
+the calling connection thread.
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+Report results progressively.
+
+[example_begin]
+ns_register_proc GET /long-running-process {
+
+    [cmd ns_headers] 200 text/plain
+    [cmd ns_write] "Results: \n"
+
+    while {[lb]do_process result[rb]} {
+        [cmd ns_write] "$result\n"
+    }
+
+    [cmd ns_write] "Done."
+}
+[example_end]
+
+
+
+Sending binary data.
+
+[example_begin]
+ns_register_proc GET /blobs {
+    ...
+    [cmd ns_headers] -binary -- 200 application/x-whateva
+    [cmd ns_write] $blob1 $blob2
+    ...
+    [cmd ns_write] $blob3
+}
+[example_end]
+
+
+
+[see_also ns_return ns_conn]
+[keywords return response status charset encoding writer]
+
+[manpage_end]

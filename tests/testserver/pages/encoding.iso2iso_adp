@@ -1,0 +1,8 @@
+<% 
+#this is an iso-8859-1 adp-page which should not be converted 
+
+if {[ns_queryget mime NULL] eq "utf"} {
+   ns_adp_mimetype "text/plain; charset=utf-8"
+}
+
+%>הצü

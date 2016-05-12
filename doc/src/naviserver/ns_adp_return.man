@@ -1,0 +1,34 @@
+[include version_include.man]
+[manpage_begin ns_adp_return n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Stop processing of the current ADP and return up the call stack}]
+
+[description]
+
+ This command ends processing of the current ADP and returns up the call stack,
+ possibly to a previous ADP that had included the current one.  Returns retval
+ or an empty string by default.
+
+ Note that this command returns only one level up the call stack.  To return
+ all the way up the call stack, use ns_adp_break.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_return] [opt [arg retval]]]
+
+
+[list_end]
+
+
+
+[see_also ns_adp ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]
+[keywords ADP]
+
+[manpage_end]
+

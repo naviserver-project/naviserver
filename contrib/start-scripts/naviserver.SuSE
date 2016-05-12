@@ -1,0 +1,312 @@
+#!/bin/sh
+#
+# Author(s): Bernd Eidenschink, eide@users.sourceforge.net
+#
+#
+# /etc/init.d/naviserver
+#
+### BEGIN INIT INFO
+# Provides:			naviserver nsd
+# Required-Start:		$local_fs $remote_fs $network 
+# X-UnitedLinux-Should-Start:	$named $time postgresql sendmail mysql ypclient dhcp radiusd
+# Required-Stop:		$local_fs $remote_fs $network
+# X-UnitedLinux-Should-Stop:	
+# Default-Start:		3 5
+# Default-Stop:			0 1 2 6
+# Short-Description:		Naviserver 4.99 nsd
+# Description:			Start the Naviserver daemon nsd
+### END INIT INFO
+
+#
+# Paths to binaries used by this script
+#
+startproc=/sbin/startproc
+checkproc=/sbin/checkproc
+killproc=/sbin/killproc
+find=/usr/bin/find
+tr=/usr/bin/tr
+cat=/bin/cat
+kill=/bin/kill
+
+#
+# Decision about starting normal or in a chroot cage
+# Default: no
+#
+# Note: You have to set up a specific chroot environment 
+#       before setting this to 'yes' will result in any success.
+#
+NS_CHROOT=no
+
+#
+# Decision about using the built-in watchdog that automatically restarts
+# the server if it crashes.
+# Default: no
+#
+NS_WATCHDOG=no
+
+#
+# Set whatever variables Naviserver or it's modules make use of
+#
+#PGHOST=127.0.0.1
+#PGPORT=5433
+#PGCLIENTENCODING=UNICODE
+#export PGHOST PGPORT PGCLIENTENCODING
+
+#
+# How long to wait between server restarts
+# Note: This makes only sense with NS_WATCHDOG=no
+#
+SLEEP=/bin/sleep
+SLEEPTIME=10
+
+#
+# Default variables used by this script
+#
+nsd_ident=naviserver
+NS_TITLE="Naviserver daemon"
+
+NS_USER=nsadmin
+NS_GROUP=nswww
+NS_CONFIG=/etc/naviserver/nsd.conf
+NS_MESSAGES=/var/log/rc${nsd_ident}.out
+#
+# Background on 'NS_LOCKFILE': 
+# If you call this script with the 'realstop' argument it creates a lockfile.
+# This may indicate an external watchdog (e.g. a cron job) to not restart
+# the daemon (e.g. because of maintenance)
+# Note: This makes only sense with NS_WATCHDOG=no
+#
+# Example line for a cron job:
+# test -e "$NS_LOCKFILE" || /sbin/checkproc $NS_BINARY || /etc/init.d/naviserver start
+#
+NS_LOCKFILE=/var/lock/naviserver_rc_lock
+
+if [ "$NS_CHROOT" = "no" ]; then
+    NS_BINARY=/usr/local/ns/bin/nsd
+    NS_HOME=/usr/local/ns/
+    NS_PIDFILE=/usr/local/ns/logs/nsd.pid
+elif [ "$NS_CHROOT" = "yes" ]; then
+    NS_TITLE="$NS_TITLE (chroot)"
+    NS_CAGE=/opt/${nsd_ident}/nsd
+    NS_PIDFILE=/logs/nsd.pid
+    # note that it is possible - and a good idea - to place the
+    # configuration and the binary outside the chroot cage
+    # (so NS_CONFIG is defined "globally" and not here)
+    NS_HOME=/opt/${nsd_ident}_ext/
+    NS_BINARY=/opt/${nsd_ident}_ext/nsd
+fi
+
+# resolve the watchdog variable to a usable argument
+if [ "$NS_WATCHDOG" = "yes" ]; then
+    NS_WATCHDOG="-w"
+else
+    # default 'inittab' mode
+    NS_WATCHDOG="-i"
+fi
+
+command="$1"
+shift
+
+#
+# Be more specific about paths when chroot environment is requested
+#
+if [ "$NS_CHROOT" == "yes" ]; then
+    # Place to add or overwrite chroot specific environment variables
+    # (All paths are relative to the chroot starting point)
+    #TCL_LIBRARY=/lib/tcl8.4
+    #MAGICK_HOME=...
+    #export TCL_LIBRARY MAGICK_HOME
+
+    # set up the specific startup command, relevant argument for
+    # chroot configs is '-r'
+    cmdline=$(echo $NS_BINARY $NS_WATCHDOG -t $NS_CONFIG -u $NS_USER -g $NS_GROUP -r $NS_CAGE "$@")
+else
+    # set up the specific startup command
+    cmdline=$(echo $NS_BINARY $NS_WATCHDOG -t $NS_CONFIG -u $NS_USER -g $NS_GROUP "$@")
+fi
+
+#
+# *** STOP doing changes from here on (at least you should not have to) ***
+#
+
+# load function sets for boot script return messages
+test -s /etc/rc.status && . /etc/rc.status && rc_reset
+
+for binary in $NS_BINARY $startproc $checkproc $killproc $find $tr $cat $kill; do
+    test -x $binary || {
+        echo >&2 "${warn}$binary not found or not executable.${norm}"
+        rc_failed 5
+        rc_status -v1
+        rc_exit
+    }
+done
+
+#
+# main logic implementing 
+#     start
+#     stop
+#     realstop
+#     try-restart
+#     restart
+#     status
+#     probe
+#     version
+
+case "$command" in
+    start)
+	if [ -e $NS_PIDFILE ]; then
+	    $0 status &>/dev/null
+	    ret=$?
+	    if [ $ret = 1 ]; then
+		echo "Warning: found stale pidfile (unclean shutdown?)"
+	    elif [ $ret = 0 ]; then
+		echo -e "$NS_TITLE is already running \n($NS_PIDFILE)"
+		rc_failed $ret
+		rc_status -v1
+		rc_exit
+	    fi
+	fi
+
+        echo -n "Starting $NS_TITLE"
+        test -e "$NS_LOCKFILE" && rm "$NS_LOCKFILE"
+        eval $startproc -l $NS_MESSAGES -f $cmdline
+        ret=$?
+        if [ "$ret" != 0 ]; then
+            rc_failed 1
+        fi
+        rc_status -v
+        ;;
+
+    realstop|stop)
+	echo -n "Shutting down $NS_TITLE "
+
+        $killproc -t120 -p $NS_PIDFILE $NS_BINARY 2>>$NS_MESSAGES
+	case $? in
+            0) echo -n "(Success or program was not running)"
+	       rc_status -v
+               # create a lockfile if requested
+               test "$command" = "realstop" && touch "$NS_LOCKFILE"
+               rc_exit
+                ;;
+            4) echo -n '(Insufficient privilege(s))'
+                ;;
+            7) echo -n "(Program was not running to receive the specified signal)"
+                ;;
+            *) echo -n "(Error: $?)"
+                ;;
+        esac
+	rc_status -v
+	;;
+
+    try-restart)
+        # restart only if the service was active before
+	$0 status
+	if [ "$?" = 0 ]; then
+            # status ok, do the restart
+	    $0 restart
+	else
+            # don't restart and don't complain
+	    rc_reset
+	fi
+	rc_status
+	;;
+
+    restart)
+        # handle special watchdog case: it listens to SIGINT to restart,
+        # stopping is not necessary
+        if test "$NS_WATCHDOG" = "-w" -o "$NS_WATCHDOG" = "yes" ; then
+            $checkproc -p $NS_PIDFILE $NS_BINARY && {
+                pid=$(<$NS_PIDFILE)
+                $kill -s SIGINT $pid &>$NS_MESSAGES
+                rc_failed $?
+                rc_status -v1
+                rc_exit
+            }
+        fi
+
+        $checkproc -p $NS_PIDFILE $NS_BINARY && {
+            $0 stop
+            # server was running, so we wait specified time to let it calm down
+            $SLEEP $SLEEPTIME
+        }
+	$0 start "$@"
+	rc_status
+	;;
+
+    status)
+        echo -n "Checking for naviserver daemon nsd: "
+        $checkproc -p $NS_PIDFILE $NS_BINARY
+        ret=$?
+        case "$ret" in
+            0)  # program is running
+                ;;
+            1)  rc_failed 3
+                # No process but pid file found
+                ;;
+            3)  rc_failed 3
+                # No process and no pid file found
+                ;;
+            101)
+                rc_failed 3
+                # Wrong syntax on command line
+                ;;
+            *)  rc_failed 1
+                # Other errors
+                ;;
+        esac
+        rc_status -v
+        ;;
+
+    probe)
+        # reload necessary? Changes to configuration newer
+        # than the pidfile may indicate that.
+
+        # note: probe expects one or more config files with '.conf' extension
+        configs_dir=$(dirname $NS_CONFIG)
+        configs=$($find $configs_dir -name "*.conf" -type f)
+
+	for i in $configs
+	do
+            if [ "$i" -nt $NS_PIDFILE ]; then
+                echo reload
+                break
+            fi
+	done
+        ;;
+
+    version)
+        test -e $NS_PIDFILE && pid=$(<$NS_PIDFILE)
+        if test -e $NS_PIDFILE -a -e /proc/${pid}/cmdline; then
+            echo -e "\n$NS_TITLE started with: "
+            # args might be separated with nullbytes
+            $cat /proc/${pid}/cmdline | $tr '\0' ' '
+            echo -e "\n"
+        fi
+
+        $NS_BINARY -V
+	rc_failed $?
+	rc_exit
+	;;
+
+    *)
+    $cat >&2 <<-EOF 
+
+    Usage: $0 <command>
+
+    where <command> is one of 
+    start           - start nsd
+    stop            - stop nsd
+    restart         - stop nsd if running; start nsd
+    try-restart     - restart a running server only
+    realstop        - stop nsd and create a lockfile
+    version         - show version and release information
+    probe           - figure out if config changed since last start
+    status          - check whether nsd is running    
+
+EOF
+    exit 1
+esac
+
+
+
+rc_exit

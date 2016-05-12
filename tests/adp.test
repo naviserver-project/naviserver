@@ -1,0 +1,162 @@
+# -*- Tcl -*-
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://mozilla.org/.
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is AOLserver Code and related documentation
+# distributed by AOL.
+# 
+# The Initial Developer of the Original Code is America Online,
+# Inc. Portions created by AOL are Copyright (C) 1999 America Online,
+# Inc. All Rights Reserved.
+#
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+# 
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
+
+
+#
+# The following allows us to use ADP without a connection.
+#
+
+ns_adp_ctl channel stdout
+
+
+
+
+test adp-1.1 {Simple Tcl page} -body {
+    nstest::http -getbody 1 GET /helloworld.tcl
+} -result {200 {Hello World!}}
+
+
+test adp-1.2 {Simple Tcl page returning large data} -body {
+    set result [nstest::http -getbody 1 GET /helloworld.tcl?data=x&repeat=8666]
+	list [lindex $result 0] [string length [lindex $result 1]]
+} -cleanup {
+	unset -nocomplain result
+} -result {200 8666}
+
+
+test adp-1.3 {Simple ADP page} -body {
+    nstest::http -getbody 1 GET /helloworld.adp
+} -result {200 {Hello World!}}
+
+
+test adp-1.4 {Simple ADP page returning large data} -body {
+    set result [nstest::http -getbody 1 GET /helloworld.adp?data=x&repeat=8666]
+	list [lindex $result 0] [string length [lindex $result 1]]
+} -cleanup {
+	unset -nocomplain result
+} -result {200 8666}
+
+
+test adp-2.1 {ADP page map} -setup {
+	ns_register_adp GET /dejavu helloworld.adp
+} -body {
+	nstest::http -getbody 1 GET /dejavu
+} -cleanup {
+	ns_unregister_op GET /dejavu
+} -result {200 {Hello World!}}
+
+
+test adp-2.2 {Tcl page map} -setup {
+	ns_register_tcl GET /dejavu helloworld.tcl
+} -body {
+	nstest::http -getbody 1 GET /dejavu
+} -cleanup {
+	ns_unregister_op GET /dejavu
+} -result {200 {Hello World!}}
+
+
+
+test adp-3.1 {ns_adp_ctl} -body {
+	# (enabled by default)
+	list [ns_adp_ctl autoabort 0] [ns_adp_ctl autoabort]
+} -result {1 0}
+
+test adp-3.2 {ns_adp_ctl bufsize} -body {
+	set orig [ns_adp_ctl bufsize 666]
+	ns_adp_ctl bufsize $orig
+} -cleanup {
+	unset -nocomplain orig
+} -result {666}
+
+
+
+test adp-4.1 {ns_adp_append} -body {
+	ns_adp_eval {<% ns_adp_append adp-4.1 %>}
+} -result {adp-4.1}
+
+test adp-4.2 {ns_adp_puts} -body {
+	ns_adp_eval {<% ns_adp_puts adp-4.2 %>}
+} -result "adp-4.2\n"
+
+test adp-4.3 {ns_adp_puts} -body {
+	ns_adp_eval {<% ns_adp_puts -nonewline adp-4.3 %>}
+} -result {adp-4.3}
+
+test adp-4.4 {ns_adp_dir (unset)} -body {
+	ns_adp_dir
+} -result {}
+
+
+test adp-5.1 {Nested ADP tags} -body {
+    nstest::http -getbody 1 GET /nested.adp
+} -result {200 {anything
+}}
+
+test adp-5.2 {Deeply nested ADP tags} -body {
+    nstest::http -getbody 1 GET /deepnest.adp
+} -result {200 {deep
+}}
+
+
+#
+# ns_adp_parse 
+#
+
+test adp-6.1 {adp-parse string} -body {
+    ns_adp_parse {2 + 2 = <%= [expr 2 + 2] %> !!!}
+} -result {2 + 2 = 4 !!!}
+
+test adp-6.2 {adp-parse string} -body {
+    ns_adp_parse -string {2 + 2 = <%= [expr 2 + 2] %> !!!}
+} -result {2 + 2 = 4 !!!}
+
+
+test adp-6.3 {adp-parse file} -body {
+    ns_adp_parse -file adp1.adp
+} -result {2 + 2 = 4 !!!
+}
+
+test adp-6.4 {adp-parse file with arguments} -body {
+    ns_adp_parse -file adp2.adp hello world
+} -result {2 + 2 = 4 !!!
+argc 3
+argv adp2.adp hello world
+}
+
+cleanupTests

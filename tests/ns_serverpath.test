@@ -1,0 +1,132 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+#
+# Three test environments:
+#
+#   1) server with virtual hosting disabled.
+#   2) server with virtual hosting enabled.
+#   3) server with custom serverroot and location procs registered.
+#
+
+
+
+set serverroot [file join [ns_config "test" home] \
+                    [ns_config "ns/server/testvhost/fastpath" serverdir]]
+set vhosts [ns_config "ns/server/testvhost/vhost" hostprefix]
+
+
+test ns_serverpath-1.1 {basic path} -body {
+    ns_serverpath
+} -result $serverroot
+
+test ns_serverpath-1.2 {basic path} -body {
+    ns_serverpath --
+} -result $serverroot
+
+test ns_serverpath-1.3 {basic path} -body {
+    ns_serverpath foo bar
+} -result ${serverroot}/foo/bar
+
+test ns_serverpath-1.4 {basic path} -body {
+    ns_serverpath -- foo bar
+} -result ${serverroot}/foo/bar
+
+
+
+test ns_serverpath-2.1 {host path} -body {
+    ns_serverpath -host example.com -- x y
+} -result ${serverroot}/x/y
+
+
+
+test ns_serverpath-3.1 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath
+} -result [list 200 ${serverroot}/${vhosts}/t/e/s/testvhost]
+
+test ns_serverpath-3.2 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=example.com
+} -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
+
+test ns_serverpath-3.3 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=EXAMPLE.COM
+} -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
+
+test ns_serverpath-3.4 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=www.example.com
+} -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
+
+test ns_serverpath-3.5 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=www.example.com:80
+} -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
+
+test ns_serverpath-3.6 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=1
+} -result [list 200 ${serverroot}/${vhosts}/1/_/_/1]
+
+test ns_serverpath-3.7 {virtual host path} -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=
+} -result [list 200 ${serverroot}]
+
+
+
+test ns_serverpath-4.1 {custom serverroot} -constraints serverListen -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath
+} -result {200 testserverroot/arg}
+
+test ns_serverpath-4.2 {custom serverroot} -constraints serverListen -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath?host=example.com
+} -result {200 testserverroot/example.com/arg}
+
+test ns_serverpath-4.3 {custom serverroot} -constraints serverListen -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath?path=x
+} -result {200 testserverroot/arg/x}
+
+test ns_serverpath-4.4 {custom serverroot} -constraints serverListen -body {
+    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath?host=example.com&path=x
+} -result {200 testserverroot/example.com/arg/x}
+
+
+
+
+test ns_serverpath-5.1 {bad host} -body {
+    ns_serverpath -host " "
+} -result ${serverroot}
+
+test ns_serverpath-5.2 {bad host} -body {
+    ns_serverpath -host /
+} -result ${serverroot}
+
+test ns_serverpath-5.3 {bad host} -body {
+    ns_serverpath -host ../example.com
+} -result ${serverroot}
+
+test ns_serverpath-5.4 {bad host} -body {
+    ns_serverpath -host www.example.com//naughty
+} -result ${serverroot}
+
+test ns_serverpath-5.5 {bad host} -body {
+    ns_serverpath -host www.example.com/../naughty
+} -result ${serverroot}
+
+test ns_serverpath-5.6 {bad host} -body {
+    ns_serverpath -host .. 2dots
+} -result ${serverroot}/2dots
+
+test ns_serverpath-5.7 {bad host} -body {
+    ns_serverpath -host ... 3dots
+} -result ${serverroot}/3dots
+
+
+
+unset -nocomplain serverroot vhosts
+
+
+
+cleanupTests

@@ -1,0 +1,54 @@
+[include version_include.man]
+[manpage_begin ns_mktemp n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+
+[titledesc {Make a unique temporary file name}]
+
+[description]
+This command is a wrapper around the mktemp(3) function in the C standard library. 
+
+[para]
+Note that some implementations of mktemp are not so safe - it creates
+predictable/only a small number of variations - please consult your 
+system's man pages if this might be an issue to you. NaviServer could
+potentially be improved to use mkstemp instead, but that command
+creates a file as well, so this is not fully compatible.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_mktemp] [opt [arg template]]]
+
+[para]
+
+This command takes a optionally a template as argument, which is a
+string whose last six characters must be XXXXXX, and returns a new
+string where those are replaced with random characters such as to make
+the string a unique file name. It is commonly used to safely create
+temporary files.
+
+[para]
+If this command is called without the optional parameter it behaves
+like
+[example_begin]
+   ns_mktemp [lb]ns_config ns/parameters tmpdir[rb]/ns-XXXXXX
+[example_end]
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_mktemp /tmp/aol-XXXXXX
+   /tmp/aol-rhaGGx
+[example_end]
+
+
+[keywords tmp tmpfile]
+
+
+[manpage_end]
+

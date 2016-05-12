@@ -1,0 +1,38 @@
+[include version_include.man]
+[manpage_begin ns_adp_mime n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get or set the mime type for the current ADP page}]
+
+[description]
+
+ This command will either get or set the mime type returned to the client
+ when the parsing of the page is complete. If called with no arguments,
+ the current mime type will be returned. If called with one argument, the
+ mime type will be set to the given mime type.
+
+[para]
+ Note: This command should not be called outside an ADP page.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_mime] [opt [arg mimetype]]]
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_adp_mime
+   ns_adp_mime "text/plain"
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_adp_mimetype]
+
+[manpage_end]
+

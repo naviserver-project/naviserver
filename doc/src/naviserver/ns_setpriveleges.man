@@ -1,0 +1,32 @@
+[include version_include.man]
+[manpage_begin ns_setuser n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Set the current procces priveleges}]
+
+[description]
+
+Sets the effective user or group ID of the current process.  If the effective UID
+of the caller is root, the real UID and saved set-user-ID are also set.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_setuser] [arg user]]
+[call [cmd ns_setgroup] [arg group]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_setuser nobody
+   % ns_setuser 99
+   % ns_setgroup nogroup
+   % ns_setgroup 99
+[example_end]
+
+[manpage_end]
+

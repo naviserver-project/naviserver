@@ -1,0 +1,210 @@
+[include version_include.man]
+
+[manpage_begin ns_accesslog n [vset version]]
+[moddesc   {NaviServer Module Commands}]
+[titledesc {Query and control access log parameters}]
+
+[description]
+
+This command controls and configures the access log. It can change
+settings at run-time.
+
+
+
+[section {COMMANDS}]
+[list_begin definitions]
+
+
+[call [cmd ns_accesslog] \
+	[arg file] \
+	[opt [arg new-path]] ]
+
+Returns the path of the access log for the current virtual server.
+
+[para]
+If [opt [arg new-path]] is given then the old log is closed and the log
+re-opened at the new location. All the components of [opt [arg new-path]] must
+exist. If an error occurs logging will be disabled.
+
+
+
+[call [cmd ns_accesslog] \
+	[arg roll] \
+	[opt [arg new-path]]]
+
+Roll the access log (see [cmd ns_rollfile] for details). Keep [term maxbackup]
+old log files around.  If [opt [arg new-path]] is given then it overrides the
+configuration parameter 'file' as the new log file.
+
+
+
+[call [cmd ns_accesslog] \
+	[arg rollfmt] \
+	[opt [arg time-format]] ]
+
+Get the [opt [arg time-format]] which is appended to the log file name when
+rolling. The format string is as understood by the Tcl [cmd clock] command.
+If [opt [arg time-format]] is given then it replaces any existing value.
+
+
+
+[call [cmd ns_accesslog] \
+	[arg maxbackup] \
+	[opt [arg keep]] ]
+
+Get the number of backup files which will be kept when log rolling is
+enabled. If [opt [arg keep]] is given it replaces any existing value.
+
+
+
+[call [cmd ns_accesslog] \
+	[arg flags] \
+	[opt [arg flags]]]
+
+Return a list of the enabled logging options, or reset the list if a
+new set of flags is given. Valid flags are: logcombined,
+formattedtime, logpartialtimes, logreqtime, checkforproxy, and
+suppressquery. They have the same meaning as the similarly named
+configuration parameters.
+
+
+
+[call [cmd ns_accesslog] \
+	[arg extendedheaders] \
+	[opt [arg new-headers]]]
+
+Return a list of the HTTP headers which will be appended to each entry in the
+access log. If [opt [arg new-headers]] is given it replaces the existing
+setting.
+
+
+
+[call [cmd ns_accesslog] \
+	[arg maxbuffer] \
+	[opt [arg lines]] ]
+
+Set or get the maximum number of lines to buffer before being flushed to the
+log file.
+
+
+[list_end]
+
+
+
+[section CONFIGURATION]
+
+The nslog module is loaded per-server.
+
+[example_begin]
+ns_section "ns/server/server1/modules"
+ns_param   nslog   nslog.so
+
+ns_section "ns/server/server1/module/nslog"
+ns_param   ...
+[example_end]
+
+
+The following are valid configuration parameters:
+
+[list_begin definitions]
+
+[def file]
+String: path to the log file.
+
+[def formattedtime]
+If true, log the time in common-log-format. Otherwise log seconds since the
+epoch. Default: true.
+
+[def logcombined]
+If true, log the referer and user-agent HTTP headers (NCSA combined
+format). Default: true.
+
+[def maxbuffer]
+The number of log entries to buffer before flushing to the log file. Default: 0.
+
+[def rolllog]
+If true then the log file will be rolled. Default: true.
+
+[def rollhour]
+The hour of the day (0-23) to roll the log file if log rolling is enabled.
+Default: 0 (midnight).
+
+[def maxbackup]
+Number of old log files to keep when log rolling is enabled. Default: 100.
+
+[def rollonsignal]
+If true then the log file will be rolled when the serve receives a SIGHUP
+signal. Default: false.
+
+[def suppressquery]
+If true then the query (everything after the ? in the URL) is not logged.
+Default: false.
+
+[def checkforproxy]
+If true then the value of the X-Forwarded-For HTTP header is logged as the IP
+address of the client. Otherwise, the TCP peer address is logged. Only enable
+this if you run your own, trusted proxy server. Default: false.
+
+[def logpartialtimes]
+If true then include the high-resolution start time of the request
+together with partial request durations (accept, queue, filter,
+run) in the access log.
+Default: false.
+
+[def logreqtime]
+If true then log the total amount of time the request took to run in seconds and
+milliseconds.  Default: false.
+
+[def extendedheaders]
+A space separated list of additional HTTP headers whos value should be logged.
+Default: no extra headers are logged.
+
+[list_end]
+
+
+
+
+[section EXAMPLES]
+
+The path of the active access log.
+
+[example_begin]
+nscp:1> [cmd ns_accesslog] file
+/home/ns/servers/server1/modules/nslog/access.log
+
+nscp:2> [cmd ns_modulepath] server1 nslog access.log
+/home/ns/servers/server1/modules/nslog/access.log
+[example_end]
+
+
+
+The access log can be rolled manually.
+
+[example_begin]
+nscp:1> ns_accesslog roll
+[example_end]
+
+
+
+Extended logging options can be configured at run-time.
+
+[example_begin]
+nscp:1> [cmd ns_accesslog] flags
+logCombined formattedTime
+
+nscp:2> [cmd ns_accesslog] flags {logcombined formattedtime checkforproxy}
+logcombined formattedtime checkforproxy
+
+nscp:3> [cmd ns_accesslog] extendedheaders
+
+nscp:4> [cmd ns_accesslog] extendedheaders {Cookie Accept}
+Cookie Accept
+[example_end]
+
+
+
+
+[see_also ns_log ns_rollfile]
+[keywords log path proxy ipaddress]
+
+[manpage_end]

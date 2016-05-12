@@ -1,0 +1,141 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+test ns_parseargs-1.1 {basic syntax} -body {
+    ns_parseargs
+} -returnCodes error -result {wrong # args: should be "ns_parseargs specification args"}
+
+test ns_parseargs-1.2 {basic syntax} -body {
+    ns_parseargs {} {}
+} -result {}
+
+
+
+test ns_parseargs-2.1 {object type conversion / display} -body {
+
+    set spec1 {-a -- x {y Y} args}
+    set spec2 $spec1
+
+    ns_parseargs $spec1 X
+    ns_parseargs $spec2 X
+    set spec1 $spec2
+    ns_parseargs $spec1 X
+    ns_parseargs $spec2 X
+    set spec2 ""
+    set spec2 $spec1
+    ns_parseargs $spec2 X
+
+    string equal $spec1 $spec2
+
+} -cleanup {
+    unset -nocomplain -- spec1 spec2 x y args
+} -result 1
+
+test ns_parseargs-2.2 {object type conversion / display} -body {
+    ns_parseargs a a
+} -cleanup {
+    unset -nocomplain a
+} -result {}
+
+test ns_parseargs-2.3 {object type conversion / display} -body {
+    set tid [ns_thread begin {
+        proc x {} {
+            ns_parseargs {-a} {-a A}
+        }
+        x
+    }]
+    ns_thread wait $tid
+} -cleanup {
+    unset -nocomplain -- tid
+} -result {}
+
+
+
+test ns_parseargs-3.1 {Arguments} -body {
+    ns_parseargs {x y args} {1 2 3 4 5}
+    list $x $y $args
+} -cleanup {
+    unset -nocomplain -- x y args
+} -result [list 1 2 [list 3 4 5]]
+
+
+test ns_parseargs-4.1 {Options} -body {
+    unset -nocomplain a c e
+    ns_parseargs {-a -b -c -d -e} {-b B -d D}
+    list [info exists a] $b [info exists c] $d [info exists e]
+} -cleanup {
+    unset -nocomplain -- a b c d e
+} -result [list 0 B 0 D 0]
+
+
+test ns_parseargs-5.1 {Defaults} -body {
+    ns_parseargs {{-a A} -- x {y Y} {args {1 2 3}}} {X}
+    list $a $x $y $args
+} -cleanup {
+    unset -nocomplain -- a x y args
+} -result [list A X Y [list 1 2 3]]
+
+test ns_parseargs-5.2 {Defaults} -body {
+    ns_parseargs {{-a A} -- x {y Y} {args {1 2 3}}} {-a aaa -- xxx yyy 3 2 1}
+    list $a $x $y $args
+} -cleanup {
+    unset -nocomplain -- a x y args
+} -result [list aaa xxx yyy [list 3 2 1]]
+
+test ns_parseargs-5.3 {Defaults script} -body {
+    unset -nocomplain a c e
+    ns_parseargs {-a -b -c -d -e {-l {[info level]}} } {-b B -d D}
+    list [info exists a] $b [info exists c] $d [info exists e] [set l]
+} -cleanup {
+    unset -nocomplain -- a b c d e l
+} -result [list 0 B 0 D 0 0]
+
+
+
+test ns_parseargs-6.1 {-- ends option parsing} -body {
+    ns_parseargs {-a -- x} {-a A -- X}
+    list $a $x
+} -cleanup {
+    unset -nocomplain -- a x
+} -result [list A X]
+
+test ns_parseargs-6.2 {-- ends option parsing} -body {
+    ns_parseargs {-a -- x} {-a A X}
+    list $a $x
+} -cleanup {
+    unset -nocomplain -- a x
+} -result [list A X]
+
+test ns_parseargs-6.1 {-- ends option parsing} -body {
+    ns_parseargs {-a x} {-a A X}
+    list $a $x
+} -cleanup {
+    unset -nocomplain -- a x
+} -result [list A X]
+
+
+
+test ns_parseargs-7.1 {Bad Args} -body {
+    ns_parseargs {-a x} {}
+} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+
+test ns_parseargs-7.2 {Bad Args} -body {
+    ns_parseargs {-a x} {x y}
+} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+
+test ns_parseargs-7.3 {Bad Args} -body {
+    ns_parseargs {-a x} {-b x}
+} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+
+test ns_parseargs-7.4 {Bad Args} -body {
+    ns_parseargs {-a x} {-a a -- x}
+} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+
+
+
+cleanupTests

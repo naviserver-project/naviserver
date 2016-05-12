@@ -1,0 +1,67 @@
+[include version_include.man]
+[manpage_begin ns_guesstype n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Lookup MIME type based on file extension}]
+
+[description]
+
+This command guesses and returns the MIME type of a file, based on the extension of filename.  
+A large set of default extension to MIME type mappings is built into the command:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_guesstype] [arg filename]]
+
+Return the MIME type for the provided [arg filename] based on its file extension.
+
+[list_end]
+
+ The MIME type returned for a file extension can be overriden in the
+ NaviServer config file, and new mappings can be added, e.g.
+
+[example_begin]
+   ns_section "ns/mimetypes"
+   ns_param  ".xls"        "application/vnd.ms-excel"     ;# Add a mapping for Excel files
+   ns_param  ".sjis_html"  "text/html; charset=shift_jis" ;# Adding a mapping, specifing charset
+   ns_param  ".adp"        "text/html; charset=UTF-8"     ;# Overriding an existing mapping
+[example_end]
+
+ The MIME type to be returned for files with unrecognized or missing extensions can also be specified in the "ns/mimetypes" section of the config file, e.g.
+
+[example_begin]
+   ns_section "ns/mimetypes"
+   ns_param  default      "*/*"   ;# MIME type for unrecognized extension.
+   ns_param  noextension  "*/*"   ;# MIME type for missing extension.
+[example_end]
+
+ If default is not configured, "*/*" will be returned for files with unrecognized extensions.  If noextension is not configured, the MIME type configured as default (or "*/*") will be used.
+
+[section EXAMPLES]
+
+ (Assuming configured with the examples above)
+
+[example_begin]
+   % ns_guesstype "hello.jpg"
+   image/jpeg
+   
+   % ns_guesstype "hello.xls"
+   application/vnd.ms-excel
+ 
+   % ns_guesstype "hello.html"
+   text/html
+   
+   % ns_guesstype "world.adp"
+   text/html; charset=UTF-8
+   
+   % ns_guesstype somefile
+   */*
+[example_end]
+
+
+[keywords return mime configuration ]
+
+[manpage_end]
+

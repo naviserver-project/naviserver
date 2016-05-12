@@ -1,0 +1,157 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+test ns_server-1.1 {basic syntax: plain call} -body {
+    ns_server
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+
+test ns_server-1.2 {basic syntax: wrong argument} -body {
+    ns_server ?
+} -returnCodes error -result {bad option "?": must be active, all, connections, filters, keepalive, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, url2file, or waiting}
+
+test ns_server-1.3.1 {plain call, option but no argument} -body {
+    ns_server -pool {}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+
+test ns_server-1.3.2 {plain call, option but no argument} -body {
+    ns_server -pool {} --
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+
+test ns_server-1.4.1 {plain call, option but no argument} -body {
+    ns_server -server test
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+
+test ns_server-1.4.2 {plain call, option but no argument} -body {
+    ns_server -server test --
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+
+test ns_server-1.5 {provide invalid server argument} -body {
+    ns_server -server foo
+} -returnCodes error -result {invalid server: 'foo'}
+
+
+test ns_server-2.1 {basic operation} -body {
+    string is int -strict [ns_server connections]
+} -match exact -result 1
+
+test ns_server-2.2 {basic operation} -body {
+    ns_server maxthreads
+} -match exact -result 10
+
+test ns_server-2.3 {basic operation} -body {
+    ns_server minthreads
+} -match exact -result 2
+
+test ns_server-2.3.1 {set minthreads} -body {
+    ns_server minthreads 1
+} -match exact -result 1
+
+test ns_server-2.3.2 {query modfied minthreads} -body {
+    ns_server minthreads
+} -match exact -result 1
+
+test ns_server-2.3.3 {provided too large minthreads value} -body {
+    ns_server minthreads 100
+} -returnCodes error -result {argument is not a integer in the valid range: 100}
+
+test ns_server-2.3.4.1 {query alternate pool from default server} -body {
+    ns_server -pool emergency maxthreads
+} -match exact -result 1
+
+test ns_server-2.3.4.2 {query alternate pool from specified server} -body {
+    ns_server -server test -pool emergency maxthreads
+} -match exact -result 1
+
+test ns_server-2.3.4.3 {query alternate pool from incorrect server} -body {
+    ns_server -server testvhost -pool emergency maxthreads
+} -returnCodes error -result {no such pool emergency for server testvhost}
+
+test ns_server-2.3.5.1 {query alternate pool from server "test"} -body {
+    ns_server -server test maxthreads
+} -match exact -result 10
+
+test ns_server-2.3.5.2 {query alternate pool from server "testvhost"} -body {
+    ns_server -server testvhost maxthreads
+} -match exact -result 3
+
+test ns_server-2.3.5.3 {query alternate pool from server "testvhost2"} -body {
+    ns_server -server testvhost2 maxthreads
+} -match exact -result 4
+
+
+test ns_server-2.4.1 {just default pool} -body {
+    ns_server pools
+} -match exact -result "emergency {}"
+
+test ns_server-2.4.2 {basic operation} -body {
+    ns_server -server test pools
+} -match exact -result "emergency {}"
+
+test ns_server-2.4.2 {basic operation} -body {
+    ns_server -server testvhost pools
+} -match exact -result "{}"
+
+test ns_server-2.4.2 {basic operation} -body {
+    ns_server -server testvhost2 pools
+} -match exact -result "{}"
+
+test ns_server-2.5 {basic operation} -body {
+    array set stats [ns_server stats]
+    array size stats
+} -match exact -result 8
+
+test ns_server-2.6 {basic operation} -body {
+    array set threads [ns_server threads]
+    array size threads
+} -match exact -result 5
+
+test ns_server-2.7 {basic operation} -body {
+    ns_server waiting
+} -match exact -result 0
+
+test ns_server-2.8 {register filter and query} -setup {
+    proc _filter_do_nothing {args} {
+	return filter_ok
+    }
+    ns_register_filter preauth GET /ns_server-2.8 _filter_do_nothing
+} -body {
+    ns_server filters
+} -match glob -result {*{GET /ns_server-2.8 preauth ns:tclfilter _filter_do_nothing}*}
+
+test ns_server-2.9 {basic operation} -body {
+    expr {[llength [ns_server traces]] == 1}
+} -result 1
+
+test ns_server-2.10 {basic operation} -body {
+    expr {[llength [ns_server requestprocs]]>1}
+} -result 1
+
+test ns_server-2.11 {basic operation} -body {
+    expr {[llength [split [ns_server pagedir] "/"]]>1}
+} -result 1
+
+test ns_server-2.12 {basic operation} -body {
+    ns_server tcllib
+} -match "glob" -result "*modules*"
+
+test ns_server-2.13.1 {basic operation} -body {
+    ns_server serverdir
+} -match "glob" -result "*tests/testserver"
+
+test ns_server-2.13.2 {basic operation} -body {
+    ns_server -server test serverdir
+} -match "glob" -result "*tests/testserver"
+
+test ns_server-2.13.3 {basic operation} -body {
+    ns_server -server testvhost serverdir
+} -match "glob" -result "*tests/testserver"
+
+test ns_server-2.13.4 {basic operation} -body {
+    ns_server -server testvhost2 serverdir
+} -match "glob" -result "*tests/testserver"
+
+cleanupTests

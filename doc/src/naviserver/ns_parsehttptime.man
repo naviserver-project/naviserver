@@ -1,0 +1,27 @@
+[include version_include.man]
+[manpage_begin ns_parsehttptime n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Convert a HTTP date format string into seconds}]
+
+[description]
+
+This command parses a string containing an HTTP date format string
+(see RFC 2616 Sec 3.3) and returns the number of seconds since
+00:00:00 UTC Jan 1, 1970.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+ [call [cmd ns_parsehttptime] [arg httptime]]
+
+[list_end]
+
+
+
+[keywords time]
+[see_also ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
+
+[manpage_end]
+

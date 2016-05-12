@@ -1,0 +1,329 @@
+[include version_include.man]
+
+[manpage_begin ns_return n [vset version]]
+[moddesc   {NaviServer Built-in Commands}]
+[titledesc {Return a complete HTTP response}]
+
+[description]
+
+These commands are used to construct a complete HTTP response and return
+it to the requesting client. The response may be transcoded into a different
+encoding, compressed and/or sent in chunks as automatically negotiated by
+the client and server settings.
+
+[para]
+Unless otherwise noted, these commands return [const true] if the command
+failed and [const false] otherwise. All of them can raise an error if their
+arguments are incorrect.
+
+[para]
+The behavior of the file delivery commands [cmd ns_returnfile] 
+and [cmd ns_repond] is influenced
+by the [const fastpath] settings, that define, how static files are
+served. The fastpath settings are described in the [sectref CONFIGURATION]
+section at the end of this page.
+
+
+[section {COMMANDS}]
+[list_begin definitions]
+
+
+[call [cmd  ns_return] \
+	[opt [option {-binary}]] \
+	[arg status] \
+	[arg mime-type] \
+	[arg body] ]
+
+Return a complete response to the client consisting of the given [arg body]
+and a set of HTTP headers. [arg status] is an integer HTTP status code such as
+200 (OK) or 404 (Not Found). When the optional flag [option {-binary}] is
+used, the content of the tcl byte-array is transmitted.
+
+[para]
+[arg mime-type] is the mime-type of the body. If a [term charset] attribute
+is included in the mime-type it will be used to set the encoding of the
+connection. Otherwise, the connection encoding will be used to
+construct a charset attribute for the mime-type.
+
+[para]
+If [arg body] is Tcl byte-array object then no transcoding will take place.
+Otherwise, the [term encoding] in effect for the current connection will be
+used to encode the [arg body].
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execute code.
+
+
+[call [cmd  ns_returnfile] \
+     [arg status] \
+     [arg mime-type] \
+     [arg filepath] ]
+
+Return the given file as the complete response body. Headers are constructed
+using [arg status], [arg mime-type] and any pending headers set using
+[cmd "ns_conn outputheaders"]. The bytes of the file are not transformed in any
+way. 
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execute code.
+
+
+
+[call [cmd  ns_returnfp] \
+     [arg status] \
+     [arg mime-type] \
+     [arg channel] \
+     [arg length] ]
+
+Return [arg length] bytes from [arg channel] as the response body. The current
+offset of the channel is the beginning of the body -- the offset will be left
+at [arg length] bytes. The bytes of the file are not transformed in any way.
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execute code.
+
+
+
+[call [cmd ns_respond] \
+     [opt [option "-status [arg status]"]] \
+     [opt [option "-type [arg mime-type]"]] \
+     [opt [option "-length [arg int]"]] \
+     [opt [option "-headers [arg setid]"]] \
+     [opt [option "-string [arg body]"]] \
+     [opt [option "-binary [arg body]"]] \
+     [opt [option "-file [arg filepath]"]] \
+     [opt [option "-fileid [arg channel]"]] ]
+
+Return a complete response to the client using exactly one of [option -string],
+[option -binary], [option -file] or [option -fileid] as the body.
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execute code.
+
+[list_begin options]
+
+[opt_def -status [arg status]]
+The HTTP status code. Default [const 200].
+
+[opt_def -type [arg mime-type]]
+The mime-type of the response body. Default [const */*].
+
+[opt_def -headers [arg setid]]
+A set of headers which will replace any pending headers for the response.
+
+[opt_def -string [arg body]]
+The Tcl string to send as the response body. The body may be encoded into
+an appropriate character set if required by the client and server settings.
+
+[opt_def -binary [arg body]]
+The byte-array representation of the given Tcl object will be used as the
+response body. No character set conversion will be done.
+
+[opt_def -file [arg filepath]]
+The file identified by the given [arg filepath] will be sent as the response
+body. The bytes of the file will not be transformed in any way.
+
+[opt_def -fileid [arg channel]]
+The file identified by the given Tcl [arg channel] will be sent as the response
+body. The bytes of the file will not be transformed in any way.
+
+[opt_def -length [arg length]]
+Specifies the number of bytes to send from the channel.
+
+[list_end]
+
+[list_end]
+
+
+
+
+[section EXAMPLES]
+
+A traditional geek greeting:
+
+[example_begin]
+ns_register_proc GET /hello {
+    ns_return 200 text/plain "Hello World!"
+}
+[example_end]
+
+
+
+A traditional Albanian greeting, using an explicit charset:
+
+[example_begin]
+ns_register_proc GET /hello {
+    ns_return 200 "text/plain; charset=iso-8859-2" "Përshëndetje të gjithëve!"
+}
+[example_end]
+
+[section CONFIGURATION]
+
+The behavior of the file delivery commands [cmd ns_returnfile] and 
+[cmd "ns_respond -file ..."], as well as the automatic delivery of static
+files is influenced by the [const fastpath] settings, which define, how
+files are served. The fastpath section of the configuration file for a
+server [const server1] has a global part (general settings for all
+servers) and a per (virtual) server part:
+
+[example_begin]
+   ns_section ns/fastpath
+   # global configuration
+   ns_param  ...
+   ...
+   
+   ns_section ns/server/server1/fastpath
+   # per-server configuration
+   ns_param  ...
+   ...
+[example_end]
+
+
+Most prominently, the [emph "global fastpath parameters"] define the delivery
+mode.  In general, fastpath supports three delivery modes for static
+content:
+
+[list_begin enumerated]
+[enum] Delivering file via chunk reads from the file, where the
+chunk size is typical the [const writersize] of a writer thread.
+This is the same behavior as in
+[cmd "ns_respond -fileid ..."] or in 
+[cmd "ns_returnfp"]. This delivery mode is activated, when
+both the global fastpath parameter [const cache] and [const mmap]
+are false.
+
+[enum] Delivering from mapped memory, when when [const mmap] is defined
+and the operating supports it. In this case the file to be delivered
+is mapped into memory and served from there. The buffer size etc. is
+determined from the operating system. This option is activated, when
+the global fastpath parameter [const mmap] is true and [const cache] is
+false.
+
+[enum] Delivering the file from the own NaviServer file cache.  This
+option is activated, when the parameter [const cache] is set to true.
+[list_end]
+
+[subsection "Global fastpath configuration parameters"]
+
+[list_begin definitions]
+
+[def cache]
+Use the NaviServer file cache for file deliveries
+(boolean, defaults to false)
+
+[def cachemaxentry]
+Maximum size of a single entry, when parameter [const cache] is true
+(integer, defaults to 8192)
+
+[def cachemaxsize]
+Size of the cache, when parameter [const cache] is true
+(integer, defaults to 10240000)
+
+[def mmap]
+Use mmap for file deliveries (and cache is false)
+(boolean, defaults to false)
+
+[def gzip_static]
+Send the gzip-ed version of the file if available and the client
+accepts gzip-ed content. When a file [const path/foo.ext] is requested,
+and there exists a file  [const path/foo.ext.gz], and the
+timestamp of the gzip-ed file is equal or newer than the
+source file, use the gzip-ed file for delivery. 
+(boolean, defaults to false)
+
+[def gzip_refresh]
+Refresh gzip file (i.e. re-gzip source) when the modification time of
+the compressed file is older than the modification time of the source.
+Note, that the command is just used for re-gzip-ing outdated .gz-files; it
+does not actively compress files, which were previously not compressed
+(this would be wasteful for e.g. large tmp files, there is not
+cleanup, etc.).  For refreshing gzip files, the Tcl command
+"::ns_gzipfile source target" is used.  This command can be
+potentially redefined by an application.  When this parameter is not
+defined (or the refresh cmd fails), outdated gzip-ed files are
+ignored, and a warning is written to the error.log. (boolean, defaults
+to false)
+
+[def gzip_cmd]
+Command for gzip-ing files, used by [cmd ::ns_gzipfile].  
+The value of [term gzip_cmd] is used in [cmd ::ns_gzipfile]
+to locate the gzip command in the OS.  If [term gzip_cmd] 
+is not defined, and [cmd ::ns_gzipfile] is called, an error 
+is written to the error.log. 
+Example setting: "/usr/bin/gzip -9".  (string, defaults to "")
+
+[def minify_css_cmd] Command for minifying css files.  When
+recompressing outdated gzip files (see parameters [term gzip_refresh] and
+[term gzip_cmd]), NaviServer will optionally minify
+css files on the fly, when [term minify_css_cmd] is specified.
+In these cases, the returned file will be minified and compressed.
+The configured command must read css files from stdin and
+to write the minified content to stdout.
+Example setting: "/usr/bin/yui-compressor --type css".  (string, defaults to "")
+
+[def minify_js_cmd] Command for minifying css files.  When
+recompressing outdated gzip files (see parameters [term gzip_refresh] and
+[term gzip_cmd]), NaviServer will optionally minify
+JavaScript files on the fly, when [term minify_js_cmd] is specified.
+In these cases, the returned file will be minified and compressed.
+The configured command must read JavaScript files from stdin and
+to write the minified content to stdout.
+Example setting: "/usr/bin/yui-compressor --type js".  (string, defaults to "")
+
+[list_end]
+
+[subsection "Per-server fastpath configuration parameters"]
+[list_begin definitions]
+
+[def directoryadp]
+Name of an adp page to use to display directory listings.
+One can either specify [const directoryadp], 
+or [const directoryproc], but not both.
+(string, defaults to "")
+
+[def directoryfile]
+Index files for directory
+(string, defaults to index.adp index.tcl index.html index.htm)
+
+[def directorylisting]
+Style of directory listings, Can be [const fancy], [const simple], or [const none].
+(string, defaults to simple)
+
+[def directoryproc]
+Name of Tcl proc to use to display directory listings.
+One can either specify [const directoryproc], 
+or [const directoryadp], but not both.
+(string, defaults to _ns_dirlist)
+
+[def hidedotfiles]
+Hide files starting with a dot in directory listings
+(boolean, defaults to false)
+
+[def pagedir]
+Defines absolute or relative path for serving content files. Relative
+names are relativ to the [const serverdir]
+(string, defaults to serverdir/pages)
+
+[def serverdir]
+Defines absolute path to server's home directory.
+(string, defaults to "")
+
+[list_end]
+
+
+
+
+[see_also returnstatus-cmds ns_write ns_guesstype \
+	ns_register ns_adp_puts ns_conn ns_writer]
+
+[keywords return response status charset encoding configuration \
+	fastpath mmap cache gzip serverdir pagedir writer minify]
+[manpage_end]

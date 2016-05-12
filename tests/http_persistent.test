@@ -1,0 +1,194 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
+
+test http-persist-1 {simple setup} -constraints {serverListen} -body {
+
+    set d [tcltest::client 2 {
+	"GET /1 HTTP/1.1\nHost: localhost\n\n"
+	"GET /2 HTTP/1.1\nHost: localhost\n\n"
+    } 0]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set connection ""
+	regexp {Connection:\s+(\S+)\s} $bytes . connection
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result size [dict get $d $k size] connection $connection content-length $contentLength
+    }
+
+    return $result
+    
+} -result {size 210 connection keep-alive content-length 3 size 211 connection keep-alive content-length 4}
+
+
+test http-persist-2 {three requests in two chunks} -constraints {serverListen} -body {
+
+    set d [tcltest::client 3 {
+	"GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 HTTP/1.1\nHost: localhost\n\n"
+	"GET /3 HTTP/1.1\nHost: localhost\n\n"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4 content-length 5}
+
+
+test http-persist-3 {three requests in one chunk} -constraints {serverListen} -body {
+
+    set d [tcltest::client 3 {
+	"GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 HTTP/1.1\nHost: localhost\n\nGET /3 HTTP/1.1\nHost: localhost\n\n"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4 content-length 5}
+
+
+test http-persist-4 {three requests in three chunks, broken strangely} -constraints {serverListen} -body {
+
+    set d [tcltest::client 3 {
+	"GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 "
+	"HTTP/1.1\nHost: localhost\n\nGET /3 "
+	"HTTP/1.1\nHost: localhost\n\n"
+    } ]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4 content-length 5}
+
+
+test http-persist-5 {three requests in two chunks, one with content} -constraints {serverListen} -body {
+
+    set d [tcltest::client 3 {
+	"GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\n\n"
+	"GET /3 HTTP/1.1\nHost: localhost\n\n"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4 content-length 5}
+
+
+test http-persist-6 {two requests in one chunk, both with content} -constraints {serverListen} -body {
+
+    set d [tcltest::client 2 {
+	"GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZ"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4}
+
+
+test http-persist-7 {two requests in one chunk, both with content, trailing junk} -constraints {serverListen} -body {
+
+    set d [tcltest::client 3 {
+	"GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZTOOMUCH\n"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4 content-length {}}
+
+
+test http-persist-8 {one request in six chunks} -constraints {serverListen} -body {
+
+    set d [tcltest::client 1 {
+	"GET "
+	"/1 "
+	"HTTP/1.1\n"
+	"Host: "
+	"localhost\n"
+	"\n"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3}
+
+
+test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -constraints {serverListen} -body {
+
+    set d [tcltest::client 2 {
+	"GET /1 HTTP/1.1\nHost: localhost\nContent-length: 20\n\n0123456789"
+	"0123456789GET /2 HTTP/1.1\nHost: localhost\nContent-length: 5\n\nA"
+	"BCDE"
+    }]
+
+    set result {}
+    foreach {k} [lsort -decreasing -integer [dict keys $d]] {
+	set bytes [dict get $d $k bytes]
+	set contentLength ""
+	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+	lappend result content-length $contentLength
+    }
+    
+    return $result
+    
+} -result {content-length 3 content-length 4}

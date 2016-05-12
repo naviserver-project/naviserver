@@ -1,0 +1,152 @@
+/*
+ * This is the style sheet for the HTML version of the naviserver and module
+ * man pages that appear at: http://naviserver.sourceforge.net/api/*
+ *
+ */
+
+
+html { padding: 0; }
+body { padding: 0 2em 0 2em; margin: 0; }
+
+
+
+h1 {
+   margin:    1.5em 0 2em 0;
+   font-size: 1.3em;
+   color:     #333;
+}
+
+h2 {
+   margin-top: 2em;
+   color: #655;
+   text-transform: capitalize;
+   font-size: 1.6em;
+   font-weight: normal;
+   border-top: 1px solid #e9e6e6;
+   width: 50em;
+}
+
+
+
+hr {
+   border: 0; height: 0; color: white; margin: 0;
+}
+
+
+p, dl dd {
+   min-width: 15em;
+   max-width: 50em;
+}
+
+dt strong, dt i.arg, table tr td strong {
+   font-weight: normal;
+}
+
+
+table {
+   width: 100% !important;
+   background-color: white;
+   border: 0;
+   border-collapse: collapse;
+}
+
+table tr td {
+   background-color: white;
+   padding-bottom: .3em;
+}
+
+table tr td a {
+   text-decoration: none;
+}
+
+table table tr td a {
+   color: black;
+}
+
+table tr td a:hover {
+   color: blue;
+}
+
+
+
+dl dt {
+   margin-top:    .5em;
+   margin-bottom: .5em;
+
+   margin-left:  5em;
+   text-indent: -5em;
+   max-width:    50em;
+}
+
+
+.sample {
+   background-color: #f9f6f6;
+   margin-left: 0;
+   padding: 1em 1em 1em 2em;
+}
+
+
+#man-header {
+   background-color: black;
+   color:            #eee;
+
+   border-top:       1px solid #666;
+   border-bottom:    1px solid #666;
+
+   margin:   0 -2em 1em -2em;
+   padding: .1em 2em .1em 2em;
+}
+
+#man-header a {
+   color: #eee;
+   text-decoration: none;
+   font-size: 16px;
+}
+
+#man-header img {
+   border: 0;
+}
+
+
+
+#man-footer {
+   background-color: #eee;
+   color:            black;
+
+   border-top:       2px solid #999;
+
+   margin:   3em -2em -1em -2em;
+   padding-bottom: 1em;
+}
+
+#man-footer ul {
+   color: #333;
+   list-style-type: circle;
+}
+
+#man-footer a {
+   color: #333;
+   text-decoration: none;
+   font-size: .8em;
+}
+
+#man-footer a:hover {
+   color: blue;
+   text-decoration: underline;
+}
+
+#f-poweredbyico {
+   float: right;
+   margin: 1em;
+}
+
+b.const {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: normal;
+}
+
+span.logo {
+    background-image: url('http://naviserver.sourceforge.net/ns-icon-16.png');
+    background-repeat: no-repeat;
+    padding-left: 20px;  /* width of the image plus a little extra padding */
+}

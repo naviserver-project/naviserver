@@ -1,0 +1,108 @@
+[include version_include.man]
+[manpage_begin ns_chan n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Share Tcl channels between threads and interpreters}]
+
+[description]
+ The command [cmd ns_chan] lets you transfer ownership of Tcl channels between threads and interpreters
+ within the NaviServer process.
+
+ NaviServer maintains several internal tables to implement the channel-transfer capability.
+ Each virtual server maintains a private table of shared Tcl channels which are not associated
+ to any particular thread.  Each Tcl interpreter maintains a table of currently attached shared
+ channels.  Consequently, a shared channel can be in the per-virtual-server private table, or
+ it can be in the interpreter private table, but not both at the same time.
+
+[para]
+ Furthermore, each shared channel has a user-supplied name.  This name is used to track the
+ channel handle in the tables mentioned above.  By using the various ns_chan commands, you can
+ create shared Tcl channels and move them back and forth between the current Tcl interpreter
+ and per-virtual-server private table.
+
+[section {COMMANDS}]
+
+
+[list_begin definitions]
+[call [cmd  "ns_chan cleanup"] [opt [arg {-shared}]]]
+
+ Closes all shared channels found in the per-virtual-server private table or current Tcl
+ interpreter table, depending on the -shared flag.  If the -shared flag is not specified,
+ this command will close all channels from the current interpreter which were attached to
+ it by the ns_chan get command.  If the -shared flag is specified, this command will close
+ all channels from the per-virtual-server private table, i.e., all those which are currently
+ not attached in any Tcl interpreter or thread.
+
+
+[call [cmd "ns_chan create"] [arg {channel name}]]
+
+ Given an existing Tcl channel handle, ns_chan create "unplugs" this channel from
+ the current interpreter, and stores it under the name in the per-virtual-server
+ private table.  Any further attempt to use this channel from the current interpreter
+ will fail by throwing a Tcl error.  On success, this command will return an empty string.
+ The command also throws an error if the channel cannot be found in the current Tcl interpreter
+ or if an entry already exists with the same name in the per-virtual-server private table.
+
+[call [cmd "ns_chan get"] [arg name]]
+
+ Retrieves a channel from the per-virtual-server private table for the entry name and makes
+ it available within the current interpreter.  On success, the command will return the handle
+ for the channel.  This handle can be used in any regular Tcl or NaviServer command that operates
+ on Tcl channels, like puts, read, fconfigure, etc.  The command will throw an error if
+ the channel cannot be plugged in for current interpreter or if the entry name could not
+ be found in the per-virtual-server private table.
+
+[call [cmd  "ns_chan list"] [opt [arg -shared]]]
+
+ Returns a list of all shared channels found in the per-virtual-server private table or
+ current Tcl interpreter, depending on the -shared flag.  If the -shared flag is not specified,
+ this command will report all channels from the current interpreter which were attached to it
+ by the ns_chan get command.  If the -shared flag is specified, this command will report all
+ channels from the per-virtual-server private table, i.e., all those which are currently not
+ attached in any Tcl interpreter or thread.
+
+[call [cmd  "ns_chan put"] [arg name]]
+
+ Unplugs a channel from the current interpreter matching entry name and returns it to the
+ per-virtual-server private table.  Any further attempt to use the named channel from the
+ current interpreter will fail by throwing a Tcl error.  On success, command will return
+ an empty string.  The command will also throw an error if the named channel was never
+ attached to the current interpreter by some previous ns_chan get command or if the entry
+ name is already found in the per-virtual-server private table.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+    # In thread #1, create the shared entry.
+    ns_chan create [lb]open /tmp/ns_chan w[rb] test
+ 
+    # Attach to it in thread #1, and write something to it.
+    set fd [lb]ns_chan get test[rb]
+    puts $fd "this is thread #1"
+ 
+    # Detach from it in thread #1.
+    ns_chan put test
+ 
+    # Now, in thread #2, attach to the channel and write something to it.
+    set fd [lb]ns_chan get test[rb]
+    puts $fd "this is thread #2"
+ 
+    # See it in the attached state in thread #2.
+    ns_chan list ;# => test
+ 
+    # Detach from it in thread #2.
+    ns_chan put test
+ 
+    # See it back in the per-virtual-server private table.
+    ns_chan list -shared ;# => test
+[example_end]
+
+
+[see_also ns_conn ns_connchan]
+[keywords channels]
+
+[manpage_end]
+

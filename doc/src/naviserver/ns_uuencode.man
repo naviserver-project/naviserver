@@ -1,0 +1,40 @@
+[include version_include.man]
+[manpage_begin ns_uuencode n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Binary-to-text encoding using "htuu" encoding}]
+
+[description]
+
+ This command performs a binary-to-text encoding on string.  The encoded string will
+ be approximately 33% longer than the original.
+
+ NOTE: This stype of encodeing is sometimes called "htuu". This
+ command converts the specified argument to RFC 1113 printable
+ encoding format. This technique is similar to the familiar Unix
+ uuencode format in that it maps 6 binary bits to one ASCII character
+ (or more aptly, 3 binary bytes to 4 ASCII characters). However, RFC
+ 1113 does not use the same mapping to printable characters as
+ uuencode.
+
+[list_begin definitions]
+
+ [call [cmd ns_uuencode] [arg string]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+oss2:nscp 7> ns_uuencode test
+dGVzdA==
+
+oss2:nscp 6> ns_uudecode dGVzdA==
+test
+
+[example_end]
+
+[see_also ns_uudecode ns_base64encode ns_base64decode]
+[keywords encoding]
+[manpage_end]

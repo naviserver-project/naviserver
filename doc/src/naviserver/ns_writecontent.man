@@ -1,0 +1,35 @@
+[include version_include.man]
+[manpage_begin ns_writecontent n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Write content to a file}]
+
+[description]
+This function writes all the content (including any embedded null characters) to the specified file.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_writecontent] [arg fileid]]
+
+[para]
+[arg fileid]
+Opened Tcl stream
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+set fp [lb]open /tmp/data.txt[rb]
+ns_writecontent $fp
+close $fp
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

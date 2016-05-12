@@ -1,0 +1,16 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_db-1.1 {basic syntax} -body {
+    ns_db
+} -returnCodes error -result {wrong # args: should be "ns_db option ?arg ...?"}
+
+
+
+cleanupTests

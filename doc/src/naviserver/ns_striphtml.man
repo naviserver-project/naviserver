@@ -1,0 +1,32 @@
+[include version_include.man]
+[manpage_begin ns_striphtml n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Remove HTML tags from a string}]
+
+[description]
+
+ Returns the contents of html with any HTML tags removed.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_striphtml] [arg html]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_striphtml "<MARQUEE direction='right'><BLINK>Hello World!</BLINK></MARQUEE>"
+   Hello World!
+[example_end]
+
+
+
+[manpage_end]
+

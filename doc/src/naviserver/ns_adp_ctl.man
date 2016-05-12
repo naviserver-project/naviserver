@@ -1,0 +1,143 @@
+[include version_include.man]
+[manpage_begin ns_adp_ctl n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {ADP control command}]
+[description]
+
+This command enables control of the current ADP execution environment.
+Aside from the bufsize and chan subcommands,
+they all return a boolean value for a given ADP option. If
+the bool argument is given, the option is set to the
+given value and the previous value is returned.
+
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_ctl] [arg autoabort] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg bufsize] [opt [arg size]]]
+[call [cmd ns_adp_ctl] [arg cache] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg channel] [opt [arg chan]]]
+[call [cmd ns_adp_ctl] [arg detailerror] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg displayerror] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg expire] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg safe] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg singlescript] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg stream] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg stricterror] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg trace] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg trimspace] [opt [arg bool]]]
+
+[para]
+[arg bufsize]
+This command returns the currently
+ADP output buffer size, setting it to a new value if the
+optionial size argument is specified.
+
+[para] [arg channel]
+This command is used to specify an
+open file channel to receive output when the buffer is
+flushed. If channel is the null string, the output
+channel is cleared. This capability can be useful for
+specialized uses of ADP outside the context of an HTTP
+connection, e.g., for debugging or testing. Use an empty argument to
+reset the channel.
+
+[para]
+[arg autoabort]
+Query or set the autoabort option. When enabled, failure to flush a
+buffer (normally the result of a closed HTTP connection)
+generates an ADP exception, unwinding the ADP call
+stack.
+
+[para]
+[arg detailerror]
+Query or set the detailerror option. When enabled, errors in ADP pages
+are formatted with information about the context of the HTTP
+request. This can be very helpful in debugging ADP errors
+but potentially a security risk if the HTTP context (e.g.,
+cookie headers) contains personal or sensitive data. Errors
+are logged to the server log and, if [arg displayerror] is
+enabled, appened to the output buffer.
+
+[para]
+[arg displayerror]
+Query or set the displayerror option. When enabled, errors in ADP
+pages are formatted and appended to the output stream,
+normally visiable to a user's browser. This option
+should generally be enabled in development and disabled in
+production.
+
+[para]
+[arg expire]
+Query or set the expire option. When enabled, the ADP request
+processing code adds an "Expires: now" header in the response buffer to
+disable any caching. In practice, more thoughtful cache
+control mechanisms should be used based on the HTTP/1.1
+spec.
+
+[para]
+[arg cache]
+Query or set the cache option. When disabled, all requests
+to cache executed ADP blocks via the ns_adp_include [arg -cache] directive are
+ignored, resulting in normal execution of all code.
+
+[para]
+[arg safe]
+Query or set the safe option.
+When enabled, all code is executed in [arg safe]  mode,
+disabling and ignoring any code within registered
+tags.
+
+[para]
+[arg singlescript]
+Query or set the singlescript option. When enabled, ADP pages are
+converted from independent text-script blocks into a single
+script, which text blocks replaced with a call to
+ns_adp_append with the given text. Functionally the
+output is the same however an error anywhere on the page
+will result in the entire ADP page returning instead of
+skipping to the next block which is the normal behavior. In
+practice, singlescript is useful in development while
+in production leaving it disabled provides a more defensive
+execution environment where minor errors in one ADP do not
+inhibit execution of the overall page.
+
+[para]
+[arg stream]
+Query or set the streaming option.
+When enabled, partial adp-outputs are returned to the user as soon as
+possible via chunked encoding.
+
+[para]
+[arg stricterror]
+Query or set the stricterror option. When enabled, the result is
+similar to that of singlescript in that an error in a
+particular block will return the entire page instead of
+continuing to the next text or script block.
+
+[para]
+[arg trace]
+Query or set the [arg trace] option which currently does nothing.
+
+[para]
+[arg trimspace]
+Query or set the trimspace option. When enabled, any white space at
+the start of the output buffer is eliminated. White space
+can show up in the output as a result of ADP pages which do
+nothing but include other ADPs in a way to reuse code
+with the unfortunate side effect of the training newline at
+the end of a <% ns_adp_include myfile.adp %> ending up in the output stream.
+
+[list_end]
+
+[see_also ns_conn \
+	ns_adp ns_adp_mimetype  ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]
+[keywords ADP]
+[manpage_end]
+
+

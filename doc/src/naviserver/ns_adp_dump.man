@@ -1,0 +1,35 @@
+[include version_include.man]
+[manpage_begin ns_adp_dump n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return the contents of the current ADP output buffer}]
+
+[description]
+
+ This command returns the contents of the current ADP output buffer.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_dump]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_adp_dump
+[example_end]
+
+
+[see_also ns_adp ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]
+[keywords ADP]
+
+[manpage_end]
+

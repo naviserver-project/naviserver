@@ -1,0 +1,149 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "main"=.\main\main.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nscgi"=.\nscgi\nscgi.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nscp"=.\nscp\nscp.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nsd"=.\nsd\nsd.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsthread
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nsdb"=.\nsdb\nsdb.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nslog"=.\nslog\nslog.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nsperm"=.\nsperm\nsperm.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nssock"=.\nssock\nssock.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name nsd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "nsthread"=.\nsthread\nsthread.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

@@ -1,0 +1,92 @@
+[include version_include.man]
+[include version_include.man]
+
+[manpage_begin ns_sls n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Socket local storage for connections}]
+
+[description]
+
+The underlying TCP socket used by a NaviServer connection may be kept open and
+reused for further connections, e.g. during HTTP keep-alive . The [cmd ns_sls]
+commands associate data with the socket, which will be available to future
+connections on that socket. The data is freed automatically when the socket
+closes.
+
+[para]
+The data is saved as a string, both for thread safety and to allow easy
+sharing with C code using the [cmd Ns_SlsGetKeyed] and [cmd Ns_SlsSetKeyed]
+API.
+
+[para]
+Per-socket data is often used by socket drivers and protocol
+drivers. It may be tempting to save HTTP session data here, but beware:
+intermediate HTTP proxies may send multiple, unrelated requests using a single
+TCP socket. You may be looking for [cmd Ns_Cls] -- connection local storage.
+
+[para]
+All the [cmd ns_sls] commands require an active connection.
+
+
+[section COMMANDS]
+[list_begin definitions]
+
+
+[call [cmd "ns_sls set"] [arg key] [arg value]]
+
+Set the string value of an sls key. Any old value will be freed. The new value
+will be freed automatically when the socket is closed.
+
+
+[call [cmd "ns_sls get"] [arg key] [opt [arg default]]]
+
+Get the current string value of an sls key. If the key does not exist and no
+default was given an error is raised, otherwise the default is returned.
+
+
+[call [cmd "ns_sls unset"] [arg key]]
+
+Free the data associated with the given key. A key which doesn't exist is
+ignored.
+
+
+[call [cmd "ns_sls array"]]
+
+Return a list of sls keys and values in array-get format.
+
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+Log the number of connections handled by a single TCP socket:
+
+[example_begin]
+    set n [lb][cmd "ns_sls get"] connections 0[rb]
+    incr n
+    ns_sls set connections $n
+
+    if {$n > 1} {
+        ns_log notice connections: $n
+    }
+[example_end]
+
+
+Log all the keys and data stored for the socket of the currently active
+connection:
+
+[para]
+(NB: Does not include C module data set via the [cmd Ns_SlsSet] API)
+
+[example_begin]
+    foreach {k v} [lb][cmd "ns_sls array"][rb] {
+        ns_log notice sls: $k: $v
+    }
+[example_end]
+
+
+[see_also Ns_Sls Ns_Cls]
+[keywords sls storage data ns_sls]
+[manpage_end]

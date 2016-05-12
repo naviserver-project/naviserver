@@ -1,0 +1,35 @@
+[include version_include.man]
+[manpage_begin ns_encodingfortype n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return the encoding implied by the given mime type string}]
+
+[description]
+
+Parses the given mime-type string to determine the character encoding implied by it.  
+Will use the configured OutputCharset if no charset is explicitly specified in the given string.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_encodingfortype] [arg mime-type]]
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_encodingfortype "text/plain; charset=iso-8859-1"
+   iso8859-1
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_charsets ns_urlcharset]
+
+[manpage_end]
+

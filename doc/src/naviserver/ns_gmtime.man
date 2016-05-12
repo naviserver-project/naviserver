@@ -1,0 +1,42 @@
+[include version_include.man]
+[manpage_begin ns_gmtime n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return current time in Greenwich Mean Time (GMT)}]
+
+[description]
+This command returns a nine-element Tcl list representing the current time in Greenwich Mean
+Time (GMT).  The structure of the list corresponds to the Unix struct tm time structure:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd  ns_gmtime] [arg seconds]]
+[para] minutes (0-59)
+[para] hours (0-23)
+[para] dayofmonth (1-31)
+[para] monthofyear (0-11)
+[para] year (year-1900)
+[para] dayofweek (0-6, Sunday=0)
+[para] dayofyear (0-365)
+[para] isdst (>0 if Daylight Savings Time is in effect)
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_gmtime
+   40 31 2 12 5 104 6 163 0
+[example_end]
+
+
+[keywords time]
+[see_also ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
+
+[manpage_end]
+

@@ -1,0 +1,32 @@
+[include version_include.man]
+[manpage_begin ns_sockcheck n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Check if a socket is connected}]
+
+[description]
+ns_sockcheck uses recv() or send() calls to check if a socket is
+still connected. The fileid is the read or write file id returned
+by ns_sockopen. This function is useful if you used the -nonblock
+option with ns_sockopen after calling ns_sockselect.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_sockcheck] [arg fileid]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also ns_sockselect]
+[keywords NaviServer socket connected]
+[manpage_end]
+
+

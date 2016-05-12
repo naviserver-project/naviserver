@@ -1,0 +1,37 @@
+[include version_include.man]
+[manpage_begin ns_cookiecharset n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Set the urlencoding to the charset given in the named cookie if it exists}]
+
+[description]
+
+ Examine the incoming request for a cookie with the given name, which is expected to
+ contain the character set that the data is encoded.  If this cookie is found, use that
+ charset to set the urlencoding for the current connection.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_cookiecharset] [arg cookie-name]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_cookiecharset user_charset
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_charsets ns_urlcharset]
+
+
+
+[manpage_end]
+

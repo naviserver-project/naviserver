@@ -1,0 +1,47 @@
+[include version_include.man]
+[manpage_begin ns_hmac_sha2 n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Returns a hex-encoded string containing a keyed-hash
+message authentication code (HMAC) based on SHA2}]
+
+[description] This function returs a keyed-hash message authentication
+code (HMAC) for the specified key and message based on SHA2. An HMAC
+is a message authentication code of a key (secret) with a message. It
+may be used to simultaneously verify both the data integrity and the
+authentication of a message. For details of HTMC, consult RFC 4231.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_hmac_sha2] [opt [option "-length [arg l]"]] [arg key] [arg message]]
+
+[para]
+[arg length]
+The length determines the size of the SHA2 checksum. The function
+support currently as arguments "224", "256", "384" and "512". The returned
+hex strings have a length of 56, 64, 96 or 128 bytes.
+
+[para]
+[arg key]
+The key is used as secret in the HMAC computation
+
+[para]
+[arg message]
+The message is the text to be secured.
+
+[list_end]
+
+[example_begin]
+  
+  nscp 2> ns_hmac_sha2 "Jefe" "what do ya want for nothing?"
+  5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843
+
+[example_end]
+
+[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_sha1 ns_sha2]
+[keywords encoding crypt]
+
+[manpage_end]
+

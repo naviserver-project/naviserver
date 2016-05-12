@@ -1,0 +1,105 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test sls-1.1 {basic syntax} -body {
+    ns_sls
+} -returnCodes error -result {No connection available.}
+
+test sls-1.2 {basic syntax} -setup {
+    ns_register_proc GET /sls-1.2 {
+        set msg ""
+        catch {ns_sls} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-1.2
+} -cleanup {
+    ns_unregister_op GET /sls-1.2
+} -result {200 {wrong # args: should be "ns_sls command"}}
+
+test sls-1.3 {basic syntax} -setup {
+    ns_register_proc GET /sls-1.3 {
+        set msg ""
+        catch {ns_sls ?} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-1.3
+} -cleanup {
+    ns_unregister_op GET /sls-1.3
+} -result {200 {bad command "?": must be array, get, set, or unset}}
+
+
+
+test sls-2.1 {set/get} -setup {
+    ns_register_proc GET /sls-2.1 {
+        ns_sls set x y
+        ns_return 200 text/plain [ns_sls get x]
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-2.1
+} -cleanup {
+    ns_unregister_op GET /sls-2.1
+} -result {200 y}
+
+test sls-2.2 {set/get missing} -setup {
+    ns_register_proc GET /sls-2.2 {
+        catch {ns_sls get x} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-2.2
+} -cleanup {
+    ns_unregister_op GET /sls-2.2
+} -result {200 {key does not exist and no default given}}
+
+test sls-2.3 {set/get w/ default} -setup {
+    ns_register_proc GET /sls-2.3 {
+        catch {ns_sls get x z} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-2.3
+} -cleanup {
+    ns_unregister_op GET /sls-2.3
+} -result {200 z}
+
+test sls-2.4 {list} -setup {
+    ns_register_proc GET /sls-2.4 {
+        ns_sls set x y
+        ns_sls set a b
+        ns_return 200 text/plain [lsort [ns_sls array]]
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-2.4
+} -cleanup {
+    ns_unregister_op GET /sls-2.4
+} -result {200 {a b x y}}
+
+test sls-2.5 {unset} -setup {
+    ns_register_proc GET /sls-2.5 {
+        ns_sls set x y
+        ns_sls unset x
+        ns_return 200 text/plain [ns_sls get x none]
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-2.5
+} -cleanup {
+    ns_unregister_op GET /sls-2.5
+} -result {200 none}
+
+
+
+#
+# FIXME: Test persistence with keepalive connections...
+#
+
+
+
+cleanupTests

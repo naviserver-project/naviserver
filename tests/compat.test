@@ -1,0 +1,22 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_cp-1.1 {basic copy} -setup {
+    makeFile "data" f1
+} -body {
+    ns_cp f1 f2
+    viewFile f2
+} -cleanup {
+    removeFile f1
+    removeFile f2
+} -result {data}
+
+
+
+cleanupTests

@@ -1,0 +1,26 @@
+[include version_include.man]
+[manpage_begin ns_adp_tell n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get number of bytes in current ADP output buffer}]
+
+[description]
+
+ This command returns the total number of bytes in the current ADP output buffer.
+ This may be useful in order to throttle pages that can get too large for the client
+ to handle due to modem speeds and other factors.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_tell]]
+
+
+[list_end]
+
+[see_also ns_adp]
+[keywords ADP]
+
+[manpage_end]
+

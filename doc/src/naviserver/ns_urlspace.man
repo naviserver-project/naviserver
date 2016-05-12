@@ -1,0 +1,121 @@
+[include version_include.man]
+[manpage_begin ns_urlspace n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Assign Application Data to URLs.}]
+
+[description] The command [cmd ns_urlspace] allows to
+ assign/query/list/delete data to the trie representing the URL
+ space. The command supports filters and inheritance such one can
+ e.g. assign data to certain patterns of pages (e.g. to .adp-pages) or
+ such one can assign data to a higher level node which can be
+ inherited to all nodes below this one.
+ 
+ [para] The values assigned to the URL space are shared among all
+ threads of a server. So this command is somewhat similar to the set
+ of [cmd nsv] commands, but differs in its inheritance and filtering
+ capabilities.
+	
+[para]
+ The command allows e.g. to implement access control (like the nsperm
+ module) on the Tcl level. Other applications are e.g. blacklisting of
+ certain parts of the URL tree from statistics, or to assign different
+ master templates to different parts of the URL tree.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd  "ns_urlspace set"] \
+	[opt [option "-id [arg id]"]] \
+	[opt [option "-key [arg key]"]] \
+	[opt [option "-noinherit"]] \
+	[arg url] \
+	[arg value] \
+]
+
+ Assign a value to a node in the URL space. Per default,
+ the value is inherited to all sub-nodes, unless the option
+ [option "-noinherit"] is specified.
+
+[call [cmd  "ns_urlspace get"] \
+	[opt [option "-id [arg id]"]] \
+	[opt [option "-key [arg key]"]] \
+	[opt [option "-exact"]] \
+	[opt [option "-noinherit"]] \
+	[arg url] \
+	[arg value] \
+]
+
+ Retrieve a value from the URL space for a specified URL. Per
+ default, the returned values might be inherited from a parent node.
+ When the option [option "-exact"] is used, the inheritance is
+ deactivated, and only the values are returned directly assigned to
+ the URL. When the option [option "-noinherit"] is specified, only
+ values set with the [option "-noinherit"] flag are returned.
+
+[call [cmd  "ns_urlspace list"] \
+	[opt [option "-id [arg id]"]] \	
+]
+
+List the values assigned to the URL space. The command returns a list
+of lists, containing for every item the 5 elements
+ [list_begin itemized]
+	[item] key
+	[item] path
+	[item] filter pattern
+	[item] the constants [const inherit] or [const noinherit]
+	[item] the assigned data
+ [list_end]
+
+
+[call [cmd  "ns_urlspace unset"] \
+	[opt [option "-id [arg id]"]] \
+	[opt [option "-key [arg key]"]] \
+	[opt [option "-noinherit"]] \
+	[opt [option "-recurse"]] \
+	[arg url] \
+]
+
+Unset a value for a URL for the given or default key. This command
+undoes the effects of [cmd "ns_urlspace set"]. When the options
+[option "-noinherit"] is used the values set this way are deleted
+and vice versa. The option [option "-recurse"] performs the operation
+recursively. Unless [option "-recurse"] is specified, the command
+returns 1 or 0 on success or failure.
+
+
+[call [cmd  "ns_urlspace new"] ]
+
+Allocate a new URL space id. When the number of compile-time configured
+URL spaces runs out, a Tcl exception is raised.
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -id [arg id]]
+ID of the URL space. In general multiple different URL spaces
+could be used, which can be allocated with the command
+[cmd  "ns_urlspace new"]. The maximum number of available URL spaces
+is a compile time constant of NaviServer. When no ID is specified,
+NaviServer allocates automatically a default ID on first usage.
+
+[opt_def -key [arg key]]
+Every URL has a key assigned, which is logically part of the URL
+space. Using this key, one could for example use the HTTP methods
+[term GET] or [term POST] to assign different values to an URL
+for GET or POST requests. The key can be used as well for other
+purposes. If no key is specified, it default to the constant
+"[const .]" (dot character).
+
+[list_end]
+
+
+
+[see_also nsv]
+[keywords trie shared variables]
+
+[manpage_end]
+

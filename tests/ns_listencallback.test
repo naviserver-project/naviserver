@@ -1,0 +1,53 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
+
+test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
+    #
+    # Register listen callback with Tcl handler
+    #
+    ns_socklistencallback * 7227 ns_listencallback::conn_handler
+} -body {
+
+    set localhost [expr {[ns_info ipv6] ? "::1" : "127.0.0.1"}]
+    ns_log notice "open sockent on $localhost 7227"
+    set fds [ns_sockopen $localhost 7227]
+    lassign $fds rfd wfd
+    set size 0
+    
+    if {[gets $rfd line] == -1} {
+	ns_log error "got no data"
+    } else {
+	incr size [string length $line]
+	puts $wfd "How are you?"
+	flush $wfd
+	gets $rfd line
+	incr size [string length $line]
+    }
+    return [list size $size]
+} -cleanup {
+    #
+    # Currently, theres seems to way to stop listening on that port.
+    #
+} -result {size 46}
+
+#
+# the following function must be available in the blueprint
+#
+if {0} {
+    proc ns_listencallback::conn_handler {rfd wfd} {
+	puts  $wfd "Welcome to the test server"
+	flush $wfd
+	gets  $rfd line
+	puts  $wfd "Well isn't that nice"
+	flush $wfd
+    }
+}
+

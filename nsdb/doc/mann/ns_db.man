@@ -1,0 +1,429 @@
+[include version_include.man]
+
+[manpage_begin ns_db n [vset version]]
+[moddesc {NaviServer Module Commands}]
+[titledesc {Database access API}]
+
+[description]
+These commands provides a mechanism to access databases.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_db 1row"] [arg handle] [arg sql]]
+
+This command expects the SQL to be a select statement that returns exactly one
+row and returns that row as an ns_set. An error is returned if zero or more than
+one row is returned.
+
+
+[call [cmd "ns_db 0or1row"] [arg handle] [arg sql]]
+
+This command expects the SQL to be a select statement that returns exactly zero
+or one row. On zero rows, a null string is returned. On one row, a newly
+allocated ns_set is returned. An error is thrown if more then one row
+is returned.
+
+
+[call [cmd "ns_db bindrow"] [arg handle]]
+
+ns_db bindrow returns an ns_set structure whose key names are the column names
+of the rows returned by the SQL command previously-executed with ns_db exec.
+If the database is not currently returning rows (i.e., a status other than
+NS_ROWS was returned by ns_db exec), an error is thrown. The handle argument is
+a database handle (obtained with ns_db gethandle).
+
+
+[call [cmd "ns_db bouncepool"] [arg poolname]]
+
+Marks all database handles for the specified database pool as stale. When any
+database handle currently open is put back into the pool, its connection to the
+database will be reset.
+
+
+[call [cmd "ns_db cancel"] [arg handle]]
+
+ns_db cancel cancels the current operation.
+
+
+[call [cmd "ns_db close"] [arg handle]]
+
+Closes the connection. Use this function only on handles that were obtained by
+the ns_db open function. The server automatically close handles when the
+operation is complete, so you don't normally have to call this function.
+
+
+[call [cmd "ns_db connected"] [arg handle]]
+
+ns_db connected returns a boolean value indicating whether the connection to the database pool is made.
+
+
+[call [cmd "ns_db datasource"] [arg handle]]
+
+Returns the datasource for the database pool.
+
+
+[call [cmd "ns_db dbtype"] [arg handle]]
+
+Returns the database type for the database pool.
+
+
+[call [cmd "ns_db dml"] [arg handle] [arg sql]]
+
+ns_db dml executes SQL that should be data manipulation language such as an
+insert or update, or data definition language such as a create table.
+
+
+[call [cmd "ns_db driver"] [arg handle]]
+
+Returns the name of the driver of the handle.
+
+
+[call [cmd "ns_db exception"] [arg handle]]
+
+ns_db exception returns the most recent exception for the database pool.
+
+
+[call [cmd "ns_db exec"] [arg handle] [arg sqlcommand]]
+
+Executes the specified SQL command. It returns either NS_DML (if the SQL command
+is a DML or DDL command) or NS_ROWS (if the SQL command returns rows, such as
+a SELECT). This function can be used for ad hoc querying, where you don't know
+what kind of SQL command will be executed.
+
+
+[call [cmd "ns_db flush"] [arg handle]]
+
+ns_db flush flushes the results of an SQL select so you do not need to use ns_db
+getrow to get all the rows and throw them away.
+
+
+[call [cmd "ns_db gethandle"] \
+     [opt [option "-timeout [arg t]"]] \
+     [arg poolname] \
+     [opt [arg nhandles]] ]
+
+ns_db gethandle returns the specified number of handles from the specified pool.
+If poolname is not specified, the Defaultpool from the configuration file is
+used. If nhandles is not specified, 1 handle is returned. (Note that if you
+specify nhandles, you must also specify a poolname.) If not enough handles are
+available to fulfill the request, it waits until they are available. You must
+request all the handles you will need for a specific pool with one call to ns_db
+gethandle. You must release all your database handles explicitly (with ns_db
+releasehandle) before acquiring more. If you request multiple handles from the
+database, this function returns a Tcl list of database handles (space
+delimited). In this case, each handle must be released with a separate call to
+ns_db releasehandle.
+
+[para]
+If [option -timeout] is not specified or timeout is zero, [cmd "ns_db gethandle"] will
+wait indefinitely (perhaps forever) for the requested number of handles to
+become available. If timeout is greater than zero, ns_db gethandle will either
+return with the handles within that time period, or return "" if the time period
+was exceeded, or generate a Tcl error. See the examples for [cmd "ns_db gethandle"], below.
+The argument [arg t] can be specified in the form [arg sec[opt :microseconds]].
+
+[call [cmd "ns_db getrow"] [arg handle] [arg setId]]
+
+ns_db getrow fetches the next row waiting to be retrieved after an ns_db select.
+The data is dumped right into the set associated with SETID, which should be the
+set returned by the ns_db select. It returns "1" if there are more rows waiting
+and returns "0" otherwise. If you call ns_db getrow again after already
+receiving "0" on the previous call, an error is returned.
+
+[call [cmd "ns_db logminduration"] [arg pool] [opt [arg duration]]]
+
+Query or set a threshold for logging of sql statements. Log only
+statements in the error.log, when sql logging is turned on in general
+(via "ns_logctl severity Debug(sql) ...") and the statement took
+at least the specified duration (specified in seconds, e.g. "0.1").
+
+[call [cmd "ns_db open"] [arg driver] [arg datasource] [arg user] [arg password]]
+
+ns_db open returns a handle at a lower level, circumventing the pools.
+
+
+[call [cmd "ns_db password"] [arg handle]]
+
+Returns the password of the user for the database pool.
+
+
+[call [cmd "ns_db poolname"] [arg handle]]
+
+ns_db poolname returns the database pool that this handle came from.
+
+
+[call [cmd "ns_db pools"]]
+
+ns_db pools returns a list of all database pools.
+
+
+[call [cmd "ns_db releasehandle"] [arg handle]]
+
+Puts the handle back in the pool. The server will automatically return any open
+handles to the pool after a page has finished executing.
+
+
+[call [cmd "ns_db rowcount"] [arg handle]]
+
+Returns number of processed records by the last SQL statements, this is useful with INSERT/UPDATE/DELETE
+statements to know how many records updated.
+
+
+[call [cmd "ns_db select"] [arg handle] [arg sql]]
+
+ns_db select executes the SQL statement on the database server. It returns an
+ns_set with the keys set to the column names that were selected. Use ns_db
+getrow to retrieve rows. You cannot perform nested select statements. Before you
+start a new select statement, you must first either retrieve all the rows from
+the first select or use the ns_db flush statement to flush any rows not
+yet retrieved.
+
+
+[call [cmd "ns_db setexception"] [arg handle] [arg code] [arg message]]
+
+ns_db setexception returns the specified status code and message to the client.
+
+
+[call [cmd "ns_db sp_exec"] [arg handle]]
+
+ns_db sp_exec executes a stored procedure that has been initialized with ns_db
+sp_start and ns_db sp_setparam. It returns "NS_DML" if the command was
+successfully executed but did not return rows, or it returns "NS_ROWS" if the
+command was successfully executed and did return rows (which can then be fetched
+with ns_db bindrow and ns_db getrow). It throws an error if the command failed.
+This function is implemented only for the Sybase database driver. See the
+Examples section, below, for an example of this function.
+
+
+[call [cmd "ns_db sp_getparams"]]
+
+ns_db sp_getparams gets any output parameters set after executing a stored
+procedure with ns_db sp_exec. It returns an ns_set or throws an error on failure.
+This function is implemented only for the Sybase database driver. See the Examples
+section, below, for an example of this function.
+
+
+[call [cmd "ns_db sp_returncode"] [arg handle]]
+
+ns_db sp_returncode gets the return code from a stored procedure. It must be
+called after ns_db sp_exec. This function is implemented only for the Sybase
+database driver. See the Examples section, below, for an example of
+this function.
+
+
+[call [cmd "ns_db sp_setparam"] \
+     [arg handle] \
+     [arg varname] \
+     [arg vartype] \
+     [arg inout] \
+     [arg value] ]
+
+ns_db sp_setparam sets a parameter for a call to a stored procedure. The varname
+is the name of the variable, for example "@name". The vartype is the data type
+of this parameter, for example "varchar". The inout argument indicates whether
+it's an input or output parameter. It must be set to either "in" or "out".
+The value is the parameter value to send. This function returns 1 on success and
+throws an error on failure. This function is implemented only for the Sybase
+database driver. See the Examples section, below, for an example of
+this function.
+
+
+[call [cmd "ns_db sp_start"] [arg handle] [arg procname]]
+
+ns_db sp_start begins execution of the stored procedure called procname.
+It returns 0 on success and throws an error on failure. This function is
+implemented only for the Sybase database driver. See the Examples section,
+below, for an example of this function.
+
+
+[call [cmd "ns_db stats"] ]
+
+Returns statistics in form of a Tcl dict from all pools in form of a
+dict. The statistics contain the number of SQL statements executed,
+the number of get-handle operations, 
+the total and the used handles from the pool, and the aggregated wait
+time for handles from this pool (including the connection setup time
+to the database server).
+
+
+[call [cmd "ns_db user"] [arg handle]]
+
+Returns the user (as specified for the User parameter of the configuration file)
+for the database pool.
+
+
+[call [cmd "ns_db verbose"] [arg handle] [opt [arg enabled]]]
+
+Change the verbose setting (the Verbose parameter in the configuration file) for
+the given pool.
+
+
+[list_end]
+
+
+
+
+[section EXAMPLES]
+
+These are valid uses of ns_db gethandle:
+
+[example_begin]
+
+ns_db gethandle
+# 1 handle from default pool
+ 
+ns_db gethandle -timeout 2:500000
+# 1 handle from default pool, 2.5 sec timeout
+ 
+ns_db gethandle -timeout -1 poolname
+# 1 handle from poolname, error if not available
+ 
+ns_db gethandle poolname
+# 1 handle from poolname
+ 
+ns_db gethandle -timeout 23 poolname
+# 1 handle from poolname, 23 sec timeout
+ 
+ns_db gethandle poolname 5
+# 5 handles from poolname
+ 
+ns_db gethandle -timeout 23 poolname 5
+# 5 handles from poolname, 23 sec timeout
+[example_end]
+
+
+
+[example_begin]
+
+set db [lb]ns_db gethandle $pool[rb]
+set ret [lb]ns_db sp_start $db "p_TestProc"[rb]
+ 
+#
+# Set the parameters for this stored procedure.  The SQL definition of this
+# procedure is:
+#
+#   CREATE PROCEDURE p_TestProc(@x int, @y varchar(16) out, @z int out)
+#
+# The arguments to ns_db sp_setparam are like this:
+#
+#   ns_db setparam $handle $varname, $vartype, in|out, $value
+#
+set ret [lb]ns_db sp_setparam $db "@x" int in 4[rb]
+set ret [lb]ns_db sp_setparam $db "@y" varchar out "varchar val"[rb]
+set ret [lb]ns_db sp_setparam $db "@z" int out 231[rb]
+ 
+#
+# Execute the stored procedure now
+#
+set ret [lb]ns_db sp_exec $db[rb]
+
+[example_end]
+
+
+[section CONFIGURATION]
+
+The nsdb module is typically loaded per-server, where every server
+might use multiple database pools. Below is a sample configuration for
+PostgreSQL using the [term nsdbpg] driver, using two database pools
+where [term pool1] is the default pool.
+
+[example_begin]
+ns_section "ns/db/drivers" 
+    ns_param	postgres        ${bindir}/nsdbpg.so
+ 	
+ns_section ns/server/${server}/modules 
+    ns_param	nsdb		${bindir}/nsdb.so
+ 
+ns_section ns/server/${server}/db
+    ns_param	pools           pool1,pool2
+    ns_param	defaultpool     pool1
+ 
+ns_section ns/db/pools 
+    ns_param	pool1           "Pool 1"
+    ns_param	pool2           "Pool 2"
+ 
+ns_section ns/db/pool/pool1
+    ns_param	...
+[example_end]
+
+For every pool the following configuation options might be used:
+
+[list_begin definitions]
+
+[def CheckInterval] Integer: Check after this number of seconds for
+stale connections. Default: 600.
+
+[def Connections] Integer: The maximum number of connections that can
+be established at any one time. The server automatically makes
+connections as needed up to this maximum number. If additional
+connections are requested during processing, the requests must wait.
+Default: 2
+
+[def Datasource] Name specific to the database management system that
+might be necessary for opening database connections. For PostgreSQL,
+datasousce has the form "${db_host}:${db_port}:${db_name}".
+
+[def Driver] Name of the driver for this pool as specified in
+[term ns/db/drivers].
+
+[def LogMinDuration] Seconds in floating point format. When SQL
+logging is turned on, log only SQL queries that take longer than the
+specified duration (similar to log_min_duration_statement in PostgreSQL)
+
+[def LogSQLErrors] Boolean value: If set to [term On], SQL errors are
+written to the server log along with the offending SQL statement(s).
+
+[def MaxIdle] Integer: The maximum time in seconds that a database
+connection within this pool can remain open and idle.  The default
+setting of 600 causes connections that are idle for 10 minutes to be
+closed. Note that [term MaxIdle] will not have an effect if it is
+equal to [term MaxOpen]. Setting [term MaxIdle] to 0 deactivates the
+automatic closing feature on idle connections.
+
+[def MaxOpen] Integer: The maximum time in seconds that a database
+connection within this pool can remain open.  The default setting of
+3600 causes connections to keep open for one hour regardless of
+activity level. Database connections will then be opened again as
+needed up to the value of the [term Connections] parameter.  It is
+recommended that [term MaxOpen] be a multiple of [term MaxIdle];
+otherwise, [term MaxOpen] may be off by as much as (MaxOpen mod MaxIdle).
+Setting [term MaxOpen] to 0 deactivates the automatic closing feature.
+
+[def Password] Password to log into the database.
+
+[def User] Username to log into the database. 
+
+[list_end]
+
+Below is a sample configuration for two pools. The referenced Tcl
+variables have to be set earlier to appropriate values.
+
+[example_begin]
+ns_section ns/db/pool/pool1
+        ns_param	Connections        15
+        ns_param        LogMinDuration     0.01   
+	ns_param	LogSQLerrors       $debug
+	ns_param	driver             postgres 
+	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
+	ns_param	user               $db_user
+	ns_param	password           ""
+ 
+ns_section ns/db/pool/pool2
+	ns_param	Connections        5
+        ns_param        LogMinDuration     0.01
+        ns_param	LogSQLerrors       $debug
+	ns_param	driver             postgres 
+	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
+	ns_param	user               $db_user
+	ns_param	password           ""
+[example_end]
+
+
+[see_also ns_buildsqldate ns_dbquotevalue]
+[keywords database sql pool]
+
+
+[manpage_end]

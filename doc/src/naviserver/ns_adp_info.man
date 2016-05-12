@@ -1,0 +1,35 @@
+[include version_include.man]
+[manpage_begin ns_adp_info n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get inforamtion about currrently procesing ADP}]
+
+[description]
+
+ This command returns the currently processing ADP file name with its size and 
+ modification date. This can be usefull inside the ADP for generating conditional
+ Tcl code for tempalting for example.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_info]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+ns_adp_info
+
+/usr/local/ns/pages/test.adp 1865 1167237186
+
+[example_end]
+
+[see_also nsd]
+[keywords ADP]
+
+[manpage_end]
+

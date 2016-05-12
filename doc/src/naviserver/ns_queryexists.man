@@ -1,0 +1,39 @@
+[include version_include.man]
+[manpage_begin ns_queryexists n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Check for a key in the query data that was part of the HTTP request}]
+
+[description]
+
+This command looks in the query data for the specified key.  If the key exists, 
+1 is returned; otherwise 0 is returned.  The key is interpreted in a case-insensitive manner.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_queryexists] [arg key]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+ns_register_proc POST /queryexiststest queryexiststest
+
+proc queryexiststest { } {
+  if [lb]ns_queryexists name[rb] {
+    # process the form
+  } else {
+    ns_returnerror 400 "need to supply your name in the form"
+  }
+}
+
+[example_end]
+
+[manpage_end]
+

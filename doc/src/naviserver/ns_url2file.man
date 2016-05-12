@@ -1,0 +1,43 @@
+[include version_include.man]
+[manpage_begin ns_url2file n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc {Return the path to a file referenced by a URL}]
+
+[description]
+
+ This command returns the absolute path to a file referenced by the given URL.
+ The file returned is located in the "pages" directory on  the current virtual server.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_url2file] [arg url]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+This is especially useful when using the ns_adp_include command. 
+
+[example_begin]
+   <% ns_adp_include [lb]ns_url2file /include/myfile.inc[rb] %>
+[example_end]
+
+
+[example_begin]
+   % ns_url2file /test.adp
+   /usr/local/ns/pages/test.adp
+[example_end]
+
+
+[see_also nsd]
+
+
+[manpage_end]
+

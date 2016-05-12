@@ -1,0 +1,20 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test errordoc-1.1 {adp template} -setup {
+    ns_register_proc GET /400error { ns_returnbadrequest "uh-oh" ;#}
+} -body {
+    nstest::http -getbody 1 GET /400error
+} -cleanup {
+    ns_unregister_op GET /400error
+} -match glob -result {400 *oops*}
+
+
+
+cleanupTests

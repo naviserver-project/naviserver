@@ -1,0 +1,77 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_env-1.1 {basic syntax} -body {
+     ns_env
+} -returnCodes error -result {wrong # args: should be "ns_env command ?args ...?"}
+
+test ns_env-1.2 {basic syntax} -body {
+     ns_env ?
+} -returnCodes error -result {bad command "?": must be exists, names, get, set, or unset}
+
+test ns_env-1.3 {basic syntax} -body {
+     ns_env exists
+} -returnCodes error -result {wrong # args: should be "ns_env exists name"}
+
+test ns_env-1.4 {basic syntax} -body {
+     ns_env get
+} -returnCodes error -result {wrong # args: should be "ns_env get ?-nocomplain? name"}
+
+test ns_env-1.5 {basic syntax} -body {
+     ns_env set
+} -returnCodes error -result {wrong # args: should be "ns_env set name value"}
+
+test ns_env-1.6 {basic syntax} -body {
+     ns_env unset
+} -returnCodes error -result {wrong # args: should be "ns_env unset ?-nocomplain? name"}
+
+
+
+test ns_env-2.1 {names} -body {
+    ns_env set NSTEST X
+    expr {[lsearch -exact [ns_env names] NSTEST] > -1}
+} -cleanup {
+    ns_env unset NSTEST
+} -result 1
+
+test ns_env-2.2 {set, get} -body {
+    ns_env set NSTEST X
+    ns_env get NSTEST
+} -cleanup {
+    ns_env unset NSTEST
+} -result X
+
+test ns_env-2.5 {unset} -body {
+    ns_env set NSTEST X
+    ns_env unset NSTEST
+    ns_env exists NSTEST
+} -result 0
+
+test ns_env-2.3 {exists, yes} -body {
+    ns_env set NSTEST X
+    ns_env exists NSTEST
+} -cleanup {
+    ns_env unset NSTEST
+} -result 1
+
+test ns_env-2.4 {exists, no} -body {
+    ns_env exists NSTEST_NOEXIST
+} -result 0
+
+test ns_env-2.6 {get non existing variable} -body {
+    ns_env get NSTEST_NOEXIST
+} -returnCodes error -result {no such environment variable}
+
+test ns_env-2.7 {get non existing variable without complaint} -body {
+    ns_env get -nocomplain NSTEST_NOEXIST
+} -result ""
+
+
+
+cleanupTests

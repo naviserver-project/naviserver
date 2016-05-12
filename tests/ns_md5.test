@@ -1,0 +1,70 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_md5-1.1 {basic syntax: plain call} -body {
+     ns_md5
+} -returnCodes error -result {wrong # args: should be "ns_md5 string"}
+
+test ns_md5-1.2 {basic syntax: plain call} -body {
+     ns_md5
+} -returnCodes error -result {wrong # args: should be "ns_md5 string"}
+
+
+test ns_md5-2.1 {basic operation} -body {
+     ns_md5 test
+} -result "098F6BCD4621D373CADE4E832627B4F6"
+
+test ns_md5-2.2 {basic operation} -body {
+     for {set i 0} {$i < 999} {incr i +1} {
+         set nsmd5([ns_md5 foo]) .
+     }
+     llength [array names nsmd5]
+} -cleanup {
+     array unset nsmd5
+} -result 1
+
+test ns_md5-2.3 {basic operation} -body {
+     for {set i 0} {$i < 999} {incr i +1} {
+         set nsmd5([ns_md5 $i]) .
+     }
+     llength [array names nsmd5]
+} -cleanup {
+     array unset nsmd5
+} -result 999
+
+test ns_md5-2.4 {basic operation} -body {
+     set hash1 [ns_md5 ""]
+     set hash2 [ns_md5 {}]
+     set hash3 [ns_md5 [array names fjfjfjfjfj]]
+     expr {($hash1 eq $hash2) == ($hash2 eq $hash3)}
+} -result 1
+
+test ns_md5-2.5.0 {short string} -body {
+     ns_md5 x
+} -result "9DD4E461268C8034F5C8564E155C67A6"
+test ns_md5-2.5.1 {longer string} -body {
+     ns_md5 [string repeat test 100]
+} -result "6AEC0A1D6F44C9EFAFEC45F89A43B5A3"
+test ns_md5-2.5.2 {longer string} -body {
+     ns_md5 [string repeat 123 27]
+} -result "9FDD84389F080170513A08AEE9ED8244"
+
+test ns_md5-2.6 {binary string} -body {
+     ns_md5 [binary format H* 6501ff01]
+} -result "B501948B7A9E912E0ABF7DE3A34983DE"
+
+test ns_md5-2.7 {checksum from binary file} -body {
+    set f [open [ns_server pagedir]/ns_poweredby.png]
+    fconfigure $f -translation binary
+    set c [read $f]
+    close $f
+    ns_md5 $c
+} -result "C4024A17423FD3840C7816DDC6FE59F4"
+
+
+
+cleanupTests

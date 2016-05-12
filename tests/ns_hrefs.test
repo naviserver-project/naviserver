@@ -1,0 +1,98 @@
+# -*- Tcl -*-
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://aolserver.com/.
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is AOLserver Code and related documentation
+# distributed by AOL.
+# 
+# The Initial Developer of the Original Code is America Online,
+# Inc. Portions created by AOL are Copyright (C) 1999 America Online,
+# Inc. All Rights Reserved.
+#
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+# 
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+
+
+test ns_hrefs-1.1 {syntax} -body {
+    ns_hrefs
+} -returnCodes error -result {wrong # args: should be "ns_hrefs html"}
+
+test ns_hrefs-1.2 {syntax} -body {
+    ns_hrefs {}
+} -result {}
+
+
+
+test ns_hrefs-2.1 {parse with result} -body {
+    ns_hrefs {<a>}
+} -result {}
+
+test ns_hrefs-2.2 {parse with result} -body {
+    ns_hrefs {<a href="">}
+} -result {{}}
+
+test ns_hrefs-2.3 {parse with result} -body {
+    ns_hrefs {<a href=''>}
+} -result {{}}
+
+test ns_hrefs-2.4 {parse with result} -body {
+    ns_hrefs {<a href="simple">}
+} -result {simple}
+
+test ns_hrefs-2.5 {parse with result} -body {
+    ns_hrefs {<a href="href=tricky">}
+} -result {href=tricky}
+
+test ns_hrefs-2.6 {parse with result} -body {
+    ns_hrefs {<a href="first" href="second">}
+} -result {first}
+
+test ns_hrefs-2.7 {parse with result} -body {
+    ns_hrefs {<a href=naked dummy>}
+} -result {naked}
+
+test ns_hrefs-2.8 {parse with result} -body {
+    ns_hrefs {<a first href="second">}
+} -result {second}
+
+
+
+test ns_hrefs-3.1 {parse without result} -body {
+    ns_hrefs {a href="bogus">}
+} -result {}
+
+test ns_hrefs-3.2 {parse without result} -body {
+    ns_hrefs {<a href="bogus"}
+} -result {}
+
+test ns_hrefs-3.3 {parse without result} -body {
+    ns_hrefs {<a href "bogus">}
+} -result {}
+
+test ns_hrefs-3.4 {parse without result} -body {
+    ns_hrefs {a "href="bogus"">}
+} -result {}
+
+
+
+cleanupTests

@@ -1,0 +1,159 @@
+[include version_include.man]
+[manpage_begin ns_server n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get state of the server's connection pools and queues}]
+
+[description]
+
+This command provides a way to examine the current server's
+connection pools and queues.  The legal options (which may be abbreviated) are:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg filters]]
+
+Returns a list of the currently defined filters.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg pagedir]]
+
+Returns the path of the virtual server's page directory root.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg pools]]
+
+Returns a list of the pools defined for this server.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg requestprocs]]
+
+Returns a list of the currently defined requestprocs  (the registered
+procs for certain request patterns).
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg serverdir]]
+
+Returns the path of the virtual server's base directory.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg tcllib]]
+
+Returns the path of the virtual server's private Tcl library.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg traces]]
+
+Returns a list of the currently defined traces.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg url2file]]
+
+Returns a list of the mappings from urls to files.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg active]]
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg all]]
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg queued]]
+
+These three commands return information about queued or running
+requests. For every request the command returns a list containing
+connection id, the peer address, state ("running" or "queued"), the
+request (HTTP method and url), running time, and bytes sent. The
+subcommand [arg all] returns the union of the running and queued
+requests.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg connections]]
+
+Returns the number of connection requests processed by this pool since
+startup. 
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg maxthreads] \
+	[opt [arg value]]]
+
+Query or set the maximum number of connection threads for this server
+and pool. The value must be large than [arg minthreads] and less than
+the maximum number of connections.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg minthreads] \
+	[opt [arg value]]]
+
+Query or set the minimum number of connection threads for this server
+and pool. The value must be between 1 and [arg maxthreads].
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg stats]]
+
+Returns a list of attribute value pairs containing statistics for the
+server and pool, containing the number of requests, queued requests,
+cumulative times.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg threads]]
+
+Returns a list of attribute value pairs containg information about the
+number of connection threads for the server and pool.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[arg waiting]]
+
+Returns the number of connections waiting to be processed.
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -server [arg s]]
+Specifies the (virtual) server to be queried. If this option is not
+specified, the current server is used as a source.
+
+[opt_def -pool [arg p]]
+Specifies the pool to be queried. If this option is not
+specified, the default pool of the server is used as a source.
+
+[list_end]
+
+[manpage_end]
+

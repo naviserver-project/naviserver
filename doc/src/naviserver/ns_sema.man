@@ -1,0 +1,63 @@
+[include version_include.man]
+[manpage_begin ns_sema n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Operate on semaphore-like objects}]
+
+[description]
+
+This command provides a mechanism to manipulate semaphore-like objects
+but are not inter-process capable like true semaphores.  They are actually
+implemented with a mutex and a counter.  The legal options (which may be abbreviated) are:
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_sema] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+[call [cmd  ns_sema] [arg create] [opt [arg count]]]
+
+Initializes a new semaphore whose count is initialized to zero by default
+or count otherwise.  Returns a handle to the semaphore object.
+
+[call [cmd  ns_sema] [arg destroy] [arg object]]
+
+Destroys the semaphore object and frees any resources it was using.
+
+[call [cmd  ns_sema] [arg release] [arg object] [opt [arg count]]]
+
+Releases the semaphore object by incrementing the counter by one by default
+or by count otherwise.  The thread will wake any threads blocking on this 
+semaphore when count is equal to one.
+
+This is what is commonly referred to as "semaphore up".
+
+[call [cmd  ns_sema] [arg wait] [arg object]]
+
+Waits for a semaphore object to be greater than zero.  Will block the thread until
+this is true.  Decrements the counter by one when the counter is greater than zero.
+
+This is what is commonly referred to as "semaphore down".
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   # need an example here
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_cond ns_critsec ns_event ns_mutex ns_thread]
+
+[manpage_end]
+

@@ -1,0 +1,30 @@
+[include version_include.man]
+[manpage_begin ns_adp_close n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Flushes the ADP output buffer and closes the HTTP connection}]
+
+[description]
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_close]]
+
+This command flushes the ADP output buffer (i.e. sends it to the
+browser) and closes the underlying HTTP connection. ADP execution
+continues after the connection is closed. Any text appended to the ADP
+output buffer after the close is simply discarded when processing is
+complete.
+
+[list_end ]
+
+[see_also ns_adp ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]	
+[keywords ADP]
+
+[manpage_end]
+

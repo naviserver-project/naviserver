@@ -1,0 +1,41 @@
+[include version_include.man]
+[manpage_begin ns_internalredirect n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Re-authorize and restart url processing}]
+
+[description]
+
+The "ns_internalredirect" command enables re-authorization
+and restart of a connection as if it where originally for
+a different URL. 
+
+It is possible now to set new request url and re-process the
+request from the beginning without using external redirect.
+Internal redirect assigns new url and calls registered proc for new url inside
+the existing connection and using the same Tcl interp.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_internalredirect] [opt [arg url]]]
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+  if { $login } {
+    ns_internalredirect /main
+    return
+  }
+[example_end]
+
+[see_also nsd ns_returnredirect]
+[keywords redirect]
+
+[manpage_end]
+

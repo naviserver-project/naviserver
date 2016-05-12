@@ -1,0 +1,28 @@
+[include version_include.man]
+[manpage_begin ns_rollfile n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Roll an arbitrary file}]
+
+[description]
+This function rolls the specified file, keeping a number of backup copies up to backupMax.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_rollfile] [arg file] [arg backupMax]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

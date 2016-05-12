@@ -1,0 +1,35 @@
+[include version_include.man]
+[manpage_begin ns_paren n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Surround string with parentheses}]
+
+[description]
+
+This command returns string inside left and right parentheses, unless
+string is the empty string, for which an empty string is returned.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_paren] [arg string]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_paren "Hello World!"
+   (Hello World!)
+[example_end]
+
+
+[para]
+
+
+[manpage_end]
+

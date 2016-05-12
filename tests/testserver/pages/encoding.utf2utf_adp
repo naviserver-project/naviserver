@@ -1,0 +1,8 @@
+<% 
+#this is an utf-8 adp-page which should not be converted
+
+if {[ns_queryget mime NULL] eq "iso"} {
+   ns_adp_mimetype "text/plain; charset=iso-8859-1"
+}
+
+%>äöü

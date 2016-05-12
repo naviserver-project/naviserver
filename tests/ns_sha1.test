@@ -1,0 +1,110 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_sha1-1.1 {basic syntax: plain call} -body {
+     ns_sha1
+} -returnCodes error -result {wrong # args: should be "ns_sha1 string"}
+
+
+test ns_sha1-2.1 {basic operation} -body {
+     ns_sha1 foo
+} -result "0BEEC7B5EA3F0FDBC95D0DD47F3C5BC275DA8A33"
+
+test ns_sha1-2.2 {basic operation} -body {
+     for {set i 0} {$i < 999} {incr i +1} {
+         set nssha1([ns_sha1 foo]) .
+     }
+     llength [array names nssha1]
+} -cleanup {
+     array unset nssha1
+} -result 1
+
+test ns_sha1-2.3 {basic operation} -body {
+     for {set i 0} {$i < 999} {incr i +1} {
+         set nssha1([ns_sha1 $i]) .
+     }
+     llength [array names nssha1]
+} -cleanup {
+     array unset nssha1
+} -result 999
+
+test ns_sha1-2.4 {basic operation} -body {
+     set hash1 [ns_sha1 ""]
+     set hash2 [ns_sha1 {}]
+     set hash3 [ns_sha1 [array names fjfjfjfjfj]]
+     expr {($hash1 eq $hash2) == ($hash2 eq $hash3)}
+} -result 1
+
+test ns_sha1-2.5 {basic operation} -body {
+    ns_sha1 [binary format H* 6501ff01]
+} -result "97CE1CD8E5D85BA0913976868BC3EB024F6DD214"
+
+test ns_sha1-2.6 {checksum from binary file} -body {
+    set f [open [ns_server pagedir]/ns_poweredby.png]
+    fconfigure $f -translation binary
+    set c [read $f]
+    close $f
+    ns_sha1 $c
+} -result "1BFB30C1892435CA0AD6042FA80CE6B222E5121A"
+
+
+test ns_sha2-1.1 {basic syntax: plain call} -body {
+     ns_sha2
+} -returnCodes error -result {wrong # args: should be "ns_sha2 ?-length length? data"}
+test ns_sha2-1.2 {basic syntax: plain call} -body {
+     ns_sha2 -length 123 x
+} -returnCodes error -result {bad option "123": must be 224, 256, 384, or 512}
+
+test ns_sha2-2.0 {basic operation} -body {
+     ns_sha2 foo
+} -result "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+
+test ns_sha2-2.1 {basic operation} -body {
+     ns_sha2 -length 224 foo
+} -result "0808f64e60d58979fcb676c96ec938270dea42445aeefcd3a4e6f8db"
+
+test ns_sha2-2.2 {basic operation} -body {
+     ns_sha2 -length 256 foo
+} -result "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+
+test ns_sha2-2.3 {basic operation} -body {
+     ns_sha2 -length 384 foo
+} -result "98c11ffdfdd540676b1a137cb1a22b2a70350c9a44171d6b1180c6be5cbb2ee3f79d532c8a1dd9ef2e8e08e752a3babb"
+
+test ns_sha2-2.4 {basic operation} -body {
+     ns_sha2 -length 512 foo
+} -result "f7fbba6e0636f890e56fbbf3283e524c6fa3204ae298382d624741d0dc6638326e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7"
+
+
+test ns_hmac_sha2-1.1 {basic syntax: plain call} -body {
+     ns_hmac_sha2
+} -returnCodes error -result {wrong # args: should be "ns_hmac_sha2 ?-length length? key message"}
+test ns_hmac_sha2-1.2 {basic syntax: plain call} -body {
+     ns_hmac_sha2 -length 123 x
+} -returnCodes error -result {bad option "123": must be 224, 256, 384, or 512}
+
+test ns_hmac_sha2-2.0 {basic operation} -body {
+     ns_hmac_sha2 "Jefe" "what do ya want for nothing?"
+} -result "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+
+test ns_hmac_sha2-2.1 {basic operation} -body {
+     ns_hmac_sha2 -length 224 "Jefe" "what do ya want for nothing?"
+} -result "a30e01098bc6dbbf45690f3a7e9e6d0f8bbea2a39e6148008fd05e44"
+
+test ns_hmac_sha2-2.2 {basic operation} -body {
+     ns_hmac_sha2 -length 256 "Jefe" "what do ya want for nothing?"
+} -result "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+
+test ns_hmac_sha2-2.3 {basic operation} -body {
+     ns_hmac_sha2 -length 384 "Jefe" "what do ya want for nothing?"
+} -result "af45d2e376484031617f78d2b58a6b1b9c7ef464f5a01b47e42ec3736322445e8e2240ca5e69e2c78b3239ecfab21649"
+
+test ns_hmac_sha2-2.4 {basic operation} -body {
+     ns_hmac_sha2 -length 512 "Jefe" "what do ya want for nothing?"
+} -result "164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea2505549758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737"
+
+cleanupTests

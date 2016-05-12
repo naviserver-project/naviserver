@@ -1,0 +1,28 @@
+[include version_include.man]
+[manpage_begin ns_socknonblocking n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Set socket nonblocking}]
+
+[description]
+This function sets the socket for the specified sockId to nonblocking.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_socknonblocking] [arg sockid]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also nsd ns_sockblocking]
+[keywords NaviServer socket blocking]
+[manpage_end]
+
+

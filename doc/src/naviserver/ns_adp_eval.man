@@ -1,0 +1,27 @@
+[include version_include.man]
+[manpage_begin ns_adp_eval n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Evaluate an ADP block}]
+
+[description]
+
+ This function evaluates the ADP specified by page (which is somewhat of a misnomer)
+ and returns the output as the result.  If any arguments are specified,
+ they will be passed to the ADP.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_eval] [arg page] [opt [arg {args ...}]]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[see_also nsd]
+[keywords ADP]
+
+[manpage_end]
+
