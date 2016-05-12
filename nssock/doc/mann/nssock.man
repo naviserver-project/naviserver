@@ -1,7 +1,7 @@
 [include version_include.man]
 
 [manpage_begin nssock n [vset version]]
-[moddesc   {NaviServer Module Commands}]
+[moddesc   {NaviServer Modules}]
 [titledesc {Configuring http socket communications}]
 
 [description]
