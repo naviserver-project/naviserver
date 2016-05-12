@@ -51,7 +51,7 @@ static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
                        Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-                       char *cert, char *caFile, char *caPath, int verify,
+                       const char *cert, const char *caFile, const char *caPath, int verify,
                        bool keep_host_header, Ns_HttpTask **httpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(12);
 
@@ -70,9 +70,9 @@ static void ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
 
 static NS_SOCKET WaitWritable(NS_SOCKET sock);
 
-static ssize_t HttpTaskSend(Ns_HttpTask *httpPtr, const void *buffer, size_t length)
+static ssize_t HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static ssize_t HttpTaskRecv(Ns_HttpTask *httpPtr, char *buffer, size_t length)
+static ssize_t HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_TaskProc HttpProc;
@@ -913,7 +913,7 @@ WaitWritable(NS_SOCKET sock) {
 static int
 HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
             Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-            char *cert, char *caFile, char *caPath, int verify,
+            const char *cert, const char *caFile, const char *caPath, int verify,
             bool keep_host_header, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock = NS_INVALID_SOCKET;
@@ -932,7 +932,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
      * If host_keep_header set then "Host:" header field must be present.
      */
     if (keep_host_header == NS_TRUE) {
-        if ( hdrPtr == NULL || Ns_SetIFind(hdrPtr, "Host") == -1 ) {
+        if ( (hdrPtr == NULL) || (Ns_SetIFind(hdrPtr, "Host") == -1) ) {
 	    Tcl_AppendResult(interp, "keep_host_header specified but no Host header given", NULL);
 	    return TCL_ERROR;
         }
@@ -959,7 +959,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
      * Check used protocol and protocol-specific parameters
      */
     if (STREQ("http", protocol)) {
-        if (cert != NULL || caFile != NULL || caPath != NULL || verify != 0) {
+        if ( (cert != NULL) || (caFile != NULL) || (caPath != NULL) || (verify != 0) ) {
             Ns_TclPrintfResult(interp, "https-specific parameters are only allowed for https urls");
             goto fail;
         }
@@ -1342,7 +1342,7 @@ HttpAbort(Ns_HttpTask *httpPtr)
  */
 
 static ssize_t
-HttpTaskSend(Ns_HttpTask *httpPtr, const void *buffer, size_t length)
+HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
 {
     ssize_t       sent;
 
@@ -1360,7 +1360,7 @@ HttpTaskSend(Ns_HttpTask *httpPtr, const void *buffer, size_t length)
             int     err;
             ssize_t n;
         
-            n = SSL_write(httpPtr->ssl, iov.iov_base, iov.iov_len);
+            n = SSL_write(httpPtr->ssl, iov.iov_base, (int)iov.iov_len);
             err = SSL_get_error(httpPtr->ssl, n);
             if (err == SSL_ERROR_WANT_WRITE) {
                 Ns_Time timeout = { 0, 10000 }; /* 10ms */
@@ -1370,10 +1370,11 @@ HttpTaskSend(Ns_HttpTask *httpPtr, const void *buffer, size_t length)
             }
             if (likely(n > -1)) {
                 sent += n;
-            }
-            if ((n < iov.iov_len) && (n > -1)) {
-                Ns_ResetVec(&iov, 1, n);
-                continue;
+                
+                if (((size_t)n < iov.iov_len)) {
+                    Ns_ResetVec(&iov, 1, (size_t)n);
+                    continue;
+                }
             }
             break;
         }
@@ -1402,7 +1403,7 @@ HttpTaskSend(Ns_HttpTask *httpPtr, const void *buffer, size_t length)
  */
 
 static ssize_t
-HttpTaskRecv(Ns_HttpTask *httpPtr, char *buffer, size_t length)
+HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
 {
     ssize_t       received;
 
@@ -1416,16 +1417,15 @@ HttpTaskRecv(Ns_HttpTask *httpPtr, char *buffer, size_t length)
 
 	received = 0;
         while (1) {
-            ssize_t n;
-            int err;
+            int n, err;
             
-	    n = SSL_read(httpPtr->ssl, buffer+received, length-received);
+	    n = SSL_read(httpPtr->ssl, buffer+received, (int)(length - (size_t)received));
 	    err = SSL_get_error(httpPtr->ssl, n);
 	    /*fprintf(stderr, "### SSL_read n %ld got %lu err %d\n", n, received, err);*/
 	    switch (err) {
 	    case SSL_ERROR_NONE: 
 		if (n < 0) { 
-		    fprintf(stderr, "### SSL_read failed but no error, should not happen\n"); 
+		    Ns_Log(Error, "SSL_read failed but no error, should not happen"); 
 		    break;
 		}
 		received += n;
@@ -1464,7 +1464,7 @@ HttpTaskRecv(Ns_HttpTask *httpPtr, char *buffer, size_t length)
  */
 
 static void
-HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
+HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
 {
     Ns_HttpTask *httpPtr;
     char buf[CHUNK_SIZE];
@@ -1492,7 +1492,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why)
                 httpPtr->error = "read failed";
             } else {
                 Ns_Log(Ns_LogTaskDebug, "HttpProc send read data from file");
-                n = HttpTaskSend(httpPtr, httpPtr->ds.string, n);
+                n = HttpTaskSend(httpPtr, httpPtr->ds.string, (size_t)n);
                 if (n < 0) {
                     httpPtr->error = "send failed";
                 } else {
