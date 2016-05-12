@@ -558,7 +558,6 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              * ns_connchan detach
              */
             Conn       *connPtr = (Conn *)itPtr->conn;
-            NsConnChan *connChanPtr;
             
             if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
