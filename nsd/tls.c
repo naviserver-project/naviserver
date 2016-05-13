@@ -78,7 +78,7 @@ void NsInitOpenSSL(void)
  *
  * Ns_TLS_CtxClientCreate --
  *
- *   Crete and Initialize OpenSSL context
+ *   Create and Initialize OpenSSL context
  *
  * Results:
  *   Result code.
@@ -126,6 +126,32 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     
     return TCL_OK;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TLS_CtxFree --
+ *
+ *   Free OpenSSL context
+ *
+ * Results:
+ *   none
+ *
+ * Side effects:
+ *  None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
+{
+    NS_NONNULL_ASSERT(ctx != NULL);
+
+    SSL_CTX_free(ctx);
+}
+
 
 
 /*
@@ -201,20 +227,26 @@ void NsInitOpenSSL(void)
  */
 
 int
-Ns_TLS_SSLCreate(Tcl_Interp *UNUSED(interp), NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
-                 NS_TLS_SSL **UNUSED(sslPtr))
+Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
+                  NS_TLS_SSL **UNUSED(sslPtr))
 {
     Ns_TclPrintfResult(interp, "SSLCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 
 int
-Ns_TLS_CtxCreate(Tcl_Interp *UNUSED(interp),
-                 const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), int UNUSED(verify),
-                 NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
+                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), int UNUSED(verify),
+                       NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
     Ns_TclPrintfResult(interp, "CtxCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
+}
+
+void
+Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
+{
+    /* dummy stub */
 }
 
 #endif

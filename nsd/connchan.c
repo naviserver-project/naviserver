@@ -639,7 +639,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                          * and keep it around.
                          */
                         if (ctx != NULL)  {
-                            SSL_CTX_free(ctx);
+                            Ns_TLS_CtxFree(ctx);
                         }
                     }
                     

@@ -46,13 +46,11 @@
 
 #ifdef HAVE_OPENSSL_EVP_H
 # include <openssl/ssl.h>
-# ifdef HAVE_OPENSSL_EVP_H
-#  define NS_TLS_SSL_CTX SSL_CTX
-#  define NS_TLS_SSL SSL
-# else
-#  define NS_TLS_SSL_CTX void*
-#  define NS_TLS_SSL void*
-# endif
+# define NS_TLS_SSL_CTX SSL_CTX
+# define NS_TLS_SSL SSL
+#else
+# define NS_TLS_SSL_CTX void*
+# define NS_TLS_SSL void*
 #endif
 
 #ifdef NSD_EXPORTS
@@ -3380,6 +3378,9 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
                   NS_TLS_SSL **sslPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
+NS_EXTERN void
+Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
+    NS_GNUC_NONNULL(1);
 #endif /* NS_H */
 
 /*

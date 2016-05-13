@@ -35,6 +35,9 @@
  */
 
 #include "ns.h"
+
+#ifdef HAVE_OPENSSL_EVP_H
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -726,7 +729,15 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
 
     return TCL_OK;
 }
+#else
 
+NS_EXPORT int
+Ns_ModuleInit(const char *server, const char *module)
+{
+    Ns_Log(Warning, "modules nsssl requires a version of NaviServer built with OpenSSL");
+    return TCL_ERROR;
+}
+#endif
 
 /*
  * Local Variables:

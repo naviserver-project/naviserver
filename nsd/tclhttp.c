@@ -74,6 +74,8 @@ static ssize_t HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static ssize_t HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void HttpTaskShutdown(const Ns_HttpTask *httpPtr)
+    NS_GNUC_NONNULL(1);
 
 static Ns_TaskProc HttpProc;
 
@@ -1352,6 +1354,7 @@ HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
     if (httpPtr->ssl == NULL) {
         sent = ns_send(httpPtr->sock, httpPtr->ds.string, length, 0);
     } else {
+#ifdef HAVE_OPENSSL_EVP_H
         struct iovec  iov;
         (void) Ns_SetVec(&iov, 0, buffer, length);
 
@@ -1378,6 +1381,9 @@ HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
             }
             break;
         }
+#else
+        sent = -1;
+#endif        
     }
     
     Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %ld bytes (from %lu)", sent, length);
@@ -1413,6 +1419,7 @@ HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
     if (httpPtr->ssl == NULL) {
         received = ns_recv(httpPtr->sock, buffer, length, 0);
     } else {
+#ifdef HAVE_OPENSSL_EVP_H
         /*fprintf(stderr, "### SSL_read want %lu\n", length);*/
 
 	received = 0;
@@ -1438,12 +1445,44 @@ HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
 	    }
 	    break;
         }
+#else
+        received = -1;
+#endif
     }
     
     Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv received %ld bytes (from %lu)", received, length);
     return received;
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpTaskShutdown --
+ *
+ *        Shutdown sending data
+ *
+ * Results:
+ *        None
+ *
+ * Side effects:
+ *        effecting socket and SSL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+HttpTaskShutdown(const Ns_HttpTask *httpPtr)
+{
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+#ifdef HAVE_OPENSSL_EVP_H
+    if (httpPtr->ssl != NULL) {
+        SSL_set_shutdown(httpPtr->ssl, SSL_SENT_SHUTDOWN);
+    }
+#endif    
+}
 
 
 /*
@@ -1498,9 +1537,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
                 } else {
                     if (n < CHUNK_SIZE) {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data spooled, switch to read reply");
-                        if (httpPtr->ssl != NULL) {
-                            SSL_set_shutdown(httpPtr->ssl, SSL_SENT_SHUTDOWN);
-                        }
+                        HttpTaskShutdown(httpPtr);
                         Tcl_DStringTrunc(&httpPtr->ds, 0);
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
@@ -1527,9 +1564,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
                         Tcl_DStringTrunc(&httpPtr->ds, CHUNK_SIZE);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
-                        if (httpPtr->ssl != NULL) {
-                            SSL_set_shutdown(httpPtr->ssl, SSL_SENT_SHUTDOWN);
-                        }
+                        HttpTaskShutdown(httpPtr);
                         Tcl_DStringTrunc(&httpPtr->ds, 0);
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
