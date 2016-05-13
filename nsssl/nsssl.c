@@ -35,6 +35,7 @@
  */
 
 #include "ns.h"
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 #ifdef HAVE_OPENSSL_EVP_H
 
@@ -91,7 +92,6 @@ static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
 
 static Ns_Mutex *driver_locks;
 
-NS_EXPORT int Ns_ModuleVersion = 1;
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 static void 
