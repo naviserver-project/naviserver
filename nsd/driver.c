@@ -3713,7 +3713,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         } else {
             int i;
             for (i = 0; i < wrSockPtr->c.mem.nbufs; i++) {
-                ns_free(wrSockPtr->c.mem.bufs[i].iov_base);
+                ns_free((char *)wrSockPtr->c.mem.bufs[i].iov_base);
             }
         }
         if (wrSockPtr->c.mem.bufs != wrSockPtr->c.mem.preallocated_bufs) {

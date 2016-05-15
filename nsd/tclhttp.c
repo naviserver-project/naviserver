@@ -878,7 +878,7 @@ WaitWritable(NS_SOCKET sock) {
           pollfd.events = POLLOUT;
           pollfd.fd = sock;
 
-          while (1) {
+          for (;;) {
               /*fprintf(stderr, "# call poll on %d\n", sock);*/
               retval = poll(&pollfd, 1, 1000);
               /*fprintf(stderr, "# call poll on %d => %d\n", sock, retval);*/
@@ -1359,7 +1359,7 @@ HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
         (void) Ns_SetVec(&iov, 0, buffer, length);
 
         sent = 0;
-        while (1) {
+        for (;;) {
             int     err;
             ssize_t n;
         
@@ -1423,7 +1423,7 @@ HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
         /*fprintf(stderr, "### SSL_read want %lu\n", length);*/
 
 	received = 0;
-        while (1) {
+        for (;;) {
             int n, err;
             
 	    n = SSL_read(httpPtr->ssl, buffer+received, (int)(length - (size_t)received));

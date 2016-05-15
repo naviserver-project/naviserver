@@ -280,9 +280,9 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
     NS_NONNULL_ASSERT(buffer != NULL);
 
     if (saPtr->sa_family == AF_INET6) {
-        result = inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saPtr)->sin6_addr, buffer, size);
+        result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr, buffer, size);
     } else {
-        result = inet_ntop(AF_INET, &((struct sockaddr_in *)saPtr)->sin_addr, buffer, size);
+        result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr, buffer, size);
     }
     
     return result;
@@ -437,12 +437,12 @@ Ns_SockaddrGetPort(const struct sockaddr *saPtr)
     
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
-        port = ((struct sockaddr_in6 *)saPtr)->sin6_port;
+        port = ((const struct sockaddr_in6 *)saPtr)->sin6_port;
     } else {
-        port = ((struct sockaddr_in *)saPtr)->sin_port;
+        port = ((const struct sockaddr_in *)saPtr)->sin_port;
     }
 #else
-    port = ((struct sockaddr_in *)saPtr)->sin_port;
+    port = ((const struct sockaddr_in *)saPtr)->sin_port;
 #endif
     
     return htons(port);

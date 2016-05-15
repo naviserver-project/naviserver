@@ -928,7 +928,7 @@ MakePath(Ns_DString *dest, va_list *pap)
     NS_NONNULL_ASSERT(dest != NULL);
 
     for (s = va_arg(*pap, char *); s != NULL; s = va_arg(*pap, char *)) {
-        if (CHARTYPE(alpha, *s) != 0 && s[1] == ':') {
+        if ((CHARTYPE(alpha, *s) != 0) && (s[1] == ':')) {
             char temp = *(s+2);
 
             *(s + 2) = '\0';

@@ -198,9 +198,9 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 	rc  = SSL_connect(ssl);
 	err = SSL_get_error(ssl, rc);
 
-	if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+	if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
 	    Ns_Time timeout = { 0, 10000 }; /* 10ms */
-	    Ns_SockTimedWait(sock, NS_SOCK_WRITE|NS_SOCK_READ, &timeout);
+	    Ns_SockTimedWait(sock, (unsigned int)(NS_SOCK_WRITE|NS_SOCK_READ), &timeout);
 	    continue;
 	}
 	break;
