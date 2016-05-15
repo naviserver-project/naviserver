@@ -113,7 +113,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
     
     if (cert != NULL) {
-      if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
+        if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
             Ns_TclPrintfResult(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
 	    return TCL_ERROR;
 	}
