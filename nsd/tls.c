@@ -214,6 +214,109 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     return TCL_OK;
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclHmacObjCmd --
+ *
+ *      Returns a Hash-based message authentication code of the provided message
+ *
+ * Results:
+ *	NS_OK
+ *
+ * Side effects:
+ *	Tcl result is set to a string value.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    unsigned char  digest[EVP_MAX_MD_SIZE];
+    char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
+    Tcl_Obj       *keyObj, *messageObj;
+    const char    *key, *message, *digestName = "sha256";
+    int            keyLength, messageLength;
+    unsigned int   mdLength;
+    bool           binary;
+    const EVP_MD  *md;
+    Ns_ObjvSpec lopts[] = {
+        {"-digest",  Ns_ObjvString, &digestName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"key",     Ns_ObjvObj, &keyObj, NULL},
+        {"message", Ns_ObjvObj, &messageObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    md = EVP_get_digestbyname(digestName);
+    if (md == NULL) {
+        /*
+         * The following approach to list available digests would require at
+         * least OpenSSL 1.0.     1.0 OPENSSL_VERSION_NUMBER > 0x010000000
+         *                        1.1 OPENSSL_VERSION_NUMBER > 0x010100000
+         *
+         * EVP_MD_do_all_sorted(list_md_fn, out);
+         * static void list_md_fn(const EVP_MD *m, const char *from, const char *to, void *arg) {
+         *   if (m) BIO_printf(arg, "%s\n", EVP_MD_name(m));
+         *   else {
+         *      if (!from) from = "<undefined>";
+         *      if (!to) to = "<undefined>";
+         *      BIO_printf(arg, "%s => %s\n", from, to);
+         *}
+         */
+        Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
+        return TCL_ERROR;
+    }
+
+    binary = NsTclObjIsByteArray(keyObj);
+    if (binary == NS_TRUE) {
+        key = (char *)Tcl_GetByteArrayFromObj(keyObj, &keyLength);
+    } else {
+        key = Tcl_GetStringFromObj(keyObj, &keyLength);
+    }
+
+    binary = NsTclObjIsByteArray(messageObj);
+    if (binary == NS_TRUE) {
+        message = (char *)Tcl_GetByteArrayFromObj(messageObj, &messageLength);
+    } else {
+        message = Tcl_GetStringFromObj(messageObj, &messageLength);
+    }
+
+#if OPENSSL_VERSION_NUMBER < 0x010100000
+    {
+        HMAC_CTX ctx;
+        HMAC_CTX_init(&ctx);
+        HMAC(md,
+             (const void *)key, keyLength,
+             (const void *)message, messageLength,
+             digest, &mdLength);
+        HMAC_CTX_cleanup(&ctx);
+    }
+#else
+    {
+        HMAC_CTX *ctx = HMAC_CTX_new();
+        HMAC(md,
+             (const void *)key, keyLength,
+             (const void *)message, messageLength,
+             digest, &mdLength);
+        HMAC_CTX_free(ctx);
+    }
+#endif    
+
+    Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
+    Tcl_AppendResult(interp, digestChars, NULL);
+    
+    return NS_OK;
+}
+
+
 #else
 
 void NsInitOpenSSL(void)
@@ -249,6 +352,12 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
     /* dummy stub */
 }
 
+int
+NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
 #endif
  
 /*

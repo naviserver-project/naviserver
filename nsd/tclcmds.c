@@ -84,6 +84,7 @@ static const Cmd basicCmds[] = {
     {"ns_hmac_sha2", NULL, NsTclHMACSHA2ObjCmd},
     {"ns_hostbyaddr", NULL, NsTclGetHostObjCmd},
     {"ns_hrefs", NsTclHrefsCmd, NULL},
+    {"ns_hmac", NULL, NsTclHmacObjCmd},
     {"ns_http", NULL, NsTclHttpObjCmd},
     {"ns_httptime", NULL, NsTclHttpTimeObjCmd},
     {"ns_imgmime", NULL, NsTclImgMimeObjCmd},
