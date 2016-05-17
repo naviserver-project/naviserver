@@ -64,8 +64,11 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  *
  * Ns_ConnGetQuery --
  *
- *      Get the connection query data, either by reading the content 
- *      of a POST request or get it from the query string 
+ *      Return the connection query data in form of a Ns_Set. This function
+ *      parses the either the query (of the URL) or the form content (in POST
+ *      requests with content type "www-form-urlencoded" or
+ *      "multipart/form-data"). In case the Ns_Set for the query is already
+ *      set, it is treated as cached result and is returned untouched.
  *
  * Results:
  *      Query data or NULL if error 
@@ -87,7 +90,10 @@ Ns_ConnGetQuery(Ns_Conn *conn)
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
         if (connPtr->request.method != NULL && !STREQ(connPtr->request.method, "POST")) {
-
+            /*
+             * If it is no POST resquest, parse the "form" content from the
+             * query parameters.
+             */
             form = connPtr->request.query;
             if (form != NULL) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
@@ -105,11 +111,17 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 
             if (contentType != NULL) {
                 Tcl_DStringInit(&bound);
-                
+
+                /*
+                 * GetBoundary cares for "multipart/form-data"
+                 */
                 if (GetBoundary(&bound, contentType) == 0) {
                     if (Ns_StrCaseFind(contentType, "www-form-urlencoded") != NULL) {
                         ParseQuery(form, connPtr->query, connPtr->urlEncoding);
                     }
+                    /*
+                     * Don't do anything for other content-types.
+                     */
                 } else {
                     const char *formend = form + connPtr->reqPtr->length;
                     char       *s;
