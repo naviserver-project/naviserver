@@ -214,6 +214,40 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     return TCL_OK;
 }
 
+#if OPENSSL_VERSION_NUMBER > 0x010000000
+/*
+ *----------------------------------------------------------------------
+ *
+ * ListMDfunc --
+ *
+ *      Helper function for iterator EVP_MD_do_all_sorted
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Appending to passed Tcl list
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg) {
+    Tcl_Obj *listPtr = (Tcl_Obj *)arg;
+    
+    if (m != NULL && from != NULL) {
+        const char *mdName = EVP_MD_name(m);
+        
+        /* fprintf(stderr, "from %s to %to name <%s> type (nid) %d\n",from,to,mdName, EVP_MD_type(m)); */
+        /*
+         * Apprarently, the list contains upper and lower case variants. Avoid
+         * duplication.
+         */
+        if (*from >= 'a' && *from <= 'z') {
+            (void)Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(mdName, -1));
+        }
+    }
+}
+#endif
 
 
 /*
@@ -255,26 +289,32 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+
+    /* 
+     * Look up the Message digest from OpenSSL
+     */
     md = EVP_get_digestbyname(digestName);
     if (md == NULL) {
+#if OPENSSL_VERSION_NUMBER > 0x010000000
         /*
-         * The following approach to list available digests would require at
-         * least OpenSSL 1.0.     1.0 OPENSSL_VERSION_NUMBER > 0x010000000
-         *                        1.1 OPENSSL_VERSION_NUMBER > 0x010100000
-         *
-         * EVP_MD_do_all_sorted(list_md_fn, out);
-         * static void list_md_fn(const EVP_MD *m, const char *from, const char *to, void *arg) {
-         *   if (m) BIO_printf(arg, "%s\n", EVP_MD_name(m));
-         *   else {
-         *      if (!from) from = "<undefined>";
-         *      if (!to) to = "<undefined>";
-         *      BIO_printf(arg, "%s => %s\n", from, to);
-         *}
+         * EVP_MD_do_all_sorted was added in OpenSSL 1.0.0
          */
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+        Tcl_IncrRefCount(listObj);
+        EVP_MD_do_all_sorted(ListMDfunc, listObj);
+        Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
+                           digestName, Tcl_GetString(listObj));
+        Tcl_DecrRefCount(listObj);
+#else
         Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
+#endif        
         return TCL_ERROR;
     }
 
+    /*
+     * All input parameters are valid, get key and data.
+     */
     binary = NsTclObjIsByteArray(keyObj);
     if (binary == NS_TRUE) {
         key = (char *)Tcl_GetByteArrayFromObj(keyObj, &keyLength);
@@ -289,7 +329,13 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         message = Tcl_GetStringFromObj(messageObj, &messageLength);
     }
 
+    /*
+     * Call the HMAC computation
+     */
 #if OPENSSL_VERSION_NUMBER < 0x010100000
+    /*
+     * The interface has changed in OpenSSL 1.1.0
+     */
     {
         HMAC_CTX ctx;
         HMAC_CTX_init(&ctx);
@@ -309,7 +355,10 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         HMAC_CTX_free(ctx);
     }
 #endif    
-
+    
+    /*
+     * Convert the result to hex and return the hex string.
+     */
     Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
     Tcl_AppendResult(interp, digestChars, NULL);
     
