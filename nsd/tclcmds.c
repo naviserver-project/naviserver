@@ -81,7 +81,6 @@ static const Cmd basicCmds[] = {
     {"ns_gmtime", NULL, NsTclGmTimeObjCmd},
     {"ns_guesstype", NULL, NsTclGuessTypeObjCmd},
     {"ns_hashpath", NULL, NsTclHashPathObjCmd},
-    {"ns_hmac_sha2", NULL, NsTclHMACSHA2ObjCmd},
     {"ns_hostbyaddr", NULL, NsTclGetHostObjCmd},
     {"ns_hrefs", NsTclHrefsCmd, NULL},
     {"ns_hmac", NULL, NsTclHmacObjCmd},

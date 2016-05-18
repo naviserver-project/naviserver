@@ -357,7 +357,7 @@ proc ns_adp_stream {{bool 1}} {
 
 proc ns_unregister_proc {args} {
     ns_deprecated "ns_unregister_op"
-    eval ns_unregister_op $args
+    uplevel [list ns_unregister_op {*}$args]
 }
 
 #
@@ -381,6 +381,27 @@ proc ns_var {cmd {key ""} {value ""}} {
         }
     }
 }
+#
+# ns_hmac_sha2 --
+#
+#   compute a HMAC based on ns_sha
+#   use "ns_hmac -digest ..." instead
+#
+
+proc ns_hmac_sha2 args {
+    set length 256
+    
+    ns_parseargs {
+	{-length 256}
+	key
+	message
+    } $args
+    
+    ns_deprecated "ns_hmac -digest sha$length ..."
+    uplevel [list ns_hmac -digest sha$length $key $message]
+}
+
+
 
 # EOF
 
