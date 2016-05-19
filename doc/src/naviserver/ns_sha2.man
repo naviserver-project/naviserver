@@ -33,7 +33,7 @@ String from which hash should be produced
   
 [example_end]
 
-[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_sha1 ns_hmac_sha2]
+[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_sha1 ns_hmac]
 [keywords encoding crypt]
 
 [manpage_end]

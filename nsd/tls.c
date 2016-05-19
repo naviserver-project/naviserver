@@ -41,6 +41,17 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+/*
+ * Static functions defined in this file.
+ */
+
+static const char *GetString(Tcl_Obj *obj, int *lengthPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+#if OPENSSL_VERSION_NUMBER > 0x010000000
+static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
+#endif
+
 
 
 /*
@@ -231,7 +242,8 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  *----------------------------------------------------------------------
  */
 
-static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg) {
+static void
+ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg) {
     Tcl_Obj *listPtr = (Tcl_Obj *)arg;
     
     if (m != NULL && from != NULL) {
@@ -248,6 +260,39 @@ static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *
     }
 }
 #endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetString --
+ *
+ *      Helper function to return the content either binary or as text
+ *
+ * Results:
+ *	Content of the Tcl_Obj.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+GetString(Tcl_Obj *obj, int *lengthPtr)
+{
+    const char *result;
+
+    NS_NONNULL_ASSERT(obj != NULL);
+    NS_NONNULL_ASSERT(lengthPtr != NULL);
+    
+    if (NsTclObjIsByteArray(obj) == NS_TRUE) {
+        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+    } else {
+        result = Tcl_GetStringFromObj(obj, lengthPtr);
+    }
+
+    return result;
+}
 
 
 /*
@@ -274,7 +319,6 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     const char    *key, *message, *digestName = "sha256";
     int            keyLength, messageLength;
     unsigned int   mdLength;
-    bool           binary;
     const EVP_MD  *md;
     Ns_ObjvSpec lopts[] = {
         {"-digest",  Ns_ObjvString, &digestName, NULL},
@@ -315,19 +359,8 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     /*
      * All input parameters are valid, get key and data.
      */
-    binary = NsTclObjIsByteArray(keyObj);
-    if (binary == NS_TRUE) {
-        key = (char *)Tcl_GetByteArrayFromObj(keyObj, &keyLength);
-    } else {
-        key = Tcl_GetStringFromObj(keyObj, &keyLength);
-    }
-
-    binary = NsTclObjIsByteArray(messageObj);
-    if (binary == NS_TRUE) {
-        message = (char *)Tcl_GetByteArrayFromObj(messageObj, &messageLength);
-    } else {
-        message = Tcl_GetStringFromObj(messageObj, &messageLength);
-    }
+    key = GetString(keyObj, &keyLength);
+    message = GetString(messageObj, &messageLength);
 
     /*
      * Call the HMAC computation
@@ -364,6 +397,8 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     
     return NS_OK;
 }
+
+
 
 
 #else
