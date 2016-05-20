@@ -1043,14 +1043,14 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
  *      at least size*2 + 1 bytes long.
  *
  * Results:
- *      None.
+ *      buffer
  *
  * Side effects:
  *      Updates passed-in buffer (2nd argument).
  *
  *----------------------------------------------------------------------
  */
-void Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper)
+char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper)
 {
     int i;
     static const char hexCharsUpper[] = "0123456789ABCDEF";
@@ -1068,6 +1068,8 @@ void Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper
         }
     }
     buf[size * 2] = '\0';
+
+    return buf;
 }
 
 

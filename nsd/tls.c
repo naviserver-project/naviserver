@@ -41,6 +41,14 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+#if OPENSSL_VERSION_NUMBER < 0x010100000
+# define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
+# define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
+#else
+# define NS_EVP_MD_CTX_new  EVP_MD_CTX_new
+# define NS_EVP_MD_CTX_free EVP_MD_CTX_free
+#endif
+
 /*
  * Static functions defined in this file.
  */
@@ -48,9 +56,18 @@
 static const char *GetString(Tcl_Obj *obj, int *lengthPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 #if OPENSSL_VERSION_NUMBER > 0x010000000
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 #endif
+
+/*
+ * Local variables defined in this file.
+ */
+
+static const char *mdctxType  = "ns:mdctx";
 
 
 
@@ -243,7 +260,8 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  */
 
 static void
-ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg) {
+ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg)
+{
     Tcl_Obj *listPtr = (Tcl_Obj *)arg;
     
     if (m != NULL && from != NULL) {
@@ -260,6 +278,53 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg) {
     }
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetDigest --
+ *
+ *      Helper function to lookup digest from a string.
+ *
+ * Results:
+ *	Tcl result code, value in third argument.
+ *
+ * Side effects:
+ *	Interp result Obj is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
+{
+    int result;
+    
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(digestName != NULL);
+    NS_NONNULL_ASSERT(mdPtr != NULL);
+
+    *mdPtr = EVP_get_digestbyname(digestName);
+    if (*mdPtr == NULL) {
+#if OPENSSL_VERSION_NUMBER > 0x010000000
+        /*
+         * EVP_MD_do_all_sorted was added in OpenSSL 1.0.0
+         */
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+        
+        Tcl_IncrRefCount(listObj);
+        EVP_MD_do_all_sorted(ListMDfunc, listObj);
+        Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
+                           digestName, Tcl_GetString(listObj));
+        Tcl_DecrRefCount(listObj);
+#else
+        Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
+#endif
+        result = TCL_ERROR;
+    } else {
+        result = TCL_OK;
+    }
+    return result;
+}
 
 
 /*
@@ -317,7 +382,7 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
     Tcl_Obj       *keyObj, *messageObj;
     const char    *key, *message, *digestName = "sha256";
-    int            keyLength, messageLength;
+    int            keyLength, messageLength, result;
     unsigned int   mdLength;
     const EVP_MD  *md;
     Ns_ObjvSpec lopts[] = {
@@ -337,23 +402,9 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     /* 
      * Look up the Message digest from OpenSSL
      */
-    md = EVP_get_digestbyname(digestName);
-    if (md == NULL) {
-#if OPENSSL_VERSION_NUMBER > 0x010000000
-        /*
-         * EVP_MD_do_all_sorted was added in OpenSSL 1.0.0
-         */
-        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
-
-        Tcl_IncrRefCount(listObj);
-        EVP_MD_do_all_sorted(ListMDfunc, listObj);
-        Ns_TclPrintfResult(interp, "Unknown value for digest \"%s\", valid: %s",
-                           digestName, Tcl_GetString(listObj));
-        Tcl_DecrRefCount(listObj);
-#else
-        Ns_TclPrintfResult(interp, "Unknown message digest \"%s\"", digestName);
-#endif        
-        return TCL_ERROR;
+    result = GetDigest(interp, digestName, &md);
+    if (result == TCL_ERROR) {
+        return result;
     }
 
     /*
@@ -393,11 +444,219 @@ NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
      * Convert the result to hex and return the hex string.
      */
     Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
-    Tcl_AppendResult(interp, digestChars, NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
     
     return NS_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptoMdObjCmd --
+ *
+ *      Returns a Hash-based message authentication code of the provided message
+ *
+ * Results:
+ *	NS_OK
+ *
+ * Side effects:
+ *	Tcl result is set to a string value.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    unsigned char  digest[EVP_MAX_MD_SIZE];
+    char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
+    int            opt, result;
+    unsigned int   mdLength;
+    EVP_MD_CTX    *mdctx;
+    const EVP_MD  *md;
+    Tcl_Obj       *ctxObj;
+
+    static const char *const opts[] = {
+        "add",
+        "free",
+        "get",
+        "new",        
+        "string",
+        NULL
+    };
+
+    enum {
+        CAddIdx,
+        CFreeIdx,
+        CGetIdx,
+        CNewIdx,        
+        CStringIdx, 
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
+                            "option", 0, &opt) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    switch (opt) {
+    case CNewIdx:
+        {
+            const char    *digestName = "sha256";
+            Ns_ObjvSpec args[] = {
+                {"digest",  Ns_ObjvString, &digestName, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+
+            /* 
+             * Look up the Message Digest from OpenSSL
+             */
+            result = GetDigest(interp, digestName, &md);
+            if (result == TCL_ERROR) {
+                return result;
+            }
+            mdctx = NS_EVP_MD_CTX_new();
+            EVP_DigestInit_ex(mdctx, md, NULL);
+            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), mdctxType, mdctx);
+
+            break;
+        }
+        
+    case CFreeIdx:
+        {
+            Ns_ObjvSpec args[] = {
+                {"ctx",  Ns_ObjvObj, &ctxObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            
+            if (Ns_TclGetOpaqueFromObj(ctxObj, mdctxType, (void **)&mdctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdctxType);
+                return TCL_ERROR;
+            }
+
+            NS_EVP_MD_CTX_free(mdctx);
+            Ns_TclResetObjType(ctxObj, NULL);
+
+            break;
+        }
+
+    case CAddIdx:
+        {
+            Tcl_Obj       *messageObj;
+            int            messageLength;
+            const char    *message;
+            Ns_ObjvSpec    args[] = {
+                {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
+                {"message",  Ns_ObjvObj, &messageObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            
+            if (Ns_TclGetOpaqueFromObj(ctxObj, mdctxType, (void **)&mdctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdctxType);
+                return TCL_ERROR;
+            }
+
+            message = GetString(messageObj, &messageLength);
+            EVP_DigestUpdate(mdctx, message, messageLength);
+
+            break;
+        }
+
+    case CGetIdx:
+        {
+            EVP_MD_CTX    *partial_ctx;
+            Ns_ObjvSpec    args[] = {
+                {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            
+            if (Ns_TclGetOpaqueFromObj(ctxObj, mdctxType, (void **)&mdctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdctxType);
+                return TCL_ERROR;
+            }
+
+            partial_ctx = NS_EVP_MD_CTX_new();
+            EVP_MD_CTX_copy(partial_ctx, mdctx);
+            EVP_DigestFinal_ex(partial_ctx, digest, &mdLength);
+            NS_EVP_MD_CTX_free(partial_ctx);
+
+            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+
+            break;
+        }
+        
+    case CStringIdx:
+        {
+            Tcl_Obj       *messageObj;
+            const char    *message, *digestName = "sha256";
+            int            messageLength;
+            Ns_ObjvSpec lopts[] = {
+                {"-digest",  Ns_ObjvString, &digestName, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {"message", Ns_ObjvObj, &messageObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+
+            /* 
+             * Look up the Message Digest from OpenSSL
+             */
+            result = GetDigest(interp, digestName, &md);
+            if (result == TCL_ERROR) {
+                return result;
+            }
+
+            /*
+             * All input parameters are valid, get key and data.
+             */
+            message = GetString(messageObj, &messageLength);
+        
+            /*
+             * Call the Digest computation
+             */
+            mdctx = NS_EVP_MD_CTX_new();
+            EVP_DigestInit_ex(mdctx, md, NULL);
+            EVP_DigestUpdate(mdctx, message, messageLength);
+            EVP_DigestFinal_ex(mdctx, digest, &mdLength);
+            NS_EVP_MD_CTX_free(mdctx);    
+        
+            /*
+             * Convert the result to hex and return the hex string.
+             */
+            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+
+            break;
+        }
+    }
+    
+    return TCL_OK;
+}
 
 
 
@@ -438,6 +697,13 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 
 int
 NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
