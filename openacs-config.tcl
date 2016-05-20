@@ -19,6 +19,8 @@ set hostname		localhost
 set address_v4		127.0.0.1
 #set address_v6		::1
 
+
+
 # Note: If port is privileged (usually < 1024), OpenACS must be
 # started by root, and the run script must contain the flag 
 # '-b address:port' which matches the address and port 
@@ -75,6 +77,11 @@ set env(LANG) en_US.UTF-8
 ###################################################################### 
 #
 ns_logctl severity "Debug(ns:driver)" $debug
+
+set addresses {}
+set suffixes {}
+if {[info exists address_v4]} {lappend addresses $address_v4; lappend suffixes v4}
+if {[info exists address_v6]} {lappend addresses $address_v6; lappend suffixes v6}
 
 #---------------------------------------------------------------------
 #
@@ -306,9 +313,9 @@ ns_section ns/server/${server}/tdav/share/share1
 # Socket driver module (HTTP)  -- nssock 
 # 
 #---------------------------------------------------------------------
-if {[info exists address_v4]} {
-ns_section ns/server/${server}/module/nssock_v4
-	ns_param	address		$address_v4
+foreach address $addresses suffix $sufixes {
+    ns_section ns/server/${server}/module/nssock_$suffix
+	ns_param	address		$address
 	ns_param	hostname	$hostname
 	ns_param	port		$httpport	;# 80 or 443
 	ns_param	maxinput	[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
@@ -335,17 +342,7 @@ ns_section ns/server/${server}/module/nssock_v4
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
 	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
 }
-if {[info exists address_v6]} {
-ns_section ns/server/${server}/module/nssock_v6
-	ns_param	address		$address_v6
-	ns_param	hostname	$hostname
-	ns_param	port		$httpport	;# 80 or 443
-	ns_param	maxinput	[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
-	ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
-	ns_param	maxupload	100000	;# 0, when specified, spool uploads larger than this value to a temp file
-	ns_param	writerthreads	2	;# 0, number of writer threads
-	ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
-}
+
 
 #---------------------------------------------------------------------
 # 
@@ -409,8 +406,8 @@ ns_section ns/server/${server}/module/nspam
 # SSL
 # 
 #---------------------------------------------------------------------
-
-ns_section    "ns/server/${server}/module/nsssl"
+foreach address $addresses suffix $sufixes {
+    ns_section    "ns/server/${server}/module/nsssl_$suffix"
        ns_param		address    	$address
        ns_param		port       	$httpsport
        ns_param		hostname       	$hostname
@@ -424,7 +421,7 @@ ns_section    "ns/server/${server}/module/nsssl"
        #ns_param	writerstreaming	true	;# false
        #ns_param	deferaccept	true    ;# false, Performance optimization
        ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
-
+}
 
 #---------------------------------------------------------------------
 # 
