@@ -313,7 +313,7 @@ ns_section ns/server/${server}/tdav/share/share1
 # Socket driver module (HTTP)  -- nssock 
 # 
 #---------------------------------------------------------------------
-foreach address $addresses suffix $sufixes {
+foreach address $addresses suffix $suffixes {
     ns_section ns/server/${server}/module/nssock_$suffix
 	ns_param	address		$address
 	ns_param	hostname	$hostname
@@ -406,7 +406,7 @@ ns_section ns/server/${server}/module/nspam
 # SSL
 # 
 #---------------------------------------------------------------------
-foreach address $addresses suffix $sufixes {
+foreach address $addresses suffix $suffixes {
     ns_section    "ns/server/${server}/module/nsssl_$suffix"
        ns_param		address    	$address
        ns_param		port       	$httpsport
