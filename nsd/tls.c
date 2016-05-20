@@ -44,6 +44,23 @@
 #if OPENSSL_VERSION_NUMBER < 0x010100000
 # define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
 # define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
+
+/*
+ * The NEW/FREE interface is new in OpenSSL 1.1.0.  Before, HMAC_CTX_init and
+ * HMAC_CTX_cleanup were used. We provide here a forward compatible version.
+ */
+static HMAC_CTX *HMAC_CTX_new(void)
+{
+    HMAC_CTX *ctx = ns_malloc(sizeof(HMAC_CTX));
+    HMAC_CTX_init(ctx);
+    return ctx;
+}
+static void HMAC_CTX_free(HMAC_CTX *ctx)
+{
+    HMAC_CTX_cleanup(ctx);
+    ns_free(ctx);
+}
+
 #else
 # define NS_EVP_MD_CTX_new  EVP_MD_CTX_new
 # define NS_EVP_MD_CTX_free EVP_MD_CTX_free
@@ -67,7 +84,8 @@ static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *
  * Local variables defined in this file.
  */
 
-static const char *mdctxType  = "ns:mdctx";
+static const char *mdCtxType  = "ns:mdctx";
+static const char *hmacCtxType  = "ns:hmacctx";
 
 
 
@@ -363,7 +381,7 @@ GetString(Tcl_Obj *obj, int *lengthPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclHmacObjCmd --
+ * NsTclCryptoHmacObjCmd --
  *
  *      Returns a Hash-based message authentication code of the provided message
  *
@@ -376,76 +394,204 @@ GetString(Tcl_Obj *obj, int *lengthPtr)
  *----------------------------------------------------------------------
  */
 int
-NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     unsigned char  digest[EVP_MAX_MD_SIZE];
     char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
-    Tcl_Obj       *keyObj, *messageObj;
-    const char    *key, *message, *digestName = "sha256";
-    int            keyLength, messageLength, result;
+    int            opt, result;
     unsigned int   mdLength;
+    HMAC_CTX      *ctx;
     const EVP_MD  *md;
-    Ns_ObjvSpec lopts[] = {
-        {"-digest",  Ns_ObjvString, &digestName, NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec args[] = {
-        {"key",     Ns_ObjvObj, &keyObj, NULL},
-        {"message", Ns_ObjvObj, &messageObj, NULL},
-        {NULL, NULL, NULL, NULL}
+    Tcl_Obj       *ctxObj;
+
+    static const char *const opts[] = {
+        "add",
+        "free",
+        "get",
+        "new",        
+        "string",
+        NULL
     };
 
-    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
+    enum {
+        CAddIdx,
+        CFreeIdx,
+        CGetIdx,
+        CNewIdx,        
+        CStringIdx, 
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
+                            "option", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 
-    /* 
-     * Look up the Message digest from OpenSSL
-     */
-    result = GetDigest(interp, digestName, &md);
-    if (result == TCL_ERROR) {
-        return result;
-    }
-
-    /*
-     * All input parameters are valid, get key and data.
-     */
-    key = GetString(keyObj, &keyLength);
-    message = GetString(messageObj, &messageLength);
-
-    /*
-     * Call the HMAC computation
-     */
-#if OPENSSL_VERSION_NUMBER < 0x010100000
-    /*
-     * The interface has changed in OpenSSL 1.1.0
-     */
-    {
-        HMAC_CTX ctx;
-        HMAC_CTX_init(&ctx);
-        HMAC(md,
-             (const void *)key, keyLength,
-             (const void *)message, messageLength,
-             digest, &mdLength);
-        HMAC_CTX_cleanup(&ctx);
-    }
-#else
-    {
-        HMAC_CTX *ctx = HMAC_CTX_new();
-        HMAC(md,
-             (const void *)key, keyLength,
-             (const void *)message, messageLength,
-             digest, &mdLength);
-        HMAC_CTX_free(ctx);
-    }
-#endif    
+    switch (opt) {
+    case CNewIdx:
+        {
+            const char *digestName = "sha256", *keyString;
+            Tcl_Obj    *keyObj;
+            int         keyLength;
+            Ns_ObjvSpec args[] = {
+                {"digest",  Ns_ObjvString, &digestName, NULL},
+                {"key",     Ns_ObjvObj,    &keyObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
     
-    /*
-     * Convert the result to hex and return the hex string.
-     */
-    Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+
+            /* 
+             * Look up the Message Digest from OpenSSL
+             */
+            result = GetDigest(interp, digestName, &md);
+            if (result == TCL_ERROR) {
+                return result;
+            }
+            keyString = GetString(keyObj, &keyLength);
+            
+            ctx = HMAC_CTX_new();
+            HMAC_Init_ex(ctx, keyString, keyLength, md, NULL);
+            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
+
+            break;
+        }
+
+    case CFreeIdx:
+        {
+            Ns_ObjvSpec args[] = {
+                {"ctx",  Ns_ObjvObj, &ctxObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
     
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            
+            if (Ns_TclGetOpaqueFromObj(ctxObj, hmacCtxType, (void **)&ctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", hmacCtxType);
+                return TCL_ERROR;
+            }
+
+            HMAC_CTX_free(ctx);
+            Ns_TclResetObjType(ctxObj, NULL);
+
+            break;
+        }
+        
+    case CAddIdx:
+        {
+            Tcl_Obj       *messageObj;
+            int            messageLength;
+            const unsigned char *message;
+            Ns_ObjvSpec    args[] = {
+                {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
+                {"message",  Ns_ObjvObj, &messageObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            
+            if (Ns_TclGetOpaqueFromObj(ctxObj, hmacCtxType, (void **)&ctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", hmacCtxType);
+                return TCL_ERROR;
+            }
+
+            message = (const unsigned char *)GetString(messageObj, &messageLength);
+            HMAC_Update(ctx, message, messageLength);
+
+            break;
+        }
+
+    case CGetIdx:
+        {
+            HMAC_CTX     *partial_ctx;
+            Ns_ObjvSpec   args[] = {
+                {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+    
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            
+            if (Ns_TclGetOpaqueFromObj(ctxObj, hmacCtxType, (void **)&ctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", hmacCtxType);
+                return TCL_ERROR;
+            }
+
+            partial_ctx = HMAC_CTX_new();
+            HMAC_CTX_copy(partial_ctx, ctx);
+            HMAC_Final(partial_ctx, digest, &mdLength);
+            HMAC_CTX_free(partial_ctx);
+
+            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+
+            break;
+        }
+
+    case CStringIdx:
+        {
+            Tcl_Obj       *keyObj, *messageObj;
+            const char    *key, *message, *digestName = "sha256";
+            int            keyLength, messageLength, result;
+            unsigned int   mdLength;
+            const EVP_MD  *md;
+            Ns_ObjvSpec lopts[] = {
+                {"-digest",  Ns_ObjvString, &digestName, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {"key",     Ns_ObjvObj, &keyObj, NULL},
+                {"message", Ns_ObjvObj, &messageObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            fprintf(stderr, "NEW\n");
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+
+            /* 
+             * Look up the Message digest from OpenSSL
+             */
+            result = GetDigest(interp, digestName, &md);
+            if (result == TCL_ERROR) {
+                return result;
+            }
+
+            /*
+             * All input parameters are valid, get key and data.
+             */
+            key = GetString(keyObj, &keyLength);
+            message = GetString(messageObj, &messageLength);
+            
+            /*
+             * Call the HMAC computation.
+             */
+            ctx = HMAC_CTX_new();
+            HMAC(md,
+                 (const void *)key, keyLength,
+                 (const void *)message, messageLength,
+                 digest, &mdLength);
+            HMAC_CTX_free(ctx);
+    
+            /*
+             * Convert the result to hex and return the hex string.
+             */
+            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+            break;
+            
+        }
+    }
     return NS_OK;
 }
 
@@ -524,7 +670,7 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             }
             mdctx = NS_EVP_MD_CTX_new();
             EVP_DigestInit_ex(mdctx, md, NULL);
-            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), mdctxType, mdctx);
+            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), mdCtxType, mdctx);
 
             break;
         }
@@ -540,8 +686,8 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 return TCL_ERROR;
             }
             
-            if (Ns_TclGetOpaqueFromObj(ctxObj, mdctxType, (void **)&mdctx) != TCL_OK) {
-                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdctxType);
+            if (Ns_TclGetOpaqueFromObj(ctxObj, mdCtxType, (void **)&mdctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdCtxType);
                 return TCL_ERROR;
             }
 
@@ -566,8 +712,8 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 return TCL_ERROR;
             }
             
-            if (Ns_TclGetOpaqueFromObj(ctxObj, mdctxType, (void **)&mdctx) != TCL_OK) {
-                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdctxType);
+            if (Ns_TclGetOpaqueFromObj(ctxObj, mdCtxType, (void **)&mdctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdCtxType);
                 return TCL_ERROR;
             }
 
@@ -589,8 +735,8 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 return TCL_ERROR;
             }
             
-            if (Ns_TclGetOpaqueFromObj(ctxObj, mdctxType, (void **)&mdctx) != TCL_OK) {
-                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdctxType);
+            if (Ns_TclGetOpaqueFromObj(ctxObj, mdCtxType, (void **)&mdctx) != TCL_OK) {
+                Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdCtxType);
                 return TCL_ERROR;
             }
 
@@ -696,7 +842,7 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 }
 
 int
-NsTclHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
