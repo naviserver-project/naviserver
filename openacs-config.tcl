@@ -537,7 +537,8 @@ ns_section ns/server/${server}/modules
 	ns_param	nsproxy		${bindir}/nsproxy.so
         if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock.so }
         if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock.so }
-	# ns_param	nsssl		${bindir}/nsssl.so 
+        #if {[info exists address_v4]} { ns_param nsssl_v4 ${bindir}/nsssl.so }
+        #if {[info exists address_v6]} { ns_param nsssl_v6 ${bindir}/nsssl.so }
 
 	#
 	# Determine, if libthread is installed
