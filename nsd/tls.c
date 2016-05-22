@@ -45,21 +45,8 @@
 # define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
 # define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
 
-/*
- * The NEW/FREE interface is new in OpenSSL 1.1.0.  Before, HMAC_CTX_init and
- * HMAC_CTX_cleanup were used. We provide here a forward compatible version.
- */
-static HMAC_CTX *HMAC_CTX_new(void)
-{
-    HMAC_CTX *ctx = ns_malloc(sizeof(HMAC_CTX));
-    HMAC_CTX_init(ctx);
-    return ctx;
-}
-static void HMAC_CTX_free(HMAC_CTX *ctx)
-{
-    HMAC_CTX_cleanup(ctx);
-    ns_free(ctx);
-}
+static HMAC_CTX *HMAC_CTX_new(void);
+static void HMAC_CTX_free(HMAC_CTX *ctx) NS_GNUC_NONNULL(1);
 
 #else
 # define NS_EVP_MD_CTX_new  EVP_MD_CTX_new
@@ -84,9 +71,40 @@ static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *
  * Local variables defined in this file.
  */
 
-static const char *mdCtxType  = "ns:mdctx";
-static const char *hmacCtxType  = "ns:hmacctx";
+static const char * const mdCtxType  = "ns:mdctx";
+static const char * const hmacCtxType  = "ns:hmacctx";
 
+#if OPENSSL_VERSION_NUMBER < 0x010100000
+/*
+ *----------------------------------------------------------------------
+ *
+ * HMAC_CTX_new, HMAC_CTX_free --
+ *
+ *	Compatibility functions for older versions of OpenSSL.  The NEW/FREE
+ *      interface for HMAC_CTX is new in OpenSSL 1.1.0.  Before, HMAC_CTX_init
+ *      and HMAC_CTX_cleanup were used. We provide here a forward compatible
+ *      version.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ */
+static HMAC_CTX *HMAC_CTX_new(void)
+{
+    HMAC_CTX *ctx = ns_malloc(sizeof(HMAC_CTX));
+    HMAC_CTX_init(ctx);
+    return ctx;
+}
+
+static void HMAC_CTX_free(HMAC_CTX *ctx)
+{
+    NS_NONNULL_ASSERT(ctx != NULL);
+
+    HMAC_CTX_cleanup(ctx);
+    ns_free(ctx);
+}
+#endif
 
 
 /*
@@ -237,7 +255,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     SSL_set_fd(ssl, sock);
     SSL_set_connect_state(ssl);
     
-    while (1) {
+    for (;;) {
 	int rc, err;
 
 	Ns_Log(Debug, "ssl connect");
@@ -246,7 +264,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 
 	if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
 	    Ns_Time timeout = { 0, 10000 }; /* 10ms */
-	    Ns_SockTimedWait(sock, (unsigned int)(NS_SOCK_WRITE|NS_SOCK_READ), &timeout);
+	    Ns_SockTimedWait(sock, ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ), &timeout);
 	    continue;
 	}
 	break;
@@ -278,11 +296,11 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  */
 
 static void
-ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg)
+ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 {
     Tcl_Obj *listPtr = (Tcl_Obj *)arg;
     
-    if (m != NULL && from != NULL) {
+    if ((m != NULL) && (from != NULL)) {
         const char *mdName = EVP_MD_name(m);
         
         /* fprintf(stderr, "from %s to %to name <%s> type (nid) %d\n",from,to,mdName, EVP_MD_type(m)); */
@@ -290,7 +308,7 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg)
          * Apprarently, the list contains upper and lower case variants. Avoid
          * duplication.
          */
-        if (*from >= 'a' && *from <= 'z') {
+        if ((*from >= 'a') && (*from <= 'z')) {
             (void)Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(mdName, -1));
         }
     }
@@ -418,7 +436,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         CFreeIdx,
         CGetIdx,
         CNewIdx,        
-        CStringIdx, 
+        CStringIdx 
     };
 
     if (objc < 2) {
@@ -532,8 +550,8 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             HMAC_Final(partial_ctx, digest, &mdLength);
             HMAC_CTX_free(partial_ctx);
 
-            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+            Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, (int)mdLength*2));
 
             break;
         }
@@ -542,9 +560,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         {
             Tcl_Obj       *keyObj, *messageObj;
             const char    *key, *message, *digestName = "sha256";
-            int            keyLength, messageLength, result;
-            unsigned int   mdLength;
-            const EVP_MD  *md;
+            int            keyLength, messageLength;
             Ns_ObjvSpec lopts[] = {
                 {"-digest",  Ns_ObjvString, &digestName, NULL},
                 {NULL, NULL, NULL, NULL}
@@ -554,7 +570,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                 {"message", Ns_ObjvObj, &messageObj, NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            fprintf(stderr, "NEW\n");
+
             if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
@@ -586,7 +602,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             /*
              * Convert the result to hex and return the hex string.
              */
-            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
+            Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
             break;
             
@@ -636,7 +652,7 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         CFreeIdx,
         CGetIdx,
         CNewIdx,        
-        CStringIdx, 
+        CStringIdx
     };
 
     if (objc < 2) {
@@ -745,8 +761,8 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             EVP_DigestFinal_ex(partial_ctx, digest, &mdLength);
             NS_EVP_MD_CTX_free(partial_ctx);
 
-            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+            Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, (int)mdLength*2));
 
             break;
         }
@@ -787,15 +803,15 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
              */
             mdctx = NS_EVP_MD_CTX_new();
             EVP_DigestInit_ex(mdctx, md, NULL);
-            EVP_DigestUpdate(mdctx, message, messageLength);
+            EVP_DigestUpdate(mdctx, message, (unsigned long)messageLength);
             EVP_DigestFinal_ex(mdctx, digest, &mdLength);
             NS_EVP_MD_CTX_free(mdctx);    
         
             /*
              * Convert the result to hex and return the hex string.
              */
-            Ns_HexString( digest, digestChars, mdLength, NS_FALSE);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+            Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, (int)mdLength*2));
 
             break;
         }
