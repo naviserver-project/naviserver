@@ -365,7 +365,6 @@ proc ns_unregister_proc {args} {
 #
 #   Tcl shared variables. Use nsv_* instead.
 #
-
 proc ns_var {cmd {key ""} {value ""}} {
     ns_deprecated "nsv_*"
     switch $cmd {
@@ -381,13 +380,13 @@ proc ns_var {cmd {key ""} {value ""}} {
         }
     }
 }
+
 #
 # ns_hmac_sha2 --
 #
-#   compute a HMAC based on ns_sha
-#   use "ns_hmac -digest ..." instead
+#   compute a HMAC for key and message
+#   use "::crypto::hmac string -digest ..." instead
 #
-
 proc ns_hmac_sha2 args {
     set length 256
     
@@ -397,10 +396,27 @@ proc ns_hmac_sha2 args {
 	message
     } $args
     
-    ns_deprecated "ns_hmac -digest sha$length ..."
-    uplevel [list ns_hmac -digest sha$length $key $message]
+    ns_deprecated "::crypto::hmac string -digest sha$length ..."
+    uplevel [list ::crypto::hmac string -digest sha$length $key $message]
 }
 
+#
+# ns_sha2 --
+#
+#   compute a SHA2 digest for message
+#   use "::crypto::md string -digest ..." instead
+#
+proc ns_sha2 args {
+    set length 256
+    
+    ns_parseargs {
+	{-length 256}
+	message
+    } $args
+    
+    ns_deprecated "crypto::md string -digest sha$length ..."
+    uplevel [list crypto::md string -digest sha$length $message]
+}
 
 
 # EOF

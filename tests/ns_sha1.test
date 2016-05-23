@@ -54,10 +54,10 @@ test ns_sha1-2.6 {checksum from binary file} -body {
 
 test ns_sha2-1.1 {basic syntax: plain call} -body {
      ns_sha2
-} -returnCodes error -result {wrong # args: should be "ns_sha2 ?-length length? data"}
+} -returnCodes error -result {wrong # args: should be "?-length length? message"}
 test ns_sha2-1.2 {basic syntax: plain call} -body {
      ns_sha2 -length 123 x
-} -returnCodes error -result {bad option "123": must be 224, 256, 384, or 512}
+} -returnCodes error -result {Unknown value for digest "sha123", valid: DSA DSA-SHA ecdsa-with-SHA1 MD4 MD5 MDC2 RIPEMD160 SHA SHA1 SHA224 SHA256 SHA384 SHA512 whirlpool}
 
 test ns_sha2-2.0 {basic operation} -body {
      ns_sha2 foo
