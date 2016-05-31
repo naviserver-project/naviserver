@@ -262,6 +262,14 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     }
 
     /*
+     * The url may not contain a newline (possible reponse splitting attack)
+     */
+    p = strrchr(url, '\n');
+    if (p != NULL) {
+        goto done;
+    }
+   
+    /*
      * Look for a protocol in the URL.
      */
     request->protocol = NULL;
