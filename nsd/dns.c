@@ -278,21 +278,16 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     r = ns_inet_pton(saPtr, addr);
     if (r > 0) {
         char buf[NI_MAXHOST];
-        const char  *host;
+        int  err;
 
-        int err = getnameinfo(saPtr,
-                              (sa.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
-                              buf, sizeof(buf),
-                              NULL, 0, NI_NAMEREQD);
+        err = getnameinfo(saPtr,
+                          (sa.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+                          buf, sizeof(buf),
+                          NULL, 0, NI_NAMEREQD);
         if (err != 0) {
             Ns_Log(Notice, "dns: getnameinfo failed for addr <%s>: %s", addr, gai_strerror(err));
-            host = NULL;
         } else {
-            host = buf;
-        }
-
-        if (host != NULL) {
-            Ns_DStringAppend(dsPtr, host);
+            Ns_DStringAppend(dsPtr, buf);
             result = NS_TRUE;
         }
     }
