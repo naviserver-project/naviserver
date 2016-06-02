@@ -692,7 +692,7 @@ Ns_Stat(const char *path, struct stat *stPtr)
     NS_NONNULL_ASSERT(stPtr != NULL);
 
     if (stat(path, stPtr) != 0) {
-        if (errno != ENOENT && errno != EACCES) {
+        if (errno != ENOENT && errno != EACCES && errno != ENOTDIR) {
             Ns_Log(Error, "fastpath: stat(%s) failed: %s",
                    path, strerror(errno));
         }
