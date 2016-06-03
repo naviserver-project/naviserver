@@ -155,7 +155,7 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     const char     *path, *section;
     size_t          i;
-    Ns_Set         *set;
+    const Ns_Set   *set;
     Ns_DString      ds;
     Mod		   *modPtr;
     static int	    initialized = 0;
@@ -266,7 +266,7 @@ Ns_ModuleInit(const char *server, const char *module)
 static int
 CgiRequest(void *arg, Ns_Conn *conn)
 {
-    Map		   *mapPtr;
+    const Map	   *mapPtr;
     Mod		   *modPtr;
     Cgi		    cgi;
     int             status;
@@ -729,10 +729,10 @@ CgiFree(Cgi *cgiPtr)
 static int
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int i, opipe[2];
-    char *s, *e, *p;
+    int         i, opipe[2];
+    char       *s, *e, *p;
     Ns_DString *dsPtr;
-    Mod *modPtr;
+    const Mod  *modPtr;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -759,7 +759,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
     if (modPtr->flags & CGI_SYSENV) {
-	char **envp = Ns_CopyEnviron(dsPtr);
+	char *const*envp = Ns_CopyEnviron(dsPtr);
 	while (*envp != NULL) {
 	    s = *envp;
 	    e = strchr(s, '=');

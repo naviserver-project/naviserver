@@ -39,8 +39,8 @@ for this host.
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_hostbyaddr]
+[see_also ns_hostbyaddr]
+[keywords dns]
 
 [manpage_end]
 

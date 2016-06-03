@@ -391,13 +391,13 @@ EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 int
 NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = arg;
-    Tcl_DString *dsPtr;
-    int          result;
-    unsigned int flags;
-    const char  *file;
-    int          tcl = 0, nocache = 0, nargs = 0;
-    Ns_Time     *ttlPtr = NULL;
+    NsInterp      *itPtr = arg;
+    Tcl_DString   *dsPtr;
+    int            result;
+    unsigned int   flags;
+    const char    *file;
+    int            tcl = 0, nocache = 0, nargs = 0;
+    const Ns_Time *ttlPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cache",       Ns_ObjvTime,   &ttlPtr,  NULL},
@@ -636,7 +636,7 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 int
 NsTclAdpDirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
+    const NsInterp *itPtr = arg;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -1007,8 +1007,8 @@ NsTclAdpBindArgsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 int
 NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
-    int       boolValue;
+    const NsInterp *itPtr = arg;
+    int             boolValue;
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?varName?");
@@ -1163,8 +1163,8 @@ NsTclAdpDebugObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 int
 NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
-    Ns_Conn  *conn  = itPtr->conn;
+    const NsInterp *itPtr = arg;
+    Ns_Conn        *conn  = itPtr->conn;
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?mimetype?");
@@ -1202,7 +1202,7 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static int
 GetFrame(ClientData arg, AdpFrame **framePtrPtr)
 {
-    NsInterp *itPtr;
+    const NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(framePtrPtr != NULL);

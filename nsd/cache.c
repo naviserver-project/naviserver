@@ -195,9 +195,9 @@ Ns_CacheDestroy(Ns_Cache *cache)
 Ns_Entry *
 Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
 {
-    Cache         *cachePtr = (Cache *) cache;
-    Tcl_HashEntry *hPtr;
-    Entry         *ePtr;
+    Cache               *cachePtr = (Cache *) cache;
+    const Tcl_HashEntry *hPtr;
+    Entry               *ePtr;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -353,7 +353,7 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
 const char *
 Ns_CacheKey(Ns_Entry *entry)
 {
-    Entry *ePtr;
+    const Entry *ePtr;
 
     NS_NONNULL_ASSERT(entry != NULL);
 
@@ -547,7 +547,7 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 void
 Ns_CacheFlushEntry(Ns_Entry *entry)
 {
-    Entry *ePtr;
+    const Entry *ePtr;
 
     NS_NONNULL_ASSERT(entry != NULL);
 
@@ -630,8 +630,8 @@ Ns_CacheFlush(Ns_Cache *cache)
 Ns_Entry *
 Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 {
-    Cache          *cachePtr = (Cache *) cache;
-    Tcl_HashEntry  *hPtr;
+    Cache               *cachePtr = (Cache *) cache;
+    const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(search != NULL);
@@ -674,7 +674,7 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 Ns_Entry *
 Ns_CacheNextEntry(Ns_CacheSearch *search)
 {
-    Tcl_HashEntry  *hPtr;
+    const Tcl_HashEntry  *hPtr;
 
     NS_NONNULL_ASSERT(search != NULL);
 
@@ -883,9 +883,9 @@ Ns_CacheBroadcast(Ns_Cache *cache)
 char *
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 {
-    Cache          *cachePtr;
+    const Cache    *cachePtr;
     unsigned long   count, hitrate;
-    Entry          *ePtr;
+    const Entry    *ePtr;
     Ns_CacheSearch  search;
     double          savedCost = 0.0;
 

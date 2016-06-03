@@ -258,7 +258,7 @@ Ns_ConnContentSize(const Ns_Conn *conn)
 const char *
 Ns_ConnContentFile(const Ns_Conn *conn)
 {
-    Sock *sockPtr;
+    const Sock *sockPtr;
     
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -285,7 +285,7 @@ Ns_ConnContentFile(const Ns_Conn *conn)
 int
 Ns_ConnContentFd(const Ns_Conn *conn)
 {
-    Sock *sockPtr;
+    const Sock *sockPtr;
     
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -473,7 +473,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
 char *
 Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr)
 {
-    Conn *connPtr;
+    const Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
@@ -603,8 +603,8 @@ Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
 const char *
 Ns_ConnLocation(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
-    NsServer *servPtr = connPtr->poolPtr->servPtr;
+    const Conn *connPtr = (Conn *) conn;
+    NsServer   *servPtr = connPtr->poolPtr->servPtr;
     const char *location = NULL;
 
     if (servPtr->vhost.locationProc != NULL) {
@@ -638,10 +638,11 @@ Ns_ConnLocation(Ns_Conn *conn)
 char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 {
-    Conn       *connPtr;
-    NsServer   *servPtr;
-    Ns_Set     *headers;
-    char       *location, *host;
+    const Conn     *connPtr;
+    const NsServer *servPtr;
+    const Ns_Set   *headers;
+    const char     *host;
+    char           *location;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(dest != NULL);
@@ -784,7 +785,7 @@ Ns_ConnPort(const Ns_Conn *conn)
 NS_SOCKET
 Ns_ConnSock(const Ns_Conn *conn)
 {
-    Sock *sockPtr;
+    const Sock *sockPtr;
     
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -1011,9 +1012,9 @@ Ns_ConnTimeSpans(const Ns_Conn *conn,
  */
 void
 Ns_ConnTimeStats(Ns_Conn *conn) {
-    Conn       *connPtr;
-    ConnPool   *poolPtr;
-    Ns_Time     now;
+    Conn     *connPtr;
+    ConnPool *poolPtr;
+    Ns_Time   now;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -1122,7 +1123,7 @@ NsConnIdStr(const Ns_Conn *conn)
 bool
 Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
 {
-    ConnPool   *poolPtr;
+    const ConnPool *poolPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -1297,19 +1298,19 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
 int
 NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = clientData;
-    Ns_Conn *conn = itPtr->conn;
-    Conn *connPtr = (Conn *) conn;
-    Ns_Request *request;
-    Tcl_Encoding encoding;
-    Tcl_Channel chan;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    FormFile *filePtr;
-    Ns_DString ds;
-    int idx, off, len, opt, n;
-    const char *setName;
-    int         setNameLength;
+    NsInterp            *itPtr = clientData;
+    Ns_Conn             *conn = itPtr->conn;
+    Conn                *connPtr = (Conn *) conn;
+    const Ns_Request    *request;
+    Tcl_Encoding         encoding;
+    Tcl_Channel          chan;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+    const FormFile      *filePtr;
+    Ns_DString           ds;
+    int                  idx, off, len, opt, n;
+    const char          *setName;
+    int                  setNameLength;
 
     static const char *const opts[] = {
 	"auth", "authpassword", "authuser", 
@@ -1461,7 +1462,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             bool        binary = NS_FALSE;
             int         offset = 0, length = -1, requiredLength;
             size_t      contentLength;
-            char       *content;
+            const char *content;
             Tcl_DString encDs;
             
             Ns_ObjvSpec lopts[] = {
@@ -1863,9 +1864,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 int
 NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsServer *servPtr = NsGetInitServer();
+    const NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
-    int result;
+    int             result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
@@ -1902,11 +1903,11 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    int          toCopy = 0;
-    const char  *chanName;
-    Request     *reqPtr;
-    Tcl_Channel  chan;
+    const NsInterp *itPtr = clientData;
+    int             toCopy = 0;
+    const char     *chanName;
+    const Request  *reqPtr;
+    Tcl_Channel     chan;
 
     /*
      * Syntax: ns_conncptofp ?-bytes tocopy? channel
@@ -1968,8 +1969,8 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 char *
 NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, void *arg)
 {
-    Ns_TclCallback *cbPtr = arg;
-    Tcl_Interp *interp = Ns_GetConnInterp(conn);
+    const Ns_TclCallback *cbPtr = arg;
+    Tcl_Interp           *interp = Ns_GetConnInterp(conn);
 
     if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != NS_OK) {
 	(void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
@@ -2001,7 +2002,7 @@ static int
 GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
 {
     Tcl_Channel chan;
-    int mode;
+    int         mode;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(id != NULL);

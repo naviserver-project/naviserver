@@ -473,8 +473,8 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                    && itPtr->adp.debugFile != NULL
                    && (p = strrchr(file, '/')) != NULL
                    && Tcl_StringMatch(p+1, itPtr->adp.debugFile) != 0) {
-        Ns_Set *hdrs;
-        char *host, *port, *procs;
+        const Ns_Set *hdrs;
+        const char   *host, *port, *procs;
 
         hdrs = Ns_ConnGetQuery(itPtr->conn);
         host = Ns_SetIGet(hdrs, "dhost");
@@ -583,9 +583,9 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
      */
 
     if (ipagePtr != NULL) {
-	AdpCode  *codePtr;
-        Objs *objsPtr;
-	int   cacheGen = 0;
+	const AdpCode *codePtr;
+        Objs          *objsPtr;
+	int            cacheGen = 0;
 
         pagePtr = ipagePtr->pagePtr;
         if (expiresPtr == NULL || (itPtr->adp.flags & ADP_CACHE) == 0u) {
@@ -788,7 +788,7 @@ int
 NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, 
 		 int UNUSED(argc), CONST char* UNUSED(argv[]))
 {
-    NsInterp       *itPtr = arg;
+    const NsInterp *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_DString      ds;
     Tcl_HashSearch  search;
@@ -799,8 +799,8 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp,
     Ns_MutexLock(&servPtr->adp.pagelock);
     hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
     while (hPtr != NULL) {
-	Page  *pagePtr = Tcl_GetHashValue(hPtr);
-        char  *file    = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+	const Page *pagePtr = Tcl_GetHashValue(hPtr);
+        char       *file    = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
 
         Ns_DStringPrintf(&ds, "{%s} "
             "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
@@ -959,13 +959,13 @@ done:
 void
 NsAdpLogError(NsInterp *itPtr)
 {
-    Tcl_Interp  *interp;
-    Ns_Conn     *conn;
-    Ns_DString   ds;
-    AdpFrame    *framePtr;
-    char        *inc, *dot;
-    int          len;
-    const char  *err, *adp;
+    Tcl_Interp     *interp;
+    const Ns_Conn  *conn;
+    Ns_DString      ds;
+    const AdpFrame *framePtr;
+    char           *inc, *dot;
+    int             len;
+    const char     *err, *adp;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 

@@ -539,9 +539,9 @@ void *
 NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
                  unsigned int flags, NsUrlSpaceOp op)
 {
-    Ns_DString  ds, *dsPtr = &ds;
-    void       *data;
-    Junction   *junction;
+    Ns_DString      ds, *dsPtr = &ds;
+    void           *data;
+    const Junction *junction;
         
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -653,10 +653,10 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
 void
 Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
 {
-    Junction *juncPtr;
-    Channel  *channelPtr;
-    size_t    n, i;
-    char     *stack[STACK_SIZE];
+    const Junction *juncPtr;
+    const Channel  *channelPtr;
+    size_t          n, i;
+    char           *stack[STACK_SIZE];
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(func != NULL);
@@ -682,11 +682,11 @@ static void
 WalkTrie(const Trie *triePtr, Ns_ArgProc func,
          Ns_DString *dsPtr, char **stack, const char *filter)
 {
-    Branch      *branchPtr;
-    Node        *nodePtr;
-    int          depth;
-    size_t       i;
-    Tcl_DString  subDs;
+    const Branch *branchPtr;
+    const Node   *nodePtr;
+    int           depth;
+    size_t        i;
+    Tcl_DString   subDs;
 
     NS_NONNULL_ASSERT(triePtr != NULL);
     NS_NONNULL_ASSERT(func != NULL);
@@ -1172,10 +1172,10 @@ TrieDestroy(Trie *triePtr)
 static void *
 TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
 {
-    Node   *nodePtr;
-    Branch *branchPtr;
-    void   *data = NULL;
-    int     ldepth;
+    const Node   *nodePtr;
+    const Branch *branchPtr;
+    void         *data = NULL;
+    int           ldepth;
 
     NS_NONNULL_ASSERT(triePtr != NULL);
     NS_NONNULL_ASSERT(seq != NULL);
@@ -1247,9 +1247,9 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
 static void *
 TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 {
-    Node   *nodePtr;
-    Branch *branchPtr;
-    void   *data = NULL;
+    const Node   *nodePtr;
+    const Branch *branchPtr;
+    void         *data = NULL;
 
     NS_NONNULL_ASSERT(triePtr != NULL);
     NS_NONNULL_ASSERT(seq != NULL);
@@ -1310,9 +1310,9 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
 static void *
 TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
 {
-    Node   *nodePtr;
-    Branch *branchPtr;
-    void   *data = NULL;
+    Node         *nodePtr;
+    const Branch *branchPtr;
+    void         *data = NULL;
 
     NS_NONNULL_ASSERT(triePtr != NULL);
     NS_NONNULL_ASSERT(seq != NULL);
@@ -1736,11 +1736,11 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
 static void *
 JunctionFind(const Junction *juncPtr, char *seq)
 {
-    Channel *channelPtr;
-    char    *p;
-    size_t   i, l;
-    int      depth = 0;
-    void    *data;
+    const Channel *channelPtr;
+    const char    *p;
+    size_t         i, l;
+    int            depth = 0;
+    void          *data;
 
     NS_NONNULL_ASSERT(juncPtr != NULL);
     NS_NONNULL_ASSERT(seq != NULL);
@@ -1873,10 +1873,10 @@ JunctionFind(const Junction *juncPtr, char *seq)
 static void *
 JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
 {
-    Channel *channelPtr;
-    char    *p;
-    size_t  l, i;
-    void   *data = NULL;
+    const Channel *channelPtr;
+    char          *p;
+    size_t         l, i;
+    void          *data = NULL;
 
     NS_NONNULL_ASSERT(juncPtr != NULL);
     NS_NONNULL_ASSERT(seq != NULL);
@@ -1968,11 +1968,11 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
 static void *
 JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
 {
-    Channel *channelPtr;
-    char    *p;
-    size_t   i, l;
-    /*int      depth = 0;*/
-    void    *data = NULL;
+    const Channel *channelPtr;
+    char          *p;
+    size_t         i, l;
+    /*int          depth = 0;*/
+    void          *data = NULL;
 
     NS_NONNULL_ASSERT(juncPtr != NULL);
     NS_NONNULL_ASSERT(seq != NULL);
@@ -2258,10 +2258,10 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
 int
 NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr = itPtr->servPtr;
-    int          opt, id = -1;
-    char        *key = ".";
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             opt, id = -1;
+    const char     *key = ".";
 
     static const char *const opts[] = {
         "get", "list", "new", "set", "unset", 

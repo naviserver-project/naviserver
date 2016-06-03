@@ -133,11 +133,11 @@ CallbackFree(Callback *cbPtr)
  */
 static NsConnChan *
 ConnChanCreate(NsServer *servPtr, Sock *sockPtr, const Ns_Time *startTime, const char *peer, bool binary, const char *clientData) {
-    static uintptr_t  connchanCount = 0;
-    NsConnChan       *connChanPtr;
-    Tcl_HashEntry    *hPtr;
-    char              name[5 + TCL_INTEGER_SPACE];
-    int               isNew;
+    static uintptr_t     connchanCount = 0;
+    NsConnChan          *connChanPtr;
+    Tcl_HashEntry       *hPtr;
+    char                 name[5 + TCL_INTEGER_SPACE];
+    int                  isNew;
     
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(sockPtr != NULL);
@@ -198,8 +198,8 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr, const Ns_Time *startTime, const
  */
 static void
 ConnChanFree(NsConnChan *connChanPtr) {
-    NsServer *servPtr;
-    Tcl_HashEntry  *hPtr;
+    NsServer      *servPtr;
+    Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(connChanPtr != NULL);
     assert(connChanPtr->sockPtr != NULL);
@@ -254,8 +254,8 @@ ConnChanFree(NsConnChan *connChanPtr) {
  */
 static NsConnChan *
 ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
-    Tcl_HashEntry  *hPtr;
-    NsConnChan     *connChanPtr = NULL;
+    const Tcl_HashEntry *hPtr;
+    NsConnChan          *connChanPtr = NULL;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
@@ -296,11 +296,11 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 static bool
 NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
-    Tcl_DString  script;
-    Callback    *cbPtr;
-    Tcl_Interp  *interp;
-    const char  *w;
-    int          result;
+    Tcl_DString     script;
+    const Callback *cbPtr;
+    Tcl_Interp     *interp;
+    const char     *w;
+    int             result;
 
     NS_NONNULL_ASSERT(arg != NULL);
 
@@ -513,7 +513,7 @@ DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flag
 int
 NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = clientData;
+    const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, opt;
     const char     *name = NULL;
@@ -590,18 +590,18 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             /*
              * ns_connchan open
              */
-            const char  *url;
-            Sock        *sockPtr;
-            Ns_Set      *hdrPtr = NULL;
-            char        *method = "GET";
-            Ns_Time      timeout = {1, 0}, *timeoutPtr = &timeout; 
-            Ns_ObjvSpec  lopts[] = {
+            const char   *url;
+            Sock         *sockPtr;
+            Ns_Set       *hdrPtr = NULL;
+            char         *method = "GET";
+            Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
+            Ns_ObjvSpec   lopts[] = {
                 {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
                 {"-method",  Ns_ObjvString, &method, NULL},
                 {"-timeout",  Ns_ObjvTime,  &timeoutPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            Ns_ObjvSpec  largs[] = {
+            Ns_ObjvSpec   largs[] = {
                 {"url", Ns_ObjvString, &url, NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -781,19 +781,19 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             /*
              * ns_connchan callback
              */
-            const char *script, *whenString;
-            Ns_Time     *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
+            const char    *script, *whenString;
+            const Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
             
             Ns_ObjvSpec lopts[] = {
-                {"-timeout",    Ns_ObjvTime, &pollTimeoutPtr, NULL},
+                {"-timeout",        Ns_ObjvTime, &pollTimeoutPtr, NULL},
                 {"-receivetimeout", Ns_ObjvTime, &recvTimeoutPtr, NULL},
                 {"-sendtimeout",    Ns_ObjvTime, &sendTimeoutPtr, NULL},
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
                 {"channel", Ns_ObjvString, &name, NULL},
-                {"script", Ns_ObjvString, &script, NULL},
-                {"when", Ns_ObjvString, &whenString, NULL},
+                {"script",  Ns_ObjvString, &script, NULL},
+                {"when",    Ns_ObjvString, &whenString, NULL},
                 {NULL, NULL, NULL, NULL}
             };
 

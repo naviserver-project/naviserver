@@ -589,8 +589,8 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
     Tcl_DStringInit(&pds);
     if (GetLine(sessPtr->sock, "login: ", &uds, 1) != 0 &&
 	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo) != 0) {
-        Tcl_HashEntry  *hPtr;
-	const char     *pass;
+        const Tcl_HashEntry *hPtr;
+	const char          *pass;
 
 	user = Ns_StrTrim(uds.string);
 	pass = Ns_StrTrim(pds.string);

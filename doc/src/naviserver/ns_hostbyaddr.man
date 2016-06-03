@@ -35,8 +35,8 @@ IP Address to be resolved into hostname
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_addrbyhost]
+[see_also ns_addrbyhost]
+[keywords dns]
 
 [manpage_end]
 

@@ -171,9 +171,10 @@ Ns_PathIsAbsolute(const char *path)
 char *
 Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
 {
-    char end;
-    register char *src, *slash;
-    Ns_DString tmp;
+    char                 end;
+    register char       *src;
+    register const char *slash;
+    Ns_DString           tmp;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(path != NULL);
@@ -207,7 +208,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
         ++src;
     }
     do {
-	register char *part = src;
+	register const char *part = src;
 
         /*
          * Move to next slash
@@ -505,9 +506,9 @@ Ns_HomePathExists(const char *path, ...)
 char *
 Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...)
 {
-    NsServer *servPtr;
-    va_list   ap;
-    char     *path;
+    const NsServer *servPtr;
+    va_list         ap;
+    char           *path;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
@@ -544,9 +545,9 @@ Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...)
 char *
 Ns_PagePath(Ns_DString *dsPtr, const char *server, ...)
 {
-    NsServer *servPtr;
-    va_list   ap;
-    char     *path;
+    const NsServer *servPtr;
+    va_list         ap;
+    char           *path;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
@@ -734,9 +735,9 @@ NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 int
 NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString      ds;
-    int         i;
-    char       *module;
+    Ns_DString    ds;
+    int           i;
+    const char   *module;
 
     Ns_DStringInit(&ds);
     if (objc < 2) {
@@ -791,11 +792,11 @@ NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr;
-    Ns_DString   ds;
-    char        *host = NULL;
-    int          i, npaths = 0;
+    const NsInterp *itPtr = clientData;
+    const NsServer *servPtr;
+    Ns_DString      ds;
+    const char     *host = NULL;
+    int             i, npaths = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-host", Ns_ObjvString, &host, NULL},
@@ -855,7 +856,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 int
 NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsServer       *servPtr = NsGetInitServer();
+    const NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
     int             result;
 
@@ -894,7 +895,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
 char *
 NsTclServerRoot(Ns_DString *dest, const char *host, void *arg)
 {
-    Ns_TclCallback *cbPtr = arg;
+    const Ns_TclCallback *cbPtr = arg;
 
     if (Ns_TclEvalCallback(NULL, cbPtr, dest, host, NULL) != NS_OK) {
         return NULL;
@@ -976,10 +977,10 @@ MakePath(Ns_DString *dest, va_list *pap)
 static char *
 ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 {
-    char       *safehost, *path;
-    Ns_Conn    *conn;
-    Ns_Set     *headers;
-    Ns_DString  ds;
+    char           *safehost, *path;
+    const Ns_Conn  *conn;
+    const Ns_Set   *headers;
+    Ns_DString      ds;
 
     NS_NONNULL_ASSERT(dest != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
