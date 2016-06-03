@@ -344,11 +344,11 @@ static int
 CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int append)
 {
     NsInterp   *itPtr = arg;
-    TclCache   *cPtr;
+    TclCache   *cPtr = NULL;
     Ns_Entry   *entry;
     Tcl_Obj    *valObj;
-    const char *key;
-    int         i, isNew, nelements;
+    const char *key = NULL;
+    int         i, isNew, nelements = 0;
     Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
