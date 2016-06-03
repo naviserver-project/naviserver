@@ -289,7 +289,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              * Parse: first-byte-pos "-" last-byte-pos
              */
 
-	    start = (off_t)atoll(rangestr);
+	    start = (off_t)strtoll(rangestr, NULL, 10);
             while (CHARTYPE(digit, *rangestr) != 0) {
                 rangestr++;
             }
@@ -300,7 +300,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
             rangestr++; /* Skip '-' */
 
             if (CHARTYPE(digit, *rangestr) != 0) {
-	        end = (off_t)atoll(rangestr);
+	        end = (off_t)strtoll(rangestr, NULL, 10);
                 while (CHARTYPE(digit, *rangestr) != 0) {
                     rangestr++;
                 }
@@ -322,7 +322,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 return 0; /* Invalid syntax? */
             }
 
-            end = (off_t)atoll(rangestr);
+            end = (off_t)strtoll(rangestr, NULL, 10);
             while (CHARTYPE(digit, *rangestr) != 0) {
                 rangestr++;
             }

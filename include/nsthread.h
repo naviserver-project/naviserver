@@ -144,7 +144,6 @@ typedef int64_t ssize_t;
 typedef int32_t ssize_t;
 #  endif
 
-#  define atoll                       _atoi64
 #  define strtoll                     _strtoi64
 
 #  define access                      _access
