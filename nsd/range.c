@@ -252,7 +252,7 @@ static int
 ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                   Range *ranges, int maxRanges)
 {
-    const char *rangestr;
+    char   *rangestr;
     off_t   start, end;
     Range  *thisPtr = NULL, *prevPtr = NULL;
     int     rangeCount = 0;
@@ -289,21 +289,14 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              * Parse: first-byte-pos "-" last-byte-pos
              */
 
-	    start = (off_t)strtoll(rangestr, NULL, 10);
-            while (CHARTYPE(digit, *rangestr) != 0) {
-                rangestr++;
-            }
-
+	    start = (off_t)strtoll(rangestr, &rangestr, 10);
             if (*rangestr != '-') {
                 return 0; /* Invalid syntax? */
             }
             rangestr++; /* Skip '-' */
 
             if (CHARTYPE(digit, *rangestr) != 0) {
-	        end = (off_t)strtoll(rangestr, NULL, 10);
-                while (CHARTYPE(digit, *rangestr) != 0) {
-                    rangestr++;
-                }
+	        end = (off_t)strtoll(rangestr, &rangestr, 10);
                 if (end >= (off_t)objLength) {
 		  end = (off_t)objLength - 1;
                 }
@@ -322,11 +315,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 return 0; /* Invalid syntax? */
             }
 
-            end = (off_t)strtoll(rangestr, NULL, 10);
-            while (CHARTYPE(digit, *rangestr) != 0) {
-                rangestr++;
-            }
-
+            end = (off_t)strtoll(rangestr, &rangestr, 10);
             if (end >= (off_t)objLength) {
 	      end = (off_t)objLength;
             }

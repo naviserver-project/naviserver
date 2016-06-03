@@ -1779,7 +1779,7 @@ RequestFree(Sock *sockPtr)
     Ns_Log(DriverDebug, "=== RequestFree cleans %p (avail %lu keep %d length %lu contentLength %lu)",
            (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
 
-    keep = (sockPtr->keep > 0) && (reqPtr->avail > reqPtr->contentLength);
+    keep = (sockPtr->keep == NS_TRUE) && (reqPtr->avail > reqPtr->contentLength);
     if (keep) {
         size_t      leftover = reqPtr->avail - reqPtr->contentLength;
         const char *offset   = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
