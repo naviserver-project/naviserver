@@ -486,7 +486,9 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             if (rowPtr == NULL) {
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
             }
-            Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC);
+            if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             break;
 
         case ROWCOUNT:
@@ -533,7 +535,9 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 	    if (rowPtr == NULL) {
 	        return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
 	    }
-	    Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC);
+	    if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             break;
 
         case SP_RETURNCODE:
@@ -593,7 +597,9 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             if (rowPtr == NULL) {
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
             }
-            Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC);
+            if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             break;
 
         case ZERO_OR_ONE_ROW:
@@ -603,8 +609,8 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             }
             if (nrows == 0) {
                 Ns_SetFree(rowPtr);
-            } else {
-                Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC);
+            } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                return TCL_ERROR;
             }
             break;
 
@@ -626,7 +632,9 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             if (rowPtr == NULL) {
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
             }
-            Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC);
+            if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             break;
 
         case SP_START:

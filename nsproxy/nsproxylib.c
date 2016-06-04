@@ -1840,8 +1840,10 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 
     if (objc == 3) {
         Tcl_AppendElement(interp, flags[CEnvIdx]);
-        if (poolPtr->env) {
-            Ns_TclEnterSet(interp, poolPtr->env, 0);
+        if (poolPtr->env != NULL) {
+            if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
         } else {
             Tcl_AppendElement(interp, "");
         }
@@ -1893,7 +1895,9 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             break;
         case CEnvIdx:
             if (poolPtr->env) {
-                Ns_TclEnterSet(interp, poolPtr->env, 0);
+                if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                    return TCL_ERROR;
+                }
             } else {
                 Tcl_AppendElement(interp, "");
             }

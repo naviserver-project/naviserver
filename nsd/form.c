@@ -435,7 +435,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
                 filePtr = Tcl_GetHashValue(hPtr);
             }
 
-            Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
+            (void) Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
             Tcl_ListObjAppendElement(interp, filePtr->hdrObj,
                                      Tcl_GetObjResult(interp));
             Tcl_ResetResult(connPtr->itPtr->interp);

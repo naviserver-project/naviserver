@@ -302,7 +302,9 @@ NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         goto done;
     }
     if (objc == 3) {
-        Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC);
+        if (Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC) != TCL_OK) {
+            goto done;
+        }
         if (Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_GetObjResult(interp),
                            TCL_LEAVE_ERR_MSG) == NULL) {
             goto done;
@@ -310,6 +312,7 @@ NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     }
     Tcl_DStringResult(interp, &ds);
     code = TCL_OK;
+    
 done:
     Ns_DStringFree(&ds);
 

@@ -1437,7 +1437,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             if (connPtr->auth == NULL) {
                 connPtr->auth = Ns_SetCreate(NULL);
             }
-            Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC);
+            if (unlikely(Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
             setNameLength++;
             memcpy(itPtr->nsconn.auth, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
@@ -1621,7 +1623,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (likely((itPtr->nsconn.flags & CONN_TCLHDRS) != 0u)) {
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
-            Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
+            if (unlikely(Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
             setNameLength++;
             memcpy(itPtr->nsconn.hdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
@@ -1633,7 +1637,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (likely((itPtr->nsconn.flags & CONN_TCLOUTHDRS) != 0u)) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
-            Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
+            if (unlikely(Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC) != TCL_OK)) {
+                return TCL_ERROR;
+            }
             setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
             setNameLength++;
             memcpy(itPtr->nsconn.outhdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
@@ -1650,7 +1656,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             if (form == NULL) {
                 itPtr->nsconn.form[0] = '\0';
             } else {
-                Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC);
+                if (unlikely(Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC) != TCL_OK)) {
+                    return TCL_ERROR;
+                }
                 setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
                 setNameLength++;
                 memcpy(itPtr->nsconn.form, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
