@@ -841,7 +841,8 @@ int
 NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     AdpFrame *framePtr = NULL;
-    Tcl_Obj  *result;
+    Tcl_Obj  *resultObj;
+    int       result;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -850,13 +851,19 @@ NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    result = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(framePtr->file, -1));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->mtime));
-    Tcl_SetObjResult(interp, result);
+    resultObj = Tcl_NewListObj(0, NULL);
+    result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(framePtr->file, -1));
+    if (likely(result == TCL_OK)) {
+        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
+    }
+    if (likely(result == TCL_OK)) {    
+        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(framePtr->mtime));
+    }
+    if (likely(result == TCL_OK)) {
+        Tcl_SetObjResult(interp, resultObj);
+    }
 
-    return TCL_OK;
+    return result;
 }
 
 /*

@@ -381,8 +381,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     for (i = objc - nelements; i < objc; i++) {
         if (append != 0) {
             Tcl_AppendObjToObj(valObj, objv[i]);
-        } else if (Tcl_ListObjAppendElement(interp, valObj, objv[i])
-                   != TCL_OK) {
+        } else if (Tcl_ListObjAppendElement(interp, valObj, objv[i]) != TCL_OK) {
             Ns_CacheUnlock(cPtr->cache);
             return TCL_ERROR;
         }

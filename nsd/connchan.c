@@ -109,7 +109,7 @@ CallbackFree(Callback *cbPtr)
     NS_NONNULL_ASSERT(cbPtr != NULL);
     NS_NONNULL_ASSERT(cbPtr->connChanPtr != NULL);
     
-    Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
+    (void)Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
     cbPtr->connChanPtr->cbPtr = NULL;
     
     ns_free(cbPtr);

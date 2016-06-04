@@ -537,10 +537,10 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;
     Tcl_HashSearch  search;
-    Tcl_Obj        *result;
+    Tcl_Obj        *resultObj;
     Bucket         *bucketPtr;
     const char     *pattern, *key;
-    int             i;
+    int             i, result = TCL_OK;
 
     if (unlikely(objc != 1 && objc !=2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
@@ -552,7 +552,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
      * Walk the bucket list for each array.
      */
 
-    result = Tcl_GetObjResult(interp);
+    resultObj = Tcl_GetObjResult(interp);
     for (i = 0; i < servPtr->nsv.nbuckets; i++) {
         Tcl_HashEntry  *hPtr;
 
@@ -562,15 +562,21 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         while (hPtr != NULL) {
             key = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
             if ((pattern == NULL) || (Tcl_StringMatch(key, pattern) != 0)) {
-                Tcl_ListObjAppendElement(NULL, result,
-                                         Tcl_NewStringObj(key, -1));
+                result = Tcl_ListObjAppendElement(interp, resultObj,
+                                                  Tcl_NewStringObj(key, -1));
+                if (unlikely(result != TCL_OK)) {
+                    break;
+                }
             }
             hPtr = Tcl_NextHashEntry(&search);
         }
         Ns_MutexUnlock(&bucketPtr->lock);
+        if (unlikely(result != TCL_OK)) {
+            break;
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1356,7 +1362,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;
-    int		    bucketNr = -1, i;
+    int		    bucketNr = -1, i, result = TCL_OK;
     Bucket         *bucketPtr;
     Tcl_Obj        *resultObj, *listObj;
 
@@ -1392,17 +1398,28 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 	    const Array *arrayPtr = Tcl_GetHashValue(hPtr);
 	    Tcl_Obj     *elemObj  = Tcl_NewListObj(0, NULL);
 
-	    Tcl_ListObjAppendElement(NULL, elemObj, Tcl_NewStringObj(key, -1));
-	    Tcl_ListObjAppendElement(NULL, elemObj, Tcl_NewIntObj(arrayPtr->locks));
-	    Tcl_ListObjAppendElement(NULL, listObj, elemObj);
-
+	    result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewStringObj(key, -1));
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewIntObj(arrayPtr->locks));
+            }
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, listObj, elemObj);
+            }
+            if (unlikely(result != TCL_OK)) {
+                break;
+            }
             hPtr = Tcl_NextHashEntry(&search);
         }
         Ns_MutexUnlock(&bucketPtr->lock);
-	Tcl_ListObjAppendElement(interp, resultObj, listObj);
+        if (likely(result == TCL_OK)) {
+            result = Tcl_ListObjAppendElement(interp, resultObj, listObj);
+        }
+        if (unlikely(result != TCL_OK)) {
+            break;
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 /*

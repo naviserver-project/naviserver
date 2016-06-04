@@ -180,10 +180,14 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         envp = Ns_GetEnviron();
         result = Tcl_GetObjResult(interp);
         for (i = 0; envp[i] != NULL; ++i) {
+            Tcl_Obj *obj;
+            
             name = envp[i];
             value = strchr(name, '=');
-            Tcl_ListObjAppendElement(interp, result,
-		     Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : -1));
+            obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : -1);
+            if (Tcl_ListObjAppendElement(interp, result, obj) != TCL_OK) {
+                goto done;
+            }
         }
         break;
 

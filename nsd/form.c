@@ -436,15 +436,15 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
             }
 
             (void) Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
-            Tcl_ListObjAppendElement(interp, filePtr->hdrObj,
-                                     Tcl_GetObjResult(interp));
+            (void) Tcl_ListObjAppendElement(interp, filePtr->hdrObj,
+                                            Tcl_GetObjResult(interp));
             Tcl_ResetResult(connPtr->itPtr->interp);
                 
-            Tcl_ListObjAppendElement(interp, filePtr->offObj,
-                                     Tcl_NewIntObj((int)(start - connPtr->reqPtr->content)));
+            (void) Tcl_ListObjAppendElement(interp, filePtr->offObj,
+                                            Tcl_NewIntObj((int)(start - connPtr->reqPtr->content)));
             
-            Tcl_ListObjAppendElement(interp, filePtr->sizeObj,
-                                     Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
+            (void) Tcl_ListObjAppendElement(interp, filePtr->sizeObj,
+                                            Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
             set = NULL;
         }
         (void) Ns_SetPut(connPtr->query, key, value);
