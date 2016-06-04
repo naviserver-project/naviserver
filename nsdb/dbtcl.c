@@ -132,13 +132,13 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
     Tcl_SetAssocData(interp, datakey, FreeData, idataPtr);
 
-    Tcl_CreateObjCommand(interp, "ns_db", DbObjCmd, idataPtr, NULL);
-    Tcl_CreateObjCommand(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
-    Tcl_CreateObjCommand(interp, "ns_getcsv", GetCsvObjCmd, idataPtr, NULL);
-    Tcl_CreateObjCommand(interp, "ns_dberrorcode", DbErrorCodeObjCmd, idataPtr, NULL);
-    Tcl_CreateObjCommand(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
-    Tcl_CreateObjCommand(interp, "ns_dbconfigpath", DbConfigPathObjCmd, idataPtr, NULL);
-    Tcl_CreateObjCommand(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_db", DbObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_getcsv", GetCsvObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dberrorcode", DbErrorCodeObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dbconfigpath", DbConfigPathObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
 
     return TCL_OK;
 }

@@ -332,7 +332,7 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
     Tcl_InitHashTable(&idataPtr->ids, TCL_STRING_KEYS);
     Tcl_InitHashTable(&idataPtr->cnts, TCL_ONE_WORD_KEYS);
     Tcl_SetAssocData(interp, ASSOC_DATA, DeleteData, idataPtr);
-    Tcl_CreateObjCommand(interp, "ns_proxy", ProxyObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_proxy", ProxyObjCmd, idataPtr, NULL);
 
     return TCL_OK;
 }
