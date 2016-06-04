@@ -370,7 +370,7 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
  *      Wait for I/O.
  *
  * Results:
- *      NS_OK, NS_TIMEOUT, or NS_ERROR.
+ *      NS_OK, NS_TIMEOUT.
  *
  * Side effects:
  *      None.
@@ -383,6 +383,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
+    int           result;
 
     if (timeoutPtr != NULL) {
         msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
@@ -406,10 +407,12 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     } while (n < 0 && errno == EINTR);
 
     if (n > 0) {
-        return NS_OK;
+        result =  NS_OK;
+    } else {
+        result = NS_TIMEOUT;
     }
 
-    return NS_TIMEOUT;
+    return result;
 }
 
 /*

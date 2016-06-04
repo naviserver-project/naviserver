@@ -1371,14 +1371,14 @@ HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
             if (err == SSL_ERROR_WANT_WRITE) {
                 Ns_Time timeout = { 0, 10000 }; /* 10ms */
                 
-                Ns_SockTimedWait(httpPtr->sock, NS_SOCK_WRITE, &timeout);
+                (void) Ns_SockTimedWait(httpPtr->sock, NS_SOCK_WRITE, &timeout);
                 continue;
             }
             if (likely(n > -1)) {
                 sent += n;
                 
                 if (((size_t)n < iov.iov_len)) {
-                    Ns_ResetVec(&iov, 1, (size_t)n);
+                    (void)Ns_ResetVec(&iov, 1, (size_t)n);
                     continue;
                 }
             }
