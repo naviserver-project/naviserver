@@ -1676,7 +1676,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 
     Ns_DStringInit(&ds);
 
-    LogToDString(&ds, severity, stamp, msg, len);
+    (void) LogToDString(&ds, severity, stamp, msg, len);
     (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);

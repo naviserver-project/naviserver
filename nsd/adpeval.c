@@ -1022,7 +1022,7 @@ NsAdpLogError(NsInterp *itPtr)
         Ns_DStringAppend(&ds, "<br><pre>\n");
         Ns_QuoteHtml(&ds, err);
         Ns_DStringAppend(&ds, "\n<br></pre>\n");
-        NsAdpAppend(itPtr, ds.string, ds.length);
+        (void)NsAdpAppend(itPtr, ds.string, ds.length);
     }
     Ns_DStringFree(&ds);
     adp = itPtr->servPtr->adp.errorpage;

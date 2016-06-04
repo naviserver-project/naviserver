@@ -2300,7 +2300,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
         Request     *reqPtr = sockPtr->reqPtr;
         Tcl_DString  dsReqLine;
         
-        ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
+        (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
         
         Tcl_DStringInit(&dsReqLine);
         Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",

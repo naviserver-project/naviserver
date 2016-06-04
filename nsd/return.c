@@ -699,7 +699,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                             Ns_InfoServerName(), "/",
                             Ns_InfoServerVersion(), " on ",
                             NULL);
-        Ns_ConnLocationAppend(conn, &ds);
+        (void) Ns_ConnLocationAppend(conn, &ds);
         Ns_DStringAppend(&ds, "</i></small></p>\n");
     }
 
