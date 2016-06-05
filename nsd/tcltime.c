@@ -335,7 +335,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             Ns_TclGetTimeFromObj(interp, objv[3], &t2) != TCL_OK) {
             return TCL_ERROR;
         }
-        Ns_DiffTime(&t1, &t2, &result);
+        (void)Ns_DiffTime(&t1, &t2, &result);
         break;
 
     case TAdjustIdx:

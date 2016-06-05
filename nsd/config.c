@@ -747,8 +747,8 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
 
     set = NULL;
     interp = Ns_TclCreateInterp();
-    Tcl_CreateCommand(interp, "ns_section", SectionCmd, &set, NULL);
-    Tcl_CreateCommand(interp, "ns_param", ParamCmd, &set, NULL);
+    (void)Tcl_CreateCommand(interp, "ns_section", SectionCmd, &set, NULL);
+    (void)Tcl_CreateCommand(interp, "ns_param", ParamCmd, &set, NULL);
     for (i = 0; argv[i] != NULL; ++i) {
         (void) Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
@@ -795,7 +795,7 @@ ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv
                          " not preceded by an ns_section command.", NULL);
         return TCL_ERROR;
     }
-    Ns_SetPut(set, argv[1], argv[2]);
+    (void)Ns_SetPut(set, argv[1], argv[2]);
 
     return TCL_OK;
 }

@@ -297,7 +297,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             while (offset < objc) {
                 key = Tcl_GetString(objv[offset++]);
                 val = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
-                Ns_SetPut(set, key, val);
+                (void)Ns_SetPut(set, key, val);
             }
             EnterSet(itPtr, set, NS_TCL_SET_DYNAMIC);
             break;

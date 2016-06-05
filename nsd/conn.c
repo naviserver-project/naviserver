@@ -481,7 +481,7 @@ Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr)
     connPtr = (Conn *)conn;
     
     connPtr->reqPtr->port = Ns_SockaddrGetPort(saPtr);
-    ns_inet_ntop(saPtr, connPtr->reqPtr->peer, NS_IPADDR_SIZE);
+    (void)ns_inet_ntop(saPtr, connPtr->reqPtr->peer, NS_IPADDR_SIZE);
     
     return connPtr->reqPtr->peer;
 }
@@ -1024,10 +1024,10 @@ Ns_ConnTimeStats(Ns_Conn *conn) {
     
     Ns_GetTime(&now);
 
-    Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
-    Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   &connPtr->queueTimeSpan);
-    Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &connPtr->filterTimeSpan);
-    Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &connPtr->runTimeSpan);
+    (void)Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
+    (void)Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   &connPtr->queueTimeSpan);
+    (void)Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &connPtr->filterTimeSpan);
+    (void)Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &connPtr->runTimeSpan);
 
     Ns_MutexLock(&poolPtr->threads.lock);
     Ns_IncrTime(&poolPtr->stats.acceptTime, connPtr->acceptTimeSpan.sec, connPtr->acceptTimeSpan.usec);

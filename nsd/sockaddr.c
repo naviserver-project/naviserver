@@ -538,7 +538,7 @@ Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockadd
     family = (saPtr->sa_family == AF_INET6) ? "AF_INET6" :
         (saPtr->sa_family == AF_INET) ? "AF_INET" : "UNKNOWN";
 
-    ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
+    (void)ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
     
     Ns_Log(severity, "%s: SockAddr family %s, ip %s, port %d",
            prefix, family, ipStrPtr, Ns_SockaddrGetPort(saPtr));

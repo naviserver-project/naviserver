@@ -215,7 +215,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
 	        Ns_Time endTime, diffTime;
 
                 Ns_GetTime(&endTime);
-		Ns_DiffTime(&endTime, &t, &diffTime);
+		(void)Ns_DiffTime(&endTime, &t, &diffTime);
                 Ns_IncrTime(&endTime, ttl, 0);
                 Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), 
 					(size_t)ds.length, &endTime, 

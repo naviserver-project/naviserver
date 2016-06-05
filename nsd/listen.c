@@ -164,8 +164,9 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 
 	assert(tablePtr != NULL);
         
-        ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
-        hPtr = Tcl_CreateHashEntry(tablePtr, ipString, &isNew);
+        hPtr = Tcl_CreateHashEntry(tablePtr,
+                                   ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE),
+                                   &isNew);
 
         if (isNew == 0) {
             Ns_Log(Error, "listen callback: there is already a listen callback registered");
@@ -265,7 +266,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         }
         ldPtr = NULL;
         
-        ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
+        (void)ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
         
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(tablePtr, ipString);

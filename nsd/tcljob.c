@@ -2098,7 +2098,7 @@ ComputeDelta(const Ns_Time *start, const Ns_Time *end)
     NS_NONNULL_ASSERT(start != NULL);
     NS_NONNULL_ASSERT(end != NULL);
 
-    Ns_DiffTime(end, start, &diff);
+    (void)Ns_DiffTime(end, start, &diff);
 
     return ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0);
 }

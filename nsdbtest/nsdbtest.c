@@ -179,7 +179,7 @@ CloseDb(Ns_DbHandle *UNUSED(handle))
 static Ns_Set *
 BindRow(Ns_DbHandle *handle)
 {
-    Ns_SetPut(handle->row, "column1", NULL);
+    (void)Ns_SetPut(handle->row, "column1", NULL);
     handle->fetchingRows = NS_FALSE;
 
     return handle->row;
@@ -288,3 +288,12 @@ ResetHandle(Ns_DbHandle *UNUSED(handle))
 {
     return NS_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

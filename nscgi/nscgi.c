@@ -767,7 +767,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 		*e = '\0';
         	i = Ns_SetFind(cgiPtr->env, s);
 		if (i < 0) {
-        	    Ns_SetPut(cgiPtr->env, s, e+1);
+        	    (void)Ns_SetPut(cgiPtr->env, s, e+1);
 		}
 		*e = '=';
 	    }
@@ -919,7 +919,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         }
         index = Ns_SetFind(cgiPtr->env, dsPtr->string);
         if (index < 0) {
-            Ns_SetPut(cgiPtr->env, dsPtr->string, e);
+            (void)Ns_SetPut(cgiPtr->env, dsPtr->string, e);
         } else {
 	    SetAppend(cgiPtr->env, index, ", ", e);
         }

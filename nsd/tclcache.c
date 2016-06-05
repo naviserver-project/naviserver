@@ -211,7 +211,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
             status = Tcl_EvalObjv(interp, nargs, objv + (objc-nargs), 0);
         }
         Ns_GetTime(&end);
-        Ns_DiffTime(&end, &start, &diff);
+        (void)Ns_DiffTime(&end, &start, &diff);
 
         Ns_CacheLock(cPtr->cache);
         if (status != TCL_OK && status != TCL_RETURN) {

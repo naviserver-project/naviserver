@@ -459,7 +459,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 
     servers = Ns_ConfigCreateSection("ns/servers");
     if (Ns_SetSize(servers) == 0u) {
-        Ns_SetPut(servers, "default", "Default NaviServer");
+        (void)Ns_SetPut(servers, "default", "Default NaviServer");
     }
 
     /*

@@ -503,7 +503,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     }
     Ns_DStringInit(&ds);
     for (i = objc - nargs; i < objc; ++i) {
-        UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part);
+        (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part);
         if (i + 1 < objc) {
             if (part == 'q') {
                 Ns_DStringNAppend(&ds, "&", 1);
@@ -567,7 +567,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         encoding = Ns_GetCharsetEncoding(charset);
     }
     
-    UrlDecode(&ds, chars, encoding, part);
+    (void)UrlDecode(&ds, chars, encoding, part);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
@@ -716,7 +716,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     *q = '\0';
 
     if (encoding != NULL) {
-        Tcl_ExternalToUtfDString(encoding, copy, n, &ds);
+        (void)Tcl_ExternalToUtfDString(encoding, copy, n, &ds);
         Ns_DStringAppend(dsPtr, Tcl_DStringValue(&ds));
         Tcl_DStringFree(&ds);
         if (copy != 0) {

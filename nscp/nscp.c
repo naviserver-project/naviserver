@@ -398,7 +398,7 @@ EvalThread(void *arg)
      */
 
     stop = 0;
-    Tcl_CreateCommand(interp, "exit", ExitCmd, (ClientData) &stop, NULL);
+    (void)Tcl_CreateCommand(interp, "exit", ExitCmd, (ClientData) &stop, NULL);
 
     ncmd = 0;
     while (stop == 0) {
