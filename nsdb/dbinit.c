@@ -664,8 +664,9 @@ int
 Ns_DbPoolStats(Tcl_Interp *interp)
 {
     Ns_Set      *pools;
-    size_t       i, result = TCL_OK;
+    size_t       i;
     Tcl_Obj     *resultObj;
+    int          result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -720,7 +721,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             if (unlikely(result != TCL_OK)) {
                 break;
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->nhandles));
+            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles));
             if (unlikely(result != TCL_OK)) {
                 break;
             }
@@ -1221,6 +1222,9 @@ CreatePool(const char *pool, const char *path, const char *driver)
     if (driverPtr == NULL) {
 	return NULL;
     }
+    /*
+     * Load the configured values.
+     */
     source = Ns_ConfigGetValue(path, "datasource");
     if (source == NULL) {
 	Ns_Log(Error, "dbinit: missing datasource for pool '%s'", pool);
@@ -1250,7 +1254,6 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->waitTime.usec = 0;
     poolPtr->sqlTime.sec = 0;
     poolPtr->sqlTime.usec = 0;
-    
     poolPtr->minDuration.sec = 0;
     poolPtr->minDuration.usec = 0;
     minDurationString = Ns_ConfigGetValue(path, "logminduration");
@@ -1265,6 +1268,9 @@ CreatePool(const char *pool, const char *path, const char *driver)
         }
     }
 
+    /*
+     * Allocate the handles in the pool
+     */
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
     for (i = 0; i < poolPtr->nhandles; ++i) {
     	handlePtr = ns_malloc(sizeof(Handle));
@@ -1470,7 +1476,7 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
     resultObj = Tcl_NewListObj(0, NULL);
     pool = Ns_DbPoolList(server);
     if (pool != NULL) {
-        while (*pool != '\0') {
+        for ( ; *pool != '\0'; pool += strlen(pool) + 1u) {
             char    buffer[100];
             Pool   *poolPtr;
             int     len;
@@ -1480,7 +1486,6 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
             len = snprintf(buffer, sizeof(buffer), "%" PRId64 ".%06ld",
                            (int64_t) poolPtr->minDuration.sec, poolPtr->minDuration.usec);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
-            pool = pool + strlen(pool) + 1;
         }
     }
     return resultObj;

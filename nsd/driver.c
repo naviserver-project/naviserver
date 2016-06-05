@@ -204,7 +204,7 @@ Ns_LogSeverity Ns_LogConnchanDebug;
 
 static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
 static Tcl_HashTable hosts;           /* Host header to server table */
-static ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
+static const ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
 static Ns_Mutex   reqLock     = NULL; /* Lock for request free list */
 static Ns_Mutex   writerlock  = NULL; /* Lock updating streamin information in the writer */
 static Request   *firstReqPtr = NULL; /* Free list of request structures */
