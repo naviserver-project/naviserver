@@ -122,10 +122,10 @@ Ns_ConfigBool(const char *section, const char *key, bool def)
     }
     Ns_Log(Dev, "config: %s:%s value=%s default=%s (bool)",
            section, key,
-           (!found)    ? (value != NS_FALSE ? "true" : "false") : "(null)",
+           (found)     ? (value != NS_FALSE ? "true" : "false") : "(null)",
 	   (def != 0)  ? "true" : "false");
 
-    return (!found) ? value : def;
+    return found ? value : def;
 }
 
 
