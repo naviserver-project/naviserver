@@ -733,6 +733,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     char       *s, *e, *p;
     Ns_DString *dsPtr;
     const Mod  *modPtr;
+    const char *value;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -879,15 +880,15 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_SetUpdate(cgiPtr->env, "REQUEST_METHOD", conn->request.method);
     Ns_SetUpdate(cgiPtr->env, "QUERY_STRING", conn->request.query);
 
-    s = Ns_SetIGet(conn->headers, "Content-Type");
-    if (s == NULL) {
+    value = Ns_SetIGet(conn->headers, "Content-Type");
+    if (value == NULL) {
         if (STREQ("POST", conn->request.method)) {
-            s = "application/x-www-form-urlencoded";
+            value = "application/x-www-form-urlencoded";
         } else {
-            s = "";
+            value = "";
         }
     }
-    Ns_SetUpdate(cgiPtr->env, "CONTENT_TYPE", s);
+    Ns_SetUpdate(cgiPtr->env, "CONTENT_TYPE", value);
 
     if (conn->contentLength == 0u) {
         Ns_SetUpdate(cgiPtr->env, "CONTENT_LENGTH", "");

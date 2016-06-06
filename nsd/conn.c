@@ -1516,7 +1516,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 content = NULL;
                 contentLength = 0u;
                 Tcl_ResetResult(interp);
-            } else if (binary == NS_FALSE) {
+            } else if (!binary) {
                 content = Tcl_ExternalToUtfDString(connPtr->outputEncoding,
                                                    connPtr->reqPtr->content,
                                                    (int)connPtr->reqPtr->length,
@@ -1535,7 +1535,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                     /*
                      * return full content
                      */
-                    if (binary == NS_FALSE) {
+                    if (!binary) {
                         Tcl_DStringResult(interp, &encDs);
                     } else {
                         Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
@@ -1545,7 +1545,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                     /*
                      * return partial content
                      */
-                    if (binary == NS_FALSE) {
+                    if (!binary) {
                         Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
                         
                         Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));

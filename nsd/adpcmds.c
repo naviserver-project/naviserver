@@ -498,7 +498,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     objv = objv + (objc - nargs);
     objc = nargs;
 
-    if (asString == NS_TRUE && asFile == NS_TRUE) {
+    if (asString && asFile) {
       Tcl_AppendResult(interp, "specify either '-string' or '-file', but not both.", NULL);
       return TCL_ERROR;
     }
@@ -511,17 +511,17 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
      */
     itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
 
-    if (asFile == NS_TRUE) {
+    if (asFile) {
 	/* file mode */
         itPtr->adp.flags |= ADP_ADPFILE;
     } else {
 	/* string mode */
     }
-    if (tcl == NS_TRUE) {
+    if (tcl) {
         /* tcl script */
         itPtr->adp.flags |= ADP_TCLFILE;
     }
-    if (safe == NS_TRUE) {
+    if (safe) {
         itPtr->adp.flags |= ADP_SAFE;
     }
 
@@ -534,7 +534,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         savedCwd = itPtr->adp.cwd;
         itPtr->adp.cwd = cwd;
     }
-    if (asFile == NS_TRUE) {
+    if (asFile) {
         result = NsAdpSource(arg, objc, objv, resvar);
     } else {
         result = NsAdpEval(arg, objc, objv, resvar);

@@ -940,7 +940,7 @@ NsSockClose(Sock *sockPtr, int keep)
     drvPtr->closePtr = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
 
-    if (trigger == NS_TRUE) {
+    if (trigger) {
         SockTrigger(drvPtr->trigger[1]);
     }
 }
@@ -1246,7 +1246,7 @@ DriverThread(void *arg)
     closePtr = waitPtr = readPtr = NULL;
     stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
 
-    while (stopping == NS_FALSE) {
+    while (!stopping) {
         int n;
 
         /*
@@ -1609,7 +1609,7 @@ DriverThread(void *arg)
          * Close the active drivers if shutdown is pending.
          */
 
-        if (stopping == NS_TRUE) {
+        if (stopping) {
             ns_sockclose(drvPtr->sock);
             drvPtr->sock = NS_INVALID_SOCKET;
         }
@@ -1846,7 +1846,7 @@ RequestFree(Sock *sockPtr)
         Ns_Log(DriverDebug, "RequestFree does not call Ns_ResetRequest on %p", (void*)&reqPtr->request);
     }
 
-    if (keep == NS_FALSE) {
+    if (!keep) {
         /*
          * Push the reqPtr to the pool for reuse in other connections.
          */
@@ -3313,7 +3313,7 @@ SpoolerThread(void *arg)
     waitPtr = readPtr = NULL;
     stopping = NS_FALSE;
 
-    while (stopping == NS_FALSE) {
+    while (!stopping) {
 
         /*
          * If there are any read sockets, set the bits
@@ -3555,7 +3555,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
      * Wake up spooler thread
      */
 
-    if (trigger == NS_TRUE) {
+    if (trigger) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -4010,7 +4010,7 @@ WriterThread(void *arg)
     writePtr = NULL;
     stopping = NS_FALSE;
 
-    while (stopping == NS_FALSE) {
+    while (!stopping) {
         char charBuffer[1];
 
         /*
@@ -4593,7 +4593,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      * Wake up writer thread
      */
 
-    if (trigger == NS_TRUE) {
+    if (trigger) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -5059,7 +5059,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     /*
      * Wake up writer thread if desired
      */
-    if (trigger == NS_TRUE) {
+    if (trigger) {
         SockTrigger(queuePtr->pipe[1]);
     }
 
@@ -5135,7 +5135,7 @@ AsyncWriterThread(void *arg)
      * connections are complete and gracefully closed.
      */
 
-    while (stopping == NS_FALSE) {
+    while (!stopping) {
 
         /*
          * Always listen to the trigger pipe. We could as well perform
@@ -5249,7 +5249,7 @@ AsyncWriterThread(void *arg)
          * Check for shutdown
          */
         stopping = queuePtr->shutdown;
-        if (stopping == NS_TRUE) {
+        if (stopping) {
             curPtr = queuePtr->sockPtr;
             assert(writePtr == NULL);
             while (curPtr != NULL) {

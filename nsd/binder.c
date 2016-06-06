@@ -136,7 +136,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
      * If forked binder is running and we could not allocate socket
      * directly, try to do it through the binder
      */
-    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE && saPtr != NULL) {
+    if (sock == NS_INVALID_SOCKET && binderRunning && saPtr != NULL) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
 
@@ -193,7 +193,7 @@ Ns_SockListenUdp(const char *address, int port)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
+    if (sock == NS_INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
 
@@ -247,7 +247,7 @@ Ns_SockListenRaw(int proto)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
+    if (sock == NS_INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('R', NULL, proto, proto);
     }
 
@@ -322,7 +322,7 @@ Ns_SockListenUnix(const char *path, int backlog, int  mode)
      * directly, try to do it through the binder
      */
 
-    if (sock == NS_INVALID_SOCKET && binderRunning == NS_TRUE) {
+    if (sock == NS_INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
 #endif /* _WIN32 */
@@ -1028,7 +1028,7 @@ NsForkBinder(void)
 void
 NsStopBinder(void)
 {
-    if (binderRunning == NS_TRUE) {
+    if (binderRunning) {
         ns_sockclose(binderRequest[1]);
         ns_sockclose(binderResponse[0]);
         ns_sockclose(binderRequest[0]);
