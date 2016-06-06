@@ -946,11 +946,11 @@ NS_EXTERN const char *
 Ns_ConfigString(const char *section, const char *key, const char *def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
-Ns_ConfigBool(const char *section, const char *key, int def)
+NS_EXTERN bool
+Ns_ConfigBool(const char *section, const char *key, bool def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
               unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
@@ -989,8 +989,8 @@ NS_EXTERN int
 Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN int
-Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
+NS_EXTERN bool
+Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *

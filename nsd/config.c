@@ -50,7 +50,7 @@ static Ns_Set* GetSection(const char *section, int create)
 static const char* ConfigGet(const char *section, const char *key, int exact, const char *defstr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int ToBool(const char *value, int *valuePtr)
+static bool ToBool(const char *value, bool *valuePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -107,11 +107,11 @@ Ns_ConfigString(const char *section, const char *key, const char *def)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_ConfigBool(const char *section, const char *key, int def)
+bool
+Ns_ConfigBool(const char *section, const char *key, bool def)
 {
     const char *s;
-    int value = NS_FALSE, found = NS_FALSE;
+    bool value = NS_FALSE, found = NS_FALSE;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -122,10 +122,10 @@ Ns_ConfigBool(const char *section, const char *key, int def)
     }
     Ns_Log(Dev, "config: %s:%s value=%s default=%s (bool)",
            section, key,
-           (found != NS_FALSE) ? (value != NS_FALSE ? "true" : "false") : "(null)",
-	   (def != 0)          ? "true" : "false");
+           (!found)    ? (value != NS_FALSE ? "true" : "false") : "(null)",
+	   (def != 0)  ? "true" : "false");
 
-    return (found != NS_FALSE) ? value : def;
+    return (!found) ? value : def;
 }
 
 
@@ -146,12 +146,12 @@ Ns_ConfigBool(const char *section, const char *key, int def)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
               unsigned int *flagsPtr)
 {
     const char *s;
-    int value = 0, found = NS_FALSE;
+    bool value = NS_FALSE, found = NS_FALSE;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -450,11 +450,11 @@ Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_ConfigGetBool(const char *section, const char *key, int *valuePtr)
+bool
+Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
 {
     const char *s;
-    int found = NS_FALSE;
+    bool found = NS_FALSE;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -977,8 +977,8 @@ GetSection(const char *section, int create)
  *----------------------------------------------------------------------
  */
 
-static int
-ToBool(const char *value, int *valuePtr)
+static bool
+ToBool(const char *value, bool *valuePtr)
 {
     int boolValue;
 
