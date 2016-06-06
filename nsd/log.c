@@ -1730,7 +1730,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
-        char *err = "LogToTcl: can't get interpreter";
+        const char *const err = "LogToTcl: can't get interpreter";
         (void)LogToFile(logfile, Error, stamp, err, 0u);
         return NS_ERROR;
     }

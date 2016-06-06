@@ -1306,7 +1306,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
 {
     Array              *arrayPtr = NULL;
     Bucket             *bucketPtr;
-    static const char  *arrayType = "nsv:array";
+    static const char  *const arrayType = "nsv:array";
     const char         *arrayName;
 
     NS_NONNULL_ASSERT(interp != NULL);

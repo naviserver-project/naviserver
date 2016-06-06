@@ -877,7 +877,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
           Tcl_Obj *CONST* objv)
 {
     TclCache          **cPtrPtr = spec->dest;
-    static const char  *cacheType = "ns:cache";
+    static const char  *const cacheType = "ns:cache";
 
     if (unlikely(*objcPtr < 1)) {
         return TCL_ERROR;

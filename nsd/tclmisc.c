@@ -994,7 +994,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     *p++ = (uint8_t)0x80u;
 
     /* Bytes of padding needed to make 64 bytes (0..63) */
-    i = SHA_BLOCKBYTES - 1u - i;
+    i = (SHA_BLOCKBYTES - 1u) - i;
 
     if (i < 8u) {				/* Padding forces an extra block */
         memset(p, 0, i);
@@ -1328,7 +1328,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     *p++ = (uint8_t)0x80u;
     
     /* Bytes of padding needed to make 64 bytes */
-    count = 64u - 1u - count;
+    count = (64u - 1u) - count;
 
     /* Pad out to 56 mod 64 */
     if (count < 8u) {

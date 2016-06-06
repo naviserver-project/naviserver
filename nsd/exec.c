@@ -264,7 +264,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
     Ns_DString      cds, xds, eds;
     char           *envp;
     OSVERSIONINFO   oinfo;
-    char           *cmd;
+    const char     *cmd;
 
     if (exec == NULL) {
         return NS_INVALID_PID;

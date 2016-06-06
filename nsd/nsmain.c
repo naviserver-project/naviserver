@@ -265,7 +265,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 
     if (mode == 'c') {
 	int i;
-        cmd.argv = ns_calloc((size_t)argc - (size_t)optind + 2u, sizeof(char *));
+        cmd.argv = ns_calloc(((size_t)argc - (size_t)optind) + 2u, sizeof(char *));
         cmd.argc = 0;
         cmd.argv[cmd.argc++] = argv[0];
         for (i = optind; i < argc; i++) {
@@ -896,7 +896,7 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static void
 StatusMsg(runState state)
 {
-    char *what;
+    const char *what;
 
     switch (state) {
     case starting:

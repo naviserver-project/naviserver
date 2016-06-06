@@ -70,7 +70,7 @@ static int ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *C
  * Local variables defined in this file.
  */
 
-static const char *datakey = "nsdb:data";
+static const char *const datakey = "nsdb:data";
 
 
 /*

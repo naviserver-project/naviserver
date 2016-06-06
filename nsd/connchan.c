@@ -593,7 +593,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             const char   *url;
             Sock         *sockPtr;
             Ns_Set       *hdrPtr = NULL;
-            char         *method = "GET";
+            const char   *method = "GET";
             Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
             Ns_ObjvSpec   lopts[] = {
                 {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},

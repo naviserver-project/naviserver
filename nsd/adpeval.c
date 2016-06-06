@@ -963,9 +963,8 @@ NsAdpLogError(NsInterp *itPtr)
     const Ns_Conn  *conn;
     Ns_DString      ds;
     const AdpFrame *framePtr;
-    char           *inc, *dot;
     int             len;
-    const char     *err, *adp;
+    const char     *err, *adp, *inc, *dot;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 

@@ -65,7 +65,7 @@ static const Ns_DbProc procs[] = {
     {(Ns_DbProcId)0, NULL}
 };
 
-static const char *dbName = "nsdbtest";
+static const char *const dbName = "nsdbtest";
 
 
 /*

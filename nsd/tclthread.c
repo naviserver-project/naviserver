@@ -72,12 +72,12 @@ static void ThreadArgFree(void *arg)
  * Local variables defined in this file.
  */
 
-static const char *mutexType  = "ns:mutex";
-static const char *csType     = "ns:critsec";
-static const char *semaType   = "ns:semaphore";
-static const char *condType   = "ns:condition";
-static const char *rwType     = "ns:rwlock";
-static const char *threadType = "ns:thread";
+static const char *const mutexType  = "ns:mutex";
+static const char *const csType     = "ns:critsec";
+static const char *const semaType   = "ns:semaphore";
+static const char *const condType   = "ns:condition";
+static const char *const rwType     = "ns:rwlock";
+static const char *const threadType = "ns:thread";
 
 
 /*

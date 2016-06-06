@@ -256,7 +256,7 @@ setkey_private(struct sched *sp, const unsigned char *key)
          */
         for (j = 0; j < 24; j++) {
             sp->KS[i][j] = sp->C[PC2_C[j] - 1];
-            sp->KS[i][j + 24] = sp->D[PC2_D[j] - 28 - 1];
+            sp->KS[i][j + 24] = sp->D[PC2_D[j] - 29];
         }
     }
 

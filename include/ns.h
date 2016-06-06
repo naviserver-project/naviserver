@@ -911,7 +911,7 @@ typedef struct {
     NS_SOCKET          sock;
     int                status;
     const char        *url;
-    char              *error;
+    const char        *error;
     char              *next;             /* write to client */
     size_t             len;              /* size of request */
     int                replyHeaderSize;
@@ -1970,7 +1970,7 @@ Ns_InfoTag(void);
  * mimetypes.c:
  */
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_GetMimeType(const char *file)
     NS_GNUC_NONNULL(1)
     NS_GNUC_RETURNS_NONNULL;

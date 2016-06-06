@@ -123,8 +123,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     Conn         *connPtr = (Conn *) conn;
     Tcl_Interp   *interp;
     NsInterp     *itPtr;
-    char         *type;
-    const char   *start;
+    const char   *type, *start;
     NsServer     *servPtr;
     Tcl_Obj      *objv[2];
     int           result;

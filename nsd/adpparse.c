@@ -266,8 +266,9 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     int             level, scriptStreamDone;
     unsigned int    scriptFlags;
     Tag            *tagPtr = NULL;
-    char           *script = "", *s, *e, *n;
-    char           *a, *as = "", *ae = "", *text;
+    char           *s, *e, *n, *as = "";
+    const char     *script = "", *ae = "";
+    char           *a, *text;
     Tcl_DString     tag;
     Tcl_HashEntry  *hPtr;
     enum {
@@ -437,7 +438,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 
                     if ((flags & ADP_SAFE) == 0u) {
                         if (((scriptFlags & SERV_STREAM) != 0u) && (scriptStreamDone == 0)) {
-			    static char *buffer = "ns_adp_ctl stream on";
+			    static char *const buffer = "ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
                             AppendBlock(&parse, buffer, end, 's', flags);
@@ -690,7 +691,7 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
 static void
 ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
 {
-    char *vs = NULL, *as = NULL, *ve = NULL;
+    char *as = NULL, *vs = NULL, *ve = NULL;
     char end = '\0', vsave = '\0';
 
     NS_NONNULL_ASSERT(s != NULL);

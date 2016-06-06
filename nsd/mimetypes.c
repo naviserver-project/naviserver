@@ -51,8 +51,8 @@ static char *LowerDString(Ns_DString *dsPtr, CONST char *ext);
  */
 
 static Tcl_HashTable    types;
-static char            *defaultType = TYPE_DEFAULT;
-static char            *noextType = TYPE_DEFAULT;
+const static char      *defaultType = TYPE_DEFAULT;
+const static char      *noextType = TYPE_DEFAULT;
 /*
  * The default extension matching table.  This should be kept up to date with
  * the client.  Case in the extension is ignored.
@@ -1279,7 +1279,7 @@ NsConfigMimeTypes(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_GetMimeType(const char *file)
 {
     const char    *start, *ext;

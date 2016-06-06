@@ -2267,8 +2267,9 @@ static void
 SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 {
     struct iovec iov[3];
-    char header[32], *response = NULL;
-    ssize_t sent;
+    char         header[32];
+    ssize_t      sent;
+    const char  *response = NULL;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -2287,7 +2288,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     snprintf(header, sizeof(header), "HTTP/1.0 %d ", code);
     iov[0].iov_base = header;
     iov[0].iov_len = strlen(header);
-    iov[1].iov_base = response;
+    iov[1].iov_base = (caddr_t) response;
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4u;
