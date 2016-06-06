@@ -466,7 +466,7 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 	    nread = Tcl_Read(chan, buf, (int)toRead);
         } else if (fp != NULL) {
 	    nread = (int)fread(buf, 1u, toRead, fp);
-            if (ferror(fp)) {
+            if (ferror(fp) != 0) {
                 nread = -1;
             }
         } else {
@@ -1087,7 +1087,7 @@ ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
             nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
         } else if (fp != NULL) {
 	    nwrote = (ssize_t)fwrite(reqPtr->next, 1u, ncopy, fp);
-            if (ferror(fp)) {
+            if (ferror(fp) != 0) {
                 nwrote = -1;
             }
         } else {

@@ -342,10 +342,10 @@ NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;    /* Severity at which to log verbose
 
 typedef int   (Ns_IndexCmpProc) (const void *left, const void *right);
 typedef int   (Ns_SortProc) (void *left, void *right);
-typedef int   (Ns_EqualProc) (void *left, void *right);
+typedef bool  (Ns_EqualProc) (void *left, void *right);
 typedef void  (Ns_ElemVoidProc) (void *elem);
 typedef void *(Ns_ElemValProc) (void *elem);
-typedef int   (Ns_ElemTestProc) (void *elem);
+typedef bool  (Ns_ElemTestProc) (void *elem);
 typedef void  (Ns_Callback) (void *arg);
 typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, const void *arg);
@@ -1954,13 +1954,13 @@ Ns_InfoAddress(void);
 NS_EXTERN const char *
 Ns_InfoBuildDate(void);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_InfoShutdownPending(void);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_InfoStarted(void);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_InfoServersStarted(void);
 
 NS_EXTERN const char *
@@ -2111,7 +2111,7 @@ NS_EXTERN char *
 Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_HomePathExists(const char *path, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1);
 

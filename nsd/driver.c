@@ -1403,7 +1403,7 @@ DriverThread(void *arg)
                  * Got some data.
                  * If enabled, perform read-ahead now.
                  */
-                if (likely(sockPtr->drvPtr->opts & NS_DRIVER_ASYNC)) {
+                if (likely((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
 
                     /*
@@ -2698,7 +2698,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      * This driver needs raw buffer, it is binary or non-HTTP request
      */
 
-    if (drvPtr->opts & NS_DRIVER_NOPARSE) {
+    if ((drvPtr->opts & NS_DRIVER_NOPARSE) != 0u) {
         return SOCK_READY;
     }
 
@@ -3475,7 +3475,7 @@ SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 {
     NS_NONNULL_ASSERT(proc != NULL);
     while (queuePtr != NULL) {
-        if (ns_sockpair(queuePtr->pipe)) {
+        if (ns_sockpair(queuePtr->pipe) != 0) {
             Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
         }
         Ns_ThreadCreate(proc, queuePtr, 0, &queuePtr->thread);
@@ -3676,7 +3676,10 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         queuePtr->queuesize--;
     } else {
         WriterSock *curPtr, *lastPtr = queuePtr->curPtr;
-        for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL; curPtr; lastPtr = curPtr, curPtr = curPtr->nextPtr) {
+        for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL;
+             curPtr != NULL;
+             lastPtr = curPtr, curPtr = curPtr->nextPtr
+             ) {
             if (curPtr == wrSockPtr) {
                 lastPtr->nextPtr = wrSockPtr->nextPtr;
                 queuePtr->queuesize--;
@@ -3685,7 +3688,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         }
     }
 
-    if (wrSockPtr->err != 0 || wrSockPtr->status != SPOOLER_OK) {
+    if ((wrSockPtr->err != 0) || (wrSockPtr->status != SPOOLER_OK)) {
         int i;
         /*
          * Lookup the matching sockState from the spooler state. The array has
@@ -5172,7 +5175,7 @@ AsyncWriterThread(void *arg)
                 /*
                  * Drain the queue from everything
                  */
-                for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
+                for (curPtr = writePtr; curPtr != NULL;  curPtr = curPtr->nextPtr) {
                     ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
                     if (unlikely(written != (ssize_t)curPtr->bufsize)) {
                         WriteError("drain writer", curPtr->fd, curPtr->bufsize, written);
@@ -5180,7 +5183,7 @@ AsyncWriterThread(void *arg)
                 }
                 writePtr = NULL;
 
-                for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
+                for (curPtr = queuePtr->sockPtr; curPtr != NULL;  curPtr = curPtr->nextPtr) {
                     ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
                     if (unlikely(written != (ssize_t)curPtr->bufsize)) {
                         WriteError("drain queue", curPtr->fd, curPtr->bufsize, written);

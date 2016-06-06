@@ -960,7 +960,7 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flis
         dsPtr = &ds;
     }
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) == TCL_OK) {
-	while (fargc--) {
+	while (fargc-- > 0) {
 	    (void) Ns_TclGetOpenFd(interp, fargv[fargc], write, (int *) &sock);
 	    if (FD_ISSET(sock, setPtr)) {
 		Tcl_DStringAppendElement(dsPtr, fargv[fargc]);
@@ -1031,7 +1031,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
      * the fd_set.
      */
     
-    while (fargc--) {
+    while (fargc-- > 0) {
         if (Ns_TclGetOpenFd(interp, fargv[fargc],
                             write, (int *) &sock) != TCL_OK) {
             status = TCL_ERROR;

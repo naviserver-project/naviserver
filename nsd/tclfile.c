@@ -610,7 +610,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (chan == (Tcl_Channel)NULL) {
             return TCL_ERROR;
         }
-        if (Tcl_IsChannelShared(chan)) {
+        if (Tcl_IsChannelShared(chan) == 1) {
             Tcl_SetResult(interp, "channel is shared", TCL_STATIC);
             return TCL_ERROR;
         }

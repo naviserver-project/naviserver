@@ -366,10 +366,10 @@ Ns_InfoBuildDate(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_InfoShutdownPending(void)
 {
-    int stopping;
+    bool stopping;
 
     Ns_MutexLock(&nsconf.state.lock);
     stopping = nsconf.state.stopping;
@@ -395,10 +395,10 @@ Ns_InfoShutdownPending(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_InfoStarted(void)
 {
-    int             started;
+    bool started;
 
     Ns_MutexLock(&nsconf.state.lock);
     started = nsconf.state.started;
@@ -424,7 +424,7 @@ Ns_InfoStarted(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_InfoServersStarted(void)
 {
     return Ns_InfoStarted();

@@ -472,7 +472,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
         }
         if ((*s == 'a' || *s == 'A') && CHARTYPE(space, s[1]) != 0) {
             ++s;
-            while (*s) {
+            while (*s != '\0') {
                 if (strncasecmp(s, "href", 4u) == 0) {
                     s += 4;
                     while (*s != '\0' && CHARTYPE(space, *s) != 0) {
@@ -714,7 +714,7 @@ SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
 	         ((unsigned) src[2] << 8 | src[3]);
        src += 4;
-    } while (--words);
+    } while (--words > 0);
 }
 
 /* Initialize the SHA values */

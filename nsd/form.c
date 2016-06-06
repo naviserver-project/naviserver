@@ -191,13 +191,13 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     while (hPtr != NULL) {
 	FormFile *filePtr = Tcl_GetHashValue(hPtr);
 
-        if (filePtr->hdrObj) {
+        if (filePtr->hdrObj != NULL) {
             Tcl_DecrRefCount(filePtr->hdrObj);
         }
-        if (filePtr->offObj) {
+        if (filePtr->offObj != NULL) {
             Tcl_DecrRefCount(filePtr->offObj);
         }
-        if (filePtr->sizeObj) {
+        if (filePtr->sizeObj != NULL) {
             Tcl_DecrRefCount(filePtr->sizeObj);
         }
         ns_free(filePtr);

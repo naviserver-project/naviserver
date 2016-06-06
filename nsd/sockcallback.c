@@ -336,7 +336,7 @@ SockCallbackThread(void *UNUSED(arg))
     pfds[0].fd = trigPipe[0];
     pfds[0].events = POLLIN;
 
-    while (1) {
+    for (;;) {
 	int nfds, pollto;
         bool stop;
 	Ns_Time now, diff = {0, 0};

@@ -305,7 +305,7 @@ CgiRequest(void *arg, Ns_Conn *conn)
      */
 
     if (conn->contentLength > 0u && CgiSpool(&cgi, conn) != NS_OK) {
-	if (cgi.flags & CGI_ECONTENT) {
+	if ((cgi.flags & CGI_ECONTENT) != 0u) {
 	    status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
 	} else {
 	    status = Ns_ConnReturnInternalError(conn);
@@ -759,7 +759,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     if (modPtr->mergeEnv != NULL) {
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
-    if (modPtr->flags & CGI_SYSENV) {
+    if ((modPtr->flags & CGI_SYSENV) != 0u) {
 	char *const*envp = Ns_CopyEnviron(dsPtr);
 	while (*envp != NULL) {
 	    s = *envp;
@@ -862,7 +862,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         
         if (peer != NULL) {
             Ns_SetUpdate(cgiPtr->env, "REMOTE_ADDR", peer);
-            if ((modPtr->flags & CGI_GETHOST)) {
+            if ((modPtr->flags & CGI_GETHOST) != 0u) {
                 if (Ns_GetHostByAddr(dsPtr, peer) == NS_TRUE) {
                     Ns_SetUpdate(cgiPtr->env, "REMOTE_HOST", dsPtr->string);
                 }
@@ -1101,7 +1101,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
      * Skip to copy for nph CGI's.
      */
 
-    if (cgiPtr->flags & CGI_NPH) {
+    if ((cgiPtr->flags & CGI_NPH) != 0u) {
     	goto copy;
     }
 

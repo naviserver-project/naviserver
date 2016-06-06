@@ -992,7 +992,7 @@ static unsigned int
 BucketIndex(const char *arrayName) {
     unsigned int index = 0u;
 
-    while (1) {
+    for (;;) {
 	register unsigned int i = UCHAR(*(arrayName++));
 	if (unlikely(i == 0u)) {
             break;

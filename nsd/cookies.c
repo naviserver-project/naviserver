@@ -137,7 +137,7 @@ DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
     NS_NONNULL_ASSERT(setName != NULL);
     NS_NONNULL_ASSERT(name != NULL);
 
-    while (1) {
+    for (;;) {
 	int idx = SearchFirstCookie(NULL, hdrs, setName, name);
 	if (idx != -1) {
 	    Ns_SetDelete(hdrs, idx);

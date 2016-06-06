@@ -1054,7 +1054,7 @@ MakePath(char *file)
         Tcl_AppendStringsToObj(obj, "/", file, NULL);
 
         Tcl_IncrRefCount(obj);
-        if (Tcl_FSGetNormalizedPath(NULL, obj)) {
+        if (Tcl_FSGetNormalizedPath(NULL, obj) != NULL) {
 	  path = Tcl_FSGetTranslatedStringPath(NULL, obj);
         }
         Tcl_DecrRefCount(obj);

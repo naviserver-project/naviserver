@@ -378,7 +378,7 @@ Ns_StrCaseFind(const char *chars, const char *subString)
 
     if (strlen(chars) > strlen(subString)) {
         while (*chars != '\0') {
-            if (Ns_Match(chars, subString)) {
+            if (Ns_Match(chars, subString) != NULL) {
                 return chars;
             }
             ++chars;

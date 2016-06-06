@@ -406,11 +406,11 @@ EvalThread(void *arg)
 	++ncmd;
 retry:
 	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
-	while (1) {
+	for (;;) {
 	    if (GetLine(sessPtr->sock, buf, &ds, 1) == 0) {
 		goto done;
 	    }
-	    if (Tcl_CommandComplete(ds.string)) {
+	    if (Tcl_CommandComplete(ds.string) != 0) {
 		break;
 	    }
 	    snprintf(buf, sizeof(buf), "%s:nscp %d>>> ", server, ncmd);

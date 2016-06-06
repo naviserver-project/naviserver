@@ -1078,7 +1078,7 @@ NsConnThread(void *arg)
     Ns_MutexUnlock(threadsLockPtr);
 
 
-    while (1) {
+    for (;;) {
 
 	/*
 	 * We are ready to process requests. Pick it either a request
@@ -1195,7 +1195,7 @@ NsConnThread(void *arg)
 		
 		Ns_MutexLock(tqueueLockPtr);
 		for (aPtr = poolPtr->tqueue.nextPtr, prevPtr = &poolPtr->tqueue.nextPtr;
-		     aPtr; 
+		     aPtr != NULL; 
 		     prevPtr = &aPtr->nextPtr, aPtr = aPtr->nextPtr) {
 		    if (aPtr == argPtr) {
 			*prevPtr = aPtr->nextPtr;

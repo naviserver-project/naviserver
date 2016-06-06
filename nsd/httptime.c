@@ -374,7 +374,7 @@ MakeNum(const char *s)
 {
     NS_NONNULL_ASSERT(s != NULL);
     
-    if (CHARTYPE(digit, *s)) {
+    if (CHARTYPE(digit, *s) != 0) {
         return (10 * ((int)UCHAR(*s) - (int)UCHAR('0'))) + ((int)UCHAR(*(s + 1)) - (int)UCHAR('0'));
     } else {
 	return (int)UCHAR(*(s + 1)) - (int)UCHAR('0');

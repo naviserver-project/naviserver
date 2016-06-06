@@ -286,7 +286,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
      * Return error messages for invalid headers and 
      * the entity too large.
      */
-    if (connPtr->flags & NS_CONN_ENTITYTOOLARGE) {
+    if ((connPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u) {
         connPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
         return Ns_ConnReturnEntityTooLarge(conn);
     } else if (connPtr->flags & NS_CONN_REQUESTURITOOLONG) {

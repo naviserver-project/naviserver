@@ -197,7 +197,7 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
     n = 0;
     p = (const unsigned char *) input;
     q = buf;
-    while (*p) {
+    while (*p != '\0') {
         if (pr2six[(int)(*p)] >= 0) {
             chars[n++] = *p;
             if (n == 4) {

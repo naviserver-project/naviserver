@@ -592,7 +592,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             for (i = npatterns; i > 0; i--) {
 	        const char *pattern = Tcl_GetString(objv[objc-i]);
 
-                if (Tcl_StringMatch(key, pattern)) {
+                if (Tcl_StringMatch(key, pattern) == 1) {
                     Ns_CacheFlushEntry(entry);
                     nflushed++;
                     break;

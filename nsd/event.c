@@ -343,7 +343,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
          */
 
         revents = queuePtr->pfds[evPtr->idx].revents;
-        if (revents & POLLHUP) {
+        if ((revents & POLLHUP) != 0u) {
             revents |= POLLIN;
         }
         if (revents != 0) {

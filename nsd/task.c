@@ -298,7 +298,7 @@ Ns_TaskRun(Ns_Task *task)
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
     while ((taskPtr->flags & TASK_DONE) == 0u) {
-        if (taskPtr->flags & TASK_TIMEOUT) {
+        if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
             timeoutPtr = &taskPtr->timeout;
         } else {
             timeoutPtr = NULL;
@@ -866,7 +866,7 @@ TaskThread(void *arg)
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     firstWaitPtr = NULL;
 
-    while (1) {
+    for (;;) {
         int n, broadcast, nfds;
         bool shutdown;
 	Ns_Time  *timeoutPtr, now;
@@ -885,11 +885,11 @@ TaskThread(void *arg)
                 taskPtr->nextWaitPtr = firstWaitPtr;
                 firstWaitPtr = taskPtr;
             }
-            if (taskPtr->signalFlags & TASK_INIT) {
+            if ((taskPtr->signalFlags & TASK_INIT) != 0u) {
                 taskPtr->signalFlags &= ~TASK_INIT;
                 taskPtr->flags       |= TASK_INIT;
             }
-            if (taskPtr->signalFlags & TASK_CANCEL) {
+            if ((taskPtr->signalFlags & TASK_CANCEL) != 0u) {
                 taskPtr->signalFlags &= ~TASK_CANCEL;
                 taskPtr->flags       |= TASK_CANCEL;
             }
@@ -920,16 +920,16 @@ TaskThread(void *arg)
              * if a wait is required.
              */
 
-            if (taskPtr->flags & TASK_INIT) {
+            if ((taskPtr->flags & TASK_INIT) != 0u) {
                 taskPtr->flags &= ~TASK_INIT;
                 Call(taskPtr, NS_SOCK_INIT);
             }
-            if (taskPtr->flags & TASK_CANCEL) {
+            if ((taskPtr->flags & TASK_CANCEL) != 0u) {
                 taskPtr->flags &= ~(TASK_CANCEL|TASK_WAIT);
                 taskPtr->flags |= TASK_DONE;
                 Call(taskPtr, NS_SOCK_CANCEL);
             }
-            if (taskPtr->flags & TASK_DONE) {
+            if ((taskPtr->flags & TASK_DONE) != 0u) {
                 taskPtr->flags &= ~(TASK_DONE|TASK_WAIT);
                 Call(taskPtr, NS_SOCK_DONE);
                 Ns_MutexLock(&queuePtr->lock);
@@ -937,7 +937,7 @@ TaskThread(void *arg)
                 Ns_MutexUnlock(&queuePtr->lock);
                 broadcast = 1;
             }
-            if (taskPtr->flags & TASK_WAIT) {
+            if ((taskPtr->flags & TASK_WAIT) != 0u) {
 		if (max <= (size_t)nfds) {
                     max  = (size_t)nfds + 100u;
                     pfds = ns_realloc(pfds, max);
@@ -946,7 +946,7 @@ TaskThread(void *arg)
                 pfds[nfds].fd = taskPtr->sock;
                 pfds[nfds].events = taskPtr->events;
                 pfds[nfds].revents = 0;
-                if (taskPtr->flags & TASK_TIMEOUT) {
+                if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
                     if ((timeoutPtr == NULL ||
                         Ns_DiffTime(&taskPtr->timeout, timeoutPtr, NULL) < 0)) {
                         timeoutPtr = &taskPtr->timeout;

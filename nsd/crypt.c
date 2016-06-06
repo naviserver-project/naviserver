@@ -489,7 +489,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 	}
         c -= UCHAR('.');
         for (j = 0; j < 6; j++) {
-            if ((c >> j) & 1u) {
+            if (((c >> j) & 1u) != 0u) {
                 unsigned char temp = s.E[6u * i + j];
                 s.E[6u * i + j] = s.E[6u * i + j + 24];
                 s.E[6u * i + j + 24] = temp;

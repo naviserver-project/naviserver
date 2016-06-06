@@ -272,7 +272,7 @@ Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
         return NULL;
     }
     hPtr = Tcl_FirstHashEntry(tblPtr, &search);
-    while (hPtr) {
+    while (hPtr != NULL) {
         Ns_DStringAppendElement(dest, Tcl_GetHashKey(tblPtr, hPtr));
         Ns_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
         hPtr = Tcl_NextHashEntry(&search);
@@ -511,7 +511,7 @@ CleanupKeyed(void *arg)
     Tcl_HashEntry  *hPtr;
 
     hPtr = Tcl_FirstHashEntry(tblPtr, &search);
-    while (hPtr) {
+    while (hPtr != NULL) {
         ns_free(Tcl_GetHashValue(hPtr));
         hPtr = Tcl_NextHashEntry(&search);
     }

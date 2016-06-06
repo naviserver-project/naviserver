@@ -2011,7 +2011,7 @@ JunctionDeleteNode(const Junction *juncPtr, char *seq, unsigned int flags)
             if (data != NULL) {
                 (void) TrieDelete(&channelPtr->trie, seq, flags);
             }
-        } else if (NS_Tcl_StringMatch(p, channelPtr->filter)) {
+        } else if (NS_Tcl_StringMatch(p, channelPtr->filter) == 1) {
             /*
              * The filter matches, so get the node and delete it.
              */

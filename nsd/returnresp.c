@@ -44,7 +44,7 @@
  */
 
 static Ns_ServerInitProc ConfigServerRedirects;
-static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
+static bool ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 
@@ -738,7 +738,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
 {
     Tcl_HashEntry *hPtr;
@@ -759,10 +759,10 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
         } else {
             connPtr->responseStatus = status;
             *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
-            return 1;
+            return NS_TRUE;
         }
     }
-    return 0;
+    return NS_FALSE;
 }
 
 /*

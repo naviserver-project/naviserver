@@ -1045,7 +1045,7 @@ ServiceTicker(void *arg)
         Ns_GetTime(&timeout);
         Ns_IncrTime(&timeout, 1, 0);
         (void) Ns_CondTimedWait(&cond, &lock, &timeout);
-    } while (tick);
+    } while (tick != 0);
     Ns_MutexUnlock(&lock);
 }
 
@@ -1088,7 +1088,7 @@ ServiceMain(DWORD argc, LPTSTR *argv)
         ReportStatus((DWORD)SERVICE_STOPPED, 0u, 0u);
     }
     Ns_Log(Notice, "nswin32: service exiting");
-    if(serviceFailed) {
+    if (serviceFailed != 0) {
         exit(-1);
     }
 }

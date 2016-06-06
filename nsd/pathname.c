@@ -457,13 +457,13 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_HomePathExists(const char *path, ...)
 {
-    va_list ap;
-    int status;
-    Tcl_Obj *obj;
-    Ns_DString ds;
+    va_list      ap;
+    int          status;
+    Tcl_Obj     *obj;
+    Ns_DString   ds;
     Tcl_StatBuf *stPtr;
 
     NS_NONNULL_ASSERT(path != NULL);
@@ -483,7 +483,7 @@ Ns_HomePathExists(const char *path, ...)
     Tcl_DecrRefCount(obj);
     Ns_DStringFree(&ds);
 
-    return status == 0 ? 1 : 0;
+    return status == 0 ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -937,11 +937,11 @@ MakePath(Ns_DString *dest, va_list *pap)
             *(s + 2) = temp;
             s += 2;
         }
-        while (*s) {
+        while (*s != '\0') {
             while (ISSLASH(*s)) {
                 ++s;
             }
-            if (*s) {
+            if (*s != '\0') {
                 Ns_DStringNAppend(dest, "/", 1);
                 len = 0;
                 while (s[len] != '\0' && !ISSLASH(s[len])) {
