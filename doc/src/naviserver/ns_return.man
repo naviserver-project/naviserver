@@ -260,7 +260,7 @@ is not defined, and [cmd ::ns_gzipfile] is called, an error
 is written to the error.log. 
 Example setting: "/usr/bin/gzip -9".  (string, defaults to "")
 
-[def minify_css_cmd] Command for minifying css files.  When
+[def minify_css_cmd] Command for minifying .css files.  When
 recompressing outdated gzip files (see parameters [term gzip_refresh] and
 [term gzip_cmd]), NaviServer will optionally minify
 css files on the fly, when [term minify_css_cmd] is specified.
@@ -269,7 +269,7 @@ The configured command must read css files from stdin and
 to write the minified content to stdout.
 Example setting: "/usr/bin/yui-compressor --type css".  (string, defaults to "")
 
-[def minify_js_cmd] Command for minifying css files.  When
+[def minify_js_cmd] Command for minifying .jsfiles.  When
 recompressing outdated gzip files (see parameters [term gzip_refresh] and
 [term gzip_cmd]), NaviServer will optionally minify
 JavaScript files on the fly, when [term minify_js_cmd] is specified.
