@@ -161,6 +161,13 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     if (request == NULL) {
         return NS_ERROR;
     }
+
+#if !defined(NDEBUG)
+    /*
+     * The passed-in line must not contain a newline
+     */
+    assert(strrchr(line, '\n') == NULL);
+#endif
     
     memset(request, 0, sizeof(Ns_Request));
     Ns_DStringInit(&ds);
@@ -261,14 +268,6 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
         goto done;
     }
 
-    /*
-     * The url may not contain a newline (possible reponse splitting attack)
-     */
-    p = strrchr(url, '\n');
-    if (p != NULL) {
-        goto done;
-    }
-   
     /*
      * Look for a protocol in the URL.
      */
