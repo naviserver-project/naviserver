@@ -289,10 +289,10 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     if ((connPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u) {
         connPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
         return Ns_ConnReturnEntityTooLarge(conn);
-    } else if (connPtr->flags & NS_CONN_REQUESTURITOOLONG) {
+    } else if ((connPtr->flags & NS_CONN_REQUESTURITOOLONG) != 0u) {
         connPtr->flags &= ~NS_CONN_REQUESTURITOOLONG;
         return Ns_ConnReturnRequestURITooLong(conn);
-    } else if (connPtr->flags & NS_CONN_LINETOOLONG) {
+    } else if ((connPtr->flags & NS_CONN_LINETOOLONG) != 0u) {
         connPtr->flags &= ~NS_CONN_LINETOOLONG;
         return Ns_ConnReturnHeaderLineTooLong(conn);
     }
