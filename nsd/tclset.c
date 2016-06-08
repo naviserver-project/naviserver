@@ -307,7 +307,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 Tcl_WrongNumArgs(interp, 2, objv, "setId");
                 return TCL_ERROR;
             }
-            if (LookupObjSet(itPtr, objv[offset], 0, &set) != TCL_OK) {
+            if (LookupObjSet(itPtr, objv[offset], NS_FALSE, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
             EnterSet(itPtr, Ns_SetCopy(set), NS_TCL_SET_DYNAMIC);
@@ -322,7 +322,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
                 return TCL_ERROR;
             }
-            if (LookupObjSet(itPtr, objv[offset++], 0, &set) != TCL_OK) {
+            if (LookupObjSet(itPtr, objv[offset++], NS_FALSE, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
             split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
@@ -351,7 +351,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             Tcl_WrongNumArgs(interp, 2, objv, "setId ?args?");
             return TCL_ERROR;
         }
-        if (unlikely(LookupObjSet(itPtr, objv[2], 0, &set) != TCL_OK)) {
+        if (unlikely(LookupObjSet(itPtr, objv[2], NS_FALSE, &set) != TCL_OK)) {
             return TCL_ERROR;
         }
 
@@ -610,7 +610,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 return TCL_ERROR;
             }
 	    set2Ptr = NULL;
-            if (unlikely(LookupObjSet(itPtr, objv[3], 0, &set2Ptr) != TCL_OK)) {
+            if (unlikely(LookupObjSet(itPtr, objv[3], NS_FALSE, &set2Ptr) != TCL_OK)) {
                 return TCL_ERROR;
             }
 	    assert (set2Ptr != NULL);
