@@ -116,14 +116,14 @@ Ns_ConfigBool(const char *section, const char *key, bool def)
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    s = ConfigGet(section, key, 0, (def != NS_FALSE) ? "true" : "false");
+    s = ConfigGet(section, key, 0, def ? "true" : "false");
     if (s != NULL && ToBool(s, &value) == NS_TRUE) {
         found = NS_TRUE;
     }
     Ns_Log(Dev, "config: %s:%s value=%s default=%s (bool)",
            section, key,
-           (found)     ? (value != NS_FALSE ? "true" : "false") : "(null)",
-	   (def != 0)  ? "true" : "false");
+           found ? (value ? "true" : "false") : "(null)",
+	   def   ? "true" : "false");
 
     return found ? value : def;
 }
@@ -163,10 +163,10 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
 
     Ns_Log(Dev, "config: %s:%s value=%u default=%u (flag)", 
 	   section, key, 
-	   (value != 0) ? flag : 0u, 
+	   value ? flag : 0u, 
 	   (def != 0) ? flag : 0u);
 
-    if (value != 0) {
+    if (value) {
         *flagsPtr |= flag;
     }
     return found;
@@ -465,7 +465,7 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
         found = NS_TRUE;
     }
     Ns_Log(Dev, "config: %s:%s value=%s (bool)", 
-	   section, key, (found != NS_FALSE) ? (*valuePtr != 0 ? "true" : "false") : "(null)");
+	   section, key, found ? (*valuePtr != 0 ? "true" : "false") : "(null)");
 
     return found;
 }
