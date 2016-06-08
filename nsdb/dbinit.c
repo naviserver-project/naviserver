@@ -702,67 +702,55 @@ Ns_DbPoolStats(Tcl_Interp *interp)
 
             valuesObj = Tcl_NewListObj(1, NULL);
             result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("statements", 10));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->statementCount));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->statementCount));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("gethandles", 10));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("gethandles", 10));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {            
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->getHandleCount));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->getHandleCount));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {            
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("waittime", 8));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("waittime", 8));
             }
-
             /* 
              * We could use Ns_TclNewTimeObj here (2x), when the default representation 
              * of the obj would be floating point format
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
             */
-            len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) poolPtr->waitTime.sec, poolPtr->waitTime.usec);
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
             }
-
-            len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
-            result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
-            result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
-            if (unlikely(result != TCL_OK)) {
-                break;
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
             }
-            result = Tcl_ListObjAppendElement(interp, resultObj, valuesObj);
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, resultObj, valuesObj);
+            }
             if (unlikely(result != TCL_OK)) {
                 break;
             }
