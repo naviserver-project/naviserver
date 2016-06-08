@@ -180,8 +180,8 @@ struct nsconf {
     struct {
         Ns_Mutex lock;
         Ns_Cond cond;
-        int started;
-        int stopping;
+        bool started;
+        bool stopping;
     } state;
 
     struct {
