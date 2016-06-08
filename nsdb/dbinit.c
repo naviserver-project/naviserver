@@ -1455,8 +1455,8 @@ FreeTable(void *arg)
 Tcl_Obj *
 Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
 {
-    Tcl_Obj *resultObj;
-    char    *pool;
+    Tcl_Obj    *resultObj;
+    const char *pool;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(server != NULL);
