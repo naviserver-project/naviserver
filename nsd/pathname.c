@@ -893,7 +893,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  */
 
 char *
-NsTclServerRoot(Ns_DString *dest, const char *host, void *arg)
+NsTclServerRoot(Ns_DString *dest, const char *host, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
 

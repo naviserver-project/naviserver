@@ -471,7 +471,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
  */
 
 char *
-Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr)
+Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr)
 {
     const Conn *connPtr;
 
@@ -1975,7 +1975,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  */
 
 char *
-NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, void *arg)
+NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
     Tcl_Interp           *interp = Ns_GetConnInterp(conn);

@@ -351,7 +351,7 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
  */
 
 const char *
-Ns_CacheKey(Ns_Entry *entry)
+Ns_CacheKey(const Ns_Entry *entry)
 {
     const Entry *ePtr;
 

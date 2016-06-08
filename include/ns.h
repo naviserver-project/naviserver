@@ -651,10 +651,10 @@ typedef int (Ns_Url2FileProc)
     (Ns_DString *dsPtr, const char *url, void *arg);
 
 typedef char* (Ns_ServerRootProc)
-    (Ns_DString  *dest, const char *host, void *arg);
+    (Ns_DString  *dest, const char *host, const void *arg);
 
 typedef char* (Ns_ConnLocationProc)
-    (Ns_Conn *conn, Ns_DString *dest, void *arg);
+    (Ns_Conn *conn, Ns_DString *dest, const void *arg);
 
 typedef int (Ns_LogProc)               /* Deprecated */
     (Ns_DString *dsPtr, Ns_LogSeverity severity, const char *fmt, va_list ap);
@@ -750,7 +750,7 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *
-Ns_CacheKey(Ns_Entry *entry)
+Ns_CacheKey(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void *
@@ -1094,7 +1094,7 @@ NS_EXTERN const char *
 Ns_ConnPeer(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
