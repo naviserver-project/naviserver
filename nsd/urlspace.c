@@ -2314,13 +2314,13 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 Ns_TclPrintfResult(interp, "provided key must be at least one character");
                 return TCL_ERROR;
             }
-            if (noinherit == NS_TRUE) {
+            if (noinherit) {
                 exact = NS_TRUE;
             }
             
-            if (exact == NS_TRUE) {
+            if (exact) {
                 op = NS_URLSPACE_EXACT;
-                if (noinherit == NS_TRUE) {
+                if (noinherit) {
                     flags |= NS_OP_NOINHERIT;
                 }
             } else {
@@ -2463,10 +2463,10 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 return TCL_ERROR;
             }
 
-            if (noinherit == NS_TRUE) {
+            if (noinherit) {
                 flags |= NS_OP_NOINHERIT;
             }
-            if (recurse == NS_TRUE) {
+            if (recurse) {
                 flags |= NS_OP_RECURSE;
                 if ((flags & NS_OP_NOINHERIT) == NS_OP_NOINHERIT) {
                     Ns_Log(Warning, "flag -noinherit is ignored");
@@ -2477,7 +2477,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             data = Ns_UrlSpecificDestroy(servPtr->server, key, url, id, flags);
             Ns_MutexUnlock(&servPtr->urlspace.lock);
 
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || (recurse == NS_TRUE)));
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || recurse));
 
             break;
         }

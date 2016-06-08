@@ -678,7 +678,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
             }
         }
 
-        if (binary == NS_TRUE)  {
+        if (binary)  {
             valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
                                          (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
         } else {
@@ -741,7 +741,7 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
         return NS_FALSE;
     }
     *httpPtrPtr = Tcl_GetHashValue(hPtr);
-    if (removeRequest == NS_TRUE) {
+    if (removeRequest) {
         Tcl_DeleteHashEntry(hPtr);
     }
     return NS_TRUE;
@@ -848,7 +848,7 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
             }
         }
     }
-    if (ipv6 == NS_FALSE) {
+    if (!ipv6) {
         *portStart = strchr(hostString, ':');
         if (hostStart != NULL) {
             *hostStart = hostString;
@@ -936,7 +936,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     /* 
      * If host_keep_header set then "Host:" header field must be present.
      */
-    if (keep_host_header == NS_TRUE) {
+    if (keep_host_header) {
         if ( (hdrPtr == NULL) || (Ns_SetIFind(hdrPtr, "Host") == -1) ) {
 	    Tcl_AppendResult(interp, "keep_host_header specified but no Host header given", NULL);
 	    return TCL_ERROR;
@@ -1095,7 +1095,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
 	/*
 	 * Remove the header fields, we are providing
 	 */
-        if (keep_host_header == NS_FALSE) {
+        if (!keep_host_header) {
 	    Ns_SetIDeleteKey(hdrPtr, "Host");
         }
 	Ns_SetIDeleteKey(hdrPtr, "Connection");
@@ -1124,7 +1124,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
 			 Ns_InfoServerVersion());
     }
     
-    if (keep_host_header == NS_FALSE) {
+    if (!keep_host_header) {
         Ns_DStringNAppend(dsPtr, "Host: ", 6);
         Ns_HttpLocationString(dsPtr, NULL, host, portNr, 80);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
@@ -1141,11 +1141,11 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
             const char *bodyString;
             bool binary = NsTclObjIsByteArray(bodyPtr);
 
-            if (contentType != NULL && binary == NS_FALSE) {
+            if (contentType != NULL && !binary) {
                 binary = Ns_IsBinaryMimeType(contentType);
             }
         
-            if (binary == NS_TRUE) {
+            if (binary) {
                 bodyString = (void *)Tcl_GetByteArrayFromObj(bodyPtr, &length);
             } else {
                 bodyString = Tcl_GetStringFromObj(bodyPtr, &length);
