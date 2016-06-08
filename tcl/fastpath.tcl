@@ -191,7 +191,7 @@ proc ns_gzipfile {source target} {
         if {[catch {
             exec {*}$minifyCmd < $source | {*}$gzipCmd > $target
         } errorMsg]} {
-            ns_log warning "mininfy returned error: $errorMsg"
+            ns_log warning "minify returned error: $errorMsg"
             exec {*}$gzipCmd < $source > $target
         }
     } else {
