@@ -714,7 +714,7 @@ SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
 	         ((unsigned) src[2] << 8 | src[3]);
        src += 4;
-    } while (--words > 0);
+    } while (--words > 0u);
 }
 
 /* Initialize the SHA values */

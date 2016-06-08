@@ -573,11 +573,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
 
     case IStartedIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoStarted()));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_InfoStarted()));
         break;
         
     case IShutdownPendingIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoShutdownPending()));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_InfoShutdownPending()));
         break;
 
     case INsdIdx:
