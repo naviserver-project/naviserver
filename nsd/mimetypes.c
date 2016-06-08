@@ -51,8 +51,8 @@ static char *LowerDString(Ns_DString *dsPtr, CONST char *ext);
  */
 
 static Tcl_HashTable    types;
-const static char      *defaultType = TYPE_DEFAULT;
-const static char      *noextType = TYPE_DEFAULT;
+static const char      *defaultType = TYPE_DEFAULT;
+static const char      *noextType = TYPE_DEFAULT;
 /*
  * The default extension matching table.  This should be kept up to date with
  * the client.  Case in the extension is ignored.
