@@ -180,7 +180,7 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(set->size <  set->maxSize);
-    
+
     index = set->size;
     set->size++;
     if (set->size >= set->maxSize) {
@@ -190,7 +190,7 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
     }
     set->fields[index].name = ns_strdup(key);
     set->fields[index].value = ns_strncopy(value, size);
-
+    
     return index;
 }
 
@@ -942,6 +942,46 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
     Ns_SetTrunc(from, 0u);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetRecreate --
+ *
+ *	Combination of a create and a move operation. A new set is created,
+ *	all data from the old set is moved to the new set, and the old set is
+ *	truncated.
+ *
+ * Results:
+ *	new set.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_Set *
+Ns_SetRecreate(Ns_Set *set)
+{
+    Ns_Set      *newSet;
+    size_t       i;
+
+    NS_NONNULL_ASSERT(set != NULL);
+
+    newSet = ns_malloc(sizeof(Ns_Set));
+    newSet->size = set->size;
+    newSet->maxSize = set->maxSize;
+    newSet->name = ns_strcopy(set->name);
+    newSet->fields = ns_malloc(sizeof(Ns_SetField) * newSet->maxSize);
+    
+    for (i = 0u; i < set->size; i++) {
+	newSet->fields[i].name  = set->fields[i].name;
+        newSet->fields[i].value = set->fields[i].value;
+    }
+    set->size = 0u;
+    
+    return newSet;
+}
 
 /*
  *----------------------------------------------------------------------

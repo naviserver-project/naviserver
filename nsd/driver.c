@@ -929,6 +929,7 @@ NsSockClose(Sock *sockPtr, int keep)
      * fill out the request structure).
      */
     if (sockPtr->reqPtr != NULL) {
+        Ns_Log(DriverDebug, "NsSockClose calls RequestFree");
         RequestFree(sockPtr);
     }
 

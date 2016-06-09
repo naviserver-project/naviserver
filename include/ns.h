@@ -2454,6 +2454,11 @@ NS_EXTERN Ns_Set *
 Ns_SetCreate(const char *name)
     NS_GNUC_RETURNS_NONNULL;
 
+NS_EXTERN Ns_Set *
+Ns_SetRecreate(Ns_Set *set)
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_RETURNS_NONNULL;
+
 NS_EXTERN void
 Ns_SetFree(Ns_Set *set);
 

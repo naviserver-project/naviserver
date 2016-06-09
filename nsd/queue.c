@@ -1246,6 +1246,9 @@ NsConnThread(void *arg)
             connPtr->nextPtr->prevPtr = connPtr->prevPtr;
         }
         connPtr->prevPtr = NULL;
+        
+        Ns_SetFree(connPtr->headers);
+        connPtr->headers = NULL;
 
         Ns_MutexLock(wqueueLockPtr);
         connPtr->nextPtr = poolPtr->wqueue.freePtr;
@@ -1454,7 +1457,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
     /*{ConnPool *poolPtr = argPtr->poolPtr;
       Ns_Log(Notice,"ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
       } */   
-    connPtr->headers = connPtr->reqPtr->headers;
+    connPtr->headers = Ns_SetRecreate(connPtr->reqPtr->headers);
     connPtr->contentLength = connPtr->reqPtr->length;
 
     connPtr->nContentSent = 0u;
