@@ -154,9 +154,9 @@ NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_O
 static int
 RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
-    NsInterp       *itPtr;
+    const NsInterp *itPtr;
     NsServer       *servPtr;
-    char           *content, *end, *tag;
+    const char     *end, *tag, *content;
     Tcl_HashEntry  *hPtr;
     int             isNew, slen, elen, tlen;
     Tcl_DString     tbuf;
@@ -263,14 +263,14 @@ void
 NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
 	   unsigned int flags, const char* file)
 {
-    int             level, scriptStreamDone;
-    unsigned int    scriptFlags;
-    Tag            *tagPtr = NULL;
-    char           *s, *e, *n, *as = "";
-    const char     *script = "", *ae = "";
-    char           *a, *text;
-    Tcl_DString     tag;
-    Tcl_HashEntry  *hPtr;
+    int                  level, scriptStreamDone;
+    unsigned int         scriptFlags;
+    const Tag           *tagPtr = NULL;
+    char                *s, *e, *n, *as = "";
+    const char          *script = "", *ae = "";
+    char                *a, *text;
+    Tcl_DString          tag;
+    const Tcl_HashEntry *hPtr;
     enum {
         TagNext,
         TagScript,
@@ -644,7 +644,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
 static void
 GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
 {
-    char *t;
+    const char *t;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(s != NULL);
