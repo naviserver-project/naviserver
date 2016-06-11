@@ -731,7 +731,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 
         taskPtr->signalFlags |= bit;
         pending = ((taskPtr->signalFlags & TASK_PENDING) != 0u);
-        if (pending == 0) {
+        if (!pending) {
             taskPtr->signalFlags |= TASK_PENDING;
             taskPtr->nextSignalPtr = queuePtr->firstSignalPtr;
             queuePtr->firstSignalPtr = taskPtr;
@@ -741,7 +741,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
     if (shutdown) {
         return NS_FALSE;
     }
-    if (pending == 0) {
+    if (!pending) {
         TriggerQueue(queuePtr);
     }
     return NS_TRUE;

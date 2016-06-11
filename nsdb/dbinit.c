@@ -60,7 +60,7 @@ typedef struct Pool {
     int             nhandles;
     struct Handle  *firstPtr;
     struct Handle  *lastPtr;
-    int             fVerboseError;
+    bool            fVerboseError;
     time_t          maxidle;
     time_t          maxopen;
     int             stale_on_close;

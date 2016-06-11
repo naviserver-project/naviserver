@@ -1577,7 +1577,7 @@ DriverThread(void *arg)
          */
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
-            if (sockPtr->keep != 0) {
+            if (sockPtr->keep) {
                 Ns_Log(DriverDebug, "setting keepwait %ld for socket %d",
                        sockPtr->drvPtr->keepwait,  sockPtr->sock);
 

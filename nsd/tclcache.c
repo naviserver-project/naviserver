@@ -467,9 +467,9 @@ int
 NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     TclCache       *cPtr;
-    Ns_Entry       *entry;
-    Ns_CacheSearch  search;
+    const Ns_Entry *entry;
     const char     *pattern = NULL;
+    Ns_CacheSearch  search;
     Ns_DString      ds;
     int             exact = NS_FALSE;
 

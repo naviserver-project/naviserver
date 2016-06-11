@@ -117,7 +117,7 @@ Ns_ConfigBool(const char *section, const char *key, bool def)
     NS_NONNULL_ASSERT(key != NULL);
 
     s = ConfigGet(section, key, 0, def ? "true" : "false");
-    if (s != NULL && ToBool(s, &value) == NS_TRUE) {
+    if (s != NULL && ToBool(s, &value)) {
         found = NS_TRUE;
     }
     Ns_Log(Dev, "config: %s:%s value=%s default=%s (bool)",
@@ -157,7 +157,7 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
     NS_NONNULL_ASSERT(key != NULL);
 
     s = ConfigGet(section, key, 0, (def != 0) ? "true" : "false");
-    if (s != NULL && ToBool(s, &value) == NS_TRUE) {
+    if (s != NULL && ToBool(s, &value)) {
         found = NS_TRUE;
     }
 
@@ -461,11 +461,11 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
     s = ConfigGet(section, key, 0, NULL);
-    if (s != NULL && ToBool(s, valuePtr) == NS_TRUE) {
+    if (s != NULL && ToBool(s, valuePtr)) {
         found = NS_TRUE;
     }
     Ns_Log(Dev, "config: %s:%s value=%s (bool)", 
-	   section, key, found ? (*valuePtr != 0 ? "true" : "false") : "(null)");
+	   section, key, found ? (*valuePtr ? "true" : "false") : "(null)");
 
     return found;
 }

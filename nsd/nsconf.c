@@ -68,7 +68,7 @@ NsInitConf(void)
      * libnsd is being used for some other, non-server program.
      */
 
-    nsconf.state.started = 1;
+    nsconf.state.started = NS_TRUE;
     Ns_MutexInit(&nsconf.state.lock);
     Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
 

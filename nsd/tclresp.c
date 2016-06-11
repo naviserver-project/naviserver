@@ -212,7 +212,8 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 {
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn  = NULL;
-    int           length, i, n, binary, status;
+    int           length, i, n, status;
+    bool          binary;
     unsigned int  flags;
     struct iovec  iov[32];
     struct iovec *sbufs = iov;

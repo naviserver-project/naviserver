@@ -132,7 +132,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      */
 
     Ns_MutexLock(&nsconf.state.lock);
-    nsconf.state.started = 0;
+    nsconf.state.started = NS_FALSE;
     Ns_MutexUnlock(&nsconf.state.lock);
 
     /*
@@ -664,7 +664,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     StatusMsg(running);
 
     Ns_MutexLock(&nsconf.state.lock);
-    nsconf.state.started = 1;
+    nsconf.state.started = NS_TRUE;
     Ns_CondBroadcast(&nsconf.state.cond);
     Ns_MutexUnlock(&nsconf.state.lock);
 
@@ -704,7 +704,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     StatusMsg(stopping);
 
     Ns_MutexLock(&nsconf.state.lock);
-    nsconf.state.stopping = 1;
+    nsconf.state.stopping = NS_TRUE;
     if (sig == NS_SIGQUIT || nsconf.shutdowntimeout < 0) {
         nsconf.shutdowntimeout = 0;
     }
@@ -787,12 +787,12 @@ Ns_WaitForStartup(void)
     /*
      * This dirty-read is worth the effort.
      */
-    if (nsconf.state.started != 0) {
+    if (nsconf.state.started) {
         return NS_OK;
     }
 
     Ns_MutexLock(&nsconf.state.lock);
-    while (nsconf.state.started == 0) {
+    while (nsconf.state.started == NS_FALSE) {
         Ns_CondWait(&nsconf.state.cond, &nsconf.state.lock);
     }
     Ns_MutexUnlock(&nsconf.state.lock);
