@@ -900,7 +900,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 struct iovec buf;
                 char         buffer[4096];
 
-                if (connChanPtr->binary != NS_TRUE) {
+                if (!connChanPtr->binary) {
                     Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
                            "Channel %s is not binary", name);
                 }
@@ -957,7 +957,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 int          msgLen;
                 const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
 
-                if (connChanPtr->binary != NS_TRUE) {
+                if (!connChanPtr->binary) {
                     Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
                            "Channel %s is not binary", name);
                 }

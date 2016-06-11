@@ -519,7 +519,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 
     for (i = 0; status == NS_OK && i < ngot; ++i) {
 	handlePtr = handlesPtrPtr[i];
-	if (handlePtr->connected == NS_FALSE) {
+	if (!handlePtr->connected) {
 	    status = Connect(handlePtr);
 	}
     }
@@ -576,7 +576,7 @@ Ns_DbBouncePool(const char *pool)
     poolPtr->stale_on_close++;
     handlePtr = poolPtr->firstPtr;
     while (handlePtr != NULL) {
-	if (handlePtr->connected == NS_TRUE) {
+	if (handlePtr->connected) {
 	    handlePtr->stale = NS_TRUE;
 	}
 	handlePtr->stale_on_close = poolPtr->stale_on_close;
@@ -694,7 +694,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
              */
             Ns_MutexLock(&poolPtr->lock);
             for (handlePtr = poolPtr->firstPtr; handlePtr != NULL; handlePtr = handlePtr->nextPtr) {
-                if (handlePtr->used == NS_FALSE) {
+                if (!handlePtr->used) {
                     unused ++;
                 }
             }
@@ -911,7 +911,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
     poolPtr->statementCount++;
 
     if (handle->dsExceptionMsg.length > 0) {
-        if (poolPtr->fVerboseError == NS_TRUE) {
+        if (poolPtr->fVerboseError) {
 	    
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
@@ -1027,7 +1027,7 @@ ReturnHandle(Handle *handlePtr)
     if (poolPtr->firstPtr == NULL) {
 	poolPtr->firstPtr = poolPtr->lastPtr = handlePtr;
     	handlePtr->nextPtr = NULL;
-    } else if (handlePtr->connected == NS_TRUE) {
+    } else if (handlePtr->connected) {
 	handlePtr->nextPtr = poolPtr->firstPtr;
 	poolPtr->firstPtr = handlePtr;
     } else {
@@ -1059,14 +1059,14 @@ IsStale(const Handle *handlePtr, time_t now)
 {
     NS_NONNULL_ASSERT(handlePtr != NULL);
 
-    if (handlePtr->connected == NS_TRUE) {
+    if (handlePtr->connected) {
         time_t    minAccess, minOpen;
 
 	minAccess = now - handlePtr->poolPtr->maxidle;
 	minOpen   = now - handlePtr->poolPtr->maxopen;
 	if ((handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) || 
 	    (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen)) ||
-	    (handlePtr->stale == NS_TRUE) ||
+	    (handlePtr->stale) ||
 	    (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
             Ns_Log(Ns_LogSqlDebug, "dbinit: closing %s handle in pool '%s'",

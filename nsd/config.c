@@ -44,7 +44,7 @@
 static Tcl_CmdProc SectionCmd;
 static Tcl_CmdProc ParamCmd;
 
-static Ns_Set* GetSection(const char *section, int create)
+static Ns_Set* GetSection(const char *section, bool create)
     NS_GNUC_NONNULL(1);
 
 static const char* ConfigGet(const char *section, const char *key, int exact, const char *defstr)
@@ -583,7 +583,7 @@ Ns_ConfigGetSections(void)
 Ns_Set *
 Ns_ConfigGetSection(const char *section)
 {
-    return GetSection(section, 0);
+    return GetSection(section, NS_FALSE);
 }
 
 /*
@@ -605,7 +605,7 @@ Ns_ConfigGetSection(const char *section)
 Ns_Set *
 Ns_ConfigCreateSection(const char *section)
 {
-    int create = (Ns_InfoStarted() != 0) ? 0 : 1;
+    bool create = (Ns_InfoStarted() != 0) ? NS_FALSE : NS_TRUE;
     return GetSection(section, create);
 }
 
@@ -830,7 +830,7 @@ SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *ar
         return TCL_ERROR;
     }
     set = (Ns_Set **) clientData;
-    *set = GetSection(argv[1], 1);
+    *set = GetSection(argv[1], NS_TRUE);
 
     return TCL_OK;
 }
@@ -862,7 +862,7 @@ ConfigGet(const char *section, const char *key, int exact, const char *defstr)
     NS_NONNULL_ASSERT(key != NULL);
 
     s = NULL;
-    set = GetSection(section, 0);
+    set = GetSection(section, NS_FALSE);
 
     if (set != NULL) {
 	int  i;
@@ -901,7 +901,7 @@ ConfigGet(const char *section, const char *key, int exact, const char *defstr)
  */
 
 static Ns_Set *
-GetSection(const char *section, int create)
+GetSection(const char *section, bool create)
 {
     Ns_Set        *set;
     Tcl_HashEntry *hPtr;
@@ -942,7 +942,7 @@ GetSection(const char *section, int create)
      */
 
     set = NULL;
-    if (likely(create != 1)) {
+    if (likely(!create)) {
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
         hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &isNew);

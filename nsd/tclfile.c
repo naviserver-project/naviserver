@@ -324,7 +324,7 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     }
 
     result = kill(pid, sig);
-    if (result != 0 && nocomplain == NS_FALSE) {
+    if (result != 0 && !nocomplain) {
         Ns_TclPrintfResult(interp, "kill %d %d failed: %s", pid, sig, Tcl_PosixError(interp));
         return TCL_ERROR;
     }
@@ -370,7 +370,7 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
 
     result = symlink(file1, file2);
-    if (result != 0 && nocomplain == NS_FALSE) {
+    if (result != 0 && !nocomplain) {
         Ns_TclPrintfResult(interp, "symlink '%s' '%s' failed: %s", file1, file2, 
                            Tcl_PosixError(interp));
         return TCL_ERROR;

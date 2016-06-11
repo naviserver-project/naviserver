@@ -602,8 +602,8 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 	 * character as result.
 	 */
         ++e;
-        while (*e != '\0' && (escaped == NS_TRUE || *e != *s)) {
-	    if (escaped == NS_TRUE) {
+        while (*e != '\0' && (escaped || *e != *s)) {
+	    if (escaped) {
 	        escaped = NS_FALSE;
 	    } else if (*e == '\\') {
 	        *uPtr = *s;

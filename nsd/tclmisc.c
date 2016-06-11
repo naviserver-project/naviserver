@@ -1056,7 +1056,7 @@ char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUppe
     static const char hexCharsUpper[] = "0123456789ABCDEF";
     static const char hexCharsLower[] = "0123456789abcdef";
     
-    if (isUpper == NS_TRUE) {
+    if (isUpper) {
         for (i = 0; i < size; ++i) {
             buf[i * 2] = hexCharsUpper[digest[i] >> 4];
             buf[i * 2 + 1] = hexCharsUpper[digest[i] & 0xFu];
@@ -1106,7 +1106,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     }
 
     binary = NsTclObjIsByteArray(objv[1]);
-    if (binary == NS_TRUE) {
+    if (binary) {
         str = (char *)Tcl_GetByteArrayFromObj(objv[1], &length);
     } else {
         str = Tcl_GetStringFromObj(objv[1], &length);
@@ -1513,7 +1513,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     }
     
     binary = NsTclObjIsByteArray(objv[1]);
-    if (binary == NS_TRUE) {
+    if (binary) {
         str = (char *)Tcl_GetByteArrayFromObj(objv[1], &length);
     } else {
         str = Tcl_GetStringFromObj(objv[1], &length);

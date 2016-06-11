@@ -559,7 +559,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 			continue;
 		    }
 		}
-		if (decork == NS_TRUE) {
+		if (decork) {
                     Ns_SockCork(sock, NS_FALSE);
                 }
 		SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
@@ -575,7 +575,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 	bufs++;
     }
 
-    if (decork == NS_TRUE) {
+    if (decork) {
         Ns_SockCork(sock, NS_FALSE);
     }
     return size;

@@ -1780,7 +1780,7 @@ RequestFree(Sock *sockPtr)
     Ns_Log(DriverDebug, "=== RequestFree cleans %p (avail %lu keep %d length %lu contentLength %lu)",
            (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
 
-    keep = (sockPtr->keep == NS_TRUE) && (reqPtr->avail > reqPtr->contentLength);
+    keep = (sockPtr->keep) && (reqPtr->avail > reqPtr->contentLength);
     if (keep) {
         size_t      leftover = reqPtr->avail - reqPtr->contentLength;
         const char *offset   = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
@@ -2189,7 +2189,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
          * depends upon whether this sock was a keep-alive
          * that we were allowing to 'linger'.
          */
-        if (sockPtr->keep == NS_FALSE) {
+        if (!sockPtr->keep) {
             errMsg = "Timeout during read";
         }
         break;
@@ -3495,13 +3495,13 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
         int status;
 
         Ns_MutexLock(&queuePtr->lock);
-        if (queuePtr->stopped == NS_FALSE && queuePtr->shutdown == NS_FALSE) {
+        if (!queuePtr->stopped && !queuePtr->shutdown) {
             Ns_Log(Debug, "%s%d: triggering shutdown", name, queuePtr->id);
             queuePtr->shutdown = NS_TRUE;
             SockTrigger(queuePtr->pipe[1]);
         }
         status = NS_OK;
-        while (queuePtr->stopped == NS_FALSE && status == NS_OK) {
+        while (!queuePtr->stopped && status == NS_OK) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, timeoutPtr);
         }
         if (status != NS_OK) {
@@ -4290,7 +4290,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         size_t      wrote = 0u;
         WriterSock *wrSockPtr1 = NULL;
 
-        if (wrPtr->doStream == NS_FALSE) {
+        if (!wrPtr->doStream) {
             return NS_ERROR;
         }
 
@@ -5019,7 +5019,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * since writing of an error message to the log might bring us
      * into an infinte loop.
      */
-    if (asyncWriter == NULL || asyncWriter->firstPtr->stopped == NS_TRUE) {
+    if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
         ssize_t written = ns_write(fd, buffer, nbyte);
 
         if (unlikely(written != (ssize_t)nbyte)) {
@@ -5172,7 +5172,7 @@ AsyncWriterThread(void *arg)
                 Ns_Fatal("asynclogwriter: trigger ns_recv() failed: %s",
                          ns_sockstrerror(ns_sockerrno));
             }
-            if (queuePtr->stopped == NS_TRUE) {
+            if (queuePtr->stopped) {
                 /*
                  * Drain the queue from everything
                  */

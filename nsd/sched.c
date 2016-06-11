@@ -315,7 +315,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     ePtr->arg = clientData;
 
     Ns_MutexLock(&lock);
-    if (shutdownPending == NS_TRUE) {
+    if (shutdownPending) {
         id = NS_ERROR;
         ns_free(ePtr);
     } else {
@@ -368,7 +368,7 @@ Ns_Cancel(int id)
     bool   cancelled = NS_FALSE;
 
     Ns_MutexLock(&lock);
-    if (shutdownPending == NS_FALSE) {
+    if (!shutdownPending) {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
@@ -382,7 +382,7 @@ Ns_Cancel(int id)
         }
     }
     Ns_MutexUnlock(&lock);
-    if (cancelled == NS_TRUE) {
+    if (cancelled) {
         FreeEvent(ePtr);
     }
     return cancelled;
@@ -411,7 +411,7 @@ Ns_Pause(int id)
     bool paused = NS_FALSE;
 
     Ns_MutexLock(&lock);
-    if (shutdownPending == NS_FALSE) {
+    if (!shutdownPending) {
         Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
@@ -454,7 +454,7 @@ Ns_Resume(int id)
     int resumed = NS_FALSE;
 
     Ns_MutexLock(&lock);
-    if (shutdownPending == NS_FALSE) {
+    if (!shutdownPending) {
         Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
@@ -497,7 +497,7 @@ void
 NsStartSchedShutdown(void)
 {
     Ns_MutexLock(&lock);
-    if (running == NS_TRUE) {
+    if (running) {
         Ns_Log(Notice, "sched: shutdown pending");
         shutdownPending = NS_TRUE;
         Ns_CondSignal(&schedcond);
@@ -512,7 +512,7 @@ NsWaitSchedShutdown(const Ns_Time *toPtr)
 
     Ns_MutexLock(&lock);
     status = NS_OK;
-    while (status == NS_OK && running == NS_TRUE) {
+    while (status == NS_OK && running) {
         status = Ns_CondTimedWait(&schedcond, &lock, toPtr);
     }
     Ns_MutexUnlock(&lock);
@@ -598,7 +598,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
      * Signal or create the SchedThread if necessary.
      */
 
-    if (running == NS_TRUE) {
+    if (running) {
         Ns_CondSignal(&schedcond);
     } else {
         running = NS_TRUE;
@@ -683,7 +683,7 @@ EventThread(void *arg)
 
     Ns_MutexLock(&lock);
     while (jpt == 0 || njobs > 0) {
-        while (firstEventPtr == NULL && shutdownPending == NS_FALSE) {
+        while (firstEventPtr == NULL && !shutdownPending) {
             Ns_CondWait(&eventcond, &lock);
         }
         if (firstEventPtr == NULL) {
@@ -785,7 +785,7 @@ SchedThread(void *UNUSED(arg))
     Ns_Log(Notice, "sched: starting");
 
     Ns_MutexLock(&lock);
-    while (shutdownPending == NS_FALSE) {
+    while (!shutdownPending) {
 
         /*
          * For events ready to run, either create a thread for
@@ -859,7 +859,7 @@ SchedThread(void *UNUSED(arg))
 
         if (nqueue == 0) {
             Ns_CondWait(&schedcond, &lock);
-        } else if (shutdownPending == NS_FALSE) {
+        } else if (!shutdownPending) {
 	    timeout.sec  = (long)queue[1]->nextqueue;
             timeout.usec = 0;
             (void) Ns_CondTimedWait(&schedcond, &lock, &timeout);

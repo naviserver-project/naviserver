@@ -1028,7 +1028,7 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
     NS_NONNULL_ASSERT(bucketPtr != NULL);
     NS_NONNULL_ASSERT(arrayName != NULL);
         
-    if (unlikely(create == NS_TRUE)) {
+    if (unlikely(create)) {
         int isNew;
         
         hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, arrayName, &isNew);
@@ -1328,7 +1328,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
         }
     }
     
-    if (arrayPtr == NULL && create == NS_FALSE) {
+    if (arrayPtr == NULL && !create) {
         Tcl_AppendResult(interp, "no such array: ", arrayName, NULL);
     }
 

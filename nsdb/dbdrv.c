@@ -307,7 +307,7 @@ Ns_DbDriverDbType(Ns_DbHandle *handle)
     
     if (driverPtr == NULL ||
 	driverPtr->typeProc == NULL ||
-	handle->connected == NS_FALSE) {
+	!handle->connected) {
 
     	return NULL;
     }
@@ -338,7 +338,7 @@ Ns_DbDML(Ns_DbHandle *handle, const char *sql)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (driverPtr != NULL && handle->connected == NS_TRUE) {
+    if (driverPtr != NULL && handle->connected) {
 
 	if (driverPtr->execProc != NULL) {
 	  status = Ns_DbExec(handle, sql);
@@ -387,7 +387,7 @@ Ns_DbSelect(Ns_DbHandle *handle, const char *sql)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     Ns_Set *setPtr = NULL;
 
-    if (driverPtr != NULL && handle->connected == NS_TRUE) {
+    if (driverPtr != NULL && handle->connected) {
 
 	if (driverPtr->execProc != NULL) {
     	    if (Ns_DbExec(handle, sql) == NS_ROWS) {
@@ -434,7 +434,7 @@ Ns_DbExec(Ns_DbHandle *handle, const char *sql)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
     
-    if (handle->connected != NS_FALSE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->execProc != NULL) {
         Ns_Time startTime;
@@ -472,7 +472,7 @@ Ns_DbBindRow(Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     Ns_Set *setPtr = NULL;
 
-    if (handle->connected != NS_FALSE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->bindProc != NULL) {
 
@@ -509,7 +509,7 @@ Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (handle->connected != NS_FALSE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->getProc != NULL) {
 
@@ -541,7 +541,7 @@ Ns_DbGetRowCount(Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (handle->connected != NS_FALSE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->countProc != NULL) {
 
@@ -575,7 +575,7 @@ Ns_DbFlush(Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->flushProc != NULL) {
 
@@ -609,7 +609,7 @@ Ns_DbCancel(Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->cancelProc != NULL) {
 
@@ -642,7 +642,7 @@ Ns_DbResetHandle (Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->resetProc != NULL) {
 
@@ -679,7 +679,7 @@ NsDbLoadDriver(const char *driver)
 
     NS_NONNULL_ASSERT(driver != NULL);
     
-    if (initialized == NS_FALSE) {
+    if (!initialized) {
 	Tcl_InitHashTable(&driversTable, TCL_STRING_KEYS);
 	initialized = NS_TRUE;
     }
@@ -813,7 +813,7 @@ NsDbClose(Ns_DbHandle *handle)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
     
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->closeProc != NULL) {
 
@@ -844,7 +844,7 @@ Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int status = NS_ERROR;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->spstartProc != NULL) {
 
@@ -882,7 +882,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
     int         status = NS_ERROR;
     Ns_DString  args;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->spsetparamProc != NULL) {
 
@@ -919,7 +919,7 @@ Ns_DbSpExec(Ns_DbHandle *handle)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int       status = NS_ERROR;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->spexecProc != NULL) {
 
@@ -953,7 +953,7 @@ Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize)
     DbDriver *driverPtr = NsDbGetDriver(handle);
     int       status = NS_ERROR;
 
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->spreturncodeProc != NULL) {
 
@@ -987,7 +987,7 @@ Ns_DbSpGetParams(Ns_DbHandle *handle)
     Ns_Set   *aset = NULL;
 
     Ns_SetTrunc(handle->row, 0u);
-    if (handle->connected == NS_TRUE &&
+    if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->spgetparamsProc != NULL) {
 

@@ -717,7 +717,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
     }
 
-    if (done == NS_TRUE) {
+    if (done) {
         return result;
         
     }

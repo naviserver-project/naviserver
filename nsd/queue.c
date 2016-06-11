@@ -222,7 +222,7 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
 	 ) {
 
 	Ns_MutexLock(&poolPtr->servPtr->pools.lock);
-	wantCreate = (poolPtr->servPtr->pools.shutdown == NS_FALSE);
+	wantCreate = (!poolPtr->servPtr->pools.shutdown);
 	Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
       
 	/*Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
@@ -358,7 +358,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     * available, ...)
     */
   
-    if (servPtr->pools.shutdown == NS_FALSE) {
+    if (!servPtr->pools.shutdown) {
 
 	Ns_MutexLock(&poolPtr->wqueue.lock);
 	if (poolPtr->wqueue.freePtr != NULL) {
@@ -1139,7 +1139,7 @@ NsConnThread(void *arg)
 	    /*
 	     * Wait until someone wakes us up, or a timeout happens.
 	     */
-	    while (servPtr->pools.shutdown == NS_FALSE) {
+	    while (!servPtr->pools.shutdown) {
 
 		Ns_GetTime(timePtr);
 		Ns_IncrTime(timePtr, timeout, 0);
@@ -1215,7 +1215,7 @@ NsConnThread(void *arg)
 	    poolPtr->threads.idle --;
 	    Ns_MutexUnlock(threadsLockPtr);
 	    
-	    if (servPtr->pools.shutdown == NS_TRUE) {
+	    if (servPtr->pools.shutdown) {
 		exitMsg = "shutdown pending";
 		break;
 	    } else if (status == NS_TIMEOUT) {
@@ -1356,7 +1356,7 @@ NsConnThread(void *arg)
 	 * During shutdown, we do not want to restart connection
 	 * threads. The driver pointer might be already invalid. 
 	 */
-	if (wakeup == NS_TRUE && connPtr != NULL && shutdown == NS_FALSE) {
+	if (wakeup && connPtr != NULL && !shutdown) {
             assert(connPtr->drvPtr != NULL);
 	    NsWakeupDriver(connPtr->drvPtr);
 	} 
@@ -1367,7 +1367,7 @@ NsConnThread(void *arg)
      * condition variable to check whether all threads have terminated
      * already.
      */
-    if (shutdown == NS_TRUE) {
+    if (shutdown) {
 	Ns_CondSignal(&poolPtr->wqueue.cond); 
     }
 
@@ -1585,7 +1585,7 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
      * process the remaining bytes.
      * 
      */
-    if ((sockPtr->keep == NS_TRUE) && (connPtr->reqPtr->leftover > 0u)) {
+    if ((sockPtr->keep) && (connPtr->reqPtr->leftover > 0u)) {
         NsWakeupDriver(sockPtr->drvPtr);
     }
 

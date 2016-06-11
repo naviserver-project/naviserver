@@ -179,7 +179,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     Ns_DString  ds;
     Ns_Time     t;
     int         isNew;
-    bool        status;
+    bool        success;
 
     NS_NONNULL_ASSERT(getProc != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -191,7 +191,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
 
     Ns_DStringInit(&ds);
     if (cache == NULL) {
-        status = (*getProc)(&ds, key);
+        success = (*getProc)(&ds, key);
     } else {
         Ns_Entry   *entry;
 
@@ -207,9 +207,9 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
         }
         if (isNew != 0) {
             Ns_CacheUnlock(cache);
-            status = (*getProc)(&ds, key);
+            success = (*getProc)(&ds, key);
             Ns_CacheLock(cache);
-            if (status != NS_TRUE) {
+            if (!success) {
                 Ns_CacheDeleteEntry(entry);
             } else {
 	        Ns_Time endTime, diffTime;
@@ -225,12 +225,12 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
         } else {
             Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
                               (int)Ns_CacheGetSize(entry));
-            status = NS_TRUE;
+            success = NS_TRUE;
         }
         Ns_CacheUnlock(cache);
     }
 
-    if (status == NS_TRUE) {
+    if (success) {
         if (getProc == GetAddr && all == 0) {
             const char *p = ds.string;
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
@@ -242,7 +242,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     }
     Ns_DStringFree(&ds);
 
-    return status;
+    return success;
 }
 
 

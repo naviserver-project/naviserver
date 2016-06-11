@@ -122,7 +122,7 @@ static int AuthProc(const char *server, const char *method, const char *url,
 		    const char *user, const char *pwd, const char *peer);
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, char *uri);
-static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale);
+static int CreateHeader(Server * servPtr, Ns_Conn *conn, bool stale);
 /*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
 static void FreeUserInfo(User *userPtr, char *name)
@@ -539,8 +539,7 @@ static int AuthProc(const char *server, const char *method, const char *url,
      */
 
     if (status == NS_UNAUTHORIZED && !strcmp(auth, "Digest")) {
-        int stale = NS_FALSE;
-        CreateHeader(servPtr, conn, stale);
+        CreateHeader(servPtr, conn, NS_FALSE);
     }
 
     Ns_RWLockUnlock(&servPtr->lock);
@@ -1745,10 +1744,10 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
  *----------------------------------------------------------------------
 */
 
-static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale)
+static int CreateHeader(Server *servPtr, Ns_Conn *conn, bool stale)
 {
-    Ns_DString ds;
-    char *nonce = 0;
+    Ns_DString  ds;
+    char       *nonce = 0;
 
     if (CreateNonce(usdigest, &nonce, "") == NS_ERROR) {
         return NS_ERROR;
@@ -1757,7 +1756,7 @@ static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale)
     Ns_DStringInit(&ds);
     Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"", servPtr->server, nonce);
 
-    if (stale == NS_TRUE) {
+    if (stale) {
         Ns_DStringVarAppend(&ds, ", stale=\"true\"", NULL);
     }
     Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);

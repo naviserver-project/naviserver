@@ -57,7 +57,7 @@ typedef struct {
 static void DecrEntry(File *filePtr)
     NS_GNUC_NONNULL(1);
 
-static bool UrlIs(const char *server, const char *url, int isDir)
+static bool UrlIs(const char *server, const char *url, bool isDir)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int  FastGetRestart(Ns_Conn *conn, const char *page)
@@ -334,7 +334,7 @@ Ns_UrlIsDir(const char *server, const char *url)
 }
 
 static bool
-UrlIs(const char *server, const char *url, int isDir)
+UrlIs(const char *server, const char *url, bool isDir)
 {
     Ns_DString   ds;
     struct stat  st;
@@ -346,8 +346,8 @@ UrlIs(const char *server, const char *url, int isDir)
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK
         && stat(ds.string, &st) == 0
-        && ((isDir == NS_TRUE && S_ISDIR(st.st_mode))
-            || (isDir == NS_FALSE && S_ISREG(st.st_mode)))) {
+        && ((isDir && S_ISDIR(st.st_mode))
+            || (!isDir && S_ISREG(st.st_mode)))) {
         is = NS_TRUE;
     }
     Ns_DStringFree(&ds);
@@ -485,7 +485,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
     /*
      * Check gzip version
      */
-    if (useGzip == NS_TRUE && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
+    if (useGzip && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
 	struct stat gzStat;
 	const char *gzFileName;
 
@@ -500,7 +500,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 	     * We have a .gz file
 	     */
 	    if (gzStat.st_mtime < connPtr->fileInfo.st_mtime
-		&& (useGzipRefresh == NS_TRUE)) {
+		&& useGzipRefresh) {
 		/*
 		 * The modification time of the .gz file is older than
 		 * the modification time of the source, and the config
@@ -555,7 +555,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 	 * directly.
          */
 
-        if ((useMmap == NS_TRUE)
+        if (useMmap
 	    && NsMemMap(file, (size_t)connPtr->fileInfo.st_size,
                         NS_MMAP_READ, &connPtr->fmap) == NS_OK) {
             result = Ns_ConnReturnData(conn, status, connPtr->fmap.addr,

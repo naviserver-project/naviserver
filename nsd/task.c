@@ -633,7 +633,7 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
     while (status == NS_OK && queuePtr != NULL) {
         nextPtr = queuePtr->nextPtr;
         Ns_MutexLock(&queuePtr->lock);
-        while (status == NS_OK && queuePtr->stopped == NS_FALSE) {
+        while (status == NS_OK && !queuePtr->stopped) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, toPtr);
         }
         Ns_MutexUnlock(&queuePtr->lock);
@@ -722,7 +722,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
     
     Ns_MutexLock(&queuePtr->lock);
     shutdown = queuePtr->shutdown;
-    if (shutdown == NS_FALSE) {
+    if (!shutdown) {
 
         /*
          * Mark the signal and add event to signal list if not
@@ -738,7 +738,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
         }
     }
     Ns_MutexUnlock(&queuePtr->lock);
-    if (shutdown == NS_TRUE) {
+    if (shutdown) {
         return NS_FALSE;
     }
     if (pending == 0) {
@@ -971,7 +971,7 @@ TaskThread(void *arg)
          * Break now if shutting down now that all signals have been processed.
          */
 
-        if (shutdown == NS_TRUE) {
+        if (shutdown) {
             break;
         }
 

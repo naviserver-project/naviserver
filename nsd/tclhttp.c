@@ -1527,7 +1527,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
          * Send the request data either from the DString, or from a file. The
          * latter case is flagged via member "sendSpoolMode".
          */
-        if (httpPtr->sendSpoolMode == NS_TRUE) {
+        if (httpPtr->sendSpoolMode) {
             Ns_Log(Ns_LogTaskDebug, "HttpProc read data from file, buffer size %d", Tcl_DStringLength(&httpPtr->ds));
             n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, CHUNK_SIZE);
             if (n < 0) {
