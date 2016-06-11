@@ -502,7 +502,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     if (stat(file, &st) != 0) {
         Tcl_AppendResult(interp, "could not stat \"",
                          file, "\": ", Tcl_PosixError(interp), NULL);
-    } else if (S_ISREG(st.st_mode) == 0) {
+    } else if (!S_ISREG(st.st_mode)) {
         Tcl_AppendResult(interp, "not an ordinary file: ", file, NULL);
     } else {
 	Ns_Entry *ePtr;
