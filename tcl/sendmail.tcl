@@ -257,6 +257,11 @@ proc ns_sendmail args {
     set user [ns_config ns/parameters smtpauthuser]
     set pass [ns_config ns/parameters smtpauthpassword]
 
+    set usestarttls [ns_config ns/parameters smtpusestarttls]
+    set certfile [ns_config ns/parameters smtpcertfile]
+    set cafile [ns_config ns/parameters smtpcafile]
+    set cadir [ns_config ns/parameters smtpcadir]
+
     #
     # Open the connection to SMTP server
     #
@@ -270,7 +275,6 @@ proc ns_sendmail args {
     }
 
     lassign [ns_sockopen -timeout $timeout $smtphost $smtpport] rfd wfd
-    fconfigure $rfd -translation auto -blocking 0
     fconfigure $wfd -translation crlf
 
     #
@@ -279,15 +283,63 @@ proc ns_sendmail args {
 
     set err [catch {
 
-        _ns_smtp_recv "Start" $rfd 220
+        _ns_smtp_recv "Start" $wfd 220
+        _ns_smtp_send "EHLO" $wfd "EHLO $host"
+
+        set lines [_ns_smtp_recv "EHLO" $wfd 250]
+
+        if {$usestarttls} {
+            if {$certfile eq {}} {
+                ns_log error "ns_sendmail: param smtpcertfile must not be empty"
+            } else {
+
+                #
+                # If STARTTLS is configured, first check if the server supports
+                # it.
+                #
+
+                set hasStarttls 0
+                foreach line $lines {
+                    set command [string range $line 4 11]
+                    if {[string match "STARTTLS" $command]} {
+                        set hasStarttls 1
+                    }
+                }
+                if {$hasStarttls == 0} {
+                    ns_log warning "ns_sendmail: SMTP server does not support STARTTLS"
+                } else {
+
+                    #
+                    # Request STARTTLS
+                    #
+
+                    _ns_smtp_send "STARTTLS" $wfd "STARTTLS"
+                    _ns_smtp_recv "STARTTLS" $wfd 220
+
+                    #
+                    # Do the TLS handshake
+                    #
+
+                    package req tls
+                    tls::import $wfd -certfile $certfile -cadir $cadir      \
+                        -cafile $cafile
+                    tls::handshake $wfd
+
+                    #
+                    # Note: Translation MUST be reconfigured after the tls handshake
+                    # because it is reset to some default!
+                    #
+
+                    fconfigure $wfd -translation crlf
+                }
+            }
+        }
 
         #
         # Optionaly authorize (PLAIN or LOGIN)
         #
 
         if {$user ne {} && $pass ne {}} {
-            _ns_smtp_send "EHLO" $wfd "EHLO $host"
-            _ns_smtp_recv "EHLO" $rfd 250
             if {[llength [split $user "\0"]] == 1} {
                 # Default case: user and realm are same
                 set token [ns_base64encode "${user}\0${user}\0${pass}"]
@@ -302,28 +354,24 @@ proc ns_sendmail args {
             if {$authmode eq {} || $authmode eq "PLAIN"} {
 
                 _ns_smtp_send "AUTH PLAIN" $wfd "AUTH PLAIN $token"
-                _ns_smtp_recv "AUTH PLAIN" $rfd 235
+                _ns_smtp_recv "AUTH PLAIN" $wfd 235
 
             } elseif {$authmode eq "LOGIN"} {
 
                 _ns_smtp_send "AUTH LOGIN" $wfd "AUTH LOGIN"
-                _ns_smtp_recv "AUTH LOGIN" $rfd 334
-                # send username if AUTH LOGIN is supported
+                _ns_smtp_recv "AUTH LOGIN" $wfd 334
                 _ns_smtp_send "AUTH LOGIN" $wfd [ns_base64encode $user]
-                _ns_smtp_recv "AUTH LOGIN" $rfd 334
+                _ns_smtp_recv "AUTH LOGIN" $wfd 334
                 # then send password
                 _ns_smtp_send "AUTH LOGIN" $wfd [ns_base64encode $pass]
-                _ns_smtp_recv "AUTH LOGIN" $rfd 235
+                _ns_smtp_recv "AUTH LOGIN" $wfd 235
 
             }
 
-        } else {
-            _ns_smtp_send "Helo" $wfd "HELO $host"
-            _ns_smtp_recv "Helo" $rfd 250
         }
 
         _ns_smtp_send "Mail $from" $wfd "MAIL FROM:<$from>"
-        _ns_smtp_recv "Mail $from" $rfd 250
+        _ns_smtp_recv "Mail $from" $wfd 250
 
         #
         # Tell remote server about recipients. Count all
@@ -336,7 +384,7 @@ proc ns_sendmail args {
             regexp {.*<(.*)>} $to null to
             if {$to ne {}} {
                 _ns_smtp_send "Rcpt $to" $wfd "RCPT TO:<$to>"
-                if {![catch {_ns_smtp_recv "Rcpt $to" $rfd 250}]} {
+                if {![catch {_ns_smtp_recv "Rcpt $to" $wfd 250}]} {
                     incr countok
                 }
             }
@@ -349,13 +397,13 @@ proc ns_sendmail args {
 
         if {$countok > 0} {
             _ns_smtp_send Data $wfd DATA
-            _ns_smtp_recv Data $rfd 354
+            _ns_smtp_recv Data $wfd 354
             _ns_smtp_send Data $wfd $data
-            _ns_smtp_recv Data $rfd 250
+            _ns_smtp_recv Data $wfd 250
         }
 
         _ns_smtp_send Quit $wfd QUIT
-        _ns_smtp_recv Quit $rfd 221 0
+        _ns_smtp_recv Quit $wfd 221 0
 
     } errmsg]
 
@@ -398,7 +446,11 @@ proc ns_sendmail_config {{mode ""}} {
              smtpencoding      [ns_config ns/parameters smtpencoding]      \
              smtpauthmode      [ns_config ns/parameters smtpauthmode]      \
              smtpauthuser      [ns_config ns/parameters smtpauthuser]      \
-             smtpauthpassword  [ns_config ns/parameters smtpauthpassword]]
+             smtpauthpassword  [ns_config ns/parameters smtpauthpassword]  \
+             smtpusestarttls   [ns_config ns/parameters smtpusestarttls]   \
+             smtpcertfile      [ns_config ns/parameters smtpcertfile]      \
+             smtpcafile        [ns_config ns/parameters smtpcafile]        \
+             smtpcadir         [ns_config ns/parameters smtpcadir]]
 
     if {$mode eq {log}} {
         ns_log notice [ns_set print $myset]
@@ -528,11 +580,11 @@ proc _ns_smtp_send {mode sock string} {
 #
 # _ns_smtp_recv --
 #
-#   Receive line from SMTP server and check against the
+#   Receive line(s) from SMTP server and check against the
 #   constraints.
 #
 # Result:
-#   None.
+#   The list of lines if any.
 #
 # Side effects:
 #   Depeding on the "error" flag, may or may not throw
@@ -548,6 +600,7 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
     }
 
     set tout [ns_config -set ns/parameters smtptimeout 60]
+    set lines [list]
 
     while (1) {
         set fds [ns_sockselect -timeout $tout $sock {} {}]
@@ -580,6 +633,8 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
             # the status code.
             #
 
+            lappend lines $line
+
             set code [string range $line 0 2]
             if {![string match $check $code]} {
                 set errmsg "$mode: expected $check status line; got: $line"
@@ -594,6 +649,8 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
             }
         }
     }
+
+    return $lines
 }
 
 # Local variables:
