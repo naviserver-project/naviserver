@@ -128,7 +128,8 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     Ns_DString  ds;
     const char *addr;
-    int         status, result = TCL_OK;
+    int         result = TCL_OK;
+    bool        success;
 
     Ns_ObjvSpec args[] = {
         {"address",  Ns_ObjvString, &addr,    NULL},
@@ -139,9 +140,9 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
 
     Ns_DStringInit(&ds);
-    status = Ns_GetHostByAddr(&ds, addr);
+    success = Ns_GetHostByAddr(&ds, addr);
 
-    if (status == NS_TRUE) {
+    if (success) {
     	Tcl_DStringResult(interp, &ds);
     } else {
         Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
@@ -175,7 +176,8 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     Ns_DString  ds;
     const char *host;
-    int         all = 0, status, result = TCL_OK;
+    int         all = 0, result = TCL_OK;
+    bool        success;
     Ns_ObjvSpec opts[] = {
         {"-all",      Ns_ObjvBool,  &all, INT2PTR(1)},
         {"--",        Ns_ObjvBreak, NULL, NULL},
@@ -191,11 +193,11 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     Ns_DStringInit(&ds);
     if (all != 0) {
-	status = Ns_GetAllAddrByHost(&ds, host);
+	success = Ns_GetAllAddrByHost(&ds, host);
     } else {
-	status = Ns_GetAddrByHost(&ds, host);
+	success = Ns_GetAddrByHost(&ds, host);
     }
-    if (status == NS_TRUE) {
+    if (success) {
     	Tcl_DStringResult(interp, &ds);
     } else {
         Tcl_AppendResult(interp, "could not lookup ", host, NULL);

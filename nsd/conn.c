@@ -677,7 +677,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         }
         location = Ns_DStringAppend(dest, location);
 
-    } else if (servPtr->vhost.enabled != 0
+    } else if (servPtr->vhost.enabled
                && (headers = Ns_ConnHeaders(conn)) != NULL
                && (host = Ns_SetIGet(headers, "Host")) != NULL
                && *host != '\0') {

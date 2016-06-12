@@ -120,11 +120,11 @@ Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
 static int
 PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned int aflags)
 {
-    Conn         *connPtr = (Conn *) conn;
-    Tcl_Interp   *interp;
-    NsInterp     *itPtr;
-    const char   *type, *start;
-    NsServer     *servPtr;
+    const Conn     *connPtr = (const Conn *) conn;
+    Tcl_Interp     *interp;
+    NsInterp       *itPtr;
+    const char     *type, *start;
+    const NsServer *servPtr;
     Tcl_Obj      *objv[2];
     int           result;
 
@@ -160,7 +160,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     if ((servPtr->adp.flags & ADP_DEBUG) != 0u &&
         conn->request.method != NULL &&
         STREQ(conn->request.method, "GET")) {
-        Ns_Set *query = Ns_ConnGetQuery(conn);
+        const Ns_Set *query = Ns_ConnGetQuery(conn);
         
         if (query != NULL) {
             itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
@@ -213,10 +213,10 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
 int
 NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char         *method, *url, *file = NULL;
-    int           noinherit = 0;
-    unsigned int  rflags = 0u, aflags = 0u;
-    Ns_Time      *expiresPtr = NULL;
+    const char    *method, *url, *file = NULL;
+    int            noinherit = 0;
+    unsigned int   rflags = 0u, aflags = 0u;
+    const Ns_Time *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
 	{"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
@@ -243,7 +243,7 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 {
     int          noinherit = 0;
     unsigned int rflags = 0u;
-    char        *method, *url, *file = NULL;
+    const char  *method, *url, *file = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
@@ -268,9 +268,9 @@ RegisterPage(ClientData arg,
              const char *method, const char *url, const char *file,
              const Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags)
 {
-    NsInterp   *itPtr = arg;
-    AdpRequest *adp;
-    size_t fileLength;
+    const NsInterp *itPtr = arg;
+    AdpRequest     *adp;
+    size_t          fileLength;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -313,11 +313,11 @@ RegisterPage(ClientData arg,
 int
 NsAdpPageProc(void *arg, Ns_Conn *conn)
 {
-    AdpRequest *adp = arg;
-    Ns_Time    *expiresPtr;
-    Ns_DString  ds;
-    const char *file = NULL, *server;
-    int         status;
+    AdpRequest    *adp = arg;
+    const Ns_Time *expiresPtr;
+    Ns_DString     ds;
+    const char    *file = NULL, *server;
+    int            status;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -424,11 +424,11 @@ Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
 int
 NsAdpFlush(NsInterp *itPtr, int doStream)
 {
-    Ns_Conn     *conn;
-    Tcl_Interp  *interp;
-    int          len, result = TCL_ERROR;
-    unsigned int flags;
-    char        *buf;
+    const Ns_Conn *conn;
+    Tcl_Interp    *interp;
+    int            len, result = TCL_ERROR;
+    unsigned int   flags;
+    char          *buf;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 

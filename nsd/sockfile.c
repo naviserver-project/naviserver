@@ -395,11 +395,11 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
     
     /* fprintf(stderr, "### Ns_SockCork sock %d %d\n", sockPtr->sock, cork); */
 
-    if (cork == NS_TRUE && (sockPtr->flags & NS_CONN_SOCK_CORKED)) {
+    if (cork && (sockPtr->flags & NS_CONN_SOCK_CORKED)) {
 	/*
 	 * Don't cork an already corked connection.
 	 */
-    } else if (cork == NS_FALSE && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0) {
+    } else if (!cork && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0) {
 	/*
 	 * Don't uncork an already uncorked connection.
 	 */
@@ -429,11 +429,11 @@ Ns_SockCork(Ns_Sock *sock, bool cork)
             }
         }
 #endif
-        if (success == NS_TRUE) {
+        if (success) {
             /*
              * On success, update the corked flag.
              */
-	    if (cork == NS_TRUE) {
+	    if (cork) {
 		sockPtr->flags |= NS_CONN_SOCK_CORKED;
 	    } else {
 		sockPtr->flags &= ~NS_CONN_SOCK_CORKED;

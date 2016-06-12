@@ -490,7 +490,7 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
     NS_NONNULL_ASSERT(el != NULL);
 
     done = NS_FALSE;
-    for (i = 0u; i < indexPtr->n && done == NS_FALSE; i++) {
+    for (i = 0u; i < indexPtr->n && !done; i++) {
         if (indexPtr->el[i] == el) {
             indexPtr->n--;
             if (i < indexPtr->n) {

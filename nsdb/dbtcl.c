@@ -886,7 +886,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     inquotes = NS_FALSE;
     Ns_DStringInit(&ds);
     while (*quotelist != '\0') {
-        if (CHARTYPE(space, *quotelist) != 0 && inquotes == NS_FALSE) {
+        if (CHARTYPE(space, *quotelist) != 0 && !inquotes) {
             if (ds.length != 0) {
                 Tcl_AppendElement(interp, ds.string);
                 Ns_DStringTrunc(&ds, 0);

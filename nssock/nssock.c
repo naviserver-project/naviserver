@@ -281,7 +281,7 @@ Ns_DriverSockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 #endif
     }
 
-    if (decork == NS_TRUE) {
+    if (decork) {
         Ns_SockCork(sockPtr, NS_FALSE);
     }
     return n;

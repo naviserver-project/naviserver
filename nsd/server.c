@@ -415,8 +415,8 @@ CreatePool(NsServer *servPtr, const char *pool)
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
         connPtr->nextPtr = &connBufPtr[n+1];
-        if (servPtr->compress.enable == NS_TRUE
-	    && servPtr->compress.preinit == NS_TRUE) {
+        if (servPtr->compress.enable
+	    && servPtr->compress.preinit) {
             (void) Ns_CompressInit(&connPtr->cStream);
         }
     }

@@ -805,7 +805,7 @@ NsTclThread(void *arg)
      * initialization might be moved into some tclThreadInit() code, which
      * does not exist.
      */
-    if (initialized == NS_FALSE) {
+    if (!initialized) {
         Ns_TlsAlloc(&argtls, ThreadArgFree);
         initialized = NS_TRUE;
     }
@@ -818,7 +818,7 @@ NsTclThread(void *arg)
     }
 
     detached = argPtr->detached;
-    if (detached == NS_TRUE) {
+    if (detached) {
         dsPtr = NULL;
     } else {
         Ns_DStringInit(&ds);
@@ -839,7 +839,7 @@ NsTclThread(void *arg)
      * waiting for a result. In the detached case, there is no dstring
      * content.
      */
-    if (detached == NS_FALSE) {
+    if (!detached) {
         Ns_ThreadExit(Ns_DStringExport(&ds));
     } else {
         Ns_ThreadExit(NULL);
@@ -869,7 +869,7 @@ NsTclThreadArgProc(Tcl_DString *dsPtr, const void *arg)
     const TclThreadArg *argPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, argPtr->server);
-    if (argPtr->detached == NS_TRUE) {
+    if (argPtr->detached) {
         Tcl_DStringAppendElement(dsPtr, "detached");
     }
     Tcl_DStringAppendElement(dsPtr, argPtr->script);

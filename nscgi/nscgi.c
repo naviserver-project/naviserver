@@ -536,7 +536,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
      */
 
     if (modPtr->interps != NULL
-    	&&(s = strrchr(cgiPtr->path, '.')) != NULL
+    	&& (s = strrchr(cgiPtr->path, '.')) != NULL
         && (cgiPtr->interp = Ns_SetIGet(modPtr->interps, s)) != NULL) {
     	cgiPtr->interp = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->interp);
         s = strchr(cgiPtr->interp, '(');

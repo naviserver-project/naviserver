@@ -212,7 +212,8 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 {
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn  = NULL;
-    int           length, i, n, binary, status;
+    int           length, i, n, status;
+    bool          binary;
     unsigned int  flags;
     struct iovec  iov[32];
     struct iovec *sbufs = iov;
@@ -264,10 +265,10 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     binary = (conn->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE;
 
     for (i = 0, n = 0; i < objc; i++) {
-	if (binary == NS_FALSE) {
+	if (!binary) {
 	    binary = NsTclObjIsByteArray(objv[i]);
 	}
-	if (binary == NS_TRUE) {
+	if (binary) {
 	    sbufs[n].iov_base = (void *)Tcl_GetByteArrayFromObj(objv[i], &length);
         } else {
             sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
@@ -288,7 +289,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         flags |= NS_CONN_STREAM;
     }
 
-    if (binary == NS_TRUE) {
+    if (binary) {
         status = Ns_ConnWriteVData(conn, sbufs, n, flags);
     } else {
         status = Ns_ConnWriteVChars(conn, sbufs, n, flags);
@@ -344,7 +345,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (binary == NS_TRUE || NsTclObjIsByteArray(dataObj) == NS_TRUE) {
+    if (binary || NsTclObjIsByteArray(dataObj) == NS_TRUE) {
         data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
         result = Ns_ConnReturnData(conn, status, data, len, type);
     } else {
