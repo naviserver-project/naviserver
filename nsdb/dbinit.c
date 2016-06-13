@@ -711,9 +711,6 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             if (likely(result == TCL_OK)) {            
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->getHandleCount));
             }
-            if (likely(result == TCL_OK)) {            
-                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
-            }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
             }
