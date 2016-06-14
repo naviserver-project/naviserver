@@ -179,16 +179,22 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
             Ns_TclPrintfResult(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
-	    return TCL_ERROR;
+            goto fail;
 	}
 
 	if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
 	    Ns_TclPrintfResult(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
-	    return TCL_ERROR;
+	    goto fail;
 	}
     }
     
     return TCL_OK;
+
+ fail:
+    SSL_CTX_free(ctx);
+    *ctxPtr = NULL;
+   
+    return TCL_ERROR;
 }
 
 
@@ -856,14 +862,14 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     }
 
     rc = SSL_CTX_set_cipher_list(ctx, ciphers);
-    if (!rc) {
+    if (rc == 0) {
         Ns_TclPrintfResult(interp, "ctx cipher list failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        return TCL_ERROR;
+        goto fail;
     }
 
     if (cert == NULL && caFile == NULL) {
-        Ns_TclPrintfResult(interp, "At least one of certificate or cafile must be speciied!");
-        return TCL_ERROR;
+        Ns_TclPrintfResult(interp, "At least one of certificate or cafile must be specified!");
+        goto fail;
     }
 
     SSL_CTX_set_default_verify_paths(ctx);
@@ -875,16 +881,22 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
             Ns_TclPrintfResult(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
-            return TCL_ERROR;
+            goto fail;
         }
 
         if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
             Ns_TclPrintfResult(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
-            return TCL_ERROR;
+            goto fail;
         }
     }
 
     return TCL_OK;
+
+ fail:
+    SSL_CTX_free(ctx);
+    *ctxPtr = NULL;
+        
+    return TCL_ERROR;
 }
 
 
@@ -928,7 +940,7 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     SSL_set_fd(ssl, sock);
     SSL_set_accept_state(ssl);
 
-    while (1) {
+    for (;;) {
         int rc, sslerr;
 
         rc = SSL_do_handshake(ssl);
@@ -936,6 +948,7 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 
         if (sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_READ) {
             Ns_Time timeout = { 0, 10000 }; /* 10ms */
+            
             Ns_SockTimedWait(sock, NS_SOCK_WRITE|NS_SOCK_READ, &timeout);
             continue;
         }
@@ -945,8 +958,9 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     if (!SSL_is_init_finished(ssl)) {
         Ns_TclPrintfResult(interp, "ssl accept failed: %s", ERR_error_string(ERR_get_error(), NULL));
         Ns_Log(Debug, "ssl accept failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        free(ssl);
-        ssl = NULL;
+
+        SSL_free(ssl);
+        *sslPtr = NULL;
         return TCL_ERROR;
     }
 
@@ -975,11 +989,29 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UN
 }
 
 int
+Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
+                 NS_TLS_SSL **UNUSED(sslPtr))
+{
+    Ns_TclPrintfResult(interp, "SSLAccept failed: no support for OpenSSL built in");
+    return TCL_ERROR;
+}
+
+int
 Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                        const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), int UNUSED(verify),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
     Ns_TclPrintfResult(interp, "CtxCreate failed: no support for OpenSSL built in");
+    return TCL_ERROR;
+}
+
+int
+Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), int UNUSED(verify),
+                       const char *UNUSED(ciphers),
+                       NS_TLS_SSL_CTX **UNUSED(ctxPtr))
+{
+    Ns_TclPrintfResult(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 
@@ -990,38 +1022,20 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 }
 
 int
-NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
-    return TCL_ERROR;
-}
-
-int
-Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, int verify,
-                       const char *ciphers,
-                       NS_TLS_SSL_CTX **ctxPtr)
-{
-    Ns_TclPrintfResult(interp, "CtxServerCreate failed: no support for OpenSSL built in");
-    return TCL_ERROR;
-}
-
-
-int
-Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
-                 NS_TLS_SSL **UNUSED(sslPtr))
-{
-    Ns_TclPrintfResult(interp, "SSLAccept failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 #endif
+
  
 /*
  * Local Variables:
