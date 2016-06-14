@@ -3379,19 +3379,20 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
 
 NS_EXTERN int
-Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  NS_TLS_SSL **sslPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
+                       const char *cert, const char *caFile, const char *caPath, int verify,
+                       const char *ciphers,
+                       NS_TLS_SSL_CTX **ctxPtr)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7);
 
 NS_EXTERN void
 Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_TLS_CtxServerCreate(Tcl_Interp *interp, const char *cert,
-                       const char *caFile, const char *caPath,
-                       int verify, const char *ciphers, NS_TLS_SSL_CTX **ctxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7);
+Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
+                  NS_TLS_SSL **sslPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
 Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock,

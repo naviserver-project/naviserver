@@ -1044,14 +1044,21 @@ static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
     Ns_Time timeout;
+    ssize_t result;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     timeout.sec = sockPtr->drvPtr->recvwait;
     timeout.usec = 0;
 
-    return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                        &timeout, 0u);
+    if (likely(sockPtr->drvPtr->recvProc != NULL)) {
+        result = (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout, 0u);
+    } else {
+        Ns_Log(Warning, "driver: no recvProc registered for driver %s", sockPtr->drvPtr->name);
+        result = -1;
+    }
+
+    return result;
 }
 
 
@@ -1075,6 +1082,7 @@ ssize_t
 NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Ns_Time timeout;
+    ssize_t result;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
@@ -1093,8 +1101,16 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
         fprintf(stderr, "\n");
     }
 #endif
-    return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                        &timeout, flags);
+
+    if (likely(sockPtr->drvPtr->sendProc != NULL)) {
+        result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                              &timeout, flags);
+    } else {
+        Ns_Log(Warning, "connchan: no sendProc registered for driver %s", sockPtr->drvPtr->name);
+        result = -1;
+    }
+
+    return result;
 }
 
 
