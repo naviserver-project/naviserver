@@ -49,6 +49,193 @@ static int SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *s
 static int DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+
+typedef char* (CookieParser)(Ns_DString *dest, char *chars, const char *name, size_t nameLen)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static CookieParser GetFromCookieHeader;
+static CookieParser GetFromSetCookieHeader;
+
+static void CopyCookieValue(Tcl_DString *dest, char *valueStart)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyCookieValue --
+ *
+ *      Copy the CookieValue into the provided Tcl_DString
+ *
+ * Results: 
+ *      None
+ *
+ * Side effects:
+ *      Append to provided Tcl_DString
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CopyCookieValue(Tcl_DString *dest, char *valueStart)
+{
+    char save, *q;
+
+    NS_NONNULL_ASSERT(dest != NULL);
+    NS_NONNULL_ASSERT(valueStart != NULL);
+                    
+    if (*valueStart == '"') {
+        ++valueStart; /* advance past optional quote mark */
+    }
+    q = valueStart;
+    while (*q != '"' && *q != ';' && *q != '\0') {
+        ++q;
+    }
+    save = *q;
+    *q = '\0';
+    Ns_UrlQueryDecode(dest, valueStart, NULL);
+    *q = save;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFromCookieHeader --
+ *
+ *      Get a cookie from the cookie header. The cookie header field has a
+ *      content of the form:
+ *
+ *         cookie1="value1"; cookie2="value2"; style=null; ...
+ *
+ *      so we have to iterate over the cookie/value pairs separated with
+ *      semicolons.
+ *
+ * Results: 
+ *      On success a non-null value pointing the the begin of the found
+ *      cookie such we can iterate to search for more cookies with the same
+ *      name
+ *
+ * Side effects:
+ *      When Tcl_DString dest is provided, the value of the cookie is
+ *      appended to the DString.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t nameLen)
+{
+    char *cookieStart = NULL, *p = chars;
+
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    
+    for ( ; likely(*p != '\0'); ) {
+        /*
+         * Skip optional white space.
+         */
+        for (; (CHARTYPE(space, *p) != 0); p++) {
+        }
+        if (*p == '\0') {
+            break;
+        }
+        
+        if (strncmp(p, name, nameLen) == 0) {
+            char *q = p + nameLen;
+
+            /*
+             * Name starts correctly
+             */
+            if (likely(*q == '=')) {
+                /*
+                 * Full match, we found the cookie
+                 */
+                cookieStart = p;
+                if (dest != NULL) {
+                    q++; /* advance past equals sign */
+                    CopyCookieValue(dest, q);
+                }
+                break;
+            }
+        }
+        /* 
+         * Look for the next semicolon
+         */
+        for (; (*p != '\0') && (*p != ';'); p++) {
+            ;
+        }
+        /*
+         * We found a semicolon and skip it;
+         */
+        if (*p == ';') {
+            p++;
+        }
+    }
+
+    return cookieStart;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFromSetCookieHeader --
+ *
+ *      Get a cookie from the set-cookie header. The set-cookie header field has a
+ *      content of the form:
+ *
+ *         cookie1="new-value"; Expires=Fri, 01-Jan-2035 01:00:00 GMT; Path=/; HttpOnly
+ *
+ *      In order to get the cookie-value, the entry has to start with a
+ *      name/value pair.
+ *
+ * Results: 
+ *      On success a non-null value pointing the the begin of the found
+ *      cookie
+ *
+ * Side effects:
+ *      When Tcl_DString dest is provided, the value of the cookie is
+ *      appended to the DString.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t nameLen) {
+    char *cookieStart = NULL, *p = chars;
+
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+
+    /*
+     * Skip white space (should not be needed).
+     */
+    for (; (CHARTYPE(space, *p) != 0); p++) {
+        ;
+    }
+    if (strncmp(p, name, nameLen) == 0) {
+        char *q = p + nameLen;
+        
+        /*
+         * Name starts correctly
+         */
+            
+        if (*q == '=') {
+            /*
+             * Full match, we found the cookie
+             */
+            cookieStart = p;
+            if (dest != NULL) {
+                q++; /* advance past equals sign */
+                CopyCookieValue(dest, q);
+            }
+        }
+    }
+
+    return cookieStart;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -73,6 +260,7 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
 {
     int      index = -1;
     size_t   nameLen, i;
+    CookieParser *cookieParser;
 
     NS_NONNULL_ASSERT(hdrs != NULL);
     NS_NONNULL_ASSERT(setName != NULL);
@@ -80,37 +268,26 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
 
     nameLen = strlen(name);
 
+    cookieParser = (*setName == 'c') ? GetFromCookieHeader : GetFromSetCookieHeader;
+    
     for (i = 0u; i < hdrs->size; ++i) {
         if (strcasecmp(hdrs->fields[i].name, setName) == 0) {
-            char *p = strstr(hdrs->fields[i].value, name);
-            
-            if (p != NULL) {
-                if (*(p += nameLen) == '=') {
-                    if (dest != 0) {
-                        char *q, save;
-                                        
-                        ++p; /* advance past equals sign */
-                        if (*p == '"') {
-                            ++p; /* advance past optional quote mark */
-                        }
-                        q = p;
-                        while (*q != '"' && *q != ';' && *q != '\0') {
-                            ++q;
-                        }
-                        save = *q;
-                        *q = '\0';
-                        Ns_UrlQueryDecode(dest, p, NULL);
-                        *q = save;
-                    }
-                    index = (int) i;
-                    break;
-                }
+            /*
+             * We have the right header.
+             */
+            if ((*cookieParser)(dest, hdrs->fields[i].value, name, nameLen) != NULL) {
+                /*
+                 * We found the result.
+                 */
+                index = (int) i;
+                break;
             }
         }
     }
 
     return index;
 }
+
 
 /*
  *----------------------------------------------------------------------
