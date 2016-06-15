@@ -883,7 +883,7 @@ WaitWritable(NS_SOCKET sock) {
 
           for (;;) {
               /*fprintf(stderr, "# call poll on %d\n", sock);*/
-              retval = poll(&pollfd, 1, 1000);
+              retval = ns_poll(&pollfd, 1, 1000);
               /*fprintf(stderr, "# call poll on %d => %d\n", sock, retval);*/
               if (retval != 0) {
                   break;
