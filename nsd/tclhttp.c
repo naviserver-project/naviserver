@@ -474,7 +474,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
 	    Tcl_WideInt length;
 
-	    assert(httpPtr->replyHeaders);
+	    assert(httpPtr->replyHeaders != NULL);
 	    HttpParseHeaders(httpPtr->ds.string, httpPtr->replyHeaders, &httpPtr->status);
 	    if (httpPtr->status == 0) {
 		Ns_Log(Warning, "ns_http: Parsing reply header failed");
