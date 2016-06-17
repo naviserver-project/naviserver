@@ -107,7 +107,7 @@ typedef struct Handle {
 
 typedef struct ServData {
     const char *defpool;
-    char *allowed;
+    const char *allowed;
 } ServData;
 
 /*
@@ -211,7 +211,7 @@ Ns_DbPoolDefault(const char *server)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_DbPoolList(const char *server)
 {
     ServData *sdataPtr;
@@ -242,7 +242,7 @@ Ns_DbPoolList(const char *server)
 int
 Ns_DbPoolAllowable(const char *server, const char *pool)
 {
-    register char *p;
+    register const char *p;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(pool != NULL);
@@ -812,6 +812,7 @@ NsDbInitServer(const char *server)
     pool = Ns_ConfigGetValue(path, "pools");
     if (pool != NULL && poolsTable.numEntries > 0) {
         Pool *poolPtr;
+        char *allowed;
 
 	Ns_DStringInit(&ds);
     	if (STREQ(pool, "*")) {
@@ -843,8 +844,9 @@ NsDbInitServer(const char *server)
 	    }
 	    ns_free(toDelete);
 	}
-    	sdataPtr->allowed = ns_malloc((size_t)ds.length + 1u);
-    	memcpy(sdataPtr->allowed, ds.string, (size_t)ds.length + 1u);
+    	allowed = ns_malloc((size_t)ds.length + 1u);
+    	memcpy(allowed, ds.string, (size_t)ds.length + 1u);
+        sdataPtr->allowed = allowed;
     	Ns_DStringFree(&ds);
     }
 }
