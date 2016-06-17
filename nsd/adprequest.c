@@ -52,7 +52,7 @@ typedef struct AdpRequest {
  * Static functions defined in this file.
  */
 
-static int RegisterPage(ClientData arg, const char *method, 
+static int RegisterPage(const ClientData arg, const char *method, 
 			const char *url, const char *file, const Ns_Time *expiresPtr, 
 			unsigned int rflags, unsigned int aflags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -264,7 +264,7 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 }
 
 static int
-RegisterPage(ClientData arg,
+RegisterPage(const ClientData arg,
              const char *method, const char *url, const char *file,
              const Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags)
 {
