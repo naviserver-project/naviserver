@@ -257,7 +257,7 @@ proc ns_sendmail args {
     set user [ns_config ns/parameters smtpauthuser]
     set pass [ns_config ns/parameters smtpauthpassword]
 
-    set usestarttls [ns_config ns/parameters smtpusestarttls]
+    set usestarttls [ns_config ns/parameters smtpusestarttls 0]
     set certfile [ns_config ns/parameters smtpcertfile]
     set cafile [ns_config ns/parameters smtpcafile]
     set cadir [ns_config ns/parameters smtpcadir]
