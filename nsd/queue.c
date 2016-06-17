@@ -1515,11 +1515,9 @@ ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
         /*
          * Run classical HTTP requests
          */
-            
-        if (status == NS_OK) {
-            status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
-            Ns_GetTime(&connPtr->filterDoneTime);
-        }
+        status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
+        Ns_GetTime(&connPtr->filterDoneTime);
+
         if (status == NS_OK) {
             status = Ns_AuthorizeRequest(servPtr->server,
                                          connPtr->request.method,
