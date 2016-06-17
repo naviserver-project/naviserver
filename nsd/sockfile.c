@@ -384,7 +384,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
  *----------------------------------------------------------------------
  */
 bool
-Ns_SockCork(Ns_Sock *sock, bool cork)
+Ns_SockCork(const Ns_Sock *sock, bool cork)
 {
     bool success = NS_FALSE;
 #if defined(TCP_CORK) || defined(UDP_CORK)

@@ -686,7 +686,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                 return TCL_ERROR;
             }
             handlePtr->verbose = verbose;
-            (void) Ns_LogSeveritySetEnabled(Ns_LogSqlDebug, verbose);
+            (void) Ns_LogSeveritySetEnabled(Ns_LogSqlDebug, (bool)verbose);
         }
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(handlePtr->verbose));
         break;

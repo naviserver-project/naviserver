@@ -2663,7 +2663,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
-Ns_SockCork(Ns_Sock *sock, bool cork)
+Ns_SockCork(const Ns_Sock *sock, bool cork)
     NS_GNUC_NONNULL(1);
 
 /*

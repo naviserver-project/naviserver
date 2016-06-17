@@ -4363,7 +4363,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         if (first != 0) {
             bufs = NULL;
             connPtr->nContentSent = wrote;
-            (void)ns_sock_set_blocking(connPtr->fd, 0);
+            (void)ns_sock_set_blocking(connPtr->fd, NS_FALSE);
             /*
              * Fall through to register stream writer with temp file
              */

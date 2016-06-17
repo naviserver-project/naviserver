@@ -388,7 +388,7 @@ NsInstallService(char *service)
         Ns_DStringFree(&cmd);
     }
 
-    return ((ok != 0) ? NS_OK : NS_ERROR);
+    return (ok ? NS_OK : NS_ERROR);
 }
 
 

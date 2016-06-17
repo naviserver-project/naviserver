@@ -65,7 +65,7 @@ static int GetSet(Tcl_Interp *interp, const char *flist, int write,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) 
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-static void AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, 
+static void AppendReadyFiles(Tcl_Interp *interp, const fd_set *setPtr, 
                              int write, const char *flist, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
@@ -946,7 +946,7 @@ SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 static void
-AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, const char *flist,
+AppendReadyFiles(Tcl_Interp *interp, const fd_set *setPtr, int write, const char *flist,
 		 Tcl_DString *dsPtr)
 {
     int           fargc = 0;
