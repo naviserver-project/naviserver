@@ -1,0 +1,58 @@
+[include version_include.man]
+[manpage_begin ns_rlimit n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get or set resource limit in the operating system}]
+
+[description]
+
+This command allows to query or set the resource limits specified in
+the operating system for the current process. The command is named
+after the getrlimit/setrlimit call available on most unix-like
+systems. The commands returns on success a pair of values, which are
+the soft and hard limit for a specified resource (see below for the
+interfaced resources). The command allows only to change the soft
+limit. The specified value might be an integer or the constant
+[term unlimited].
+
+[para] A typical use case for this command is to query or set e.g. the
+coresize via the NaviServer config file or at runtime in a syntax
+independent from the namings and conventions in the various startup
+scripts (e.g. upstart, systemd, ...).
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_rlimit coresize"] [opt [arg value]]]
+[para] Get or set the maximum size of core file created on program
+aborts. When 0 no core dump files are created. When nonzero, larger
+dumps are truncated to this size.
+
+
+[call [cmd "ns_rlimit datasize"] [opt [arg value]]]
+[para] Get or set the maximum size of the process's data segment.
+
+[call [cmd "ns_rlimit files"] [opt [arg value]]]
+[para] Get or set the maximum number of file descriptor number that can be opened by this process.
+
+[call [cmd "ns_rlimit filesize"] [opt [arg value]]]
+[para] Get or set the maximum size of files that the process may create.
+
+[call [cmd "ns_rlimit vmsize"] [opt [arg value]]]
+[para] Get or set the maximum size of the process's virtual memory (address space) in bytes.
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_rlimit coresize unlimited
+ unlimited unlimited
+[example_end]
+
+[keywords system limits]
+
+[manpage_end]
+

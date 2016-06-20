@@ -115,6 +115,7 @@ static const Cmd basicCmds[] = {
     {"ns_quotehtml",             NsTclQuoteHtmlCmd, NULL},
     {"ns_rand",                  NULL, NsTclRandObjCmd},
     {"ns_resume",                NULL, NsTclResumeObjCmd},
+    {"ns_rlimit",                NULL, NsTclRlimitObjCmd},
     {"ns_rollfile",              NULL, NsTclRollFileObjCmd},
     {"ns_schedule_daily",        NULL, NsTclSchedDailyObjCmd},
     {"ns_schedule_proc",         NULL, NsTclSchedObjCmd},

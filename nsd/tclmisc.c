@@ -1569,6 +1569,142 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     return TCL_OK;
 }
 
+#ifndef _WIN32
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetLimitObj --
+ *
+ *      Get single resource limit in form of a Tcl_Obj
+ *
+ * Results:
+ *	Tcl_Obj
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+GetLimitObj(Tcl_WideInt value)
+{
+    Tcl_Obj *obj;
+    
+    if (value == RLIM_INFINITY) {
+        obj = Tcl_NewStringObj("unlimited", -1);
+    } else {
+        obj = Tcl_NewWideIntObj(value);
+    }
+    return obj;
+}
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclRlimitObjCmd --
+ *
+ *      Get or Set resource limit in the operating system.
+ *
+ * Results:
+ *	pair of actual value and maximum value
+ *
+ * Side effects:
+ *	Change resource limiat with called with a value.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+#ifndef _WIN32
+    int            opt, result = TCL_OK, rc;
+    struct rlimit  rlimit;
+
+    static const char *const opts[] = {
+        "coresize",
+        "datasize",
+        "files",
+        "filesize",        
+        "vmsize",
+        NULL
+    };
+    static int resource[] = {
+        RLIMIT_CORE,
+        RLIMIT_DATA,
+        RLIMIT_NOFILE,
+        RLIMIT_FSIZE,
+        RLIMIT_AS
+    };
+    enum {
+        CCoresizeIdx,
+        CDatasizeIdx,
+        CFIlesizeIdx,        
+        CFilesIdx,
+        CVmsizeIdx,
+        
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
+                            "option", 0, &opt) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    if (objc == 2) {
+        rc = getrlimit(resource[opt], &rlimit);
+        if (rc == -1) {
+            Ns_TclPrintfResult(interp, "getrlimit returned error");
+            result = TCL_ERROR;
+        }
+    } else if (objc == 3) {
+        Tcl_WideInt value;
+
+        result = Tcl_GetWideIntFromObj(interp, objv[2], &value);
+        if (result != TCL_OK) {
+            char *valueString = Tcl_GetString(objv[2]);
+            if (strcmp(valueString, "unlimited") == 0) {
+                value = RLIM_INFINITY;
+                result = TCL_OK;
+            }
+        }
+        if (result == TCL_OK) {
+            rc = getrlimit(resource[opt], &rlimit);
+            if (rc > -1) {
+                rlimit.rlim_cur = value;
+                rc = setrlimit(resource[opt], &rlimit);
+            }
+            if (rc == -1) {
+                Ns_TclPrintfResult(interp, "could not set limit");
+                result = TCL_ERROR;                
+            }
+        }
+    } else {
+        Ns_TclPrintfResult(interp, "wrong # of arguments");
+        result = TCL_ERROR;                
+    }
+
+    if (result == TCL_OK) {
+        Tcl_Obj *listPtr = Tcl_NewListObj(2, NULL);
+        
+        Tcl_ListObjAppendElement(interp, listPtr, GetLimitObj(rlimit.rlim_cur));
+        Tcl_ListObjAppendElement(interp, listPtr, GetLimitObj(rlimit.rlim_max));
+        Tcl_SetObjResult(interp, listPtr);
+        result = TCL_OK;
+    }
+    
+    return result;
+#else
+    return TCL_OK;
+#endif
+}
+
+
 
 /*
  * Local Variables:

@@ -137,6 +137,7 @@ List of all currently available NaviServer commands.
 [list_begin definitions]
 [call [cmd ns_crypt]]
 [call [cmd ns_hmac]]
+[call [cmd ns_md5]]
 [call [cmd ns_sha1]]
 [call [cmd ns_sha2]]
 [list_end]
@@ -385,10 +386,7 @@ List of all currently available NaviServer commands.
 
 [section {Resource limits}]
 [list_begin definitions]
-[call [cmd ns_limits_register]]
-[call [cmd ns_limits_get]]
-[call [cmd ns_limits_list]]
-[call [cmd ns_limits_set]]
+[call [cmd ns_rlimit]]
 [list_end]
 
 [section {Proxy commands}]
