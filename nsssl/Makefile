@@ -19,7 +19,7 @@ MOD      =  nsssl.so
 MODOBJS   = nsssl.o
 CLEAN	 += clean-cert
 
-include  $(NAVISERVER)/include/Makefile.module
+include  ../include/Makefile.build
 
 dhparams.h:
 	openssl dhparam -C -2 -noout 512 >> dhparams.h
