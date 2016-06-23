@@ -17,7 +17,7 @@ limit. The specified value might be an integer or the constant
 
 [para] A typical use case for this command is to query or set e.g. the
 coresize via the NaviServer config file or at runtime in a syntax
-independent from the namings and conventions in the various startup
+independent from the naming and conventions in the various startup
 scripts (e.g. upstart, systemd, ...).
 
 [section {COMMANDS}]
