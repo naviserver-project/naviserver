@@ -1409,7 +1409,7 @@ NsConnThread(void *arg)
  *----------------------------------------------------------------------
  */
 static void
-ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
+ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
 {
     Ns_Conn  *conn;
     NsServer *servPtr;
