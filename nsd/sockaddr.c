@@ -36,8 +36,8 @@
  */
 
 
-#if defined(__APPLE__) || defined(__darwin__)
-/* OSX seems not to define these. */
+#if defined(__APPLE__) || defined(__darwin__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+/* The *BSD family seems to requires these access macros */
 # ifndef s6_addr16
 #  define s6_addr16 __u6_addr.__u6_addr16
 # endif
