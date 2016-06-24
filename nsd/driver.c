@@ -1902,10 +1902,12 @@ RequestFree(Sock *sockPtr)
 static int
 SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 {
+    int result;
+    
+    NS_NONNULL_ASSERT(sockPtr != NULL);
     /*
      *  Verify the conditions. Request struct must exist already.
      */
-    NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(sockPtr->reqPtr != NULL);
 
     SockSetServer(sockPtr);
@@ -1915,11 +1917,13 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
      *  Actual queueing, if not ready spool to the waiting list.
      */
 
-    if (NsQueueConn(sockPtr, timePtr) == 0) {
-        return NS_TIMEOUT;
+    if (!NsQueueConn(sockPtr, timePtr)) {
+        result = NS_TIMEOUT;
+    } else {
+        result = NS_OK;
     }
 
-    return NS_OK;
+    return result;
 }
 
 
@@ -3443,7 +3447,7 @@ SpoolerThread(void *arg)
             }
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (NsQueueConn(sockPtr, &now) == 0) {
+                if (!NsQueueConn(sockPtr, &now)) {
                     Push(sockPtr, waitPtr);
                 } else {
                     queuePtr->queuesize--;

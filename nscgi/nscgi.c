@@ -584,9 +584,9 @@ err:
 static int
 CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 {
-    int     fd;
-    size_t  len;
-    const char   *content, *err;
+    int         fd, status;
+    size_t      len;
+    const char *content, *err;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -607,11 +607,14 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 	(void) ns_close(fd);
 	fd = NS_INVALID_FD;
     }
+
     if (fd == NS_INVALID_FD) {
-	return NS_ERROR;
+	status = NS_ERROR;
+    } else {
+        cgiPtr->ifd = fd;
+        status = NS_OK;
     }
-    cgiPtr->ifd = fd;
-    return NS_OK;
+    return status;
 }
 
 
@@ -729,7 +732,7 @@ CgiFree(Cgi *cgiPtr)
 static int
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int         i, opipe[2];
+    int         i, opipe[2], status;
     char       *s, *e, *p;
     Ns_DString *dsPtr;
     const Mod  *modPtr;
@@ -761,6 +764,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
     if ((modPtr->flags & CGI_SYSENV) != 0u) {
 	char *const*envp = Ns_CopyEnviron(dsPtr);
+        
 	while (*envp != NULL) {
 	    s = *envp;
 	    e = strchr(s, '=');
@@ -961,30 +965,33 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      * Create the output pipe.
      */
 
-    if (ns_pipe(opipe) != 0) {
+    if (unlikely(ns_pipe(opipe) != 0)) {
 	Ns_Log(Error, "nscgi: pipe() failed: %s", strerror(errno));
-	return NS_ERROR;
+	status = NS_ERROR;
+    } else {
+
+        /*
+         * Execute the CGI.
+         */
+        cgiPtr->pid = Ns_ExecProcess(cgiPtr->exec, cgiPtr->dir,
+                                     cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
+                                     opipe[1], dsPtr->string, cgiPtr->env);
+
+        Ns_Log(Ns_LogCGIDebug,
+               "nscgi: execute cgi script in directory '%s' returned pid %ld",
+               cgiPtr->dir, (long)cgiPtr->pid);
+
+        (void) ns_close(opipe[1]);
+        if (unlikely(cgiPtr->pid == NS_INVALID_PID)) {
+            (void) ns_close(opipe[0]);
+            status = NS_ERROR;
+        } else {
+            cgiPtr->ofd = opipe[0];
+            status = NS_OK;
+        }
     }
 
-    /*
-     * Execute the CGI.
-     */
-    cgiPtr->pid = Ns_ExecProcess(cgiPtr->exec, cgiPtr->dir,
-	cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
-	opipe[1], dsPtr->string, cgiPtr->env);
-
-    Ns_Log(Ns_LogCGIDebug,
-           "nscgi: execute cgi script in directory '%s' returned pid %ld",
-           cgiPtr->dir, (long)cgiPtr->pid);
-
-    (void) ns_close(opipe[1]);
-    if (cgiPtr->pid == NS_INVALID_PID) {
-    	(void) ns_close(opipe[0]);
-	return NS_ERROR;
-    }
-
-    cgiPtr->ofd = opipe[0];
-    return NS_OK;
+    return status;
 }
 
 

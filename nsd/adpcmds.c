@@ -71,36 +71,41 @@ int
 Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
 {
     NsInterp *itPtr;
+    int       status;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
-    if (GetInterp(interp, &itPtr) != TCL_OK) {
-        return TCL_ERROR;
+    if (unlikely(GetInterp(interp, &itPtr) != TCL_OK)) {
+        status = TCL_ERROR;
+    } else {
+        status = NsAdpAppend(itPtr, buf, len);
     }
-    return NsAdpAppend(itPtr, buf, len);
+    return status;
 }
 
 int
 NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
 {
     Tcl_DString *bufPtr;
+    int          status = TCL_OK;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
     if (GetOutput(itPtr, &bufPtr) != TCL_OK) {
-        return TCL_ERROR;
+        status = TCL_ERROR;
+    } else {
+        Ns_DStringNAppend(bufPtr, buf, len);
+        if (
+            ((itPtr->adp.flags & ADP_STREAM) != 0u
+             || (size_t)bufPtr->length > itPtr->adp.bufsize
+             ) 
+            && NsAdpFlush(itPtr, 1) != TCL_OK) {
+            status = TCL_ERROR;
+        }
     }
-    Ns_DStringNAppend(bufPtr, buf, len);
-    if (
-	((itPtr->adp.flags & ADP_STREAM) != 0u
-	 || (size_t)bufPtr->length > itPtr->adp.bufsize
-	 ) 
-	&& NsAdpFlush(itPtr, 1) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    return TCL_OK;
+    return status;
 }
 
 
@@ -129,8 +134,8 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
 {
     NsInterp *itPtr;
 
-    if (GetInterp(interp, &itPtr) != TCL_OK
-            || GetOutput(itPtr, dsPtrPtr) != TCL_OK) {
+    if (unlikely(GetInterp(interp, &itPtr) != TCL_OK)
+        || unlikely(GetOutput(itPtr, dsPtrPtr) != TCL_OK)) {
         return TCL_ERROR;
     }
     if (doStreamPtr != NULL) {
@@ -240,7 +245,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     };
 
 
-    if (objc < 2) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
@@ -360,14 +365,17 @@ NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc, Tcl
 static int
 EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 {
+    int status;
+    
     NS_NONNULL_ASSERT(itPtr != NULL);
 
-    if (objc < 2) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "page ?args ...?");
-	return TCL_ERROR;
+	status = TCL_ERROR;
+    } else {
+        status = NsAdpEval(itPtr, objc-1, objv+1, NULL);
     }
-
-    return NsAdpEval(itPtr, objc-1, objv+1, NULL);
+    return status;
 }
 
 
@@ -637,14 +645,16 @@ int
 NsTclAdpDirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = arg;
+    int             status = TCL_OK;
 
-    if (objc != 1) {
+    if (unlikely(objc != 1)) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
-        return TCL_ERROR;
+        status = TCL_ERROR;
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, -1));
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, -1));
 
-    return TCL_OK;
+    return status;
 }
 
 
@@ -692,11 +702,11 @@ ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, AdpResult excep
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "?retval?");
-        return TCL_ERROR;
-    }
-    itPtr->adp.exception = exception;
-    if (objc == 2) {
-        Tcl_SetObjResult(itPtr->interp, objv[1]);
+    } else {
+        itPtr->adp.exception = exception;
+        if (objc == 2) {
+            Tcl_SetObjResult(itPtr->interp, objv[1]);
+        }
     }
     return TCL_ERROR;
 }
@@ -1017,7 +1027,7 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     const NsInterp *itPtr = arg;
     int             boolValue;
 
-    if (objc != 1 && objc != 2) {
+    if (unlikely(objc != 1 && objc != 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "?varName?");
         return TCL_ERROR;
     }

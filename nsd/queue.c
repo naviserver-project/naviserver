@@ -316,7 +316,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
  *      Append a connection to the run queue.
  *
  * Results:
- *      1 if queued, 0 otherwise.
+ *      NS_TRUE if queued, NS_FALSE otherwise.
  *
  * Side effects:
  *      Conneciton will run shortly.
@@ -324,7 +324,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
  *----------------------------------------------------------------------
  */
 
-int
+bool
 NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     ConnThreadArg *argPtr = NULL;
@@ -452,7 +452,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	       poolPtr->wqueue.wait.num,
 	       poolPtr->threads.idle, 
 	       poolPtr->threads.current);
-	return 0;
+	return NS_FALSE;
     }
 
     if (argPtr != NULL) {
@@ -505,7 +505,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	CreateConnThread(poolPtr);
     } 
 
-    return 1;
+    return NS_TRUE;
 }
 
 
