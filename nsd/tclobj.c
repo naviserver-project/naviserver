@@ -389,7 +389,7 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
   
-    return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes == NULL)) ? NS_TRUE : NS_FALSE;
+    return (objPtr->typePtr == byteArrayTypePtr) ? NS_TRUE : NS_FALSE;
 }
 
 
