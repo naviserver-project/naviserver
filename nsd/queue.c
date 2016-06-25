@@ -1417,7 +1417,7 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
     Sock     *sockPtr;
     char     *auth;
 
-    NS_NONNULL_ASSERT(argPtr != NULL);
+    /*NS_NONNULL_ASSERT(argPtr != NULL);*/
     NS_NONNULL_ASSERT(connPtr != NULL);
 
     conn = (Ns_Conn *) connPtr;
