@@ -48,11 +48,11 @@ typedef struct Config {
  * Local functions defined in this file.
  */
 
-NS_EXPORT Ns_DriverListenProc Ns_DriverSockListen;
-NS_EXPORT Ns_DriverAcceptProc Ns_DriverSockAccept;
-NS_EXPORT Ns_DriverRecvProc Ns_DriverSockRecv;
-NS_EXPORT Ns_DriverSendProc Ns_DriverSockSend;
-NS_EXPORT Ns_DriverCloseProc Ns_DriverSockClose;
+static Ns_DriverListenProc SockListen;
+static Ns_DriverAcceptProc SockAccept;
+static Ns_DriverRecvProc SockRecv;
+static Ns_DriverSendProc SockSend;
+static Ns_DriverCloseProc SockClose;
 static Ns_DriverSendFileProc SendFile;
 static Ns_DriverKeepProc Keep;
 
@@ -94,14 +94,14 @@ Ns_ModuleInit(const char *server, const char *module)
 
     init.version = NS_DRIVER_VERSION_4;
     init.name = "nssock";
-    init.listenProc = Ns_DriverSockListen;
-    init.acceptProc = Ns_DriverSockAccept;
-    init.recvProc = Ns_DriverSockRecv;
-    init.sendProc = Ns_DriverSockSend;
+    init.listenProc   = SockListen;
+    init.acceptProc   = SockAccept;
+    init.recvProc     = SockRecv;
+    init.sendProc     = SockSend;
     init.sendFileProc = SendFile;
-    init.keepProc = Keep;
-    init.requestProc = NULL;
-    init.closeProc = Ns_DriverSockClose;
+    init.keepProc     = Keep;
+    init.requestProc  = NULL;
+    init.closeProc    = SockClose;
     init.opts = NS_DRIVER_ASYNC;
     init.arg = cfg;
     init.path = (char*)path;
@@ -115,7 +115,7 @@ Ns_ModuleInit(const char *server, const char *module)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DriverSockListen --
+ * SockListen --
  *
  *      Open a listening TCP socket in non-blocking mode.
  *
@@ -128,8 +128,8 @@ Ns_ModuleInit(const char *server, const char *module)
  *----------------------------------------------------------------------
  */
 
-NS_SOCKET
-Ns_DriverSockListen(Ns_Driver *driver, const char *address, int port, int backlog)
+static NS_SOCKET
+SockListen(Ns_Driver *driver, const char *address, int port, int backlog)
 {
     NS_SOCKET sock;
 
@@ -149,7 +149,7 @@ Ns_DriverSockListen(Ns_Driver *driver, const char *address, int port, int backlo
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DriverSockAccept --
+ * SockAccept --
  *
  *      Accept a new TCP socket in non-blocking mode.
  *
@@ -164,8 +164,8 @@ Ns_DriverSockListen(Ns_Driver *driver, const char *address, int port, int backlo
  *----------------------------------------------------------------------
  */
  
-NS_DRIVER_ACCEPT_STATUS
-Ns_DriverSockAccept(Ns_Sock *sock, NS_SOCKET listensock,
+static NS_DRIVER_ACCEPT_STATUS
+SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
        struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
     Config *cfg    = sock->driver->arg;
@@ -194,7 +194,7 @@ Ns_DriverSockAccept(Ns_Sock *sock, NS_SOCKET listensock,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DriverSockRecv --
+ * SockRecv --
  *
  *      Receive data into given buffers.
  *
@@ -208,8 +208,8 @@ Ns_DriverSockAccept(Ns_Sock *sock, NS_SOCKET listensock,
  *----------------------------------------------------------------------
  */
 
-ssize_t
-Ns_DriverSockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+static ssize_t
+SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t n;
@@ -233,7 +233,7 @@ Ns_DriverSockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DriverSockSend --
+ * SockSend --
  *
  *      Send data from given buffers.
  *
@@ -247,8 +247,8 @@ Ns_DriverSockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 
-ssize_t
-Ns_DriverSockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
+static ssize_t
+SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
      const Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t   n;
@@ -340,7 +340,7 @@ Keep(Ns_Sock *sock)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DriverSockClose --
+ * SockClose --
  *
  *      Close the connection socket.
  *
@@ -353,8 +353,8 @@ Keep(Ns_Sock *sock)
  *----------------------------------------------------------------------
  */
 
-void
-Ns_DriverSockClose(Ns_Sock *sock)
+static void
+SockClose(Ns_Sock *sock)
 {
     NS_NONNULL_ASSERT(sock != NULL);
     

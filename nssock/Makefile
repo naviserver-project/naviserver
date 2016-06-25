@@ -29,7 +29,6 @@
 
 MOD      =  nssock.so
 MODOBJS  =  nssock.o
-LIBNM   = nssock
+
 LIBOBJS = nssock.o
-LIBHDRS = nssock.h
 include  ../include/Makefile.build
