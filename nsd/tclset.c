@@ -182,17 +182,20 @@ int
 Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
 {
     Ns_Set  *set = NULL;
+    int      result;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(setId != NULL);
 
     if (LookupInterpSet(interp, setId, NS_TRUE, &set) != TCL_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        result = TCL_OK;
+        if (IS_DYNAMIC(setId)) {
+            Ns_SetFree(set);
+        }
     }
-    if (IS_DYNAMIC(setId)) {
-        Ns_SetFree(set);
-    }
-    return TCL_OK;
+    return result;
 }
 
 
@@ -653,9 +656,10 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 int
 NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    NsInterp *itPtr = arg;
-    Ns_Set *set;
+    NsInterp                *itPtr = arg;
+    Ns_Set                  *set;
     Ns_HeaderCaseDisposition disp;
+    int                      result = TCL_OK;
 
     assert(arg != NULL);
 
@@ -678,15 +682,15 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *
     } else if (STREQ(argv[3], "preserve")) {
         disp = Preserve;
     } else {
-        Tcl_AppendResult(interp, "unknown case disposition \"", argv[3],
-            "\":  should be toupper, tolower, or preserve", NULL);
-        return TCL_ERROR;
+        Ns_TclPrintfResult(interp, "unknown case disposition \"%s\": should be toupper, tolower, or preserve", 
+                           argv[3]);
+        result = TCL_ERROR;
     }
-    if (Ns_ParseHeader(set, argv[2], disp) != NS_OK) {
-        Tcl_AppendResult(interp, "invalid header:  ", argv[2], NULL);
-        return TCL_ERROR;
+    if ((result == TCL_OK) && (Ns_ParseHeader(set, argv[2], disp) != NS_OK)) {
+        Ns_TclPrintfResult(interp, "invalid header: %s", argv[2]);
+        result = TCL_ERROR;
     }
-    return TCL_OK;
+    return result;
 }
 
 

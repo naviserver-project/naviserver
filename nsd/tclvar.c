@@ -272,16 +272,17 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE);
         if (unlikely(arrayPtr == NULL)) {
-            return TCL_ERROR;
-        }
-        hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
-        if (likely(hPtr != NULL)) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
-        } else {
-            Tcl_AppendResult(interp, "no such key: ", key, NULL);
             result = TCL_ERROR;
+        } else {
+            hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
+            if (likely(hPtr != NULL)) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+            } else {
+                Tcl_AppendResult(interp, "no such key: ", key, NULL);
+                result = TCL_ERROR;
+            }
+            UnlockArray(arrayPtr);
         }
-        UnlockArray(arrayPtr);
     }
 
     return result;
@@ -476,41 +477,43 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (unlikely(arrayPtr == NULL)) {
         if (nocomplain != 0) {
             Tcl_ResetResult(interp);
-            return TCL_OK;
+        } else {
+            result = TCL_ERROR;
         }
-        return TCL_ERROR;
-       
-    }
-    assert(arrayPtr != NULL);
+        
+    } else {
+    
+        assert(arrayPtr != NULL);
 
-    if (Unset(arrayPtr, key) != NS_OK && key != NULL) {
-        Tcl_AppendResult(interp, "no such key: ", key, NULL);
-        result = TCL_ERROR;
-    }
+        if (Unset(arrayPtr, key) != NS_OK && key != NULL) {
+            Tcl_AppendResult(interp, "no such key: ", key, NULL);
+            result = TCL_ERROR;
+        }
 
-    /*
-     * If everything went well and we have no key specified, delete
-     * the array entry.
-     */
-    if (result == TCL_OK && key == NULL) {
-	/*
-	 * Delete the hash-table of this array and the entry in the
-	 * table of array names.
-	 */
-	Tcl_DeleteHashTable(&arrayPtr->vars);
-	Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+        /*
+         * If everything went well and we have no key specified, delete
+         * the array entry.
+         */
+        if (result == TCL_OK && key == NULL) {
+            /*
+             * Delete the hash-table of this array and the entry in the
+             * table of array names.
+             */
+            Tcl_DeleteHashTable(&arrayPtr->vars);
+            Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+        }
+        UnlockArray(arrayPtr);
+        
+        if (result == TCL_OK && key == NULL) {
+            /*
+             * Free the actual array data strucure and invalidate the
+             * Tcl_Obj.
+             */
+            ns_free(arrayPtr);
+            Ns_TclSetTwoPtrValue(arrayObj, NULL, NULL, NULL);
+        }
     }
-    UnlockArray(arrayPtr);
-
-    if (result == TCL_OK && key == NULL) {
-	/*
-	 * Free the actual array data strucure and invalidate the
-	 * Tcl_Obj.
-	 */
-	ns_free(arrayPtr);
-	Ns_TclSetTwoPtrValue(arrayObj, NULL, NULL, NULL);
-    }
-
+    
     return result;
 }
 
