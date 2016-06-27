@@ -150,7 +150,7 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr, const Ns_Time *startTime, const
      */
 
     Ns_MutexLock(&servPtr->connchans.lock);
-    snprintf(name, sizeof(name), "conn%td", connchanCount ++);
+    snprintf(name, sizeof(name), "conn%" PRIuPTR, connchanCount ++);
     hPtr = Tcl_CreateHashEntry(&servPtr->connchans.table, name, &isNew);
     Ns_MutexUnlock(&servPtr->connchans.lock);
 
