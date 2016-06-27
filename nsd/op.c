@@ -272,11 +272,11 @@ Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnRunRequest(Ns_Conn *conn)
 {
-    int         status = NS_OK;
-    Conn       *connPtr;
+    Ns_ReturnCode  status = NS_OK;
+    Conn          *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -348,10 +348,10 @@ Ns_ConnRunRequest(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnRedirect(Ns_Conn *conn, const char *url)
 {
-    int status;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -511,13 +511,13 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsConnRunProxyRequest(Ns_Conn *conn)
 {
     Conn          *connPtr = (Conn *) conn;
     NsServer      *servPtr;
     Req           *reqPtr = NULL;
-    int            status;
+    Ns_ReturnCode  status;
     Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 

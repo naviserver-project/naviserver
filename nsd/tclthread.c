@@ -544,12 +544,13 @@ NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 int
 NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr   = arg;
-    NsServer *servPtr = itPtr->servPtr;
-    Ns_Cond  *condPtr;
-    Ns_Mutex *lockPtr;
-    Ns_Time   timeout, abstime;
-    int       opt, result;
+    NsInterp     *itPtr   = arg;
+    NsServer     *servPtr = itPtr->servPtr;
+    Ns_Cond      *condPtr;
+    Ns_Mutex     *lockPtr;
+    Ns_Time       timeout, abstime;
+    int           opt;
+    Ns_ReturnCode result;
 
     static const char *const opts[] = {
         "abswait", "broadcast", "create", "destroy", "set",

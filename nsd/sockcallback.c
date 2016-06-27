@@ -164,9 +164,8 @@ NsStartSockShutdown(void)
 void
 NsWaitSockShutdown(const Ns_Time *toPtr)
 {
-    int status;
+    Ns_ReturnCode status = NS_OK;
 
-    status = NS_OK;
     Ns_MutexLock(&lock);
     while (status == NS_OK && running) {
 	status = Ns_CondTimedWait(&cond, &lock, toPtr);

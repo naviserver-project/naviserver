@@ -710,10 +710,11 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 {
-    int              err, status = NS_ERROR;
+    int              err;
+    Ns_ReturnCode    status = NS_ERROR;
     struct timespec  ts;
 
     NS_NONNULL_ASSERT(cond != NULL);

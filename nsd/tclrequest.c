@@ -64,7 +64,7 @@ static Ns_ObjvTable filters[] = {
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclRequest(Ns_Conn *conn, const char *name)
 {
     Ns_TclCallback cb;
@@ -429,13 +429,13 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsTclRequestProc(void *arg, Ns_Conn *conn)
 {
     Ns_TclCallback *cbPtr = arg;
     Tcl_Interp     *interp;
     Ns_DString      ds;
-    int             status = NS_OK;
+    Ns_ReturnCode   status = NS_OK;
 
     NS_NONNULL_ASSERT(conn != NULL);
     

@@ -136,36 +136,40 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 {
-    Conn *connPtr = (Conn *) conn;
-    NsServer *servPtr;
-    Filter *fPtr;
-    int status;
+    Conn          *connPtr = (Conn *) conn;
+    NsServer      *servPtr;
+    Filter        *fPtr;
+    Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(conn != NULL);
     servPtr = connPtr->poolPtr->servPtr;
 
     status = NS_OK;
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
+        int filter_status = NS_OK;
+        
         Ns_MutexLock(&servPtr->filter.lock);
 	fPtr = servPtr->filter.firstFilterPtr;
-	while (fPtr != NULL && status == NS_OK) {
+	while (fPtr != NULL && filter_status == NS_OK) {
 	    if (unlikely(fPtr->when == why)
 		&& (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
 		&& (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)) {
 	        Ns_MutexUnlock(&servPtr->filter.lock);
-		status = (*fPtr->proc)(fPtr->arg, conn, why);
+		filter_status = (*fPtr->proc)(fPtr->arg, conn, why);
 		Ns_MutexLock(&servPtr->filter.lock);
 	    }
 	    fPtr = fPtr->nextPtr;
 	}
 	Ns_MutexUnlock(&servPtr->filter.lock);
-	if (status == NS_FILTER_BREAK ||
+	if (filter_status == NS_FILTER_BREAK ||
 	    (why == NS_FILTER_TRACE && status == NS_FILTER_RETURN)) {
 	    status = NS_OK;
-	}
+	} else {
+            status = filter_status;
+        }
     }
 
     /*

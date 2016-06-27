@@ -117,7 +117,7 @@ static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
                       bool trunc, bool locked)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int   LogOpen(void);
+static Ns_ReturnCode LogOpen(void);
 
 static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1341,10 +1341,10 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_LogRoll(void)
 {
-    int rc = NS_OK;
+    Ns_ReturnCode rc = NS_OK;
 
     if (file != NULL) {
 	NsAsyncWriterQueueDisable(0);
@@ -1415,11 +1415,12 @@ NsLogOpen(void)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogOpen(void)
 {
-    int          fd, status = NS_OK;
-    unsigned int oflags;
+    int           fd;
+    Ns_ReturnCode status = NS_OK;
+    unsigned int  oflags;
 
     oflags = O_WRONLY | O_APPEND | O_CREAT;
 

@@ -910,9 +910,9 @@ NsStopServer(NsServer *servPtr)
 void
 NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr)
 {
-    ConnPool  *poolPtr;
-    Ns_Thread  joinThread;
-    int        status;
+    ConnPool     *poolPtr;
+    Ns_Thread     joinThread;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(toPtr != NULL);
@@ -1004,7 +1004,8 @@ NsConnThread(void *arg)
     Ns_Time        wait, *timePtr = &wait;
     uintptr_t      id;
     bool           shutdown;
-    int            status = NS_OK, cpt, ncons, current, fromQueue;
+    int            cpt, ncons, current, fromQueue;
+    Ns_ReturnCode  status = NS_OK;
     long           timeout;
     const char    *exitMsg;
     Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
@@ -1411,11 +1412,11 @@ NsConnThread(void *arg)
 static void
 ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
 {
-    Ns_Conn  *conn;
-    NsServer *servPtr;
-    int       status = NS_OK;
-    Sock     *sockPtr;
-    char     *auth;
+    Ns_Conn      *conn;
+    NsServer     *servPtr;
+    Ns_ReturnCode status = NS_OK;
+    Sock         *sockPtr;
+    char         *auth;
 
     /*NS_NONNULL_ASSERT(argPtr != NULL);*/
     NS_NONNULL_ASSERT(connPtr != NULL);

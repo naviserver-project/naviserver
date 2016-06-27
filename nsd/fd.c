@@ -187,7 +187,7 @@ NsInitFd(void)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_CloseOnExec(int fd)
 {
 #ifdef _WIN32
@@ -198,7 +198,8 @@ Ns_CloseOnExec(int fd)
     }
     return NS_OK;
 #else
-    int i, status = NS_ERROR;
+    int           i;
+    Ns_ReturnCode status = NS_ERROR;
 
     i = fcntl(fd, F_GETFD);
     if (i != -1) {
@@ -227,7 +228,7 @@ Ns_CloseOnExec(int fd)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_NoCloseOnExec(int fd)
 {
 #ifdef _WIN32
@@ -238,7 +239,8 @@ Ns_NoCloseOnExec(int fd)
     }
     return NS_OK;
 #else
-    int i, status = NS_ERROR;
+    int           i;
+    Ns_ReturnCode status = NS_ERROR;
 
     i = fcntl(fd, F_GETFD);
     if (i != -1) {

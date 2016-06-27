@@ -720,31 +720,18 @@ typedef struct DIR_ *DIR;
 #endif
 
 /*
- * Return codes. It would be probably a good idea to define an enum
- * Ns_ReturnCode, but that would be a large change.
+ * NaviServer return codes. Similar to Tcl return codes, but not compatible,
+ * since negative numbers denote different kinds of non-success.
  */
-#define NS_OK                       0
-#define NS_ERROR                    (-1)
-
-/*
- * The following are valid return codes from an Ns_UserAuthorizeProc.
- */
-#define NS_TIMEOUT                  (-2)
-
-/*
- * The following are valid return codes from an Ns_UserAuthorizeProc.
- */
-                                        /* NS_OK The user's access is authorized */
-#define NS_UNAUTHORIZED            (-3) /* Bad user/passwd or unauthorized */
-#define NS_FORBIDDEN               (-4) /* Authorization is not possible */
-                                        /* NS_ERROR The authorization function failed */
-/*
- * The following are valid return codes from an Ns_FilterProc.
- */
-                                        /* NS_OK Run next filter */
-#define NS_FILTER_BREAK            (-5) /* Run next stage of connection */
-#define NS_FILTER_RETURN           (-6) /* Close connection */
-
+typedef enum {
+    NS_OK =               ( 0), /* success */
+    NS_ERROR =            (-1), /* error */
+    NS_TIMEOUT =          (-2), /* timeout occurred */
+    NS_UNAUTHORIZED =     (-3), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
+    NS_FORBIDDEN =        (-4), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
+    NS_FILTER_BREAK =     (-5), /* filter result, returned by e.g. Ns_FilterProc */
+    NS_FILTER_RETURN =    (-6), /* filter result, returned by e.g. Ns_FilterProc */    
+} Ns_ReturnCode;
 
 /*
  * Constants for nsthread 
@@ -856,9 +843,9 @@ NS_EXTERN void Ns_CondDestroy(Ns_Cond *condPtr);
 NS_EXTERN void Ns_CondSignal(Ns_Cond *condPtr)        NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_CondBroadcast(Ns_Cond *condPtr)     NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_CondWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN int Ns_CondTimedWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr,
-			       const Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Ns_ReturnCode Ns_CondTimedWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr,
+                                         const Ns_Time *timePtr)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

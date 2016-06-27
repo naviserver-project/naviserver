@@ -172,17 +172,18 @@ Ns_RollFile(const char *file, int max)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_RollFileByDate(const char *file, int max)
 {
     return Ns_PurgeFiles(file, max);
 }
 
-int
+Ns_ReturnCode
 Ns_PurgeFiles(const char *file, int max)
 {
-    File *fiPtr, *files = NULL;
-    int   nfiles, status = NS_ERROR;
+    File         *fiPtr, *files = NULL;
+    int           nfiles;
+    Ns_ReturnCode status = NS_ERROR;
 
     NS_NONNULL_ASSERT(file != NULL);
     

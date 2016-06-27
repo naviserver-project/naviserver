@@ -1455,7 +1455,7 @@ NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, const char *method, co
 /*
  * url2file.c
  */
-NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
+NS_EXTERN Ns_ReturnCode NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
@@ -1554,7 +1554,7 @@ NS_EXTERN void NsTclInitSpecType(void);
  * Callback routines.
  */
 
-NS_EXTERN int  NsRunFilters(Ns_Conn *conn, Ns_FilterType why) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode NsRunFilters(Ns_Conn *conn, Ns_FilterType why) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunCleanups(Ns_Conn *conn)                   NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunTraces(Ns_Conn *conn)                     NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunPreStartupProcs(void);
@@ -1601,7 +1601,7 @@ NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
  * (HTTP) Proxy support
  */
 
-NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn)
+NS_EXTERN Ns_ReturnCode NsConnRunProxyRequest(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 #endif /* NSD_H */

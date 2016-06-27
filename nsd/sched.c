@@ -508,7 +508,7 @@ NsStartSchedShutdown(void)
 void
 NsWaitSchedShutdown(const Ns_Time *toPtr)
 {
-    int status;
+    Ns_ReturnCode status;
 
     Ns_MutexLock(&lock);
     status = NS_OK;

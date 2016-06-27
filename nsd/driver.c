@@ -656,7 +656,7 @@ void
 NsStartDrivers(void)
 {
     Driver *drvPtr;
-    /* int status = NS_OK;*/
+    /* Ns_ReturnCode status = NS_OK;*/
 
     /*
      * Signal and wait for each driver to start.
@@ -797,9 +797,9 @@ NsWakeupDriver(const Driver *drvPtr) {
 void
 NsWaitDriversShutdown(const Ns_Time *toPtr)
 {
-    Driver *drvPtr;
-    int status = NS_OK;
-
+    Driver       *drvPtr;
+    Ns_ReturnCode status = NS_OK;
+        
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             continue;
@@ -3495,6 +3495,7 @@ static void
 SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 {
     NS_NONNULL_ASSERT(proc != NULL);
+    
     while (queuePtr != NULL) {
         if (ns_sockpair(queuePtr->pipe) != 0) {
             Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
@@ -3512,7 +3513,7 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
     NS_NONNULL_ASSERT(name != NULL);
 
     while (queuePtr != NULL) {
-        int status;
+        Ns_ReturnCode status;
 
         Ns_MutexLock(&queuePtr->lock);
         if (!queuePtr->stopped && !queuePtr->shutdown) {
@@ -4976,7 +4977,7 @@ NsAsyncWriterQueueDisable(int shutdown)
 {
     if (asyncWriter != NULL) {
         SpoolerQueue *queuePtr = asyncWriter->firstPtr;
-        Ns_Time timeout;
+        Ns_Time       timeout;
 
         assert(queuePtr != NULL);
 
@@ -5136,7 +5137,8 @@ AsyncWriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     char            charBuffer[1];
-    int             pollto, status;
+    int             pollto;
+    Ns_ReturnCode   status;
     bool            stopping;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;

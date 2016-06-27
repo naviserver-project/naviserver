@@ -40,7 +40,7 @@
  * Static functions defined in this file.
  */
 
-static int Result(Tcl_Interp *interp, int result) NS_GNUC_NONNULL(1);
+static int Result(Tcl_Interp *interp, Ns_ReturnCode result) NS_GNUC_NONNULL(1);
 
 static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -212,7 +212,8 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 {
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn  = NULL;
-    int           length, i, n, status;
+    int           length, i, n;
+    Ns_ReturnCode status;
     bool          binary;
     unsigned int  flags;
     struct iovec  iov[32];
@@ -324,10 +325,11 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 int
 NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn = NULL;
-    Tcl_Obj    *dataObj;
-    const char *type, *data;
-    int         status, len, result, binary = NS_FALSE;
+    Ns_Conn      *conn = NULL;
+    Tcl_Obj      *dataObj;
+    const char   *type, *data;
+    int           status, len, binary = NS_FALSE;
+    Ns_ReturnCode result;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
@@ -379,12 +381,13 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 int
 NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn     *conn = NULL;
-    int          result, status = 200, length = -1;
-    const char  *type = "*/*", *setid = NULL, *binary = NULL;
-    const char  *chars = NULL, *filename = NULL, *chanid = NULL;
-    Ns_Set      *set = NULL;
-    Tcl_Channel  chan;
+    Ns_Conn       *conn = NULL;
+    int            status = 200, length = -1;
+    Ns_ReturnCode  result;
+    const char    *type = "*/*", *setid = NULL, *binary = NULL;
+    const char    *chars = NULL, *filename = NULL, *chanid = NULL;
+    Ns_Set        *set = NULL;
+    Tcl_Channel    chan;
 
     Ns_ObjvSpec opts[] = {
         {"-status",   Ns_ObjvInt,       &status,   NULL},
@@ -485,10 +488,11 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 int
 NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn = NULL;
-    int         status, result;
-    const char *mimeType, *fileName;
-    Ns_ObjvSpec args[] = {
+    Ns_Conn      *conn = NULL;
+    Ns_ReturnCode result;
+    int           status;
+    const char   *mimeType, *fileName;
+    Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &status,   NULL},
         {"type",     Ns_ObjvString, &mimeType, NULL},
         {"filename", Ns_ObjvString, &fileName, NULL},
@@ -530,9 +534,10 @@ NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int          len, status, result;
-    Tcl_Channel  chan;
-    Ns_Conn     *conn = NULL;
+    int           len, status;
+    Ns_ReturnCode result;
+    Tcl_Channel   chan;
+    Ns_Conn      *conn = NULL;
 
     if (objc != 5) {
         Tcl_WrongNumArgs(interp, 1, objv, "status type channel len");
@@ -630,8 +635,8 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn *conn = NULL;
-    int      result;
+    Ns_Conn      *conn = NULL;
+    Ns_ReturnCode result;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "reason");
@@ -734,10 +739,11 @@ NsTclReturnTooLargeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         status, result;
-    Ns_Conn    *conn = NULL;    
-    const char *message;
-    Ns_ObjvSpec args[] = {
+    int           status;
+    Ns_ReturnCode result;
+    Ns_Conn      *conn = NULL;    
+    const char   *message;
+    Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &status,   NULL},
         {"message",  Ns_ObjvString, &message, NULL},
         {NULL, NULL, NULL, NULL}
@@ -775,10 +781,10 @@ NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 int
 NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn = NULL;
-    const char *location;
-    int         result;
-    Ns_ObjvSpec args[] = {
+    Ns_Conn       *conn = NULL;
+    const char    *location;
+    Ns_ReturnCode  result;
+    Ns_ObjvSpec    args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -816,10 +822,11 @@ NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 int
 NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn = NULL;
-    int         status, result;
-    const char *title, *message;
-    Ns_ObjvSpec args[] = {
+    Ns_Conn       *conn = NULL;
+    int            status;
+    Ns_ReturnCode  result;
+    const char    *title, *message;
+    Ns_ObjvSpec    args[] = {
         {"status",   Ns_ObjvInt,    &status,   NULL},
         {"title",    Ns_ObjvString, &title,   NULL},
         {"message",  Ns_ObjvString, &message, NULL},
@@ -859,10 +866,10 @@ NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 int
 NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn = NULL;
-    int         result;
-    const char *location;
-    Ns_ObjvSpec args[] = {
+    Ns_Conn       *conn = NULL;
+    Ns_ReturnCode  result;
+    const char    *location;
+    Ns_ObjvSpec    args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -898,10 +905,10 @@ NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclInternalRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn = NULL;
-    int         result;
-    const char *location;
-    Ns_ObjvSpec args[] = {
+    Ns_Conn       *conn = NULL;
+    Ns_ReturnCode  result;
+    const char    *location;
+    Ns_ObjvSpec    args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}
     };

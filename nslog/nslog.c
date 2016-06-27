@@ -79,10 +79,10 @@ static Tcl_ObjCmdProc  LogObjCmd;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
-static int LogFlush(Log *logPtr, Ns_DString *dsPtr);
-static int LogOpen (Log *logPtr);
-static int LogRoll (Log *logPtr);
-static int LogClose(Log *logPtr);
+static Ns_ReturnCode LogFlush(Log *logPtr, Ns_DString *dsPtr);
+static Ns_ReturnCode LogOpen (Log *logPtr);
+static Ns_ReturnCode LogRoll (Log *logPtr);
+static Ns_ReturnCode LogClose(Log *logPtr);
 
 static void AppendEscaped(Ns_DString *dsPtr, const char *chars)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -558,12 +558,13 @@ AppendEscaped(Ns_DString *dsPtr, const char *chars)
 static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
-    Log         *logPtr = arg;
-    const char **h, *user, *p;
-    char         buffer[PIPE_BUF], *bufferPtr = NULL;
-    int          n, status, i;
-    size_t	 bufferSize = 0u;
-    Ns_DString   ds, *dsPtr = &ds;
+    Log          *logPtr = arg;
+    const char  **h, *user, *p;
+    char          buffer[PIPE_BUF], *bufferPtr = NULL;
+    int           n, i;
+    Ns_ReturnCode status;
+    size_t	  bufferSize = 0u;
+    Ns_DString    ds, *dsPtr = &ds;
 
     Ns_DStringInit(dsPtr);
     Ns_MutexLock(&logPtr->lock);
@@ -724,7 +725,7 @@ LogTrace(void *arg, Ns_Conn *conn)
            * Only ns_write() operations < PIPE_BUF are guaranteed to be atomic
            */
 	    bufferPtr = ds.string;
-           status = NS_OK;
+            status = NS_OK;
 	} else {
 	    status = LogFlush(logPtr, dsPtr);
 	}
@@ -778,7 +779,7 @@ LogTrace(void *arg, Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogOpen(Log *logPtr)
 {
     int fd;
@@ -817,10 +818,10 @@ LogOpen(Log *logPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogClose(Log *logPtr)
 {
-    int status = NS_OK;
+    Ns_ReturnCode status = NS_OK;
 
     if (logPtr->fd >= 0) {
         status = LogFlush(logPtr, &logPtr->buffer);
@@ -851,7 +852,7 @@ LogClose(Log *logPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogFlush(Log *logPtr, Ns_DString *dsPtr)
 {
     int   len = dsPtr->length;
@@ -890,15 +891,15 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogRoll(Log *logPtr)
 {
-    int      status;
-    Tcl_Obj *path;
+    Ns_ReturnCode status;
+    Tcl_Obj      *path;
 
     NsAsyncWriterQueueDisable(0);
 
-    LogClose(logPtr);
+    (void)LogClose(logPtr);
 
     path = Tcl_NewStringObj(logPtr->file, -1);
     Tcl_IncrRefCount(path);

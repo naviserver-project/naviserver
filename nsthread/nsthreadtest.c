@@ -181,7 +181,7 @@ WorkThread(void *arg)
 
     if (i == 5) {
         Ns_Time         to;
-        int             st;
+        Ns_ReturnCode   st;
 
         Ns_GetTime(&to);
         Msg("time: %" PRIu64 ".%06ld", (int64_t) to.sec, to.usec);
@@ -328,7 +328,7 @@ DumperThread(void *arg)
     while (dstop == 0) {
 	Ns_GetTime(&to);
 	Ns_IncrTime(&to, 1, 0);
-	Ns_CondTimedWait(&dcond, &dlock, &to);
+	(void)Ns_CondTimedWait(&dcond, &dlock, &to);
 	Ns_MutexLock(&slock);
 	Ns_ThreadList(&ds, NULL);
 	DumpString(&ds);

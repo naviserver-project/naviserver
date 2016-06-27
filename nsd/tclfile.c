@@ -165,7 +165,8 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 static int
 FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
 {
-    int max, status;
+    int           max, result;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cmd != NULL);
@@ -191,10 +192,12 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
         Tcl_AppendResult(interp, "could not ", cmd, " \"",
                          Tcl_GetString(objv[1]), "\": ",
                          Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        result = TCL_OK;
     }
-
-    return TCL_OK;
+    
+    return result;
 }
 
 int
@@ -399,10 +402,10 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = clientData;
-    Tcl_Channel chan;
-    int         nbytes = INT_MAX;
-    int         result;
+    NsInterp     *itPtr = clientData;
+    Tcl_Channel   chan;
+    int           nbytes = INT_MAX;
+    Ns_ReturnCode result;
 
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");

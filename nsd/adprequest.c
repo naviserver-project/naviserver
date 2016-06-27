@@ -57,8 +57,8 @@ static int RegisterPage(const ClientData arg, const char *method,
 			unsigned int rflags, unsigned int aflags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, 
-		       unsigned int aflags)
+static Ns_ReturnCode PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, 
+                                 unsigned int aflags)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -99,7 +99,7 @@ static Ns_ObjvTable adpOpts[] = {
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_AdpRequest(Ns_Conn *conn, const char *file)
 {
     NS_NONNULL_ASSERT(conn != NULL);
@@ -108,7 +108,7 @@ Ns_AdpRequest(Ns_Conn *conn, const char *file)
     return PageRequest(conn, file, NULL, 0u);
 }
 
-int
+Ns_ReturnCode
 Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
 {
     NS_NONNULL_ASSERT(conn != NULL);
@@ -117,7 +117,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
     return PageRequest(conn, file, expiresPtr, 0u);
 }
 
-static int
+static Ns_ReturnCode
 PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned int aflags)
 {
     const Conn     *connPtr = (const Conn *) conn;
@@ -263,6 +263,23 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     return RegisterPage(arg, method, url, file, NULL, rflags, ADP_TCLFILE);
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RegisterPage --
+ *
+ *      Register ADP page
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 RegisterPage(const ClientData arg,
              const char *method, const char *url, const char *file,
@@ -310,14 +327,14 @@ RegisterPage(const ClientData arg,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsAdpPageProc(void *arg, Ns_Conn *conn)
 {
     AdpRequest    *adp = arg;
     const Ns_Time *expiresPtr;
     Ns_DString     ds;
     const char    *file = NULL, *server;
-    int            status;
+    Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -460,7 +477,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
         if (doStream == 0) {
             NsAdpReset(itPtr);
         }
-        return NS_OK;
+        return TCL_OK;
     }
 
     /*

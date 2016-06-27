@@ -336,7 +336,7 @@ NsWaitJobsShutdown(const Ns_Time *toPtr)
 {
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
-    int             status = NS_OK;
+    Ns_ReturnCode   status = NS_OK;
 
     hPtr = Tcl_FirstHashEntry(&tp.queues, &search);
     while (status == NS_OK && hPtr != NULL) {
@@ -702,8 +702,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             if (deltaTimeoutPtr != NULL) {
                 while (jobPtr->state != JOB_DONE) {
-                    int timedOut = Ns_CondTimedWait(&queue->cond,
-						    &queue->lock, &timeout);
+                    Ns_ReturnCode timedOut = Ns_CondTimedWait(&queue->cond,
+                                                              &queue->lock, &timeout);
                     if (timedOut == NS_TIMEOUT) {
                         Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
                         Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
@@ -872,8 +872,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             if (deltaTimeoutPtr != NULL) {
                 while ((Tcl_FirstHashEntry(&queue->jobs, &search) != NULL)
                        && AnyDone(queue) == 0) {
-                    int timedOut = Ns_CondTimedWait(&queue->cond,
-						    &queue->lock, &timeout);
+                    Ns_ReturnCode timedOut = Ns_CondTimedWait(&queue->cond,
+                                                              &queue->lock, &timeout);
                     if (timedOut == NS_TIMEOUT) {
                         Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
                         Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
@@ -1193,9 +1193,10 @@ JobThread(void *UNUSED(arg))
     jpt = njobs = tp.jobsPerThread;
 
     while (jpt == 0 || njobs > 0) {
-	Job         *jobPtr;
-	Tcl_Interp *interp;
-	int         status, code;
+	Job          *jobPtr;
+	Tcl_Interp   *interp;
+	int           code;
+        Ns_ReturnCode status;
 
         ++tp.nidle;
         status = NS_OK;

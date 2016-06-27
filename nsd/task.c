@@ -370,10 +370,10 @@ Ns_TaskCancel(Ns_Task *task)
 int
 Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 {
-    Task      *taskPtr = (Task *) task;
-    TaskQueue *queuePtr = taskPtr->queuePtr;
-    int        status = NS_OK;
-    Ns_Time    atime;
+    Task          *taskPtr = (Task *) task;
+    TaskQueue     *queuePtr = taskPtr->queuePtr;
+    Ns_ReturnCode  status = NS_OK;
+    Ns_Time        atime;
 
     NS_NONNULL_ASSERT(task != NULL);
     
@@ -613,8 +613,8 @@ NsStartTaskQueueShutdown(void)
 void
 NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
 {
-    TaskQueue *queuePtr, *nextPtr;
-    int        status;
+    TaskQueue     *queuePtr, *nextPtr;
+    Ns_ReturnCode  status;
 
     /*
      * Clear out list of any remaining task queues.

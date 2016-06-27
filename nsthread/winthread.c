@@ -574,14 +574,14 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 {
-    int         status;
-    Cond       *condPtr;
-    WinThread  *wPtr;
-    Ns_Time     now, wait;
-    DWORD       msec, w;
+    Ns_ReturnCode status;
+    Cond         *condPtr;
+    WinThread    *wPtr;
+    Ns_Time       now, wait;
+    DWORD         msec, w;
 
     /*
      * Convert to relative wait time and verify.

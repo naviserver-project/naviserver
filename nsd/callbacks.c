@@ -363,7 +363,7 @@ void
 NsWaitShutdownProcs(const Ns_Time *toPtr)
 {
     Callback         *cbPtr;
-    int               status = NS_OK;
+    Ns_ReturnCode     status = NS_OK;
 
     if (shutdownThread == NULL) {
         return; /* No shutdown callbacks. */

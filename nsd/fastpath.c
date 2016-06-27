@@ -60,10 +60,10 @@ static void DecrEntry(File *filePtr)
 static bool UrlIs(const char *server, const char *url, bool isDir)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int  FastGetRestart(Ns_Conn *conn, const char *page)
+static Ns_ReturnCode FastGetRestart(Ns_Conn *conn, const char *page)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int  FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
+static Ns_ReturnCode FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static int  GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
@@ -178,11 +178,11 @@ ConfigServerFastpath(const char *server)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *file)
 {
-    Conn        *connPtr = (Conn *) conn;
-    int          rc;
+    Conn         *connPtr = (Conn *) conn;
+    Ns_ReturnCode rc;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
@@ -212,14 +212,14 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *f
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 {
-    Conn        *connPtr;
-    NsServer    *servPtr;
-    const char  *url;
-    Ns_DString   ds;
-    int          result;
+    Conn         *connPtr;
+    NsServer     *servPtr;
+    const char   *url;
+    Ns_DString    ds;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -448,7 +448,7 @@ GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 {
     Conn        *connPtr = (Conn *) conn;
@@ -718,11 +718,11 @@ Ns_Stat(const char *path, struct stat *stPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 FastGetRestart(Ns_Conn *conn, const char *page)
 {
-    int        status;
-    Ns_DString ds;
+    Ns_ReturnCode status;
+    Ns_DString    ds;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(page != NULL);

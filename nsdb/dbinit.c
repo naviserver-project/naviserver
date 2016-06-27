@@ -426,11 +426,12 @@ int
 Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool, 
     				 int nwant, const Ns_Time *wait)
 {
-    Handle    *handlePtr;
-    Handle   **handlesPtrPtr = (Handle **) handles;
-    Pool      *poolPtr;
-    Ns_Time    timeout, *timePtr, startTime, endTime, diffTime;
-    int        i, ngot, status;
+    Handle       *handlePtr;
+    Handle      **handlesPtrPtr = (Handle **) handles;
+    Pool         *poolPtr;
+    Ns_Time       timeout, *timePtr, startTime, endTime, diffTime;
+    int           i, ngot;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(pool != NULL);
     NS_NONNULL_ASSERT(handles != NULL);

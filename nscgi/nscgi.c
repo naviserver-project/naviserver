@@ -125,7 +125,7 @@ static Ns_DString *CgiDs(Cgi *cgiPtr)                      NS_GNUC_NONNULL(1);
 static void	CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
 static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int	CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static ssize_t	CgiRead(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
 static ssize_t	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static char    *NextWord(char *s)                          NS_GNUC_NONNULL(1);
@@ -263,13 +263,13 @@ Ns_ModuleInit(const char *server, const char *module)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 CgiRequest(void *arg, Ns_Conn *conn)
 {
     const Map	   *mapPtr;
     Mod		   *modPtr;
     Cgi		    cgi;
-    int             status;
+    Ns_ReturnCode   status;
 
     mapPtr = arg;
     modPtr = mapPtr->modPtr;
@@ -319,7 +319,7 @@ CgiRequest(void *arg, Ns_Conn *conn)
 
     if (modPtr->maxCgi > 0) {
 	Ns_Time timeout;
-	int wait = NS_OK;
+	Ns_ReturnCode wait = NS_OK;
 
 	Ns_GetTime(&timeout);
 	Ns_IncrTime(&timeout, modPtr->maxWait, 0);
@@ -1092,11 +1092,12 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 {
     Ns_DString      ds, redir;
-    int             status, last, httpstatus;
+    int             last, httpstatus;
+    Ns_ReturnCode   status;
     char           *value;
     Ns_Set         *hdrs;
     ssize_t         n;

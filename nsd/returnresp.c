@@ -44,7 +44,7 @@
  */
 
 static Ns_ServerInitProc ConfigServerRedirects;
-static bool ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
+static bool ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 
@@ -160,10 +160,10 @@ Ns_RegisterReturn(int status, const char *url)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -191,7 +191,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnOk(Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
@@ -217,10 +217,10 @@ Ns_ConnReturnOk(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 {
-    int        result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -267,7 +267,7 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnNoResponse(Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
@@ -293,10 +293,10 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 {
-    int        result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -346,11 +346,11 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
 {
-    Ns_DString ds;
-    int        result;
+    Ns_DString    ds;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -387,12 +387,12 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnUnauthorized(Ns_Conn *conn)
 {
-    Conn       *connPtr = (Conn *) conn;
-    Ns_DString  ds;
-    int         result;
+    Conn         *connPtr = (Conn *) conn;
+    Ns_DString    ds;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -429,10 +429,10 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnForbidden(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -461,10 +461,10 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnNotFound(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -493,10 +493,10 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -523,7 +523,7 @@ Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 Ns_ConnReturnNotModified(Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
@@ -546,10 +546,10 @@ Ns_ConnReturnNotModified(Ns_Conn *conn)
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -575,10 +575,10 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -605,10 +605,10 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -636,10 +636,10 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnNotImplemented(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -669,10 +669,10 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnInternalError(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -703,10 +703,10 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnUnavailable(Ns_Conn *conn)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -729,7 +729,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  *      Redirect internally to the URL registered for the given status.
  *
  * Results:
- *      1 if a redirect exists and ran, 0 otherwise.
+ *      NS_TRUE if a redirect exists and ran, NS_FALSE otherwise.
  *      The status of the redirected page is left in resultPtr.
  *
  * Side effects:
@@ -739,7 +739,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  */
 
 static bool
-ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
+ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
 {
     Tcl_HashEntry *hPtr;
     Conn          *connPtr = (Conn *) conn;

@@ -226,7 +226,7 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 {
     NsServer *servPtr;
@@ -239,10 +239,10 @@ Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
     return NsUrlToFile(dsPtr, servPtr, url);
 }
 
-int
+Ns_ReturnCode
 NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
 {
-    int       status = NS_ERROR;
+    Ns_ReturnCode status = NS_ERROR;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);

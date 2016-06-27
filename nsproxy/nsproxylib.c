@@ -418,7 +418,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
      * This will of course block the caller, possibly forever.
      */
 
-    Ns_CloseOnExec(proc.wfd);
+    (void)Ns_CloseOnExec(proc.wfd);
 
     /*
      * Create the interp, initialize with user init proc, if any.
@@ -575,7 +575,8 @@ Shutdown(const Ns_Time *toutPtr, void *arg)
     Pool           *poolPtr;
     Proxy          *proxyPtr, *tmpPtr;
     Tcl_HashSearch  search;
-    int             reap, status;
+    int             reap;
+    Ns_ReturnCode   status;
 
     /*
      * Cleanup all known pools. This will put all idle
@@ -2132,10 +2133,10 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 static Err
 PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
 {
-    Proxy   *proxyPtr;
-    Err      err;
-    int      status = NS_OK;
-    Ns_Time  tout;
+    Proxy        *proxyPtr;
+    Err           err;
+    Ns_ReturnCode status = NS_OK;
+    Ns_Time       tout;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
     NS_NONNULL_ASSERT(proxyPtrPtr != NULL);
@@ -2835,7 +2836,7 @@ ReaperThread(void *ignored)
             if (tout.sec == TIME_T_MAX && tout.usec == LONG_MAX) {
                 Ns_CondWait(&pcond, &plock);
             } else {
-                Ns_CondTimedWait(&pcond, &plock, &tout);
+                (void) Ns_CondTimedWait(&pcond, &plock, &tout);
             }
             if (reaperState == Stopping) {
                 break;

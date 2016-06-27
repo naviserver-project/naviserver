@@ -2144,7 +2144,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
         if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0u) {
             conn->flags |= NS_CONN_SKIPHDRS;
         } else {
-            if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != TCL_OK) {
+            if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != NS_OK) {
 		Ns_Log(Error, "make channel: error writing headers");
 	    }
         }

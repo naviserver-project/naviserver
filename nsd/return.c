@@ -40,12 +40,12 @@
  * Local functions defined in this file
  */
 
-static int ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
-                      FILE *fp, int fd, size_t len)
+static Ns_ReturnCode ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
+                                FILE *fp, int fd, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-static int ReturnRange(Ns_Conn *conn, const char *mimeType,
-                       int fd, const void *data, size_t len)
+static Ns_ReturnCode ReturnRange(Ns_Conn *conn, const char *mimeType,
+                                 int fd, const void *data, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -613,7 +613,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *mimeType, size_t length)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnResetReturn(Ns_Conn *UNUSED(conn))
 {
     return NS_OK;
@@ -637,7 +637,7 @@ Ns_ConnResetReturn(Ns_Conn *UNUSED(conn))
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status,
                          const char *title, const char *notice)
 {
@@ -664,14 +664,14 @@ Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     const char *title, const char *notice)
 {
-    Conn       *connPtr = (Conn *) conn;
-    NsServer   *servPtr;
-    Ns_DString  ds;
-    int         result;
+    Conn         *connPtr = (Conn *) conn;
+    NsServer     *servPtr;
+    Ns_DString    ds;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(title != NULL);
@@ -740,12 +740,12 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data, 
 		  ssize_t len, const char *mimeType)
 {
-    int result;
-    size_t length;
+    Ns_ReturnCode result;
+    size_t        length;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(data != NULL);
@@ -779,12 +779,12 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data, 
 		      ssize_t len, const char *mimeType)
 {
-    struct iovec sbuf;
-    int result;
+    struct iovec  sbuf;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(data != NULL);
@@ -820,7 +820,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnHtml(Ns_Conn *conn, int status, const char *html, ssize_t len)
 {
     return Ns_ConnReturnCharData(conn, status, html, len, "text/html");
@@ -851,7 +851,7 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, const char *html, ssize_t len)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *mimeType,
                          Tcl_Channel chan, size_t len)
 {
@@ -861,7 +861,7 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *mimeType,
     return ReturnOpen(conn, status, mimeType, chan, NULL, -1, len);
 }
 
-int
+Ns_ReturnCode
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *mimeType,
                       FILE *fp, size_t len)
 {
@@ -871,7 +871,7 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *mimeType,
     return ReturnOpen(conn, status, mimeType, NULL, fp, -1, len);
 }
 
-int
+Ns_ReturnCode
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *mimeType,
                     int fd, size_t len)
 {
@@ -881,11 +881,11 @@ Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *mimeType,
     return ReturnOpen(conn, status, mimeType, NULL, NULL, fd, len);
 }
 
-static int
+static Ns_ReturnCode
 ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
            FILE *fp, int fd, size_t len)
 {
-    int result;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
@@ -933,14 +933,15 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 ReturnRange(Ns_Conn *conn, const char *mimeType,
             int fd, const void *data, size_t len)
 {
-    Ns_DString  ds;
-    Ns_FileVec  bufs[32];
-    int         nbufs = (int)(sizeof(bufs) / sizeof(bufs[0]));
-    int         rangeCount, result = NS_ERROR;
+    Ns_DString    ds;
+    Ns_FileVec    bufs[32];
+    int           nbufs = (int)(sizeof(bufs) / sizeof(bufs[0]));
+    int           rangeCount;
+    Ns_ReturnCode result = NS_ERROR;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
