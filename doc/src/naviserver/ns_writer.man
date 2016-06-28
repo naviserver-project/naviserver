@@ -41,7 +41,8 @@ Submit arbitrary data to be returned via writer thread, data can be binary.
 
 [para]
 Submits file to be returned via writer thread. For parital requests,
-ns_writer does NOT change status code or sets content-range.
+ns_writer does NOT change status code or sets content-range. On
+success the function returns 1, otherwise 0.
 Optionally the following arguments can be used:
 
 [para]
