@@ -217,27 +217,30 @@ Ns_StrToUpper(char *chars)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_StrToInt(const char *chars, int *intPtr)
 {
-    long  lval;
-    char *ep;
+    long          lval;
+    char         *ep;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(intPtr != NULL);
 
     errno = 0;
     lval = strtol(chars, &ep, chars[0] == '0' && chars[1] == 'x' ? 16 : 10);
-    if (chars[0] == '\0' || *ep != '\0') {
-        return NS_ERROR;
+    if (unlikely(chars[0] == '\0' || *ep != '\0')) {
+        status = NS_ERROR;
+    } else {
+        if (unlikely((errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN))
+                     || (lval > INT_MAX || lval < INT_MIN))) {
+            status = NS_ERROR;
+        } else {
+            *intPtr = (int) lval;
+        }
     }
-    if ((errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN))
-        || (lval > INT_MAX || lval < INT_MIN)) {
-        return NS_ERROR;
-    }
-    *intPtr = (int) lval;
 
-    return NS_OK;
+    return status;
 }
 
 /*
@@ -259,23 +262,26 @@ Ns_StrToInt(const char *chars, int *intPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
 {
-    Tcl_WideInt  lval;
-    char *ep;
+    Tcl_WideInt   lval;
+    char         *ep;
+    Ns_ReturnCode status = NS_OK;
 
     errno = 0;
     lval = strtoll(chars, &ep, chars[0] == '0' && chars[1] == 'x' ? 16 : 10);
-    if (chars[0] == '\0' || *ep != '\0') {
-        return NS_ERROR;
+    if (unlikely(chars[0] == '\0' || *ep != '\0')) {
+        status = NS_ERROR;
+    } else {
+        if (unlikely(errno == ERANGE && (lval == LLONG_MAX || lval == LLONG_MIN))) {
+            status = NS_ERROR;
+        } else {
+            *intPtr = (Tcl_WideInt) lval;
+        }
     }
-    if ((errno == ERANGE && (lval == LLONG_MAX || lval == LLONG_MIN))) {
-        return NS_ERROR;
-    }
-    *intPtr = (Tcl_WideInt) lval;
 
-    return NS_OK;
+    return status;
 }
 
 

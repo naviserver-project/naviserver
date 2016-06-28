@@ -63,7 +63,7 @@ static Ns_UserAuthorizeProc    *userProcPtr = NULL;
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
 	            const char *user, const char *passwd, const char *peer)
 {
@@ -191,16 +191,20 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_AuthorizeUser(const char *user, const char *passwd)
 {
+    Ns_ReturnCode status;
+    
     NS_NONNULL_ASSERT(user != NULL);
     NS_NONNULL_ASSERT(passwd != NULL);
     
     if (userProcPtr == NULL) {
-	return NS_ERROR;
+	status = NS_ERROR;
+    } else {
+        status = (*userProcPtr)(user, passwd);
     }
-    return (*userProcPtr)(user, passwd);
+    return status;
 }
 
 

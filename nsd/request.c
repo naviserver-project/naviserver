@@ -150,7 +150,7 @@ Ns_FreeRequest(Ns_Request *request)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ParseRequest(Ns_Request *request, const char *line)
 {
     char       *url, *l, *p;
@@ -542,7 +542,7 @@ SetUrl(Ns_Request *request, char *url)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 {
     char           *sep;

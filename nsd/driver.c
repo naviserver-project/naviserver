@@ -131,7 +131,7 @@ static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static SockState SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
-static int   SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
+static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 
 static Sock *SockNew(Driver *drvPtr)
@@ -269,7 +269,7 @@ NsInitDrivers(void)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *init)
 {
     const char     *defproto, *host, *address, *bindaddr, *defserver, *path;
@@ -1899,10 +1899,10 @@ RequestFree(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
 {
-    int result;
+    Ns_ReturnCode result;
     
     NS_NONNULL_ASSERT(sockPtr != NULL);
     /*
@@ -4086,7 +4086,7 @@ WriterThread(void *arg)
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
-            err = NS_OK;
+            err = 0;
 
             /* the truth value of doStream does not change through concurrency */
             doStream = curPtr->doStream;
@@ -4267,7 +4267,7 @@ NsWriterFinish(WriterSock *wrSockPtr) {
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs, int everysize)
 {
@@ -4761,10 +4761,11 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         if (headers != 0) {
             Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
         }
-
-        rc = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
-
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+        {
+            Ns_ReturnCode status;
+            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+        }
         (void) ns_close(fd);
 
         break;
@@ -4856,7 +4857,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             if (objc == 4) {
                 int value = 0;
 
-                if (Tcl_GetIntFromObj(interp, objv[3], &value) != NS_OK || value < 1024) {
+                if (Tcl_GetIntFromObj(interp, objv[3], &value) != TCL_OK || value < 1024) {
                     Tcl_AppendResult(interp, "argument is not an integer in valid range: ",
                                      Tcl_GetString(objv[3]), " (min 1024)", NULL);
                     return TCL_ERROR;
@@ -4880,7 +4881,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     }
     }
 
-    return NS_OK;
+    return TCL_OK;
 }
 
 /*
@@ -5024,7 +5025,7 @@ NsAsyncWriterQueueDisable(int shutdown)
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 {
     SpoolerQueue         *queuePtr;

@@ -165,7 +165,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 	}
 	Ns_MutexUnlock(&servPtr->filter.lock);
 	if (filter_status == NS_FILTER_BREAK ||
-	    (why == NS_FILTER_TRACE && status == NS_FILTER_RETURN)) {
+	    (why == NS_FILTER_TRACE && filter_status == NS_FILTER_RETURN)) {
 	    status = NS_OK;
 	} else {
             status = filter_status;

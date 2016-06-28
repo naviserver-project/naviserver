@@ -101,7 +101,7 @@ static void RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
 static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
-static int RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
+static Ns_ReturnCode RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
     NS_GNUC_NONNULL(1);
 
 static Tcl_InterpDeleteProc FreeInterpData;
@@ -172,7 +172,7 @@ NsInitTcl(void)
     NsRegisterServerInit(ConfigServerTcl);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerTcl(const char *server)
 {
     NsServer   *servPtr;
@@ -640,7 +640,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
                     const void *arg, Ns_TclTraceType when)
 {
@@ -716,25 +716,25 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, const void *arg)
 {
     return RegisterAt(proc, arg, NS_TCL_TRACE_CREATE);
 }
 
-int
+Ns_ReturnCode
 Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, const void *arg)
 {
     return RegisterAt(proc, arg, NS_TCL_TRACE_DEALLOCATE);
 }
 
-int
+Ns_ReturnCode
 Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, const void *arg)
 {
     return RegisterAt(proc, arg, NS_TCL_TRACE_DELETE);
 }
 
-static int
+static Ns_ReturnCode
 RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
 {
     NsServer *servPtr;
@@ -771,7 +771,7 @@ RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, const void *arg)
 {
     return Ns_TclRegisterTrace(server, proc, arg, NS_TCL_TRACE_CREATE);
@@ -892,21 +892,24 @@ Ns_TclInterpServer(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclInitModule(const char *server, const char *module)
 {
-    NsServer *servPtr;
+    NsServer     *servPtr;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(module != NULL);
 
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        (void) Tcl_ListObjAppendElement(NULL, servPtr->tcl.modules,
+                                        Tcl_NewStringObj(module, -1));
+        status = NS_OK;
     }
-    (void) Tcl_ListObjAppendElement(NULL, servPtr->tcl.modules,
-                                    Tcl_NewStringObj(module, -1));
-    return NS_OK;
+    return status;
 }
 
 
@@ -1154,11 +1157,14 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (servPtr != NsGetInitServer()) {
             Tcl_SetResult(interp, "cannot register trace after server startup",
                           TCL_STATIC);
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclTraceProc, 
+                                      scriptObj, remain, objv + (objc - remain));
+            if (Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when) != NS_OK) {
+                result = TCL_ERROR;
+            }
         }
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclTraceProc, 
-				  scriptObj, remain, objv + (objc - remain));
-        result = Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when);
         break;
 
     case IGetTracesIdx:

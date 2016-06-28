@@ -268,12 +268,13 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         Tcl_SetObjResult(interp, objv[3]);
     } else {
-        const Tcl_HashEntry *hPtr;
 
         arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE);
         if (unlikely(arrayPtr == NULL)) {
             result = TCL_ERROR;
         } else {
+            const Tcl_HashEntry *hPtr;
+
             hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
             if (likely(hPtr != NULL)) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));

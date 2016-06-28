@@ -108,14 +108,14 @@ static void AppendEscaped(Ns_DString *dsPtr, const char *chars)
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    const char *path, *file;
-    Log        *logPtr;
-    Ns_DString  ds;
-    static int  first = 1;
-    int         result;
+    const char   *path, *file;
+    Log          *logPtr;
+    Ns_DString    ds;
+    static bool   first = NS_TRUE;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(module != NULL);
 
@@ -124,8 +124,8 @@ Ns_ModuleInit(const char *server, const char *module)
      * called w/o locking from within the server startup.
      */
 
-    if (first != 0) {
-        first = 0;
+    if (first) {
+        first = NS_FALSE;
         Ns_RegisterProcInfo((Ns_Callback *)LogRollCallback, "nslog:roll", LogArg);
         Ns_RegisterProcInfo((Ns_Callback *)LogCloseCallback, "nslog:close", LogArg);
         Ns_RegisterProcInfo((Ns_Callback *)LogTrace, "nslog:conntrace", LogArg);
@@ -161,15 +161,15 @@ Ns_ModuleInit(const char *server, const char *module)
             (void) Ns_HomePath(&ds, "logs", "/", file, NULL);
         } else {
             Tcl_Obj *dirpath;
-	    int status;
+	    int rc;
 
             Ns_DStringTrunc(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
-            status = Tcl_FSCreateDirectory(dirpath);
+            rc = Tcl_FSCreateDirectory(dirpath);
             Tcl_DecrRefCount(dirpath);
-            if (status != 0 && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
+            if (rc != TCL_OK && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
                 Ns_Log(Error, "nslog: create directory (%s) failed: '%s'",
                        ds.string, strerror(Tcl_GetErrno()));
                 Ns_DStringFree(&ds);
@@ -755,7 +755,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     (void)(status); /* ignore status */
 
     if (likely(bufferPtr != NULL) && likely(logPtr->fd >= 0) && likely(bufferSize > 0)) {
-        NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
+        (void)NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
     }
 
     Ns_DStringFree(dsPtr);

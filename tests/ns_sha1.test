@@ -107,4 +107,16 @@ test ns_hmac_sha2-2.4 {basic operation} -body {
      ns_hmac_sha2 -length 512 "Jefe" "what do ya want for nothing?"
 } -result "164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea2505549758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737"
 
+test ns_hmac_sha1-1.1 {basic operation} -body {
+     crypto::hmac string -digest sha1 "Jefe" "what do ya want for nothing?"
+} -result "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"
+
+test ns_hmac_sha1-1.2 {binary operation (example from RFC 4226, appendix D)} -body {
+     crypto::hmac string -digest sha1 12345678901234567890 [binary format W 0]
+} -result "cc93cf18508d94934c64b65d8ba7667fb7cde4b0"
+test ns_hmac_sha1-1.3 {binary operation (example from RFC 4226, appendix D)} -body {
+    crypto::hmac string -digest sha1 12345678901234567890 [binary format W 1]
+} -result "75a48a19d4cbe100644e8ac1397eea747a2d33ab"
+
+
 cleanupTests

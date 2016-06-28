@@ -685,6 +685,7 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *
         Ns_TclPrintfResult(interp, "unknown case disposition \"%s\": should be toupper, tolower, or preserve", 
                            argv[3]);
         result = TCL_ERROR;
+        disp = Preserve;  /* silence code checker */
     }
     if ((result == TCL_OK) && (Ns_ParseHeader(set, argv[2], disp) != NS_OK)) {
         Ns_TclPrintfResult(interp, "invalid header: %s", argv[2]);

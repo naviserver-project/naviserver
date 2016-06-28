@@ -1543,7 +1543,10 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
                 (void) Ns_ConnReturnUnauthorized(conn);
                 break;
 
-            case NS_ERROR:
+            case NS_ERROR:          /* fall through */
+            case NS_FILTER_BREAK:   /* fall through */
+            case NS_FILTER_RETURN:  /* fall through */
+            case NS_TIMEOUT:        /* fall through */
             default:
                 (void) Ns_ConnReturnInternalError(conn);
                 break;

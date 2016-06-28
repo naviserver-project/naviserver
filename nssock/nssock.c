@@ -78,7 +78,7 @@ static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_DriverInitData  init = {0};

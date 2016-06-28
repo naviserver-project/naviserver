@@ -55,15 +55,15 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    static int once = 0;
+    static bool once = NS_FALSE;
 
-    if (once == 0) {
+    if (!once) {
         Ns_LogSqlDebug = Ns_CreateLogSeverity("Debug(sql)");
 	NsDbInitPools();
-	once = 1;
+	once = NS_TRUE;
     }
     NsDbInitServer(server);
     if (Ns_TclRegisterTrace(server, NsDbAddCmds, server,

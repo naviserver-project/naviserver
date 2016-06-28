@@ -103,7 +103,7 @@ NsInitUrl2File(void)
     NsRegisterServerInit(ConfigServerUrl2File);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerUrl2File(const char *server)
 {
     NsServer *servPtr;

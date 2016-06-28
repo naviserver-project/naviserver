@@ -117,19 +117,19 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 static Ns_OpProc CgiRequest;
 static Ns_Callback CgiFreeMap;
 
-static int	CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
+static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void     CgiRegister(Mod *modPtr, const char *map)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Ns_DString *CgiDs(Cgi *cgiPtr)                      NS_GNUC_NONNULL(1);
-static void	CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
-static int  	CgiExec(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int	CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void          CgiRegister(Mod *modPtr, const char *map)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_DString   *CgiDs(Cgi *cgiPtr)                      NS_GNUC_NONNULL(1);
+static void	     CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
+static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static ssize_t	CgiRead(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
-static ssize_t	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char    *NextWord(char *s)                          NS_GNUC_NONNULL(1);
-static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
+static ssize_t	     CgiRead(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
+static ssize_t	     CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static char         *NextWord(char *s)                          NS_GNUC_NONNULL(1);
+static void	     SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
@@ -150,7 +150,7 @@ static void	SetAppend(const Ns_Set *set, int index, const char *sep, char *value
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
     const char     *path, *section;
@@ -158,7 +158,7 @@ Ns_ModuleInit(const char *server, const char *module)
     const Ns_Set   *set;
     Ns_DString      ds;
     Mod		   *modPtr;
-    static int	    initialized = 0;
+    static bool	    initialized = NS_FALSE;
 
     NS_NONNULL_ASSERT(module != NULL);
 
@@ -168,7 +168,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * for requests without content data.
      */
 
-    if (initialized == 0) {
+    if (!initialized) {
 	devNull = ns_open(DEVNULL, O_RDONLY, 0);
 	if (devNull < 0) {
 	    Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
@@ -180,7 +180,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
         Ns_LogCGIDebug = Ns_CreateLogSeverity("Debug(cgi)");
 
-	initialized = 1;
+	initialized = NS_TRUE;
     }
 
     /*
@@ -383,7 +383,7 @@ done:
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 {
     Mod		   *modPtr;
@@ -581,12 +581,13 @@ err:
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 {
-    int         fd, status;
-    size_t      len;
-    const char *content, *err;
+    int           fd;
+    Ns_ReturnCode status;
+    size_t        len;
+    const char   *content, *err;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -729,14 +730,15 @@ CgiFree(Cgi *cgiPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int         i, opipe[2], status;
-    char       *s, *e, *p;
-    Ns_DString *dsPtr;
-    const Mod  *modPtr;
-    const char *value;
+    int           i, opipe[2];
+    Ns_ReturnCode status;
+    char         *s, *e, *p;
+    Ns_DString   *dsPtr;
+    const Mod    *modPtr;
+    const char   *value;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);

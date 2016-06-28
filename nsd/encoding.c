@@ -214,7 +214,7 @@ NsConfigEncodings(void)
     NsRegisterServerInit(ConfigServerEncodings);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerEncodings(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);

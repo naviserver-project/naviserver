@@ -81,7 +81,7 @@ main(int argc, char *const* argv)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 ServerInit(const char *UNUSED(server))
 {
     /*

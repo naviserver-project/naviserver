@@ -84,7 +84,7 @@ Nsproxy_Init(Tcl_Interp *interp)
  *      NaviServer module initialisation routine.
  *
  * Results:
- *      NS_OK.
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
  *      None.
@@ -92,17 +92,17 @@ Nsproxy_Init(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    SrvMod *smPtr;
-    static  int once = 0;
-    int     result;
+    SrvMod       *smPtr;
+    static bool   initialized = NS_FALSE;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(module != NULL);
 
-    if (once == 0) {
-        once = 1;
+    if (!initialized) {
+        initialized = NS_TRUE;
         Nsproxy_LibInit();
         Ns_RegisterProcInfo((Ns_Callback *)InitInterp, "nsproxy:initinterp", NULL);
         Ns_RegisterProcInfo((Ns_Callback *)Ns_ProxyCleanup, "nsproxy:cleanup", NULL);
@@ -119,6 +119,22 @@ Ns_ModuleInit(const char *server, const char *module)
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitInterp --
+ *
+ *      Initialze interpreter
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 InitInterp(Tcl_Interp *interp, const void *arg)

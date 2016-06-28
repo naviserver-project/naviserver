@@ -80,7 +80,7 @@ NsConfigVhost(void)
     NsRegisterServerInit(ConfigServerVhost);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerVhost(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);

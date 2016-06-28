@@ -131,7 +131,7 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
     return key;
 }
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_DString ds;
@@ -239,6 +239,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
     {
 	EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        
 	if (ecdh == NULL) {
 	    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
 	    return NS_ERROR;
@@ -263,6 +264,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
     {
         long n = SSL_OP_ALL;
+        
         value = Ns_ConfigGetValue(path, "protocols");
         if (value != NULL) {
             if (strstr(value, "!SSLv2") != NULL) {
@@ -328,6 +330,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_DStringSetLength(&ds, 1024);
     for (num = 0; !RAND_status() && num < 3; num++) {
         int n;
+        
         Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
         for (n = 0; n < 1024; n++) {
             ds.string[n] = Ns_DRand();
@@ -712,9 +715,9 @@ SSLThreadId(void)
 static int
 ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
 {
-    SSL        *ssl;
-    SSLContext *sslPtr;
-    int         result;
+    SSL          *ssl;
+    SSLContext   *sslPtr;
+    int           result;
         
     result = Ns_TLS_SSLConnect(interp, sockPtr->sock, ctx, &ssl);
 
@@ -731,11 +734,11 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
 }
 #else
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_Log(Warning, "modules nsssl requires a version of NaviServer built with OpenSSL");
-    return TCL_ERROR;
+    return NS_ERROR;
 }
 #endif
 

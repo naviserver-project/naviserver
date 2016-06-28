@@ -1224,7 +1224,7 @@ HttpAppendRawBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t outSize)
 int
 Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize) 
 {
-    int status = TCL_OK;
+    int tclStatus = TCL_OK;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
@@ -1235,7 +1235,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	/*
 	 * Output raw content
 	 */
-	status = HttpAppendRawBuffer(httpPtr, buffer, inSize);
+	tclStatus = HttpAppendRawBuffer(httpPtr, buffer, inSize);
 
     } else {
 	char out[16384];
@@ -1249,16 +1249,16 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
 	do {
 	    size_t uncompressedLen = 0u;
 
-	    status = Ns_InflateBuffer(httpPtr->compress, out, sizeof(out), &uncompressedLen);
-	    Ns_Log(Ns_LogTaskDebug, "InflateBuffer status %d uncompressed %" PRIdz " bytes", status, uncompressedLen);
+	    tclStatus = Ns_InflateBuffer(httpPtr->compress, out, sizeof(out), &uncompressedLen);
+	    Ns_Log(Ns_LogTaskDebug, "InflateBuffer status %d uncompressed %" PRIdz " bytes", tclStatus, uncompressedLen);
 	    
 	    if (HttpAppendRawBuffer(httpPtr, out, uncompressedLen) != TCL_OK) {
-                status = TCL_ERROR;
+                tclStatus = TCL_ERROR;
             }
 
-	} while(status == TCL_CONTINUE);
+	} while(tclStatus == TCL_CONTINUE);
     }
-    return status;
+    return tclStatus;
 }
 
 /*

@@ -72,7 +72,7 @@ NsConfigRedirects(void)
     NsRegisterServerInit(ConfigServerRedirects);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerRedirects(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
@@ -87,16 +87,16 @@ ConfigServerRedirects(const char *server)
 
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key, *map;
-	int status;
+	int statusCode;
 
         key = Ns_SetKey(set, i);
         map = Ns_SetValue(set, i);
-        status = strtol(key, NULL, 10);
-        if (status <= 0 || *map == '\0') {
+        statusCode = strtol(key, NULL, 10);
+        if (statusCode <= 0 || *map == '\0') {
             Ns_Log(Error, "redirects[%s]: invalid redirect '%s=%s'",
                    server, key, map);
         } else {
-            Ns_RegisterReturn(status, map);
+            Ns_RegisterReturn(statusCode, map);
         }
     }
 

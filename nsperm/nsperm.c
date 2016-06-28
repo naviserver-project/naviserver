@@ -154,13 +154,14 @@ static Tcl_HashTable serversTable;
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    Server *servPtr;
-    /*char *path;*/
+    Server        *servPtr;
     Tcl_HashEntry *hPtr;
-    int isNew, result;
+    int            isNew;
+    Ns_ReturnCode  result;
+    /*char *path;*/
 
     NS_NONNULL_ASSERT(module != NULL);
 
@@ -192,9 +193,11 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
     Ns_SetRequestAuthorizeProc(server, AuthProc);
+    
     result = Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
     hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
     Tcl_SetHashValue(hPtr, servPtr);
+    
     return result;
 }
 

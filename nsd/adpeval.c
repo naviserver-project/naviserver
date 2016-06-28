@@ -151,7 +151,7 @@ NsConfigAdp(void)
     NsRegisterServerInit(ConfigServerAdp);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerAdp(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server); 

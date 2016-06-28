@@ -120,7 +120,7 @@ NsConfigFastpath()
     NsRegisterServerInit(ConfigServerFastpath);
 }
 
-static int
+static Ns_ReturnCode
 ConfigServerFastpath(const char *server)
 {
     NsServer   *servPtr = NsGetServer(server);

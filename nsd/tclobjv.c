@@ -174,12 +174,13 @@ GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              int offset, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_ObjvSpec *specPtr = NULL;
-    int          optIndex, status, remain = (objc - offset);
+    Ns_ObjvSpec  *specPtr = NULL;
+    int           optIndex, remain = (objc - offset);
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
