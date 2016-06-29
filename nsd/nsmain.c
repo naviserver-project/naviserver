@@ -551,7 +551,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 'I' || mode == 'R' || mode == 'S') {
-	int status = TCL_OK;
+	Ns_ReturnCode status = NS_OK;
 
         Ns_ThreadSetName("-service-");
 

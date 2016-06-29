@@ -309,7 +309,7 @@ NsSendSignal(int sig)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
     NS_NONNULL_ASSERT(path != NULL);

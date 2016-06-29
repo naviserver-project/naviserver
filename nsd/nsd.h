@@ -1391,9 +1391,9 @@ NS_EXTERN void NsGetRequestProcs(Tcl_DString *dsPtr, const char *server) NS_GNUC
 NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 #ifdef _WIN32
-NS_EXTERN int NsConnectService(void);
-NS_EXTERN int NsInstallService(char *service) NS_GNUC_NONNULL(1);
-NS_EXTERN int NsRemoveService(char *service) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode NsConnectService(void);
+NS_EXTERN Ns_ReturnCode NsInstallService(char *service) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode NsRemoveService(char *service) NS_GNUC_NONNULL(1);
 #endif
 
 NS_EXTERN void NsCreatePidFile(void);
@@ -1581,7 +1581,7 @@ NS_EXTERN int NsForkWatchedProcess(void);
  * Utility functions.
  */
 
-NS_EXTERN int NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
+NS_EXTERN Ns_ReturnCode NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void NsMemUmap(const FileMap *mapPtr)

@@ -56,7 +56,8 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc SockCallbackThread;
-static int Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, const Ns_Time *timeout, char const**threadNamePtr);
+static Ns_ReturnCode Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
+                           const Ns_Time *timeout, char const**threadNamePtr);
 static void CallbackTrigger(void);
 
 /*
@@ -90,13 +91,13 @@ static Tcl_HashTable table;
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when)
 {
     return Queue(sock, proc, arg, when, NULL, NULL);
 }
 
-int
+Ns_ReturnCode
 Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
                   const Ns_Time *timeout, char const**threadNamePtr)
 {
@@ -127,7 +128,7 @@ Ns_SockCancelCallback(NS_SOCKET sock)
     (void) Ns_SockCancelCallbackEx(sock, NULL, NULL, NULL);
 }
 
-int
+Ns_ReturnCode
 Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, char const**threadNamePtr)
 {
     return Queue(sock, proc, arg, (unsigned int)NS_SOCK_CANCEL, NULL, threadNamePtr);
@@ -222,13 +223,13 @@ CallbackTrigger(void)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
       const Ns_Time *timeout, char const**threadNamePtr)
 {
-    Callback   *cbPtr;
-    int         status;
-    bool        trigger, create;
+    Callback     *cbPtr;
+    Ns_ReturnCode status;
+    bool          trigger, create;
 
     cbPtr = ns_calloc(1u, sizeof(Callback));
     cbPtr->sock = sock;

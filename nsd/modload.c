@@ -105,7 +105,7 @@ Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
 {

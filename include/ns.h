@@ -638,20 +638,20 @@ typedef Ns_ReturnCode (Ns_OpProc)
 typedef void (Ns_TraceProc)
     (void *arg, Ns_Conn *conn);
 
-typedef int (Ns_FilterProc)
+typedef Ns_ReturnCode (Ns_FilterProc)
     (void *arg, Ns_Conn *conn, Ns_FilterType why);
 
-typedef int (Ns_LogFilter)
+typedef Ns_ReturnCode (Ns_LogFilter)
     (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-typedef int (Ns_UrlToFileProc)
+typedef Ns_ReturnCode (Ns_UrlToFileProc)
     (Ns_DString *dsPtr, const char *server, const char *url);
 
-typedef int (Ns_Url2FileProc)
+typedef Ns_ReturnCode (Ns_Url2FileProc)
     (Ns_DString *dsPtr, const char *url, void *arg);
 
-typedef char* (Ns_ServerRootProc)
+typedef const char* (Ns_ServerRootProc)
     (Ns_DString  *dest, const char *host, const void *arg);
 
 typedef char* (Ns_ConnLocationProc)
@@ -1128,7 +1128,7 @@ Ns_ConnDriverName(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 NS_EXTERN void
 Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -1443,7 +1443,7 @@ Ns_Stat(const char *path, struct stat *stPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *file)
+Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN const char *
@@ -1812,12 +1812,12 @@ Tcl_SetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
  * listen.c:
  */
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
     NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_SockPortBound(int port);
 
 /*
@@ -2017,7 +2017,7 @@ NS_EXTERN void
 Ns_RegisterModule(const char *name, Ns_ModuleInitProc *proc)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const char *file,
               const char *init)
     NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
@@ -2683,14 +2683,14 @@ NS_EXTERN size_t
 Ns_SumVec(const struct iovec *bufs, int nbufs)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockPipe(NS_SOCKET socks[2])
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr);
 
 NS_EXTERN ssize_t
@@ -2749,16 +2749,16 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
 		     const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockSetNonBlocking(NS_SOCKET sock);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockSetBlocking(NS_SOCKET sock);
 
 NS_EXTERN void
 Ns_SockSetDeferAccept(NS_SOCKET sock, int secs);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockCloseLater(NS_SOCKET sock);
 
 NS_EXTERN char *
@@ -2814,7 +2814,7 @@ NS_EXTERN const char *
 ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
     NS_GNUC_NONNULL(1);
 
@@ -2840,17 +2840,17 @@ Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockadd
  * sockcallback.c:
  */
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
                   const Ns_Time *timeout, char const**threadNamePtr);
 
 NS_EXTERN void
 Ns_SockCancelCallback(NS_SOCKET sock);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, char const**threadNamePtr);
 
 /*
@@ -2965,7 +2965,7 @@ NS_EXTERN int
 Ns_TclInit(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
      NS_GNUC_NONNULL(3);
 
@@ -3118,7 +3118,7 @@ Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper)
  * tclrequest.c:
  */
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TclRequest(Ns_Conn *conn, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

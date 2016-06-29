@@ -179,20 +179,21 @@ ConfigServerFastpath(const char *server)
  */
 
 Ns_ReturnCode
-Ns_ConnReturnFile(Ns_Conn *conn, int status, const char *mimeType, const char *file)
+Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file)
 {
     Conn         *connPtr = (Conn *) conn;
-    Ns_ReturnCode rc;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
 
     if (Ns_Stat(file, &connPtr->fileInfo) == NS_FALSE) {
-        return Ns_ConnReturnNotFound(conn);
+        status = Ns_ConnReturnNotFound(conn);
+    } else {
+        status = FastReturn(conn, statusCode, mimeType, file);
     }
 
-    rc = FastReturn(conn, status, mimeType, file);
-    return rc;
+    return status;
 }
 
 
@@ -449,11 +450,12 @@ GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
  */
 
 static Ns_ReturnCode
-FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
+FastReturn(Ns_Conn *conn, int statusCode, const char *type, const char *file)
 {
-    Conn        *connPtr = (Conn *) conn;
-    int         isNew, fd, result = NS_ERROR;
-    Tcl_DString ds, *dsPtr = &ds;
+    Conn          *connPtr = (Conn *) conn;
+    int            isNew, fd;
+    Ns_ReturnCode  result = NS_ERROR;
+    Tcl_DString    ds, *dsPtr = &ds;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
@@ -534,7 +536,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
 
     if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
 	Ns_DStringFree(dsPtr);
-        return Ns_ConnReturnData(conn, status, "",
+        return Ns_ConnReturnData(conn, statusCode, "",
                                  (ssize_t)connPtr->fileInfo.st_size, type);
     }
 
@@ -558,7 +560,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
         if (useMmap
 	    && NsMemMap(file, (size_t)connPtr->fileInfo.st_size,
                         NS_MMAP_READ, &connPtr->fmap) == NS_OK) {
-            result = Ns_ConnReturnData(conn, status, connPtr->fmap.addr,
+            result = Ns_ConnReturnData(conn, statusCode, connPtr->fmap.addr,
                                        (ssize_t)connPtr->fmap.size, type);
 	    if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0u) {
 		NsMemUmap(&connPtr->fmap);
@@ -572,7 +574,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
                        file, strerror(errno));
                 goto notfound;
             }
-            result = Ns_ConnReturnOpenFd(conn, status, type, fd, connPtr->fileInfo.st_size);
+            result = Ns_ConnReturnOpenFd(conn, statusCode, type, fd, connPtr->fileInfo.st_size);
             (void) ns_close(fd);
         }
 
@@ -648,7 +650,7 @@ FastReturn(Ns_Conn *conn, int status, const char *type, const char *file)
         if (filePtr != NULL) {
             ++filePtr->refcnt;
             Ns_CacheUnlock(cache);
-            result = Ns_ConnReturnData(conn, status, filePtr->bytes,
+            result = Ns_ConnReturnData(conn, statusCode, filePtr->bytes,
                                        (ssize_t)filePtr->size, type);
             Ns_CacheLock(cache);
             DecrEntry(filePtr);

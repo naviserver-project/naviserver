@@ -614,7 +614,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             
         }
     }
-    return NS_OK;
+    return TCL_OK;
 }
 
 

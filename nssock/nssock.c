@@ -166,7 +166,7 @@ SockListen(Ns_Driver *driver, const char *address, int port, int backlog)
  
 static NS_DRIVER_ACCEPT_STATUS
 SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
-       struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
+           struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
     Config *cfg    = sock->driver->arg;
     int     status = NS_DRIVER_ACCEPT_ERROR;
@@ -183,7 +183,7 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
         int value = 1;
 	setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
 #endif
-        Ns_SockSetNonBlocking(sock->sock);
+        (void)Ns_SockSetNonBlocking(sock->sock);
 	SetNodelay(sock->driver, sock->sock);
         status = (cfg->deferaccept != 0) ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
     }

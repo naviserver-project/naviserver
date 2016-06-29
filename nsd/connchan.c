@@ -76,7 +76,7 @@ static void ConnChanFree(NsConnChan *connChanPtr)
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
+static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
@@ -380,12 +380,12 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
 {
-    Callback *cbPtr;
-    size_t    scriptLength;
-    int       result;
+    Callback     *cbPtr;
+    size_t        scriptLength;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(connChanPtr != NULL);
     NS_NONNULL_ASSERT(script != NULL);
@@ -412,7 +412,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int w
     result = Ns_SockCallbackEx(connChanPtr->sockPtr->sock, NsTclConnChanProc, cbPtr,
                                when | (unsigned int)NS_SOCK_EXIT, 
                                timeoutPtr, &cbPtr->threadName);
-    if (result == TCL_OK) {
+    if (result == NS_OK) {
         assert(connChanPtr->cbPtr == NULL);
         connChanPtr->cbPtr = cbPtr;
     } else {
@@ -855,15 +855,19 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 /*
                  * Register the callback.
                  */
-                result = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
-                if (result != TCL_OK) {
-                    Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
-                    ConnChanFree(connChanPtr);
-                } else {
-                    /*
-                     * The socket is already in non-blocking state, since it
-                     * was received via the driver.
-                     */
+                {
+                    Ns_ReturnCode status = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
+                    if (unlikely(status != NS_OK)) {
+                        Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+                        ConnChanFree(connChanPtr);
+                        result = TCL_ERROR;
+                    } else {
+                        /*
+                         * The socket is already in non-blocking state, since it
+                         * was received via the driver.
+                         */
+                        result = TCL_OK;
+                    }
                 }
             } else {
                 result = TCL_ERROR;

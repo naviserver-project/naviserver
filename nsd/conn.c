@@ -528,23 +528,24 @@ Ns_ConnPeerPort(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
 {
-    NsServer *servPtr = NsGetInitServer();
+    Ns_ReturnCode status = NS_OK;
+    NsServer     *servPtr = NsGetInitServer();
 
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
     
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_SetConnLocationProc: no initializing server");
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        servPtr->vhost.connLocationProc = proc;
+        servPtr->vhost.connLocationArg = arg;
     }
 
-    servPtr->vhost.connLocationProc = proc;
-    servPtr->vhost.connLocationArg = arg;
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -1390,7 +1391,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CKeepAliveIdx:
         if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2],
                                           &connPtr->keep) != TCL_OK) {
-            return NS_ERROR;
+            return TCL_ERROR;
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
         break;
@@ -1410,7 +1411,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (objc > 2) {
             if (Tcl_GetIntFromObj(interp, objv[2], &n) != TCL_OK
                     && Tcl_GetBooleanFromObj(interp, objv[2], &n) != TCL_OK) {
-                return NS_ERROR;
+                return TCL_ERROR;
             }
             Ns_ConnSetCompression(conn, n);
         }
@@ -1874,7 +1875,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     const NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
-    int             result;
+    int             result = TCL_OK;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
@@ -1886,7 +1887,9 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
 			      objv[1], objc - 2, objv + 2);
-    result = Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
+    if (Ns_SetConnLocationProc(NsTclConnLocation, cbPtr) != NS_OK) {
+        result = TCL_ERROR;
+    }
 
     return result;
 }
@@ -1980,7 +1983,7 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const void *arg)
     const Ns_TclCallback *cbPtr = arg;
     Tcl_Interp           *interp = Ns_GetConnInterp(conn);
 
-    if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != NS_OK) {
+    if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != TCL_OK) {
 	(void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
         return NULL;
     }

@@ -209,7 +209,7 @@ NsWin32ErrMsg(DWORD err)
  *      Attach to the service control manager at startup.
  *
  * Results:
- *      None.
+ *      NaviServer status code
  *
  * Side effects:
  *      Service control manager will create a new thread running
@@ -218,7 +218,7 @@ NsWin32ErrMsg(DWORD err)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsConnectService(void)
 {
     SERVICE_TABLE_ENTRY table[2];
@@ -289,7 +289,7 @@ NsConnectService(void)
  *      Remove a previously installed service.
  *
  * Results:
- *      None.
+ *      NaviServer status code.
  *
  * Side effects:
  *      Service should stop and then disappear from the list in the
@@ -298,13 +298,13 @@ NsConnectService(void)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsRemoveService(char *service)
 {
-    SC_HANDLE hmgr;
+    SC_HANDLE      hmgr;
     SERVICE_STATUS status;
-    Ns_DString name;
-    BOOL ok;
+    Ns_DString     name;
+    BOOL           ok;
 
     Ns_DStringInit(&name);
     (void) GetServiceName(&name, service);
@@ -327,7 +327,7 @@ NsRemoveService(char *service)
     }
     Ns_DStringFree(&name);
 
-    return ((ok != 0) ? NS_OK : NS_ERROR);
+    return (ok ? NS_OK : NS_ERROR);
 }
 
 
@@ -339,7 +339,7 @@ NsRemoveService(char *service)
  *      Install as an NT service.
  *
  * Results:
- *      None.
+ *      NaviSever status code.
  *
  * Side effects:
  *      Service should appear in the list in the services control panel.
@@ -347,12 +347,12 @@ NsRemoveService(char *service)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsInstallService(char *service)
 {
-    SC_HANDLE hmgr, hsrv;
-    bool ok = FALSE;
-    char nsd[PATH_MAX], config[PATH_MAX];
+    SC_HANDLE  hmgr, hsrv;
+    bool       ok = FALSE;
+    char       nsd[PATH_MAX], config[PATH_MAX];
     Ns_DString name, cmd;
 
     if (_fullpath(config, nsconf.config, sizeof(config)) == NULL) {
@@ -527,7 +527,7 @@ NsSendSignal(int sig)
  *      Maps a file to memory.
  *
  * Results:
- *      None.
+ *      NaviServer status code.
  *
  * Side effects:
  *      None.
@@ -535,7 +535,7 @@ NsSendSignal(int sig)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
     HANDLE hndl, mobj;

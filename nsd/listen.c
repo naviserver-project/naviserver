@@ -102,13 +102,14 @@ NsInitListen(void)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 {
     Tcl_HashTable        *tablePtr = NULL;
     Tcl_HashEntry        *hPtr;
     NS_SOCKET             sock;
-    int                   isNew, status;
+    int                   isNew;
+    Ns_ReturnCode         status;
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr      *saPtr = (struct sockaddr *)&sa;
 
@@ -195,7 +196,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
  *	address. 
  *
  * Results:
- *	Boolean: true=yes, false=no. 
+ *	Boolean
  *
  * Side effects:
  *	None. 
@@ -203,7 +204,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_SockPortBound(int port)
 {
     Tcl_HashEntry  *hPtr;
@@ -211,7 +212,7 @@ Ns_SockPortBound(int port)
     Ns_MutexLock(&lock);
     hPtr = Tcl_FindHashEntry(&portsTable, INT2PTR(port));
     Ns_MutexUnlock(&lock);
-    return (hPtr != NULL ? 1 : 0);
+    return (hPtr != NULL ? NS_TRUE : NS_FALSE);
 }
 
 

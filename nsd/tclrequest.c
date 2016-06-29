@@ -473,14 +473,15 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
 {
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          ds;
     Tcl_Interp          *interp;
-    int                  ii, status;
+    int                  ii;
     const char          *result;
+    Ns_ReturnCode        status;
 
     interp = Ns_GetConnInterp(conn);
     Tcl_DStringInit(&ds);
@@ -588,7 +589,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsShortcutFilterProc(void *UNUSED(arg), Ns_Conn *UNUSED(conn), Ns_FilterType UNUSED(why))
 {
     return NS_FILTER_BREAK;

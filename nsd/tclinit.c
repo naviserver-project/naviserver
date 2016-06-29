@@ -309,8 +309,8 @@ Ns_TclInit(Tcl_Interp *interp)
  *      Execute a tcl script in the context of the given server.
  *
  * Results:
- *      Tcl result code. String result or error placed in dsPtr if
- *      not NULL.
+ *      NaviServer result code. String result or error placed in dsPtr if
+ *      dsPtr is not NULL.
  *
  * Side effects:
  *      Tcl interp may be allocated, initialized and cached if none
@@ -319,11 +319,11 @@ Ns_TclInit(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
 {
-    Tcl_Interp *interp;
-    int         retcode = NS_ERROR;
+    Tcl_Interp   *interp;
+    Ns_ReturnCode status = NS_ERROR;
 
     NS_NONNULL_ASSERT(script != NULL);
 
@@ -335,14 +335,14 @@ Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
             result = Ns_TclLogErrorInfo(interp, NULL);
         } else {
             result = Tcl_GetStringResult(interp);
-            retcode = NS_OK;
+            status = NS_OK;
         }
         if (dsPtr != NULL) {
             Ns_DStringAppend(dsPtr, result);
         }
         Ns_TclDeAllocateInterp(interp);
     }
-    return retcode;
+    return status;
 }
 
 
@@ -1419,7 +1419,7 @@ NsFreeConnInterp(Conn *connPtr)
  *      Eval a registered Tcl interp trace callback.
  *
  * Results:
- *      Status from script eval.
+ *      Tcl result code from script eval.
  *
  * Side effects:
  *      Depends on script.
@@ -1431,14 +1431,14 @@ int
 NsTclTraceProc(Tcl_Interp *interp, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
-    int   status;
+    int                   tclResult;
 
-    status = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0);
-    if (status != TCL_OK) {
+    tclResult = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0);
+    if (tclResult != TCL_OK) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: trace proc)");
     }
 
-    return status;
+    return tclResult;
 }
 
 

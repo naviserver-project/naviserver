@@ -748,7 +748,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     char        *s;
     const char  *script;
     NS_SOCKET    sock;
-    int          scriptLength = 0;
+    int          scriptLength = 0, result = TCL_OK;
     Ns_Time     *timeoutPtr = NULL, timeout;
     unsigned int when;
     Callback    *cbPtr;
@@ -828,10 +828,10 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
         ns_sockclose(sock);
         ns_free(cbPtr);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

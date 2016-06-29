@@ -378,12 +378,12 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
-    int           result;
+    Ns_ReturnCode result;
 
     if (timeoutPtr != NULL) {
         msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
@@ -431,7 +431,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
 {
     Ns_Time t;
@@ -657,7 +657,6 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
                      const Ns_Time *timeoutPtr)
 {
     NS_SOCKET sock;
-    int       err;
     socklen_t len;
 
     NS_NONNULL_ASSERT(host != NULL);
@@ -670,14 +669,20 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
 
     sock = SockConnect(host, port, lhost, lport, NS_TRUE);
     if (sock != NS_INVALID_SOCKET) {
-        err = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
-        switch (err) {
+        Ns_ReturnCode status;
+        
+        status = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
+        switch (status) {
         case NS_OK:
-            len = (socklen_t)sizeof(err);
-            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) != -1) {
-                return sock;
+            {
+                int err;
+            
+                len = (socklen_t)sizeof(err);
+                if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) != -1) {
+                    return sock;
+                }
+                break;
             }
-            break;
         case NS_TIMEOUT:
             errno = ETIMEDOUT;
             break;
@@ -708,13 +713,17 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
+    Ns_ReturnCode status;
+    
     if (ns_sock_set_blocking(sock, NS_FALSE) == -1) {
-	return NS_ERROR;
+	status = NS_ERROR;
+    } else {
+        status = NS_OK;
     }
-    return NS_OK;
+    return status;
 }
 
 
@@ -734,13 +743,17 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
+    Ns_ReturnCode status;
+    
     if (ns_sock_set_blocking(sock, NS_TRUE) == -1) {
-	return NS_ERROR;
+	status = NS_ERROR;
+    } else {
+        status = NS_OK;
     }
-    return NS_OK;
+    return status;
 }
 
 
@@ -829,16 +842,20 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SockPipe(NS_SOCKET socks[2])
 {
+    Ns_ReturnCode status;
+    
     NS_NONNULL_ASSERT(socks != NULL);
 
     if (ns_sockpair(socks) != 0) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        status = NS_OK;
     }
 
-    return NS_OK;
+    return status;
 }
 
 
@@ -866,7 +883,7 @@ CloseLater(NS_SOCKET sock, void *UNUSED(arg), unsigned int UNUSED(why))
     return (rc == 0 ? NS_TRUE : NS_FALSE);
 }
 
-int
+Ns_ReturnCode
 Ns_SockCloseLater(NS_SOCKET sock)
 {
     return Ns_SockCallback(sock, CloseLater, NULL, (unsigned int)NS_SOCK_WRITE);
@@ -1018,7 +1035,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
     NS_SOCKET             sock;
     struct NS_SOCKADDR_STORAGE sa, lsa;
     struct sockaddr      *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
-    int                   result;
+    Ns_ReturnCode         result;
 
     result = Ns_GetSockAddr(saPtr, host, port);
 

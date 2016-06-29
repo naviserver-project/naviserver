@@ -1584,7 +1584,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             const char *msg, size_t len)
 {
@@ -1664,7 +1664,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
           const char *msg, size_t len)
 {
@@ -1710,7 +1710,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          const char *msg, size_t len)
 {

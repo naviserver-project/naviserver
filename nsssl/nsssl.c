@@ -413,7 +413,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
         int value = 1;
 	setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
 #endif
-        Ns_SockSetNonBlocking(sock->sock);
+        (void)Ns_SockSetNonBlocking(sock->sock);
 
         if (sslPtr == NULL) {
             sslPtr = ns_calloc(1, sizeof(SSLContext));

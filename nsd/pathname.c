@@ -53,7 +53,7 @@ static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1);
-static char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
+static const char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -892,15 +892,16 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 NsTclServerRoot(Ns_DString *dest, const char *host, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
+    const char           *result = NULL;
 
-    if (Ns_TclEvalCallback(NULL, cbPtr, dest, host, NULL) != NS_OK) {
-        return NULL;
+    if (Ns_TclEvalCallback(NULL, cbPtr, dest, host, NULL) == TCL_OK) {
+        result = Ns_DStringValue(dest);
     }
-    return Ns_DStringValue(dest);
+    return result;
 }
 
 
@@ -974,10 +975,11 @@ MakePath(Ns_DString *dest, va_list *pap)
  *
  *----------------------------------------------------------------------
  */
-static char *
+static const char *
 ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 {
-    char           *safehost, *path;
+    char           *safehost;
+    const char     *path;
     const Ns_Conn  *conn;
     const Ns_Set   *headers;
     Ns_DString      ds;
