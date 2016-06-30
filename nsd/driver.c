@@ -5324,7 +5324,7 @@ AsyncWriterThread(void *arg)
  *      Thread that implements non-blocking write operations to files
  *
  * Results:
- *      None.
+ *      Tcl return code.
  *
  * Side effects:
  *      Write to files.
@@ -5335,14 +5335,14 @@ AsyncWriterThread(void *arg)
 int
 NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
-    char       *protocol, *host, *portString, *path, *tail, *url2;
-    const char *query;
-    Driver     *drvPtr = NULL;
-    Tcl_DString ds, *dsPtr = &ds;
-    int         result, portNr;
-    NS_SOCKET   sock;
-    Sock       *sockPtr;
-    Request    *reqPtr;
+    char         *protocol, *host, *portString, *path, *tail, *url2;
+    const char   *query;
+    Driver       *drvPtr = NULL;
+    Tcl_DString   ds, *dsPtr = &ds;
+    int           portNr;
+    NS_SOCKET     sock;
+    Sock         *sockPtr;
+    Request      *reqPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -5350,17 +5350,16 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     NS_NONNULL_ASSERT(sockPtrPtr != NULL);
     
     url2 = ns_strdup(url);
-    result = Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail);
+
+    if (unlikely(Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)) {
+        goto fail;
+    }
 
     assert(protocol != NULL);
     assert(host != NULL);
     assert(path != NULL);
     assert(tail != NULL);
     
-    if (unlikely(result != TCL_OK)) {
-        goto fail;
-    }
-
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
                drvPtr->protocol, drvPtr->server, drvPtr->name, drvPtr->location);

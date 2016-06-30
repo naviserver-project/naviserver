@@ -1098,19 +1098,13 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     char           digestChars[41];
     const char    *str;
     int            length;
-    bool           binary;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
 
-    binary = NsTclObjIsByteArray(objv[1]);
-    if (binary) {
-        str = (char *)Tcl_GetByteArrayFromObj(objv[1], &length);
-    } else {
-        str = Tcl_GetStringFromObj(objv[1], &length);
-    }    
+    str = Ns_GetBinaryString(objv[1], &length);
 
     Ns_CtxSHAInit(&ctx);
     Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
@@ -1119,7 +1113,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     Ns_HexString(digest, digestChars, 20, NS_TRUE);
     Tcl_AppendResult(interp, digestChars, NULL);
 
-    return NS_OK;
+    return TCL_OK;
 }
 
 
@@ -1153,7 +1147,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     }
     if (stat(Tcl_GetString(objv[1]), &st) != 0) {
         Tcl_SetResult(interp, "0", TCL_STATIC);
-        return NS_OK;
+        return TCL_OK;
     }
     if (objc > 2) {
         char *name = Tcl_GetString(objv[2]);
@@ -1189,7 +1183,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    ""), -1), 0);
     }
     Tcl_SetResult(interp, "1", TCL_STATIC);
-    return NS_OK;
+    return TCL_OK;
 }
 
 /*
@@ -1505,20 +1499,14 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     char           digestChars[33];
     const char    *str;
     int            length;
-    bool           binary;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
     
-    binary = NsTclObjIsByteArray(objv[1]);
-    if (binary) {
-        str = (char *)Tcl_GetByteArrayFromObj(objv[1], &length);
-    } else {
-        str = Tcl_GetStringFromObj(objv[1], &length);
-    }
-
+    str = Ns_GetBinaryString(objv[1], &length);
+        
     Ns_CtxMD5Init(&ctx);
     Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
     Ns_CtxMD5Final(&ctx, digest);
@@ -1526,7 +1514,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     Ns_HexString(digest, digestChars, 16, NS_TRUE);
     Tcl_AppendResult(interp, digestChars, NULL);
 
-    return NS_OK;
+    return TCL_OK;
 }
 
 /*

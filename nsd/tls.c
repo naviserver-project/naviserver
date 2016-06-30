@@ -57,9 +57,6 @@ static void HMAC_CTX_free(HMAC_CTX *ctx) NS_GNUC_NONNULL(1);
  * Static functions defined in this file.
  */
 
-static const char *GetString(Tcl_Obj *obj, int *lengthPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -372,39 +369,6 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
 /*
  *----------------------------------------------------------------------
  *
- * GetString --
- *
- *      Helper function to return the content either binary or as text
- *
- * Results:
- *	Content of the Tcl_Obj.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static const char *
-GetString(Tcl_Obj *obj, int *lengthPtr)
-{
-    const char *result;
-
-    NS_NONNULL_ASSERT(obj != NULL);
-    NS_NONNULL_ASSERT(lengthPtr != NULL);
-    
-    if (NsTclObjIsByteArray(obj) == NS_TRUE) {
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-    } else {
-        result = Tcl_GetStringFromObj(obj, lengthPtr);
-    }
-
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclCryptoHmacObjCmd --
  *
  *      Returns a Hash-based message authentication code of the provided message
@@ -477,7 +441,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             if (result == TCL_ERROR) {
                 return result;
             }
-            keyString = GetString(keyObj, &keyLength);
+            keyString = Ns_GetBinaryString(keyObj, &keyLength);
             
             ctx = HMAC_CTX_new();
             HMAC_Init_ex(ctx, keyString, keyLength, md, NULL);
@@ -528,7 +492,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                 return TCL_ERROR;
             }
 
-            message = (const unsigned char *)GetString(messageObj, &messageLength);
+            message = (const unsigned char *)Ns_GetBinaryString(messageObj, &messageLength);
             HMAC_Update(ctx, message, messageLength);
 
             break;
@@ -592,8 +556,8 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             /*
              * All input parameters are valid, get key and data.
              */
-            key = GetString(keyObj, &keyLength);
-            message = GetString(messageObj, &messageLength);
+            key = Ns_GetBinaryString(keyObj, &keyLength);
+            message = Ns_GetBinaryString(messageObj, &messageLength);
             
             /*
              * Call the HMAC computation.
@@ -739,7 +703,7 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 return TCL_ERROR;
             }
 
-            message = GetString(messageObj, &messageLength);
+            message = Ns_GetBinaryString(messageObj, &messageLength);
             EVP_DigestUpdate(mdctx, message, messageLength);
 
             break;
@@ -802,7 +766,7 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             /*
              * All input parameters are valid, get key and data.
              */
-            message = GetString(messageObj, &messageLength);
+            message = Ns_GetBinaryString(messageObj, &messageLength);
         
             /*
              * Call the Digest computation

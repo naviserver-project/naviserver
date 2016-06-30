@@ -431,6 +431,41 @@ Ns_StrIsHost(const char *chars)
     return NS_TRUE;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_GetBinaryString --
+ *
+ *      Helper function to return the content of a Tcl_Obj either binary (if
+ *      available) or from the string representation.
+ *
+ * Results:
+ *	Content of the Tcl_Obj.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr)
+{
+    const char *result;
+
+    NS_NONNULL_ASSERT(obj != NULL);
+    NS_NONNULL_ASSERT(lengthPtr != NULL);
+    
+    if (NsTclObjIsByteArray(obj) == NS_TRUE) {
+        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+    } else {
+        result = Tcl_GetStringFromObj(obj, lengthPtr);
+    }
+
+    return result;
+}
+
+
 /*
  * Local Variables:
  * mode: c

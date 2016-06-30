@@ -949,16 +949,14 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
      * free urls before leaving this function.
      */
     url2 = ns_strdup(url);
-    result = Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail);
+    if (Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK) {
+        goto fail;
+    }
 
     assert(protocol != NULL);
     assert(host != NULL);
     assert(path != NULL);
     assert(tail != NULL);
-    
-    if (unlikely(result != TCL_OK)) {
-        goto fail;
-    }
     
     /*
      * Check used protocol and protocol-specific parameters

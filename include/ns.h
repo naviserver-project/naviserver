@@ -1651,7 +1651,7 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
     NS_GNUC_RETURNS_NONNULL
     NS_GNUC_WARN_UNUSED_RESULT;
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -1671,11 +1671,11 @@ NS_EXTERN bool
 Ns_TaskCompleted(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TaskCancel(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
@@ -2905,6 +2905,10 @@ NS_EXTERN int
 Ns_StrIsHost(const char *chars)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN const char *
+Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * tclcallbacks.c:
  */
@@ -3157,13 +3161,13 @@ Ns_ParseHttpTime(char *chars)
 NS_EXTERN const char *
 Ns_RelativeUrl(const char *url, const char *location);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_ParseUrl(char *url, char **pprotocol, char **phost, char **pport,
             char **ppath, char **ptail)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

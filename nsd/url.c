@@ -104,7 +104,7 @@ Ns_RelativeUrl(const char *url, const char *location)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             char **pport, char **ppath, char **ptail)
 {
@@ -298,13 +298,13 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
 {
-    Ns_DString  urlDs, baseDs;
-    char       *proto, *host, *port, *path, *tail;
-    char       *bproto, *bhost, *bport, *bpath, *btail;
-    int         status;
+    Ns_DString    urlDs, baseDs;
+    char         *proto, *host, *port, *path, *tail;
+    char         *bproto, *bhost, *bport, *bpath, *btail;
+    Ns_ReturnCode status;
 
     /*
      * Copy the URL's to allow Ns_ParseUrl to destroy them.
@@ -315,22 +315,9 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
 
     Ns_DStringAppend(&urlDs, url);
     (void) Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
-    /*
-     * Currently, Ns_ParseUrl returns always TCL_OK; otherwise we should use
-     * here:
-     *
-     * if (status != TCL_OK) {
-     *   goto done;
-     * }
-     */
 
     Ns_DStringAppend(&baseDs, base);
     status = Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);
-    /*
-     * if (status != TCL_OK) {
-     *   goto done;
-     * }
-     */
 
     if (bproto == NULL || bhost == NULL || bpath == NULL) {
         status = NS_ERROR;

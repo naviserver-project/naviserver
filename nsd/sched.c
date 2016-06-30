@@ -171,12 +171,16 @@ NsInitSched(void)
 int
 Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
 {
+    int result;
+    
     NS_NONNULL_ASSERT(proc != NULL);
     
     if (delay < 0) {
-        return NS_ERROR;
+        result = (int)NS_ERROR;
+    } else {
+        result = Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, NS_SCHED_ONCE, delay, (Ns_SchedProc *) deleteProc);
     }
-    return Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, NS_SCHED_ONCE, delay, (Ns_SchedProc *) deleteProc);
+    return result;
 }
 
 
@@ -199,12 +203,16 @@ Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
 int
 Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
 {
+    int result;
+    
     NS_NONNULL_ASSERT(proc != NULL);
     
     if (interval < 0) {
-        return NS_ERROR;
+        result = (int)NS_ERROR;
+    } else {
+        result = Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, interval, NULL);
     }
-    return Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, interval, NULL);
+    return result;
 }
 
 
@@ -282,7 +290,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
  *  by QueueEvent.
  *
  * Results:
- *  Event id of NS_ERROR if interval is out of range.
+ *  Event id ot NS_ERROR if interval is out of range.
  *
  * Side effects:
  *  Event is allocated, hashed, and queued.
@@ -301,7 +309,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     NS_NONNULL_ASSERT(proc != NULL);
     
     if (interval < 0) {
-        return NS_ERROR;
+        return (int)NS_ERROR;
     }
 
     time(&now);
@@ -316,7 +324,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 
     Ns_MutexLock(&lock);
     if (shutdownPending) {
-        id = NS_ERROR;
+        id = (int)NS_ERROR;
         ns_free(ePtr);
     } else {
         do {

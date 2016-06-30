@@ -253,20 +253,23 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
 {
-    Task      *taskPtr = (Task *) task;
-    TaskQueue *queuePtr = (TaskQueue *) queue;
+    Ns_ReturnCode status;
+    Task         *taskPtr = (Task *) task;
+    TaskQueue    *queuePtr = (TaskQueue *) queue;
 
     NS_NONNULL_ASSERT(task != NULL);
     NS_NONNULL_ASSERT(queue != NULL);
     
     taskPtr->queuePtr = queuePtr;
-    if (SignalQueue(taskPtr, TASK_INIT) == NS_FALSE) {
-        return NS_ERROR;
+    if (unlikely(SignalQueue(taskPtr, TASK_INIT) == NS_FALSE)) {
+        status = NS_ERROR;
+    } else {
+        status = NS_OK;
     }
-    return NS_OK;
+    return status;
 }
 
 
@@ -333,19 +336,20 @@ Ns_TaskRun(Ns_Task *task)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TaskCancel(Ns_Task *task)
 {
-    Task *taskPtr = (Task *) task;
+    Ns_ReturnCode status = NS_OK;
+    Task         *taskPtr = (Task *) task;
 
     NS_NONNULL_ASSERT(task != NULL);
 
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
     } else if (SignalQueue(taskPtr, TASK_CANCEL) == NS_FALSE) {
-        return NS_ERROR;
+        status = NS_ERROR;
     }
-    return NS_OK;
+    return status;
 }
 
 
@@ -367,7 +371,7 @@ Ns_TaskCancel(Ns_Task *task)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 {
     Task          *taskPtr = (Task *) task;
