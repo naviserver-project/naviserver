@@ -110,9 +110,8 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
               const char *init)
 {
     Tcl_PackageInitProc  *tclInitProc = NULL, *moduleVersionAddr = NULL;
-    Ns_ModuleInitProc    *initProc;
     Ns_DString            ds;
-    int                  *versionPtr, rc;
+    int                   rc;
     bool                  privateInterp = (interp == NULL);
     Ns_ReturnCode         status = NS_OK;
     Tcl_Obj              *pathObj;
@@ -176,8 +175,8 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
         status = NS_ERROR;        
     }
     if (status == NS_OK) {
-        initProc   = (Ns_ModuleInitProc *) tclInitProc;
-        versionPtr = (int *) moduleVersionAddr;
+        Ns_ModuleInitProc *initProc   = (Ns_ModuleInitProc *) tclInitProc;
+        int               *versionPtr = (int *) moduleVersionAddr;
 
         /*
          * Calling Ns_ModuleInit()
