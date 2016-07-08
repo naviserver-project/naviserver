@@ -128,7 +128,7 @@ NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
  * dbdrv.c:
  */
 
-NS_EXTERN int Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
+NS_EXTERN Ns_ReturnCode Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs);
 NS_EXTERN char *Ns_DbDriverName(Ns_DbHandle *handle);
 NS_EXTERN char *Ns_DbDriverDbType(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbDML(Ns_DbHandle *handle, const char *sql);
