@@ -113,6 +113,7 @@ static Ns_ServerInitProc ConfigServerTcl;
  */
 
 static Ns_Tls tls;  /* Slot for per-thread Tcl interp cache. */
+static Ns_Mutex interpLock = NULL; 
 
 
 
@@ -161,6 +162,8 @@ Nsd_Init(Tcl_Interp *interp)
 void
 NsInitTcl(void)
 {
+    Ns_MutexInit(&interpLock);
+    Ns_MutexSetName(&interpLock, "interp");
     /*
      * Allocate the thread storage slot for the table of interps
      * per-thread. At thread exit, DeleteInterps will be called
@@ -1610,12 +1613,11 @@ GetCacheEntry(const NsServer *servPtr)
 
 Tcl_Interp *
 NsTclCreateInterp() {
-    static Ns_Mutex initLock = NULL; 
     Tcl_Interp *interp;
 
-    Ns_MutexLock(&initLock);
+    Ns_MutexLock(&interpLock);
     interp = Tcl_CreateInterp();
-    Ns_MutexUnlock(&initLock);
+    Ns_MutexUnlock(&interpLock);
 
     return interp;
 }
