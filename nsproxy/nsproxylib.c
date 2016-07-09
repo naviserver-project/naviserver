@@ -264,11 +264,11 @@ static Tcl_HashTable pools;     /* Tracks proxy pools */
 
 ReaperState reaperState = Stopped;
 
-static Ns_Cond  pcond;          /* Those are used to control access to */
-static Ns_Mutex plock;          /* the list of Slave structures of slave */
-static Slave    *firstClosePtr;  /* processes which are being closed. */
+static Ns_Cond  pcond = NULL;          /* Those are used to control access to */
+static Ns_Mutex plock = NULL;          /* the list of Slave structures of slave */
+static Slave    *firstClosePtr = NULL; /* processes which are being closed. */
 
-static Ns_DString defexec;      /* Stores full path of the proxy executable */
+static Ns_DString defexec;             /* Stores full path of the proxy executable */
 
 
 /*
@@ -290,10 +290,13 @@ static Ns_DString defexec;      /* Stores full path of the proxy executable */
 void
 Nsproxy_LibInit(void)
 {
-    static int once = 0;
+    static bool initialized = NS_FALSE;
 
-    if (once == 0) {
-        once = 1;
+    if (!initialized) {
+        initialized = NS_TRUE;
+
+        Ns_MutexInit(&plock);
+        Ns_MutexSetName(&plock, "ns:proxy");
 
         Nsd_LibInit();
 

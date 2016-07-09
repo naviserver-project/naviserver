@@ -49,17 +49,17 @@ static unsigned long Roulette(void);
  * by utilizing the random nature of the thread scheduler.
  */
 
-static volatile unsigned long counter;  /* Counter in counting thread */
-static volatile int fRun; 	/* Flag for counting thread outer loop. */
-static volatile int fCount; 	/* Flag for counting thread inner loop. */
-static Ns_Sema       sema;	/* Semaphore that controls counting threads. */
+static volatile unsigned long counter = 0u;  /* Counter in counting thread */
+static volatile int fRun = 0; 	/* Flag for counting thread outer loop. */
+static volatile int fCount= 0; 	/* Flag for counting thread inner loop. */
+static Ns_Sema       sema = NULL;	/* Semaphore that controls counting threads. */
 
 /*
  * Critical section around initial and subsequent seed generation.
  */
 
-static Ns_Cs lock;
-static volatile int initialized;
+static Ns_Cs lock = NULL;
+static volatile bool initialized = NS_FALSE;
 
 
 /*
@@ -137,7 +137,7 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 double
 Ns_DRand(void)
 {
-    if (initialized == 0) {
+    if (!initialized) {
 	Ns_CsEnter(&lock);
 	if (initialized == 0) {
 	    unsigned long seed;
@@ -149,7 +149,7 @@ Ns_DRand(void)
 #else
     	    srand((unsigned int) seed);
 #endif
-	    initialized = 1;
+	    initialized = NS_TRUE;
 	}
 	Ns_CsLeave(&lock);
     }

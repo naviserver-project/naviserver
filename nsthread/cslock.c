@@ -84,6 +84,7 @@ Ns_CsInit(Ns_Cs *csPtr)
     NS_NONNULL_ASSERT(csPtr != NULL);
 
     lockPtr = ns_malloc(sizeof(CsLock));
+    lockPtr->mutex = NULL;
     NsMutexInitNext(&lockPtr->mutex, "cs", &nextid);
     Ns_CondInit(&lockPtr->cond);
     lockPtr->count = 0;

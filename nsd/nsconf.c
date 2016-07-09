@@ -69,8 +69,6 @@ NsInitConf(void)
      */
 
     nsconf.state.started = NS_TRUE;
-    Ns_MutexInit(&nsconf.state.lock);
-    Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
 
     nsconf.build = nsBuildDate;
     nsconf.name = PACKAGE_NAME;

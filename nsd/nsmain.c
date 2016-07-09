@@ -124,13 +124,11 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     /*
      * Initialise the Nsd library.
      */
-
     Nsd_LibInit();
 
     /*
      * Mark the server stopped until initialization is complete.
      */
-
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.started = NS_FALSE;
     Ns_MutexUnlock(&nsconf.state.lock);

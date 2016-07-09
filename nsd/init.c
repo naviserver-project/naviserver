@@ -60,12 +60,17 @@
 void
 Nsd_LibInit(void)
 {
-    static int once = 0;
+    static bool initialized = NS_FALSE;
 
-    if (once == 0) {
-        once = 1;
+    if (!initialized) {
+        initialized = NS_TRUE;
+
+	nsconf.state.lock = NULL;
+	Ns_MutexInit(&nsconf.state.lock);
+	Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
+	
         Nsthreads_LibInit();
-        NsInitSls();  /* Checks if server started. */
+        NsInitSls();
     	NsInitConf(); /* <- Server marked 'started' during library load. */
     	NsInitLog();
 	NsInitOpenSSL();

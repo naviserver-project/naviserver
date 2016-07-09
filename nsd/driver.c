@@ -202,13 +202,13 @@ Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 
-static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
-static Tcl_HashTable hosts;           /* Host header to server table */
+static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
+static Tcl_HashTable    hosts;              /* Host header to server table */
 static const ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
-static Ns_Mutex   reqLock     = NULL; /* Lock for request free list */
-static Ns_Mutex   writerlock  = NULL; /* Lock updating streamin information in the writer */
-static Request   *firstReqPtr = NULL; /* Free list of request structures */
-static Driver    *firstDrvPtr = NULL; /* First in list of all drivers */
+static Ns_Mutex         reqLock     = NULL; /* Lock for request free list */
+static Ns_Mutex         writerlock  = NULL; /* Lock updating streamin information in the writer */
+static Request         *firstReqPtr = NULL; /* Free list of request structures */
+static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
 
 #define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
 
@@ -389,9 +389,16 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      */
 
     drvPtr = ns_calloc(1u, sizeof(Driver));
+    
     Ns_MutexInit(&drvPtr->lock);
     Ns_MutexSetName2(&drvPtr->lock, "ns:drv", module);
 
+    Ns_MutexInit(&drvPtr->spooler.lock);
+    Ns_MutexSetName2(&drvPtr->spooler.lock, "ns:drv:spool", module);
+
+    Ns_MutexInit(&drvPtr->writer.lock);
+    Ns_MutexSetName2(&drvPtr->writer.lock, "ns:drv:writer", module);
+    
     if (ns_sockpair(drvPtr->trigger) != 0) {
         Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
     }

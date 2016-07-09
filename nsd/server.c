@@ -230,6 +230,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      */
 
     servPtr = ns_calloc(1u, sizeof(NsServer));
+
     servPtr->server = server;
 
     Tcl_SetHashValue(hPtr, servPtr);
@@ -285,13 +286,21 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * Load modules and initialize Tcl.  The order is significant.
+     * Initialize and name the mutexes.
      */
 
     Ns_MutexInit(&servPtr->pools.lock);
     Ns_MutexSetName2(&servPtr->pools.lock, "nsd:pools", server);
+    
     Ns_MutexInit(&servPtr->filter.lock);
     Ns_MutexSetName2(&servPtr->filter.lock, "nsd:filter", server);
+
+    Ns_MutexInit(&servPtr->tcl.synch.lock);
+    Ns_MutexSetName2(&servPtr->tcl.synch.lock, "nsd:tcl:synch", server);
+    
+    /*
+     * Load modules and initialize Tcl.  The order is significant.
+     */
 
     CreatePool(servPtr, "");
     path = Ns_ConfigGetPath(server, NULL, "pools", NULL);

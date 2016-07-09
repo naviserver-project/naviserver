@@ -120,6 +120,7 @@ NsTclCreateBuckets(const char *server, int nbuckets)
     while (--nbuckets >= 0) {
         snprintf(buf, sizeof(buf), "nsv:%d", nbuckets);
         Tcl_InitHashTable(&buckets[nbuckets].arrays, TCL_STRING_KEYS);
+        buckets[nbuckets].lock = NULL;
         Ns_MutexInit(&buckets[nbuckets].lock);
         Ns_MutexSetName2(&buckets[nbuckets].lock, buf, server);
     }

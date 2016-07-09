@@ -137,6 +137,7 @@ Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freePr
     cachePtr->stats.nflushed = 0u;
     cachePtr->stats.npruned  = 0u;
 
+    Ns_MutexInit(&cachePtr->lock);
     Ns_MutexSetName2(&cachePtr->lock, "ns:cache", name);
     Tcl_InitHashTable(&cachePtr->entriesTable, keys);
 

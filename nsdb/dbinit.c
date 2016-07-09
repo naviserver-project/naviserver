@@ -1221,6 +1221,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr = ns_malloc(sizeof(Pool));
     poolPtr->driver = driver;
     poolPtr->driverPtr = driverPtr;
+    poolPtr->lock = NULL;
     Ns_MutexInit(&poolPtr->lock);
     Ns_MutexSetName2(&poolPtr->lock, "nsdb", pool);
     Ns_CondInit(&poolPtr->waitCond);

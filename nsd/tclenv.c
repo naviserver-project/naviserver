@@ -52,7 +52,7 @@ static int PutEnv(Tcl_Interp *interp, const char *name, const char *value);
  * Loca variables defined in this file.
  */
 
-static Ns_Mutex lock;
+static Ns_Mutex lock = NULL;
 
 
 /*

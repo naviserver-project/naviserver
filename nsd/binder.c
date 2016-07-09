@@ -49,7 +49,7 @@
  * Local variables defined in this file
  */
 
-static Ns_Mutex      lock;
+static Ns_Mutex      lock = NULL;
 static Tcl_HashTable preboundTcp;
 static Tcl_HashTable preboundUdp;
 static Tcl_HashTable preboundRaw;
@@ -482,6 +482,9 @@ Ns_SockBindRaw(int proto)
 void
 NsInitBinder(void)
 {
+    Ns_MutexInit(&lock);
+    Ns_MutexSetName(&lock, "binder");
+    
     Tcl_InitHashTable(&preboundTcp, (int)(sizeof(struct NS_SOCKADDR_STORAGE) / sizeof(int)));
     Tcl_InitHashTable(&preboundUdp, (int)(sizeof(struct NS_SOCKADDR_STORAGE) / sizeof(int)));
     Tcl_InitHashTable(&preboundRaw, TCL_ONE_WORD_KEYS);
