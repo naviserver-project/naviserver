@@ -745,9 +745,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             while (hPtr != NULL) {
                 connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
                 Ns_DStringPrintf(dsPtr, "{%s %s %" PRIu64 ".%06ld %s %s %" PRIdz " %" PRIdz,
-                                 Tcl_GetHashKey(&servPtr->connchans.table, hPtr),
-                                 (connChanPtr->cbPtr != NULL && connChanPtr->cbPtr->threadName != NULL) ?
-                                 connChanPtr->cbPtr->threadName : "{}",
+                                 (char *)Tcl_GetHashKey(&servPtr->connchans.table, hPtr),
+                                 ((connChanPtr->cbPtr != NULL && connChanPtr->cbPtr->threadName != NULL) ?
+                                  connChanPtr->cbPtr->threadName : "{}"),
                                  (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec,
                                  connChanPtr->sockPtr->drvPtr->name,
                                  connChanPtr->peer,
