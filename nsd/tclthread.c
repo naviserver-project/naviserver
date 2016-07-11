@@ -315,7 +315,7 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
                                 &servPtr->tcl.synch.mutexId,
                                 (Ns_Callback *) Ns_MutexInit,
                                 mutexType,
-                                objc == 3 ? objv[2] : NULL, -1);
+                                (objc >= 3) ? objv[2] : NULL, -1);
     switch (opt) {
     case MCreateIdx:
         if (objc > 2) {
@@ -402,7 +402,7 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
                               &servPtr->tcl.synch.csId,
                               (Ns_Callback *) Ns_CsInit,
                               csType,
-                              objc == 3 ? objv[2] : NULL, -1);
+                              (objc == 3) ? objv[2] : NULL, -1);
     switch (opt) {
     case CCreateIdx:
         /* Handled above. */
@@ -491,7 +491,7 @@ NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
                                 &servPtr->tcl.synch.semaId,
                                 NULL,
                                 semaType,
-                                objc == 3 ? objv[2] : NULL, cnt);
+                                (objc == 3) ? objv[2] : NULL, cnt);
     switch (opt) {
     case SCreateIdx:
         /* Handled above. */
@@ -573,7 +573,7 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
                                 &servPtr->tcl.synch.condId,
                                 (Ns_Callback *) Ns_CondInit,
                                 condType,
-                                objc > 2 ? objv[2] : NULL, -1);
+                                (objc >= 3) ? objv[2] : NULL, -1);
     switch (opt) {
     case ECreateIdx:
         /* Handled above. */
@@ -687,7 +687,7 @@ NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
                                   &servPtr->tcl.synch.rwId,
                                   (Ns_Callback *) Ns_RWLockInit,
                                   rwType,
-                                  objc == 3 ? objv[2] : NULL, -1);
+                                  (objc == 3) ? objv[2] : NULL, -1);
     switch (opt) {
     case RCreateIdx:
         /* Handled above. */
@@ -946,7 +946,7 @@ CreateSynchObject(const NsInterp *itPtr,
     Tcl_Interp    *interp;
     Tcl_HashEntry *hPtr;
     void          *addr;
-    int            isNew;
+    int            isNew = 0;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(typeTable != NULL);
@@ -989,7 +989,12 @@ CreateSynchObject(const NsInterp *itPtr,
             Ns_SemaInit((Ns_Sema *) addr, cnt);
         } else if (initProc != NULL) {
 	  (*initProc)(addr);
-          Ns_MutexSetName2(addr, "syncobj",Tcl_GetString(objPtr));
+          /*
+           * Just for mutexes, provide a name
+           */
+          if (type == mutexType) {
+              Ns_MutexSetName2(addr, "syncobj", Tcl_GetString(objPtr));
+          }
         }
         Tcl_SetHashValue(hPtr, addr);
         Ns_TclSetOpaqueObj(objPtr, type, addr);
