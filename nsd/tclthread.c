@@ -945,7 +945,6 @@ CreateSynchObject(const NsInterp *itPtr,
     NsServer      *servPtr;
     Tcl_Interp    *interp;
     Tcl_HashEntry *hPtr;
-    Ns_DString     ds;
     void          *addr;
     int            isNew;
 
@@ -966,6 +965,8 @@ CreateSynchObject(const NsInterp *itPtr,
     Ns_MutexLock(&servPtr->tcl.synch.lock);
 
     if (objPtr == NULL) {
+        Ns_DString     ds;
+        
         Ns_DStringInit(&ds);
         do {
             Ns_DStringTrunc(&ds, 0);
@@ -988,6 +989,7 @@ CreateSynchObject(const NsInterp *itPtr,
             Ns_SemaInit((Ns_Sema *) addr, cnt);
         } else if (initProc != NULL) {
 	  (*initProc)(addr);
+          Ns_MutexSetName2(addr, "syncobj",Tcl_GetString(objPtr));
         }
         Tcl_SetHashValue(hPtr, addr);
         Ns_TclSetOpaqueObj(objPtr, type, addr);
