@@ -225,7 +225,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_QueryToSet(char *query, Ns_Set *set)
 {
     NS_NONNULL_ASSERT(query != NULL);

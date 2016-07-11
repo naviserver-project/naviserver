@@ -1469,7 +1469,7 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
 
     connPtr->keep = -1;            /* Undecided, default keep-alive rules apply */
 
-    Ns_ConnSetCompression(conn, (servPtr->compress.enable != 0) ? servPtr->compress.level : 0);
+    Ns_ConnSetCompression(conn, servPtr->compress.enable ? servPtr->compress.level : 0);
     connPtr->compress = -1;
 
     connPtr->outputEncoding = servPtr->encoding.outputEncoding;

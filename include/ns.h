@@ -3368,7 +3368,7 @@ NS_EXTERN void
 Ns_ConnClearQuery(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_QueryToSet(char *query, Ns_Set *set)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

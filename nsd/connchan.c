@@ -659,7 +659,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                     }
                     
                     if (unlikely(result != TCL_OK)) {
-                        if (sockPtr->sock > 0) {ns_sockclose(sockPtr->sock);}
+                        if (sockPtr->sock > 0) {
+                            ns_sockclose(sockPtr->sock);
+                        }
                         return TCL_ERROR;
                     }
                 }

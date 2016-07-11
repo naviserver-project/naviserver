@@ -1132,7 +1132,7 @@ Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
     assert(poolPtr != NULL);
     assert(poolPtr->servPtr != NULL);
     
-    if (poolPtr->servPtr->opts.modsince != 0) {
+    if (poolPtr->servPtr->opts.modsince) {
 	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
         
         if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {

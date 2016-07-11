@@ -149,7 +149,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 
     status = NS_OK;
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
-        int filter_status = NS_OK;
+        Ns_ReturnCode filter_status = NS_OK;
         
         Ns_MutexLock(&servPtr->filter.lock);
 	fPtr = servPtr->filter.firstFilterPtr;
