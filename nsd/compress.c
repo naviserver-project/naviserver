@@ -443,7 +443,7 @@ Ns_InflateInit(Ns_CompressStream *UNUSED(cStream))
     return NS_ERROR;
 }
 
-Ns_ReturnCodex
+Ns_ReturnCode
 Ns_InflateBufferInit(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer), size_t UNUSED(inSize)) 
 {
     return NS_ERROR;
