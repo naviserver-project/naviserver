@@ -1218,17 +1218,18 @@ CreatePool(const char *pool, const char *path, const char *driver)
 	Ns_Log(Error, "dbinit: missing datasource for pool '%s'", pool);
 	return NULL;
     }
-    poolPtr = ns_malloc(sizeof(Pool));
+    /*
+     * Allocate Pool structure and initialize its members
+     */
+    poolPtr = ns_calloc(1u, sizeof(Pool));
     poolPtr->driver = driver;
     poolPtr->driverPtr = driverPtr;
-    poolPtr->lock = NULL;
     Ns_MutexInit(&poolPtr->lock);
     Ns_MutexSetName2(&poolPtr->lock, "nsdb", pool);
     Ns_CondInit(&poolPtr->waitCond);
     Ns_CondInit(&poolPtr->getCond);
     poolPtr->source = source;
     poolPtr->name = pool;
-    poolPtr->waiting = 0;
     poolPtr->user = Ns_ConfigGetValue(path, "user");
     poolPtr->pass = Ns_ConfigGetValue(path, "password");
     poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
@@ -1237,14 +1238,6 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
     poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
     poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
-    poolPtr->statementCount = 0;
-    poolPtr->getHandleCount = 0;
-    poolPtr->waitTime.sec = 0;
-    poolPtr->waitTime.usec = 0;
-    poolPtr->sqlTime.sec = 0;
-    poolPtr->sqlTime.usec = 0;
-    poolPtr->minDuration.sec = 0;
-    poolPtr->minDuration.usec = 0;
     minDurationString = Ns_ConfigGetValue(path, "logminduration");
     if (minDurationString != NULL) {
         if (Ns_GetTimeFromString(NULL, minDurationString, &poolPtr->minDuration) != TCL_OK) {
