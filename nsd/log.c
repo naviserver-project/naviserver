@@ -1482,9 +1482,9 @@ LogOpen(void)
 static void
 LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool locked)
 {
-    int        status, nentry = 0;
-    LogFilter *cPtr;
-    LogEntry  *ePtr;
+    int            nentry = 0;
+    LogFilter     *cPtr;
+    LogEntry      *ePtr;
 
     NS_NONNULL_ASSERT(cachePtr != NULL);
     NS_NONNULL_ASSERT(listPtr != NULL);
@@ -1504,6 +1504,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
         cPtr = listPtr;
         do {
             if (cPtr->proc != NULL) {
+                Ns_ReturnCode  status;
+
                 if (locked) {
                     cPtr->refcnt++;
                     Ns_MutexUnlock(&lock);
