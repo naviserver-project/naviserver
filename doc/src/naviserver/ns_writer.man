@@ -29,7 +29,8 @@ are returned.
 [call [cmd ns_writer] [arg submit] [arg data]]
 
 [para]
-Submit arbitrary data to be returned via writer thread, data can be binary.
+Submit arbitrary data to be returned via writer thread, data can be
+binary. On success the function returns 1, otherwise 0.
 
 
 [call [cmd ns_writer] \

@@ -4397,7 +4397,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                 SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
             }
             WriterSockRelease(wrSockPtr1);
-            return TCL_OK;
+            return NS_OK;
         }
     } else {
         if (fp != NULL) {
@@ -4680,10 +4680,13 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         data = Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data != NULL) {
             struct iovec vbuf;
+            Ns_ReturnCode status;
+            
             vbuf.iov_base = (void *)data;
             vbuf.iov_len = (size_t)size;
-            rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+
+            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
         }
         break;
     }
