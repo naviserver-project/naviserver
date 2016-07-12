@@ -141,7 +141,7 @@ Ns_CreateEventQueue(int maxevents)
  *      Add a socket to an event queue.
  *
  * Results:
- *      NS_OK if event queued, or NS_ERROR if queue full.
+ *      NS_TRUE if event queued, or NS_FALSE if queue full.
  *
  * Side effects:
  *      Given Ns_EventProc callback will be run later with any of the
@@ -157,7 +157,7 @@ Ns_CreateEventQueue(int maxevents)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *arg)
 {
     EventQueue *queuePtr = (EventQueue *) queue;
@@ -175,7 +175,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
         evPtr->arg = arg;
         Push(evPtr, queuePtr->firstInitPtr);
     }
-    return (evPtr != NULL) ? NS_OK : NS_ERROR;
+    return (evPtr != NULL) ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -254,7 +254,7 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_RunEventQueue(Ns_EventQueue *queue)
 {
     EventQueue *queuePtr = (EventQueue *) queue;
