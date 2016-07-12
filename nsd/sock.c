@@ -686,7 +686,12 @@ Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
         case NS_TIMEOUT:
             errno = ETIMEDOUT;
             break;
-        default:
+            
+        case NS_ERROR:         /* fall through */
+        case NS_FILTER_BREAK:  /* fall through */
+        case NS_FILTER_RETURN: /* fall through */
+        case NS_FORBIDDEN:     /* fall through */
+        case NS_UNAUTHORIZED:  
             break;
         }
         ns_sockclose(sock);
@@ -1066,7 +1071,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
     */
     if (sock != NS_INVALID_SOCKET) {
         if (async) {
-            if (Ns_SockSetNonBlocking(sock) != TCL_OK) {
+            if (Ns_SockSetNonBlocking(sock) != NS_OK) {
                 Ns_Log(Warning, "attempt to set socket nonblocking failed");
             }
         }
@@ -1081,7 +1086,7 @@ SockConnect(const char *host, int port, const char *lhost, int lport, bool async
             }
         }
         if (async && (sock != NS_INVALID_SOCKET)) {
-            if (Ns_SockSetBlocking(sock) != TCL_OK) {
+            if (Ns_SockSetBlocking(sock) != NS_OK) {
                 Ns_Log(Warning, "attempt to set socket blocking failed");
             }
         }

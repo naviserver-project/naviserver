@@ -180,7 +180,6 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 {
     Ns_ObjvSpec  *specPtr = NULL;
     int           optIndex, remain = (objc - offset);
-    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -188,23 +187,24 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 
         while (remain > 0) {
 	    Tcl_Obj *obj = objv[objc - remain];
+            int      result;
 
-	    status = Tcl_IsShared(obj) ? 
+	    result = Tcl_IsShared(obj) ? 
 		GetOptIndex(obj, optSpec, &optIndex) :
 		Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
 					  sizeof(Ns_ObjvSpec), "option",
 					  TCL_EXACT, &optIndex);
-	    if (status != TCL_OK) {
+	    if (result != TCL_OK) {
 		break;
 	    }
 
             --remain;
             specPtr = optSpec + optIndex;
-            status = specPtr->proc(specPtr, interp, &remain, objv + (objc - remain));
+            result = specPtr->proc(specPtr, interp, &remain, objv + (objc - remain));
 
-            if (status == TCL_BREAK) {
+            if (result == TCL_BREAK) {
                 break;
-            } else if (status != TCL_OK) {
+            } else if (result != TCL_OK) {
                 return NS_ERROR;
             }
         }

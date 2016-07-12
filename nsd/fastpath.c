@@ -495,7 +495,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *type, const char *file)
 	Tcl_DStringAppend(dsPtr, ".gz", 3);
 	gzFileName = Tcl_DStringValue(dsPtr);
 
-	if (Ns_Stat(gzFileName, &gzStat) == NS_TRUE) {
+	if (Ns_Stat(gzFileName, &gzStat)) {
 	    Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
 
 	    /*
@@ -509,8 +509,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *type, const char *file)
 		 * file indicates the we have to try to refresh the
 		 * gzip file (rezip the source).
 		 */
-		result = GzipFile(Ns_GetConnInterp(conn), file, gzFileName);
-		if (result == NS_OK) {
+		if (GzipFile(Ns_GetConnInterp(conn), file, gzFileName) == TCL_OK) {
 		    (void)Ns_Stat(gzFileName, &gzStat);
 		}
 	    }
@@ -574,7 +573,8 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *type, const char *file)
                        file, strerror(errno));
                 goto notfound;
             }
-            result = Ns_ConnReturnOpenFd(conn, statusCode, type, fd, connPtr->fileInfo.st_size);
+            result = Ns_ConnReturnOpenFd(conn, statusCode, type, fd,
+                                         connPtr->fileInfo.st_size);
             (void) ns_close(fd);
         }
 

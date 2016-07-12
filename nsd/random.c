@@ -139,8 +139,9 @@ Ns_DRand(void)
 {
     if (!initialized) {
 	Ns_CsEnter(&lock);
-	if (initialized == 0) {
+	if (!initialized) {
 	    unsigned long seed;
+            
 	    Ns_GenSeeds(&seed, 1);
 #if defined(HAVE_DRAND48)
     	    srand48((long) seed);

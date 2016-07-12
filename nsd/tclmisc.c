@@ -301,7 +301,7 @@ Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const 
  *	tcl-commands, when var names are passed in (e.g ns_http).
  *
  * Results:
- *	1 on success, 0 otherwise.
+ *	NS_TRUE on success, NS_FALSE otherwise.
  *
  * Side effects:
  *	None.
@@ -309,7 +309,7 @@ Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const 
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 {
     Tcl_Obj *errPtr;

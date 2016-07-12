@@ -479,7 +479,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          ds;
     Tcl_Interp          *interp;
-    int                  ii;
+    int                  ii, rc;
     const char          *result;
     Ns_ReturnCode        status;
 
@@ -528,11 +528,11 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
      */
 
     Tcl_AllowExceptions(interp);
-    status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+    rc = Tcl_EvalEx(interp, ds.string, ds.length, 0);
     result = Tcl_GetStringResult(interp);
     Ns_DStringSetLength(&ds, 0);
 
-    if (status != TCL_OK) {
+    if (rc != TCL_OK) {
 
         /*
          * Handle Tcl errors and timeouts.

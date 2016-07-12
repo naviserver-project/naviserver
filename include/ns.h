@@ -361,7 +361,8 @@ typedef Ns_ReturnCode (Ns_RequestAuthorizeProc) (const char *server, const char 
                                                  const char *url, const char *user,
                                                  const char *pass, const char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
-typedef int   (Ns_UserAuthorizeProc) (const char *user, const char *passwd);
+typedef Ns_ReturnCode (Ns_UserAuthorizeProc) (const char *user, const char *passwd)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST* objv);
@@ -555,7 +556,7 @@ typedef ssize_t
                         Ns_Time *timeoutPtr, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-typedef int
+typedef Ns_ReturnCode
 (Ns_DriverRequestProc)(void *arg, Ns_Conn *conn)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -1386,7 +1387,7 @@ Ns_DStringPush(Ns_DString *dsPtr)
 NS_EXTERN Ns_EventQueue *
 Ns_CreateEventQueue(int maxevents);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *arg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
@@ -1394,7 +1395,7 @@ NS_EXTERN void
 Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_RunEventQueue(Ns_EventQueue *queue)
     NS_GNUC_NONNULL(1);
 
@@ -1429,10 +1430,10 @@ NS_EXTERN pid_t
 Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout, char **argv, const Ns_Set *env)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_WaitProcess(pid_t pid);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_WaitForProcess(pid_t pid, int *exitcodePtr);
 
 /*
@@ -1755,11 +1756,11 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
  * tclthread.c:
  */
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -1887,7 +1888,7 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled);
  * rollfile.c
  */
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_RollFile(const char *file, int max)
     NS_GNUC_NONNULL(1);
 
@@ -1909,7 +1910,7 @@ Nsd_LibInit(void);
 NS_EXTERN int
 Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_WaitForStartup(void);
 
 NS_EXTERN void
@@ -2128,7 +2129,7 @@ NS_EXTERN char *
 Ns_PagePath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 /*
@@ -2325,7 +2326,7 @@ NS_EXTERN Ns_ReturnCode
 Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
@@ -2349,7 +2350,7 @@ NS_EXTERN Ns_ReturnCode
 Ns_ConnReturnNotModified(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
@@ -2901,7 +2902,7 @@ NS_EXTERN const char *
 Ns_StrCaseFind(const char *chars, const char *subString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_StrIsHost(const char *chars)
     NS_GNUC_NONNULL(1);
 
@@ -3063,7 +3064,7 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *h
  * tclmisc.c
  */
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

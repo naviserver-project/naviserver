@@ -539,7 +539,7 @@ int
 Ns_DbGetRowCount(Ns_DbHandle *handle)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);
-    int status = NS_ERROR;
+    int status = (int)NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&
@@ -772,7 +772,7 @@ NsDbDriverInit(const char *server, const DbDriver *driverPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsDbOpen(Ns_DbHandle *handle)
 {
     DbDriver *driverPtr = NsDbGetDriver(handle);

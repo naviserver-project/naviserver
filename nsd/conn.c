@@ -687,7 +687,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
          * Construct a location string from the HTTP host header.
          */
 
-        if (Ns_StrIsHost(host) == 0) {
+        if (!Ns_StrIsHost(host)) {
             goto deflocation;
         }
         /* we have here no port and no default port */
@@ -2153,7 +2153,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
         }
     }
 
-    if (Ns_SockSetBlocking(connPtr->sockPtr->sock) != TCL_OK) {
+    if (Ns_SockSetBlocking(connPtr->sockPtr->sock) != NS_OK) {
 	Ns_Log(Error, "make channel: error while making channel blocking");
     }
 

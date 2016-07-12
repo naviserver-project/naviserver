@@ -455,7 +455,7 @@ Ns_InflateBuffer(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer),
     return TCL_ERROR;
 }
 
-int
+Ns_ReturnCode
 Ns_InflateEnd(Ns_CompressStream *UNUSED(cStream)) 
 {
     return NS_ERROR;

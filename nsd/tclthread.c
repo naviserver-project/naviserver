@@ -96,7 +96,7 @@ static const char *const threadType = "ns:thread";
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
 {
     NS_NONNULL_ASSERT(interp != NULL);
@@ -124,7 +124,7 @@ Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
 {
     NS_NONNULL_ASSERT(interp != NULL);

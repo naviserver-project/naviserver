@@ -117,7 +117,7 @@ Ns_ExecProc(const char *exec, char **argv)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_WaitProcess(pid_t pid)
 {
     return Ns_WaitForProcess(pid, NULL);
@@ -131,7 +131,7 @@ Ns_WaitProcess(pid_t pid)
  *      Wait for child process.
  *
  * Results:
- *      Ruturn NS_OK for success and NS_ERROR for failure.
+ *      Return NS_OK for success and NS_ERROR for failure.
  *
  * Side effects:
  *      Sets exit code in exitcodePtr if given.
@@ -139,7 +139,7 @@ Ns_WaitProcess(pid_t pid)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 {
 #ifdef _WIN32

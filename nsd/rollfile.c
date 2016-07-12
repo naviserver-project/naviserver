@@ -83,7 +83,7 @@ static int Unlink(const char *file)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_RollFile(const char *file, int max)
 {
     char *first;

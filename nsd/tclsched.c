@@ -42,7 +42,10 @@
 
 static Ns_SchedProc FreeSched;
 static int SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd);
-static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr);
+static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(3);
+
+
 
 
 
@@ -400,7 +403,10 @@ NsTclSchedProc(void *arg, int UNUSED(id))
 static int
 ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
 {
-    if (id == NS_ERROR) {
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(cbPtr != NULL);
+
+    if (id == (int)NS_ERROR) {
         Tcl_SetResult(interp, "could not schedule procedure", TCL_STATIC);
         Ns_TclFreeCallback(cbPtr);
         return TCL_ERROR;
@@ -432,3 +438,12 @@ FreeSched(void *arg, int UNUSED(id))
 {
     Ns_TclFreeCallback(arg);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

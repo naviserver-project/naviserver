@@ -778,22 +778,20 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_WaitForStartup(void)
 {
 
     /*
      * This dirty-read is worth the effort.
      */
-    if (nsconf.state.started) {
-        return NS_OK;
+    if (unlikely(!nsconf.state.started)) {
+        Ns_MutexLock(&nsconf.state.lock);
+        while (nsconf.state.started == NS_FALSE) {
+            Ns_CondWait(&nsconf.state.cond, &nsconf.state.lock);
+        }
+        Ns_MutexUnlock(&nsconf.state.lock);
     }
-
-    Ns_MutexLock(&nsconf.state.lock);
-    while (nsconf.state.started == NS_FALSE) {
-        Ns_CondWait(&nsconf.state.cond, &nsconf.state.lock);
-    }
-    Ns_MutexUnlock(&nsconf.state.lock);
     return NS_OK;
 }
 
@@ -801,7 +799,7 @@ Ns_WaitForStartup(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_StopSerrver --
+ * Ns_StopServer --
  *
  *      Shutdown a server.
  *

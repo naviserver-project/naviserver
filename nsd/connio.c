@@ -705,7 +705,7 @@ Ns_ConnFlushContent(Ns_Conn *conn)
     Request *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
-        return -1;
+        return NS_ERROR;
     }
     reqPtr->next  += reqPtr->avail;
     reqPtr->avail  = 0u;

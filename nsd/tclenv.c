@@ -197,7 +197,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
             goto done;
         }
         if (PutEnv(interp, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]))
-            != NS_OK) {
+            != TCL_OK) {
             goto done;
         }
         break;
@@ -222,7 +222,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
             Tcl_SetResult(interp, "no such environment variable", TCL_STATIC);
             goto done;
         }
-        if (opt == IUnsetIdx && PutEnv(interp, name, NULL) != NS_OK) {
+        if ((opt == IUnsetIdx) && (PutEnv(interp, name, NULL) != TCL_OK)) {
             goto done;
         } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));

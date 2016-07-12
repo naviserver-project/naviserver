@@ -74,12 +74,12 @@ static bool FillBuf(Stream *sPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
 {
-    Ns_DString  ds;
-    Tcl_Channel chan;
-    int result = NS_OK;
+    Ns_DString    ds;
+    Tcl_Channel   chan;
+    Ns_ReturnCode result = NS_OK;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -96,7 +96,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
         while ((nread = Tcl_Read(chan, buf, (int)sizeof(buf))) > 0) {
             Ns_DStringNAppend(dsPtr, buf, nread);
         }
-        result = Tcl_Close(NULL, chan);
+        result = (Tcl_Close(NULL, chan) == TCL_OK ? NS_OK : NS_ERROR);
     } else {
         result = NS_ERROR;
     }

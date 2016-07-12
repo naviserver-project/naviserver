@@ -695,7 +695,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
      * Detailed server information at the bottom of the page.
      */
 
-    if (servPtr->opts.noticedetail != 0) {
+    if (servPtr->opts.noticedetail) {
         Ns_DStringVarAppend(&ds, "<p align='right'><small><i>",
                             Ns_InfoServerName(), "/",
                             Ns_InfoServerVersion(), " on ",

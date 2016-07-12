@@ -321,7 +321,7 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
 {
     NsServer *servPtr = NsGetServer(server);

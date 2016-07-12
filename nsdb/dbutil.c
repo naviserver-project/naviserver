@@ -192,12 +192,13 @@ Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
 {
     FILE           *fp;
     Ns_DString      dsSql;
-    int             i, status, inquote;
+    int             i, inquote;
+    Ns_ReturnCode   status;
     char            c, lastc;
 
     NS_NONNULL_ASSERT(handle != NULL);
