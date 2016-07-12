@@ -412,10 +412,11 @@ Ns_StrCaseFind(const char *chars, const char *subString)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_StrIsHost(const char *chars)
 {
     register const char *p;
+    bool result = NS_TRUE;
 
     NS_NONNULL_ASSERT(chars != NULL);
 
@@ -424,11 +425,12 @@ Ns_StrIsHost(const char *chars)
             && (*p != '[') && (*p != ']')                           /* IP-literal notation */
             && ((*p != '.') || (p[0] == '.' && p[1] == '.'))) {
 	    
-            return NS_FALSE;
+            result = NS_FALSE;
+            break;
         }
     }
 
-    return NS_TRUE;
+    return result;
 }
 
 
