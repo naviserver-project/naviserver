@@ -277,10 +277,10 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 static int
 LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *strarg, **hdrs;
-    int          status, intarg, cmd;
-    Ns_DString   ds;
-    Log         *logPtr = arg;
+    const char    *strarg, **hdrs;
+    int            rc, intarg, cmd;
+    Ns_DString     ds;
+    Log           *logPtr = arg;
 
     enum {
         ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS,
@@ -295,8 +295,8 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
-    status = Tcl_GetIndexFromObj(interp, objv[1], subcmd, "option", 0, &cmd);
-    if (status != TCL_OK) {
+    rc = Tcl_GetIndexFromObj(interp, objv[1], subcmd, "option", 0, &cmd);
+    if (rc != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -356,77 +356,84 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case EXTHDRS:
-        if (objc > 2) {
-            strarg = Tcl_GetString(objv[2]);
-            if (Tcl_SplitList(interp, strarg, &status, &hdrs) != TCL_OK) {
-                return TCL_ERROR;
+        {
+            int n;
+            if (objc > 2) {
+                strarg = Tcl_GetString(objv[2]);
+                if (Tcl_SplitList(interp, strarg, &n, &hdrs) != TCL_OK) {
+                    return TCL_ERROR;
+                }
             }
-        }
-        Ns_MutexLock(&logPtr->lock);
-        if (objc > 2) {
-            if (logPtr->extheaders != NULL) {
-                Tcl_Free((char*)logPtr->extheaders);
+            Ns_MutexLock(&logPtr->lock);
+            if (objc > 2) {
+                if (logPtr->extheaders != NULL) {
+                    Tcl_Free((char*)logPtr->extheaders);
+                }
+                logPtr->extheaders = hdrs;
+                logPtr->numheaders = n;
             }
-            logPtr->extheaders = hdrs;
-            logPtr->numheaders = status;
+            strarg = Tcl_Merge(logPtr->numheaders, logPtr->extheaders);
+            Ns_MutexUnlock(&logPtr->lock);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
         }
-        strarg = Tcl_Merge(logPtr->numheaders, logPtr->extheaders);
-        Ns_MutexUnlock(&logPtr->lock);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
         break;
 
     case FLAGS:
-        Ns_DStringInit(&ds);
-        if (objc > 2) {
-            status = 0;
-            Ns_DStringAppend(&ds, Tcl_GetString(objv[2]));
-            Ns_StrToLower(ds.string);
-            if (strstr(ds.string, "logcombined")) {
-                status |= LOG_COMBINED;
+        {
+            unsigned int flags;
+            
+            Ns_DStringInit(&ds);
+            if (objc > 2) {
+                flags = 0u;
+                Ns_DStringAppend(&ds, Tcl_GetString(objv[2]));
+                Ns_StrToLower(ds.string);
+                if (strstr(ds.string, "logcombined")) {
+                    flags |= LOG_COMBINED;
+                }
+                if (strstr(ds.string, "formattedtime")) {
+                    flags |= LOG_FMTTIME;
+                }
+                if (strstr(ds.string, "logreqtime")) {
+                    flags |= LOG_REQTIME;
+                }
+                if (strstr(ds.string, "logpartialtimes")) {
+                    flags |= LOG_PARTIALTIMES;
+                }
+                if (strstr(ds.string, "checkforproxy")) {
+                    flags |= LOG_CHECKFORPROXY;
+                }
+                if (strstr(ds.string, "suppressquery")) {
+                    flags |= LOG_SUPPRESSQUERY;
+                }
+                Ns_DStringTrunc(&ds, 0);
+                Ns_MutexLock(&logPtr->lock);
+                logPtr->flags = flags;
+                Ns_MutexUnlock(&logPtr->lock);
+            } else {
+                Ns_MutexLock(&logPtr->lock);
+                flags = logPtr->flags;
+                Ns_MutexUnlock(&logPtr->lock);
             }
-            if (strstr(ds.string, "formattedtime")) {
-                status |= LOG_FMTTIME;
+            if ((flags & LOG_COMBINED)) {
+                Ns_DStringAppend(&ds, "logcombined ");
             }
-            if (strstr(ds.string, "logreqtime")) {
-                status |= LOG_REQTIME;
+            if ((flags & LOG_FMTTIME)) {
+                Ns_DStringAppend(&ds, "formattedtime ");
             }
-            if (strstr(ds.string, "logpartialtimes")) {
-                status |= LOG_PARTIALTIMES;
+            if ((flags & LOG_REQTIME)) {
+                Ns_DStringAppend(&ds, "logreqtime ");
             }
-            if (strstr(ds.string, "checkforproxy")) {
-                status |= LOG_CHECKFORPROXY;
+            if ((flags & LOG_PARTIALTIMES)) {
+                Ns_DStringAppend(&ds, "logpartialtimes ");
             }
-            if (strstr(ds.string, "suppressquery")) {
-                status |= LOG_SUPPRESSQUERY;
+            if ((flags & LOG_CHECKFORPROXY)) {
+                Ns_DStringAppend(&ds, "checkforproxy ");
             }
-            Ns_DStringTrunc(&ds, 0);
-            Ns_MutexLock(&logPtr->lock);
-            logPtr->flags = status;
-            Ns_MutexUnlock(&logPtr->lock);
-        } else {
-            Ns_MutexLock(&logPtr->lock);
-            status = logPtr->flags;
-            Ns_MutexUnlock(&logPtr->lock);
+            if ((rc & LOG_SUPPRESSQUERY)) {
+                Ns_DStringAppend(&ds, "suppressquery ");
+            }
+            Tcl_DStringResult(interp, &ds);
         }
-        if ((status & LOG_COMBINED)) {
-            Ns_DStringAppend(&ds, "logcombined ");
-        }
-        if ((status & LOG_FMTTIME)) {
-            Ns_DStringAppend(&ds, "formattedtime ");
-        }
-        if ((status & LOG_REQTIME)) {
-            Ns_DStringAppend(&ds, "logreqtime ");
-        }
-        if ((status & LOG_PARTIALTIMES)) {
-            Ns_DStringAppend(&ds, "logpartialtimes ");
-        }
-        if ((status & LOG_CHECKFORPROXY)) {
-            Ns_DStringAppend(&ds, "checkforproxy ");
-        }
-        if ((status & LOG_SUPPRESSQUERY)) {
-            Ns_DStringAppend(&ds, "suppressquery ");
-        }
-        Tcl_DStringResult(interp, &ds);
         break;
 
     case FILE:
@@ -451,34 +458,38 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case ROLL:
-        Ns_MutexLock(&logPtr->lock);
-        if (objc == 2) {
-            status = LogRoll(logPtr);
-        } else if (objc > 2) {
-            strarg = Tcl_GetString(objv[2]);
-            if (Tcl_FSAccess(objv[2], F_OK) == 0) {
-                status = Ns_RollFile(strarg, logPtr->maxbackup);
-            } else {
-                Tcl_Obj *path = Tcl_NewStringObj(logPtr->file, -1);
-
-                Tcl_IncrRefCount(path);
-                status = Tcl_FSRenameFile(path, objv[2]);
-                Tcl_DecrRefCount(path);
-                if (status != 0) {
-                    status = NS_ERROR;
+        {
+            Ns_ReturnCode status = NS_ERROR;
+            
+            Ns_MutexLock(&logPtr->lock);
+            if (objc == 2) {
+                status = LogRoll(logPtr);
+            } else if (objc > 2) {
+                strarg = Tcl_GetString(objv[2]);
+                if (Tcl_FSAccess(objv[2], F_OK) == 0) {
+                    status = Ns_RollFile(strarg, logPtr->maxbackup);
                 } else {
-                    LogFlush(logPtr, &logPtr->buffer);
-                    status = LogOpen(logPtr);
+                    Tcl_Obj *path = Tcl_NewStringObj(logPtr->file, -1);
+                    
+                    Tcl_IncrRefCount(path);
+                    rc = Tcl_FSRenameFile(path, objv[2]);
+                    Tcl_DecrRefCount(path);
+                    if (rc != 0) {
+                        status = NS_ERROR;
+                    } else {
+                        LogFlush(logPtr, &logPtr->buffer);
+                        status = LogOpen(logPtr);
+                    }
                 }
             }
-        }
-        if (status != NS_OK) {
-            Tcl_AppendResult(interp, "could not roll \"", logPtr->file,
-                             "\": ", Tcl_PosixError(interp), NULL);
-        }
-        Ns_MutexUnlock(&logPtr->lock);
-        if (status != NS_OK) {
-            return TCL_ERROR;
+            if (status != NS_OK) {
+                Tcl_AppendResult(interp, "could not roll \"", logPtr->file,
+                                 "\": ", Tcl_PosixError(interp), NULL);
+            }
+            Ns_MutexUnlock(&logPtr->lock);
+            if (status != NS_OK) {
+                return TCL_ERROR;
+            }
         }
         break;
     }
