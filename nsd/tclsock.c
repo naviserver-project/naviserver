@@ -453,10 +453,11 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *host, *lhost = NULL;
-    int         lport = 0, port, nonblock = 0, async = 0, msec = -1;
-    NS_SOCKET   sock;
-    Ns_Time     timeout = {0,0}, *timeoutPtr = NULL;
+    const char    *host, *lhost = NULL;
+    int            lport = 0, port, nonblock = 0, async = 0, msec = -1;
+    NS_SOCKET      sock;
+    Ns_Time        timeout = {0,0};
+    const Ns_Time *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
 	{"-nonblock",  Ns_ObjvBool,   &nonblock,   INT2PTR(1)},
@@ -554,13 +555,13 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 int
 NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    fd_set          rset, wset, eset, *rPtr, *wPtr, *ePtr;
-    int             i, fobjc, status, arg, maxfd;
-    Tcl_Channel     chan;
-    struct timeval  tv, *tvPtr;
-    Tcl_DString     dsRfd, dsNbuf;
-    Tcl_Obj       **fobjv;
-    Ns_Time         timeout;
+    fd_set                rset, wset, eset, *rPtr, *wPtr, *ePtr;
+    int                   i, fobjc, status, arg, maxfd;
+    Tcl_Channel           chan;
+    struct timeval        tv, *tvPtr;
+    Tcl_DString           dsRfd, dsNbuf;
+    Tcl_Obj             **fobjv;
+    Ns_Time               timeout;
 
     status = TCL_ERROR;
     
@@ -745,14 +746,14 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
 int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char        *s;
-    const char  *script;
-    NS_SOCKET    sock;
-    int          scriptLength = 0, result = TCL_OK;
-    Ns_Time     *timeoutPtr = NULL, timeout;
-    unsigned int when;
-    Callback    *cbPtr;
-    NsInterp    *itPtr = clientData;
+    const char     *s, *script;
+    NS_SOCKET       sock;
+    int             scriptLength = 0, result = TCL_OK;
+    Ns_Time         timeout;
+    const Ns_Time  *timeoutPtr = NULL;
+    unsigned int    when;
+    Callback       *cbPtr;
+    const NsInterp *itPtr = clientData;
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId script when ?timeout?");
@@ -857,7 +858,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = clientData;
+    const NsInterp *itPtr = clientData;
     ListenCallback *lcbPtr;
     int             port, length;
     const char     *addr, *script;
@@ -1242,11 +1243,11 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 static bool
 SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
 {
-    ListenCallback *lcbPtr = arg;
-    Tcl_Interp     *interp;
-    Tcl_DString     script;
-    Tcl_Obj       **objv;
-    int             result, objc;
+    const ListenCallback *lcbPtr = arg;
+    Tcl_Interp           *interp;
+    Tcl_DString           script;
+    Tcl_Obj             **objv;
+    int                   result, objc;
 
     interp = Ns_TclAllocateInterp(lcbPtr->server);
     result = EnterDupedSocks(interp, sock);

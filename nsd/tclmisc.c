@@ -100,7 +100,7 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
 int
 NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp             *itPtr = arg;
+    const NsInterp       *itPtr = arg;
     const char           *script;
     int                   isNew, global = NS_FALSE;
     static Tcl_HashTable  runTable;
@@ -156,9 +156,9 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 const char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
-    NsInterp    *itPtr = NsGetInterpData(interp);
-    const char  *errorInfo, **logHeaders;
-    Ns_DString   ds;
+    const NsInterp *itPtr = NsGetInterpData(interp);
+    const char     *errorInfo, **logHeaders;
+    Ns_DString      ds;
 
     if (extraInfo != NULL) {
         Tcl_AddObjErrorInfo(interp, extraInfo, -1);
@@ -168,7 +168,8 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
         errorInfo = "";
     }
     if (itPtr != NULL && itPtr->conn != NULL) {
-        Ns_Conn *conn = itPtr->conn;
+        const Ns_Conn *conn = itPtr->conn;
+        
         Ns_DStringInit(&ds);
         if (conn->request.method != NULL) {
             Ns_DStringVarAppend(&ds, conn->request.method, " ", NULL);
@@ -180,7 +181,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
-	    const char  **hdr;
+	    const char  *const*hdr;
 
             for (hdr = logHeaders; *hdr != NULL; hdr++) {
 	        const char *value = Ns_SetIGet(conn->headers, *hdr);
@@ -312,7 +313,7 @@ Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const 
 bool
 Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 {
-    Tcl_Obj *errPtr;
+    const Tcl_Obj *errPtr;
 
     Tcl_IncrRefCount(valPtr);
     errPtr = Tcl_ObjSetVar2(interp, varPtr, NULL, valPtr,
@@ -1150,7 +1151,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         return TCL_OK;
     }
     if (objc > 2) {
-        char *name = Tcl_GetString(objv[2]);
+        const char *name = Tcl_GetString(objv[2]);
         
         (void)Tcl_SetVar2Ex(interp, name, "dev",   Tcl_NewIntObj(st.st_ino), 0);
         (void)Tcl_SetVar2Ex(interp, name, "ino",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);

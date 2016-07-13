@@ -433,10 +433,10 @@ Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
 void
 Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
-    Conn       *connPtr = (Conn *) conn;
-    Ns_Sock    *sockPtr;
-    size_t      i;
-    const char *reason, *value;
+    const Conn    *connPtr = (Conn *) conn;
+    const Ns_Sock *sockPtr;
+    size_t         i;
+    const char    *reason, *value;
 
     /*
      * Construct the HTTP response status line.
@@ -501,7 +501,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-		char *lineBreak = strchr(value, (int)UCHAR('\n'));
+		const char *lineBreak = strchr(value, (int)UCHAR('\n'));
 
 		if (lineBreak == NULL) {
 		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
@@ -576,7 +576,7 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
 size_t
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
     /* 
      * Deprecated
      */
@@ -668,10 +668,10 @@ Ns_ReturnCode
 Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     const char *title, const char *notice)
 {
-    Conn         *connPtr = (Conn *) conn;
-    NsServer     *servPtr;
-    Ns_DString    ds;
-    Ns_ReturnCode result;
+    const Conn      *connPtr = (const Conn *) conn;
+    const NsServer  *servPtr;
+    Ns_DString       ds;
+    Ns_ReturnCode    result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(title != NULL);

@@ -492,9 +492,9 @@ const char *
 Ns_ConfigGetPath(const char *server, const char *module, ...)
 {
     va_list         ap;
-    char           *s;
+    const char     *s;
     Ns_DString      ds;
-    Ns_Set         *set;
+    const Ns_Set   *set;
 
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds, "ns");
@@ -545,10 +545,10 @@ Ns_ConfigGetPath(const char *server, const char *module, ...)
 Ns_Set **
 Ns_ConfigGetSections(void)
 {
-    Ns_Set        **sets;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
-    int             n;
+    Ns_Set             **sets;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+    int                  n;
 
     n = nsconf.sections.numEntries + 1;
     sets = ns_malloc(sizeof(Ns_Set *) * (size_t)n);
@@ -735,8 +735,8 @@ NsConfigRead(const char *file)
 void
 NsConfigEval(const char *config, int argc, char *const *argv, int optind)
 {
-    Tcl_Interp *interp;
-    Ns_Set     *set;
+    Tcl_Interp   *interp;
+    const Ns_Set *set;
     int i;
 
     NS_NONNULL_ASSERT(config != NULL);
@@ -855,8 +855,8 @@ SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *ar
 static const char *
 ConfigGet(const char *section, const char *key, int exact, const char *defstr)
 {
-    char    *s;
-    Ns_Set  *set;
+    const char *s;
+    Ns_Set     *set;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
