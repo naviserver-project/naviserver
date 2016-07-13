@@ -41,25 +41,25 @@
  * loadable drivers.
  */
 
-typedef Ns_ReturnCode (InitProc) (const char *server, const char *module, const char *driver);
-typedef char *(NameProc) (Ns_DbHandle *handle);
-typedef char *(TypeProc) (Ns_DbHandle *handle);
-typedef int (OpenProc) (Ns_DbHandle *handle);
-typedef void (CloseProc) (Ns_DbHandle *handle);
-typedef int (DMLProc) (Ns_DbHandle *handle, const char *sql);
-typedef Ns_Set *(SelectProc) (Ns_DbHandle *handle, const char *sql);
-typedef int (ExecProc) (Ns_DbHandle *handle, const char *sql);
-typedef Ns_Set *(BindProc) (Ns_DbHandle *handle);
-typedef int (GetProc) (Ns_DbHandle *handle, Ns_Set *row);
-typedef int (FlushProc) (Ns_DbHandle *handle);
-typedef int (CancelProc) (Ns_DbHandle *handle);
-typedef int (CountProc) (Ns_DbHandle *handle);
-typedef int (ResetProc) (Ns_DbHandle *handle);
-typedef int (SpStartProc) (Ns_DbHandle *handle, const char *procname);
-typedef int (SpSetParamProc) (Ns_DbHandle *handle, char *args);
-typedef int (SpExecProc) (Ns_DbHandle *handle);
-typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
-typedef Ns_Set *(SpGetParamsProc) (Ns_DbHandle *handle);
+typedef Ns_ReturnCode  (InitProc) (const char *server, const char *module, const char *driver);
+typedef char *         (NameProc) (Ns_DbHandle *handle);
+typedef char *         (TypeProc) (Ns_DbHandle *handle);
+typedef Ns_ReturnCode  (OpenProc) (Ns_DbHandle *handle);
+typedef Ns_ReturnCode  (CloseProc) (Ns_DbHandle *handle);
+typedef int            (DMLProc) (Ns_DbHandle *handle, const char *sql);
+typedef Ns_Set *       (SelectProc) (Ns_DbHandle *handle, const char *sql);
+typedef int            (ExecProc) (Ns_DbHandle *handle, const char *sql);
+typedef Ns_Set *       (BindProc) (Ns_DbHandle *handle);
+typedef int            (GetProc) (Ns_DbHandle *handle, Ns_Set *row);
+typedef Ns_ReturnCode  (FlushProc) (Ns_DbHandle *handle);
+typedef int            (CancelProc) (Ns_DbHandle *handle);
+typedef int            (CountProc) (Ns_DbHandle *handle);
+typedef Ns_ReturnCode  (ResetProc) (Ns_DbHandle *handle);
+typedef int            (SpStartProc) (Ns_DbHandle *handle, const char *procname);
+typedef int            (SpSetParamProc) (Ns_DbHandle *handle, char *args);
+typedef int            (SpExecProc) (Ns_DbHandle *handle);
+typedef int            (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
+typedef Ns_Set *       (SpGetParamsProc) (Ns_DbHandle *handle);
 
 
 /*
@@ -810,17 +810,19 @@ NsDbOpen(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-void
+Ns_ReturnCode
 NsDbClose(Ns_DbHandle *handle)
 {
-    DbDriver *driverPtr = NsDbGetDriver(handle);
+    DbDriver     *driverPtr = NsDbGetDriver(handle);
+    Ns_ReturnCode status = NS_OK;
     
     if (handle->connected &&
 	driverPtr != NULL &&
 	driverPtr->closeProc != NULL) {
 
-    	(*driverPtr->closeProc)(handle);
+    	status = (*driverPtr->closeProc)(handle);
     }
+    return status;
 }
 
 
