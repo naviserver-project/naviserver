@@ -87,13 +87,13 @@ static Ns_ObjvProc ObjvCache;
 int
 NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp      *itPtr = arg;
-    NsServer      *servPtr = itPtr->servPtr;
-    Tcl_HashEntry *hPtr;
-    const char    *name = NULL;
-    int            isNew;
-    int            iMaxSize = 0, iMaxEntry = 0;
-    Ns_Time       *timeoutPtr = NULL, *expPtr = NULL;
+    const NsInterp *itPtr = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    Tcl_HashEntry  *hPtr;
+    const char     *name = NULL;
+    int             isNew;
+    int             iMaxSize = 0, iMaxEntry = 0;
+    const Ns_Time  *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -413,10 +413,10 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 int
 NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
-    NsInterp       *itPtr = arg;
-    NsServer       *servPtr = itPtr->servPtr;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
+    const NsInterp      *itPtr = arg;
+    NsServer            *servPtr = itPtr->servPtr;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
 
     Ns_MutexLock(&servPtr->tcl.cachelock);
     hPtr = Tcl_FirstHashEntry(&servPtr->tcl.caches, &search);
@@ -466,7 +466,7 @@ noGlobChars(const char *pattern)
 int
 NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    TclCache       *cPtr;
+    const TclCache *cPtr;
     const Ns_Entry *entry;
     const char     *pattern = NULL;
     Ns_CacheSearch  search;
@@ -549,7 +549,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 int
 NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    TclCache       *cPtr = NULL;
+    const TclCache *cPtr = NULL;
     Ns_Cache       *cache;
     Ns_Entry       *entry;
     Ns_CacheSearch  search;
@@ -630,8 +630,8 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    TclCache       *cPtr = NULL;
-    Ns_Entry       *entry;
+    const TclCache *cPtr = NULL;
+    const Ns_Entry *entry;
     const char     *key;
     Tcl_Obj        *varNameObj = NULL, *resultObj;
     int             result = TCL_OK;
@@ -695,7 +695,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 int
 NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    TclCache       *cPtr = NULL;
+    const TclCache *cPtr = NULL;
     Ns_Cache       *cache;
     Ns_CacheSearch  search;
     Ns_DString      ds;
@@ -723,7 +723,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
     Ns_CacheLock(cache);
     if (contents != 0) {
-        Ns_Entry *entry;
+        const Ns_Entry *entry;
 
         Tcl_DStringStartSublist(&ds);
         entry = Ns_CacheFirstEntry(cache, &search);
@@ -883,9 +883,9 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
         return TCL_ERROR;
     }
     if (unlikely(Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **)cPtrPtr) != TCL_OK)) {
-	NsInterp      *itPtr   = spec->arg;
-	NsServer      *servPtr = itPtr->servPtr;
-        Tcl_HashEntry *hPtr;
+	const NsInterp      *itPtr   = spec->arg;
+	NsServer            *servPtr = itPtr->servPtr;
+        const Tcl_HashEntry *hPtr;
 
         Ns_MutexLock(&servPtr->tcl.cachelock);
         hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, Tcl_GetString(objv[0]));

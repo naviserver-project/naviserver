@@ -185,9 +185,9 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
 static int
 CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
 {
-    Ns_Conn  *conn    = (Ns_Conn *) connPtr;
-    NsServer *servPtr;
-    int       level, compress = 0;
+    const Ns_Conn  *conn = (Ns_Conn *) connPtr;
+    const NsServer *servPtr;
+    int             level, compress = 0;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 
@@ -701,8 +701,8 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 Ns_ReturnCode
 Ns_ConnFlushContent(Ns_Conn *conn)
 {
-    Conn    *connPtr = (Conn *) conn;
-    Request *reqPtr = connPtr->reqPtr;
+    const Conn *connPtr = (const Conn *) conn;
+    Request    *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
         return NS_ERROR;
@@ -802,7 +802,7 @@ Ns_ConnClose(Ns_Conn *conn)
 int
 Ns_ConnWrite(Ns_Conn *conn, const void *buf, size_t toWrite)
 {
-    Conn         *connPtr = (Conn *) conn;
+    const Conn   *connPtr = (const Conn *) conn;
     size_t        n;
     Ns_ReturnCode status;
     struct iovec  vbuf;
@@ -902,8 +902,8 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
 size_t
 Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toRead)
 {
-    Conn    *connPtr = (Conn *) conn;
-    Request *reqPtr = connPtr->reqPtr;
+    const Conn *connPtr = (const Conn *) conn;
+    Request    *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
         return 0u;
@@ -939,11 +939,11 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toRead)
 Ns_ReturnCode
 Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
 {
-    Conn       *connPtr = (Conn *) conn;
-    Request    *reqPtr = connPtr->reqPtr;
-    Driver     *drvPtr = connPtr->drvPtr;
-    char       *eol;
-    size_t     nread, ncopy;
+    const Conn   *connPtr = (const Conn *) conn;
+    Request      *reqPtr = connPtr->reqPtr;
+    const Driver *drvPtr = connPtr->drvPtr;
+    const char   *eol;
+    size_t        nread, ncopy;
 
     if (connPtr->sockPtr == NULL
         || (eol = strchr(reqPtr->next, '\n')) == NULL
@@ -986,7 +986,7 @@ Ns_ReturnCode
 Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 {
     Ns_DString      ds;
-    Conn           *connPtr = (Conn *) conn;
+    const Conn     *connPtr = (const Conn *) conn;
     size_t          nread, nline, maxhdr;
     Ns_ReturnCode   status;
 
@@ -1037,8 +1037,8 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 Ns_ReturnCode
 Ns_ConnCopyToDString(Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
 {
-    Conn    *connPtr = (Conn *) conn;
-    Request *reqPtr = connPtr->reqPtr;
+    const Conn *connPtr = (const Conn *) conn;
+    Request    *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         return NS_ERROR;
@@ -1088,10 +1088,10 @@ Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
 static Ns_ReturnCode
 ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 {
-    Conn    *connPtr;
-    Request *reqPtr;
-    size_t   ncopy = toCopy;
-    ssize_t  nwrote;
+    const Conn *connPtr;
+    Request    *reqPtr;
+    size_t      ncopy = toCopy;
+    ssize_t     nwrote;
 
     NS_NONNULL_ASSERT(conn != NULL);
 

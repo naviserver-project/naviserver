@@ -98,7 +98,7 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
 int
 NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    const NsInterp *itPtr = arg;
     Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
     const char     *method, *url;
@@ -151,7 +151,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 int
 NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    const NsInterp *itPtr = arg;
     Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
     const char     *method, *protocol;
@@ -200,7 +200,7 @@ NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
 int
 NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    const NsInterp *itPtr = arg;
     const char     *method, *url;
     int             noinherit = 0;
     unsigned int    flags = 0u;
@@ -249,9 +249,9 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = arg;
-    const char *method = NULL, *url = NULL;
-    int         noinherit = 0, recurse = 0;
+    const NsInterp *itPtr = arg;
+    const char     *method = NULL, *url = NULL;
+    int             noinherit = 0, recurse = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
@@ -293,7 +293,7 @@ NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 int
 NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp        *itPtr = arg;
+    const NsInterp  *itPtr = arg;
     Ns_TclCallback  *cbPtr;
     const char      *method, *urlPattern;
     Tcl_Obj         *scriptObj;
@@ -345,10 +345,10 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = arg;
-    const char  *server = itPtr->servPtr->server;
-    const char  *method, *urlPattern;
-    unsigned int when = 0u;
+    const NsInterp *itPtr = arg;
+    const char     *server = itPtr->servPtr->server;
+    const char     *method, *urlPattern;
+    unsigned int    when = 0u;
 
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
@@ -386,7 +386,7 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    const NsInterp *itPtr = arg;
     Ns_TclCallback *cbPtr;
     const char     *method, *urlPattern;
     Tcl_Obj        *scriptObj;
@@ -432,10 +432,10 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
 Ns_ReturnCode
 NsTclRequestProc(void *arg, Ns_Conn *conn)
 {
-    Ns_TclCallback *cbPtr = arg;
-    Tcl_Interp     *interp;
-    Ns_DString      ds;
-    Ns_ReturnCode   status = NS_OK;
+    const Ns_TclCallback *cbPtr = arg;
+    Tcl_Interp           *interp;
+    Ns_DString            ds;
+    Ns_ReturnCode         status = NS_OK;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -476,12 +476,12 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
 Ns_ReturnCode
 NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
 {
-    Ns_TclCallback      *cbPtr = arg;
-    Tcl_DString          ds;
-    Tcl_Interp          *interp;
-    int                  ii, rc;
-    const char          *result;
-    Ns_ReturnCode        status;
+    const Ns_TclCallback *cbPtr = arg;
+    Tcl_DString           ds;
+    Tcl_Interp           *interp;
+    int                   ii, rc;
+    const char           *result;
+    Ns_ReturnCode         status;
 
     interp = Ns_GetConnInterp(conn);
     Tcl_DStringInit(&ds);

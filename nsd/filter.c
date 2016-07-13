@@ -139,9 +139,9 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
 Ns_ReturnCode
 NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 {
-    Conn          *connPtr = (Conn *) conn;
+    const Conn    *connPtr = (const Conn *) conn;
     NsServer      *servPtr;
-    Filter        *fPtr;
+    const Filter  *fPtr;
     Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -306,7 +306,7 @@ RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
 void
 NsRunTraces(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -316,7 +316,7 @@ NsRunTraces(Ns_Conn *conn)
 void
 NsRunCleanups(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    const Conn *connPtr = (const Conn *) conn;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -383,8 +383,8 @@ NewTrace(Ns_TraceProc *proc, void *arg)
 void
 NsGetFilters(Tcl_DString *dsPtr, const char *server)
 {
-    Filter *fPtr;
-    NsServer *servPtr;
+    const Filter   *fPtr;
+    const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
@@ -418,8 +418,8 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
 void
 NsGetTraces(Tcl_DString *dsPtr, const char *server)
 {
-    Trace  *tracePtr;
-    NsServer *servPtr;
+    const Trace    *tracePtr;
+    const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);

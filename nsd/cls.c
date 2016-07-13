@@ -122,7 +122,7 @@ Ns_ClsSet(const Ns_Cls *clsPtr, Ns_Conn *conn, void *value)
 void *
 Ns_ClsGet(const Ns_Cls *clsPtr, Ns_Conn *conn)
 {
-    void **slotPtr;
+    void *const*slotPtr;
 
     slotPtr = GetSlot(clsPtr, conn);
     return *slotPtr;

@@ -67,8 +67,8 @@ Ns_ReturnCode
 Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
 	            const char *user, const char *passwd, const char *peer)
 {
-    Ns_ReturnCode status;
-    NsServer     *servPtr;
+    Ns_ReturnCode   status;
+    const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -134,8 +134,8 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
 int
 NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp      *itPtr = arg;
-    Ns_ReturnCode  status;
+    const NsInterp *itPtr = arg;
+    Ns_ReturnCode   status;
 
     if ((objc != 5) && (objc != 6)) {
         Tcl_WrongNumArgs(interp, 1, objv,

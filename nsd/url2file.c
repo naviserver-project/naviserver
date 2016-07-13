@@ -199,8 +199,8 @@ Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flag
 Ns_ReturnCode
 Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
-    Ns_ReturnCode status = NS_OK;
-    NsServer     *servPtr = arg;
+    Ns_ReturnCode   status = NS_OK;
+    const NsServer *servPtr = arg;
 
     if (NsPageRoot(dsPtr, servPtr, NULL) == NULL) {
         status = NS_ERROR;
@@ -349,8 +349,8 @@ NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
 int
 NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = arg;
-    Ns_DString  ds;
+    const NsInterp *itPtr = arg;
+    Ns_DString      ds;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
@@ -388,9 +388,9 @@ NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 int
 NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    const NsInterp *itPtr = arg;
     Ns_TclCallback *cbPtr;
-    char           *url;
+    const char     *url;
     Tcl_Obj        *scriptObj;
     int             remain = 0, noinherit = 0;
     unsigned int    flags = 0u;
@@ -439,12 +439,12 @@ NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp     *itPtr = arg;
-    const char   *url = NULL;
-    int           noinherit = 0, recurse = 0;
-    unsigned int  flags = 0u;
+    const NsInterp *itPtr = arg;
+    const char     *url = NULL;
+    int             noinherit = 0, recurse = 0;
+    unsigned int    flags = 0u;
 
-    Ns_ObjvSpec opts[] = {
+    Ns_ObjvSpec     opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
         {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(1)},
         {"--",         Ns_ObjvBreak, NULL,   NULL},
@@ -486,10 +486,10 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp     *itPtr = arg;
-    const char   *url = NULL, *basepath = NULL;
-    int           noinherit = 0;
-    unsigned int  flags = 0u;
+    const NsInterp *itPtr = arg;
+    const char     *url = NULL, *basepath = NULL;
+    int             noinherit = 0;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
 	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
@@ -544,8 +544,8 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
 Ns_ReturnCode
 NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
-    Ns_ReturnCode   status = NS_OK;
-    Ns_TclCallback *cbPtr = arg;
+    Ns_ReturnCode         status = NS_OK;
+    const Ns_TclCallback *cbPtr = arg;
 
     if (unlikely(Ns_TclEvalCallback(NULL, cbPtr, dsPtr, url, NULL) != TCL_OK)) {
         status = NS_ERROR;
@@ -574,7 +574,7 @@ Ns_ReturnCode
 NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
 {
     Ns_ReturnCode status = NS_OK;
-    Mount        *mPtr = arg;
+    const Mount  *mPtr = arg;
     const char   *u;
 
     u = mPtr->url;

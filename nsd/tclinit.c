@@ -369,8 +369,8 @@ Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
 Tcl_Interp *
 Ns_TclAllocateInterp(const char *server)
 {
-    NsServer *servPtr;
-    NsInterp *itPtr;
+    NsServer       *servPtr;
+    const NsInterp *itPtr;
 
     /*
      * Verify the server.  NULL (i.e., no server) is valid but
@@ -393,7 +393,7 @@ Ns_TclAllocateInterp(const char *server)
 Tcl_Interp *
 NsTclAllocateInterp(NsServer *servPtr)
 {
-    NsInterp *itPtr = PopInterp(servPtr, NULL);
+    const NsInterp *itPtr = PopInterp(servPtr, NULL);
 
     return itPtr->interp;
 }
@@ -516,7 +516,7 @@ Ns_FreeConnInterp(Ns_Conn *UNUSED(conn))
 Ns_Conn *
 Ns_TclGetConn(Tcl_Interp *interp)
 {
-    NsInterp *itPtr;
+    const NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -544,7 +544,7 @@ Ns_TclGetConn(Tcl_Interp *interp)
 void
 Ns_TclDestroyInterp(Tcl_Interp *interp)
 {
-    NsInterp      *itPtr;
+    const NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -740,7 +740,7 @@ Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, const void *arg)
 static Ns_ReturnCode
 RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
 {
-    NsServer *servPtr;
+    const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(proc != NULL);
 
@@ -842,7 +842,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
 const char *
 Ns_TclLibrary(const char *server)
 {
-    NsServer *servPtr = NsGetServer(server);
+    const NsServer *servPtr = NsGetServer(server);
 
     return ((servPtr != NULL) ? servPtr->tcl.library : nsconf.tcl.sharedlibrary);
 }
@@ -867,7 +867,7 @@ Ns_TclLibrary(const char *server)
 const char *
 Ns_TclInterpServer(Tcl_Interp *interp)
 {
-    NsInterp *itPtr;
+    const NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -898,8 +898,8 @@ Ns_TclInterpServer(Tcl_Interp *interp)
 Ns_ReturnCode
 Ns_TclInitModule(const char *server, const char *module)
 {
-    NsServer     *servPtr;
-    Ns_ReturnCode status;
+    const NsServer *servPtr;
+    Ns_ReturnCode   status;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(module != NULL);
@@ -945,17 +945,17 @@ Ns_TclInitModule(const char *server, const char *module)
 int
 NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
-    NsServer       *servPtr = itPtr->servPtr;
-    TclTrace       *tracePtr;
-    Defer          *deferPtr;
-    Ns_TclCallback *cbPtr;
-    Tcl_Obj        *scriptObj;
-    Ns_DString      ds;
-    char           *script;
-    int             remain = 0, opt, length, result = TCL_OK;
-    Ns_TclTraceType when = NS_TCL_TRACE_NONE;
-    unsigned int    flags = 0u;
+    NsInterp             *itPtr = arg;
+    NsServer             *servPtr = itPtr->servPtr;
+    const TclTrace       *tracePtr;
+    Defer                *deferPtr;
+    const Ns_TclCallback *cbPtr;
+    Tcl_Obj              *scriptObj;
+    Ns_DString            ds;
+    const char           *script;
+    int                   remain = 0, opt, length, result = TCL_OK;
+    Ns_TclTraceType       when = NS_TCL_TRACE_NONE;
+    unsigned int          flags = 0u;
 
     static const char *const opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
@@ -1821,8 +1821,8 @@ UpdateInterp(NsInterp *itPtr)
 static void
 RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
 {
-    TclTrace *tracePtr;
-    NsServer *servPtr;
+    const TclTrace *tracePtr;
+    const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 
@@ -1963,13 +1963,13 @@ FreeInterpData(ClientData arg, Tcl_Interp *UNUSED(interp))
 static void
 DeleteInterps(void *arg)
 {
-    Tcl_HashTable  *tablePtr = arg;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
+    Tcl_HashTable       *tablePtr = arg;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
  
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     while (hPtr != NULL) {
-        NsInterp  *itPtr;
+        const NsInterp *itPtr;
 
         itPtr = Tcl_GetHashValue(hPtr);
         if ((itPtr != NULL) && (itPtr->interp != NULL)) {
