@@ -273,7 +273,8 @@ Ns_ReturnCode
 Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *init)
 {
     const char     *defproto, *host, *address, *bindaddr, *defserver, *path;
-    int             i, n, defport, noHostNameGiven;
+    int             i, n, defport;
+    bool            noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;
     Driver         *drvPtr;
@@ -367,7 +368,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         host = address;
     }
 
-    if (noHostNameGiven != 0 && host != NULL && path != NULL) {
+    if (noHostNameGiven && host != NULL && path != NULL) {
         Ns_SetUpdate(set, "hostname", host);
     }
 

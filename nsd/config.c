@@ -379,11 +379,11 @@ Ns_ConfigGetValueExact(const char *section, const char *key)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
 {
     const char *s;
-    int found;
+    bool found;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -420,7 +420,7 @@ Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
 {
     const char *s;
@@ -992,7 +992,7 @@ ToBool(const char *value, bool *valuePtr)
         || STRIEQ(value, "t")
         || STRIEQ(value, "true")) {
 
-        boolValue = NS_TRUE;
+        boolValue = (int)NS_TRUE;
     } else if (STREQ(value, "0")
                || STRIEQ(value, "n")
                || STRIEQ(value, "no")
@@ -1000,11 +1000,11 @@ ToBool(const char *value, bool *valuePtr)
                || STRIEQ(value, "f")
                || STRIEQ(value, "false")) {
 
-        boolValue = NS_FALSE;
+        boolValue = (int)NS_FALSE;
     } else if (Ns_StrToInt(value, &boolValue) != NS_OK) {
         return NS_FALSE;
     }
-    *valuePtr = (boolValue != NS_FALSE) ? NS_TRUE : NS_FALSE;
+    *valuePtr = (boolValue != (int)NS_FALSE) ? NS_TRUE : NS_FALSE;
 
     return NS_TRUE;
 }

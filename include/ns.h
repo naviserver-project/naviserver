@@ -983,11 +983,11 @@ NS_EXTERN const char *
 Ns_ConfigGetValueExact(const char *section, const char *key)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

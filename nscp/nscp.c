@@ -47,8 +47,8 @@ typedef struct Mod {
     const char *server;
     const char *addr;
     int port;
-    int echo;
-    int commandLogging;
+    bool echo;
+    bool commandLogging;
 } Mod;
 
 static Ns_ThreadProc EvalThread;
@@ -71,8 +71,8 @@ typedef struct Sess {
 
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
-static int Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
-static int GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo);
+static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
+static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo);
 static Ns_ArgProc ArgProc;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
@@ -381,7 +381,7 @@ EvalThread(void *arg)
     Ns_Log(Notice, "nscp: %s connected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
 
-    if (Login(sessPtr, &unameDS) == 0) {
+    if (!Login(sessPtr, &unameDS)) {
 	goto done;
     }
 
@@ -408,7 +408,7 @@ EvalThread(void *arg)
 retry:
 	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
 	for (;;) {
-	    if (GetLine(sessPtr->sock, buf, &ds, 1) == 0) {
+	    if (!GetLine(sessPtr->sock, buf, &ds, 1)) {
 		goto done;
 	    }
 	    if (Tcl_CommandComplete(ds.string) != 0) {
@@ -423,7 +423,7 @@ retry:
 	    goto retry; /* Empty command - try again. */
 	}
 
-        if (sessPtr->modPtr->commandLogging != 0) {
+        if (sessPtr->modPtr->commandLogging) {
             Ns_Log(Notice, "nscp: %s %d: %s", sessPtr->user, ncmd, ds.string);
         }
 
@@ -442,7 +442,7 @@ retry:
 	    res += sent;
 	}
 
-        if (sessPtr->modPtr->commandLogging != 0) {
+        if (sessPtr->modPtr->commandLogging) {
             Ns_Log(Notice, "nscp: %s %d: done", sessPtr->user, ncmd);
         }
     }
@@ -468,7 +468,7 @@ done:
  *  	are translated to \n.
  *
  * Results:
- *  	1 if line received, 0 if remote dropped.
+ *  	NS_TRUE if line received, NS_FALSE if remote dropped.
  *
  * Side effects:
  *  	None.
@@ -476,11 +476,12 @@ done:
  *----------------------------------------------------------------------
  */
 
-static int
-GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
+static bool
+GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
 {
     char   buf[2048];
-    int    result = 0, retry = 0;
+    int    retry = 0;
+    bool   result = NS_FALSE;
     ssize_t n;
     size_t promptLength;
 
@@ -488,21 +489,20 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
      * Suppress output on things like password prompts.
      */
 
-    if (echo == 0) {
+    if (!echo) {
 	(void)ns_send(sock, (const void*)will_echo, 3u, 0);
 	(void)ns_send(sock, (const void*)dont_echo, 3u, 0);
 	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     promptLength = strlen(prompt);
     if (ns_send(sock, prompt, promptLength, 0) != (ssize_t)promptLength) {
-	result = 0;
 	goto bail;
     }
 
     do {
 	n = ns_recv(sock, buf, sizeof(buf), 0);
 	if (n <= 0) {
-	    result = 0;
+	    result = NS_FALSE;
 	    goto bail;
 	}
 
@@ -515,7 +515,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	 * This EOT checker cannot happen in the context of telnet.
 	 */
 	if (n == 1 && buf[0] == '\4') {
-	    result = 0;
+	    result = NS_FALSE;
 	    goto bail;
 	}
 
@@ -525,10 +525,10 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 
 	if (n > 1 && UCHAR(buf[0]) == TN_IAC) {
 	    if ( UCHAR(buf[1]) == TN_EOF) {
-		result = 0;
+		result = NS_FALSE;
 		goto bail;
 	    } else if (UCHAR(buf[1]) == TN_IP) {
-		result = 0;
+		result = NS_FALSE;
 		goto bail;
             } else if ((UCHAR(buf[1]) == TN_WONT) && (retry < 2)) {
                 /*
@@ -543,18 +543,18 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
 	    } else {
 		Ns_Log(Warning, "nscp: "
 		       "unsupported telnet IAC code received from client");
-		result = 0;
+		result = NS_FALSE;
 		goto bail;
 	    }
 	}
 
 	Tcl_DStringAppend(dsPtr, buf, (int)n);
-	result = 1;
+	result = NS_TRUE;
 
     } while (buf[n-1] != '\n');
 
  bail:
-    if (echo == 0) {
+    if (!echo) {
 	(void)ns_send(sock, (const void*)wont_echo, 3u, 0);
 	(void)ns_send(sock, (const void*)do_echo, 3u, 0);
 	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
@@ -571,7 +571,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
  *	Attempt to login the user.
  *
  * Results:
- *  	1 if login ok, 0 otherwise.
+ *  	NS_TRUE if login ok, NS_FALSE otherwise.
  *
  * Side effects:
  *  	Stores user's login name into unameDSPtr.
@@ -579,17 +579,17 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, int echo)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 {
     Tcl_DString uds, pds, msgDs;
     const char *user = NULL;
-    int         ok = 0;
+    bool        ok = NS_FALSE;
 
     Tcl_DStringInit(&uds);
     Tcl_DStringInit(&pds);
-    if (GetLine(sessPtr->sock, "login: ", &uds, 1) != 0 &&
-	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo) != 0) {
+    if (GetLine(sessPtr->sock, "login: ", &uds, 1) &&
+	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
         const Tcl_HashEntry *hPtr;
 	const char          *pass;
 
@@ -602,7 +602,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 
 	    (void) Ns_Encrypt(pass, encpass, buf);
     	    if (STREQ(buf, encpass)) {
-		ok = 1;
+		ok = NS_TRUE;
 	    }
 	}
     }
@@ -612,7 +612,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
      */
 
     Ns_DStringInit(&msgDs);
-    if (ok != 0) {
+    if (ok) {
         Ns_Log(Notice, "nscp: %s logged in", user);
         Tcl_DStringAppend(unameDSPtr, user, -1);
         Ns_DStringPrintf(&msgDs,
