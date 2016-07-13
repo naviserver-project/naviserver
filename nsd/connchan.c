@@ -321,7 +321,7 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
     }
 
     Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, cbPtr->script, cbPtr->scriptLength);
+    Tcl_DStringAppend(&script, cbPtr->script, (int)cbPtr->scriptLength);
     
     if ((why & (unsigned int)NS_SOCK_TIMEOUT) != 0u) {
         w = "t";
