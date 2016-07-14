@@ -501,12 +501,12 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
 int
 NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn     *conn = GetConn(interp);
-    const char  *name, *data, *domain = NULL, *path = NULL;
-    int          secure = 0, scriptable = 0, discard = 0, replace = 0;
-    unsigned int flags = 0u;
-    time_t       maxage;
-    Ns_Time     *expiresPtr = NULL;
+    Ns_Conn       *conn = GetConn(interp);
+    const char    *name, *data, *domain = NULL, *path = NULL;
+    int            secure = 0, scriptable = 0, discard = 0, replace = 0;
+    unsigned int   flags = 0u;
+    time_t         maxage;
+    const Ns_Time *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-discard",    Ns_ObjvBool,   &discard,    NULL},
@@ -548,7 +548,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
      */
 
     if (expiresPtr != NULL) {
-        Ns_Time *nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
+        const Ns_Time *nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
         if (expiresPtr->sec < 0) {
             maxage = TIME_T_MAX;
         } else if (expiresPtr->sec > nowPtr->sec) {
@@ -586,12 +586,12 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn     *conn;
-    Ns_DString   ds;
-    const char  *nameString;
-    Tcl_Obj     *defaultObj = NULL;
-    int          idx = -1, status = TCL_OK;
-    int          withSetCookies = NS_FALSE;
+    const Ns_Conn *conn;
+    Ns_DString     ds;
+    const char    *nameString;
+    Tcl_Obj       *defaultObj = NULL;
+    int            idx = -1, status = TCL_OK;
+    int            withSetCookies = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-include_set_cookies", Ns_ObjvBool,  &withSetCookies, NULL},
@@ -614,7 +614,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     Ns_DStringInit(&ds);
 
-    if (withSetCookies == NS_TRUE) {
+    if (withSetCookies == (int)NS_TRUE) {
 	idx = SearchFirstCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", nameString);
     }
     if (idx == -1) {
@@ -654,12 +654,12 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn     *conn = GetConn(interp);
-    const char  *name, *domain = NULL, *path = NULL;
-    unsigned int flags = NS_COOKIE_SCRIPTABLE;
-    int          secure = 0, replace = 0;
+    const Ns_Conn  *conn = GetConn(interp);
+    const char     *name, *domain = NULL, *path = NULL;
+    unsigned int    flags = NS_COOKIE_SCRIPTABLE;
+    int             secure = 0, replace = 0;
 
-    Ns_ObjvSpec  opts[] = {
+    Ns_ObjvSpec     opts[] = {
         {"-secure",  Ns_ObjvBool,   &secure,  NULL},
         {"-domain",  Ns_ObjvString, &domain,  NULL},
         {"-path",    Ns_ObjvString, &path,    NULL},

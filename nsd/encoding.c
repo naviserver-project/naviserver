@@ -177,8 +177,8 @@ static const struct {
 void
 NsConfigEncodings(void)
 {
-    Ns_Set *set;
-    size_t  i;
+    const Ns_Set *set;
+    size_t        i;
 
     Ns_MutexSetName(&lock, "ns:encodings");
     Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);
@@ -291,7 +291,7 @@ Ns_GetFileEncoding(const char *file)
 
     ext = strrchr(file, '.');
     if (ext != NULL) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&extensions, ext);
+        const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&extensions, ext);
 
         if (hPtr != NULL) {
 	    const char *name = Tcl_GetHashValue(hPtr);
@@ -368,9 +368,9 @@ Ns_GetCharsetEncoding(const char *charset)
 Tcl_Encoding
 Ns_GetCharsetEncodingEx(const char *charset, int len)
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_Encoding   encoding;
-    Ns_DString     ds;
+    const Tcl_HashEntry *hPtr;
+    Tcl_Encoding         encoding;
+    Ns_DString           ds;
 
     NS_NONNULL_ASSERT(charset != NULL);
 
@@ -421,8 +421,8 @@ Ns_GetEncoding(const char *name)
 const char *
 Ns_GetEncodingCharset(Tcl_Encoding encoding)
 {
-    const char    *encname, *charset = NULL;
-    Tcl_HashEntry *hPtr;
+    const char          *encname, *charset = NULL;
+    const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(encoding != NULL);
 
@@ -499,8 +499,8 @@ int
 NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		    int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
 
     hPtr = Tcl_FirstHashEntry(&charsets, &search);
     while (hPtr != NULL) {

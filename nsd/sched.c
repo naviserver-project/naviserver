@@ -420,7 +420,7 @@ Ns_Pause(int id)
 
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
+        const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
             Event *ePtr;
@@ -463,7 +463,7 @@ Ns_Resume(int id)
 
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
+        const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
             Event *ePtr;
@@ -908,15 +908,15 @@ SchedThread(void *UNUSED(arg))
 void
 NsGetScheduled(Tcl_DString *dsPtr)
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&eventsTable, &search);
     while (hPtr != NULL) {
-        Event *ePtr = Tcl_GetHashValue(hPtr);
+        const Event *ePtr = Tcl_GetHashValue(hPtr);
 
         Tcl_DStringStartSublist(dsPtr);
         Ns_DStringPrintf(dsPtr, "%d %d %d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64,

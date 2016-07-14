@@ -211,14 +211,14 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 int
 NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp     *itPtr = arg;
-    Ns_Conn      *conn  = NULL;
-    int           length, i, n;
-    Ns_ReturnCode status;
-    bool          binary;
-    unsigned int  flags;
-    struct iovec  iov[32];
-    struct iovec *sbufs = iov;
+    const NsInterp *itPtr = arg;
+    Ns_Conn        *conn  = NULL;
+    int             length, i, n;
+    Ns_ReturnCode   status;
+    bool            binary;
+    unsigned int    flags;
+    struct iovec    iov[32];
+    struct iovec   *sbufs = iov;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "data ?data ...?");
@@ -387,7 +387,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     Ns_ReturnCode  result;
     const char    *type = "*/*", *setid = NULL, *binary = NULL;
     const char    *chars = NULL, *filename = NULL, *chanid = NULL;
-    Ns_Set        *set = NULL;
+    const Ns_Set  *set = NULL;
     Tcl_Channel    chan;
 
     Ns_ObjvSpec opts[] = {
@@ -972,8 +972,8 @@ Result(Tcl_Interp *interp, Ns_ReturnCode result)
 static Ns_ReturnCode
 GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
 {
-    NsInterp      *itPtr = arg;
-    Ns_ReturnCode  result;
+    const NsInterp *itPtr = arg;
+    Ns_ReturnCode   result;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(interp != NULL);

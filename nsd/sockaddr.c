@@ -68,9 +68,9 @@ Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *m
     }
 
     if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET6) {
-        struct in6_addr *addrBits   = &(((struct sockaddr_in6 *)addr)->sin6_addr);
-        struct in6_addr *maskBits   = &(((struct sockaddr_in6 *)mask)->sin6_addr);
-        struct in6_addr *maskedBits = &(((struct sockaddr_in6 *)maskedAddr)->sin6_addr);
+        const struct in6_addr *addrBits   = &(((struct sockaddr_in6 *)addr)->sin6_addr);
+        const struct in6_addr *maskBits   = &(((struct sockaddr_in6 *)mask)->sin6_addr);
+        struct in6_addr       *maskedBits = &(((struct sockaddr_in6 *)maskedAddr)->sin6_addr);
         int i;
 
         /*
@@ -129,8 +129,8 @@ Ns_SockaddrSameIP(struct sockaddr *addr1, struct sockaddr *addr2)
     }
     
     if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET6) {
-        struct in6_addr *addr1Bits  = &(((struct sockaddr_in6 *)addr1)->sin6_addr);
-        struct in6_addr *addr2Bits  = &(((struct sockaddr_in6 *)addr2)->sin6_addr);
+        const struct in6_addr *addr1Bits  = &(((struct sockaddr_in6 *)addr1)->sin6_addr);
+        const struct in6_addr *addr2Bits  = &(((struct sockaddr_in6 *)addr2)->sin6_addr);
         int i;
         
         /*

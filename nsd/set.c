@@ -234,7 +234,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
 
     found = 0;
     for (i = 0u; i < set->size; ++i) {
-        char *name = set->fields[i].name;
+        const char *name = set->fields[i].name;
 
         if ((name == NULL) || (((*cmp) (key, name)) == 0)) {
 
@@ -772,9 +772,9 @@ Ns_SetListFind(Ns_Set *const*sets, const char *name)
 Ns_Set **
 Ns_SetSplit(const Ns_Set *set, char sep)
 {
-    size_t      i;
-    Ns_DString  ds;
-    Ns_Set     *end = NULL;
+    size_t        i;
+    Ns_DString    ds;
+    const Ns_Set *end = NULL;
 
     NS_NONNULL_ASSERT(set != NULL);
 
@@ -831,7 +831,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
 void
 Ns_SetListFree(Ns_Set **sets)
 {
-    Ns_Set        **s;
+   Ns_Set *const*s;
 
     NS_NONNULL_ASSERT(sets != NULL);
 

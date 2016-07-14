@@ -102,9 +102,9 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 {
     const NsInterp       *itPtr = arg;
     const char           *script;
-    int                   isNew, global = NS_FALSE;
+    int                   isNew, global = (int)NS_FALSE;
     static Tcl_HashTable  runTable;
-    static int            initialized = NS_FALSE;
+    static int            initialized = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-global", Ns_ObjvBool,  &global, INT2PTR(NS_TRUE)},
@@ -124,7 +124,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
         initialized = NS_TRUE;
     }
-    (void) Tcl_CreateHashEntry((global != NS_FALSE) ? &runTable :
+    (void) Tcl_CreateHashEntry((global != (int)NS_FALSE) ? &runTable :
                                &itPtr->servPtr->tcl.runTable, script, &isNew);
     Ns_MasterUnlock();
 

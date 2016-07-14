@@ -104,7 +104,7 @@ static struct proc {
 void
 NsInitProcInfo(void)
 {
-    struct proc *procPtr;
+    const struct proc *procPtr;
 
     Tcl_InitHashTable(&infoHashTable, TCL_ONE_WORD_KEYS);
     procPtr = procs;
@@ -176,8 +176,8 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
 void
 Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
 {
-    Tcl_HashEntry          *hPtr;
-    Info                   *infoPtr;
+    const Tcl_HashEntry    *hPtr;
+    const Info             *infoPtr;
     static Info nullInfo =  {NULL, NULL};
 
     NS_NONNULL_ASSERT(dsPtr != NULL);

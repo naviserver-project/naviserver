@@ -156,11 +156,11 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
 int
 NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp  *itPtr = arg;
-    void      *tidArg;
-    Ns_Thread  tid;
-    void      *result;
-    int        opt;
+    const NsInterp *itPtr = arg;
+    void           *tidArg;
+    Ns_Thread       tid;
+    void           *result;
+    int             opt;
 
     static const char *const opts[] = {
         "begin", "begindetached", "create", "wait", "join",
@@ -291,10 +291,10 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 int
 NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr   = arg;
-    NsServer *servPtr = itPtr->servPtr;
-    Ns_Mutex *lockPtr;
-    int       opt, status = TCL_OK;
+    const NsInterp *itPtr = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    Ns_Mutex       *lockPtr;
+    int             opt, status = TCL_OK;
 
     static const char *const opts[] = {
         "create", "destroy", "eval", "lock", "trylock", "unlock", NULL
@@ -378,10 +378,10 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
 int
 NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr   = arg;
-    NsServer *servPtr = itPtr->servPtr;
-    Ns_Cs    *csPtr;
-    int       opt, status = TCL_OK;
+    const NsInterp *itPtr   = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    Ns_Cs          *csPtr;
+    int             opt, status = TCL_OK;
 
     static const char *const opts[] = {
         "create", "destroy", "enter", "eval", "leave", NULL
@@ -459,10 +459,10 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 int
 NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr   = arg;
-    NsServer *servPtr = itPtr->servPtr;
-    Ns_Sema  *semaPtr;
-    int       opt, cnt;
+    const NsInterp *itPtr = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    Ns_Sema        *semaPtr;
+    int             opt, cnt;
 
     static const char *const opts[] = {
         "create", "destroy", "release", "wait", NULL
@@ -544,13 +544,13 @@ NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 int
 NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp     *itPtr   = arg;
-    NsServer     *servPtr = itPtr->servPtr;
-    Ns_Cond      *condPtr;
-    Ns_Mutex     *lockPtr;
-    Ns_Time       timeout, abstime;
-    int           opt;
-    Ns_ReturnCode result;
+    const NsInterp *itPtr   = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    Ns_Cond        *condPtr;
+    Ns_Mutex       *lockPtr;
+    Ns_Time         timeout, abstime;
+    int             opt;
+    Ns_ReturnCode   result;
 
     static const char *const opts[] = {
         "abswait", "broadcast", "create", "destroy", "set",
@@ -661,10 +661,10 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 int
 NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp  *itPtr   = arg;
-    NsServer  *servPtr = itPtr->servPtr;
-    Ns_RWLock *rwlockPtr;
-    int        opt, status = TCL_OK;
+    const NsInterp *itPtr   = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    Ns_RWLock      *rwlockPtr;
+    int             opt, status = TCL_OK;
 
     static const char *const opts[] = {
         "create", "destroy", "readlock", "readunlock", "readeval",

@@ -124,14 +124,14 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     if (progressMinSize > 0u) {
-        Tcl_HashEntry *hPtr;
-        char          *url = Tcl_GetString(objv[1]);
+        const Tcl_HashEntry *hPtr;
+        const char          *url = Tcl_GetString(objv[1]);
 
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&urlTable, url);
         if (hPtr != NULL) {
-	    Tcl_Obj   *resObj;
-	    Progress  *pPtr;
+	    Tcl_Obj        *resObj;
+	    const Progress *pPtr;
 
             pPtr = Tcl_GetHashValue(hPtr);
             resObj = Tcl_GetObjResult(interp);
@@ -179,12 +179,12 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 void
 NsUpdateProgress(Ns_Sock *sock)
 {
-    Sock          *sockPtr = (Sock *) sock;
-    Request       *reqPtr;
-    Ns_Request    *request;
-    Tcl_HashEntry *hPtr;
-    Ns_DString     ds;
-    int            isNew;
+    const Sock       *sockPtr = (const Sock *) sock;
+    Request          *reqPtr;
+    const Ns_Request *request;
+    Tcl_HashEntry    *hPtr;
+    Ns_DString        ds;
+    int               isNew;
 
     assert(sockPtr != NULL);
     assert(sockPtr->reqPtr != NULL);

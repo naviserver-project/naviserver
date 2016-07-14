@@ -214,11 +214,12 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     int            verify = 0, isNew, i;
     Tcl_HashEntry *hPtr;
     Ns_HttpTask   *httpPtr;
-    char           buf[TCL_INTEGER_SPACE + 4], *cert = NULL, *caFile = NULL, *caPath = NULL;
+    char           buf[TCL_INTEGER_SPACE + 4];
+    const char    *cert = NULL, *caFile = NULL, *caPath = NULL;
     const char    *method = "GET", *url = NULL, *bodyFileName = NULL;
     Ns_Set        *hdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
-    Ns_Time       *timeoutPtr = NULL;
+    const Ns_Time *timeoutPtr = NULL;
     bool           keep_host_header = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {

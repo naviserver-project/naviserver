@@ -130,7 +130,7 @@ NsInitQueue(void)
 Ns_Conn *
 Ns_GetConn(void)
 {
-    ConnThreadArg *argPtr;
+    const ConnThreadArg *argPtr;
 
     argPtr = Ns_TlsGet(&argtls);
     return ((argPtr != NULL) ? ((Ns_Conn *) argPtr->connPtr) : NULL);
@@ -529,12 +529,12 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 int
 NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int          subcmd = 0, value = 0;
-    NsInterp    *itPtr = arg;
-    NsServer    *servPtr = NULL;
-    ConnPool    *poolPtr;
-    char        *pool = NULL, *optArg = NULL, buf[100];
-    Tcl_DString ds, *dsPtr = &ds;
+    int             subcmd = 0, value = 0;
+    const NsInterp *itPtr = arg;
+    const NsServer *servPtr = NULL;
+    ConnPool       *poolPtr;
+    char           *pool = NULL, *optArg = NULL, buf[100];
+    Tcl_DString     ds, *dsPtr = &ds;
 
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, 
@@ -775,9 +775,11 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         Tcl_DStringInit(dsPtr);
         if (subcmd != SQueuedIdx) {
 	    int i;
+            
 	    Ns_MutexLock(&poolPtr->tqueue.lock);
 	    for (i=0; i < poolPtr->threads.max; i++) {
-	        ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
+	        const ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
+                
 		if (argPtr->connPtr != NULL) {
 		    AppendConnList(dsPtr, argPtr->connPtr, "running");
 		}
@@ -1412,11 +1414,11 @@ NsConnThread(void *arg)
 static void
 ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
 {
-    Ns_Conn      *conn;
-    NsServer     *servPtr;
-    Ns_ReturnCode status = NS_OK;
-    Sock         *sockPtr;
-    char         *auth;
+    Ns_Conn        *conn;
+    const NsServer *servPtr;
+    Ns_ReturnCode   status = NS_OK;
+    Sock           *sockPtr;
+    char           *auth;
 
     /*NS_NONNULL_ASSERT(argPtr != NULL);*/
     NS_NONNULL_ASSERT(connPtr != NULL);

@@ -158,13 +158,13 @@ Ns_SlsSet(const Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
 void *
 Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
 {
-    void **slotPtr;
+    void *const* slotPtr, *result = NULL;
 
     slotPtr = GetSlot(slsPtr, sock);
     if (slotPtr != NULL) {
-        return *slotPtr;
+        result = *slotPtr;
     }
-    return NULL;
+    return result;
 }
 
 
@@ -227,9 +227,9 @@ Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
 const char *
 Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
 {
-    Tcl_HashTable *tblPtr;
-    Tcl_HashEntry *hPtr;
-    const char    *value = NULL;
+    Tcl_HashTable       *tblPtr;
+    const Tcl_HashEntry *hPtr;
+    const char          *value = NULL;
 
     tblPtr = Ns_SlsGet(&kslot, sock);
     if (tblPtr == NULL) {
@@ -263,9 +263,9 @@ Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
 char *
 Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
 {
-    Tcl_HashTable  *tblPtr;
-    Tcl_HashSearch  search;
-    Tcl_HashEntry  *hPtr;
+    Tcl_HashTable        *tblPtr;
+    Tcl_HashSearch        search;
+    const Tcl_HashEntry  *hPtr;
 
     tblPtr = Ns_SlsGet(&kslot, sock);
     if (tblPtr == NULL) {
@@ -333,11 +333,11 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, const char *key)
 int
 NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn    *conn;
-    Ns_Sock    *sock = NULL;
-    Ns_DString  ds;
-    const char *data;
-    int         cmd;
+    const Ns_Conn *conn;
+    Ns_Sock       *sock = NULL;
+    Ns_DString     ds;
+    const char    *data;
+    int            cmd;
 
     static const char *const cmds[] = {
         "array", "get", "set", "unset", NULL
@@ -506,9 +506,9 @@ GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock)
 static void
 CleanupKeyed(void *arg)
 {
-    Tcl_HashTable  *tblPtr = arg;
-    Tcl_HashSearch  search;
-    Tcl_HashEntry  *hPtr;
+    Tcl_HashTable       *tblPtr = arg;
+    Tcl_HashSearch       search;
+    const Tcl_HashEntry *hPtr;
 
     hPtr = Tcl_FirstHashEntry(tblPtr, &search);
     while (hPtr != NULL) {
