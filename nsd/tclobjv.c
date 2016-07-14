@@ -260,7 +260,6 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     if (likely(*objcPtr > 0)) {
         int *dest = spec->dest;
@@ -283,7 +282,6 @@ Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
     
     if (likely(*objcPtr > 0)) {
         long *dest = spec->dest;
@@ -306,7 +304,6 @@ Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     if (likely(*objcPtr > 0)) {
         Tcl_WideInt *dest = spec->dest;
@@ -329,7 +326,6 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int     result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     if (likely(*objcPtr > 0)) {
         double *dest = spec->dest;
@@ -371,7 +367,6 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST*
     int *dest, result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     dest = spec->dest;
     
@@ -460,7 +455,6 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
     
     if (likely(*objcPtr > 0)) {
         const char **dest = spec->dest;
@@ -581,7 +575,6 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int result;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     if (likely(*objcPtr > 0)) {
         Ns_Time **dest = spec->dest;
@@ -622,7 +615,6 @@ Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int result;
     
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     if (likely(*objcPtr > 0)) {
         Ns_Set **dest = spec->dest;
@@ -666,7 +658,6 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int                *dest, tableIdx;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     tablePtr = spec->arg;
     dest     = spec->dest;
@@ -715,7 +706,6 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     Tcl_Obj       **flagv;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     dest = spec->dest;
     tablePtr = spec->arg;
@@ -831,7 +821,6 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONS
     int        result = TCL_OK;
 
     NS_NONNULL_ASSERT(spec != NULL);
-    NS_NONNULL_ASSERT(interp != NULL);
 
     dest = spec->dest;
     

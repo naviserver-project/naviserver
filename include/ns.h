@@ -366,7 +366,7 @@ typedef Ns_ReturnCode (Ns_UserAuthorizeProc) (const char *user, const char *pass
 struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST* objv)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 
 /*
  * The field of a key-value data structure.
