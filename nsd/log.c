@@ -988,9 +988,9 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
      * store it in the cache.
      */
     if (*tp != timePtr->sec) {
-        size_t n;
-	time_t secs;
-	struct tm *ptm;
+        size_t           n;
+	time_t           secs;
+	const struct tm *ptm;
 
         *tp = timePtr->sec;
 
@@ -1716,12 +1716,12 @@ static Ns_ReturnCode
 LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          const char *msg, size_t len)
 {
-    int             ii, ret;
-    void           *logfile = INT2PTR(STDERR_FILENO);
-    Tcl_Obj        *stampObj;
-    Ns_DString      ds, ds2;
-    Tcl_Interp     *interp;
-    Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
+    int                   ii, ret;
+    void                 *logfile = INT2PTR(STDERR_FILENO);
+    Tcl_Obj              *stampObj;
+    Ns_DString            ds, ds2;
+    Tcl_Interp           *interp;
+    const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
@@ -1882,7 +1882,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
     NS_NONNULL_ASSERT(addrPtrPtr != NULL);
 
     if (Ns_TclGetOpaqueFromObj(objPtr, severityType, addrPtrPtr) != TCL_OK) {
-	Tcl_HashEntry *hPtr;
+	const Tcl_HashEntry *hPtr;
 
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&severityTable, Tcl_GetString(objPtr));

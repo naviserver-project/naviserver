@@ -137,7 +137,7 @@ NS_EXTERN int Ns_DbExec(Ns_DbHandle *handle, const char *sql);
 NS_EXTERN Ns_Set *Ns_DbBindRow(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row);
 NS_EXTERN int Ns_DbGetRowCount(Ns_DbHandle *handle);
-NS_EXTERN int Ns_DbFlush(Ns_DbHandle *handle);
+NS_EXTERN Ns_ReturnCode Ns_DbFlush(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbCancel(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbResetHandle(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbSpStart(Ns_DbHandle *handle, const char *procname);

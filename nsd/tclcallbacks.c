@@ -157,9 +157,9 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
         deallocInterp = 1;
     }
     if (interp != NULL) {
-        char *arg;
-        int   ii;
-	va_list ap;
+        const char *arg;
+        int         ii;
+	va_list     ap;
 
         Ns_DStringInit(&ds);
         Ns_DStringAppend(&ds, cbPtr->script);
@@ -214,7 +214,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
 void
 Ns_TclCallbackProc(void *arg)
 {
-    Ns_TclCallback *cbPtr = arg;
+    const Ns_TclCallback *cbPtr = arg;
 
     (void) Ns_TclEvalCallback(NULL, cbPtr, (Ns_DString *)NULL, (char *)0);
 }

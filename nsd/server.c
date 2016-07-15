@@ -60,8 +60,8 @@ static void CreatePool(NsServer *servPtr, const char *pool)
 
 static NsServer   *initServPtr;  /* Currently initializing server. */
 
-static ServerInit *firstInitPtr; /* First in list of server config callbacks. */
-static ServerInit *lastInitPtr;  /* Last in list of server config callbacks. */
+static const ServerInit *firstInitPtr; /* First in list of server config callbacks. */
+static ServerInit       *lastInitPtr;  /* Last in list of server config callbacks. */
 
 
 /*

@@ -527,11 +527,11 @@ Ns_InfoSSL(void)
 int
 NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         opt, result = TCL_OK;
-    bool        done = NS_TRUE; 
-    NsInterp   *itPtr = arg;
-    const char *server, *elog;
-    Tcl_DString ds;
+    int             opt, result = TCL_OK;
+    bool            done = NS_TRUE; 
+    const NsInterp *itPtr = arg;
+    const char     *server, *elog;
+    Tcl_DString     ds;
 
     static const char *const opts[] = {
         "address", "argv0", "boottime", "builddate", "callbacks",
@@ -702,7 +702,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case IServersIdx:
         {
-            Tcl_DString *dsPtr = &nsconf.servers;
+            const Tcl_DString *dsPtr = &nsconf.servers;
             Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
             break;
         }
@@ -804,9 +804,9 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 int
 NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    NsInterp *itPtr = arg;
-    const char *lib;
-    Ns_DString ds;
+    const NsInterp *itPtr = arg;
+    const char     *lib;
+    Ns_DString      ds;
 
     if (argc != 2 && argc != 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",

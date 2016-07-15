@@ -176,7 +176,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
     }
     if (status == NS_OK) {
         Ns_ModuleInitProc *initProc   = (Ns_ModuleInitProc *) tclInitProc;
-        int               *versionPtr = (int *) moduleVersionAddr;
+        const int         *versionPtr = (const int *) moduleVersionAddr;
 
         /*
          * Calling Ns_ModuleInit()
@@ -216,9 +216,9 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
 int
 NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = (NsInterp *) arg;
-    const char *server, *module, *file, *init = "Ns_ModuleInit";
-    int         global = NS_FALSE;
+    const NsInterp *itPtr = (NsInterp *) arg;
+    const char     *server, *module, *file, *init = "Ns_ModuleInit";
+    int             global = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
 	{"-global", Ns_ObjvBool,   &global, INT2PTR(NS_TRUE)},

@@ -412,9 +412,9 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 static int
 TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    time_t     now;
-    struct tm *ptm;
-    Tcl_Obj   *objPtr[9];
+    time_t           now;
+    const struct tm *ptm;
+    Tcl_Obj         *objPtr[9];
 
     NS_NONNULL_ASSERT(interp != NULL);
     
@@ -474,9 +474,9 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int     ms;
-    Ns_Time *tPtr = NULL;
-    Ns_ObjvSpec args[] = {
+    int            ms;
+    const Ns_Time *tPtr = NULL;
+    Ns_ObjvSpec    args[] = {
         {"timespec", Ns_ObjvTime, &tPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };

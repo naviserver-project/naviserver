@@ -113,8 +113,8 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
     int     i;
 
     for (i = 0; i < nbufs && sent > 0u; i++) {
-        char   *data = bufs[i].iov_base;
-	size_t  len  = bufs[i].iov_len;
+        const char *data = bufs[i].iov_base;
+	size_t      len  = bufs[i].iov_len;
 
         if (len > 0u) {
             if (sent >= len) {
@@ -221,7 +221,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
     size_t        len, toWrite = 0u, nWrote = 0u;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     Sock         *sock = (Sock *)sockPtr;
-    void         *data;
+    const void   *data;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(nbufs < 1 || bufs != NULL);

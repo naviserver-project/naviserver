@@ -551,11 +551,11 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
     
     Ns_MutexLock(&lock);
     if (running) {
-        Tcl_HashEntry *hPtr; 
+        const Tcl_HashEntry *hPtr; 
 
         for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	    Callback *cbPtr = Tcl_GetHashValue(hPtr);
-	    char      buf[TCL_INTEGER_SPACE];
+	    const Callback *cbPtr = Tcl_GetHashValue(hPtr);
+	    char            buf[TCL_INTEGER_SPACE];
 
             Tcl_DStringStartSublist(dsPtr);
             snprintf(buf, sizeof(buf), "%d", (int) cbPtr->sock);

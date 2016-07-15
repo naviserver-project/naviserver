@@ -139,7 +139,7 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
 int
 NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsLimits *limitsPtr;
+    const NsLimits *limitsPtr;
 
     Ns_ObjvSpec args[] = {
         {"limits", ObjvLimits, &limitsPtr, INT2PTR(NS_FALSE)},
@@ -173,9 +173,9 @@ NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
-    const char     *pattern;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+    const char          *pattern;
 
     if (objc > 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
@@ -273,11 +273,11 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    NsLimits    *limitsPtr;
-    const char  *method, *url, *server = itPtr->servPtr->server;
-    int          noinherit = 0;
-    unsigned int flags = 0u;
+    const NsInterp *itPtr = clientData;
+    NsLimits       *limitsPtr;
+    const char     *method, *url, *server = itPtr->servPtr->server;
+    int             noinherit = 0;
+    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(1)},

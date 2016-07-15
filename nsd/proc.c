@@ -60,7 +60,7 @@ static void AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
 
 static Tcl_HashTable infoHashTable;
 
-static struct proc {
+static const struct proc {
     Ns_Callback *procAddr;
     const char  *desc;
     Ns_ArgProc  *argProc;
@@ -176,9 +176,9 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
 void
 Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
 {
-    const Tcl_HashEntry    *hPtr;
-    const Info             *infoPtr;
-    static Info nullInfo =  {NULL, NULL};
+    const Tcl_HashEntry  *hPtr;
+    const Info           *infoPtr;
+    static const Info     nullInfo = {NULL, NULL};
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     

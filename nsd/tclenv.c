@@ -144,7 +144,7 @@ int
 NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char  *name, *value;
-    char       **envp;
+    char        *const*envp;
     int          status, i, opt;
     Tcl_Obj     *result;
 

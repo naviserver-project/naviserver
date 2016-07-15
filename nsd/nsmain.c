@@ -1030,9 +1030,9 @@ static const char *
 MakePath(char *file)
 {
     if (Ns_PathIsAbsolute(nsconf.nsd) == NS_TRUE) {
-	char *str;
+	const char *str;
 	const char *path = NULL;
-	Tcl_Obj *obj;
+	Tcl_Obj    *obj;
 
         str = strstr(nsconf.nsd, "/bin/");
         if (str == NULL) {
@@ -1127,7 +1127,7 @@ SetCwd(const char *path)
 static void
 CmdThread(void *arg)
 {
-    Args *cmd = arg;
+    const Args *cmd = arg;
 
     Ns_ThreadSetName("-command-");
 

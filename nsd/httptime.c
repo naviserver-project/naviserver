@@ -87,8 +87,8 @@ static Ns_Mutex lock;
 char *
 Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
 {
-    time_t     now;
-    struct tm *tmPtr;
+    time_t           now;
+    const struct tm *tmPtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     

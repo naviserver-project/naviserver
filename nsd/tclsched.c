@@ -377,7 +377,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 void
 NsTclSchedProc(void *arg, int UNUSED(id))
 {
-    Ns_TclCallback *cbPtr = arg;
+    const Ns_TclCallback *cbPtr = arg;
 
     (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, (char *)0);
 }

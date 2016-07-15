@@ -402,10 +402,10 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp     *itPtr = clientData;
-    Tcl_Channel   chan;
-    int           nbytes = INT_MAX;
-    Ns_ReturnCode result;
+    const NsInterp *itPtr = clientData;
+    Tcl_Channel     chan;
+    int             nbytes = INT_MAX;
+    Ns_ReturnCode   result;
 
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");

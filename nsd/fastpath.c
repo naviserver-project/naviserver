@@ -378,7 +378,7 @@ UrlIs(const char *server, const char *url, bool isDir)
 const char *
 Ns_PageRoot(const char *server)
 {
-    NsServer *servPtr;
+    const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
 
@@ -833,7 +833,7 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_CacheLock(cache);
 
     if (contents != 0) {
-        Ns_Entry       *entry;
+        const Ns_Entry *entry;
 
         Tcl_DStringStartSublist(&ds);
         entry = Ns_CacheFirstEntry(cache, &search);

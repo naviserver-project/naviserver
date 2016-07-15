@@ -167,8 +167,8 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *arg)
 
     idataPtr = Tcl_GetAssocData(interp, datakey, NULL);
     if (idataPtr != NULL) {
-        Tcl_HashSearch  search;
-        Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
+        Tcl_HashSearch       search;
+        const Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
 
         while (hPtr != NULL) {
 	    Ns_DbHandle *handlePtr = Tcl_GetHashValue(hPtr);
@@ -264,9 +264,9 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case GETHANDLE: {
-	int nhandles = 1, result;
-        Ns_Time *timeoutPtr = NULL;
-	Ns_DbHandle **handlesPtrPtr;
+	int            nhandles = 1, result;
+        const Ns_Time *timeoutPtr = NULL;
+	Ns_DbHandle  **handlesPtrPtr;
 
         Ns_ObjvSpec opts[] = {
             {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -815,8 +815,8 @@ DbErrorMsgObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 static int
 DbConfigPathObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    InterpData *idataPtr = data;
-    const char *section;
+    const InterpData *idataPtr = data;
+    const char       *section;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 0, objv, NULL);

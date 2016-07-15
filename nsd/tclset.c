@@ -218,15 +218,15 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
 int
 NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp        *itPtr = arg;
-    Ns_Set          *set = NULL, *set2Ptr;
-    int              opt;
-    const char      *key, *val, *def;
-    Tcl_DString      ds;
-    Tcl_HashTable   *tablePtr;
-    Tcl_HashEntry   *hPtr;
-    Tcl_HashSearch   search;
-    Tcl_Obj         *objPtr;
+    NsInterp            *itPtr = arg;
+    Ns_Set              *set = NULL, *set2Ptr;
+    int                  opt;
+    const char          *key, *val, *def;
+    Tcl_DString          ds;
+    Tcl_HashTable       *tablePtr;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+    Tcl_Obj             *objPtr;
 
     static const char *const opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",

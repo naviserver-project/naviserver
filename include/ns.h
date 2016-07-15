@@ -1216,7 +1216,7 @@ Ns_ConnClose(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnFlushContent(Ns_Conn *conn)
+Ns_ConnFlushContent(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *

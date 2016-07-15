@@ -257,11 +257,12 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 bool
 Ns_RunEventQueue(Ns_EventQueue *queue)
 {
-    EventQueue *queuePtr = (EventQueue *) queue;
-    Event      *evPtr, *nextPtr;
-    Ns_Time     now, *timeoutPtr;
-    int         i, n, nfds;
-    char        c;
+    EventQueue    *queuePtr = (EventQueue *) queue;
+    Event         *evPtr, *nextPtr;
+    Ns_Time        now;
+    const Ns_Time *timeoutPtr;
+    int            i, n, nfds;
+    char           c;
 
     NS_NONNULL_ASSERT(queue != NULL);
 
@@ -388,7 +389,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
 void
 Ns_TriggerEventQueue(Ns_EventQueue *queue)
 {
-    EventQueue *queuePtr = (EventQueue *) queue;
+    const EventQueue *queuePtr = (const EventQueue *) queue;
 
     NS_NONNULL_ASSERT(queue != NULL);
 

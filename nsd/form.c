@@ -174,9 +174,9 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 void
 Ns_ConnClearQuery(Ns_Conn *conn)
 {
-    Conn           *connPtr = (Conn *) conn;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
+    Conn                *connPtr = (Conn *) conn;
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
@@ -355,8 +355,8 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 {
     Tcl_Encoding encoding;
     Tcl_DString  kds, vds;
-    char        *e, saveend, *disp, unescape;
-    const char  *ks, *ke;
+    char        *e, saveend, unescape;
+    const char  *ks, *ke, *disp;
     Ns_Set      *set;
     int          isNew;
 

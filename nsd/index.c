@@ -201,7 +201,7 @@ Ns_IndexDup(const Ns_Index *indexPtr)
 void *
 Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
 {
-    void **pPtrPtr;
+    void *const *pPtrPtr;
 
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -279,7 +279,7 @@ Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
 void **
 Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
 {
-    void **firstPtrPtr;
+    void *const *firstPtrPtr;
 
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(key != NULL);

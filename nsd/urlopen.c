@@ -267,12 +267,12 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
 int
 NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp      *itPtr = arg;
-    Ns_DString     ds;
-    Ns_Set        *headers;
-    int            code;
-    Ns_ReturnCode  status;
-    const char    *url;
+    const NsInterp *itPtr = arg;
+    Ns_DString      ds;
+    Ns_Set         *headers;
+    int             code;
+    Ns_ReturnCode   status;
+    const char     *url;
 
     if ((objc != 3) && (objc != 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "url ?headersSetIdVar?");

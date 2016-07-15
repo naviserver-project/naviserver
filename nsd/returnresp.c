@@ -75,10 +75,10 @@ NsConfigRedirects(void)
 static Ns_ReturnCode
 ConfigServerRedirects(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server);
-    Ns_Set     *set;
-    const char *path;
-    size_t      i;
+    NsServer     *servPtr = NsGetServer(server);
+    const Ns_Set *set;
+    const char   *path;
+    size_t        i;
 
     Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
 
@@ -390,7 +390,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
 Ns_ReturnCode
 Ns_ConnReturnUnauthorized(Ns_Conn *conn)
 {
-    Conn         *connPtr = (Conn *) conn;
+    const Conn   *connPtr = (const Conn *) conn;
     Ns_DString    ds;
     Ns_ReturnCode result;
 
@@ -741,9 +741,9 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
 static bool
 ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
 {
-    Tcl_HashEntry *hPtr;
-    Conn          *connPtr = (Conn *) conn;
-    NsServer      *servPtr;
+    const Tcl_HashEntry *hPtr;
+    Conn                *connPtr = (Conn *) conn;
+    NsServer            *servPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);

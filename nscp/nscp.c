@@ -408,7 +408,7 @@ EvalThread(void *arg)
 retry:
 	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
 	for (;;) {
-	    if (!GetLine(sessPtr->sock, buf, &ds, 1)) {
+	    if (!GetLine(sessPtr->sock, buf, &ds, NS_TRUE)) {
 		goto done;
 	    }
 	    if (Tcl_CommandComplete(ds.string) != 0) {
@@ -588,7 +588,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 
     Tcl_DStringInit(&uds);
     Tcl_DStringInit(&pds);
-    if (GetLine(sessPtr->sock, "login: ", &uds, 1) &&
+    if (GetLine(sessPtr->sock, "login: ", &uds, NS_TRUE) &&
 	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
         const Tcl_HashEntry *hPtr;
 	const char          *pass;

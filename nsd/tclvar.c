@@ -559,7 +559,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
     resultObj = Tcl_GetObjResult(interp);
     for (i = 0; i < servPtr->nsv.nbuckets; i++) {
-        Tcl_HashEntry  *hPtr;
+        const Tcl_HashEntry  *hPtr;
 
         bucketPtr = &servPtr->nsv.buckets[i];
         Ns_MutexLock(&bucketPtr->lock);

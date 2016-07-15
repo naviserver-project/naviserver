@@ -61,7 +61,7 @@ static Ns_ReturnCode ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
 static bool CheckKeep(const Conn *connPtr)
     NS_GNUC_NONNULL(1);
 
-static int CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
+static int CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
     NS_GNUC_NONNULL(1);
 
 static bool HdrEq(const Ns_Set *set, const char *name, const char *value)
@@ -183,7 +183,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
  */
 
 static int
-CheckCompress(Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
+CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
 {
     const Ns_Conn  *conn = (Ns_Conn *) connPtr;
     const NsServer *servPtr;
@@ -699,7 +699,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
  */
 
 Ns_ReturnCode
-Ns_ConnFlushContent(Ns_Conn *conn)
+Ns_ConnFlushContent(const Ns_Conn *conn)
 {
     const Conn *connPtr = (const Conn *) conn;
     Request    *reqPtr = connPtr->reqPtr;

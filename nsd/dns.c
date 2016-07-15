@@ -299,7 +299,8 @@ static bool
 GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct addrinfo hints;
-    struct addrinfo *res, *ptr;
+    const struct addrinfo *ptr;
+    struct addrinfo       *res;
     int result;
     bool status = NS_FALSE;
 

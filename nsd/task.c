@@ -293,7 +293,8 @@ void
 Ns_TaskRun(Ns_Task *task)
 {
     Task          *taskPtr = (Task *) task;
-    Ns_Time        now, *timeoutPtr;
+    const Ns_Time *timeoutPtr;
+    Ns_Time        now;
     struct pollfd  pfd;
 
     NS_NONNULL_ASSERT(task != NULL);
@@ -422,9 +423,9 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 bool
 Ns_TaskCompleted(Ns_Task *task)
 {
-    Task      *taskPtr = (Task *) task;
-    TaskQueue *queuePtr;
-    bool       status;
+    const Task *taskPtr = (const Task *) task;
+    TaskQueue  *queuePtr;
+    bool        status;
 
     NS_NONNULL_ASSERT(task != NULL);
 
@@ -871,9 +872,10 @@ TaskThread(void *arg)
     firstWaitPtr = NULL;
 
     for (;;) {
-        int n, broadcast, nfds;
-        bool shutdown;
-	Ns_Time  *timeoutPtr, now;
+        int            n, broadcast, nfds;
+        bool           shutdown;
+	Ns_Time        now;
+        const Ns_Time *timeoutPtr;
 
         /*
          * Get the shutdown flag and process any incoming signals.

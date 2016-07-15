@@ -810,8 +810,8 @@ SockAddrEqual(struct sockaddr *saPtr1, struct sockaddr *saPtr2)
             return NS_FALSE;
         }
     } else if (saPtr1->sa_family == AF_INET6) {
-        struct in6_addr *sa1Bits = &(((struct sockaddr_in6 *)saPtr1)->sin6_addr);
-        struct in6_addr *sa2Bits = &(((struct sockaddr_in6 *)saPtr2)->sin6_addr);
+        const struct in6_addr *sa1Bits = &(((struct sockaddr_in6 *)saPtr1)->sin6_addr);
+        const struct in6_addr *sa2Bits = &(((struct sockaddr_in6 *)saPtr2)->sin6_addr);
         int i;
         
         for (i = 0; i < 8; i++) {
@@ -1183,11 +1183,12 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
 int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 {
-    struct timeval timeout, *toPtr;
-    fd_set ifds, ofds, efds;
-    unsigned long int i;
-    NS_SOCKET n = NS_INVALID_SOCKET;
-    int rc;
+    struct timeval        timeout;
+    const struct timeval *toPtr;
+    fd_set                ifds, ofds, efds;
+    unsigned long int     i;
+    NS_SOCKET             n = NS_INVALID_SOCKET;
+    int                   rc;
 
     FD_ZERO(&ifds);
     FD_ZERO(&ofds);

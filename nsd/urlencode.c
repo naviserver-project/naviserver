@@ -267,7 +267,7 @@ Ns_GetUrlEncoding(const char *charset)
      */
 
     if (encoding == NULL) {
-        Conn *connPtr = (Conn *) Ns_GetConn();
+        const Conn *connPtr = (const Conn *) Ns_GetConn();
 
         if (connPtr != NULL) {
             encoding = connPtr->urlEncoding;
@@ -598,7 +598,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     register char *q;
     const char    *p;
     Tcl_DString    ds;
-    ByteKey       *enc;
+    const ByteKey *enc;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
@@ -670,7 +670,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     char          *copy = NULL;
     size_t         length;
     Tcl_DString    ds;
-    ByteKey       *enc;
+    const ByteKey *enc;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
