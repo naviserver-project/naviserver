@@ -144,6 +144,24 @@ typedef int64_t ssize_t;
 typedef int32_t ssize_t;
 #  endif
 
+/*
+MSVC++ 5.0  _MSC_VER == 1100
+MSVC++ 6.0  _MSC_VER == 1200
+MSVC++ 7.0  _MSC_VER == 1300
+MSVC++ 7.1  _MSC_VER == 1310 (Visual Studio 2003)
+MSVC++ 8.0  _MSC_VER == 1400 (Visual Studio 2005)
+MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
+MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
+MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
+MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
+MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
+*/
+
+#  if _MSC_VER < 1900
+#    define snprintf                  _snprintf
+#    define vsnprintf                 _vsnprintf
+#  endif
+
 #  define strtoll                     _strtoi64
 
 #  define access                      _access
@@ -153,12 +171,14 @@ typedef int32_t ssize_t;
 #  define mktemp                      _mktemp
 #  define open                        _open
 #  define putenv                      _putenv
-#  define snprintf                    _snprintf
 #  define unlink                      _unlink
-#  define vsnprintf                   _vsnprintf
 
 #  define getpid()                    (pid_t)GetCurrentProcessId()
 #  define ftruncate(f,s)              _chsize((f),(s))
+
+#  ifndef P_tmpdir
+#   define P_tmpdir "/tmp"
+#  endif
 
 # else
 /*
