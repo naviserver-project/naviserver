@@ -38,7 +38,6 @@
 #ifdef HAVE_ZLIB_H
 
 # define COMPRESS_SENT_HEADER 0x01u
-# define COMPRESS_FLUSHED     0x02u
 
 
 /*
@@ -192,7 +191,7 @@ Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize,
 	tclStatus = TCL_CONTINUE;
     }
     
-    *nrBytes = outSize-zPtr->avail_out;
+    *nrBytes = (size_t)outSize-zPtr->avail_out;
 
     return tclStatus;
 }
@@ -264,7 +263,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     if (flush) {
         compressLen += 4; /* Gzip footer. */
     }
-    Ns_DStringSetLength(dsPtr, compressLen);
+    Ns_DStringSetLength(dsPtr, (int)compressLen);
 
     z->next_out  = (Bytef *) (dsPtr->string + offset);
     z->avail_out = compressLen;
@@ -284,7 +283,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 
 	    z->next_in  = (void *)bufs[i].iov_base;
 	    z->avail_in = bufs[i].iov_len;
-	    nCompressed += z->avail_in;;
+	    nCompressed += (size_t)z->avail_in;;
 	    
 	    if (z->avail_in == 0 && i < nbufs -1) {
 		continue;
@@ -337,9 +336,9 @@ Ns_CompressGzip(const char *buf, int len, Ns_DString *dsPtr, int level)
     
     status = Ns_CompressInit(&cStream);
     if (status == NS_OK) {
-      Ns_SetVec(&iov, 0, buf, len);
-      status = Ns_CompressBufsGzip(&cStream, &iov, 1, dsPtr, level, NS_TRUE);
-      Ns_CompressFree(&cStream);
+        Ns_SetVec(&iov, 0, buf, (size_t)len);
+        status = Ns_CompressBufsGzip(&cStream, &iov, 1, dsPtr, level, NS_TRUE);
+        Ns_CompressFree(&cStream);
     }
 
     return status;
