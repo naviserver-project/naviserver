@@ -56,7 +56,7 @@ static void LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
 static int            limid = 0;
 static NsLimits      *defLimitsPtr;     /* Default limits if none registered. */
 static Tcl_HashTable  limtable;         /* Process-wide hash of limits. */
-static Ns_Mutex       lock = 0;         /* Lock for limtable and urlspecific data. */
+static Ns_Mutex       lock = NULL;      /* Lock for limtable and urlspecific data. */
 
 
 

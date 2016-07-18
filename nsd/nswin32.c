@@ -56,7 +56,7 @@ static bool SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *
 static Ns_Mutex lock;
 static Ns_Cond cond;
 static Ns_Thread tickThread;
-static SERVICE_STATUS_HANDLE hStatus = 0;
+static SERVICE_STATUS_HANDLE hStatus = NULL;
 static SERVICE_STATUS curStatus;
 static Ns_Tls tls;
 static int serviceRunning = 0;

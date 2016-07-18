@@ -274,7 +274,7 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     Tcl_Obj    *valObj;
     const char *key;
     int         isNew, cur, incr = 1;
-    Ns_Time    *timeoutPtr = NULL, *expPtr = 0;
+    Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},

@@ -630,7 +630,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             (void)ReleaseQueue(queue, NS_TRUE);
             Ns_MutexUnlock(&tp.queuelock);
             if (create != 0) {
-                Ns_ThreadCreate(JobThread, 0, 0, NULL);
+                Ns_ThreadCreate(JobThread, NULL, 0, NULL);
             }
             Tcl_SetObjResult(interp, Tcl_NewStringObj(jobIdString, -1));
         }

@@ -2124,7 +2124,7 @@ SockNew(Driver *drvPtr)
         sockPtr->drvPtr = drvPtr;
     } else {
         sockPtr->tfd    = 0;
-        sockPtr->taddr  = 0;
+        sockPtr->taddr  = NULL;
         sockPtr->keep   = NS_FALSE;
         sockPtr->flags  = 0u;
         sockPtr->arg    = NULL;
