@@ -46,7 +46,7 @@ static VOID WINAPI ServiceHandler(DWORD code);
 static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
 static char *GetServiceName(Ns_DString *dsPtr, char *service);
-static bool SockAddrEqual(struct sockaddr *saPtr1, struct sockaddr *saPtr2);
+static bool SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *saPtr2);
 
 
 /*
@@ -798,7 +798,7 @@ ns_mkstemp(char *charTemplate)
  */
 
 static bool
-SockAddrEqual(struct sockaddr *saPtr1, struct sockaddr *saPtr2)
+SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *saPtr2)
 {
 #ifdef HAVE_IPV6
     if (saPtr1->sa_family != saPtr2->sa_family) {

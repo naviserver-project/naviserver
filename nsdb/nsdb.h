@@ -139,7 +139,7 @@ NS_EXTERN int Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row);
 NS_EXTERN int Ns_DbGetRowCount(Ns_DbHandle *handle);
 NS_EXTERN Ns_ReturnCode Ns_DbFlush(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbCancel(Ns_DbHandle *handle);
-NS_EXTERN int Ns_DbResetHandle(Ns_DbHandle *handle);
+NS_EXTERN Ns_ReturnCode Ns_DbResetHandle(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbSpStart(Ns_DbHandle *handle, const char *procname);
 NS_EXTERN int Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname,
 			      const char *paramtype, const char *inout, const char *value);

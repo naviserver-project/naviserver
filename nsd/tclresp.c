@@ -43,7 +43,7 @@
 static int Result(Tcl_Interp *interp, Ns_ReturnCode result)
     NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
+static Ns_ReturnCode GetConn(const ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static int ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int (*proc) (Ns_Conn *conn))
@@ -970,7 +970,7 @@ Result(Tcl_Interp *interp, Ns_ReturnCode result)
  */
 
 static Ns_ReturnCode
-GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
+GetConn(const ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
 {
     const NsInterp *itPtr = arg;
     Ns_ReturnCode   result;

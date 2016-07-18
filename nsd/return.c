@@ -431,9 +431,9 @@ Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
  */
 
 void
-Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
+Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 {
-    const Conn    *connPtr = (Conn *) conn;
+    const Conn    *connPtr = (const Conn *) conn;
     const Ns_Sock *sockPtr;
     size_t         i;
     const char    *reason, *value;

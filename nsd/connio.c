@@ -54,7 +54,7 @@ static Ns_ReturnCode ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
                               FILE *fp, int fd)
     NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
+static Ns_ReturnCode ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
                               FILE *fp, int fd)
     NS_GNUC_NONNULL(1);
 
@@ -900,7 +900,7 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
  */
 
 size_t
-Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toRead)
+Ns_ConnRead(const Ns_Conn *conn, void *vbuf, size_t toRead)
 {
     const Conn *connPtr = (const Conn *) conn;
     Request    *reqPtr = connPtr->reqPtr;
@@ -937,7 +937,7 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toRead)
  */
 
 Ns_ReturnCode
-Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
+Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
 {
     const Conn   *connPtr = (const Conn *) conn;
     Request      *reqPtr = connPtr->reqPtr;
@@ -1035,7 +1035,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
  */
 
 Ns_ReturnCode
-Ns_ConnCopyToDString(Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
+Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
 {
     const Conn *connPtr = (const Conn *) conn;
     Request    *reqPtr = connPtr->reqPtr;
@@ -1068,25 +1068,25 @@ Ns_ConnCopyToDString(Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
  */
 
 Ns_ReturnCode
-Ns_ConnCopyToChannel(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
+Ns_ConnCopyToChannel(const Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
 {
     return ConnCopy(conn, ncopy, chan, NULL, -1);
 }
 
 Ns_ReturnCode
-Ns_ConnCopyToFile(Ns_Conn *conn, size_t ncopy, FILE *fp)
+Ns_ConnCopyToFile(const Ns_Conn *conn, size_t ncopy, FILE *fp)
 {
     return ConnCopy(conn, ncopy, NULL, fp, -1);
 }
 
 Ns_ReturnCode
-Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
+Ns_ConnCopyToFd(const Ns_Conn *conn, size_t ncopy, int fd)
 {
     return ConnCopy(conn, ncopy, NULL, NULL, fd);
 }
 
 static Ns_ReturnCode
-ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
+ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 {
     const Conn *connPtr;
     Request    *reqPtr;

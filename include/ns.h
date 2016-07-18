@@ -634,14 +634,14 @@ typedef void (Ns_ArgProc)
     (Tcl_DString *dsPtr, const void *arg);
 
 typedef Ns_ReturnCode (Ns_OpProc)
-    (void *arg, Ns_Conn *conn)
+    (const void *arg, Ns_Conn *conn)
     NS_GNUC_NONNULL(2);
 
 typedef void (Ns_TraceProc)
     (void *arg, Ns_Conn *conn);
 
 typedef Ns_ReturnCode (Ns_FilterProc)
-    (void *arg, Ns_Conn *conn, Ns_FilterType why);
+    (const void *arg, Ns_Conn *conn, Ns_FilterType why);
 
 typedef Ns_ReturnCode (Ns_LogFilter)
     (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
@@ -651,7 +651,7 @@ typedef Ns_ReturnCode (Ns_UrlToFileProc)
     (Ns_DString *dsPtr, const char *server, const char *url);
 
 typedef Ns_ReturnCode (Ns_Url2FileProc)
-    (Ns_DString *dsPtr, const char *url, void *arg);
+    (Ns_DString *dsPtr, const char *url, const void *arg);
 
 typedef const char* (Ns_ServerRootProc)
     (Ns_DString  *dest, const char *host, const void *arg);
@@ -1224,11 +1224,11 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN size_t
-Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toRead)
+Ns_ConnRead(const Ns_Conn *conn, void *vbuf, size_t toRead)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
+Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
@@ -1236,19 +1236,19 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnCopyToDString(Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
+Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
+Ns_ConnCopyToFd(const Ns_Conn *conn, size_t ncopy, int fd)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnCopyToFile(Ns_Conn *conn, size_t ncopy, FILE *fp)
+Ns_ConnCopyToFile(const Ns_Conn *conn, size_t ncopy, FILE *fp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnCopyToChannel(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
+Ns_ConnCopyToChannel(const Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 
@@ -1401,7 +1401,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TriggerEventQueue(Ns_EventQueue *queue)
+Ns_TriggerEventQueue(const Ns_EventQueue *queue)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -1670,7 +1670,7 @@ Ns_TaskDone(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN bool
-Ns_TaskCompleted(Ns_Task *task)
+Ns_TaskCompleted(const Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
@@ -2239,7 +2239,7 @@ Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
+Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
@@ -2801,11 +2801,11 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *maskedAddr)
+Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct sockaddr *maskedAddr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN bool
-Ns_SockaddrSameIP(struct sockaddr *addr1, struct sockaddr *addr2)
+Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int

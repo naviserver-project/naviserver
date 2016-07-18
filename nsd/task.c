@@ -421,7 +421,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
  */
 
 bool
-Ns_TaskCompleted(Ns_Task *task)
+Ns_TaskCompleted(const Ns_Task *task)
 {
     const Task *taskPtr = (const Task *) task;
     TaskQueue  *queuePtr;

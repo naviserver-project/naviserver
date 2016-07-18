@@ -328,13 +328,13 @@ RegisterPage(const ClientData arg,
  */
 
 Ns_ReturnCode
-NsAdpPageProc(void *arg, Ns_Conn *conn)
+NsAdpPageProc(const void *arg, Ns_Conn *conn)
 {
-    AdpRequest    *adp = arg;
-    const Ns_Time *expiresPtr;
-    Ns_DString     ds;
-    const char    *file = NULL, *server;
-    Ns_ReturnCode  status;
+    const AdpRequest *adp = arg;
+    const Ns_Time    *expiresPtr;
+    Ns_DString        ds;
+    const char       *file = NULL, *server;
+    Ns_ReturnCode     status;
 
     NS_NONNULL_ASSERT(conn != NULL);
 

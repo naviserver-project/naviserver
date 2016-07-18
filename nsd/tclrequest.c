@@ -430,7 +430,7 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 
 Ns_ReturnCode
-NsTclRequestProc(void *arg, Ns_Conn *conn)
+NsTclRequestProc(const void *arg, Ns_Conn *conn)
 {
     const Ns_TclCallback *cbPtr = arg;
     Tcl_Interp           *interp;
@@ -474,7 +474,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
  */
 
 Ns_ReturnCode
-NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
+NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
 {
     const Ns_TclCallback *cbPtr = arg;
     Tcl_DString           ds;
@@ -590,7 +590,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, Ns_FilterType why)
  */
 
 Ns_ReturnCode
-NsShortcutFilterProc(void *UNUSED(arg), Ns_Conn *UNUSED(conn), Ns_FilterType UNUSED(why))
+NsShortcutFilterProc(const void *UNUSED(arg), Ns_Conn *UNUSED(conn), Ns_FilterType UNUSED(why))
 {
     return NS_FILTER_BREAK;
 }

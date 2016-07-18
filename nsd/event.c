@@ -387,7 +387,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
  */
 
 void
-Ns_TriggerEventQueue(Ns_EventQueue *queue)
+Ns_TriggerEventQueue(const Ns_EventQueue *queue)
 {
     const EventQueue *queuePtr = (const EventQueue *) queue;
 

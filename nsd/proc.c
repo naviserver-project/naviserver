@@ -65,13 +65,13 @@ static const struct proc {
     const char  *desc;
     Ns_ArgProc  *argProc;
 } procs[] = {
-    {                NsTclThread,          "ns:tclthread",        NsTclThreadArgProc},
+    { (Ns_Callback *)NsTclThread,          "ns:tclthread",        NsTclThreadArgProc},
     {                Ns_TclCallbackProc,   "ns:tclcallback",      Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsTclConnLocation,    "ns:tclconnlocation",  Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsTclSchedProc,       "ns:tclschedproc",     Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsTclServerRoot,      "ns:tclserverroot",    Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsTclSockProc,        "ns:tclsockcallback",  NsTclSockArgProc},
-    {                NsConnThread,         "ns:connthread",       NsConnArgProc},
+    { (Ns_Callback *)NsConnThread,         "ns:connthread",       NsConnArgProc},
     { (Ns_Callback *)NsTclFilterProc,      "ns:tclfilter",        Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
     { (Ns_Callback *)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},

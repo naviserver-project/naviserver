@@ -214,7 +214,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const cha
  */
 
 Ns_ReturnCode
-Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
+Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
 {
     Conn         *connPtr;
     NsServer     *servPtr;

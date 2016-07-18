@@ -264,7 +264,7 @@ Ns_ModuleInit(const char *server, const char *module)
  */
 
 static Ns_ReturnCode
-CgiRequest(void *arg, Ns_Conn *conn)
+CgiRequest(const void *arg, Ns_Conn *conn)
 {
     const Map	   *mapPtr;
     Mod		   *modPtr;

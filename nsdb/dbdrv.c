@@ -569,11 +569,11 @@ Ns_DbGetRowCount(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbFlush(Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode   status = NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&
@@ -636,11 +636,11 @@ Ns_DbCancel(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbResetHandle (Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode   status = NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&
@@ -987,8 +987,8 @@ Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize)
 Ns_Set *
 Ns_DbSpGetParams(Ns_DbHandle *handle)
 {
-    DbDriver *driverPtr = NsDbGetDriver(handle);
-    Ns_Set   *aset = NULL;
+    const DbDriver *driverPtr = NsDbGetDriver(handle);
+    Ns_Set         *aset = NULL;
 
     Ns_SetTrunc(handle->row, 0u);
     if (handle->connected &&

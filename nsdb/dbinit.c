@@ -954,7 +954,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
  */
 
 struct DbDriver *
-NsDbGetDriver(Ns_DbHandle *handle)
+NsDbGetDriver(const Ns_DbHandle *handle)
 {
     const Handle *handlePtr = (const Handle *) handle;
 

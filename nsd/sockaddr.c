@@ -54,7 +54,7 @@
  *----------------------------------------------------------------------
  */
 void
-Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *maskedAddr)
+Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct sockaddr *maskedAddr)
 {
     NS_NONNULL_ASSERT(addr != NULL);
     NS_NONNULL_ASSERT(mask != NULL);
@@ -119,7 +119,7 @@ Ns_SockaddrMask(struct sockaddr *addr, struct sockaddr *mask, struct sockaddr *m
  *----------------------------------------------------------------------
  */
 bool
-Ns_SockaddrSameIP(struct sockaddr *addr1, struct sockaddr *addr2)
+Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
 {
     NS_NONNULL_ASSERT(addr1 != NULL);
     NS_NONNULL_ASSERT(addr2 != NULL);

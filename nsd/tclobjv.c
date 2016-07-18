@@ -706,6 +706,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     Tcl_Obj       **flagv;
 
     NS_NONNULL_ASSERT(spec != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     dest = spec->dest;
     tablePtr = spec->arg;
@@ -821,6 +822,7 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONS
     int        result = TCL_OK;
 
     NS_NONNULL_ASSERT(spec != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     dest = spec->dest;
     

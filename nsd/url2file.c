@@ -197,7 +197,7 @@ Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flag
  */
 
 Ns_ReturnCode
-Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
+Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
 {
     Ns_ReturnCode   status = NS_OK;
     const NsServer *servPtr = arg;
@@ -542,7 +542,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
  */
 
 Ns_ReturnCode
-NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
+NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
 {
     Ns_ReturnCode         status = NS_OK;
     const Ns_TclCallback *cbPtr = arg;
@@ -571,7 +571,7 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
  */
 
 Ns_ReturnCode
-NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, void *arg)
+NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
 {
     Ns_ReturnCode status = NS_OK;
     const Mount  *mPtr = arg;
