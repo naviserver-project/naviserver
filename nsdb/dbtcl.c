@@ -63,7 +63,7 @@ static Tcl_ObjCmdProc
     GetCsvObjCmd, 
     PoolDescriptionObjCmd,
     QuoteListToListObjCmd;
-static int ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd);
+static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd);
 
 
 /*
@@ -201,9 +201,9 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *arg)
  */
 
 static int
-DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    InterpData	   *idataPtr = data;
+    InterpData	   *idataPtr = clientData;
     char            tmpbuf[32] = "";
     const char     *pool = NULL;
     int             cmd, nrows;
@@ -763,9 +763,9 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
  */
 
 static int
-ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
+ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
-    InterpData *idataPtr = data;
+    InterpData *idataPtr = clientData;
     Ns_DbHandle *handle;
 
     if (objc != 2) {
@@ -784,15 +784,15 @@ ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
 }
 
 static int
-DbErrorCodeObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbErrorCodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return ErrorObjCmd(data, interp, objc, objv, 'c');
+    return ErrorObjCmd(clientData, interp, objc, objv, 'c');
 }
 
 static int
-DbErrorMsgObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return ErrorObjCmd(data, interp, objc, objv, 'm');
+    return ErrorObjCmd(clientData, interp, objc, objv, 'm');
 }
 
 
@@ -813,9 +813,9 @@ DbErrorMsgObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 static int
-DbConfigPathObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const InterpData *idataPtr = data;
+    const InterpData *idataPtr = clientData;
     const char       *section;
 
     if (objc != 1) {
