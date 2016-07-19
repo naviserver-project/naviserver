@@ -4315,7 +4315,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     if (((connPtr->flags & NS_CONN_STREAM) != 0u) || connPtr->fd > 0) {
-        int         first = 0;
+        bool        first = NS_FALSE;
         size_t      wrote = 0u;
         WriterSock *wrSockPtr1 = NULL;
 
@@ -4334,7 +4334,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
             /*
              * Create a new temporary spool file.
              */
-            first = 1;
+            first = NS_TRUE;
             fd = connPtr->fd = Ns_GetTemp();
 
             Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", fd);
@@ -4373,7 +4373,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
             }
         }
 
-        if (first != 0) {
+        if (first) {
             bufs = NULL;
             connPtr->nContentSent = wrote;
             (void)ns_sock_set_blocking(connPtr->fd, NS_FALSE);
