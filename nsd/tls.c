@@ -573,7 +573,7 @@ NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * Convert the result to hex and return the hex string.
              */
             Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, mdLength*2));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, (int)mdLength*2));
             break;
             
         }
