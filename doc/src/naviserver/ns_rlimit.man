@@ -47,9 +47,14 @@ dumps are truncated to this size.
 
 [section EXAMPLES]
 
+When the server is for some reason in an unknown state, the command
+ns_rlimit can be used to force a core dump via ns_crash also for
+running processes, which were started with a core dump limit of 0.
+
 [example_begin]
  % ns_rlimit coresize unlimited
  unlimited unlimited
+ % ns_crash
 [example_end]
 
 [keywords system limits]

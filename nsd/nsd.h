@@ -1245,6 +1245,7 @@ NsTclAdpAbortObjCmd,
 
 NS_EXTERN Tcl_CmdProc
     NsTclAdpStatsCmd,
+    NsTclCrashCmd,
     NsTclHrefsCmd,
     NsTclLibraryCmd,
     NsTclMkTempCmd,

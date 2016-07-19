@@ -73,6 +73,7 @@ static const Cmd basicCmds[] = {
     {"ns_config",                NULL, NsTclConfigObjCmd},
     {"ns_configsection",         NULL, NsTclConfigSectionObjCmd},
     {"ns_configsections",        NULL, NsTclConfigSectionsObjCmd},
+    {"ns_crash",                 NsTclCrashCmd, NULL},
     {"ns_crypt",                 NULL, NsTclCryptObjCmd},
     {"ns_encodingforcharset",    NULL, NsTclEncodingForCharsetObjCmd},
     {"ns_env",                   NULL, NsTclEnvObjCmd},
