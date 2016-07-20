@@ -3077,7 +3077,15 @@ SockParse(Sock *sockPtr)
             *e = save;
         }
     }
-
+    
+    if (unlikely(reqPtr->request.line == NULL)) {
+        /*
+         * We are at end of headers, but we have not parsed a request line
+         * (maybe just two line feeds).
+         */
+        return SOCK_BADREQUEST;
+    }
+    
     /*
      * We are in the request body
      */
