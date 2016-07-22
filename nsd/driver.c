@@ -2326,6 +2326,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     if (sockPtr->reqPtr != NULL) {
         Request     *reqPtr = sockPtr->reqPtr;
         Tcl_DString  dsReqLine;
+        const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : "";
         
         (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
         
@@ -2333,7 +2334,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
         Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
                code, errMsg,
                reqPtr->peer,
-               Ns_DStringAppendPrintable(&dsReqLine, reqPtr->request.line, strlen(reqPtr->request.line)),
+               Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
                reqPtr->roff,
                reqPtr->woff,
                reqPtr->coff,
