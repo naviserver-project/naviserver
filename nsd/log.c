@@ -1347,7 +1347,7 @@ Ns_LogRoll(void)
     Ns_ReturnCode rc = NS_OK;
 
     if (file != NULL) {
-	NsAsyncWriterQueueDisable(0);
+	NsAsyncWriterQueueDisable(NS_FALSE);
 
         if (access(file, F_OK) == 0) {
             (void) Ns_RollFile(file, maxback);

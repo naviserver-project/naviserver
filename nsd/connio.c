@@ -113,7 +113,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
      */
 
     if (connPtr->outputEncoding != NULL
-        && NsEncodingIsUtf8(connPtr->outputEncoding) == 0
+        && ! NsEncodingIsUtf8(connPtr->outputEncoding)
         && nbufs > 0
         && bufs[0].iov_len > 0u) {
         int i;
@@ -1171,7 +1171,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
         }
 
     } else if (connPtr->responseLength < 0) {
-      Ns_ConnSetLengthHeader(conn, dataLength, 0);
+      Ns_ConnSetLengthHeader(conn, dataLength, NS_FALSE);
     }
 
     /*

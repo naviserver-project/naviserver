@@ -340,11 +340,11 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
  */
 
 void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, bool doStream)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (doStream == 0) {
+    if (!doStream) {
 	char buffer[TCL_INTEGER_SPACE];
 
 	snprintf(buffer, sizeof(buffer), "%" PRIuz, length);
@@ -593,7 +593,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *mimeType, size_t length)
      * Deprecated
      */
     Ns_ConnSetTypeHeader(conn, mimeType);
-    Ns_ConnSetLengthHeader(conn, length, 0);
+    Ns_ConnSetLengthHeader(conn, length, NS_FALSE);
 }
 
 
@@ -899,10 +899,10 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
     }
 
     if (chan != NULL) {
-        Ns_ConnSetLengthHeader(conn, len, 0);
+        Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
         result = Ns_ConnSendChannel(conn, chan, len);
     } else if (fp != NULL) {
-        Ns_ConnSetLengthHeader(conn, len, 0);
+        Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
         result = Ns_ConnSendFp(conn, fp, len);
     } else {
         result = ReturnRange(conn, mimeType, fd, NULL, len);
@@ -1001,7 +1001,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
     
     if (rangeCount >= 0) {
 	if (rangeCount == 0) {
-            Ns_ConnSetLengthHeader(conn, len, 0);
+            Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
 
 	    if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
 	      len = 0u;

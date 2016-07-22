@@ -559,7 +559,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
     resultObj = Tcl_GetObjResult(interp);
     for (i = 0; i < servPtr->nsv.nbuckets; i++) {
-        const Tcl_HashEntry  *hPtr;
+        const Tcl_HashEntry *hPtr;
 
         bucketPtr = &servPtr->nsv.buckets[i];
         Ns_MutexLock(&bucketPtr->lock);
@@ -626,7 +626,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         return TCL_ERROR;
     }
     switch (opt) {
-    case CSetIdx:
+    case CSetIdx:   /* fall through */
     case CResetIdx:
         if (objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "array valueList");
@@ -686,7 +686,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
         break;
 
-    case CGetIdx:
+    case CGetIdx:   /* fall through */
     case CNamesIdx:
         if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "array ?pattern?");

@@ -311,7 +311,7 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
 int
 NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int pid, sig, nocomplain = NS_FALSE, result;
+    int pid, sig, nocomplain = (int)NS_FALSE, result;
 
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
@@ -356,7 +356,7 @@ int
 NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *file1, *file2;
-    int nocomplain = NS_FALSE, result;
+    int nocomplain = (int)NS_FALSE, result;
 
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
@@ -578,7 +578,8 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsRegChan      *regChan = NULL;
 
     const char     *name = NULL, *chanName = NULL;
-    int             isNew, shared, opt;
+    int             isNew, opt;
+    bool            shared;
     Tcl_Channel     chan = NULL;
 
     Tcl_HashTable  *tabPtr;
@@ -693,7 +694,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
         shared = (objc == 3);
-        if (shared != 0) {
+        if (shared) {
             Ns_MutexLock(&servPtr->chans.lock);
             tabPtr = &servPtr->chans.table; 
         } else {
@@ -704,7 +705,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_AppendElement(interp, Tcl_GetHashKey(tabPtr, hPtr));
             hPtr = Tcl_NextHashEntry(&search);
         }
-        if (shared != 0) {
+        if (shared) {
             Ns_MutexUnlock(&servPtr->chans.lock);
         }
         break;
@@ -715,7 +716,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             return TCL_ERROR;
         }
         shared = (objc == 3);
-        if (shared != 0) {
+        if (shared) {
             Ns_MutexLock(&servPtr->chans.lock);
             tabPtr = &servPtr->chans.table;
         } else {
@@ -725,7 +726,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         while (hPtr != NULL) {
 	    regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
 	    assert(regChan != NULL);
-            if (shared != 0) {
+            if (shared) {
                 Tcl_SpliceChannel(regChan->chan);
                 (void) Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);
             } else {
@@ -736,7 +737,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_DeleteHashEntry(hPtr);
             hPtr = Tcl_NextHashEntry(&search);
         }
-        if (shared != 0) {
+        if (shared) {
             Ns_MutexUnlock(&servPtr->chans.lock);
         }
         break;

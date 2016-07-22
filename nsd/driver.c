@@ -45,12 +45,6 @@
 #define DRIVER_FAILED            8u
 
 /*
- * Managing streaming output via writer
- */
-#define NS_WRITER_STREAM_ACTIVE       1
-#define NS_WRITER_STREAM_FINISH       2
-
-/*
  * The following maintains Host header to server mappings.
  */
 
@@ -424,9 +418,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                                                  (Tcl_WideInt)1024*1024,
                                                  (Tcl_WideInt)1024, LLONG_MAX);
 
-    drvPtr->maxupload     = Ns_ConfigWideIntRange(path, "maxupload",
-                                                  (Tcl_WideInt)0,
-                                                  (Tcl_WideInt)0, drvPtr->maxinput);
+    drvPtr->maxupload    = Ns_ConfigWideIntRange(path, "maxupload",
+                                                 (Tcl_WideInt)0,
+                                                 (Tcl_WideInt)0, drvPtr->maxinput);
 
     drvPtr->maxline      = Ns_ConfigIntRange(path, "maxline",
                                              8192,         256, INT_MAX);
@@ -512,14 +506,13 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
      * Add extra headers, which have to be of the form of
      * attribute/value pairs.
      */
-
     {
         const char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
 
         if (extraHeaders != NULL) {
-            int objc;
+            int       objc;
             Tcl_Obj **objv, *headers = Tcl_NewStringObj(extraHeaders, -1);
-            int result = Tcl_ListObjGetElements(NULL, headers, &objc, &objv);
+            int       result = Tcl_ListObjGetElements(NULL, headers, &objc, &objv);
 
             if (result != TCL_OK || objc % 2 != 0) {
                 Ns_Log(Warning, "Ignoring invalid value for extraheaders: %s", extraHeaders);
@@ -547,9 +540,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         Ns_Log(Notice, "%s: enable %d spooler thread(s) "
                "for uploads >= %" TCL_LL_MODIFIER "d bytes", module,
                spPtr->threads, drvPtr->readahead);
+
         for (i = 0; i < spPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
-            char buffer[100];
+            char          buffer[100];
 
             sprintf(buffer, "ns:driver:spooler:%d", i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
@@ -573,13 +567,15 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                                                    1024*1024, 1024, INT_MAX);
         wrPtr->bufsize = (size_t)Ns_ConfigIntRange(path, "writerbufsize",
                                                    8192, 512, INT_MAX);
-        wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
+        wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE)
+            ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE;
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
                module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->doStream);
+
         for (i = 0; i < wrPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
-            char buffer[100];
+            char          buffer[100];
 
             sprintf(buffer, "ns:driver:writer:%d", i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
@@ -617,6 +613,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                 Ns_Log(Error, "%s: no such server: %s", module, server);
             } else {
                 Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
+
                 if (n == 0) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
@@ -715,7 +712,7 @@ NsStopDrivers(void)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    NsAsyncWriterQueueDisable(1);
+    NsAsyncWriterQueueDisable(NS_TRUE);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
@@ -1171,7 +1168,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
  *      request will arrive before the keepwait timeout expires?
  *
  * Results:
- *      1 if the socket is OK for keepalive, 0 if this is not possible.
+ *      NS_TRUE if the socket is OK for keepalive, NS_FALSE if this is not possible.
  *
  * Side effects:
  *      Depends on driver.
@@ -2163,7 +2160,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     assert(drvPtr != NULL);
 
     SockError(sockPtr, reason, err);
-    SockClose(sockPtr, NS_FALSE);
+    SockClose(sockPtr, (int)NS_FALSE);
     NsSlsCleanup(sockPtr);
 
     drvPtr->queuesize--;
@@ -2401,12 +2398,12 @@ SockClose(Sock *sockPtr, int keep)
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     if (keep != 0) {
-        keep = DriverKeep(sockPtr);
+        keep = (int)DriverKeep(sockPtr);
     }
-    if (keep == NS_FALSE) {
+    if (keep == (int)NS_FALSE) {
         DriverClose(sockPtr);
     }
-    sockPtr->keep = keep;
+    sockPtr->keep = (bool)keep;
 
     /*
      * Unconditionally remove temporary file, connection thread
@@ -2793,7 +2790,7 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
 static size_t
 EndOfHeader(Sock *sockPtr)
 {
-    int         gzip;
+    bool        gzip;
     Request    *reqPtr;
     const char *s;
 
@@ -2888,9 +2885,9 @@ EndOfHeader(Sock *sockPtr)
         gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
     } else {
         /* no accept-encoding header; don't allow gzip */
-        gzip = 0;
+        gzip = NS_FALSE;
     }
-    if (gzip != 0) {
+    if (gzip) {
         /*
          * Don't allow gzip results for Range requests.
          */
@@ -3694,7 +3691,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
            wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
-    if (wrSockPtr->doStream != 0) {
+    if (wrSockPtr->doStream != NS_WRITER_STREAM_NONE) {
         Conn *connPtr;
         
         NsWriterLock();
@@ -3738,7 +3735,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
                 break;
             }
         }
-        NsSockClose(wrSockPtr->sockPtr, NS_FALSE);
+        NsSockClose(wrSockPtr->sockPtr, (int)NS_FALSE);
     } else {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
     }
@@ -3794,10 +3791,10 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
 static SpoolerState
 WriterReadFromSpool(WriterSock *curPtr) {
-    int            doStream;
-    SpoolerState   status = SPOOLER_OK;
-    size_t         maxsize, toRead;
-    unsigned char *bufPtr;
+    NsWriterStreamState doStream;
+    SpoolerState        status = SPOOLER_OK;
+    size_t              maxsize, toRead;
+    unsigned char      *bufPtr;
 
     NS_NONNULL_ASSERT(curPtr != NULL);
 
@@ -3973,7 +3970,7 @@ WriterSend(WriterSock *curPtr, int *err) {
         /*
          * We have sent something.
          */
-        if (curPtr->doStream != 0) {
+        if (curPtr->doStream != NS_WRITER_STREAM_NONE) {
             Ns_MutexLock(&curPtr->c.file.fdlock);
             curPtr->size -= (size_t)n;
             Ns_MutexUnlock(&curPtr->c.file.fdlock);
@@ -4097,8 +4094,8 @@ WriterThread(void *arg)
         writePtr = NULL;
 
         while (curPtr != NULL) {
-            int doStream;
-            SpoolerState spoolerState = SPOOLER_OK;
+            NsWriterStreamState doStream;
+            SpoolerState        spoolerState = SPOOLER_OK;
 
             nextPtr = curPtr->nextPtr;
             sockPtr = curPtr->sockPtr;
@@ -4327,7 +4324,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         size_t      wrote = 0u;
         WriterSock *wrSockPtr1 = NULL;
 
-        if (!wrPtr->doStream) {
+        if (wrPtr->doStream == NS_WRITER_STREAM_NONE) {
             return NS_ERROR;
         }
 
@@ -4885,16 +4882,16 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
 
-        } else {
+        } else /* opt == cmdStreamingIdx */ {
             if (objc == 4) {
                 int value = 0;
 
                 if (unlikely(Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK)) {
                     return TCL_ERROR;
                 }
-                wrPtr->doStream = value;
+                wrPtr->doStream = (value == 1 ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE);
             }
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wrPtr->doStream));
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->doStream));
         }
         break;
     }
@@ -4993,7 +4990,7 @@ NsAsyncWriterQueueEnable(void)
  *----------------------------------------------------------------------
  */
 void
-NsAsyncWriterQueueDisable(int shutdown)
+NsAsyncWriterQueueDisable(bool shutdown)
 {
     if (asyncWriter != NULL) {
         SpoolerQueue *queuePtr = asyncWriter->firstPtr;
@@ -5016,7 +5013,7 @@ NsAsyncWriterQueueDisable(int shutdown)
 
         Ns_MutexUnlock(&queuePtr->lock);
 
-        if (shutdown != 0) {
+        if (shutdown) {
             ns_free(queuePtr);
             ns_free(asyncWriter);
             asyncWriter = NULL;

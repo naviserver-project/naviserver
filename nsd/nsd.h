@@ -75,6 +75,15 @@ typedef enum {
     NS_URLSPACE_EXACT =          2
 } NsUrlSpaceOp;
 
+/*
+ * Managing streaming output via writer
+ */
+typedef enum {
+    NS_WRITER_STREAM_NONE =        0,
+    NS_WRITER_STREAM_ACTIVE =      1,
+    NS_WRITER_STREAM_FINISH =      2
+} NsWriterStreamState;
+
 #define MAX_URLSPACES                  16
 #define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2u)
 
@@ -240,7 +249,7 @@ typedef struct WriterSock {
     Tcl_WideInt          nsent;
     size_t               size;
     unsigned int         flags;
-    int                  doStream;
+    NsWriterStreamState  doStream;
     int                  fd;
     char                *headerString;
 
@@ -1486,7 +1495,7 @@ NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
 /*
  * request parsing
  */
-NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr)
+NS_EXTERN bool NsParseAcceptEncoding(double version, const char *hdr)
     NS_GNUC_NONNULL(2);
 
 /*
@@ -1496,7 +1505,7 @@ NS_EXTERN int NsParseAcceptEncoding(double version, const char *hdr)
 NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int NsEncodingIsUtf8(const Tcl_Encoding encoding);
+NS_EXTERN bool NsEncodingIsUtf8(const Tcl_Encoding encoding);
 
 
 /*

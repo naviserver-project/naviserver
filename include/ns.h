@@ -1335,7 +1335,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-NsAsyncWriterQueueDisable(int shutdown);
+NsAsyncWriterQueueDisable(bool shutdown);
 
 NS_EXTERN void
 NsAsyncWriterQueueEnable(void);
@@ -2227,7 +2227,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, int doStream)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, bool doStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void

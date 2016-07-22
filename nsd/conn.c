@@ -2135,7 +2135,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
      */
 
     if (connPtr->responseLength < 0) {
-        connPtr->keep = NS_FALSE;
+        connPtr->keep = (int)NS_FALSE;
     }
 
     /*

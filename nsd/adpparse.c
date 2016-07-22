@@ -80,7 +80,7 @@ static void AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsi
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)  NS_GNUC_NONNULL(4);
 
 static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -866,6 +866,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
 
     NS_NONNULL_ASSERT(parsePtr != NULL);
     NS_NONNULL_ASSERT(tagPtr != NULL);
+    NS_NONNULL_ASSERT(as != NULL);
     NS_NONNULL_ASSERT(ae != NULL);
 
     Tcl_DStringInit(&script);

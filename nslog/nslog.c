@@ -908,7 +908,7 @@ LogRoll(Log *logPtr)
     Ns_ReturnCode status;
     Tcl_Obj      *path;
 
-    NsAsyncWriterQueueDisable(0);
+    NsAsyncWriterQueueDisable(NS_FALSE);
 
     (void)LogClose(logPtr);
 

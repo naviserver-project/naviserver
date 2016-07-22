@@ -746,11 +746,11 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
  *
  *----------------------------------------------------------------------
  */
-int
+bool
 NsParseAcceptEncoding(double version, const char *hdr) 
 {
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
-    int gzip = 0;
+    bool   gzip;
 
     NS_NONNULL_ASSERT(hdr != NULL);
 
@@ -758,10 +758,10 @@ NsParseAcceptEncoding(double version, const char *hdr)
 	/* we have gzip specified in accept-encoding */
 	if (gzipQvalue > 0.999) {
 	    /* gzip qvalue 1, use it, nothing else can be higher */
-	    gzip = 1;
+	    gzip = NS_TRUE;
 	} else if (gzipQvalue < 0.0009) {
 	    /* gzip qvalue 0, forbid gzip */
-	    gzip = 0;
+	    gzip = NS_FALSE;
 	} else {
 	    /* a middle gzip qvalue, compare it with identity and default */
 	    if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
@@ -772,14 +772,14 @@ NsParseAcceptEncoding(double version, const char *hdr)
 		gzip = (gzipQvalue >= starQvalue);
 	    } else {
 		/* just the low qvalue was specified */
-		gzip = 1;
+		gzip = NS_TRUE;
 	    }
 	}
     } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
 	/* star matches everything, so as well gzip */
 	if (starQvalue < 0.0009) {
 	    /* star qvalue forbids gzip */
-	    gzip = 0;
+	    gzip = NS_FALSE;
 	} else if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
 	    /* star qvalue allows gzip in HTTP/1.1 */
 	    gzip = (starQvalue >= identityQvalue) && (version >= 1.1);
@@ -787,6 +787,8 @@ NsParseAcceptEncoding(double version, const char *hdr)
 	    /* no identity specified, assume gzip is matched with * in HTTP/1.1 */
 	    gzip = (version >= 1.1);
 	}
+    } else {
+        gzip = NS_FALSE;
     }
 
     return gzip;

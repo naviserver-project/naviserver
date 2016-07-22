@@ -566,7 +566,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
-int
+bool
 NsEncodingIsUtf8(const Tcl_Encoding encoding)
 {
     return (encoding == utf8Encoding);
