@@ -258,7 +258,7 @@ NsInitLog(void)
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
         severityConfig[i].label = Tcl_GetHashKey(&severityTable, hPtr);
-        severityConfig[i].enabled = 0;
+        severityConfig[i].enabled = NS_FALSE;
     }
 
     /*
@@ -1002,7 +1002,8 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
             bp[n++] = ']';
             bp[n] = '\0';
         } else {
- 	    int gmtoff, sign;
+ 	    int gmtoff;
+            char sign;
 #ifdef HAVE_TM_GMTOFF
             gmtoff = ptm->tm_gmtoff / 60;
 #else
@@ -1242,7 +1243,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                */
               if (givenEnabled != -1 && severity != Fatal) {
                   enabled = severityConfig[severity].enabled;
-                  severityConfig[severity].enabled = givenEnabled;
+                  severityConfig[severity].enabled = (givenEnabled == 1 ? NS_TRUE : NS_FALSE);
               } else {
                   enabled = Ns_LogSeverityEnabled(severity);
               }

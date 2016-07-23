@@ -52,13 +52,13 @@ typedef int            (ExecProc) (Ns_DbHandle *handle, const char *sql);
 typedef Ns_Set *       (BindProc) (Ns_DbHandle *handle);
 typedef int            (GetProc) (Ns_DbHandle *handle, Ns_Set *row);
 typedef Ns_ReturnCode  (FlushProc) (Ns_DbHandle *handle);
-typedef int            (CancelProc) (Ns_DbHandle *handle);
+typedef Ns_ReturnCode  (CancelProc) (Ns_DbHandle *handle);
 typedef int            (CountProc) (Ns_DbHandle *handle);
 typedef Ns_ReturnCode  (ResetProc) (Ns_DbHandle *handle);
-typedef int            (SpStartProc) (Ns_DbHandle *handle, const char *procname);
-typedef int            (SpSetParamProc) (Ns_DbHandle *handle, char *args);
-typedef int            (SpExecProc) (Ns_DbHandle *handle);
-typedef int            (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
+typedef Ns_ReturnCode  (SpStartProc) (Ns_DbHandle *handle, const char *procname);
+typedef Ns_ReturnCode  (SpSetParamProc) (Ns_DbHandle *handle, char *args);
+typedef Ns_ReturnCode  (SpExecProc) (Ns_DbHandle *handle);
+typedef Ns_ReturnCode  (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
 typedef Ns_Set *       (SpGetParamsProc) (Ns_DbHandle *handle);
 
 
@@ -603,11 +603,11 @@ Ns_DbFlush(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbCancel(Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode   status = NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&
@@ -675,7 +675,7 @@ NsDbLoadDriver(const char *driver)
     Tcl_HashEntry  *hPtr;
     int             isNew;
     DbDriver	   *driverPtr;
-    static int 	    initialized = NS_FALSE;
+    static bool	    initialized = NS_FALSE;
 
     NS_NONNULL_ASSERT(driver != NULL);
     
@@ -842,11 +842,11 @@ NsDbClose(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode   status = NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&
@@ -878,12 +878,12 @@ Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtype,
                 const char *inout, const char *value)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode    status = NS_ERROR;
     Ns_DString       args;
 
     if (handle->connected &&
@@ -917,11 +917,11 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbSpExec(Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode   status = NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&
@@ -951,11 +951,11 @@ Ns_DbSpExec(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    int             status = NS_ERROR;
+    Ns_ReturnCode   status = NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&

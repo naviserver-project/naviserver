@@ -171,7 +171,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     Ns_Entry   *entry;
     const char *key;
     Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
-    int         nargs, isNew, force = NS_FALSE, status = TCL_OK;
+    int         nargs, isNew, force = (int)NS_FALSE, status = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -471,7 +471,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     const char     *pattern = NULL;
     Ns_CacheSearch  search;
     Ns_DString      ds;
-    int             exact = NS_FALSE;
+    int             exact = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-exact",   Ns_ObjvBool,  &exact,     INT2PTR(NS_TRUE)},
@@ -553,7 +553,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_Cache       *cache;
     Ns_Entry       *entry;
     Ns_CacheSearch  search;
-    int             i, nflushed = 0, glob = NS_FALSE, npatterns = 0;
+    int             i, nflushed = 0, glob = (int)NS_FALSE, npatterns = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-glob",    Ns_ObjvBool,  &glob, INT2PTR(NS_TRUE)},
@@ -699,7 +699,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_Cache       *cache;
     Ns_CacheSearch  search;
     Ns_DString      ds;
-    int             contents = NS_FALSE, reset = NS_FALSE;
+    int             contents = (int)NS_FALSE, reset = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-contents", Ns_ObjvBool,  &contents, INT2PTR(NS_TRUE)},

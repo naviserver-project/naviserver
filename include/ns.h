@@ -2473,7 +2473,7 @@ NS_EXTERN size_t
 Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
                               int (*cmp) (const char *s1, const char *s2))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -2488,11 +2488,11 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key,
 	     int (*cmp) (const char *s1, const char *s2))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_SetUnique(const Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN bool
 Ns_SetIUnique(const Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

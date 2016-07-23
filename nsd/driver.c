@@ -2313,11 +2313,11 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     }
     snprintf(header, sizeof(header), "HTTP/1.0 %d ", code);
     iov[0].iov_base = header;
-    iov[0].iov_len = strlen(header);
+    iov[0].iov_len  = strlen(header);
     iov[1].iov_base = (caddr_t) response;
-    iov[1].iov_len = strlen(response);
+    iov[1].iov_len  = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
-    iov[2].iov_len = 4u;
+    iov[2].iov_len  = 4u;
     sent = NsDriverSend(sockPtr, iov, 3, 0u);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
         Ns_Log(Warning, "Driver: partial write while sending error reply");

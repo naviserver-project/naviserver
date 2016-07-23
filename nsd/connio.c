@@ -766,8 +766,7 @@ Ns_ConnClose(Ns_Conn *conn)
 	 * writer thread.
 	 */
 	if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0u) {
-	    bool keep = (connPtr->keep > 0) ? NS_TRUE : NS_FALSE;
-	    NsSockClose(connPtr->sockPtr, keep);
+	    NsSockClose(connPtr->sockPtr, (connPtr->keep > 0) ? 1 : 0);
 	}
 
         
@@ -946,7 +945,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     size_t        nread, ncopy;
 
     if (connPtr->sockPtr == NULL
-        || (eol = strchr(reqPtr->next, '\n')) == NULL
+        || (eol = strchr(reqPtr->next, (int)'\n')) == NULL
         || (nread = (eol - reqPtr->next)) > (size_t)drvPtr->maxline) {
         return NS_ERROR;
     }
@@ -1178,7 +1177,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
      * Set and construct the headers.
      */
 
-    connPtr->keep = CheckKeep(connPtr);
+    connPtr->keep = (CheckKeep(connPtr) ? 1 : 0);
     if (connPtr->keep != 0) {
         keepString = "keep-alive";
     } else {

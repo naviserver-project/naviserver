@@ -46,7 +46,7 @@ typedef struct TaskQueue {
     Ns_Mutex           lock;              /* Queue list and signal lock. */
     Ns_Cond            cond;              /* Task and queue signal condition. */
     bool               shutdown;          /* Shutdown flag. */
-    int                stopped;           /* Stop flag. */
+    bool               stopped;           /* Stop flag. */
     NS_SOCKET          trigger[2];        /* Trigger pipe. */
     char               name[1];           /* String name. */
 } TaskQueue;
