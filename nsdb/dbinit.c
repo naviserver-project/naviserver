@@ -239,10 +239,11 @@ Ns_DbPoolList(const char *server)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 Ns_DbPoolAllowable(const char *server, const char *pool)
 {
     register const char *p;
+    bool           result = NS_FALSE;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(pool != NULL);
@@ -251,12 +252,13 @@ Ns_DbPoolAllowable(const char *server, const char *pool)
     if (p != NULL) {
         while (*p != '\0') {
             if (STREQ(pool, p)) {
-                return NS_TRUE;
+                result = NS_TRUE;
+                break;
             }
             p = p + strlen(p) + 1;
         }
     }
-    return NS_FALSE;
+    return result;
 }
 
 
@@ -383,7 +385,8 @@ Ns_DbPoolGetHandle(const char *pool)
  *	Return 1 or more handles from a pool.
  *
  * Results:
- *	NS_OK if handles were allocated, NS_ERROR otherwise.
+ *	NS_OK if the handlers where allocated, NS_ERROR
+ *	otherwise.
  *
  * Side effects:
  *	Given array of handles is updated with pointers to allocated
@@ -392,7 +395,7 @@ Ns_DbPoolGetHandle(const char *pool)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
 {
     NS_NONNULL_ASSERT(handles != NULL);
@@ -422,7 +425,7 @@ Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool, 
     				 int nwant, const Ns_Time *wait)
 {
@@ -562,7 +565,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_DbBouncePool(const char *pool)
 {
     Pool	*poolPtr;
@@ -829,7 +832,7 @@ NsDbInitServer(const char *server)
 	    char *p, *toDelete, *pool2;
 	    toDelete = p = pool2 = ns_strdup(pool);
 	    while (p != NULL && *p != '\0') {
-		p = strchr(pool2, ',');
+		p = strchr(pool2, (int)',');
 		if (p != NULL) {
 		    *p = '\0';
 		}
@@ -1235,7 +1238,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
     poolPtr->user = Ns_ConfigGetValue(path, "user");
     poolPtr->pass = Ns_ConfigGetValue(path, "password");
     poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
-    poolPtr->stale_on_close = NS_FALSE;
+    poolPtr->stale_on_close = 0;
     poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
     poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
     poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
