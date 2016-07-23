@@ -125,8 +125,9 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     NsInterp       *itPtr;
     const char     *type, *start;
     const NsServer *servPtr;
-    Tcl_Obj      *objv[2];
-    int           result;
+    Tcl_Obj        *objv[2];
+    int             result;
+    Ns_ReturnCode   status;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 
@@ -183,14 +184,15 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     Tcl_DecrRefCount(objv[1]);
 
     if (itPtr->adp.exception == ADP_TIMEOUT) {
-        return Ns_ConnReturnUnavailable(conn);
+        status = Ns_ConnReturnUnavailable(conn);
+        
+    } else if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
+        status = NS_ERROR;
+    } else {
+        status = NS_OK;
     }
-
-    if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
-        return NS_ERROR;
-    }
-
-    return NS_OK;
+    
+    return status;
 }
 
 

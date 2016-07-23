@@ -638,14 +638,18 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 static Ns_DString *
 CgiDs(Cgi *cgiPtr)
 {
+    Ns_DString *result;
+    
     NS_NONNULL_ASSERT(cgiPtr != NULL);
 
     if (cgiPtr->nextds < NDSTRINGS) {
-        return &cgiPtr->ds[cgiPtr->nextds++];
+        result = &cgiPtr->ds[cgiPtr->nextds++];
     } else {
         Ns_Fatal("nscgi: running out of configured dstrings");
+        result = NULL;
     }
-
+    
+    return result;
 }
 
 
@@ -1069,7 +1073,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 		    && CHARTYPE(space, dsPtr->string[dsPtr->length - 1]) != 0) {
 		    Ns_DStringTrunc(dsPtr, dsPtr->length-1);
 		}
-		return dsPtr->length;
+		return (ssize_t)dsPtr->length;
 	    }
 	    Ns_DStringNAppend(dsPtr, &c, 1);
 	}
