@@ -909,7 +909,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
  *	Run an Sp begun with Ns_DbSpStart 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *	NS_OK/NS_ERROR/NS_DML/NS_ROWS
  *
  * Side effects:
  *	None. 
@@ -917,7 +917,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
  *----------------------------------------------------------------------
  */
 
-Ns_ReturnCode
+int
 Ns_DbSpExec(Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
