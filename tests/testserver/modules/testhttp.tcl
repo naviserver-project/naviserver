@@ -95,23 +95,24 @@ namespace eval ::nstest {
 	    }
 
 	    #
-	    # Default Headers.
+	    # Default Headers (unless pre HTTP/1.0)
 	    #
+	    if {$http ne "" && $http >= "1.0"} { 
+		ns_set icput $hdrs Accept */*
+		ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
 
-	    ns_set icput $hdrs Accept */*
-	    ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+		if {$http eq "1.0"} {
+		    ns_set icput $hdrs Connection close
+		}
 
-	    if {$http eq "1.0"} {
-		ns_set icput $hdrs Connection close
-	    }
-
-	    if {[string match *:* $host]} {
-		set host "\[$host\]"
-	    }
-	    if {$port eq "80"} {
-		ns_set icput $hdrs Host $host
-	    } else {
-		ns_set icput $hdrs Host $host:$port
+		if {[string match *:* $host]} {
+		    set host "\[$host\]"
+		}
+		if {$port eq "80"} {
+		    ns_set icput $hdrs Host $host
+		} else {
+		    ns_set icput $hdrs Host $host:$port
+		}
 	    }
 
 	    if {$body ne {}} {
@@ -139,7 +140,9 @@ namespace eval ::nstest {
 		http_puts $timeout $wfd "$key: $val"
 	    }
 
-	    http_puts $timeout $wfd ""
+	    if {$http ne ""} {
+		http_puts $timeout $wfd ""
+	    }
 	    flush $wfd
 	    log "flush header"
 

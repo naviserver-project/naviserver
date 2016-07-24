@@ -1150,6 +1150,12 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     if ((conn->flags & NS_CONN_SKIPHDRS) != 0u) {
+        /*
+         * Pre-HTTP/1.0 has no headers, and no keep-alive
+         */
+        if (conn->request.version < 1.0) {
+            connPtr->keep = 0;
+        }
         return NS_FALSE;
     }
 
