@@ -373,7 +373,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Nsproxy_LibInit();
 
     if (argc > 4 || argc < 3) {
-        char *pgm = strrchr(argv[0], '/');
+        char *pgm = strrchr(argv[0], INTCHAR('/'));
         Ns_Fatal("usage: %s pool id ?command?", (pgm != NULL) ? ++pgm : argv[0]);
     }
     if (argc < 4) {
@@ -452,11 +452,11 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
      * etc...
      */
 
-    user = strchr(argv[1], ':');
+    user = strchr(argv[1], INTCHAR(':'));
     if (user != NULL) {
         uarg = ns_strdup(++user);
         user = uarg;
-        group = strchr(user, ':');
+        group = strchr(user, INTCHAR(':'));
         if (group != NULL) {
             *group = 0;
             group++;

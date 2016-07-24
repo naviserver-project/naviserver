@@ -1036,7 +1036,7 @@ MakePath(char *file)
 
         str = strstr(nsconf.nsd, "/bin/");
         if (str == NULL) {
-            str = strrchr(nsconf.nsd, '/');
+            str = strrchr(nsconf.nsd, INTCHAR('/'));
         }
         if (str == NULL) {
             return NULL;

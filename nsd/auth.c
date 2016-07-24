@@ -291,7 +291,7 @@ NsParseAuth(Conn *connPtr, char *auth)
             v = ns_malloc(size);
             size = Ns_HtuuDecode(q, (unsigned char *) v, size);
             v[size] = '\0';
-            q = strchr(v, ':');
+            q = strchr(v, INTCHAR(':'));
             if (q != NULL) {
                 *q++ = '\0';
                 (void)Ns_SetPut(connPtr->auth, "Password", q);
@@ -313,7 +313,7 @@ NsParseAuth(Conn *connPtr, char *auth)
 		size_t idx;
 		char   save2;
 
-                p = strchr(q, '=');
+                p = strchr(q, INTCHAR('='));
                 if (p == NULL) {
                     break;
                 }

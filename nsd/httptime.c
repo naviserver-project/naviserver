@@ -155,7 +155,7 @@ Ns_ParseHttpTime(char *chars)
      *    +-- s
      */
 
-    s = strchr(chars, ',');
+    s = strchr(chars, INTCHAR(','));
     if (s != NULL) {
 
         /*
@@ -173,7 +173,7 @@ Ns_ParseHttpTime(char *chars)
          * it must be the first format.
          */
 
-        if (strchr(s, '-') != NULL) {
+        if (strchr(s, INTCHAR('-')) != NULL) {
             if (strlen(s) < 18u) {
                 return 0;
             }

@@ -945,7 +945,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     size_t        nread, ncopy;
 
     if (connPtr->sockPtr == NULL
-        || (eol = strchr(reqPtr->next, (int)'\n')) == NULL
+        || (eol = strchr(reqPtr->next, INTCHAR('\n'))) == NULL
         || (nread = (eol - reqPtr->next)) > (size_t)drvPtr->maxline) {
         return NS_ERROR;
     }
@@ -1237,8 +1237,7 @@ CheckKeep(const Conn *connPtr)
              */
             if ((   (connPtr->request.version == 1.0)
                  && (HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE) )
-                ||
-                (   (connPtr->request.version > 1.0)
+                ||  (   (connPtr->request.version > 1.0)
                  && (HdrEq(connPtr->headers, "connection", "close") == NS_FALSE) )
                 ) {
 

@@ -289,7 +289,7 @@ Ns_GetFileEncoding(const char *file)
 
     NS_NONNULL_ASSERT(file != NULL);
 
-    ext = strrchr(file, '.');
+    ext = strrchr(file, INTCHAR('.'));
     if (ext != NULL) {
         const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&extensions, ext);
 

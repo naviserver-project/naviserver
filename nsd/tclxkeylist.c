@@ -727,7 +727,7 @@ FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyL
     size_t keyLen;
     int    findIdx;
 
-    keySeparPtr = strchr(key, '.');
+    keySeparPtr = strchr(key, INTCHAR('.'));
     if (keySeparPtr != NULL) {
         keyLen = (size_t)(keySeparPtr - key);
     } else {

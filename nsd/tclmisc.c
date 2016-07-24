@@ -465,7 +465,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
     }
 
     p = argv[1];
-    while (((s = strchr(p, '<')) != NULL) && ((e = strchr(s, '>')) != NULL)) {
+    while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
         ++s;
         *e = '\0';
         while (*s != '\0' && CHARTYPE(space, *s) != 0) {

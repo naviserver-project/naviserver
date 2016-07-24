@@ -397,7 +397,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
     Ns_DStringSetLength(dsPtr, 0);
     do {
         if (sPtr->cnt > 0u) {
-            eol = strchr(sPtr->ptr, '\n');
+            eol = strchr(sPtr->ptr, INTCHAR('\n'));
             if (eol == NULL) {
                 n = sPtr->cnt;
             } else {

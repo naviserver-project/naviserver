@@ -5437,7 +5437,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     reqPtr->request.method = ns_strdup(method);
     reqPtr->request.protocol = ns_strdup(protocol);
     reqPtr->request.host = ns_strdup(host);
-    query = strchr(tail, '?');
+    query = strchr(tail, INTCHAR('?'));
     if (query != NULL) {
         reqPtr->request.query = ns_strdup(query+1);
     } else {

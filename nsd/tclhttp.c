@@ -328,7 +328,7 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
 
     sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
     p = response;
-    while ((eol = strchr(p, '\n')) != NULL) {
+    while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
 	size_t len;
 	
 	*eol++ = '\0';
@@ -778,7 +778,7 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *h
     if (protoString != NULL) {
         Ns_DStringVarAppend(dsPtr, protoString, "://", NULL);
     }
-    if (strchr(hostString, ':') != NULL) {
+    if (strchr(hostString, INTCHAR(':')) != NULL) {
         Ns_DStringVarAppend(dsPtr, "[", hostString, "]", NULL);
     } else {
         Ns_DStringVarAppend(dsPtr, hostString, NULL);
@@ -830,7 +830,7 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
         /*
          * Maybe this is an IPv6 address in square braces
          */
-        p = strchr(hostString + 1, ']');
+        p = strchr(hostString + 1, INTCHAR(']'));
         if (p != NULL) {
             ipv6 = NS_TRUE;
             
@@ -850,7 +850,7 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
         }
     }
     if (!ipv6) {
-        *portStart = strchr(hostString, ':');
+        *portStart = strchr(hostString, INTCHAR(':'));
         if (hostStart != NULL) {
             *hostStart = hostString;
         }

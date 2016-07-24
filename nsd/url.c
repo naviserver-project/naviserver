@@ -123,7 +123,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
      *     +--end
      */
     
-    end = strchr(url, (int)':');
+    end = strchr(url, INTCHAR(':'));
     if (end != NULL) {
 
         /*
@@ -191,7 +191,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
              * +----- *pprotocol    +-- *pport
              */
 
-            end = strchr(url, (int)'/');
+            end = strchr(url, INTCHAR('/'));
             if (end == NULL) {
 
                 /*
@@ -235,7 +235,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          */
 
         *ppath = url;
-        end = strrchr(url, (int)'/');
+        end = strrchr(url, INTCHAR('/'));
         if (end == NULL) {
             *ptail = *ppath;
             *ppath = "";
@@ -260,7 +260,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
              * and path is an empty string.
              */
 
-            end = strrchr(url, '/');
+            end = strrchr(url, INTCHAR('/'));
             if (end == NULL) {
                 *ptail = *ppath;
                 *ppath = "";

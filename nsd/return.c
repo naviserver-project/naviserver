@@ -501,7 +501,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-		const char *lineBreak = strchr(value, (int)UCHAR('\n'));
+		const char *lineBreak = strchr(value, INTCHAR('\n'));
 
 		if (lineBreak == NULL) {
 		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
@@ -526,7 +526,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
 			offset ++;
 			value += offset;
-			lineBreak = strchr(value, (int)UCHAR('\n'));
+			lineBreak = strchr(value, INTCHAR('\n'));
 
 		    } while (lineBreak != NULL);
 

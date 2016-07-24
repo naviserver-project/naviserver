@@ -226,7 +226,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
              * There's a "..", so wipe out one path backwards.
              */
 
-            slash = strrchr(dsPtr->string, '/');
+            slash = strrchr(dsPtr->string, INTCHAR('/'));
             if (slash != NULL) {
 	      Ns_DStringSetLength(dsPtr, (int)(slash - dsPtr->string));
             }
@@ -1030,7 +1030,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             safehost = &safehost[4];
         }
         if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u) {
-            char *p = strrchr(safehost, ':');
+            char *p = strrchr(safehost, INTCHAR(':'));
             if (p != NULL) {
                 *p = '\0';
             }

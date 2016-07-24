@@ -832,7 +832,7 @@ NsDbInitServer(const char *server)
 	    char *p, *toDelete, *pool2;
 	    toDelete = p = pool2 = ns_strdup(pool);
 	    while (p != NULL && *p != '\0') {
-		p = strchr(pool2, (int)',');
+		p = strchr(pool2, INTCHAR(','));
 		if (p != NULL) {
 		    *p = '\0';
 		}

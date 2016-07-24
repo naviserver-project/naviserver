@@ -1288,11 +1288,11 @@ Ns_GetMimeType(const char *file)
 
     NS_NONNULL_ASSERT(file != NULL);
     
-    start = strrchr(file, '/');
+    start = strrchr(file, INTCHAR('/'));
     if (start == NULL) {
         start = file;
     }
-    ext = strrchr(start, '.');
+    ext = strrchr(start, INTCHAR('.'));
     if (ext == NULL) {
         return noextType;
     }

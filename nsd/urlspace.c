@@ -1673,7 +1673,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
      * dsWord will eventually be used to set or find&reuse a channel filter.
      */
     assert(p != NULL);
-    if ((depth > 0) && (strchr(p, '*') != NULL || strchr(p, '?') != NULL )) {
+    if ((depth > 0) && (strchr(p, INTCHAR('*')) != NULL || strchr(p, INTCHAR('?')) != NULL )) {
         Ns_DStringAppend(&dsFilter, p);
         *p = '\0';
     } else {
@@ -2070,7 +2070,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
     done = 0;
     while (done == 0 && *url != '\0') {
         if (*url != '/') {
-            p = strchr(url, '/');
+            p = strchr(url, INTCHAR('/'));
             if (p != NULL) {
 		l = (size_t)(p - url);
             } else {

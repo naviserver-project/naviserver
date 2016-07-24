@@ -329,7 +329,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
 
-    while ((s = strchr(adp, '<')) && (e = strchr(s, '>'))) {
+    while ((s = strchr(adp, INTCHAR('<'))) && (e = strchr(s, INTCHAR('>')))) {
         
         /*
          * Process the tag depending on the current state.

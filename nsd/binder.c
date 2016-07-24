@@ -685,7 +685,7 @@ PreBind(const char *spec)
         const char *proto;
         char       *addr;
 
-        next = strchr(line, ',');
+        next = strchr(line, INTCHAR(','));
         if (next != NULL) {
             *next++ = '\0';
         }
@@ -712,7 +712,7 @@ PreBind(const char *spec)
         /* 
 	 * Parse protocol 
 	 */
-        if (*line != '/' && (str = strchr(line,'/'))) {
+        if (*line != '/' && (str = strchr(line, INTCHAR('/')))) {
             *str++ = '\0';
             proto = str;
         }
@@ -780,7 +780,7 @@ PreBind(const char *spec)
             int count = 1;
             /* Parse count */
             
-            str = strchr(str,'/');
+            str = strchr(str, INTCHAR('/'));
             if (str != NULL) {
                 *(str++) = '\0';
                 count = strtol(str, NULL, 10);
@@ -808,7 +808,7 @@ PreBind(const char *spec)
         if (Ns_PathIsAbsolute(line) == NS_TRUE) {
             /* Parse mode */
             mode = 0;
-            str = strchr(str,'|');
+            str = strchr(str, INTCHAR('|'));
             if (str != NULL) {
                 *(str++) = '\0';
                 mode = strtol(str, NULL, 10);

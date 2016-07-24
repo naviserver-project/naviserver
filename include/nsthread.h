@@ -47,6 +47,9 @@
 
 #include <nscheck.h>
 
+#define UCHAR(c)                   ((unsigned char)(c))
+#define INTCHAR(c)                 ((int)UCHAR((c)))
+
 /*
  * AFAICT, there is no reason to conditionalize NSTHREAD_EXPORTS
  * depending on the compiler used, it should ALWAYS be set:

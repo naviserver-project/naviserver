@@ -673,7 +673,7 @@ ValidateUserAddr(User *userPtr, const char *peer)
                     }
                     break;
                 }
-                start = strchr(start + 1, '.');
+                start = strchr(start + 1, INTCHAR('.'));
                 if (start == NULL) {
                     break;
                 }
@@ -831,7 +831,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
         memset(ipPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
         memset(maskPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
 
-        slash = strchr(net, '/');
+        slash = strchr(net, INTCHAR('/'));
         if (slash == NULL) {
             /*
              * No mask is given
@@ -852,7 +852,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
             slash++;
 
             validIp = ns_inet_pton(ipPtr, net);
-            if (strchr(slash, '.') == NULL && strchr(slash, ':') == NULL) {
+            if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
                 maskPtr->sa_family = ipPtr->sa_family;
                 Ns_SockaddrMaskBits(maskPtr, strtol(slash, NULL, 10));
                 validMask = 1;

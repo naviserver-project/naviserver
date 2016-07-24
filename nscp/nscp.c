@@ -205,7 +205,7 @@ Ns_ModuleInit(const char *server, const char *module)
         if (!STRIEQ(key, "user")) {
             continue;
         }
-        passPart = strchr(user, ':');
+        passPart = strchr(user, INTCHAR(':'));
         if (passPart == NULL) {
             Ns_Log(Warning, "nscp: user entry '%s' contains no colon; ignored.", user);
 	    continue;
@@ -237,7 +237,7 @@ Ns_ModuleInit(const char *server, const char *module)
         /* 
          * look for end of password.
          */
-	end = strchr(p, ':');
+	end = strchr(p, INTCHAR(':'));
 	if (end != NULL) {
 	    *end = '\0';
 	}

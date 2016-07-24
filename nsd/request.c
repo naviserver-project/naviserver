@@ -166,7 +166,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     /*
      * The passed-in line must not contain a newline
      */
-    assert(strrchr(line, '\n') == NULL);
+    assert(strrchr(line, INTCHAR('\n')) == NULL);
 #endif
     
     memset(request, 0, sizeof(Ns_Request));
@@ -185,7 +185,6 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     /*
      * Save the trimmed line for logging purposes.
      */
-    
     request->line = ns_strdup(l);
     
     Ns_Log(Ns_LogRequestDebug, "begin %s", request->line);
@@ -231,7 +230,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     /*
      * Search from the end for the last space.
      */
-    p = strrchr(url, ' ');
+    p = strrchr(url, INTCHAR(' '));
     if (likely(p != NULL)) {
         /*
          * We have a final token. Let see, if this a HTTP-version string.
@@ -315,11 +314,11 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     }
 
     SetUrl(request, url);
-
     Ns_DStringFree(&ds);
     return NS_OK;
 
 done:
+
     Ns_Log(Warning, "Ns_ParseRequest <%s> -> ERROR", line);
     Ns_DStringFree(&ds);
     return NS_ERROR;
@@ -457,7 +456,7 @@ SetUrl(Ns_Request *request, char *url)
      * Look for a query string at the end of the URL.
      */
     
-    p = strchr(url, '?');
+    p = strchr(url, INTCHAR('?'));
     if (p != NULL) {
         *p++ = '\0';
         if (request->query != NULL) {
@@ -577,7 +576,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
     } else {
         char *key;
 
-        sep = strchr(line, ':');
+        sep = strchr(line, INTCHAR(':'));
         if (sep == NULL) {
 	    return NS_ERROR;	/* Malformed header. */
 	}

@@ -471,7 +471,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
         ++itPtr->adp.debugLevel;
     } else if (((itPtr->adp.flags & ADP_DEBUG) != 0u)
                    && itPtr->adp.debugFile != NULL
-                   && (p = strrchr(file, '/')) != NULL
+                   && (p = strrchr(file, INTCHAR('/'))) != NULL
                    && Tcl_StringMatch(p+1, itPtr->adp.debugFile) != 0) {
         const Ns_Set *hdrs;
         const char   *host, *port, *procs;
@@ -1096,7 +1096,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
     frame.ident = NULL;
     savecwd = itPtr->adp.cwd;
     if (file != NULL) {
-        const char *slash = strrchr(file, '/');
+        const char *slash = strrchr(file, INTCHAR('/'));
         if (slash != NULL) {
             Ns_DStringNAppend(&cwd, file, (int)(slash - file));
             itPtr->adp.cwd = cwd.string;

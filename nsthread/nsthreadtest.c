@@ -79,7 +79,7 @@ Msg(char *fmt,...)
 
     time(&now);
     s = ns_ctime(&now);
-    r = strchr(s, '\n');
+    r = strchr(s, INTCHAR('\n'));
     if (r != NULL) {
 	*r = '\0';
     }

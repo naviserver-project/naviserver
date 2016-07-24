@@ -308,11 +308,11 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 	const char *k;
 
         k = p;
-        p = strchr(p, '&');
+        p = strchr(p, INTCHAR('&'));
         if (p != NULL) {
             *p = '\0';
         }
-        v = strchr(k, '=');
+        v = strchr(k, INTCHAR('='));
         if (v != NULL) {
             *v = '\0';
         }
@@ -384,7 +384,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
      */
 
     ks = NULL;
-    while ((e = strchr(start, '\n')) != NULL) {
+    while ((e = strchr(start, INTCHAR('\n'))) != NULL) {
 	const char *s = start;
 	char save;
 
