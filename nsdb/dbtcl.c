@@ -264,9 +264,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
 
     case GETHANDLE: {
-	int            nhandles = 1, result;
+	int            nhandles = 1;
         const Ns_Time *timeoutPtr = NULL;
 	Ns_DbHandle  **handlesPtrPtr;
+        Ns_ReturnCode  status;
 
         Ns_ObjvSpec opts[] = {
             {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -323,9 +324,9 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	} else {
 	    handlesPtrPtr = ns_malloc((size_t)nhandles * sizeof(Ns_DbHandle *));
 	}
-	result = Ns_DbPoolTimedGetMultipleHandles(handlesPtrPtr, pool,
+	status = Ns_DbPoolTimedGetMultipleHandles(handlesPtrPtr, pool,
     	    	                                  nhandles, timeoutPtr);
-    	if (result == NS_OK) {
+    	if (status == NS_OK) {
   	    int i;
 
 	    for (i = 0; i < nhandles; ++i) {
@@ -335,7 +336,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	if (handlesPtrPtr != &handlePtr) {
 	    ns_free(handlesPtrPtr);
 	}
-	if (result != NS_TIMEOUT && result != NS_OK) {
+	if (status != NS_TIMEOUT && status != NS_OK) {
 	  Ns_TclPrintfResult(interp,
 			     "could not allocate %d handle%s from pool \"%s\"",
 			     nhandles,

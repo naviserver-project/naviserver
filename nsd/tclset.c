@@ -473,12 +473,12 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 break;
 
             case SUniqueIdx:
-                objPtr = Tcl_NewIntObj(Ns_SetUnique(set, key));
+                objPtr = Tcl_NewBooleanObj(Ns_SetUnique(set, key));
                 Tcl_SetObjResult(interp, objPtr);
                 break;
 
             case SIUniqueIdx:
-                objPtr = Tcl_NewIntObj(Ns_SetIUnique(set, key));
+                objPtr = Tcl_NewBooleanObj(Ns_SetIUnique(set, key));
                 Tcl_SetObjResult(interp, objPtr);
                 break;
 
