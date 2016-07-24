@@ -3800,7 +3800,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     NS_NONNULL_ASSERT(curPtr != NULL);
 
     doStream = curPtr->doStream;
-    if (doStream != 0) {
+    if (doStream != NS_WRITER_STREAM_NONE) {
         Ns_MutexLock(&curPtr->c.file.fdlock);
         toRead = curPtr->c.file.toRead;
         Ns_MutexUnlock(&curPtr->c.file.fdlock);
@@ -3842,7 +3842,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     if (toRead > 0u) {
         ssize_t n;
 
-        if (doStream != 0) {
+        if (doStream != NS_WRITER_STREAM_NONE) {
             /*
              * In streaming mode, the connection thread writes to the
              * spool file and the writer thread reads from the same
@@ -3870,7 +3870,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
             curPtr->c.file.bufsize += (size_t)n;
         }
 
-        if (doStream != 0) {
+        if (doStream != NS_WRITER_STREAM_NONE) {
             Ns_MutexUnlock(&curPtr->c.file.fdlock);
         }
     }

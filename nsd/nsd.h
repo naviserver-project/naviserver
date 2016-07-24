@@ -397,20 +397,20 @@ typedef struct Request {
  */
 
 typedef struct {
-    int threads;                 /* Number of spooler threads to run */
-    Ns_Mutex lock;               /* Lock around spooler queue */
-    SpoolerQueue *firstPtr;      /* Spooler thread queue */
-    SpoolerQueue *curPtr;        /* Current spooler thread */
+    int threads;                        /* Number of spooler threads to run */
+    Ns_Mutex lock;                      /* Lock around spooler queue */
+    SpoolerQueue *firstPtr;             /* Spooler thread queue */
+    SpoolerQueue *curPtr;               /* Current spooler thread */
 } DrvSpooler;
 
 typedef struct {
-    int       threads;           /* Number of writer threads to run */
-    size_t    maxsize;           /* Max content size to use writer thread */
-    size_t    bufsize;           /* Size of the output buffer */
-    int       doStream;          /* Activate writer for HTML streaming */
-    Ns_Mutex lock;               /* Lock around writer queues */
-    SpoolerQueue *firstPtr;      /* List of writer threads */
-    SpoolerQueue *curPtr;        /* Current writer thread */
+    int       threads;                  /* Number of writer threads to run */
+    size_t    maxsize;                  /* Max content size to use writer thread */
+    size_t    bufsize;                  /* Size of the output buffer */
+    NsWriterStreamState doStream;       /* Activate writer for HTML streaming */
+    Ns_Mutex lock;                      /* Lock around writer queues */
+    SpoolerQueue *firstPtr;             /* List of writer threads */
+    SpoolerQueue *curPtr;               /* Current writer thread */
 } DrvWriter;
 
 typedef struct Driver {
