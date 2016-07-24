@@ -2962,7 +2962,7 @@ SockParse(Sock *sockPtr)
          * Find the next header line.
          */
         s = bufPtr->string + reqPtr->roff;
-        e = memchr(s, '\n', reqPtr->avail);
+        e = memchr(s, INTCHAR('\n'), reqPtr->avail);
 
         if (unlikely(e == NULL)) {
             /*
