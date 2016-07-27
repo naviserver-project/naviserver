@@ -363,7 +363,7 @@ Ns_ModuleInit(const char *server, const char *module)
  */
 
 static NS_SOCKET
-Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
+Listen(Ns_Driver *driver, CONST char *address, unsigned short port, int backlog)
 {
     NS_SOCKET sock;
 

@@ -2412,11 +2412,7 @@ SockClose(Sock *sockPtr, int keep)
      */
 
     if (sockPtr->tfile != NULL) {
-#ifndef _WIN32
         unlink(sockPtr->tfile);
-#else
-        DeleteFile(sockPtr->tfile);
-#endif
         ns_free(sockPtr->tfile);
         sockPtr->tfile = NULL;
 
@@ -4382,7 +4378,13 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         if (first) {
             bufs = NULL;
             connPtr->nContentSent = wrote;
+#ifndef _WIN32
+            /*
+             * sock_set_blocking can't be used under windows, since sockets
+             * are under windows no file descriptors.
+             */
             (void)ns_sock_set_blocking(connPtr->fd, NS_FALSE);
+#endif            
             /*
              * Fall through to register stream writer with temp file
              */

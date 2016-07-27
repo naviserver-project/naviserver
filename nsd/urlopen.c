@@ -402,7 +402,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
                 n = sPtr->cnt;
             } else {
                 *eol++ = '\0';
-                n = eol - sPtr->ptr;
+                n = (size_t)(eol - sPtr->ptr);
             }
             Ns_DStringNAppend(dsPtr, sPtr->ptr, (int)n - 1);
             sPtr->ptr += n;

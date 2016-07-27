@@ -515,7 +515,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             break;
 
         case CONNECTED:
-      	    Tcl_SetObjResult(interp, Tcl_NewIntObj(handlePtr->connected));
+      	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(handlePtr->connected));
             break;
 
         case SP_EXEC:
@@ -689,7 +689,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             handlePtr->verbose = verbose;
             (void) Ns_LogSeveritySetEnabled(Ns_LogSqlDebug, (bool)verbose);
         }
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(handlePtr->verbose));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(handlePtr->verbose));
         break;
 
     case SETEXCEPTION:
@@ -876,7 +876,7 @@ static int
 QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *quotelist;
-    int         inquotes;
+    bool        inquotes;
     Ns_DString  ds;
 
     if (objc != 2) {
@@ -899,7 +899,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             Ns_DStringNAppend(&ds, quotelist + 1, 1);
             quotelist += 2;
         } else if (*quotelist == '\'') {
-            if (inquotes != 0) {
+            if (inquotes) {
                 /* Finish element */
                 Tcl_AppendElement(interp, ds.string);
                 Ns_DStringTrunc(&ds, 0);
@@ -1028,7 +1028,7 @@ loopstart:
 		       || ((elem.length == 0) && (CHARTYPE(space, c) != 0))
 		       ) {
                 continue;
-            } else if (strchr(delimiter,c) != NULL) {
+            } else if (strchr(delimiter, INTCHAR(c)) != NULL) {
                 if (quoted == 0) {
                     (void) Ns_StrTrimRight(elem.string);
                 }

@@ -921,7 +921,7 @@ int
 Ns_DbSpExec(Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    Ns_ReturnCode   status = NS_ERROR;
+    int             status = (int)NS_ERROR;
 
     if (handle->connected &&
 	driverPtr != NULL &&

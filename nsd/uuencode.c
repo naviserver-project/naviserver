@@ -149,7 +149,7 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
         *q++ = UCHAR('=');
     }
     *q = UCHAR('\0');
-    return ((char *)q - buf);
+    return (size_t)((char *)q - buf);
 }
 
 

@@ -25,7 +25,7 @@
 #include "nsd.h"
 
 static int TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg);
-static int TclX_IsNullObj(Tcl_Obj *objPtr);
+static bool TclX_IsNullObj(Tcl_Obj *objPtr);
 
 
 
@@ -122,7 +122,7 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg)
  *   True if NULL, FALSE if not.
  *-----------------------------------------------------------------------------
  */
-static int
+static bool
 TclX_IsNullObj(Tcl_Obj *objPtr)
 {
     if (objPtr->typePtr == NULL) {
@@ -1339,7 +1339,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     /*
      * Variable (or empty variable name) specified.
      */
-    if (TclX_IsNullObj(objv[3]) == 0) {
+    if (!TclX_IsNullObj(objv[3])) {
         if (Tcl_SetVar2Ex(interp, Tcl_GetStringFromObj(objv[3], NULL), NULL,
                           valuePtr, TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG) == NULL) {
             return TCL_ERROR;

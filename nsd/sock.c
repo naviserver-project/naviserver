@@ -56,7 +56,7 @@
  * Local functions defined in this file
  */
 
-static NS_SOCKET SockConnect(const char *host, int port, const char *lhost, int lport, bool async)
+static NS_SOCKET SockConnect(const char *host, unsigned short port, const char *lhost, int lport, bool async)
     NS_GNUC_NONNULL(1);
 
 static NS_SOCKET SockSetup(NS_SOCKET sock);
@@ -459,7 +459,7 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
  */
 
 NS_SOCKET
-Ns_SockListen(const char *address, int port)
+Ns_SockListen(const char *address, unsigned short port)
 {
     return Ns_SockListenEx(address, port, nsconf.backlog);
 }
@@ -578,7 +578,7 @@ Ns_SockBind(const struct sockaddr *saPtr)
  */
 
 NS_SOCKET
-Ns_SockConnect(const char *host, int port)
+Ns_SockConnect(const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
@@ -586,7 +586,7 @@ Ns_SockConnect(const char *host, int port)
 }
 
 NS_SOCKET
-Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
+Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, int lport)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
@@ -611,7 +611,7 @@ Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
  */
 
 NS_SOCKET
-Ns_SockAsyncConnect(const char *host, int port)
+Ns_SockAsyncConnect(const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
@@ -619,7 +619,7 @@ Ns_SockAsyncConnect(const char *host, int port)
 }
 
 NS_SOCKET
-Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
+Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, int lport)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
@@ -644,7 +644,7 @@ Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
  */
 
 NS_SOCKET
-Ns_SockTimedConnect(const char *host, int port, const Ns_Time *timeoutPtr)
+Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeoutPtr)
 {
     NS_NONNULL_ASSERT(host != NULL);
     NS_NONNULL_ASSERT(timeoutPtr != NULL);
@@ -653,7 +653,7 @@ Ns_SockTimedConnect(const char *host, int port, const Ns_Time *timeoutPtr)
 }
 
 NS_SOCKET
-Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
+Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, int lport,
                      const Ns_Time *timeoutPtr)
 {
     NS_SOCKET sock;
@@ -1035,7 +1035,7 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
  */
 
 static NS_SOCKET
-SockConnect(const char *host, int port, const char *lhost, int lport, bool async)
+SockConnect(const char *host, unsigned short port, const char *lhost, int lport, bool async)
 {
     NS_SOCKET             sock;
     struct NS_SOCKADDR_STORAGE sa, lsa;

@@ -107,8 +107,9 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
-    int id, ok;
-
+    int  id, rc;
+    bool ok;
+    
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "id");
         return TCL_ERROR;
@@ -116,6 +117,8 @@ SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
     if (Tcl_GetIntFromObj(interp, objv[1], &id) != TCL_OK) {
         return TCL_ERROR;
     }
+    rc = TCL_OK;
+    
     switch (cmd) {
     case 'u':
     case 'c':
@@ -128,12 +131,16 @@ SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
         ok = Ns_Resume(id);
         break;
     default:
-        ok = -1;
+        rc = TCL_ERROR;
+        ok = NS_FALSE;
+        Ns_Log(Error, "unexpected code '%c' passed to SchedObjCmd", cmd);
+        break;
     }
-    if (cmd != 'u') {
+    
+    if ((rc == TCL_OK) && (cmd != 'u')) {
         Tcl_SetObjResult(interp, Tcl_NewIntObj(ok));
     }
-    return TCL_OK;
+    return rc;
 }
 
 int

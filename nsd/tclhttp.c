@@ -770,7 +770,8 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  *----------------------------------------------------------------------
  */
 char *
-Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString, int port, int defPort)
+Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString,
+                      unsigned short port, unsigned short defPort)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(hostString != NULL);
@@ -1125,7 +1126,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     
     if (!keep_host_header) {
         Ns_DStringNAppend(dsPtr, "Host: ", 6);
-        Ns_HttpLocationString(dsPtr, NULL, host, portNr, 80);
+        Ns_HttpLocationString(dsPtr, NULL, host, portNr, 80u);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
     }
 

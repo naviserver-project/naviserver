@@ -46,7 +46,8 @@ static int Result(Tcl_Interp *interp, Ns_ReturnCode result)
 static Ns_ReturnCode GetConn(const ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int (*proc) (Ns_Conn *conn))
+static int ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                        Ns_ReturnCode (*proc) (Ns_Conn *conn))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -674,7 +675,7 @@ NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 static int
 ReturnObjCmd(ClientData arg, Tcl_Interp *interp, 
 	     int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv), 
-	     int (*proc) (Ns_Conn *conn))
+	     Ns_ReturnCode (*proc) (Ns_Conn *conn))
 {
     Ns_Conn *conn = NULL;
 

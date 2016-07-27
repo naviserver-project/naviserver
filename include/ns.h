@@ -533,7 +533,7 @@ typedef enum {
  */
 
 typedef NS_SOCKET
-(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, int port, int backlog)
+(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, unsigned short port, int backlog)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef NS_DRIVER_ACCEPT_STATUS
@@ -1814,12 +1814,12 @@ Tcl_SetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
+Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, void *arg)
     NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
 NS_EXTERN bool
-Ns_SockPortBound(int port);
+Ns_SockPortBound(unsigned short port);
 
 /*
  * log.c:
@@ -2582,10 +2582,10 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
  */
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenEx(const char *address, int port, int backlog);
+Ns_SockListenEx(const char *address, unsigned short port, int backlog);
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenUdp(const char *address, int port);
+Ns_SockListenUdp(const char *address, unsigned short port);
 
 NS_EXTERN NS_SOCKET
 Ns_SockListenRaw(int proto);
@@ -2612,7 +2612,7 @@ NS_EXTERN void
 NsStopBinder(void);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBinderListen(int type, const char *address, int port, int options);
+Ns_SockBinderListen(int type, const char *address, unsigned short port, int options);
 
 /*
  * sls.c
@@ -2720,33 +2720,33 @@ Ns_SockBind(const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockListen(const char *address, int port);
+Ns_SockListen(const char *address, unsigned short port);
 
 NS_EXTERN NS_SOCKET
 Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr);
 
 NS_EXTERN NS_SOCKET
-Ns_SockConnect(const char *host, int port)
+Ns_SockConnect(const char *host, unsigned short port)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockConnect2(const char *host, int port, const char *lhost, int lport)
+Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, int lport)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockAsyncConnect(const char *host, int port)
+Ns_SockAsyncConnect(const char *host, unsigned short port)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockAsyncConnect2(const char *host, int port, const char *lhost, int lport)
+Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, int lport)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockTimedConnect(const char *host, int port, const Ns_Time *timeoutPtr)
+Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN NS_SOCKET
-Ns_SockTimedConnect2(const char *host, int port, const char *lhost, int lport,
+Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, int lport,
 		     const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
@@ -2816,7 +2816,7 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
+Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN unsigned short
@@ -3057,7 +3057,8 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
-Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString, int port, int defPort)
+Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString,
+                      unsigned short port, unsigned short defPort)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 /*

@@ -337,9 +337,10 @@ SockCallbackThread(void *UNUSED(arg))
     pfds[0].events = POLLIN;
 
     for (;;) {
-	int nfds, pollto;
-        bool stop;
-	Ns_Time now, diff = {0, 0};
+	int               pollto;
+        NS_POLL_NFDS_TYPE nfds;
+        bool              stop;
+	Ns_Time           now, diff = {0, 0};
 
 	/*
 	 * Grab the list of any queue updates and the shutdown

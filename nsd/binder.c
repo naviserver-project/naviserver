@@ -87,7 +87,7 @@ static void Binder(void);
 
 #ifndef _WIN32
 NS_SOCKET
-Ns_SockListenEx(const char *address, int port, int backlog)
+Ns_SockListenEx(const char *address, unsigned short port, int backlog)
 {
     NS_SOCKET           sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
@@ -163,7 +163,7 @@ Ns_SockListenEx(const char *address, int port, int backlog)
  */
 
 NS_SOCKET
-Ns_SockListenUdp(const char *address, int port)
+Ns_SockListenUdp(const char *address, unsigned short port)
 {
     NS_SOCKET        sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
@@ -857,7 +857,7 @@ PreBind(const char *spec)
  */
 
 NS_SOCKET
-Ns_SockBinderListen(int type, const char *address, int port, int options)
+Ns_SockBinderListen(int type, const char *address, unsigned short port, int options)
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32

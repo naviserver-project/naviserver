@@ -946,7 +946,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
 
     if (connPtr->sockPtr == NULL
         || (eol = strchr(reqPtr->next, INTCHAR('\n'))) == NULL
-        || (nread = (eol - reqPtr->next)) > (size_t)drvPtr->maxline) {
+        || (nread = (size_t)(eol - reqPtr->next)) > (size_t)drvPtr->maxline) {
         return NS_ERROR;
     }
     ncopy = nread;

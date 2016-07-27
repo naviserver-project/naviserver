@@ -345,7 +345,7 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr) {
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, int port)
+Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(saPtr != NULL);
 

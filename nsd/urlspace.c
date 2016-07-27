@@ -1784,12 +1784,12 @@ JunctionFind(const Junction *juncPtr, char *seq)
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0u; i < l; i++) {
-        int doit;
+        bool doit;
         
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = l; i > 0u; i--) {
-        int doit;
+        bool doit;
         
         channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
 #endif
@@ -1803,7 +1803,7 @@ JunctionFind(const Junction *juncPtr, char *seq)
         fprintf(stderr, "JunctionFind: compare filter '%s' with channel filter '%s' => %d\n",
                 p, channelPtr->filter, doit);
 #endif
-        if (doit != 0) {
+        if (doit) {
             /*
              * We got here because this url matches the filter
              * (for example, it's *.adp).

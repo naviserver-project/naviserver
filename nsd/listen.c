@@ -103,7 +103,7 @@ NsInitListen(void)
  */
 
 Ns_ReturnCode
-Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
+Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, void *arg)
 {
     Tcl_HashTable        *tablePtr = NULL;
     Tcl_HashEntry        *hPtr;
@@ -205,7 +205,7 @@ Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
  */
 
 bool
-Ns_SockPortBound(int port)
+Ns_SockPortBound(unsigned short port)
 {
     const Tcl_HashEntry *hPtr;
 

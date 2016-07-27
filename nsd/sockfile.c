@@ -473,7 +473,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     char          buf[16384];
     struct iovec  iov;
     ssize_t       nwrote = 0, toRead = (ssize_t)length;
-    int           decork;
+    bool          decork;
 
     decork = Ns_SockCork(sock, NS_TRUE);
     while (toRead > 0) {
@@ -497,7 +497,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
         }
     }
 
-    if (decork != 0) {
+    if (decork) {
 	(void) Ns_SockCork(sock, NS_FALSE);
     }
 
