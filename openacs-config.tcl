@@ -578,5 +578,10 @@ ns_section ns/server/${server}/module/nsproxy
 	# ns_param	waittimeout        1000
 	# ns_param	idletimeout        300000
 
+#
+# If you want to activate core dumps, one can use the following command
+#
+#ns_log notice "nsd.tcl: ns_rlimit coresize [ns_rlimit coresize unlimited]"
+
 ns_log notice "nsd.tcl: using threadsafe tcl: [info exists tcl_platform(threaded)]"
 ns_log notice "nsd.tcl: finished reading config file."
