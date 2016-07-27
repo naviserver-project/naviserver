@@ -186,7 +186,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     if (itPtr->adp.exception == ADP_TIMEOUT) {
         status = Ns_ConnReturnUnavailable(conn);
         
-    } else if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
+    } else if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK || result != TCL_OK) {
         status = NS_ERROR;
     } else {
         status = NS_OK;
@@ -428,7 +428,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 int
-Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
+Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
 {
     NsInterp *itPtr;
 
@@ -437,11 +437,11 @@ Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
         Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
         return TCL_ERROR;
     }
-    return NsAdpFlush(itPtr, isStreaming);
+    return NsAdpFlush(itPtr, doStream);
 }
 
 int
-NsAdpFlush(NsInterp *itPtr, int doStream)
+NsAdpFlush(NsInterp *itPtr, bool doStream)
 {
     const Ns_Conn *conn;
     Tcl_Interp    *interp;
@@ -476,7 +476,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
      */
 
     if (len < 1 && (flags & ADP_FLUSHED) != 0u) {
-        if (doStream == 0) {
+        if (!doStream) {
             NsAdpReset(itPtr);
         }
         return TCL_OK;
@@ -507,7 +507,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream != 0)) {
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {
@@ -544,7 +544,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
 		sbuf.iov_base = buf;
 		sbuf.iov_len  = (size_t)len;
                 if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, 
-                                       (doStream != 0) ? NS_CONN_STREAM : 0u) == NS_OK) {
+                                       (doStream ? NS_CONN_STREAM : 0u)) == NS_OK) {
                     result = TCL_OK;
                 }
                 if (result != TCL_OK) {
@@ -568,7 +568,7 @@ NsAdpFlush(NsInterp *itPtr, int doStream)
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
 
-    if (doStream == 0) {
+    if (!doStream) {
         NsAdpReset(itPtr);
     }
     return result;

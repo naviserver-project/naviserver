@@ -152,7 +152,7 @@ void NsInitOpenSSL(void)
 
 int
 Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
-                 const char *cert, const char *caFile, const char *caPath, int verify,
+                 const char *cert, const char *caFile, const char *caPath, bool verify,
                  NS_TLS_SSL_CTX **ctxPtr)
 {
     NS_TLS_SSL_CTX *ctx;
@@ -808,7 +808,7 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
 int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, int verify,
+                       const char *cert, const char *caFile, const char *caPath, bool verify,
                        const char *ciphers,
                        NS_TLS_SSL_CTX **ctxPtr)
 {
@@ -962,7 +962,7 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNU
 
 int
 Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
-                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), int UNUSED(verify),
+                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), bool UNUSED(verify),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
     Ns_TclPrintfResult(interp, "CtxCreate failed: no support for OpenSSL built in");
@@ -971,7 +971,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
 
 int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), int UNUSED(verify),
+                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), bool UNUSED(verify),
                        const char *UNUSED(ciphers),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {

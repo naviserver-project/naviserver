@@ -592,7 +592,7 @@ typedef struct Ns_DriverInitData {
     unsigned int             opts;             /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                    *arg;              /* Module's driver callback data */
     const char              *path;             /* Path to find config parameter such as port, address, etc. */
-    int                      defaultPort;      /* Default port */
+    unsigned int             defaultPort;      /* Default port */
     const char              *protocol;         /* Protocol */
 } Ns_DriverInitData;
 
@@ -693,7 +693,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_AdpFlush(Tcl_Interp *interp, int isStreaming)
+Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -1467,7 +1467,7 @@ NS_EXTERN Ns_OpProc Ns_FastPathProc;
 
 NS_EXTERN void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
-		  Ns_FilterProc *proc, Ns_FilterType when, void *arg, int first)
+		  Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
     NS_GNUC_RETURNS_NONNULL;
 
@@ -1850,7 +1850,7 @@ Ns_LogTime(char *timeBuf)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_LogTime2(char *timeBuf, int gmt)
+Ns_LogTime2(char *timeBuf, bool gmt)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2060,7 +2060,7 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
 
 NS_EXTERN void
 Ns_UnRegisterRequest(const char *server, const char *method, const char *url,
-                     int inherit)
+                     bool inherit)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -3381,13 +3381,13 @@ Ns_QueryToSet(char *query, Ns_Set *set)
 
 NS_EXTERN int
 Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, int verify,
+                       const char *cert, const char *caFile, const char *caPath, bool verify,
                        NS_TLS_SSL_CTX **ctxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(6);
 
 NS_EXTERN int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, int verify,
+                       const char *cert, const char *caFile, const char *caPath, bool verify,
                        const char *ciphers,
                        NS_TLS_SSL_CTX **ctxPtr)
         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7);

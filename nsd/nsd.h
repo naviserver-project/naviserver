@@ -357,7 +357,7 @@ typedef struct Request {
     Ns_Set *headers;             /* Input headers */
     Ns_Set *auth;                /* Auth user/password and parameters */
     char peer[NS_IPADDR_SIZE];   /* Client peer address */
-    int port;                    /* Client peer port */
+    unsigned short port;         /* Client peer port */
 
     /*
      * The following pointers are used to access the
@@ -455,7 +455,7 @@ typedef struct Driver {
     NS_SOCKET sock;                     /* Listening socket */
     NS_POLL_NFDS_TYPE pidx;             /* poll() index */
     const char *bindaddr;               /* Numerical listen address */
-    int port;                           /* Port in location */
+    unsigned short port;                /* Port in location */
     int backlog;                        /* listen() backlog */
     Tcl_WideInt maxinput;               /* Maximum request bytes to read */
     Tcl_WideInt maxupload;              /* Uploads that exceed will go into temp file without parsing */
@@ -1012,7 +1012,7 @@ typedef struct NsInterp {
     struct adp {
         unsigned int      flags;
         AdpResult         exception;
-        int               refresh;
+        bool              refresh;
         size_t            bufsize;
         int               errorLevel;
         int               debugLevel;
@@ -1515,7 +1515,7 @@ NS_EXTERN bool NsEncodingIsUtf8(const Tcl_Encoding encoding);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int doStream)
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, bool doStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)

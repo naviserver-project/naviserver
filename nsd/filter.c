@@ -83,7 +83,7 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
 
 void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
-                  Ns_FilterProc *proc, Ns_FilterType when, void *arg, int first)
+                  Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
 {
     NsServer *servPtr;
     Filter *fPtr;
@@ -103,7 +103,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     fPtr->url = ns_strdup(url);
     fPtr->when = when;
     fPtr->arg = arg;
-    if (first != 0) {
+    if (first) {
         fPtr->nextPtr = servPtr->filter.firstFilterPtr;
         servPtr->filter.firstFilterPtr = fPtr;
     } else {

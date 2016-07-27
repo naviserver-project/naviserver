@@ -119,7 +119,7 @@ static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
 
 static Ns_ReturnCode LogOpen(void);
 
-static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
+static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Tcl_Obj *LogStats(void);
@@ -922,7 +922,7 @@ Ns_LogTime(char *timeBuf)
 }
 
 char *
-Ns_LogTime2(char *timeBuf, int gmt)
+Ns_LogTime2(char *timeBuf, bool gmt)
 {
     Ns_Time now;
     LogCache   *cachePtr = GetCache();
@@ -936,7 +936,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
      */
     Ns_GetTime(&now);
     timeString = LogTime(cachePtr, &now, gmt);
-    timeStringLength = (gmt == 0) ? cachePtr->lbufSize : cachePtr->gbufSize;
+    timeStringLength = gmt ? cachePtr->gbufSize : cachePtr->lbufSize;
 
     assert(timeStringLength < 41);
     assert(timeStringLength == strlen(timeString));
@@ -962,7 +962,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
  */
 
 static char *
-LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
+LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
 {
     time_t    *tp;
     char      *bp;
@@ -971,7 +971,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
     NS_NONNULL_ASSERT(cachePtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    if (gmt != 0) {
+    if (gmt) {
         tp = &cachePtr->gtime;
         bp = cachePtr->gbuf;
         sizePtr = &cachePtr->gbufSize;
@@ -998,7 +998,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, int gmt)
         ptm = ns_localtime(&secs);
 
         n = strftime(bp, 32u, "[%d/%b/%Y:%H:%M:%S", ptm);
-        if (gmt == 0) {
+        if (!gmt) {
             bp[n++] = ']';
             bp[n] = '\0';
         } else {

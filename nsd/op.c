@@ -214,13 +214,13 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
 
 void
 Ns_UnRegisterRequest(const char *server, const char *method, const char *url,
-                     int inherit)
+                     bool inherit)
 {
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    Ns_UnRegisterRequestEx(server, method, url, (inherit != 0) ? 0u : NS_OP_NOINHERIT);
+    Ns_UnRegisterRequestEx(server, method, url, (inherit ? 0u : NS_OP_NOINHERIT));
 }
 
 
