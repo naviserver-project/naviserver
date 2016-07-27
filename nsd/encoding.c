@@ -454,7 +454,7 @@ Ns_GetEncodingCharset(Tcl_Encoding encoding)
 const char *
 NsFindCharset(const char *mimetype, size_t *lenPtr)
 {
-    const char *start;
+    const char *start, *charset = NULL;
 
     NS_NONNULL_ASSERT(mimetype != NULL);
     NS_NONNULL_ASSERT(lenPtr != NULL);
@@ -472,10 +472,10 @@ NsFindCharset(const char *mimetype, size_t *lenPtr)
                 ++end;
             }
             *lenPtr = (size_t)(end - start);
-            return start;
+            charset = start;
         }
     }
-    return NULL;
+    return charset;
 }
 
 

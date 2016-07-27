@@ -424,12 +424,13 @@ bool
 Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
 {
     const char *s;
+    bool        success = NS_TRUE;
 
     s = Ns_ConfigGetValue(section, key);
     if (s == NULL || sscanf(s, "%24" SCNd64, valuePtr) != 1) {
-        return NS_FALSE;
+        success = NS_FALSE;
     }
-    return NS_TRUE;
+    return success;
 }
 
 
@@ -783,21 +784,25 @@ static int
 ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     Ns_Set *set;
+    int     result = TCL_OK;
 
     if (argc != 3) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
                          argv[0], " key value", NULL);
         return TCL_ERROR;
     }
+    
     set = *((Ns_Set **) clientData);
-    if (set == NULL) {
+
+    if (likely(set != NULL)) {
+        (void)Ns_SetPut(set, argv[1], argv[2]);
+    } else {
         Tcl_AppendResult(interp, argv[0],
                          " not preceded by an ns_section command.", NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
-    (void)Ns_SetPut(set, argv[1], argv[2]);
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -823,16 +828,18 @@ static int
 SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     Ns_Set  **set;
+    int       result = TCL_OK;
 
-    if (argc != 2) {
+    if (unlikely(argc != 2)) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
                          argv[0], " sectionname", NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        set = (Ns_Set **) clientData;
+        *set = GetSection(argv[1], NS_TRUE);
     }
-    set = (Ns_Set **) clientData;
-    *set = GetSection(argv[1], NS_TRUE);
 
-    return TCL_OK;
+    return result;
 }
 
 

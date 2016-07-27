@@ -136,6 +136,7 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     const NsInterp *itPtr = arg;
     Ns_ReturnCode   status;
+    int             result = TCL_OK;
 
     if ((objc != 5) && (objc != 6)) {
         Tcl_WrongNumArgs(interp, 1, objv,
@@ -172,10 +173,10 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
         Tcl_AppendResult(interp, "could not authorize \"",
                          Tcl_GetString(objv[1]), " ",
                          Tcl_GetString(objv[2]), "\"", NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

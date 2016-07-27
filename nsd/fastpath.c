@@ -379,15 +379,16 @@ const char *
 Ns_PageRoot(const char *server)
 {
     const NsServer *servPtr;
+    const char     *pageRoot = NULL;
 
     NS_NONNULL_ASSERT(server != NULL);
 
     servPtr = NsGetServer(server);
-    if (servPtr != NULL) {
-        return servPtr->fastpath.pageroot;
+    if (likely(servPtr != NULL)) {
+        pageRoot = servPtr->fastpath.pageroot;
     }
 
-    return NULL;
+    return pageRoot;
 }
 
 

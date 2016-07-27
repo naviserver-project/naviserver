@@ -431,13 +431,16 @@ int
 Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
 {
     NsInterp *itPtr;
+    int       result;
 
     itPtr = NsGetInterpData(interp);
-    if (itPtr == NULL) {
+    if (likely(itPtr != NULL)) {
+        result = NsAdpFlush(itPtr, doStream);
+    } else {
         Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
-    return NsAdpFlush(itPtr, doStream);
+    return result;
 }
 
 int
