@@ -30,7 +30,7 @@ nsssl.o: dhparams.h
 LD_LIBRARY_PATH = LD_LIBRARY_PATH="./:$$LD_LIBRARY_PATH"
 NSD             = $(NAVISERVER)/bin/nsd
 NS_TEST_CFG     = -c -d -t tests/config.tcl -u nsadmin
-NS_TEST_ALL     = all.tcl $(TCLTESTARGS)
+NS_TEST_ALL     = all.tcl $(TESTFLAGS)
 PEM_FILE	= tests/etc/server.pem
 
 certificate: $(PEM_FILE)

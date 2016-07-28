@@ -67,7 +67,7 @@ help:
 	@echo '  make all && su -c "make install"'
 	@echo
 	@echo 'Example for running a single test in the test suite, under the debugger:'
-	@echo '  make gdbtest TCLTESTARGS="-file tclconnio.test -match tclconnio-1.1"'
+	@echo '  make gdbtest TESTFLAGS="-file tclconnio.test -match tclconnio-1.1"'
 	@echo
 
 install: install-dirs install-include install-tcl install-modules \
@@ -203,7 +203,7 @@ build-doc:
 #
 
 NS_TEST_CFG	= -u root -c -d -t $(srcdir)/tests/test.nscfg
-NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
+NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TESTFLAGS)
 NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
    DYLD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$DYLD_LIBRARY_PATH"
