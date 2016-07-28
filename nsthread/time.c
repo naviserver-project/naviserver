@@ -222,8 +222,8 @@ Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    timePtr->usec += usec;
     timePtr->sec += sec;
+    timePtr->usec += usec;
     Ns_AdjTime(timePtr);
 }
 

@@ -182,31 +182,37 @@ Ns_TclSetTimeObj(Tcl_Obj *objPtr, const Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
     long sec;
+    int  result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
     if (objPtr->typePtr == intTypePtr) {
-        if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
-            return TCL_ERROR;
+        if (likely(Tcl_GetLongFromObj(interp, objPtr, &sec) == TCL_OK)) {
+            timePtr->sec = sec;
+            timePtr->usec = 0;
+        } else {
+            result = TCL_ERROR;
         }
-        timePtr->sec = sec;
-        timePtr->usec = 0;
     } else {
-        if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
-            return TCL_ERROR;
+        if (objPtr->typePtr != &timeType) {
+            if (unlikely(Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK)) {
+                result = TCL_ERROR;
+            }
         }
-        timePtr->sec =  (long) objPtr->internalRep.twoPtrValue.ptr1;
-        timePtr->usec = (long) objPtr->internalRep.twoPtrValue.ptr2;
+        if (likely(objPtr->typePtr == &timeType)) {
+            timePtr->sec =  (long) objPtr->internalRep.twoPtrValue.ptr1;
+            timePtr->usec = (long) objPtr->internalRep.twoPtrValue.ptr2;
+        }
     }
-    return TCL_OK;
+    return result;
 }
+
 
 
 /*
@@ -225,24 +231,27 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr)
 {
+    int result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(timePtrPtr != NULL);
     
     if (objPtr->typePtr != &timeType) {
-        if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
-            return TCL_ERROR;
+        if (unlikely(Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK)) {
+            result = TCL_ERROR;
         }
     }
-    *timePtrPtr = ((Ns_Time *) (void *) &objPtr->internalRep);
+    if (likely(objPtr->typePtr == &timeType)) {
+        *timePtrPtr = ((Ns_Time *) (void *) &objPtr->internalRep);
+    }
 
-    return TCL_OK;
+    return result;
 }
+
 
 
 /*
@@ -264,9 +273,8 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
 int
 NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Time result = {0, 0}, t1, t2;
-    long sec;
-    int opt;
+    int     opt, rc = TCL_OK;
+    Ns_Time resultTime;
 
     static const char *const opts[] = {
 	"adjust", "diff", "format", "get", "incr", "make",
@@ -278,7 +286,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     };
 
     if (objc < 2) {
-      Tcl_SetObjResult(interp, Tcl_NewLongObj((long)time(NULL)));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)time(NULL)));
         return TCL_OK;
     }
 
@@ -289,107 +297,132 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     switch (opt) {
     case TGetIdx:
-        Ns_GetTime(&result);
+        {            
+            Ns_GetTime(&resultTime);
+            Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+        }
         break;
 
     case TMakeIdx:
-        if (objc != 3 && objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "sec ?usec?");
-            return TCL_ERROR;
-        }
-        if (Tcl_GetLongFromObj(interp, objv[2], &sec) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        result.sec = sec;
-        if (objc == 3) {
-            result.usec = 0;
-        } else if (Tcl_GetLongFromObj(interp, objv[3], &result.usec) != TCL_OK) {
-            return TCL_ERROR;
+        {
+            Ns_ObjvSpec   largs[] = {
+                {"sec",   Ns_ObjvLong, &resultTime.sec, NULL},
+                {"?usec", Ns_ObjvLong, &resultTime.usec, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+            }
         }
         break;
 
     case TIncrIdx:
-        if (objc != 4 && objc != 5) {
-            Tcl_WrongNumArgs(interp, 2, objv, "time sec ?usec?");
-            return TCL_ERROR;
+        {
+            Ns_Time       t2 = {0, 0}, *tPtr;
+            Ns_ObjvSpec   largs[] = {
+                {"time",  Ns_ObjvTime, &tPtr,  NULL},                
+                {"sec",   Ns_ObjvLong, &t2.sec,  NULL},
+                {"?usec", Ns_ObjvLong, &t2.usec, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            
+            if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                resultTime = *tPtr;
+                Ns_IncrTime(&resultTime, t2.sec, t2.usec);
+                Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+            }
         }
-        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK
-                || Tcl_GetLongFromObj(interp, objv[3], &sec) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        t2.sec = sec;
-        if (objc == 4) {
-            t2.usec = 0;
-        } else if (Tcl_GetLongFromObj(interp, objv[4], &t2.usec) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        Ns_IncrTime(&result, t2.sec, t2.usec);
         break;
 
     case TDiffIdx:
-        if (objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "time1 time2");
-            return TCL_ERROR;
+        {
+            Ns_Time      *tPtr1, *tPtr2;
+            Ns_ObjvSpec   largs[] = {
+                {"time1",  Ns_ObjvTime, &tPtr1,  NULL},                
+                {"time2",  Ns_ObjvTime, &tPtr2,  NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            
+            if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                (void)Ns_DiffTime(tPtr1, tPtr2, &resultTime);
+                Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+            }
         }
-        if (Ns_TclGetTimeFromObj(interp, objv[2], &t1) != TCL_OK ||
-            Ns_TclGetTimeFromObj(interp, objv[3], &t2) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        (void)Ns_DiffTime(&t1, &t2, &result);
         break;
 
     case TAdjustIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "time");
-            return TCL_ERROR;
+        {
+            Ns_Time      *tPtr;
+            Ns_ObjvSpec   largs[] = {
+                {"time",  Ns_ObjvTime, &tPtr,  NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            
+            if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                resultTime = *tPtr;
+                Ns_AdjTime(&resultTime);
+                Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+            }
         }
-        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        Ns_AdjTime(&result);
         break;
 
     case TSecondsIdx:
     case TMicroSecondsIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "time");
-            return TCL_ERROR;
+        {
+            Ns_Time      *tPtr;
+            Ns_ObjvSpec   largs[] = {
+                {"time",  Ns_ObjvTime, &tPtr,  NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            
+            if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewLongObj((long)(opt == TSecondsIdx ?
+                                                               tPtr->sec : tPtr->usec)));
+            }
         }
-        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)(opt == TSecondsIdx ?
-						       result.sec : result.usec)));
-        return TCL_OK;
+        break;
 
     case TFormatIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "time");
-            return TCL_ERROR;
-        }
-        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
-            return TCL_ERROR;
-        }
+        {
+            Ns_Time      *tPtr;
+            Ns_ObjvSpec   largs[] = {
+                {"time",  Ns_ObjvTime, &tPtr,  NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            
+            if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                Tcl_DString ds, *dsPtr = &ds;
 
-	{ 
-	  Tcl_DString ds, *dsPtr = &ds;
-
-	  Tcl_DStringInit(dsPtr);
-	  Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
-			   (int64_t)result.sec, result.usec);
-	  Tcl_DStringResult(interp, dsPtr);
-	}
-	return TCL_OK;
+                Tcl_DStringInit(dsPtr);
+                Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+                                 (int64_t)tPtr->sec, tPtr->usec);
+                Tcl_DStringResult(interp, dsPtr);
+            }
+            return rc;
+        }
+        break;
 
     default:
         /* unexpected value */
         assert(opt && 0);
+        rc = TCL_ERROR;
         break;
     }
 
-    Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&result));
-
-    return TCL_OK;
+    return rc;
 }
 
 
@@ -412,32 +445,35 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 static int
 TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    time_t           now;
-    const struct tm *ptm;
-    Tcl_Obj         *objPtr[9];
+    int              rc = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
-        return TCL_ERROR;
-    }
-    now = time(NULL);
-    if (PTR2INT(isGmt) != 0) {
-        ptm = ns_gmtime(&now);
+        rc = TCL_ERROR;
     } else {
-        ptm = ns_localtime(&now);
+        time_t           now;
+        const struct tm *ptm;
+        Tcl_Obj         *objPtr[9];
+
+        now = time(NULL);
+        if (PTR2INT(isGmt) != 0) {
+            ptm = ns_gmtime(&now);
+        } else {
+            ptm = ns_localtime(&now);
+        }
+        objPtr[0] = Tcl_NewIntObj(ptm->tm_sec);
+        objPtr[1] = Tcl_NewIntObj(ptm->tm_min);
+        objPtr[2] = Tcl_NewIntObj(ptm->tm_hour);
+        objPtr[3] = Tcl_NewIntObj(ptm->tm_mday);
+        objPtr[4] = Tcl_NewIntObj(ptm->tm_mon);
+        objPtr[5] = Tcl_NewIntObj(ptm->tm_year);
+        objPtr[6] = Tcl_NewIntObj(ptm->tm_wday);
+        objPtr[7] = Tcl_NewIntObj(ptm->tm_yday);
+        objPtr[8] = Tcl_NewIntObj(ptm->tm_isdst);
+        Tcl_SetListObj(Tcl_GetObjResult(interp), 9, objPtr);
     }
-    objPtr[0] = Tcl_NewIntObj(ptm->tm_sec);
-    objPtr[1] = Tcl_NewIntObj(ptm->tm_min);
-    objPtr[2] = Tcl_NewIntObj(ptm->tm_hour);
-    objPtr[3] = Tcl_NewIntObj(ptm->tm_mday);
-    objPtr[4] = Tcl_NewIntObj(ptm->tm_mon);
-    objPtr[5] = Tcl_NewIntObj(ptm->tm_year);
-    objPtr[6] = Tcl_NewIntObj(ptm->tm_wday);
-    objPtr[7] = Tcl_NewIntObj(ptm->tm_yday);
-    objPtr[8] = Tcl_NewIntObj(ptm->tm_isdst);
-    Tcl_SetListObj(Tcl_GetObjResult(interp), 9, objPtr);
 
     return TCL_OK;
 }
@@ -474,7 +510,7 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int            ms;
+    int            rc = TCL_OK;
     const Ns_Time *tPtr = NULL;
     Ns_ObjvSpec    args[] = {
         {"timespec", Ns_ObjvTime, &tPtr, NULL},
@@ -482,18 +518,18 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     };
     
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;    
-    }
-
-    if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
+        rc = TCL_ERROR;    
+    } else if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
         Tcl_AppendResult(interp, "invalid timespec: ",
                          Tcl_GetString(objv[1]), NULL);
-        return TCL_ERROR;
-    }
-    ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
-    Tcl_Sleep(ms);
+        rc = TCL_ERROR;
+    } else {
+        int  ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
 
-    return TCL_OK;
+        Tcl_Sleep(ms);
+    }
+
+    return rc;
 }
 
 
@@ -516,33 +552,38 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 int
 NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *fmt;
-    char    buf[200];
-    time_t  t;
-    long    sec;
+    long        sec;
+    int         rc = TCL_OK;
 
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "time ?fmt?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetLongFromObj(interp, objv[1], &sec) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    t = sec;
-
-    if (objc > 2) {
-        fmt = Tcl_GetString(objv[2]);
+        rc = TCL_ERROR;
+    } else if (Tcl_GetLongFromObj(interp, objv[1], &sec) != TCL_OK) {
+        rc = TCL_ERROR;
     } else {
-        fmt = "%c";
-    }
-    if (strftime(buf, sizeof(buf), fmt, ns_localtime(&t)) == 0u) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
-                               Tcl_GetString(objv[1]), NULL);
-        return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+        const char *fmt;
+        char        buf[200];
+        size_t      bufLength;
+        time_t      t;
 
-    return TCL_OK;
+        t = sec;
+        if (objc > 2) {
+            fmt = Tcl_GetString(objv[2]);
+        } else {
+            fmt = "%c";
+        }
+        
+        bufLength = strftime(buf, sizeof(buf), fmt, ns_localtime(&t));
+        if (unlikely(bufLength == 0u)) {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
+                                   Tcl_GetString(objv[1]), NULL);
+            rc = TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, (int)bufLength));
+        }
+    }
+    
+    return rc;
 }
 
 
@@ -613,6 +654,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
      * Look for the separator
      */
     char *sep;
+    int   rc = TCL_CONTINUE;
 
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(tPtr != NULL);
@@ -640,31 +682,36 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
             result = Tcl_GetInt(interp, str, &intValue);
             *sep = separator;
             if (result != TCL_OK) {
-                return TCL_ERROR;
+                rc = TCL_ERROR;
+            } else {
+                tPtr->sec = (long)intValue;
+                rc = TCL_OK;
             }
-            tPtr->sec = (long)intValue;
         }
 
         /*
          * Get usec
          */
-        if (separator == '.') {
+        if ((rc != TCL_ERROR) && (separator == '.')) {
             double dblValue;
             
             if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
-                return TCL_ERROR;
+                rc = TCL_ERROR;
+            } else {
+                tPtr->usec = (long)(dblValue * 1000000.0);
+                rc = TCL_OK;
             }
-            tPtr->usec = (long)(dblValue * 1000000.0);
             
         } else {
             if (Tcl_GetInt(interp, sep+1, &intValue) != TCL_OK) {
-                return TCL_ERROR;
+                rc = TCL_ERROR;
+            } else {
+                tPtr->usec = (long)intValue;
+                rc = TCL_OK;
             }
-            tPtr->usec = (long)intValue;
         }
-        return TCL_OK;
     }
-    return TCL_CONTINUE;
+    return rc;
 }
 
 
@@ -703,10 +750,11 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
          * When the type is "int", usec is 0.
          */
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            t.sec = sec;
+            t.usec = 0;
         }
-        t.sec = sec;
-        t.usec = 0;
     } else {
         result = Ns_GetTimeFromString(interp, Tcl_GetString(objPtr), &t);
     }
