@@ -475,7 +475,7 @@ TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         Tcl_SetListObj(Tcl_GetObjResult(interp), 9, objPtr);
     }
 
-    return TCL_OK;
+    return rc;
 }
 
 int

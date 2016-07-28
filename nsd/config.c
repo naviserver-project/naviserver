@@ -827,7 +827,6 @@ ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv
 static int
 SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    Ns_Set  **set;
     int       result = TCL_OK;
 
     if (unlikely(argc != 2)) {
@@ -835,7 +834,8 @@ SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *ar
                          argv[0], " sectionname", NULL);
         result = TCL_ERROR;
     } else {
-        set = (Ns_Set **) clientData;
+        Ns_Set  **set = (Ns_Set **) clientData;
+        
         *set = GetSection(argv[1], NS_TRUE);
     }
 
