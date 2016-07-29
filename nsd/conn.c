@@ -839,14 +839,15 @@ Ns_DString *
 Ns_ConnSockContent(const Ns_Conn *conn)
 {
     const Conn *connPtr;
+    Ns_DString *result = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
     connPtr = ((const Conn *)conn);
-    if (connPtr->reqPtr != NULL) {
-        return &connPtr->reqPtr->buffer;
+    if (likely(connPtr->reqPtr != NULL)) {
+        result = &connPtr->reqPtr->buffer;
     }
-    return NULL;
+    return result;
 }
 
 
@@ -1125,6 +1126,7 @@ bool
 Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
 {
     const ConnPool *poolPtr;
+    bool            result = NS_TRUE;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -1136,10 +1138,10 @@ Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
 	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
         
         if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
-            return NS_FALSE;
+            result = NS_FALSE;
         }
     }
-    return NS_TRUE;
+    return result;
 }
 
 
@@ -1163,12 +1165,13 @@ bool
 Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 {
     char *hdr;
+    bool  result = NS_TRUE;
 
     hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since");
     if (hdr != NULL && Ns_ParseHttpTime(hdr) < since) {
-        return NS_FALSE;
+        result = NS_FALSE;
     }
-    return NS_TRUE;
+    return result;
 }
 
 
@@ -1307,9 +1310,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Tcl_Channel          chan;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
-    const FormFile      *filePtr;
     Ns_DString           ds;
-    int                  idx, off, len, opt, n;
+    int                  idx, off, len, opt, n, result = TCL_OK;
     const char          *setName;
     int                  setNameLength;
 
@@ -1361,39 +1363,42 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
-        return TCL_ERROR;
-    }
-    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-				     &opt) != TCL_OK)) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
+    } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+				     &opt) != TCL_OK)) {
+        result = TCL_ERROR;
+    }
+    
     /*
      * Only the "isconnected" option operates without a conn.
      */
-
-    if (unlikely(opt == (int)CIsConnectedIdx)) {
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
-        return TCL_OK;
-    }
-    if (unlikely(connPtr == NULL)) {
+    if (likely(result == TCL_OK)
+        && unlikely(opt != (int)CIsConnectedIdx)
+        && unlikely(connPtr == NULL)
+        ) {
         Tcl_SetResult(interp, "no current connection", TCL_STATIC);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    }
+
+    if (result == TCL_ERROR) {
+        return result;
     }
 
     request = &connPtr->request;
     switch (opt) {
 
     case CIsConnectedIdx:
-        /* NB: Not reached - silence compiler warning. */
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
         break;
 
     case CKeepAliveIdx:
         if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2],
                                           &connPtr->keep) != TCL_OK) {
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
         }
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
         break;
 
     case CClientdataIdx:
@@ -1411,12 +1416,15 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (objc > 2) {
             if (Tcl_GetIntFromObj(interp, objv[2], &n) != TCL_OK
                     && Tcl_GetBooleanFromObj(interp, objv[2], &n) != TCL_OK) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                Ns_ConnSetCompression(conn, n);
             }
-            Ns_ConnSetCompression(conn, n);
         }
-        Tcl_SetObjResult(interp,
-                         Tcl_NewIntObj(Ns_ConnGetCompression(conn)));
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp,
+                             Tcl_NewIntObj(Ns_ConnGetCompression(conn)));
+        }
         break;
 
     case CUrlvIdx:
@@ -1425,7 +1433,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 Tcl_AppendElement(interp, request->urlv[idx]);
             }
         } else if (Tcl_GetIntFromObj(interp, objv[2], &idx) != TCL_OK) {
-            return TCL_ERROR;
+            result = TCL_ERROR;
         } else if (idx >= 0 && idx < request->urlc) {
             Tcl_SetResult(interp, request->urlv[idx], TCL_STATIC);
         }
@@ -1439,12 +1447,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 connPtr->auth = Ns_SetCreate(NULL);
             }
             if (unlikely(Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC) != TCL_OK)) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
+                setNameLength++;
+                memcpy(itPtr->nsconn.auth, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
+                itPtr->nsconn.flags |= CONN_TCLAUTH;
             }
-            setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
-            setNameLength++;
-            memcpy(itPtr->nsconn.auth, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
-            itPtr->nsconn.flags |= CONN_TCLAUTH;
         }
         break;
 
@@ -1464,10 +1473,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         {
             bool        binary = NS_FALSE;
             int         offset = 0, length = -1, requiredLength;
-            size_t      contentLength;
-            const char *content;
             Tcl_DString encDs;
-            
+
             Ns_ObjvSpec lopts[] = {
                 {"-binary",    Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
                 {NULL, NULL, NULL, NULL}
@@ -1479,10 +1486,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             };
 
             if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
+                result = TCL_ERROR;
 
-            if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
+            } else if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
                 /* 
                  * In cases, the content is allocated via mmap, the content
                  * is unmapped when the socket is closed. Accessing the
@@ -1493,68 +1499,76 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                  * strategy.
                  */
                 Tcl_AppendResult(interp, "connection already closed, can't get content", NULL);
-                return TCL_ERROR;
-            }
-            if (offset < 0 || length < -1) {
+                result = TCL_ERROR;
+
+            } else if (offset < 0 || length < -1) {
                 Tcl_AppendResult(interp, "invalid offset and/or length specified", NULL);
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
             
             requiredLength = length;
-            if (offset > 0 && ((size_t)offset > connPtr->reqPtr->length)) {
+            if (result == TCL_OK
+                && offset > 0 && ((size_t)offset > connPtr->reqPtr->length)) {
                 Tcl_AppendResult(interp, "offset exceeds available content length", NULL);
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
-
-            if (length == -1) {
+            
+            if (result == TCL_OK
+                && length == -1) {
                 length = (int)connPtr->reqPtr->length - offset;
-            } else if (length > -1 && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)) {
+            } else if (result == TCL_OK
+                       && length > -1 && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)) {
                 Tcl_AppendResult(interp, "offset + length exceeds available content length", NULL);
-                return TCL_ERROR;
-            }
-                        
-            if (connPtr->reqPtr->length == 0u) {
-                content = NULL;
-                contentLength = 0u;
-                Tcl_ResetResult(interp);
-            } else if (!binary) {
-                content = Tcl_ExternalToUtfDString(connPtr->outputEncoding,
-                                                   connPtr->reqPtr->content,
-                                                   (int)connPtr->reqPtr->length,
-                                                   &encDs);
-                contentLength = (size_t)Tcl_DStringLength(&encDs);
-                if (requiredLength == -1) {
-                    length = Tcl_DStringLength(&encDs) - offset;
-                }
-            } else {
-                content = connPtr->reqPtr->content;
-                contentLength = connPtr->reqPtr->length;
+                result = TCL_ERROR;
             }
 
-            if (contentLength > 0u) {
-                if (requiredLength == -1 && offset == 0) {
-                    /*
-                     * return full content
-                     */
-                    if (!binary) {
-                        Tcl_DStringResult(interp, &encDs);
-                    } else {
-                        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
-                                                                     (int)connPtr->reqPtr->length));
+            if (result == TCL_OK) {
+                size_t      contentLength;
+                const char *content;
+                
+                if (connPtr->reqPtr->length == 0u) {
+                    content = NULL;
+                    contentLength = 0u;
+                    Tcl_ResetResult(interp);
+                } else if (!binary) {
+                    content = Tcl_ExternalToUtfDString(connPtr->outputEncoding,
+                                                       connPtr->reqPtr->content,
+                                                       (int)connPtr->reqPtr->length,
+                                                       &encDs);
+                    contentLength = (size_t)Tcl_DStringLength(&encDs);
+                    if (requiredLength == -1) {
+                        length = Tcl_DStringLength(&encDs) - offset;
                     }
                 } else {
-                    /*
-                     * return partial content
-                     */
-                    if (!binary) {
-                        Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
-                        
-                        Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));
-                        Tcl_DStringFree(&encDs);
-                        Tcl_DecrRefCount(contentObj);
+                    content = connPtr->reqPtr->content;
+                    contentLength = connPtr->reqPtr->length;
+                }
+
+                if (contentLength > 0u) {
+                    if (requiredLength == -1 && offset == 0) {
+                        /*
+                         * return full content
+                         */
+                        if (!binary) {
+                            Tcl_DStringResult(interp, &encDs);
+                        } else {
+                            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
+                                                                         (int)connPtr->reqPtr->length));
+                        }
                     } else {
-                        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)content + offset, 
-                                                                     (int)length));
+                        /*
+                         * return partial content
+                         */
+                        if (!binary) {
+                            Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
+                        
+                            Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));
+                            Tcl_DStringFree(&encDs);
+                            Tcl_DecrRefCount(contentObj);
+                        } else {
+                            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)content + offset, 
+                                                                         (int)length));
+                        }
                     }
                 }
             }
@@ -1575,11 +1589,12 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             if (encoding == NULL) {
                 Tcl_AppendResult(interp, "no such encoding: ",
                                  Tcl_GetString(objv[2]), NULL);
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                connPtr->outputEncoding = encoding;
             }
-            connPtr->outputEncoding = encoding;
         }
-        if (connPtr->outputEncoding != NULL) {
+        if ((result == TCL_OK) && (connPtr->outputEncoding != NULL)) {
             const char *charset = Ns_GetEncodingCharset(connPtr->outputEncoding);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
         }
@@ -1591,7 +1606,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             if (encoding == NULL) {
                 Tcl_AppendResult(interp, "no such encoding: ",
                                  Tcl_GetString(objv[2]), NULL);
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
             /*
              * Check to see if form data has already been parsed.
@@ -1606,7 +1621,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             }
             connPtr->urlEncoding = encoding;
         }
-        if (connPtr->urlEncoding != NULL) {
+        if ((result == TCL_OK) && (connPtr->urlEncoding != NULL)) {
             const char *charset = Ns_GetEncodingCharset(connPtr->urlEncoding);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
         }
@@ -1625,12 +1640,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             if (unlikely(Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC) != TCL_OK)) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
+                setNameLength++;
+                memcpy(itPtr->nsconn.hdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
+                itPtr->nsconn.flags |= CONN_TCLHDRS;
             }
-            setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
-            setNameLength++;
-            memcpy(itPtr->nsconn.hdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
-            itPtr->nsconn.flags |= CONN_TCLHDRS;
         }
         break;
 
@@ -1639,12 +1655,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             if (unlikely(Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC) != TCL_OK)) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
+                setNameLength++;
+                memcpy(itPtr->nsconn.outhdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
+                itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
             }
-            setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
-            setNameLength++;
-            memcpy(itPtr->nsconn.outhdrs, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
-            itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
         }
         break;
 
@@ -1656,27 +1673,30 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
             if (form == NULL) {
                 itPtr->nsconn.form[0] = '\0';
+                itPtr->nsconn.flags |= CONN_TCLFORM;
             } else {
                 if (unlikely(Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC) != TCL_OK)) {
-                    return TCL_ERROR;
+                    result = TCL_ERROR;
+                } else {
+                    setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
+                    setNameLength++;
+                    memcpy(itPtr->nsconn.form, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
+                    itPtr->nsconn.flags |= CONN_TCLFORM;
                 }
-                setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
-                setNameLength++;
-                memcpy(itPtr->nsconn.form, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
             }
-            itPtr->nsconn.flags |= CONN_TCLFORM;
         }
         break;
 
     case CFilesIdx:
         if (objc != 2) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
-            return TCL_ERROR;
-        }
-        hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
-        while (hPtr != NULL) {
-            Tcl_AppendElement(interp, Tcl_GetHashKey(&connPtr->files, hPtr));
-            hPtr = Tcl_NextHashEntry(&search);
+            result = TCL_ERROR;
+        } else {
+            hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
+            while (hPtr != NULL) {
+                Tcl_AppendElement(interp, Tcl_GetHashKey(&connPtr->files, hPtr));
+                hPtr = Tcl_NextHashEntry(&search);
+            }
         }
         break;
 
@@ -1685,39 +1705,42 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CFileHdrIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
-            return TCL_ERROR;
-        }
-        hPtr = Tcl_FindHashEntry(&connPtr->files, Tcl_GetString(objv[2]));
-        if (hPtr == NULL) {
-            Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]),
-                             NULL);
-            return TCL_ERROR;
-        }
-        filePtr = Tcl_GetHashValue(hPtr);
-        if (opt == (int)CFileOffIdx) {
-            Tcl_SetObjResult(interp, (filePtr->offObj != NULL) ? filePtr->offObj : Tcl_NewObj());
-        } else if (opt == (int)CFileLenIdx) {
-            Tcl_SetObjResult(interp, (filePtr->sizeObj != NULL) ? filePtr->sizeObj : Tcl_NewObj());
+            result = TCL_ERROR;
         } else {
-            Tcl_SetObjResult(interp, (filePtr->hdrObj != NULL) ? filePtr->hdrObj : Tcl_NewObj() );
+            hPtr = Tcl_FindHashEntry(&connPtr->files, Tcl_GetString(objv[2]));
+            if (hPtr == NULL) {
+                Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]),
+                                 NULL);
+                result = TCL_ERROR;
+            } else {
+                const FormFile *filePtr = Tcl_GetHashValue(hPtr);
+                
+                if (opt == (int)CFileOffIdx) {
+                    Tcl_SetObjResult(interp, (filePtr->offObj != NULL) ? filePtr->offObj : Tcl_NewObj());
+                } else if (opt == (int)CFileLenIdx) {
+                    Tcl_SetObjResult(interp, (filePtr->sizeObj != NULL) ? filePtr->sizeObj : Tcl_NewObj());
+                } else {
+                    Tcl_SetObjResult(interp, (filePtr->hdrObj != NULL) ? filePtr->hdrObj : Tcl_NewObj() );
+                }
+            }
         }
         break;
 
     case CCopyIdx:
         if (objc != 5) {
             Tcl_WrongNumArgs(interp, 2, objv, "off len chan");
-            return TCL_ERROR;
-        }
-        if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK ||
-            GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
+            result = TCL_ERROR;
+
+        } else if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK ||
+                   GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
+            result = TCL_ERROR;
+
+        } else if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
             Tcl_AppendResult(interp, "could not write ",
                              Tcl_GetString(objv[3]), " bytes to ",
                              Tcl_GetString(objv[4]), ": ",
                              Tcl_PosixError(interp), NULL);
-            return TCL_ERROR;
+            result = TCL_ERROR;
         }
         break;
 
@@ -1778,14 +1801,18 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CStatusIdx:
         if (objc < 2 || objc > 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "?status?");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+            
         } else if (objc == 3) {
             int status;
+            
             if (Tcl_GetIntFromObj(interp, objv[2], &status) != TCL_OK) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+                
+            } else {
+                Tcl_SetObjResult(interp,Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
+                Ns_ConnSetResponseStatus(conn, status);
             }
-            Tcl_SetObjResult(interp,Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
-            Ns_ConnSetResponseStatus(conn, status);
         } else {
             Tcl_SetObjResult(interp,Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
         }
@@ -1818,24 +1845,28 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CChannelIdx:
         chan = MakeConnChannel(itPtr, conn);
         if (chan == NULL) {
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            Tcl_RegisterChannel(interp, chan);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),-1));
         }
-        Tcl_RegisterChannel(interp, chan);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),-1));
 	break;
 
     case CContentSentLenIdx:
         if (objc == 2) {
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)connPtr->nContentSent));
+            
         } else if (objc == 3) {
 	    Tcl_WideInt sent;
+            
             if (Tcl_GetWideIntFromObj(interp, objv[2], &sent) != TCL_OK) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                connPtr->nContentSent = (size_t)sent;
             }
-	    connPtr->nContentSent = (size_t)sent;
         } else {
             Tcl_WrongNumArgs(interp, 2, objv, "?value?");
-            return TCL_ERROR;
+            result = TCL_ERROR;
         }
 	break;
 
@@ -1850,7 +1881,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1874,21 +1905,21 @@ int
 NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsServer *servPtr = NsGetInitServer();
-    Ns_TclCallback *cbPtr;
     int             result = TCL_OK;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
-        return TCL_ERROR;
-    }
-    if (servPtr == NULL) {
-        Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
-			      objv[1], objc - 2, objv + 2);
-    if (Ns_SetConnLocationProc(NsTclConnLocation, cbPtr) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (servPtr == NULL) {
+        Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
+        result = TCL_ERROR;
+    } else {
+        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
+                                                  objv[1], objc - 2, objv + 2);
+        if (Ns_SetConnLocationProc(NsTclConnLocation, cbPtr) != NS_OK) {
+            result = TCL_ERROR;
+        }
     }
 
     return result;
@@ -1915,7 +1946,7 @@ int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = clientData;
-    int             toCopy = 0;
+    int             toCopy = 0, result = TCL_OK;;
     const char     *chanName;
     const Request  *reqPtr;
     Tcl_Channel     chan;
@@ -1935,29 +1966,31 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     };
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    if (itPtr->conn == NULL) {
+        result = TCL_ERROR;
+        
+    } else if (itPtr->conn == NULL) {
         Tcl_SetResult(interp, "no connection", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    if (GetChan(interp, chanName, &chan) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (Tcl_Flush(chan) != TCL_OK) {
+        result = TCL_ERROR;
+        
+    } else if (GetChan(interp, chanName, &chan) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (Tcl_Flush(chan) != TCL_OK) {
 	Ns_TclPrintfResult(interp, "flush returned error: %s", strerror(Tcl_GetErrno()));
-	return TCL_ERROR;
-    }
-    reqPtr = ((Conn *)itPtr->conn)->reqPtr;
-    if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
-        toCopy = (int)reqPtr->avail;
-    }
-    if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
-        Tcl_SetResult(interp, "could not copy content", TCL_STATIC);
-        return TCL_ERROR;
+	result = TCL_ERROR;
+
+    } else {
+        reqPtr = ((Conn *)itPtr->conn)->reqPtr;
+        if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
+            toCopy = (int)reqPtr->avail;
+        }
+        if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
+            Tcl_SetResult(interp, "could not copy content", TCL_STATIC);
+            result = TCL_ERROR;
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1982,13 +2015,15 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const void *arg)
 {
     const Ns_TclCallback *cbPtr = arg;
     Tcl_Interp           *interp = Ns_GetConnInterp(conn);
+    char                 *result;
 
     if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != TCL_OK) {
 	(void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
-        return NULL;
+        result =  NULL;
+    } else {
+        result = Ns_DStringValue(dest);
     }
-
-    return Ns_DStringValue(dest);
+    return result;
 }
 
 
@@ -2013,7 +2048,7 @@ static int
 GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
 {
     Tcl_Channel chan;
-    int         mode;
+    int         mode, result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(id != NULL);
@@ -2021,17 +2056,18 @@ GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
 
     chan = Tcl_GetChannel(interp, id, &mode);
     if (chan == (Tcl_Channel) NULL) {
-        return TCL_ERROR;
-    }
-    if ((mode & TCL_WRITABLE) == 0) {
+        result = TCL_ERROR;
+        
+    } else if ((mode & TCL_WRITABLE) == 0) {
         Tcl_AppendResult(interp, "channel \"", id,
                          "\" wasn't opened for writing", NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        *chanPtr = chan;
     }
 
-    *chanPtr = chan;
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -2056,30 +2092,31 @@ static int
 GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
            int *lenPtr)
 {
-    int off, len;
+    int off, len, result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(connPtr != NULL);
 
     if (Tcl_GetIntFromObj(interp, objv[0], &off) != TCL_OK
         || Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (off < 0 || (size_t)off > connPtr->reqPtr->length) {
+        result = TCL_ERROR;
+
+    } else if (off < 0 || (size_t)off > connPtr->reqPtr->length) {
         Tcl_AppendResult(interp, "invalid offset: ", Tcl_GetString(objv[0]),
                          NULL);
-        return TCL_ERROR;
-    }
-    if (len < 0 || (size_t)len > (connPtr->reqPtr->length - (size_t)off)) {
+        result = TCL_ERROR;
+
+    } else if (len < 0 || (size_t)len > (connPtr->reqPtr->length - (size_t)off)) {
         Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[1]),
                          NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        *offPtr = off;
+        *lenPtr = len;
     }
 
-    *offPtr = off;
-    *lenPtr = len;
-
-    return TCL_OK;
+    return result;
 }
 
 
