@@ -61,12 +61,12 @@ static int JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NO
 static int PngSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static int GifSize (Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int JpegRead2Bytes(Tcl_Channel chan, uint32_t *value) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static bool JpegRead2Bytes(Tcl_Channel chan, uint32_t *value) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int JpegNextMarker(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 
 static enum imgtype GetImageType(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 
-static void SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h) NS_GNUC_NONNULL(1);
+static void SetResultObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h) NS_GNUC_NONNULL(1);
 
 static int ChanGetc(Tcl_Channel chan) NS_GNUC_NONNULL(1);
 static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -91,32 +91,35 @@ static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NON
 int
 NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *file, *type = "unknown";
-    Tcl_Channel  chan;
+    const char  *file;
     int          result;
+    Ns_ObjvSpec  args[] = {
+        {"file",  Ns_ObjvString, &file, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        const char  *type = "unknown";
+        Tcl_Channel  chan = GetFileChan(interp, file);
+        
+        if (chan == NULL) {
+            result = TCL_ERROR;
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file");
-        return TCL_ERROR;
+        } else {
+            switch (GetImageType(chan)) {
+            case jpeg:    type = "jpeg";    break;
+            case png:     type = "png";     break;
+            case gif:     type = "gif";     break;
+            case unknown: type = "unknown"; break;
+            default: /*should not happen */ assert(0); break;
+            }
+            result = Tcl_Close(interp, chan);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
+        }
     }
-
-    file = Tcl_GetString(objv[1]);
-    chan = GetFileChan(interp, file);
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-
-    switch (GetImageType(chan)) {
-    case jpeg:    type = "jpeg";    break;
-    case png:     type = "png";     break;
-    case gif:     type = "gif";     break;
-    case unknown: type = "unknown"; break;
-    default: /*should not happen */ assert(0); break;
-    }
-
-    result = Tcl_Close(interp, chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
-
     return result;
 }
 
@@ -139,32 +142,36 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file, *mime = "image/unknown";
-    Tcl_Channel chan;
+    const char *file;
     int         result;
+    Ns_ObjvSpec args[] = {
+        {"file",  Ns_ObjvString, &file, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        const char  *mime = "image/unknown";
+        Tcl_Channel  chan = GetFileChan(interp, file);
+        
+        if (chan == NULL) {
+            result = TCL_ERROR;
+        } else {
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file");
-        return TCL_ERROR;
+            switch (GetImageType(chan)) {
+            case jpeg:    mime = "image/jpeg";    break;
+            case png:     mime = "image/png";     break;
+            case gif:     mime = "image/gif";     break;
+            case unknown: mime = "image/unknown"; break;
+            default: /*should not happen */ assert(0); break;
+            }
+
+            result = Tcl_Close(interp, chan);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(mime, -1));
+        }
     }
-
-    file = Tcl_GetString(objv[1]);
-    chan = GetFileChan(interp, file);
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-
-    switch (GetImageType(chan)) {
-    case jpeg:    mime = "image/jpeg";    break;
-    case png:     mime = "image/png";     break;
-    case gif:     mime = "image/gif";     break;
-    case unknown: mime = "image/unknown"; break;
-    default: /*should not happen */ assert(0); break;
-    }
-
-    result = Tcl_Close(interp, chan);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(mime, -1));
-
     return result;
 }
 
@@ -189,40 +196,46 @@ int
 NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *file;
-    int         status = TCL_ERROR;
-    uint32_t    w = 0u, h = 0u;
-    Tcl_Channel chan;
-
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file");
-        return TCL_ERROR;
-    }
-
-    file = Tcl_GetString(objv[1]);
-    chan = GetFileChan(interp, file);
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-
-    switch (GetImageType(chan)) {
-    case jpeg:    status = JpegSize(chan, &w, &h); break;
-    case png:     status = PngSize (chan, &w, &h); break;
-    case gif:     status = GifSize (chan, &w, &h); break;
-    case unknown: status = TCL_ERROR; break;
-    default: /*should not happen */ assert(0); break;
-    }
-
-    if (Tcl_Close(interp, chan) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (status != TCL_OK) {
-        SetObjDims(interp, 0u, 0u);
+    int         result;
+    Ns_ObjvSpec args[] = {
+        {"file",  Ns_ObjvString, &file, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
     } else {
-        SetObjDims(interp, w, h);
+        Tcl_Channel  chan = GetFileChan(interp, file);
+
+        if (chan == NULL) {
+            result = TCL_ERROR;
+        } else {
+            uint32_t    w = 0u, h = 0u;
+
+            switch (GetImageType(chan)) {
+            case jpeg:    result = JpegSize(chan, &w, &h); break;
+            case png:     result = PngSize (chan, &w, &h); break;
+            case gif:     result = GifSize (chan, &w, &h); break;
+            case unknown: result = TCL_ERROR; break;
+            default: /*should not happen */ result = TCL_ERROR; assert(0); break;
+            }
+            
+            if (Tcl_Close(interp, chan) != TCL_OK) {
+                result = TCL_ERROR;
+            } else {
+            
+                if (result != TCL_OK) {
+                    SetResultObjDims(interp, 0u, 0u);
+                    result = TCL_OK;
+                } else {
+                    SetResultObjDims(interp, w, h);
+                }
+            }
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -246,28 +259,32 @@ int
 NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *file;
-    uint32_t    w, h;
-    Tcl_Channel chan;
     int         result;
-
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "gif_file");
-        return TCL_ERROR;
-    }
-    file = Tcl_GetString(objv[1]);
-    chan = GetFileChan(interp, file);
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-    if (GetImageType(chan) != gif || GifSize(chan, &w, &h) != TCL_OK) {
-        (void)Tcl_Close(interp, chan);
-        Tcl_AppendResult(interp, "invalid GIF file \"", file, "\"", NULL);
-        return TCL_ERROR;
-    }
+    Ns_ObjvSpec args[] = {
+        {"gif_file", Ns_ObjvString, &file, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     
-    result = Tcl_Close(interp, chan);
-    SetObjDims(interp, w, h);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        uint32_t    w = 0u, h = 0u;
+        Tcl_Channel chan = GetFileChan(interp, file);
+    
+        if (chan == NULL) {
+            result = TCL_ERROR;
 
+        } else if (GetImageType(chan) != gif || GifSize(chan, &w, &h) != TCL_OK) {
+            (void)Tcl_Close(interp, chan);
+            Tcl_AppendResult(interp, "invalid GIF file \"", file, "\"", NULL);
+            result = TCL_ERROR;
+
+        } else {
+            result = Tcl_Close(interp, chan);
+            SetResultObjDims(interp, w, h);            
+        }
+    }
     return result;
 }
 
@@ -292,28 +309,32 @@ int
 NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *file;
-    uint32_t    w, h;
-    Tcl_Channel chan;
     int         result;
+    Ns_ObjvSpec args[] = {
+        {"png_file", Ns_ObjvString, &file, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        uint32_t    w, h;
+        Tcl_Channel chan = GetFileChan(interp, file);
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "png_file");
-        return TCL_ERROR;
-    }
-    file = Tcl_GetString(objv[1]);
-    chan = GetFileChan(interp, file);
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-    if (GetImageType(chan) != png || PngSize(chan, &w, &h) != TCL_OK) {
-        (void)Tcl_Close(interp, chan);
-        Tcl_AppendResult(interp, "invalid PNG file \"", file, "\"", NULL);
-        return TCL_ERROR;
-    }
+        if (chan == NULL) {
+            result = TCL_ERROR;
 
-    result = Tcl_Close(interp, chan);
-    SetObjDims(interp, w, h);
+        } else if (GetImageType(chan) != png || PngSize(chan, &w, &h) != TCL_OK) {
+            (void)Tcl_Close(interp, chan);
+            Tcl_AppendResult(interp, "invalid PNG file \"", file, "\"", NULL);
+            result = TCL_ERROR;
 
+        } else {
+            result = Tcl_Close(interp, chan);
+            SetResultObjDims(interp, w, h);
+        }
+    }
     return result;
 }
 
@@ -338,28 +359,32 @@ int
 NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *file;
-    uint32_t    w = 0u, h = 0u;
-    Tcl_Channel chan;
     int         result;
+    Ns_ObjvSpec args[] = {
+        {"jpeg_file", Ns_ObjvString, &file, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        uint32_t    w = 0u, h = 0u;
+        Tcl_Channel chan = GetFileChan(interp, file);
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "jpeg_file");
-        return TCL_ERROR;
-    }
-    file = Tcl_GetString(objv[1]);
-    chan = GetFileChan(interp, file);
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-    if (GetImageType(chan) != jpeg || JpegSize(chan, &w, &h) != TCL_OK) {
-        (void) Tcl_Close(interp, chan);
-        Tcl_AppendResult(interp, "invalid JPEG file \"", file, "\"", NULL);
-        return TCL_ERROR;
-    }
+        if (chan == NULL) {
+            result = TCL_ERROR;
 
-    result = Tcl_Close(interp, chan);
-    SetObjDims(interp, w, h);
+        } else if (GetImageType(chan) != jpeg || JpegSize(chan, &w, &h) != TCL_OK) {
+            (void) Tcl_Close(interp, chan);
+            Tcl_AppendResult(interp, "invalid JPEG file \"", file, "\"", NULL);
+            result = TCL_ERROR;
 
+        } else {
+            result = Tcl_Close(interp, chan);
+            SetResultObjDims(interp, w, h);
+        }
+    }        
     return result;
 }
 
@@ -467,27 +492,27 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 static int
 PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
-    unsigned int w, h;
+    unsigned int w = 0u, h = 0u;
+    int          result = TCL_OK;
 
     NS_NONNULL_ASSERT(chan != NULL);
     NS_NONNULL_ASSERT(wPtr != NULL);
     NS_NONNULL_ASSERT(hPtr != NULL);
 
-    if (Tcl_Seek(chan, 16LL, SEEK_SET) == -1 || Tcl_Eof(chan) == 1) {
-        return TCL_ERROR;
-    }
+    if (
+        (Tcl_Seek(chan, 16LL, SEEK_SET) == -1)
+        || (Tcl_Eof(chan) == 1)
+        || (Tcl_Read(chan, (char *)&w, 4) != 4)
+        || (Tcl_Read(chan, (char *)&h, 4) != 4)
+        ) {
+        result = TCL_ERROR;
 
-    if (Tcl_Read(chan, (char *)&w, 4) != 4) {
-        return TCL_ERROR;
+    } else {
+        *wPtr = htonl(w);
+        *hPtr = htonl(h);
     }
-    if (Tcl_Read(chan, (char *)&h, 4) != 4) {
-        return TCL_ERROR;
-    }
-
-    *wPtr = htonl(w);
-    *hPtr = htonl(h);
-
-    return TCL_OK;
+    
+    return result;
 }
 
 
@@ -510,6 +535,8 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 static int
 JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
+    int result = TCL_ERROR;
+    
     NS_NONNULL_ASSERT(chan != NULL);
     NS_NONNULL_ASSERT(wPtr != NULL);
     NS_NONNULL_ASSERT(hPtr != NULL);
@@ -525,10 +552,12 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
             }
             if (0xC0 <= i && i <= 0xC3) {
 	        uint32_t first;
-                if (JpegRead2Bytes(chan, &first) == 1 && ChanGetc(chan) != EOF
-                    && JpegRead2Bytes(chan, hPtr) == 1
-                    && JpegRead2Bytes(chan, wPtr) == 1) {
-                    return TCL_OK;
+                
+                if (JpegRead2Bytes(chan, &first) && ChanGetc(chan) != EOF
+                    && JpegRead2Bytes(chan, hPtr)
+                    && JpegRead2Bytes(chan, wPtr)
+                    ) {
+                    result = TCL_OK;
                 }
                 break;
             }
@@ -539,7 +568,7 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         }
     }
 
-    return TCL_ERROR;
+    return result;
 }
 
 
@@ -560,10 +589,11 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 JpegRead2Bytes(Tcl_Channel chan, uint32_t *value)
 {
     int c1, c2;
+    bool success;
 
     NS_NONNULL_ASSERT(chan != NULL);
     NS_NONNULL_ASSERT(value != NULL);
@@ -571,11 +601,12 @@ JpegRead2Bytes(Tcl_Channel chan, uint32_t *value)
     c1 = ChanGetc(chan);
     c2 = ChanGetc(chan);
     if (c1 == EOF || c2 == EOF) {
-        return 0;
+        success = NS_FALSE;
+    } else {
+        *value = (((unsigned int) c1) << 8) + ((unsigned int) c2);
+        success = NS_TRUE;
     }
-
-    *value = (((unsigned int) c1) << 8) + ((unsigned int) c2);
-    return 1;
+    return success;
 }
 
 
@@ -660,14 +691,12 @@ GetImageType(Tcl_Channel chan)
     NS_NONNULL_ASSERT(chan != NULL);
     
     (void)Tcl_Seek(chan, 0LL, SEEK_SET);
-
     toRead = (int)sizeof(buf);
+    
     if (Tcl_Read(chan, (char*)buf, toRead) != toRead) {
         (void)Tcl_Seek(chan, 0LL, SEEK_SET);
-        return type;
-    }
 
-    if (memcmp(buf, jpeg_magic, sizeof(jpeg_magic)) == 0) {
+    } else if (memcmp(buf, jpeg_magic, sizeof(jpeg_magic)) == 0) {
         unsigned char trail[] = {0x00u, 0x00u};
 	static const unsigned char jpeg_trail  [] = {0xffu, 0xd9u};
 
@@ -677,9 +706,11 @@ GetImageType(Tcl_Channel chan)
         if (memcmp(trail, jpeg_trail, 2u) == 0) {
             type = jpeg;
         }
+        
     } else if (   memcmp(gif87_magic, buf, sizeof(gif87_magic)) == 0
                || memcmp(gif89_magic, buf, sizeof(gif89_magic)) == 0) {
         type = gif;
+        
     } else if (memcmp(png_magic, buf, sizeof(png_magic)) == 0) {
         type = png;
     }
@@ -710,21 +741,23 @@ static int
 ChanGetc(Tcl_Channel chan)
 {
     unsigned char buf[1];
+    int           resultChar;
 
     NS_NONNULL_ASSERT(chan != NULL);
 
     if (Tcl_Read(chan, (char *) buf, 1) != 1) {
-        return EOF;
+        resultChar = EOF;
+    } else {
+        resultChar = (int) buf[0];
     }
-
-    return (int) buf[0];
+    return resultChar;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * SetObjDims --
+ * SetResultObjDims --
  *
  *      Set width and height dimensions as a two element list.
  *
@@ -738,7 +771,7 @@ ChanGetc(Tcl_Channel chan)
  */
 
 static void
-SetObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
+SetResultObjDims(Tcl_Interp *interp, uint32_t w, uint32_t h)
 {
     Tcl_Obj *objv[2];
 
@@ -776,10 +809,9 @@ GetFileChan(Tcl_Interp *interp, const char *path)
     
     chan = Tcl_OpenFileChannel(interp, path, "r", 0);
     if (chan != NULL) {
-        if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
-            != TCL_OK) {
+        if (Tcl_SetChannelOption(interp, chan, "-translation", "binary") != TCL_OK) {
             (void)Tcl_Close(interp, chan);
-            return NULL;
+            chan = NULL;
         }
     }
 
