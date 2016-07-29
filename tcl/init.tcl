@@ -30,7 +30,7 @@
 #
 # init.tcl --
 #
-#    Naviserver looks for init.tcl before sourcing all other files
+#    NaviServer looks for init.tcl before sourcing all other files
 #    in directory order.
 #
 
@@ -46,7 +46,7 @@ set ::errorInfo ""
 # packages with our private library directory and not
 # in some public, like /usr/local/lib or such. This
 # way we avoid clashes with modules having multiple
-# versions, one for general use and one for Naviserver.
+# versions, one for general use and one for NaviServer.
 #
 
 if {[info exists ::auto_path] == 0} {

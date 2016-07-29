@@ -188,7 +188,7 @@ server will  setuid(2) after startup.
 
 [para]
 
-If Naviserver was installed with default nsd.tcl config file, just type /usr/local/ns/bin/nsd
+If NaviServer was installed with default nsd.tcl config file, just type /usr/local/ns/bin/nsd
 and it will be started in the background listening on port 8080.
 
 [para]

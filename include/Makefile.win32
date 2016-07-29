@@ -34,7 +34,7 @@
 #
 # Makefile.win32 --
 #
-# 	Common nmake file for Naviserver Win32 builds.
+# 	Common nmake file for NaviServer Win32 builds.
 #
 # Usage:
 #
@@ -90,7 +90,7 @@ DLL = $(MOD:.so=)
 #
 
 !ifndef NSBUILD
-# We are linking a module against an already-installed Naviserver:
+# We are linking a module against an already-installed NaviServer:
 INCDIR = $(NAVISERVER)\include
 LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" libnsd.lib nsthread.lib
 !else
@@ -176,7 +176,7 @@ DLLOPTS	= /EXPORT:$(DLLINIT)
 # nsthread and nsd do NOT define Ns_ModuleInit functions.
 DLLOPTS	= 
 !else
-# Each normal individual Naviserver module defines a "NS_EXPORT int
+# Each normal individual NaviServer module defines a "NS_EXPORT int
 # Ns_ModuleInit" function, so do NOT also export it here.  If you do
 # then on 64-bit Windows you will get "LNK4197: export 'Ns_ModuleInit'
 # specified multiple times" warnings:  --atp@piskorski.com, 2014/10/02

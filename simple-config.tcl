@@ -1,5 +1,5 @@
 #
-# This is minimal Naviserver config file that makes the server to
+# This is minimal NaviServer config file that makes the server to
 # accept HTTP requests on port 80
 #
 # Logs are in the logs/nsd.log and logs/access.log
@@ -8,7 +8,7 @@
 #
 
 ns_section      "ns/servers"
-ns_param         default         Naviserver
+ns_param         default         NaviServer
 
 ns_section      "ns/server/default/modules"
 ns_param         nscp            nscp.so

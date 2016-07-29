@@ -7,7 +7,7 @@
 [description]
 
 Several commands, normally beginning with the  ns_adp  prefix, are used
-to support  Naviserver Dynamic Pages , or ADPs . ADPs are a server-side
+to support  NaviServer Dynamic Pages , or ADPs . ADPs are a server-side
 environment for embedding Tcl code within static text blocks
 (typically HTML or XML). The Tcl code is normally delimited
 within  <%  and  %>  or  <%=  and  %>  tags and can be used
@@ -79,7 +79,7 @@ stack to the underyling C-level request processing code.
 
 [para]
 
-Naviserver can be configured to execute ADP's placed with other static
+NaviServer can be configured to execute ADP's placed with other static
 files within a virtual server's pages directory via
 the  map  parameter in the  adp  server config
 section, for example:

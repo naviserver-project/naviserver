@@ -30,7 +30,7 @@
 /*
  * nsproxymod.c --
  *
- *      Loadable module for Naviserver to add the ns_proxy command
+ *      Loadable module for NaviServer to add the ns_proxy command
  *      and cleanup trace.
  */
 

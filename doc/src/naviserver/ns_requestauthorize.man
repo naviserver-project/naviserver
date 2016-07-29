@@ -8,7 +8,7 @@
 
 This function does the same permission check that the NaviServer does before serving
 a URL. If the nsperm module is loaded, the algorithm is as follows. See Chapter 6 in
-the Naviserver Administrator's Guide for information on access control, including permissions.
+the NaviServer Administrator's Guide for information on access control, including permissions.
 
 [list_begin itemized]
 

@@ -54,8 +54,8 @@ Options:
 
 [item] [emph {-b address:port}]
 [para]  Prebind to address and port. This is necessary when starting
-the server under a priviledged port running with a non-root user-id.
-multiple prebind address might be specified in a comma separated list.
+the server under a privileged port running with a non-root user-id.
+Multiple prebind address might be specified in a comma separated list.
 
 [item] [emph {-B file}]
 [para]  Prebind to address:port list from the specified file
@@ -234,7 +234,7 @@ It's possible (and has been done) to use it as some kind of application where se
 webpages is not the primary target.
 
 [para]
-So it's possible to tell NaviServer to run as root using the -u switch at startup from the commandline.
+So it's possible to tell NaviServer to run as root using the -u switch at startup from the command line.
 
 [para]
 Of course, you have to be root to do that:
@@ -258,7 +258,7 @@ It's simply a convenience for people that need it to not have to rewrite code to
 
 [subsection {Running inside Chroot Environment}]
 
-Chrooting Naviserver effectively means to run it with a special root directory.
+Chrooting NaviServer effectively means to run it with a special root directory.
 When using TCL commands like file, glob or exec only files "below" the specified
 path are visible, limiting access to critical files and devices. This is an important
 means to limit the access attackers of a website might gain.
@@ -291,7 +291,7 @@ to simplify and speed up the task of creating a chroot environment.
 [item] The setup of a chroot cage is a cumbersome task, you have to find out every library used, absolute paths might be compiled into the code, strace will become your friend...
 [item] Every other application used (e.g. ImageMagick) must be chrooted
 [item] When using a database network support must be enabled or the socket placed into the chroot environment (?)
-[item] Updates and patches for Naviserver or any other chrooted tool becomes more difficult 
+[item] Updates and patches for NaviServer or any other chrooted tool becomes more difficult 
 
 [list_end]
 
@@ -299,7 +299,7 @@ to simplify and speed up the task of creating a chroot environment.
 
 [emph {Alternatives}]
 
-Use Novell AppArmor (http://www.novell.com/products/apparmor/) and create a Profile for Naviserver 
+Use Novell AppArmor (http://www.novell.com/products/apparmor/) and create a Profile for NaviServer 
 
 [subsection {Command (interactive) mode}]
 
@@ -325,7 +325,7 @@ tests than going the other way with using a TCL shell and loading libnsd.so.
 [para]
 
 This mode is not intended to be used for a production system. If you need insight on a running server
-the Controlport might be the right thing for you.
+the control port (module nscp) might be the right thing for you.
 
 [para]
 
@@ -1139,7 +1139,7 @@ BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
 
 [subsection {Stacksize}]
 
-Apart from the specific details of integration of your favoured language you may have to take a look at
+Apart from the specific details of integration of your favored language you may have to take a look at
 the stacksize parameter of your config file.
 
 [para]

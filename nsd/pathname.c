@@ -414,7 +414,7 @@ Ns_BinPath(Ns_DString *dsPtr, ...)
  *
  * Ns_HomePath --
  *
- *  Build a path relative to Naviserver's home dir.
+ *  Build a path relative to NaviServer's home dir.
  *
  * Results:
  *  dest->string
@@ -446,7 +446,7 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
  *
  * Ns_HomePathExists --
  *
- *  Check that a path exists relative to Naviserver's home dir.
+ *  Check that a path exists relative to NaviServer's home dir.
  *
  * Results:
  *  1 if exists

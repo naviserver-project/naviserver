@@ -189,7 +189,7 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *arg)
  *
  * DbObjCmd --
  *
- *      Implement the Naviserver ns_db Tcl command.
+ *      Implement the NaviServer ns_db Tcl command.
  *
  * Results:
  *      Return TCL_OK upon success and TCL_ERROR otherwise.

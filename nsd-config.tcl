@@ -87,7 +87,7 @@ ns_param        maxidle             31536000
 ns_param        maxopen             31536000
 
 ns_section     "ns/servers"
-ns_param        default             "Naviserver"
+ns_param        default             "NaviServer"
 
 ns_section     "ns/server/default"
 ns_param        checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup

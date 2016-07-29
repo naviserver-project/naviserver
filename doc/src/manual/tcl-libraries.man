@@ -94,7 +94,7 @@ Tcl libraries contain Tcl files, which are loaded at startup time. The
 functions defined in these Tcl files are available at runtime without
 any function loading overhead. 
 
-Naviserver distinguishes between global (shared) and per-server
+NaviServer distinguishes between global (shared) and per-server
 (private) library directories.
 
 [list_begin itemized]

@@ -223,7 +223,7 @@ milliseconds in between) to ensure the process eventually exits.
 
 [opt_def -env [arg setname]]
 Initializes the slave's process environment with keys/values
-passed in the named Naviserver set (see command [cmd ns_set]).
+passed in the named NaviServer set (see command [cmd ns_set]).
 
 [para]
 Slave processes whose handles are already attached to some Tcl
