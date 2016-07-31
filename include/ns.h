@@ -1747,6 +1747,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
 NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
 NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
+NS_EXTERN Ns_ObjvProc Ns_ObjvUShort;
 NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
 NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
 NS_EXTERN Ns_ObjvProc Ns_ObjvServer;
@@ -2735,7 +2736,8 @@ Ns_SockConnect(const char *host, unsigned short port)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, int lport)
+Ns_SockConnect2(const char *host, unsigned short port,
+                const char *lhost, unsigned short lport)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
@@ -2743,7 +2745,8 @@ Ns_SockAsyncConnect(const char *host, unsigned short port)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, int lport)
+Ns_SockAsyncConnect2(const char *host, unsigned short port,
+                     const char *lhost, unsigned short lport)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
@@ -2751,7 +2754,8 @@ Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeou
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN NS_SOCKET
-Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, int lport,
+Ns_SockTimedConnect2(const char *host, unsigned short port,
+                     const char *lhost, unsigned short lport,
 		     const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 

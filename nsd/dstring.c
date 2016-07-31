@@ -376,10 +376,10 @@ Ns_DStringPush(Ns_DString *dsPtr)
  *      code if the bytes with a \x prefix.
  *
  * Results:
- *      None.
+ *      DString value.
  *
  * Side effects:
- *      Appends to the Dstring
+ *      Appends to the DString
  *
  *----------------------------------------------------------------------
  */
@@ -404,6 +404,29 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
     return Ns_DStringValue(dsPtr);
 }
 
+/*----------------------------------------------------------------------
+ *
+ * Ns_DStringAppendTime --
+ *
+ *      Append the given time to DString formatted in a uniform way.
+ *
+ * Results:
+ *      DString value
+ *
+ * Side effects:
+ *      Appends to the DString
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
+{    
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
+
+    return Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
+}
+ 
  
 
 /*

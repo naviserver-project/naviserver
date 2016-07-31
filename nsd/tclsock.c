@@ -323,31 +323,35 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NS_SOCKET   sock;
-    const char *addr;
-    int         port;
+    const char    *addr;
+    int            result = TCL_OK;
+    unsigned short port;
+    Ns_ObjvSpec    args[] = {
+        {"address", Ns_ObjvString, &addr, NULL},
+        {"port",    Ns_ObjvUShort, &port, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "address port");
-        return TCL_ERROR;
-    }
-    addr = Tcl_GetString(objv[1]);
-    if (STREQ(addr, "*")) {
-        addr = NULL;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[2], &port) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    sock = Ns_SockListen(addr, port);
-    if (sock == NS_INVALID_SOCKET) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-                               "could not listen on [\"",
-                               Tcl_GetString(objv[1]), "]:", 
-                               Tcl_GetString(objv[2]), "\"", NULL);
-        return TCL_ERROR;
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        NS_SOCKET      sock;
+        
+        if (STREQ(addr, "*")) {
+            addr = NULL;
+        }
+        sock = Ns_SockListen(addr, port);
+        if (sock == NS_INVALID_SOCKET) {
+            Ns_TclPrintfResult(interp, "could not listen on [%s]:%hu",
+                               Tcl_GetString(objv[1]), port);
+            result = TCL_ERROR;
+        } else {
+            result = EnterSock(interp, sock);
+        }
     }
 
-    return EnterSock(interp, sock);
+    return result;
 }
 
 
@@ -454,7 +458,8 @@ int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char    *host, *lhost = NULL;
-    int            lport = 0, port, nonblock = 0, async = 0, msec = -1;
+    unsigned short lport = 0u, port;
+    int            nonblock = 0, async = 0, msec = -1;
     NS_SOCKET      sock;
     Ns_Time        timeout = {0,0};
     const Ns_Time *timeoutPtr = NULL;
@@ -464,13 +469,13 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 	{"-async",     Ns_ObjvBool,   &async,      INT2PTR(1)},
         {"-timeout",   Ns_ObjvTime,   &timeoutPtr, NULL},                
 	{"-localhost", Ns_ObjvString, &lhost,      NULL},
-	{"-localport", Ns_ObjvInt,    &lport,      NULL},
+	{"-localport", Ns_ObjvUShort, &lport,      NULL},
         {"--",         Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"host",      Ns_ObjvString,  &host,       NULL},
-        {"port",      Ns_ObjvInt,     &port,       NULL},
+        {"port",      Ns_ObjvUShort,  &port,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -501,17 +506,9 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (timeoutPtr != NULL) {
 	msec = (int)(timeout.sec * 1000 + timeout.usec / 1000);
     }
-    if (lport < 0) {
-	Ns_TclPrintfResult(interp, "invalid local port, must be > 0");
-	return TCL_ERROR;
-    }
     if (*host == '\0') {
 	Ns_TclPrintfResult(interp, "invalid hostname: must not be empty");
         return TCL_ERROR;
-    }
-    if (port < 0) {
-	Ns_TclPrintfResult(interp, "invalid port, must be > 0");
-	return TCL_ERROR;
     }
 
     /*
@@ -527,7 +524,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     }
 
     if (sock == NS_INVALID_SOCKET) {
-	Ns_TclPrintfResult(interp, "can't connect to \"%s:%d\"; %s",
+	Ns_TclPrintfResult(interp, "can't connect to [\"%s]:%hu\"; %s",
 			   host, port, (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
         return TCL_ERROR;
     }
@@ -746,63 +743,59 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
 int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *s, *script;
+    const char     *script, *sockId, *whenString;
     NS_SOCKET       sock;
-    int             scriptLength = 0, result = TCL_OK;
-    Ns_Time         timeout;
+    int             result = TCL_OK;
+    size_t          scriptLength = 0u;
     const Ns_Time  *timeoutPtr = NULL;
     unsigned int    when;
     Callback       *cbPtr;
     const NsInterp *itPtr = clientData;
 
-    if (objc < 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "sockId script when ?timeout?");
+    Ns_ObjvSpec args[] = {
+        {"sockId",      Ns_ObjvString,  &sockId,       NULL},
+        {"script",      Ns_ObjvString,  &script,       NULL},
+        {"when",        Ns_ObjvString,  &whenString,   NULL},
+        {"?timeout",    Ns_ObjvTime,    &timeoutPtr,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    s = Tcl_GetString(objv[3]);
+
     when = 0u;
-    while (*s != '\0') {
-        if (*s == 'r') {
+    while (*whenString != '\0') {
+        if (*whenString == 'r') {
             when |= (unsigned int)NS_SOCK_READ;
-        } else if (*s == 'w') {
+        } else if (*whenString == 'w') {
             when |= (unsigned int)NS_SOCK_WRITE;
-        } else if (*s == 'e') {
+        } else if (*whenString == 'e') {
             when |= (unsigned int)NS_SOCK_EXCEPTION;
-        } else if (*s == 'x') {
+        } else if (*whenString == 'x') {
             when |= (unsigned int)NS_SOCK_EXIT;
         } else {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                                   "invalid when specification \"",
-                                   Tcl_GetString(objv[3]), 
-                                   "\": should be one/more of r, w, e, or x", 
-                                   NULL);
+            Ns_TclPrintfResult(interp, "invalid when specification \"%s\": "
+                               "should be one/more of r, w, e, or x", whenString);
             return TCL_ERROR;
         }
-        ++s;
+        ++whenString;
     }
     if (when == 0u) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                               "invalid when specification \"",
-                               Tcl_GetString(objv[3]), 
-                               "\": should be one/more of r, w, e, or x",
-                               NULL);
+        Ns_TclPrintfResult(interp, "invalid when specification \"%s\": "
+                           "should be one/more of r, w, e, or x", whenString);
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]),
+    if (Ns_TclGetOpenFd(interp, sockId,
                         (when & (unsigned int)NS_SOCK_WRITE) != 0u, 
 			(int *) &sock) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (objc > 4) {
+    if (timeoutPtr != NULL) {
         /*
          * timeout was specified, set is just in case the timeout was not 0:0
          */
-        if (Ns_TclGetTimeFromObj(interp, objv[4], &timeout) == TCL_OK) {
-            if (timeout.sec > 0 || timeout.usec > 0) {
-                timeoutPtr = &timeout;
-            }
-        } else {
-            return TCL_ERROR;
+        if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
+            timeoutPtr = NULL;
         }
     }
 
@@ -815,7 +808,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
      */
 
     sock = ns_sockdup(sock);
-    script = Tcl_GetStringFromObj(objv[2], &scriptLength);
+    scriptLength = strlen(script);
     
     cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
     cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
@@ -858,34 +851,40 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = clientData;
-    ListenCallback *lcbPtr;
-    int             port, length;
     const char     *addr, *script;
+    unsigned short  port;
+    int             result = TCL_OK;
+    Ns_ObjvSpec     args[] = {
+        {"address", Ns_ObjvString, &addr, NULL},
+        {"port",    Ns_ObjvUShort, &port, NULL},
+        {"script",  Ns_ObjvString, &script, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "address port script");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[2], &port) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    addr = Tcl_GetString(objv[1]);
-    if (STREQ(addr, "*")) {
-        addr = NULL;
-    }
-    script = Tcl_GetStringFromObj(objv[3], &length);
-    lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)length);
-    lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
-    memcpy(lcbPtr->script, script, (size_t)length + 1u);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr) != NS_OK) {
-        Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
-        ns_free(lcbPtr);
-        return TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        ListenCallback *lcbPtr;
+        size_t          scriptLength;
+
+        if (STREQ(addr, "*")) {
+            addr = NULL;
+        }
+        scriptLength = strlen(script);
+        lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
+        lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
+        memcpy(lcbPtr->script, script, scriptLength + 1u);
+
+        if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr) != NS_OK) {
+            Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+            ns_free(lcbPtr);
+            result = TCL_ERROR;
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

@@ -56,7 +56,7 @@
  * Local functions defined in this file
  */
 
-static NS_SOCKET SockConnect(const char *host, unsigned short port, const char *lhost, int lport, bool async)
+static NS_SOCKET SockConnect(const char *host, unsigned short port, const char *lhost, unsigned short lport, bool async)
     NS_GNUC_NONNULL(1);
 
 static NS_SOCKET SockSetup(NS_SOCKET sock);
@@ -582,11 +582,11 @@ Ns_SockConnect(const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
-    return SockConnect(host, port, NULL, 0, NS_FALSE);
+    return SockConnect(host, port, NULL, 0u, NS_FALSE);
 }
 
 NS_SOCKET
-Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, int lport)
+Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, unsigned short lport)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
@@ -615,11 +615,11 @@ Ns_SockAsyncConnect(const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
-    return SockConnect(host, port, NULL, 0, NS_TRUE);
+    return SockConnect(host, port, NULL, 0u, NS_TRUE);
 }
 
 NS_SOCKET
-Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, int lport)
+Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, unsigned short lport)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
@@ -653,7 +653,7 @@ Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeou
 }
 
 NS_SOCKET
-Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, int lport,
+Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, unsigned short lport,
                      const Ns_Time *timeoutPtr)
 {
     NS_SOCKET sock;
@@ -1035,7 +1035,7 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
  */
 
 static NS_SOCKET
-SockConnect(const char *host, unsigned short port, const char *lhost, int lport, bool async)
+SockConnect(const char *host, unsigned short port, const char *lhost, unsigned short lport, bool async)
 {
     NS_SOCKET             sock;
     struct NS_SOCKADDR_STORAGE sa, lsa;
