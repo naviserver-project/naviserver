@@ -643,7 +643,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                          */
                         result = Ns_TLS_CtxClientCreate(interp,
                                                         NULL /*cert*/, NULL /*caFile*/,
-                                                        NULL /* caPath*/, 0 /*verify*/,
+                                                        NULL /* caPath*/, NS_FALSE /*verify*/,
                                                         &ctx);
                     
                         if (likely(result == TCL_OK)) {
