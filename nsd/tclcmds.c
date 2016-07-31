@@ -52,8 +52,6 @@ typedef struct Cmd {
  */
 
 static const Cmd basicCmds[] = {
-    {"crypto::hmac",             NULL, NsTclCryptoHmacObjCmd},
-    {"crypto::md",               NULL, NsTclCryptoMdObjCmd},
     {"env",                      NULL, NsTclEnvObjCmd},
     {"keyldel",                  NULL, TclX_KeyldelObjCmd},
     {"keylget",                  NULL, TclX_KeylgetObjCmd},
@@ -75,6 +73,8 @@ static const Cmd basicCmds[] = {
     {"ns_configsections",        NULL, NsTclConfigSectionsObjCmd},
     {"ns_crash",                 NsTclCrashCmd, NULL},
     {"ns_crypt",                 NULL, NsTclCryptObjCmd},
+    {"ns_crypto::hmac",          NULL, NsTclCryptoHmacObjCmd},
+    {"ns_crypto::md",            NULL, NsTclCryptoMdObjCmd},
     {"ns_encodingforcharset",    NULL, NsTclEncodingForCharsetObjCmd},
     {"ns_env",                   NULL, NsTclEnvObjCmd},
     {"ns_fastpath_cache_stats",  NULL, NsTclFastPathCacheStatsObjCmd},

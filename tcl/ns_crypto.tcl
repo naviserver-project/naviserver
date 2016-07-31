@@ -1,14 +1,14 @@
 if {[info commands ::nx::Class] eq ""} {
-    ns_log warning "ns_md and ns_hmac are not available; use crypto::md and crypto::hmac instead"
+    ns_log warning "ns_md and ns_hmac are not available; use ns_crypto::md and ns_crypto::hmac instead"
     return
 }
 
 #
-# class ::crypto::HashFunctions
+# class ::ns_crypto::HashFunctions
 #
-#     Define common behavior for crypto::* functionality
+#     Define common behavior for ns_crypto::* functionality
 #
-nx::Class create ::crypto::HashFunctions {
+nx::Class create ::ns_crypto::HashFunctions {
     :property {digest sha256}
     :variable ctx
 
@@ -40,10 +40,10 @@ nx::Class create ::crypto::HashFunctions {
 #     Provide an oo interface to the OpenSSL Message Digest
 #     functionality.
 #
-nx::Class create ns_md -superclass ::crypto::HashFunctions {
+nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
    
     :public object method string {-digest message} {
-	::crypto::md string -digest $digest $message
+	::ns_crypto::md string -digest $digest $message
     }
     
     :public object method file {-digest filename} {
@@ -57,18 +57,18 @@ nx::Class create ns_md -superclass ::crypto::HashFunctions {
     }
     
     :method init {} {
-	set :ctx [::crypto::md new ${:digest}]
+	set :ctx [::ns_crypto::md new ${:digest}]
     }
     :public method destroy {} {
-	::crypto::md free ${:ctx}
+	::ns_crypto::md free ${:ctx}
 	next
     }
    
     :public method add {message} {
-	::crypto::md add ${:ctx} $message
+	::ns_crypto::md add ${:ctx} $message
     }
     :public method get {} {
-	::crypto::md get ${:ctx}
+	::ns_crypto::md get ${:ctx}
     }
 }
 
@@ -81,11 +81,11 @@ nx::Class create ns_md -superclass ::crypto::HashFunctions {
 #     secured hash code.
 #
 
-nx::Class create ns_hmac -superclass ::crypto::HashFunctions {
+nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
     :property key:required
    
     :public object method string {-digest key message} {
-	::crypto::hmac string -digest $digest $key $message
+	::ns_crypto::hmac string -digest $digest $key $message
     }
 
     :public object method file {-digest key filename} {
@@ -99,17 +99,17 @@ nx::Class create ns_hmac -superclass ::crypto::HashFunctions {
     }
     
     :method init {} {
-	set :ctx [::crypto::hmac new ${:digest} ${:key}]
+	set :ctx [::ns_crypto::hmac new ${:digest} ${:key}]
     }
     :public method destroy {} {
-	::crypto::hmac free ${:ctx}
+	::ns_crypto::hmac free ${:ctx}
 	next
     }
    
     :public method add {message} {
-	::crypto::hmac add ${:ctx} $message
+	::ns_crypto::hmac add ${:ctx} $message
     }
     :public method get {} {
-	::crypto::hmac get ${:ctx}
+	::ns_crypto::hmac get ${:ctx}
     }
 }

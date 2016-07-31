@@ -51,7 +51,7 @@ static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
                        Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-                       const char *cert, const char *caFile, const char *caPath, int verify,
+                       const char *cert, const char *caFile, const char *caPath, bool verify,
                        bool keep_host_header, Ns_HttpTask **httpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(12);
 
@@ -211,7 +211,7 @@ static int
 HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 {
     Tcl_Interp    *interp;
-    int            verify = 0, isNew, i;
+    int            verifyInt = 0, isNew, i;
     Tcl_HashEntry *hPtr;
     Ns_HttpTask   *httpPtr;
     char           buf[TCL_INTEGER_SPACE + 4];
@@ -232,7 +232,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         {"-keep_host_header", Ns_ObjvBool, &keep_host_header,  INT2PTR(NS_TRUE)},
         {"-method",   Ns_ObjvString, &method,       NULL},
         {"-timeout",  Ns_ObjvTime,   &timeoutPtr,   NULL},
-        {"-verify",   Ns_ObjvBool,   &verify,       NULL},
+        {"-verify",   Ns_ObjvBool,   &verifyInt,    NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -248,7 +248,8 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     }
     
     if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, bodyFileName,
-                    cert, caFile, caPath, verify,
+                    cert, caFile, caPath,
+                    verifyInt == 1 ? NS_TRUE : NS_FALSE,
                     keep_host_header, &httpPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -754,8 +755,9 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  * Ns_HttpLocationString --
  *
  *	Build a http location string following the IP literation notation in
- *	RFC 3986 section 3.2.2 if needed. In case protoString is non-null,
- *	perpend the protocol. In case port != defPort, append the the port.
+ *	RFC 3986 section 3.2.2 if needed and return in in the provided
+ *	DString. In case protoString is non-null, perpend the protocol. In
+ *	case port != defPort, append the the port.
  *
  * Results:
  *
@@ -920,15 +922,16 @@ WaitWritable(NS_SOCKET sock) {
 static int
 HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
             Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-            const char *cert, const char *caFile, const char *caPath, int verify,
+            const char *cert, const char *caFile, const char *caPath, bool verify,
             bool keep_host_header, Ns_HttpTask **httpPtrPtr)
 {
-    NS_SOCKET    sock = NS_INVALID_SOCKET;
-    Ns_HttpTask *httpPtr;
-    int          result, defaultPort = 0, portNr, uaFlag = -1, bodyFileSize = 0, bodyFileFd = 0;
-    char        *url2, *protocol, *host, *portString, *path, *tail;
-    const char  *contentType = NULL;
-    Tcl_DString *dsPtr;
+    NS_SOCKET      sock = NS_INVALID_SOCKET;
+    Ns_HttpTask   *httpPtr;
+    int            result, uaFlag = -1, bodyFileSize = 0, bodyFileFd = 0;
+    unsigned short defaultPort = 0u, portNr;
+    char          *url2, *protocol, *host, *portString, *path, *tail;
+    const char    *contentType = NULL;
+    Tcl_DString   *dsPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -964,15 +967,15 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
      * Check used protocol and protocol-specific parameters
      */
     if (STREQ("http", protocol)) {
-        if ( (cert != NULL) || (caFile != NULL) || (caPath != NULL) || (verify != 0) ) {
+        if ( (cert != NULL) || (caFile != NULL) || (caPath != NULL) || verify ) {
             Ns_TclPrintfResult(interp, "https-specific parameters are only allowed for https urls");
             goto fail;
         }
-        defaultPort = 80;
+        defaultPort = 80u;
     }
 #ifdef HAVE_OPENSSL_EVP_H    
     else if (STREQ("https", protocol)) {
-        defaultPort = 443;
+        defaultPort = 443u;
     }
 #endif        
     else {
@@ -984,12 +987,12 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
      * Use the specified port or the default port.
      */
     if (portString != NULL) {
-        portNr = (int) strtol(portString, NULL, 10);
+        portNr = (unsigned short) strtol(portString, NULL, 10);
     } else {
         portNr = defaultPort;
     }
 
-    Ns_Log(Ns_LogTaskDebug, "connect to [%s]:%d", host, portNr);
+    Ns_Log(Ns_LogTaskDebug, "connect to [%s]:%hu", host, portNr);
 
     sock = Ns_SockAsyncConnect(host, portNr);
     if (sock == NS_INVALID_SOCKET) {
@@ -1052,7 +1055,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     /*
      * Initialize OpenSSL context and establish SSL/TLS connection for https.
      */
-    if (defaultPort == 443) {
+    if (defaultPort == 443u) {
         NS_TLS_SSL_CTX *ctx;
         NS_TLS_SSL     *ssl;
 
@@ -1126,7 +1129,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     
     if (!keep_host_header) {
         Ns_DStringNAppend(dsPtr, "Host: ", 6);
-        Ns_HttpLocationString(dsPtr, NULL, host, portNr, 80u);
+        (void)Ns_HttpLocationString(dsPtr, NULL, host, portNr, 80u);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
     }
 
