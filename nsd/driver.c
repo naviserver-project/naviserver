@@ -2566,12 +2566,6 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      */
     if (sockPtr->acceptTime.sec == 0) {
         assert(timePtr != NULL);
-        /*fprintf(stderr, "SOCKREAD reset times "
-          " start %" PRIu64 ".%06ld"
-          " now %" PRIu64 ".%06ld\n",
-          (int64_t) sockPtr->acceptTime.sec, sockPtr->acceptTime.usec,
-          (int64_t) timePtr->sec, timePtr->usec
-          );*/
         sockPtr->acceptTime = *timePtr;
     }
 
@@ -4829,17 +4823,22 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
                     char ipString[NS_IPADDR_SIZE];
-                    
-                    (void) Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
-                                            "%" PRIdz " %" TCL_LL_MODIFIER "d ",
-                                            (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
-                                            queuePtr->threadname,
-                                            drvPtr->name,
-                                            ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa), ipString, sizeof(ipString)),
+
+                    (void) Ns_DStringNAppend(dsPtr, "{", 1);
+                    (void) Ns_DStringAppendTime(dsPtr, &wrSockPtr->startTime);
+                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
+                    (void) Ns_DStringAppend(dsPtr, queuePtr->threadname);
+                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
+                    (void) Ns_DStringAppend(dsPtr, drvPtr->name);
+                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
+                    (void) Ns_DStringAppend(dsPtr, ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa),
+                                                                ipString,
+                                                                sizeof(ipString)));
+                    (void) Ns_DStringPrintf(dsPtr, " %d %" PRIdz " %" TCL_LL_MODIFIER "d ",
                                             wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
                     (void) Ns_DStringAppendElement(dsPtr,
                                                    (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
-                    (void) Ns_DStringAppend(dsPtr, "} ");
+                    (void) Ns_DStringNAppend(dsPtr, "} ", 2);
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
                 Ns_MutexUnlock(&queuePtr->lock);

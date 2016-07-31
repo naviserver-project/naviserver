@@ -739,25 +739,17 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         snprintf(buf, sizeof(buf), "%lu", poolPtr->stats.connthreads);
         Tcl_DStringAppendElement(dsPtr, buf);
 
-        Tcl_DStringAppendElement(dsPtr, "accepttime");
-	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
-			 (int64_t)poolPtr->stats.acceptTime.sec, 
-			 poolPtr->stats.acceptTime.usec);
+        Ns_DStringAppend(dsPtr, " accepttime ");
+	Ns_DStringAppendTime(dsPtr, &poolPtr->stats.acceptTime);
 
-        Tcl_DStringAppendElement(dsPtr, "queuetime");
-	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
-		 (int64_t)poolPtr->stats.queueTime.sec,
-		 poolPtr->stats.queueTime.usec);
+        Ns_DStringAppend(dsPtr, " queuetime ");
+	Ns_DStringAppendTime(dsPtr, &poolPtr->stats.queueTime);
 
-        Tcl_DStringAppendElement(dsPtr, "filtertime");
-	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
-		 (int64_t)poolPtr->stats.filterTime.sec,
-		 poolPtr->stats.filterTime.usec);
-	
-	Tcl_DStringAppendElement(dsPtr, "runtime");
-	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
-		 (int64_t)poolPtr->stats.runTime.sec, 
-		 poolPtr->stats.runTime.usec);
+        Ns_DStringAppend(dsPtr, " filtertime ");
+	Ns_DStringAppendTime(dsPtr, &poolPtr->stats.filterTime);
+
+        Ns_DStringAppend(dsPtr, " runtime ");
+	Ns_DStringAppendTime(dsPtr, &poolPtr->stats.runTime);
 
         Tcl_DStringResult(interp, dsPtr);
         break;
@@ -1777,8 +1769,6 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
      * An annoying race condition can be lethal here.
      */
     if (connPtr != NULL) {
-	char  buf[100];
-
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 	if (connPtr->reqPtr != NULL) {
 	    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((const Ns_Conn *) connPtr));
@@ -1802,10 +1792,9 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
 	}
 	Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
-        snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld", (int64_t) diff.sec, diff.usec);
-        Tcl_DStringAppendElement(dsPtr, buf);
-        snprintf(buf, sizeof(buf), "%" PRIuz, connPtr->nContentSent);
-        Tcl_DStringAppendElement(dsPtr, buf);
+        Ns_DStringNAppend(dsPtr, " ", 1);
+        Ns_DStringAppendTime(dsPtr, &diff);
+        Ns_DStringPrintf(dsPtr, " %" PRIuz, connPtr->nContentSent);
     }
     Tcl_DStringEndSublist(dsPtr);
 }

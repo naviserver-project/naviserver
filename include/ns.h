@@ -200,7 +200,8 @@ typedef enum {
 typedef enum {
     NS_SOCK_COND_READ =         NS_SOCK_READ,
     NS_SOCK_COND_WRITE =        NS_SOCK_WRITE,
-    NS_SOCK_COND_EXCEPTION =    NS_SOCK_EXCEPTION
+    NS_SOCK_COND_EXCEPTION =    NS_SOCK_EXCEPTION,
+    NS_SOCK_COND_EXIT =         NS_SOCK_EXIT
 } Ns_SockCondition;
 */
 
@@ -1370,6 +1371,10 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
 
 NS_EXTERN char *
 Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN char *
+Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_DString *

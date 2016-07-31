@@ -273,9 +273,10 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
 
     if (threadNamePtr != NULL) {
         /*
-         * threadName is currently just a constant, but when implementing
-         * multiple socks threads, threadNamePtr should return the associated
-         * queue. This way, we can keep the interface constant.
+         * threadName is currently just a constant, but when
+         * implementing multiple socks threads, threadNamePtr should
+         * return the associated queue. This way, we can keep the
+         * interface constant.
          */
         *threadNamePtr = "-socks-";
     }
@@ -343,8 +344,7 @@ SockCallbackThread(void *UNUSED(arg))
 	Ns_Time           now, diff = {0, 0};
 
 	/*
-	 * Grab the list of any queue updates and the shutdown
-	 * flag.
+	 * Grab the list of any queue updates and the shutdown flag.
 	 */
 
     	Ns_MutexLock(&lock);
@@ -474,12 +474,12 @@ SockCallbackThread(void *UNUSED(arg))
                         && (pfds[cbPtr->idx].revents & events[i]) != 0) {
                         /* 
                          * Call the Sock_Proc with the SockState flag
-                         * combination from when[i]. This is actually the
-                         * only place, where a Ns_SockProc is called with a
-                         * flag combination in the last argument. If this
-                         * would not be the case, we could set the type of
-                         * the last parameter of Ns_SockProc to
-                         * Ns_SockState.
+                         * combination from when[i]. This is actually
+                         * the only place, where a Ns_SockProc is called
+                         * with a flag combination in the last
+                         * argument. If this would not be the case, we
+                         * could set the type of the last parameter of
+                         * Ns_SockProc to Ns_SockState.
                          */
                         if ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]) == NS_FALSE) {
                             cbPtr->when = 0u;
@@ -558,6 +558,10 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
 	    const Callback *cbPtr = Tcl_GetHashValue(hPtr);
 	    char            buf[TCL_INTEGER_SPACE];
 
+            /*
+             * The "when" conditions are ORed together. Return these
+             * as a sublist of conditions.
+             */
             Tcl_DStringStartSublist(dsPtr);
             snprintf(buf, sizeof(buf), "%d", (int) cbPtr->sock);
             Tcl_DStringAppendElement(dsPtr, buf);
@@ -576,8 +580,8 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
             }
             Tcl_DStringEndSublist(dsPtr);
             Ns_GetProcInfo(dsPtr, (Ns_Callback *)cbPtr->proc, cbPtr->arg);
-            snprintf(buf, sizeof(buf), "%ld:%06ld", cbPtr->timeout.sec, cbPtr->timeout.usec);
-            Tcl_DStringAppendElement(dsPtr, buf);
+            Ns_DStringNAppend(dsPtr, " ", 1);
+            Ns_DStringAppendTime(dsPtr, &cbPtr->timeout);
             Tcl_DStringEndSublist(dsPtr);
         }
     }
