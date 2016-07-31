@@ -57,7 +57,7 @@ typedef int            (CountProc) (Ns_DbHandle *handle);
 typedef Ns_ReturnCode  (ResetProc) (Ns_DbHandle *handle);
 typedef Ns_ReturnCode  (SpStartProc) (Ns_DbHandle *handle, const char *procname);
 typedef Ns_ReturnCode  (SpSetParamProc) (Ns_DbHandle *handle, char *args);
-typedef Ns_ReturnCode  (SpExecProc) (Ns_DbHandle *handle);
+typedef int            (SpExecProc) (Ns_DbHandle *handle);
 typedef Ns_ReturnCode  (SpReturnCodeProc) (Ns_DbHandle *dbhandle, const char *returnCode, int bufsize);
 typedef Ns_Set *       (SpGetParamsProc) (Ns_DbHandle *handle);
 
