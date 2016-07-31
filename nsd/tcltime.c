@@ -321,8 +321,9 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TIncrIdx:
         {
-            Ns_Time       t2 = {0, 0}, *tPtr;
-            Ns_ObjvSpec   largs[] = {
+            Ns_Time        t2 = {0, 0};
+            const Ns_Time *tPtr;
+            Ns_ObjvSpec    largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},                
                 {"sec",   Ns_ObjvLong, &t2.sec,  NULL},
                 {"?usec", Ns_ObjvLong, &t2.usec, NULL},
@@ -341,8 +342,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TDiffIdx:
         {
-            Ns_Time      *tPtr1, *tPtr2;
-            Ns_ObjvSpec   largs[] = {
+            const Ns_Time *tPtr1, *tPtr2;
+            Ns_ObjvSpec    largs[] = {
                 {"time1",  Ns_ObjvTime, &tPtr1,  NULL},                
                 {"time2",  Ns_ObjvTime, &tPtr2,  NULL},
                 {NULL, NULL, NULL, NULL}
@@ -359,8 +360,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TAdjustIdx:
         {
-            Ns_Time      *tPtr;
-            Ns_ObjvSpec   largs[] = {
+            const Ns_Time *tPtr;
+            Ns_ObjvSpec    largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -378,8 +379,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     case TSecondsIdx:
     case TMicroSecondsIdx:
         {
-            Ns_Time      *tPtr;
-            Ns_ObjvSpec   largs[] = {
+            const Ns_Time *tPtr;
+            Ns_ObjvSpec    largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -395,8 +396,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TFormatIdx:
         {
-            Ns_Time      *tPtr;
-            Ns_ObjvSpec   largs[] = {
+            const Ns_Time *tPtr;
+            Ns_ObjvSpec    largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
