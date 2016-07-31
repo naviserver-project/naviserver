@@ -669,7 +669,7 @@ NsStartDrivers(void)
      */
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        if (drvPtr->port == 0) {
+        if (drvPtr->port == 0u) {
             /*
              * Don't start this driver
              */
