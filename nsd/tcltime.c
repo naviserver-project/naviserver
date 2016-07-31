@@ -411,7 +411,6 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                                  (int64_t)tPtr->sec, tPtr->usec);
                 Tcl_DStringResult(interp, dsPtr);
             }
-            return rc;
         }
         break;
 
