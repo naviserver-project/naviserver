@@ -670,7 +670,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
             /*
              * The first character was the separator, treat sec as 0.
              */
-            tPtr->sec = 0L;
+            tPtr->sec = 0l;
         } else {
             int result;
             
@@ -692,22 +692,34 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
         /*
          * Get usec
          */
-        if ((rc != TCL_ERROR) && (separator == '.')) {
-            double dblValue;
-            
-            if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
-                rc = TCL_ERROR;
+        if (rc != TCL_ERROR) {
+            /*
+             * When the separator is a dot, try to get the value in floating
+             * point format, which are fractions of a second.
+             */
+            if (separator == '.') {
+                double dblValue;
+                
+                if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
+                    rc = TCL_ERROR;
+                } else {
+                    tPtr->usec = (long)(dblValue * 1000000.0);
+                    rc = TCL_OK;
+                }
+                
             } else {
-                tPtr->usec = (long)(dblValue * 1000000.0);
-                rc = TCL_OK;
-            }
-            
-        } else {
-            if (Tcl_GetInt(interp, sep+1, &intValue) != TCL_OK) {
-                rc = TCL_ERROR;
-            } else {
-                tPtr->usec = (long)intValue;
-                rc = TCL_OK;
+                /*
+                 * The separator must be the ":", the traditional
+                 * separator for sec:usec.
+                 */
+                assert(separator == ':');
+                
+                if (Tcl_GetInt(interp, sep+1, &intValue) != TCL_OK) {
+                    rc = TCL_ERROR;
+                } else {
+                    tPtr->usec = (long)intValue;
+                    rc = TCL_OK;
+                }
             }
         }
     }
