@@ -1363,6 +1363,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
+        opt = (int)CIsConnectedIdx; /* silence static checker */
         result = TCL_ERROR;
 
     } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
