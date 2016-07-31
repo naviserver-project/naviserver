@@ -918,7 +918,7 @@ Ns_LogTime(char *timeBuf)
 {
     NS_NONNULL_ASSERT(timeBuf != NULL);
 
-    return Ns_LogTime2(timeBuf, 1);
+    return Ns_LogTime2(timeBuf, NS_TRUE);
 }
 
 char *
@@ -1604,7 +1604,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     /*
      * Add the log stamp
      */
-    timeString = LogTime(cachePtr, stamp, 0);
+    timeString = LogTime(cachePtr, stamp, NS_FALSE);
     timeStringLength = cachePtr->lbufSize;
 
     if ((flags & LOG_COLORIZE) != 0u) {
