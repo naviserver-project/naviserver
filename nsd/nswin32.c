@@ -863,7 +863,7 @@ ns_sockpair(NS_SOCKET socks[2])
         return -1;
     }
     size = (int)sizeof(struct NS_SOCKADDR_STORAGE);
-    socks[1] = Ns_SockConnect(NS_IP_LOOPBACK, (int) Ns_SockaddrGetPort((struct sockaddr *)&ia[0]));
+    socks[1] = Ns_SockConnect(NS_IP_LOOPBACK, Ns_SockaddrGetPort((struct sockaddr *)&ia[0]));
     if (socks[1] == NS_INVALID_SOCKET ||
         getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
         ns_sockclose(sock);
@@ -907,7 +907,7 @@ ns_sockpair(NS_SOCKET socks[2])
  */
 
 NS_SOCKET
-Ns_SockListenEx(const char *address, int port, int backlog)
+Ns_SockListenEx(const char *address, unsigned short port, int backlog)
 {
     NS_SOCKET sock;
     struct NS_SOCKADDR_STORAGE sa;

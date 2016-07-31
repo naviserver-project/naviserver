@@ -267,7 +267,8 @@ Ns_ReturnCode
 Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *init)
 {
     const char     *defproto, *host, *address, *bindaddr, *defserver, *path;
-    int             i, n, defport;
+    int             i, n;
+    unsigned short  defport;
     bool            noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds, *dsPtr = &ds;
@@ -374,9 +375,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         defport = init->defaultPort;
     } else {
         defproto = "unknown";
-        defport = 0;
+        defport = 0u;
     }
-    Ns_Log(DriverDebug, "DriverInit server <%s> module %s proto %s port %d",
+    Ns_Log(DriverDebug, "DriverInit server <%s> module %s proto %s port %hu",
            server, module, defproto, defport);
     
     /*
@@ -488,7 +489,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     drvPtr->bindaddr = bindaddr;
     drvPtr->protocol = ns_strdup(defproto);
     drvPtr->address  = ns_strdup(address);
-    drvPtr->port     = Ns_ConfigIntRange(path, "port", defport, 0, 65535);
+    drvPtr->port     = (unsigned short)Ns_ConfigIntRange(path, "port", (int)defport, 0, 65535);
     drvPtr->location = Ns_ConfigGetValue(path, "location");
 
     if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
@@ -5353,14 +5354,14 @@ AsyncWriterThread(void *arg)
 int
 NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
-    char         *protocol, *host, *portString, *path, *tail, *url2;
-    const char   *query;
-    Driver       *drvPtr = NULL;
-    Tcl_DString   ds, *dsPtr = &ds;
-    int           portNr;
-    NS_SOCKET     sock;
-    Sock         *sockPtr;
-    Request      *reqPtr;
+    char          *protocol, *host, *portString, *path, *tail, *url2;
+    const char    *query;
+    Driver        *drvPtr = NULL;
+    Tcl_DString    ds, *dsPtr = &ds;
+    unsigned short portNr;
+    NS_SOCKET      sock;
+    Sock          *sockPtr;
+    Request       *reqPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -5391,18 +5392,18 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     }
 
     if (portString != NULL) {
-        portNr = (int) strtol(portString, NULL, 10);
+        portNr = (unsigned short) strtol(portString, NULL, 10);
     } else if (STREQ(drvPtr->protocol, "http")) {
         /* the default port should be in the driver structure */
-        portNr = 80;
+        portNr = 80u;
     } else if (STREQ(drvPtr->protocol, "https")) {
-        portNr = 443;
+        portNr = 443u;
     } else {
         Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", protocol);
         goto fail;
     }
     
-    sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, timeoutPtr);
+    sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr);
 
     if (sock == NS_INVALID_SOCKET) {
 	Ns_TclPrintfResult(interp, "connect to '%s' failed: %s", url, 

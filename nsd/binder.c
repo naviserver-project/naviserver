@@ -248,7 +248,7 @@ Ns_SockListenRaw(int proto)
      */
 
     if (sock == NS_INVALID_SOCKET && binderRunning) {
-        sock = Ns_SockBinderListen('R', NULL, proto, proto);
+        sock = Ns_SockBinderListen('R', NULL, 0u, proto);
     }
 
     return sock;
@@ -929,12 +929,12 @@ Ns_SockBinderListen(int type, const char *address, unsigned short port, int opti
         sock = NS_INVALID_SOCKET;
     }
     if (err == 0) {
-        Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%d) = %d",
+        Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%hu) = %d",
                address, port, sock);
     } else {
         Ns_SetSockErrno(err);
         sock = NS_INVALID_SOCKET;
-        Ns_Log(Error, "Ns_SockBinderListen: listen(%s,%d) failed: '%s'",
+        Ns_Log(Error, "Ns_SockBinderListen: listen(%s,%hu) failed: '%s'",
                address, port, ns_sockstrerror(ns_sockerrno));
     }
 #endif /* _WIN32 */
