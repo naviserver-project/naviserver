@@ -126,7 +126,8 @@ Ns_ModuleInit(const char *server, const char *module)
     Mod           *modPtr;
     char          *end;
     const char    *addr, *path;
-    int            isNew, port;
+    int            isNew;
+    unsigned short port;
     Ns_ReturnCode  result;
     size_t         i;
     NS_SOCKET      lsock;
@@ -141,18 +142,18 @@ Ns_ModuleInit(const char *server, const char *module)
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
     addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
-    port = Ns_ConfigInt(path, "port", 2080);
+    port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
 
-    if ((addr == NULL) || (port <= 0 ))  {
+    if ((addr == NULL) || (port <= 0u ))  {
 	Ns_Log(Error, "nscp: address and port must be specified in config");
 	return NS_ERROR;
     }
     lsock = Ns_SockListen(addr, port);
     if (lsock == NS_INVALID_SOCKET) {
-	Ns_Log(Error, "nscp: could not listen on [%s]:%d", addr, port);
+	Ns_Log(Error, "nscp: could not listen on [%s]:%hu", addr, port);
 	return NS_ERROR;
     }
-    Ns_Log(Notice, "nscp: listening on [%s]:%d", addr, port);
+    Ns_Log(Notice, "nscp: listening on [%s]:%hu", addr, port);
 
     /*
      * Create a new Mod structure for this instance.
