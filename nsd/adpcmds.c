@@ -46,7 +46,7 @@ static int GetFrame(const ClientData arg, AdpFrame **framePtrPtr) NS_GNUC_NONNUL
 static int GetOutput(ClientData arg, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int doStream);
+static int AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, bool doStream);
 
 
 /*
@@ -101,7 +101,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
             ((itPtr->adp.flags & ADP_STREAM) != 0u
              || (size_t)bufPtr->length > itPtr->adp.bufsize
              ) 
-            && NsAdpFlush(itPtr, 1) != TCL_OK) {
+            && NsAdpFlush(itPtr, NS_TRUE) != TCL_OK) {
             status = TCL_ERROR;
         }
     }
@@ -287,7 +287,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         id = Tcl_GetString(objv[2]);
         if (*id == '\0') {
             if (itPtr->adp.chan != NULL) {
-                if (NsAdpFlush(itPtr, 0) != TCL_OK) {
+                if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK) {
                     return TCL_ERROR;
                 }
                 itPtr->adp.chan = NULL;
@@ -438,7 +438,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
      * buffer. It will be compiled into the cached result.
      */
 
-    if (nocache != 0 && itPtr->adp.refresh > 0) {
+    if (nocache != 0 && itPtr->adp.refresh) {
         int i;
         if (GetOutput(arg, &dsPtr) != TCL_OK) {
             return TCL_ERROR;
@@ -1086,7 +1086,7 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
  */
 
 static int
-AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int doStream)
+AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, bool doStream)
 {
     NsInterp *itPtr = arg;
 
@@ -1100,13 +1100,13 @@ AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 int
 NsTclAdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return AdpFlushObjCmd(arg, interp, objc, objv, 1);
+    return AdpFlushObjCmd(arg, interp, objc, objv, NS_TRUE);
 }
 
 int
 NsTclAdpCloseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return AdpFlushObjCmd(arg, interp, objc, objv, 0);
+    return AdpFlushObjCmd(arg, interp, objc, objv, NS_FALSE);
 }
 
 
