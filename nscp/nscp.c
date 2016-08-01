@@ -144,10 +144,6 @@ Ns_ModuleInit(const char *server, const char *module)
     addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
     port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
 
-    if ((addr == NULL) || (port <= 0u ))  {
-	Ns_Log(Error, "nscp: address and port must be specified in config");
-	return NS_ERROR;
-    }
     lsock = Ns_SockListen(addr, port);
     if (lsock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: could not listen on [%s]:%hu", addr, port);
