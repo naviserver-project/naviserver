@@ -593,7 +593,7 @@ typedef struct Ns_DriverInitData {
     unsigned int             opts;             /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                    *arg;              /* Module's driver callback data */
     const char              *path;             /* Path to find config parameter such as port, address, etc. */
-    unsigned int             defaultPort;      /* Default port */
+    unsigned short           defaultPort;      /* Default port */
     const char              *protocol;         /* Protocol */
 } Ns_DriverInitData;
 
