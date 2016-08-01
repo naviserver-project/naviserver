@@ -1311,7 +1311,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
     Ns_DString           ds;
-    int                  idx, off, len, opt, n, result = TCL_OK;
+    int                  idx, off, len, opt = 0, n, result = TCL_OK;
     const char          *setName;
     int                  setNameLength;
 
