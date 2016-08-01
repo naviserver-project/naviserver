@@ -701,16 +701,17 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 Ns_ReturnCode
 Ns_ConnFlushContent(const Ns_Conn *conn)
 {
-    const Conn *connPtr = (const Conn *) conn;
-    Request    *reqPtr = connPtr->reqPtr;
+    const Conn   *connPtr = (const Conn *) conn;
+    Request      *reqPtr = connPtr->reqPtr;
+    Ns_ReturnCode status = NS_OK;
 
     if (connPtr->sockPtr == NULL) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        reqPtr->next  += reqPtr->avail;
+        reqPtr->avail  = 0u;
     }
-    reqPtr->next  += reqPtr->avail;
-    reqPtr->avail  = 0u;
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -804,6 +805,7 @@ Ns_ConnWrite(Ns_Conn *conn, const void *buf, size_t toWrite)
     const Conn   *connPtr = (const Conn *) conn;
     size_t        n;
     Ns_ReturnCode status;
+    int           result;
     struct iovec  vbuf;
 
     vbuf.iov_base = (void *) buf;
@@ -812,9 +814,11 @@ Ns_ConnWrite(Ns_Conn *conn, const void *buf, size_t toWrite)
     n = connPtr->nContentSent;
     status = Ns_ConnWriteVData(conn, &vbuf, 1, 0u);
     if (status == NS_OK) {
-        return (int)connPtr->nContentSent - (int)n;
+        result = (int)connPtr->nContentSent - (int)n;
+    } else {
+        result = -1;
     }
-    return -1;
+    return result;
 }
 
 Ns_ReturnCode
@@ -864,19 +868,22 @@ Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
 char *
 Ns_ConnGets(char *buf, size_t bufsize, const Ns_Conn *conn)
 {
-    char *p;
+    char *p, *result = buf;
 
     p = buf;
     while (bufsize > 1u) {
         if (Ns_ConnRead(conn, p, 1u) != 0u) {
-            return NULL;
+            result = NULL;
+            break;
         }
         if (*p++ == '\n') {
             break;
         }
         --bufsize;
     }
-    *p = '\0';
+    if (likely(result != NULL)) {
+        *p = '\0';
+    }
 
     return buf;
 }
@@ -905,14 +912,15 @@ Ns_ConnRead(const Ns_Conn *conn, void *vbuf, size_t toRead)
     Request    *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
-        return 0u;
+        toRead = 0u;
+    } else {
+        if (toRead > reqPtr->avail) {
+            toRead = reqPtr->avail;
+        }
+        memcpy(vbuf, reqPtr->next, toRead);
+        reqPtr->next  += toRead;
+        reqPtr->avail -= toRead;
     }
-    if (toRead > reqPtr->avail) {
-        toRead = reqPtr->avail;
-    }
-    memcpy(vbuf, reqPtr->next, toRead);
-    reqPtr->next  += toRead;
-    reqPtr->avail -= toRead;
 
     return toRead;
 }
@@ -938,30 +946,38 @@ Ns_ConnRead(const Ns_Conn *conn, void *vbuf, size_t toRead)
 Ns_ReturnCode
 Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
 {
-    const Conn   *connPtr = (const Conn *) conn;
-    Request      *reqPtr = connPtr->reqPtr;
-    const Driver *drvPtr = connPtr->drvPtr;
+    const Conn   *connPtr;
+    Request      *reqPtr;
+    const Driver *drvPtr;
     const char   *eol;
-    size_t        nread, ncopy;
+    size_t        nread;
+    Ns_ReturnCode status = NS_OK;
 
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    
+    connPtr = (const Conn *) conn;
+    reqPtr = connPtr->reqPtr;
+    drvPtr = connPtr->drvPtr;
+    
     if (connPtr->sockPtr == NULL
         || (eol = strchr(reqPtr->next, INTCHAR('\n'))) == NULL
         || (nread = (size_t)(eol - reqPtr->next)) > (size_t)drvPtr->maxline) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        size_t ncopy = nread;
+        ++nread;
+        if (nreadPtr != NULL) {
+            *nreadPtr = nread;
+        }
+        if (ncopy > 0u && *(eol-1) == '\r') {
+            --ncopy;
+        }
+        Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);
+        reqPtr->next  += nread;
+        reqPtr->avail -= nread;
     }
-    ncopy = nread;
-    ++nread;
-    if (nreadPtr != NULL) {
-        *nreadPtr = nread;
-    }
-    if (ncopy > 0u && *(eol-1) == '\r') {
-        --ncopy;
-    }
-    Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);
-    reqPtr->next  += nread;
-    reqPtr->avail -= nread;
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -986,14 +1002,15 @@ Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 {
     Ns_DString      ds;
     const Conn     *connPtr = (const Conn *) conn;
-    size_t          nread, nline, maxhdr;
-    Ns_ReturnCode   status;
+    size_t          nread, maxhdr;
+    Ns_ReturnCode   status = NS_OK;
 
     Ns_DStringInit(&ds);
     nread = 0u;
     maxhdr = (size_t)connPtr->drvPtr->maxheaders;
-    status = NS_OK;
     while (nread < maxhdr && status == NS_OK) {
+        size_t nline;
+        
         Ns_DStringSetLength(&ds, 0);
         status = Ns_ConnReadLine(conn, &ds, &nline);
         if (status == NS_OK) {
@@ -1036,17 +1053,25 @@ Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 Ns_ReturnCode
 Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
 {
-    const Conn *connPtr = (const Conn *) conn;
-    Request    *reqPtr = connPtr->reqPtr;
+    const Conn    *connPtr;
+    Request       *reqPtr;
+    Ns_ReturnCode  status = NS_OK;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    connPtr = (const Conn *)conn;
+    reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        Ns_DStringNAppend(dsPtr, reqPtr->next, (int)toCopy);
+        reqPtr->next  += toCopy;
+        reqPtr->avail -= toCopy;
     }
-    Ns_DStringNAppend(dsPtr, reqPtr->next, (int)toCopy);
-    reqPtr->next  += toCopy;
-    reqPtr->avail -= toCopy;
 
-    return NS_OK;
+    return status;
 }
 
 
@@ -1087,38 +1112,43 @@ Ns_ConnCopyToFd(const Ns_Conn *conn, size_t ncopy, int fd)
 static Ns_ReturnCode
 ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 {
-    const Conn *connPtr;
-    Request    *reqPtr;
-    size_t      ncopy = toCopy;
-    ssize_t     nwrote;
-
+    const Conn   *connPtr;
+    Request      *reqPtr;
+    size_t        ncopy = toCopy;
+    ssize_t       nwrote;
+    Ns_ReturnCode status = NS_OK;
+    
     NS_NONNULL_ASSERT(conn != NULL);
 
     connPtr = (Conn *) conn;
     reqPtr = connPtr->reqPtr;
+    assert(reqPtr != NULL);
 
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
-        return NS_ERROR;
-    }
-    while (ncopy > 0u) {
-        if (chan != NULL) {
-            nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
-        } else if (fp != NULL) {
-	    nwrote = (ssize_t)fwrite(reqPtr->next, 1u, ncopy, fp);
-            if (ferror(fp) != 0) {
-                nwrote = -1;
+        status = NS_ERROR;
+    } else {
+        while (ncopy > 0u) {
+            if (chan != NULL) {
+                nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
+            } else if (fp != NULL) {
+                nwrote = (ssize_t)fwrite(reqPtr->next, 1u, ncopy, fp);
+                if (ferror(fp) != 0) {
+                    nwrote = -1;
+                }
+            } else {
+                nwrote = ns_write(fd, reqPtr->next, ncopy);
             }
-        } else {
-            nwrote = ns_write(fd, reqPtr->next, ncopy);
+            if (nwrote < 0) {
+                status = NS_ERROR;
+                break;
+            } else {
+                ncopy -= (size_t)nwrote;
+                reqPtr->next  += nwrote;
+                reqPtr->avail -= (size_t)nwrote;
+            }
         }
-        if (nwrote < 0) {
-            return NS_ERROR;
-        }
-        ncopy -= (size_t)nwrote;
-        reqPtr->next  += nwrote;
-        reqPtr->avail -= (size_t)nwrote;
     }
-    return NS_OK;
+    return status;
 }
 
 
@@ -1322,10 +1352,7 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
 
     hdrvalue = Ns_SetIGet(set, name);
 
-    if ((hdrvalue != NULL) && (strncasecmp(hdrvalue, value, strlen(value)) == 0)) {
-        return NS_TRUE;
-    }
-    return NS_FALSE;
+    return ((hdrvalue != NULL) && (strncasecmp(hdrvalue, value, strlen(value)) == 0));
 }
 
 /*
