@@ -240,9 +240,14 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ObjvInt, Ns_ObjvUShort, Ns_ObjvLong, Ns_ObjvWideInt, Ns_ObjvDouble --
+ * Ns_ObjvInt, 
+ * Ns_ObjvUShort, 
+ * Ns_ObjvLong, 
+ * Ns_ObjvWideInt, 
+ * Ns_ObjvDouble
  *
  *      Consume exactly one argument, returning it's value into dest.
+ *      A typical use case for Ns_ObjvUShort is for ports.
  *
  * Results:
  *      TCL_OK or TCL_ERROR;
@@ -288,6 +293,9 @@ Ns_ObjvUShort(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
         
         result = Tcl_GetIntFromObj(interp, objv[0], &intValue);
         if (likely(result == TCL_OK)) {
+            /*
+             * Check permissible values (USHRT_MAX)
+             */
             if (intValue > 65535 || intValue < 0) {
                 Ns_TclPrintfResult(interp, "value %d out of range (0..65535)", intValue); 
                 result = TCL_ERROR;
