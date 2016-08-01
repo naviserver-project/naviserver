@@ -893,48 +893,49 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
                   NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;
+    int             result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(sslPtr != NULL);
 
-    Ns_Log(Debug, "SSLAccept: before new.");
     ssl = SSL_new(ctx);
     *sslPtr = ssl;
     if (ssl == NULL) {
         Ns_TclPrintfResult(interp, "SSLAccept failed: %s", ERR_error_string(ERR_get_error(), NULL));
         Ns_Log(Debug, "SSLAccept failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    SSL_set_fd(ssl, sock);
-    SSL_set_accept_state(ssl);
+    } else {
 
-    for (;;) {
-        int rc, sslerr;
+        SSL_set_fd(ssl, sock);
+        SSL_set_accept_state(ssl);
 
-        rc = SSL_do_handshake(ssl);
-        sslerr = SSL_get_error(ssl, rc);
+        for (;;) {
+            int rc, sslerr;
 
-        if (sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_READ) {
-            Ns_Time timeout = { 0, 10000 }; /* 10ms */
+            rc = SSL_do_handshake(ssl);
+            sslerr = SSL_get_error(ssl, rc);
+
+            if (sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_READ) {
+                Ns_Time timeout = { 0, 10000 }; /* 10ms */
             
-            (void) Ns_SockTimedWait(sock, ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ), &timeout);
-            continue;
+                (void) Ns_SockTimedWait(sock, ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ), &timeout);
+                continue;
+            }
+            break;
         }
-        break;
+
+        if (!SSL_is_init_finished(ssl)) {
+            Ns_TclPrintfResult(interp, "ssl accept failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            Ns_Log(Debug, "SSLAccept failed: %s", ERR_error_string(ERR_get_error(), NULL));
+
+            SSL_free(ssl);
+            *sslPtr = NULL;
+            result = TCL_ERROR;
+        }
     }
-
-    if (!SSL_is_init_finished(ssl)) {
-        Ns_TclPrintfResult(interp, "ssl accept failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        Ns_Log(Debug, "ssl accept failed: %s", ERR_error_string(ERR_get_error(), NULL));
-
-        SSL_free(ssl);
-        *sslPtr = NULL;
-        return TCL_ERROR;
-    }
-
-    return TCL_OK;
+    return result;
 }
 
 
