@@ -196,14 +196,14 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
         /*
          * Set the mask bits in the leading 32 bit ints to 1.
          */
-        for (i = 0; i < 4 && nrBits >= 32u; i++, nrBits -= 32) {
+        for (i = 0; i < 4 && nrBits >= 32u; i++, nrBits -= 32u) {
             addr->s6_addr32[i] = (~0u);
         }
         /*
          * Set the partial mask.
          */
         if (i < 4 && nrBits > 0u) {
-            addr->s6_addr32[i] = htonl((~0u) << (32 - nrBits));
+            addr->s6_addr32[i] = htonl((~0u) << (32u - nrBits));
             i++;
         }
         /*
@@ -217,14 +217,14 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
          * Windows does not have 32bit members, so process in 16bit
          * chunks: Set the mask bits in the leading 16 bit Words to 1.
          */
-        for (i = 0; i < 8 && nrBits >= 16u; i++, nrBits -= 16) {
+        for (i = 0; i < 8 && nrBits >= 16u; i++, nrBits -= 16u) {
             addr->u.Word[i] = (unsigned short)(~0u);
         }
         /*
          * Set the partial mask.
          */
         if (i < 8 && nrBits > 0u) {
-            addr->u.Word[i] = htons((~0u) << (16 - nrBits));
+            addr->u.Word[i] = htons((~0u) << (16u - nrBits));
             i++;
         }
         /*
@@ -240,7 +240,7 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
             Ns_Log(Warning, "Invalid bitmask /%d: can be most 32 bits", nrBits);
             nrBits = 32u;
         }
-        ((struct sockaddr_in *)mask)->sin_addr.s_addr = htonl((~0u) << (32 - nrBits));
+        ((struct sockaddr_in *)mask)->sin_addr.s_addr = htonl((~0u) << (32u - nrBits));
     } else {
         Ns_Log(Error, "invalid address family %d detected (Ns_SockaddrMaskBits)", mask->sa_family);
     }

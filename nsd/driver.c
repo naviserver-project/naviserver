@@ -3729,7 +3729,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         }
         NsSockClose(wrSockPtr->sockPtr, (int)NS_FALSE);
     } else {
-        NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
+        NsSockClose(wrSockPtr->sockPtr, (int)wrSockPtr->keep);
     }
     if (wrSockPtr->clientData != NULL) {
         ns_free(wrSockPtr->clientData);
