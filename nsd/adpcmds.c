@@ -1089,12 +1089,14 @@ static int
 AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, bool doStream)
 {
     NsInterp *itPtr = arg;
+    int       result;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        result = NsAdpFlush(itPtr, doStream);
     }
-    return NsAdpFlush(itPtr, doStream);
 }
 
 int
