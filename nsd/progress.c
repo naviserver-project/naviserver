@@ -180,7 +180,7 @@ void
 NsUpdateProgress(Ns_Sock *sock)
 {
     const Sock       *sockPtr = (const Sock *) sock;
-    Request          *reqPtr;
+    const Request    *reqPtr;
     const Ns_Request *request;
     Tcl_HashEntry    *hPtr;
     Ns_DString        ds;

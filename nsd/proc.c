@@ -206,7 +206,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
  *
  * Ns_StringArgProc --
  *
- *      Info callback for procs which take a cstring arg.
+ *      Info callback for procs which take a C string arg.
  *
  * Results:
  *      None. 
@@ -218,9 +218,9 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
  */
 
 void
-Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
+Ns_StringArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    char *str = arg;
+    const char *str = arg;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     

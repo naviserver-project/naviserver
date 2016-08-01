@@ -862,7 +862,7 @@ Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
  */
 
 char *
-Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
+Ns_ConnGets(char *buf, size_t bufsize, const Ns_Conn *conn)
 {
     char *p;
 
@@ -982,7 +982,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
  */
 
 Ns_ReturnCode
-Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
+Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 {
     Ns_DString      ds;
     const Conn     *connPtr = (const Conn *) conn;

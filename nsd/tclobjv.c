@@ -732,10 +732,10 @@ int
 Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
              Tcl_Obj *CONST* objv)
 {
-    unsigned int   *dest;
-    Ns_ObjvTable   *tablePtr;
-    int             result, tableIdx = 0;
-    Tcl_Obj       **flagv;
+    unsigned int       *dest;
+    const Ns_ObjvTable *tablePtr;
+    int                 result, tableIdx = 0;
+    Tcl_Obj           **flagv;
 
     NS_NONNULL_ASSERT(spec != NULL);
     NS_NONNULL_ASSERT(interp != NULL);

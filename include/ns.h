@@ -1220,7 +1220,7 @@ Ns_ConnFlushContent(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
+Ns_ConnGets(char *buf, size_t bufsize, const Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN size_t
@@ -1232,7 +1232,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
+Ns_ConnReadHeaders(const Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
@@ -2152,7 +2152,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
 
 
 NS_EXTERN void
-Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
+Ns_StringArgProc(Tcl_DString *dsPtr, const void *arg)
     NS_GNUC_NONNULL(1);
 
 

@@ -157,7 +157,7 @@ const char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
     const NsInterp *itPtr = NsGetInterpData(interp);
-    const char     *errorInfo, **logHeaders;
+    const char     *errorInfo, *const*logHeaders;
     Ns_DString      ds;
 
     if (extraInfo != NULL) {
