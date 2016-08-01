@@ -192,7 +192,7 @@ Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize,
 	tclStatus = TCL_CONTINUE;
     }
     
-    *nrBytes = (size_t)outSize-zPtr->avail_out;
+    *nrBytes = outSize - (size_t)zPtr->avail_out;
 
     return tclStatus;
 }
