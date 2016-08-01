@@ -670,7 +670,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
             /*
              * The first character was the separator, treat sec as 0.
              */
-            tPtr->sec = 0l;
+            tPtr->sec = 0L;
         } else {
             int result;
             
