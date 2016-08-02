@@ -2616,7 +2616,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         && reqPtr->length > drvPtr->readahead /* We need more data */
         && sockPtr->tfd <= 0                  /* We have no spool fd */
         ) {
-        DrvSpooler *spPtr  = &drvPtr->spooler;
+        const DrvSpooler *spPtr = &drvPtr->spooler;
 
         Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %lu > readahead %lu)",
                reqPtr->length, drvPtr->readahead);
