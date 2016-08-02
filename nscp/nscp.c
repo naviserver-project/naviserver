@@ -46,7 +46,7 @@ typedef struct Mod {
     Tcl_HashTable users;
     const char *server;
     const char *addr;
-    int port;
+    unsigned short port;
     bool echo;
     bool commandLogging;
 } Mod;

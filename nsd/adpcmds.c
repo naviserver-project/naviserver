@@ -1097,6 +1097,7 @@ AdpFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     } else {
         result = NsAdpFlush(itPtr, doStream);
     }
+    return result;
 }
 
 int

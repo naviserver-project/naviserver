@@ -2546,7 +2546,7 @@ ChunkedDecode(Request *reqPtr, int update)
 static SockState
 SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 {
-    Driver       *drvPtr;
+    const Driver       *drvPtr;
     Request      *reqPtr;
     Tcl_DString  *bufPtr;
     struct iovec  buf;

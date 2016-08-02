@@ -375,23 +375,27 @@ int
 NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NS_SOCKET sock;
+    int       result;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 0, (int *) &sock) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    sock = Ns_SockAccept(sock, NULL, 0);
-    if (sock == NS_INVALID_SOCKET) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                               "accept failed: ",
-                               Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
+        
+    } else if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 0, (int *) &sock) != TCL_OK) {
+        result = TCL_ERROR;
 
-    return EnterDupedSocks(interp, sock);
+    } else {
+        sock = Ns_SockAccept(sock, NULL, 0);
+        if (sock == NS_INVALID_SOCKET) {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                                   "accept failed: ",
+                                   Tcl_PosixError(interp), NULL);
+            result = TCL_ERROR;
+        } else {
+            result = EnterDupedSocks(interp, sock);
+        }
+    }
+    return result;
 }
 
 
@@ -746,7 +750,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     const char     *script, *sockId, *whenString;
     NS_SOCKET       sock;
     int             result = TCL_OK;
-    size_t          scriptLength = 0u;
+    size_t          scriptLength;
     const Ns_Time  *timeoutPtr = NULL;
     unsigned int    when;
     Callback       *cbPtr;
@@ -1096,29 +1100,34 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 static int
 EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 {
+    int result;
+    
     NS_NONNULL_ASSERT(interp != NULL);
 
     sock = ns_sockdup(sock);
     if (sock == NS_INVALID_SOCKET) {
         Tcl_AppendResult(interp, "could not dup socket: ", 
                          ns_sockstrerror(errno), NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        result = EnterSock(interp, sock);
     }
-
-    return EnterSock(interp, sock);
+    return result;
 }
 
 static int
 EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
 {
+    int result = TCL_OK;
+    
     NS_NONNULL_ASSERT(interp != NULL);
 
     if (EnterSock(interp, sock) != TCL_OK ||
         EnterDup(interp, sock) != TCL_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

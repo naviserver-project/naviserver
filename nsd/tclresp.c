@@ -556,7 +556,7 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     int           len, httpStatus, result;
     const char   *mimeType, *channelName;
     Ns_Conn      *conn = NULL;
-    Tcl_Channel   chan;
+    Tcl_Channel   chan = NULL;
     Ns_ObjvSpec   args[] = {
         {"status",  Ns_ObjvInt,    &httpStatus, NULL},
         {"type",    Ns_ObjvString, &mimeType, NULL},
