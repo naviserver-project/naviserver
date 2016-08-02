@@ -1115,7 +1115,6 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
     const Conn   *connPtr;
     Request      *reqPtr;
     size_t        ncopy = toCopy;
-    ssize_t       nwrote;
     Ns_ReturnCode status = NS_OK;
     
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1128,6 +1127,8 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
         status = NS_ERROR;
     } else {
         while (ncopy > 0u) {
+            ssize_t nwrote;
+
             if (chan != NULL) {
                 nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
             } else if (fp != NULL) {
