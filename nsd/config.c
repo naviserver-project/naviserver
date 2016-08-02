@@ -987,7 +987,7 @@ GetSection(const char *section, bool create)
 static bool
 ToBool(const char *value, bool *valuePtr)
 {
-    int boolValue;
+    int boolValue, success = NS_TRUE;
 
     NS_NONNULL_ASSERT(value != NULL);
     NS_NONNULL_ASSERT(valuePtr != NULL);
@@ -1009,11 +1009,13 @@ ToBool(const char *value, bool *valuePtr)
 
         boolValue = (int)NS_FALSE;
     } else if (Ns_StrToInt(value, &boolValue) != NS_OK) {
-        return NS_FALSE;
+        success = NS_FALSE;
     }
-    *valuePtr = (boolValue != (int)NS_FALSE) ? NS_TRUE : NS_FALSE;
+    if (success) {
+        *valuePtr = (boolValue != (int)NS_FALSE) ? NS_TRUE : NS_FALSE;
+    }
 
-    return NS_TRUE;
+    return success;
 }
 
 /*

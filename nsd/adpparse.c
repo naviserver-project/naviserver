@@ -97,6 +97,11 @@ static char *GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
 static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void AdpParseTclFile(AdpCode *codePtr, char *adp, unsigned int flags, const char* file)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  *----------------------------------------------------------------------
@@ -236,6 +241,48 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
  *
  * NsAdpParse --
  *
+ *      Parse a string containing Tcl statements. When evalutating a Tcl file,
+ *      we just wrap it as Tcl proc and save in ADP block with cache enabled
+ *      or just execute the Tcl code in case of cache disabled
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The given AdpCode structure is filled in with a copy of the Tcl source
+ *      code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AdpParseTclFile(AdpCode *codePtr, char *adp, unsigned int flags, const char* file) {
+    int size, line = 0;
+
+    NS_NONNULL_ASSERT(codePtr != NULL);
+    NS_NONNULL_ASSERT(adp != NULL);
+    
+    if ((flags & ADP_CACHE) == 0u) {
+        Tcl_DStringAppend(&codePtr->text, adp, -1);
+    } else {
+        Ns_DStringPrintf(&codePtr->text,
+                         "ns_adp_append {<%%"
+                         "if {[info proc adp:%s] == {}} {"
+                         "  proc adp:%s {} { uplevel [for {", file, file);
+        Tcl_DStringAppend(&codePtr->text, adp, -1);
+        Ns_DStringPrintf(&codePtr->text, "} {0} {} {}]}}\nadp:%s %%>}", file);
+    }
+    codePtr->nblocks = codePtr->nscripts = 1;
+    size = -codePtr->text.length;
+    AppendLengths(codePtr, &size, &line);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AdpParseAdp --
+ *
  *      Parse a string of ADP text/script.  Parsing is done in a single,
  *      top to bottom pass, looking for the following four types of
  *      embedded script sequences:
@@ -253,24 +300,21 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
  *      None.
  *
  * Side effects:
- *      Given AdpCode structure is initialized and filled in with copy
- *      of parsed ADP.
+ *      The given AdpCode structure is filled in with copy
+ *      of the parsed ADP code.
  *
  *----------------------------------------------------------------------
  */
-
-void
-NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
-	   unsigned int flags, const char* file)
+static void
+AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 {
     int                  level, scriptStreamDone;
     unsigned int         scriptFlags;
-    const Tag           *tagPtr = NULL;
-    char                *s, *e, *n, *as = "";
-    const char          *script = "", *ae = "";
-    char                *a, *text;
-    Tcl_DString          tag;
     const Tcl_HashEntry *hPtr;
+    const Tag           *tagPtr = NULL;
+    const char          *script = "", *ae = "";
+    char                *s, *e, *n, *a, *text, null = '\0', *as = &null;
+    Tcl_DString          tag;
     enum {
         TagNext,
         TagScript,
@@ -283,37 +327,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     NS_NONNULL_ASSERT(adp != NULL);
 
     /*
-     * Initialize the code and parse structures.
+     * Initialize the parse structure.
      */
-    Tcl_DStringInit(&codePtr->text);
-    codePtr->nscripts = codePtr->nblocks = 0;
     parse.codePtr = codePtr;
     parse.line = 0;
-
-    /*
-     * Special case when we evalutating Tcl file, we just wrap it as
-     * Tcl proc and save in ADP block with cache enabled or
-     * just execute the Tcl code in case of cache disabled
-     */
-    if ((flags & ADP_TCLFILE) != 0u) {
-        int size;
-
-        if ((flags & ADP_CACHE) == 0u) {
-            Tcl_DStringAppend(&codePtr->text, adp, -1);
-        } else {
-            Ns_DStringPrintf(&codePtr->text,
-                "ns_adp_append {<%%"
-                "if {[info proc adp:%s] == {}} {"
-                "  proc adp:%s {} { uplevel [for {", file, file);
-            Tcl_DStringAppend(&codePtr->text, adp, -1);
-            Ns_DStringPrintf(&codePtr->text, "} {0} {} {}]}}\nadp:%s %%>}", file);
-        }
-        codePtr->nblocks = codePtr->nscripts = 1;
-        size = -codePtr->text.length;
-        AppendLengths(codePtr, &size, &parse.line);
-
-        return;
-    }
 
     Tcl_DStringInit(&tag);
     Tcl_DStringInit(&parse.lens);
@@ -334,7 +351,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
         /*
          * Process the tag depending on the current state.
          */
-
         switch (state) {
         case TagNext:
             /*
@@ -520,6 +536,49 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 /*
  *----------------------------------------------------------------------
  *
+ * AdpParseAdp --
+ *
+ *      Parse a string containing a Tcl source or an ADP text/script.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Given AdpCode structure is initialized and filled in with copy
+ *      of parsed ADP.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
+	   unsigned int flags, const char* file)
+{
+    NS_NONNULL_ASSERT(codePtr != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(adp != NULL);
+
+    /*
+     * Initialize the code structure.
+     */
+    Tcl_DStringInit(&codePtr->text);
+    codePtr->nscripts = codePtr->nblocks = 0;
+
+    /*
+     * Special case when we evalutating Tcl file, we just wrap it as
+     * Tcl proc and save in ADP block with cache enabled or
+     * just execute the Tcl code in case of cache disabled
+     */
+    if ((flags & ADP_TCLFILE) != 0u) {
+        AdpParseTclFile(codePtr, adp, flags, file);
+    } else {
+        AdpParseAdp(codePtr, servPtr, adp, flags);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsAdpFreeCode --
  *
  *      Free internal AdpCode storage.
@@ -571,54 +630,57 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
     NS_NONNULL_ASSERT(e != NULL);
     NS_NONNULL_ASSERT(s <= e);
 
-    if (unlikely(s == e)) {
-	/* false alarm */
-	return;
-    }
+    len = e - s;
 
-    codePtr = parsePtr->codePtr;
+    if (likely(len > 0)) {
 
-    if ((flags & ADP_SINGLE) != 0u) {
-        char     save;
+        codePtr = parsePtr->codePtr;
 
-        switch (type) {
-        case 'S':
-            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
-            Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
-            break;
+        if ((flags & ADP_SINGLE) != 0u) {
+            char save;
 
-        case 't':
-            save = *e;
-            *e = '\0';
-            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
-            Tcl_DStringAppendElement(&codePtr->text, s);
-            *e = save;
-            break;
+            switch (type) {
+            case 'S':
+                Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
+                Tcl_DStringAppend(&codePtr->text, s, (int)len);
+                break;
 
-        default:
-	  Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
+            case 't':
+                save = *e;
+                *e = '\0';
+                Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
+                Tcl_DStringAppendElement(&codePtr->text, s);
+                *e = save;
+                break;
 
-        }
-        Tcl_DStringAppend(&codePtr->text, "\n", 1);
+            default:
+                Tcl_DStringAppend(&codePtr->text, s, (int)len);
 
-    } else {
+            }
+            Tcl_DStringAppend(&codePtr->text, "\n", 1);
 
-        ++codePtr->nblocks;
-        len = e - s;
-        if (type == 'S') {
-            len += APPEND_LEN;
-            Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
-        }
-        Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
-        if (type != 't') {
-            ++codePtr->nscripts;
-            len = -len;
-        }
-        Tcl_DStringAppend(&parsePtr->lens, (char *) &len, LENSZ);
-        Tcl_DStringAppend(&parsePtr->lines, (char *) &parsePtr->line, LENSZ);
-        while (likely(s < e)) {
-            if (unlikely(*s++ == '\n')) {
-                ++parsePtr->line;
+        } else {
+            ptrdiff_t  l = len;
+
+            ++codePtr->nblocks;
+            if (type == 'S') {
+                l += APPEND_LEN;
+                Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
+            }
+            Tcl_DStringAppend(&codePtr->text, s, (int)len);
+            if (type != 't') {
+                ++codePtr->nscripts;
+                l = -l;
+            }
+            Tcl_DStringAppend(&parsePtr->lens, (char *) &l, LENSZ);
+            Tcl_DStringAppend(&parsePtr->lines, (char *) &parsePtr->line, LENSZ);
+            /*
+             * Increment line numbers based on the passed-in segment
+             */
+            while (likely(s < e)) {
+                if (unlikely(*s++ == '\n')) {
+                    ++parsePtr->line;
+                }
             }
         }
     }
@@ -826,6 +888,7 @@ static char *
 GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
 {
     unsigned int flags;
+    char        *result = NULL;
 
     NS_NONNULL_ASSERT(tag != NULL);
     NS_NONNULL_ASSERT(a != NULL);
@@ -836,10 +899,10 @@ GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
         ParseAtts(a, e, &flags, NULL, 1);
         if ((flags & SERV_RUNAT) != 0u && (flags & SERV_NOTTCL) == 0u) {
             *flagPtr = (flags & SERV_STREAM);
-            return (e + 1);
+            result = (e + 1);
         }
     }
-    return NULL;
+    return result;
 }
 
 

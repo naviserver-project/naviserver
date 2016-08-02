@@ -362,39 +362,39 @@ ShutdownThread(void *arg)
 void
 NsWaitShutdownProcs(const Ns_Time *toPtr)
 {
-    const Callback   *cbPtr;
-    Ns_ReturnCode     status = NS_OK;
-
-    if (shutdownThread == NULL) {
-        return; /* No shutdown callbacks. */
-    }
-
     /*
-     * Wait for the shutdown thread to finish running shutdown
-     * notification and one-shot callbacks.
+     * Execute shutdown callbacks only when we have a shutdownThread.
      */
-
-    Ns_MutexLock(&lock);
-    while (status == NS_OK && shutdownComplete == 0) {
-        status = Ns_CondTimedWait(&cond, &lock, toPtr);
-    }
-    Ns_MutexUnlock(&lock);
-
-    if (status != NS_OK) {
-        Ns_Log(Warning, "shutdown: timeout waiting for shutdown procs");
-    } else {
-
+    if (shutdownThread != NULL) {
+        Ns_ReturnCode     status = NS_OK;
+        
         /*
-         * Wait for each callback to complete.  Well behaved callbacks will
-         * return immediately if timeout has expired.
+         * Wait for the shutdown thread to finish running shutdown
+         * notification and one-shot callbacks.
          */
-
-        for (cbPtr = firstShutdown; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
-	    Ns_ShutdownProc *proc = (Ns_ShutdownProc *)cbPtr->proc;
-            (*proc)(toPtr, cbPtr->arg);
+        Ns_MutexLock(&lock);
+        while (status == NS_OK && shutdownComplete == 0) {
+            status = Ns_CondTimedWait(&cond, &lock, toPtr);
         }
+        Ns_MutexUnlock(&lock);
 
-        Ns_ThreadJoin(&shutdownThread, NULL);
+        if (status != NS_OK) {
+            Ns_Log(Warning, "shutdown: timeout waiting for shutdown procs");
+        } else {
+            const Callback   *cbPtr;
+
+            /*
+             * Wait for each callback to complete.  Well behaved callbacks will
+             * return immediately if timeout has expired.
+             */
+
+            for (cbPtr = firstShutdown; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
+                Ns_ShutdownProc *proc = (Ns_ShutdownProc *)cbPtr->proc;
+                (*proc)(toPtr, cbPtr->arg);
+            }
+
+            Ns_ThreadJoin(&shutdownThread, NULL);
+        }
     }
 }
 

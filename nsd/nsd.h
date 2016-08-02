@@ -86,6 +86,7 @@ typedef enum {
 
 #define MAX_URLSPACES                  16
 #define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2u)
+#define NS_MAX_RANGES                  32
 
 #define CONN_TCLFORM                   0x01u  /* Query form set is registered for interp */
 #define CONN_TCLHDRS                   0x02u  /* Input headers set is registered for interp */

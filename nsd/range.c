@@ -130,10 +130,16 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
                  Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
     const Conn *connPtr = (const Conn *) conn;
-    Range      *ranges;
-    int         maxranges, rangeCount, i, v;
+    int         maxranges = NS_MAX_RANGES, rangeCount, i, v;
     off_t       start, end, dsbase;
     size_t      len, responseLength;
+#ifdef NS_HAVE_C99
+    Range       ranges[NS_MAX_RANGES];
+#else
+    Range      *ranges;
+    
+    ranges = alloca(sizeof(Range) * (size_t)NS_MAX_RANGES);
+#endif    
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(type != NULL);
@@ -146,9 +152,6 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
         *nbufsPtr = 0;
         return 0;
     }
-
-    maxranges = (*nbufsPtr / 2) - 1;
-    ranges = alloca(sizeof(Range) * (size_t)maxranges);
 
     rangeCount = ParseRangeOffsets(conn, objLength, ranges, maxranges);
     if (rangeCount < 1) {

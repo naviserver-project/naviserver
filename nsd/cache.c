@@ -962,6 +962,7 @@ static bool
 Expired(const Entry *ePtr, const Ns_Time *nowPtr)
 {
     Ns_Time  now;
+    bool     expired = NS_FALSE;
 
     NS_NONNULL_ASSERT(ePtr != NULL);
 
@@ -971,10 +972,10 @@ Expired(const Entry *ePtr, const Ns_Time *nowPtr)
             nowPtr = &now;
         }
         if (Ns_DiffTime(&ePtr->expires, nowPtr, NULL) < 0) {
-            return NS_TRUE;
+            expired = NS_TRUE;
         }
     }
-    return NS_FALSE;
+    return expired;
 }
 
 
