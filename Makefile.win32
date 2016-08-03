@@ -40,7 +40,7 @@ TCLPATH = $(tcl_64)
 VC      = C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC
 MSDK    = C:\Program Files\Microsoft SDKs\Windows\v7.1
 
-# Note that I compile Naviserver (on Windows 7 x86-64) like so:
+# Note that I compile NaviServer (on Windows 7 x86-64) like so:
 #
 # "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
 # cd C:\foo\naviserver
@@ -113,7 +113,7 @@ NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 #
 # --atp@piskorski.com, 2014/09/25 16:29 EDT
 
-# For the core Naviserver modules, we use the same module/Makefile for
+# For the core NaviServer modules, we use the same module/Makefile for
 # both make and nmake.  Unfortunately, it looks like that won't work
 # for add-on modules.  Their makefiles have more diversity, and even
 # if they are did NOT, there are still other stumbling blocks.  E.g.:
