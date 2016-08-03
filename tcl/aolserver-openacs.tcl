@@ -19,11 +19,12 @@
 # Gustaf Neumann fecit June, 2009
 
 
-if {[ns_config "ns/testconfig" isTestServer] eq ""} {
-    # Try to load NX/XOTcl only if not in the regression test
-    # server. The exit from the test server calls the global "exit"
-    # handler in XOTcl/NX (not the thread exit handler) and throws ugly
-    # error messages.
+if {1} {
+    # In previous versions, this file was just loaded if not in the
+    # regression test server. The exit from the test server calls the
+    # global "exit" handler in XOTcl/NX (not the thread exit handler)
+    # which used to show wrong error messages. This seems to be solved,
+    # and we can use nsf in the regression test suite.
 
     # Requiring the XOTcl/NX and the serializer here is not necessary
     # for the ns-cache emulation, but since the tcl files are sourced in
