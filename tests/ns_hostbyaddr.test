@@ -44,7 +44,7 @@ if {$::tcl_platform(os) eq "Darwin"} {
     }
 } 
 
-tcltest::testConstraint notDarwin [expr {$::notRecentDarwin}]
+tcltest::testConstraint notDarwin $::notRecentDarwin
 
 test ns_hostbyaddr-1.1 {good address} -constraints {notDarwin} -body {
     ns_hostbyaddr 127.0.0.1
