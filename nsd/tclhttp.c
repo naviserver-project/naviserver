@@ -536,7 +536,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 
 	    Ns_Log(Ns_LogTaskDebug, "ns_http: got header %d + %" PRIdz " bytes", httpPtr->replyHeaderSize, contentSize);
 
-	    (void)Tcl_DStringInit(dsPtr);
+	    Tcl_DStringInit(dsPtr);
 	    Tcl_DStringAppend(dsPtr, httpPtr->ds.string + httpPtr->replyHeaderSize, (int)contentSize);
 	    Tcl_DStringTrunc(&httpPtr->ds, httpPtr->replyHeaderSize);
 	    Ns_HttpAppendBuffer(httpPtr, dsPtr->string, contentSize);

@@ -2479,8 +2479,8 @@ ChunkedDecode(Request *reqPtr, int update)
     chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
-        char *p = strstr(chunkStart, "\r\n");
-        size_t chunk_length;
+        char   *p = strstr(chunkStart, "\r\n");
+        size_t  chunk_length;
 
         if (p == NULL) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
@@ -2502,7 +2502,7 @@ ChunkedDecode(Request *reqPtr, int update)
             reqPtr->chunkWriteOff += chunk_length;
             *(writeBuffer + chunk_length) = '\0';
         }
-        reqPtr->chunkStartOff += (p - chunkStart) + 4u + chunk_length ;
+        reqPtr->chunkStartOff += (p - chunkStart) + 4u + chunk_length;
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
 

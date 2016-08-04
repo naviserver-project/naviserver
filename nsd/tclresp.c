@@ -603,7 +603,7 @@ int
 NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn     *conn = NULL;
-    Tcl_Channel  chan;
+    Tcl_Channel  chan = NULL;
     int          len, result = TCL_OK;
     const char  *channelName;
     Ns_ObjvSpec   args[] = {

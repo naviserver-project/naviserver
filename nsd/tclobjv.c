@@ -51,7 +51,8 @@ static void FreeSpecs(Ns_ObjvSpec *specPtr)
 static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
+static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+                         Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
 
 static int GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -389,8 +390,9 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  * Ns_ObjvBool --
  *
  *      If spec->arg is 0 consume exactly one argument and attempt
- *      conversion to a boolean value.  Otherwise, spec->arg is treated
- *      as an int and placed into spec->dest with zero args consumed.
+ *      conversion to a boolean value.  Otherwise, spec->arg is
+ *      treated as an int and placed into spec->dest with zero args
+ *      consumed.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -473,8 +475,8 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
  *
  * Ns_ObjvEval --
  *
- *      Consume exactly one argument, returning a pointer to the result
- *      of eval into *spec->dest.
+ *      Consume exactly one argument, returning a pointer to the
+ *      result of eval into *spec->dest.
  *
  *      If spec->arg is != NULL it is assumed to be a pointer to an
  *      int and the returned string length will be left in it.
@@ -677,9 +679,9 @@ Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  * Ns_ObjvIndex --
  *
  *      Match the next argument against the keys in the specified
- *      table, returning the value at the index of the first match into
- *      dest. It is an error for the argument to contain anything but
- *      one of the table keys.
+ *      table, returning the value at the index of the first match
+ *      into dest. It is an error for the argument to contain anything
+ *      but one of the table keys.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -724,9 +726,9 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  * Ns_ObjvFlags --
  *
  *      Treat the next argument as a list of flags and compare them
- *      all with the keys in the specified table.  As flags are matched
- *      the values are ORed togethter and the result is returned in dest.
- *      An unknown flag causes an error.
+ *      all with the keys in the specified table.  As flags are
+ *      matched the values are ORed togethter and the result is
+ *      returned in dest.  An unknown flag causes an error.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -816,7 +818,8 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
  *
  * Ns_ObjvArgs --
  *
- *	    Count all remaining arguments, leaving zero left unprocessed.
+ *	    Count all remaining arguments, leaving zero left
+ *	    unprocessed.
  *
  * Results:
  *	    Always TCL_BREAK.
@@ -1040,13 +1043,16 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
             return TCL_ERROR;
         }
         if (key[0] != '-' && argSpec == NULL) {
-            /* Found the first non-option. */
+            /* 
+             * Found the first non-option. 
+             */
             argSpec = ++specPtr;
         }
 
         /*
-         * Arguments with default values must have their keys prepended
-         * with '?' for the runtime parser. Tcl 'args' are always optional.
+         * Arguments with default values must have their keys
+         * prepended with '?' for the runtime parser. Tcl 'args' are
+         * always optional.
          */
 
         if ((key[0] != '-' && defObjPtr != NULL)
@@ -1343,12 +1349,12 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST*
  * SetValue --
  *
  *      Strip any leading "-" or "?" from the key and set a variable
- *      with the resulting name.
- *      If value starts with [ and ends with ] then evaluate Tcl script and assign result
- *      to the variable
+ *      with the resulting name.  If value starts with "[" and ends
+ *      with "]" then evaluate Tcl script and assign result to the
+ *      variable.
  *
  * Results:
- *      TCL_OK or TCL_ERROR.
+ *      Tcl result code.
  *
  * Side effects:
  *	    None.
@@ -1445,7 +1451,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */
