@@ -711,19 +711,22 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
                       Tcl_Obj *CONST* UNUSED(objv))
 {
     NS_SOCKET socks[2];
+    int       result;
     
     if (ns_sockpair(socks) != 0) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "ns_sockpair failed:  ", 
                                Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
-    if (EnterSock(interp, socks[0]) != TCL_OK) {
+        result = TCL_ERROR;
+        
+    } else if (EnterSock(interp, socks[0]) != TCL_OK) {
         ns_sockclose(socks[1]);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        result = EnterSock(interp, socks[1]);
     }
-    
-    return EnterSock(interp, socks[1]);
+    return result;
 }
 
 
