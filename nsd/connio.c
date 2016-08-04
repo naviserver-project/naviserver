@@ -885,7 +885,7 @@ Ns_ConnGets(char *buf, size_t bufsize, const Ns_Conn *conn)
         *p = '\0';
     }
 
-    return buf;
+    return result;
 }
 
 
