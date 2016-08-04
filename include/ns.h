@@ -2955,7 +2955,7 @@ Ns_GetEnviron(void);
 
 NS_EXTERN int
 Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
-                     int check, Tcl_Channel *chanPtr)
+                     bool check, Tcl_Channel *chanPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int

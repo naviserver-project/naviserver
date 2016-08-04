@@ -963,7 +963,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
         return TCL_ERROR;
     }
 
-    if (Ns_TclGetOpenChannel(interp, fileId, 0, 0, &chan) == TCL_ERROR) {
+    if (Ns_TclGetOpenChannel(interp, fileId, 0, NS_FALSE, &chan) == TCL_ERROR) {
         return TCL_ERROR;
     }
 

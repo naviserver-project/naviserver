@@ -74,9 +74,9 @@ static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const
 
 int
 Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
-                     int check, Tcl_Channel *chanPtr)
+                     bool check, Tcl_Channel *chanPtr)
 {
-    int mode;
+    int mode, result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(chanId != NULL);
@@ -85,20 +85,19 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
     *chanPtr = Tcl_GetChannel(interp, chanId, &mode);
 
     if (*chanPtr == NULL) {
-        return TCL_ERROR;
-    }
-    if (check == 0) {
-        return TCL_OK;
-    }
-    if (( write != 0 && (mode & TCL_WRITABLE) == 0) 
-        ||
-        (write == 0 && (mode & TCL_READABLE) == 0)) {
-        Tcl_AppendResult(interp, "channel \"", chanId, "\" not open for ",
-                         write != 0 ? "writing" : "reading", NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else if (check != 0) {
+
+        if (( write != 0 && (mode & TCL_WRITABLE) == 0) 
+            ||
+            (write == 0 && (mode & TCL_READABLE) == 0)) {
+            Tcl_AppendResult(interp, "channel \"", chanId, "\" not open for ",
+                             write != 0 ? "writing" : "reading", NULL);
+            result = TCL_ERROR;
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -125,24 +124,26 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 {
     Tcl_Channel chan;
     ClientData  data;
+    int         result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(chanId != NULL);
     NS_NONNULL_ASSERT(fdPtr != NULL);
 
-    if (Ns_TclGetOpenChannel(interp, chanId, write, 1, &chan) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (Tcl_GetChannelHandle(chan, write != 0 ? TCL_WRITABLE : TCL_READABLE,
+    if (Ns_TclGetOpenChannel(interp, chanId, write, NS_TRUE, &chan) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (Tcl_GetChannelHandle(chan, write != 0 ? TCL_WRITABLE : TCL_READABLE,
                              &data) != TCL_OK) {
         Tcl_AppendResult(interp, "could not get handle for channel: ",
                          chanId, NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        *fdPtr = PTR2INT(data);
     }
 
-    *fdPtr = PTR2INT(data);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -173,28 +174,30 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
     
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "file backupMax");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[2], &max) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (max <= 0 || max > 1000) {
+        result = TCL_ERROR;
+
+    } else if (Tcl_GetIntFromObj(interp, objv[2], &max) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (max <= 0 || max > 1000) {
         Tcl_AppendResult(interp, "invalid max \"", Tcl_GetString(objv[2]),
                          "\": should be > 0 and <= 1000.", NULL);
-        return TCL_ERROR;
-    }
-    if (*cmd == 'p') {
-        status = Ns_PurgeFiles(Tcl_GetString(objv[1]), max);
-    } else {
-        status = Ns_RollFile(Tcl_GetString(objv[1]), max);
-    }
-    if (status != NS_OK) {
-        Tcl_AppendResult(interp, "could not ", cmd, " \"",
-                         Tcl_GetString(objv[1]), "\": ",
-                         Tcl_PosixError(interp), NULL);
         result = TCL_ERROR;
+
     } else {
-        result = TCL_OK;
+        if (*cmd == 'p') {
+            status = Ns_PurgeFiles(Tcl_GetString(objv[1]), max);
+        } else {
+            status = Ns_RollFile(Tcl_GetString(objv[1]), max);
+        }
+        if (status != NS_OK) {
+            Tcl_AppendResult(interp, "could not ", cmd, " \"",
+                             Tcl_GetString(objv[1]), "\": ",
+                             Tcl_PosixError(interp), NULL);
+            result = TCL_ERROR;
+        } else {
+            result = TCL_OK;
+        }
     }
     
     return result;
@@ -232,7 +235,8 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-
+    int result = TCL_OK;
+    
     if (argc == 1) {
         char buffer[PATH_MAX] = "";
 
@@ -247,10 +251,10 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
     } else {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",
                          argv[0], " ?template?\"", NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -279,16 +283,18 @@ int
 NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* objv)
 {
     char buf[L_tmpnam];
-
+    int  result = TCL_OK;
+    
     Ns_LogDeprecated(objv, 1, "ns_mktemp ?template?", NULL);
 
     if (tmpnam(buf) == NULL) {
         Tcl_SetResult(interp, "could not get temporary filename", TCL_STATIC);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -311,7 +317,7 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
 int
 NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int pid, sig, nocomplain = (int)NS_FALSE, result;
+    int pid, sig, nocomplain = (int)NS_FALSE, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
@@ -323,16 +329,17 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    result = kill(pid, sig);
-    if (result != 0 && !nocomplain) {
-        Ns_TclPrintfResult(interp, "kill %d %d failed: %s", pid, sig, Tcl_PosixError(interp));
-        return TCL_ERROR;
+    } else {
+        int rc = kill(pid, sig);
+        
+        if (rc != 0 && !nocomplain) {
+            Ns_TclPrintfResult(interp, "kill %d %d failed: %s", pid, sig, Tcl_PosixError(interp));
+            result = TCL_ERROR;
+        }
     }
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -356,7 +363,7 @@ int
 NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char *file1, *file2;
-    int nocomplain = (int)NS_FALSE, result;
+    int nocomplain = (int)NS_FALSE, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
@@ -369,17 +376,18 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    result = symlink(file1, file2);
-    if (result != 0 && !nocomplain) {
-        Ns_TclPrintfResult(interp, "symlink '%s' '%s' failed: %s", file1, file2, 
-                           Tcl_PosixError(interp));
-        return TCL_ERROR;
+    } else {
+        int rc = result = symlink(file1, file2);
+        if (rc != 0 && !nocomplain) {
+            Ns_TclPrintfResult(interp, "symlink '%s' '%s' failed: %s", file1, file2, 
+                               Tcl_PosixError(interp));
+            result = TCL_ERROR;
+        }
     }
     
-    return TCL_OK;
+    return result;
 }
 
 
@@ -404,30 +412,30 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     const NsInterp *itPtr = clientData;
     Tcl_Channel     chan;
-    int             nbytes = INT_MAX;
-    Ns_ReturnCode   result;
+    int             nbytes = INT_MAX, result = TCL_OK;
 
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (objc == 3 && Tcl_GetIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (itPtr->conn == NULL) {
+        result = TCL_ERROR;
+
+    } else if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, NS_TRUE, &chan) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (objc == 3 && Tcl_GetIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (unlikely(itPtr->conn == NULL)) {
         Tcl_SetResult(interp, "no connection", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    result = Ns_ConnSendChannel(itPtr->conn, chan, (size_t)nbytes);
-    if (result != NS_OK) {
-        Tcl_SetResult(interp, "i/o failed", TCL_STATIC);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else  {
+        Ns_ReturnCode status = Ns_ConnSendChannel(itPtr->conn, chan, (size_t)nbytes);
+        if (unlikely(status != NS_OK)) {
+            Tcl_SetResult(interp, "i/o failed", TCL_STATIC);
+            result = TCL_ERROR;
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -450,8 +458,9 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    off_t length = 0;
     const char *fileString;
+    off_t       length = 0;
+    int         result = TCL_OK;
 
     Ns_ObjvSpec args[] = {
 	{"file",      Ns_ObjvString, &fileString, NULL},
@@ -460,17 +469,16 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-	return TCL_ERROR;
-    }
+	result = TCL_ERROR;
 
-    if (truncate(fileString, length) != 0) {
+    } else if (truncate(fileString, length) != 0) {
         Tcl_AppendResult(interp, "truncate (\"", fileString, "\", ",
                          length == 0 ? "0" : Tcl_GetString(objv[2]),
                          ") failed: ", Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -493,7 +501,7 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 int
 NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         fd;
+    int         fd, result = TCL_OK;
     off_t       length = 0;
     const char *fileIdString;
     
@@ -504,19 +512,19 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-	return TCL_ERROR;
-    }
-    if (Ns_TclGetOpenFd(interp, fileIdString, 1, &fd) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (ftruncate(fd, length) != 0) {
+	result = TCL_ERROR;
+
+    } else if (Ns_TclGetOpenFd(interp, fileIdString, 1, &fd) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (ftruncate(fd, length) != 0) {
         Tcl_AppendResult(interp, "ftruncate (\"", fileIdString, "\", ",
                          length == 0 ? "0" : Tcl_GetString(objv[2]),
                          ") failed: ", Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 /*
@@ -539,18 +547,20 @@ int
 NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString ds;
+    int        result = TCL_OK;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "path");
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    Ns_DStringInit(&ds);
-    Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
-    Tcl_DStringResult(interp, &ds);
-    Ns_DStringFree(&ds);
+    } else {
+        Ns_DStringInit(&ds);
+        Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
+        Tcl_DStringResult(interp, &ds);
+        Ns_DStringFree(&ds);
+    }
     
-    return TCL_OK;
+    return result;
 }
 
 

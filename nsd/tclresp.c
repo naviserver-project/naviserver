@@ -456,7 +456,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
             /*
              * We'll be returning an open channel
              */
-            if (Ns_TclGetOpenChannel(interp, chanid, 0, 1, &chan) != TCL_OK) {
+            if (Ns_TclGetOpenChannel(interp, chanid, 0, NS_TRUE, &chan) != TCL_OK) {
                 status = NS_ERROR;
             } else {
                 status = Ns_ConnReturnOpenChannel(conn, httpStatus, type, chan, (size_t)length);
@@ -571,7 +571,7 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     } else {
         result = GetConn(arg, interp, &conn);
         if (likely( result == TCL_OK )) {
-            result = Ns_TclGetOpenChannel(interp, channelName, 0, 1, &chan);
+            result = Ns_TclGetOpenChannel(interp, channelName, 0, NS_TRUE, &chan);
         }
         if (likely( result == TCL_OK )) {
             result = Result(interp, Ns_ConnReturnOpenChannel(conn, httpStatus, mimeType,
@@ -618,7 +618,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     } else {
         result = GetConn(arg, interp, &conn);
         if (likely( result == TCL_OK )) {
-            result = Ns_TclGetOpenChannel(interp, channelName, 0, 1, &chan);
+            result = Ns_TclGetOpenChannel(interp, channelName, 0, NS_TRUE, &chan);
         }
         if (likely( result == TCL_OK )) {
 
