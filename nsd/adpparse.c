@@ -100,7 +100,7 @@ static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DStrin
 static void AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void AdpParseTclFile(AdpCode *codePtr, char *adp, unsigned int flags, const char* file)
+static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -256,7 +256,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
  */
 
 static void
-AdpParseTclFile(AdpCode *codePtr, char *adp, unsigned int flags, const char* file) {
+AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file) {
     int size, line = 0;
 
     NS_NONNULL_ASSERT(codePtr != NULL);
