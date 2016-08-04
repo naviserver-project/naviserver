@@ -891,7 +891,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
                     if (deltaTimeoutPtr != NULL) {
                         while ((Tcl_FirstHashEntry(&queue->jobs, &search) != NULL)
-                               && (result = TCL_OK)
+                               && (result == TCL_OK)
                                && !AnyDone(queue)) {
                             Ns_ReturnCode timedOut = Ns_CondTimedWait(&queue->cond,
                                                                       &queue->lock, &timeout);
@@ -1621,6 +1621,7 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
             bool locked)
 {
     const Tcl_HashEntry *hPtr;
+    int                  result = TCL_OK;
     
     NS_NONNULL_ASSERT(queuePtr != NULL);
     NS_NONNULL_ASSERT(queueName != NULL);
@@ -1646,10 +1647,10 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
         if (interp != NULL) {
             Tcl_AppendResult(interp, "no such queue: ", queueName, NULL);
         }
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
