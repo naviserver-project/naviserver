@@ -54,8 +54,10 @@ static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
                          Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
 
-static int GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
+static int GetOptIndexObjvSpec(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const Ns_SubCmdSpec *tablePtr, int *idxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
  * Static variables defined in this file.
@@ -96,7 +98,7 @@ NsTclInitSpecType()
 /*
  *----------------------------------------------------------------------
  *
- * GetOptIndex --
+ * GetOptIndexObjvSpec --
  *
  *      Process options similar to Tcl_GetIndexFromObj() but allow
  *      only options (starting with a "-"), allow only exact matches
@@ -104,16 +106,16 @@ NsTclInitSpecType()
  *
  *      Background: Tcl_GetIndexFromObj() validates internal reps
  *      based on the pointer of the base string table, which works
- *      only reliably with static string tables. Since NaviServer
- *      can't use static string tables, these are allocated on the
- *      stack. This can lead to mix-ups for shared objects with the
- *      consequence the the resulting indices might be incorrect,
+ *      only reliably with *static* string tables. Since NaviServer
+ *      can't use static string tables, these tables are allocated on
+ *      the stack. This can lead to mix-ups for shared objects with
+ *      the consequence the the resulting indices might be incorrect,
  *      leading to potential crashes. In order to allow caching, it
  *      should be possible to validate the entries based on other
  *      means, but this requires a different interface.
  *
  * Results:
- *      NS_OK or NS_ERROR.
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -121,11 +123,11 @@ NsTclInitSpecType()
  *----------------------------------------------------------------------
  */
 static int 
-GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr) 
+GetOptIndexObjvSpec(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr) 
 {
     const Ns_ObjvSpec *entryPtr;
     const char        *key;
-    int                idx;
+    int                idx, result = TCL_ERROR;
 
     NS_NONNULL_ASSERT(obj != NULL);
     NS_NONNULL_ASSERT(tablePtr != NULL);    
@@ -152,11 +154,11 @@ GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
             /*
              * The value is an abbreviation for this entry.
              */
-	    return TCL_ERROR;
+	    break;
         }
     }
  
-   return TCL_ERROR;
+    return result;
 }
 
 
@@ -191,7 +193,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             int      result;
 
 	    result = Tcl_IsShared(obj) ? 
-		GetOptIndex(obj, optSpec, &optIndex) :
+		GetOptIndexObjvSpec(obj, optSpec, &optIndex) :
 		Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
 					  sizeof(Ns_ObjvSpec), "option",
 					  TCL_EXACT, &optIndex);
@@ -1446,6 +1448,137 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     Tcl_WrongNumArgs(interp, objc, objv, ds.string);
     Ns_DStringFree(&ds);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SubcmdObjv --
+ *
+ *      Call subcommand based on the provided name and associated functions.
+ *
+ * Results:
+ *      Tcl result code.
+ *
+ * Side effects:
+ *      Depends on the Ns_ObjvTypeProcs which run.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp *interp,
+              int objc, Tcl_Obj *CONST* objv)
+{
+    int opt = 0, result;
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        result = TCL_ERROR;
+    } else {
+        /*
+         * If the obj is shared, don't trust its internal representation.
+         */
+        result = Tcl_IsShared(objv[1])
+            ? GetOptIndexSubcmdSpec(interp, objv[1], "subcmd", subcmdSpec, &opt) 
+            : Tcl_GetIndexFromObjStruct(interp, objv[1], subcmdSpec, sizeof(Ns_SubCmdSpec), "subcmd",
+                                        TCL_EXACT, &opt);
+        if (likely(result == TCL_OK)) {
+            result = (*subcmdSpec[opt].proc)(clientData, interp, objc, objv);
+        }
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetOptIndexSubcmdSpec --
+ *
+ *      Process options similar to Tcl_GetIndexFromObj() but don't
+ *      cache results as internal reps.
+ *
+ *      Background: see GetOptIndexObjvSpec()
+ *
+ * Results:
+ *      Tcl result
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int 
+GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const Ns_SubCmdSpec *tablePtr, int *idxPtr) 
+{
+    const Ns_SubCmdSpec *entryPtr;
+    const char          *key;
+    int                  idx, result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(obj != NULL);
+    NS_NONNULL_ASSERT(msg != NULL);
+    NS_NONNULL_ASSERT(tablePtr != NULL);    
+    NS_NONNULL_ASSERT(idxPtr != NULL);
+
+    key = Tcl_GetString(obj);
+
+    for (entryPtr = tablePtr, idx = 0; entryPtr->key != NULL;  entryPtr++, idx++) {
+	const char *p1, *p2;
+
+        for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
+            if (*p1 == '\0') {
+		/*
+		 * Both words are at their ends. Match is successful.
+		 */
+                *idxPtr = idx;
+		return TCL_OK;
+            }
+        }
+        if (*p1 == '\0') {
+            /*
+             * The value is an abbreviation for this entry.
+             */
+            break;
+        }
+    }
+    
+    if (result == TCL_ERROR) {
+        int count = 0;
+        Tcl_Obj *resultPtr;
+        
+        /*
+         * Produce a fancy error message.
+         */
+        resultPtr = Tcl_NewObj();
+        entryPtr = tablePtr;
+        /*while ((entryPtr != NULL)) {
+            entryPtr = NEXT_ENTRY(entryPtr, offset);
+            }*/
+        Tcl_AppendStringsToObj(resultPtr,"bad ", msg, " \"", key, NULL);
+        if (entryPtr->key == NULL) {
+            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NULL);
+        } else {
+            Tcl_AppendStringsToObj(resultPtr, "\": must be ",
+                                   entryPtr->key, NULL);
+            entryPtr++;
+            while (entryPtr->key != NULL) {
+                if ((entryPtr+1)->key == NULL) {
+                    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
+                                           " or ", entryPtr->key, NULL);
+                } else if (entryPtr->key != NULL) {
+                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, NULL);
+                    count++;
+                }
+                entryPtr++;
+            }
+        }
+        Tcl_SetObjResult(interp, resultPtr);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
+    }
+ 
+   return result;
+}
+
 
 /*
  * Local Variables:

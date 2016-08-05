@@ -464,6 +464,15 @@ typedef struct Ns_ObjvTable {
 } Ns_ObjvTable;
 
 /*
+ * The following struct is used to to define a command with subcmds.
+ */
+typedef struct Ns_SubCmdSpec {
+    const char      *key;
+    Tcl_ObjCmdProc  *proc;
+} Ns_SubCmdSpec;
+
+
+/*
  * The following structure defines the Tcl code to run
  * for a callback function.
  */
@@ -1755,6 +1764,11 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
+
+NS_EXTERN int
+Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp *interp,
+              int objc, Tcl_Obj *CONST* objv)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 #define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof((arr)[0])))
 

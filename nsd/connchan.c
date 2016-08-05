@@ -30,7 +30,8 @@
 
 
 /*
- * Structure handling one registered channel for the [ns_connchan] command
+ * Structure handling one registered channel for the [ns_connchan]
+ * command.
  */
 
 typedef struct {
@@ -87,6 +88,15 @@ static ssize_t DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, un
 
 static Ns_SockProc NsTclConnChanProc;
 
+static Tcl_ObjCmdProc   ConnChanCallbackObjCmd;
+static Tcl_ObjCmdProc   ConnChanCloseObjCmd;
+static Tcl_ObjCmdProc   ConnChanDetachObjCmd;
+static Tcl_ObjCmdProc   ConnChanExistsObjCmd;
+static Tcl_ObjCmdProc   ConnChanListObjCmd;
+static Tcl_ObjCmdProc   ConnChanOpenObjCmd;
+static Tcl_ObjCmdProc   ConnChanReadObjCmd;
+static Tcl_ObjCmdProc   ConnChanWriteObjCmd;
+
 
 /*
  *----------------------------------------------------------------------
@@ -132,7 +142,9 @@ CallbackFree(Callback *cbPtr)
  *----------------------------------------------------------------------
  */
 static NsConnChan *
-ConnChanCreate(NsServer *servPtr, Sock *sockPtr, const Ns_Time *startTime, const char *peer, bool binary, const char *clientData) {
+ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
+               const Ns_Time *startTime, const char *peer, bool binary,
+               const char *clientData) {
     static uintptr_t     connchanCount = 0;
     NsConnChan          *connChanPtr;
     Tcl_HashEntry       *hPtr;
@@ -185,8 +197,8 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr, const Ns_Time *startTime, const
  *
  * ConnChanFree --
  *
- *    Free NsConnChan structure and remove the entry from the hash table of
- *    open connection channel structures.
+ *    Free NsConnChan structure and remove the entry from the hash
+ *    table of open connection channel structures.
  *
  * Results:
  *    None.
@@ -242,7 +254,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
  *
  * ConnChanGet --
  *
- *    Access a NsConnChan from the per-server table via its name
+ *    Access a NsConnChan from the per-server table via its name.
  *
  * Results:
  *    ConnChan* or NULL if not found.
@@ -280,9 +292,10 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
  *
  * NsTclSockProc --
  *
- *      A wrapper function callback that is called, when the callback is
- *      fired. The function allocates an interpreter if necessary, builds the
- *      argument list for invocation and calls the registered Tcl script.
+ *      A wrapper function callback that is called, when the callback
+ *      is fired. The function allocates an interpreter if necessary,
+ *      builds the argument list for invocation and calls the
+ *      registered Tcl script.
  *
  * Results:
  *      NS_TRUE or NS_FALSE on error 
@@ -368,8 +381,9 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
  *
  * SockCallbackRegister --
  *
- *      Register a callback for the connection channel. Due to the underlying
- *      infrastructure, one socket has at most one callback registered.
+ *      Register a callback for the connection channel. Due to the
+ *      underlying infrastructure, one socket has at most one callback
+ *      registered.
  *
  * Results:
  *      Tcl result code.
@@ -381,7 +395,8 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
  */
 
 static Ns_ReturnCode
-SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
+SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
+                     unsigned int when, const Ns_Time *timeoutPtr)
 {
     Callback     *cbPtr;
     size_t        scriptLength;
@@ -391,10 +406,10 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int w
     NS_NONNULL_ASSERT(script != NULL);
 
     /*
-     * If there is already a callback registered, free and cancel it. This
-     * has to be done as first step, since CallbackFree() calls finally
-     * Ns_SockCancelCallbackEx(), which deletes all callbacks registered for
-     * the associated socket.
+     * If there is already a callback registered, free and cancel
+     * it. This has to be done as first step, since CallbackFree()
+     * calls finally Ns_SockCancelCallbackEx(), which deletes all
+     * callbacks registered for the associated socket.
      */
     if (connChanPtr->cbPtr != NULL) {
         CallbackFree((Callback *)connChanPtr->cbPtr);
@@ -512,9 +527,9 @@ DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flag
 /*
  *----------------------------------------------------------------------
  *
- * NsTclConnChanObjCmd --
+ * ConnChanDeatchObjCmd --
  *
- *    Implement the ns_connchan command.
+ *    Implements the "ns_connchan detach" command.
  *
  * Results:
  *    Tcl result. 
@@ -524,330 +539,367 @@ DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flag
  *
  *----------------------------------------------------------------------
  */
+static int
+ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const NsInterp *itPtr = clientData;
+    Conn           *connPtr = (Conn *)itPtr->conn;
+    int             result = TCL_OK;
 
-int
-NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else if (connPtr == NULL) {
+        Ns_TclPrintfResult(interp, "no current connection");
+        result = TCL_ERROR;
+        
+    } else {
+        NsServer  *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr;
+        
+        /*
+         * Lock the channel table and create a new entry for the
+         * connection. After this operation the channel is responsible
+         * for managing the sockPtr, so we have to remove it from the
+         * connection structure.
+         */
+        connChanPtr = ConnChanCreate(servPtr,
+                                     connPtr->sockPtr,
+                                     Ns_ConnStartTime((Ns_Conn *)connPtr),
+                                     connPtr->reqPtr->peer,
+                                     (connPtr->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE,
+                                     connPtr->clientData);
+        connPtr->sockPtr = NULL;
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanOpenObjCmd --
+ *
+ *    Implements the "ns_connchan open" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int           result = TCL_OK;
+    const char   *url;
+    Sock         *sockPtr;
+    Ns_Set       *hdrPtr = NULL;
+    const char   *method = "GET";
+    Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
+    Ns_ObjvSpec   lopts[] = {
+        {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
+        {"-method",  Ns_ObjvString, &method, NULL},
+        {"-timeout", Ns_ObjvTime,   &timeoutPtr,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec   largs[] = {
+        {"url", Ns_ObjvString, &url, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr;
+
+        result = NSDriverClientOpen(interp, url, method, timeoutPtr, &sockPtr);
+        if (likely(result == TCL_OK)) {
+
+            Ns_Time      now;
+            struct iovec buf[4];
+            ssize_t      nSent;
+
+            if (STREQ(sockPtr->drvPtr->protocol, "https")) {
+                NS_TLS_SSL_CTX *ctx;
+
+                assert(sockPtr->drvPtr->clientInitProc != NULL);
+
+                /* 
+                 * For the time being, just pass NULL
+                 * structures. Probably, we could create the
+                 * SSLcontext.
+                 */
+                result = Ns_TLS_CtxClientCreate(interp,
+                                                NULL /*cert*/, NULL /*caFile*/,
+                                                NULL /* caPath*/, NS_FALSE /*verify*/,
+                                                &ctx);
+                    
+                if (likely(result == TCL_OK)) {
+                    result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, ctx);
+                        
+                    /*
+                     * For the time being, we create/delete the ctx in
+                     * an eager fashion. We could probably make it
+                     * reusable and keep it around.
+                     */
+                    if (ctx != NULL)  {
+                        Ns_TLS_CtxFree(ctx);
+                    }
+                }
+                    
+                if (unlikely(result != TCL_OK)) {
+                    if (sockPtr->sock > 0) {
+                        ns_sockclose(sockPtr->sock);
+                    }
+                    return TCL_ERROR;
+                }
+            }
+                
+            Ns_GetTime(&now);
+            connChanPtr = ConnChanCreate(servPtr,
+                                         sockPtr,
+                                         &now,
+                                         sockPtr->reqPtr->peer,
+                                         NS_TRUE /* binary, fixed for the time being */,
+                                         NULL);
+            if (hdrPtr != NULL) {
+                size_t i;
+                    
+                for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
+                    const char *key = Ns_SetKey(hdrPtr, i);
+                    Ns_DStringPrintf(&sockPtr->reqPtr->buffer, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
+                }
+            }
+                
+            /*
+             * Write the request header via the "send" operation of
+             * the driver.
+             */
+            buf[0].iov_base = (void *)sockPtr->reqPtr->request.line;
+            buf[0].iov_len = strlen(buf[0].iov_base);
+            buf[1].iov_base = (void *)"\r\n";
+            buf[1].iov_len = 2u;
+            buf[2].iov_base = (void *)sockPtr->reqPtr->buffer.string;
+            buf[2].iov_len = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
+            buf[3].iov_base = (void *)"\r\n";
+            buf[3].iov_len = 2u;
+                
+            nSent = DriverSend(connChanPtr->sockPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
+            Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
+
+            if (nSent > -1) {
+                connChanPtr->wBytes += (size_t)nSent;
+                //Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(strerror(errno), -1));
+                result = TCL_ERROR;
+            }
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanListObjCmd --
+ *
+ *    Implements the "ns_connchan list" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
-    int             result = TCL_OK, opt;
-    const char     *name = NULL;
-    NsConnChan     *connChanPtr;
-
-    static const char *const opts[] = {
-        "callback",
-        "close",
-        "detach",
-        "exists",
-        "list", 
-        "open",
-        "read",
-        "write",
-        NULL
+    int             result = TCL_OK;
+    const char     *server = NULL;
+    Ns_ObjvSpec     lopts[] = {
+        {"-server", Ns_ObjvString, &server, NULL},
+        {NULL, NULL, NULL, NULL}
     };
-
-    enum {
-        CCallbackIdx,
-        CCloseIdx,
-        CDetachIdx,
-        CExistsIdx,
-        CListIdx, 
-        COpenIdx,
-        CReadIdx,
-        CWriteIdx 
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
-                            "option", 0, &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
     
-    switch (opt) {
-    case CDetachIdx:
-        {
-            /*
-             * ns_connchan detach
-             */
-            Conn       *connPtr = (Conn *)itPtr->conn;
-            
-            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-            } else if (connPtr == NULL) {
-                Ns_TclPrintfResult(interp, "no current connection");
-                result = TCL_ERROR;
-
-            } else {
-
-                /*
-                 * Lock the channel table and create a new entry for the
-                 * connection. After this operation the channel is responsible for
-                 * managing the sockPtr, so we have to remove it from the
-                 * connection structure.
-                 */
-                connChanPtr = ConnChanCreate(servPtr,
-                                             connPtr->sockPtr,
-                                             Ns_ConnStartTime((Ns_Conn *)connPtr),
-                                             connPtr->reqPtr->peer,
-                                             (connPtr->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE,
-                                             connPtr->clientData);
-                connPtr->sockPtr = NULL;
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
-            }
-            break;
+    } else if (server != NULL) {
+        servPtr = NsGetServer(server);
+        if (servPtr == NULL) {
+            Ns_TclPrintfResult(interp, "server \"%s\" does not exist", server);
+            result = TCL_ERROR;
         }
+    }
 
-    case COpenIdx:
-        {
-            /*
-             * ns_connchan open
-             */
-            const char   *url;
-            Sock         *sockPtr;
-            Ns_Set       *hdrPtr = NULL;
-            const char   *method = "GET";
-            Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
-            Ns_ObjvSpec   lopts[] = {
-                {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
-                {"-method",  Ns_ObjvString, &method, NULL},
-                {"-timeout",  Ns_ObjvTime,  &timeoutPtr,  NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-            Ns_ObjvSpec   largs[] = {
-                {"url", Ns_ObjvString, &url, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
+    if (result == TCL_OK) {
+        Tcl_HashSearch  search;
+        Tcl_HashEntry  *hPtr;
+        Tcl_DString     ds, *dsPtr = &ds;
 
-            if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
-            } else {
-            
-                result = NSDriverClientOpen(interp, url, method, timeoutPtr, &sockPtr);
-                if (likely(result == TCL_OK)) {
-                    Ns_Time      now;
-                    struct iovec buf[4];
-                    ssize_t      nSent;
+        /*
+         * The provided parameter appear to be valid. Lock the channel
+         * table and return the infos for every existing entry in the
+         * conneciton channel table.
+         */
+        Tcl_DStringInit(dsPtr);
 
-                    if (STREQ(sockPtr->drvPtr->protocol, "https")) {
-                        NS_TLS_SSL_CTX *ctx;
+        Ns_MutexLock(&servPtr->connchans.lock);
+        hPtr = Tcl_FirstHashEntry(&servPtr->connchans.table, &search);
+        while (hPtr != NULL) {
+            NsConnChan     *connChanPtr;
 
-                        assert(sockPtr->drvPtr->clientInitProc != NULL);
-
-                        /* 
-                         * For the time being, just pass NULL
-                         * structures. Probably, we could create the SSLcontext
-                         */
-                        result = Ns_TLS_CtxClientCreate(interp,
-                                                        NULL /*cert*/, NULL /*caFile*/,
-                                                        NULL /* caPath*/, NS_FALSE /*verify*/,
-                                                        &ctx);
-                    
-                        if (likely(result == TCL_OK)) {
-                            result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, ctx);
-                        
-                            /*
-                             * For the time being, we create/delete the ctx in an
-                             * eager fashion. We could probably make it reusable
-                             * and keep it around.
-                             */
-                            if (ctx != NULL)  {
-                                Ns_TLS_CtxFree(ctx);
-                            }
-                        }
-                    
-                        if (unlikely(result != TCL_OK)) {
-                            if (sockPtr->sock > 0) {
-                                ns_sockclose(sockPtr->sock);
-                            }
-                            return TCL_ERROR;
-                        }
-                    }
-                
-                    Ns_GetTime(&now);
-                    connChanPtr = ConnChanCreate(servPtr,
-                                                 sockPtr,
-                                                 &now,
-                                                 sockPtr->reqPtr->peer,
-                                                 NS_TRUE /* binary, fixed for the time being */,
-                                                 NULL);
-                    if (hdrPtr != NULL) {
-                        size_t i;
-                    
-                        for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
-                            const char *key = Ns_SetKey(hdrPtr, i);
-                            Ns_DStringPrintf(&sockPtr->reqPtr->buffer, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
-                        }
-                    }
-                
-                    /*
-                     * Write the request header via the "send" operation of the driver.
-                     */
-                    buf[0].iov_base = (void *)sockPtr->reqPtr->request.line;
-                    buf[0].iov_len = strlen(buf[0].iov_base);
-                    buf[1].iov_base = (void *)"\r\n";
-                    buf[1].iov_len = 2u;
-                    buf[2].iov_base = (void *)sockPtr->reqPtr->buffer.string;
-                    buf[2].iov_len = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
-                    buf[3].iov_base = (void *)"\r\n";
-                    buf[3].iov_len = 2u;
-                
-                    nSent = DriverSend(connChanPtr->sockPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
-                    Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
-
-                    if (nSent > -1) {
-                        connChanPtr->wBytes += (size_t)nSent;
-                        //Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
-                    } else {
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(strerror(errno), -1));
-                        result = TCL_ERROR;
-                    }
-                }
-            }
-            break;
+            connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
+            Ns_DStringPrintf(dsPtr, "{%s %s %" PRIu64 ".%06ld %s %s %" PRIdz " %" PRIdz,
+                             (char *)Tcl_GetHashKey(&servPtr->connchans.table, hPtr),
+                             ((connChanPtr->cbPtr != NULL && connChanPtr->cbPtr->threadName != NULL) ?
+                              connChanPtr->cbPtr->threadName : "{}"),
+                             (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec,
+                             connChanPtr->sockPtr->drvPtr->name,
+                             connChanPtr->peer,
+                             connChanPtr->wBytes,
+                             connChanPtr->rBytes);
+            Ns_DStringAppendElement(dsPtr,
+                                    (connChanPtr->clientData != NULL) ? connChanPtr->clientData : "");
+            Ns_DStringAppend(dsPtr, "} ");
+            hPtr = Tcl_NextHashEntry(&search);
         }
+        Ns_MutexUnlock(&servPtr->connchans.lock);
+
+        Tcl_DStringResult(interp, dsPtr);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanCloseObjCmd --
+ *
+ *    Implements the "ns_connchan close" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const char  *name;
+    int          result = TCL_OK;
+    Ns_ObjvSpec  args[] = {
+        {"channel", Ns_ObjvString, &name, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr;
         
-    case CListIdx:
-        {
+        connChanPtr = ConnChanGet(interp, servPtr, name);
+        Ns_Log(Ns_LogConnchanDebug, "ns_connchan %s close connChanPtr %p", name, (void*)connChanPtr);
+                
+        if (connChanPtr != NULL) {
+            ConnChanFree(connChanPtr);
+        } else {
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanCallbackObjCmd --
+ *
+ *    Implements the "ns_connchan callback" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const char    *name;
+    int            result = TCL_OK;
+    const char    *script, *whenString;
+    const Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
+            
+    Ns_ObjvSpec lopts[] = {
+        {"-timeout",        Ns_ObjvTime, &pollTimeoutPtr, NULL},
+        {"-receivetimeout", Ns_ObjvTime, &recvTimeoutPtr, NULL},
+        {"-sendtimeout",    Ns_ObjvTime, &sendTimeoutPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"channel", Ns_ObjvString, &name, NULL},
+        {"script",  Ns_ObjvString, &script, NULL},
+        {"when",    Ns_ObjvString, &whenString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
+
+        if (unlikely(connChanPtr == NULL)) {
+            result = TCL_ERROR;
+        } else {
             /*
-             * ns_connchan list
+             * The provided channel name exists. In a first step get
+             * the flags from the when string.
              */
-            const char     *server = NULL;
-            Tcl_DString     ds, *dsPtr = &ds;
-            Ns_ObjvSpec     lopts[] = {
-                {"-server", Ns_ObjvString, &server, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
-
-            } else if (server != NULL) {
-                servPtr = NsGetServer(server);
-                if (servPtr == NULL) {
-                    Ns_TclPrintfResult(interp, "server \"%s\" does not exist", server);
+            unsigned int  when = 0u;
+            const char   *s = whenString;
+                
+            while (*s != '\0') {
+                if (*s == 'r') {
+                    when |= (unsigned int)NS_SOCK_READ;
+                } else if (*s == 'w') {
+                    when |= (unsigned int)NS_SOCK_WRITE;
+                } else if (*s == 'e') {
+                    when |= (unsigned int)NS_SOCK_EXCEPTION;
+                } else if (*s == 'x') {
+                    when |= (unsigned int)NS_SOCK_EXIT;
+                } else {
+                    Ns_TclPrintfResult(interp, "invalid when specification: \"%s\":"
+                                       " should be one/more of r, w, e, or x", whenString);
                     result = TCL_ERROR;
+                    break;
                 }
+                s++;
             }
 
             if (result == TCL_OK) {
-                Tcl_HashSearch  search;
-                Tcl_HashEntry  *hPtr;
-
-                /*
-                 * The provided parameter appear to be valid. Lock the channel
-                 * table and return the infos for every existing entry in the
-                 * conneciton channel table.
-                 */
-                Tcl_DStringInit(dsPtr);
-
-                Ns_MutexLock(&servPtr->connchans.lock);
-                hPtr = Tcl_FirstHashEntry(&servPtr->connchans.table, &search);
-                while (hPtr != NULL) {
-                    connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
-                    Ns_DStringPrintf(dsPtr, "{%s %s %" PRIu64 ".%06ld %s %s %" PRIdz " %" PRIdz,
-                                     (char *)Tcl_GetHashKey(&servPtr->connchans.table, hPtr),
-                                     ((connChanPtr->cbPtr != NULL && connChanPtr->cbPtr->threadName != NULL) ?
-                                      connChanPtr->cbPtr->threadName : "{}"),
-                                     (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec,
-                                     connChanPtr->sockPtr->drvPtr->name,
-                                     connChanPtr->peer,
-                                     connChanPtr->wBytes,
-                                     connChanPtr->rBytes);
-                    Ns_DStringAppendElement(dsPtr,
-                                            (connChanPtr->clientData != NULL) ? connChanPtr->clientData : "");
-                    Ns_DStringAppend(dsPtr, "} ");
-                    hPtr = Tcl_NextHashEntry(&search);
-                }
-                Ns_MutexUnlock(&servPtr->connchans.lock);
-
-                Tcl_DStringResult(interp, dsPtr);
-            }
-            break;
-        }
-        
-    case CCloseIdx:
-        {
-            /*
-             * ns_connchan close
-             */
-            Ns_ObjvSpec args[] = {
-                {"channel", Ns_ObjvString, &name, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
-            } else {
-
-                connChanPtr = ConnChanGet(interp, servPtr, name);
-                Ns_Log(Ns_LogConnchanDebug, "ns_connchan %s close connChanPtr %p", name, (void*)connChanPtr);
+                Ns_ReturnCode status;
                 
-                if (connChanPtr != NULL) {
-                    ConnChanFree(connChanPtr);
-                } else {
-                    result = TCL_ERROR;
-                }
-            }
-
-            break;
-        }
-
-    case CCallbackIdx:
-        {
-            /*
-             * ns_connchan callback
-             */
-            const char    *script, *whenString;
-            const Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
-            
-            Ns_ObjvSpec lopts[] = {
-                {"-timeout",        Ns_ObjvTime, &pollTimeoutPtr, NULL},
-                {"-receivetimeout", Ns_ObjvTime, &recvTimeoutPtr, NULL},
-                {"-sendtimeout",    Ns_ObjvTime, &sendTimeoutPtr, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-            Ns_ObjvSpec args[] = {
-                {"channel", Ns_ObjvString, &name, NULL},
-                {"script",  Ns_ObjvString, &script, NULL},
-                {"when",    Ns_ObjvString, &whenString, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            connChanPtr = ConnChanGet(interp, servPtr, name);
-            if (likely(connChanPtr != NULL)) {
-                /*
-                 * The provided channel name exists. In a first step get the
-                 * flags from the when string.
-                 */
-                unsigned int  when = 0u;
-                const char   *s = whenString;
-                
-                while (*s != '\0') {
-                    if (*s == 'r') {
-                        when |= (unsigned int)NS_SOCK_READ;
-                    } else if (*s == 'w') {
-                        when |= (unsigned int)NS_SOCK_WRITE;
-                    } else if (*s == 'e') {
-                        when |= (unsigned int)NS_SOCK_EXCEPTION;
-                    } else if (*s == 'x') {
-                        when |= (unsigned int)NS_SOCK_EXIT;
-                    } else {
-                        Ns_TclPrintfResult(interp, "invalid when specification: \"%s\":"
-                                           " should be one/more of r, w, e, or x", whenString);
-                        return TCL_ERROR;
-                    }
-                    s++;
-                }
-
                 /*
                  * Fill in the timeouts, when these are provided.
                  */
@@ -861,170 +913,239 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 /*
                  * Register the callback.
                  */
-                {
-                    Ns_ReturnCode status = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
-                    if (unlikely(status != NS_OK)) {
-                        Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
-                        ConnChanFree(connChanPtr);
-                        result = TCL_ERROR;
-                    } else {
-                        /*
-                         * The socket is already in non-blocking state, since it
-                         * was received via the driver.
-                         */
-                        result = TCL_OK;
-                    }
-                }
-            } else {
-                result = TCL_ERROR;
-            }
-            break;
-        }
-
-    case CExistsIdx:
-        {
-            /*
-             * ns_connchan exists
-             */
-            Ns_ObjvSpec args[] = {
-                {"channel", Ns_ObjvString, &name, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
-            } else {
-
-                connChanPtr = ConnChanGet(interp, servPtr, name);
-                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connChanPtr != NULL));
-            }
-            break;
-        }
-        
-
-    case CReadIdx:
-        {
-            /*
-             * ns_connchan read
-             */
-            Ns_ObjvSpec  args[] = {
-                {"channel", Ns_ObjvString, &name, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            connChanPtr = ConnChanGet(interp, servPtr, name);
-            if (likely(connChanPtr != NULL)) {
-                /*
-                 * The provided channel exists.
-                 */
-                ssize_t      nRead;
-                struct iovec buf;
-                char         buffer[4096];
-
-                if (!connChanPtr->binary) {
-                    Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
-                           "Channel %s is not binary", name);
-                }
-
-                /*
-                 * Read the data via the "receive" operation of the driver.
-                 */
-                buf.iov_base = buffer;
-                buf.iov_len = sizeof(buffer);
-                nRead = DriverRecv(connChanPtr->sockPtr, &buf, 1, &connChanPtr->recvTimeout);
-
-                if (nRead > -1) {
-                    connChanPtr->rBytes += (size_t)nRead;
-                    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (int)nRead));
-                } else {
-                    /*
-                     * The receive operation failed, maybe a receive timeout
-                     * happend.  The read call will simply return an empty
-                     * string. We could notice this fact internally by a
-                     * timeout counter, but for the time being no application
-                     * has usage for it.
-                     */
-                }
-            } else {
-                result = TCL_ERROR;
-            }
-
-            break;
-        }
-        
-    case CWriteIdx:
-        {
-            /*
-             * ns_connchan write
-             */
-            Tcl_Obj     *msgObj;
-            Ns_ObjvSpec  args[] = {
-                {"channel", Ns_ObjvString, &name, NULL},
-                {"msg",  Ns_ObjvObj,    &msgObj, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
-
-            } else {
-
-                connChanPtr = ConnChanGet(interp, servPtr, name);
-                if (likely(connChanPtr != NULL)) {
-                    /*
-                     * The provided channel name exists.
-                     */
-                    struct iovec buf;
-                    ssize_t      nSent;
-                    int          msgLen;
-                    const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
-
-                    if (!connChanPtr->binary) {
-                        Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
-                               "Channel %s is not binary", name);
-                    }
-
-                    /*
-                     * Write the data via the "send" operation of the driver.
-                     */
-                    buf.iov_base = (void *)msgString;
-                    buf.iov_len = (size_t)msgLen;
-                    nSent = DriverSend(connChanPtr->sockPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
-
-                    if (nSent > -1) {
-                        connChanPtr->wBytes += (size_t)nSent;
-                        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
-                    } else {
-                        result = TCL_ERROR;
-                    }
-                } else {
+                status = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
+                
+                if (unlikely(status != NS_OK)) {
+                    Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+                    ConnChanFree(connChanPtr);
                     result = TCL_ERROR;
                 }
             }
-            break;
         }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanExistsObjCmd --
+ *
+ *    Implements the "ns_connchan exists" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const char   *name;
+    int           result = TCL_OK;
+    Ns_ObjvSpec   args[] = {
+        {"channel", Ns_ObjvString, &name, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    default:
-        /* 
-         * unexpected value 
-         */
-        assert(opt && 0);
-        break;
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr;
+        
+        connChanPtr = ConnChanGet(interp, servPtr, name);
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connChanPtr != NULL));
+    }
+    return result;
+}
+        
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanReadObjCmd --
+ *
+ *    Implements the "ns_connchan read" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const char  *name;
+    int          result = TCL_OK;
+    Ns_ObjvSpec  args[] = {
+        {"channel", Ns_ObjvString, &name, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
+
+        if (unlikely(connChanPtr == NULL)) {
+            result = TCL_ERROR;
+        } else {
+            /*
+             * The provided channel exists.
+             */
+            ssize_t      nRead;
+            struct iovec buf;
+            char         buffer[4096];
+
+            if (!connChanPtr->binary) {
+                Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
+                       "Channel %s is not binary", name);
+            }
+
+            /*
+             * Read the data via the "receive" operation of the driver.
+             */
+            buf.iov_base = buffer;
+            buf.iov_len = sizeof(buffer);
+            nRead = DriverRecv(connChanPtr->sockPtr, &buf, 1, &connChanPtr->recvTimeout);
+
+            if (nRead > -1) {
+                connChanPtr->rBytes += (size_t)nRead;
+                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (int)nRead));
+            } else {
+                /*
+                 * The receive operation failed, maybe a receive
+                 * timeout happend.  The read call will simply return
+                 * an empty string. We could notice this fact
+                 * internally by a timeout counter, but for the time
+                 * being no application has usage for it.
+                 */
+            }
+        }
     }
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanWriteObjCmd --
+ *
+ *    Implements the "ns_connchan write" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const char  *name;
+    int          result = TCL_OK;
+    Tcl_Obj     *msgObj;
+    Ns_ObjvSpec  args[] = {
+        {"channel", Ns_ObjvString, &name,   NULL},
+        {"msg",     Ns_ObjvObj,    &msgObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
+        
+        if (unlikely(connChanPtr == NULL)) {
+            result = TCL_ERROR;
+        } else {
+            /*
+             * The provided channel name exists.
+             */
+            struct iovec buf;
+            ssize_t      nSent;
+            int          msgLen;
+            const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
+
+            if (!connChanPtr->binary) {
+                Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
+                       "Channel %s is not binary", name);
+            }
+
+            /*
+             * Write the data via the "send" operation of the driver.
+             */
+            buf.iov_base = (void *)msgString;
+            buf.iov_len = (size_t)msgLen;
+            nSent = DriverSend(connChanPtr->sockPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
+
+            if (nSent > -1) {
+                connChanPtr->wBytes += (size_t)nSent;
+                Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
+            } else {
+                result = TCL_ERROR;
+            }
+        }
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclConnChanObjCmd --
+ *
+ *    Implements the "ns_connchan" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"callback", ConnChanCallbackObjCmd},
+        {"close",    ConnChanCloseObjCmd},
+        {"detach",   ConnChanDetachObjCmd},
+        {"exists",   ConnChanExistsObjCmd},
+        {"list",     ConnChanListObjCmd},
+        {"open",     ConnChanOpenObjCmd},
+        {"read",     ConnChanReadObjCmd},
+        {"write",    ConnChanWriteObjCmd},
+        {NULL, NULL}
+    };
+    
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
 
 /*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */
