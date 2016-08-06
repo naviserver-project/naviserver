@@ -403,8 +403,6 @@ static int
 CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
-    HMAC_CTX      *ctx;
-    const EVP_MD  *md;
     const char    *digestName = "sha256";
     Tcl_Obj       *keyObj;
     Ns_ObjvSpec    args[] = {
@@ -417,11 +415,14 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
                 
     } else {
+        const EVP_MD  *md;
+
         /* 
          * Look up the Message Digest from OpenSSL
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
+            HMAC_CTX   *ctx;
             const char *keyString;
             int         keyLength;
 
@@ -598,12 +599,7 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static int
 CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char  digest[EVP_MAX_MD_SIZE];
-    char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
     int            result = TCL_OK;
-    unsigned int   mdLength;
-    HMAC_CTX      *ctx;
-    const EVP_MD  *md;
     Tcl_Obj       *keyObj, *messageObj;
     const char    *digestName = "sha256";
     Ns_ObjvSpec    lopts[] = {
@@ -619,13 +615,18 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        const EVP_MD  *md;
 
         /* 
          * Look up the Message digest from OpenSSL
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
+            unsigned char  digest[EVP_MAX_MD_SIZE];
+            char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
+            HMAC_CTX      *ctx;
             const char    *keyString, *messageString;
+            unsigned int   mdLength;
             int            keyLength, messageLength;
                     
             /*
@@ -711,8 +712,6 @@ static int
 CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
-    EVP_MD_CTX    *mdctx;
-    const EVP_MD  *md;
     const char    *digestName = "sha256";
     Ns_ObjvSpec    args[] = {
         {"digest",  Ns_ObjvString, &digestName, NULL},
@@ -722,11 +721,14 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        const EVP_MD  *md;
+
         /* 
          * Look up the Message Digest from OpenSSL
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
+            EVP_MD_CTX    *mdctx;
 
             mdctx = NS_EVP_MD_CTX_new();
             EVP_DigestInit_ex(mdctx, md, NULL);
@@ -902,12 +904,7 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 static int
 CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char  digest[EVP_MAX_MD_SIZE];
-    char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
     int            result = TCL_OK;
-    unsigned int   mdLength;
-    EVP_MD_CTX    *mdctx;
-    const EVP_MD  *md;
     Tcl_Obj       *messageObj;
     const char    *digestName = "sha256";
     Ns_ObjvSpec lopts[] = {
@@ -922,14 +919,19 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        const EVP_MD  *md;
 
         /* 
          * Look up the Message Digest from OpenSSL
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
+            unsigned char  digest[EVP_MAX_MD_SIZE];
+            char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
+            EVP_MD_CTX    *mdctx;
             const char    *messageString;
             int            messageLength;
+            unsigned int   mdLength;
 
             /*
              * All input parameters are valid, get key and data.
