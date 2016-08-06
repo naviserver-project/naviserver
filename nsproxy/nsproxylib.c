@@ -1492,7 +1492,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         }
         if (opt == PPutIdx || opt == PReleaseIdx) {
             result = ReleaseProxy(interp, proxyPtr);
-        } else {
+        } else /* opt == PPingIdx */ {
             result = Eval(interp, proxyPtr, NULL, -1);
         }
         break;
@@ -1992,22 +1992,20 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
     Tcl_HashEntry *cntPtr, *idPtr;
-    int            i, flag, isNew, nwant, n, ms;
-    const char    *arg;
+    int            isNew, nwant = 1, timeoutMs = -1, ms, result = TCL_OK;
     Err            err;
     Pool          *poolPtr;
-
-    static const char *const flags[] = {
-        "-timeout", "-handles", NULL
-    };
-    enum {
-        FTimeoutIdx, FHandlesIdx
+    Ns_ObjvSpec    lopts[] = {
+        {"-timeout", Ns_ObjvInt, &timeoutMs,  NULL},
+        {"-handles", Ns_ObjvInt, &nwant,      NULL},
+        {NULL, NULL, NULL, NULL}
     };
 
     if (objc < 3 || (objc % 2) != 1) {
         Tcl_WrongNumArgs(interp, 2, objv, "pool ?-opt val -opt val ...?");
         return TCL_ERROR;
     }
+
     assert(idataPtr != NULL);
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
     assert(poolPtr != NULL);
@@ -2018,34 +2016,16 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         goto errout;
     }
 
-    nwant = 1;
-
-    Ns_MutexLock(&poolPtr->lock);
-    ms = poolPtr->conf.tget;
-    Ns_MutexUnlock(&poolPtr->lock);
-
-    for (i = 3; i < objc; ++i) {
-        arg = Tcl_GetString(objv[2]);
-        if (Tcl_GetIndexFromObj(interp, objv[i], flags, "flags", 0,
-                                &flag)) {
-            return TCL_ERROR;
-        }
-        ++i;
-        if (Tcl_GetIntFromObj(interp, objv[i], &n) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        if (n < 0) {
-            Tcl_AppendResult(interp, "invalid ", flags[flag], ": ", arg, NULL);
-            return TCL_ERROR;
-        }
-        switch (flag) {
-        case FTimeoutIdx:
-            ms = n;
-            break;
-        case FHandlesIdx:
-            nwant = n;
-            break;
-        }
+    if (Ns_ParseObjv(lopts, NULL, interp, 3, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    
+    if (timeoutMs == -1) {
+        Ns_MutexLock(&poolPtr->lock);
+        ms = poolPtr->conf.tget;
+        Ns_MutexUnlock(&poolPtr->lock);
+    } else {
+        ms = timeoutMs;
     }
 
     /*
@@ -2064,7 +2044,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
      * Set total owned count and create handle ids.
      */
 
-    Tcl_SetHashValue(cntPtr, (ClientData)(intptr_t) nwant);
+    Tcl_SetHashValue(cntPtr, INT2PTR(nwant));
     proxyPtr = firstPtr;
     while (proxyPtr != NULL) {
         idPtr = Tcl_CreateHashEntry(&idataPtr->ids, proxyPtr->id, &isNew);
@@ -2092,28 +2072,30 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             firstPtr = proxyPtr->nextPtr;
             PushProxy(proxyPtr);
         }
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
 
-    /*
-     * Generate accessor commands for the returned proxies.
-     */
-
-    proxyPtr = firstPtr;
-    Tcl_ResetResult(interp);
-    while (proxyPtr != NULL) {
-        proxyPtr->cmdToken = Tcl_CreateObjCommand(interp, proxyPtr->id,
-                                                  RunProxyCmd, proxyPtr,
-                                                  DelProxyCmd);
-        if (proxyPtr->cmdToken == NULL) {
-            return TCL_ERROR;
+    if (result == TCL_OK) {
+        /*
+         * Generate accessor commands for the returned proxies.
+         */
+        proxyPtr = firstPtr;
+        Tcl_ResetResult(interp);
+        while (proxyPtr != NULL) {
+            proxyPtr->cmdToken = Tcl_CreateObjCommand(interp, proxyPtr->id,
+                                                      RunProxyCmd, proxyPtr,
+                                                      DelProxyCmd);
+            if (proxyPtr->cmdToken == NULL) {
+                result = TCL_ERROR;
+                break;
+            }
+            proxyPtr->interp = interp;
+            Tcl_AppendElement(interp, proxyPtr->id);
+            proxyPtr = proxyPtr->nextPtr;
         }
-        proxyPtr->interp = interp;
-        Tcl_AppendElement(interp, proxyPtr->id);
-        proxyPtr = proxyPtr->nextPtr;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
