@@ -391,7 +391,6 @@ static int
 JobConfigureObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
-    char           buf[100];
     int            jpt = -1;
     const Ns_Time *timeoutPtr;
     Ns_ObjvSpec    lopts[] = {
@@ -403,6 +402,8 @@ JobConfigureObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        char  buf[100];
+
         Ns_MutexLock(&tp.queuelock);
         SetupJobDefaults();
 
@@ -1353,19 +1354,19 @@ NsTclJobObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"cancel",     JobCancelObjCmd},
+        {"configure",  JobConfigureObjCmd},
         {"create",     JobCreateObjCmd},
         {"delete",     JobDeleteObjCmd},
+        {"exists",     JobExistsObjCmd},
         {"genid",      JobGenIDObjCmd},
-        {"jobs",       JobJobsObjCmd},
         {"joblist",    JobJobListObjCmd},
-        {"threadlist", JobThreadListObjCmd},
+        {"jobs",       JobJobsObjCmd},
         {"queue",      JobQueueObjCmd},
-        {"queues",     JobQueuesObjCmd},
         {"queuelist",  JobQueueListObjCmd},
+        {"queues",     JobQueuesObjCmd},
+        {"threadlist", JobThreadListObjCmd},
         {"wait",       JobWaitObjCmd},
         {"waitany",    JobWaitAnyObjCmd},
-        {"exists",     JobExistsObjCmd},
-        {"configure",  JobConfigureObjCmd},
         {NULL, NULL}
     };
 
