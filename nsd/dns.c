@@ -313,7 +313,6 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     if (result == 0) {
         ptr = res;
         while (ptr != NULL) {
-            char ipString[NS_IPADDR_SIZE];
 
             /*
              * Getaddrinfo with flag AF_UNSPEC returns both AF_INET and
@@ -330,6 +329,8 @@ GetAddr(Ns_DString *dsPtr, const char *host)
                 result = NS_FALSE;
                 break;
             } else {
+                char ipString[NS_IPADDR_SIZE];
+
                 Tcl_DStringAppendElement(dsPtr,
                                          ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString)));
 
