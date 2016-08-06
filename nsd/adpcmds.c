@@ -293,7 +293,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
                 itPtr->adp.chan = NULL;
             }
         } else {
-            if (Ns_TclGetOpenChannel(interp, id, 1, 1, &chan) != TCL_OK) {
+            if (Ns_TclGetOpenChannel(interp, id, 1, NS_TRUE, &chan) != TCL_OK) {
                 return TCL_ERROR;
             }
             itPtr->adp.chan = chan;
