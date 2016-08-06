@@ -92,7 +92,7 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
 
     if (*chanPtr == NULL) {
         result = TCL_ERROR;
-    } else if (check != 0) {
+    } else if (check) {
 
         if (( write != 0 && (mode & TCL_WRITABLE) == 0) 
             ||
@@ -113,8 +113,8 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
  * Ns_TclGetOpenFd --
  *
  *      Return an open Unix file descriptor for the given channel.
- *      This routine is used by the AOLserver * routines
- *      to provide access to the underlying socket.
+ *      This routine is used by the AOLserver * routines to provide
+ *      access to the underlying socket.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -271,7 +271,9 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  *
  *  Implements ns_tmpnam as obj command. 
  *
- *  The fallback definition of L_tmpnam was removed in Tcl on 2015-07-15
+ *  The fallback definition of L_tmpnam was removed in Tcl on
+ *  2015-07-15, so we add it here locally, since this is the only
+ *  usage
  *
  * Results:
  *  Tcl result. 
@@ -282,7 +284,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  *----------------------------------------------------------------------
  */
 #ifndef L_tmpnam
-#   define L_tmpnam	100
+# define L_tmpnam	100
 #endif
 
 int
@@ -402,7 +404,7 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclWriteFpObjCmd --
  *
- *      Implements ns_writefp as obj command. 
+ *     Implements ns_writefp as obj command. 
  *
  * Results:
  *      Tcl result. 
@@ -450,13 +452,13 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclTruncateObjCmd --
  *
- *  Implements ns_truncate as obj command. 
+ *     Implements ns_truncate as obj command. 
  *
  * Results:
- *  Tcl result. 
+ *     Tcl result. 
  *
  * Side effects:
- *  See docs. 
+ *     See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -611,10 +613,10 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
             result = TCL_ERROR;
 
         } else {
-            NsInterp      *itPtr = clientData;
-            NsServer      *servPtr = itPtr->servPtr;
-            Tcl_HashEntry *hPtr;
-            int            isNew;
+            const NsInterp *itPtr = clientData;
+            NsServer       *servPtr = itPtr->servPtr;
+            Tcl_HashEntry  *hPtr;
+            int             isNew;
 
             Ns_MutexLock(&servPtr->chans.lock);
             hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
@@ -671,13 +673,14 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         Tcl_HashEntry *hPtr;
         NsInterp      *itPtr = clientData;
         NsServer      *servPtr = itPtr->servPtr;
-        NsRegChan     *regChan;
+        NsRegChan     *regChan = NULL;
  
         Ns_MutexLock(&servPtr->chans.lock);
         hPtr = Tcl_FindHashEntry(&servPtr->chans.table, name);
         if (hPtr != NULL) {
             regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
             Tcl_DeleteHashEntry(hPtr);
+            assert(regChan != NULL);
         }
         Ns_MutexUnlock(&servPtr->chans.lock);
         
@@ -734,8 +737,8 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
             result = TCL_ERROR;
             
         } else {
-            NsRegChan      *regChan = NULL;
-            Tcl_Channel     chan = NULL;
+            NsRegChan      *regChan;
+            Tcl_Channel     chan;
             
             regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
             chan = Tcl_GetChannel(interp, regChan->name, NULL);
@@ -997,7 +1000,7 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */
