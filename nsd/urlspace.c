@@ -138,11 +138,12 @@
 /*
  * This optimization, when turned on, prevents the server from doing a
  * whole lot of calls to Tcl_StringMatch on every lookup in urlspace.
- * Instead, a NS_strcmp is done. 
+ * Instead, a NS_strcmp is done.
  *
- * GN 2015/11: This optimization was developed more than 10 years ago. With
- * the introduction of ns_urlspace it became easy to write test cases. The
- * __URLSPACE_OPTIMIZE__ option can be turned on, since it passes all tests.
+ * GN 2015/11: This optimization was developed more than 10 years
+ * ago. With the introduction of ns_urlspace it became easy to write
+ * test cases. The __URLSPACE_OPTIMIZE__ option can be turned on,
+ * since it passes all tests.
  */
 
 /* 
@@ -150,14 +151,14 @@
  */
 
 /*
- * There is still room for improvements. a simple lookup for "/a/c/a.html"
- * takes 10 strlen operations and 14 strcmp operations. One could alter the
- * static function MkSeq() to produce a more intelligent structure, to
- * calculate strlen operations once, and to make it easier to access the last
- * element.
+ * There is still room for improvements. a simple lookup for
+ * "/a/c/a.html" takes 10 strlen operations and 14 strcmp
+ * operations. One could alter the static function MkSeq() to produce
+ * a more intelligent structure, to calculate strlen operations once,
+ * and to make it easier to access the last element.
  *
- * Currently, the performance of "ns_urlspace get" is about twice the time of
- * "nsv_get".
+ * Currently, the performance of "ns_urlspace get" is about twice the
+ * time of "nsv_get".
 
      ns_urlspace unset -recurse /x
      ns_urlspace set /x 1
@@ -211,10 +212,10 @@ typedef struct {
 
 /*
  * This structure defines a trie. A trie is a tree whose nodes are
- * branches and channels. It is an inherently recursive data structure,
- * and each node is itself a trie. Each node represents one "part" of
- * a URL; in this case, a "part" is server name, method, directory, or
- * wildcard.
+ * branches and channels. It is an inherently recursive data
+ * structure, and each node is itself a trie. Each node represents one
+ * "part" of a URL; in this case, a "part" is server name, method,
+ * directory, or wildcard.
  */
 
 typedef struct {
@@ -236,10 +237,10 @@ typedef struct {
  * A channel is much like a branch. It exists only at the second level
  * (Channels come out of Junctions, which are top-level structures).
  * The filter is a copy of the very last part of the URLs matched by
- * branches coming out of this channel (only branches come out of channels).
- * When looking for a URL, the filename part of the target URL is compared
- * with the filter in each channel, and the channel is traversed only if
- * there is a match
+ * branches coming out of this channel (only branches come out of
+ * channels).  When looking for a URL, the filename part of the target
+ * URL is compared with the filter in each channel, and the channel is
+ * traversed only if there is a match.
  */
 
 typedef struct {
@@ -521,10 +522,11 @@ Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
  *
  * NsUrlSpecificGet --
  *
- *      Lower level function, receives NsServer instead of string base server
- *      name.  "flags" are just used, when NS_URLSPACE_EXACT is specified. In
- *      this case, the flags are passed to TrieFindExact(), which returns data
- *      only, which was set with this flag.
+ *      Lower level function, receives NsServer instead of string base
+ *      server name.  "flags" are just used, when NS_URLSPACE_EXACT is
+ *      specified. In this case, the flags are passed to
+ *      TrieFindExact(), which returns data only, which was set with
+ *      this flag.
  *
  * Results:
  *      A pointer to user data, set with Ns_UrlSpecificSet.
@@ -951,8 +953,8 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
         Branch *branchPtr;
 
         /*
-         * We are still parsing the middle of a sequence, such as "foo" in:
-         * "server1\0GET\0foo\0*.html\0"
+         * We are still parsing the middle of a sequence, such as
+         * "foo" in: "server1\0GET\0foo\0*.html\0"
          *
          * Create a new branch and recurse to add the next word in the
          * sequence.
@@ -983,8 +985,8 @@ TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
         } else {
 
             /*
-             * If NS_OP_NODELETE is NOT set, then delete the current node
-             * because one already exists.
+             * If NS_OP_NODELETE is NOT set, then delete the current
+             * node because one already exists.
              */
 
             nodePtr = triePtr->node;
@@ -1232,9 +1234,9 @@ TrieFind(const Trie *triePtr, char *seq, int *depthPtr)
  *
  * TrieFindExact --
  *
- *      Similar to TrieFind, but will not do inheritance.
- *      If (flags & NS_OP_NOINHERIT) then data set with that flag will
- *      be returned; otherwise only data set without that flag will be
+ *      Similar to TrieFind, but will not do inheritance.  If (flags &
+ *      NS_OP_NOINHERIT) then data set with that flag will be
+ *      returned; otherwise only data set without that flag will be
  *      returned.
  *
  * Results:
@@ -1272,10 +1274,9 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
     } else if (nodePtr != NULL) {
 
         /*
-         * We reached the end of the sequence. Grab the data from
-         * this node. If the flag specifies NOINHERIT, then return
-         * the non-inheriting data, otherwise return the inheriting
-         * data.
+         * We reached the end of the sequence. Grab the data from this
+         * node. If the flag specifies NOINHERIT, then return the
+         * non-inheriting data, otherwise return the inheriting data.
          */
 
 	if ((flags & NS_OP_NOINHERIT) != 0u) {
@@ -1616,17 +1617,18 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
  *
  * JunctionAdd --
  *
- *      This function is called from Ns_UrlSpecificSet which is 
- *      usually called from Ns_RegisterRequest, 
- *      Ns_RegisterProxyRequest, InitAliases for mapping aliases, and 
- *      the nsperm functions TribeAlloc and Ns_AddPermission for 
- *      adding permissions. It adds a sequence, terminating in a new 
+ *      This function is called from Ns_UrlSpecificSet which is
+ *      usually called from Ns_RegisterRequest,
+ *      Ns_RegisterProxyRequest, InitAliases for mapping aliases, and
+ *      the nsperm functions TribeAlloc and Ns_AddPermission for
+ *      adding permissions. It adds a sequence, terminating in a new
  *      node, to a junction.
  *
- *      Flags may be a bit-combination of NS_OP_NOINHERIT, NS_OP_NODELETE.
- *      NOINHERIT sets the data as noninheriting, so only an exact sequence
- *      will match in the future; NODELETE means that if a node already
- *      exists with this sequence/ID it will not be deleted but replaced.
+ *      Flags may be a bit-combination of NS_OP_NOINHERIT,
+ *      NS_OP_NODELETE.  NOINHERIT sets the data as noninheriting, so
+ *      only an exact sequence will match in the future; NODELETE
+ *      means that if a node already exists with this sequence/ID it
+ *      will not be deleted but replaced.
  *
  * Results:
  *      None. 
@@ -1664,13 +1666,15 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
     }
 
     /*
-     * If it's a valid sequence that has a wildcard in its last element,
-     * append the whole string to dsWord, then cut off the last word from
-     * p.
-     * Otherwise, set dsWord to "*" because there is an implicit * wildcard
-     * at the end of URLs like /foo/bar
+     * If it's a valid sequence that has a wildcard in its last
+     * element, append the whole string to dsWord, then cut off the
+     * last word from p.
      *
-     * dsWord will eventually be used to set or find&reuse a channel filter.
+     * Otherwise, set dsWord to "*" because there is an implicit *
+     * wildcard at the end of URLs like /foo/bar
+     *
+     * dsWord will eventually be used to set or find&reuse a channel
+     * filter.
      */
     assert(p != NULL);
     if ((depth > 0) && (strchr(p, INTCHAR('*')) != NULL || strchr(p, INTCHAR('?')) != NULL )) {
@@ -1751,7 +1755,8 @@ JunctionFind(const Junction *juncPtr, char *seq)
     NS_NONNULL_ASSERT(seq != NULL);
 
     /*
-     * After this loop, p will point at the last element in the sequence.
+     * After this loop, p will point at the last element in the
+     * sequence.
      */
     
     for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
@@ -1823,9 +1828,9 @@ JunctionFind(const Junction *juncPtr, char *seq)
                 int   cdepth;
 
                 /*
-                 * Let's see if this channel has a node that also matches
-                 * the sequence but is more specific (has a greater depth)
-                 * that the previously found node.
+                 * Let's see if this channel has a node that also
+                 * matches the sequence but is more specific (has a
+                 * greater depth) that the previously found node.
                  */
 
                 cdepth = 0;
@@ -2136,9 +2141,9 @@ PrintSeq(const char *seq)
  * AllocTclUrlSpaceId --
  *
  *    Allocate a UrlSpace id for Tcl. It uses the low-level function
- *    Ns_UrlSpecificAlloc() which aborts with Fatal() in case the server runs
- *    out of url spaces. This function does not abort, but returns a TCL_ERROR
- *    in such cases.
+ *    Ns_UrlSpecificAlloc() which aborts with Fatal() in case the
+ *    server runs out of url spaces. This function does not abort, but
+ *    returns a TCL_ERROR in such cases.
  *
  * Results:
  *    Tcl result. 
@@ -2175,8 +2180,9 @@ AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
  *
  * CheckTclUrlSpaceId --
  *
- *    Either allocate a new UrlSpace id or check, whether the provided id is
- *    an id dedicated "Tcl" (i.e. it is used via ns_urlspace interface).
+ *    Either allocate a new UrlSpace id or check, whether the provided
+ *    id is an id dedicated "Tcl" (i.e. it is used via ns_urlspace
+ *    interface).
  *
  * Results:
  *    Tcl result. 
@@ -2247,6 +2253,299 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
+ * UrlSpaceGetObjCmd, subcommand of NsTclUrlSpaceObjCmd --
+ *
+ *    Implements the "ns_urlspace get" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK, id = -1;
+    const char     *key = ".", *url, *data;
+    bool            exact = NS_FALSE, noinherit = NS_FALSE;
+    Ns_ObjvSpec     lopts[] = {
+        {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
+        {"-id",        Ns_ObjvInt,    &id,        NULL},
+        {"-key",       Ns_ObjvString, &key,       NULL},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };            
+    Ns_ObjvSpec args[] = {
+        {"URL",    Ns_ObjvString, &url,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+                        
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else if (NS_strlen(key) < 1u) {
+        Ns_TclPrintfResult(interp, "provided key must be at least one character");
+        result = TCL_ERROR;
+
+    } else {
+        NsUrlSpaceOp  op;
+        unsigned int  flags = 0u;
+
+        if (noinherit) {
+            exact = NS_TRUE;
+        }
+        
+        if (exact) {
+            op = NS_URLSPACE_EXACT;
+            if (noinherit) {
+                flags |= NS_OP_NOINHERIT;
+            }
+        } else {
+            op = NS_URLSPACE_DEFAULT;
+        }
+
+#ifdef DEBUG        
+        fprintf(stderr, "=== GET id %d key %s url %s op %d\n", id, key, url, op);
+#endif
+        Ns_MutexLock(&servPtr->urlspace.lock);
+        data = NsUrlSpecificGet(servPtr, key, url, id, flags, op);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
+
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlSpaceListObjCmd, subcommand of NsTclUrlSpaceObjCmd --
+ *
+ *    Implements the "ns_urlspace list" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK, id = -1;
+    Ns_ObjvSpec     lopts[] = {
+        {"-id",  Ns_ObjvInt, &id, NULL},
+        {NULL, NULL, NULL, NULL}
+    };            
+                        
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds, *dsPtr = &ds;
+
+        Ns_DStringInit(dsPtr);
+        
+        Ns_MutexLock(&servPtr->urlspace.lock);
+        Ns_UrlSpecificWalk(id, servPtr->server, WalkCallback, dsPtr);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
+
+        Tcl_DStringResult(interp, dsPtr);
+    }
+
+    return result;
+}        
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlSpaceNewObjCmd, subcommand of NsTclUrlSpaceObjCmd --
+ *
+ *    Implements the "ns_urlspace new" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+UrlSpaceNewObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK;
+          
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        int id = -1;
+        
+        Ns_MutexLock(&servPtr->urlspace.lock);
+        result = AllocTclUrlSpaceId(interp, &id);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
+        
+        if (likely(result == TCL_OK)) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(id));
+        }
+    }
+    
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlSpaceSetObjCmd, subcommand of NsTclUrlSpaceObjCmd --
+ *
+ *    Implements the "ns_urlspace set" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK, id = -1, noinherit = 0;
+    const char     *key = ".", *url, *data;
+    Ns_ObjvSpec     lopts[] = {
+        {"-id",        Ns_ObjvInt,    &id,        NULL},
+        {"-key",       Ns_ObjvString, &key,       NULL},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };            
+    Ns_ObjvSpec args[] = {
+        {"URL",    Ns_ObjvString, &url,    NULL},
+        {"data",   Ns_ObjvString, &data,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+                        
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
+        result = TCL_ERROR;
+        
+    } else if (NS_strlen(key) < 1u) {
+        Ns_TclPrintfResult(interp, "provided key must be at least one character");
+        result = TCL_ERROR;
+        
+    } else {
+        unsigned int  flags = 0u;
+
+        if (noinherit != 0) {
+            flags |= NS_OP_NOINHERIT;
+        }
+#ifdef DEBUG        
+        fprintf(stderr, "=== SET use id %d\n", id);
+#endif
+        Ns_MutexLock(&servPtr->urlspace.lock);
+        /* maybe add a non-string interface for first arg */
+        Ns_UrlSpecificSet(servPtr->server, key, url, id, ns_strdup(data),
+                          flags, ns_free);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlSpaceUnsetObjCmd, subcommand of NsTclUrlSpaceObjCmd --
+ *
+ *    Implements the "ns_urlspace unset" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK, id = -1;
+    const char     *key = ".", *url;
+    bool            recurse = NS_FALSE, noinherit = NS_FALSE;
+    Ns_ObjvSpec     lopts[] = {
+        {"-id",        Ns_ObjvInt,    &id,        NULL},
+        {"-key",       Ns_ObjvString, &key,       NULL},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
+        {"-recurse",   Ns_ObjvBool,   &recurse,   INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };            
+    Ns_ObjvSpec     args[] = {
+        {"URL",    Ns_ObjvString, &url,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+                        
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const char   *data;
+        unsigned int  flags = 0u;
+        
+        if (NS_strlen(key) < 1u) {
+            Ns_TclPrintfResult(interp, "provided key must be at least one character");
+            return TCL_ERROR;
+        }
+
+        if (noinherit) {
+            flags |= NS_OP_NOINHERIT;
+        }
+        if (recurse) {
+            flags |= NS_OP_RECURSE;
+            if ((flags & NS_OP_NOINHERIT) == NS_OP_NOINHERIT) {
+                Ns_Log(Warning, "flag -noinherit is ignored");
+            }
+        }
+        
+        Ns_MutexLock(&servPtr->urlspace.lock);
+        data = Ns_UrlSpecificDestroy(servPtr->server, key, url, id, flags);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || recurse));
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclUrlSpaceObjCmd --
  *
  *    Implements the ns_urlspace command.
@@ -2263,239 +2562,16 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
 int
 NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = itPtr->servPtr;
-    int             opt, id = -1;
-    const char     *key = ".";
-
-    static const char *const opts[] = {
-        "get", "list", "new", "set", "unset", 
-        NULL
+    const Ns_SubCmdSpec subcmds[] = {
+        {"get",   UrlSpaceGetObjCmd},
+        {"list",  UrlSpaceListObjCmd},
+        {"new",   UrlSpaceNewObjCmd},
+        {"set",   UrlSpaceSetObjCmd},
+        {"unset", UrlSpaceUnsetObjCmd},
+        {NULL, NULL}
     };
 
-    enum {
-        CGetIdx, CListIdx, CNewIdx, CSetIdx, CUnsetIdx
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
-                            "option", 0, &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    
-    switch (opt) {
-        
-    case CGetIdx:
-        {
-            const char   *url, *data;
-            bool          exact = NS_FALSE, noinherit = NS_FALSE;
-            NsUrlSpaceOp  op;
-            unsigned int  flags = 0u;
-            
-            Ns_ObjvSpec lopts[] = {
-                {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
-                {"-id",        Ns_ObjvInt,    &id,        NULL},
-                {"-key",       Ns_ObjvString, &key,       NULL},
-                {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
-                {NULL, NULL, NULL, NULL}
-            };            
-            Ns_ObjvSpec args[] = {
-
-                {"URL",    Ns_ObjvString, &url,    NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-                        
-            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-            if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            if (NS_strlen(key) < 1u) {
-                Ns_TclPrintfResult(interp, "provided key must be at least one character");
-                return TCL_ERROR;
-            }
-            if (noinherit) {
-                exact = NS_TRUE;
-            }
-            
-            if (exact) {
-                op = NS_URLSPACE_EXACT;
-                if (noinherit) {
-                    flags |= NS_OP_NOINHERIT;
-                }
-            } else {
-                op = NS_URLSPACE_DEFAULT;
-            }
-
-#ifdef DEBUG        
-            fprintf(stderr, "=== GET id %d key %s url %s op %d\n", id, key, url, op);
-#endif
-            Ns_MutexLock(&servPtr->urlspace.lock);
-            data = NsUrlSpecificGet(servPtr, key, url, id, flags, op);
-            Ns_MutexUnlock(&servPtr->urlspace.lock);
-
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
-            break;
-        }
-
-    case CListIdx:
-        {
-            Tcl_DString ds, *dsPtr = &ds;
-            
-            Ns_ObjvSpec lopts[] = {
-                {"-id",        Ns_ObjvInt,    &id,        NULL},
-                {NULL, NULL, NULL, NULL}
-            };            
-                        
-            if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            
-            Ns_DStringInit(dsPtr);
-
-            Ns_MutexLock(&servPtr->urlspace.lock);
-            Ns_UrlSpecificWalk(id, servPtr->server, WalkCallback, dsPtr);
-            Ns_MutexUnlock(&servPtr->urlspace.lock);
-
-            Tcl_DStringResult(interp, dsPtr);
-
-            break;
-        }        
-
-    case CNewIdx:
-        {
-            int  result;
-            
-            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            Ns_MutexLock(&servPtr->urlspace.lock);
-            result = AllocTclUrlSpaceId(interp, &id);
-            Ns_MutexUnlock(&servPtr->urlspace.lock);
-
-            if (result == TCL_ERROR) {
-                return TCL_ERROR;
-            }
-
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(id));
-            break;
-        }
-
-        
-    case CSetIdx:
-        {
-            const char   *url, *data;
-            unsigned int  flags = 0u;
-            int           noinherit = 0;
-            
-            Ns_ObjvSpec lopts[] = {
-                {"-id",        Ns_ObjvInt,    &id,        NULL},
-                {"-key",       Ns_ObjvString, &key,       NULL},
-                {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
-                {NULL, NULL, NULL, NULL}
-            };            
-            Ns_ObjvSpec args[] = {
-                {"URL",    Ns_ObjvString, &url,    NULL},
-                {"data",   Ns_ObjvString, &data,   NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-                        
-            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            if (NS_strlen(key) < 1u) {
-                Ns_TclPrintfResult(interp, "provided key must be at least one character");
-                return TCL_ERROR;
-            }
-
-            
-            if (noinherit != 0) {
-                flags |= NS_OP_NOINHERIT;
-            }
-#ifdef DEBUG        
-            fprintf(stderr, "=== SET use id %d\n", id);
-#endif
-            Ns_MutexLock(&servPtr->urlspace.lock);
-            /* maybe add a non-string interface for first arg */
-            Ns_UrlSpecificSet(servPtr->server, key, url, id, ns_strdup(data),
-                              flags, ns_free);
-            Ns_MutexUnlock(&servPtr->urlspace.lock);
-
-            break;
-        }
-
-    case CUnsetIdx:
-        {
-            const char   *url, *data;
-            bool          recurse = NS_FALSE, noinherit = NS_FALSE;
-            unsigned int  flags = 0u;
-            
-            Ns_ObjvSpec lopts[] = {
-                {"-id",        Ns_ObjvInt,    &id,        NULL},
-                {"-key",       Ns_ObjvString, &key,       NULL},
-                {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
-                {"-recurse",   Ns_ObjvBool,   &recurse,   INT2PTR(NS_TRUE)},
-                {NULL, NULL, NULL, NULL}
-            };            
-            Ns_ObjvSpec args[] = {
-                {"URL",    Ns_ObjvString, &url,    NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-                        
-            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            if (NS_strlen(key) < 1u) {
-                Ns_TclPrintfResult(interp, "provided key must be at least one character");
-                return TCL_ERROR;
-            }
-
-            if (noinherit) {
-                flags |= NS_OP_NOINHERIT;
-            }
-            if (recurse) {
-                flags |= NS_OP_RECURSE;
-                if ((flags & NS_OP_NOINHERIT) == NS_OP_NOINHERIT) {
-                    Ns_Log(Warning, "flag -noinherit is ignored");
-                }
-            }
-        
-            Ns_MutexLock(&servPtr->urlspace.lock);
-            data = Ns_UrlSpecificDestroy(servPtr->server, key, url, id, flags);
-            Ns_MutexUnlock(&servPtr->urlspace.lock);
-
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || recurse));
-
-            break;
-        }
-        
-    default: 
-        /*
-         * Should not be reached.
-         */
-        break;
-    }
-
-
-    return TCL_OK;
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 
@@ -2503,7 +2579,7 @@ NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */

@@ -14,7 +14,7 @@ test ns_urlspace-1.0 {basic operation} -body {
 
 test ns_urlspace-1.1 {basic operation} -body {
      ns_urlspace x
-} -returnCodes error -result {bad option "x": must be get, list, new, set, or unset}
+} -returnCodes error -result {bad subcmd "x": must be get, list, new, set, or unset}
 
 test ns_urlspace-1.2 {basic operation get} -body {
      ns_urlspace get
