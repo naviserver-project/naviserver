@@ -74,9 +74,9 @@ static bool HdrEq(const Ns_Set *set, const char *name, const char *value)
  * Ns_ConnWriteChars, Ns_ConnWriteVChars --
  *
  *      This will write a string buffer to the conn.  The distinction
- *      being that the given data is explicitly a UTF8 character string,
- *      and will be put out in an 'encoding-aware' manner.
- *      It promises to write all of it.
+ *      being that the given data is explicitly a UTF8 character
+ *      string, and will be put out in an 'encoding-aware' manner.  It
+ *      promises to write all of it.
  *
  * Results:
  *      NS_OK if all data written, NS_ERROR otherwise.
@@ -230,7 +230,8 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
  * Ns_ConnWriteData, Ns_ConnWriteVData --
  *
  *      Send one or more buffers of raw bytes to the client, possibly
- *      using the HTTP chunked encoding if flags includes NS_CONN_STREAM.
+ *      using the HTTP chunked encoding if flags includes
+ *      NS_CONN_STREAM.
  *
  * Results:
  *      NS_OK if all data written, NS_ERROR otherwise.
@@ -269,8 +270,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 
     /*
      * Make sure there's enough send buffers to contain the given
-     * buffers, a set of optional HTTP headers, and an optional
-     * HTTP chunked header/footer pair. Use the stack if possible.
+     * buffers, a set of optional HTTP headers, and an optional HTTP
+     * chunked header/footer pair. Use the stack if possible.
      */
 
     neededBufs = (size_t)nbufs + 2u + 1u;
@@ -337,7 +338,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 		assert(nbufs > 0);
 		assert(bufs != NULL);
                 /*
-                 * Output length header followed by content and then trailer.
+                 * Output length header followed by content and then
+                 * trailer.
                  */
 
 		len = (size_t)sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength);
@@ -496,8 +498,8 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
  *
  * Ns_ConnSendFileVec --
  *
- *      Send a vector of file ranges/buffers. It promises to send
- *      all of it.
+ *      Send a vector of file ranges/buffers. It promises to send all
+ *      of it.
  *
  * Results:
  *      NS_OK if all data sent, NS_ERROR otherwise.
@@ -853,8 +855,8 @@ Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
  *
  * Ns_ConnGets --
  *
- *      Read in a string from a connection, stopping when either
- *      we've run out of data, hit a newline, or had an error
+ *      Read in a string from a connection, stopping when either we've
+ *      run out of data, hit a newline, or had an error.
  *
  * Results:
  *      Pointer to given buffer or NULL on error.
@@ -986,13 +988,13 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
  *
  * Ns_ConnReadHeaders --
  *
- *      Read the headers and insert them into the passed-in set
+ *      Read the headers and insert them into the passed-in set.
  *
  * Results:
  *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      Stuff will be read from the conn
+ *      Stuff will be read from the conn.
  *
  *----------------------------------------------------------------------
  */
@@ -1126,9 +1128,16 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         status = NS_ERROR;
     } else {
+        /*
+         * There is data to copy.
+         */
         while (ncopy > 0u) {
             ssize_t nwrote;
 
+            /*
+             * Write it to the chan, or fp, or fd, depending on what
+             * was provided.
+             */
             if (chan != NULL) {
                 nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
             } else if (fp != NULL) {
@@ -1306,8 +1315,8 @@ CheckKeep(const Conn *connPtr)
 		}
 		
                 /*
-                 * We allow keep-alive for chunked encoding variants or a valid
-                 * content-length header.
+                 * We allow keep-alive for chunked encoding variants
+                 * or a valid content-length header.
                  */
 		if (((connPtr->flags & NS_CONN_CHUNK) != 0u)
                     || (Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL)
@@ -1360,7 +1369,7 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */
