@@ -457,7 +457,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     int            result = TCL_OK;
     HMAC_CTX      *ctx;
-    Tcl_Obj       *ctxObj;
+    const Tcl_Obj *ctxObj;
     Tcl_Obj       *messageObj;
     int            messageLength;
     const unsigned char *message;
@@ -507,7 +507,7 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     int            result = TCL_OK;
     unsigned int   mdLength;
     HMAC_CTX      *ctx;
-    Tcl_Obj       *ctxObj;
+    const Tcl_Obj *ctxObj;
     HMAC_CTX      *partial_ctx;
     Ns_ObjvSpec    args[] = {
         {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
@@ -707,7 +707,7 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
@@ -755,12 +755,13 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
     EVP_MD_CTX    *mdctx;
-    Tcl_Obj       *ctxObj, *messageObj;
+    const Tcl_Obj *ctxObj;
+    Tcl_Obj       *messageObj;
     int            messageLength;
     const char    *message;
     Ns_ObjvSpec    args[] = {
@@ -802,7 +803,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     unsigned char  digest[EVP_MAX_MD_SIZE];
@@ -852,7 +853,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
@@ -898,7 +899,7 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     unsigned char  digest[EVP_MAX_MD_SIZE];
