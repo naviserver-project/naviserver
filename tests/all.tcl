@@ -39,7 +39,7 @@
 package require Tcl 8.5
 package require tcltest 2.2
 namespace import tcltest::*
-eval configure $argv -singleproc true -testdir [file dirname [info script]]
+configure {*}$argv -singleproc true -testdir [file dirname [info script]]
 
 
 
@@ -66,4 +66,4 @@ ns_shutdown
 #
 # Wait until these are finished, ns_shutdown will terminate this script
 #
-after 2000 return
+vwait forever
