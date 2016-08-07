@@ -282,6 +282,17 @@ static int   CmpBranches(const Branch *const*leftPtrPtr, const Branch *const*rig
 static int   CmpKeyWithBranch(const char *key, const Branch *const*branchPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+
+/*
+ * SubCommands
+ */
+
+static Tcl_ObjCmdProc UrlSpaceGetObjCmd;
+static Tcl_ObjCmdProc UrlSpaceListObjCmd;
+static Tcl_ObjCmdProc UrlSpaceNewObjCmd;
+static Tcl_ObjCmdProc UrlSpaceSetObjCmd;
+static Tcl_ObjCmdProc UrlSpaceUnsetObjCmd;
+
 /*
  * Utility functions
  */
