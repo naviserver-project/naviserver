@@ -6,7 +6,7 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 #
-# most fo these tests require the OpenSLL API, some require nsf
+# most fo these tests require the OpenSSL API, some require nsf
 #
 tcltest::testConstraint crypto [ns_info ssl]
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
