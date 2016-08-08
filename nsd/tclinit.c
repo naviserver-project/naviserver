@@ -995,39 +995,6 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
- * ICtlModulesObjCmd - subcommand of NsTclICtlObjCmd --
- *
- *      Implements "ns_ictl modules" command.
- *      Get the list of registered modules.
- *
- * Results:
- *      Standard Tcl result.
- *
- * Side effects:
- *      Add module.
- *
- *----------------------------------------------------------------------
- */
-static int
-ICtlModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-{
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr = itPtr->servPtr;
-    int          result = TCL_OK;
-
-    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-        
-    } else {
-        Tcl_SetObjResult(interp, servPtr->tcl.modules);
-    }
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * ICtlGetObjCmd - subcommand of NsTclICtlObjCmd --
  *
  *      Implements "ns_ictl get" command.
@@ -1801,7 +1768,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
     hPtr = GetCacheEntry(servPtr);
     itPtr = Tcl_GetHashValue(hPtr);
     if (itPtr == NULL) {
-        if (nsconf.tcl.lockoninit != 0) {
+        if (nsconf.tcl.lockoninit) {
             Ns_CsEnter(&lock);
         }
         if (interp != NULL) {
@@ -1819,7 +1786,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
         } else {
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
         }
-        if (nsconf.tcl.lockoninit != 0) {
+        if (nsconf.tcl.lockoninit) {
             Ns_CsLeave(&lock);
         }
         Tcl_SetHashValue(hPtr, itPtr);
