@@ -7,7 +7,7 @@
 
 [description]
 
-These commands provides a mechanism to control Tcl interpreter initialisation,
+These commands provides a mechanism to control Tcl interpreter initialization,
 cleanup, lifetime, synchronization etc.
 
 
@@ -52,20 +52,71 @@ this to define new procs once the server has started.
 
 [para]
 If the script evaluates without error then it is appended to the interpreter
-intialisation script. Other threads will begin to pick up the changes when
+initialization script. Other threads will begin to pick up the changes when
 they next run their [term delete] traces and notice that the [term epoch] has
 changed.
 
 [para]
 If the [option -sync] option is given then [cmd ns_eval] will return only
-after the interpreter initialisation script has been updated. Otherwise, there
-might be a small delay before the initialisation script receives the update
+after the interpreter initialization script has been updated. Otherwise, there
+might be a small delay before the initialization script receives the update
 due to [cmd ns_eval] [arg script]'s being evaluated in series.
 
 [para]
 If the [option -pending] option is given a list of all scripts which are queued
-to be folded into the inerpreter initialisation script are returned.
+to be folded into the interpreter initialization script are returned.
 
+
+
+
+
+[call [cmd "ns_ictl addmodule"] [arg modulename] ]
+Add a module to the list of modules to be initialized for the current virtual
+server and return the whole list.  The modules are loaded later.
+
+
+[call [cmd "ns_ictl cleanup"] [arg modulename] ]
+Invoke the legacy defer callbacks.
+
+
+[call [cmd "ns_ictl epoch"] ]
+Return the epoch (version) of the interpreter initialization script for the
+current virtual server.
+
+The epoch increases by 1 whenever [cmd "ns_ictl save"] is called, such as by
+[cmd ns_eval].
+
+
+[call [cmd "ns_ictl get"] ]
+Return the interpreter initialization script for the current virtual
+server.
+
+
+[call [cmd "ns_ictl getmodules"] ]
+Return the list of modules to be loaded for the current virtual server.
+
+
+[call [cmd "ns_ictl gettrace"] ]
+Return the script of the specified trace.
+
+
+[call [cmd "ns_ictl markfordelete"] ]
+Mark the interpreter for deletion after the [term deallocate] interpreter traces
+and have run. This is useful when it's necessary to delete an interp after it
+has been modified in a way that cannot be safely cleaned up, such as by the
+TclPro debugger.
+
+
+[call [cmd "ns_ictl runtraces"] ]
+Run the scripts of the specified trace.
+
+[call [cmd "ns_ictl save"] [arg script] ]
+Replace the interpreter initialization script for the current virtual
+server.
+
+The newly saved script will be used to initialise newly created
+interpreters. Existing interpreters will be be reinitialized when
+[cmd "ns_ictl update"] is called.
 
 
 [call [cmd "ns_ictl trace"] [arg tracewhen] [arg script] [opt [arg args]] ]
@@ -83,14 +134,31 @@ All traces must be registered before server start up completes.  Valid
 
 [list_begin options]
 
-[opt_def create]
-Create traces fires when a new interpreter is first created. They are the first
-to be called, and are always called for every interpreter.
-
 [opt_def allocate]
 Allocate interpreter traces fire when an interpreter is first allocated for a
 particular thread, for example at the beginning of connection processing, job
 queue processing, or for a scheduled procedure.
+
+[opt_def create]
+Create traces fires when a new interpreter is first created. They are the first
+to be called, and are always called for every interpreter.
+
+[opt_def deallocate]
+Deallocate interpreter traces fire at the end of a transaction, after any
+[term getconn] traces if running in a connection thread.[opt_def deallocate]
+[para]
+A deallocate trace is a good place for general resource cleanup.
+
+[opt_def delete]
+Delete interpreter traces fire when an interpreter is deleted. Interpreters are
+often cached per-thread and reused multiple times, so a [opt delete] trace
+may only fire when a thread exits or when [cmd "ns_ictl markfordelete"] is
+called explicitly. They are the last trace to be called for an interp, and are
+always called, eventually.
+
+[opt_def freeconn]
+Freeconn interpreter traces fire after connection processing is complete, before
+any deallocate interpreter traces.
 
 [opt_def getconn]
 Getconn interpreter traces fire after all allocate traces have run, before
@@ -102,84 +170,12 @@ Tcl proc is registered as a connection filter, that will trigger the
 [option getconn] interpreter trace, otherwise it will fire later in the process
 when the registered proc, [term ADP], or Tcl page runs.
 
-[opt_def freeconn]
-Freeconn interpreter traces fire after connection processing is complete, before
-any deallocate interpreter traces.
-
-[opt_def deallocate]
-Deallocate interpreter traces fire at the end of a transaction, after any
-[term getconn] traces if running in a connection thread.
-
-[para]
-A deallocate trace is a good place for general resource cleanup.
-
-[opt_def delete]
-Delete interpreter traces fire when an interpreter is deleted. Interpreters are
-often cached per-thread and reused multiple times, so a [opt delete] trace
-may only fire when a thread exits or when [cmd "ns_ictl markfordelete"] is
-called explicitly. They are the last trace to be called for an interp, and are
-always called, eventually.
-
 [list_end]
 
 
-
-[call [cmd "ns_ictl markfordelete"] ]
-
-Mark the interpreter for deletion after the [term deallocate] interpreter traces
-and have run. This is useful when it's necessary to delete an interp after it
-has been modified in a way that cannot be safely cleaned up, such as by the
-TclPro debugger.
-
-
-
-[call [cmd "ns_ictl addmodule"] [arg modulename] ]
-
-Add a module to the list of modules to be initialised for the current virtual
-server and return the whole list.  The modules are loaded later.
-
-
-
-[call [cmd "ns_ictl getmodules"] ]
-
-Return the list of modules to be loaded for the current virtual server.
-
-
-
-[call [cmd "ns_ictl get"] ]
-
-Return the interpreter initialisation script for the current virtual
-server.
-
-
-
-[call [cmd "ns_ictl epoch"] ]
-
-Return the epoch (version) of the interpreter initialization script for the
-current virtual server.
-
-The epoch increases by 1 whenever [cmd "ns_ictl save"] is called, such as by
-[cmd ns_eval].
-
-
-
-[call [cmd "ns_ictl save"] [arg script] ]
-
-Replace the interpreter initialization script for the current virtual
-server.
-
-The newly saved script will be used to initialise newly created
-interpreters. Existing interpreters will be be reinitialised when
-[cmd "ns_ictl update"] is called.
-
-
-
 [call [cmd "ns_ictl update"] ]
-
-Re-run the interpreter initialisation script if it has changed since this
-interpreter was last initialised.
-
-
+Re-run the interpreter initialization script if it has changed since this
+interpreter was last initialized.
 
 [list_end]
 
