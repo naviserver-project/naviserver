@@ -66,7 +66,7 @@ if test "${ac_openssl}" = "yes" ; then
   dnl echo "OpenSSL lib crypto found: $ac_cv_lib_crypto_PEM_read_bio_DHparams"
 
   if test "${ac_cv_header_openssl_evp_h}" != "yes" -o "${ac_cv_lib_ssl_SSL_library_init}" != "yes" -o "${ac_cv_lib_crypto_PEM_read_bio_DHparams}" != "yes"; then
-    AC_MSG_ERROR([OpenSLL support requested but not available])
+    AC_MSG_ERROR([OpenSSL support requested but not available])
   fi
 
   CPPFLAGS="$save_CPPFLAGS"
