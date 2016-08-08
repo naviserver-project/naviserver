@@ -45,8 +45,6 @@
  * Local functions defined in this file
  */
 
-static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
-    NS_GNUC_NONNULL(1);
 static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
@@ -79,11 +77,319 @@ static void HttpTaskShutdown(const Ns_HttpTask *httpPtr)
 
 static Ns_TaskProc HttpProc;
 
+static Tcl_ObjCmdProc HttpCancelObjCmd;
+static Tcl_ObjCmdProc HttpCleanupObjCmd;
+static Tcl_ObjCmdProc HttpListObjCmd;
+static Tcl_ObjCmdProc HttpQueueObjCmd;
+static Tcl_ObjCmdProc HttpRunObjCmd;
+static Tcl_ObjCmdProc HttpWaitObjCmd;
+
 
 /*
  * Static variables defined in this file.
  */
 static Ns_TaskQueue *session_queue;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpRunObjCmd, HttpQueueObjCmd - subcommands of "ns_http"
+ *
+ *	Implements the "ns_http run|queue" 
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	May queue an HTTP request.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HttpRunObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    return HttpQueueCmd(clientData, objc, objv, 1);
+}
+
+static int
+HttpQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    return HttpQueueCmd(clientData, objc, objv, 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpWaitObjCmd --
+ *
+ *	Implements "ns_http wait" subcommand.
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	Typically closing request.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    NsInterp    *itPtr = clientData;
+    Tcl_Obj     *valPtr, 
+	        *elapsedVarPtr = NULL, *resultVarPtr = NULL, 
+	        *statusVarPtr = NULL, *fileVarPtr = NULL;
+    Ns_Time     *timeoutPtr = NULL;
+    const char  *id = NULL;
+    Ns_Set      *hdrPtr = NULL;
+    Ns_HttpTask *httpPtr = NULL;
+    Ns_Time      diff;
+    int          result = TCL_ERROR, spoolLimit = -1, decompress = 0;
+
+    Ns_ObjvSpec opts[] = {
+        {"-timeout",    Ns_ObjvTime,   &timeoutPtr,    NULL},
+        {"-headers",    Ns_ObjvSet,    &hdrPtr,        NULL},
+        {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr, NULL},
+        {"-result",     Ns_ObjvObj,    &resultVarPtr,  NULL},
+        {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
+        {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
+        {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
+        {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"id",       Ns_ObjvString, &id, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    NS_NONNULL_ASSERT(itPtr != NULL);
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    if (HttpGet(itPtr, id, &httpPtr, NS_TRUE) == NS_FALSE) {
+	return TCL_ERROR;
+    }
+    if (decompress != 0) {
+      httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+    }
+
+    if (hdrPtr == NULL) {
+      /*
+       * If no output headers are provided, we create our
+       * own. The ns_set is needed for checking the content
+       * length of the reply.
+       */
+      hdrPtr = Ns_SetCreate("outputHeaders");
+      if (unlikely(Ns_TclEnterSet(interp, hdrPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+          Ns_SetFree(hdrPtr);
+          return TCL_ERROR;
+      }
+    }
+    httpPtr->spoolLimit = spoolLimit;
+    httpPtr->replyHeaders = hdrPtr;
+
+    Ns_HttpCheckSpool(httpPtr);
+
+    if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
+	HttpCancel(httpPtr);
+	Tcl_AppendResult(interp, "timeout waiting for task", NULL);
+	return TCL_ERROR;
+    }
+
+    if (elapsedVarPtr != NULL) {
+    	Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
+	valPtr = Tcl_NewObj();
+    	Ns_TclSetTimeObj(valPtr, &diff);
+    	if (Ns_SetNamedVar(interp, elapsedVarPtr, valPtr) == NS_FALSE) {
+	    goto err;
+	}
+    }
+
+    if (httpPtr->error != NULL) {
+	Tcl_AppendResult(interp, "ns_http failed: ", httpPtr->error, NULL);
+	goto err;
+    }
+
+    if (httpPtr->replyHeaderSize == 0) {
+	Ns_HttpCheckHeader(httpPtr);
+    }
+    Ns_HttpCheckSpool(httpPtr);
+
+    if (statusVarPtr != NULL 
+	&& Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status)) == NS_FALSE) {
+	goto err;
+    }
+
+    if (httpPtr->spoolFd > 0)  {
+	(void) ns_close(httpPtr->spoolFd);
+	valPtr = Tcl_NewObj();
+    } else {
+        bool binary = NS_TRUE;
+
+        if (hdrPtr != NULL) {
+            const char *contentEncoding = Ns_SetIGet(hdrPtr, "Content-Encoding");
+            
+            /*
+             * Does the contentEncoding allow text transfers? Not, if the
+             * content is compressed.
+             */
+
+            if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
+                const char *contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+                
+                if (contentType != NULL) {
+                    /*
+                     * Determine binary via contentType
+                     */
+                    binary = Ns_IsBinaryMimeType(contentType);
+                }
+            }
+        }
+
+        if (binary)  {
+            valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
+                                         (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        } else {
+            valPtr = Tcl_NewStringObj(httpPtr->ds.string + httpPtr->replyHeaderSize, 
+                                      (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        }
+    }
+
+    if (fileVarPtr != NULL 
+	&& httpPtr->spoolFd > 0 
+	&& Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1)) == NS_FALSE) {
+	goto err;
+    }
+
+    if (resultVarPtr == NULL) {
+	Tcl_SetObjResult(interp, valPtr);
+    } else {
+	if (Ns_SetNamedVar(interp, resultVarPtr, valPtr) == NS_FALSE) {
+	    goto err;
+	}
+	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
+    }
+
+    result = TCL_OK;
+
+err:
+    HttpClose(httpPtr);
+    return result;
+}
+
+
+static int
+HttpCancelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    NsInterp    *itPtr = clientData;
+    const char  *idString;
+    int          result = TCL_OK;
+    Ns_ObjvSpec  args[] = {
+        {"id", Ns_ObjvString,  &idString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_HttpTask *httpPtr = NULL;
+
+        if (HttpGet(itPtr, Tcl_GetString(objv[2]), &httpPtr, NS_TRUE) == NS_FALSE) {
+            result = TCL_ERROR;
+        } else {
+            HttpAbort(httpPtr);
+        }
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpCleanupObjCmd - subcommand of "ns_http"
+ *
+ *	Implements the "ns_http cleanup" 
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	Aborting requests and reinitializiung hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+HttpCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    NsInterp    *itPtr = clientData;
+    int          result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
+
+        for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search) ) {
+            Ns_HttpTask *httpPtr = Tcl_GetHashValue(hPtr);
+            
+            HttpAbort(httpPtr);
+        }
+        Tcl_DeleteHashTable(&itPtr->httpRequests);
+        Tcl_InitHashTable(&itPtr->httpRequests, TCL_STRING_KEYS);
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpListObjCmd - subcommand of "ns_http"
+ *
+ *	Implements the "ns_http list" 
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+HttpListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    NsInterp    *itPtr = clientData;
+    int          result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
+        
+        for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search) ) {
+            Ns_HttpTask *httpPtr = Tcl_GetHashValue(hPtr);
+            
+            Tcl_AppendResult(interp, Tcl_GetHashKey(&itPtr->httpRequests, hPtr), " ",
+                             httpPtr->url, " ",
+                             Ns_TaskCompleted(httpPtr->task) == NS_TRUE ? "done" : "running", 
+                             " ", NULL);
+        }
+    }        
+    return result;
+}
 
 
 /*
@@ -103,92 +409,21 @@ static Ns_TaskQueue *session_queue;
  */
 
 int
-NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclHttpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
-    Ns_HttpTask *httpPtr = NULL;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    int result, opt, run = 0;
-
-    static const char *const opts[] = {
-       "cancel", "cleanup", "run", "queue", "wait", "list",
-       NULL
+    const Ns_SubCmdSpec subcmds[] = {
+        {"cancel",   HttpCancelObjCmd},
+        {"cleanup",  HttpCleanupObjCmd},
+        {"list",     HttpListObjCmd},
+        {"queue",    HttpQueueObjCmd},
+        {"run",      HttpRunObjCmd},
+        {"wait",     HttpWaitObjCmd},
+        {NULL, NULL}
     };
-    enum {
-        HCancelIdx, HCleanupIdx, HRunIdx, HQueueIdx, HWaitIdx, HListIdx
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?args ...?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    assert(itPtr != NULL);
-
-    switch (opt) {
-    case HRunIdx:
-	run = 1;
-	/* FALLTHROUGH */
-    case HQueueIdx:
-	result = HttpQueueCmd(itPtr, objc, objv, run);
-        break;
-
-    case HWaitIdx:
-	result = HttpWaitCmd(itPtr, objc, objv);
-        break;
-
-    case HCancelIdx:
-        if (objc != 2) {
-            Tcl_WrongNumArgs(interp, 2, objv, "id");
-            result = TCL_ERROR;
-        } else {
-            result = TCL_OK;
-            if (HttpGet(itPtr, Tcl_GetString(objv[2]), &httpPtr, NS_TRUE) == NS_FALSE) {
-                result = TCL_ERROR;
-            }
-	}
-        if (result == TCL_OK) {
-            HttpAbort(httpPtr);
-        }
-        break;
-
-    case HCleanupIdx:
-        hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
-        while (hPtr != NULL) {
-            httpPtr = Tcl_GetHashValue(hPtr);
-            HttpAbort(httpPtr);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        Tcl_DeleteHashTable(&itPtr->httpRequests);
-        Tcl_InitHashTable(&itPtr->httpRequests, TCL_STRING_KEYS);
-        result = TCL_OK;
-        break;
-
-    case HListIdx:
-        hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
-        while (hPtr != NULL) {
-            httpPtr = Tcl_GetHashValue(hPtr);
-            Tcl_AppendResult(interp, Tcl_GetHashKey(&itPtr->httpRequests, hPtr), " ",
-                             httpPtr->url, " ",
-                             Ns_TaskCompleted(httpPtr->task) == NS_TRUE ? "done" : "running", 
-                             " ", NULL);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        result = TCL_OK;
-        break;
-
-    default:
-        /* unexpected value */
-        assert(opt && 0);
-        result = TCL_ERROR;
-        break;
-    }
-    return result;
+    
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
+
 
 
 /*
@@ -546,170 +781,6 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
     }
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * HttpWaitCmd --
- *
- *	Implements "ns_http wait" subcommand.
- *
- * Results:
- *	Standard Tcl result.
- *
- * Side effects:
- *	May queue an HTTP request.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
-{
-    Tcl_Interp  *interp;
-    Tcl_Obj     *valPtr, 
-	        *elapsedVarPtr = NULL, *resultVarPtr = NULL, 
-	        *statusVarPtr = NULL, *fileVarPtr = NULL;
-    Ns_Time     *timeoutPtr = NULL;
-    const char  *id = NULL;
-    Ns_Set      *hdrPtr = NULL;
-    Ns_HttpTask *httpPtr = NULL;
-    Ns_Time      diff;
-    int          result = TCL_ERROR, spoolLimit = -1, decompress = 0;
-
-    Ns_ObjvSpec opts[] = {
-        {"-timeout",    Ns_ObjvTime,   &timeoutPtr,    NULL},
-        {"-headers",    Ns_ObjvSet,    &hdrPtr,        NULL},
-        {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr, NULL},
-        {"-result",     Ns_ObjvObj,    &resultVarPtr,  NULL},
-        {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
-        {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
-        {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
-        {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
-        {NULL, NULL,  NULL, NULL}
-    };
-    Ns_ObjvSpec args[] = {
-        {"id",       Ns_ObjvString, &id, NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-
-    NS_NONNULL_ASSERT(itPtr != NULL);
-    interp = itPtr->interp;
-
-    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-
-    if (HttpGet(itPtr, id, &httpPtr, NS_TRUE) == NS_FALSE) {
-	return TCL_ERROR;
-    }
-    if (decompress != 0) {
-      httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
-    }
-
-    if (hdrPtr == NULL) {
-      /*
-       * If no output headers are provided, we create our
-       * own. The ns_set is needed for checking the content
-       * length of the reply.
-       */
-      hdrPtr = Ns_SetCreate("outputHeaders");
-      if (unlikely(Ns_TclEnterSet(interp, hdrPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-          Ns_SetFree(hdrPtr);
-          return TCL_ERROR;
-      }
-    }
-    httpPtr->spoolLimit = spoolLimit;
-    httpPtr->replyHeaders = hdrPtr;
-
-    Ns_HttpCheckSpool(httpPtr);
-
-    if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
-	HttpCancel(httpPtr);
-	Tcl_AppendResult(interp, "timeout waiting for task", NULL);
-	return TCL_ERROR;
-    }
-
-    if (elapsedVarPtr != NULL) {
-    	Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
-	valPtr = Tcl_NewObj();
-    	Ns_TclSetTimeObj(valPtr, &diff);
-    	if (Ns_SetNamedVar(interp, elapsedVarPtr, valPtr) == NS_FALSE) {
-	    goto err;
-	}
-    }
-
-    if (httpPtr->error != NULL) {
-	Tcl_AppendResult(interp, "ns_http failed: ", httpPtr->error, NULL);
-	goto err;
-    }
-
-    if (httpPtr->replyHeaderSize == 0) {
-	Ns_HttpCheckHeader(httpPtr);
-    }
-    Ns_HttpCheckSpool(httpPtr);
-
-    if (statusVarPtr != NULL 
-	&& Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status)) == NS_FALSE) {
-	goto err;
-    }
-
-    if (httpPtr->spoolFd > 0)  {
-	(void) ns_close(httpPtr->spoolFd);
-	valPtr = Tcl_NewObj();
-    } else {
-        bool binary = NS_TRUE;
-
-        if (hdrPtr != NULL) {
-            const char *contentEncoding = Ns_SetIGet(hdrPtr, "Content-Encoding");
-            
-            /*
-             * Does the contentEncoding allow text transfers? Not, if the
-             * content is compressed.
-             */
-
-            if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
-                const char *contentType = Ns_SetIGet(hdrPtr, "Content-Type");
-                
-                if (contentType != NULL) {
-                    /*
-                     * Determine binary via contentType
-                     */
-                    binary = Ns_IsBinaryMimeType(contentType);
-                }
-            }
-        }
-
-        if (binary)  {
-            valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
-                                         (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
-        } else {
-            valPtr = Tcl_NewStringObj(httpPtr->ds.string + httpPtr->replyHeaderSize, 
-                                      (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
-        }
-    }
-
-    if (fileVarPtr != NULL 
-	&& httpPtr->spoolFd > 0 
-	&& Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1)) == NS_FALSE) {
-	goto err;
-    }
-
-    if (resultVarPtr == NULL) {
-	Tcl_SetObjResult(interp, valPtr);
-    } else {
-	if (Ns_SetNamedVar(interp, resultVarPtr, valPtr) == NS_FALSE) {
-	    goto err;
-	}
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
-    }
-
-    result = TCL_OK;
-
-err:
-    HttpClose(httpPtr);
-    return result;
-}
 
 
 /*
