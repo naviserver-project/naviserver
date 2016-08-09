@@ -145,7 +145,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     if (success) {
     	Tcl_DStringResult(interp, &ds);
     } else {
-        Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
+        Ns_TclPrintfResult(interp, "could not lookup %s", addr);
 	result = TCL_ERROR;
     }
     Ns_DStringFree(&ds);
@@ -200,7 +200,7 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     if (success) {
     	Tcl_DStringResult(interp, &ds);
     } else {
-        Tcl_AppendResult(interp, "could not lookup ", host, NULL);
+        Ns_TclPrintfResult(interp, "could not lookup %s", host);
 	result = TCL_ERROR;
     }
     Ns_DStringFree(&ds);
@@ -1087,7 +1087,7 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 
     chan = Tcl_MakeTcpClientChannel(INT2PTR(sock));
     if (chan == NULL) {
-        Tcl_AppendResult(interp, "could not open socket", NULL);
+        Ns_TclPrintfResult(interp, "could not open socket");
         ns_sockclose(sock);
         return TCL_ERROR;
     }

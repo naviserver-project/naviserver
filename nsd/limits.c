@@ -384,7 +384,7 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST* 
         const char *limits = Tcl_GetString(objv[0]);
         *limitsPtrPtr = FindLimits(limits, create);
         if (*limitsPtrPtr == NULL) {
-            Tcl_AppendResult(interp, "no such limits: ", limits, NULL);
+            Ns_TclPrintfResult(interp, "no such limits: %s", limits);
             return TCL_ERROR;
         }
         Ns_TclSetOpaqueObj(objv[0], limitsType, *limitsPtrPtr);

@@ -136,7 +136,7 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         Ns_MutexUnlock(&servPtr->tcl.cachelock);
         
         if (isNew == 0) {
-            Tcl_AppendResult(interp, "duplicate cache name: ", name, NULL);
+            Ns_TclPrintfResult(interp, "duplicate cache name: %s", name);
             result = TCL_ERROR;
         }
     }
@@ -690,7 +690,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
             if (likely(resultObj != NULL)) {
                 Tcl_SetObjResult(interp, resultObj);
             } else {
-                Tcl_AppendResult(interp, "no such key: ", key, NULL);
+                Ns_TclPrintfResult(interp, "no such key: %s", key);
                 result = TCL_ERROR;
             }
         }
@@ -826,8 +826,7 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key, int *newPtr,
     if (entry == NULL) {
         Ns_CacheUnlock(cache);
         Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", NULL);
-        Tcl_AppendResult(itPtr->interp, "timeout waiting for concurrent update: ",
-                         key, NULL);
+        Ns_TclPrintfResult(itPtr->interp, "timeout waiting for concurrent update: %s", key);
     }
     return entry;
 }

@@ -503,7 +503,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
         Tcl_AppendResult(interp, "could not stat \"",
                          file, "\": ", Tcl_PosixError(interp), NULL);
     } else if (!S_ISREG(st.st_mode)) {
-        Tcl_AppendResult(interp, "not an ordinary file: ", file, NULL);
+        Ns_TclPrintfResult(interp, "not an ordinary file: %s", file);
     } else {
 	Ns_Entry *ePtr;
 
@@ -903,7 +903,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
     } while ((size_t)n != size && ++trys < 10);
 
     if ((size_t)n != size) {
-        Tcl_AppendResult(interp, "inconsistent file: ", file, NULL);
+        Ns_TclPrintfResult(interp, "inconsistent file: %s", file);
     } else {
         char *page;
 

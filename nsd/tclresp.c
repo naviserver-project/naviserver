@@ -182,7 +182,7 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
             if (charset != NULL) {
                 encoding = Ns_GetCharsetEncoding(charset);
                 if (encoding == NULL) {
-                    Tcl_AppendResult(interp, "no encoding for charset: ", charset, NULL);
+                    Ns_TclPrintfResult(interp, "no encoding for charset: %s", charset);
                     result = TCL_ERROR;
                 }
             }

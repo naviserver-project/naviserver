@@ -1487,7 +1487,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         proxyId = Tcl_GetString(objv[2]);
         proxyPtr = GetProxy(proxyId, idataPtr);
         if (proxyPtr == NULL) {
-            Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
+            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
             return TCL_ERROR;
         }
         if (opt == PPutIdx || opt == PReleaseIdx) {
@@ -1521,7 +1521,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         proxyId = Tcl_GetString(objv[2]);
         proxyPtr = GetProxy(proxyId, idataPtr);
         if (proxyPtr == NULL) {
-            Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
+            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
             return TCL_ERROR;
         }
         err = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
@@ -1536,7 +1536,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         proxyId = Tcl_GetString(objv[2]);
         proxyPtr = GetProxy(proxyId, idataPtr);
         if (proxyPtr == NULL) {
-            Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
+            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
             return TCL_ERROR;
         }
         if (objc == 3) {
@@ -1556,7 +1556,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         proxyId = Tcl_GetString(objv[2]);
         proxyPtr = GetProxy(proxyId, idataPtr);
         if (proxyPtr == NULL) {
-            Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
+            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
             return TCL_ERROR;
         }
         err = Recv(interp, proxyPtr, &result);
@@ -1571,7 +1571,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         proxyId = Tcl_GetString(objv[2]);
         proxyPtr = GetProxy(proxyId, idataPtr);
         if (proxyPtr == NULL) {
-            Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
+            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
             return TCL_ERROR;
         }
         if (objc == 4) {

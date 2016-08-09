@@ -4678,7 +4678,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             return TCL_ERROR;
         }
         if (unlikely(conn == NULL)) {
-            Tcl_AppendResult(interp, "no connection", NULL);
+            Ns_TclPrintfResult(interp, "no connection");
             return TCL_ERROR;
         }
         data = Tcl_GetByteArrayFromObj(objv[2], &size);
@@ -4719,7 +4719,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         }
 
         if (unlikely(conn == NULL)) {
-            Tcl_AppendResult(interp, "no connection", NULL);
+            Ns_TclPrintfResult(interp, "no connection");
             return TCL_ERROR;
         }
 
@@ -4738,20 +4738,20 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         }
 
         if (unlikely(size < 0 || size > st.st_size)) {
-            Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
+            Ns_TclPrintfResult(interp, "size must be a positive value less or equal filesize");
             (void) ns_close(fd);
             return TCL_ERROR;
         }
 
         if (unlikely(offset < 0 || offset > st.st_size)) {
-            Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
+            Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
             (void) ns_close(fd);
             return TCL_ERROR;
         }
 
         if (size > 0) {
             if (unlikely(size + offset > st.st_size)) {
-                Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
+                Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
                 (void) ns_close(fd);
                 return TCL_ERROR;
             }
@@ -4868,7 +4868,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         }
 
         if (unlikely(wrPtr == NULL)) {
-            Tcl_AppendResult(interp, "no writer configured for a driver with name ", driverName, NULL);
+            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s", driverName);
             return TCL_ERROR;
         }
 

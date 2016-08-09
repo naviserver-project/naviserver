@@ -1499,18 +1499,18 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                  * provide consistant behavior independent of the allocation
                  * strategy.
                  */
-                Tcl_AppendResult(interp, "connection already closed, can't get content", NULL);
+                Ns_TclPrintfResult(interp, "connection already closed, can't get content");
                 result = TCL_ERROR;
 
             } else if (offset < 0 || length < -1) {
-                Tcl_AppendResult(interp, "invalid offset and/or length specified", NULL);
+                Ns_TclPrintfResult(interp, "invalid offset and/or length specified");
                 result = TCL_ERROR;
             }
             
             requiredLength = length;
             if (result == TCL_OK
                 && offset > 0 && ((size_t)offset > connPtr->reqPtr->length)) {
-                Tcl_AppendResult(interp, "offset exceeds available content length", NULL);
+                Ns_TclPrintfResult(interp, "offset exceeds available content length");
                 result = TCL_ERROR;
             }
             
@@ -1519,7 +1519,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 length = (int)connPtr->reqPtr->length - offset;
             } else if (result == TCL_OK
                        && length > -1 && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)) {
-                Tcl_AppendResult(interp, "offset + length exceeds available content length", NULL);
+                Ns_TclPrintfResult(interp, "offset + length exceeds available content length");
                 result = TCL_ERROR;
             }
 
@@ -1913,7 +1913,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         result = TCL_ERROR;
 
     } else if (servPtr == NULL) {
-        Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "no initializing server");
         result = TCL_ERROR;
     } else {
         Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
@@ -2148,13 +2148,13 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 
     connPtr = (Conn *) conn;
     if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
-        Tcl_AppendResult(itPtr->interp, "connection closed", NULL);
+        Ns_TclPrintfResult(itPtr->interp, "connection closed");
         return NULL;
     }
 
     assert(connPtr->sockPtr != NULL);
     if (connPtr->sockPtr->sock == NS_INVALID_SOCKET) {
-        Tcl_AppendResult(itPtr->interp, "no socket for connection", NULL);
+        Ns_TclPrintfResult(itPtr->interp, "no socket for connection");
         return NULL;
     }
 

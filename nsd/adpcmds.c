@@ -507,7 +507,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     objc = nargs;
 
     if (asString && asFile) {
-      Tcl_AppendResult(interp, "specify either '-string' or '-file', but not both.", NULL);
+      Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");
       return TCL_ERROR;
     }
 
@@ -991,7 +991,7 @@ NsTclAdpBindArgsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return TCL_ERROR;
     }
     if (objc != (int)framePtr->objc) {
-        Tcl_AppendResult(interp, "invalid #variables", NULL);
+        Ns_TclPrintfResult(interp, "invalid #variables");
         return TCL_ERROR;
     }
     for (i = 1; i < objc; ++i) {

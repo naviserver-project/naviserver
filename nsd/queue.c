@@ -592,8 +592,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	 || subcmd == SRequestprocsIdx
 	 || subcmd == SUrl2fileIdx)
 	&& pool != NULL) {	
-	    Tcl_AppendResult(interp, 
-			     "option -pool is not allowed for this subcommand", NULL);
+	    Ns_TclPrintfResult(interp, "option -pool is not allowed for this subcommand");
 	    return TCL_ERROR;
     }
 
@@ -693,7 +692,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     case SMaxthreadsIdx:
 	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
-		Tcl_AppendResult(interp, "argument is not an integer in valid range: ", optArg, NULL);
+		Ns_TclPrintfResult(interp, "argument is not an integer in valid range: %s", optArg);
 		return TCL_ERROR;
 	    }
 	    Ns_MutexLock(&poolPtr->threads.lock);
@@ -706,7 +705,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     case SMinthreadsIdx:
 	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < 1 || value > poolPtr->threads.max) {
-		Tcl_AppendResult(interp, "argument is not a integer in the valid range: ", optArg, NULL);
+		Ns_TclPrintfResult(interp, "argument is not a integer in the valid range: %s", optArg);
 		return TCL_ERROR;
 	    }
 	    Ns_MutexLock(&poolPtr->threads.lock);

@@ -141,8 +141,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 
     } else if (Tcl_GetChannelHandle(chan, write != 0 ? TCL_WRITABLE : TCL_READABLE,
                              &data) != TCL_OK) {
-        Tcl_AppendResult(interp, "could not get handle for channel: ",
-                         chanId, NULL);
+        Ns_TclPrintfResult(interp, "could not get handle for channel: %s", chanId);
         result = TCL_ERROR;
 
     } else {

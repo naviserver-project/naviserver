@@ -473,7 +473,7 @@ JobCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         Ns_MutexUnlock(&tp.queuelock);
 
         if (isNew == 0) {
-            Tcl_AppendResult(interp, "queue already exists: ", queueIdString, NULL);
+            Ns_TclPrintfResult(interp, "queue already exists: %s", queueIdString);
             result = TCL_ERROR;
         } else {
             Tcl_SetObjResult(interp, queueIdObj);
@@ -725,7 +725,7 @@ JobWaitObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv
 
         hPtr = Tcl_FindHashEntry(&queue->jobs, jobIdString);
         if (hPtr == NULL) {
-            Tcl_AppendResult(interp, "no such job: ", jobIdString, NULL);
+            Ns_TclPrintfResult(interp, "no such job: %s", jobIdString);
             result = TCL_ERROR;
             goto releaseQueue;
         }
@@ -733,15 +733,13 @@ JobWaitObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv
         jobPtr = Tcl_GetHashValue(hPtr);
 
         if (jobPtr->type == JOB_DETACHED) {
-            Tcl_AppendResult(interp, "can't wait on detached job: ",
-                             jobIdString, NULL);
+            Ns_TclPrintfResult(interp, "can't wait on detached job: %s", jobIdString);
             result = TCL_ERROR;
             goto releaseQueue;
         }
 
         if (jobPtr->req == JOB_WAIT) {
-            Tcl_AppendResult(interp, "can't wait on waited job: ",
-                             jobIdString, NULL);
+            Ns_TclPrintfResult(interp, "can't wait on waited job: %s", jobIdString);
             result = TCL_ERROR;
             goto releaseQueue;
         }
@@ -845,7 +843,7 @@ JobCancelObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
         if (hPtr == NULL) {
             (void)ReleaseQueue(queue, NS_FALSE);
-            Tcl_AppendResult(interp, "no such job: ", jobIdString, NULL);
+            Ns_TclPrintfResult(interp, "no such job: %s", jobIdString);
             result = TCL_ERROR;
 
         } else {
@@ -1836,7 +1834,7 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
 
     if (*queuePtr == NULL) {
         if (interp != NULL) {
-            Tcl_AppendResult(interp, "no such queue: ", queueName, NULL);
+            Ns_TclPrintfResult(interp, "no such queue: %s", queueName);
         }
         result = TCL_ERROR;
     }

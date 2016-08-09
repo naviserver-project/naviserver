@@ -280,7 +280,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             if (likely(hPtr != NULL)) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
             } else {
-                Tcl_AppendResult(interp, "no such key: ", key, NULL);
+                Ns_TclPrintfResult(interp, "no such key: %s", key);
                 result = TCL_ERROR;
             }
             UnlockArray(arrayPtr);
@@ -330,7 +330,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (likely(result == TCL_OK)) {
         Tcl_SetObjResult(interp, Tcl_NewWideIntObj(current));
     } else {
-        Tcl_AppendResult(interp, "array variable is not an integer", NULL);
+        Ns_TclPrintfResult(interp, "array variable is not an integer");
     }
 
     return result;
@@ -488,7 +488,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         assert(arrayPtr != NULL);
 
         if (Unset(arrayPtr, key) != NS_OK && key != NULL) {
-            Tcl_AppendResult(interp, "no such key: ", key, NULL);
+            Ns_TclPrintfResult(interp, "no such key: %s", key);
             result = TCL_ERROR;
         }
 
@@ -1336,7 +1336,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
     }
     
     if (arrayPtr == NULL && !create) {
-        Tcl_AppendResult(interp, "no such array: ", arrayName, NULL);
+        Ns_TclPrintfResult(interp, "no such array: %s", arrayName);
     }
 
     return arrayPtr;
@@ -1383,7 +1383,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 	 || bucketNr >= servPtr->nsv.nbuckets
 	 )) {
         Tcl_ResetResult(interp);
-        Tcl_AppendResult(interp, "bucket number is not a valid integer", NULL);
+        Ns_TclPrintfResult(interp, "bucket number is not a valid integer");
         return TCL_ERROR;
     }
 
