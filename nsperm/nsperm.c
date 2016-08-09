@@ -861,8 +861,8 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
             }
 
 	    if (validIp <= 0 || validMask <= 0) {
-                Tcl_AppendResult(interp, "invalid address or hostname \"",
-                                 net, "\". " "should be ipaddr/netmask or hostname", NULL);
+                Ns_TclPrintfResult(interp, "invalid address or hostname \"%s\". "
+                                   "Should be ipaddr/netmask or hostname", net);
                 goto fail;
             }
 
@@ -1108,7 +1108,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
         hPtr = Tcl_CreateHashEntry(&groupPtr->users, user, &isNew);
         if (isNew == 0) {
           dupuser:
-            Tcl_AppendResult(interp, "user \"", user, "\" already in group \"", name, "\"", NULL);
+            Ns_TclPrintfResult(interp, "user \"%s\" already in group \"%s\"", user, name);
             goto fail;
         }
         Tcl_SetHashValue(hPtr, userPtr);
