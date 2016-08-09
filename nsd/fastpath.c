@@ -691,6 +691,8 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *type, const char *file)
 bool
 Ns_Stat(const char *path, struct stat *stPtr)
 {
+    bool success = NS_TRUE;
+    
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(stPtr != NULL);
 
@@ -699,9 +701,9 @@ Ns_Stat(const char *path, struct stat *stPtr)
             Ns_Log(Error, "fastpath: stat(%s) failed: %s",
                    path, strerror(errno));
         }
-        return NS_FALSE;
+        success = NS_FALSE;
     }
-    return NS_TRUE;
+    return success;
 }
 
 
@@ -811,9 +813,7 @@ FreeEntry(void *arg)
 int
 NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_CacheSearch  search;
-    Ns_DString      ds;
-    int             contents = NS_FALSE, reset = NS_FALSE;
+    int         contents = NS_FALSE, reset = NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-contents", Ns_ObjvBool,  &contents, INT2PTR(NS_TRUE)},
         {"-reset",    Ns_ObjvBool,  &reset,    INT2PTR(NS_TRUE)},
@@ -822,47 +822,45 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     };
 
     if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    /* if there is no cache defined, return empty */
-    if (cache == NULL) {
-	return TCL_OK;
-    }
+    } else if (cache != NULL) {
+        Ns_DString      ds;
+        Ns_CacheSearch  search;
 
-    Ns_DStringInit(&ds);
-    Ns_CacheLock(cache);
+        Ns_DStringInit(&ds);
+        Ns_CacheLock(cache);
 
-    if (contents != 0) {
-        const Ns_Entry *entry;
+        if (contents != 0) {
+            const Ns_Entry *entry;
 
-        Tcl_DStringStartSublist(&ds);
-        entry = Ns_CacheFirstEntry(cache, &search);
-        while (entry != NULL) {
-	    size_t         size    = Ns_CacheGetSize(entry);
-	    const Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
+            Tcl_DStringStartSublist(&ds);
+            entry = Ns_CacheFirstEntry(cache, &search);
+            while (entry != NULL) {
+                size_t         size    = Ns_CacheGetSize(entry);
+                const Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
 
-            if (timePtr->usec == 0) {
-                Ns_DStringPrintf(&ds, "%" PRIdz " %ld ",
-                                 size, timePtr->sec);
-            } else {
-                Ns_DStringPrintf(&ds, "%" PRIdz " %ld:%ld ",
-                                 size, timePtr->sec, timePtr->usec);
+                if (timePtr->usec == 0) {
+                    Ns_DStringPrintf(&ds, "%" PRIdz " %ld ",
+                                     size, timePtr->sec);
+                } else {
+                    Ns_DStringPrintf(&ds, "%" PRIdz " %ld:%ld ",
+                                     size, timePtr->sec, timePtr->usec);
+                }
+                entry = Ns_CacheNextEntry(&search);
             }
-            entry = Ns_CacheNextEntry(&search);
+            Tcl_DStringEndSublist(&ds);
+        } else {
+            (void)Ns_CacheStats(cache, &ds);
         }
-        Tcl_DStringEndSublist(&ds);
-    } else {
-        (void)Ns_CacheStats(cache, &ds);
-    }
-    if (reset != 0) {
-        Ns_CacheResetStats(cache);
-    }
-    Ns_CacheUnlock(cache);
+        if (reset != 0) {
+            Ns_CacheResetStats(cache);
+        }
+        Ns_CacheUnlock(cache);
 
-    Tcl_DStringResult(interp, &ds);
-
-    return TCL_OK;
+        Tcl_DStringResult(interp, &ds);
+    }
+    return result;
 }
 
 /*

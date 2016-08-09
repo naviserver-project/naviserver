@@ -274,16 +274,15 @@ Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg)
 static void *
 RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
 {
-    Trace *tracePtr;
+    Trace *tracePtr = NULL;
 
     NS_NONNULL_ASSERT(proc != NULL);
 
-    if (servPtr == NULL) {
-	return NULL;
+    if (servPtr != NULL) {
+        tracePtr = NewTrace(proc, arg);
+        tracePtr->nextPtr = servPtr->filter.firstCleanupPtr;
+        servPtr->filter.firstCleanupPtr = tracePtr;
     }
-    tracePtr = NewTrace(proc, arg);
-    tracePtr->nextPtr = servPtr->filter.firstCleanupPtr;
-    servPtr->filter.firstCleanupPtr = tracePtr;
     return (void *) tracePtr;
 }
 

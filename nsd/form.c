@@ -48,7 +48,7 @@ static void ParseMultiInput(Conn *connPtr, const char *start, char *end)
 static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int GetBoundary(Tcl_DString *dsPtr, const char *contentType)
+static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
@@ -115,7 +115,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                 /*
                  * GetBoundary cares for "multipart/form-data"
                  */
-                if (GetBoundary(&bound, contentType) == 0) {
+                if (!GetBoundary(&bound, contentType)) {
                     if (Ns_StrCaseFind(contentType, "www-form-urlencoded") != NULL) {
                         ParseQuery(form, connPtr->query, connPtr->urlEncoding);
                     }
@@ -174,38 +174,37 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 void
 Ns_ConnClearQuery(Ns_Conn *conn)
 {
-    Conn                *connPtr = (Conn *) conn;
-    const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
+    Conn *connPtr = (Conn *) conn;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
-    if (connPtr->query == NULL) {
-        return;
-    }
+    if (connPtr->query != NULL) {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
 
-    Ns_SetFree(connPtr->query);
-    connPtr->query = NULL;
+        Ns_SetFree(connPtr->query);
+        connPtr->query = NULL;
 
-    hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
-    while (hPtr != NULL) {
-	FormFile *filePtr = Tcl_GetHashValue(hPtr);
+        hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
+        while (hPtr != NULL) {
+            FormFile *filePtr = Tcl_GetHashValue(hPtr);
 
-        if (filePtr->hdrObj != NULL) {
-            Tcl_DecrRefCount(filePtr->hdrObj);
-        }
-        if (filePtr->offObj != NULL) {
-            Tcl_DecrRefCount(filePtr->offObj);
-        }
-        if (filePtr->sizeObj != NULL) {
-            Tcl_DecrRefCount(filePtr->sizeObj);
-        }
-        ns_free(filePtr);
+            if (filePtr->hdrObj != NULL) {
+                Tcl_DecrRefCount(filePtr->hdrObj);
+            }
+            if (filePtr->offObj != NULL) {
+                Tcl_DecrRefCount(filePtr->offObj);
+            }
+            if (filePtr->sizeObj != NULL) {
+                Tcl_DecrRefCount(filePtr->sizeObj);
+            }
+            ns_free(filePtr);
         
-        hPtr = Tcl_NextHashEntry(&search);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Tcl_DeleteHashTable(&connPtr->files);
+        Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
     }
-    Tcl_DeleteHashTable(&connPtr->files);
-    Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
 }
 
 
@@ -256,20 +255,24 @@ Ns_QueryToSet(char *query, Ns_Set *set)
 int
 NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Set *set;
+    int     result;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "querystring");
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        Ns_Set *set = Ns_SetCreate(NULL);
+        
+        if (Ns_QueryToSet(Tcl_GetString(objv[1]), set) != NS_OK) {
+            Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", Tcl_GetString(objv[1]));
+            Ns_SetFree(set);
+            result = TCL_ERROR;
+        } else {
+            result = Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
+        }
     }
-    set = Ns_SetCreate(NULL);
-    if (Ns_QueryToSet(Tcl_GetString(objv[1]), set) != NS_OK) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-            "could not parse: \"", Tcl_GetString(objv[1]), "\"", NULL);
-        Ns_SetFree(set);
-        return TCL_ERROR;
-    }
-    return Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
+    return result;
 }
 
 
@@ -479,10 +482,11 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 GetBoundary(Tcl_DString *dsPtr, const char *contentType)
 {
     const char *bs;
+    bool        success = NS_FALSE;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(contentType != NULL);
@@ -498,9 +502,9 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
         Tcl_DStringAppend(dsPtr, bs, (int)(be - bs));
-        return 1;
+        success = NS_TRUE;
     }
-    return 0;
+    return success;
 }
 
 
@@ -569,7 +573,8 @@ NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
 static bool
 GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
 {
-    const char *s, *e;
+    const char *s;
+    bool        success = NS_TRUE;
 
     NS_NONNULL_ASSERT(hdr != NULL);
     NS_NONNULL_ASSERT(att != NULL);
@@ -579,44 +584,47 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 
     s = Ns_StrCaseFind(hdr, att);
     if (s == NULL) {
-        return NS_FALSE;
-    }
-    s += strlen(att);
-    e = s;
-    if (*s != '"' && *s != '\'') {
-        /* 
-         * End of unquoted att=value is next space. 
-         */
-        while (*e != '\0' && CHARTYPE(space, *e) == 0) {
-            ++e;
-        }
-	*uPtr = '\0';
+        success = NS_FALSE;
     } else {
-        bool escaped = NS_FALSE;
+        const char *e;
 
-	*uPtr = '\0';
-        /* 
-	 * End of quoted att="value" is next quote.  A quote within
-	 * the quoted string could be escaped with a backslash. In
-	 * case, an escaped quote was detected, report the quote
-	 * character as result.
-	 */
-        ++e;
-        while (*e != '\0' && (escaped || *e != *s)) {
-	    if (escaped) {
-	        escaped = NS_FALSE;
-	    } else if (*e == '\\') {
-	        *uPtr = *s;
-	        escaped = NS_TRUE;
-	    }
+        s += strlen(att);
+        e = s;
+        if (*s != '"' && *s != '\'') {
+            /* 
+             * End of unquoted att=value is next space. 
+             */
+            while (*e != '\0' && CHARTYPE(space, *e) == 0) {
+                ++e;
+            }
+            *uPtr = '\0';
+        } else {
+            bool escaped = NS_FALSE;
+
+            *uPtr = '\0';
+            /* 
+             * End of quoted att="value" is next quote.  A quote within
+             * the quoted string could be escaped with a backslash. In
+             * case, an escaped quote was detected, report the quote
+             * character as result.
+             */
             ++e;
+            while (*e != '\0' && (escaped || *e != *s)) {
+                if (escaped) {
+                    escaped = NS_FALSE;
+                } else if (*e == '\\') {
+                    *uPtr = *s;
+                    escaped = NS_TRUE;
+                }
+                ++e;
+            }
+            ++s;
         }
-        ++s;
+        *vsPtr = s;
+        *vePtr = e;
     }
-    *vsPtr = s;
-    *vePtr = e;
 
-    return NS_TRUE;
+    return success;
 }
 
 
