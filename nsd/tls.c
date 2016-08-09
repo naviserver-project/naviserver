@@ -461,7 +461,6 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     const Tcl_Obj *ctxObj;
     Tcl_Obj       *messageObj;
     int            messageLength;
-    const unsigned char *message;
     Ns_ObjvSpec    args[] = {
         {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
         {"message",  Ns_ObjvObj, &messageObj, NULL},
@@ -476,6 +475,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
         
     } else {
+        const unsigned char *message;
         
         message = (const unsigned char *)Ns_GetBinaryString(messageObj, &messageLength);
         HMAC_Update(ctx, message, messageLength);
@@ -503,13 +503,9 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static int
 CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char  digest[EVP_MAX_MD_SIZE];
-    char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
     int            result = TCL_OK;
-    unsigned int   mdLength;
     HMAC_CTX      *ctx;
     const Tcl_Obj *ctxObj;
-    HMAC_CTX      *partial_ctx;
     Ns_ObjvSpec    args[] = {
         {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
         {NULL, NULL, NULL, NULL}
@@ -523,6 +519,11 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
         
     } else {
+        unsigned char  digest[EVP_MAX_MD_SIZE];
+        char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
+        unsigned int   mdLength;
+        HMAC_CTX      *partial_ctx;
+
         partial_ctx = HMAC_CTX_new();
         HMAC_CTX_copy(partial_ctx, ctx);
         HMAC_Final(partial_ctx, digest, &mdLength);
@@ -764,8 +765,6 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     EVP_MD_CTX    *mdctx;
     const Tcl_Obj *ctxObj;
     Tcl_Obj       *messageObj;
-    int            messageLength;
-    const char    *message;
     Ns_ObjvSpec    args[] = {
         {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
         {"message",  Ns_ObjvObj, &messageObj, NULL},
@@ -780,6 +779,8 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         result = TCL_ERROR;
 
     } else {
+        const char    *message;
+        int            messageLength;
 
         message = Ns_GetBinaryString(messageObj, &messageLength);
         EVP_DigestUpdate(mdctx, message, messageLength);
@@ -808,11 +809,8 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 static int
 CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned char  digest[EVP_MAX_MD_SIZE];
-    char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
     int            result = TCL_OK;
-    unsigned int   mdLength;
-    EVP_MD_CTX    *mdctx, *partial_ctx;
+    EVP_MD_CTX    *mdctx;
     Tcl_Obj       *ctxObj;
     Ns_ObjvSpec    args[] = {
         {"ctx", Ns_ObjvObj, &ctxObj, NULL},
@@ -827,6 +825,11 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         result = TCL_ERROR;
                     
     } else {
+        unsigned char  digest[EVP_MAX_MD_SIZE];
+        char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
+        unsigned int   mdLength;
+        EVP_MD_CTX    *partial_ctx;
+
 
         partial_ctx = NS_EVP_MD_CTX_new();
         EVP_MD_CTX_copy(partial_ctx, mdctx);

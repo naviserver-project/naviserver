@@ -1949,7 +1949,6 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     const NsInterp *itPtr = clientData;
     int             toCopy = 0, result = TCL_OK;;
     const char     *chanName;
-    const Request  *reqPtr;
     Tcl_Channel     chan;
 
     /*
@@ -1981,7 +1980,8 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 	result = TCL_ERROR;
 
     } else {
-        reqPtr = ((Conn *)itPtr->conn)->reqPtr;
+        const Request *reqPtr = ((Conn *)itPtr->conn)->reqPtr;
+        
         if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
             toCopy = (int)reqPtr->avail;
         }

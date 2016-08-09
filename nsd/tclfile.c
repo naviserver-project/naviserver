@@ -172,7 +172,6 @@ static int
 FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
 {
     int           max, result;
-    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cmd != NULL);
@@ -190,6 +189,8 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
         result = TCL_ERROR;
 
     } else {
+        Ns_ReturnCode status;
+
         if (*cmd == 'p') {
             status = Ns_PurgeFiles(Tcl_GetString(objv[1]), max);
         } else {

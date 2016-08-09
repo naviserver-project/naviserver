@@ -452,7 +452,6 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 {
     Tcl_Interp    *interp;
     int            verifyInt = 0, result = TCL_OK;
-    Tcl_HashEntry *hPtr;
     Ns_HttpTask   *httpPtr;
     const char    *cert = NULL, *caFile = NULL, *caPath = NULL;
     const char    *method = "GET", *url = NULL, *bodyFileName = NULL;
@@ -493,8 +492,9 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 	result = TCL_ERROR;
 
     } else {
-        char  buf[TCL_INTEGER_SPACE + 4];
-        int   isNew, i;
+        Tcl_HashEntry *hPtr;
+        char           buf[TCL_INTEGER_SPACE + 4];
+        int            isNew, i;
 
         Ns_GetTime(&httpPtr->stime);
         httpPtr->timeout = httpPtr->stime;

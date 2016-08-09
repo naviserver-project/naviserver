@@ -2282,7 +2282,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1;
-    const char     *key = ".", *url, *data;
+    const char     *key = ".", *url;
     bool            exact = NS_FALSE, noinherit = NS_FALSE;
     Ns_ObjvSpec     lopts[] = {
         {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
@@ -2309,6 +2309,8 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     } else {
         NsUrlSpaceOp  op;
         unsigned int  flags = 0u;
+        const char   *data;
+
 
         if (noinherit) {
             exact = NS_TRUE;

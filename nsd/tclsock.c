@@ -876,6 +876,8 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
         ListenCallback *lcbPtr;
         size_t          scriptLength;
 
+        assert(script != NULL);
+        
         if (STREQ(addr, "*")) {
             addr = NULL;
         }

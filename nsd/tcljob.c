@@ -392,7 +392,7 @@ JobConfigureObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 {
     int            result = TCL_OK;
     int            jpt = -1;
-    const Ns_Time *timeoutPtr;
+    const Ns_Time *timeoutPtr = NULL;
     Ns_ObjvSpec    lopts[] = {
         {"-jobsperthread",  Ns_ObjvInt,  &jpt,        NULL},
         {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
