@@ -1003,7 +1003,9 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
         Tcl_HashEntry    *mPtr;
         struct sockaddr  *netPtr;
 
-        Ns_DStringPrintf(&ds, "{%s} {%s} {", Tcl_GetHashKey(&servPtr->users, hPtr), userPtr->pwd);
+        Ns_DStringPrintf(&ds, "{%s} {%s} {",
+                         (const char*)Tcl_GetHashKey(&servPtr->users, hPtr),
+                         userPtr->pwd);
 
         if (userPtr->hosts.numEntries > 0 || userPtr->masks.numEntries > 0 || userPtr->nets.numEntries > 0) {
             Ns_DStringPrintf(&ds, " %s ", ((userPtr->flags & USER_FILTER_ALLOW) != 0u) ? "-allow" : "-deny");
@@ -1033,7 +1035,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
          */
         mPtr = Tcl_FirstHashEntry(&userPtr->hosts, &msearch);
         while (mPtr != NULL) {
-            Ns_DStringPrintf(&ds, "%s ", Tcl_GetHashKey(&userPtr->hosts, mPtr));
+            Ns_DStringPrintf(&ds, "%s ", (const char*)Tcl_GetHashKey(&userPtr->hosts, mPtr));
             mPtr = Tcl_NextHashEntry(&msearch);
         }
         Ns_DStringNAppend(&ds, "} ", 2);
@@ -1244,7 +1246,8 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_
 	Tcl_HashEntry *uhPtr;
 	Group         *groupPtr = Tcl_GetHashValue(hPtr);
 
-        Ns_DStringPrintf(&ds, "%s { ", Tcl_GetHashKey(&servPtr->groups, hPtr));
+        Ns_DStringPrintf(&ds, "%s { ",
+                         (const char *)Tcl_GetHashKey(&servPtr->groups, hPtr));
 
         /*
          * All users for this group
@@ -1252,7 +1255,8 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_
 
         uhPtr = Tcl_FirstHashEntry(&groupPtr->users, &usearch);
         while (uhPtr != NULL) {
-            Ns_DStringPrintf(&ds, "\"%s\" ", Tcl_GetHashKey(&groupPtr->users, uhPtr));
+            Ns_DStringPrintf(&ds, "\"%s\" ",
+                             (const char *)Tcl_GetHashKey(&groupPtr->users, uhPtr));
             uhPtr = Tcl_NextHashEntry(&usearch);
         }
         Ns_DStringNAppend(&ds, "} ", 2);
