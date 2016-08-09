@@ -4640,7 +4640,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 int
 NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int               fd, opt, rc;
+    int               fd, opt, result = TCL_OK;
     Tcl_DString       ds, *dsPtr = &ds;
     Ns_Conn          *conn;
     Driver           *drvPtr;
@@ -4670,35 +4670,36 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     switch (opt) {
     case cmdSubmitIdx: {
-        int size;
-        unsigned char *data;
-
+        
         if (unlikely(objc < 3)) {
             Tcl_WrongNumArgs(interp, 2, objv, "data");
-            return TCL_ERROR;
-        }
-        if (unlikely(conn == NULL)) {
-            Ns_TclPrintfResult(interp, "no connection");
-            return TCL_ERROR;
-        }
-        data = Tcl_GetByteArrayFromObj(objv[2], &size);
-        if (data != NULL) {
-            struct iovec vbuf;
-            Ns_ReturnCode status;
-            
-            vbuf.iov_base = (void *)data;
-            vbuf.iov_len = (size_t)size;
+            result = TCL_ERROR;
 
-            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+        } else if (unlikely(conn == NULL)) {
+            Ns_TclPrintfResult(interp, "no connection");
+            result = TCL_ERROR;
+
+        } else {
+            int size;
+            unsigned char *data = Tcl_GetByteArrayFromObj(objv[2], &size);
+
+            if (data != NULL) {
+                struct iovec vbuf;
+                Ns_ReturnCode status;
+            
+                vbuf.iov_base = (void *)data;
+                vbuf.iov_len = (size_t)size;
+                
+                status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+            }
         }
         break;
     }
 
     case cmdSubmitFileIdx: {
         struct stat st;
-        const char *name;
-        Tcl_Obj    *fileObj = NULL;
+        const char *fileNameString;
         int         headers = 0;
         Tcl_WideInt offset = 0, size = 0;
         size_t      nrbytes;
@@ -4710,77 +4711,87 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             {NULL, NULL, NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
-            {"file",      Ns_ObjvObj,     &fileObj,    NULL},
+            {"file",      Ns_ObjvString, &fileNameString, NULL},
             {NULL, NULL, NULL, NULL}
         };
 
         if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)) {
-            return TCL_ERROR;
-        }
+            result = TCL_ERROR;
 
-        if (unlikely(conn == NULL)) {
+        } else if (unlikely(conn == NULL)) {
             Ns_TclPrintfResult(interp, "no connection");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+            
+        } else if (unlikely(Ns_ConnSockPtr(conn) == NULL)) {
+            Ns_Log(DriverDebug,
+                   "NsWriterQueue: called without valid sockPtr, maybe connection already closed");            
+            Ns_TclPrintfResult(interp, "0");
+            return TCL_OK;
         }
 
-        name = Tcl_GetString(fileObj);
-
-        rc = stat(name, &st);
-        if (unlikely(rc != 0)) {
-            Tcl_AppendResult(interp, "file does not exist '", name, "'", NULL);
-            return TCL_ERROR;
-        }
-
-        fd = ns_open(name, O_RDONLY, 0);
-        if (unlikely(fd == NS_INVALID_FD)) {
-            Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
-            return TCL_ERROR;
-        }
-
-        if (unlikely(size < 0 || size > st.st_size)) {
-            Ns_TclPrintfResult(interp, "size must be a positive value less or equal filesize");
-            (void) ns_close(fd);
-            return TCL_ERROR;
-        }
-
-        if (unlikely(offset < 0 || offset > st.st_size)) {
-            Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
-            (void) ns_close(fd);
-            return TCL_ERROR;
-        }
-
-        if (size > 0) {
-            if (unlikely(size + offset > st.st_size)) {
-                Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
-                (void) ns_close(fd);
-                return TCL_ERROR;
+        if (likely (result == TCL_OK)) {
+            int rc = stat(fileNameString, &st);
+            if (unlikely(rc != 0)) {
+                Ns_TclPrintfResult(interp, "file does not exist '%s'", fileNameString);
+                result = TCL_ERROR;
             }
-            nrbytes = (size_t)size;
-        } else {
-            nrbytes = (size_t)st.st_size - (size_t)offset;
         }
 
-        if (offset > 0) {
+        fd = NS_INVALID_FD;
+        if (likely (result == TCL_OK)) {
+            
+            fd = ns_open(fileNameString, O_RDONLY, 0);
+            if (unlikely(fd == NS_INVALID_FD)) {
+                Ns_TclPrintfResult(interp, "could not open file '%s'", fileNameString);
+                result = TCL_ERROR;
+
+            } else if (unlikely(size < 0 || size > st.st_size)) {
+                Ns_TclPrintfResult(interp, "size must be a positive value less or equal filesize");
+                result = TCL_ERROR;
+
+            } else if (unlikely(offset < 0 || offset > st.st_size)) {
+                Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
+                result = TCL_ERROR;
+
+            } else if (size > 0) {
+                if (unlikely(size + offset > st.st_size)) {
+                    Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
+                    result = TCL_ERROR;
+                } else {
+                    nrbytes = (size_t)size;
+                }
+            } else {
+                nrbytes = (size_t)st.st_size - (size_t)offset;
+            }
+        }
+
+        if (offset > 0 && result == TCL_OK) {
             if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
                 Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
-                (void) ns_close(fd);
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
         }
 
-        /*
-         *  The caller requested that we build required headers
-         */
-
-        if (headers != 0) {
-            Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
+        if (result == TCL_OK) {
+        
+            /*
+             *  The caller requested that we build required headers
+             */
+            
+            if (headers != 0) {
+                Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(fileNameString));
+            }
+            {
+                Ns_ReturnCode status;
+                status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+            }
+            (void) ns_close(fd);
         }
-        {
-            Ns_ReturnCode status;
-            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+        
+        if (fd != NS_INVALID_FD) {
+            (void) ns_close(fd);
         }
-        (void) ns_close(fd);
 
         break;
     }
@@ -4900,7 +4911,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 /*
