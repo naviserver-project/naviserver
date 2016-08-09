@@ -890,25 +890,31 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
 
-    Ns_ConnSetTypeHeader(conn, mimeType);
-    Ns_ConnSetResponseStatus(conn, status);
-
-    if ((chan != NULL || fp != NULL) 
-	&& (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, 0) == NS_OK)) {
-	return NS_OK;
-    }
-
-    if (chan != NULL) {
-        Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
-        result = Ns_ConnSendChannel(conn, chan, len);
-    } else if (fp != NULL) {
-        Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
-        result = Ns_ConnSendFp(conn, fp, len);
+    if (unlikely(Ns_ConnSockPtr(conn) == NULL)) {
+        result = NS_ERROR;
+        
     } else {
-        result = ReturnRange(conn, mimeType, fd, NULL, len);
-    }
+        Ns_ConnSetTypeHeader(conn, mimeType);
+        Ns_ConnSetResponseStatus(conn, status);
 
-    (void) Ns_ConnClose(conn);
+        if ((chan != NULL || fp != NULL) 
+            && (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, 0) == NS_OK)) {
+            result = NS_OK;
+        } else {
+
+            if (chan != NULL) {
+                Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
+                result = Ns_ConnSendChannel(conn, chan, len);
+            } else if (fp != NULL) {
+                Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
+                result = Ns_ConnSendFp(conn, fp, len);
+            } else {
+                result = ReturnRange(conn, mimeType, fd, NULL, len);
+            }
+
+            (void) Ns_ConnClose(conn);
+        }
+    }
 
     return result;
 }
