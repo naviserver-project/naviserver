@@ -89,6 +89,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
 {
     time_t           now;
     const struct tm *tmPtr;
+    char            *result = NULL;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
@@ -97,22 +98,22 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
         when = &now;
     }
     tmPtr = ns_gmtime(when);
-    if (tmPtr == NULL) {
-        return NULL;
+    if (likely(tmPtr != NULL)) {
+
+        /*
+         * The format is RFC 1123 "Sun, 06 Nov 1997 09:12:45 GMT"
+         * and is locale independant, so English week and month names
+         * must always be used.
+         */
+        
+        Ns_DStringPrintf(dsPtr, "%s, %02d %s %d %02d:%02d:%02d GMT",
+                         week_names[tmPtr->tm_wday], tmPtr->tm_mday,
+                         month_names[tmPtr->tm_mon], tmPtr->tm_year + 1900,
+                         tmPtr->tm_hour, tmPtr->tm_min, tmPtr->tm_sec);
+        result = dsPtr->string;
     }
 
-    /*
-     * The format is RFC 1123 "Sun, 06 Nov 1997 09:12:45 GMT"
-     * and is locale independant, so English week and month names
-     * must always be used.
-     */
-
-    Ns_DStringPrintf(dsPtr, "%s, %02d %s %d %02d:%02d:%02d GMT",
-             week_names[tmPtr->tm_wday], tmPtr->tm_mday,
-             month_names[tmPtr->tm_mon], tmPtr->tm_year + 1900,
-             tmPtr->tm_hour, tmPtr->tm_min, tmPtr->tm_sec);
-
-    return dsPtr->string;
+    return result;
 }
 
 
@@ -295,21 +296,29 @@ Ns_ParseHttpTime(char *chars)
 int
 NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    time_t t;
+    int         result = TCL_OK;
+    char       *timeString;
+    Ns_ObjvSpec args[] = {
+        {"httptime", Ns_ObjvString,  &timeString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "httptime");
-        return TCL_ERROR;
-    }
-    t = Ns_ParseHttpTime(Tcl_GetString(objv[1]));
-    if (t == 0) {
-        Tcl_AppendResult(interp, "invalid time: ",
-                         Tcl_GetString(objv[1]), NULL);
-        return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(t));
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    return TCL_OK;
+    } else {
+        time_t t = Ns_ParseHttpTime(timeString);
+        
+        if (likely(t != 0)) {
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(t));
+        } else {
+            Ns_TclPrintfResult(interp, "invalid time: %s", timeString);
+            result = TCL_ERROR;
+        }
+
+    }
+
+    return result;
 }
 
 
@@ -332,23 +341,25 @@ NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 int
 NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString ds;
-    int        itime;
-    time_t     t;
+    int         result = TCL_OK, itime;
+    Ns_ObjvSpec args[] = {
+        {"time", Ns_ObjvInt,  &itime, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "time");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[1], &itime) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    t = (time_t) itime;
-    Ns_DStringInit(&ds);
-    (void) Ns_HttpTime(&ds, &t);
-    Tcl_DStringResult(interp, &ds);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    return TCL_OK;
+    } else {
+        Ns_DString ds;
+        time_t     t = (time_t) itime;
+        
+        Ns_DStringInit(&ds);
+        (void) Ns_HttpTime(&ds, &t);
+        Tcl_DStringResult(interp, &ds);
+    }
+
+    return result;
 }
 
 
@@ -372,13 +383,16 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static int
 MakeNum(const char *s)
 {
+    int result;
+    
     NS_NONNULL_ASSERT(s != NULL);
     
     if (CHARTYPE(digit, *s) != 0) {
-        return (10 * ((int)UCHAR(*s) - (int)UCHAR('0'))) + ((int)UCHAR(*(s + 1)) - (int)UCHAR('0'));
+        result = (10 * ((int)UCHAR(*s) - (int)UCHAR('0'))) + ((int)UCHAR(*(s + 1)) - (int)UCHAR('0'));
     } else {
-	return (int)UCHAR(*(s + 1)) - (int)UCHAR('0');
+	result = (int)UCHAR(*(s + 1)) - (int)UCHAR('0');
     }
+    return result;
 }
 
 
@@ -402,7 +416,7 @@ MakeNum(const char *s)
 static int
 MakeMonth(char *s)
 {
-    int i;
+    int i, result = 0;
 
     NS_NONNULL_ASSERT(s != NULL);
 
@@ -417,11 +431,12 @@ MakeMonth(char *s)
 
     for (i = 0; i < 12; i++) {
         if (strncmp(month_names[i], s, 3u) == 0) {
-            return i;
+            result = i;
+            break;
         }
     }
 
-    return 0;
+    return result;
 }
 
 /*
