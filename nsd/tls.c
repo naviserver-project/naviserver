@@ -811,7 +811,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 {
     int            result = TCL_OK;
     EVP_MD_CTX    *mdctx;
-    Tcl_Obj       *ctxObj;
+    const Tcl_Obj *ctxObj;
     Ns_ObjvSpec    args[] = {
         {"ctx", Ns_ObjvObj, &ctxObj, NULL},
         {NULL, NULL, NULL, NULL}

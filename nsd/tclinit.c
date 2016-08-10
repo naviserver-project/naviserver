@@ -992,8 +992,8 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     if (status != NS_OK) {
         result = TCL_ERROR;
     } else {
-        NsInterp   *itPtr = clientData;
-        NsServer   *servPtr = itPtr->servPtr;
+        const NsInterp  *itPtr = clientData;
+        const NsServer  *servPtr = itPtr->servPtr;
 
         if (servPtr != NsGetInitServer()) {
             Ns_TclPrintfResult(interp, "cannot add module after server startup");
@@ -1020,13 +1020,6 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 }
 
 
-
-
-
-
-
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -1047,11 +1040,11 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 static int
 ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr = itPtr->servPtr;
-    Tcl_Obj     *moduleObj;
-    int          result = TCL_OK;
-    Ns_ObjvSpec  args[] = {
+    const NsInterp *itPtr = clientData;
+    const NsServer *servPtr = itPtr->servPtr;
+    Tcl_Obj        *moduleObj;
+    int             result = TCL_OK;
+    Ns_ObjvSpec     args[] = {
         {"module",     Ns_ObjvObj,  &moduleObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1093,9 +1086,9 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr = itPtr->servPtr;
-    int          result = TCL_OK;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1129,9 +1122,9 @@ ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 static int
 ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr = itPtr->servPtr;
-    int          result = TCL_OK;
+    const NsInterp *itPtr = clientData;
+    const NsServer *servPtr = itPtr->servPtr;
+    int             result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1163,9 +1156,9 @@ ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 static int
 ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    NsServer    *servPtr = itPtr->servPtr;
-    int          result = TCL_OK;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    int             result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1199,10 +1192,15 @@ ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static int
 ICtlMarkForDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp             *itPtr = clientData;
-    
-    itPtr->deleteInterp = 1;
-    return TCL_OK;
+    NsInterp  *itPtr = clientData;
+    int        result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        itPtr->deleteInterp = 1;
+    }
+    return result;
 }
 
 
@@ -1236,10 +1234,10 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         result = TCL_ERROR;
         
     } else {
-        NsInterp   *itPtr = clientData;
-        NsServer   *servPtr = itPtr->servPtr;
-        int         length;
-        const char *script = ns_strdup(Tcl_GetStringFromObj(scriptObj, &length));
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        int             length;
+        const char     *script = ns_strdup(Tcl_GetStringFromObj(scriptObj, &length));
         
         Ns_RWLockWrLock(&servPtr->tcl.lock);
         ns_free((char *)servPtr->tcl.script);
@@ -1413,8 +1411,8 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else {
-        NsInterp        *itPtr = clientData;
-        NsServer        *servPtr = itPtr->servPtr;
+        const NsInterp  *itPtr = clientData;
+        const NsServer  *servPtr = itPtr->servPtr;
         Ns_DString       ds;
         const TclTrace  *tracePtr;
         Ns_TclTraceType  when = (Ns_TclTraceType)flags;
@@ -1461,7 +1459,7 @@ ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else {
-        NsInterp  *itPtr = clientData;
+        const NsInterp *itPtr = clientData;
         
         RunTraces(itPtr, (Ns_TclTraceType)flags);
     }

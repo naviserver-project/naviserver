@@ -274,7 +274,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     int    r;
     struct sockaddr_storage sa;
     struct sockaddr        *saPtr = (struct sockaddr *)&sa;
-    bool   result = NS_FALSE;
+    bool   success = NS_FALSE;
 
     r = ns_inet_pton(saPtr, addr);
     if (r > 0) {
@@ -289,10 +289,10 @@ GetHost(Ns_DString *dsPtr, const char *addr)
             Ns_Log(Notice, "dns: getnameinfo failed for addr <%s>: %s", addr, gai_strerror(err));
         } else {
             Ns_DStringAppend(dsPtr, buf);
-            result = NS_TRUE;
+            success = NS_TRUE;
         }
     }
-    return result;
+    return success;
 }
 
 static bool
@@ -302,7 +302,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     const struct addrinfo *ptr;
     struct addrinfo       *res;
     int result;
-    bool status = NS_FALSE;
+    bool success = NS_FALSE;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -326,7 +326,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
                 Ns_Log(Error, "dns: getaddrinfo failed for %s: unknown address family %d",
                        host, ptr->ai_family);
 
-                result = NS_FALSE;
+                success = NS_FALSE;
                 break;
             } else {
                 char ipString[NS_IPADDR_SIZE];
@@ -334,7 +334,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
                 Tcl_DStringAppendElement(dsPtr,
                                          ns_inet_ntop(ptr->ai_addr, ipString, sizeof(ipString)));
 
-                status = NS_TRUE;
+                success = NS_TRUE;
                 ptr = ptr->ai_next;
             }
         }
@@ -345,7 +345,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
                gai_strerror(result));
     }
 
-    return status;
+    return success;
 }
 
 #else

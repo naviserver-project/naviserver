@@ -108,13 +108,13 @@ static Ns_TaskQueue *session_queue;
  */
 
 static int
-HttpRunObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+HttpRunObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST* objv)
 {
     return HttpQueueCmd(clientData, objc, objv, 1);
 }
 
 static int
-HttpQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+HttpQueueObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST* objv)
 {
     return HttpQueueCmd(clientData, objc, objv, 0);
 }
@@ -382,7 +382,7 @@ HttpListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search) ) {
-            Ns_HttpTask *httpPtr = Tcl_GetHashValue(hPtr);
+            const Ns_HttpTask *httpPtr = Tcl_GetHashValue(hPtr);
             
             Tcl_DStringAppend(&ds,  Tcl_GetHashKey(&itPtr->httpRequests, hPtr), -1);
             Tcl_DStringAppend(&ds, " ", 1);
@@ -458,7 +458,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     Ns_Set        *hdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
     const Ns_Time *timeoutPtr = NULL;
-    bool           keepInt = 0;
+    int            keepInt = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-body",             Ns_ObjvObj,    &bodyPtr,      NULL},

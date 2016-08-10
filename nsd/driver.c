@@ -2260,6 +2260,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
         SockSendResponse(sockPtr, 400, errMsg);
         break;
     }
+    
     if (errMsg != NULL) {
         char ipString[NS_IPADDR_SIZE];
         
@@ -2307,7 +2308,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     case 414:
         response = "Request-URI Too Long";
         break;
-    case 400:
+    case 400: /* fall through */
     default:
         response = "Bad Request";
         break;
@@ -4702,7 +4703,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         const char *fileNameString;
         int         headers = 0;
         Tcl_WideInt offset = 0, size = 0;
-        size_t      nrbytes;
+        size_t      nrbytes = 0u;
 
         Ns_ObjvSpec lopts[] = {
             {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
@@ -4718,18 +4719,18 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)) {
             result = TCL_ERROR;
 
-        } else if (unlikely(conn == NULL)) {
+        } else if (unlikely( conn == NULL )) {
             Ns_TclPrintfResult(interp, "no connection");
             result = TCL_ERROR;
             
-        } else if (unlikely(Ns_ConnSockPtr(conn) == NULL)) {
+        } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
             Ns_Log(DriverDebug,
                    "NsWriterQueue: called without valid sockPtr, maybe connection already closed");            
             Ns_TclPrintfResult(interp, "0");
             return TCL_OK;
         }
 
-        if (likely (result == TCL_OK)) {
+        if (likely( result == TCL_OK )) {
             int rc = stat(fileNameString, &st);
             if (unlikely(rc != 0)) {
                 Ns_TclPrintfResult(interp, "file does not exist '%s'", fileNameString);
@@ -4738,7 +4739,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         }
 
         fd = NS_INVALID_FD;
-        if (likely (result == TCL_OK)) {
+        if (likely( result == TCL_OK )) {
             
             fd = ns_open(fileNameString, O_RDONLY, 0);
             if (unlikely(fd == NS_INVALID_FD)) {
@@ -4773,7 +4774,8 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         }
 
         if (result == TCL_OK) {
-        
+            Ns_ReturnCode status;
+            
             /*
              *  The caller requested that we build required headers
              */
@@ -4781,11 +4783,9 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             if (headers != 0) {
                 Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(fileNameString));
             }
-            {
-                Ns_ReturnCode status;
-                status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
-                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
-            }
+            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+
             (void) ns_close(fd);
         }
         
