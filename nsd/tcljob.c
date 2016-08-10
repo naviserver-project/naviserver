@@ -1054,14 +1054,14 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
 static int
 JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
-    int                  result = TCL_OK;
+    int result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
         
         Ns_MutexLock(&tp.queuelock);
         hPtr = Tcl_FirstHashEntry(&tp.queues, &search);

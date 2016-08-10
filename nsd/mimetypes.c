@@ -1282,8 +1282,6 @@ const char *
 Ns_GetMimeType(const char *file)
 {
     const char          *start, *ext, *result = defaultType;
-    Ns_DString           ds;
-    const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(file != NULL);
     
@@ -1296,6 +1294,9 @@ Ns_GetMimeType(const char *file)
         result = noextType;
 
     } else {
+        Ns_DString           ds;
+        const Tcl_HashEntry *hPtr;
+            
         Ns_DStringInit(&ds);
         ext = LowerDString(&ds, ext);
         hPtr = Tcl_FindHashEntry(&types, ext);
