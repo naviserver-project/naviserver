@@ -110,6 +110,17 @@ static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 static Ns_ThreadProc AsyncWriterThread;
 
+static Tcl_ObjCmdProc WriterListObjCmd;
+static Tcl_ObjCmdProc WriterSizeObjCmd;
+static Tcl_ObjCmdProc WriterStreamingObjCmd;
+static Tcl_ObjCmdProc WriterSubmitObjCmd;
+static Tcl_ObjCmdProc WriterSubmitFileObjCmd;
+
+static DrvWriter *DriverWriterFromObj(Tcl_Obj *driverObj)
+    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode RequireConnection(Tcl_Interp *interp, Ns_Conn **connPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static NS_SOCKET DriverListen(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr)
@@ -4638,106 +4649,180 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     return NS_OK;
 }
 
-int
-NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequireConnection --
+ *
+ *      Helper function to get the current connection an to set an error
+ *      message, when no connection is available.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+RequireConnection(Tcl_Interp *interp, Ns_Conn **connPtr) {
+    int status = NS_OK;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(connPtr != NULL);
+
+    *connPtr = Ns_GetConn();
+
+    if (unlikely(*connPtr == NULL)) {
+        Ns_TclPrintfResult(interp, "no connection");
+        status = NS_ERROR;
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverWriterFromObj --
+ *
+ *      Lookup driver by name and return its DrvWriter.
+ *
+ * Results:
+ *      DrvWriter or NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static DrvWriter *
+DriverWriterFromObj(Tcl_Obj *driverObj) {
+    Driver     *drvPtr;
+    const char *driverName;
+    int         driverNameLen;
+    DrvWriter  *wrPtr = NULL;
+    
+    NS_NONNULL_ASSERT(driverObj != NULL);
+
+    driverName = Tcl_GetStringFromObj(driverObj, &driverNameLen);
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
+        if (strncmp(driverName, drvPtr->name, (size_t)driverNameLen) == 0) {
+            if (drvPtr->writer.firstPtr != NULL) {
+                wrPtr = &drvPtr->writer;
+            }
+            break;
+        }
+    }
+    return wrPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSubmitObjCmd - subcommand of NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer submit" command.
+ *      Send the provided data to the client.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterSubmitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int               fd, opt, result = TCL_OK;
-    Tcl_DString       ds, *dsPtr = &ds;
+    int               result = TCL_OK;
     Ns_Conn          *conn;
-    Driver           *drvPtr;
-    DrvWriter        *wrPtr = NULL;
-    const WriterSock *wrSockPtr;
-    SpoolerQueue     *queuePtr;
-    const char       *driverName;
-    const NsServer   *servPtr = NULL;
-
-    static const char *const opts[] = {
-        "submit", "submitfile", "list", "size", "streaming", NULL
+    Tcl_Obj          *dataObj;
+    Ns_ObjvSpec       args[] = {
+        {"data", Ns_ObjvObj,  &dataObj, NULL},
+        {NULL, NULL, NULL, NULL}
     };
 
-    enum {
-        cmdSubmitIdx, cmdSubmitFileIdx, cmdListIdx, cmdSizeIdx, cmdStreamingIdx
-    };
-
-    if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
-        return TCL_ERROR;
-    }
-    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts,
-                                      "option", 0, &opt) != TCL_OK)) {
-        return TCL_ERROR;
-    }
-    conn = Ns_GetConn();
-
-    switch (opt) {
-    case cmdSubmitIdx: {
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK
+        || RequireConnection(interp, &conn) != NS_OK) {
+        result = TCL_ERROR;
         
-        if (unlikely(objc < 3)) {
-            Tcl_WrongNumArgs(interp, 2, objv, "data");
-            result = TCL_ERROR;
+    } else {
+        int            size;
+        unsigned char *data = Tcl_GetByteArrayFromObj(dataObj, &size);
 
-        } else if (unlikely(conn == NULL)) {
-            Ns_TclPrintfResult(interp, "no connection");
-            result = TCL_ERROR;
-
-        } else {
-            int size;
-            unsigned char *data = Tcl_GetByteArrayFromObj(objv[2], &size);
-
-            if (data != NULL) {
-                struct iovec vbuf;
-                Ns_ReturnCode status;
+        if (data != NULL) {
+            struct iovec  vbuf;
+            Ns_ReturnCode status;
             
-                vbuf.iov_base = (void *)data;
-                vbuf.iov_len = (size_t)size;
+            vbuf.iov_base = (void *)data;
+            vbuf.iov_len = (size_t)size;
                 
-                status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
-                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
-            }
+            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
         }
-        break;
     }
+    return result;
+}
 
-    case cmdSubmitFileIdx: {
-        struct stat st;
-        const char *fileNameString;
-        int         headers = 0;
-        Tcl_WideInt offset = 0, size = 0;
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSubmitFileObjCmd - subcommand of NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer submitfile" command.
+ *      Send the provided file to the client.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterSubmitFileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int         result = TCL_OK;
+    Ns_Conn    *conn;
+    const char *fileNameString;
+    int         headers = 0;
+    Tcl_WideInt offset = 0, size = 0;
+    Ns_ObjvSpec lopts[] = {
+        {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
+        {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
+        {"-size",     Ns_ObjvWideInt, &size,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"file",      Ns_ObjvString, &fileNameString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)
+        || RequireConnection(interp, &conn) != NS_OK) {
+        result = TCL_ERROR;
+                    
+    } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
+        Ns_Log(Warning,
+               "NsWriterQueue: called without valid sockPtr, maybe connection already closed");            
+        Ns_TclPrintfResult(interp, "0");
+        result = TCL_OK;
+
+    } else {
         size_t      nrbytes = 0u;
-
-        Ns_ObjvSpec lopts[] = {
-            {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
-            {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
-            {"-size",     Ns_ObjvWideInt, &size,    NULL},
-            {NULL, NULL, NULL, NULL}
-        };
-        Ns_ObjvSpec args[] = {
-            {"file",      Ns_ObjvString, &fileNameString, NULL},
-            {NULL, NULL, NULL, NULL}
-        };
-
-        if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)) {
+        struct stat st;
+        int         fd, rc = stat(fileNameString, &st);
+        
+        if (unlikely(rc != 0)) {
+            Ns_TclPrintfResult(interp, "file does not exist '%s'", fileNameString);
             result = TCL_ERROR;
-
-        } else if (unlikely( conn == NULL )) {
-            Ns_TclPrintfResult(interp, "no connection");
-            result = TCL_ERROR;
-            
-        } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
-            Ns_Log(DriverDebug,
-                   "NsWriterQueue: called without valid sockPtr, maybe connection already closed");            
-            Ns_TclPrintfResult(interp, "0");
-            return TCL_OK;
-        }
-
-        if (likely( result == TCL_OK )) {
-            int rc = stat(fileNameString, &st);
-            if (unlikely(rc != 0)) {
-                Ns_TclPrintfResult(interp, "file does not exist '%s'", fileNameString);
-                result = TCL_ERROR;
-            }
-        }
-
+        } 
+        
         fd = NS_INVALID_FD;
         if (likely( result == TCL_OK )) {
             
@@ -4773,7 +4858,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
         }
 
-        if (result == TCL_OK) {
+        if (likely(result == TCL_OK)) {
             Ns_ReturnCode status;
             
             /*
@@ -4792,35 +4877,50 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         if (fd != NS_INVALID_FD) {
             (void) ns_close(fd);
         }
-
-        break;
     }
+    
+    return result;
+}
 
-    case cmdListIdx:
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterListObjCmd - subcommand of NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer list" command.
+ *      List the current writer jobs.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int               result = TCL_OK;
+    const NsServer   *servPtr = NULL;
+    Ns_ObjvSpec       lopts[] = {
+        {"-server",  Ns_ObjvServer,    &servPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-        if (unlikely(objc < 2)) {
-        usage_error:
-            Tcl_WrongNumArgs(interp, 2, objv, "?-server server?");
-            return TCL_ERROR;
-        }
-
-        if (unlikely(objc > 4)) {
-            goto usage_error;
-        } else if (objc > 2) {
-
-            Ns_ObjvSpec lopts[] = {
-                {"-server",  Ns_ObjvServer,    &servPtr, NULL},
-                {NULL, NULL, NULL, NULL}
-            };
-
-            if (unlikely(Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK)) {
-                return TCL_ERROR;
-            }
-        }
-
+    if (unlikely(Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK)) {
+        result = TCL_ERROR;
+        
+    } else {
+        Tcl_DString       ds, *dsPtr = &ds;
+        Driver           *drvPtr;
+        SpoolerQueue     *queuePtr;
+    
         Tcl_DStringInit(dsPtr);
 
         for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
+            DrvWriter *wrPtr;
+
             /*
              * if server was specified, list only results from this server.
              */
@@ -4831,6 +4931,8 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             wrPtr = &drvPtr->writer;
             queuePtr = wrPtr->firstPtr;
             while (queuePtr != NULL) {
+                const WriterSock *wrSockPtr;
+
                 Ns_MutexLock(&queuePtr->lock);
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
@@ -4858,60 +4960,152 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
         }
         Tcl_DStringResult(interp, &ds);
-        break;
+    }
+    return result;
+}
 
-    case cmdSizeIdx:
-    case cmdStreamingIdx: {
-        int driverNameLen;
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSizeObjCmd - subcommand of NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer size" command.
+ *      Sets or queries lower limit for sending via writer.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterSizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int          intValue = -1, result = TCL_OK;
+    Tcl_Obj     *driverObj;
+    Ns_ObjvSpec  args[] = {
+        {"driver", Ns_ObjvObj, &driverObj, NULL},
+        {"?value", Ns_ObjvInt, &intValue, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-        if (unlikely(objc < 3 || objc > 4)) {
-            Tcl_WrongNumArgs(interp, 2, objv, "driver ?value?");
-            return TCL_ERROR;
-        }
-        driverName = Tcl_GetStringFromObj(objv[2], &driverNameLen);
-
-        /* look up driver with the specified name */
-        for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
-            if (strncmp(driverName, drvPtr->name, (size_t)driverNameLen) == 0) {
-                if (drvPtr->writer.firstPtr != NULL) {wrPtr = &drvPtr->writer;}
-                break;
-            }
-        }
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
 
         if (unlikely(wrPtr == NULL)) {
-            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s", driverName);
-            return TCL_ERROR;
+            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
+                               Tcl_GetString(driverObj));
+            result = TCL_ERROR;
+
+        } else if (objc == 4) {
+            /*
+             * The optional argument was provided.
+             */
+            if (intValue < 1024) {
+                Ns_TclPrintfResult(interp,
+                                   "argument is not an integer in valid range: %d (min 1024)",
+                                   intValue);
+                result = TCL_ERROR;
+            } else {
+                wrPtr->maxsize = (size_t)intValue;
+            }
         }
-
-        if (opt == cmdSizeIdx) {
-            if (objc == 4) {
-                int value = 0;
-
-                if (Tcl_GetIntFromObj(interp, objv[3], &value) != TCL_OK || value < 1024) {
-                    Tcl_AppendResult(interp, "argument is not an integer in valid range: ",
-                                     Tcl_GetString(objv[3]), " (min 1024)", NULL);
-                    return TCL_ERROR;
-                }
-                wrPtr->maxsize = (size_t)value;
-            }
+        if (result == TCL_OK) {
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
+        }
+    }
+    return result;
+}
 
-        } else /* opt == cmdStreamingIdx */ {
-            if (objc == 4) {
-                int value = 0;
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterStreamingObjCmd - subcommand of NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer streaming" command.
+ *      Sets or queries streaming state of the writer.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterStreamingObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int          boolValue, result = TCL_OK;
+    Tcl_Obj     *driverObj;
+    Ns_ObjvSpec  args[] = {
+        {"driver", Ns_ObjvObj,  &driverObj, NULL},
+        {"?value", Ns_ObjvBool, &boolValue, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-                if (unlikely(Tcl_GetBooleanFromObj(interp, objv[3], &value) != TCL_OK)) {
-                    return TCL_ERROR;
-                }
-                wrPtr->doStream = (value == 1 ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE);
-            }
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else {
+        DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
+
+        if (unlikely(wrPtr == NULL)) {
+            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
+                               Tcl_GetString(driverObj));
+            result = TCL_ERROR;
+
+        } else if (objc == 4) {
+            /*
+             * The optional argument was provided.
+             */
+            wrPtr->doStream = (boolValue == 1 ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE);
+        }
+        
+        if (result == TCL_OK) {
             Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->doStream));
         }
-        break;
-    }
     }
 
     return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer" command for submitting data to the writer
+ *      threads and to configure and query the state of the writer threads at
+ *      runtime.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"list",       WriterListObjCmd},
+        {"size",       WriterSizeObjCmd},
+        {"streaming",  WriterStreamingObjCmd},
+        {"submit",     WriterSubmitObjCmd},
+        {"submitfile", WriterSubmitFileObjCmd},
+        {NULL, NULL}
+    };
+    
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 /*
