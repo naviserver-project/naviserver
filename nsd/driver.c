@@ -4427,14 +4427,15 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
              */
             fd = ns_dup(fd);
         } else if (chan != NULL) {
+            ClientData clientData;
             /*
              * The client provided an open tcl channel and closes it
              */
             if (Tcl_GetChannelHandle(chan, TCL_READABLE,
-                                     (ClientData)&fd) != TCL_OK) {
+                                     &clientData) != TCL_OK) {
                 return NS_ERROR;
             }
-            fd = ns_dup(fd);
+            fd = ns_dup(PTR2INT(clientData));
         }
     }
 
@@ -4510,7 +4511,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         wrSockPtr->c.file.toRead = nsend;
 
     } else if (bufs != NULL) {
-        int   i, j, headerbufs = headerSize > 0u ? 1 : 0;
+        int   i, j, headerbufs = (headerSize > 0u ? 1 : 0);
 
         wrSockPtr->fd = NS_INVALID_FD;
 
