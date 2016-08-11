@@ -517,8 +517,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
             while (len > 0) {
                 int wrote = Tcl_Write(itPtr->adp.chan, buf, len);
                 if (wrote < 0) {
-                    Tcl_AppendResult(interp, "write failed: ",
-                                     Tcl_PosixError(interp), NULL);
+                    Ns_TclPrintfResult(interp, "write failed: %s", Tcl_PosixError(interp));
                     break;
                 }
                 buf += wrote;

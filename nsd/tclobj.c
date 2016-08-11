@@ -264,7 +264,7 @@ Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
         return TCL_ERROR;
     }
     if (objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
-        Tcl_AppendResult(interp, "incorrect type: ", Tcl_GetString(objPtr), NULL);
+        Ns_TclPrintfResult(interp, "incorrect type: %s", Tcl_GetString(objPtr));
         return TCL_ERROR;
     }
     *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;

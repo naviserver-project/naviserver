@@ -1125,8 +1125,7 @@ EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 
     sock = ns_sockdup(sock);
     if (sock == NS_INVALID_SOCKET) {
-        Tcl_AppendResult(interp, "could not dup socket: ", 
-                         ns_sockstrerror(errno), NULL);
+        Ns_TclPrintfResult(interp, "could not dup socket: %s", ns_sockstrerror(errno));
         result = TCL_ERROR;
     } else {
         result = EnterSock(interp, sock);
