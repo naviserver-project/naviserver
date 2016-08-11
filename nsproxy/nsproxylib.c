@@ -797,11 +797,11 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     argv[4] = NULL;
 
     if (ns_pipe(rpipe) != 0) {
-        Tcl_AppendResult(interp, "pipe failed: ", Tcl_PosixError(interp), NULL);
+        Ns_TclPrintfResult(interp, "pipe failed: %s", Tcl_PosixError(interp));
         return NULL;
     }
     if (ns_pipe(wpipe) != 0) {
-        Tcl_AppendResult(interp, "pipe failed: ", Tcl_PosixError(interp), NULL);
+        Ns_TclPrintfResult(interp, "pipe failed: %s", Tcl_PosixError(interp));
         ns_close(rpipe[0]);
         ns_close(rpipe[1]);
         return NULL;
@@ -816,7 +816,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     ns_free(argv[1]);
 
     if (pid == NS_INVALID_PID) {
-        Tcl_AppendResult(interp, "exec failed: ", Tcl_PosixError(interp), NULL);
+        Ns_TclPrintfResult(interp, "exec failed: %s", Tcl_PosixError(interp));
         ns_close(wpipe[0]);
         ns_close(rpipe[1]);
         return NULL;
