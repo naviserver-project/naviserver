@@ -781,8 +781,7 @@ NsTclAdpTruncObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
             return TCL_ERROR;
         }
         if (length < 0) {
-            Tcl_AppendResult(interp, "invalid length: ",
-                             Tcl_GetString(objv[1]), NULL);
+            Ns_TclPrintfResult(interp, "invalid length: %s", Tcl_GetString(objv[1]));
             return TCL_ERROR;
         }
     }

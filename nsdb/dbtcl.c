@@ -258,7 +258,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             return TCL_ERROR;
 	}
 	if (Ns_DbBouncePool(Tcl_GetString(objv[2])) == NS_ERROR) {
-	    Tcl_AppendResult(interp, "could not bounce: ", Tcl_GetString(objv[2]), NULL);
+	    Ns_TclPrintfResult(interp, "could not bounce: %s", Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
         break;

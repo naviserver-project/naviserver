@@ -867,7 +867,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
         return TCL_ERROR;
     }
     if (unlikely(servPtr == NULL)) {
-        Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "no initializing server");
         return TCL_ERROR;
     }
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclServerRoot, objv[1],

@@ -920,7 +920,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, Tcl_GetString(objv[0]));
             Ns_MutexUnlock(&servPtr->tcl.cachelock);
             if (hPtr == NULL) {
-                Tcl_AppendResult(interp, "no such cache: ", Tcl_GetString(objv[0]), NULL);
+                Ns_TclPrintfResult(interp, "no such cache: %s", Tcl_GetString(objv[0]));
                 result = TCL_ERROR;
             } else {
                 *cPtrPtr = Tcl_GetHashValue(hPtr);

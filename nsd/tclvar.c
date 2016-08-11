@@ -171,8 +171,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 	if (likely(resultObj != NULL)) {
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
-	    Tcl_AppendResult(interp, "no such key: ",
-			     Tcl_GetString(objv[2]), NULL);
+	    Ns_TclPrintfResult(interp, "no such key: %s", Tcl_GetString(objv[2]));
 	    result = TCL_ERROR;
 	}
     } else {
@@ -637,8 +636,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             return TCL_ERROR;
         }
         if (lobjc % 2 == 1) {
-            Tcl_AppendResult(interp, "invalid list: ",
-                             Tcl_GetString(objv[3]), NULL);
+            Ns_TclPrintfResult(interp, "invalid list: %s", Tcl_GetString(objv[3]));
             return TCL_ERROR;
         }
 

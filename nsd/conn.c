@@ -1588,8 +1588,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (objc > 2) {
             encoding = Ns_GetCharsetEncoding(Tcl_GetString(objv[2]));
             if (encoding == NULL) {
-                Tcl_AppendResult(interp, "no such encoding: ",
-                                 Tcl_GetString(objv[2]), NULL);
+                Ns_TclPrintfResult(interp, "no such encoding: %s", Tcl_GetString(objv[2]));
                 result = TCL_ERROR;
             } else {
                 connPtr->outputEncoding = encoding;
@@ -1605,8 +1604,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         if (objc > 2) {
             encoding = Ns_GetCharsetEncoding(Tcl_GetString(objv[2]));
             if (encoding == NULL) {
-                Tcl_AppendResult(interp, "no such encoding: ",
-                                 Tcl_GetString(objv[2]), NULL);
+                Ns_TclPrintfResult(interp, "no such encoding: %s", Tcl_GetString(objv[2]));
                 result = TCL_ERROR;
             }
             /*
@@ -1710,8 +1708,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         } else {
             hPtr = Tcl_FindHashEntry(&connPtr->files, Tcl_GetString(objv[2]));
             if (hPtr == NULL) {
-                Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]),
-                                 NULL);
+                Ns_TclPrintfResult(interp, "no such file: %s", Tcl_GetString(objv[2]));
                 result = TCL_ERROR;
             } else {
                 const FormFile *filePtr = Tcl_GetHashValue(hPtr);
@@ -2103,13 +2100,11 @@ GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *o
         result = TCL_ERROR;
 
     } else if (off < 0 || (size_t)off > connPtr->reqPtr->length) {
-        Tcl_AppendResult(interp, "invalid offset: ", Tcl_GetString(objv[0]),
-                         NULL);
+        Ns_TclPrintfResult(interp, "invalid offset: %s", Tcl_GetString(objv[0]));
         result = TCL_ERROR;
 
     } else if (len < 0 || (size_t)len > (connPtr->reqPtr->length - (size_t)off)) {
-        Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[1]),
-                         NULL);
+        Ns_TclPrintfResult(interp, "invalid length: %s", Tcl_GetString(objv[1]));
         result = TCL_ERROR;
 
     } else {

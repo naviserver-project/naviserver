@@ -520,8 +520,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         rc = TCL_ERROR;    
     } else if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
-        Tcl_AppendResult(interp, "invalid timespec: ",
-                         Tcl_GetString(objv[1]), NULL);
+        Ns_TclPrintfResult(interp, "invalid timespec: %s", Tcl_GetString(objv[1]));
         rc = TCL_ERROR;
     } else {
         int  ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
