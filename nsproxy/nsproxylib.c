@@ -675,32 +675,37 @@ Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY* handlePtr, int ms)
     Pool  *poolPtr;
     Proxy *proxyPtr;
     Err    err;
-
+    int    result;
+    
     /*
      * Get just one proxy from the pool
      */
-
     poolPtr = GetPool(poolName, NULL);
+    
     err = PopProxy(poolPtr, &proxyPtr, 1, ms);
-    if (err != 0) {
+    if (unlikely(err != 0)) {
         Tcl_AppendResult(interp, "could not allocate from pool \"",
                          poolPtr->name, "\": ", ProxyError(interp, err), NULL);
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    /*
-     * Check proxy for valid connection.
-     */
-
-    if (CheckProxy(interp, proxyPtr) != ENone) {
+    } else if (CheckProxy(interp, proxyPtr) != ENone) {
+        /*
+         * No proxy connection.
+         */
         PushProxy(proxyPtr);
         Ns_CondBroadcast(&poolPtr->cond);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+        
+    } else {
+        /*
+         * Valid proxy for connection.
+         */
+        *handlePtr = (PROXY *)proxyPtr;
+         result = TCL_OK;
+
     }
 
-    *handlePtr = (PROXY *)proxyPtr;
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1118,7 +1123,7 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     iov[0].iov_len  = sizeof(ulen);
     iov[1].iov_base = dsPtr->string;
     iov[1].iov_len  = dsPtr->length;
-    while ((iov[0].iov_len + iov[1].iov_len) > 0) {
+    while ((iov[0].iov_len + iov[1].iov_len) > 0u) {
         do {
             n = writev(slavePtr->wfd, iov, 2);
         } while (n == -1 && errno == EINTR);
@@ -1393,38 +1398,39 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
 static int
 Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
 {
-    Res        *resPtr;
-    const char *str;
-    int         rlen, clen, ilen;
+    int result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
     
     if (dsPtr->length < sizeof(Res)) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    resPtr = (Res *) dsPtr->string;
-    str = dsPtr->string + sizeof(Res);
-    clen = ntohl(resPtr->clen);
-    ilen = ntohl(resPtr->ilen);
-    rlen = ntohl(resPtr->rlen);
-    if (clen > 0) {
-        Tcl_Obj *err=Tcl_NewStringObj(str,-1);
-        Tcl_SetObjErrorCode(interp, err);
-        str += clen;
+    } else {
+        Res        *resPtr = (Res *) dsPtr->string;
+        const char *str    = dsPtr->string + sizeof(Res);
+        int         rlen, clen, ilen;
+        
+        clen = ntohl(resPtr->clen);
+        ilen = ntohl(resPtr->ilen);
+        rlen = ntohl(resPtr->rlen);
+        if (clen > 0) {
+            Tcl_Obj *err=Tcl_NewStringObj(str,-1);
+            
+            Tcl_SetObjErrorCode(interp, err);
+            str += clen;
+        }
+        if (ilen > 0) {
+            Tcl_AddErrorInfo(interp, str);
+            str += ilen;
+        }
+        if (rlen > 0) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
+        }
+        *resultPtr = ntohl(resPtr->code);
     }
-    if (ilen > 0) {
-        Tcl_AddErrorInfo(interp, str);
-        str += ilen;
-    }
-    if (rlen > 0) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
-    }
-    *resultPtr = ntohl(resPtr->code);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -2360,14 +2366,15 @@ CreateProxy(Pool *poolPtr)
 static Proxy*
 GetProxy(const char *proxyId, InterpData *idataPtr)
 {
-    Tcl_HashEntry *hPtr;
+    const Tcl_HashEntry *hPtr;
+    Proxy                *result = NULL;
 
     hPtr = Tcl_FindHashEntry(&idataPtr->ids, proxyId);
-    if (hPtr != NULL) {
-        return (Proxy *)Tcl_GetHashValue(hPtr);
+    if (likely(hPtr != NULL)) {
+        result = (Proxy *)Tcl_GetHashValue(hPtr);
     }
 
-    return NULL;
+    return result;
 }
 
 
@@ -2647,7 +2654,6 @@ ReaperThread(void *ignored)
     while (1) {
         Tcl_HashEntry *hPtr;
 	Slave          *prevSlavePtr;
-
 
         Ns_GetTime(&now);
 
@@ -3061,20 +3067,23 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 static int
 RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Proxy *proxyPtr = (Proxy *)clientData;
-    int ms;
+    const char *scriptString;
+    int         ms = -1, result = TCL_OK;
+    Ns_ObjvSpec args[] = {
+        {"script",    Ns_ObjvString, &scriptString, NULL},
+        {"?timeout",  Ns_ObjvInt,    &ms,           NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    if (objc < 2 || objc > 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "script ?timeout?");
-        return TCL_ERROR;
+    } else {
+        Proxy *proxyPtr = (Proxy *)clientData;
+        
+        result = Eval(interp, proxyPtr, scriptString, ms);
     }
-    if (objc == 2) {
-        ms = -1;
-    } else if (Tcl_GetIntFromObj(interp, objv[2], &ms) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    return Eval(interp, proxyPtr, Tcl_GetString(objv[1]), ms);
+    return result;
 }
 
 
