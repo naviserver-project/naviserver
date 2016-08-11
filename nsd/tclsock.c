@@ -126,29 +126,30 @@ NsTclSockArgProc(Tcl_DString *dsPtr, const void *arg)
 int
 NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString  ds;
     const char *addr;
     int         result = TCL_OK;
-    bool        success;
-
     Ns_ObjvSpec args[] = {
         {"address",  Ns_ObjvString, &addr,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    Ns_DStringInit(&ds);
-    success = Ns_GetHostByAddr(&ds, addr);
-
-    if (success) {
-    	Tcl_DStringResult(interp, &ds);
     } else {
-        Ns_TclPrintfResult(interp, "could not lookup %s", addr);
-	result = TCL_ERROR;
+        Ns_DString  ds;
+        bool        success;
+
+        Ns_DStringInit(&ds);
+        success = Ns_GetHostByAddr(&ds, addr);
+
+        if (success) {
+            Tcl_DStringResult(interp, &ds);
+        } else {
+            Ns_TclPrintfResult(interp, "could not lookup %s", addr);
+            result = TCL_ERROR;
+        }
+        Ns_DStringFree(&ds);
     }
-    Ns_DStringFree(&ds);
 
     return result;
 }
@@ -174,12 +175,10 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString  ds;
     const char *host;
     int         all = 0, result = TCL_OK;
-    bool        success;
     Ns_ObjvSpec opts[] = {
-        {"-all",      Ns_ObjvBool,  &all, INT2PTR(1)},
+        {"-all",      Ns_ObjvBool,  &all, INT2PTR(NS_TRUE)},
         {"--",        Ns_ObjvBreak, NULL, NULL},
         {NULL, NULL,  NULL, NULL}
     };
@@ -188,22 +187,26 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    Ns_DStringInit(&ds);
-    if (all != 0) {
-	success = Ns_GetAllAddrByHost(&ds, host);
     } else {
-	success = Ns_GetAddrByHost(&ds, host);
+        bool        success;
+        Ns_DString  ds;
+        
+        Ns_DStringInit(&ds);
+        if (all != 0) {
+            success = Ns_GetAllAddrByHost(&ds, host);
+        } else {
+            success = Ns_GetAddrByHost(&ds, host);
+        }
+        if (success) {
+            Tcl_DStringResult(interp, &ds);
+        } else {
+            Ns_TclPrintfResult(interp, "could not lookup %s", host);
+            result = TCL_ERROR;
+        }
+        Ns_DStringFree(&ds);
     }
-    if (success) {
-    	Tcl_DStringResult(interp, &ds);
-    } else {
-        Ns_TclPrintfResult(interp, "could not lookup %s", host);
-	result = TCL_ERROR;
-    }
-    Ns_DStringFree(&ds);
 
     return result;
 }
@@ -418,25 +421,28 @@ NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
+    int        result = TCL_OK;
     Tcl_Obj   *objPtr;
     NS_SOCKET  sock;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 1, (int *) &sock) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (ns_send(sock, NULL, 0, 0) != 0) {
-        objPtr = Tcl_NewBooleanObj(0);
-    } else {
-        objPtr = Tcl_NewBooleanObj(1);
+        result = TCL_ERROR;
+
+    } else if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 1, (int *) &sock) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {    
+        if (ns_send(sock, NULL, 0, 0) != 0) {
+            objPtr = Tcl_NewBooleanObj(0);
+        } else {
+            objPtr = Tcl_NewBooleanObj(1);
+        }
+
+        Tcl_SetObjResult(interp, objPtr);
     }
 
-    Tcl_SetObjResult(interp, objPtr);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -463,14 +469,12 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     const char    *host, *lhost = NULL;
     unsigned short lport = 0u, port;
-    int            nonblock = 0, async = 0, msec = -1;
-    NS_SOCKET      sock;
-    Ns_Time        timeout = {0,0};
+    int            nonblock = 0, async = 0, msec = -1, result;
     const Ns_Time *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-	{"-nonblock",  Ns_ObjvBool,   &nonblock,   INT2PTR(1)},
-	{"-async",     Ns_ObjvBool,   &async,      INT2PTR(1)},
+	{"-nonblock",  Ns_ObjvBool,   &nonblock,   INT2PTR(NS_TRUE)},
+	{"-async",     Ns_ObjvBool,   &async,      INT2PTR(NS_TRUE)},
         {"-timeout",   Ns_ObjvTime,   &timeoutPtr, NULL},                
 	{"-localhost", Ns_ObjvString, &lhost,      NULL},
 	{"-localport", Ns_ObjvUShort, &lport,      NULL},
@@ -483,57 +487,60 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    /*
-     * Provide error messages for invalid argument combinations.  Note that either
-     *     -nonblock | -async
-     * or
-     *     -timeout seconds?:microseconds?
-     * are accepted as combinations.
-     */
-
-    if (nonblock != 0 || async != 0) {
-	if (timeoutPtr != NULL) {
-	    Ns_TclPrintfResult(interp, "-timeout can't be specified when -async or -nonblock are used");
-	    return TCL_ERROR;
-	}
-	async = 1;
-    }
-    if (lhost != NULL) {
-	if (*lhost == '\0') {
-	    Ns_TclPrintfResult(interp, "invalid hostname: must not be empty");
-	    return TCL_ERROR;
-	}
-    }
-    if (timeoutPtr != NULL) {
-	msec = (int)(timeout.sec * 1000 + timeout.usec / 1000);
-    }
-    if (*host == '\0') {
+    } else if (*host == '\0') {
 	Ns_TclPrintfResult(interp, "invalid hostname: must not be empty");
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
+        
+    } else if (lhost != NULL && (*lhost == '\0')) {
+        Ns_TclPrintfResult(interp, "invalid local hostname: must not be empty");
+        result = TCL_ERROR;
 
-    /*
-     * Perform the connection.
-     */
-
-    if (async != 0) {
-        sock = Ns_SockAsyncConnect2(host, port, lhost, lport);
-    } else if (msec < 0) {
-        sock = Ns_SockConnect2(host, port, lhost, lport);
     } else {
-        sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeoutPtr);
-    }
+        NS_SOCKET      sock;
 
-    if (sock == NS_INVALID_SOCKET) {
-	Ns_TclPrintfResult(interp, "can't connect to [\"%s]:%hu\"; %s",
-			   host, port, (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
-        return TCL_ERROR;
-    }
+        /*
+         * Provide error messages for invalid argument combinations.  Note that either
+         *     -nonblock | -async
+         * or
+         *     -timeout seconds?:microseconds?
+         * are accepted as combinations.
+         */
+        if (nonblock != 0 || async != 0) {
+            if (timeoutPtr != NULL) {
+                Ns_TclPrintfResult(interp, "-timeout can't be specified when -async or -nonblock are used");
+                return TCL_ERROR;
+            }
+            async = 1;
+        }
     
-    return EnterDupedSocks(interp, sock);
+        if (timeoutPtr != NULL) {
+            msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
+        }
+
+        /*
+         * Perform the connection.
+         */
+
+        if (async != 0) {
+            sock = Ns_SockAsyncConnect2(host, port, lhost, lport);
+        } else if (msec < 0) {
+            sock = Ns_SockConnect2(host, port, lhost, lport);
+        } else {
+            sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeoutPtr);
+        }
+
+        if (sock == NS_INVALID_SOCKET) {
+            Ns_TclPrintfResult(interp, "can't connect to [\"%s]:%hu\"; %s",
+                               host, port,
+                               (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
+            result = TCL_ERROR;
+        } else {
+            result = EnterDupedSocks(interp, sock);
+        }
+    }
+    return result;
 }
 
 
@@ -755,7 +762,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     int             result = TCL_OK;
     size_t          scriptLength;
     const Ns_Time  *timeoutPtr = NULL;
-    unsigned int    when;
+    unsigned int    when = 0u;
     Callback       *cbPtr;
     const NsInterp *itPtr = clientData;
 
@@ -767,69 +774,73 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    when = 0u;
-    while (*whenString != '\0') {
-        if (*whenString == 'r') {
-            when |= (unsigned int)NS_SOCK_READ;
-        } else if (*whenString == 'w') {
-            when |= (unsigned int)NS_SOCK_WRITE;
-        } else if (*whenString == 'e') {
-            when |= (unsigned int)NS_SOCK_EXCEPTION;
-        } else if (*whenString == 'x') {
-            when |= (unsigned int)NS_SOCK_EXIT;
-        } else {
-            Ns_TclPrintfResult(interp, "invalid when specification \"%s\": "
-                               "should be one/more of r, w, e, or x", whenString);
-            return TCL_ERROR;
+    } else {
+        while (*whenString != '\0') {
+            if (*whenString == 'r') {
+                when |= (unsigned int)NS_SOCK_READ;
+            } else if (*whenString == 'w') {
+                when |= (unsigned int)NS_SOCK_WRITE;
+            } else if (*whenString == 'e') {
+                when |= (unsigned int)NS_SOCK_EXCEPTION;
+            } else if (*whenString == 'x') {
+                when |= (unsigned int)NS_SOCK_EXIT;
+            } else {
+                Ns_TclPrintfResult(interp, "invalid when specification \"%s\": "
+                                   "should be one/more of r, w, e, or x", whenString);
+                result = TCL_ERROR;
+                break;
+            }
+            ++whenString;
         }
-        ++whenString;
     }
-    if (when == 0u) {
+    
+    if (result == TCL_OK && when == 0u) {
         Ns_TclPrintfResult(interp, "invalid when specification \"%s\": "
                            "should be one/more of r, w, e, or x", whenString);
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetOpenFd(interp, sockId,
+        result = TCL_ERROR;
+
+    } else if (Ns_TclGetOpenFd(interp, sockId,
                         (when & (unsigned int)NS_SOCK_WRITE) != 0u, 
 			(int *) &sock) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (timeoutPtr != NULL) {
-        /*
-         * timeout was specified, set is just in case the timeout was not 0:0
-         */
-        if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-            timeoutPtr = NULL;
-        }
-    }
-
-    /*
-     * Pass a dup of the socket to the callback thread, allowing
-     * this thread's cleanup to close the current socket.  It's
-     * not possible to simply register the channel again with
-     * a NULL interp because the Tcl channel code is not entirely
-     * thread safe.
-     */
-
-    sock = ns_sockdup(sock);
-    scriptLength = strlen(script);
-    
-    cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
-    cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
-    cbPtr->chan = NULL;
-    cbPtr->when = when;
-    memcpy(cbPtr->script, script, (size_t)scriptLength + 1u);
-    
-    if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
-			  when | (unsigned int)NS_SOCK_EXIT, 
-			  timeoutPtr, NULL) != NS_OK) {
-        Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
-        ns_sockclose(sock);
-        ns_free(cbPtr);
         result = TCL_ERROR;
+
+    } else {
+        if (timeoutPtr != NULL) {
+            /*
+             * timeout was specified, set is just in case the timeout was not 0:0
+             */
+            if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
+                timeoutPtr = NULL;
+            }
+        }
+
+        /*
+         * Pass a dup of the socket to the callback thread, allowing
+         * this thread's cleanup to close the current socket.  It's
+         * not possible to simply register the channel again with
+         * a NULL interp because the Tcl channel code is not entirely
+         * thread safe.
+         */
+
+        sock = ns_sockdup(sock);
+        scriptLength = strlen(script);
+    
+        cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
+        cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
+        cbPtr->chan = NULL;
+        cbPtr->when = when;
+        memcpy(cbPtr->script, script, (size_t)scriptLength + 1u);
+    
+        if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
+                              when | (unsigned int)NS_SOCK_EXIT, 
+                              timeoutPtr, NULL) != NS_OK) {
+            Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+            ns_sockclose(sock);
+            ns_free(cbPtr);
+            result = TCL_ERROR;
+        }
     }
 
     return result;
@@ -916,23 +927,25 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
 static int
 SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Tcl_Channel chan;
+    int         result;
 
     NS_NONNULL_ASSERT(value != NULL);
     NS_NONNULL_ASSERT(interp != NULL);
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+
+        Tcl_Channel chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
+        if (chan == NULL) {
+            result = TCL_ERROR;
+        } else {
+            result = Tcl_SetChannelOption(interp, chan, "-blocking", value);
+        }
     }
-
-    chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
-
-    if (chan == NULL) {
-        return TCL_ERROR;
-    }
-
-    return Tcl_SetChannelOption(interp, chan, "-blocking", value);
+    return result;
 }
 
 
@@ -1091,12 +1104,13 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
     if (chan == NULL) {
         Ns_TclPrintfResult(interp, "could not open socket");
         ns_sockclose(sock);
-        return TCL_ERROR;
-    }
-    result = Tcl_SetChannelOption(interp, chan, "-translation", "binary");
-    if (result == TCL_OK) {
-	Tcl_RegisterChannel(interp, chan);
-	Tcl_AppendElement(interp, Tcl_GetChannelName(chan));
+        result = TCL_ERROR;
+    } else {
+        result = Tcl_SetChannelOption(interp, chan, "-translation", "binary");
+        if (result == TCL_OK) {
+            Tcl_RegisterChannel(interp, chan);
+            Tcl_AppendElement(interp, Tcl_GetChannelName(chan));
+        }
     }
 
     return result;
