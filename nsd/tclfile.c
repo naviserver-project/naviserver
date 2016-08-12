@@ -565,7 +565,6 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
         Ns_DStringInit(&ds);
         Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
         Tcl_DStringResult(interp, &ds);
-        Ns_DStringFree(&ds);
     }
     
     return result;

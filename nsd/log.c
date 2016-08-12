@@ -1162,7 +1162,6 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         Ns_DStringInit(&ds);
         LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx) ? NS_TRUE : NS_FALSE, NS_FALSE);
         Tcl_DStringResult(interp, &ds);
-        Ns_DStringFree(&ds);
         break;
 
     case CReleaseIdx:

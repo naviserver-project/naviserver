@@ -757,7 +757,7 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);
     }
     Tcl_DStringResult(interp, &ds);
-    Ns_DStringFree(&ds);
+
     return TCL_OK;
 }
 
