@@ -194,8 +194,8 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
-        {"-once",   Ns_ObjvBool,  &once,   INT2PTR(1)},
-        {"-thread", Ns_ObjvBool,  &thread, INT2PTR(1)},
+        {"-once",   Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
+        {"-thread", Ns_ObjvBool,  &thread, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -260,8 +260,8 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
-	{"-once",   Ns_ObjvBool,  &once,   INT2PTR(1)},
-        {"-thread", Ns_ObjvBool,  &thread, INT2PTR(1)},
+	{"-once",   Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
+        {"-thread", Ns_ObjvBool,  &thread, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -331,8 +331,8 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
-        {"-once",    Ns_ObjvBool,  &once,   INT2PTR(1)},
-        {"-thread",  Ns_ObjvBool,  &thread, INT2PTR(1)},
+        {"-once",    Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
+        {"-thread",  Ns_ObjvBool,  &thread, INT2PTR(NS_TRUE)},
         {"--",       Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };

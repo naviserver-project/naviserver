@@ -106,7 +106,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -301,7 +301,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     unsigned int     when = 0u;
 
     Ns_ObjvSpec opts[] = {
-        {"-first", Ns_ObjvBool,  &first, INT2PTR(1)},
+        {"-first", Ns_ObjvBool,  &first, INT2PTR(NS_TRUE)},
         {"--",     Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };

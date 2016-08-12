@@ -280,7 +280,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(1)},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {"-server",    Ns_ObjvString, &server,    NULL},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}

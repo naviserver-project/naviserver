@@ -396,7 +396,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     unsigned int    flags = 0u;
     
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(1)},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -445,8 +445,8 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec     opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
-        {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(1)},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
+        {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -492,7 +492,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
-	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
+	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
