@@ -278,7 +278,7 @@ NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
         } else if (GetImageType(chan) != gif || GifSize(chan, &w, &h) != TCL_OK) {
             (void)Tcl_Close(interp, chan);
-            Tcl_AppendResult(interp, "invalid GIF file \"", file, "\"", NULL);
+            Ns_TclPrintfResult(interp, "invalid GIF file \"%s\"", file);
             result = TCL_ERROR;
 
         } else {
@@ -328,7 +328,7 @@ NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
         } else if (GetImageType(chan) != png || PngSize(chan, &w, &h) != TCL_OK) {
             (void)Tcl_Close(interp, chan);
-            Tcl_AppendResult(interp, "invalid PNG file \"", file, "\"", NULL);
+            Ns_TclPrintfResult(interp, "invalid PNG file \"%s\"", file);
             result = TCL_ERROR;
 
         } else {
@@ -378,7 +378,7 @@ NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
         } else if (GetImageType(chan) != jpeg || JpegSize(chan, &w, &h) != TCL_OK) {
             (void) Tcl_Close(interp, chan);
-            Tcl_AppendResult(interp, "invalid JPEG file \"", file, "\"", NULL);
+            Ns_TclPrintfResult(interp, "invalid JPEG file \"%s\"", file);
             result = TCL_ERROR;
 
         } else {

@@ -112,8 +112,7 @@ NsTclQuoteHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
     Ns_DString ds;
 
     if (unlikely(argc != 2)) {
-        Tcl_AppendResult(interp, "wrong # args:  should be \"",
-                         argv[0], " html\"", NULL);
+        Ns_TclPrintfResult(interp, "wrong # args:  should be \"%s html\"", argv[0]);
         return TCL_ERROR;
     }
     Ns_DStringInit(&ds);

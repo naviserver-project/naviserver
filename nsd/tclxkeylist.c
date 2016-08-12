@@ -577,28 +577,30 @@ ValidateKeyedList(keylIntPtr)
 static int
 ValidateKey(Tcl_Interp *interp, const char *key, int keyLen, int isPath)
 {
-    const char *keyp;
+    int result = TCL_OK;
 
     if (strlen (key) != (size_t) keyLen) {
-        Tcl_AppendResult(interp, "keyed list key may not be a ",
-			 "binary string", (char *) NULL);
-        return TCL_ERROR;
-    }
-    if (key[0] == '\0') {
-        Tcl_AppendResult(interp, "keyed list key may not be an ",
-			 "empty string", (char *) NULL);
-        return TCL_ERROR;
-    }
-    for (keyp = key; *keyp != '\0'; keyp++) {
-        if ((isPath == 0) && (*keyp == '.')) {
-            Tcl_AppendResult(interp,
-                             "keyed list key may not contain a \".\"; ",
-			     "it is used as a separator in key paths",
-			     (char *) NULL);
-            return TCL_ERROR;
+        Ns_TclPrintfResult(interp, "keyed list key may not be a binary string");
+        result = TCL_ERROR;
+
+    } else if (key[0] == '\0') {
+        Ns_TclPrintfResult(interp, "keyed list key may not be an empty string");
+        result = TCL_ERROR;
+
+    } else {
+        const char *keyp;
+        
+        for (keyp = key; *keyp != '\0'; keyp++) {
+            if ((isPath == 0) && (*keyp == '.')) {
+                Ns_TclPrintfResult(interp,
+                                   "keyed list key may not contain a \".\"; "
+                                   "it is used as a separator in key paths");
+                result = TCL_ERROR;
+                break;
+            }
         }
     }
-    return TCL_OK;
+    return result;
 }
 
 
@@ -776,36 +778,36 @@ FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyL
 static int
 ObjToKeyedListEntry(Tcl_Interp *interp, Tcl_Obj *objPtr, keylEntry_t *entryPtr)
 {
-    int objc;
+    int       objc, result = TCL_OK;
     Tcl_Obj **objv;
-    const char *key;
-    int keyLen;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
-        Tcl_AppendResult(interp, "keyed list entry not a valid list, ",
-			 "found \"", Tcl_GetStringFromObj (objPtr, NULL),
-			 "\"", (char *) NULL);
-        return TCL_ERROR;
+        Ns_TclPrintfResult(interp, "keyed list entry not a valid list, "
+                           "found \"%s\"",
+                           Tcl_GetString(objPtr));
+        result = TCL_ERROR;
+
+    } else if (objc != 2) {
+        Ns_TclPrintfResult(interp, "keyed list entry must be a two "
+                           "element list, found \"%s\"",
+                           Tcl_GetString(objPtr));
+        result = TCL_ERROR;
+
+    } else {
+        const char *key;
+        int keyLen;
+        
+        key = Tcl_GetStringFromObj(objv[0], &keyLen);
+        if (ValidateKey(interp, key, keyLen, FALSE) == TCL_ERROR) {
+            result = TCL_ERROR;
+
+        } else {
+            entryPtr->key = ckstrdup(key);
+            entryPtr->valuePtr = Tcl_DuplicateObj(objv[1]);
+            Tcl_IncrRefCount(entryPtr->valuePtr);
+        }
     }
-
-    if (objc != 2) {
-        Tcl_AppendResult(interp, "keyed list entry must be a two ",
-                         "element list, found \"",
-                         Tcl_GetStringFromObj(objPtr, NULL),
-                         "\"", (char *) NULL);
-        return TCL_ERROR;
-    }
-
-    key = Tcl_GetStringFromObj(objv[0], &keyLen);
-    if (ValidateKey(interp, key, keyLen, FALSE) == TCL_ERROR) {
-        return TCL_ERROR;
-    }
-
-    entryPtr->key = ckstrdup(key);
-    entryPtr->valuePtr = Tcl_DuplicateObj(objv[1]);
-    Tcl_IncrRefCount(entryPtr->valuePtr);
-
-    return TCL_OK;
+    return result;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1319,8 +1321,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
      */
     if (status == TCL_BREAK) {
         if (objc == 3) {
-            Tcl_AppendResult(interp, "key \"",  key,
-			     "\" not found in keyed list", (char *) NULL);
+            Ns_TclPrintfResult(interp, "key \"%s\" not found in keyed list", key);
             return TCL_ERROR;
         } else {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(FALSE));
@@ -1420,7 +1421,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     Tcl_Obj *keylVarPtr, *keylPtr;
     const char *varName;
-    int idx, keyLen;
+    int idx, keyLen, result = TCL_OK;
 
     if (objc < 3) {
         return TclX_WrongArgs(interp, objv[0], "listvar key ?key ...?");
@@ -1452,26 +1453,20 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     for (idx = 2; idx < objc; idx++) {
         const char *key = Tcl_GetStringFromObj(objv[idx], &keyLen);
-	int status;
 
         if (ValidateKey(interp, key, keyLen, TRUE) == TCL_ERROR) {
-            return TCL_ERROR;
-        }
+            result = TCL_ERROR;
+        } else {
+            result = TclX_KeyedListDelete(interp, keylPtr, key);
 
-        status = TclX_KeyedListDelete(interp, keylPtr, key);
-        switch (status) {
-        case TCL_BREAK:
-            Tcl_AppendResult(interp, "key not found: \"", key, "\"", 
-			     (char *) NULL);
-            return TCL_ERROR;
-        case TCL_ERROR:
-            return TCL_ERROR;
-	default:
-            break;
+            if (result == TCL_BREAK) {
+                Ns_TclPrintfResult(interp, "key not found: \"%s\"", key);
+                result = TCL_ERROR;
+            }
         }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1485,7 +1480,7 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     Tcl_Obj *keylPtr, *listObjPtr;
     const char *varName, *key;
-    int keyLen, status;
+    int keyLen, result = TCL_OK;
 
     if ((objc < 2) || (objc > 3)) {
         return TclX_WrongArgs(interp, objv[0], "listvar ?key?");
@@ -1511,24 +1506,17 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         }
     }
 
-    status = TclX_KeyedListGetKeys(interp, keylPtr, key, &listObjPtr);
-
-    switch (status) {
-    case TCL_BREAK:
-        Tcl_AppendResult(interp, "key not found: \"", key, "\"",
-                         (char *) NULL);
-        return TCL_ERROR;
-
-    case TCL_ERROR:
-        return TCL_ERROR;
-
-    default:
-        break;
+    result = TclX_KeyedListGetKeys(interp, keylPtr, key, &listObjPtr);
+    if (result == TCL_BREAK) {
+        Ns_TclPrintfResult(interp, "key not found: \"%s\"", key);
+        result = TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, listObjPtr);
+    if (result == TCL_OK) {
+        Tcl_SetObjResult(interp, listObjPtr);
+    }
 
-    return TCL_OK;
+    return result;
 }
 
 /*

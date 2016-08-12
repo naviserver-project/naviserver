@@ -110,7 +110,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
              */
 
 	    if (unlikely(Ns_StrToWideInt(value, &v) != NS_OK)) {
-                Tcl_AppendResult(interp, "expected integer but got \"", value, "\"", NULL);
+                Ns_TclPrintfResult(interp, "expected integer but got \"%s\"", value);
                 return TCL_ERROR;
             } 
             if (v >= min && v <= max) {

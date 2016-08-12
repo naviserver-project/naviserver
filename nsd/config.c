@@ -787,8 +787,7 @@ ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv
     int     result = TCL_OK;
 
     if (argc != 3) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         argv[0], " key value", NULL);
+        Ns_TclPrintfResult(interp, "wrong # args: should be \"%s key value\"", argv[0]);
         return TCL_ERROR;
     }
     
@@ -797,8 +796,7 @@ ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv
     if (likely(set != NULL)) {
         (void)Ns_SetPut(set, argv[1], argv[2]);
     } else {
-        Tcl_AppendResult(interp, argv[0],
-                         " not preceded by an ns_section command.", NULL);
+        Ns_TclPrintfResult(interp, "%s not preceded by an ns_section command.", argv[0]);
         result = TCL_ERROR;
     }
 
@@ -830,8 +828,7 @@ SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *ar
     int       result = TCL_OK;
 
     if (unlikely(argc != 2)) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         argv[0], " sectionname", NULL);
+        Ns_TclPrintfResult(interp, "wrong # args: should be \"%s sectionname\"", argv[0]);
         result = TCL_ERROR;
     } else {
         Ns_Set  **set = (Ns_Set **) clientData;

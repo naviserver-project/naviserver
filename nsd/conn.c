@@ -1743,10 +1743,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             result = TCL_ERROR;
 
         } else if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
-            Tcl_AppendResult(interp, "could not write ",
-                             Tcl_GetString(objv[3]), " bytes to ",
-                             Tcl_GetString(objv[4]), ": ",
-                             Tcl_PosixError(interp), NULL);
+            Ns_TclPrintfResult(interp, "could not write %s bytes to %s: %s",
+                               Tcl_GetString(objv[3]),
+                               Tcl_GetString(objv[4]),
+                               Tcl_PosixError(interp));
             result = TCL_ERROR;
         }
         break;
@@ -2066,8 +2066,7 @@ GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
         result = TCL_ERROR;
         
     } else if ((mode & TCL_WRITABLE) == 0) {
-        Tcl_AppendResult(interp, "channel \"", id,
-                         "\" wasn't opened for writing", NULL);
+        Ns_TclPrintfResult(interp, "channel \"%s\" wasn't opened for writing", id);
         result = TCL_ERROR;
 
     } else {

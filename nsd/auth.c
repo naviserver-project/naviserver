@@ -170,9 +170,8 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     case NS_FILTER_BREAK:  /* fall through */
     case NS_FILTER_RETURN: /* fall through */
     case NS_TIMEOUT:
-        Tcl_AppendResult(interp, "could not authorize \"",
-                         Tcl_GetString(objv[1]), " ",
-                         Tcl_GetString(objv[2]), "\"", NULL);
+        Ns_TclPrintfResult(interp, "could not authorize \"%s %s\"",
+                         Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));
         result = TCL_ERROR;
     }
 
