@@ -1906,6 +1906,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
                                  " should be one of: ", Tcl_GetString(objPtr));
                 for (i = 0; i < severityIdx; i++) {
                     Ns_DStringAppend(&ds, severityConfig[i].label);
+                    Ns_DStringNAppend(&ds, " ", 1);
                 }
                 Tcl_DStringResult(interp, &ds);
                 result = TCL_ERROR;                
