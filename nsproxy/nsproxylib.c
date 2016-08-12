@@ -193,6 +193,41 @@ typedef enum Err {
     EEvalTimeout
 } Err;
 
+static char *errMsg[] = {
+    "no error",
+    "currently evaluating a script",
+    "child process died",
+    "allocation deadlock",
+    "could not create child process",
+    "timeout waiting for handle",
+    "no script evaluating",
+    "invalid response",
+    "init script failed",
+    "insufficient handles",
+    "result recv failed",
+    "script send failed",
+    "no wait for script result",
+    "timeout waiting for evaluation",
+    NULL
+};
+
+static char *errCode[] = {
+    "ENone",
+    "EBusy",
+    "EDead",
+    "EDeadlock",
+    "EExec",
+    "EGetTimeout",
+    "EIdle",
+    "EImport",
+    "EInit",
+    "ERange",
+    "ERecv",
+    "ESend",
+    "ENoWait",
+    "EEvalTimeout",
+    NULL
+};
 
 /*
  * Static functions defined in this file.
@@ -230,7 +265,7 @@ static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(
 static void   CloseProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   FreeProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ResetProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
-static const char* ProxyError(Tcl_Interp *interp, Err err) NS_GNUC_NONNULL(1);
+static void   ProxyError(Tcl_Interp *interp, Err err) NS_GNUC_NONNULL(1);
 static void   FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void   ReleaseHandles(Tcl_Interp *interp, InterpData *idataPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -253,8 +288,9 @@ static void   CloseSlave(Slave *slavePtr, int ms) NS_GNUC_NONNULL(1);
 static void   ReapProxies(void);
 static int    GetTimeDiff(Ns_Time *tsPtr) NS_GNUC_NONNULL(1);
 
-static void   AppendStr(Tcl_Interp *interp, const char *flag, const char *val) NS_GNUC_NONNULL(1);
-static void   AppendInt(Tcl_Interp *interp, const char *flag, int i) NS_GNUC_NONNULL(1);
+static void   AppendStr(Tcl_Obj *listObj, const char *flag, const char *val) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void   AppendInt(Tcl_Obj *listObj, const char *flag, int i) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Tcl_Obj* StringObj(const char* chars);
 
 /*
  * Static variables defined in this file.
@@ -684,8 +720,9 @@ Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY* handlePtr, int ms)
     
     err = PopProxy(poolPtr, &proxyPtr, 1, ms);
     if (unlikely(err != 0)) {
-        Tcl_AppendResult(interp, "could not allocate from pool \"",
-                         poolPtr->name, "\": ", ProxyError(interp, err), NULL);
+        Ns_TclPrintfResult(interp, "could not allocate from pool \"%s\": %s",
+                           poolPtr->name, errMsg[err]);
+        ProxyError(interp, err);
         result = TCL_ERROR;
 
     } else if (CheckProxy(interp, proxyPtr) != ENone) {
@@ -973,10 +1010,10 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
     }
 
     if (err != ENone) {
-        Tcl_AppendResult(interp, "could not send script \"", 
-			 script == NULL ? "" : script,
-                         "\" to proxy \"", proxyPtr->id, "\": ",
-                         ProxyError(interp, err), NULL);
+        Ns_TclPrintfResult(interp, "could not send script \"%s\" to proxy \"%s\": %s",
+                           script == NULL ? "" : script,
+                           proxyPtr->id, errMsg[err]);
+        ProxyError(interp, err);
     }
 
     return err;
@@ -1026,9 +1063,9 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
     }
 
     if (err != ENone) {
-        Tcl_AppendResult(interp, "could not wait for proxy \"",
-                         proxyPtr->id, "\": ",
-                         ProxyError(interp, err), NULL);
+        Ns_TclPrintfResult(interp, "could not wait for proxy \"%s\": %s",
+                           proxyPtr->id, errMsg[err]);
+        ProxyError(interp, err);
     }
 
     return err;
@@ -1078,9 +1115,9 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
     }
 
     if (err != ENone) {
-        Tcl_AppendResult(interp, "could not receive from proxy \"",
-                         proxyPtr->id, "\": ",
-                         ProxyError(interp, err), NULL);
+        Ns_TclPrintfResult(interp, "could not receive from proxy \"%s\": %s",
+                         proxyPtr->id, errMsg[err]);
+        ProxyError(interp, err);
     }
 
     return err;
@@ -1461,6 +1498,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     const char    *proxyId;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
+    Tcl_Obj       *listObj;
 
     static const char *const opts[] = {
         "get", "put", "release", "eval", "cleanup", "configure",
@@ -1593,14 +1631,16 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             Tcl_WrongNumArgs(interp, 2, objv, "pool");
             return TCL_ERROR;
         }
+        listObj = Tcl_NewListObj(0, NULL);
         poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
         Ns_MutexLock(&poolPtr->lock);
         proxyPtr = poolPtr->firstPtr;
         while (proxyPtr != NULL) {
-            Tcl_AppendElement(interp, proxyPtr->id);
+            Tcl_ListObjAppendElement(interp, listObj, StringObj(proxyPtr->id));
             proxyPtr = proxyPtr->nextPtr;
         }
         Ns_MutexUnlock(&poolPtr->lock);
+        Tcl_SetObjResult(interp, listObj);
         break;
 
     case PHandlesIdx:
@@ -1609,14 +1649,16 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         } else {
             poolPtr = NULL;
         }
+        listObj = Tcl_NewListObj(0, NULL);
         hPtr = Tcl_FirstHashEntry(&idataPtr->ids, &search);
         while (hPtr != NULL) {
             proxyPtr = (Proxy *)Tcl_GetHashValue(hPtr);
             if (poolPtr == NULL || poolPtr == proxyPtr->poolPtr) {
-                Tcl_AppendElement(interp, proxyPtr->id);
+                Tcl_ListObjAppendElement(interp, listObj, StringObj(proxyPtr->id));
             }
             hPtr = Tcl_NextHashEntry(&search);
         }
+        Tcl_SetObjResult(interp, listObj);
         break;
 
     case PActiveIdx:
@@ -1685,14 +1727,16 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 
 
     case PPoolsIdx:
+        listObj = Tcl_NewListObj(0, NULL);
         Ns_MutexLock(&plock);
         hPtr = Tcl_FirstHashEntry(&pools, &search);
         while (hPtr != NULL) {
             poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
-            Tcl_AppendElement(interp, poolPtr->name);
+            Tcl_ListObjAppendElement(interp, listObj,  StringObj(poolPtr->name));
             hPtr = Tcl_NextHashEntry(&search);
         }
         Ns_MutexUnlock(&plock);
+        Tcl_SetObjResult(interp, listObj);
         break;
     }
 
@@ -1722,7 +1766,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     InterpData *idataPtr = data;
     Pool       *poolPtr;
     Proxy      *proxyPtr;
-    int         flag, n, result, reap = 0;
+    int         flag, n, result = TCL_OK, reap = 0;
 
     static const char *const flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", "-env",
@@ -1738,12 +1782,13 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         Tcl_WrongNumArgs(interp, 2, objv, "pool ?opt? ?val? ?opt val?...");
         return TCL_ERROR;
     }
-    result = TCL_ERROR;
+    
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
     Ns_MutexLock(&poolPtr->lock);
     if (objc == 4) {
         if (Tcl_GetIndexFromObj(interp, objv[3], flags, "flags", 0,
                                 &flag) != TCL_OK) {
+            result = TCL_ERROR;
             goto err;
         }
     } else if (objc > 4) {
@@ -1753,6 +1798,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         for (i = 3; i < (objc - 1); ++i) {
             if (Tcl_GetIndexFromObj(interp, objv[i], flags, "flags", 0,
                                     &flag)) {
+                result = TCL_ERROR;
                 goto err;
             }
             ++i;
@@ -1767,11 +1813,13 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             case CMaxslaveIdx:
             case CMaxrunsIdx:
                 if (Tcl_GetIntFromObj(interp, objv[i], &n) != TCL_OK) {
+                    result = TCL_ERROR;
                     goto err;
                 }
                 if (n < 0) {
-                    Tcl_AppendResult(interp, "invalid ", flags[flag], ": ",
-                                     str, NULL);
+                    Ns_TclPrintfResult(interp, "invalid %s: %s",
+                                       flags[flag], str);
+                    result = TCL_ERROR;
                     goto err;
                 }
                 switch ((int) flag) {
@@ -1847,76 +1895,80 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     /*
      * Construct command result
      */
+    Tcl_ResetResult(interp);
 
     if (objc == 3) {
-        Tcl_AppendElement(interp, flags[CEnvIdx]);
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(flags[CEnvIdx], -1));
         if (poolPtr->env != NULL) {
             if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else {
+                /* 
+                 * Ns_TclEnterSet() sets the result
+                 */
             }
-        } else {
-            Tcl_AppendElement(interp, "");
         }
-        AppendStr(interp, flags[CExecIdx],     poolPtr->exec);
-        AppendStr(interp, flags[CInitIdx],     poolPtr->init);
-        AppendStr(interp, flags[CReinitIdx],   poolPtr->reinit);
-        AppendInt(interp, flags[CMaxslaveIdx], poolPtr->maxslaves);
-        AppendInt(interp, flags[CMaxrunsIdx],  poolPtr->conf.maxruns);
-        AppendInt(interp, flags[CGetIdx],      poolPtr->conf.tget);
-        AppendInt(interp, flags[CEvalIdx],     poolPtr->conf.teval);
-        AppendInt(interp, flags[CSendIdx],     poolPtr->conf.tsend);
-        AppendInt(interp, flags[CRecvIdx],     poolPtr->conf.trecv);
-        AppendInt(interp, flags[CWaitIdx],     poolPtr->conf.twait);
-        AppendInt(interp, flags[CIdleIdx],     poolPtr->conf.tidle);
+        
+        if (result == TCL_OK) {
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_GetObjResult(interp));
+            AppendStr(listObj, flags[CExecIdx],     poolPtr->exec);
+            AppendStr(listObj, flags[CInitIdx],     poolPtr->init);
+            AppendStr(listObj, flags[CReinitIdx],   poolPtr->reinit);
+            AppendInt(listObj, flags[CMaxslaveIdx], poolPtr->maxslaves);
+            AppendInt(listObj, flags[CMaxrunsIdx],  poolPtr->conf.maxruns);
+            AppendInt(listObj, flags[CGetIdx],      poolPtr->conf.tget);
+            AppendInt(listObj, flags[CEvalIdx],     poolPtr->conf.teval);
+            AppendInt(listObj, flags[CSendIdx],     poolPtr->conf.tsend);
+            AppendInt(listObj, flags[CRecvIdx],     poolPtr->conf.trecv);
+            AppendInt(listObj, flags[CWaitIdx],     poolPtr->conf.twait);
+            AppendInt(listObj, flags[CIdleIdx],     poolPtr->conf.tidle);
+            Tcl_SetObjResult(interp, listObj);
+        }
+        
     } else if (objc == 4) {
         switch (flag) {
-        case CExecIdx:
-            AppendStr(interp, NULL, poolPtr->exec);
+        case CExecIdx:     Tcl_SetObjResult(interp, StringObj(poolPtr->exec));
             break;
-        case CInitIdx:
-            AppendStr(interp, NULL, poolPtr->init);
+        case CInitIdx:     Tcl_SetObjResult(interp, StringObj(poolPtr->init));
             break;
-        case CReinitIdx:
-            AppendStr(interp, NULL, poolPtr->reinit);
+        case CReinitIdx:   Tcl_SetObjResult(interp, StringObj(poolPtr->reinit));
             break;
-        case CMaxslaveIdx:
-            AppendInt(interp, NULL, poolPtr->maxslaves);
+        case CMaxslaveIdx: Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->maxslaves));
             break;
-        case CMaxrunsIdx:
-            AppendInt(interp, NULL, poolPtr->conf.maxruns);
+        case CMaxrunsIdx:  Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.maxruns));
             break;
-        case CGetIdx:
-            AppendInt(interp, NULL, poolPtr->conf.tget);
+        case CGetIdx:      Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.tget));
             break;
-        case CEvalIdx:
-            AppendInt(interp, NULL, poolPtr->conf.teval);
+        case CEvalIdx:     Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.teval));
             break;
-        case CSendIdx:
-            AppendInt(interp, NULL, poolPtr->conf.tsend);
+        case CSendIdx:     Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.tsend));
             break;
-        case CRecvIdx:
-            AppendInt(interp, NULL, poolPtr->conf.trecv);
+        case CRecvIdx:     Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.trecv));
             break;
-        case CWaitIdx:
-            AppendInt(interp, NULL, poolPtr->conf.twait);
+        case CWaitIdx:     Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.twait));
             break;
-        case CIdleIdx:
-            AppendInt(interp, NULL, poolPtr->conf.tidle);
+        case CIdleIdx:     Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.tidle));
             break;
         case CEnvIdx:
             if (poolPtr->env) {
+                /* 
+                 * Ns_TclEnterSet() sets the result
+                 */
                 if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-                    return TCL_ERROR;
+                    result = TCL_ERROR;
                 }
             } else {
-                Tcl_AppendElement(interp, "");
+                /*
+                 * The result is empty.
+                 */
             }
             break;
         }
     } else if (objc == 5) {
         Tcl_SetObjResult(interp, objv[4]);
     }
-    result = TCL_OK;
 
  err:
     Ns_MutexUnlock(&poolPtr->lock);
@@ -1951,28 +2003,36 @@ SetOpt(const char *str, char const **optPtr)
     }
 }
 
-static void
-AppendInt(Tcl_Interp *interp, const char *flag, int i)
-{
-    char buf[TCL_INTEGER_SPACE];
-
-    NS_NONNULL_ASSERT(interp != NULL);
-
-    snprintf(buf, sizeof(buf), "%d", i);
-    AppendStr(interp, flag, buf);
+static Tcl_Obj*
+StringObj(const char* chars) {
+    Tcl_Obj *resultObj;
+    
+    if (chars != NULL) {
+        resultObj = Tcl_NewStringObj(chars, -1);
+    } else {
+        resultObj = Tcl_NewStringObj("", 0);
+    }
+    return resultObj;
 }
 
 static void
-AppendStr(Tcl_Interp *interp, const char *flag, const char *val)
+AppendInt(Tcl_Obj *listObj, const char *flag, int i)
 {
-    NS_NONNULL_ASSERT(interp != NULL);
-    
-    if (flag != NULL) {
-        Tcl_AppendElement(interp, flag);
-        Tcl_AppendElement(interp, (val != NULL) ? val : "");
-    } else {
-        Tcl_AppendResult(interp, (val != NULL) ? val : "", NULL);
-    }
+    NS_NONNULL_ASSERT(listObj != NULL);
+    NS_NONNULL_ASSERT(flag != NULL);
+
+    Tcl_ListObjAppendElement(NULL, listObj, StringObj(flag));
+    Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewIntObj(i)); 
+}
+
+static void
+AppendStr(Tcl_Obj *listObj, const char *flag, const char *val)
+{
+    NS_NONNULL_ASSERT(listObj != NULL);
+    NS_NONNULL_ASSERT(flag != NULL);
+
+    Tcl_ListObjAppendElement(NULL, listObj, StringObj(flag));
+    Tcl_ListObjAppendElement(NULL, listObj, StringObj(val));
 }
 
 
@@ -2041,8 +2101,9 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     err = PopProxy(poolPtr, &firstPtr, nwant, ms);
     if (err != 0) {
     errout:
-        Tcl_AppendResult(interp, "could not allocate from pool \"",
-                         poolPtr->name, "\": ", ProxyError(interp, err), NULL);
+        Ns_TclPrintfResult(interp, "could not allocate from pool \"%s\": %s",
+                           poolPtr->name, errMsg[err]);
+        ProxyError(interp, err);
         return TCL_ERROR;
     }
 
@@ -2085,8 +2146,9 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         /*
          * Generate accessor commands for the returned proxies.
          */
+        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
         proxyPtr = firstPtr;
-        Tcl_ResetResult(interp);
         while (proxyPtr != NULL) {
             proxyPtr->cmdToken = Tcl_CreateObjCommand(interp, proxyPtr->id,
                                                       RunProxyCmd, proxyPtr,
@@ -2096,8 +2158,14 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                 break;
             }
             proxyPtr->interp = interp;
-            Tcl_AppendElement(interp, proxyPtr->id);
+            Tcl_ListObjAppendElement(interp, listObj,  StringObj(proxyPtr->id));
             proxyPtr = proxyPtr->nextPtr;
+        }
+        
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp, listObj);
+        } else {
+            Tcl_DecrRefCount(listObj);
         }
     }
 
@@ -3253,7 +3321,7 @@ GetTimeDiff(Ns_Time *timePtr)
  *      Formats an extended error message.
  *
  * Results:
- *      Pointer to error message string.
+ *      None.
  *
  * Side effects:
  *      Will set the errorCode global variable.
@@ -3261,82 +3329,15 @@ GetTimeDiff(Ns_Time *timePtr)
  *----------------------------------------------------------------------
  */
 
-static const char *
+static void
 ProxyError(Tcl_Interp *interp, Err err)
 {
-    const char *msg, *sysmsg, *code;
+    const char *sysmsg;
 
     NS_NONNULL_ASSERT(interp != NULL);
     
     sysmsg = NULL;
-    switch (err) {
-    case ENone:
-        code = "ENone";
-        msg = "no error";
-        break;
-    case EDeadlock:
-        code = "EDeadlock";
-        msg = "allocation deadlock";
-        break;
-    case EExec:
-        code = "EExec";
-        msg = "could not create child process";
-        sysmsg = strerror(errno);
-        break;
-    case ERange:
-        code = "ERange";
-        msg = "insufficient handles";
-        break;
-    case EGetTimeout:
-        code = "EGetTimeout";
-        msg = "timeout waiting for handle";
-        break;
-    case EEvalTimeout:
-        code = "EEvalTimeout";
-        msg = "timeout waiting for evaluation";
-        break;
-    case ESend:
-        code = "ESend";
-        msg = "script send failed";
-        sysmsg = strerror(errno);
-        break;
-    case ERecv:
-        code = "ERecv";
-        msg = "result recv failed";
-        sysmsg = strerror(errno);
-        break;
-    case EIdle:
-        code = "EIdle";
-        msg = "no script evaluating";
-        break;
-    case EImport:
-        code = "EImport";
-        msg = "invalid response";
-        break;
-    case EInit:
-        code = "EInit";
-        msg = "init script failed";
-        break;
-    case EDead:
-        code = "EDead";
-        msg = "child process died";
-        break;
-    case ENoWait:
-        code = "ENoWait";
-        msg = "no wait for script result";
-        break;
-    case EBusy:
-        code = "EBusy";
-        msg = "currently evaluating a script";
-        break;
-    default:
-        code = "EUnknown";
-        msg = "unknown error";
-    }
-
-    Tcl_SetErrorCode(interp, "NSPROXY", code, msg, sysmsg, NULL);
-
-    return msg;
+    Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, NULL);
 }
 
 /*

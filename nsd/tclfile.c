@@ -97,8 +97,8 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
         if (( write != 0 && (mode & TCL_WRITABLE) == 0) 
             ||
             (write == 0 && (mode & TCL_READABLE) == 0)) {
-            Tcl_AppendResult(interp, "channel \"", chanId, "\" not open for ",
-                             write != 0 ? "writing" : "reading", NULL);
+            Ns_TclPrintfResult(interp, "channel \"%s\" not open for %s",
+                               chanId, write != 0 ? "writing" : "reading");
             result = TCL_ERROR;
         }
     }
@@ -184,8 +184,7 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
         result = TCL_ERROR;
 
     } else if (max <= 0 || max > 1000) {
-        Tcl_AppendResult(interp, "invalid max \"", Tcl_GetString(objv[2]),
-                         "\": should be > 0 and <= 1000.", NULL);
+        Ns_TclPrintfResult(interp, "invalid max %d: should be > 0 and <= 1000.", max);
         result = TCL_ERROR;
 
     } else {
@@ -197,9 +196,8 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
             status = Ns_RollFile(Tcl_GetString(objv[1]), max);
         }
         if (status != NS_OK) {
-            Tcl_AppendResult(interp, "could not ", cmd, " \"",
-                             Tcl_GetString(objv[1]), "\": ",
-                             Tcl_PosixError(interp), NULL);
+            Ns_TclPrintfResult(interp, "could not %s \"%s\": %s",
+                               cmd, Tcl_GetString(objv[1]), Tcl_PosixError(interp));
             result = TCL_ERROR;
         } else {
             result = TCL_OK;
@@ -255,8 +253,8 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
 	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
 
     } else {
-        Tcl_AppendResult(interp, "wrong # of args: should be \"",
-                         argv[0], " ?template?\"", NULL);
+        Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s ?template?\"",
+                           argv[0]);
         result = TCL_ERROR;
     }
 
@@ -480,9 +478,10 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 	result = TCL_ERROR;
 
     } else if (truncate(fileString, length) != 0) {
-        Tcl_AppendResult(interp, "truncate (\"", fileString, "\", ",
-                         length == 0 ? "0" : Tcl_GetString(objv[2]),
-                         ") failed: ", Tcl_PosixError(interp), NULL);
+        Ns_TclPrintfResult(interp, "truncate (\"%s\", %s) failed: %s",
+                           fileString,
+                           length == 0 ? "0" : Tcl_GetString(objv[2]),
+                           Tcl_PosixError(interp));
         result = TCL_ERROR;
     }
 
@@ -526,9 +525,10 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
 
     } else if (ftruncate(fd, length) != 0) {
-        Tcl_AppendResult(interp, "ftruncate (\"", fileIdString, "\", ",
-                         length == 0 ? "0" : Tcl_GetString(objv[2]),
-                         ") failed: ", Tcl_PosixError(interp), NULL);
+        Ns_TclPrintfResult(interp, "ftruncate (\"%s\", %s) failed: %s",
+                           fileIdString,
+                           length == 0 ? "0" : Tcl_GetString(objv[2]),
+                           Tcl_PosixError(interp));
         result = TCL_ERROR;
     }
 
@@ -629,8 +629,8 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
             }
             Ns_MutexUnlock(&servPtr->chans.lock);
             if (isNew == 0) {
-                Tcl_AppendResult(interp, "channel \"", name, 
-                                 "\" already exists", NULL);
+                Ns_TclPrintfResult(interp, "channel \"%s\" already exists",
+                                   name);
                 result = TCL_ERROR;
             } else {
                 UnspliceChannel(interp, chan);
@@ -684,7 +684,7 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         Ns_MutexUnlock(&servPtr->chans.lock);
         
         if (hPtr == NULL) {
-            Tcl_AppendResult(interp, "channel \"", name, "\" not found", NULL);
+            Ns_TclPrintfResult(interp, "channel \"%s\" not found", name);
             result = TCL_ERROR;
         } else {
             int isNew;
@@ -732,7 +732,7 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         Tcl_HashEntry  *hPtr = Tcl_FindHashEntry(&itPtr->chans, name);
         
         if (hPtr == NULL) {
-            Tcl_AppendResult(interp, "channel \"", name, "\" not found", NULL);
+            Ns_TclPrintfResult(interp, "channel \"%s\" not found", name);
             result = TCL_ERROR;
             
         } else {
@@ -748,8 +748,8 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
                 }
                 result = TCL_ERROR;
             } else {
-                NsServer       *servPtr = itPtr->servPtr;
-                int isNew;
+                NsServer *servPtr = itPtr->servPtr;
+                int       isNew;
                 
                 UnspliceChannel(interp, regChan->chan);
                 Tcl_DeleteHashEntry(hPtr);
@@ -796,6 +796,7 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         NsInterp            *itPtr = clientData;
         NsServer            *servPtr = itPtr->servPtr;
         Tcl_HashTable       *tabPtr;
+        Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
         if (isShared != (int)NS_FALSE) {
             Ns_MutexLock(&servPtr->chans.lock);
@@ -803,14 +804,18 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         } else {
             tabPtr = &itPtr->chans;
         }
-        hPtr = Tcl_FirstHashEntry(tabPtr, &search);
-        while (hPtr != NULL) {
-            Tcl_AppendElement(interp, Tcl_GetHashKey(tabPtr, hPtr));
-            hPtr = Tcl_NextHashEntry(&search);
+        for (hPtr = Tcl_FirstHashEntry(tabPtr, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search)
+             ) {
+            const char *key = Tcl_GetHashKey(tabPtr, hPtr);
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
         }
         if (isShared != (int)NS_FALSE) {
             Ns_MutexUnlock(&servPtr->chans.lock);
         }
+        Tcl_SetObjResult(interp, listObj);
+
     }
     return result;
 }

@@ -617,7 +617,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
             poolPtr = poolPtr->nextPtr;
         }
         if (unlikely(poolPtr == NULL)) {
-            Tcl_AppendResult(interp, "no such pool ", pool, " for server ", servPtr->server, NULL);
+            Ns_TclPrintfResult(interp, "no such pool %s for server %s", pool, servPtr->server);
             return TCL_ERROR;
         }
     } else {
@@ -629,10 +629,13 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
 	 * These subcommands are server specific (do not allow -pool option)
 	 */
     case SPoolsIdx:
-        poolPtr = servPtr->pools.firstPtr;
-        while (poolPtr != NULL) {
-            Tcl_AppendElement(interp, poolPtr->pool);
-            poolPtr = poolPtr->nextPtr;
+        {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+            for (poolPtr = servPtr->pools.firstPtr; poolPtr != NULL; poolPtr = poolPtr->nextPtr) {
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(poolPtr->pool, -1));
+            }
+            Tcl_SetObjResult(interp, listObj);
         }
         break;
 

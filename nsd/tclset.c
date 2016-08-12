@@ -55,7 +55,7 @@ static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, bool deleteEntry, Ns_Se
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static void EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
+static Tcl_Obj *EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -95,7 +95,7 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
         Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
         result = TCL_ERROR;
     } else {
-        EnterSet(itPtr, set, type);
+        Tcl_SetObjResult(interp, EnterSet(itPtr, set, type));
         result = TCL_OK;
     }
     
@@ -276,11 +276,18 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         break;
 
     case SListIdx:
-        tablePtr = &itPtr->sets;
-	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-	while (hPtr != NULL) {
-	    Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
-	    hPtr = Tcl_NextHashEntry(&search);
+        {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+            tablePtr = &itPtr->sets;
+            for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+                 hPtr != NULL;
+                 hPtr = Tcl_NextHashEntry(&search)
+                 ) {
+                const char *key = Tcl_GetHashKey(tablePtr, hPtr);
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+            }
+            Tcl_SetObjResult(interp, listObj);
         }
         break;
 
@@ -303,7 +310,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 val = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
                 (void)Ns_SetPut(set, key, val);
             }
-            EnterSet(itPtr, set, NS_TCL_SET_DYNAMIC);
+            Tcl_SetObjResult(interp, EnterSet(itPtr, set, NS_TCL_SET_DYNAMIC));
             break;
 
         case SCopyIdx:
@@ -314,27 +321,32 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             if (LookupObjSet(itPtr, objv[offset], NS_FALSE, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
-            EnterSet(itPtr, Ns_SetCopy(set), NS_TCL_SET_DYNAMIC);
+            Tcl_SetObjResult(interp, EnterSet(itPtr, Ns_SetCopy(set), NS_TCL_SET_DYNAMIC));
             break;
 
         case SSplitIdx: {
-            int          i;
-            Ns_Set     **sets;
-            const char  *split;
-
             if (unlikely((objc - offset) < 1)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
-                return TCL_ERROR;
+                result = TCL_ERROR;
+
+            } else if (LookupObjSet(itPtr, objv[offset++], NS_FALSE, &set) != TCL_OK) {
+                result = TCL_ERROR;
+
+            } else {
+                Tcl_Obj     *listObj = Tcl_NewListObj(0, NULL);
+                Ns_Set     **sets;
+                const char  *split;
+                int          i;
+                
+                split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
+                sets = Ns_SetSplit(set, *split);
+                for (i = 0; sets[i] != NULL; i++) {
+                    Tcl_ListObjAppendElement(interp, listObj,
+                                             EnterSet(itPtr, sets[i], NS_TCL_SET_DYNAMIC));
+                }
+                Tcl_SetObjResult(interp, listObj);
+                ns_free(sets);
             }
-            if (LookupObjSet(itPtr, objv[offset++], NS_FALSE, &set) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
-            sets = Ns_SetSplit(set, *split);
-            for (i = 0; sets[i] != NULL; i++) {
-                EnterSet(itPtr, sets[i], NS_TCL_SET_DYNAMIC);
-            }
-            ns_free(sets);
             break;
         }
             
@@ -712,7 +724,7 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *
  *----------------------------------------------------------------------
  */
 
-static void
+static Tcl_Obj *
 EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
 {
     Tcl_HashTable  *tablePtr;
@@ -740,7 +752,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
     } while (isNew == 0);
 
     Tcl_SetHashValue(hPtr, set);
-    Tcl_AppendElement(itPtr->interp, buf);
+    return Tcl_NewStringObj(buf, -1);
 }
 
 

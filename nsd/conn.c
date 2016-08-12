@@ -1430,9 +1430,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CUrlvIdx:
         if (objc == 2) {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
             for (idx = 0; idx < request->urlc; idx++) {
-                Tcl_AppendElement(interp, request->urlv[idx]);
+                Tcl_ListObjAppendElement(interp, listObj,
+                                         Tcl_NewStringObj(request->urlv[idx], -1));
             }
+            Tcl_SetObjResult(interp, listObj);
         } else if (Tcl_GetIntFromObj(interp, objv[2], &idx) != TCL_OK) {
             result = TCL_ERROR;
         } else if (idx >= 0 && idx < request->urlc) {
@@ -1691,11 +1695,16 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
             result = TCL_ERROR;
         } else {
-            hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
-            while (hPtr != NULL) {
-                Tcl_AppendElement(interp, Tcl_GetHashKey(&connPtr->files, hPtr));
-                hPtr = Tcl_NextHashEntry(&search);
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+            for (hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
+                 hPtr != NULL;
+                 hPtr = Tcl_NextHashEntry(&search)
+                 ) {
+                const char *key = Tcl_GetHashKey(&connPtr->files, hPtr);
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
             }
+            Tcl_SetObjResult(interp, listObj);
         }
         break;
 

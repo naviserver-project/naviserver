@@ -402,8 +402,6 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char  buf[100];
-
         Ns_MutexLock(&tp.queuelock);
         SetupJobDefaults();
 
@@ -413,10 +411,9 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         if (timeoutPtr != NULL) {
             tp.timeout = *timeoutPtr;
         }
-        snprintf(buf, sizeof(buf), "jobsperthread %d timeout %ld:%06ld",
-                 tp.jobsPerThread, tp.timeout.sec, tp.timeout.usec);
+        Ns_TclPrintfResult(interp, "jobsperthread %d timeout %ld:%06ld",
+                           tp.jobsPerThread, tp.timeout.sec, tp.timeout.usec);
         Ns_MutexUnlock(&tp.queuelock);
-        Tcl_AppendResult(interp, buf, NULL);
     }
 
     return result;
@@ -590,9 +587,9 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         Ns_GetTime(&jobPtr->startTime);
         if (tp.req == THREADPOOL_REQ_STOP
             || queue->req == QUEUE_REQ_DELETE) {
-            Tcl_AppendResult(interp,
-                             "The specified queue is being deleted or "
-                             "the system is stopping.", NULL);
+            Ns_TclPrintfResult(interp,
+                               "The specified queue is being deleted or "
+                             "the system is stopping.");
             FreeJob(jobPtr);
             result = TCL_ERROR;
             goto releaseQueue;
@@ -607,8 +604,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             hPtr = Tcl_CreateHashEntry(&queue->jobs, jobIdString, &isNew);
             if (isNew == 0) {
                 FreeJob(jobPtr);
-                Tcl_AppendResult(interp, "Job ", jobIdString,
-                                 " already exists", NULL);
+                Ns_TclPrintfResult(interp, "Job %s already exists", jobIdString);
                 result = TCL_ERROR;
                 goto releaseQueue;
             }
@@ -849,9 +845,8 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             jobPtr = Tcl_GetHashValue(hPtr);
             if (unlikely(jobPtr->req == JOB_WAIT)) {
                 (void)ReleaseQueue(queue, NS_FALSE);
-                Tcl_AppendResult(interp,"can't cancel job \"",
-                                 Tcl_DStringValue(&jobPtr->id),
-                                 "\", someone is waiting on it", NULL);
+                Ns_TclPrintfResult(interp,"can't cancel job \"%s\", someone is waiting on it",
+                                   Tcl_DStringValue(&jobPtr->id));
                 result = TCL_ERROR;
             }
         }
@@ -1019,17 +1014,19 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
         result = TCL_ERROR;
 
     } else {
-        const Tcl_HashEntry  *hPtr;
-        Tcl_HashSearch        search;
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
+        Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
         for (hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)
              ) {
             const char *jobIdString = Tcl_GetHashKey(&queue->jobs, hPtr);
-            Tcl_AppendElement(interp, jobIdString);
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(jobIdString, -1));
         }
         (void)ReleaseQueue(queue, NS_FALSE);
+        Tcl_SetObjResult(interp, listObj);
     }
 
     return result;
@@ -1062,16 +1059,18 @@ JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     } else {
         const Tcl_HashEntry *hPtr;
         Tcl_HashSearch       search;
-        
+        Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
+
         Ns_MutexLock(&tp.queuelock);
-        hPtr = Tcl_FirstHashEntry(&tp.queues, &search);
-        while (hPtr != NULL) {
+        for (hPtr = Tcl_FirstHashEntry(&tp.queues, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search)
+             ) {
             const Queue *queue = Tcl_GetHashValue(hPtr);
-            
-            Tcl_AppendElement(interp, queue->name);
-            hPtr = Tcl_NextHashEntry(&search);
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(queue->name, -1));
         }
         Ns_MutexUnlock(&tp.queuelock);
+        Tcl_SetObjResult(interp, listObj);
     }
 
     return result;

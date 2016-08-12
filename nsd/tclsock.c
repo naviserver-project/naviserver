@@ -65,15 +65,15 @@ static int GetSet(Tcl_Interp *interp, const char *flist, int write,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) 
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-static void AppendReadyFiles(Tcl_Interp *interp, const fd_set *setPtr, 
+static void AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj, const fd_set *setPtr, 
                              int write, const char *flist, Tcl_DString *dsPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
-static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
+static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1);
-static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
+static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1);
-static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
+static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1);
 
 static int SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
@@ -340,6 +340,7 @@ NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
         NS_SOCKET      sock;
+        Tcl_Obj       *listObj = Tcl_NewListObj(0, NULL);
         
         if (STREQ(addr, "*")) {
             addr = NULL;
@@ -350,7 +351,12 @@ NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                                Tcl_GetString(objv[1]), port);
             result = TCL_ERROR;
         } else {
-            result = EnterSock(interp, sock);
+            result = EnterSock(interp, sock, listObj);
+        }
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp, listObj);
+        } else {
+            Tcl_DecrRefCount(listObj);
         }
     }
 
@@ -388,14 +394,21 @@ NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         result = TCL_ERROR;
 
     } else {
+
         sock = Ns_SockAccept(sock, NULL, 0);
         if (sock == NS_INVALID_SOCKET) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                                   "accept failed: ",
-                                   Tcl_PosixError(interp), NULL);
+            Ns_TclPrintfResult(interp, "accept failed: %s",
+                               Tcl_PosixError(interp));
             result = TCL_ERROR;
         } else {
-            result = EnterDupedSocks(interp, sock);
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+            
+            result = EnterDupedSocks(interp, sock, listObj);
+            if (result == TCL_OK) {
+                Tcl_SetObjResult(interp, listObj);
+            } else {
+                Tcl_DecrRefCount(listObj);
+            }
         }
     }
     return result;
@@ -537,7 +550,14 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
             result = TCL_ERROR;
         } else {
-            result = EnterDupedSocks(interp, sock);
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+            result = EnterDupedSocks(interp, sock, listObj);
+            if (result == TCL_OK) {
+                Tcl_SetObjResult(interp, listObj);
+            } else {
+                Tcl_DecrRefCount(listObj);
+            }
         }
     }
     return result;
@@ -665,8 +685,9 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
                                    Tcl_PosixError(interp), NULL);
         } else {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+            
             if (sock == 0) {
-
                 /*
                  * The sets can have any random value now
                  */
@@ -681,10 +702,12 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                     FD_ZERO(ePtr);
                 }
             }
-            AppendReadyFiles(interp, rPtr, 0, dsRfd.string, &dsNbuf);
+            AppendReadyFiles(interp, listObj, rPtr, 0, dsRfd.string, &dsNbuf);
             arg -= 2;
-            AppendReadyFiles(interp, wPtr, 1, Tcl_GetString(objv[arg++]), NULL);
-            AppendReadyFiles(interp, ePtr, 0, Tcl_GetString(objv[arg++]), NULL);
+            AppendReadyFiles(interp, listObj, wPtr, 1, Tcl_GetString(objv[arg++]), NULL);
+            AppendReadyFiles(interp, listObj, ePtr, 0, Tcl_GetString(objv[arg++]), NULL);
+
+            Tcl_SetObjResult(interp, listObj);
             status = TCL_OK;
         }
     }
@@ -719,19 +742,26 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
 {
     NS_SOCKET socks[2];
     int       result;
-    
+    Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
+
+        
     if (ns_sockpair(socks) != 0) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "ns_sockpair failed:  ", 
                                Tcl_PosixError(interp), NULL);
         result = TCL_ERROR;
         
-    } else if (EnterSock(interp, socks[0]) != TCL_OK) {
+    } else if (EnterSock(interp, socks[0], listObj) != TCL_OK) {
         ns_sockclose(socks[1]);
         result = TCL_ERROR;
 
     } else {
-        result = EnterSock(interp, socks[1]);
+        result = EnterSock(interp, socks[1], listObj);
+    }
+    if (result == TCL_OK) {
+        Tcl_SetObjResult(interp, listObj);
+    } else {
+        Tcl_DecrRefCount(listObj);
     }
     return result;
 }
@@ -954,21 +984,23 @@ SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  *
  * AppendReadyFiles --
  *
- *      Find files in an fd_set that are selected and append them 
- *      to the tcl result, and also an optional passed-in dstring. 
+ *      Find files in an fd_set that are selected and append them to
+ *      the passed in list obj, and also an optional passed-in
+ *      DString.
  *
  * Results:
  *      None. 
  *
  * Side effects:
- *      Ready files will be appended to pds if not null, and also 
- *      interp result. 
+ *      Ready files will be appended to the dsPtr if not null, and also 
+ *      to the provided list.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-AppendReadyFiles(Tcl_Interp *interp, const fd_set *setPtr, int write, const char *flist,
+AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
+                 const fd_set *setPtr, int write, const char *flist,
 		 Tcl_DString *dsPtr)
 {
     int           fargc = 0;
@@ -977,6 +1009,7 @@ AppendReadyFiles(Tcl_Interp *interp, const fd_set *setPtr, int write, const char
     Tcl_DString   ds;
 
     NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(listObj != NULL);
     NS_NONNULL_ASSERT(flist != NULL);
 
     Tcl_DStringInit(&ds);
@@ -992,10 +1025,10 @@ AppendReadyFiles(Tcl_Interp *interp, const fd_set *setPtr, int write, const char
 	}
 
 	/*
-	 * Append the ready files to the tcl interp.
+	 * Append the ready files to the passed in listObj
 	 */
-    
-	Tcl_AppendElement(interp, dsPtr->string);
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(dsPtr->string, -1));
+
 	Tcl_Free((char *) fargv);
     } else {
 	Ns_Log(Error, "Can't split list '%s'", flist);
@@ -1093,7 +1126,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
  */
 
 static int
-EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
+EnterSock(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
 {
     Tcl_Channel chan;
     int result;
@@ -1109,7 +1142,8 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
         result = Tcl_SetChannelOption(interp, chan, "-translation", "binary");
         if (result == TCL_OK) {
             Tcl_RegisterChannel(interp, chan);
-            Tcl_AppendElement(interp, Tcl_GetChannelName(chan));
+            Tcl_ListObjAppendElement(interp, listObj,
+                                     Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
         }
     }
 
@@ -1117,7 +1151,7 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 }
 
 static int
-EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
+EnterDup(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
 {
     int result;
     
@@ -1128,20 +1162,20 @@ EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
         Ns_TclPrintfResult(interp, "could not dup socket: %s", ns_sockstrerror(errno));
         result = TCL_ERROR;
     } else {
-        result = EnterSock(interp, sock);
+        result = EnterSock(interp, sock, listObj);
     }
     return result;
 }
 
 static int
-EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
+EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
 {
     int result = TCL_OK;
     
     NS_NONNULL_ASSERT(interp != NULL);
 
-    if (EnterSock(interp, sock) != TCL_OK ||
-        EnterDup(interp, sock) != TCL_OK) {
+    if (EnterSock(interp, sock, listObj) != TCL_OK ||
+        EnterDup(interp, sock, listObj) != TCL_OK) {
         result = TCL_ERROR;
     }
 
@@ -1274,14 +1308,13 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
     Tcl_DString           script;
     Tcl_Obj             **objv;
     int                   result, objc;
+    Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
     interp = Ns_TclAllocateInterp(lcbPtr->server);
-    result = EnterDupedSocks(interp, sock);
+    result = EnterDupedSocks(interp, sock, listObj);
 
     if (result == TCL_OK) {
-        Tcl_Obj  *listPtr = Tcl_GetObjResult(interp);
-
-        if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) == TCL_OK 
+        if (Tcl_ListObjGetElements(interp, listObj, &objc, &objv) == TCL_OK 
             && objc == 2) {
             Tcl_DStringInit(&script);
             Tcl_DStringAppend(&script, lcbPtr->script, -1);
@@ -1297,6 +1330,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
     }
 
     Ns_TclDeAllocateInterp(interp);
+    Tcl_DecrRefCount(listObj);
 
     return NS_TRUE;
 }
@@ -1305,7 +1339,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */

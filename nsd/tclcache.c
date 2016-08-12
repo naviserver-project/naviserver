@@ -424,21 +424,25 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 int
-NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
-    const NsInterp      *itPtr = arg;
+    const NsInterp      *itPtr = clientData;
     NsServer            *servPtr = itPtr->servPtr;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
+    Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
     Ns_MutexLock(&servPtr->tcl.cachelock);
-    hPtr = Tcl_FirstHashEntry(&servPtr->tcl.caches, &search);
-    while (hPtr != NULL) {
-        Tcl_AppendElement(interp, Tcl_GetHashKey(&servPtr->tcl.caches, hPtr));
-        hPtr = Tcl_NextHashEntry(&search);
+    for (hPtr = Tcl_FirstHashEntry(&servPtr->tcl.caches, &search);
+         hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&search)
+         ) {
+        const char *key = Tcl_GetHashKey(&servPtr->tcl.caches, hPtr);
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
     }
     Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
+    Tcl_SetObjResult(interp, listObj);
     return TCL_OK;
 }
 
@@ -502,6 +506,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         result = TCL_ERROR;
 
     } else if (pattern != NULL && (exact != 0 || noGlobChars(pattern))) {
+        Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
 
         /*
          * If the provided pattern (key) contains no glob characters,
@@ -509,17 +514,17 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
          * cases, or when the option "-exact" is specified, a single hash
          * lookup is sufficient.
          */
-
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFindEntry(cPtr->cache, pattern);
         if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {
-            Tcl_AppendElement(interp, pattern);
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(pattern, -1));
         }
         Ns_CacheUnlock(cPtr->cache);
+        Tcl_SetObjResult(interp, listObj);
         
     } else {
-        Ns_DString      ds;
         Ns_CacheSearch  search;
+        Tcl_Obj        *listObj = Tcl_NewListObj(0, NULL);
         
         /*
          * We have either no pattern or the pattern contains meta
@@ -527,19 +532,18 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
          * take a while for large caches.
          */
 
-        Ns_DStringInit(&ds);
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFirstEntry(cPtr->cache, &search);
         while (entry != NULL) {
             const char *key = Ns_CacheKey(entry);
 
             if (pattern == NULL || Tcl_StringMatch(key, pattern) == 1) {
-                Tcl_AppendElement(interp, key);
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
             }
             entry = Ns_CacheNextEntry(&search);
         }
         Ns_CacheUnlock(cPtr->cache);
-        Ns_DStringFree(&ds);
+        Tcl_SetObjResult(interp, listObj);
     }
     
     return result;

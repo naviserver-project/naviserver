@@ -173,28 +173,33 @@ NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
-    const char          *pattern;
+    int result = TCL_OK;
 
     if (objc > 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
-        return TCL_ERROR;
-    }
-    pattern = (objc == 2 ? Tcl_GetString(objv[1]) : NULL);
-    Ns_MutexLock(&lock);
-    hPtr = Tcl_FirstHashEntry(&limtable, &search);
-    while (hPtr != NULL) {
-        const char *limits = Tcl_GetHashKey(&limtable, hPtr);
-
-        if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
-            Tcl_AppendElement(interp, limits);
+        result = TCL_ERROR;
+    } else {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
+        const char          *pattern = (objc == 2 ? Tcl_GetString(objv[1]) : NULL);
+        Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
+        
+        Ns_MutexLock(&lock);
+        hPtr = Tcl_FirstHashEntry(&limtable, &search);
+        while (hPtr != NULL) {
+            const char *limits = Tcl_GetHashKey(&limtable, hPtr);
+            
+            if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
+                Tcl_ListObjAppendElement(interp, listObj,
+                                         Tcl_NewStringObj(limits, -1));
+            }
+            hPtr = Tcl_NextHashEntry(&search);
         }
-        hPtr = Tcl_NextHashEntry(&search);
+        Ns_MutexUnlock(&lock);
+        Tcl_SetObjResult(interp, listObj);
     }
-    Ns_MutexUnlock(&lock);
 
-    return TCL_OK;
+    return result;
 }
 
 

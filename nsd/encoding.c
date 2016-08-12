@@ -501,12 +501,17 @@ NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
+    Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
-    hPtr = Tcl_FirstHashEntry(&charsets, &search);
-    while (hPtr != NULL) {
-        Tcl_AppendElement(interp, Tcl_GetHashKey(&charsets, hPtr));
-        hPtr = Tcl_NextHashEntry(&search);
+    for (hPtr = Tcl_FirstHashEntry(&charsets, &search);
+         hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&search)
+         ) {
+        const char *key = Tcl_GetHashKey(&charsets, hPtr);
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
     }
+    Tcl_SetObjResult(interp, listObj);
+
     return TCL_OK;
 }
 

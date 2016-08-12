@@ -462,70 +462,73 @@ NsTclCryptObjCmd(ClientData UNUSED(arg), Tcl_Interp *interp, int objc, Tcl_Obj *
 int
 NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    char       *s, *e, *he, save;
-    const char *p;
-
+    int result = TCL_OK;
+    
     if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         argv[0], " html\"", (char *) NULL);
-        return TCL_ERROR;
-    }
-
-    p = argv[1];
-    while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
-        ++s;
-        *e = '\0';
-        while (*s != '\0' && CHARTYPE(space, *s) != 0) {
+        Ns_TclPrintfResult(interp, "wrong # args: should be \"%s html\"", argv[0]);
+        result = TCL_ERROR;
+    } else {
+        char       *s, *e;
+        const char *p = argv[1];
+        Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
+        
+        while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
             ++s;
-        }
-        if ((*s == 'a' || *s == 'A') && CHARTYPE(space, s[1]) != 0) {
-            ++s;
-            while (*s != '\0') {
-                if (strncasecmp(s, "href", 4u) == 0) {
-                    s += 4;
-                    while (*s != '\0' && CHARTYPE(space, *s) != 0) {
-                        ++s;
-                    }
-                    if (*s == '=') {
-                        ++s;
+            *e = '\0';
+            while (*s != '\0' && CHARTYPE(space, *s) != 0) {
+                ++s;
+            }
+            if ((*s == 'a' || *s == 'A') && CHARTYPE(space, s[1]) != 0) {
+                ++s;
+                while (*s != '\0') {
+                    if (strncasecmp(s, "href", 4u) == 0) {
+                        s += 4;
                         while (*s != '\0' && CHARTYPE(space, *s) != 0) {
                             ++s;
                         }
-                        he = NULL;
-                        if (*s == '\'' || *s == '"') {
-                            he = strchr(s+1, INTCHAR(*s));
+                        if (*s == '=') {
+                            char save, *he;
+                            
+                            ++s;
+                            while (*s != '\0' && CHARTYPE(space, *s) != 0) {
+                                ++s;
+                            }
+                            he = NULL;
+                            if (*s == '\'' || *s == '"') {
+                                he = strchr(s+1, INTCHAR(*s));
+                                ++s;
+                            }
+                            if (he == NULL) {
+                                assert(s != NULL);
+                                he = s;
+                                while (*he != '\0' && CHARTYPE(space, *he) == 0) {
+                                    ++he;
+                                }
+                            }
+                            save = *he;
+                            *he = '\0';
+                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(s, -1));
+                            *he = save;
+                            break;
+                        }
+                    }
+                    if (*s == '\'' || *s == '\"') {
+                        while (*s != '\0' && (*s != '\'' || *s != '\"')) {
                             ++s;
                         }
-                        if (he == NULL) {
-                            assert(s != NULL);
-                            he = s;
-                            while (*he != '\0' && CHARTYPE(space, *he) == 0) {
-                                ++he;
-                            }
-                        }
-                        save = *he;
-                        *he = '\0';
-                        Tcl_AppendElement(interp, s);
-                        *he = save;
-                        break;
+                        continue;
                     }
-                }
-                if (*s == '\'' || *s == '\"') {
-                    while (*s != '\0' && (*s != '\'' || *s != '\"')) {
+                    if (*s != '\0') {
                         ++s;
                     }
-                    continue;
-                }
-                if (*s != '\0') {
-                    ++s;
                 }
             }
+            *e++ = '>';
+            p = e;
         }
-        *e++ = '>';
-        p = e;
+        Tcl_SetObjResult(interp, listObj);
     }
-
-    return TCL_OK;
+    return result;
 }
 
 
