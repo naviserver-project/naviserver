@@ -483,8 +483,8 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
                 }
             }
             if (status != NS_OK) {
-                Tcl_AppendResult(interp, "could not roll \"", logPtr->file,
-                                 "\": ", Tcl_PosixError(interp), NULL);
+                Ns_TclPrintfResult(interp, "could not roll \"%s\": %s",
+                                   logPtr->file, Tcl_PosixError(interp));
             }
             Ns_MutexUnlock(&logPtr->lock);
             if (status != NS_OK) {

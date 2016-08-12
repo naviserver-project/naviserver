@@ -227,6 +227,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
     Tcl_Obj             *objPtr;
+    int                  result = TCL_OK;
 
     static const char *const opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",
@@ -501,51 +502,49 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             if (unlikely(objc != 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId index");
-                return TCL_ERROR;
-            }
-            if (unlikely(Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK)) {
-                return TCL_ERROR;
-            }
-            if (unlikely(i < 0)) {
-                Tcl_AppendResult(interp, "invalid index \"",
-                                 Tcl_GetString(objv[3]), "\": must be >= 0", NULL);
-                return TCL_ERROR;
-            }
-            if (unlikely((size_t)i >= Ns_SetSize(set))) {
-                Tcl_AppendResult(interp, "invalid index \"",
-                                 Tcl_GetString(objv[3]),
-                                 "\": beyond range of set fields", NULL);
-                return TCL_ERROR;
-            }
-            switch (opt) {
-            case SValueIdx:
-                val = Ns_SetValue(set, i);
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
-                break;
+                result = TCL_ERROR;
 
-            case SIsNullIdx:
-                val = Ns_SetValue(set, i);
-                objPtr = Tcl_NewBooleanObj((val != NULL) ? 0 : 1);
-                Tcl_SetObjResult(interp, objPtr);
-                break;
+            } else if (unlikely(Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK)) {
+                result = TCL_ERROR;
 
-            case SKeyIdx:
-                key = Ns_SetKey(set, i);
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(key, -1));
-                break;
+            } else if (unlikely(i < 0)) {
+                Ns_TclPrintfResult(interp, "invalid index %d: must be >= 0", i);
+                result = TCL_ERROR;
 
-            case SDeleteIdx:
-                Ns_SetDelete(set, i);
-                break;
+            } else if (unlikely((size_t)i >= Ns_SetSize(set))) {
+                Ns_TclPrintfResult(interp, "invalid index %d: beyond range of set fields", i);
+                result = TCL_ERROR;
+            } else {
+                switch (opt) {
+                case SValueIdx:
+                    val = Ns_SetValue(set, i);
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
+                    break;
 
-            case STruncateIdx:
-                Ns_SetTrunc(set, (size_t)i);
-                break;
+                case SIsNullIdx:
+                    val = Ns_SetValue(set, i);
+                    objPtr = Tcl_NewBooleanObj((val != NULL) ? 0 : 1);
+                    Tcl_SetObjResult(interp, objPtr);
+                    break;
 
-            default:
-                /* unexpected value */
-                assert(opt && 0);
-                break;
+                case SKeyIdx:
+                    key = Ns_SetKey(set, i);
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(key, -1));
+                    break;
+
+                case SDeleteIdx:
+                    Ns_SetDelete(set, i);
+                    break;
+
+                case STruncateIdx:
+                    Ns_SetTrunc(set, (size_t)i);
+                    break;
+
+                default:
+                    /* unexpected value */
+                    assert(opt && 0);
+                    break;
+                }
             }
             break;
         }
@@ -632,7 +631,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -664,32 +663,34 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *
     assert(arg != NULL);
 
     if (argc != 3 && argc != 4) {
-        Tcl_AppendResult(interp, "wrong # of args: should be \"",
-            argv[0], " set header ?tolower|toupper|preserve?\"", NULL);
-        return TCL_ERROR;
-    }
-    if (LookupSet(itPtr, argv[1], NS_FALSE, &set) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    assert(set != NULL);
+        Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s"
+                           " set header ?tolower|toupper|preserve?\"", argv[0]);
+        result = TCL_ERROR;
 
-    if (argc < 4) {
-        disp = ToLower;
-    } else if (STREQ(argv[3], "toupper")) {
-        disp = ToUpper;
-    } else if (STREQ(argv[3], "tolower")) {
-        disp = ToLower;
-    } else if (STREQ(argv[3], "preserve")) {
-        disp = Preserve;
+    } else if (LookupSet(itPtr, argv[1], NS_FALSE, &set) != TCL_OK) {
+        result = TCL_ERROR;
+
     } else {
-        Ns_TclPrintfResult(interp, "unknown case disposition \"%s\": should be toupper, tolower, or preserve", 
-                           argv[3]);
-        result = TCL_ERROR;
-        disp = Preserve;  /* silence code checker */
-    }
-    if ((result == TCL_OK) && (Ns_ParseHeader(set, argv[2], disp) != NS_OK)) {
-        Ns_TclPrintfResult(interp, "invalid header: %s", argv[2]);
-        result = TCL_ERROR;
+        assert(set != NULL);
+
+        if (argc < 4) {
+            disp = ToLower;
+        } else if (STREQ(argv[3], "toupper")) {
+            disp = ToUpper;
+        } else if (STREQ(argv[3], "tolower")) {
+            disp = ToLower;
+    } else if (STREQ(argv[3], "preserve")) {
+            disp = Preserve;
+        } else {
+            Ns_TclPrintfResult(interp, "unknown case disposition \"%s\": should be toupper, tolower, or preserve", 
+                               argv[3]);
+            result = TCL_ERROR;
+            disp = Preserve;  /* silence code checker */
+        }
+        if ((result == TCL_OK) && (Ns_ParseHeader(set, argv[2], disp) != NS_OK)) {
+            Ns_TclPrintfResult(interp, "invalid header: %s", argv[2]);
+            result = TCL_ERROR;
+        }
     }
     return result;
 }

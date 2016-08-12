@@ -1876,7 +1876,7 @@ FreeCache(void *arg)
 static int
 GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
 {
-    int            i;
+    int result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
@@ -1892,6 +1892,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
         if (hPtr != NULL) {
             *addrPtrPtr = Tcl_GetHashValue(hPtr);
         } else {
+            int  i;
             /*
              * Check for a legacy integer severity.
              */
@@ -1899,22 +1900,27 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
 		&& i < severityMaxCount) {
 		*addrPtrPtr = INT2PTR(i);
             } else {
-                Tcl_AppendResult(interp, "unknown severity: \"",
-                                 Tcl_GetString(objPtr),
-                                 "\": should be one of: ", NULL);
+                Tcl_DString ds;
+
+                Tcl_DStringInit(&ds);
+                Ns_DStringPrintf(&ds, "unknown severity: \"%s\":"
+                                 " should be one of: ", Tcl_GetString(objPtr));
                 for (i = 0; i < severityIdx; i++) {
-                    Tcl_AppendResult(interp, severityConfig[i].label, " ", NULL);
+                    Ns_DStringAppend(&ds, severityConfig[i].label);
                 }
-                return TCL_ERROR;
+                Tcl_DStringResult(interp, &ds);
+                result = TCL_ERROR;                
             }
         }
-        /*
-         * Stash the severity for future speedy lookup.
-         */
-        Ns_TclSetOpaqueObj(objPtr, severityType, *addrPtrPtr);
+        if (result == TCL_OK) {
+            /*
+             * Stash the severity for future speedy lookup.
+             */
+            Ns_TclSetOpaqueObj(objPtr, severityType, *addrPtrPtr);
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

@@ -1017,8 +1017,8 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
             return TCL_ERROR;
         }
         if (specLen == 0 || specLen > 2) {
-            Tcl_AppendResult(interp, "wrong # fields in argument specifier \"",
-                             Tcl_GetString(specv[i]), "\"", NULL);
+            Ns_TclPrintfResult(interp, "wrong # fields in argument specifier \"%s\"",
+                               Tcl_GetString(specv[i]));
             FreeSpecs(optSpec);
             return TCL_ERROR;
         }
@@ -1042,7 +1042,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
             return TCL_ERROR;
         }
         if (key[0] == '-' && argSpec != NULL) {
-            Tcl_AppendResult(interp, "expected argument \"", key, "\"", NULL);
+            Ns_TclPrintfResult(interp, "expected argument \"%s\"", key);
             FreeSpecs(optSpec);
             return TCL_ERROR;
         }

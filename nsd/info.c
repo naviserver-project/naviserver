@@ -802,32 +802,35 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
  */
 
 int
-NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclLibraryCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     const char     *lib;
-    Ns_DString      ds;
+    int             result = TCL_OK;
 
     if (argc != 2 && argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 argv[0], " library ?module?\"", NULL);
-	return TCL_ERROR;
-    }
-    if (STREQ(argv[1], "private")) {
+	Ns_TclPrintfResult(interp,
+                           "wrong # args: should be \"%s library ?module?\"",
+                           argv[0]);
+	result = TCL_ERROR;
+
+    } else if (STREQ(argv[1], "private")) {
         lib = itPtr->servPtr->tcl.library;
     } else if (STREQ(argv[1], "shared")) {
         lib = nsconf.tcl.sharedlibrary;
     } else {
-	Tcl_AppendResult(interp, "unknown library \"",
-			 argv[1], "\": should be private or shared", NULL);
-	return TCL_ERROR;
+	Ns_TclPrintfResult(interp, "unknown library \"%s\":"
+                           " should be private or shared", argv[1]);
+	result = TCL_ERROR;
     }
-    Ns_DStringInit(&ds);
-    Ns_MakePath(&ds, lib, argv[2], NULL);
-    Tcl_DStringResult(interp, &ds);
-    Ns_DStringFree(&ds);
+    if (result == TCL_OK) {
+        Ns_DString      ds;
 
-    return TCL_OK;
+        Ns_DStringInit(&ds);
+        Ns_MakePath(&ds, lib, argv[2], NULL);
+        Tcl_DStringResult(interp, &ds);
+    }
+    return result;
 }
 
 

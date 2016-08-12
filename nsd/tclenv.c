@@ -264,11 +264,12 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 {
     char   *s;
     size_t  len, nameLength, valueLength;
+    int     result = TCL_OK;
 
 #ifdef HAVE_UNSETENV
     if (value == NULL) {
         unsetenv(name);
-        return TCL_OK;
+        return result;
     }
 #endif
 
@@ -288,45 +289,40 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
     if (s == NULL) {
         Tcl_SetResult(interp, "could not allocate memory for new env entry",
                       TCL_STATIC);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+
+        /*
+         * This complication for value == NULL below is needed on 
+         * some platforms (Solaris) which do not have unsetenv()
+         * and are picky if we try to pass a value to putenv not
+         * conforming to the "name=value" format.
+         *
+         * This trick will of course work only for platforms which
+         * conform to Single Unix Spec and actually uses the storage
+         * passed to putenv() to hold the environ entry.
+         * However, there are some libc implementations (notably 
+         * recent BSDs) that do not obey SUS but copy the presented
+         * string. This method fails on such platforms.
+         */
+
+        memcpy(s, name, nameLength);
+        *(s + nameLength) = '=';
+        *(s + nameLength + 1u) = '\0';
+
+        if (value != NULL) {
+            strncat(s + nameLength + 1, value, valueLength);
+        }
+
+        if (putenv(s) != 0) {
+            Ns_TclPrintfResult(interp, "could not put environment entry \"%s\": %s",
+                               s, Tcl_PosixError(interp));
+            free(s);
+            result = TCL_ERROR;
+        }
     }
-
-    /*
-     * This complication for value == NULL below is needed on 
-     * some platforms (Solaris) which do not have unsetenv()
-     * and are picky if we try to pass a value to putenv not
-     * conforming to the "name=value" format.
-     *
-     * This trick will of course work only for platforms which
-     * conform to Single Unix Spec and actually uses the storage
-     * passed to putenv() to hold the environ entry.
-     * However, there are some libc implementations (notably 
-     * recent BSDs) that do not obey SUS but copy the presented
-     * string. This method fails on such platforms.
-     */
-
-    memcpy(s, name, nameLength);
-    *(s + nameLength) = '=';
-    *(s + nameLength + 1u) = '\0';
-
-    if (value != NULL) {
-        strncat(s + nameLength + 1, value, valueLength);
-    }
-
-    if (putenv(s) != 0) {
-        Tcl_AppendResult(interp, "could not put environment entry \"",
-                         s, "\": ", Tcl_PosixError(interp), NULL);
-        free(s);
-        return TCL_ERROR;
-    }
-#if 0    
-    if (value == NULL) {
-        strncpy(s, "=", 2u);
-        putenv(s);
-    }
-#endif
-
-    return TCL_OK;
+    
+    return result;
 }
 
 /*
