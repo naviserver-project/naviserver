@@ -125,36 +125,38 @@ NsTclInitSpecType()
 static int
 GetOptIndexObjvSpec(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
 {
-    const Ns_ObjvSpec *entryPtr;
-    const char        *key;
-    int                idx, result = TCL_ERROR;
+    const char *key;
+    int         result = TCL_ERROR;
 
     NS_NONNULL_ASSERT(obj != NULL);
     NS_NONNULL_ASSERT(tablePtr != NULL);
     NS_NONNULL_ASSERT(idxPtr != NULL);
 
     key = Tcl_GetString(obj);
-    if (*key != '-') {
-	return TCL_ERROR;
-    }
+    if (*key == '-') {
+        const Ns_ObjvSpec *entryPtr;
+        int                idx;
 
-    for (entryPtr = tablePtr, idx = 0; entryPtr->key != NULL;  entryPtr++, idx++) {
-	const char *p1, *p2;
+        for (entryPtr = tablePtr, idx = 0; entryPtr->key != NULL;  entryPtr++, idx++) {
+            const char *p1, *p2;
 
-        for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
-            if (*p1 == '\0') {
-		/*
-		 * Both words are at their ends. Match is successful.
-		 */
-                *idxPtr = idx;
-		return TCL_OK;
+            for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
+                if (*p1 == '\0') {
+                    /*
+                     * Both words are at their ends. Match is successful.
+                     */
+                    *idxPtr = idx;
+                    result = TCL_OK;
+                    break;
+                }
             }
-        }
-        if (*p1 == '\0') {
-            /*
-             * The value is an abbreviation for this entry.
-             */
-	    break;
+            if (*p1 == '\0') {
+                /*
+                 * The value is an abbreviation for this entry or was
+                 * matched in the inner loop.
+                 */
+                break;
+            }
         }
     }
 
@@ -1369,6 +1371,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 {
     size_t      len;
     const char *value;
+    int         result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -1385,18 +1388,21 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
         value++;
         len -= 2u;
 
-        if (Tcl_EvalEx(interp, value, (int)len, 0) == TCL_ERROR) {
-            return TCL_ERROR;
+        result = Tcl_EvalEx(interp, value, (int)len, 0);
+        if (result == TCL_OK) {
+            valueObj = Tcl_GetObjResult(interp);
         }
-        valueObj = Tcl_GetObjResult(interp);
     }
 
-    if (Tcl_SetVar2Ex(interp, key, NULL, valueObj,
-                      TCL_LEAVE_ERR_MSG) == NULL) {
-        return TCL_ERROR;
+    if (likely(result == TCL_OK)) {
+        if (Tcl_SetVar2Ex(interp, key, NULL, valueObj,
+                          TCL_LEAVE_ERR_MSG) == NULL) {
+            result = TCL_ERROR;
+        } else {
+            Tcl_ResetResult(interp);
+        }
     }
-    Tcl_ResetResult(interp);
-    return TCL_OK;
+    return result;
 }
 
 

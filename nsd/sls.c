@@ -227,17 +227,16 @@ Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
 const char *
 Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
 {
-    Tcl_HashTable       *tblPtr;
-    const Tcl_HashEntry *hPtr;
-    const char          *value = NULL;
+    Tcl_HashTable *tblPtr;
+    const char    *value = NULL;
 
     tblPtr = Ns_SlsGet(&kslot, sock);
-    if (tblPtr == NULL) {
-        return NULL;
-    }
-    hPtr = Tcl_FindHashEntry(tblPtr, key);
-    if (hPtr != NULL) {
-        value = Tcl_GetHashValue(hPtr);
+    if (tblPtr != NULL) {
+        const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tblPtr, key);
+        
+        if (hPtr != NULL) {
+            value = Tcl_GetHashValue(hPtr);
+        }
     }
     return value;
 }
@@ -263,21 +262,22 @@ Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
 char *
 Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
 {
-    Tcl_HashTable        *tblPtr;
-    Tcl_HashSearch        search;
-    const Tcl_HashEntry  *hPtr;
+    Tcl_HashTable *tblPtr;
+    char          *value = NULL;
 
     tblPtr = Ns_SlsGet(&kslot, sock);
-    if (tblPtr == NULL) {
-        return NULL;
+    if (tblPtr != NULL) {
+        Tcl_HashSearch        search;
+        const Tcl_HashEntry  *hPtr = Tcl_FirstHashEntry(tblPtr, &search);
+
+        while (hPtr != NULL) {
+            Ns_DStringAppendElement(dest, Tcl_GetHashKey(tblPtr, hPtr));
+            Ns_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        value = Ns_DStringValue(dest);
     }
-    hPtr = Tcl_FirstHashEntry(tblPtr, &search);
-    while (hPtr != NULL) {
-        Ns_DStringAppendElement(dest, Tcl_GetHashKey(tblPtr, hPtr));
-        Ns_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
-        hPtr = Tcl_NextHashEntry(&search);
-    }
-    return Ns_DStringValue(dest);
+    return value;
 }
 
 
@@ -336,8 +336,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     const Ns_Conn *conn;
     Ns_Sock       *sock = NULL;
     Ns_DString     ds;
-    const char    *data;
-    int            cmd;
+    int            cmd, result = TCL_OK;
 
     static const char *const cmds[] = {
         "array", "get", "set", "unset", NULL
@@ -373,35 +372,39 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     case CGetIdx:
         if (objc < 3 || objc > 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "key ?default?");
-            return TCL_ERROR;
-        }
-        data = Ns_SlsGetKeyed(sock, Tcl_GetString(objv[2]));
-        if (data == NULL) {
-            if (objc == 4) {
-                Tcl_SetObjResult(interp, objv[3]);
-            } else {
-                Tcl_SetResult(interp, "key does not exist and no default given", TCL_STATIC);
-                return TCL_ERROR;
-            }
+            result = TCL_ERROR;
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+            const char *data = Ns_SlsGetKeyed(sock, Tcl_GetString(objv[2]));
+            
+            if (data == NULL) {
+                if (objc == 4) {
+                    Tcl_SetObjResult(interp, objv[3]);
+                } else {
+                    Tcl_SetResult(interp, "key does not exist and no default given", TCL_STATIC);
+                    result =  TCL_ERROR;
+                }
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+            }
         }
         break;
 
     case CSetIdx:
         if (objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "key value");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            Ns_SlsSetKeyed(sock, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
         }
-        Ns_SlsSetKeyed(sock, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
         break;
 
     case CUnsetIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "key");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            Ns_SlsUnsetKeyed(sock, Tcl_GetString(objv[2]));
         }
-        Ns_SlsUnsetKeyed(sock, Tcl_GetString(objv[2]));
         break;
 
     default:
@@ -410,7 +413,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         break;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

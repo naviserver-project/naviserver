@@ -344,18 +344,19 @@ done:
 const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
 {
-    size_t skip;
+    const char *result = NULL;
 
     NS_NONNULL_ASSERT(request != NULL);
 
-    if (n > request->urlc) {
-        return NULL;
+    if (n <= request->urlc) {
+        size_t skip = 0u;
+        
+        while (--n >= 0) {
+            skip += strlen(request->urlv[n]) + 1u;
+        }
+        result = (request->url + skip);
     }
-    skip = 0u;
-    while (--n >= 0) {
-        skip += strlen(request->urlv[n]) + 1u;
-    }
-    return (request->url + skip);
+    return result;
 }
 
 
@@ -712,7 +713,7 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
     encodingStr = strstr(encodingString, encodingFormat);
 
     if (encodingStr != NULL) {
-	int len = 0;
+	int         len = 0;
 	const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
 
 	if (qValueString != NULL) {
@@ -720,11 +721,11 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
 	} else {
 	    *qValue = 1.0;
 	}
-	return encodingStr;
+
+    } else {
+        *qValue = -1.0;
     }
-    
-    *qValue = -1.0;
-    return NULL;
+    return encodingStr;
 }
 
 

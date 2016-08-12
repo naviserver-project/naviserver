@@ -40,7 +40,7 @@
  * Local functions defined in this file
  */
 
-static int WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
+static bool WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
 static void SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
@@ -98,13 +98,10 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
  */
 
 int
-NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRunOnceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp       *itPtr = arg;
     const char           *script;
-    int                   isNew, global = (int)NS_FALSE;
-    static Tcl_HashTable  runTable;
-    static int            initialized = (int)NS_FALSE;
+    int                   global = (int)NS_FALSE, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
         {"-global", Ns_ObjvBool,  &global, INT2PTR(NS_TRUE)},
@@ -115,24 +112,31 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         {"script", Ns_ObjvString, &script, NULL},
         {NULL, NULL, NULL, NULL}
     };
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        const NsInterp       *itPtr = clientData;
+        int                   isNew;
+        static Tcl_HashTable  runTable;
+        static int            initialized = (int)NS_FALSE;
+
+        Ns_MasterLock();
+        if (initialized == 0) {
+            Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
+            initialized = (int)NS_TRUE;
+        }
+        (void) Tcl_CreateHashEntry((global != (int)NS_FALSE) ? &runTable :
+                                   &itPtr->servPtr->tcl.runTable, script, &isNew);
+        Ns_MasterUnlock();
+        
+        if (isNew != 0) {
+            result = Tcl_Eval(interp, script);
+        }
     }
 
-    Ns_MasterLock();
-    if (initialized == 0) {
-        Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
-        initialized = (int)NS_TRUE;
-    }
-    (void) Tcl_CreateHashEntry((global != (int)NS_FALSE) ? &runTable :
-                               &itPtr->servPtr->tcl.runTable, script, &isNew);
-    Ns_MasterUnlock();
-
-    if (isNew != 0) {
-        return Tcl_Eval(interp, script);
-    }
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -342,64 +346,65 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 int
 NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    int         intag;     /* flag to see if are we inside a tag */
-    int         intspec;   /* flag to see if we are inside a special char */
-    char       *inString;  /* copy of input string */
-    char       *outPtr;    /* moving pointer to output string */
-    const char *inPtr;     /* moving pointer to input string */
+    int         result = NS_OK;
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # of args:  should be \"",
                          argv[0], " page\"", NULL);
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
+        
+    } else {
+        bool        intag;     /* flag to see if are we inside a tag */
+        bool        intspec;   /* flag to see if we are inside a special char */
+        char       *inString;  /* copy of input string */
+        char       *outPtr;    /* moving pointer to output string */
+        const char *inPtr;     /* moving pointer to input string */
 
-    /*
-     * Make a copy of the input and point the moving and output ptrs to it.
-     */
-    inString = ns_strdup(argv[1]);
-    inPtr    = inString;
-    outPtr   = inString;
-    intag    = 0;
-    intspec  = 0;
+        /*
+         * Make a copy of the input and point the moving and output ptrs to it.
+         */
+        inString = ns_strdup(argv[1]);
+        inPtr    = inString;
+        outPtr   = inString;
+        intag    = NS_FALSE;
+        intspec  = NS_FALSE;
 
-    while (*inPtr != '\0') {
+        while (*inPtr != '\0') {
 
-        if (*inPtr == '<') {
-            intag = 1;
+            if (*inPtr == '<') {
+                intag = 1;
 
-        } else if ((intag != 0) && (*inPtr == '>')) {
-	    /* inside a tag that closes */
-            intag = 0;
+            } else if (intag && (*inPtr == '>')) {
+                /* inside a tag that closes */
+                intag = NS_FALSE;
 
-        } else if ((intspec != 0) && (*inPtr == ';')) {
-	    /* inside a special character that closes */
-            intspec = 0;
+            } else if (intspec && (*inPtr == ';')) {
+                /* inside a special character that closes */
+                intspec = NS_FALSE;
 
-        } else if ((intag == 0) && (intspec == 0)) {
-	    /* regular text */
+            } else if ((!intag) && (!intspec)) {
+                /* regular text */
 
-            if (*inPtr == '&') {
-		/* starting a new special character */
-		intspec=WordEndsInSemi(inPtr);
-	    }
+                if (*inPtr == '&') {
+                    /* starting a new special character */
+                    intspec = WordEndsInSemi(inPtr);
+                }
 
-            if (intspec == 0) {
-		/* incr pointer only if we're not in something htmlish */
-                *outPtr++ = *inPtr;
-	    }
+                if (!intspec) {
+                    /* incr pointer only if we're not in something htmlish */
+                    *outPtr++ = *inPtr;
+                }
+            }
+            ++inPtr;
         }
-        ++inPtr;
+
+        /* null-terminator */
+        *outPtr = '\0';
+
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
+        ns_free(inString);
     }
-
-    /* null-terminator */
-    *outPtr = '\0';
-
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
-
-    ns_free(inString);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -422,17 +427,19 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
 int
 NsTclCryptObjCmd(ClientData UNUSED(arg), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char buf[NS_ENCRYPT_BUFSIZE];
+    int  result = TCL_OK;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "key salt");
-        return TCL_ERROR;
-    }
-    Tcl_SetResult(interp,
-                  Ns_Encrypt(Tcl_GetString(objv[1]),
-                             Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
+        result = TCL_ERROR;
+    } else {
+        char buf[NS_ENCRYPT_BUFSIZE];
 
-    return TCL_OK;
+        Tcl_SetResult(interp,
+                      Ns_Encrypt(Tcl_GetString(objv[1]),
+                                 Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
+    }
+    return result;
 }
 
 
@@ -541,23 +548,24 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
 int
 NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const unsigned char *bytes;
-    char          *result;
-    int            nbytes = 0;
-    size_t         size;
+
+    int result = TCL_OK;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        char                *buffer;
+        size_t               size;
+        int                  nbytes = 0;
+        const unsigned char *bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
+
+        size = (size_t)nbytes;
+        buffer = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
+        (void)Ns_HtuuEncode(bytes, size, buffer);
+        Tcl_SetResult(interp, buffer, (Tcl_FreeProc *) ns_free);
     }
-
-    bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
-    size = (size_t)nbytes;
-    result = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
-    (void)Ns_HtuuEncode(bytes, size, result);
-    Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -580,25 +588,27 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int            len;
-    size_t         size;
-    const char    *chars;
-    unsigned char *decoded;
+    int result = TCL_OK;
+
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
+    } else {
+        int            len;
+        size_t         size;
+        const char    *chars = Tcl_GetStringFromObj(objv[1], &len);
+        unsigned char *decoded;
+
+        size = (size_t)len + 3u;
+        decoded = (unsigned char *)ns_malloc(size);
+        size = Ns_HtuuDecode(chars, decoded, size);
+        decoded[size] = UCHAR('\0');
+        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
+        ns_free(decoded);
     }
 
-    chars = Tcl_GetStringFromObj(objv[1], &len);
-    size = (size_t)len + 3u;
-    decoded = (unsigned char *)ns_malloc(size);
-    size = Ns_HtuuDecode(chars, decoded, size);
-    decoded[size] = UCHAR('\0');
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
-    ns_free(decoded);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -647,7 +657,7 @@ NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 WordEndsInSemi(const char *ip)
 {
     NS_NONNULL_ASSERT(ip != NULL);
@@ -661,11 +671,7 @@ WordEndsInSemi(const char *ip)
     while((*ip != '\0') && (*ip != ' ') && (*ip != ';') && (*ip != '&')) {
         ip++;
     }
-    if (*ip == ';') {
-        return 1;
-    } else {
-        return 0;
-    }
+    return (*ip == ';');
 }
 
 /*
@@ -1094,27 +1100,28 @@ char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUppe
 int
 NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_CtxSHA1     ctx;
-    unsigned char  digest[20];
-    char           digestChars[41];
-    const char    *str;
-    int            length;
+    int result = TCL_OK;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
-        return TCL_ERROR;
+        result = TCL_ERROR;
+        
+    } else {
+        unsigned char  digest[20];
+        char           digestChars[41];
+        Ns_CtxSHA1     ctx;
+        int            length;
+        const char    *str = Ns_GetBinaryString(objv[1], &length);
+
+        Ns_CtxSHAInit(&ctx);
+        Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
+        Ns_CtxSHAFinal(&ctx, digest);
+
+        Ns_HexString(digest, digestChars, 20, NS_TRUE);
+        Tcl_AppendResult(interp, digestChars, NULL);
     }
-
-    str = Ns_GetBinaryString(objv[1], &length);
-
-    Ns_CtxSHAInit(&ctx);
-    Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
-    Ns_CtxSHAFinal(&ctx, digest);
-
-    Ns_HexString(digest, digestChars, 20, NS_TRUE);
-    Tcl_AppendResult(interp, digestChars, NULL);
-
-    return TCL_OK;
+    
+    return result;
 }
 
 
@@ -1140,30 +1147,30 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 int
 NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
+    int         result = TCL_OK;
     struct stat st;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
-        return TCL_ERROR;
+        result = TCL_ERROR;
     }
     if (stat(Tcl_GetString(objv[1]), &st) != 0) {
         Tcl_SetResult(interp, "0", TCL_STATIC);
-        return TCL_OK;
-    }
-    if (objc > 2) {
-        const char *name = Tcl_GetString(objv[2]);
+    } else {
+        if (objc > 2) {
+            const char *name = Tcl_GetString(objv[2]);
         
-        (void)Tcl_SetVar2Ex(interp, name, "dev",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_dev), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "ino",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewWideIntObj((Tcl_WideInt)st.st_nlink), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "uid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_uid), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "gid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_gid), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "size",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_size), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_atime), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_ctime), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_mtime), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "mode",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_mode), 0);
-        (void)Tcl_SetVar2Ex(interp, name, "type",  Tcl_NewStringObj(
+            (void)Tcl_SetVar2Ex(interp, name, "dev",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_dev), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "ino",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewWideIntObj((Tcl_WideInt)st.st_nlink), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "uid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_uid), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "gid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_gid), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "size",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_size), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_atime), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_ctime), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_mtime), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "mode",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_mode), 0);
+            (void)Tcl_SetVar2Ex(interp, name, "type",  Tcl_NewStringObj(
                   (S_ISREG(st.st_mode) ? "file" :
                         S_ISDIR(st.st_mode) ? "directory" :
 #ifdef S_ISCHR
@@ -1182,9 +1189,10 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                   S_ISSOCK(st.st_mode) ? "socket" :
 #endif
                    ""), -1), 0);
+        }
+        Tcl_SetResult(interp, "1", TCL_STATIC);
     }
-    Tcl_SetResult(interp, "1", TCL_STATIC);
-    return TCL_OK;
+    return result;
 }
 
 /*
