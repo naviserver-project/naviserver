@@ -349,8 +349,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
     int         result = NS_OK;
 
     if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # of args:  should be \"",
-                         argv[0], " page\"", NULL);
+        Ns_TclPrintfResult(interp, "wrong # of args:  should be \"%s page\"", argv[0]);
         result = TCL_ERROR;
         
     } else {
@@ -1121,7 +1120,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         Ns_CtxSHAFinal(&ctx, digest);
 
         Ns_HexString(digest, digestChars, 20, NS_TRUE);
-        Tcl_AppendResult(interp, digestChars, NULL);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, 40));
     }
     
     return result;
@@ -1524,7 +1523,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     Ns_CtxMD5Final(&ctx, digest);
 
     Ns_HexString(digest, digestChars, 16, NS_TRUE);
-    Tcl_AppendResult(interp, digestChars, NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, 32));
 
     return TCL_OK;
 }

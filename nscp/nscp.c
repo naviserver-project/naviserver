@@ -310,31 +310,36 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
 static bool
 AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
-    Mod       *modPtr = arg;
-    Sess      *sessPtr;
-    socklen_t  len;
+    bool success = NS_TRUE;
 
     if (why == (unsigned int)NS_SOCK_EXIT) {
 	Ns_Log(Notice, "nscp: shutdown");
 	(void )ns_sockclose(sock);
-	return NS_FALSE;
-    }
+	success = NS_FALSE;
 
-    sessPtr = ns_malloc(sizeof(Sess));
-    sessPtr->modPtr = modPtr;
-    len = (socklen_t)sizeof(struct sockaddr_in);
-    sessPtr->sock = Ns_SockAccept(sock, (struct sockaddr *) &sessPtr->sa, &len);
-    if (sessPtr->sock == NS_INVALID_SOCKET) {
-	Ns_Log(Error, "nscp: accept() failed: %s",
-	       ns_sockstrerror(ns_sockerrno));
-	ns_free(sessPtr);
     } else {
-        static int next = 0;
+        Mod       *modPtr = arg;
+        Sess      *sessPtr;
+        socklen_t  len;
 
-	sessPtr->id = ++next;
-	Ns_ThreadCreate(EvalThread, sessPtr, 0, NULL);
+        sessPtr = ns_malloc(sizeof(Sess));
+        sessPtr->modPtr = modPtr;
+        len = (socklen_t)sizeof(struct sockaddr_in);
+        sessPtr->sock = Ns_SockAccept(sock, (struct sockaddr *) &sessPtr->sa, &len);
+        if (sessPtr->sock == NS_INVALID_SOCKET) {
+            Ns_Log(Error, "nscp: accept() failed: %s",
+                   ns_sockstrerror(ns_sockerrno));
+            ns_free(sessPtr);
+            success = NS_FALSE;
+
+        } else {
+            static int next = 0;
+            
+            sessPtr->id = ++next;
+            Ns_ThreadCreate(EvalThread, sessPtr, 0, NULL);
+        }
     }
-    return NS_TRUE;
+    return success;
 }
 
 
@@ -650,20 +655,21 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+ExitCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    int *stopPtr;
 
+    int result = TCL_OK;
+    
     if (argc != 1) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 argv[0], "\"", NULL);
-	return TCL_ERROR;
+	Ns_TclPrintfResult(interp, "wrong # args: should be \"%s\"", argv[0]);
+	result = TCL_ERROR;
+    } else {
+        int *stopPtr = (int *) clientData;
+        
+        *stopPtr = 1;
+        Tcl_SetResult(interp, "\nGoodbye!", TCL_STATIC);
     }
-
-    stopPtr = (int *) arg;
-    *stopPtr = 1;
-    Tcl_SetResult(interp, "\nGoodbye!", TCL_STATIC);
-    return TCL_OK;
+    return result;
 }
 
 /*
