@@ -1,0 +1,75 @@
+[include version_include.man]
+[manpage_begin ns_hotp n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Returns a decimal-coded one-time password (HOTP)}]
+
+[description] The function returns a one time password based on a
+HMAC algorithm (HOTP) as described in RFC-4226, where the 
+message algorithm can be specified.
+
+[para]
+RFC-4226 defines HOTP as:
+[example_begin]
+     HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
+ 
+     K: key
+     C: counter (moving factor for one time passwd)
+[example_end]     
+
+The implemented function ns_hotp is a generalization over RFC by
+allowing to to specify the message digest algorithm and the number of
+characters of the returned truncated value.
+
+
+[para] The listed commands is available in installations when
+NaviServer is compiled with OpenSSL support and where
+the nsf package is installed.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_hotp"] \
+	[opt [option "-digest [arg digest]"]] \
+	[opt [option "-digits [arg digits]"]] \
+	[opt [option "-key [arg key]"]] \
+	[arg data]]
+
+[para]
+[arg data]
+is the moving factor for the one time password ("C" in the formula above).
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -digest [arg digest]]
+Digest algorithm for the checksum computation. The available algorithms
+are implemented in OpenSSL. The current versions of OpenSSL supports
+the following message digest algorithms: "dsa dsa-sha ecdsa-with-sha1
+md4 md5 mdc2 ripemd160 sha sha1 sha224 sha256 sha384 sha512
+whirlpool".  The default value is "sha256"
+
+[opt_def -digits [arg digits]]
+specifies the number of digits of the returned one time password.
+The default value is 6.
+
+[opt_def -key [arg key]]
+specifies the secret used for creating one time passwords.
+("K" in the formula above).
+[list_end]
+
+[example_begin]
+  
+  nscp 2> ns_hotp -key "tweedie123" 1
+  763540
+
+[example_end]
+
+[see_also nsd ns_totp ns_hmac ns_md ns_sha1 ns_crypt ns_rand]
+[keywords HOTP encoding crypt nsf]
+
+[manpage_end]
+

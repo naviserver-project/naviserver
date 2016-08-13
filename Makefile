@@ -87,7 +87,7 @@ install-notice:
 	  echo ""; \
 	  echo "The permissions for log directory have to be set up:"; \
 	  echo ""; \
-	  echo "  chown -R nsadmin $(NAVISERVER)/logs"; \
+	  echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
 	  echo ""; \
 	  user="-u nsadmin"; \
 	  chown -R nobody $(NAVISERVER)/logs; \

@@ -1,0 +1,93 @@
+[include version_include.man]
+[manpage_begin ns_md n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Returns a hex-encoded string containing a message digest (MD)}]
+
+[description] These functions return a message digest (MD) for a
+message using the specified message digest algorithm. The MD code can
+be used to check the integrity of a text (whether the text was
+altered) by computing a cryptographic checksum.
+
+[para] The provided commands provide a one-step interface and an
+incremental interface, where the latter one can be used to
+e.g. incrementally compute a message digest reading data from a
+file. This is especially important for computing message digest on
+content which is to large to be kept in memory.
+
+[para] The listed commands are available in installations when
+NaviServer is compiled with OpenSSL support and where the nsf package
+is installed. The command [cmd ns_md] is a generalization of
+[cmd ns_md5] and [cmd ns_sha1] since it provides a much larger
+set of cryptogrphic algorithms and provides the incremental interface.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_md string"] \
+	[opt [option "-digest [arg digest]"]] \
+	[arg message]]
+
+[para]
+[arg message]
+is the text from which the message digest is to be computed.
+
+
+[call [cmd "ns_md file"] \
+	[opt [option "-digest [arg digest]"]] \
+	[arg filename]]
+
+[para] [arg filename]
+points to a file containing the text from which
+the message digest is to be computed. The file is read incrementally.
+
+[call [cmd "ns_md new"] \
+	[opt [option "-digest [arg digest]"]] \
+	]
+
+Create and return a new MD object for incremental operations. 
+
+[call [arg \$md_object] [cmd "add"] [arg data]]
+
+Method to add [arg data] incrementally to the MD object, which was created
+previously  with [cmd "ns_md new"].
+
+
+[call [arg \$md_object] [cmd "get"]]
+
+Method to return the current digest value from the MD object, to which data was
+added previously with the method [cmd "add"].
+
+
+[call [arg \$md_object] [cmd "destroy"]]
+
+Method to delete the MD object (used for incremental operations).
+
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -digest [arg digest]]
+Digest algorithm for the checksum computation. The available algorithms
+are implemented in OpenSSL. The current versions of OpenSSL supports
+the following message digest algorithms: "dsa dsa-sha ecdsa-with-sha1
+md4 md5 mdc2 ripemd160 sha sha1 sha224 sha256 sha384 sha512
+whirlpool".  The default value is "sha256"
+
+[list_end]
+
+[example_begin]
+  
+  nscp 2> ns_md string -digest sha256 "what do ya want for nothing?"
+  b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
+
+[example_end]
+
+[see_also nsd ns_hmac ns_crypt ns_md5 ns_rand ns_sha1 ns_sha]
+[keywords encoding crypt MD nsf]
+
+[manpage_end]
+

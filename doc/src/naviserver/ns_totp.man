@@ -1,0 +1,100 @@
+[include version_include.man]
+[manpage_begin ns_totp n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Returns a decimal-coded time-based one-time password (TOTP)}]
+
+[description] The function returns a time-based one time password
+(TOTP) as described in RFC-6238. The function uses the HOTP function
+of RFC-4226 but adds the possibility to restrict the validity of the
+password to a time window.
+
+[para]
+RFC-6238 defines TOTP as:
+[example_begin]
+     TOTP = HOTP(K, T), where T is an integer
+
+     K: key
+     T: time slice (moving factor for one time passwd)
+[example_end]     
+
+The implemented function ns_totp is a generalization by allowing to to
+specify the message digest algorithm, the number of characters of
+the returned truncated value, a used_id and a time.
+
+[para] The listed command is available in installations when
+NaviServer is compiled with OpenSSL support and where
+the nsf package is installed.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_totp"] \
+	[opt [option "-digest [arg digest]"]] \
+	[opt [option "-digits [arg digits]"]] \
+	[opt [option "-interval [arg interval]"]] \
+	[opt [option "-user_id [arg user_id]"]] \
+	[opt [option "-key [arg key]"]] \
+	[opt [option "-time [arg time]"]] \
+	]
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -digest [arg digest]]
+Digest algorithm for the checksum computation. The available algorithms
+are implemented in OpenSSL. The current versions of OpenSSL supports
+the following message digest algorithms: "dsa dsa-sha ecdsa-with-sha1
+md4 md5 mdc2 ripemd160 sha sha1 sha224 sha256 sha384 sha512
+whirlpool".  The default value is "sha256"
+
+[opt_def -digits [arg digits]]
+specifies the number of digits of the returned one time password.
+The default value (as used in the RFC) is 8.
+
+[opt_def -digits [arg interval]]
+specifies the time interval, for which the password should be vald.
+The default value is 30.
+
+[opt_def -digits [arg user_id]]
+the secret can be either be provided via [arg key], or via
+[arg user_id] and a config parameter [term serversecret]. For testing
+purposes, the [arg key] is preferable. For usage scenarios,
+the secret should be personalized to the user. Therefore
+the implementation uses the user_id and the per-server configured
+password value (see configuration section).
+
+[opt_def -key [arg key]]
+specifies the secret used for creating one time passwords
+(see option [arg user_id] for detail)
+("K" in the formula above).
+
+[opt_def -time [arg time]]
+specifies time base for the computation (epoch in seconds).
+If no time is specified, the current time is used.
+
+[list_end]
+
+[example_begin]
+  
+  nscp 2> ns_totp -key "tweedie123" -time 1471107671
+  33888450
+
+[example_end]
+
+[section CONFIGURATION]
+
+[example_begin]
+[cmd ns_section] "ns/server/server1"
+[cmd ns_param]   serversecret "swordfish"
+[example_end]
+
+
+[see_also nsd ns_hmac ns_hotp ns_md ns_sha1 ns_crypt ns_rand]
+[keywords TOTP encoding crypt nsf]
+
+[manpage_end]
+

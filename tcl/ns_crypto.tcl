@@ -1,6 +1,8 @@
 # -*- Tcl -*-
 # Crypto support based on OpenSSL and nsf
 #
+# Author: Gustaf Neumann
+# Date:   August 2016
 
 #catch {package require nx}
 

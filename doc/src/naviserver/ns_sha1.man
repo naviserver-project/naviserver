@@ -27,7 +27,7 @@ String from which hash should be produced.
    
 [example_end]
 
-[see_also nsd ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_sha2 ns_hmac]
+[see_also nsd ns_md ns_uuencode ns_uudecode ns_crypt ns_md5 ns_rand ns_hmac]
 [keywords encoding crypt]
 
 [manpage_end]
