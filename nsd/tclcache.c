@@ -169,11 +169,11 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = clientData;
-    TclCache   *cPtr;
-    const char *key;
-    Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
-    int         nargs, isNew, force = (int)NS_FALSE, status;
+    const NsInterp *itPtr = clientData;
+    TclCache        *cPtr;
+    const char      *key;
+    Ns_Time         *timeoutPtr = NULL, *expPtr = NULL;
+    int              nargs, isNew, force = (int)NS_FALSE, status;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -274,11 +274,11 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = clientData;
-    TclCache   *cPtr;
-    const char *key;
-    int         isNew, incr = 1, result;
-    Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
+    const NsInterp *itPtr = clientData;
+    TclCache       *cPtr;
+    const char     *key;
+    int             isNew, incr = 1, result;
+    Ns_Time        *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -351,11 +351,11 @@ NsTclCacheLappendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 static int
 CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int append)
 {
-    NsInterp   *itPtr = clientData;
-    TclCache   *cPtr = NULL;
-    const char *key = NULL;
-    int         result = TCL_OK, nelements = 0;
-    Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
+    const NsInterp *itPtr = clientData;
+    TclCache       *cPtr = NULL;
+    const char     *key = NULL;
+    int             result = TCL_OK, nelements = 0;
+    Ns_Time        *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime, &timeoutPtr, NULL},

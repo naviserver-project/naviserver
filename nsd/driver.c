@@ -4668,7 +4668,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
  */
 static Ns_ReturnCode
 RequireConnection(Tcl_Interp *interp, Ns_Conn **connPtr) {
-    int status = NS_OK;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(connPtr != NULL);
@@ -4920,7 +4920,7 @@ WriterListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
         Tcl_DStringInit(dsPtr);
 
         for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
-            DrvWriter *wrPtr;
+            const DrvWriter *wrPtr;
 
             /*
              * if server was specified, list only results from this server.
