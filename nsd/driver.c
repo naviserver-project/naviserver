@@ -4737,7 +4737,7 @@ DriverWriterFromObj(Tcl_Obj *driverObj) {
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int               result = TCL_OK;
     Ns_Conn          *conn;
@@ -4900,7 +4900,7 @@ WriterSubmitFileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *----------------------------------------------------------------------
  */
 static int
-WriterListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int               result = TCL_OK;
     const NsServer   *servPtr = NULL;
@@ -4982,7 +4982,7 @@ WriterListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *----------------------------------------------------------------------
  */
 static int
-WriterSizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          intValue = -1, result = TCL_OK;
     Tcl_Obj     *driverObj;
@@ -5040,7 +5040,7 @@ WriterSizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *----------------------------------------------------------------------
  */
 static int
-WriterStreamingObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          boolValue, result = TCL_OK;
     Tcl_Obj     *driverObj;
