@@ -346,7 +346,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 int
 NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    int         result = NS_OK;
+    int         result = TCL_OK;
 
     if (argc != 2) {
         Ns_TclPrintfResult(interp, "wrong # of args:  should be \"%s page\"", argv[0]);
@@ -371,7 +371,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
         while (*inPtr != '\0') {
 
             if (*inPtr == '<') {
-                intag = 1;
+                intag = NS_TRUE;
 
             } else if (intag && (*inPtr == '>')) {
                 /* inside a tag that closes */
