@@ -691,7 +691,7 @@ NsTclParseHeaderCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84
             disp = ToUpper;
         } else if (STREQ(argv[3], "tolower")) {
             disp = ToLower;
-    } else if (STREQ(argv[3], "preserve")) {
+        } else if (STREQ(argv[3], "preserve")) {
             disp = Preserve;
         } else {
             Ns_TclPrintfResult(interp, "unknown case disposition \"%s\": should be toupper, tolower, or preserve", 
