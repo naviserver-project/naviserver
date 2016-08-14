@@ -46,9 +46,9 @@
 #define LOG_COLORIZE 0x08u
 
 /*
- * The following struct represents a log entry header as stored in
- * the per-thread cache. It is followed by a variable-length log
- * string as passed by the caller (format expanded).
+ * The following struct represents a log entry header as stored in the
+ * per-thread cache. It is followed by a variable-length log string as
+ * passed by the caller (format expanded).
  */
 
 typedef struct LogEntry {
@@ -288,8 +288,8 @@ NsInitLog(void)
  *
  * ObjvTableLookup --
  *
- *      Lookup a value from an Ns_ObjvTable and return its associated value in
- *      the last parameter, if the lookup was successful.
+ *      Lookup a value from an Ns_ObjvTable and return its associated
+ *      value in the last parameter, if the lookup was successful.
  *
  * Results:
  *      Tcl return code.
@@ -444,8 +444,8 @@ Ns_InfoErrorLog(void)
  *
  * Ns_CreateLogSeverity --
  *
- *      Create and return a new log severity with the given name, which
- *      will initially be disabled (except for the built-ins).
+ *      Create and return a new log severity with the given name,
+ *      which will initially be disabled (except for the built-ins).
  *
  * Results:
  *      The severity.
@@ -544,7 +544,9 @@ static char *
 LogSeverityColor(char *buffer, Ns_LogSeverity severity)
 {
     if (severity < severityMaxCount) {
-        sprintf(buffer, "%s%d;%dm", LOG_COLORSTART, severityConfig[severity].intensity, severityConfig[severity].color);
+        sprintf(buffer, "%s%d;%dm", LOG_COLORSTART,
+                severityConfig[severity].intensity,
+                severityConfig[severity].color);
     } else {
         sprintf(buffer, "%s0m", LOG_COLORSTART);
     }
@@ -618,9 +620,10 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
  *
  * LogStats --
  *
- *      Return a Tcl list containing the labels and counts for all severities.
- *      The function should be probably be guarded by a lock, but we have just
- *      single word operations and potentially incorrect counts are not fatal.
+ *      Return a Tcl list containing the labels and counts for all
+ *      severities.  The function should be probably be guarded by a
+ *      lock, but we have just single word operations and potentially
+ *      incorrect counts are not fatal.
  *
  * Results:
  *      Tcl list
@@ -982,10 +985,10 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
     }
     
     /*
-     * LogTime has a granularity of seconds. For frequent updates the print
-     * string is therefore cached. Check if the value for seconds in the cache
-     * is the same as the required value. If not, recompute the string and
-     * store it in the cache.
+     * LogTime has a granularity of seconds. For frequent updates the
+     * print string is therefore cached. Check if the value for
+     * seconds in the cache is the same as the required value. If not,
+     * recompute the string and store it in the cache.
      */
     if (*tp != timePtr->sec) {
         size_t           n;
@@ -1373,9 +1376,9 @@ Ns_LogRoll(void)
  *      None.
  *
  * Side effects:
- *      Configures this module to use the newly opened log file.
- *      If LogRoll is turned on in the config file, then it registers
- *      a signal callback.
+ *      Configures this module to use the newly opened log file.  If
+ *      LogRoll is turned on in the config file, then it registers a
+ *      signal callback.
  *
  *----------------------------------------------------------------------
  */
@@ -1498,8 +1501,9 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
         }
         
         /*
-         * Since listPtr is never NULL, a repeat-unil loop is sufficient to
-         * guarantee that the initial cPtr is not NULL either.
+         * Since listPtr is never NULL, a repeat-unil loop is
+         * sufficient to guarantee that the initial cPtr is not NULL
+         * either.
          */
         cPtr = listPtr;
         do {
@@ -1519,11 +1523,11 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
                 }
                 if (status == NS_ERROR) {
                     /*
-                     * Callback signalized error. Per definition we will
-                     * skip invoking other registered filters. In such
-                     * case we must assure that the current log entry
-                     * eventually gets written into some log sink, so we
-                     * use the default logfile sink.
+                     * Callback signalized error. Per definition we
+                     * will skip invoking other registered filters. In
+                     * such case we must assure that the current log
+                     * entry eventually gets written into some log
+                     * sink, so we use the default logfile sink.
                      */
                     (void) LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
                                      &ePtr->stamp, logString, ePtr->length);
@@ -1705,8 +1709,8 @@ LogToFile(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  *      Standard NS result code.
  *
  * Side effects:
- *      This call deliberately does not use Ns_TclEvalCallback(),
- *      as if the Tcl code throws error, that one will invoke
+ *      This call deliberately does not use Ns_TclEvalCallback(), as
+ *      if the Tcl code throws error, that one will invoke
  *      Ns_TclLogError() and will deadlock in the log code.
  *
  *----------------------------------------------------------------------
@@ -1722,6 +1726,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     Ns_DString            ds, ds2;
     Tcl_Interp           *interp;
     const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
+    Ns_ReturnCode         status;
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
@@ -1731,61 +1736,64 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         return NS_OK;
     }
 
+    /*
+     * Try to obtain an interpreter:
+     */ 
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
-        const char *const err = "LogToTcl: can't get interpreter";
-        (void)LogToFile(logfile, Error, stamp, err, 0u);
-        return NS_ERROR;
-    }
+        (void)LogToFile(logfile, Error, stamp,
+                        "LogToTcl: can't get interpreter", 0u);
+        status = NS_ERROR;
+    } else {
 
-    Ns_DStringInit(&ds);
-    stampObj = Tcl_NewObj();
-    Ns_TclSetTimeObj(stampObj, stamp);
-
-    /*
-     * Construct args for passing to the callback script:
-     *
-     *      callback severity timestamp log ?arg...?
-     *
-     * The script may contain blanks therefore append
-     * as regular string instead of as list element.
-     * Other arguments are appended to it as elements.
-     */
-
-    Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
-    Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
-    Tcl_DecrRefCount(stampObj);
-
-    /*
-     * Append n bytes of msg as proper list element to ds. Since
-     * Tcl_DStringAppendElement has no length parameter, we have to
-     * use a temporary DString here.
-     */
-    Ns_DStringInit(&ds2);
-    Ns_DStringNAppend(&ds2, msg, (int)len);
-    Ns_DStringAppendElement(&ds, ds2.string);
-    Ns_DStringFree(&ds2);
-
-    for (ii = 0; ii < cbPtr->argc; ii++) {
-        Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
-    }
-    ret = Tcl_EvalEx(interp, Ns_DStringValue(&ds), Ns_DStringLength(&ds), 0);
-    if (ret == TCL_ERROR) {
+        Ns_DStringInit(&ds);
+        stampObj = Tcl_NewObj();
+        Ns_TclSetTimeObj(stampObj, stamp);
 
         /*
-         * Error in Tcl callback is always logged to file.
+         * Construct args for passing to the callback script:
+         *
+         *      callback severity timestamp log ?arg...?
+         *
+         * The script may contain blanks therefore append as regular
+         * string instead of as list element.  Other arguments are
+         * appended to it as elements.
          */
+        Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
+        Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
+        Tcl_DecrRefCount(stampObj);
 
-        Ns_DStringSetLength(&ds, 0);
-        Ns_DStringAppend(&ds, "LogToTcl: ");
-        Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
-        (void)LogToFile(logfile, Error, stamp, Ns_DStringValue(&ds),
-                        (size_t)Ns_DStringLength(&ds));
+        /*
+         * Append n bytes of msg as proper list element to ds. Since
+         * Tcl_DStringAppendElement has no length parameter, we have
+         * to use a temporary DString here.
+         */
+        Ns_DStringInit(&ds2);
+        Ns_DStringNAppend(&ds2, msg, (int)len);
+        Ns_DStringAppendElement(&ds, ds2.string);
+        Ns_DStringFree(&ds2);
+
+        for (ii = 0; ii < cbPtr->argc; ii++) {
+            Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
+        }
+        ret = Tcl_EvalEx(interp, Ns_DStringValue(&ds), Ns_DStringLength(&ds), 0);
+        if (ret == TCL_ERROR) {
+
+            /*
+             * Error in Tcl callback is always logged to file.
+             */
+            Ns_DStringSetLength(&ds, 0);
+            Ns_DStringAppend(&ds, "LogToTcl: ");
+            Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
+            (void)LogToFile(logfile, Error, stamp, Ns_DStringValue(&ds),
+                            (size_t)Ns_DStringLength(&ds));
+        }
+        Ns_DStringFree(&ds);
+        Ns_TclDeAllocateInterp(interp);
+
+        status = (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
     }
-    Ns_DStringFree(&ds);
-    Ns_TclDeAllocateInterp(interp);
-
-    return (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
+    return status;
 }
 
 
@@ -1956,7 +1964,7 @@ Ns_SetNsLogProc(Ns_LogProc *UNUSED(procPtr))
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */

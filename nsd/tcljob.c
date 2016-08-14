@@ -1370,7 +1370,6 @@ JobThreadListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  *----------------------------------------------------------------------
  */
-
 int
 NsTclJobObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
@@ -1473,6 +1472,9 @@ JobThread(void *UNUSED(arg))
         }
 	assert(queue != NULL);
 
+        /*
+         * Get an interpreter....
+         */
         interp = Ns_TclAllocateInterp(jobPtr->server);
 
         Ns_GetTime(&jobPtr->endTime);
@@ -1486,13 +1488,19 @@ JobThread(void *UNUSED(arg))
         if (jobPtr->cancel != 0) {
             Tcl_AsyncMark(jobPtr->async);
         }
-
+        
+        /*
+         * ... rename the thread to job thread...
+         */
         Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
         ++queue->nRunning;
 
         Ns_MutexUnlock(&queue->lock);
         Ns_MutexUnlock(&tp.queuelock);
 
+        /*
+         * ... and execute the job.
+         */
         code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
 
         Ns_MutexLock(&tp.queuelock);
@@ -2235,7 +2243,7 @@ AppendField(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
     NS_NONNULL_ASSERT(value != NULL);
 
     /*
-     * Note: If there is an error occurs within Tcl_ListObjAppendElement
+     * Note: If there occurs an error within Tcl_ListObjAppendElement
      * it will set the result anyway.
      */
 
@@ -2274,8 +2282,8 @@ AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, const char *name, int value)
     NS_NONNULL_ASSERT(name != NULL);
 
     /*
-     * Note: If there is an error occurs within Tcl_ListObjAppendElement
-     * it will set the result anyway
+     * Note: If there occurs within Tcl_ListObjAppendElement it will
+     * set the result anyway.
      */
 
     elObj = Tcl_NewStringObj(name, -1);
@@ -2366,7 +2374,7 @@ AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
  *
  * ComputeDelta --
  *
- *      Compute the time difference   .
+ *      Compute the time difference.
  *
  * Results:
  *      Difference in milliseconds
@@ -2394,7 +2402,7 @@ ComputeDelta(const Ns_Time *start, const Ns_Time *end)
  *
  * SetupJobDefaults --
  *
- *      Assigns default configuration parameters if not set yet
+ *      Assigns default configuration parameters if not set yet.
  *
  * Results:
  *      None

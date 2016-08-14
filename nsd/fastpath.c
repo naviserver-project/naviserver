@@ -117,6 +117,9 @@ NsConfigFastpath()
         cache = Ns_CacheCreateSz("ns:fastpath", TCL_STRING_KEYS, size, FreeEntry);
         maxentry = Ns_ConfigIntRange(path, "cachemaxentry", 8192, 8, INT_MAX);
     }
+    /*
+     * Register the fastpath initialization for every server.
+     */
     NsRegisterServerInit(ConfigServerFastpath);
 }
 
@@ -334,6 +337,23 @@ Ns_UrlIsDir(const char *server, const char *url)
     return UrlIs(server, url, NS_TRUE);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UrlIs --
+ *
+ *      Helper function for Ns_UrlIsFile and Ns_UrlIsDir.  Map the url
+ *      to a file and check whether the file exists or is a directory.
+ *
+ * Results:
+ *      Returns boolean value indicating success.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static bool
 UrlIs(const char *server, const char *url, bool isDir)
 {
@@ -555,9 +575,9 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
     }
 
     /*
-     * Depending on the size of the content and state of the fastpath cache,
-     * either return the data directly, or cache it first and return the
-     * cached copy.
+     * Depending on the size of the content and state of the fastpath
+     * cache, either return the data directly, or cache it first and
+     * return the cached copy.
      */
 
     if ((cache == NULL)
@@ -601,7 +621,6 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
          * Search for an existing cache entry for this file, validating
          * the contents against the current file mtime, size and inode.
          */
-
         Ns_CacheLock(cache);
         entry = Ns_CacheWaitCreateEntry(cache, file, &isNew, NULL);
 
@@ -883,7 +902,7 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */
