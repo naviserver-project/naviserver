@@ -475,7 +475,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
 {
     Conn          *connPtr = (Conn *) conn;
     int            isNew, fd;
-    Ns_ReturnCode  status;
+    Ns_ReturnCode  status = NS_OK;
     Tcl_DString    ds, *dsPtr = &ds;
     bool           done = NS_FALSE;
 

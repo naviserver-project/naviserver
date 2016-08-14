@@ -805,7 +805,7 @@ int
 NsTclLibraryCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     const NsInterp *itPtr = clientData;
-    const char     *lib;
+    const char     *lib = "";
     int             result = TCL_OK;
 
     if (argc != 2 && argc != 3) {
@@ -824,7 +824,7 @@ NsTclLibraryCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 cha
 	result = TCL_ERROR;
     }
     if (result == TCL_OK) {
-        Ns_DString      ds;
+        Ns_DString ds;
 
         Ns_DStringInit(&ds);
         Ns_MakePath(&ds, lib, argv[2], NULL);
@@ -844,7 +844,7 @@ ThreadArgProc(Tcl_DString *dsPtr, Ns_ThreadProc proc, const void *arg)
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 70
  * indent-tabs-mode: nil
  * End:
  */
