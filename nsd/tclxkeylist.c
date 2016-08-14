@@ -59,11 +59,10 @@ static char *ckstrdup(const char *s) {
   ((char *)memcpy(ckalloc((unsigned int)((b)+1)),(a),(size_t)((b)+1)))
 
 /*
- * Those are used in TclX_IsNullObj() in read-only mode
+ * listType is used in TclX_IsNullObj() in read-only mode
  * therefore no need to mutex protect them (see below).
  */
 static const Tcl_ObjType *listType;
-static const Tcl_ObjType *strType;
 
 /*
  * This is called once from InitInterp() call in tclinit.c
@@ -72,7 +71,6 @@ static const Tcl_ObjType *strType;
 void NsTclInitKeylistType(void)
 {
     listType = Tcl_GetObjType("list");
-    strType  = Tcl_GetObjType("string");
 }
 
 /*-----------------------------------------------------------------------------
@@ -1479,7 +1477,7 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
     } else {
         const char *key;
-        Tcl_Obj    *listObjPtr;
+        Tcl_Obj    *listObjPtr = NULL;
         
         /*
          * If "key" argument is not specified, then objv[2] is NULL or
