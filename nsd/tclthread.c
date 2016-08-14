@@ -154,9 +154,9 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
  */
 
 int
-NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     void           *tidArg;
     Ns_Thread       tid;
     void           *result;
@@ -289,9 +289,9 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 int
-NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_Mutex       *lockPtr;
     int             opt, status = TCL_OK;
@@ -376,9 +376,9 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
  */
 
 int
-NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr   = arg;
+    const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_Cs          *csPtr;
     int             opt, status = TCL_OK;
@@ -457,9 +457,9 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 int
-NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_Sema        *semaPtr;
     int             opt, cnt;
@@ -542,9 +542,9 @@ NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
  */
 
 int
-NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr   = arg;
+    const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_Cond        *condPtr;
     Ns_Mutex       *lockPtr;
@@ -659,9 +659,9 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
  */
 
 int
-NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr   = arg;
+    const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_RWLock      *rwlockPtr;
     int             opt, status = TCL_OK;

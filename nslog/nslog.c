@@ -275,12 +275,12 @@ AddCmds(Tcl_Interp *interp, const void *arg)
  */
 
 static int
-LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char    *strarg, **hdrs;
     int            rc, intarg, cmd;
     Ns_DString     ds;
-    Log           *logPtr = arg;
+    Log           *logPtr = clientData;
 
     enum {
         ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS,

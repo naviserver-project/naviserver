@@ -3238,9 +3238,9 @@ ReleaseHandles(Tcl_Interp *interp, InterpData *idataPtr)
  */
 
 static void
-DeleteData(ClientData arg, Tcl_Interp *interp)
+DeleteData(ClientData clientData, Tcl_Interp *interp)
 {
-    InterpData *idataPtr = arg;
+    InterpData *idataPtr = clientData;
 
     ReleaseHandles(interp, idataPtr);
     Tcl_DeleteHashTable(&idataPtr->ids);

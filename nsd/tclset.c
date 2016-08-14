@@ -216,9 +216,9 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
  */
 
 int
-NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp            *itPtr = arg;
+    NsInterp            *itPtr = clientData;
     Ns_Set              *set = NULL, *set2Ptr;
     int                  opt;
     const char          *key, *val, *def;
@@ -665,14 +665,14 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
  */
 
 int
-NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclParseHeaderCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-    NsInterp                *itPtr = arg;
+    NsInterp                *itPtr = clientData;
     Ns_Set                  *set;
     Ns_HeaderCaseDisposition disp;
     int                      result = TCL_OK;
 
-    assert(arg != NULL);
+    assert(clientData != NULL);
 
     if (argc != 3 && argc != 4) {
         Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s"

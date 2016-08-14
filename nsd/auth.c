@@ -132,9 +132,9 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
  */
 
 int
-NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     Ns_ReturnCode   status;
     int             result = TCL_OK;
 

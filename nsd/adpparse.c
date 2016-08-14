@@ -82,7 +82,7 @@ static void AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsi
 static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)  NS_GNUC_NONNULL(4);
 
-static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
+static int RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void AppendLengths(AdpCode *codePtr, const int *length, const int *line)
@@ -122,42 +122,42 @@ static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flag
  */
 
 int
-NsTclAdpRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclAdpRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return RegisterObjCmd(arg, interp, objc, objv, TAG_ADP);
+    return RegisterObjCmd(clientData, interp, objc, objv, TAG_ADP);
 }
 
 int
-NsTclAdpRegisterTagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclAdpRegisterTagObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registeradp", NULL);
-    return RegisterObjCmd(arg, interp, objc, objv, TAG_ADP);
+    return RegisterObjCmd(clientData, interp, objc, objv, TAG_ADP);
 }
 
 int
-NsTclAdpRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclAdpRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return RegisterObjCmd(arg, interp, objc, objv, TAG_PROC);
+    return RegisterObjCmd(clientData, interp, objc, objv, TAG_PROC);
 }
 
 int
-NsTclAdpRegisterScriptObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclAdpRegisterScriptObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
+    return RegisterObjCmd(clientData, interp, objc, objv, TAG_SCRIPT);
 }
 
 int
-NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclAdpRegisterAdptagObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registerscript", NULL);
-    return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
+    return RegisterObjCmd(clientData, interp, objc, objv, TAG_SCRIPT);
 }
 
 /*
  * The actual function doing the hard work.
  */
 static int
-RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
+RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
     const NsInterp *itPtr;
     NsServer       *servPtr;
@@ -167,10 +167,10 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_DString     tbuf;
     Tag            *tagPtr;
 
-    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(clientData != NULL);
     NS_NONNULL_ASSERT(interp != NULL);
 
-    itPtr = arg;
+    itPtr = clientData;
     servPtr = itPtr->servPtr;
 
     if (objc != 4 && objc != 3) {

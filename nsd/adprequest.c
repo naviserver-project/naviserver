@@ -52,7 +52,7 @@ typedef struct AdpRequest {
  * Static functions defined in this file.
  */
 
-static int RegisterPage(const ClientData arg, const char *method, 
+static int RegisterPage(const ClientData clientData, const char *method, 
 			const char *url, const char *file, const Ns_Time *expiresPtr, 
 			unsigned int rflags, unsigned int aflags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -213,7 +213,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
  */
 
 int
-NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char    *method, *url, *file = NULL;
     int            noinherit = 0;
@@ -237,11 +237,11 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return TCL_ERROR;
     }
     if (noinherit != 0) {rflags |= NS_OP_NOINHERIT;}
-    return RegisterPage(arg, method, url, file, expiresPtr, rflags, aflags);
+    return RegisterPage(clientData, method, url, file, expiresPtr, rflags, aflags);
 }
 
 int
-NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          noinherit = 0;
     unsigned int rflags = 0u;
@@ -262,7 +262,7 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return TCL_ERROR;
     }
     if (noinherit != 0) {rflags |= NS_OP_NOINHERIT;}
-    return RegisterPage(arg, method, url, file, NULL, rflags, ADP_TCLFILE);
+    return RegisterPage(clientData, method, url, file, NULL, rflags, ADP_TCLFILE);
 }
 
 
@@ -283,11 +283,11 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *----------------------------------------------------------------------
  */
 static int
-RegisterPage(const ClientData arg,
+RegisterPage(const ClientData clientData,
              const char *method, const char *url, const char *file,
              const Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags)
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     AdpRequest     *adp;
     size_t          fileLength;
 

@@ -424,7 +424,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
  */
 
 int
-NsTclCryptObjCmd(ClientData UNUSED(arg), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int  result = TCL_OK;
 

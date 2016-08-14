@@ -785,10 +785,10 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
  */
 
 int
-NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclAdpStatsCmd(ClientData clientData, Tcl_Interp *interp, 
 		 int UNUSED(argc), CONST char* UNUSED(argv[]))
 {
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Ns_DString      ds;
     Tcl_HashSearch  search;

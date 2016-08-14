@@ -525,11 +525,11 @@ Ns_InfoSSL(void)
  */
 
 int
-NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int             opt, result = TCL_OK;
     bool            done = NS_TRUE; 
-    const NsInterp *itPtr = arg;
+    const NsInterp *itPtr = clientData;
     const char     *server, *elog;
     Tcl_DString     ds;
 
