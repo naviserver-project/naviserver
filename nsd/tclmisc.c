@@ -592,10 +592,9 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     int result = TCL_OK;
 
-
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
-        return TCL_ERROR;
+        result = TCL_ERROR;
     } else {
         int            len;
         size_t         size;
