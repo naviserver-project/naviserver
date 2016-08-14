@@ -1,4 +1,124 @@
 =======================================
+NaviServer 4.99.12, released 2016-08-XX
+=======================================
+
+ 193 files changed, 18690 insertions(+), 12108 deletions(-)
+
+New Features:
+  * OpenSSL support integrated with NaviServer core
+    - ns_http can handle now http and https urls
+    - added backward_compatibility stub for ns_ssl
+    - added configure switch --with-openssl?=path?
+
+  * Improved crypto support (through OpenSSL)
+    New commands:
+      - ns_hmac
+      - ns_md (generalization of ns_md4 and ns_sha1,
+        but supports by default 14 different digest algorithms)
+      - ns_hotp (one-time passwords as defined in RFC 4226)
+      - ns_totp (time-based one-time passwords as defined in RFC 6238)
+
+  * New Command "ns_rlimit" to get/set various resource limits from
+    the operating system. A typical use case for this command is to
+    query or set e.g. the core size via the NaviServer startup file or
+    to change it at runtime in a syntax independent from the naming
+    and conventions in the various startup scripts (e.g. upstart,
+    systemd, ...). This is e.g. useful when a core dump should be
+    created from the running state.
+  
+  * Improvements for ns_connchan
+     - support now client functionality via
+          ns_connchan open ...
+       (works for http:// and https:// URLs)
+     - new subcommand "ns_connchan exists /channel/"
+     - added runtime switchable debug severity "Debug(connchan)"
+
+Performance Improvements:
+
+Bug Fixes:
+  * Fix ns_set management of headers (which was broken since the
+    introduction of the leftover management when requests are
+    pipelined in 4.99.11). The problem was that the "static" ns_set for headers is
+    was freed to early in the pipelined case.
+
+  * Fix for a serious bug in cookie management which could lead to false
+    positives in ns_getcookie:
+
+      - Previous versions of NaviServer searched the Cookie and
+	Set-Cookie header files for a string "NAME=" and returned the
+	value provided after this string, when found.
+
+      - However, the Cookie and Set-Cookie header fields have different a
+	different syntax (see https://tools.ietf.org/html/rfc6265 section
+	4.1.1 vs. 4.2.1), such as e.g. Cookie: cookie1="value1";
+	cookie2="value2"; style=null; ... Set-Cookie: cookie1="new- value";
+	Expires=Fri, 01-Jan-2035 01:00:00 GMT; Path=/; HttpOnly
+
+      - Therefore, searching in Cookie e.g. for a cookie named "tyle"
+        lead to a success as well as a search in Set-Cookies for
+	e.g. a cookie named "Expires".
+
+  * Fix potential memory leak for "ns_mutex eval"
+
+  * Improved portability for *BSD systems and recent Windows
+    build environments (e.g. Visual Studio 2015)
+	
+Documentation improvements:
+  * new man pages for ns_hmac, hs_md, ns_hotp, ns_totp
+  * various man pages updated/improved
+  * improved sample config files
+  
+Tcl API Changes:
+
+C API Changes:
+
+  *  New function
+
+  *  Introduction of Ns_ReturnCode: use an enumeration type instead of
+     preprocessor based constants + int. The change revealed several
+     places, where NS_OK/NS_ERROR and TCL_OK/TCL_ERROR were intermixed.
+
+  * New functions
+
+    - Ns_GetBinaryString() to obtain from a Tcl_Obj the binary
+      representation if available, otherwise the string representation.
+      
+    - Ns_SetRecreate() which is a combintion of a create and a move
+      operation, but avoiding malloc operatons on all keys/values.
+
+Incompatible API Changes:
+
+Configuration Changes:
+    - added configure switch --with-openssl?=path?
+
+Command Line Changes:
+
+Code Changes:
+  * Improve naming of Mutexes: much more mutexes are named.
+  
+  * Code cleanup:
+    - use boolean types on more occasions
+    - use more often typedef-ed function definitions
+    - reduce number of multiple returns per function
+    - remove all calls to deprecated Tcl API Function
+      Tcl_AppendElement()
+    - reduce calls to Tcl_AppendResult() and use explicit
+      Tcl_Objs
+    - replace deprecated atoll by strtoll
+    - reduced variable scopes
+    - added more const declarations
+    - prefer Ns_ParseObjv() interface over manual argv parsing for consistency
+
+  * Made testing more robust when IPv6 is available, but
+    turned off in the kernel
+    
+  * NaviServer driver:
+    - added (clientInitProc, protocol and default port) to info record
+    - bumped driver version to 4
+    
+  * Ignore less soft error conditions, but report in the error.log
+    
+=======================================
 NaviServer 4.99.11, released 2016-05-01
 =======================================
 
@@ -102,7 +222,7 @@ Documentation improvements:
  - Improved validity of HTML man pages
  - Fixed documentation bug on ns_cookie
  - Improved documentation of configure parameters
-  - various more man pages updated 
+ - various more man pages updated 
 
 Tcl API Changes:
 

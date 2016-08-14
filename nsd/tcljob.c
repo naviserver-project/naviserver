@@ -543,6 +543,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 {
     int         result = TCL_OK, create = 0, head = 0, detached = 0;
     const char *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
+    char        buf[100];
     Ns_ObjvSpec lopts[] = {
         {"-head",      Ns_ObjvBool,    &head,        INT2PTR(NS_TRUE)},
         {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(NS_TRUE)},
@@ -564,7 +565,6 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         JobTypes        jobType = JOB_NON_DETACHED;
         Tcl_HashEntry  *hPtr;
         int             isNew;
-        char            buf[100];
 
         if (detached != 0) {
             jobType = JOB_DETACHED;

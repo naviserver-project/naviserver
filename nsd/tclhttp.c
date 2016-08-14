@@ -492,10 +492,6 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 	result = TCL_ERROR;
 
     } else {
-        Tcl_HashEntry *hPtr;
-        char           buf[TCL_INTEGER_SPACE + 4];
-        int            isNew, i;
-
         Ns_GetTime(&httpPtr->stime);
         httpPtr->timeout = httpPtr->stime;
     
@@ -519,21 +515,26 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
             if (Ns_TaskEnqueue(httpPtr->task, session_queue) != NS_OK) {
                 HttpClose(httpPtr);
                 Ns_TclPrintfResult(interp, "could not queue http task");
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
         }
 
-        /*
-         * Create a unique ID for this interp
-         */
-        i = itPtr->httpRequests.numEntries;
-        do {
-            snprintf(buf, sizeof(buf), "http%d", i++);
-            hPtr = Tcl_CreateHashEntry(&itPtr->httpRequests, buf, &isNew);
-        } while (isNew == 0);
-        Tcl_SetHashValue(hPtr, httpPtr);
-
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+        if (result == TCL_OK) {
+            Tcl_HashEntry *hPtr;
+            int            isNew, i;
+            char           buf[TCL_INTEGER_SPACE + 4];
+            /*
+             * Create a unique ID for this interp
+             */
+            i = itPtr->httpRequests.numEntries;
+            do {
+                snprintf(buf, sizeof(buf), "http%d", i++);
+                hPtr = Tcl_CreateHashEntry(&itPtr->httpRequests, buf, &isNew);
+            } while (isNew == 0);
+            Tcl_SetHashValue(hPtr, httpPtr);
+            
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+        }
     }
     return result;
 }
