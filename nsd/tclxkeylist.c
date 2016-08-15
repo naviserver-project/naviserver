@@ -1308,7 +1308,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             Ns_TclPrintfResult(interp, "key \"%s\" not found in keyed list", key);
             return TCL_ERROR;
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(FALSE));
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(NS_FALSE));
             return TCL_OK;
         }
     }
@@ -1330,7 +1330,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TRUE));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(NS_TRUE));
     return TCL_OK;
 }
 

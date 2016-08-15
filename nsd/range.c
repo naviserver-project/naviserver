@@ -62,11 +62,14 @@ static int AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
 static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
         NS_GNUC_NONNULL(1);
 
+static bool MatchRange(const Ns_Conn *conn, time_t mtime)
+        NS_GNUC_NONNULL(1);
+
 
 /*
  *----------------------------------------------------------------------
  *
- * NsMatchRange --
+ * MatchRange --
  *
  *      Check an If-Range header against the data's mtime.
  *
@@ -79,10 +82,10 @@ static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 
-int
-NsMatchRange(const Ns_Conn *conn, time_t mtime)
+static bool
+MatchRange(const Ns_Conn *conn, time_t mtime)
 {
-    int result = NS_TRUE;
+    bool result = NS_TRUE;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -149,7 +152,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
     
     Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
 
-    if (NsMatchRange(conn, connPtr->fileInfo.st_mtime) == 0) {
+    if (!MatchRange(conn, connPtr->fileInfo.st_mtime)) {
         *nbufsPtr = 0;
         return 0;
     }

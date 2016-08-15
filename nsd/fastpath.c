@@ -848,7 +848,7 @@ FreeEntry(void *arg)
 int
 NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         contents = NS_FALSE, reset = NS_FALSE, result = TCL_OK;
+    int         contents = (int)NS_FALSE, reset = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-contents", Ns_ObjvBool,  &contents, INT2PTR(NS_TRUE)},
         {"-reset",    Ns_ObjvBool,  &reset,    INT2PTR(NS_TRUE)},

@@ -503,7 +503,7 @@ Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr)
  *----------------------------------------------------------------------
  */
 
-int
+unsigned short
 Ns_ConnPeerPort(const Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1635,7 +1635,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CPeerPortIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnPeerPort(conn)));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_ConnPeerPort(conn)));
         break;
 
     case CHeadersIdx:

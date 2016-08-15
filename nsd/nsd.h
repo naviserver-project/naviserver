@@ -1478,9 +1478,6 @@ NS_EXTERN char *NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const cha
 /*
  * range.c
  */
-NS_EXTERN int NsMatchRange(const Ns_Conn *conn, time_t mtime)
-    NS_GNUC_NONNULL(1);
-
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
                                int fd, const void *data, size_t objLength,
                                Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)

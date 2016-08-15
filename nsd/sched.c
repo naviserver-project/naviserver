@@ -459,7 +459,7 @@ Ns_Pause(int id)
 bool
 Ns_Resume(int id)
 {
-    int resumed = NS_FALSE;
+    bool resumed = NS_FALSE;
 
     Ns_MutexLock(&lock);
     if (!shutdownPending) {

@@ -217,7 +217,7 @@ int
 NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const char   *module, *file, *init = "Ns_ModuleInit";
-    int           global = NS_FALSE, result = TCL_OK;
+    int           global = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec   opts[] = {
 	{"-global", Ns_ObjvBool,   &global, INT2PTR(NS_TRUE)},
         {"-init",   Ns_ObjvString, &init,   NULL},

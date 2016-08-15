@@ -1108,7 +1108,7 @@ Ns_ConnPeer(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 NS_EXTERN char *
 Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN unsigned short
 Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
