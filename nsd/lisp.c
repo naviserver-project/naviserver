@@ -56,17 +56,18 @@
 Ns_List *
 Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
 {
-    Ns_List *lPtr;
+    Ns_List *lPtr, *result;
 
     if (l1Ptr != NULL) {
         for (lPtr = l1Ptr; ((lPtr->rest) != NULL); lPtr = lPtr->rest) {
             ;
         }
         lPtr->rest = l2Ptr;
-        return l1Ptr;
+        result = l1Ptr;
     } else {
-        return l2Ptr;
+        result = l2Ptr;
     }
+    return result;
 }
 
 
@@ -153,14 +154,12 @@ Ns_ListNreverse(Ns_List *lPtr)
 Ns_List *
 Ns_ListLast(Ns_List *lPtr)
 {
-    if (lPtr == NULL) {
-        return NULL;
-    } else {
+    if (lPtr != NULL) {
         for (; lPtr->rest != NULL; lPtr = lPtr->rest) {
 	    ;
         }
-        return lPtr;
     }
+    return lPtr;
 }
 
 
@@ -293,19 +292,20 @@ Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
 Ns_List *
 Ns_ListCopy(const Ns_List *lPtr)
 {
-    Ns_List *curPtr, *newPtr = NULL, *headPtr;
+    Ns_List *headPtr = NULL;
 
     if (lPtr == NULL) {
-        return NULL;
-    }
-    headPtr = curPtr = Ns_ListCons(lPtr->first, NULL);
-    for (lPtr = lPtr->rest; lPtr != NULL; lPtr = lPtr->rest) {
-        newPtr = Ns_ListCons(lPtr->first, NULL);
-        curPtr->rest = newPtr;
-        curPtr = newPtr;
-    }
-    if (newPtr != NULL) {
-        newPtr->rest = NULL;
+        Ns_List *curPtr, *newPtr = NULL;
+
+        headPtr = curPtr = Ns_ListCons(lPtr->first, NULL);
+        for (lPtr = lPtr->rest; lPtr != NULL; lPtr = lPtr->rest) {
+            newPtr = Ns_ListCons(lPtr->first, NULL);
+            curPtr->rest = newPtr;
+            curPtr = newPtr;
+        }
+        if (newPtr != NULL) {
+            newPtr->rest = NULL;
+        }
     }
     
     return headPtr;

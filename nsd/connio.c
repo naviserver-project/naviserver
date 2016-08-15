@@ -440,53 +440,53 @@ static Ns_ReturnCode
 ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     Ns_ReturnCode status;
-    int           nread;
-    char          buf[IOBUFSZ];
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    /*
-     * Even if nsend is 0 ensure HTTP response headers get written.
-     */
-
     if (nsend == 0u) {
-        return Ns_ConnWriteVData(conn, NULL, 0, 0u);
-    }
+        /*
+         * Even if nsend is 0 ensure HTTP response headers get written.
+         */
+        status = Ns_ConnWriteVData(conn, NULL, 0, 0u);
 
-    /*
-     * Read from disk and send in IOBUFSZ chunks until done.
-     */
+    } else {
+        char buf[IOBUFSZ];
+        
+        /*
+         * Read from disk and send in IOBUFSZ chunks until done.
+         */
+        status = NS_OK;
+        while (status == NS_OK && nsend > 0u) {
+            int    nread;
+            size_t toRead = nsend;
 
-    status = NS_OK;
-    while (status == NS_OK && nsend > 0u) {
-        size_t toRead = nsend;
-
-        if (toRead > sizeof(buf)) {
-            toRead = sizeof(buf);
-        }
-        if (chan != NULL) {
-	    nread = Tcl_Read(chan, buf, (int)toRead);
-        } else if (fp != NULL) {
-	    nread = (int)fread(buf, 1u, toRead, fp);
-            if (ferror(fp) != 0) {
-                nread = -1;
+            if (toRead > sizeof(buf)) {
+                toRead = sizeof(buf);
             }
-        } else {
-            nread = ns_read(fd, buf, toRead);
+            if (chan != NULL) {
+                nread = Tcl_Read(chan, buf, (int)toRead);
+            } else if (fp != NULL) {
+                nread = (int)fread(buf, 1u, toRead, fp);
+                if (ferror(fp) != 0) {
+                    nread = -1;
+                }
+            } else {
+                nread = ns_read(fd, buf, toRead);
+            }
+
+            if (nread == -1 || nread == 0 /* NB: truncated file */) {
+                status = NS_ERROR;
+            } else {
+                struct iovec vbuf;
+
+                vbuf.iov_base = (void *)buf;
+                vbuf.iov_len  = (size_t)nread;
+                status = Ns_ConnWriteVData(conn, &vbuf, 1, 0u);
+                if (status == NS_OK) {
+                    nsend -= (size_t)nread;
+                }
+            }
         }
-
-        if (nread == -1 || nread == 0 /* NB: truncated file */) {
-            status = NS_ERROR;
-        } else {
-	    struct iovec vbuf;
-
-	    vbuf.iov_base = (void *)buf;
-	    vbuf.iov_len  = (size_t)nread;
-	    status = Ns_ConnWriteVData(conn, &vbuf, 1, 0u);
-	    if (status == NS_OK) {
-		nsend -= (size_t)nread;
-	    }
-	}
     }
 
     return status;
@@ -635,15 +635,12 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn    *connPtr = (Conn *) conn;
     int      i;
-    size_t   toWrite;
-    ssize_t  nwrote, sent;
+    size_t   toWrite = 0u;
+    ssize_t  sent, result;
 
     if (connPtr->sockPtr == NULL) {
         return -1;
     }
-
-    toWrite = 0u;
-    nwrote = 0;
 
     assert(nbufs <= 0 || bufs != NULL);
 
@@ -652,35 +649,34 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     }
    
     if (toWrite == 0u) {
-	return 0;
-    }
-
-    if (NsWriterQueue(conn, toWrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
+        /*
+         * Nothing to do.
+         */
+	result = 0;
+        
+    } else if (NsWriterQueue(conn, toWrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
 	Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", toWrite);
-	return (ssize_t)toWrite;
-    }
-    
-    /*
-     * Perform the actual send operation.
-     */
-    {
-	Ns_Time timeout;
-	
+	result = (ssize_t)toWrite;
+
+    } else {
+        Ns_Time timeout;
+        
+        /*
+         * Perform the actual send operation.
+         */
 	timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
 	timeout.usec = 0;
       
 	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0u);
+        if (likely(sent > 0)) {
+            /*
+             * Update counters.
+             */
+            connPtr->nContentSent += (size_t)sent;
+        }
+        result = sent;
     }
-
-    /*
-     * Update counters;
-     */
-    nwrote += sent;
-    if (nwrote > 0) {
-	connPtr->nContentSent += (size_t)nwrote;
-    }
-
-    return (nwrote > 0) ? nwrote : sent;
+    return result;
 }
 
 
@@ -1248,7 +1244,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
  *      Should the Connection header be set to keep-alive or close.
  *
  * Results:
- *      1 if keep-alive enabled, 0 otherwise.
+ *      NS_TRUE if keep-alive is allowed, NS_FALSE otherwise.
  *
  * Side effects:
  *      None.
@@ -1259,78 +1255,87 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
 static bool
 CheckKeep(const Conn *connPtr)
 {
+    bool result = NS_FALSE;
+    
     NS_NONNULL_ASSERT(connPtr != NULL);
 
-    if (connPtr->drvPtr->keepwait > 0) {
+    do {
+        if (connPtr->drvPtr->keepwait > 0) {
+            /*
+             * Check for manual keep-alive override.
+             */
 
-        /*
-         * Check for manual keep-alive override.
-         */
-
-        if (connPtr->keep > 0) {
-            return NS_TRUE;
-        }
-
-        /*
-         * Apply default rules.
-         */
-
-        if ((connPtr->keep == -1)
-            && (connPtr->request.line != NULL)) {
+            if (connPtr->keep > 0) {
+                result = NS_TRUE;
+                break;
+            }
 
             /*
-             * HTTP 1.0/1.1 keep-alive header checks.
+             * Apply default rules.
              */
-            if ((   (connPtr->request.version == 1.0)
-                 && (HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE) )
-                ||  (   (connPtr->request.version > 1.0)
-                 && (HdrEq(connPtr->headers, "connection", "close") == NS_FALSE) )
-                ) {
+            if ((connPtr->keep == -1)
+                && (connPtr->request.line != NULL)) {
 
                 /*
-                 * POST, PUT etc. require a content-length header to allow keep-alive
+                 * HTTP 1.0/1.1 keep-alive header checks.
                  */
-                if ((connPtr->contentLength > 0u)
-		    && (Ns_SetIGet(connPtr->headers, "Content-Length") == NULL)) {
-                    return NS_FALSE;
-                }
+                if ((   (connPtr->request.version == 1.0)
+                        && (HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE) )
+                    ||  (   (connPtr->request.version > 1.0)
+                            && (HdrEq(connPtr->headers, "connection", "close") == NS_FALSE) )
+                    ) {
 
-		if (   (connPtr->drvPtr->keepmaxuploadsize > 0u)
-		    && (connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) ) {
-		    Ns_Log(Notice, 
-			   "Disallow keep-alive, content-Length %" PRIdz 
-			   " larger keepmaxuploadsize %" PRIdz ": %s",
-			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
-			   connPtr->request.line);
-		    return NS_FALSE;
-		} else if (   (connPtr->drvPtr->keepmaxdownloadsize > 0u)
-			   && (connPtr->responseLength > 0)
-			   && ((size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) ) {
-		    Ns_Log(Notice, 
-			   "Disallow keep-alive response length %" PRIdz " "
-			   "larger keepmaxdownloadsize %" PRIdz ": %s",
-			   connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
-			   connPtr->request.line);
-		    return NS_FALSE;
-		}
+                    /*
+                     * POST, PUT etc. require a content-length header
+                     * to allow keep-alive.
+                     */
+                    if ((connPtr->contentLength > 0u)
+                        && (Ns_SetIGet(connPtr->headers, "Content-Length") == NULL)) {
+                        /*
+                         * No content length -> disallow.
+                         */
+                        break;
+                    }
+
+                    if ( (connPtr->drvPtr->keepmaxuploadsize > 0u)
+                         && (connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) ) {
+                        Ns_Log(Notice, 
+                               "Disallow keep-alive, content-Length %" PRIdz 
+                               " larger keepmaxuploadsize %" PRIdz ": %s",
+                               connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
+                               connPtr->request.line);
+                        break;
+                    } else if ( (connPtr->drvPtr->keepmaxdownloadsize > 0u)
+                                && (connPtr->responseLength > 0)
+                                && ((size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) ) {
+                        Ns_Log(Notice, 
+                               "Disallow keep-alive response length %" PRIdz " "
+                               "larger keepmaxdownloadsize %" PRIdz ": %s",
+                               connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
+                               connPtr->request.line);
+                        break;
+                    }
 		
-                /*
-                 * We allow keep-alive for chunked encoding variants
-                 * or a valid content-length header.
-                 */
-		if (((connPtr->flags & NS_CONN_CHUNK) != 0u)
-                    || (Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL)
-                    || (HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") == NS_TRUE)) {
-		    return NS_TRUE;
+                    /*
+                     * We allow keep-alive for chunked encoding
+                     * variants or a valid content-length header.
+                     */
+                    if (((connPtr->flags & NS_CONN_CHUNK) != 0u)
+                        || (Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL)
+                        || (HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") == NS_TRUE)) {
+                        
+                        result = NS_TRUE;
+                        break;
+                    }
                 }
             }
         }
-    }
-
+    } while (0); /* loop construct just for breaks */
+    
     /*
      * Don't allow keep-alive.
      */
-    return NS_FALSE;
+    return result;
 }
 
 
@@ -1343,7 +1348,7 @@ CheckKeep(const Conn *connPtr)
  *      Value is matched at the beginning of the header value only.
  *
  * Results:
- *      1 if there is a match, 0 otherwise.
+ *      NS_TRUE if there is a match, NS_FALSE otherwise.
  *
  * Side effects:
  *      None.

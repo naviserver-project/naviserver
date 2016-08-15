@@ -139,18 +139,20 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
 int
 NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
+    int             result = TCL_OK;
     const NsLimits *limitsPtr;
-
-    Ns_ObjvSpec args[] = {
+    Ns_ObjvSpec     args[] = {
         {"limits", ObjvLimits, &limitsPtr, INT2PTR(NS_FALSE)},
         {NULL, NULL, NULL, NULL}
     };
+    
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        LimitsResult(interp, limitsPtr);
     }
-    LimitsResult(interp, limitsPtr);
 
-    return TCL_OK;
+    return result;
 }
 
 

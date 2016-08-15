@@ -841,8 +841,7 @@ Ns_StopServer(char *server)
 int
 NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int timeout = 0, sig = NS_SIGTERM;
-
+    int         timeout = 0, sig = NS_SIGTERM, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-restart", Ns_ObjvBool,  &sig, INT2PTR(NS_SIGINT)},
         {"--",       Ns_ObjvBreak, NULL, NULL},
@@ -854,21 +853,21 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     };
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-
-    Ns_MutexLock(&nsconf.state.lock);
-    if (timeout > 0) {
-        nsconf.shutdowntimeout = timeout;
+        result = TCL_ERROR;
     } else {
-        timeout = nsconf.shutdowntimeout;
+
+        Ns_MutexLock(&nsconf.state.lock);
+        if (timeout > 0) {
+            nsconf.shutdowntimeout = timeout;
+        } else {
+            timeout = nsconf.shutdowntimeout;
+        }
+        Ns_MutexUnlock(&nsconf.state.lock);
+
+        NsSendSignal(sig);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(timeout));
     }
-    Ns_MutexUnlock(&nsconf.state.lock);
-
-    NsSendSignal(sig);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(timeout));
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1029,43 +1028,41 @@ UsageError(const char *msg, ...)
 static const char *
 MakePath(char *file)
 {
+    const char *result = NULL;
+    
     if (Ns_PathIsAbsolute(nsconf.nsd) == NS_TRUE) {
-	const char *str;
-	const char *path = NULL;
-	Tcl_Obj    *obj;
-
-        str = strstr(nsconf.nsd, "/bin/");
+	const char *str = strstr(nsconf.nsd, "/bin/");
+        
         if (str == NULL) {
             str = strrchr(nsconf.nsd, INTCHAR('/'));
         }
-        if (str == NULL) {
-            return NULL;
+        if (str != NULL) {
+            const char *path = NULL;
+            Tcl_Obj    *obj;
+        
+            /*
+             * Make sure we have valid path on all platforms
+             */
+            obj = Tcl_NewStringObj(nsconf.nsd, (int)(str - nsconf.nsd));
+            Tcl_AppendStringsToObj(obj, "/", file, NULL);
+        
+            Tcl_IncrRefCount(obj);
+            if (Tcl_FSGetNormalizedPath(NULL, obj) != NULL) {
+                path = Tcl_FSGetTranslatedStringPath(NULL, obj);
+            }
+            Tcl_DecrRefCount(obj);
+
+            /*
+             * If file name was given, check if the file exists
+             */
+            if (path != NULL && *file != '\0' && access(path, F_OK) != 0) {
+                ns_free((void *)path);
+                path = NULL;
+            }
+            result = path;
         }
-
-        /*
-         * Make sure we have valid path on all platforms
-         */
-
-        obj = Tcl_NewStringObj(nsconf.nsd, (int)(str - nsconf.nsd));
-        Tcl_AppendStringsToObj(obj, "/", file, NULL);
-
-        Tcl_IncrRefCount(obj);
-        if (Tcl_FSGetNormalizedPath(NULL, obj) != NULL) {
-	  path = Tcl_FSGetTranslatedStringPath(NULL, obj);
-        }
-        Tcl_DecrRefCount(obj);
-
-        /*
-         * If file name was given, check if the file exists
-         */
-
-        if (path != NULL && *file != '\0' && access(path, F_OK) != 0) {
-            ns_free((void *)path);
-            return NULL;
-        }
-        return path;
     }
-    return NULL;
+    return result;
 }
 
 

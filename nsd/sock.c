@@ -149,8 +149,8 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 size_t
 Ns_SumVec(const struct iovec *bufs, int nbufs)
 {
-    int     i;
-    size_t  sum = 0u;
+    register int i;
+    size_t       sum = 0u;
 
     NS_NONNULL_ASSERT(bufs != NULL);
 

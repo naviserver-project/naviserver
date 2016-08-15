@@ -159,8 +159,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     const NsInterp *itPtr = clientData;
     void           *tidArg;
     Ns_Thread       tid;
-    void           *result;
-    int             opt;
+    int             opt, result = TCL_OK;
 
     static const char *const opts[] = {
         "begin", "begindetached", "create", "wait", "join",
@@ -182,8 +181,8 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     switch (opt) {
     case TCreateIdx:
         Ns_LogDeprecated(objv, 2, "ns_thread begin ...", NULL);
-        /* FALLTHROUGH */
-    case TBeginIdx:
+        /* fall through */
+    case TBeginIdx:         /* fall through */
     case TBeginDetachedIdx:
         {
             const char *threadName = NULL, *script;
@@ -198,10 +197,8 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             };
 
             if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                return TCL_ERROR;
-            }
-
-            if (opt == TBeginDetachedIdx) {
+                result = TCL_ERROR;
+            } else if (opt == TBeginDetachedIdx) {
                 CreateTclThread(itPtr, script, NS_TRUE, threadName, NULL);
             } else {
                 CreateTclThread(itPtr, script, NS_FALSE, threadName, &tid);
@@ -212,18 +209,22 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case TJoinIdx:
         Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
-        /* FALLTHROUGH */
+        /* fall through */
     case TWaitIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "tid");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+
+        } else if (Ns_TclGetAddrFromObj(interp, objv[2], threadType, &tidArg) != TCL_OK) {
+            result = TCL_ERROR;
+
+        } else {
+            void *arg;
+            
+            tid = tidArg;
+            Ns_ThreadJoin(&tid, &arg);
+            Tcl_SetResult(interp, arg, (Tcl_FreeProc *) ns_free);
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], threadType, &tidArg) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        tid = tidArg;
-        Ns_ThreadJoin(&tid, &result);
-        Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
         break;
 
 
@@ -268,7 +269,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         break;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -291,10 +292,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 int
 NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = itPtr->servPtr;
-    Ns_Mutex       *lockPtr;
-    int             opt, status = TCL_OK;
+    int opt, result = TCL_OK;
 
     static const char *const opts[] = {
         "create", "destroy", "eval", "lock", "trylock", "unlock", NULL
@@ -304,58 +302,63 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
     };
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    lockPtr = CreateSynchObject(itPtr,
-                                &servPtr->tcl.synch.mutexTable,
-                                &servPtr->tcl.synch.mutexId,
-                                (Ns_Callback *) Ns_MutexInit,
-                                mutexType,
-                                (objc >= 3) ? objv[2] : NULL, -1);
-    switch (opt) {
-    case MCreateIdx:
-        if (objc > 2) {
-            Ns_MutexSetName(lockPtr, Tcl_GetString(objv[2]));
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Ns_Mutex       *lockPtr;
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        lockPtr = CreateSynchObject(itPtr,
+                                    &servPtr->tcl.synch.mutexTable,
+                                    &servPtr->tcl.synch.mutexId,
+                                    (Ns_Callback *) Ns_MutexInit,
+                                    mutexType,
+                                    (objc >= 3) ? objv[2] : NULL, -1);
+        switch (opt) {
+        case MCreateIdx:
+            if (objc > 2) {
+                Ns_MutexSetName(lockPtr, Tcl_GetString(objv[2]));
+            }
+            break;
+
+        case MLockIdx:
+            Ns_MutexLock(lockPtr);
+            break;
+
+        case MTryLockIdx:
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_MutexTryLock(lockPtr)));
+            break;
+
+        case MUnlockIdx:
+            Ns_MutexUnlock(lockPtr);
+            break;
+
+        case MEvalIdx:
+            if (objc != 4) {
+                Tcl_WrongNumArgs(interp, 3, objv, "script");
+                result = TCL_ERROR;
+            } else {
+                Ns_MutexLock(lockPtr);
+                result = Tcl_EvalObjEx(interp, objv[3], 0);
+                Ns_MutexUnlock(lockPtr);
+            }
+            break;
+
+        case MDestroyIdx:
+            /* No-op. */
+            break;
+
+        default:
+            /* unexpected value */
+            assert(opt && 0);
+            break;
         }
-        break;
-
-    case MLockIdx:
-        Ns_MutexLock(lockPtr);
-        break;
-
-    case MTryLockIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_MutexTryLock(lockPtr)));
-        break;
-
-    case MUnlockIdx:
-        Ns_MutexUnlock(lockPtr);
-        break;
-
-    case MEvalIdx:
-        if (objc != 4) {
-            Tcl_WrongNumArgs(interp, 3, objv, "script");
-            return TCL_ERROR;
-        }
-        Ns_MutexLock(lockPtr);
-        status = Tcl_EvalObjEx(interp, objv[3], 0);
-        Ns_MutexUnlock(lockPtr);
-        break;
-
-    case MDestroyIdx:
-        /* No-op. */
-        break;
-
-    default:
-        /* unexpected value */
-        assert(opt && 0);
-        break;
     }
-
-    return status;
+    return result;
 }
 
 

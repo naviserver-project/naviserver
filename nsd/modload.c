@@ -216,39 +216,43 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
 int
 NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = (const NsInterp *)clientData;
-    const char     *server, *module, *file, *init = "Ns_ModuleInit";
-    int             global = NS_FALSE;
-
-    Ns_ObjvSpec opts[] = {
+    const char   *module, *file, *init = "Ns_ModuleInit";
+    int           global = NS_FALSE, result = TCL_OK;
+    Ns_ObjvSpec   opts[] = {
 	{"-global", Ns_ObjvBool,   &global, INT2PTR(NS_TRUE)},
         {"-init",   Ns_ObjvString, &init,   NULL},
         {"--",      Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec args[] = {
+    Ns_ObjvSpec   args[] = {
         {"module",  Ns_ObjvString, &module, NULL},
         {"file",    Ns_ObjvString, &file,   NULL},
         {NULL, NULL, NULL, NULL}
     };
+    
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    if (Ns_InfoStarted()) {
+        result = TCL_ERROR;
+
+    } else if (Ns_InfoStarted()) {
         Tcl_SetResult(interp, "server already started", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    if (global == NS_TRUE) {
-        server = NULL;
+        result = TCL_ERROR;
+
     } else {
-        server = itPtr->servPtr->server;
+        const NsInterp *itPtr = clientData;
+        const char     *server;
+        
+        if (global == NS_TRUE) {
+            server = NULL;
+        } else {
+            server = itPtr->servPtr->server;
+        }
+
+        if (Ns_ModuleLoad(interp, server, module, file, init) != NS_OK) {
+            Ns_Fatal("modload: failed to load module '%s'", file);
+        }
     }
 
-    if (Ns_ModuleLoad(interp, server, module, file, init) != NS_OK) {
-        Ns_Fatal("modload: failed to load module '%s'", file);
-    }
-
-    return TCL_OK;
+    return result;
 }
 
 

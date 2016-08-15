@@ -277,31 +277,36 @@ NsTclSockSetNonBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 int
 NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned long nread;
-    int           nrBytes;
-    Tcl_Channel   chan;
-    NS_SOCKET     sock;
+
+    int result = TCL_OK;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
-        return TCL_ERROR;
-    }
-    chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
-    if (chan == NULL 
-	|| Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 0, (int *) &sock) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (ns_sockioctl(sock, FIONREAD, &nread) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                               "ns_sockioctl failed: ", 
-                               Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
-    nrBytes = (int)nread;
-    nrBytes += Tcl_InputBuffered(chan);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(nrBytes));
+        result = TCL_ERROR;
 
-    return TCL_OK;
+    } else {
+        unsigned long nread;
+        NS_SOCKET     sock;
+        Tcl_Channel   chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
+        
+        if (chan == NULL 
+            || Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 0, (int *) &sock) != TCL_OK) {
+            result = TCL_ERROR;
+
+        } else if (ns_sockioctl(sock, FIONREAD, &nread) != 0) {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                                   "ns_sockioctl failed: ", 
+                                   Tcl_PosixError(interp), NULL);
+            result = TCL_ERROR;
+
+        } else {
+            int nrBytes = (int)nread;
+            
+            nrBytes += Tcl_InputBuffered(chan);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(nrBytes));
+        }
+    }
+    return result;
 }
     
 
@@ -650,16 +655,13 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         tvPtr = &tv;
     }
     maxfd = 0;
-    if (GetSet(interp, dsRfd.string, 0, &rPtr, &rset, &maxfd) 
-        != TCL_OK) {
+    if (GetSet(interp, dsRfd.string, 0, &rPtr, &rset, &maxfd) != TCL_OK) {
         goto done;
     }
-    if (GetSet(interp, Tcl_GetString(objv[arg++]), 1, &wPtr, &wset, &maxfd)
-        != TCL_OK) {
+    if (GetSet(interp, Tcl_GetString(objv[arg++]), 1, &wPtr, &wset, &maxfd) != TCL_OK) {
         goto done;
     }
-    if (GetSet(interp, Tcl_GetString(objv[arg++]), 0, &ePtr, &eset, &maxfd)
-        != TCL_OK) {
+    if (GetSet(interp, Tcl_GetString(objv[arg++]), 0, &ePtr, &eset, &maxfd) != TCL_OK) {
         goto done;
     }    
     if (dsNbuf.length == 0 && rPtr == NULL && wPtr == NULL && ePtr == NULL && tvPtr == NULL) {
@@ -1059,7 +1061,7 @@ static int
 GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
        fd_set *setPtr, int *const maxPtr)
 {
-    int          fargc, status;
+    int          fargc, result;
     NS_SOCKET    sock;
     const char **fargv = NULL;
 
@@ -1070,41 +1072,41 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
     NS_NONNULL_ASSERT(maxPtr != NULL);
     
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (fargc == 0) {
+        result = TCL_ERROR;
+
+    } else if (fargc == 0) {
         ckfree((char *)fargv);
         *setPtrPtr = NULL;
-        return TCL_OK;
+        result = TCL_OK;
+        
     } else {
         *setPtrPtr = setPtr;
-    }
     
-    FD_ZERO(setPtr);
-    status = TCL_OK;
+        FD_ZERO(setPtr);
+        result = TCL_OK;
 
-    /*
-     * Loop over each file, try to get its FD, and set the bit in
-     * the fd_set.
-     */
+        /*
+         * Loop over each file, try to get its FD, and set the bit in
+         * the fd_set.
+         */
     
-    while (fargc-- > 0) {
-        if (Ns_TclGetOpenFd(interp, fargv[fargc],
-                            write, (int *) &sock) != TCL_OK) {
-            status = TCL_ERROR;
-            break;
-        }
+        while (fargc-- > 0) {
+            if (Ns_TclGetOpenFd(interp, fargv[fargc],
+                                write, (int *) &sock) != TCL_OK) {
+                result = TCL_ERROR;
+                break;
+            }
 #ifndef _MSC_VER
-	/* winsock ignores first argument of select */
-        if (sock > *maxPtr) {
-            *maxPtr = sock;
-        }
+            /* winsock ignores first argument of select */
+            if (sock > *maxPtr) {
+                *maxPtr = sock;
+            }
 #endif
-        FD_SET(sock, setPtr);
+            FD_SET(sock, setPtr);
+        }
+        Tcl_Free((char *) fargv);
     }
-    Tcl_Free((char *) fargv);
-
-    return status;
+    return result;
 }
 
 
