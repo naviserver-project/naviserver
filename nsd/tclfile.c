@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * tclfile.c --
  *
- *      Tcl commands that do stuff to the filesystem. 
+ *      Tcl commands that do stuff to the filesystem.
  */
 
 #include "nsd.h"
@@ -94,7 +94,7 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
         result = TCL_ERROR;
     } else if (check) {
 
-        if (( write != 0 && (mode & TCL_WRITABLE) == 0) 
+        if (( write != 0 && (mode & TCL_WRITABLE) == 0)
             ||
             (write == 0 && (mode & TCL_READABLE) == 0)) {
             Ns_TclPrintfResult(interp, "channel \"%s\" not open for %s",
@@ -157,13 +157,13 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
  *
  * NsTclRollFileObjCmd --
  *
- *      Implements ns_rollfile obj command. 
+ *      Implements ns_rollfile obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -175,7 +175,7 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cmd != NULL);
-    
+
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "file backupMax");
         result = TCL_ERROR;
@@ -203,7 +203,7 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
             result = TCL_OK;
         }
     }
-    
+
     return result;
 }
 
@@ -225,10 +225,10 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclMkTempCmd --
  *
- *      Implements ns_mktemp. 
+ *      Implements ns_mktemp.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      Allocates memory for the filename as a TCL_VOLATILE object.
@@ -239,7 +239,7 @@ int
 NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     int result = TCL_OK;
-    
+
     if (argc == 1) {
         char buffer[PATH_MAX] = "";
 
@@ -266,17 +266,17 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  *
  * NsTclTmpNamObjCmd --
  *
- *  Implements ns_tmpnam as obj command. 
+ *  Implements ns_tmpnam as obj command.
  *
  *  The fallback definition of L_tmpnam was removed in Tcl on
  *  2015-07-15, so we add it here locally, since this is the only
  *  usage
  *
  * Results:
- *  Tcl result. 
+ *  Tcl result.
  *
  * Side effects:
- *  See docs. 
+ *  See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -289,7 +289,7 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
 {
     char buf[L_tmpnam];
     int  result = TCL_OK;
-    
+
     Ns_LogDeprecated(objv, 1, "ns_mktemp ?template?", NULL);
 
     if (tmpnam(buf) == NULL) {
@@ -308,13 +308,13 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
  *
  * NsTclKillObjCmd --
  *
- *      Implements ns_kill as obj command. 
+ *      Implements ns_kill as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -331,13 +331,13 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         {"sig",  Ns_ObjvInt, &sig,    NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         int rc = kill(pid, sig);
-        
+
         if (rc != 0 && !nocomplain) {
             Ns_TclPrintfResult(interp, "kill %d %d failed: %s", pid, sig, Tcl_PosixError(interp));
             result = TCL_ERROR;
@@ -352,13 +352,13 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclSymlinkObjCmd --
  *
- *      Implements ns_symlink as obj command. 
+ *      Implements ns_symlink as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -377,19 +377,19 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {"file2",  Ns_ObjvString, &file2,  NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         int rc = result = symlink(file1, file2);
         if (rc != 0 && !nocomplain) {
-            Ns_TclPrintfResult(interp, "symlink '%s' '%s' failed: %s", file1, file2, 
+            Ns_TclPrintfResult(interp, "symlink '%s' '%s' failed: %s", file1, file2,
                                Tcl_PosixError(interp));
             result = TCL_ERROR;
         }
     }
-    
+
     return result;
 }
 
@@ -399,13 +399,13 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclWriteFpObjCmd --
  *
- *     Implements ns_writefp as obj command. 
+ *     Implements ns_writefp as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -446,13 +446,13 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclTruncateObjCmd --
  *
- *     Implements ns_truncate as obj command. 
+ *     Implements ns_truncate as obj command.
  *
  * Results:
- *     Tcl result. 
+ *     Tcl result.
  *
  * Side effects:
- *     See docs. 
+ *     See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -489,13 +489,13 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclFTruncateObjCmd --
  *
- *      Implements ns_ftruncate as obj command. 
+ *      Implements ns_ftruncate as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -505,7 +505,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     int         fd, result = TCL_OK;
     off_t       length = 0;
     const char *fileIdString;
-    
+
     Ns_ObjvSpec args[] = {
 	{"fileId",    Ns_ObjvString, &fileIdString, NULL},
 	{"?length",   Ns_ObjvInt,    &length,  NULL},
@@ -534,13 +534,13 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclNormalizePathObjCmd --
  *
- *	    Implements ns_normalizepath as obj command. 
+ *	    Implements ns_normalizepath as obj command.
  *
  * Results:
- *	    Tcl result. 
+ *	    Tcl result.
  *
  * Side effects:
- *	    See docs. 
+ *	    See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -559,7 +559,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
         Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
         Tcl_DStringResult(interp, &ds);
     }
-    
+
     return result;
 }
 
@@ -572,10 +572,10 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  *    Implement the "ns_chan create" command.
  *
  * Results:
- *    Tcl result. 
+ *    Tcl result.
  *
  * Side effects:
- *    See docs. 
+ *    See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -598,7 +598,7 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
         chan = Tcl_GetChannel(interp, chanName, NULL);
         if (chan == (Tcl_Channel)NULL) {
             result = TCL_ERROR;
-            
+
         } else if (Tcl_IsChannelShared(chan) == 1) {
             Tcl_SetResult(interp, "channel is shared", TCL_STATIC);
             result = TCL_ERROR;
@@ -613,7 +613,7 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
             hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
             if (isNew != 0) {
                 NsRegChan *regChan;
-                
+
                 regChan = ns_malloc(sizeof(NsRegChan));
                 regChan->name = ns_strdup(chanName);
                 regChan->chan = chan;
@@ -641,10 +641,10 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *    Implement the "ns_chan get" command.
  *
  * Results:
- *    Tcl result. 
+ *    Tcl result.
  *
  * Side effects:
- *    See docs. 
+ *    See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -665,7 +665,7 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         NsInterp      *itPtr = clientData;
         NsServer      *servPtr = itPtr->servPtr;
         NsRegChan     *regChan = NULL;
- 
+
         Ns_MutexLock(&servPtr->chans.lock);
         hPtr = Tcl_FindHashEntry(&servPtr->chans.table, name);
         if (hPtr != NULL) {
@@ -674,13 +674,13 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
             assert(regChan != NULL);
         }
         Ns_MutexUnlock(&servPtr->chans.lock);
-        
+
         if (hPtr == NULL) {
             Ns_TclPrintfResult(interp, "channel \"%s\" not found", name);
             result = TCL_ERROR;
         } else {
             int isNew;
-            
+
             assert(regChan != NULL);
             SpliceChannel(interp, regChan->chan);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(regChan->name, -1));
@@ -700,10 +700,10 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  *    Implement the "ns_chan put" command.
  *
  * Results:
- *    Tcl result. 
+ *    Tcl result.
  *
  * Side effects:
- *    See docs. 
+ *    See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -722,15 +722,15 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     } else {
         NsInterp       *itPtr = clientData;
         Tcl_HashEntry  *hPtr = Tcl_FindHashEntry(&itPtr->chans, name);
-        
+
         if (hPtr == NULL) {
             Ns_TclPrintfResult(interp, "channel \"%s\" not found", name);
             result = TCL_ERROR;
-            
+
         } else {
             NsRegChan   *regChan;
             Tcl_Channel  chan;
-            
+
             regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
             chan = Tcl_GetChannel(interp, regChan->name, NULL);
             if (chan == NULL || chan != regChan->chan) {
@@ -742,7 +742,7 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
             } else {
                 NsServer *servPtr = itPtr->servPtr;
                 int       isNew;
-                
+
                 UnspliceChannel(interp, regChan->chan);
                 Tcl_DeleteHashEntry(hPtr);
                 Ns_MutexLock(&servPtr->chans.lock);
@@ -764,10 +764,10 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  *    Implement the "ns_chan list" command.
  *
  * Results:
- *    Tcl result. 
+ *    Tcl result.
  *
  * Side effects:
- *    See docs. 
+ *    See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -792,7 +792,7 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
         if (isShared != (int)NS_FALSE) {
             Ns_MutexLock(&servPtr->chans.lock);
-            tabPtr = &servPtr->chans.table; 
+            tabPtr = &servPtr->chans.table;
         } else {
             tabPtr = &itPtr->chans;
         }
@@ -821,10 +821,10 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *    Implement the "ns_chan cleanup" command.
  *
  * Results:
- *    Tcl result. 
+ *    Tcl result.
  *
  * Side effects:
- *    See docs. 
+ *    See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -845,7 +845,7 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Tcl_HashTable  *tabPtr;
         Tcl_HashEntry  *hPtr;
         Tcl_HashSearch  search;
-        
+
         if (isShared != (int)NS_FALSE) {
             Ns_MutexLock(&servPtr->chans.lock);
             tabPtr = &servPtr->chans.table;
@@ -855,7 +855,7 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         hPtr = Tcl_FirstHashEntry(tabPtr, &search);
         while (hPtr != NULL) {
             NsRegChan *regChan;
-            
+
             regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
             assert(regChan != NULL);
             if (isShared != (int)NS_FALSE) {
@@ -885,10 +885,10 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *  Implement the ns_chan command.
  *
  * Results:
- *  Tcl result. 
+ *  Tcl result.
  *
  * Side effects:
- *  See docs. 
+ *  See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -904,7 +904,7 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         {"get",     ChanGetObjCmd},
         {NULL, NULL}
     };
-    
+
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
@@ -912,25 +912,25 @@ NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 /*
  *----------------------------------------------------------------------
  *
- * SpliceChannel 
+ * SpliceChannel
  *
- *      Adds the shared channel in the interp/thread. 
+ *      Adds the shared channel in the interp/thread.
  *
  * Results:
- *      None.   
+ *      None.
  *
  * Side effects:
- *      New channel appears in the interp. 
+ *      New channel appears in the interp.
  *
  *----------------------------------------------------------------------
  */
 
-static void 
+static void
 SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(chan != NULL);
-    
+
     Tcl_SpliceChannel(chan);
     Tcl_RegisterChannel(interp, chan);
     (void) Tcl_UnregisterChannel((Tcl_Interp*)NULL, chan);
@@ -940,20 +940,20 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 /*
  *----------------------------------------------------------------------
  *
- * UnspliceChannel 
+ * UnspliceChannel
  *
- *      Divorces the channel from its owning interp/thread. 
+ *      Divorces the channel from its owning interp/thread.
  *
  * Results:
- *      None.   
+ *      None.
  *
  * Side effects:
- *      Channel is not accesible by Tcl scripts any more.   
+ *      Channel is not accesible by Tcl scripts any more.
  *
  *----------------------------------------------------------------------
  */
 
-static void 
+static void
 UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
     const Tcl_ChannelType *chanTypePtr;
@@ -969,7 +969,7 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 
     /*
      * This effectively disables processing of pending
-     * events which are ready to fire for the given 
+     * events which are ready to fire for the given
      * channel. If we do not do this, events will hit
      * the detached channel which is potentially being
      * owned by some other thread. This will wreck havoc
