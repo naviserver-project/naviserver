@@ -2,7 +2,7 @@
 NaviServer 4.99.12, released 2016-08-XX
 =======================================
 
- 193 files changed, 18690 insertions(+), 12108 deletions(-)
+ 195 files changed, 19904 insertions(+), 13118 deletions(-)
 
 New Features:
   * OpenSSL support integrated with NaviServer core
@@ -18,6 +18,12 @@ New Features:
       - ns_hotp (one-time passwords as defined in RFC 4226)
       - ns_totp (time-based one-time passwords as defined in RFC 6238)
 
+    StartTLS support (contributed by Constantin Șerban-Rădoi)
+     - "ns_sendmail" is now able to connect to servers via StartTLS
+        (requires the Tcl "tls" package, since ns_sendmail is
+        implemented in Tcl)
+      - Client and server support for StartTLS in the nssmtpd module.
+
   * New Command "ns_rlimit" to get/set various resource limits from
     the operating system. A typical use case for this command is to
     query or set e.g. the core size via the NaviServer startup file or
@@ -27,12 +33,12 @@ New Features:
     created from the running state (e.g. in combination with the
     "ns_crash" command).
   
-  * Improvements for ns_connchan
-     - support now client functionality via
+  * Improvements for "ns_connchan":
+     - Supports now client functionality via
           ns_connchan open ...
        (works for http:// and https:// URLs)
-     - new subcommand "ns_connchan exists /channel/"
-     - added runtime switchable debug severity "Debug(connchan)"
+     - New subcommand "ns_connchan exists /channel/"
+     - Added runtime switchable debug severity "Debug(connchan)"
 
 Performance Improvements:
 
@@ -45,19 +51,20 @@ Bug Fixes:
   * Fix for a serious bug in cookie management which could lead to false
     positives in ns_getcookie:
 
-      - Previous versions of NaviServer searched the Cookie and
-	Set-Cookie header files for a string "NAME=" and returned the
-	value provided after this string, when found.
+      - Previous versions of NaviServer searched the "Cookie" and
+	"Set-Cookie" header files for a string "NAME=" and returned
+	the value provided after this string, when found.
 
-      - However, the Cookie and Set-Cookie header fields have different a
-	different syntax (see https://tools.ietf.org/html/rfc6265 section
-	4.1.1 vs. 4.2.1), such as e.g. Cookie: cookie1="value1";
-	cookie2="value2"; style=null; ... Set-Cookie: cookie1="new- value";
-	Expires=Fri, 01-Jan-2035 01:00:00 GMT; Path=/; HttpOnly
+      - However, the "Cookie" and "Set-Cookie" header fields have
+	contents in a different a different syntax (see
+	https://tools.ietf.org/html/rfc6265 section 4.1.1 vs. 4.2.1),
+	such as e.g. Cookie: cookie1="value1"; cookie2="value2";
+	style=null; ... Set-Cookie: cookie1="new- value"; Expires=Fri,
+	01-Jan-2035 01:00:00 GMT; Path=/; HttpOnly
 
-      - Therefore, searching in Cookie e.g. for a cookie named "tyle"
-        lead to a success as well as a search in Set-Cookies for
-	e.g. a cookie named "Expires".
+      - Therefore, searching in the "Cookie" header field e.g. for a
+        cookie named "tyle" lead to a success as well as a search in
+        "Set-Cookies" for e.g. a cookie named "Expires".
 
   * Improved handling of erroneous requests (some where treated as
     HTTP/0.9 requests before, leading to strange behavior/error
@@ -73,16 +80,14 @@ Bug Fixes:
   * Improved portability for *BSD systems and recent Windows
     build environments (e.g. Visual Studio 2015)
 	
+
 Documentation improvements:
-  * new man pages for ns_hmac, hs_md, ns_hotp, ns_totp
-  * various man pages updated/improved
-  * improved sample config files
+  * New man pages for ns_hmac, hs_md, ns_hotp, ns_totp
+  * Various man pages updated/improved
+  * Improved sample config files
   
-Tcl API Changes:
 
 C API Changes:
-
-  *  New function
 
   *  Introduction of Ns_ReturnCode: use an enumeration type instead of
      preprocessor based constants + int. The change revealed several
@@ -93,62 +98,60 @@ C API Changes:
     - Ns_GetBinaryString() to obtain from a Tcl_Obj the binary
       representation if available, otherwise the string representation.
       
-    - Ns_SetRecreate() which is a combintion of a create and a move
-      operation, but avoiding malloc operatons on all keys/values.
+    - Ns_SetRecreate() which is a combination of a create and a move
+      operation, but avoiding malloc operations on all keys/values.
 
     - Ns_DStringAppendTime() to ease uniform printing of
       Ns_Time structs into DStrings
-
-    - new argv checkers Ns_ObjvUShort() and ObjvQueue()
 
     - Ns_SubcmdObjv(): New infrastructure support for commands with
       subcommands: instead of long switch statements with nested
       structures with often many returns, one can now register
       Tcl_ObjCmdProcs for subcommands in an Ns_SubCmdSpec structure.
-
-Incompatible API Changes:
+      
+    - New argv checkers Ns_ObjvUShort() and ObjvQueue()
+    
 
 Configuration Changes:
     - added configure switch --with-openssl?=path?
 
-Command Line Changes:
 
 Code Changes:
-  * Improve naming of Mutexes: much more mutexes are named now.
+  * Improved naming of Mutexes: much more mutexes are named now.
   
   * Code cleanup:
-    - modernized argv parsing by using Ns_ParseObjv() for
+    - Modernized argv parsing by using Ns_ParseObjv() for
       many functions.
-    - introduced enumeration types Ns_ReturnCode
+    - Introduced enumeration types Ns_ReturnCode
       and NsWriterStreamState
-    - new macro INTCHAR to pass "char" values to library
-    - use "unsigned short" consistently for port numbers
+    - New macro INTCHAR to pass "char" values to library
+    - Use "unsigned short" consistently for port numbers
       functions requiring "int" to avoid code smells 
-    - use boolean types on more occasions
-    - use more often typedef-ed function definitions
-    - reduce number of multiple returns per function
-    - remove all calls to deprecated Tcl API Function
+    - Use boolean types on more occasions
+    - Use more often typedef-ed function definitions
+    - Reduced number of multiple returns per function
+    - Removed all calls to deprecated Tcl API Function
       Tcl_AppendElement()
-    - reduce calls to Tcl_AppendResult() and use explicit
-      Tcl_Objs
-    - made generation of error messages more consistent
+    - Reduced calls to Tcl_AppendResult() and use explicit
+      Tcl_Objs instead for results
+    - Generation of error messages made more consistent
     - Removed useless calls to Ns_DStringFree() after Tcl_DStringResult()
-
-    - replace deprecated atoll by strtoll
-    - reduced variable scopes
-    - added more const declarations
-    - don't use boolean values as arguments of comparsion operators
-    - many large functions split into smaller units
+    - Replaced deprecated atoll() by strtoll()
+    - Reduced variable scopes
+    - Added more const declarations
+    - Don't use boolean values as arguments of comparison operators
+    - Many large functions split into smaller units
 
   * Made testing more robust when IPv6 is available, but
     turned off in the kernel
     
   * NaviServer driver:
-    - added (clientInitProc, protocol and default port) to info record
-    - bumped driver version to 4
+    - Added (clientInitProc, protocol and default port) to info record
+    - Bumped driver version to 4
     
   * Ignore less soft error conditions, but report in the error.log
-    
+
+
 =======================================
 NaviServer 4.99.11, released 2016-05-01
 =======================================
