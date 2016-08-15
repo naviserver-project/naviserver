@@ -451,8 +451,7 @@ encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
 char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
-    register size_t i;
-    register int    j;
+    register size_t i, j;
     unsigned char   c;
     unsigned char   block[66];
     struct sched    s;
@@ -465,9 +464,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         block[i] = UCHAR('\0');
     }
     for (i = 0u, c = UCHAR(*pw); c != UCHAR('\0') && i < 64u; pw++, c = UCHAR(*pw)) {
-	for (j = 0; j < 7; j++, i++) {
+	for (j = 0u; j < 7u; j++, i++) {
             assert(i < sizeof(block));
-            block[i] = (c >> (6 - j)) & 1u;
+            block[i] = (c >> (6u - j)) & 1u;
 	}
         i++;
     }
@@ -488,11 +487,11 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
             c -= 7u;
 	}
         c -= UCHAR('.');
-        for (j = 0; j < 6; j++) {
+        for (j = 0u; j < 6u; j++) {
             if (((c >> j) & 1u) != 0u) {
                 unsigned char temp = s.E[6u * i + j];
-                s.E[6u * i + j] = s.E[6u * i + j + 24];
-                s.E[6u * i + j + 24] = temp;
+                s.E[6u * i + j] = s.E[6u * i + j + 24u];
+                s.E[6u * i + j + 24u] = temp;
             }
         }
     }
@@ -503,7 +502,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 
     for (i = 0u; i < 11u; i++) {
         c = UCHAR('\0');
-        for (j = 0; j < 6; j++) {
+        for (j = 0u; j < 6u; j++) {
             c <<= 1;
             c |= block[6u * i + j];
         }
@@ -521,7 +520,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         iobuf[1] = iobuf[0];
     }
 
-    return (iobuf);
+    return iobuf;
 }
 
 #endif
