@@ -640,14 +640,13 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *
  * NsTclCacheGetObjCmd --
  *
- *      Return an entry from the cache. This function behaves
- *      similar to nsv_get; if the optional varname is passed,
- *      it returns 0 or 1 depending on succes and bind the variable
- *      on success. If no varName is provided, it returns the value
- *      or an error.
+ *      Return an entry from the cache. This function behaves similar to
+ *      nsv_get; if the optional varname is passed, it returns on the Tcl
+ *      level 0 or 1 depending on succes and bind the variable on success. If
+ *      no varName is provided, it returns the value or an error.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.
