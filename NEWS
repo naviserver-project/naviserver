@@ -24,7 +24,8 @@ New Features:
     to change it at runtime in a syntax independent from the naming
     and conventions in the various startup scripts (e.g. upstart,
     systemd, ...). This is e.g. useful when a core dump should be
-    created from the running state.
+    created from the running state (e.g. in combination with the
+    "ns_crash" command).
   
   * Improvements for ns_connchan
      - support now client functionality via
@@ -58,7 +59,16 @@ Bug Fixes:
         lead to a success as well as a search in Set-Cookies for
 	e.g. a cookie named "Expires".
 
+  * Improved handling of erroneous requests (some where treated as
+    HTTP/0.9 requests before, leading to strange behavior/error
+    messages).
+
   * Fix potential memory leak for "ns_mutex eval"
+
+  * Long standing bug when exiting "make test" should be fixed by now.
+    The problem was that the the Tcl exit handler was kicking in when
+    the end-of file was reached, interfering with the NaviServer
+    shutdown steps.
 
   * Improved portability for *BSD systems and recent Windows
     build environments (e.g. Visual Studio 2015)
@@ -86,6 +96,16 @@ C API Changes:
     - Ns_SetRecreate() which is a combintion of a create and a move
       operation, but avoiding malloc operatons on all keys/values.
 
+    - Ns_DStringAppendTime() to ease uniform printing of
+      Ns_Time structs into DStrings
+
+    - new argv checkers Ns_ObjvUShort() and ObjvQueue()
+
+    - Ns_SubcmdObjv(): New infrastructure support for commands with
+      subcommands: instead of long switch statements with nested
+      structures with often many returns, one can now register
+      Tcl_ObjCmdProcs for subcommands in an Ns_SubCmdSpec structure.
+
 Incompatible API Changes:
 
 Configuration Changes:
@@ -94,9 +114,16 @@ Configuration Changes:
 Command Line Changes:
 
 Code Changes:
-  * Improve naming of Mutexes: much more mutexes are named.
+  * Improve naming of Mutexes: much more mutexes are named now.
   
   * Code cleanup:
+    - modernized argv parsing by using Ns_ParseObjv() for
+      many functions.
+    - introduced enumeration types Ns_ReturnCode
+      and NsWriterStreamState
+    - new macro INTCHAR to pass "char" values to library
+    - use "unsigned short" consistently for port numbers
+      functions requiring "int" to avoid code smells 
     - use boolean types on more occasions
     - use more often typedef-ed function definitions
     - reduce number of multiple returns per function
@@ -104,10 +131,14 @@ Code Changes:
       Tcl_AppendElement()
     - reduce calls to Tcl_AppendResult() and use explicit
       Tcl_Objs
+    - made generation of error messages more consistent
+    - Removed useless calls to Ns_DStringFree() after Tcl_DStringResult()
+
     - replace deprecated atoll by strtoll
     - reduced variable scopes
     - added more const declarations
-    - prefer Ns_ParseObjv() interface over manual argv parsing for consistency
+    - don't use boolean values as arguments of comparsion operators
+    - many large functions split into smaller units
 
   * Made testing more robust when IPv6 is available, but
     turned off in the kernel

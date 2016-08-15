@@ -703,10 +703,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
                 result = TCL_ERROR;
 
             } else {
+                assert(handlePtr != NULL);
                 Ns_LogDeprecated(objv, 2, "ns_logctl debug(sql) ...", NULL);
-                
+
                 if (objc == 4) {
-                    assert(handlePtr != NULL);
                     handlePtr->verbose = verbose;
                     (void) Ns_LogSeveritySetEnabled(Ns_LogSqlDebug, (bool)verbose);
                 }

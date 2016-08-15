@@ -294,15 +294,15 @@ typedef struct Ns_CacheSearch {
     Tcl_HashSearch hsearch;
 } Ns_CacheSearch;
 
-typedef struct _Ns_Cache        *Ns_Cache;
-typedef struct _Ns_Entry        *Ns_Entry;
+typedef struct _Ns_Cache         Ns_Cache;
+typedef struct _Ns_Entry         Ns_Entry;
 typedef struct _Ns_Cls          *Ns_Cls;
 typedef struct _Ns_Sls          *Ns_Sls;
-typedef void                    *Ns_OpContext;
-typedef struct _Ns_TaskQueue    *Ns_TaskQueue;
-typedef struct _Ns_Task         *Ns_Task;
-typedef struct _Ns_EventQueue   *Ns_EventQueue;
-typedef struct _Ns_Event        *Ns_Event;
+typedef void                     Ns_OpContext;
+typedef struct _Ns_TaskQueue     Ns_TaskQueue;
+typedef struct _Ns_Task          Ns_Task;
+typedef struct _Ns_EventQueue    Ns_EventQueue;
+typedef struct _Ns_Event         Ns_Event;
 
 
 /*
@@ -1641,9 +1641,6 @@ Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc);
 /*
  * rand.c:
  */
-
-NS_EXTERN void
-Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
 
 NS_EXTERN double
 Ns_DRand(void);

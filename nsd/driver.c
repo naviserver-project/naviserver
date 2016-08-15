@@ -2280,7 +2280,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
                err, (err != 0) ? strerror(err) : "",
                sockPtr->sock,
                ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), ipString, sizeof(ipString)),
-               Ns_SockaddrGetPort((struct sockaddr *)&sockPtr),
+               Ns_SockaddrGetPort((struct sockaddr *)&(sockPtr->sa)),
                (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
     }
 }

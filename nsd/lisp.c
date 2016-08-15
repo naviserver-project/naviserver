@@ -294,7 +294,7 @@ Ns_ListCopy(const Ns_List *lPtr)
 {
     Ns_List *headPtr = NULL;
 
-    if (lPtr == NULL) {
+    if (lPtr != NULL) {
         Ns_List *curPtr, *newPtr = NULL;
 
         headPtr = curPtr = Ns_ListCons(lPtr->first, NULL);

@@ -52,7 +52,7 @@ static unsigned long Roulette(void);
 static volatile unsigned long counter = 0u;  /* Counter in counting thread */
 static volatile int fRun = 0; 	/* Flag for counting thread outer loop. */
 static volatile int fCount= 0; 	/* Flag for counting thread inner loop. */
-static Ns_Sema       sema = NULL;	/* Semaphore that controls counting threads. */
+static Ns_Sema      sema = NULL;	/* Semaphore that controls counting threads. */
 
 /*
  * Critical section around initial and subsequent seed generation.
@@ -60,6 +60,12 @@ static Ns_Sema       sema = NULL;	/* Semaphore that controls counting threads. *
 
 static Ns_Cs lock = NULL;
 static volatile bool initialized = NS_FALSE;
+
+/*
+ * Static functions defined in this file.
+ */
+
+static void GenSeeds(unsigned long seeds[], int nseeds);
 
 
 /*
@@ -140,15 +146,15 @@ Ns_DRand(void)
     if (!initialized) {
 	Ns_CsEnter(&lock);
 	if (!initialized) {
-	    unsigned long seed;
+	    unsigned long seed[1];
             
-	    Ns_GenSeeds(&seed, 1);
+	    GenSeeds(seed, 1);
 #if defined(HAVE_DRAND48)
-    	    srand48((long) seed);
+    	    srand48((long) seed[0]);
 #elif defined(HAVE_RANDOM)
-    	    srandom((unsigned int) seed);
+    	    srandom((unsigned int) seed[0]);
 #else
-    	    srand((unsigned int) seed);
+    	    srand((unsigned int) seed[0]);
 #endif
 	    initialized = NS_TRUE;
 	}
@@ -169,10 +175,9 @@ Ns_DRand(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GenSeeds --
+ * GenSeeds --
  * 
- *	Calculate an array of random seeds used by both Ns_DRand() and
- *  	the old SSL module.
+ *	Calculate an array of random seeds.
  * 	
  * Results:
  *  	None.
@@ -183,8 +188,8 @@ Ns_DRand(void)
  *----------------------------------------------------------------------
  */
 
-void
-Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
+static void
+GenSeeds(unsigned long seeds[], int nseeds)
 {
     Ns_Thread thr;
     
@@ -195,7 +200,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
     fRun = 1;
     Ns_ThreadCreate(CounterThread, NULL, 0, &thr);
     while (nseeds-- > 0) {
-    	*seedsPtr++ = TrueRand();
+    	seeds[nseeds] = TrueRand();
     }
     fRun = 0;
     Ns_SemaPost(&sema, 1);
