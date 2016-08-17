@@ -1330,7 +1330,7 @@ CheckKeep(const Conn *connPtr)
                 }
             }
         }
-    } while (0); /* loop construct just for breaks */
+    } while (NS_FALSE); /* loop construct just for breaks */
     
     /*
      * Don't allow keep-alive.
