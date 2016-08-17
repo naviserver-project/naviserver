@@ -4914,7 +4914,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         
     } else {
         Tcl_DString       ds, *dsPtr = &ds;
-        Driver           *drvPtr;
+        const Driver     *drvPtr;
         SpoolerQueue     *queuePtr;
     
         Tcl_DStringInit(dsPtr);
