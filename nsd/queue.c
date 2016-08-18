@@ -328,10 +328,10 @@ bool
 NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     ConnThreadArg *argPtr = NULL;
-    NsServer *servPtr;
-    ConnPool *poolPtr = NULL;
-    Conn     *connPtr = NULL;
-    bool      create = NS_FALSE;
+    NsServer      *servPtr;
+    ConnPool      *poolPtr = NULL;
+    Conn          *connPtr = NULL;
+    bool           create = NS_FALSE, queued = NS_TRUE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(nowPtr != NULL);
@@ -452,10 +452,10 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	       poolPtr->wqueue.wait.num,
 	       poolPtr->threads.idle, 
 	       poolPtr->threads.current);
-	return NS_FALSE;
-    }
+	queued = NS_FALSE;
+        create = NS_FALSE;
 
-    if (argPtr != NULL) {
+    } else if (argPtr != NULL) {
 	/*
 	 * We have a connection thread ready.
 	 *
@@ -505,7 +505,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	CreateConnThread(poolPtr);
     } 
 
-    return NS_TRUE;
+    return queued;
 }
 
 
@@ -530,7 +530,7 @@ int
 NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = clientData;
-    int             subcmd = 0, value = 0;
+    int             subcmd = 0, value = 0, result = TCL_OK;
     const NsServer *servPtr = NULL;
     ConnPool       *poolPtr;
     char           *pool = NULL, *optArg = NULL, buf[100];
@@ -696,26 +696,32 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
 		Ns_TclPrintfResult(interp, "argument is not an integer in valid range: %s", optArg);
-		return TCL_ERROR;
-	    }
-	    Ns_MutexLock(&poolPtr->threads.lock);
-	    poolPtr->threads.max = value;
-	    Ns_MutexUnlock(&poolPtr->threads.lock);
+		result = TCL_ERROR;
+	    } else {
+                Ns_MutexLock(&poolPtr->threads.lock);
+                poolPtr->threads.max = value;
+                Ns_MutexUnlock(&poolPtr->threads.lock);
+            }
 	}
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.max));
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.max));
+        }
 	break;
 
     case SMinthreadsIdx:
 	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < 1 || value > poolPtr->threads.max) {
 		Ns_TclPrintfResult(interp, "argument is not a integer in the valid range: %s", optArg);
-		return TCL_ERROR;
-	    }
-	    Ns_MutexLock(&poolPtr->threads.lock);
-	    poolPtr->threads.min = value;
-	    Ns_MutexUnlock(&poolPtr->threads.lock);
+		result = TCL_ERROR;
+	    } else {
+                Ns_MutexLock(&poolPtr->threads.lock);
+                poolPtr->threads.min = value;
+                Ns_MutexUnlock(&poolPtr->threads.lock);
+            }
 	}
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.min));
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.min));
+        }
 	break;
     
     case SConnectionsIdx:
@@ -792,7 +798,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         assert(subcmd && 0);
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
