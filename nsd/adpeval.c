@@ -736,7 +736,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
 
     code = TCL_OK;
     if (itPtr->adp.debugInit == 0) {
-        itPtr->deleteInterp = 1;
+        itPtr->deleteInterp = NS_TRUE;
         Tcl_DStringInit(&ds);
         Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
         Tcl_DStringAppendElement(&ds, (procs != NULL) ? procs : "");

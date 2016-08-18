@@ -645,7 +645,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
 
     itPtr = NsGetInterpData(interp);
     if (itPtr != NULL) {
-        itPtr->deleteInterp = 1;
+        itPtr->deleteInterp = NS_TRUE;
     }
 }
 
@@ -1198,7 +1198,7 @@ ICtlMarkForDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        itPtr->deleteInterp = 1;
+        itPtr->deleteInterp = NS_TRUE;
     }
     return result;
 }
@@ -1872,7 +1872,7 @@ PushInterp(NsInterp *itPtr)
      */
     if (itPtr->refcnt == 1) {
         RunTraces(itPtr, NS_TCL_TRACE_DEALLOCATE);
-        if (itPtr->deleteInterp != 0) {
+        if (itPtr->deleteInterp) {
             Ns_Log(Debug, "ns_markfordelete: true");
             Ns_TclDestroyInterp(interp);
             return;

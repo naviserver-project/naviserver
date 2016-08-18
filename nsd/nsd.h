@@ -969,7 +969,7 @@ typedef struct NsInterp {
 
     Tcl_Interp *interp;
     NsServer   *servPtr;
-    int         deleteInterp;  /* Interp should be deleted on next deallocation */
+    bool        deleteInterp;  /* Interp should be deleted on next deallocation */
     int         epoch;         /* Run the update script if != to server epoch */
     int         refcnt;        /* Counts recursive allocations of cached interp */
 
