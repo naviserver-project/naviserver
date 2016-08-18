@@ -156,7 +156,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     if (request.port == 0u) {
         request.port = 80u;
     }
-    sock = Ns_SockConnect(request.host, (int)request.port);
+    sock = Ns_SockConnect(request.host, request.port);
     if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
                url, ns_sockstrerror(ns_sockerrno));
