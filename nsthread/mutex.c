@@ -389,8 +389,7 @@ Ns_MutexList(Tcl_DString *dsPtr)
     char buf[200];
 
     Ns_MasterLock();
-    mutexPtr = firstMutexPtr;
-    while (mutexPtr != NULL) {
+    for (mutexPtr = firstMutexPtr; mutexPtr != NULL; mutexPtr = mutexPtr->nextPtr) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
@@ -403,7 +402,6 @@ Ns_MutexList(Tcl_DString *dsPtr)
 		 );
         Tcl_DStringAppend(dsPtr, buf, -1);
         Tcl_DStringEndSublist(dsPtr);
-        mutexPtr = mutexPtr->nextPtr;
     }
     Ns_MasterUnlock();
 }
