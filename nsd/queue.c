@@ -53,7 +53,7 @@ static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *stat
 static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-static int neededAdditionalConnectionThreads(const ConnPool *poolPtr) 
+static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr) 
     NS_GNUC_NONNULL(1);
 
 static void WakeupConnThreads(ConnPool *poolPtr) 
@@ -193,9 +193,9 @@ NsMapPool(ConnPool *poolPtr, const char *map)
  *
  *----------------------------------------------------------------------
  */
-static int 
+static bool 
 neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
-    int wantCreate;
+    bool wantCreate;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
@@ -234,7 +234,7 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
 	     poolPtr->wqueue.wait.num
 	     );*/
     } else {
-        wantCreate = 0;
+        wantCreate = NS_FALSE;
 		
         /*Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d, waiting %d)",
 	       poolPtr->servPtr->server, 
@@ -273,7 +273,7 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
 
 void
 NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
-    int create;
+    bool create;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
@@ -289,7 +289,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     Ns_MutexLock(&poolPtr->threads.lock);
     create = neededAdditionalConnectionThreads(poolPtr);
 
-    if (create != 0) {
+    if (create) {
 	poolPtr->threads.current ++;
 	poolPtr->threads.creating ++;
     }
@@ -297,7 +297,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     Ns_MutexUnlock(&poolPtr->threads.lock);
     Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
-    if (create != 0) {
+    if (create) {
         Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d waiting %d idle %d current %d", 
 	       create,
 	       poolPtr->wqueue.wait.num,
@@ -331,7 +331,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     NsServer *servPtr;
     ConnPool *poolPtr = NULL;
     Conn     *connPtr = NULL;
-    int       create = 0;
+    bool      create = NS_FALSE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(nowPtr != NULL);
@@ -486,7 +486,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	}
     }
 
-    if (create != 0) {
+    if (create) {
 	int idle, current;
 
 	Ns_MutexLock(&poolPtr->threads.lock);
