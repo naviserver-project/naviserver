@@ -308,8 +308,8 @@ Ns_Match(const char *a, const char *b)
 {
     if (a != NULL && b != NULL) {
         while (*a != '\0' && *b != '\0') {
-            char c1 = CHARTYPE(lower, *a) != 0 ? *a : CHARCONV(lower, *a);
-            char c2 = CHARTYPE(lower, *b) != 0 ? *b : CHARCONV(lower, *b);
+            char c1 = (CHARTYPE(lower, *a) != 0) ? *a : CHARCONV(lower, *a);
+            char c2 = (CHARTYPE(lower, *b) != 0) ? *b : CHARCONV(lower, *b);
             if (c1 != c2) {
                 return NULL;
             }
