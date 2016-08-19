@@ -299,7 +299,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
 
     if (create) {
         Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d waiting %d idle %d current %d", 
-	       create,
+	       (int)create,
 	       poolPtr->wqueue.wait.num,
 	       poolPtr->threads.idle, 
 	       poolPtr->threads.current);
@@ -469,7 +469,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	    Ns_MutexUnlock(&poolPtr->threads.lock);
 
 	    Ns_Log(Debug, "[%ld] dequeue thread connPtr %p idle %d state %d create %d", 
-		   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, create);
+		   ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, (int)create);
 	}
 
 	/*
@@ -482,7 +482,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     } else {
 	if (Ns_LogSeverityEnabled(Debug)) {
 	    Ns_Log(Debug, "add waiting connPtr %p => waiting %d create %d", 
-		   (void *)connPtr, poolPtr->wqueue.wait.num, create);
+		   (void *)connPtr, poolPtr->wqueue.wait.num, (int)create);
 	}
     }
 
@@ -497,7 +497,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         Ns_MutexUnlock(&poolPtr->threads.lock);
 
         Ns_Log(Notice, "NsQueueConn wantCreate %d waiting %d idle %d current %d", 
-	       create,
+	       (int)create,
 	       poolPtr->wqueue.wait.num,
 	       idle, 
 	       current);
