@@ -614,6 +614,9 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
             if (isNew != 0) {
                 NsRegChan *regChan;
 
+                /*
+                 * Allocate a new NsRegChan entry.
+                 */
                 regChan = ns_malloc(sizeof(NsRegChan));
                 regChan->name = ns_strdup(chanName);
                 regChan->chan = chan;
@@ -680,7 +683,10 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
             result = TCL_ERROR;
         } else {
             int isNew;
-
+            
+            /*
+             * We have a valid NsRegChan.
+             */
             assert(regChan != NULL);
             SpliceChannel(interp, regChan->chan);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(regChan->name, -1));
@@ -743,6 +749,9 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
                 NsServer *servPtr = itPtr->servPtr;
                 int       isNew;
 
+                /*
+                 * We have a valid NsRegChan.
+                 */
                 UnspliceChannel(interp, regChan->chan);
                 Tcl_DeleteHashEntry(hPtr);
                 Ns_MutexLock(&servPtr->chans.lock);
@@ -796,10 +805,13 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         } else {
             tabPtr = &itPtr->chans;
         }
-        for (hPtr = Tcl_FirstHashEntry(tabPtr, &search);
-             hPtr != NULL;
-             hPtr = Tcl_NextHashEntry(&search)
-             ) {
+        
+        /*
+         * Compute a Tcl list of the keys of every entry of the hash
+         * table.
+         */
+        for (hPtr = Tcl_FirstHashEntry(tabPtr, &search); hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search)) {
             const char *key = Tcl_GetHashKey(tabPtr, hPtr);
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
         }
@@ -852,8 +864,11 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         } else {
             tabPtr = &itPtr->chans;
         }
-        hPtr = Tcl_FirstHashEntry(tabPtr, &search);
-        while (hPtr != NULL) {
+        
+        /*
+         * Cleanup every entry found in the the hash table.
+         */
+        for (hPtr = Tcl_FirstHashEntry(tabPtr, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
             NsRegChan *regChan;
 
             regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
@@ -867,7 +882,6 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             ns_free((char *)regChan->name);
             ns_free(regChan);
             Tcl_DeleteHashEntry(hPtr);
-            hPtr = Tcl_NextHashEntry(&search);
         }
         if (isShared != (int)NS_FALSE) {
             Ns_MutexUnlock(&servPtr->chans.lock);
