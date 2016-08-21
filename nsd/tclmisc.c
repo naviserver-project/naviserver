@@ -512,9 +512,11 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                         }
                     }
                     if (*s == '\'' || *s == '\"') {
-                        while (*s != '\0' && (*s != '\'' || *s != '\"')) {
-                            ++s;
-                        }
+                        char quote = *s;
+
+                        do {
+                            s++;
+                        } while (*s != '\0' && *s != quote);
                         continue;
                     }
                     if (*s != '\0') {
