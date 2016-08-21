@@ -1,19 +1,19 @@
 =======================================
-NaviServer 4.99.12, released 2016-08-XX
+NaviServer 4.99.12, released 2016-08-21
 =======================================
 
- 195 files changed, 19904 insertions(+), 13118 deletions(-)
+ 195 files changed, 20265 insertions(+), 13421 deletions(-)
 
 New Features:
   * OpenSSL support integrated with NaviServer core
     - ns_http can handle now http and https urls
-    - added backward_compatibility stub for ns_ssl
-    - added configure switch --with-openssl?=path?
+    - Added backward_compatibility stub for ns_ssl
+    - Added configure switch --with-openssl?=path?
 
   * Improved crypto support (through OpenSSL)
     New commands:
       - ns_hmac
-      - ns_md (generalization of ns_md4 and ns_sha1,
+      - ns_md (generalization of ns_md5 and ns_sha1,
         but supports by default 14 different digest algorithms)
       - ns_hotp (one-time passwords as defined in RFC 4226)
       - ns_totp (time-based one-time passwords as defined in RFC 6238)
