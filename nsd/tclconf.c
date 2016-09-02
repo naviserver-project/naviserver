@@ -226,15 +226,16 @@ NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 int
 NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int      result;
+    int result;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         result = TCL_ERROR;
     } else {
         Ns_Set **sets;
-        int i;
-
+        int      i;
+        Tcl_Obj *resultList = Tcl_NewListObj(0,NULL);
+        
         result = TCL_OK;
         sets = Ns_ConfigGetSections();
         for (i = 0; sets[i] != NULL; i++) {
@@ -242,7 +243,10 @@ NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
             if (unlikely(result != TCL_OK)) {
                 break;
             }
+            Tcl_ListObjAppendElement(interp, resultList, Tcl_GetObjResult(interp));
         }
+        
+        Tcl_SetObjResult(interp, resultList);
         ns_free(sets);
     }
 
