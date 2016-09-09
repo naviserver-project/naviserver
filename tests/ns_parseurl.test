@@ -1,0 +1,58 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_parseurl-1.0 {basic syntax: plain call} -body {
+     ns_parseurl 
+} -returnCodes error -result {wrong # args: should be "ns_parseurl url"}
+
+test ns_parseurl-1.1 {full url, no port} -body {
+    ns_parseurl http://openacs.org/www/t.html
+} -result {proto http host openacs.org path www tail t.html}
+
+test ns_parseurl-1.2 {full url, no port} -body {
+    ns_parseurl http://openacs.org:80/www/t.html
+} -result {proto http host openacs.org portString 80 path www tail t.html}
+
+test ns_parseurl-1.3 {full url, no port, no component} -body {
+    ns_parseurl http://openacs.org/
+} -result {proto http host openacs.org path {} tail {}}
+
+test ns_parseurl-1.4 {full url, no port, no component, no trailing slash} -body {
+    ns_parseurl http://openacs.org
+} -result {proto http host openacs.org path {} tail {}}
+
+test ns_parseurl-1.5 {full url, no port, one component} -body {
+    ns_parseurl http://openacs.org/t.html
+} -result {proto http host openacs.org path {} tail t.html}
+
+#
+# relative URLs
+#
+
+test ns_parseurl-2.1 {relative url} -body {
+    ns_parseurl /www/t.html
+} -result {path www tail t.html}
+
+# legacy NaviServer, desired?
+test ns_parseurl-2.2 {relative url, no leading /} -body {
+    ns_parseurl www/t.html
+} -result {tail www/t.html}
+
+#
+# protocol relative (protocol agnostic) URLs (contained in RFC 3986)
+#
+test ns_parseurl-3.1 {protocol relative url with port} -body {
+    ns_parseurl //openacs.org/www/t.html
+} -result {host openacs.org path www tail t.html}
+
+test ns_parseurl-3.2 {protocol relative url without port} -body {
+    ns_parseurl //openacs.org:80/www/t.html
+} -result {host openacs.org portString 80 path www tail t.html}
+
+
+
+cleanupTests
