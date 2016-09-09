@@ -656,7 +656,7 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     const Ns_Conn  *conn = GetConn(interp);
     const char     *name, *domain = NULL, *path = NULL;
-    unsigned int    flags = NS_COOKIE_SCRIPTABLE;
+    unsigned int    flags = 0;
     int             secure = 0, replace = 0;
 
     Ns_ObjvSpec     opts[] = {
