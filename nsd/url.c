@@ -354,7 +354,7 @@ done:
  *----------------------------------------------------------------------
  */
 int
-NsTclParseUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
     const char *urlString;
