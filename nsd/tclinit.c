@@ -1860,6 +1860,7 @@ static void
 PushInterp(NsInterp *itPtr)
 {
     Tcl_Interp *interp;
+    bool        ok = NS_TRUE;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     
@@ -1875,13 +1876,15 @@ PushInterp(NsInterp *itPtr)
         if (itPtr->deleteInterp) {
             Ns_Log(Debug, "ns_markfordelete: true");
             Ns_TclDestroyInterp(interp);
-            return;
+            ok = NS_FALSE;
         }
     }
-    Tcl_ResetResult(interp);
-    itPtr->refcnt--;
+    if (ok) {
+        Tcl_ResetResult(interp);
+        itPtr->refcnt--;
 
-    assert(itPtr->refcnt >= 0);
+        assert(itPtr->refcnt >= 0);
+    }
 }
 
 

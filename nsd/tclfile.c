@@ -610,7 +610,7 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
 
         } else {
             /*
-             * All parameters are ok
+             * All parameters are ok.
              */
             const NsInterp *itPtr = clientData;
             NsServer       *servPtr = itPtr->servPtr;
