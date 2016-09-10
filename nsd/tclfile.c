@@ -188,6 +188,9 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, const char *cmd)
         result = TCL_ERROR;
 
     } else {
+        /*
+         * All parameters are ok.
+         */
         Ns_ReturnCode status;
 
         if (*cmd == 'p' /* "purge" */ ) {
@@ -252,8 +255,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
 	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
 
     } else {
-        Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s ?template?\"",
-                           argv[0]);
+        Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s ?template?\"", argv[0]);
         result = TCL_ERROR;
     }
 
@@ -430,6 +432,9 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Tcl_SetResult(interp, "no connection", TCL_STATIC);
         result = TCL_ERROR;
     } else  {
+        /*
+         * All parameters are ok.
+         */
         Ns_ReturnCode status = Ns_ConnSendChannel(itPtr->conn, chan, (size_t)nbytes);
         if (unlikely(status != NS_OK)) {
             Tcl_SetResult(interp, "i/o failed", TCL_STATIC);
@@ -604,6 +609,9 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
             result = TCL_ERROR;
 
         } else {
+            /*
+             * All parameters are ok
+             */
             const NsInterp *itPtr = clientData;
             NsServer       *servPtr = itPtr->servPtr;
             Tcl_HashEntry  *hPtr;
