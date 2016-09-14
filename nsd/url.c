@@ -123,7 +123,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
      *     +--end
      */
 
-    for (end = url; CHARTYPE(alpha, *end) == 1; end++) {
+    for (end = url; CHARTYPE(alpha, *end) != 0; end++) {
         ;
     }
     if (*end == ':') {
