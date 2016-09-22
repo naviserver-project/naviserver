@@ -209,7 +209,7 @@ ConfigServerTcl(const char *server)
 {
     NsServer   *servPtr;
     Ns_DString  ds;
-    const char *path, *p;
+    const char *path, *p, *initFileString;
     int         n;
     Ns_Set     *set;
 
@@ -230,13 +230,15 @@ ConfigServerTcl(const char *server)
 	Ns_SetUpdate(set, "library", servPtr->tcl.library);
     }
 
-    servPtr->tcl.initfile = Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.initfile) == NS_FALSE) {
-        Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
-        servPtr->tcl.initfile = Ns_DStringExport(&ds);
-	Ns_SetUpdate(set, "initfile", servPtr->tcl.initfile);
+    initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
+    if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
+        Ns_HomePath(&ds, initFileString, NULL);
+        initFileString = Ns_DStringExport(&ds);
+	Ns_SetUpdate(set, "initfile", initFileString);
     }
-
+    servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
+    Tcl_IncrRefCount(servPtr->tcl.initfile);
+    
     servPtr->tcl.modules = Tcl_NewObj();
     Tcl_IncrRefCount(servPtr->tcl.modules);
 
@@ -577,7 +579,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
 
     itPtr = NsGetInterpData(interp);
     /*
-     * If this naviserver interp, clean it up
+     * If this is an naviserver interp, clean it up
      */
 
     if (itPtr != NULL) {
@@ -1630,7 +1632,7 @@ NsTclInitServer(const char *server)
     if (servPtr != NULL) {
 	Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
-        if (Tcl_EvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
+        if ( Tcl_FSEvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: init server)");
         }
         Ns_TclDeAllocateInterp(interp);
@@ -2152,7 +2154,7 @@ RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
     const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
-
+    
     servPtr = itPtr->servPtr;
     if (servPtr != NULL) {
 
@@ -2293,7 +2295,7 @@ DeleteInterps(void *arg)
     Tcl_HashTable       *tablePtr = arg;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
- 
+
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     while (hPtr != NULL) {
         const NsInterp *itPtr;
