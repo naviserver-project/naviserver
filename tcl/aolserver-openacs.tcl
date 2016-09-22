@@ -40,6 +40,8 @@ if {1} {
 
     if {$xotcl == 2} {
         if {[catch {
+            package require nsf
+            ns_ictl trace delete {nsf::finalize}
             package require XOTcl 2
             package require nx::serializer
             namespace import -force ::xotcl::*
