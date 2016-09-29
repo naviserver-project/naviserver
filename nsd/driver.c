@@ -1421,7 +1421,7 @@ DriverThread(void *arg)
                  */
                 SockRelease(sockPtr, SOCK_CLOSE, 0);
 
-            } else if (unlikely(PollIn(&pdata, sockPtr->pidx) == 0)
+            } else if (unlikely(!PollIn(&pdata, sockPtr->pidx))
                        && ((sockPtr->reqPtr == NULL) || (sockPtr->reqPtr->leftover == 0u))) {
                 /*
                  * Got no data
@@ -3401,7 +3401,7 @@ SpoolerThread(void *arg)
                  */
                 SockRelease(sockPtr, SOCK_CLOSE, 0);
 
-            } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
+            } else if (!PollIn(&pdata, sockPtr->pidx)) {
                 /*
                  * Got no data
                  */
