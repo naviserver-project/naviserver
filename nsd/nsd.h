@@ -511,7 +511,7 @@ typedef struct Sock {
 
     const char         *location;
     bool                keep;
-    int                 pidx;            /* poll() index */
+    NS_POLL_NFDS_TYPE   pidx;            /* poll() index */
     unsigned int        flags;           /* state flags used by driver */
     Ns_Time             timeout;
     Request            *reqPtr;
