@@ -1289,10 +1289,10 @@ DriverThread(void *arg)
          */
 
         PollReset(&pdata);
-        (void)PollSet(&pdata, drvPtr->trigger[0], POLLIN, NULL);
+        (void)PollSet(&pdata, drvPtr->trigger[0], (short)POLLIN, NULL);
 
         if (likely(waitPtr == NULL)) {
-            drvPtr->pidx = PollSet(&pdata, drvPtr->sock, POLLIN, NULL);
+            drvPtr->pidx = PollSet(&pdata, drvPtr->sock, (short)POLLIN, NULL);
         }
 
         /*
@@ -1307,10 +1307,10 @@ DriverThread(void *arg)
         } else {
 
             for (sockPtr = readPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
-                SockPoll(sockPtr, POLLIN, &pdata);
+                SockPoll(sockPtr, (short)POLLIN, &pdata);
             }
             for (sockPtr = closePtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
-                SockPoll(sockPtr, POLLIN, &pdata);
+                SockPoll(sockPtr, (short)POLLIN, &pdata);
             }
 
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
@@ -3360,14 +3360,14 @@ SpoolerThread(void *arg)
          */
 
         PollReset(&pdata);
-        (void)PollSet(&pdata, queuePtr->pipe[0], POLLIN, NULL);
+        (void)PollSet(&pdata, queuePtr->pipe[0], (short)POLLIN, NULL);
 
         if (readPtr == NULL) {
             pollto = 30 * 1000;
         } else {
             sockPtr = readPtr;
             while (sockPtr != NULL) {
-                SockPoll(sockPtr, POLLIN, &pdata);
+                SockPoll(sockPtr, (short)POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
             pollto = -1;
@@ -4061,7 +4061,7 @@ WriterThread(void *arg)
          */
 
         PollReset(&pdata);
-        (void)PollSet(&pdata, queuePtr->pipe[0], POLLIN, NULL);
+        (void)PollSet(&pdata, queuePtr->pipe[0], (short)POLLIN, NULL);
 
         if (writePtr == NULL) {
             pollto = 30 * 1000;
@@ -4071,7 +4071,7 @@ WriterThread(void *arg)
                 Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d",
                        (void *)curPtr, curPtr->size, curPtr->doStream);
                 if (likely(curPtr->size > 0u)) {
-                    SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
+                    SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);
                     pollto = -1;
                 } else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
                     pollto = -1;
@@ -5399,7 +5399,7 @@ AsyncWriterThread(void *arg)
          */
 
         PollReset(&pdata);
-        (void)PollSet(&pdata, queuePtr->pipe[0], POLLIN, NULL);
+        (void)PollSet(&pdata, queuePtr->pipe[0], (short)POLLIN, NULL);
 
         if (writePtr == NULL) {
             pollto = 30 * 1000;
