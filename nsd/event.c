@@ -286,7 +286,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      */
 
     queuePtr->pfds[0].fd = queuePtr->trigger[0];
-    queuePtr->pfds[0].events = POLLIN;
+    queuePtr->pfds[0].events = (short)POLLIN;
     queuePtr->pfds[0].revents = 0;
     nfds = 1;
     timeoutPtr = NULL;
@@ -345,7 +345,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
 
         revents = queuePtr->pfds[evPtr->idx].revents;
         if ((revents & POLLHUP) != 0) {
-            revents |= POLLIN;
+            revents |= (short)POLLIN;
         }
         if (revents != 0) {
             for (i = 0; i < Ns_NrElements(map); ++i) {

@@ -392,13 +392,13 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     pfd.events = 0;
 
     if ((what & (unsigned int)NS_SOCK_READ) != 0u) {
-	pfd.events |= POLLIN;
+	pfd.events |= (short)POLLIN;
     }
     if ((what & (unsigned int)NS_SOCK_WRITE) != 0u) {
-	pfd.events |= POLLOUT;
+	pfd.events |= (short)POLLOUT;
     }
     if ((what & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
-	pfd.events |= POLLPRI;
+	pfd.events |= (short)POLLPRI;
     }
 
     pfd.revents = 0;

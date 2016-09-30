@@ -326,16 +326,16 @@ SockCallbackThread(void *UNUSED(arg))
     (void)Ns_WaitForStartup();
     Ns_Log(Notice, "socks: starting");
 
-    events[0] = POLLIN;
-    events[1] = POLLOUT;
-    events[2] = POLLPRI;
+    events[0] = (short)POLLIN;
+    events[1] = (short)POLLOUT;
+    events[2] = (short)POLLPRI;
     when[0] = (unsigned int)NS_SOCK_READ;
     when[1] = (unsigned int)NS_SOCK_WRITE;
     when[2] = (unsigned int)NS_SOCK_EXCEPTION | (unsigned int)NS_SOCK_DONE;
     max = 100u;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     pfds[0].fd = trigPipe[0];
-    pfds[0].events = POLLIN;
+    pfds[0].events = (short)POLLIN;
 
     for (;;) {
 	int               pollto;

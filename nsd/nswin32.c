@@ -1230,7 +1230,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
                 continue;
             }
             if (FD_ISSET(fds[i].fd, &ifds)) {
-                fds[i].revents |= POLLIN;
+                fds[i].revents |= (short)POLLIN;
             }
             if (FD_ISSET(fds[i].fd, &ofds)) {
                 fds[i].revents |= POLLOUT;
