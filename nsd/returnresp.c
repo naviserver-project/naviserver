@@ -167,11 +167,11 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 
     NS_NONNULL_ASSERT(conn != NULL);
     
-    if (ReturnRedirect(conn, status, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, status, &result)) {
+        Ns_ConnSetResponseStatus(conn, status);
+        result = Ns_ConnWriteVData(conn, NULL, 0, 0u);
     }
-    Ns_ConnSetResponseStatus(conn, status);
-    return Ns_ConnWriteVData(conn, NULL, 0, 0u);
+    return result;
 }
 
 
@@ -349,22 +349,22 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 Ns_ReturnCode
 Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
 {
-    Ns_DString    ds;
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (ReturnRedirect(conn, 400, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 400, &result)) {
+        Ns_DString    ds;
+
+        Ns_DStringInit(&ds);
+        Ns_DStringAppend(&ds,
+                         "<p>The HTTP request presented by your browser is invalid.");
+        if (reason != NULL) {
+            Ns_DStringVarAppend(&ds, "<p>\n", reason, NULL);
+        }
+        result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
+        Ns_DStringFree(&ds);
     }
-    Ns_DStringInit(&ds);
-    Ns_DStringAppend(&ds,
-        "<p>The HTTP request presented by your browser is invalid.");
-    if (reason != NULL) {
-        Ns_DStringVarAppend(&ds, "<p>\n", reason, NULL);
-    }
-    result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
-    Ns_DStringFree(&ds);
 
     return result;
 }
@@ -403,13 +403,12 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
         Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
         Ns_DStringFree(&ds);
     }
-    if (ReturnRedirect(conn, 401, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 401, &result)) {
+        result = Ns_ConnReturnNotice(conn, 401, "Access Denied",
+                                     "The requested URL cannot be accessed because a "
+                                     "valid username and password are required.");
     }
-
-    return Ns_ConnReturnNotice(conn, 401, "Access Denied",
-               "The requested URL cannot be accessed because a "
-               "valid username and password are required.");
+    return result;
 }
 
 
@@ -436,12 +435,13 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (ReturnRedirect(conn, 403, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 403, &result)) {
+        result = Ns_ConnReturnNotice(conn, 403, "Forbidden",
+                                     "The requested URL cannot be accessed by this server.");
     }
 
-    return Ns_ConnReturnNotice(conn, 403, "Forbidden",
-               "The requested URL cannot be accessed by this server.");
+    return result;
+
 }
 
 
@@ -468,12 +468,12 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
     
-    if (ReturnRedirect(conn, 404, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 404, &result)) {
+        result = Ns_ConnReturnNotice(conn, 404, "Not Found",
+                                     "The requested URL was not found on this server.");
     }
 
-    return Ns_ConnReturnNotice(conn, 404, "Not Found",
-               "The requested URL was not found on this server.");
+    return result;
 }
 
 
@@ -500,12 +500,12 @@ Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
     
-    if (ReturnRedirect(conn, 405, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 405, &result)) {
+        result = Ns_ConnReturnNotice(conn, 405, "Method Not Allowed",
+                                     "The requested method is not allowed on this server.");
     }
 
-    return Ns_ConnReturnNotice(conn, 405, "Method Not Allowed",
-               "The requested method is not allowed on this server.");
+    return result;
 }
 
 /*
@@ -553,11 +553,11 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (ReturnRedirect(conn, 413, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 413, &result)) {
+        result = Ns_ConnReturnNotice(conn, 413, "Request Entity Too Large",
+                                     "The request entity (e.g. file to be uploaded) is too large.");
     }
-    return Ns_ConnReturnNotice(conn, 413, "Request Entity Too Large",
-	"The request entity (e.g. file to be uploaded) is too large.");
+    return result;
 }
 
 /*

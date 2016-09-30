@@ -96,31 +96,35 @@ static void GenSeeds(unsigned long seeds[], int nseeds);
 int
 NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    double d;
+    int result = TCL_OK;
 
     if (objc > 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?maximum?");
-	return TCL_ERROR;
-    }
+	result = TCL_ERROR;
 
-    d = Ns_DRand();
-
-    if (objc == 2) {
-        int maxValue;
-
-    	if (Tcl_GetIntFromObj(interp, objv[1], &maxValue) != TCL_OK) {
-	    return TCL_ERROR;
-	} else if (maxValue <= 0) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid max \"", 
-		    Tcl_GetString(objv[1]), "\": must be > 0", NULL);
-	    return TCL_ERROR;
-	}
-        Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * (double)maxValue)));
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
+        double d = Ns_DRand();
+
+        if (objc == 2) {
+            int maxValue;
+
+            if (Tcl_GetIntFromObj(interp, objv[1], &maxValue) != TCL_OK) {
+                result = TCL_ERROR;
+                
+            } else if (maxValue <= 0) {
+                Ns_TclPrintfResult(interp, "invalid max \"%s\": "
+                                   "must be > 0", Tcl_GetString(objv[1]));
+                result = TCL_ERROR;
+                
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * (double)maxValue)));
+            }
+        }  else {
+            Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
