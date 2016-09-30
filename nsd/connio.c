@@ -634,47 +634,50 @@ ssize_t
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn    *connPtr = (Conn *) conn;
-    int      i;
-    size_t   toWrite = 0u;
-    ssize_t  sent, result;
+    ssize_t  result;
 
     if (connPtr->sockPtr == NULL) {
-        return -1;
-    }
-
-    assert(nbufs <= 0 || bufs != NULL);
-
-    for (i = 0; i < nbufs; i++) {
-        toWrite += bufs[i].iov_len;
-    }
-   
-    if (toWrite == 0u) {
-        /*
-         * Nothing to do.
-         */
-	result = 0;
-        
-    } else if (NsWriterQueue(conn, toWrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
-	Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", toWrite);
-	result = (ssize_t)toWrite;
+        result = -1;
 
     } else {
-        Ns_Time timeout;
-        
-        /*
-         * Perform the actual send operation.
-         */
-	timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
-	timeout.usec = 0;
-      
-	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0u);
-        if (likely(sent > 0)) {
-            /*
-             * Update counters.
-             */
-            connPtr->nContentSent += (size_t)sent;
+        int    i;
+        size_t toWrite = 0u;
+
+        assert(nbufs <= 0 || bufs != NULL);
+
+        for (i = 0; i < nbufs; i++) {
+            toWrite += bufs[i].iov_len;
         }
-        result = sent;
+   
+        if (toWrite == 0u) {
+            /*
+             * Nothing to do.
+             */
+            result = 0;
+        
+        } else if (NsWriterQueue(conn, toWrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
+            Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", toWrite);
+            result = (ssize_t)toWrite;
+
+        } else {
+            Ns_Time timeout;
+            ssize_t  sent;
+        
+            /*
+             * Perform the actual send operation.
+             */
+            timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
+            timeout.usec = 0;
+      
+            sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0u);
+            if (likely(sent > 0)) {
+                /*
+                 * Update counters.
+                 */
+                connPtr->nContentSent += (size_t)sent;
+            }
+            result = sent;
+        }
     }
     return result;
 }

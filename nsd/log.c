@@ -517,10 +517,14 @@ Ns_CreateLogSeverity(const char *name)
 const char *
 Ns_LogSeverityName(Ns_LogSeverity severity)
 {
+    const char *result;
+    
     if (severity < severityMaxCount) {
-        return severityConfig[severity].label;
+        result = severityConfig[severity].label;
+    } else {
+        result = "Unknown";
     }
-    return "Unknown";
+    return result;
 }
 
 

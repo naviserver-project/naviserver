@@ -653,11 +653,15 @@ NsMemUmap(const FileMap *mapPtr)
 int
 ns_socknbclose(NS_SOCKET sock)
 {
+    int result;
+    
     if (Ns_SockCloseLater(sock) != NS_OK) {
-        return SOCKET_ERROR;
+        result = SOCKET_ERROR;
+    } else {
+        result = 0;
     }
 
-    return 0;
+    return result;
 }
 
 
@@ -680,15 +684,18 @@ ns_socknbclose(NS_SOCKET sock)
 NS_SOCKET
 ns_sockdup(NS_SOCKET sock)
 {
-    HANDLE hp, src, dup;
+    HANDLE    hp, src, dup;
+    NS_SOCKET result;
 
     src = (HANDLE) sock;
     hp = GetCurrentProcess();
     if (DuplicateHandle(hp, src, hp, &dup, 0u, FALSE, (DWORD)DUPLICATE_SAME_ACCESS) == 0) {
-        return NS_INVALID_SOCKET;
+        result = NS_INVALID_SOCKET;
+    } else {
+        result = (NS_SOCKET) dup;
     }
 
-    return (NS_SOCKET) dup;
+    return result;
 }
 
 
@@ -772,7 +779,7 @@ ns_mkstemp(char *charTemplate)
     }
 
     if (err != 0) {
-	return -1;
+	fd = NS_INVALID_FD;
     }
 
     return fd;

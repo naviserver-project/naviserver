@@ -416,11 +416,7 @@ void
 Ns_RegisterProxyRequest(const char *server, const char *method, const char *protocol,
                         Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg)
 {
-    NsServer      *servPtr;
-    Req           *reqPtr;
-    Ns_DString     ds;
-    int            isNew;
-    Tcl_HashEntry *hPtr;
+    NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -430,24 +426,29 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_RegisterProxyRequest: no such server: %s", server);
-        return;
+    } else {
+        Req           *reqPtr;
+        Ns_DString     ds;
+        int            isNew;
+        Tcl_HashEntry *hPtr;
+
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, method, protocol, NULL);
+        reqPtr = ns_malloc(sizeof(Req));
+        reqPtr->refcnt = 1;
+        reqPtr->proc = proc;
+        reqPtr->deleteCallback = deleteCallback;
+        reqPtr->arg = arg;
+        reqPtr->flags = 0u;
+        Ns_MutexLock(&servPtr->request.plock);
+        hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
+        if (isNew == 0) {
+            FreeReq(Tcl_GetHashValue(hPtr));
+        }
+        Tcl_SetHashValue(hPtr, reqPtr);
+        Ns_MutexUnlock(&servPtr->request.plock);
+        Ns_DStringFree(&ds);
     }
-    Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, method, protocol, NULL);
-    reqPtr = ns_malloc(sizeof(Req));
-    reqPtr->refcnt = 1;
-    reqPtr->proc = proc;
-    reqPtr->deleteCallback = deleteCallback;
-    reqPtr->arg = arg;
-    reqPtr->flags = 0u;
-    Ns_MutexLock(&servPtr->request.plock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
-    if (isNew == 0) {
-        FreeReq(Tcl_GetHashValue(hPtr));
-    }
-    Tcl_SetHashValue(hPtr, reqPtr);
-    Ns_MutexUnlock(&servPtr->request.plock);
-    Ns_DStringFree(&ds);
 }
 
 
