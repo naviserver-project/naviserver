@@ -114,6 +114,7 @@ ns_param   logdev          false
 ns_param   progressminsize 1
 
 ns_section "ns/fastpath"
+ns_param gzip_static true
 set v cache
 #set v mmap
 #set v none

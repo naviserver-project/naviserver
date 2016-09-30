@@ -746,4 +746,13 @@ test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
 } -result {200 {utf-8 <text/plain> <123>}}
 
 
+test http-9.0 {GET for static compressed file via fastpath} -constraints {serverListen} -body {
+    nstest::http \
+	-getbody 0 \
+	-setheaders {accept-encoding gzip} \
+	-getheaders {Content-Length Content-Type Content-Encoding} \
+	GET /test.html
+} -cleanup {
+} -result {200 89 text/html gzip}
+
 cleanupTests
