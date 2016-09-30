@@ -226,7 +226,7 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 /*
  *----------------------------------------------------------------------
  *
- * NsTclMkTempCmd --
+ * NsTclMkTempObjCmd --
  *
  *      Implements ns_mktemp.
  *
@@ -239,25 +239,29 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *----------------------------------------------------------------------
  */
 int
-NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int result = TCL_OK;
+    int          result = TCL_OK;
+    const char  *templateString = NULL;
+    Ns_ObjvSpec  args[] = {
+        {"?template", Ns_ObjvString, &templateString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (argc == 1) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (objc == 1) {
         char buffer[PATH_MAX] = "";
 
         snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
 
-    } else if (argc == 2) {
-	char *buffer = ns_strdup(argv[1]);
+    } else /*if (objc == 2)*/ {
+	char *buffer = strdup(templateString);
 
 	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
-
-    } else {
-        Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s ?template?\"", argv[0]);
-        result = TCL_ERROR;
-    }
+    } 
 
     return result;
 }

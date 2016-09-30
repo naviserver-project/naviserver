@@ -93,7 +93,7 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclQuoteHtmlCmd --
+ * NsTclQuoteHtmlObjCmd --
  *
  *	Implements ns_quotehtml. 
  *
@@ -107,19 +107,28 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
  */
 
 int
-NsTclQuoteHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString ds;
+    int          result = TCL_OK;
+    const char  *htmlString;
+    Ns_ObjvSpec  args[] = {
+        {"html", Ns_ObjvString,  &htmlString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (unlikely(argc != 2)) {
-        Ns_TclPrintfResult(interp, "wrong # args:  should be \"%s html\"", argv[0]);
-        return TCL_ERROR;
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Ns_DString ds;
+
+        Ns_DStringInit(&ds);
+        Ns_QuoteHtml(&ds, htmlString);
+
+        Tcl_DStringResult(interp, &ds);
     }
-    Ns_DStringInit(&ds);
-    Ns_QuoteHtml(&ds, argv[1]);
 
-    Tcl_DStringResult(interp, &ds);
-    return TCL_OK;
+    return result;
 }
 
 /*

@@ -330,7 +330,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclStripHtmlCmd --
+ * NsTclStripHtmlObjCmd --
  *
  *      Implements ns_striphtml.
  *
@@ -344,12 +344,16 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
  */
 
 int
-NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         result = TCL_OK;
+    int          result = TCL_OK;
+    const char  *htmlString;
+    Ns_ObjvSpec  args[] = {
+        {"html", Ns_ObjvString,  &htmlString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (argc != 2) {
-        Ns_TclPrintfResult(interp, "wrong # of args:  should be \"%s page\"", argv[0]);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
         
     } else {
@@ -362,7 +366,7 @@ NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
         /*
          * Make a copy of the input and point the moving and output ptrs to it.
          */
-        inString = ns_strdup(argv[1]);
+        inString = ns_strdup(htmlString);
         inPtr    = inString;
         outPtr   = inString;
         intag    = NS_FALSE;
@@ -445,7 +449,7 @@ NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 /*
  *----------------------------------------------------------------------
  *
- * NsTclHrefsCmd --
+ * NsTclHrefsObjCmd --
  *
  *      Implements ns_hrefs.
  *
@@ -459,16 +463,21 @@ NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 int
-NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int result = TCL_OK;
-    
-    if (argc != 2) {
-        Ns_TclPrintfResult(interp, "wrong # args: should be \"%s html\"", argv[0]);
+    int          result = TCL_OK;
+    const char  *htmlString;
+    Ns_ObjvSpec  args[] = {
+        {"html", Ns_ObjvString,  &htmlString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
     } else {
         char       *s, *e;
-        const char *p = argv[1];
+        const char *p = htmlString;
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
         
         while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
@@ -618,7 +627,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCrashCmd --
+ * NsTclCrashObjCmd --
  *
  *      Crash the server to test exception handling.
  *
@@ -632,8 +641,8 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 int
-NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
-	      int UNUSED(argc), CONST char* UNUSED(argv[]))
+NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
+                 int UNUSED(argc), Tcl_Obj *CONST* UNUSED(objv))
 {
     char *death;
 

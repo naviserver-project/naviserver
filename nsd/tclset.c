@@ -650,7 +650,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 /*
  *----------------------------------------------------------------------
  *
- * NsTclParseHeaderCmd --
+ * NsTclParseHeaderObjCmd --
  *
  *      This wraps Ns_ParseHeader.
  *
@@ -665,42 +665,48 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 int
-NsTclParseHeaderCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp                *itPtr = clientData;
-    Ns_Set                  *set;
+    NsInterp    *itPtr = clientData;
+    int          result = TCL_OK;
+    Ns_Set      *set;
     Ns_HeaderCaseDisposition disp;
-    int                      result = TCL_OK;
+    const char  *setString, *headerString, *dispositionString;
+    Ns_ObjvSpec  args[] = {
+        {"set", Ns_ObjvString, &setString, NULL},
+        {"header", Ns_ObjvString, &headerString, NULL},
+        {"?disposition", Ns_ObjvString, &dispositionString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
     assert(clientData != NULL);
 
-    if (argc != 3 && argc != 4) {
-        Ns_TclPrintfResult(interp, "wrong # of args: should be \"%s"
-                           " set header ?tolower|toupper|preserve?\"", argv[0]);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (LookupSet(itPtr, argv[1], NS_FALSE, &set) != TCL_OK) {
+    } else if (LookupSet(itPtr, setString, NS_FALSE, &set) != TCL_OK) {
         result = TCL_ERROR;
 
+    } else if (objc < 4) {
+        disp = ToLower;
+    } else if (STREQ(dispositionString, "toupper")) {
+        disp = ToUpper;
+    } else if (STREQ(dispositionString, "tolower")) {
+        disp = ToLower;
+    } else if (STREQ(dispositionString, "preserve")) {
+        disp = Preserve;
     } else {
+        Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve", 
+                           dispositionString);
+        result = TCL_ERROR;
+        disp = Preserve;  /* silence code checker */
+    }
+
+    if (result == TCL_OK) {
         assert(set != NULL);
 
-        if (argc < 4) {
-            disp = ToLower;
-        } else if (STREQ(argv[3], "toupper")) {
-            disp = ToUpper;
-        } else if (STREQ(argv[3], "tolower")) {
-            disp = ToLower;
-        } else if (STREQ(argv[3], "preserve")) {
-            disp = Preserve;
-        } else {
-            Ns_TclPrintfResult(interp, "unknown case disposition \"%s\": should be toupper, tolower, or preserve", 
-                               argv[3]);
-            result = TCL_ERROR;
-            disp = Preserve;  /* silence code checker */
-        }
-        if ((result == TCL_OK) && (Ns_ParseHeader(set, argv[2], disp) != NS_OK)) {
-            Ns_TclPrintfResult(interp, "invalid header: %s", argv[2]);
+        if (Ns_ParseHeader(set, headerString, disp) != NS_OK) {
+            Ns_TclPrintfResult(interp, "invalid header: %s", headerString);
             result = TCL_ERROR;
         }
     }

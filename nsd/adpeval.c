@@ -770,7 +770,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpStatsCmd --
+ * NsTclAdpStatsObjCmd --
  *
  *      Implement the ns_adp_stats command to return stats on cached
  *      ADP pages.
@@ -785,8 +785,8 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
  */
 
 int
-NsTclAdpStatsCmd(ClientData clientData, Tcl_Interp *interp, 
-		 int UNUSED(argc), CONST char* UNUSED(argv[]))
+NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp, 
+		 int UNUSED(objc), Tcl_Obj *CONST* (objv))
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;

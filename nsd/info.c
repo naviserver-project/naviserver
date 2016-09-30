@@ -788,7 +788,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 /*
  *----------------------------------------------------------------------
  *
- * NsTclLibraryCmd --
+ * NsTclLibraryObjCmd --
  *
  *  Implements ns_library.
  *
@@ -802,32 +802,35 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclLibraryCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
+    int          result = TCL_OK;
+    const char  *kindString, *moduleString = NULL, *lib = "";
     const NsInterp *itPtr = clientData;
-    const char     *lib = "";
-    int             result = TCL_OK;
+    Ns_ObjvSpec  args[] = {
+        {"kind",    Ns_ObjvString,  &kindString, NULL},
+        {"?module", Ns_ObjvString,  &moduleString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (argc != 2 && argc != 3) {
-	Ns_TclPrintfResult(interp,
-                           "wrong # args: should be \"%s library ?module?\"",
-                           argv[0]);
-	result = TCL_ERROR;
-
-    } else if (STREQ(argv[1], "private")) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else if (STREQ(kindString, "private")) {
         lib = itPtr->servPtr->tcl.library;
-    } else if (STREQ(argv[1], "shared")) {
+    } else if (STREQ(kindString, "shared")) {
         lib = nsconf.tcl.sharedlibrary;
     } else {
 	Ns_TclPrintfResult(interp, "unknown library \"%s\":"
-                           " should be private or shared", argv[1]);
+                           " should be private or shared", kindString);
 	result = TCL_ERROR;
     }
+
     if (result == TCL_OK) {
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
-        Ns_MakePath(&ds, lib, argv[2], NULL);
+        Ns_MakePath(&ds, lib, moduleString, NULL);
         Tcl_DStringResult(interp, &ds);
     }
     return result;
