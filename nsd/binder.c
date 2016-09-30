@@ -857,7 +857,7 @@ PreBind(const char *spec)
  */
 
 NS_SOCKET
-Ns_SockBinderListen(int type, const char *address, unsigned short port, int options)
+Ns_SockBinderListen(char type, const char *address, unsigned short port, int options)
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
@@ -1061,8 +1061,8 @@ NsStopBinder(void)
 static void
 Binder(void)
 {
-    int           options, type, port, n, err, sock;
-    char          address[NS_IPADDR_SIZE];
+    int           options, port, n, err, sock;
+    char          type, address[NS_IPADDR_SIZE];
     struct msghdr msg;
     struct iovec  iov[4];
 
@@ -1089,7 +1089,7 @@ Binder(void)
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 4;
-        type = 0;
+        type = '\0';
         err = 0;
         do {
             n = recvmsg(binderRequest[0], (struct msghdr *) &msg, 0);

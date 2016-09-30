@@ -2629,7 +2629,7 @@ NS_EXTERN void
 NsStopBinder(void);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBinderListen(int type, const char *address, unsigned short port, int options);
+Ns_SockBinderListen(char type, const char *address, unsigned short port, int options);
 
 /*
  * sls.c
