@@ -509,6 +509,14 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
         return status;
     }
 
+    /*
+     * Determine the mime type if not given based on the requested
+     * file name (without a potential gz suffix).
+     */
+    if (mimeType == NULL) {
+        mimeType = Ns_GetMimeType(file);
+    }
+    
     Tcl_DStringInit(dsPtr);
 
     /*
@@ -553,14 +561,6 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
 		       gzFileName);
 	    }
 	}
-    }
-
-    /*
-     * Determine the mime type if not given.
-     */
-
-    if (mimeType == NULL) {
-        mimeType = Ns_GetMimeType(file);
     }
     
     /*
