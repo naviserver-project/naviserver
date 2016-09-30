@@ -141,7 +141,7 @@ ConfigServerFastpath(const char *server)
 
     servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
     if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
-	(void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
+        (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     }
 
@@ -150,7 +150,7 @@ ConfigServerFastpath(const char *server)
         servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
     } else {
         (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,
-                    servPtr->fastpath.pagedir, NULL);
+                          servPtr->fastpath.pagedir, NULL);
         servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
 
@@ -446,7 +446,7 @@ GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
     Tcl_DStringAppendElement(dsPtr, gzFileName);
     result = Tcl_EvalEx(interp, Tcl_DStringValue(dsPtr), Tcl_DStringLength(dsPtr), 0);
     if (result != TCL_OK) {
-	Ns_Log(Warning, "ns_gzipfile returned: %s ", Tcl_GetString(Tcl_GetObjResult(interp)));
+        Ns_Log(Warning, "ns_gzipfile returned: %s ", Tcl_GetString(Tcl_GetObjResult(interp)));
     }
     Tcl_DStringFree(dsPtr);
 
@@ -481,7 +481,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
-    
+
     if (unlikely(Ns_ConnSockPtr(conn) == NULL)) {
         Ns_Log(Warning,
                "FastReturn: called without valid connection, maybe connection already closed: %s",
@@ -493,9 +493,9 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
          * Set the last modified header if not set yet.
          * If not modified since last request, return now.
          */
-        
+
         Ns_ConnSetLastModifiedHeader(conn, &connPtr->fileInfo.st_mtime);
-        
+
         if (Ns_ConnModifiedSince(conn, connPtr->fileInfo.st_mtime) == NS_FALSE) {
             status = Ns_ConnReturnNotModified(conn);
             done = NS_TRUE;
@@ -516,60 +516,60 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
     if (mimeType == NULL) {
         mimeType = Ns_GetMimeType(file);
     }
-    
+
     Tcl_DStringInit(dsPtr);
 
     /*
      * Check gzip version
      */
     if (useGzip && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
-	struct stat gzStat;
-	const char *gzFileName;
+        struct stat gzStat;
+        const char *gzFileName;
 
-	Tcl_DStringAppend(dsPtr, file, -1);
-	Tcl_DStringAppend(dsPtr, ".gz", 3);
-	gzFileName = Tcl_DStringValue(dsPtr);
+        Tcl_DStringAppend(dsPtr, file, -1);
+        Tcl_DStringAppend(dsPtr, ".gz", 3);
+        gzFileName = Tcl_DStringValue(dsPtr);
 
-	if (Ns_Stat(gzFileName, &gzStat)) {
-	    Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
+        if (Ns_Stat(gzFileName, &gzStat)) {
+            Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
 
-	    /*
-	     * We have a .gz file
-	     */
-	    if (gzStat.st_mtime < connPtr->fileInfo.st_mtime
-		&& useGzipRefresh) {
-		/*
-		 * The modification time of the .gz file is older than
-		 * the modification time of the source, and the config
-		 * file indicates the we have to try to refresh the
-		 * gzip file (rezip the source).
-		 */
-		if (GzipFile(Ns_GetConnInterp(conn), file, gzFileName) == TCL_OK) {
-		    (void)Ns_Stat(gzFileName, &gzStat);
-		}
-	    }
-	    if (gzStat.st_mtime >= connPtr->fileInfo.st_mtime) {
-		/*
-		 * The modification time of the .gz file is newer or
-		 * equal, so use it for delivery.
-		 */
-		connPtr->fileInfo = gzStat;
-		file = gzFileName;
-		Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
-	    } else {
-		Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file",
-		       gzFileName);
-	    }
-	}
+            /*
+             * We have a .gz file
+             */
+            if (gzStat.st_mtime < connPtr->fileInfo.st_mtime
+                && useGzipRefresh) {
+                /*
+                 * The modification time of the .gz file is older than
+                 * the modification time of the source, and the config
+                 * file indicates the we have to try to refresh the
+                 * gzip file (rezip the source).
+                 */
+                if (GzipFile(Ns_GetConnInterp(conn), file, gzFileName) == TCL_OK) {
+                    (void)Ns_Stat(gzFileName, &gzStat);
+                }
+            }
+            if (gzStat.st_mtime >= connPtr->fileInfo.st_mtime) {
+                /*
+                 * The modification time of the .gz file is newer or
+                 * equal, so use it for delivery.
+                 */
+                connPtr->fileInfo = gzStat;
+                file = gzFileName;
+                Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
+            } else {
+                Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file",
+                       gzFileName);
+            }
+        }
     }
-    
+
     /*
      * For no output (i.e., HEAD request), just send required
      * headers.
      */
 
     if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
-	Ns_DStringFree(dsPtr);
+        Ns_DStringFree(dsPtr);
         return Ns_ConnReturnData(conn, statusCode, "",
                                  (ssize_t)connPtr->fileInfo.st_size, mimeType);
     }
@@ -581,25 +581,25 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
      */
 
     if ((cache == NULL)
-	|| (connPtr->fileInfo.st_size > maxentry)
+        || (connPtr->fileInfo.st_size > maxentry)
         || (connPtr->fileInfo.st_ctime >= (time_t)(connPtr->acceptTime.sec - 1))
         ) {
         /*
          * The cache is not enabled or the entry is too large for the
-	 * cache, or the inode has been changed too recently (within 1
-	 * second of the start of this connection) so send the content
-	 * directly.
+         * cache, or the inode has been changed too recently (within 1
+         * second of the start of this connection) so send the content
+         * directly.
          */
 
         if (useMmap
-	    && NsMemMap(file, (size_t)connPtr->fileInfo.st_size,
+            && NsMemMap(file, (size_t)connPtr->fileInfo.st_size,
                         NS_MMAP_READ, &connPtr->fmap) == NS_OK) {
             status = Ns_ConnReturnData(conn, statusCode, connPtr->fmap.addr,
                                        (ssize_t)connPtr->fmap.size, mimeType);
-	    if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0u) {
-		NsMemUmap(&connPtr->fmap);
-	    }
-	    connPtr->fmap.addr = NULL;
+            if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0u) {
+                NsMemUmap(&connPtr->fmap);
+            }
+            connPtr->fmap.addr = NULL;
 
         } else {
             fd = ns_open(file, O_RDONLY | O_BINARY, 0);
@@ -656,7 +656,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
                        file, strerror(errno));
                 status = NS_ERROR;
             } else {
- 	        ssize_t nread;
+                ssize_t nread;
 
                 filePtr = ns_malloc(sizeof(File) + (size_t)connPtr->fileInfo.st_size);
                 filePtr->refcnt = 1;
@@ -727,7 +727,7 @@ bool
 Ns_Stat(const char *path, struct stat *stPtr)
 {
     bool success = NS_TRUE;
-    
+
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(stPtr != NULL);
 
