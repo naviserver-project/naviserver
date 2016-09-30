@@ -3,7 +3,7 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
 
 
 
@@ -180,7 +180,7 @@ test cookie-3.1 {delete cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-3.1
 } -cleanup {
     ns_unregister_op GET /cookie-3.1
-} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT}}
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; HttpOnly}}
 
 test cookie-3.2 {delete cookie w/ all options} -setup {
     ns_register_proc GET /cookie-3.2 {
@@ -191,7 +191,7 @@ test cookie-3.2 {delete cookie w/ all options} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-3.2
 } -cleanup {
     ns_unregister_op GET /cookie-3.2
-} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure}}
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure; HttpOnly}}
 
 
 
