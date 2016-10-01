@@ -58,7 +58,7 @@ static bool ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
  *      will be issued to the url.
  *
  * Results:
- *      None.
+ *      Status code (always NS_OK).
  *
  * Side effects:
  *      Previous registration is deleted if url is NULL.
@@ -582,12 +582,13 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (ReturnRedirect(conn, 414, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 414, &result)) {
+        result = Ns_ConnReturnNotice(conn, 414, "Request-URI Too Long",
+                                     "The request URI is too long. You might "
+                                     "consider to provide a larger value for "
+                                     "maxline in your NaviServer config file.");
     }
-    return Ns_ConnReturnNotice(conn, 414, "Request-URI Too Long",
-        "The request URI is too long. "
-	"You might to consider to provide a larger value for maxline in your NaviServer config file.");
+    return result;
 }
 
 /*
@@ -612,12 +613,13 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (ReturnRedirect(conn, 431, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 431, &result)) {
+        result = Ns_ConnReturnNotice(conn, 431, "Request Header Fields Too Large",
+                                     "A provided request header line is too long. "
+                                     "You might consider to provide a larger value "
+                                     "for maxline in your NaviServer config file");
     }
-    return Ns_ConnReturnNotice(conn, 431, "Request Header Fields Too Large",
-        "A provided request header line is too long. "
-	"You might to consider to provide a larger value for maxline in your NaviServer config file");
+   return result;
 }
 
 /*
@@ -643,13 +645,12 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (ReturnRedirect(conn, 501, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 501, &result)) {
+        result = Ns_ConnReturnNotice(conn, 501, "Not Implemented",
+                                     "The requested URL or method is not implemented "
+                                     "by this server.");
     }
-
-    return Ns_ConnReturnNotice(conn, 501, "Not Implemented",
-               "The requested URL or method is not implemented "
-               "by this server.");
+    return result;
 }
 
 
@@ -677,13 +678,12 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
     NS_NONNULL_ASSERT(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0u);
-    if (ReturnRedirect(conn, 500, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 500, &result)) {
+        result = Ns_ConnReturnNotice(conn, 500, "Server Error",
+                                     "The requested URL cannot be accessed "
+                                     "due to a system error on this server.");
     }
-
-    return Ns_ConnReturnNotice(conn, 500, "Server Error",
-               "The requested URL cannot be accessed "
-               "due to a system error on this server.");
+    return result;
 }
 
 
@@ -711,13 +711,12 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
     NS_NONNULL_ASSERT(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0u);
-    if (ReturnRedirect(conn, 503, &result)) {
-        return result;
+    if (!ReturnRedirect(conn, 503, &result)) {
+        result = Ns_ConnReturnNotice(conn, 503, "Service Unavailable",
+                                     "The server is temporarily unable to service your request. "
+                                     "Please try again later.");
     }
-
-    return Ns_ConnReturnNotice(conn, 503, "Service Unavailable",
-               "The server is temporarily unable to service your request. "
-               "Please try again later.");
+    return result;
 }
 
 
@@ -744,6 +743,7 @@ ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
     const Tcl_HashEntry *hPtr;
     Conn                *connPtr = (Conn *) conn;
     NsServer            *servPtr;
+    bool                 result = NS_FALSE;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
@@ -759,10 +759,10 @@ ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
         } else {
             connPtr->responseStatus = status;
             *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
-            return NS_TRUE;
+            result = NS_TRUE;
         }
     }
-    return NS_FALSE;
+    return result;
 }
 
 /*
