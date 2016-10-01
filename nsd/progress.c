@@ -119,11 +119,13 @@ NsConfigProgress(void)
 int
 NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
+    int result = TCL_OK;
+    
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
-        return TCL_ERROR;
-    }
-    if (progressMinSize > 0u) {
+        result = TCL_ERROR;
+
+    } else if (progressMinSize > 0u) {
         const Tcl_HashEntry *hPtr;
         const char          *url = Tcl_GetString(objv[1]);
 
@@ -140,21 +142,20 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                          Tcl_NewWideIntObj((Tcl_WideInt)pPtr->current)) != TCL_OK
                 || Tcl_ListObjAppendElement(interp, resObj,
                                             Tcl_NewWideIntObj((Tcl_WideInt)pPtr->size)) != TCL_OK) {
-                Ns_MutexUnlock(&lock);
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
         } else {
-	  /*
-	  Tcl_HashSearch  search;
-	  hPtr = Tcl_FirstHashEntry(&urlTable, &search);
-	  while (hPtr != NULL) {
-            CONST char *key = Tcl_GetHashKey(&urlTable, hPtr);
-            hPtr = Tcl_NextHashEntry(&search);
-	    }*/
+            /*
+              Tcl_HashSearch  search;
+              hPtr = Tcl_FirstHashEntry(&urlTable, &search);
+              while (hPtr != NULL) {
+              CONST char *key = Tcl_GetHashKey(&urlTable, hPtr);
+              hPtr = Tcl_NextHashEntry(&search);
+              */
 	}
         Ns_MutexUnlock(&lock);
     }
-    return TCL_OK;
+    return result;
 }
 
 
