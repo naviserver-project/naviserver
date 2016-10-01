@@ -156,14 +156,18 @@ const char *
 Ns_DbPoolDescription(const char *pool)
 {
     const Pool *poolPtr;
+    const char *result;
 
     NS_NONNULL_ASSERT(pool != NULL);
 
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
-        return NULL;
+        result = NULL;
+    } else {
+        result = poolPtr->desc;
     }
-    return poolPtr->desc;
+
+    return result;
 }
 
 
@@ -341,12 +345,12 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
 Ns_DbHandle *
 Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)
 {
-    Ns_DbHandle       *handle;
+    Ns_DbHandle *handle;
 
     NS_NONNULL_ASSERT(pool != NULL);
 
     if (Ns_DbPoolTimedGetMultipleHandles(&handle, pool, 1, wait) != NS_OK) {
-        return NULL;
+        handle = NULL;
     }
     return handle;
 }
@@ -568,29 +572,31 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 Ns_ReturnCode
 Ns_DbBouncePool(const char *pool)
 {
-    Pool	*poolPtr;
-    Handle	*handlePtr;
+    Pool	 *poolPtr;
+    Handle	 *handlePtr;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(pool != NULL);
 
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
-	return NS_ERROR;
+	status = NS_ERROR;
+        
+    } else {
+        Ns_MutexLock(&poolPtr->lock);
+        poolPtr->stale_on_close++;
+        handlePtr = poolPtr->firstPtr;
+        while (handlePtr != NULL) {
+            if (handlePtr->connected) {
+                handlePtr->stale = NS_TRUE;
+            }
+            handlePtr->stale_on_close = poolPtr->stale_on_close;
+            handlePtr = handlePtr->nextPtr;
+        }
+        Ns_MutexUnlock(&poolPtr->lock);
+        CheckPool(poolPtr);
     }
-    Ns_MutexLock(&poolPtr->lock);
-    poolPtr->stale_on_close++;
-    handlePtr = poolPtr->firstPtr;
-    while (handlePtr != NULL) {
-	if (handlePtr->connected) {
-	    handlePtr->stale = NS_TRUE;
-	}
-	handlePtr->stale_on_close = poolPtr->stale_on_close;
-	handlePtr = handlePtr->nextPtr;
-    }
-    Ns_MutexUnlock(&poolPtr->lock);
-    CheckPool(poolPtr);
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -959,13 +965,16 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
 struct DbDriver *
 NsDbGetDriver(const Ns_DbHandle *handle)
 {
-    const Handle *handlePtr = (const Handle *) handle;
+    struct DbDriver *result;
+    const Handle    *handlePtr = (const Handle *) handle;
 
     if (handlePtr != NULL && handlePtr->poolPtr != NULL) {
-	return handlePtr->poolPtr->driverPtr;
+	result = handlePtr->poolPtr->driverPtr;
+    } else {
+        result = NULL;
     }
 
-    return NULL;
+    return result;
 }
 
 
@@ -988,16 +997,19 @@ NsDbGetDriver(const Ns_DbHandle *handle)
 static Pool *
 GetPool(const char *pool)
 {
+    Pool *               result;
     const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(pool != NULL);
 
     hPtr = Tcl_FindHashEntry(&poolsTable, pool);
     if (hPtr == NULL) {
-	return NULL;
+	result = NULL;
+    } else {
+	result = (Pool *) Tcl_GetHashValue(hPtr);
     }
-
-    return (Pool *) Tcl_GetHashValue(hPtr);
+    
+    return result;
 }
 
 
@@ -1062,6 +1074,8 @@ ReturnHandle(Handle *handlePtr)
 static bool
 IsStale(const Handle *handlePtr, time_t now)
 {
+    bool result = NS_FALSE;
+    
     NS_NONNULL_ASSERT(handlePtr != NULL);
 
     if (handlePtr->connected) {
@@ -1078,11 +1092,11 @@ IsStale(const Handle *handlePtr, time_t now)
                    handlePtr->atime < minAccess ? "idle" : "old",
                    handlePtr->poolname);
 
-	    return NS_TRUE;
+	    result = NS_TRUE;
 	}
     }
 
-    return NS_FALSE;
+    return result;
 }
 
 
@@ -1397,15 +1411,16 @@ IncrCount(const Pool *poolPtr, int incr)
 static ServData *
 GetServer(const char *server)
 {
+    ServData            *result = NULL;
     const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
 
     hPtr = Tcl_FindHashEntry(&serversTable, server);
     if (hPtr != NULL) {
-	return Tcl_GetHashValue(hPtr);
+	result = Tcl_GetHashValue(hPtr);
     }
-    return NULL;
+    return result;
 }
 
 

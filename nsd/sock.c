@@ -1151,17 +1151,17 @@ SockSetup(NS_SOCKET sock)
 static ssize_t
 SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 {
+    ssize_t n;
 
 #ifdef _WIN32
     DWORD RecvBytes, Flags = (DWORD)flags;
     if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &RecvBytes, &Flags,
                 NULL, NULL) != 0) {
-        return -1;
+        n = -1;
+    } else {
+        n = (ssize_t)RecvBytes;
     }
-
-    return (ssize_t)RecvBytes;
 #else
-    ssize_t n;
     struct msghdr msg;
 
     memset(&msg, 0, sizeof(msg));
@@ -1169,13 +1169,12 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     msg.msg_iovlen = nbufs;
 
     n = recvmsg(sock, &msg, flags);
-
     if (n < 0) {
         Ns_Log(Debug, "SockRecv: %s",
                ns_sockstrerror(ns_sockerrno));
     }
-    return n;
 #endif
+    return n;
 }
 
 

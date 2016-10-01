@@ -205,16 +205,20 @@ BindRow(Ns_DbHandle *handle)
 static int
 Exec(const Ns_DbHandle *handle, char *sql)
 {
+    int result;
+    
     if (handle->verbose != 0) {
         Ns_Log(Notice, "nsdbtest(%s): Querying '%s'", handle->driver, sql);
     }
 
     if (STRIEQ(sql, "rows")) {
-        return NS_ROWS;
+        result = (int)NS_ROWS;
     } else if (STRIEQ(sql, "dml")) {
-        return NS_DML;
+        result = (int)NS_DML;
+    } else {
+        result = (int)NS_ERROR;
     }
-    return NS_ERROR;
+    return result;
 }
 
 

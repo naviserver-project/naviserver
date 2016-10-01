@@ -473,9 +473,7 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *chars
 int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString   ds;
-    int          i, nargs;
-    Tcl_Encoding encoding = NULL;
+    int          nargs, result = TCL_OK;
     const char  *charset = NULL;
     char         part = 'q';
     Ns_ObjvTable parts[] = {
@@ -495,26 +493,30 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     };    
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
+    } else {
+        Ns_DString   ds;
+        Tcl_Encoding encoding = NULL;
+        int          i;
 
-    if (charset != NULL) {
-        encoding = Ns_GetCharsetEncoding(charset);
-    }
-    Ns_DStringInit(&ds);
-    for (i = objc - nargs; i < objc; ++i) {
-        (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part);
-        if (i + 1 < objc) {
-            if (part == 'q') {
-                Ns_DStringNAppend(&ds, "&", 1);
-            } else {
-                Ns_DStringNAppend(&ds, "/", 1);
+        if (charset != NULL) {
+            encoding = Ns_GetCharsetEncoding(charset);
+        }
+        Ns_DStringInit(&ds);
+        for (i = objc - nargs; i < objc; ++i) {
+            (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part);
+            if (i + 1 < objc) {
+                if (part == 'q') {
+                    Ns_DStringNAppend(&ds, "&", 1);
+                } else {
+                    Ns_DStringNAppend(&ds, "/", 1);
+                }
             }
         }
+        Tcl_DStringResult(interp, &ds);
     }
-    Tcl_DStringResult(interp, &ds);
-
-    return TCL_OK;
+    
+    return result;
 }
 
 
@@ -538,39 +540,40 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_DString          ds;
-    const char         *charset = NULL, *chars;
-    char                part = 'q';
-    Tcl_Encoding        encoding = NULL;
+    int          result = TCL_OK;
+    const char  *charset = NULL, *chars;
+    char         part = 'q';
     Ns_ObjvTable parts[] = {
         {"query",    UCHAR('q')},
         {"path",     UCHAR('p')},
         {NULL,       0u}
     };
-    Ns_ObjvSpec lopts[] = {
+    Ns_ObjvSpec  lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
         {"-part",    Ns_ObjvIndex,  &part,    parts},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec args[] = {
+    Ns_ObjvSpec  args[] = {
         {"string", Ns_ObjvString, &chars, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
+    } else {
+        Ns_DString    ds;
+        Tcl_Encoding  encoding = NULL;
 
-    Ns_DStringInit(&ds);
-    if (charset != NULL) {
-        encoding = Ns_GetCharsetEncoding(charset);
+        Ns_DStringInit(&ds);
+        if (charset != NULL) {
+            encoding = Ns_GetCharsetEncoding(charset);
+        }
+        
+        (void)UrlDecode(&ds, chars, encoding, part);
+        Tcl_DStringResult(interp, &ds);
     }
-    
-    (void)UrlDecode(&ds, chars, encoding, part);
-    Tcl_DStringResult(interp, &ds);
-
-    return TCL_OK;
+    return result;
 }
 
 

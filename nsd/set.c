@@ -226,7 +226,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
                 int (*cmp) (CONST char *s1, CONST char *s2))
 {
     size_t i;
-    bool   found;
+    bool   found, result = NS_TRUE;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -239,13 +239,14 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
         if ((name == NULL) || (((*cmp) (key, name)) == 0)) {
 
             if (found) {
-                return NS_FALSE;
+                result = NS_FALSE;
+                break;
             }
             found = NS_TRUE;
         }
     }
 
-    return NS_TRUE;
+    return result;
 }
 
 
@@ -271,6 +272,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
               int (*cmp) (const char *s1, const char *s2))
 {
     size_t i;
+    int    result = -1;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
@@ -280,18 +282,20 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
 	    const char *name = set->fields[i].name;
 
 	    if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
-	      return (int)i;
+                result = (int)i;
+                break;
 	    }
 	}
     } else {
 	for (i = 0u; i < set->size; i++) {
 	    if (unlikely(set->fields[i].name == NULL)) {
-	      return (int)i;
+                result = (int)i;
+                break;
 	    }
 	}
     }
 
-    return -1;
+    return result;
 }
 
 
@@ -728,23 +732,26 @@ Ns_SetIDeleteKey(Ns_Set *set, const char *key)
 Ns_Set *
 Ns_SetListFind(Ns_Set *const*sets, const char *name)
 {
+    Ns_Set *result = NULL;
+    
     NS_NONNULL_ASSERT(sets != NULL);
 
     while (*sets != NULL) {
         if (name == NULL) {
             if ((*sets)->name == NULL) {
-                return (*sets);
+                result = *sets;
+                break;
             }
         } else {
             if ((*sets)->name != NULL &&
 		STREQ((*sets)->name, name)) {
-
-                return (*sets);
+                result = *sets;
+                break;
             }
         }
         ++sets;
     }
-    return NULL;
+    return result;
 }
 
 
@@ -896,15 +903,17 @@ Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
 Ns_Set *
 Ns_SetCopy(const Ns_Set *old)
 {
-    size_t          i;
-    Ns_Set         *new;
+    Ns_Set *new;
 
     if (old == NULL) {
-        return NULL;
-    }
-    new = Ns_SetCreate(old->name);
-    for (i = 0u; i < old->size; ++i) {
-        (void)Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
+        new = NULL;
+    } else {
+        size_t i;
+
+        new = Ns_SetCreate(old->name);
+        for (i = 0u; i < old->size; ++i) {
+            (void)Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
+        }
     }
 
     return new;

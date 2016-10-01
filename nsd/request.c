@@ -579,7 +579,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
             }
         }
     } else {
-        char *key, *sep;
+        char *sep;
        
         sep = strchr(line, INTCHAR(':'));
         if (sep == NULL) {
@@ -589,7 +589,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 	    status = NS_ERROR;	
             
 	} else {
-            char  *value;
+            char  *value, *key;
             size_t index;
 
             *sep = '\0';

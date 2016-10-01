@@ -60,29 +60,31 @@
 const char *
 Ns_RelativeUrl(const char *url, const char *location)
 {
-    const char *v;
+    const char *v, *result;
 
     if (url == NULL || location == NULL) {
-        return NULL;
-    }
+        result = NULL;
+    } else {
 
-    /*
-     * Ns_Match will return the point in URL where location stops
-     * being equal to it because location ends.
-     *
-     * e.g., if location = "http://www.foo.com" and
-     * url="http://www.foo.com/a/b" then after the call,
-     * v="/a/b", or NULL if there's a mismatch.
-     */
+        /*
+         * Ns_Match will return the point in URL where location stops
+         * being equal to it because location ends.
+         *
+         * e.g., if location = "http://www.foo.com" and
+         * url="http://www.foo.com/a/b" then after the call,
+         * v="/a/b", or NULL if there's a mismatch.
+         */
 
-    v = Ns_Match(location, url);
-    if (v != NULL) {
-        url = v;
+        v = Ns_Match(location, url);
+        if (v != NULL) {
+            url = v;
+        }
+        while (url[0] == '/' && url[1] == '/') {
+            ++url;
+        }
+        result = url;
     }
-    while (url[0] == '/' && url[1] == '/') {
-        ++url;
-    }
-    return url;
+    return result;
 }
 
 

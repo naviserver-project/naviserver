@@ -83,15 +83,17 @@ static ServerInit       *lastInitPtr;  /* Last in list of server config callback
 NsServer *
 NsGetServer(const char *server)
 {
+    NsServer *result = NULL;
+    
     if (server != NULL) {
         const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
         
         if (hPtr != NULL) {
-            return Tcl_GetHashValue(hPtr);
+            result = Tcl_GetHashValue(hPtr);
         }
     }
 
-    return NULL;
+    return result;
 }
 
 

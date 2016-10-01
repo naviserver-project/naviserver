@@ -58,7 +58,8 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    static bool once = NS_FALSE;
+    Ns_ReturnCode status = NS_OK;
+    static bool   once = NS_FALSE;
 
     if (!once) {
         Ns_LogSqlDebug = Ns_CreateLogSeverity("Debug(sql)");
@@ -70,12 +71,12 @@ Ns_ModuleInit(const char *server, const char *module)
                             NS_TCL_TRACE_CREATE) != NS_OK
         || Ns_TclRegisterTrace(server, NsDbReleaseHandles, NULL,
                                NS_TCL_TRACE_DEALLOCATE) != NS_OK) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        Ns_RegisterProcInfo((Ns_Callback *)NsDbAddCmds, "nsdb:initinterp", NULL);
+        Ns_RegisterProcInfo((Ns_Callback *)NsDbReleaseHandles, "nsdb:releasehandles", NULL);
     }
-    Ns_RegisterProcInfo((Ns_Callback *)NsDbAddCmds, "nsdb:initinterp", NULL);
-    Ns_RegisterProcInfo((Ns_Callback *)NsDbReleaseHandles, "nsdb:releasehandles", NULL);
-
-    return NS_OK;
+    return status;
 }
 
 /*

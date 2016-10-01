@@ -1164,32 +1164,32 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     }
     Ns_DStringFree(&ds);
     if (n < 0) {
-	return Ns_ConnReturnInternalError(conn);
+	status = Ns_ConnReturnInternalError(conn);
+    } else {
+
+        /*
+         * Queue the headers and copy remaining content up to end of file.
+         */
+
+        Ns_ConnSetResponseStatus(conn, httpstatus);
+    copy:
+        do {
+            struct iovec vbuf;
+
+            vbuf.iov_base = cgiPtr->ptr;
+            vbuf.iov_len  = (size_t)cgiPtr->cnt;
+            status = Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
+        } while (status == NS_OK && CgiRead(cgiPtr) > 0);
+
+        /*
+         * Close connection now so it will not linger on
+         * waiting for process exit.
+         */
+
+        if (status == NS_OK) {
+            status = Ns_ConnClose(conn);
+        }
     }
-
-    /*
-     * Queue the headers and copy remaining content up to end of file.
-     */
-
-    Ns_ConnSetResponseStatus(conn, httpstatus);
-copy:
-    do {
-	struct iovec vbuf;
-
-	vbuf.iov_base = cgiPtr->ptr;
-	vbuf.iov_len  = (size_t)cgiPtr->cnt;
-    	status = Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
-    } while (status == NS_OK && CgiRead(cgiPtr) > 0);
-
-    /*
-     * Close connection now so it will not linger on
-     * waiting for process exit.
-     */
-
-    if (status == NS_OK) {
-    	status = Ns_ConnClose(conn);
-    }
-
     return status;
 }
 

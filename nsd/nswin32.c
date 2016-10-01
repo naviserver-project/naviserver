@@ -145,20 +145,22 @@ Ns_SetUser(const char *UNUSED(user))
 BOOL APIENTRY
 DllMain(HANDLE hModule, DWORD why, LPVOID UNUSED(lpReserved))
 {
+    BOOL    result = TRUE;
     WSADATA wsd;
 
     if (why == (DWORD)DLL_PROCESS_ATTACH) {
         Ns_TlsAlloc(&tls, ns_free);
         if (WSAStartup((WORD)MAKEWORD(1, 1), &wsd) != 0) {
-            return FALSE;
+            result = FALSE;
+        } else {
+            DisableThreadLibraryCalls(hModule);
+            Nsd_LibInit();
         }
-        DisableThreadLibraryCalls(hModule);
-        Nsd_LibInit();
     } else if (why == (DWORD)DLL_PROCESS_DETACH) {
         WSACleanup();
     }
 
-    return TRUE;
+    return result;
 }
 
 
@@ -538,9 +540,9 @@ NsSendSignal(int sig)
 Ns_ReturnCode
 NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
-    HANDLE hndl, mobj;
-    LPCVOID addr;
-    char name[256];
+    HANDLE        hndl, mobj;
+    char          name[256];
+    Ns_ReturnCode status = NS_OK;
 
     switch (mode) {
     case NS_MMAP_WRITE:
@@ -582,28 +584,32 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
     if (mobj == NULL || mobj == INVALID_HANDLE_VALUE) {
         Ns_Log(Error, "CreateFileMapping(%s): %ld", path, GetLastError());
         CloseHandle(hndl);
-        return NS_ERROR;
+        status = NS_ERROR;
+
+    } else {
+        LPCVOID       addr;
+
+        addr = MapViewOfFile(mobj,
+                             mode == NS_MMAP_WRITE ? (DWORD)FILE_MAP_WRITE : (DWORD)FILE_MAP_READ,
+                             0u,
+                             0u,
+                             size);
+
+        if (addr == NULL) {
+            Ns_Log(Warning, "MapViewOfFile(%s): %ld", path, GetLastError());
+            CloseHandle(mobj);
+            CloseHandle(hndl);
+            status = NS_ERROR;
+            
+        } else {
+            mapPtr->mapobj = (void *) mobj;
+            mapPtr->handle = (int) hndl;
+            mapPtr->addr   = (void *) addr;
+            mapPtr->size   = size;
+        }
     }
-
-    addr = MapViewOfFile(mobj,
-                         mode == NS_MMAP_WRITE ? (DWORD)FILE_MAP_WRITE : (DWORD)FILE_MAP_READ,
-                         0u,
-                         0u,
-                         size);
-
-    if (addr == NULL) {
-        Ns_Log(Warning, "MapViewOfFile(%s): %ld", path, GetLastError());
-        CloseHandle(mobj);
-        CloseHandle(hndl);
-        return NS_ERROR;
-    }
-
-    mapPtr->mapobj = (void *) mobj;
-    mapPtr->handle = (int) hndl;
-    mapPtr->addr   = (void *) addr;
-    mapPtr->size   = size;
-
-    return NS_OK;
+    
+    return status;
 }
 
 

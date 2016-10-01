@@ -379,18 +379,21 @@ Ns_StrNStr(const char *chars, const char *subString)
 const char *
 Ns_StrCaseFind(const char *chars, const char *subString)
 {
+    const char *result = NULL;
+    
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(subString != NULL);
 
     if (strlen(chars) > strlen(subString)) {
         while (*chars != '\0') {
             if (Ns_Match(chars, subString) != NULL) {
-                return chars;
+                result = chars;
+                break;
             }
             ++chars;
         }
     }
-    return NULL;
+    return result;
 }
 
 

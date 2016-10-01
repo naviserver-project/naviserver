@@ -56,10 +56,10 @@
 int
 NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *section, *key, *value;
+    const char *section, *key;
     Tcl_Obj    *defObj = NULL;
     int         status, isBool = 0, isInt = 0, exact = 0, doSet = 0;
-    Tcl_WideInt v, min = LLONG_MIN, max = LLONG_MAX;
+    Tcl_WideInt min = LLONG_MIN, max = LLONG_MAX;
 
     Ns_ObjvSpec opts[] = {
         {"-bool",  Ns_ObjvBool,      &isBool, INT2PTR(NS_TRUE)},
@@ -78,92 +78,102 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         {NULL, NULL, NULL, NULL}
     };
     if (unlikely(Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK)) {
-        return TCL_ERROR;
-    }
-    if (min > LLONG_MIN || max < LLONG_MAX) {
-        isInt = 1;
-    }
+        status = TCL_ERROR;
 
-    value = (exact != 0) ?
-        Ns_ConfigGetValueExact(section, key) :
-        Ns_ConfigGetValue(section, key);
+    } else {
+        const char *value;
+        bool        done = NS_FALSE;
 
-    /*
-     * Handle type checking of config value.
-     */
-
-    status = TCL_OK;
-
-    if (isBool != 0) {
-        if (value != NULL) {
-            int i;
-            status = Tcl_GetBoolean(interp, value, &i);
-            if (status == TCL_OK) {
-                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
-                return TCL_OK;
-            }
+        if (min > LLONG_MIN || max < LLONG_MAX) {
+            isInt = 1;
         }
-    } else if (isInt != 0) {
-        if (value != NULL) { 
-            /*
-             * There is no Tcl_GetWideInt so we put same error message as Tcl_GetInt
-             */
 
-	    if (unlikely(Ns_StrToWideInt(value, &v) != NS_OK)) {
-                Ns_TclPrintfResult(interp, "expected integer but got \"%s\"", value);
-                return TCL_ERROR;
-            } 
-            if (v >= min && v <= max) {
-                Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
-                return TCL_OK;
-            } else {
-                Tcl_SetResult(interp, "value out of range", TCL_STATIC);
-                status = TCL_ERROR;
-            }
-        }
-    } else if (value != NULL) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
-        return TCL_OK;
-    }
+        value = (exact != 0) ?
+            Ns_ConfigGetValueExact(section, key) :
+            Ns_ConfigGetValue(section, key);
 
-    /*
-     * Handle default value.
-     */
+        /*
+         * Handle type checking of config value.
+         */
 
-    if (defObj != NULL) {
+        status = TCL_OK;
 
         if (isBool != 0) {
-            int i;
-            if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
-                return TCL_ERROR;
+            if (value != NULL) {
+                int i;
+                status = Tcl_GetBoolean(interp, value, &i);
+                if (status == TCL_OK) {
+                    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
+                    done = NS_TRUE;
+                }
             }
-            defObj = Tcl_NewIntObj(i);
         } else if (isInt != 0) {
-            if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
-                return TCL_ERROR;
+            if (value != NULL) {
+                Tcl_WideInt v;
+                
+                /*
+                 * There is no Tcl_GetWideInt so we put same error message as
+                 * Tcl_GetInt.
+                 */
+
+                if (unlikely(Ns_StrToWideInt(value, &v) != NS_OK)) {
+                    Ns_TclPrintfResult(interp, "expected integer but got \"%s\"", value);
+                    done = NS_TRUE;
+                    status = TCL_ERROR;
+                }  else if (v >= min && v <= max) {
+                    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
+                    done = NS_TRUE;
+                } else {
+                    Tcl_SetResult(interp, "value out of range", TCL_STATIC);
+                    status = TCL_ERROR;
+                }
             }
-            if (v < min || v > max) {
-                Tcl_SetResult(interp, "value out of range", TCL_STATIC);
-                return TCL_ERROR;
-            }
+        } else if (value != NULL) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
+            done = NS_TRUE;
         }
 
-	if (doSet != 0) {
-	    /* make setting queryable */
+        /*
+         * Handle default value.
+         */
 
-	    Ns_Set *set = Ns_ConfigCreateSection(section);
-	    if (set != NULL) {
-		Ns_SetUpdate(set, key, Tcl_GetString(defObj));
-	    }
-	}
+        if (!done && defObj != NULL) {
+            status = TCL_OK;
 
-        Tcl_SetObjResult(interp, defObj);
-        return TCL_OK;
+            if (isBool != 0) {
+                int i;
+                if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
+                    status = TCL_ERROR;
+                } else {
+                    defObj = Tcl_NewIntObj(i);
+                }
+            } else if (isInt != 0) {
+                Tcl_WideInt v;
+
+                if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
+                    status = TCL_ERROR;
+                } else if (v < min || v > max) {
+                    Tcl_SetResult(interp, "value out of range", TCL_STATIC);
+                    status = TCL_ERROR;
+                }
+            }
+
+            if (status == TCL_OK && doSet != 0) {
+                /* make setting queryable */
+
+                Ns_Set *set = Ns_ConfigCreateSection(section);
+                if (set != NULL) {
+                    Ns_SetUpdate(set, key, Tcl_GetString(defObj));
+                }
+            }
+            if (status == TCL_OK) {
+                Tcl_SetObjResult(interp, defObj);
+            }
+        }
     }
-
     /*
-     * Either TCL_OK and "" result because matching config not found,
-     * or TCL_ERROR from type conversion error above.
+     * Either TCL_OK and "" result because matching config not found, or
+     * TCL_ERROR from type conversion error above.
      */
 
     return status;

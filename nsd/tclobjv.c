@@ -911,9 +911,8 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONS
 int
 NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_ObjvSpec   *opts, *args, *specPtr;
-    Tcl_Obj      **argv, *argsObj;
-    int            argc, doneOpts = 0, status = TCL_OK;
+    Tcl_Obj  **argv, *argsObj;
+    int        argc, status = TCL_OK;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "specification args");
@@ -933,42 +932,44 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     if (Tcl_ListObjGetElements(interp, argsObj, &argc, &argv) != TCL_OK
         || Tcl_ConvertToType(interp, objv[1], &specType) != TCL_OK) {
-        if (argsObj != objv[2]) {
-            Tcl_DecrRefCount(argsObj);
-        }
-        return TCL_ERROR;
-    }
-    opts = objv[1]->internalRep.twoPtrValue.ptr1;
-    args = objv[1]->internalRep.twoPtrValue.ptr2;
-    if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
-        if (argsObj != objv[2]) {
-            Tcl_DecrRefCount(argsObj);
-        }
-        return TCL_ERROR;
-    }
+        status = TCL_ERROR;
 
-    /*
-     * Set defaults for args which were passed no values and reset the
-     * dest pointer for subsequent calls to this command.
-     */
+    } else {
+        Ns_ObjvSpec   *opts, *args;
 
-    specPtr = opts;
-    for (;;) {
-        if (specPtr->key == NULL) {
-            if (doneOpts != 0) {
-                break;
+        opts = objv[1]->internalRep.twoPtrValue.ptr1;
+        args = objv[1]->internalRep.twoPtrValue.ptr2;
+        if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
+            status = TCL_ERROR;
+        
+        } else {
+            int          doneOpts = 0;
+            Ns_ObjvSpec *specPtr = opts;
+
+            /*
+             * Set defaults for args which were passed no values and
+             * reset the dest pointer for subsequent calls to this
+             * command.
+             */
+
+            for (;;) {
+                if (specPtr->key == NULL) {
+                    if (doneOpts != 0) {
+                        break;
+                    }
+                    doneOpts = 1;
+                    specPtr++;
+                    continue;
+                }
+                if (status == TCL_OK && specPtr->dest == NULL && specPtr->arg != NULL) {
+                    status = SetValue(interp, specPtr->key, specPtr->arg);
+                }
+                specPtr->dest = NULL;
+                specPtr++;
             }
-            doneOpts = 1;
-            specPtr++;
-            continue;
-        }
-        if (status == TCL_OK && specPtr->dest == NULL && specPtr->arg != NULL) {
-            status = SetValue(interp, specPtr->key, specPtr->arg);
-        }
-        specPtr->dest = NULL;
-        specPtr++;
-    }
 
+        }
+    }    
     if (argsObj != objv[2]) {
         Tcl_DecrRefCount(argsObj);
     }

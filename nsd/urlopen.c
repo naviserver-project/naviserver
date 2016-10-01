@@ -341,6 +341,7 @@ static bool
 FillBuf(Stream *sPtr)
 {
     ssize_t n;
+    bool    result = NS_TRUE;
     
     NS_NONNULL_ASSERT(sPtr != NULL);
 
@@ -351,20 +352,21 @@ FillBuf(Stream *sPtr)
                    strerror(errno));
             sPtr->error = 1;
         }
-        return NS_FALSE;
+        result = NS_FALSE;
+    } else {
+        assert(n > 0);
+
+        /*
+         * The recv() operation was sucessuful, fill values into result fields and
+         * return NS_TRUE.
+         */
+        
+        sPtr->buf[n] = '\0';
+        sPtr->ptr = sPtr->buf;
+        sPtr->cnt = (size_t)n;
     }
-    assert(n > 0);
-
-    /*
-     * The recv() operation was sucessuful, fill values into result fields and
-     * return NS_TRUE.
-     */
-
-    sPtr->buf[n] = '\0';
-    sPtr->ptr = sPtr->buf;
-    sPtr->cnt = (size_t)n;
-
-    return NS_TRUE;
+    
+    return result;
 }
 
 
@@ -377,7 +379,7 @@ FillBuf(Stream *sPtr)
  *      the \n and \r.
  *
  * Results:
- *      1 or 0.
+ *      boolean success
  *
  * Side effects:
  *      The dstring is truncated on entry.
@@ -390,6 +392,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
 {
     char   *eol;
     size_t  n;
+    bool    success = NS_FALSE;
 
     NS_NONNULL_ASSERT(sPtr != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -412,12 +415,13 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
                 if (n > 0u && dsPtr->string[n - 1u] == '\r') {
                     Ns_DStringSetLength(dsPtr, (int)n - 1);
                 }
-                return NS_TRUE;
+                success = NS_TRUE;
+                break;
             }
         }
-    } while (FillBuf(sPtr) == NS_TRUE);
+    } while (FillBuf(sPtr));
 
-    return NS_FALSE;
+    return success;
 }
 
 /*
