@@ -256,20 +256,24 @@ int
 Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                      const char *type, void **addrPtrPtr)
 {
+    int result = TCL_OK;
+    
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
     NS_NONNULL_ASSERT(addrPtrPtr != NULL);
     
     if (Tcl_ConvertToType(interp, objPtr, &addrType) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
+        result = TCL_ERROR;
+        
+    } else if (objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
         Ns_TclPrintfResult(interp, "incorrect type: %s", Tcl_GetString(objPtr));
-        return TCL_ERROR;
+        result = TCL_ERROR;
+        
+    } else {
+        *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
     }
-    *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
-    return TCL_OK;
+    return result;
 }
 
 

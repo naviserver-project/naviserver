@@ -68,22 +68,25 @@ static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
 int
 NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_TclCallback *cbPtr;
-    int             id, seconds;
+    int result, seconds;
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "seconds script ?args?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
-			      objv[2], objc - 3, objv + 3);
-    id = Ns_After(seconds, (Ns_Callback *) NsTclSchedProc, cbPtr,
-                  Ns_TclFreeCallback);
+        result = TCL_ERROR;
 
-    return ReturnValidId(interp, id, cbPtr);
+    } else if (Tcl_GetIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        int             id;
+        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclSchedProc, 
+                                                  objv[2], objc - 3, objv + 3);
+        id = Ns_After(seconds, (Ns_Callback *)NsTclSchedProc, cbPtr,
+                      Ns_TclFreeCallback);
+        result = ReturnValidId(interp, id, cbPtr);
+    }
+    
+    return result;
 }
    
 
@@ -107,40 +110,41 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
-    int  id, rc;
-    bool ok;
+    int id, result = TCL_OK;
     
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "id");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[1], &id) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    rc = TCL_OK;
+        result = TCL_ERROR;
+
+    } else if (Tcl_GetIntFromObj(interp, objv[1], &id) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        bool ok;
+        
+        switch (cmd) {
+        case 'u':
+        case 'c':
+            ok = Ns_Cancel(id);
+            break;
+        case 'p':
+            ok = Ns_Pause(id);
+            break;
+        case 'r':
+            ok = Ns_Resume(id);
+            break;
+        default:
+            result = TCL_ERROR;
+            ok = NS_FALSE;
+            Ns_Log(Error, "unexpected code '%c' passed to SchedObjCmd", cmd);
+            break;
+        }
     
-    switch (cmd) {
-    case 'u':
-    case 'c':
-        ok = Ns_Cancel(id);
-        break;
-    case 'p':
-        ok = Ns_Pause(id);
-        break;
-    case 'r':
-        ok = Ns_Resume(id);
-        break;
-    default:
-        rc = TCL_ERROR;
-        ok = NS_FALSE;
-        Ns_Log(Error, "unexpected code '%c' passed to SchedObjCmd", cmd);
-        break;
+        if ((result == TCL_OK) && (cmd != 'u')) {
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ok));
+        }
     }
-    
-    if ((rc == TCL_OK) && (cmd != 'u')) {
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ok));
-    }
-    return rc;
+    return result;
 }
 
 int
@@ -187,11 +191,9 @@ NsTclUnscheduleObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
-    int             id, hour, minute;
+    int             hour, minute, result = TCL_OK;
     int             remain = 0, once = 0, thread = 0;
-    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
         {"-once",   Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
@@ -207,30 +209,36 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
+        
+    } else {
+        unsigned int flags = 0u;
 
-    if (once != 0) {
-        flags |= NS_SCHED_ONCE;
-    }
-    if (thread != 0) {
-        flags |= NS_SCHED_THREAD;
-    }
-    if (hour < 0 || hour > 23) {
-        Tcl_SetResult(interp, "hour should be >= 0 and <= 23", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    if (minute < 0 || minute > 59) {
-        Tcl_SetResult(interp, "minute should be >= 0 and <= 59", TCL_STATIC);
-        return TCL_ERROR;
-    }
+        if (once != 0) {
+            flags |= NS_SCHED_ONCE;
+        }
+        if (thread != 0) {
+            flags |= NS_SCHED_THREAD;
+        }
+        if (hour < 0 || hour > 23) {
+            Ns_TclPrintfResult(interp, "hour should be >= 0 and <= 23");
+            result = TCL_ERROR;
+        } else if (minute < 0 || minute > 59) {
+            Ns_TclPrintfResult(interp, "minute should be >= 0 and <= 59");
+            result = TCL_ERROR;
+        } else {
+            int             id;
+            Ns_TclCallback *cbPtr;
 
-    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
-			      scriptObj, remain, objv + (objc - remain));
-    id = Ns_ScheduleDaily(NsTclSchedProc, cbPtr, flags, hour, minute,
-                          FreeSched);
+            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+                                      scriptObj, remain, objv + (objc - remain));
+            id = Ns_ScheduleDaily(NsTclSchedProc, cbPtr, flags, hour, minute,
+                                  FreeSched);
 
-    return ReturnValidId(interp, id, cbPtr);
+            result = ReturnValidId(interp, id, cbPtr);
+        }
+    }
+    return result;
 }
 
 
@@ -253,11 +261,9 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
-    int             id, day, hour, minute;
+    int             day, hour, minute, result = TCL_OK;
     int             remain = 0, once = 0, thread = 0;
-    unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
 	{"-once",   Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
@@ -274,34 +280,40 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    if (once != 0) {
-        flags |= NS_SCHED_ONCE;
-    }
-    if (thread != 0) {
-        flags |= NS_SCHED_THREAD;
-    }
-    if (day < 0 || day > 6) {
-        Tcl_SetResult(interp, "day should be >= 0 and <= 6", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    if (hour < 0 || hour > 23) {
-        Tcl_SetResult(interp, "hour should be >= 0 and <= 23", TCL_STATIC);
-        return TCL_ERROR;
-    }
-    if (minute < 0 || minute > 59) {
-        Tcl_SetResult(interp, "minute should be >= 0 and <= 59", TCL_STATIC);
-        return TCL_ERROR;
-    }
+    } else {
+        unsigned int    flags = 0u;
 
-    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
-			      scriptObj, remain, objv + (objc - remain));
-    id = Ns_ScheduleWeekly(NsTclSchedProc, cbPtr, flags, day, hour, minute,
-                           FreeSched);
+        if (once != 0) {
+            flags |= NS_SCHED_ONCE;
+        }
+        if (thread != 0) {
+            flags |= NS_SCHED_THREAD;
+        }
+        if (day < 0 || day > 6) {
+            Ns_TclPrintfResult(interp, "day should be >= 0 and <= 6");
+            result = TCL_ERROR;
+        } else if (hour < 0 || hour > 23) {
+            Ns_TclPrintfResult(interp, "hour should be >= 0 and <= 23");
+            result = TCL_ERROR;
+        } else if (minute < 0 || minute > 59) {
+            Ns_TclPrintfResult(interp, "minute should be >= 0 and <= 59");
+            result = TCL_ERROR;
+        } else {
+            Ns_TclCallback *cbPtr;
+            int             id;
 
-    return ReturnValidId(interp, id, cbPtr);
+            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+                                      scriptObj, remain, objv + (objc - remain));
+            id = Ns_ScheduleWeekly(NsTclSchedProc, cbPtr, flags, day, hour, minute,
+                                   FreeSched);
+
+            result = ReturnValidId(interp, id, cbPtr);
+        }
+    }
+    
+    return result;
 }
 
 
@@ -324,12 +336,8 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 int
 NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
-    int             id, interval;
-    int             remain = 0, once = 0, thread = 0;
-    unsigned int    flags = 0u;
-
+    int             interval, remain = 0, once = 0, thread = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-once",    Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
         {"-thread",  Ns_ObjvBool,  &thread, INT2PTR(NS_TRUE)},
@@ -343,25 +351,33 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    if (once != 0) {
-        flags |= NS_SCHED_ONCE;
-    }
-    if (thread != 0) {
-        flags |= NS_SCHED_THREAD;
-    }
-    if (interval < 0) {
-        Tcl_SetResult(interp, "interval should be >= 0", TCL_STATIC);
-        return TCL_ERROR;
-    }
+    } else {
+        unsigned int flags = 0u;
 
-    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
-			      scriptObj, remain, objv + (objc - remain));
-    id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSched);
+        if (once != 0) {
+            flags |= NS_SCHED_ONCE;
+        }
+        if (thread != 0) {
+            flags |= NS_SCHED_THREAD;
+        }
+        if (interval < 0) {
+            Ns_TclPrintfResult(interp, "interval should be >= 0");
+            result = TCL_ERROR;
+            
+        } else {
+            Ns_TclCallback *cbPtr;
+            int             id;
 
-    return ReturnValidId(interp, id, cbPtr);
+            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+                                      scriptObj, remain, objv + (objc - remain));
+            id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSched);
+            
+            result = ReturnValidId(interp, id, cbPtr);
+        }
+    }
+    return result;
 }
 
 
@@ -410,17 +426,21 @@ NsTclSchedProc(void *arg, int UNUSED(id))
 static int
 ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
 {
+    int result = TCL_OK;
+    
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cbPtr != NULL);
 
     if (id == (int)NS_ERROR) {
-        Tcl_SetResult(interp, "could not schedule procedure", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "could not schedule procedure");
         Ns_TclFreeCallback(cbPtr);
-        return TCL_ERROR;
+        result = TCL_ERROR;
+        
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(id));
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(id));
 
-    return TCL_OK;
+    return result;
 }
 
 

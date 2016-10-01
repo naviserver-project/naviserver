@@ -45,7 +45,8 @@ typedef void *(AtProc)(Ns_Callback *proc, void *data);
  */
 
 static Ns_ShutdownProc ShutdownProc;
-static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
+static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 
@@ -268,17 +269,21 @@ Ns_TclCallbackArgProc(Tcl_DString *dsPtr, const void *arg)
 static int
 AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_TclCallback *cbPtr;
+    int result = TCL_OK;
+
+    NS_NONNULL_ASSERT(queue != NULL);
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
-        return TCL_ERROR;
+        result = TCL_ERROR;
+	
+    } else {
+      Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1], 
+						objc - 2, objv + 2);
+      (void) (*atProc)(Ns_TclCallbackProc, cbPtr);
     }
-    cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1], 
-                              objc - 2, objv + 2);
-    (void) (*atProc)(Ns_TclCallbackProc, cbPtr);
-
-    return TCL_OK;
+    
+    return result;
 }
     
 int
@@ -326,22 +331,24 @@ NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 int
 NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_TclCallback *cbPtr;
+    int             result = TCL_OK;
     static int      once = 0;
 
     if (once == 0) {
-      Ns_RegisterProcInfo((Ns_Callback *)ShutdownProc, "ns:tclshutdown",
-			  Ns_TclCallbackArgProc);
+        Ns_RegisterProcInfo((Ns_Callback *)ShutdownProc, "ns:tclshutdown",
+                            Ns_TclCallbackArgProc);
         once = 1;
     }
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc, 
+                                                  objv[1], objc - 2, objv + 2);
+        (void) Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
     }
-    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc, 
-			      objv[1], objc - 2, objv + 2);
-    (void) Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
-    return TCL_OK;
+    return result;
 }
 
 static void
@@ -351,3 +358,12 @@ ShutdownProc(const Ns_Time *toPtr, void *arg)
         Ns_TclCallbackProc(arg);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

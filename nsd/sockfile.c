@@ -344,23 +344,27 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
 
 ssize_t pread(int fd, char *buf, size_t count, off_t offset)
 {
-    OVERLAPPED overlapped = { 0u };
-    HANDLE fh = (HANDLE)_get_osfhandle(fd);
-    DWORD ret, c = (DWORD)count;
+    HANDLE   fh = (HANDLE)_get_osfhandle(fd);
+    ssize_t  result;
 
     if (fh == INVALID_HANDLE_VALUE) {
         errno = EBADF;
-	return -1;
+	result = -1;
+    } else {
+        DWORD      ret, c = (DWORD)count;
+        OVERLAPPED overlapped = { 0u };
+
+        overlapped.Offset = (DWORD)offset;
+        overlapped.OffsetHigh = (DWORD)(((uint64_t)offset) >> 32);
+
+        if (ReadFile(fh, buf, c, &ret, &overlapped) == FALSE) {
+            result = -1;
+        } else {
+            result = (ssize_t)ret;
+        }
     }
 
-    overlapped.Offset = (DWORD)offset;
-    overlapped.OffsetHigh = (DWORD)(((uint64_t)offset) >> 32);
-
-    if (ReadFile(fh, buf, c, &ret, &overlapped) == FALSE) {
-        return -1;
-    }
-
-    return (ssize_t)ret;
+    return result;
 }
 #endif
 
@@ -472,7 +476,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
 {
     char          buf[16384];
     struct iovec  iov;
-    ssize_t       nwrote = 0, toRead = (ssize_t)length;
+    ssize_t       nwrote = 0, toRead = (ssize_t)length, result;
     bool          decork;
 
     decork = Ns_SockCork(sock, NS_TRUE);
@@ -502,10 +506,12 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     }
 
     if (nwrote > 0) {
-        return nwrote;
+        result = nwrote;
     } else {
-        return -1;
+        result = -1;
     }
+    
+    return result;
 }
 
 
