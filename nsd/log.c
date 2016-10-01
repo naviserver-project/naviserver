@@ -978,6 +978,9 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
     NS_NONNULL_ASSERT(cachePtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
+    /*
+     * Use either GMT or local time.
+     */
     if (gmt) {
         tp = &cachePtr->gtime;
         bp = cachePtr->gbuf;
@@ -1614,6 +1617,10 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     timeString = LogTime(cachePtr, stamp, NS_FALSE);
     timeStringLength = cachePtr->lbufSize;
 
+    /*
+     * In case colorization was configured, add the escape necessary
+     * sequences.
+     */
     if ((flags & LOG_COLORIZE) != 0u) {
         Ns_DStringPrintf(dsPtr, "%s%d;%dm", LOG_COLORSTART, prefixIntensity, prefixColor);
     }

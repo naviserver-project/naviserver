@@ -669,8 +669,8 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
-    Ns_Set      *set;
-    Ns_HeaderCaseDisposition disp;
+    Ns_Set      *set = NULL;
+    Ns_HeaderCaseDisposition disp = Preserve;
     const char  *setString, *headerString, *dispositionString;
     Ns_ObjvSpec  args[] = {
         {"set", Ns_ObjvString, &setString, NULL},
@@ -699,7 +699,6 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve", 
                            dispositionString);
         result = TCL_ERROR;
-        disp = Preserve;  /* silence code checker */
     }
 
     if (result == TCL_OK) {
