@@ -3,7 +3,7 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
 
 test ns_server-1.1 {basic syntax: plain call} -body {
     ns_server

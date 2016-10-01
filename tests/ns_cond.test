@@ -6,7 +6,7 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
 
 test ns_cond-1.1 {
     Master uses ns_cond to wake up a worker thread.

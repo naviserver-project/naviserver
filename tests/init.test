@@ -39,7 +39,7 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
 
 
 set qid [ns_job create init-test]

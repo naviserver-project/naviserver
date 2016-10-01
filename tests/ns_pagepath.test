@@ -7,7 +7,7 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$argv
 
 
 set serverroot [file join [ns_config "test" home] \
