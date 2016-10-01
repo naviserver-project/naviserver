@@ -545,10 +545,7 @@ SetUrl(Ns_Request *request, char *url)
 Ns_ReturnCode
 Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 {
-    char           *sep;
-    char           *value;
-    size_t          index;
-    Ns_DString	    ds;
+    Ns_ReturnCode   status = NS_OK;
 
     /* 
      * Header lines are first checked if they continue a previous
@@ -561,51 +558,66 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 
     if (CHARTYPE(space, *line) != 0) {
         if (Ns_SetSize(set) == 0u) {
-	    return NS_ERROR;	/* Continue before first header. */
+            /* 
+             * Continue before first header. 
+             */
+            status = NS_ERROR;
+            
+        } else {
+            size_t index = Ns_SetLast(set);
+            while (CHARTYPE(space, *line) != 0) {
+                ++line;
+            }
+            if (*line != '\0') {
+                Ns_DString ds;
+                char      *value = Ns_SetValue(set, index);
+                
+                Ns_DStringInit(&ds);
+                Ns_DStringVarAppend(&ds, value, " ", line, NULL);
+                Ns_SetPutValue(set, index, ds.string);
+                Ns_DStringFree(&ds);
+            }
         }
-	index = Ns_SetLast(set);
-        while (CHARTYPE(space, *line) != 0) {
-            ++line;
-        }
-        if (*line != '\0') {
-	    value = Ns_SetValue(set, index);
-	    Ns_DStringInit(&ds);
-	    Ns_DStringVarAppend(&ds, value, " ", line, NULL);
-	    Ns_SetPutValue(set, index, ds.string);
-	    Ns_DStringFree(&ds);
-	}
     } else {
-        char *key;
-
+        char *key, *sep;
+       
         sep = strchr(line, INTCHAR(':'));
         if (sep == NULL) {
-	    return NS_ERROR;	/* Malformed header. */
-	}
-        *sep = '\0';
-        value = sep + 1;
-        while (*value != '\0' && CHARTYPE(space, *value) != 0) {
-            ++value;
+            /* 
+             * Malformed header. 
+             */
+	    status = NS_ERROR;	
+            
+	} else {
+            char  *value;
+            size_t index;
+
+            *sep = '\0';
+            for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
+                ;
+            }
+            index = Ns_SetPut(set, line, value);
+            key = Ns_SetKey(set, index);
+            if (disp == ToLower) {
+                while (*key != '\0') {
+                    if (CHARTYPE(upper, *key) != 0) {
+                        *key = CHARCONV(lower, *key);
+                    }
+                    ++key;
+                }
+            } else if (disp == ToUpper) {
+                while (*key != '\0') {
+                    if (CHARTYPE(lower, *key) != 0) {
+                        *key = CHARCONV(upper, *key);
+                    }
+                    ++key;
+                }
+            }
+            *sep = ':';
         }
-        index = Ns_SetPut(set, line, value);
-        key = Ns_SetKey(set, index);
-	if (disp == ToLower) {
-            while (*key != '\0') {
-	        if (CHARTYPE(upper, *key) != 0) {
-            	    *key = CHARCONV(lower, *key);
-		}
-            	++key;
-	    }
-	} else if (disp == ToUpper) {
-            while (*key != '\0') {
-	        if (CHARTYPE(lower, *key) != 0) {
-		    *key = CHARCONV(upper, *key);
-		}
-		++key;
-	    }
-        }
-        *sep = ':';
     }
-    return NS_OK;
+    
+    return status;
 }
 
 
@@ -675,7 +687,9 @@ GetQvalue(const char *str, int *lenPtr) {
 	  }
       }
     }
-    /* str should point to a valid terminator of the number */
+    /* 
+     * str should point to a valid terminator of the number 
+     */
     if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
         *lenPtr = (int)(str - resultString);
 	return resultString;
@@ -750,48 +764,70 @@ bool
 NsParseAcceptEncoding(double version, const char *hdr) 
 {
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
-    bool   gzip;
+    bool   gzipAccept;
 
     NS_NONNULL_ASSERT(hdr != NULL);
 
     if (GetEncodingFormat(hdr, "gzip", &gzipQvalue) != NULL) {
-	/* we have gzip specified in accept-encoding */
+	/* 
+         * we have gzip specified in accept-encoding 
+         */
 	if (gzipQvalue > 0.999) {
-	    /* gzip qvalue 1, use it, nothing else can be higher */
-	    gzip = NS_TRUE;
+	    /* 
+             * gzip qvalue 1, use it, nothing else can be higher 
+             */
+	    gzipAccept = NS_TRUE;
 	} else if (gzipQvalue < 0.0009) {
-	    /* gzip qvalue 0, forbid gzip */
-	    gzip = NS_FALSE;
+	    /* 
+             * gzip qvalue 0, forbid gzip 
+             */
+	    gzipAccept = NS_FALSE;
 	} else {
-	    /* a middle gzip qvalue, compare it with identity and default */
+	    /* 
+             * a middle gzip qvalue, compare it with identity and default 
+             */
 	    if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
-		/* gzip qvalue larger than identity */
-		gzip = (gzipQvalue >= identityQvalue);
+		/* 
+                 * gzip qvalue larger than identity 
+                 */
+		gzipAccept = (gzipQvalue >= identityQvalue);
 	    } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
-		/* gzip qvalue larger than default */
-		gzip = (gzipQvalue >= starQvalue);
+		/* 
+                 * gzip qvalue larger than default 
+                 */
+		gzipAccept = (gzipQvalue >= starQvalue);
 	    } else {
-		/* just the low qvalue was specified */
-		gzip = NS_TRUE;
+		/* 
+                 * just the low qvalue was specified 
+                 */
+		gzipAccept = NS_TRUE;
 	    }
 	}
     } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
-	/* star matches everything, so as well gzip */
+	/* 
+         * star matches everything, so as well gzip 
+         */
 	if (starQvalue < 0.0009) {
-	    /* star qvalue forbids gzip */
-	    gzip = NS_FALSE;
+	    /* 
+             * star qvalue forbids gzip 
+             */
+	    gzipAccept = NS_FALSE;
 	} else if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
-	    /* star qvalue allows gzip in HTTP/1.1 */
-	    gzip = (starQvalue >= identityQvalue) && (version >= 1.1);
+	    /* 
+             * star qvalue allows gzip in HTTP/1.1 
+             */
+	    gzipAccept = (starQvalue >= identityQvalue) && (version >= 1.1);
 	} else {
-	    /* no identity specified, assume gzip is matched with * in HTTP/1.1 */
-	    gzip = (version >= 1.1);
+	    /* 
+             * no identity specified, assume gzip is matched with * in HTTP/1.1 
+             */
+	    gzipAccept = (version >= 1.1);
 	}
     } else {
-        gzip = NS_FALSE;
+        gzipAccept = NS_FALSE;
     }
 
-    return gzip;
+    return gzipAccept;
 }
 
 /*
