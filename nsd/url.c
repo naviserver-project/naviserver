@@ -147,6 +147,8 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
     }
     
     if (url[0] == '/' && url[1] == '/') {
+        int offset;
+
         /*
          * There are two slashes, which means a host is specified.
          * Advance url past that and set *phost.
@@ -166,7 +168,17 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          * Look for a port number, which is optional.
          */
         Ns_HttpParseHost(url, phost, &end);
-                
+        if (*phost != NULL && *phost != url) {
+            /*
+             * The url has the host IP literal notation. In such cases, the
+             * host entry is terminated with a null character. The next string
+             * operation has to start after the string terminator.
+             */
+            offset = strlen(*phost) + 2;
+        } else {
+            offset = 0;
+        }
+
         if (end != NULL) {
 
             /*
@@ -195,7 +207,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          * +----- *pprotocol    +-- *pport
          */
 
-        end = strchr(url, INTCHAR('/'));
+        end = strchr(&url[offset], INTCHAR('/'));
         if (end == NULL) {
 
             /*
@@ -322,7 +334,15 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     if (path == NULL) {
         path = bpath;
     }
-    Ns_DStringVarAppend(dsPtr, proto, "://", host, NULL);
+    if (strchr(host, INTCHAR(':')) == NULL) {
+        /*
+         * We have to use IP literal notation to avoid ambiguity of colon
+         * (part of address or separator for port).
+         */
+        Ns_DStringVarAppend(dsPtr, proto, "://", host, NULL);
+    } else {
+        Ns_DStringVarAppend(dsPtr, proto, "://[", host, "]", NULL);        
+    }
     if (port != NULL) {
         Ns_DStringVarAppend(dsPtr, ":", port, NULL);
     }
@@ -405,6 +425,52 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
 
     }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAbsoluteUrlObjCmd --
+ *
+ *    Implement the "ns_absoluteurl" command. Offers the functionality of
+ *    Ns_AbsoluteUrl on the Tcl layer.
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    none
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclAbsoluteUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int         result = TCL_OK;
+    const char *urlString, *baseString;
+    Ns_ObjvSpec args[] = {
+        {"partialurl", Ns_ObjvString, &urlString, NULL},
+        {"baseurl",    Ns_ObjvString, &baseString, NULL},        
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        if (Ns_AbsoluteUrl(&ds, urlString, baseString) == NS_OK) {
+            Tcl_DStringResult(interp, &ds);
+        } else {
+            Ns_TclPrintfResult(interp, "Could not parse base url into protocol, host and path");
+            Tcl_DStringFree(&ds);
+            result = TCL_ERROR;
+        }
+    }
+    
     return result;
 }
 

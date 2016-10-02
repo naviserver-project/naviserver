@@ -1054,7 +1054,8 @@ typedef struct NsInterp {
  */
 
 NS_EXTERN Tcl_ObjCmdProc
-NsTclAdpAbortObjCmd,
+    NsTclAbsoluteUrlObjCmd,
+    NsTclAdpAbortObjCmd,
     NsTclAdpAppendObjCmd,
     NsTclAdpArgcObjCmd,
     NsTclAdpArgvObjCmd,

@@ -57,6 +57,7 @@ static const Cmd basicCmds[] = {
     {"keylget",                  NULL, TclX_KeylgetObjCmd},
     {"keylkeys",                 NULL, TclX_KeylkeysObjCmd},
     {"keylset",                  NULL, TclX_KeylsetObjCmd},
+    {"ns_absoluteurl",           NULL, NsTclAbsoluteUrlObjCmd},
     {"ns_addrbyhost",            NULL, NsTclGetAddrObjCmd},
     {"ns_after",                 NULL, NsTclAfterObjCmd},
     {"ns_atexit",                NULL, NsTclAtExitObjCmd},

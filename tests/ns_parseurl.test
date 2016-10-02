@@ -54,5 +54,59 @@ test ns_parseurl-3.2 {protocol relative url without port} -body {
 } -result {host openacs.org portString 80 path www tail t.html}
 
 
+#
+# ns_absoluteurl
+#
+
+test ns_absoluteurl-1.0 {basic syntax} -body {
+     ns_absoluteurl 
+} -returnCodes error -result {wrong # args: should be "ns_absoluteurl partialurl baseurl"}
+
+test ns_absoluteurl-1.1 {invalid syntax for baseurl} -body {
+     ns_absoluteurl 1 2
+} -returnCodes error -result {Could not parse base url into protocol, host and path}
+
+
+test ns_absoluteurl-2.1a {replace just the last part} -body {
+    ns_absoluteurl foo.html http://openacs.org/www/t.html
+} -result {http://openacs.org/www/foo.html}
+
+test ns_absoluteurl-2.1b {replace just the last part, use ip literal notation} -body {
+    ns_absoluteurl foo.html {http://[::1]/www/t.html}
+} -result {http://[::1]/www/foo.html}
+
+test ns_absoluteurl-2.1c {replace just the last part, use ip literal notation} -body {
+    ns_absoluteurl foo.html {http://[::1]:80/www/t.html}
+} -result {http://[::1]:80/www/foo.html}
+
+
+test ns_absoluteurl-2.2 {replace the whole path} -body {
+    ns_absoluteurl /foo.html http://openacs.org/www/t.html
+} -result {http://openacs.org/foo.html}
+
+test ns_absoluteurl-2.3a {replace the protocol} -body {
+    ns_absoluteurl //google.com http://openacs.org/www/t.html
+} -result {http://google.com/}
+
+test ns_absoluteurl-2.3b {replace the protocol} -body {
+    ns_absoluteurl //google.com https://openacs.org/www/t.html
+} -result {https://google.com/}
+
+test ns_absoluteurl-2.3c {replace the protocol} -body {
+    ns_absoluteurl //google.com/test.html https://openacs.org/www/t.html
+} -result {https://google.com/test.html}
+
+
+test ns_absoluteurl-3.0 {incomplete baseurl} -body {
+    ns_absoluteurl //google.com/test.html //openacs.org/www/t.html
+} -returnCodes error -result {Could not parse base url into protocol, host and path}
+
+test ns_absoluteurl-3.1 {baseurl containing just protocol and host} -body {
+    ns_absoluteurl //google.com/test.html http://openacs.org/
+} -result {http://google.com/test.html}
+
+test ns_absoluteurl-3.2 {baseurl containing just protocol and host, no slash} -body {
+    ns_absoluteurl //google.com/test.html http://openacs.org
+} -result {http://google.com/test.html}
 
 cleanupTests
