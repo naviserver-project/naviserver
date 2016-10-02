@@ -668,51 +668,47 @@ NsConfigRead(const char *file)
 {
     Tcl_Channel  chan;
     Tcl_Obj     *buf;
-    const char  *call = "open", *data, *conf;
-    int          length;
+    const char  *call = "open", *conf = NULL;
 
     NS_NONNULL_ASSERT(file != NULL);
+
     /*
      * Open the channel for reading the config file
      */
-
     chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
     if (chan == NULL) {
         buf = NULL;
-        goto err;
+
+    } else {
+
+        /*
+         * Slurp entire file into memory
+         */
+        buf = Tcl_NewObj();
+        Tcl_IncrRefCount(buf);
+        if (Tcl_ReadChars(chan, buf, -1, 0) == -1) {
+            call = "read";
+
+        } else {
+            int         length;
+            const char *data = Tcl_GetStringFromObj(buf, &length);
+           
+            conf = ns_strncopy(data, length);
+        }
     }
-
-    /*
-     * Slurp entire file in memory
-     */
-
-    buf = Tcl_NewObj();
-    Tcl_IncrRefCount(buf);
-    if (Tcl_ReadChars(chan, buf, -1, 0) == -1) {
-        call = "read";
-        goto err;
-    }
-
-    (void) Tcl_Close(NULL, chan);
-    data = Tcl_GetStringFromObj(buf, &length);
-    conf = ns_strncopy(data, length);
-    Tcl_DecrRefCount(buf);
-
-    return conf;
-
- err:
+    
     if (chan != NULL) {
         (void) Tcl_Close(NULL, chan);
     }
     if (buf != NULL) {
         Tcl_DecrRefCount(buf);
     }
-    Ns_Fatal("config: can't %s config file '%s': '%s'",
-             call,
-             file,
-             strerror(Tcl_GetErrno()));
+    if (conf == NULL) {
+        Ns_Fatal("config: can't %s config file '%s': '%s'",
+                 call, file, strerror(Tcl_GetErrno()));
+    }
 
-    return NULL; /* Keep the compiler happy */
+    return conf; 
 }
 
 
