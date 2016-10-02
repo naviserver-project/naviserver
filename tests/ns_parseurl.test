@@ -101,12 +101,24 @@ test ns_absoluteurl-3.0 {incomplete baseurl} -body {
     ns_absoluteurl //google.com/test.html //openacs.org/www/t.html
 } -returnCodes error -result {Could not parse base url into protocol, host and path}
 
-test ns_absoluteurl-3.1 {baseurl containing just protocol and host} -body {
+test ns_absoluteurl-3.1a {baseurl containing just protocol and host} -body {
     ns_absoluteurl //google.com/test.html http://openacs.org/
 } -result {http://google.com/test.html}
+test ns_absoluteurl-3.1b {baseurl containing just protocol and host} -body {
+    ns_absoluteurl //google.com:80/test.html http://openacs.org/
+} -result {http://google.com:80/test.html}
+test ns_absoluteurl-3.1c {baseurl containing just protocol and host} -body {
+    ns_absoluteurl //google.com:80/test.html http://openacs.org:80/
+} -result {http://google.com:80/test.html}
 
-test ns_absoluteurl-3.2 {baseurl containing just protocol and host, no slash} -body {
+test ns_absoluteurl-3.2a {baseurl containing just protocol and host, no slash} -body {
     ns_absoluteurl //google.com/test.html http://openacs.org
 } -result {http://google.com/test.html}
+test ns_absoluteurl-3.2b {baseurl containing just protocol and host, no slash} -body {
+    ns_absoluteurl //google.com:80/test.html http://openacs.org
+} -result {http://google.com:80/test.html}
+test ns_absoluteurl-3.2c {baseurl containing just protocol and host, no slash} -body {
+    ns_absoluteurl //google.com:80/test.html http://openacs.org:80
+} -result {http://google.com:80/test.html}
 
 cleanupTests

@@ -147,7 +147,6 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
     }
     
     if (url[0] == '/' && url[1] == '/') {
-        int offset;
 
         /*
          * There are two slashes, which means a host is specified.
@@ -168,16 +167,6 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          * Look for a port number, which is optional.
          */
         Ns_HttpParseHost(url, phost, &end);
-        if (*phost != NULL && *phost != url) {
-            /*
-             * The url has the host IP literal notation. In such cases, the
-             * host entry is terminated with a null character. The next string
-             * operation has to start after the string terminator.
-             */
-            offset = strlen(*phost) + 2;
-        } else {
-            offset = 0;
-        }
 
         if (end != NULL) {
 
@@ -194,6 +183,17 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             *end = '\0';
             url = end + 1;
             *pport = url;
+        } else {
+            /*
+             * No port was specified. 
+             *
+             * If the url has the host specified in IP literal notation, the
+             * host entry is terminated with a null character. The next string
+             * operation has to start after the enclosing bracket.
+             */
+            if (*phost != NULL && *phost != url) {
+                url += strlen(*phost) + 2u;
+            }
         }
 
         /*
@@ -207,7 +207,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          * +----- *pprotocol    +-- *pport
          */
 
-        end = strchr(&url[offset], INTCHAR('/'));
+        end = strchr(url, INTCHAR('/'));
         if (end == NULL) {
 
             /*
@@ -216,33 +216,34 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
 
             *ppath = "";
             *ptail = "";
-            return NS_OK;
-        }
-        *end = '\0';
-        url = end + 1;
 
-        /*
-         * Set the path to URL and advance to the last slash.
-         * Set ptail to the character after that, or if there is none,
-         * it becomes path and path becomes an empty string.
-         *
-         * http\0//www.foo.com\08000\0baz/blah/spoo.html
-         * ^       ^            ^   ^ ^       ^^
-         * |       |            |   | |       |+-- *ptail
-         * |       |            |   | |       +-- end
-         * |       |            |   | +-- *ppath
-         * |       +-- *phost   |   +-- end
-         * +----- *pprotocol    +-- *pport
-         */
-
-        *ppath = url;
-        end = strrchr(url, INTCHAR('/'));
-        if (end == NULL) {
-            *ptail = *ppath;
-            *ppath = "";
         } else {
             *end = '\0';
-            *ptail = end + 1;
+            url = end + 1;
+
+            /*
+             * Set the path to URL and advance to the last slash.
+             * Set ptail to the character after that, or if there is none,
+             * it becomes path and path becomes an empty string.
+             *
+             * http\0//www.foo.com\08000\0baz/blah/spoo.html
+             * ^       ^            ^   ^ ^       ^^
+             * |       |            |   | |       |+-- *ptail
+             * |       |            |   | |       +-- end
+             * |       |            |   | +-- *ppath
+             * |       +-- *phost   |   +-- end
+             * +----- *pprotocol    +-- *pport
+             */
+
+            *ppath = url;
+            end = strrchr(url, INTCHAR('/'));
+            if (end == NULL) {
+                *ptail = *ppath;
+                *ppath = "";
+            } else {
+                *end = '\0';
+                *ptail = end + 1;
+            }
         }
     } else {
 
