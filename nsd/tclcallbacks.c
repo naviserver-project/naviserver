@@ -271,7 +271,7 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int result = TCL_OK;
 
-    NS_NONNULL_ASSERT(queue != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
