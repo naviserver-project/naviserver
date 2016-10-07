@@ -409,7 +409,6 @@ typedef struct DIR_ *DIR;
 #else
 # define NS_INITGROUPS_GID_T gid_t
 # define NS_MSG_IOVLEN_T size_t
-size_t
 
 #endif
 
