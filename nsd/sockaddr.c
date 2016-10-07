@@ -263,7 +263,7 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
  *----------------------------------------------------------------------
  */
 const char *
-ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
+ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, socklen_t size) {
     const char *result;
 
     NS_NONNULL_ASSERT(saPtr != NULL);

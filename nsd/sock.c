@@ -784,7 +784,7 @@ Ns_SockSetBlocking(NS_SOCKET sock)
  */
 
 void
-Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
+Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 {
 #ifdef TCP_FASTOPEN
 # if defined(__APPLE__) && defined(__MACH__)
@@ -807,7 +807,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 	Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
 	       ns_sockstrerror(ns_sockerrno));
     } else {
-        Ns_Log(Notice, "deferaccept: socket option DEFER_ACCEPT activated (timeout %d)", secs);
+        Ns_Log(Notice, "deferaccept: socket option DEFER_ACCEPT activated (timeout %ld)", secs);
     }
 # else
 #  ifdef SO_ACCEPTFILTER
@@ -970,10 +970,11 @@ Ns_SockStrError(int err)
  */
 
 int
-NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
+NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
 {
     Ns_Time now, diff;
-    int     i, n, ms;
+    int     n, ms;
+    NS_POLL_NFDS_TYPE i;
 
     /*
      * Clear revents.
@@ -999,7 +1000,7 @@ NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr)
                 ms = (int)(diff.sec * 1000 + diff.usec / 1000);
             }
         }
-        n = ns_poll(pfds, (size_t) nfds, ms);
+        n = ns_poll(pfds, nfds, ms);
     } while (n < 0 && ns_sockerrno == EINTR);
 
     /*
@@ -1077,7 +1078,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
         }
 
         if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
-            unsigned int err = ns_sockerrno;
+            int err = ns_sockerrno;
 
             if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
@@ -1168,7 +1169,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     msg.msg_iov = bufs;
     msg.msg_iovlen = nbufs;
 
-    n = recvmsg(sock, &msg, flags);
+    n = recvmsg(sock, &msg, (int)flags);
     if (n < 0) {
         Ns_Log(Debug, "SockRecv: %s",
                ns_sockstrerror(ns_sockerrno));

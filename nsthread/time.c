@@ -170,7 +170,7 @@ Ns_AdjTime(Ns_Time *timePtr)
  *----------------------------------------------------------------------
  */
 
-int
+long
 Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
 {
     Ns_Time diff;

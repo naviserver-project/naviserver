@@ -1012,7 +1012,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
             bp[n++] = ']';
             bp[n] = '\0';
         } else {
- 	    int gmtoff;
+ 	    long gmtoff;
             char sign;
 #ifdef HAVE_TM_GMTOFF
             gmtoff = ptm->tm_gmtoff / 60;
@@ -1028,7 +1028,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
             } else {
                 sign = '+';
             }
-            n += (size_t)sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
+            n += (size_t)sprintf(bp + n, " %c%02ld%02ld]", sign, gmtoff/60, gmtoff%60);
         }
         *sizePtr = n;
     }

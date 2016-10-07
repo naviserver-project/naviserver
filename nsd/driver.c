@@ -1493,7 +1493,7 @@ DriverThread(void *arg)
                      * Potentially blocking driver, NS_DRIVER_ASYNC is not defined 
                      */
                     if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                        Ns_Log(Notice, "read-ahead has some data, no async sock read ===== diff time %d",
+                        Ns_Log(Notice, "read-ahead has some data, no async sock read ===== diff time %ld",
                                Ns_DiffTime(&sockPtr->timeout, &now, &diff));
                         sockPtr->keep = NS_FALSE;
                         SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
@@ -2514,7 +2514,7 @@ ChunkedDecode(Request *reqPtr, int update)
             reqPtr->chunkWriteOff += chunk_length;
             *(writeBuffer + chunk_length) = '\0';
         }
-        reqPtr->chunkStartOff += (p - chunkStart) + 4u + chunk_length;
+        reqPtr->chunkStartOff += (size_t)(p - chunkStart) + 4u + chunk_length;
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
 
@@ -2625,7 +2625,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 #ifndef _WIN32
     if (reqPtr->coff > 0u                     /* We are in the content part (after the header) */
         && !reqPtr->chunkStartOff             /* Never spool chunked encoded data since we decode in memory */
-        && reqPtr->length > drvPtr->readahead /* We need more data */
+        && reqPtr->length > (size_t)drvPtr->readahead /* We need more data */
         && sockPtr->tfd <= 0                  /* We have no spool fd */
         ) {
         const DrvSpooler *spPtr = &drvPtr->spooler;
@@ -2648,7 +2648,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
          * not want to map such large files into memory.
          */
         if (drvPtr->maxupload > 0
-            && reqPtr->length > drvPtr->maxupload
+            && reqPtr->length > (size_t)drvPtr->maxupload
             ) {
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16u);
             sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
@@ -2669,7 +2669,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             return SOCK_ERROR;
         }
         
-        n = bufPtr->length - reqPtr->coff;
+        n = (ssize_t)((size_t)bufPtr->length - reqPtr->coff);
         assert(n >= 0);
         if (ns_write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
             return SOCK_WRITEERROR;
@@ -3178,7 +3178,7 @@ SockParse(Sock *sockPtr)
          * always into the mmapped area. On some older OSes this might lead to
          * crashes when we hitting page boundaries.
          */
-        int result = ns_write(sockPtr->tfd, "\0", 1);
+        ssize_t result = ns_write(sockPtr->tfd, "\0", 1);
         if (result == -1) {
             Ns_Log(Error, "socket: could not append terminating 0-byte");
         }

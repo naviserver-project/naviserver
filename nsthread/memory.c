@@ -106,10 +106,10 @@ ns_strncopy(const char *old, ssize_t size)
     char *new = NULL;
 
     if (likely(old != NULL)) {
-        size = likely(size > 0) ? size : strlen(old);
-        size ++;
-        new = ns_malloc(size);
-        memcpy(new, old, size);
+        size_t new_size = likely(size > 0) ? (size_t)size : strlen(old);
+        new_size ++;
+        new = ns_malloc(new_size);
+        memcpy(new, old, new_size);
     }
     return new;
 }

@@ -40,9 +40,9 @@
  * Local functions defined in this file
  */
 
-static int BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
+static ssize_t BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static int BinSearchKey(const void *key, void *const*listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
+static ssize_t BinSearchKey(const void *key, void *const*listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static int CmpStr(const char *const*leftPtr, const char *const*rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -240,10 +240,10 @@ Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key)
     NS_NONNULL_ASSERT(key != NULL);
 
     if (indexPtr->n > 0u) {
-        int i = BinSearchKey(key, indexPtr->el, (ssize_t)indexPtr->n,
+        ssize_t i = BinSearchKey(key, indexPtr->el, (ssize_t)indexPtr->n,
                              indexPtr->CmpKeyWithEl);
 
-        if (i < (int)indexPtr->n) {
+        if (i < (ssize_t)indexPtr->n) {
             if ((i > 0) &&
                 ((indexPtr->CmpKeyWithEl)(key, &(indexPtr->el[i])) != 0))  {
                 result = indexPtr->el[i - 1];
@@ -340,7 +340,7 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
 {
     ssize_t low = 0, high = n-1, mid = 0;
@@ -383,7 +383,7 @@ BinSearch(void *const* elPtrPtr, void *const* listPtrPtr, ssize_t n, Ns_IndexCmp
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 BinSearchKey(const void *key, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
 {
     ssize_t low = 0, high = n-1, mid = 0;
@@ -428,7 +428,7 @@ BinSearchKey(const void *key, void *const* listPtrPtr, ssize_t n, Ns_IndexCmpPro
 void
 Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 {
-    int i;
+    ssize_t i;
 
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(el != NULL);

@@ -74,7 +74,7 @@ static Thread *firstThreadPtr;
  */
 
 static Ns_Tls key;
-static long defstacksize = 0;
+static size_t defstacksize = 0u;
 
 
 /*
@@ -124,20 +124,19 @@ NsInitThreads(void)
  */
 
 void
-Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
+Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stack,
     	    	Ns_Thread *resultPtr)
 {
-    Thread *thrPtr;
-    size_t nameLength;
+    Thread     *thrPtr;
+    size_t      nameLength;
+    ssize_t     stackSize;
     const char *name;
 
     NS_NONNULL_ASSERT(proc != NULL);
 
     Ns_MasterLock();
 
-    if (stack <= 0) {
-        stack = defstacksize;
-    }
+    stackSize = (stack < 0) ? (ssize_t)defstacksize : stack;
 
     /*
      * Allocate a new thread structure and update values
@@ -156,7 +155,7 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     memcpy(thrPtr->parent, name, nameLength + 1u);
     Ns_MasterUnlock();
     
-    NsCreateThread(thrPtr, stack, resultPtr);
+    NsCreateThread(thrPtr, stackSize, resultPtr);
 }
 
 
@@ -176,15 +175,15 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
  *----------------------------------------------------------------------
  */
 
-long
-Ns_ThreadStackSize(long size)
+ssize_t
+Ns_ThreadStackSize(ssize_t size)
 {
-    long prev;
+    ssize_t prev;
 
     Ns_MasterLock();
-    prev = defstacksize;
+    prev = (ssize_t)defstacksize;
     if (size > 0) {
-        defstacksize = size;
+        defstacksize = (size_t)size;
     }
     Ns_MasterUnlock();
 
@@ -559,7 +558,7 @@ Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize) {
   
   Ns_MasterLock();
   *maxStackSize = defstacksize;
-  *estimatedSize = abs((int)(thisPtr->bottomOfStack - (unsigned char *)&thisPtr));
+  *estimatedSize = (size_t)labs((long)(thisPtr->bottomOfStack - (unsigned char *)&thisPtr));
   Ns_MasterUnlock();  
 }
 

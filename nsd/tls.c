@@ -478,7 +478,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         const unsigned char *message;
         
         message = (const unsigned char *)Ns_GetBinaryString(messageObj, &messageLength);
-        HMAC_Update(ctx, message, messageLength);
+        HMAC_Update(ctx, message, (size_t)messageLength);
     }
     return result;
 }
@@ -642,7 +642,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             ctx = HMAC_CTX_new();
             HMAC(md,
                  (const void *)keyString, keyLength,
-                 (const void *)messageString, messageLength,
+                 (const void *)messageString, (size_t)messageLength,
                  digest, &mdLength);
             HMAC_CTX_free(ctx);
                 
@@ -783,7 +783,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         int            messageLength;
 
         message = Ns_GetBinaryString(messageObj, &messageLength);
-        EVP_DigestUpdate(mdctx, message, messageLength);
+        EVP_DigestUpdate(mdctx, message, (size_t)messageLength);
     }
 
     return result;

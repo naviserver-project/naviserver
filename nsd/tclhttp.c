@@ -1009,7 +1009,8 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
 {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
     Ns_HttpTask   *httpPtr;
-    int            result, uaFlag = -1, bodyFileSize = 0, bodyFileFd = 0;
+    int            result, uaFlag = -1, bodyFileFd = 0;
+    off_t          bodyFileSize = 0;
     unsigned short defaultPort = 0u, portNr;
     char          *url2, *protocol, *host, *portString, *path, *tail;
     const char    *contentType = NULL;
@@ -1239,7 +1240,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
             Tcl_DStringAppend(dsPtr, bodyString, length);
 
         } else {
-            Ns_DStringPrintf(dsPtr, "Content-Length: %d\r\n\r\n", bodyFileSize);
+            Ns_DStringPrintf(dsPtr, "Content-Length: %" PROTd "\r\n\r\n", bodyFileSize);
         }
 
     } else {
@@ -1452,7 +1453,7 @@ HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
             ssize_t n;
         
             n = SSL_write(httpPtr->ssl, iov.iov_base, (int)iov.iov_len);
-            err = SSL_get_error(httpPtr->ssl, n);
+            err = SSL_get_error(httpPtr->ssl, (int)n);
             if (err == SSL_ERROR_WANT_WRITE) {
                 Ns_Time timeout = { 0, 10000 }; /* 10ms */
                 

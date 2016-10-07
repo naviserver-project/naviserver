@@ -2608,7 +2608,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockListenRaw(int proto);
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenUnix(const char *path, int backlog, int mode)
+Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
@@ -2619,7 +2619,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockBindRaw(int proto);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBindUnix(const char *path, int socktype, int mode)
+Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2777,7 +2777,7 @@ NS_EXTERN Ns_ReturnCode
 Ns_SockSetBlocking(NS_SOCKET sock);
 
 NS_EXTERN void
-Ns_SockSetDeferAccept(NS_SOCKET sock, int secs);
+Ns_SockSetDeferAccept(NS_SOCKET sock, long secs);
 
 NS_EXTERN Ns_ReturnCode
 Ns_SockCloseLater(NS_SOCKET sock);
@@ -2832,7 +2832,7 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
-ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size)
+ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, socklen_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
@@ -3347,29 +3347,29 @@ NS_EXTERN int
 ns_mkstemp(char *charTemplate);
 
 NS_EXTERN int
-ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
+ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN bool
-Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
+Ns_GetNameForUid(Ns_DString *dsPtr, uid_t uid)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN bool
-Ns_GetNameForGid(Ns_DString *dsPtr, int gid);
+Ns_GetNameForGid(Ns_DString *dsPtr, gid_t gid);
 
 NS_EXTERN bool
 Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN long
 Ns_GetUserGid(const char *user)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN long
 Ns_GetUid(const char *user)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN long
 Ns_GetGid(const char *group)
     NS_GNUC_NONNULL(1);
 

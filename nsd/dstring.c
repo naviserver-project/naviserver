@@ -228,8 +228,8 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
     while (result == -1 && errno == ERANGE) {
         newLength = dsPtr->spaceAvl * 2;
 #else
-    if (result >= bufLength) {
-        newLength = dsPtr->spaceAvl + (result - bufLength);
+        if ((size_t)result >= bufLength) {
+        newLength = dsPtr->spaceAvl + (result - (int)bufLength);
 #endif
 
         Ns_DStringSetLength(dsPtr, newLength);

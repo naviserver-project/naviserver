@@ -53,7 +53,7 @@ static int Pipe(int *fds, int sockpair)
 
 static void Abort(int signal);
 
-static bool GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr)
+static bool GetPwNam(const char *user, PwElement elem, long *longResult, Ns_DString *dsPtr, char **freePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
 /*
@@ -445,18 +445,21 @@ Pipe(int *fds, int sockpair)
 int
 ns_sock_set_blocking(NS_SOCKET fd, bool blocking) 
 {
+    int result;
 #if defined USE_FIONBIO
     int state = (blocking == 0);
-    return ioctl(fd, FIONBIO, &state);
+
+    result = ioctl(fd, FIONBIO, &state);
 #else
-    unsigned int flags = fcntl(fd, F_GETFL, 0);
+    int flags = fcntl(fd, F_GETFL, 0);
 
     if (blocking != 0) {
-	return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+	result = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
     } else {
-	return fcntl(fd, F_SETFL, flags|O_NONBLOCK);
+	result = fcntl(fd, F_SETFL, flags|O_NONBLOCK);
     }
 #endif
+    return result;
 }
 
 
@@ -476,7 +479,7 @@ ns_sock_set_blocking(NS_SOCKET fd, bool blocking)
  */
 
 static bool
-GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
+GetPwNam(const char *user, PwElement elem, long *longResult, Ns_DString *dsPtr, char **freePtr) {
     struct passwd *pwPtr;
     bool success;
 #if defined(HAVE_GETPWNAM_R)
@@ -511,10 +514,10 @@ GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, ch
 
         switch (elem) {
         case PwUID: 
-            *intResult = (int) pwPtr->pw_uid;
+            *longResult = (long) pwPtr->pw_uid;
             break;
         case PwGID: 
-            *intResult = (int) pwPtr->pw_gid;
+            *longResult = (long) pwPtr->pw_gid;
             break;
         case PwNAME:
             if (dsPtr != NULL) {
@@ -555,13 +558,13 @@ GetPwNam(const char *user, PwElement elem, int *intResult, Ns_DString *dsPtr, ch
  */
 
 bool
-GetPwUID(int uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
+GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) {
     struct passwd *pwPtr;
-    bool success;
+    bool           success;
 #if defined(HAVE_GETPWUID_R)
-    struct passwd pw;
-    char *buffer;
-    size_t bufSize = 4096u;
+    struct passwd  pw;
+    char          *buffer;
+    size_t         bufSize = 4096u;
 
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
@@ -629,7 +632,7 @@ GetPwUID(int uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **free
  */
 
 bool
-Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
+Ns_GetNameForUid(Ns_DString *dsPtr, uid_t uid)
 {
     char *ptr = NULL;
     bool success;
@@ -660,7 +663,7 @@ Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
  */
 
 bool
-Ns_GetNameForGid(Ns_DString *dsPtr, int gid)
+Ns_GetNameForGid(Ns_DString *dsPtr, gid_t gid)
 {
     struct group *grPtr;
 #if defined(HAVE_GETGRGID_R)
@@ -741,11 +744,11 @@ Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
  *----------------------------------------------------------------------
  */
 
-int
+long
 Ns_GetUserGid(const char *user)
 {
     char *ptr = NULL;
-    int retcode = -1;
+    long retcode = -1;
 
     NS_NONNULL_ASSERT(user != NULL);
     
@@ -772,11 +775,11 @@ Ns_GetUserGid(const char *user)
  *----------------------------------------------------------------------
  */
 
-int
+long
 Ns_GetUid(const char *user)
 {
     char *ptr = NULL;
-    int retcode = -1;
+    long retcode = -1;
 
     NS_NONNULL_ASSERT(user != NULL);
 
@@ -784,7 +787,7 @@ Ns_GetUid(const char *user)
     if (ptr != NULL) {
         ns_free(ptr);
     }
-    return retcode;
+    return (long)retcode;
 }
 
 
@@ -803,16 +806,16 @@ Ns_GetUid(const char *user)
  *----------------------------------------------------------------------
  */
 
-int
+long
 Ns_GetGid(const char *group)
 {
     struct group *grPtr;
-    int retcode;
+    long          result;
 #if defined(HAVE_GETGRNAM_R)
-    struct group gr;
-    size_t bufSize = 4096u;
-    char *buffer;
-    int errorCode = 0;
+    struct group  gr;
+    size_t        bufSize = 4096u;
+    char         *buffer;
+    int           errorCode = 0;
 
     NS_NONNULL_ASSERT(group != NULL);
 
@@ -825,7 +828,7 @@ Ns_GetGid(const char *group)
             buffer = ns_realloc(buffer, bufSize);
         }
     } while (errorCode == ERANGE);
-    retcode = (grPtr == NULL) ? -1 : (int) grPtr->gr_gid;
+    result = (grPtr == NULL) ? -1 : (long) grPtr->gr_gid;
     ns_free(buffer);
 #else
     NS_NONNULL_ASSERT(group != NULL);
@@ -833,14 +836,14 @@ Ns_GetGid(const char *group)
     Ns_MutexLock(&lock);
     grPtr = getgrnam(group);
     if (grPtr == NULL) {
-        retcode = -1;
+        result = -1;
     } else {
-        retcode = (int) grPtr->gr_gid;
+        result = (long)grPtr->gr_gid;
     }
     Ns_MutexUnlock(&lock);
 #endif
 
-    return retcode;
+    return result;
 }
 
 /*
@@ -864,12 +867,12 @@ Ns_SetGroup(const char *group)
     int nc;
 
     if (group != NULL) {
-        int gid = Ns_GetGid(group);
+        long gidResult = Ns_GetGid(group);
 
-        if (gid == -1) {
-            if (sscanf(group, "%24d%n", (int*)&gid, &nc) != 1
-                || nc != strlen(group)
-                || Ns_GetNameForGid(NULL, (gid_t)gid) == NS_FALSE) {
+        if (gidResult == -1) {
+            if (sscanf(group, "%24d%n", (int*)&gidResult, &nc) != 1
+                || nc != (int)strlen(group)
+                || Ns_GetNameForGid(NULL, (gid_t)gidResult) == NS_FALSE) {
                 Ns_Log(Error, "Ns_GetGroup: unknown group '%s'", group);
                 return NS_ERROR;
             }
@@ -881,11 +884,11 @@ Ns_SetGroup(const char *group)
             return NS_ERROR;
         }
 
-        if (gid != (int)getgid() && setgid((gid_t)gid) != 0) {
-            Ns_Log(Error, "Ns_SetGroup: setgid(%d) failed: %s", gid, strerror(errno));
+        if (gidResult != getgid() && setgid((gid_t)gidResult) != 0) {
+            Ns_Log(Error, "Ns_SetGroup: setgid(%ld) failed: %s", (long)gidResult, strerror(errno));
             return NS_ERROR;
         }
-        Ns_Log(Debug, "Ns_SetGroup: set group id to %d", gid);
+        Ns_Log(Debug, "Ns_SetGroup: set group id to %ld", (long)gidResult);
     }
     return NS_OK;
 }
@@ -908,11 +911,12 @@ Ns_SetGroup(const char *group)
 int
 Ns_SetUser(const char *user)
 {
-    int nc, uid;
+    int nc;
+    long uid;
     Ns_DString ds;
 
     if (user != NULL) {
-        int gid = -1;
+        long gid = -1;
 
         Ns_DStringInit(&ds);
         uid = Ns_GetUid(user);
@@ -921,9 +925,8 @@ Ns_SetUser(const char *user)
             /*
              * Hm, try see if given as numeric uid...
              */
-
-            if (sscanf(user, "%24d%n", &uid, &nc) != 1
-                || nc != strlen(user)
+            if (sscanf(user, "%24ld%n", &uid, &nc) != 1
+                || nc != (int)strlen(user)
                 || Ns_GetNameForUid(&ds, (uid_t)uid) == NS_FALSE) {
                 Ns_Log(Error, "Ns_SetUser: unknown user '%s'", user);
                 Ns_DStringFree(&ds);
@@ -934,8 +937,8 @@ Ns_SetUser(const char *user)
 
         gid = Ns_GetUserGid(user);
 
-        if (initgroups(user, gid) != 0) {
-            Ns_Log(Error, "Ns_SetUser: initgroups(%s, %d) failed: %s", user,
+        if (initgroups(user, (int)gid) != 0) {
+            Ns_Log(Error, "Ns_SetUser: initgroups(%s, %ld) failed: %s", user,
                    gid, strerror(errno));
             Ns_DStringFree(&ds);
             return NS_ERROR;
@@ -943,24 +946,24 @@ Ns_SetUser(const char *user)
         Ns_DStringFree(&ds);
 
         if (gid > -1 && gid != (int)getgid() && setgid((gid_t)gid) != 0) {
-            Ns_Log(Error, "Ns_SetUser: setgid(%d) failed: %s", gid, strerror(errno));
+            Ns_Log(Error, "Ns_SetUser: setgid(%ld) failed: %s", gid, strerror(errno));
             return NS_ERROR;
         }
         if (uid != (int)getuid() && setuid((uid_t)uid) != 0) {
-            Ns_Log(Error, "Ns_SetUser: setuid(%d) failed: %s", uid, strerror(errno));
+            Ns_Log(Error, "Ns_SetUser: setuid(%ld) failed: %s", uid, strerror(errno));
             return NS_ERROR;
         }
-        Ns_Log(Debug, "Ns_SetUser: set user id to %d", uid);
+        Ns_Log(Debug, "Ns_SetUser: set user id to %ld", uid);
     }
     return NS_OK;
 }
 
 #ifdef HAVE_POLL
 int
-ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
+ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
 {
     NS_NONNULL_ASSERT(fds != NULL);
-    return poll(fds, nfds, timo);
+    return poll(fds, nfds, (int)timo);
 }
 #else
 
@@ -980,7 +983,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
  */
 
 int
-ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
+ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
 {
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;

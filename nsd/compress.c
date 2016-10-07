@@ -167,7 +167,7 @@ Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSi
 {
     z_stream *zPtr = &cStream->z;
 
-    zPtr->avail_in = inSize;
+    zPtr->avail_in = (uInt)inSize;
     zPtr->next_in  = (unsigned char *)buffer;
 
     return NS_OK;
@@ -180,7 +180,7 @@ Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize,
     int           rc;
     int           tclStatus = TCL_OK;
     
-    zPtr->avail_out = outSize;
+    zPtr->avail_out = (uInt)outSize;
     zPtr->next_out  = (unsigned char *)buffer;
     rc = inflate(zPtr, Z_NO_FLUSH);
 
@@ -267,7 +267,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     Ns_DStringSetLength(dsPtr, (int)compressLen);
 
     z->next_out  = (Bytef *) (dsPtr->string + offset);
-    z->avail_out = compressLen;
+    z->avail_out = (uInt)compressLen;
 
     /*
      * Compress all buffers.
@@ -283,7 +283,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 	for (i = 0; i < nbufs; i++) {
 
 	    z->next_in  = (void *)bufs[i].iov_base;
-	    z->avail_in = bufs[i].iov_len;
+	    z->avail_in = (uInt)bufs[i].iov_len;
 	    nCompressed += (size_t)z->avail_in;;
 	    
 	    if (z->avail_in == 0 && i < nbufs -1) {
@@ -298,7 +298,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 	    DeflateOrAbort(z, flushFlags);
 	}
     }
-    Ns_DStringSetLength(dsPtr, dsPtr->length - z->avail_out);
+    Ns_DStringSetLength(dsPtr, (dsPtr->length - (int)z->avail_out));
 
     if (flush) {
         (void) deflateReset(z);

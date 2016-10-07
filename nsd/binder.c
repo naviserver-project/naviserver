@@ -273,7 +273,7 @@ Ns_SockListenRaw(int proto)
  */
 
 NS_SOCKET
-Ns_SockListenUnix(const char *path, int backlog, int  mode)
+Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
 {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
@@ -389,7 +389,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr)
  */
 
 NS_SOCKET
-Ns_SockBindUnix(const char *path, int socktype, int mode)
+Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
 {
 #ifdef _WIN32
     return NS_INVALID_SOCKET;
@@ -671,8 +671,10 @@ static void
 PreBind(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
-    int                    isNew, sock, port, mode;
+    int                    isNew, sock;
+    unsigned short         port, mode;
     char                  *next, *str, *line;
+    long                   l;
     struct NS_SOCKADDR_STORAGE  sa;
     struct sockaddr       *saPtr = (struct sockaddr *)&sa;
 
@@ -702,12 +704,13 @@ PreBind(const char *spec)
         Ns_HttpParseHost(line, &addr, &str);
         if (str != NULL) {
             *str++ = '\0';
-            port = strtol(str, NULL, 10);
+            l = strtol(str, NULL, 10);
             line = str;
         } else {
-            port = strtol(addr, NULL, 10);
+            l = strtol(addr, NULL, 10);
             addr = NS_IP_UNSPECIFIED;
         }
+        port = (l >= 0) ? (unsigned short)l : 0u;
 
         /* 
 	 * Parse protocol 
@@ -777,7 +780,7 @@ PreBind(const char *spec)
 	 * ICMP
 	 */
         if (strncmp(proto, "icmp", 4u) == 0) {
-            int count = 1;
+            long count = 1;
             /* Parse count */
             
             str = strchr(str, INTCHAR('/'));
@@ -807,11 +810,14 @@ PreBind(const char *spec)
 	 */
         if (Ns_PathIsAbsolute(line) == NS_TRUE) {
             /* Parse mode */
-            mode = 0;
+            mode = 0u;
             str = strchr(str, INTCHAR('|'));
             if (str != NULL) {
                 *(str++) = '\0';
-                mode = strtol(str, NULL, 10);
+                l = strtol(str, NULL, 10);
+                if (l > 0) {
+                    mode = (unsigned short)l;
+                }
             }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
             if (isNew == 0) {
@@ -861,7 +867,8 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
-    int           n, err;
+    int           err;
+    ssize_t       n;
     char          data[NS_IPADDR_SIZE];
     struct msghdr msg;
     struct iovec  iov[4];
@@ -884,7 +891,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     msg.msg_iovlen = 4;
     n = sendmsg(binderRequest[1], (struct msghdr *) &msg, 0);
     if (n != REQUEST_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: sent %d bytes, '%s'",
+        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: sent %" PRIdz " bytes, '%s'",
                n, strerror(errno));
         return -1;
     }
@@ -903,7 +910,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
 #endif
     n = recvmsg(binderResponse[0], (struct msghdr *) &msg, 0);
     if (n != RESPONSE_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: recv %d bytes, '%s'",
+        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: recv %" PRIdz " bytes, '%s'",
                n, strerror(errno));
         return -1;
     }
@@ -1061,10 +1068,12 @@ NsStopBinder(void)
 static void
 Binder(void)
 {
-    int           options, port, n, err, sock;
-    char          type, address[NS_IPADDR_SIZE];
-    struct msghdr msg;
-    struct iovec  iov[4];
+    int            options, err, sock;
+    unsigned short port;
+    ssize_t        n;
+    char           type, address[NS_IPADDR_SIZE];
+    struct msghdr  msg;
+    struct iovec   iov[4];
 
 #ifdef HAVE_CMMSG
     struct cmsghdr *c;
@@ -1098,7 +1107,7 @@ Binder(void)
             break;
         }
         if (n != REQUEST_SIZE) {
-            Ns_Fatal("binder: recvmsg() failed: recv %d bytes, '%s'", n, strerror(errno));
+            Ns_Fatal("binder: recvmsg() failed: recv %" PRIdz " bytes, '%s'", n, strerror(errno));
         }
 
         /*
@@ -1158,7 +1167,7 @@ Binder(void)
             n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
         } while (n == -1 && errno == EINTR);
         if (n != RESPONSE_SIZE) {
-            Ns_Fatal("binder: sendmsg() failed: sent %d bytes, '%s'", n, strerror(errno));
+            Ns_Fatal("binder: sendmsg() failed: sent %" PRIdz " bytes, '%s'", n, strerror(errno));
         }
         if (sock != -1) {
 

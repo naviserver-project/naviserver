@@ -1195,7 +1195,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
  */
 
 int
-ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
+ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
 {
     struct timeval        timeout;
     const struct timeval *toPtr;

@@ -529,7 +529,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
 	}
 	errnum = errno;
 	{ 
-	    size_t written = writev(errpipe[1], iov, 2);
+	    ssize_t written = writev(errpipe[1], iov, 2);
 	    if (written != 2) {
 		/* just ignore the attempt to write */
 		;
@@ -539,7 +539,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
 	_exit(1);
 	
     } else {
-        int nread;
+        ssize_t nread;
 	/*
 	 * Read result and errno from the child if any.
 	 */

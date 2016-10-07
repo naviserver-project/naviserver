@@ -172,7 +172,7 @@ Ns_ModuleInit(const char *server, const char *module)
     }
 
     num = CRYPTO_num_locks();
-    driver_locks = ns_calloc(num, sizeof(*driver_locks));
+    driver_locks = ns_calloc((size_t)num, sizeof(*driver_locks));
     {   int n;
         for (n = 0; n < num; n++) {
             Ns_DStringPrintf(&ds, "nsssl:%d", n);
@@ -256,7 +256,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Https cache support
      */
     Ns_DStringPrintf(&ds, "nsssl:%d", getpid());
-    SSL_CTX_set_session_id_context(drvPtr->ctx, (void *) ds.string, ds.length);
+    SSL_CTX_set_session_id_context(drvPtr->ctx, (void *) ds.string, (unsigned int)ds.length);
     SSL_CTX_set_session_cache_mode(drvPtr->ctx, SSL_SESS_CACHE_SERVER);
 
     /*
@@ -333,7 +333,7 @@ Ns_ModuleInit(const char *server, const char *module)
         
         Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
         for (n = 0; n < 1024; n++) {
-            ds.string[n] = Ns_DRand();
+            ds.string[n] = (char)Ns_DRand();
         }
         RAND_seed(ds.string, 1024);
     }
@@ -491,7 +491,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
 	int err, n;
 
         ERR_clear_error();
-        n = SSL_read(sslPtr->ssl, p + got, bufs->iov_len - got);
+        n = SSL_read(sslPtr->ssl, p + got, (int)bufs->iov_len - got);
         err = SSL_get_error(sslPtr->ssl, n);
 
         switch (err) {
@@ -502,7 +502,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
 	    }
             /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
 	    got += n;
-            if (n == 1 && got < bufs->iov_len) {
+            if (n == 1 && got < (int)bufs->iov_len) {
                 /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
                 continue;
             }
@@ -553,7 +553,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     while (nbufs > 0) {
 	if (bufs->iov_len > 0) {
 	    ERR_clear_error();
-	    rc = SSL_write(sslPtr->ssl, bufs->iov_base, bufs->iov_len);
+	    rc = SSL_write(sslPtr->ssl, bufs->iov_base, (int)bufs->iov_len);
 
 	    if (rc < 0) {
 		if (SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_WRITE) {
@@ -569,7 +569,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 		return -1;
 	    }
 	    size += rc;
-	    if (rc < bufs->iov_len) {
+	    if (rc < (int)bufs->iov_len) {
 		Ns_Log(Debug, "SSL: partial write, wanted %ld wrote %d", bufs->iov_len, rc);
 		break;
 	    }

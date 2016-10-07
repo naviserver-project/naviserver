@@ -43,7 +43,7 @@
 typedef struct Callback {
     struct Callback     *nextPtr;
     NS_SOCKET            sock;
-    int			 idx;
+    NS_POLL_NFDS_TYPE	 idx;
     unsigned int         when;
     Ns_Time              timeout;
     Ns_Time              expires;

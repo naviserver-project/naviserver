@@ -54,7 +54,7 @@ extern void   NsLockUnset(void *lock)      NS_GNUC_NONNULL(1);
 extern void   NsCleanupTls(void **slots)   NS_GNUC_NONNULL(1);
 extern void **NsGetTls(void)               NS_GNUC_RETURNS_NONNULL;
 extern void   NsThreadMain(void *arg);
-extern void   NsCreateThread(void *arg, long stacksize, Ns_Thread *threadPtr);
+extern void   NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr);
 extern void   NsThreadFatal(char *func, char *osfunc, int err);
 extern void   NsThreadShutdownStarted(void);
 

@@ -1647,14 +1647,14 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */
 static Tcl_Obj *
-GetLimitObj(Tcl_WideInt value)
+GetLimitObj(rlim_t value)
 {
     Tcl_Obj *obj;
     
     if (value == RLIM_INFINITY) {
         obj = Tcl_NewStringObj("unlimited", -1);
     } else {
-        obj = Tcl_NewWideIntObj(value);
+        obj = Tcl_NewWideIntObj((Tcl_WideInt)value);
     }
     return obj;
 }
@@ -1737,7 +1737,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         if (result == TCL_OK) {
             rc = getrlimit(resource[opt], &rlimit);
             if (rc > -1) {
-                rlimit.rlim_cur = value;
+                rlimit.rlim_cur = (rlim_t)value;
                 rc = setrlimit(resource[opt], &rlimit);
             }
             if (rc == -1) {

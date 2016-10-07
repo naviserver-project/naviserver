@@ -248,14 +248,16 @@ MemThread(void *arg)
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
-	int n = rand() % BS;
+	size_t n = rand() % BS;
 	if (arg != NULL) {
-	    if (ptr != NULL)
+	    if (ptr != NULL) {
 		ns_free(ptr);
+            }
 	    ptr = ns_malloc(n);
 	} else {
-	    if (ptr != NULL)
+	    if (ptr != NULL) {
 		free(ptr);
+            }
 	    ptr = malloc(n);
 	}
     }
@@ -268,7 +270,7 @@ MemTime(int ns)
     int             i;
     Ns_Thread      *tids;
 
-    tids = ns_malloc(sizeof(Ns_Thread *) * nthreads);
+    tids = ns_malloc(sizeof(Ns_Thread *) * (size_t)nthreads);
     Ns_MutexLock(&lock);
     nrunning = 0;
     memstart = 0;
@@ -430,7 +432,7 @@ int main(int argc, char *argv[])
 	    case 'n':
 		break;
 	    case 'm':
-	    	nthreads = strtol(p + 1, NULL, 10);
+	    	nthreads = (int)strtol(p + 1, NULL, 10);
 		goto mem;
 		break;
 	}

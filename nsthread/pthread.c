@@ -338,12 +338,12 @@ NsLockUnset(void *lock)
  */
 
 void
-NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
+NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
 {
-    static char *func = "NsCreateThread";
+    static char   *func = "NsCreateThread";
     pthread_attr_t attr;
-    pthread_t thr;
-    int err;
+    pthread_t      thr;
+    int            err;
 
     err = pthread_attr_init(&attr);
     if (err != 0) {
@@ -367,7 +367,7 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 	   * stack-size to the next multiple of the page-size.
 	   */
 #if defined(_SC_PAGESIZE)
-	    int pageSize = sysconf(_SC_PAGESIZE);
+	    long pageSize = sysconf(_SC_PAGESIZE);
 	    stacksize = (((stacksize-1) / pageSize) + 1) * pageSize;
 #endif
 	}

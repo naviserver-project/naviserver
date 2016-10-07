@@ -713,7 +713,7 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
                                            sizeof(Ns_ObjvTable), "option",
                                            TCL_EXACT, &tableIdx);
         if (result == TCL_OK) {
-            *dest = tablePtr[tableIdx].value;
+            *dest = (int)tablePtr[tableIdx].value;
             *objcPtr -= 1;
         }
     } else {

@@ -609,7 +609,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
                 goto notfound;
             }
             status = Ns_ConnReturnOpenFd(conn, statusCode, mimeType, fd,
-                                         connPtr->fileInfo.st_size);
+                                         (size_t)connPtr->fileInfo.st_size);
             (void) ns_close(fd);
         }
 
@@ -632,9 +632,9 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
             filePtr = Ns_CacheGetValue(entry);
             if (filePtr != NULL
                 && (filePtr->mtime != connPtr->fileInfo.st_mtime
-                    || filePtr->size != connPtr->fileInfo.st_size
-                    || filePtr->dev != (dev_t)connPtr->fileInfo.st_dev
-                    || filePtr->ino != connPtr->fileInfo.st_ino)) {
+                    || filePtr->size != (size_t)connPtr->fileInfo.st_size
+                    || filePtr->dev  != (dev_t)connPtr->fileInfo.st_dev
+                    || filePtr->ino  != connPtr->fileInfo.st_ino)) {
                 Ns_CacheUnsetValue(entry);
                 isNew = 1;
             }

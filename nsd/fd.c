@@ -132,7 +132,8 @@ NsInitFd(void)
 #ifdef __APPLE__
 #include <sys/sysctl.h>
                     size_t len = sizeof(int);
-                    int maxf;
+                    rlim_t maxf;
+
                     if (!sysctlbyname("kern.maxfiles", &maxf, &len, NULL, 0)) {
                         rl.rlim_cur = rl.rlim_max = maxf > OPEN_MAX ? OPEN_MAX : maxf;
                     } else {

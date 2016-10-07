@@ -1351,7 +1351,7 @@ NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, const Ns_Time *timeoutPtr);
+NS_EXTERN int NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr);
 
 NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);

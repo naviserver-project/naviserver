@@ -74,7 +74,7 @@ typedef struct Task {
     NS_SOCKET          sock;          /* Underlying socket. */
     Ns_TaskProc       *proc;          /* Queue callback. */
     void              *arg;           /* Callback data. */
-    int                idx;           /* Poll index. */
+    NS_POLL_NFDS_TYPE  idx;           /* Poll index. */
     short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     unsigned int       signalFlags;   /* Signal bits sent to/from queue thread. */
@@ -870,10 +870,11 @@ TaskThread(void *arg)
     firstWaitPtr = NULL;
 
     for (;;) {
-        int            n, broadcast, nfds;
-        bool           shutdown;
-	Ns_Time        now;
-        const Ns_Time *timeoutPtr;
+        int               n, broadcast;
+        NS_POLL_NFDS_TYPE nfds;
+        bool              shutdown;
+	Ns_Time           now;
+        const Ns_Time    *timeoutPtr;
 
         /*
          * Get the shutdown flag and process any incoming signals.

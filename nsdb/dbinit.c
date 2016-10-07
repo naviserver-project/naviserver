@@ -935,7 +935,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
         Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
 
         if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
-            int delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
+            long delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
 
             if (delta < 1) {
                 Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",

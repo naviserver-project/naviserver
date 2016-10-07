@@ -106,7 +106,7 @@ NsForkWatchedProcess()
     SysLog(LOG_NOTICE, "watchdog: started.");
 
     while (watchdogExit == 0) {
-        unsigned int startTime;
+        time_t startTime;
 
         if (restartWait != 0) {
             SysLog(LOG_WARNING,
@@ -333,3 +333,12 @@ SysLog(int priority, char *fmt, ...)
 }
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

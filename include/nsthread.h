@@ -134,6 +134,8 @@ typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
 typedef          DWORD pid_t;
+typedef          long uid_t;
+typedef          long gid_t;
 
 #  define NS_SOCKET		SOCKET
 #  define NS_INVALID_SOCKET     (INVALID_SOCKET)
@@ -916,7 +918,7 @@ NS_EXTERN uintptr_t Ns_ThreadId(void);
 NS_EXTERN void Ns_ThreadSelf(Ns_Thread *threadPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *Ns_ThreadGetName(void)       NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *Ns_ThreadGetParent(void)     NS_GNUC_RETURNS_NONNULL;
-NS_EXTERN long Ns_ThreadStackSize(long size);
+NS_EXTERN ssize_t Ns_ThreadStackSize(long ssize_t);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -930,7 +932,7 @@ NS_EXTERN void Ns_GetTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)  NS_GNUC_NONNULL(1);
-NS_EXTERN int  Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)  
+NS_EXTERN long Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)  
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 /*
  * tls.c:

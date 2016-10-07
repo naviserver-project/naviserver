@@ -172,7 +172,7 @@ NsConfUpdate(void)
         i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX);
     }
     if (i > 0) {
-	(void) Ns_ThreadStackSize((long)i);
+	(void) Ns_ThreadStackSize((ssize_t)i);
     }
 
     /*

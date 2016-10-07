@@ -854,7 +854,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
             validIp = ns_inet_pton(ipPtr, net);
             if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
                 maskPtr->sa_family = ipPtr->sa_family;
-                Ns_SockaddrMaskBits(maskPtr, strtol(slash, NULL, 10));
+                Ns_SockaddrMaskBits(maskPtr, (unsigned int)strtol(slash, NULL, 10));
                 validMask = 1;
             } else {
                 validMask = ns_inet_pton(maskPtr, slash);

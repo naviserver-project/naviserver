@@ -169,7 +169,7 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
            struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
     Config *cfg    = sock->driver->arg;
-    int     status = NS_DRIVER_ACCEPT_ERROR;
+    NS_DRIVER_ACCEPT_STATUS status = NS_DRIVER_ACCEPT_ERROR;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
     if (sock->sock != NS_INVALID_SOCKET) {
@@ -272,7 +272,7 @@ SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 	msg.msg_iov = (struct iovec *)bufs;
 	msg.msg_iovlen = nbufs;
 
-	n = sendmsg(sock, &msg, flags);
+	n = sendmsg(sock, &msg, (int)flags);
 	
 	if (n < 0) {
 	    Ns_Log(Debug, "SockSend: %s",

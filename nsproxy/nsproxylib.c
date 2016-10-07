@@ -275,18 +275,18 @@ static Err    CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1
 static void   SetExpire(Slave *slavePtr, int ms) NS_GNUC_NONNULL(1);
 static bool   SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static bool   RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static int    WaitFd(int fd, short events, int ms);
+static int    WaitFd(int fd, short events, long ms);
 
 static int    Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr) \
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void   Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr) NS_GNUC_NONNULL(3);
 
-static void   UpdateIov(struct iovec *iov, int n) NS_GNUC_NONNULL(1);
+static void   UpdateIov(struct iovec *iov, size_t n) NS_GNUC_NONNULL(1);
 static void   SetOpt(const char *str, char const **optPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   ReaperThread(void *ignored);
 static void   CloseSlave(Slave *slavePtr, int ms) NS_GNUC_NONNULL(1);
 static void   ReapProxies(void);
-static int    GetTimeDiff(Ns_Time *tsPtr) NS_GNUC_NONNULL(1);
+static long   GetTimeDiff(Ns_Time *tsPtr) NS_GNUC_NONNULL(1);
 
 static void   AppendStr(Tcl_Obj *listObj, const char *flag, const char *val) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   AppendInt(Tcl_Obj *listObj, const char *flag, int i) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -400,7 +400,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 {
     Tcl_Interp  *interp;
     Slave         proc;
-    int          result, n, max = 0;
+    int          result, max;
     Tcl_DString  in, out;
     const char  *script, *dots, *uarg = NULL, *user = NULL;
     char        *group = NULL, *active;
@@ -416,7 +416,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         active = NULL;
     } else {
         active = argv[3];
-        max = strlen(active) - 8;
+        max = (int)strlen(active) - 8;
         if (max < 0) {
             active = NULL;
         }
@@ -512,9 +512,9 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     while (RecvBuf(&proc, -1, &in) == NS_TRUE) {
         Req *reqPtr;
-	int  len;
+	uint32_t len;
 
-        if (Tcl_DStringLength(&in) < sizeof(Req)) {
+        if (Tcl_DStringLength(&in) < (int)sizeof(Req)) {
             break;
         }
         reqPtr = (Req *) Tcl_DStringValue(&in);
@@ -527,7 +527,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         } else if (len > 0) {
             script = Tcl_DStringValue(&in) + sizeof(Req);
             if (active != NULL) {
-                n = len;
+                int n = (int)len;
                 if (n < max) {
                     dots = "";
                 } else {
@@ -536,7 +536,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
                 }
                 sprintf(active, "{%.*s%s}", n, script, dots);
             }
-            result = Tcl_EvalEx(interp, script, len, 0);
+            result = Tcl_EvalEx(interp, script, (int)len, 0);
             Export(interp, result, &out);
             if (active != NULL) {
                 memset(active, ' ', max);
@@ -1142,7 +1142,8 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
 static bool
 SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
-    int          n, ms;
+    long         ms;
+    ssize_t      n;
     uint32       ulen;
     struct iovec iov[2];
     Ns_Time      end;
@@ -1159,7 +1160,8 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     iov[0].iov_base = (caddr_t) &ulen;
     iov[0].iov_len  = sizeof(ulen);
     iov[1].iov_base = dsPtr->string;
-    iov[1].iov_len  = dsPtr->length;
+    iov[1].iov_len  = (size_t)dsPtr->length;
+
     while ((iov[0].iov_len + iov[1].iov_len) > 0u) {
         do {
             n = writev(slavePtr->wfd, iov, 2);
@@ -1180,7 +1182,7 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
                 return NS_FALSE;
             }
         } else if (n > 0) {
-            UpdateIov(iov, n);
+            UpdateIov(iov, (size_t)n);
         }
     }
 
@@ -1209,7 +1211,9 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
     uint32       ulen;
     char        *ptr;
-    int          n, len, avail, ms;
+    long         ms;
+    ssize_t      n, len;
+    size_t       avail;
     struct iovec iov[2];
     Ns_Time      end;
 
@@ -1221,11 +1225,12 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
     }
 
-    avail = dsPtr->spaceAvl - 1;
+    avail = (size_t)dsPtr->spaceAvl - 1u;
     iov[0].iov_base = (caddr_t) &ulen;
     iov[0].iov_len  = sizeof(ulen);
     iov[1].iov_base = dsPtr->string;
     iov[1].iov_len  = avail;
+
     while (iov[0].iov_len > 0) {
         do {
             n = readv(slavePtr->rfd, iov, 2);
@@ -1248,18 +1253,18 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
                 return NS_FALSE;
             }
         } else if (n > 0) {
-            UpdateIov(iov, n);
+            UpdateIov(iov, (size_t)n);
         }
     }
-    n = avail - iov[1].iov_len;
-    Tcl_DStringSetLength(dsPtr, n);
-    len = ntohl(ulen);
-    Tcl_DStringSetLength(dsPtr, len);
+    n = (ssize_t)(avail - iov[1].iov_len);
+    Tcl_DStringSetLength(dsPtr, (int)n);
+    len = (ssize_t)ntohl(ulen);
+    Tcl_DStringSetLength(dsPtr, (int)len);
     len -= n;
     ptr  = dsPtr->string + n;
     while (len > 0) {
         do {
-            n = ns_read(slavePtr->rfd, ptr, len);
+            n = ns_read(slavePtr->rfd, ptr, (size_t)len);
         } while (n == -1 && errno == EINTR);
         if (n == 0) {
             return NS_FALSE; /* EOF */
@@ -1305,7 +1310,7 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
  */
 
 static int
-WaitFd(int fd, short events, int ms)
+WaitFd(int fd, short events, long ms)
 {
     struct pollfd pfd;
     int n;
@@ -1343,7 +1348,7 @@ WaitFd(int fd, short events, int ms)
  */
 
 static void
-UpdateIov(struct iovec *iov, int n)
+UpdateIov(struct iovec *iov, size_t n)
 {
     NS_NONNULL_ASSERT(iov != NULL);
 
@@ -1405,13 +1410,13 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
     hdr.rlen = htonl(rlen);
     Tcl_DStringAppend(dsPtr, (char *) &hdr, sizeof(hdr));
     if (clen > 0) {
-        Tcl_DStringAppend(dsPtr, ecode, clen);
+        Tcl_DStringAppend(dsPtr, ecode, (int)clen);
     }
     if (ilen > 0) {
-        Tcl_DStringAppend(dsPtr, einfo, ilen);
+        Tcl_DStringAppend(dsPtr, einfo, (int)ilen);
     }
     if (rlen > 0) {
-        Tcl_DStringAppend(dsPtr, result, rlen);
+        Tcl_DStringAppend(dsPtr, result, (int)rlen);
     }
 }
 
@@ -1441,13 +1446,13 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
     
-    if (dsPtr->length < sizeof(Res)) {
+    if (dsPtr->length < (int)sizeof(Res)) {
         result = TCL_ERROR;
 
     } else {
         Res        *resPtr = (Res *) dsPtr->string;
         const char *str    = dsPtr->string + sizeof(Res);
-        int         rlen, clen, ilen;
+        size_t      rlen, clen, ilen;
         
         clen = ntohl(resPtr->clen);
         ilen = ntohl(resPtr->ilen);
@@ -1465,7 +1470,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
         if (rlen > 0) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
         }
-        *resultPtr = ntohl(resPtr->code);
+        *resultPtr = (int)ntohl(resPtr->code);
     }
     return result;
 }
@@ -3302,7 +3307,7 @@ ReapProxies()
  *----------------------------------------------------------------------
  */
 
-static int
+static long
 GetTimeDiff(Ns_Time *timePtr)
 {
     Ns_Time now, diff;
@@ -3310,7 +3315,7 @@ GetTimeDiff(Ns_Time *timePtr)
     NS_NONNULL_ASSERT(timePtr != NULL);
     
     Ns_GetTime(&now);
-    return Ns_DiffTime(timePtr, &now, &diff)*(diff.sec/1000+diff.usec*1000);
+    return Ns_DiffTime(timePtr, &now, &diff) * (diff.sec/1000 + diff.usec*1000);
 }
 
 /*

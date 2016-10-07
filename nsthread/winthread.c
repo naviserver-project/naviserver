@@ -688,7 +688,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
  */
 
 void
-NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
+NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
 {
     ThreadArg *argPtr;
     unsigned   tid, flags;

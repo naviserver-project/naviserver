@@ -45,7 +45,7 @@ typedef struct Event {
     NS_SOCKET          sock;          /* Underlying socket. */
     Ns_EventProc      *proc;          /* Event callback. */
     void              *arg;           /* Callback data. */
-    int                idx;           /* Poll index. */
+    NS_POLL_NFDS_TYPE  idx;           /* Poll index. */
     short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
@@ -257,12 +257,13 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 bool
 Ns_RunEventQueue(Ns_EventQueue *queue)
 {
-    EventQueue    *queuePtr = (EventQueue *) queue;
-    Event         *evPtr, *nextPtr;
-    Ns_Time        now;
-    const Ns_Time *timeoutPtr;
-    int            i, n, nfds;
-    char           c;
+    EventQueue       *queuePtr = (EventQueue *) queue;
+    Event            *evPtr, *nextPtr;
+    Ns_Time           now;
+    const Ns_Time    *timeoutPtr;
+    int               i, n;
+    NS_POLL_NFDS_TYPE nfds;
+    char              c;
 
     NS_NONNULL_ASSERT(queue != NULL);
 

@@ -457,7 +457,7 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
          */
         status = NS_OK;
         while (status == NS_OK && nsend > 0u) {
-            int    nread;
+            ssize_t nread;
             size_t toRead = nsend;
 
             if (toRead > sizeof(buf)) {

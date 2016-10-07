@@ -429,7 +429,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             if ((flags & LOG_CHECKFORPROXY)) {
                 Ns_DStringAppend(&ds, "checkforproxy ");
             }
-            if ((rc & LOG_SUPPRESSQUERY)) {
+            if ((flags & LOG_SUPPRESSQUERY)) {
                 Ns_DStringAppend(&ds, "suppressquery ");
             }
             Tcl_DStringResult(interp, &ds);
@@ -736,7 +736,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_DStringNAppend(dsPtr, "\n", 1);
 
     if (logPtr->maxlines == 0) {
-        bufferSize = ds.length;
+        bufferSize = (size_t)ds.length;
 	if (bufferSize < PIPE_BUF) {
 	  /* 
            * Only ns_write() operations < PIPE_BUF are guaranteed to be atomic
@@ -749,7 +749,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     } else {
         Ns_DStringNAppend(&logPtr->buffer, ds.string, ds.length);
         if (++logPtr->curlines > logPtr->maxlines) {
-	    bufferSize = logPtr->buffer.length;
+	    bufferSize = (size_t)logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {
                 /* 
                  * Only ns_write() operations < PIPE_BUF are guaranteed to be
@@ -876,7 +876,7 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
     char *buf = dsPtr->string;
 
     if (len > 0) {
-        if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, len) != len) {
+        if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, (size_t)len) != len) {
             Ns_Log(Error, "nslog: logging disabled: ns_write() failed: '%s'",
                    strerror(errno));
             ns_close(logPtr->fd);

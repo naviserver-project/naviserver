@@ -615,7 +615,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             return TCL_ERROR;
         }
         tv.tv_sec  = timeout.sec;
-        tv.tv_usec = timeout.usec;
+        tv.tv_usec = (suseconds_t)timeout.usec;
         arg = 3;
     }
 
