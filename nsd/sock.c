@@ -1167,8 +1167,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = bufs;
-    msg.msg_iovlen = nbufs;
-
+    msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
     n = recvmsg(sock, &msg, (int)flags);
     if (n < 0) {
         Ns_Log(Debug, "SockRecv: %s",

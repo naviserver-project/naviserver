@@ -179,7 +179,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
             continue;
         }
 
-        towrite += length;
+        towrite += (ssize_t)length;
 
         if (fd < 0) {
             /*

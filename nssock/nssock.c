@@ -270,7 +270,7 @@ SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
       
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = (struct iovec *)bufs;
-	msg.msg_iovlen = nbufs;
+        msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;    
 
 	n = sendmsg(sock, &msg, (int)flags);
 	

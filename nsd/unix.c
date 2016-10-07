@@ -937,7 +937,7 @@ Ns_SetUser(const char *user)
 
         gid = Ns_GetUserGid(user);
 
-        if (initgroups(user, (int)gid) != 0) {
+        if (initgroups(user, (NS_INITGROUPS_GID_T)gid) != 0) {
             Ns_Log(Error, "Ns_SetUser: initgroups(%s, %ld) failed: %s", user,
                    gid, strerror(errno));
             Ns_DStringFree(&ds);

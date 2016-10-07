@@ -771,10 +771,10 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 /* 
  * The SHA Mysterious Constants. 
  */
-#define K2  (0x5A827999uL)	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
-#define K3  (0x6ED9EBA1uL)	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
-#define K5  (0x8F1BBCDCuL)	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
-#define K10 (0xCA62C1D6uL)	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
+#define K2  (0x5A827999u)	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
+#define K3  (0x6ED9EBA1u)	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
+#define K5  (0x8F1BBCDCu)	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
+#define K10 (0xCA62C1D6u)	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
 
 /* 
  * 32-bit rotate left - kludged with shifts 

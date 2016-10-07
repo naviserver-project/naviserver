@@ -421,7 +421,7 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 unsigned short
 Ns_SockaddrGetPort(const struct sockaddr *saPtr)
 {
-    unsigned int port;
+    unsigned short port;
     
     NS_NONNULL_ASSERT(saPtr != NULL);
     
@@ -435,7 +435,7 @@ Ns_SockaddrGetPort(const struct sockaddr *saPtr)
     port = ((const struct sockaddr_in *)saPtr)->sin_port;
 #endif
     
-    return htons(port);
+    return (unsigned short)htons(port);
 }
 
 /*

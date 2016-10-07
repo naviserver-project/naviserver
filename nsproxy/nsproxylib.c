@@ -539,7 +539,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
             result = Tcl_EvalEx(interp, script, (int)len, 0);
             Export(interp, result, &out);
             if (active != NULL) {
-                memset(active, ' ', max);
+                memset(active, ' ', (size_t)max);
             }
         } else {
             Ns_Fatal("nsproxy: invalid length");
@@ -813,7 +813,8 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     char  *argv[5];
     char   active[100];
     Slave *slavePtr;
-    int    rpipe[2], wpipe[2], len;
+    int    rpipe[2], wpipe[2];
+    size_t len;
     pid_t  pid;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1156,7 +1157,7 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
     }
 
-    ulen = htonl(dsPtr->length);
+    ulen = htonl((unsigned int)dsPtr->length);
     iov[0].iov_base = (caddr_t) &ulen;
     iov[0].iov_len  = sizeof(ulen);
     iov[1].iov_base = dsPtr->string;
@@ -1385,9 +1386,9 @@ UpdateIov(struct iovec *iov, size_t n)
 static void
 Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
 {
-    Res         hdr;
-    const char *einfo = NULL, *ecode = NULL, *result = NULL;
-    size_t      clen = 0, ilen = 0, rlen = 0;
+    Res          hdr;
+    const char  *einfo = NULL, *ecode = NULL, *result = NULL;
+    unsigned int clen = 0, ilen = 0, rlen = 0;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
@@ -1399,12 +1400,12 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
             ecode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
             einfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
         }
-        clen = (ecode != NULL) ? (strlen(ecode) + 1) : 0;
-        ilen = (einfo != NULL) ? (strlen(einfo) + 1) : 0;
+        clen = (ecode != NULL) ? ((unsigned int)strlen(ecode) + 1) : 0;
+        ilen = (einfo != NULL) ? ((unsigned int)strlen(einfo) + 1) : 0;
         result = Tcl_GetStringResult(interp);
-        rlen = strlen(result);
+        rlen = (unsigned int)strlen(result);
     }
-    hdr.code = htonl(code);
+    hdr.code = htonl((unsigned int)code);
     hdr.clen = htonl(clen);
     hdr.ilen = htonl(ilen);
     hdr.rlen = htonl(rlen);

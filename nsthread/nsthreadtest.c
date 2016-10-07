@@ -248,7 +248,7 @@ MemThread(void *arg)
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
-	size_t n = rand() % BS;
+	size_t n = (size_t)rand() % BS;
 	if (arg != NULL) {
 	    if (ptr != NULL) {
 		ns_free(ptr);

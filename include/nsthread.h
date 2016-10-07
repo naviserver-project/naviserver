@@ -137,6 +137,9 @@ typedef          DWORD pid_t;
 typedef          long uid_t;
 typedef          long gid_t;
 
+#  define NS_INITGROUPS_GID_T int
+#  define NS_MSG_IOVLEN_T int
+
 #  define NS_SOCKET		SOCKET
 #  define NS_INVALID_SOCKET     (INVALID_SOCKET)
 #  define NS_INVALID_PID        (0)
@@ -401,6 +404,13 @@ typedef struct DIR_ *DIR;
 # ifndef s6_addr32
 #  define s6_addr32 __u6_addr.__u6_addr32
 # endif
+# define NS_INITGROUPS_GID_T int
+# define NS_MSG_IOVLEN_T int
+#else
+# define NS_INITGROUPS_GID_T gid_t
+# define NS_MSG_IOVLEN_T size_t
+size_t
+
 #endif
 
 # ifdef __OpenBSD__

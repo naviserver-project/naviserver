@@ -664,7 +664,7 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
 
             ++codePtr->nblocks;
             if (type == 'S') {
-                l += APPEND_LEN;
+                l += (ptrdiff_t)APPEND_LEN;
                 Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
             }
             Tcl_DStringAppend(&codePtr->text, s, (int)len);

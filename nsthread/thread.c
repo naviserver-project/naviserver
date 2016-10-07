@@ -221,7 +221,7 @@ NsThreadMain(void *arg)
     Ns_ThreadSetName(name);
     SetBottomOfStack(&thrPtr);
 #ifdef HAVE_GETTID
-    thrPtr->ostid = syscall(SYS_gettid);
+    thrPtr->ostid = (pid_t)syscall(SYS_gettid);
 #endif
     (*thrPtr->proc) (thrPtr->arg);
 }
@@ -438,7 +438,7 @@ GetThread(void)
         thrPtr->tid = Ns_ThreadId();
         Ns_TlsSet(&key, thrPtr);
 #ifdef HAVE_GETTID
-        thrPtr->ostid = syscall(SYS_gettid);
+        thrPtr->ostid = (pid_t)syscall(SYS_gettid);
 #endif
     }
     return thrPtr;
