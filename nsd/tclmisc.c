@@ -357,7 +357,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         
     } else {
         bool        intag;     /* flag to see if are we inside a tag */
-        bool        intspec;   /* flag to see if we are inside a special char */
+        bool        inentity;   /* flag to see if we are inside a special char */
         char       *inString;  /* copy of input string */
         char       *outPtr;    /* moving pointer to output string */
         const char *inPtr;     /* moving pointer to input string */
@@ -369,7 +369,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         inPtr    = inString;
         outPtr   = inString;
         intag    = NS_FALSE;
-        intspec  = NS_FALSE;
+        inentity  = NS_FALSE;
 
         while (*inPtr != '\0') {
 
@@ -380,19 +380,28 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 /* inside a tag that closes */
                 intag = NS_FALSE;
 
-            } else if (intspec && (*inPtr == ';')) {
+            } else if (inentity && (*inPtr == ';')) {
                 /* inside a special character that closes */
-                intspec = NS_FALSE;
+                inentity = NS_FALSE;
 
-            } else if ((!intag) && (!intspec)) {
+            } else if ((!intag) && (!inentity)) {
                 /* regular text */
 
                 if (*inPtr == '&') {
                     /* starting a new special character */
-                    intspec = WordEndsInSemi(inPtr);
+                    inentity = WordEndsInSemi(inPtr);
+                    if (inentity) {
+                        long value = strtol(inPtr + 1, NULL, 10);
+
+                        if (value > 0 && value < 256) {
+                            *outPtr++ = (char) value;
+                        } else {
+                            Ns_Log(Notice, "ns_striphtml: ignore numeric entity with value %ld", value);
+                        }
+                    }
                 }
 
-                if (!intspec) {
+                if (!inentity) {
                     /* incr pointer only if we're not in something htmlish */
                     *outPtr++ = *inPtr;
                 }
