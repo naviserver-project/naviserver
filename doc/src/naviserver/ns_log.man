@@ -200,20 +200,29 @@ The following are valid configuration parameters:
 
 [list_begin definitions]
 
-[def serverlog]
-Path to error log file. If the path is not fully qualified it is assumed to be
-relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
-the path must exist. The server will fail to start if the log file cannot be
-opened.
-Default: logs/nsd.log
+[def logcolorize]
+If true, log entries will be colorized using ANSI color codes
+Default: false.
+
+[def logdebug]
+If true messages of severity-level [emph Debug] are enabled.
+Default: false.
+
+[def logdev]
+If true, messages of severity-level [emph Dev] are enabled.
+Default: false.
+
+[def logexpanded]
+If true, an extra newline is added to each log entry.
+Default: false.
+
+[def logmaxbackup]
+The number of old error log files to keep around if log rolling is enabled.
+Default: 10.
 
 [def lognotice]
 If true, messages of severity-level [emph Notice] are enabled.
 Default: true.
-
-[def logcolorize]
-If true, log entries will be colorized using ANSI color codes
-Default: false.
 
 [def logprefixcolor]
 When logcolorize is true, provide a color for the timestamp prefix.
@@ -226,30 +235,26 @@ When logcolorize is true, provide a the intensity for the timestamp prefix.
 Possible values are: [term "normal bright"].
 Default: normal.
 
-[def logdev]
-If true, messages of severity-level [emph Dev] are enabled.
-Default: false.
-
-[def logdebug]
-If true messages of severity-level [emph Debug] are enabled.
-Default: false.
-
-[def logusec]
-If true, log entries will have timestamps with microsecond resolution.
-Default: false.
-
-[def logexpanded]
-If true, an extra newline is added to each log entry.
-Default: false.
-
 [def logroll]
 If true, the log file will be rolled when the server receives a SIGHUP signal.
 Default: true.
 
-[def logmaxbackup]
-The number of old error log files to keep around if log rolling is enabled.
-Default: 10.
+[def logrollfmt]
+When specified, use a timestamp based logroll format based on the
+specified time format (e.g. %Y-%m-%d-%H:%M). The timestamp is appended
+to the name. When within the granularity two log files are generated
+these are numbered.
 
+[def serverlog]
+Path to error log file. If the path is not fully qualified it is assumed to be
+relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
+the path must exist. The server will fail to start if the log file cannot be
+opened.
+Default: logs/nsd.log
+
+[def logusec]
+If true, log entries will have timestamps with microsecond resolution.
+Default: false.
 
 [list_end]
 

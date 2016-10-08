@@ -438,7 +438,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
      * buffer. It will be compiled into the cached result.
      */
 
-    if (nocache != 0 && itPtr->adp.refresh) {
+    if (nocache != 0 && itPtr->adp.refresh > 0) {
         int i;
         if (GetOutput(clientData, &dsPtr) != TCL_OK) {
             return TCL_ERROR;

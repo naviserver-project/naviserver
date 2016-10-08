@@ -1915,6 +1915,11 @@ Ns_PurgeFiles(const char *file, int max)
 
 NS_EXTERN Ns_ReturnCode
 Ns_RollFileByDate(const char *file, int max)
+    NS_GNUC_NONNULL(1)
+    NS_GNUC_DEPRECATED_FOR(Ns_PurgeFiles);
+
+NS_EXTERN Ns_ReturnCode
+Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
     NS_GNUC_NONNULL(1);
 
 /*

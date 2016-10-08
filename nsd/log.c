@@ -132,9 +132,10 @@ static Ns_Tls       tls;
 static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
-static const char  *file;
+static const char  *file = NULL;
+static const char  *rollfmt = NULL;
 static unsigned int flags = 0u;
-static int          maxback;
+static int          maxbackup;
 
 static LogFilter   *filters;
 static const char  *const filterType = "ns:logfilter";
@@ -400,7 +401,7 @@ NsConfigLog(void)
         }
     }
 
-    maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
+    maxbackup = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
     file = Ns_ConfigString(path, "serverlog", "nsd.log");
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
@@ -413,6 +414,9 @@ NsConfigLog(void)
         file = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "serverlog", file);
     }
+    
+    rollfmt = Ns_ConfigString(path, "logrollfmt", "");
+
 }
 
 
@@ -1354,21 +1358,34 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 Ns_ReturnCode
 Ns_LogRoll(void)
 {
-    Ns_ReturnCode rc = NS_OK;
+    Ns_ReturnCode status = NS_OK;
 
     if (file != NULL) {
+        Tcl_Obj      *pathObj;
+
 	NsAsyncWriterQueueDisable(NS_FALSE);
 
-        if (access(file, F_OK) == 0) {
-            (void) Ns_RollFile(file, maxback);
+        pathObj = Tcl_NewStringObj(file, -1);
+        Tcl_IncrRefCount(pathObj);
+
+        if (Tcl_FSAccess(pathObj, F_OK) == 0) {
+            /*
+             * We are already logging to some file
+             */
+            status = Ns_RollFileFmt(pathObj,
+                                    rollfmt,
+                                    maxbackup);
+            //(void) Ns_RollFile(file, maxback);
         }
+        Tcl_DecrRefCount(pathObj);
+
         Ns_Log(Notice, "log: re-opening log file '%s'", file);
-	rc = LogOpen();
+	status = LogOpen();
 
 	NsAsyncWriterQueueEnable();
     }
 
-    return rc;
+    return status;
 }
 
 

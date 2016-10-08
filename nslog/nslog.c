@@ -911,63 +911,26 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
 static Ns_ReturnCode
 LogRoll(Log *logPtr)
 {
-    Ns_ReturnCode status;
-    Tcl_Obj      *path;
+    Ns_ReturnCode status = NS_OK;
+    Tcl_Obj      *pathObj;
 
     NsAsyncWriterQueueDisable(NS_FALSE);
 
     (void)LogClose(logPtr);
 
-    path = Tcl_NewStringObj(logPtr->file, -1);
-    Tcl_IncrRefCount(path);
-    status = Tcl_FSAccess(path, F_OK);
+    pathObj = Tcl_NewStringObj(logPtr->file, -1);
+    Tcl_IncrRefCount(pathObj);
 
-    if (status == 0) {
-
+    if (Tcl_FSAccess(pathObj, F_OK) == 0) {
         /*
          * We are already logging to some file
          */
-
-        if (logPtr->rollfmt == NULL) {
-            status = Ns_RollFile(logPtr->file, logPtr->maxbackup);
-        } else {
-            time_t      now = time(NULL);
-            char        timeBuf[512];
-            Ns_DString  ds;
-	    Tcl_Obj    *newpath;
-            struct tm  *ptm;
-
-            ptm = ns_localtime(&now);
-            (void) strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
-
-            Ns_DStringInit(&ds);
-            Ns_DStringVarAppend(&ds, logPtr->file, ".", timeBuf, NULL);
-            newpath = Tcl_NewStringObj(ds.string, -1);
-            Tcl_IncrRefCount(newpath);
-            status = Tcl_FSAccess(newpath, F_OK);
-            if (status == 0) {
-                status = Ns_RollFile(ds.string, logPtr->maxbackup);
-            } else if (Tcl_GetErrno() != ENOENT) {
-                Ns_Log(Error, "nslog: access(%s, F_OK) failed: '%s'",
-                       ds.string, strerror(Tcl_GetErrno()));
-                status = NS_ERROR;
-            } else {
-		status = NS_OK;
-	    }
-            if (status == NS_OK && Tcl_FSRenameFile(path, newpath)) {
-                Ns_Log(Error, "nslog: rename(%s,%s) failed: '%s'",
-                       logPtr->file, ds.string, strerror(Tcl_GetErrno()));
-                status = NS_ERROR;
-            }
-            Tcl_DecrRefCount(newpath);
-            Ns_DStringFree(&ds);
-            if (status == NS_OK) {
-                status = Ns_PurgeFiles(logPtr->file, logPtr->maxbackup);
-            }
-        }
+        status = Ns_RollFileFmt(pathObj,
+                                logPtr->rollfmt,
+                                logPtr->maxbackup);
     }
 
-    Tcl_DecrRefCount(path);
+    Tcl_DecrRefCount(pathObj);
     
     if (status == NS_OK) {
 	status = LogOpen(logPtr);

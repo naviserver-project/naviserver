@@ -66,8 +66,8 @@ static int Unlink(const char *file)
  * Ns_RollFile --
  *
  *      Roll the log file. When the log is rolled, it gets renamed to
- *      filename.xyz, where 000 <= xyz <= 999. Older files have
- *      higher numbers.
+ *      filename.xyz, where 000 <= xyz <= 999. Older files have higher
+ *      numbers.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -156,12 +156,87 @@ Ns_RollFile(const char *file, int max)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_RollFileFmt --
+ *
+ *      Roll the log file either based on a timestamp and a rollfmt, or
+ *      based on sequential numbers, when not rollfmt is given.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR
+ *
+ * Side effects:
+
+ *      The log file will be renamed, old log files (outside maxbackup)
+ *      are deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_ReturnCode
+Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
+{
+    Ns_ReturnCode status;
+    const char   *file;
+
+    NS_NONNULL_ASSERT(fileObj != NULL);
+
+    file = Tcl_GetString(fileObj);
+            
+    if (rollfmt == NULL || *rollfmt == '\0') {
+        status = Ns_RollFile(file, maxbackup);
+
+    } else {
+        time_t        now = time(NULL);
+        char          timeBuf[512];
+        Ns_DString    ds;
+        Tcl_Obj      *newPath;
+        struct tm    *ptm;
+
+        ptm = ns_localtime(&now);
+        (void) strftime(timeBuf, sizeof(timeBuf)-1, rollfmt, ptm);
+
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, file, ".", timeBuf, NULL);
+        newPath = Tcl_NewStringObj(ds.string, -1);
+        Tcl_IncrRefCount(newPath);
+        
+        if (Tcl_FSAccess(newPath, F_OK) == 0) {
+            status = Ns_RollFile(ds.string, maxbackup);
+        } else if (Tcl_GetErrno() != ENOENT) {
+            Ns_Log(Error, "rollfile: access(%s, F_OK) failed: '%s'",
+                   ds.string, strerror(Tcl_GetErrno()));
+            status = NS_ERROR;
+        } else {
+            status = NS_OK;
+        }
+        if (status == NS_OK && Tcl_FSRenameFile(fileObj, newPath) != 0) {
+            Ns_Log(Error, "rollfile: rename(%s,%s) failed: '%s'",
+                   file, ds.string, strerror(Tcl_GetErrno()));
+            status = NS_ERROR;
+        }
+        
+        Tcl_DecrRefCount(newPath);
+        Ns_DStringFree(&ds);
+        
+        if (status == NS_OK) {
+            status = Ns_PurgeFiles(file, maxbackup);
+        }
+    }
+    
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_PurgeFiles, Ns_RollFileByDate --
  *
  *      Purge files by date, keeping max files.  The file parameter is
- *      used as a basename to select files to purge.  Ns_RollFileByDate
- *      is a poorly named wrapper for historical reasons (rolling
- *      implies rotating filenames).
+ *      used as a basename to select files to purge.
+ *
+ *      Ns_RollFileByDate is deprecated and is a poorly named wrapper
+ *      for historical reasons (rolling implies rotating filenames).
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -469,7 +544,7 @@ Exists(const char *file)
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 72
  * indent-tabs-mode: nil
  * End:
  */

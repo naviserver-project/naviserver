@@ -1013,7 +1013,7 @@ typedef struct NsInterp {
     struct adp {
         unsigned int      flags;
         AdpResult         exception;
-        bool              refresh;
+        int               refresh;
         size_t            bufsize;
         int               errorLevel;
         int               debugLevel;

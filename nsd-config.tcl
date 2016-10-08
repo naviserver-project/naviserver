@@ -43,6 +43,7 @@ ns_param        serverlog           error.log
 ns_param        pidfile             nsd.pid
 #ns_param       logdebug            true               ;# default: false
 #ns_param       logroll             false              ;# default: true
+#ns_param	logrollfmt	    %Y-%m-%d-%H:%M     ;# format appendend to log file name
 #ns_param       dbcloseonexit       off                ;# default: off; from nsdb
 ns_param        jobsperthread       1000               ;# default: 0
 ns_param        jobtimeout          0                  ;# default: 300

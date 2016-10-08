@@ -88,7 +88,7 @@ NsBlockSignal(int signal)
     sigset_t set;
 
     sigemptyset(&set);
-    sigaddset(&set, signal);
+    (void)sigaddset(&set, signal);
     ns_sigmask(SIG_BLOCK, &set, NULL);
 }
 
@@ -115,7 +115,7 @@ NsUnblockSignal(int signal)
     sigset_t set;
 
     sigemptyset(&set);
-    sigaddset(&set, signal);
+    (void)sigaddset(&set, signal);
     ns_sigmask(SIG_UNBLOCK, &set, NULL);
 }
 
@@ -152,13 +152,13 @@ NsBlockSignals(int debug)
 
     debugMode = debug;
     sigemptyset(&set);
-    sigaddset(&set, SIGPIPE);
-    sigaddset(&set, SIGTERM);
-    sigaddset(&set, SIGHUP);
-    sigaddset(&set, SIGQUIT);
+    (void)sigaddset(&set, SIGPIPE);
+    (void)sigaddset(&set, SIGTERM);
+    (void)sigaddset(&set, SIGHUP);
+    (void)sigaddset(&set, SIGQUIT);
     if (debugMode == 0) {
         /* NB: Don't block SIGINT in debug mode for Solaris dbx. */
-        sigaddset(&set, SIGINT);
+        (void)sigaddset(&set, SIGINT);
     }
     ns_sigmask(SIG_BLOCK, &set, NULL);
 
@@ -233,11 +233,11 @@ NsHandleSignals(void)
      */
 
     sigemptyset(&set);
-    sigaddset(&set, SIGTERM);
-    sigaddset(&set, SIGHUP);
-    sigaddset(&set, SIGQUIT);
+    (void)sigaddset(&set, SIGTERM);
+    (void)sigaddset(&set, SIGHUP);
+    (void)sigaddset(&set, SIGQUIT);
     if (debugMode == 0) {
-        sigaddset(&set, SIGINT);
+        (void)sigaddset(&set, SIGINT);
     }
     do {
         do {
