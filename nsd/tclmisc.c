@@ -377,23 +377,34 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 intag = NS_TRUE;
 
             } else if (intag && (*inPtr == '>')) {
-                /* inside a tag that closes */
+                /* 
+                 * Inside a tag that closes 
+                 */
                 intag = NS_FALSE;
 
             } else if (inentity && (*inPtr == ';')) {
-                /* inside a special character that closes */
+                /* 
+                 * Inside an entity that closes.
+                 */
                 inentity = NS_FALSE;
 
             } else if ((!intag) && (!inentity)) {
-                /* regular text */
+                /* 
+                 * Regular text 
+                 */
 
                 if (*inPtr == '&') {
-                    /* starting a new special character */
+                    /*
+                     * Starting an entity.
+                     */
                     inentity = WordEndsInSemi(inPtr);
-                    if (inentity) {
+                    /*
+                     * Interprete numeric entities between 33 and 255.
+                     */
+                    if (inentity && CHARTYPE(digit, *(inPtr + 1)) != 0) {
                         long value = strtol(inPtr + 1, NULL, 10);
 
-                        if (value > 0 && value < 256) {
+                        if (value > 32 && value < 256) {
                             *outPtr++ = (char) value;
                         } else {
                             Ns_Log(Notice, "ns_striphtml: ignore numeric entity with value %ld", value);
@@ -402,14 +413,18 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 }
 
                 if (!inentity) {
-                    /* incr pointer only if we're not in something htmlish */
+                    /* 
+                     * incr pointer only if we're not in something htmlish.
+                     */
                     *outPtr++ = *inPtr;
                 }
             }
             ++inPtr;
         }
 
-        /* null-terminator */
+        /* 
+         * Terminate output string.
+         */
         *outPtr = '\0';
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
