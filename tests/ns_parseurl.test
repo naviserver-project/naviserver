@@ -15,7 +15,7 @@ test ns_parseurl-1.1 {full url, no port} -body {
 
 test ns_parseurl-1.2 {full url, no port} -body {
     ns_parseurl http://openacs.org:80/www/t.html
-} -result {proto http host openacs.org portString 80 path www tail t.html}
+} -result {proto http host openacs.org port 80 path www tail t.html}
 
 test ns_parseurl-1.3 {full url, no port, no component} -body {
     ns_parseurl http://openacs.org/
@@ -51,7 +51,7 @@ test ns_parseurl-3.1 {protocol relative url with port} -body {
 
 test ns_parseurl-3.2 {protocol relative url without port} -body {
     ns_parseurl //openacs.org:80/www/t.html
-} -result {host openacs.org portString 80 path www tail t.html}
+} -result {host openacs.org port 80 path www tail t.html}
 
 
 #

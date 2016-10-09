@@ -404,7 +404,7 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(host, -1));
             }
             if (portString != NULL) {
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("portString", 10));
+                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("port", 4));
                 Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(portString, -1));
             }
             if (path != NULL) {
