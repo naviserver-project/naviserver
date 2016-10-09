@@ -1,3 +1,105 @@
+======================================
+NaviServer 4.99.13, released 2016-XX-XX
+======================================
+
+ 000 files changed, 000 insertions(+), 000 deletions(-)
+
+New Features:
+  - New Tcl functions:
+
+      * ns_parseurl /url/
+        Parse the provided URL into its parts and
+        returns these in the form of a Tcl dict. The function supports
+        IP-literal notation as specified in RFC 3986. 
+
+      * ns_absoluteurl /incompleteurl/ /baseurl/
+        Construct a completed URL from a incomplete (e.g. relative)
+        URL by taking as many parts as possible from the provided base
+        URL. 
+
+  - ns_striphtml: The function honors now numeric entities between 33
+    and 255 instead of ignoring it.
+
+  - New configure option for error.log: "logrollfmt", which can be
+    specified in (section ns/parameters).  This option has the same
+    interpretation as already provided for access log and provides
+    timestamp based log file naming. This option can reduce back-up
+    demands for large error.logs significantly (since the names are
+    stable) and increases the orthogonality of options (in respect to
+    access.logs)
+
+  - Ns_ParseUrl(): add support for protocol agnostic URLs (starting
+    with two slashes as defined in RFC 3986)
+
+  - ns_deletecookie: mark deleted cookie non-scriptable to improve
+    ratings on security scanners
+
+
+Performance Improvements:
+
+Bug Fixes:
+ - Fix for [naviserver:bugs] #76: ns_configsections returned
+   only one section (bug introduced in 4.99.12)
+   
+ - Fix URL parser in Ns_ParseUrl(), could return incorrect results
+   when it received an URL in IP-literal notation (bug introduced in
+   4.99.11)
+ 
+ - Fix for potentially incorrect mime-types in fastpath, when static
+   gzip is activated. The mime type was incorrectly set to
+   application/gzip, when the static gzipped file was returned. This
+   bug was introduced in 4.99.12, many thanks to David Osborne for
+   reporting).
+
+Documentation improvements:
+  - documenting new functions
+  - several small cleanups
+  - improved sample config files
+
+Tcl API Changes:
+
+C API Changes:
+
+Incompatible API Changes:
+
+Configuration Changes:
+
+Command Line Changes:
+
+Code Changes:
+ - extended regression test
+ - improved source code documentation
+
+ - C-Code cleanup:
+   * Removed all implicit type-conversions, signed/unsigned comparisons
+     as flagged by the following gcc/clang flags (ensure cleanness on 64bit)
+     -Wconversion -Wsign-conversion -Wfloat-conversion -Wsign-compare
+
+   * Reduced number of return statement before end of function
+   * Reduced variable scopes
+   
+   * Remove calls to Tcl functions which are deprecated/ going to be
+     deprecated by Tcl. Code can be compiled now with -DTCL_NO_DEPRECATED
+     
+
+   * Converted all remaining Tcl_CmdProc to Tcl_ObjCmdProc
+	NsTclAdpStatsCmd    -> NsTclAdpStatsObjCmd
+	NsTclCrashCmd       -> NsTclCrashObjCmd
+	NsTclHrefsCmd       -> NsTclHrefsObjCmd
+	NsTclLibraryCmd     -> NsTclLibraryObjCmd
+	NsTclMkTempCmd      -> NsTclMkTempObjCmd
+	NsTclParseHeaderCmd -> NsTclParseHeaderObjCmd
+	NsTclQuoteHtmlCmd   -> NsTclQuoteHtmlObjCmd
+	NsTclStripHtmlCmd   -> NsTclStripHtmlObjCmd
+   
+ - Tcl-Code
+   * tcl/aolserver-openacs.tcl:
+     Register delete trace to run nsf::finalize in a safe state (before
+     any other c-based finalize handler are fired)
+   * regression test: Replaced Tcl "eval" by expand operator
+
+
+
 =======================================
 NaviServer 4.99.12, released 2016-08-21
 =======================================
