@@ -1372,9 +1372,9 @@ Ns_LogRoll(void)
             /*
              * We are already logging to some file
              */
-            status = Ns_RollFileFmt(pathObj,
-                                    rollfmt,
-                                    maxbackup);
+            (void) Ns_RollFileFmt(pathObj,
+                                  rollfmt,
+                                  maxbackup);
             //(void) Ns_RollFile(file, maxback);
         }
         Tcl_DecrRefCount(pathObj);
