@@ -1,0 +1,48 @@
+[include version_include.man]
+[manpage_begin ns_parseurl n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Parse a URL into its components}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parseurl] [arg url]]
+
+[para] This function parses the provided URL into its parts and
+returns these in the form of a Tcl dict. The function supports
+IP-literal notation as specified in RFC 3986.
+
+[para] The provided [arg url] might be an absolute URL (containing
+protocol and host), a protocol agnostic URL (starting with two slashes
+followed by hostname, as defined in RFC 3986) or a relative url
+(without location).
+
+[para]
+The resulting dict might contain the
+following elements: [term proto], [term host], [term port],
+[term path], and [term tail].
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_parseurl http://openacs.org//projects/openacs/download/
+   proto http host openacs.org path /projects/openacs/download tail {}
+ 
+   % ns_parseurl {http://[lb]::1[rb]:80/index.html}
+   proto http host ::1 port 80 path {} tail index.html
+ 
+   % ns_parseurl /foo/bar.html
+   path foo tail bar.html
+[example_end]
+
+[see_also ns_absoluteurl]
+[keywords url]
+[manpage_end]
+
+

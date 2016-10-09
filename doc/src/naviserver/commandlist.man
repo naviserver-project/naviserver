@@ -334,6 +334,7 @@ List of all currently available NaviServer commands.
 [section {Suicide commands}]
 [list_begin definitions]
 [call [cmd ns_shutdown]]
+[call [cmd ns_crash]]
 [list_end]
 
 [section {Server logfile}]
@@ -366,6 +367,8 @@ List of all currently available NaviServer commands.
 [call [cmd ns_url2file]]
 [call [cmd ns_urldecode]]
 [call [cmd ns_urlencode]]
+[call [cmd ns_parseurl]]
+[call [cmd ns_absoluteurl]]
 [list_end]
 
 [section {Virtual Server commands}]

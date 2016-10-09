@@ -1,0 +1,39 @@
+[include version_include.man]
+[manpage_begin ns_absoluteurl n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Construct a completed URL from an incomplete URL based on a base URL}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_absoluteurl] [arg incompleteurl] [arg baseurl]]
+
+[para] Construct a completed URL from a incomplete (e.g. relative) URL
+by taking as many parts as possible from the provided base URL. The
+function uses internally [cmd ns_parseurl] for parsing the provided
+URLs into its components.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_absoluteurl foo.html http://openacs.org//projects/openacs/download/
+   http://openacs.org//projects/openacs/download/foo.html
+ 
+   % ns_absoluteurl foo.html {http://[lb]::1[rb]:80/t.html}
+   http://[lb]::1[rb]:80/foo.html
+ 
+   % ns_absoluteurl //google.com/ https://openacs.org/forums
+   https://google.com/
+[example_end]
+
+[see_also ns_parseurl]
+[keywords url]
+[manpage_end]
+
+

@@ -37,7 +37,7 @@ This is especially useful when using the ns_adp_include command.
 
 
 [see_also nsd]
-
+[keywords url]
 
 [manpage_end]
 

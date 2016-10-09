@@ -2,8 +2,6 @@
 [manpage_begin ns_urldecode n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {URL decoding}]
 
 [description]
