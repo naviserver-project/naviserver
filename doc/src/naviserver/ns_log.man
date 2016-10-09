@@ -241,7 +241,7 @@ Default: true.
 
 [def logrollfmt]
 When specified, use a timestamp based logroll format based on the
-specified time format (e.g. %Y-%m-%d-%H:%M). The timestamp is appended
+specified time format (e.g. %Y-%m-%d). The timestamp is appended
 to the name. When within the granularity two log files are generated
 these are numbered.
 
