@@ -2,7 +2,7 @@
 NaviServer 4.99.13, released 2016-XX-XX
 ======================================
 
- 000 files changed, 000 insertions(+), 000 deletions(-)
+ 137 files changed, 2808 insertions(+), 1913 deletions(-)
 
 New Features:
   - New Tcl functions:
@@ -26,24 +26,24 @@ New Features:
     timestamp based log file naming. This option can reduce back-up
     demands for large error.logs significantly (since the names are
     stable) and increases the orthogonality of options (in respect to
-    access.logs)
+    access.logs).
 
   - Ns_ParseUrl(): add support for protocol agnostic URLs (starting
-    with two slashes as defined in RFC 3986)
+    with two slashes as defined in RFC 3986).
 
-  - ns_deletecookie: mark deleted cookie non-scriptable to improve
-    ratings on security scanners
+  - ns_deletecookie: mark deleted cookie as non-scriptable to improve
+    ratings on security scanners.
 
 
 Performance Improvements:
 
 Bug Fixes:
  - Fix for [naviserver:bugs] #76: ns_configsections returned
-   only one section (bug introduced in 4.99.12)
+   only one section (bug introduced in 4.99.12).
    
  - Fix URL parser in Ns_ParseUrl(), could return incorrect results
    when it received an URL in IP-literal notation (bug introduced in
-   4.99.11)
+   4.99.11).
  
  - Fix for potentially incorrect mime-types in fastpath, when static
    gzip is activated. The mime type was incorrectly set to
@@ -52,9 +52,9 @@ Bug Fixes:
    reporting).
 
 Documentation improvements:
-  - documenting new functions
-  - several small cleanups
-  - improved sample config files
+  - Documenting new functions
+  - Several small cleanups
+  - Improved sample config files
 
 Tcl API Changes:
 
@@ -67,8 +67,8 @@ Configuration Changes:
 Command Line Changes:
 
 Code Changes:
- - extended regression test
- - improved source code documentation
+ - Extended regression test
+ - Improved source code documentation
 
  - C-Code cleanup:
    * Removed all implicit type-conversions, signed/unsigned comparisons
@@ -81,7 +81,6 @@ Code Changes:
    * Remove calls to Tcl functions which are deprecated/ going to be
      deprecated by Tcl. Code can be compiled now with -DTCL_NO_DEPRECATED
      
-
    * Converted all remaining Tcl_CmdProc to Tcl_ObjCmdProc
 	NsTclAdpStatsCmd    -> NsTclAdpStatsObjCmd
 	NsTclCrashCmd       -> NsTclCrashObjCmd
