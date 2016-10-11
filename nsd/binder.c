@@ -126,8 +126,8 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog)
         }
     } else {
         /*
-         * We could not even get the sockaddr, so make clear, that saPtr is
-         * invalid.
+         * We could not even get the sockaddr, so make clear, that saPtr
+         * is invalid.
          */
         saPtr = NULL;
     }
@@ -149,9 +149,9 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog)
  *
  * Ns_SockListenUdp --
  *
- *      Listen on the UDP socket for the given IP address and port.  The given
- *      address might be NULL, which implies the inspecified IP address
- *      ("0.0.0.0" or "::").
+ *      Listen on the UDP socket for the given IP address and port.  The
+ *      given address might be NULL, which implies the inspecified IP
+ *      address ("0.0.0.0" or "::").
  *
  * Results:
  *      Socket descriptor or -1 on error.
@@ -515,13 +515,20 @@ NsPreBind(const char *args, const char *file)
     if (args != NULL) {
         PreBind(args);
     }
+    
+    /*
+     * Check, if the bind options were provided via file. If so, parse
+     * and interprete it.
+     */
     if (file != NULL) {
         Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
+        
         if (chan == NULL) {
             Ns_Log(Error, "NsPreBind: can't open file '%s': '%s'", file,
                    strerror(Tcl_GetErrno()));
         } else {
             Tcl_DString line;
+            
             Tcl_DStringInit(&line);
             while (Tcl_Eof(chan) == 0) {
                 Tcl_DStringSetLength(&line, 0);
@@ -672,7 +679,6 @@ PreBind(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
     int                    isNew, sock;
-    unsigned short         port, mode;
     char                  *next, *str, *line;
     long                   l;
     struct NS_SOCKADDR_STORAGE  sa;
@@ -684,9 +690,13 @@ PreBind(const char *spec)
     Ns_Log(Notice, "trying to prebind <%s>", line);
 
     for (; line != NULL; line = next) {
-        const char *proto;
-        char       *addr;
+        const char    *proto;
+        char          *addr;
+        unsigned short port, mode;
 
+        /*
+         * Find the next comma separated token.
+         */
         next = strchr(line, INTCHAR(','));
         if (next != NULL) {
             *next++ = '\0';
@@ -876,6 +886,10 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     if (address == NULL) {
         address = NS_IP_UNSPECIFIED;
     }
+    
+    /*
+     * Build and send message.
+     */    
     iov[0].iov_base = (caddr_t) &options;
     iov[0].iov_len = sizeof(options);
     iov[1].iov_base = (caddr_t) &port;
@@ -896,6 +910,9 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
         return -1;
     }
 
+    /*
+     * Reveive reply.
+     */    
     iov[0].iov_base = (caddr_t) &err;
     iov[0].iov_len = sizeof(int);
     memset(&msg, 0, sizeof(msg));
@@ -961,8 +978,9 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
  *      None.
  *
  * Side effects:
- *      The binderRunning, binderRequest, binderResponse static variables
- *      are updated.
+ *
+ *      The binderRunning, binderRequest, binderResponse static
+ *      variables are updated.
  *
  *----------------------------------------------------------------------
  */
@@ -1087,6 +1105,9 @@ Binder(void)
      */
 
     for (;;) {
+        /*
+         * Receive a message with the following contents.
+         */
         iov[0].iov_base = (caddr_t) &options;
         iov[0].iov_len = sizeof(options);
         iov[1].iov_base = (caddr_t) &port;
@@ -1170,11 +1191,9 @@ Binder(void)
             Ns_Fatal("binder: sendmsg() failed: sent %" PRIdz " bytes, '%s'", n, strerror(errno));
         }
         if (sock != -1) {
-
             /*
              * Close the socket as it won't be needed in the slave.
              */
-
             ns_sockclose(sock);
         }
     }
@@ -1186,7 +1205,7 @@ Binder(void)
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 72
  * indent-tabs-mode: nil
  * End:
  */
