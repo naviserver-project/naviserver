@@ -263,16 +263,16 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
  *----------------------------------------------------------------------
  */
 const char *
-ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, socklen_t size) {
+ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
     const char *result;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
     if (saPtr->sa_family == AF_INET6) {
-        result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr, buffer, size);
+        result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr, buffer, (socklen_t)size);
     } else {
-        result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr, buffer, size);
+        result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr, buffer, (socklen_t)size);
     }
     
     return result;

@@ -1060,34 +1060,33 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
 int
 NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_LogSeverity severity;
-    Ns_DString     ds;
-    void 	  *addrPtr;
+    void *addrPtr;
+    int   result = TCL_OK;
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
-        return TCL_ERROR;
-    }
-    if (unlikely(GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK)) {
-        return TCL_ERROR;
-    }
-    severity = PTR2INT(addrPtr);
-
-    if (likely(objc == 3)) {
-        Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
+        result = TCL_ERROR;
+    } else if (unlikely(GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK)) {
+        result = TCL_ERROR;
     } else {
-        int i;
+        Ns_LogSeverity severity = PTR2INT(addrPtr);
+        Ns_DString     ds;
 
-        Ns_DStringInit(&ds);
-        for (i = 2; i < objc; ++i) {
-            Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
-                                i < (objc-1) ? " " : NULL, NULL);
+        if (likely(objc == 3)) {
+            Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
+        } else {
+            int i;
+
+            Ns_DStringInit(&ds);
+            for (i = 2; i < objc; ++i) {
+                Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
+                                    i < (objc-1) ? " " : NULL, NULL);
+            }
+            Ns_Log(severity, "%s", Ns_DStringValue(&ds));
+            Ns_DStringFree(&ds);
         }
-        Ns_Log(severity, "%s", Ns_DStringValue(&ds));
-        Ns_DStringFree(&ds);
     }
-
-    return TCL_OK;
+    return result;
 }
 
 

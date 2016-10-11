@@ -2837,7 +2837,7 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
-ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, socklen_t size)
+ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode

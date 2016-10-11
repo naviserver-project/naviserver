@@ -922,12 +922,19 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
     poolPtr->statementCount++;
 
     if (handle->dsExceptionMsg.length > 0) {
+        /*
+         * An exception occured.
+         */
         if (poolPtr->fVerboseError) {
 	    
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
     } else {
+        /*
+         * No exception log entries, if sql debug is enabled and runtime
+         * is above threshold.
+         */
         Ns_Time endTime, diffTime;
         
         Ns_GetTime(&endTime);
@@ -1019,8 +1026,8 @@ GetPool(const char *pool)
  * ReturnHandle --
  *
  *	Return a handle to its pool.  Connected handles are pushed on
- *	the front of the list, disconnected handles are appened to
- *	the end.
+ *	the front of the list, disconnected handles are appened to the
+ *	end.
  *
  * Results:
  *	None.
@@ -1287,11 +1294,11 @@ CreatePool(const char *pool, const char *path, const char *driver)
     	handlePtr->stale_on_close = 0;
 
 	/*
-	 * The following elements of the Handle structure could
-	 * be obtained by dereferencing the poolPtr.  They're
-	 * only needed to maintain the original Ns_DbHandle
-	 * structure definition which was designed to allow
-	 * handles outside of pools, a feature no longer supported.
+	 * The following elements of the Handle structure could be
+	 * obtained by dereferencing the poolPtr.  They're only needed
+	 * to maintain the original Ns_DbHandle structure definition
+	 * which was designed to allow handles outside of pools, a
+	 * feature no longer supported.
 	 */
 
 	handlePtr->driver = driver;
@@ -1455,10 +1462,11 @@ FreeTable(void *arg)
  *
  * Ns_DbListMinDurations --
  *
- *	Introspection function to list min duration for every available pool
+ *	Introspection function to list min duration for every available
+ *	pool.
  *
  * Results:
- *	Tcl_ListObj containing pairs of pool names and minDurations
+ *	Tcl_ListObj containing pairs of pool names and minDurations.
  *
  * Side effects:
  *	None.
@@ -1499,7 +1507,8 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
  *
  * Ns_DbGetMinDuration --
  *
- *	Return the minDuration of the specified pool in the third argument
+ *	Return the minDuration of the specified pool in the third
+ *	argument.
  *
  * Results:
  *	Tcl result code
@@ -1585,7 +1594,7 @@ Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDura
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
- * fill-column: 78
+ * fill-column: 72
  * indent-tabs-mode: nil
  * End:
  */

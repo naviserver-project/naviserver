@@ -86,70 +86,72 @@ static int Unlink(const char *file)
 Ns_ReturnCode
 Ns_RollFile(const char *file, int max)
 {
-    char *first;
-    int   err;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(file != NULL);
     
     if (max < 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
                "must be > 0 and < 999", max);
-        return NS_ERROR;
-    }
+        status = NS_ERROR;
 
-    first = ns_malloc(strlen(file) + 5u);
-    sprintf(first, "%s.000", file);
-    err = Exists(first);
+    } else {
+        char *first;
+        int   err;
 
-    if (err > 0) {
-        const char *next;
-        int num = 0;
+        first = ns_malloc(strlen(file) + 5u);
+        sprintf(first, "%s.000", file);
+        err = Exists(first);
 
-        next = ns_strdup(first);
-
-        /*
-         * Find the highest version
-         */
-
-        do {
-            char *dot = strrchr(next, INTCHAR('.')) + 1;
-            sprintf(dot, "%03d", num++);
-        } while ((err = Exists(next)) == 1 && num < max);
-
-        num--; /* After this, num holds the max version found */
-
-        if (err == 1) {
-            err = Unlink(next); /* The excessive version */
-        }
-
-        /*
-         * Shift *.010 -> *.011, *:009 -> *.010, etc
-         */
-
-        while (err == 0 && num-- > 0) {
-            char *dot = strrchr(first, INTCHAR('.')) + 1;
-            sprintf(dot, "%03d", num);
-            dot = strrchr(next, INTCHAR('.')) + 1;
-            sprintf(dot, "%03d", num + 1);
-            err = Rename(first, next);
-        }
-        ns_free((char *)next);
-    }
-
-    if (err == 0) {
-        err = Exists(file);
         if (err > 0) {
-            err = Rename(file, first);
+            const char *next;
+            int         num = 0;
+
+            next = ns_strdup(first);
+
+            /*
+             * Find the highest version
+             */
+
+            do {
+                char *dot = strrchr(next, INTCHAR('.')) + 1;
+                sprintf(dot, "%03d", num++);
+            } while ((err = Exists(next)) == 1 && num < max);
+
+            num--; /* After this, num holds the max version found */
+
+            if (err == 1) {
+                err = Unlink(next); /* The excessive version */
+            }
+
+            /*
+             * Shift *.010 -> *.011, *:009 -> *.010, etc
+             */
+
+            while (err == 0 && num-- > 0) {
+                char *dot = strrchr(first, INTCHAR('.')) + 1;
+                sprintf(dot, "%03d", num);
+                dot = strrchr(next, INTCHAR('.')) + 1;
+                sprintf(dot, "%03d", num + 1);
+                err = Rename(first, next);
+            }
+            ns_free((char *)next);
+        }
+
+        if (err == 0) {
+            err = Exists(file);
+            if (err > 0) {
+                err = Rename(file, first);
+            }
+        }
+
+        ns_free(first);
+
+        if (err != 0) {
+            status = NS_ERROR;
         }
     }
-
-    ns_free(first);
-
-    if (err != 0) {
-        return NS_ERROR;
-    }
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -186,14 +188,14 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
         status = Ns_RollFile(file, maxbackup);
 
     } else {
-        time_t        now = time(NULL);
-        char          timeBuf[512];
-        Ns_DString    ds;
-        Tcl_Obj      *newPath;
-        struct tm    *ptm;
+        time_t           now = time(NULL);
+        char             timeBuf[512];
+        Ns_DString       ds;
+        Tcl_Obj         *newPath;
+        const struct tm *ptm;
 
         ptm = ns_localtime(&now);
-        (void) strftime(timeBuf, sizeof(timeBuf)-1, rollfmt, ptm);
+        (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt, ptm);
 
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, file, ".", timeBuf, NULL);
@@ -433,7 +435,7 @@ MatchFiles(const char *fileName, File **files)
  *      qsort() callback to select oldest file.
  *
  * Results:
- *      Stadard qsort() result.
+ *      Standard qsort() result (-1/0/1)
  *
  * Side effects:
  *      None.
@@ -444,16 +446,19 @@ MatchFiles(const char *fileName, File **files)
 static int
 CmpFile(const void *arg1, const void *arg2)
 {
+    int         result;
     const File *f1Ptr = (const File *) arg1;
     const File *f2Ptr = (const File *) arg2;
 
     if (f1Ptr->mtime < f2Ptr->mtime) {
-        return 1;
+        result = 1;
     } else if (f1Ptr->mtime > f2Ptr->mtime) {
-        return -1;
+        result = -1;
+    } else {
+        result = 0;
     }
 
-    return 0;
+    return result;
 }
 
 

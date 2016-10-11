@@ -65,6 +65,9 @@ static bool FillBuf(Stream *sPtr)
  *      Fetch a page off of this very server. Url must reference a 
  *      file in the filesystem. 
  *
+ *      This function is deprecated, one should use the nmuch more general
+ *      "ns_http" machinery instead.
+ *
  * Results:
  *      NS_OK or NS_ERROR.
  *
@@ -110,7 +113,10 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
  *
  * Ns_FetchURL --
  *
- *      Open up an HTTP connection to an arbitrary URL. 
+ *      Open up an HTTP connection to an arbitrary URL.  
+ *
+ *      This function is deprecated, one should use the nmuch more general
+ *      "ns_http" machinery instead.
  *
  * Results:
  *      NS_OK or NS_ERROR.
@@ -254,6 +260,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
  * NsTclGetUrlObjCmd --
  *
  *      Implements ns_geturl. 
+ *      This function is deprecated, use ns_http instead.
  *
  * Results:
  *      Tcl result.
@@ -295,28 +302,24 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         status = Ns_FetchURL(&ds, url, headers);
     }
     if (status != NS_OK) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not fetch: ",
-                               Tcl_GetString(objv[1]), NULL);
+        Ns_TclPrintfResult(interp, "could not fetch: %s", Tcl_GetString(objv[1]));
         if (headers != NULL) {
             Ns_SetFree(headers);
         }
-        goto done;
-    }
-    if (objc == 3) {
-        if (Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC) != TCL_OK) {
-            goto done;
-        }
-        if (Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_GetObjResult(interp),
-                           TCL_LEAVE_ERR_MSG) == NULL) {
-            goto done;
-        }
-    }
-    Tcl_DStringResult(interp, &ds);
-    code = TCL_OK;
-    
-done:
-    Ns_DStringFree(&ds);
 
+    } else if (objc == 3) {
+        code = Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC);
+        if (code == TCL_OK
+            && Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_GetObjResult(interp),
+                              TCL_LEAVE_ERR_MSG) == NULL) {
+            code = TCL_ERROR;
+        }
+    }
+    if (code == TCL_OK) {
+        Tcl_DStringResult(interp, &ds);
+    }
+
+    Ns_DStringFree(&ds);
     return code;
 }
 

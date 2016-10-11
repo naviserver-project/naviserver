@@ -401,8 +401,8 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     /*
                      * Interprete numeric entities between 33 and 255.
                      */
-                    if (inentity && CHARTYPE(digit, *(inPtr + 1)) != 0) {
-                        long value = strtol(inPtr + 1, NULL, 10);
+                    if (inentity && CHARTYPE(digit, *(inPtr + 1u)) != 0) {
+                        long value = strtol(inPtr + 1u, NULL, 10);
 
                         if (value > 32 && value < 256) {
                             *outPtr++ = (char) value;

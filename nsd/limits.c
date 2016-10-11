@@ -226,7 +226,7 @@ int
 NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsLimits *limitsPtr;
-    int       maxrun = -1, maxwait = -1, maxupload = -1, timeout = -1;
+    int       maxrun = -1, maxwait = -1, maxupload = -1, timeout = -1, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
         {"-maxrun",    Ns_ObjvInt,   &maxrun,    NULL},
@@ -241,23 +241,24 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    if (maxrun > -1) {
-	limitsPtr->maxrun = (unsigned int)maxrun;
-    }
-    if (maxwait > -1) {
-        limitsPtr->maxwait = (unsigned int)maxwait;
-    }
-    if (maxupload > -1) {
-	limitsPtr->maxupload = (size_t)maxupload;
-    }
-    if (timeout > -1) {
-      limitsPtr->timeout = (long)timeout;
-    }
-    LimitsResult(interp, limitsPtr);
+        result = TCL_ERROR;
 
-    return TCL_OK;
+    } else {
+        if (maxrun > -1) {
+            limitsPtr->maxrun = (unsigned int)maxrun;
+        }
+        if (maxwait > -1) {
+            limitsPtr->maxwait = (unsigned int)maxwait;
+        }
+        if (maxupload > -1) {
+            limitsPtr->maxupload = (size_t)maxupload;
+        }
+        if (timeout > -1) {
+            limitsPtr->timeout = (long)timeout;
+        }
+        LimitsResult(interp, limitsPtr);
+    }
+    return result;
 }
 
 
@@ -283,7 +284,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     const NsInterp *itPtr = clientData;
     NsLimits       *limitsPtr;
     const char     *method, *url, *server = itPtr->servPtr->server;
-    int             noinherit = 0;
+    int             noinherit = 0, result = TCL_OK;
     unsigned int    flags = 0u;
 
     Ns_ObjvSpec opts[] = {
@@ -299,15 +300,19 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
-    Ns_MutexLock(&lock);
-    Ns_UrlSpecificSet(server, method, url,
-                      limid, limitsPtr, flags, NULL);
-    Ns_MutexUnlock(&lock);
+        result = TCL_ERROR;
 
-    return TCL_OK;
+    } else {
+        if (noinherit != 0) {
+            flags |= NS_OP_NOINHERIT;
+        }
+        Ns_MutexLock(&lock);
+        Ns_UrlSpecificSet(server, method, url,
+                          limid, limitsPtr, flags, NULL);
+        Ns_MutexUnlock(&lock);
+    }
+
+    return result;
 }
 
 
@@ -379,26 +384,31 @@ FindLimits(const char *limits, int create)
 static int
 ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST* objv)
 {
-    NsLimits          **limitsPtrPtr = spec->dest;
-    int                 create = (spec->arg != NULL) ? 1 : 0;
-    static const char  *const limitsType = "ns:limits";
+    NsLimits         **limitsPtrPtr = spec->dest;
+    int                create = (spec->arg != NULL) ? 1 : 0, result = TCL_OK;
+    static const char *const limitsType = "ns:limits";
 
     if (*objcPtr < 1) {
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetOpaqueFromObj(objv[0], limitsType, (void **) limitsPtrPtr)
-        != TCL_OK) {
-        const char *limits = Tcl_GetString(objv[0]);
-        *limitsPtrPtr = FindLimits(limits, create);
-        if (*limitsPtrPtr == NULL) {
-            Ns_TclPrintfResult(interp, "no such limits: %s", limits);
-            return TCL_ERROR;
+        result = TCL_ERROR;
+        
+    } else {
+        if (Ns_TclGetOpaqueFromObj(objv[0], limitsType, (void **) limitsPtrPtr)
+            != TCL_OK) {
+            const char *limits = Tcl_GetString(objv[0]);
+            
+            *limitsPtrPtr = FindLimits(limits, create);
+            if (*limitsPtrPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such limits: %s", limits);
+                result = TCL_ERROR;
+            } else {
+                Ns_TclSetOpaqueObj(objv[0], limitsType, *limitsPtrPtr);
+            }
         }
-        Ns_TclSetOpaqueObj(objv[0], limitsType, *limitsPtrPtr);
+        if (result == TCL_OK) {
+            *objcPtr -= 1;
+        }
     }
-    *objcPtr -= 1;
-
-    return TCL_OK;
+    return result;
 }
 
 

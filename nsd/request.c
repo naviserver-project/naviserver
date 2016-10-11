@@ -589,8 +589,9 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 	    status = NS_ERROR;	
             
 	} else {
-            char  *value, *key;
-            size_t index;
+            const char *value;
+            char       *key;
+            size_t      index;
 
             *sep = '\0';
             for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
