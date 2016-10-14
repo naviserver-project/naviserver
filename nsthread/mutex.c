@@ -268,8 +268,8 @@ Ns_MutexLock(Ns_Mutex *mutex)
 	Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
 
 	if (diff.sec > 1 || diff.usec > 100000) {
-	    fprintf(stderr, "Mutex lock %s: wait duration %" PRIu64 ".%06ld\n",
-		   mutexPtr->name, (int64_t)diff.sec, diff.usec);
+	    fprintf(stderr, "[%lx] Mutex lock %s: wait duration %" PRIu64 ".%06ld\n",
+                    (long)(void*)pthread_self(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
 	}
 
         /* 
