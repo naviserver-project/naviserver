@@ -285,9 +285,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     NsLimits       *limitsPtr;
     const char     *method, *url, *server = itPtr->servPtr->server;
     int             noinherit = 0, result = TCL_OK;
-    unsigned int    flags = 0u;
-
-    Ns_ObjvSpec opts[] = {
+    Ns_ObjvSpec     opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {"-server",    Ns_ObjvString, &server,    NULL},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
@@ -303,6 +301,8 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         result = TCL_ERROR;
 
     } else {
+        unsigned int    flags = 0u;
+
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
         }

@@ -692,7 +692,7 @@ PreBind(const char *spec)
     for (; line != NULL; line = next) {
         const char    *proto;
         char          *addr;
-        unsigned short port, mode;
+        unsigned short port;
 
         /*
          * Find the next comma separated token.
@@ -819,8 +819,9 @@ PreBind(const char *spec)
 	 * Unix-domain socket
 	 */
         if (Ns_PathIsAbsolute(line) == NS_TRUE) {
+            unsigned short mode = 0u;
             /* Parse mode */
-            mode = 0u;
+            
             str = strchr(str, INTCHAR('|'));
             if (str != NULL) {
                 *(str++) = '\0';
