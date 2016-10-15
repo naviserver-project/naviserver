@@ -62,12 +62,6 @@ C API Changes:
    - makeing argument types more precise
        NsPoll(), Ns_SockBinderListen(), Ns_GetNameForGid(), Ns_ThreadStackSize()
 
-Incompatible API Changes:
-
-Configuration Changes:
-
-Command Line Changes:
-
 Code Changes:
  - Extended regression test
  - Improved source code documentation
