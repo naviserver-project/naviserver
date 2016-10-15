@@ -1,8 +1,8 @@
 =======================================
-NaviServer 4.99.13, released 2016-XX-XX
+NaviServer 4.99.13, released 2016-10-15
 =======================================
 
- 137 files changed, 2808 insertions(+), 1913 deletions(-)
+ 143 files changed, 3051 insertions(+), 2091 deletions(-)
 
 New Features:
   - New Tcl functions:
@@ -35,8 +35,6 @@ New Features:
     ratings on security scanners.
 
 
-Performance Improvements:
-
 Bug Fixes:
  - Fix for [naviserver:bugs] #76: ns_configsections returned
    only one section (bug introduced in 4.99.12).
@@ -56,9 +54,13 @@ Documentation improvements:
   - Several small cleanups
   - Improved sample config files
 
-Tcl API Changes:
-
 C API Changes:
+   - using unsigned int for ports
+       Ns_SockListenUnix(), Ns_SockBindUnix()
+   - using "long" for secs
+       Ns_SockSetDeferAccept(), ns_poll(), Ns_DiffTime()
+   - makeing argument types more precise
+       NsPoll(), Ns_SockBinderListen(), Ns_GetNameForGid(), Ns_ThreadStackSize()
 
 Incompatible API Changes:
 
@@ -77,6 +79,7 @@ Code Changes:
 
    * Reduced number of return statement before end of function
    * Reduced variable scopes
+   * added types for uid_t, gid_t if not defined
    
    * Remove calls to Tcl functions which are deprecated/ going to be
      deprecated by Tcl. Code can be compiled now with -DTCL_NO_DEPRECATED
