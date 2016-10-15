@@ -386,12 +386,13 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST* 
 {
     NsLimits         **limitsPtrPtr = spec->dest;
     int                create = (spec->arg != NULL) ? 1 : 0, result = TCL_OK;
-    static const char *const limitsType = "ns:limits";
 
     if (*objcPtr < 1) {
         result = TCL_ERROR;
         
     } else {
+        static const char *const limitsType = "ns:limits";
+        
         if (Ns_TclGetOpaqueFromObj(objv[0], limitsType, (void **) limitsPtrPtr)
             != TCL_OK) {
             const char *limits = Tcl_GetString(objv[0]);
