@@ -23,12 +23,11 @@ test http-persist-1 {simple setup} -constraints {serverListen} -body {
 	regexp {Connection:\s+(\S+)\s} $bytes . connection
 	set contentLength ""
 	regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-	lappend result size [dict get $d $k size] connection $connection content-length $contentLength
+	lappend result connection $connection content-length $contentLength
     }
-
     return $result
     
-} -result {size 210 connection keep-alive content-length 3 size 211 connection keep-alive content-length 4}
+} -result {connection keep-alive content-length 3 connection keep-alive content-length 4}
 
 
 test http-persist-2 {three requests in two chunks} -constraints {serverListen} -body {
