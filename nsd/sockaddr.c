@@ -121,47 +121,50 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
 bool
 Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
 {
+    bool success;
+    
     NS_NONNULL_ASSERT(addr1 != NULL);
     NS_NONNULL_ASSERT(addr2 != NULL);
 
     if (addr1 == addr2) {
-        return NS_TRUE;
-    }
-    
-    if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET6) {
+        success = NS_TRUE;
+
+    } else if (addr1->sa_family == AF_INET6 && addr2->sa_family == AF_INET6) {
         const struct in6_addr *addr1Bits  = &(((struct sockaddr_in6 *)addr1)->sin6_addr);
         const struct in6_addr *addr2Bits  = &(((struct sockaddr_in6 *)addr2)->sin6_addr);
         int i;
-        
+
+        success = NS_TRUE;
         /*
          * Perform bitwise comparison. Maybe something special is needed for
          * comparing IPv4 address with IN6_IS_ADDR_V4MAPPED
          */
-
 #ifndef _WIN32
         for (i = 0; i < 4; i++) {
             if (addr1Bits->s6_addr32[i] != addr2Bits->s6_addr32[i]) {
-                return NS_FALSE;
+                success = NS_FALSE;
+                break;
             }
         }
 #else        
         for (i = 0; i < 8; i++) {
             if (addr1Bits->u.Word[i] != addr2Bits->u.Word[i]) {
-                return NS_FALSE;
+                success = NS_FALSE;
+                break;
             }
         }
 #endif
     } else if (addr1->sa_family == AF_INET && addr2->sa_family == AF_INET) {
-        return (((struct sockaddr_in *)addr1)->sin_addr.s_addr
-                == ((struct sockaddr_in *)addr2)->sin_addr.s_addr);
+        success = (((struct sockaddr_in *)addr1)->sin_addr.s_addr
+                  == ((struct sockaddr_in *)addr2)->sin_addr.s_addr);
     } else {
         /*
          * Family mismatch.
          */
-        return NS_FALSE;
+        success = NS_FALSE;
     }
     
-    return NS_TRUE;
+    return success;
 }
 
 /*
@@ -347,6 +350,8 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr) {
 Ns_ReturnCode
 Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 {
+    Ns_ReturnCode status = NS_OK;
+    
     NS_NONNULL_ASSERT(saPtr != NULL);
 
     /*
@@ -371,7 +376,7 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
             }
             Ns_DStringFree(&ds);
             if (r <= 0) {
-                return NS_ERROR;
+                status = NS_ERROR;
             }
         }
     }
@@ -392,15 +397,16 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
             }
             Ns_DStringFree(&ds);
             if (((struct sockaddr_in *)saPtr)->sin_addr.s_addr == INADDR_NONE) {
-                return NS_ERROR;
+                status = NS_ERROR;
             }
         }
     }
 #endif
+    if (likely(status == NS_OK)) {
+        Ns_SockaddrSetPort((struct sockaddr *)saPtr, port);
+    }
 
-    Ns_SockaddrSetPort((struct sockaddr *)saPtr, port);
-
-    return NS_OK;
+    return status;
 }
 
 /*

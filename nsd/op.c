@@ -311,18 +311,19 @@ Ns_ConnRunRequest(Ns_Conn *conn)
         if (reqPtr == NULL) {
             Ns_MutexUnlock(&ulock);
             if (STREQ(conn->request.method, "BAD")) {
-                return Ns_ConnReturnBadRequest(conn, NULL);
+                status = Ns_ConnReturnBadRequest(conn, NULL);
             } else {
-                return Ns_ConnReturnInvalidMethod(conn);
+                status = Ns_ConnReturnInvalidMethod(conn);
             }
+        } else {
+            ++reqPtr->refcnt;
+            Ns_MutexUnlock(&ulock);
+            status = (*reqPtr->proc) (reqPtr->arg, conn);
+            
+            Ns_MutexLock(&ulock);
+            FreeReq(reqPtr);
+            Ns_MutexUnlock(&ulock);
         }
-        ++reqPtr->refcnt;
-        Ns_MutexUnlock(&ulock);
-        status = (*reqPtr->proc) (reqPtr->arg, conn);
-
-        Ns_MutexLock(&ulock);
-        FreeReq(reqPtr);
-        Ns_MutexUnlock(&ulock);
     }
     return status;
 }

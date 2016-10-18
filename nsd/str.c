@@ -311,7 +311,8 @@ Ns_Match(const char *a, const char *b)
             char c1 = (CHARTYPE(lower, *a) != 0) ? *a : CHARCONV(lower, *a);
             char c2 = (CHARTYPE(lower, *b) != 0) ? *b : CHARCONV(lower, *b);
             if (c1 != c2) {
-                return NULL;
+                b = NULL;
+                break;
             }
             a++;
             b++;

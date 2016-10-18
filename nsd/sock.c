@@ -1063,36 +1063,33 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
     }
     if (result != NS_OK) {
         Ns_Log(Debug, "SockConnect %s %d (local %s %d) fails", host, port, lhost, lport);
-        return NS_INVALID_SOCKET;
-    }
-    sock = Ns_SockBind(lsaPtr);
-    /*
-      Ns_LogSockaddr(Notice, "SockConnect  sa", saPtr);
-      Ns_LogSockaddr(Notice, "SockConnect lsa", lsaPtr);
-    */
-    if (sock != NS_INVALID_SOCKET) {
-        if (async) {
-            if (Ns_SockSetNonBlocking(sock) != NS_OK) {
-                Ns_Log(Warning, "attempt to set socket nonblocking failed");
+        sock = NS_INVALID_SOCKET;
+        
+    } else {
+        sock = Ns_SockBind(lsaPtr);
+        if (sock != NS_INVALID_SOCKET) {
+            if (async) {
+                if (Ns_SockSetNonBlocking(sock) != NS_OK) {
+                    Ns_Log(Warning, "attempt to set socket nonblocking failed");
+                }
             }
-        }
 
-        if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
-            int err = ns_sockerrno;
-
-            if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
-                ns_sockclose(sock);
-                Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
-                sock = NS_INVALID_SOCKET;
+            if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
+                int err = ns_sockerrno;
+                
+                if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
+                    ns_sockclose(sock);
+                    Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
+                    sock = NS_INVALID_SOCKET;
+                }
             }
-        }
-        if (async && (sock != NS_INVALID_SOCKET)) {
-            if (Ns_SockSetBlocking(sock) != NS_OK) {
-                Ns_Log(Warning, "attempt to set socket blocking failed");
+            if (async && (sock != NS_INVALID_SOCKET)) {
+                if (Ns_SockSetBlocking(sock) != NS_OK) {
+                    Ns_Log(Warning, "attempt to set socket blocking failed");
+                }
             }
         }
     }
-
     return sock;
 }
 

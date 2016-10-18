@@ -320,7 +320,8 @@ char *
 Ns_SetGetCmp(const Ns_Set *set, const char *key,
              int (*cmp) (const char *s1, const char *s2))
 {
-    int             i;
+    char *result;
+    int   i;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -328,9 +329,11 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key,
 
     i = Ns_SetFindCmp(set, key, cmp);
     if (i == -1) {
-        return NULL;
+        result = NULL;
+    } else {
+        result = set->fields[i].value;
     }
-    return set->fields[i].value;
+    return result;
 }
 
 

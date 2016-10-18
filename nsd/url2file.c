@@ -258,15 +258,15 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
         Ns_MutexLock(&ulock);
         u2fPtr = NsUrlSpecificGet(servPtr, "x", url, uid, 0u, NS_URLSPACE_DEFAULT);
         if (u2fPtr == NULL) {
-            Ns_MutexUnlock(&ulock);
             Ns_Log(Error, "url2file: no proc found for url: %s", url);
-            return NS_ERROR;
+            status = NS_ERROR;
+        } else {
+            ++u2fPtr->refcnt;
+            Ns_MutexUnlock(&ulock);
+            status = (*u2fPtr->proc)(dsPtr, url, u2fPtr->arg);
+            Ns_MutexLock(&ulock);
+            FreeUrl2File(u2fPtr);
         }
-        ++u2fPtr->refcnt;
-        Ns_MutexUnlock(&ulock);
-        status = (*u2fPtr->proc)(dsPtr, url, u2fPtr->arg);
-        Ns_MutexLock(&ulock);
-        FreeUrl2File(u2fPtr);
         Ns_MutexUnlock(&ulock);
     }
     if (status == NS_OK) {

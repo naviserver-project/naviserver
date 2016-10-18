@@ -693,9 +693,10 @@ GetQvalue(const char *str, int *lenPtr) {
      */
     if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
         *lenPtr = (int)(str - resultString);
-	return resultString;
+    } else {
+        resultString = NULL;
     }
-    return NULL;
+    return resultString;
 }
 
 

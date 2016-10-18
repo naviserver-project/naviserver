@@ -719,7 +719,7 @@ NsDbLoadDriver(const char *driver)
         }
     }
     if (driverPtr->registered == 0) {
-	return NULL;
+	driverPtr = NULL;
     }
 
     return driverPtr;

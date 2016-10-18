@@ -306,46 +306,49 @@ int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     int interval, Ns_SchedProc *cleanupProc)
 {
-    Event          *ePtr;
-    int             id, isNew;
-    time_t          now;
+    int id;
 
     NS_NONNULL_ASSERT(proc != NULL);
     
-    if (interval < 0) {
-        return (int)NS_ERROR;
-    }
-
-    time(&now);
-    ePtr = ns_malloc(sizeof(Event));
-    ePtr->flags = flags;
-    ePtr->nextqueue = 0;
-    ePtr->lastqueue = ePtr->laststart = ePtr->lastend = -1;
-    ePtr->interval = interval;
-    ePtr->proc = proc;
-    ePtr->deleteProc = cleanupProc;
-    ePtr->arg = clientData;
-
-    Ns_MutexLock(&lock);
-    if (shutdownPending) {
+    if (unlikely(interval < 0)) {
         id = (int)NS_ERROR;
-        ns_free(ePtr);
+        
     } else {
-        do {
-	    static int nextId = 0;
+        Event    *ePtr;
+        int       isNew;
+        time_t    now;
 
-            id = nextId++;
-            if (nextId < 0) {
-                nextId = 0;
-            }
-            ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, INT2PTR(id), &isNew);
-        } while (isNew == 0);
-        Tcl_SetHashValue(ePtr->hPtr, ePtr);
-        ePtr->id = id;
-        QueueEvent(ePtr, &now);
+        time(&now);
+        ePtr = ns_malloc(sizeof(Event));
+        ePtr->flags = flags;
+        ePtr->nextqueue = 0;
+        ePtr->lastqueue = ePtr->laststart = ePtr->lastend = -1;
+        ePtr->interval = interval;
+        ePtr->proc = proc;
+        ePtr->deleteProc = cleanupProc;
+        ePtr->arg = clientData;
+
+        Ns_MutexLock(&lock);
+        if (shutdownPending) {
+            id = (int)NS_ERROR;
+            ns_free(ePtr);
+        } else {
+            do {
+                static int nextId = 0;
+
+                id = nextId++;
+                if (nextId < 0) {
+                    nextId = 0;
+                }
+                ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, INT2PTR(id), &isNew);
+            } while (isNew == 0);
+            Tcl_SetHashValue(ePtr->hPtr, ePtr);
+            ePtr->id = id;
+            QueueEvent(ePtr, &now);
+        }
+        Ns_MutexUnlock(&lock);
     }
-    Ns_MutexUnlock(&lock);
-
+    
     return id;
 }
 
@@ -555,66 +558,65 @@ NsWaitSchedShutdown(const Ns_Time *toPtr)
 static void
 QueueEvent(Event *ePtr, const time_t *nowPtr)
 {
-    if ((ePtr->flags & NS_SCHED_PAUSED) != 0u) {
-        return;
-    }
+    if ((ePtr->flags & NS_SCHED_PAUSED) == 0u) {
 
-    /*
-     * Calculate the time from now in seconds this event should run.
-     */
+        /*
+         * Calculate the time from now in seconds this event should run.
+         */
 
-    if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0u) {
-        struct tm      *tp;
+        if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0u) {
+            struct tm  *tp;
             
-        tp = ns_localtime(nowPtr);
-        tp->tm_sec = ePtr->interval;
-        tp->tm_hour = 0;
-        tp->tm_min = 0;
-        if ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) {
-            tp->tm_mday -= tp->tm_wday;
-        }
-        ePtr->nextqueue = mktime(tp);
-        if (ePtr->nextqueue <= *nowPtr) {
-            tp->tm_mday += (ePtr->flags & NS_SCHED_WEEKLY) != 0u ? 7 : 1;
+            tp = ns_localtime(nowPtr);
+            tp->tm_sec = ePtr->interval;
+            tp->tm_hour = 0;
+            tp->tm_min = 0;
+            if ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) {
+                tp->tm_mday -= tp->tm_wday;
+            }
             ePtr->nextqueue = mktime(tp);
+            if (ePtr->nextqueue <= *nowPtr) {
+                tp->tm_mday += (ePtr->flags & NS_SCHED_WEEKLY) != 0u ? 7 : 1;
+                ePtr->nextqueue = mktime(tp);
+            }
+        } else {
+            ePtr->nextqueue = *nowPtr + ePtr->interval;
         }
-    } else {
-        ePtr->nextqueue = *nowPtr + ePtr->interval;
-    }
 
-    /*
-     * Place the new event at the end of the queue array and
-     * heap it up into place.  The queue array is extended
-     * if necessary.
-     */
+        /*
+         * Place the new event at the end of the queue array and
+         * heap it up into place.  The queue array is extended
+         * if necessary.
+         */
 
-    ePtr->qid = ++nqueue;
-    if (maxqueue <= nqueue) {
-        maxqueue += 25;
-        queue = ns_realloc(queue, sizeof(Event *) * ((size_t)maxqueue + 1u));
-    }
-    queue[nqueue] = ePtr;
-    if (nqueue > 1) {
-        int j, k;
+        ePtr->qid = ++nqueue;
+        if (maxqueue <= nqueue) {
+            maxqueue += 25;
+            queue = ns_realloc(queue, sizeof(Event *) * ((size_t)maxqueue + 1u));
+        }
+        queue[nqueue] = ePtr;
+        if (nqueue > 1) {
+            int j, k;
 
-        k = nqueue;
-        j = k / 2;
-        while (k > 1 && queue[j]->nextqueue > queue[k]->nextqueue) {
-            Exchange(j, k);
-            k = j;
+            k = nqueue;
             j = k / 2;
+            while (k > 1 && queue[j]->nextqueue > queue[k]->nextqueue) {
+                Exchange(j, k);
+                k = j;
+                j = k / 2;
+            }
         }
-    }
 
-    /*
-     * Signal or create the SchedThread if necessary.
-     */
+        /*
+         * Signal or create the SchedThread if necessary.
+         */
 
-    if (running) {
-        Ns_CondSignal(&schedcond);
-    } else {
-        running = NS_TRUE;
-        Ns_ThreadCreate(SchedThread, NULL, 0, &schedThread);
+        if (running) {
+            Ns_CondSignal(&schedcond);
+        } else {
+            running = NS_TRUE;
+            Ns_ThreadCreate(SchedThread, NULL, 0, &schedThread);
+        }
     }
 }
 

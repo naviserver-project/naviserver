@@ -261,7 +261,7 @@ Ns_PurgeFiles(const char *file, int max)
     const File   *fiPtr;
     File         *files = NULL;
     int           nfiles;
-    Ns_ReturnCode status = NS_ERROR;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(file != NULL);
     
@@ -273,29 +273,30 @@ Ns_PurgeFiles(const char *file, int max)
     if (nfiles == -1) {
         Ns_Log(Error, "rollfile: failed to match files '%s': %s",
                file, strerror(Tcl_GetErrno()));
-        return NS_ERROR;
-    }
+        status = NS_ERROR;
 
-    /*
-     * Purge (any) excessive files after sorting them
-     * on descening file mtime.
-     */
+    } else {
+        /*
+         * Purge (any) excessive files after sorting them
+         * on descening file mtime.
+         */
 
-    if (nfiles >= max) {
-        int ii;
+        if (nfiles >= max) {
+            int ii;
         
-	assert(files != NULL);
+            assert(files != NULL);
 
-        qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
-        for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
-            if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
-                goto err;
+            qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
+            for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
+                if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
+                    goto err;
+                }
             }
         }
+
+        status = NS_OK;
     }
-
-    status = NS_OK;
-
+    
  err:
     if (nfiles > 0) {
         int ii;

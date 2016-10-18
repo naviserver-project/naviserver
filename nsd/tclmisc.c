@@ -369,7 +369,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         inPtr    = inString;
         outPtr   = inString;
         intag    = NS_FALSE;
-        inentity  = NS_FALSE;
+        inentity = NS_FALSE;
 
         while (*inPtr != '\0') {
 

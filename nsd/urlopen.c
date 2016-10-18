@@ -274,52 +274,55 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
 int
 NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = clientData;
-    Ns_DString      ds;
-    Ns_Set         *headers;
     int             code;
-    Ns_ReturnCode   status;
-    const char     *url;
 
     if ((objc != 3) && (objc != 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "url ?headersSetIdVar?");
-        return TCL_ERROR;
-    }
+        code = TCL_ERROR;
 
-    Ns_LogDeprecated(objv, 2, "ns_http queue ...; ns_http wait ...", NULL);
+    } else {
+        const NsInterp *itPtr = clientData;
+        Ns_Set         *headers;
+        Ns_ReturnCode   status;
+        const char     *url;
+        Ns_DString      ds;
+        
+        Ns_LogDeprecated(objv, 2, "ns_http queue ...; ns_http wait ...", NULL);
     
-    code = TCL_ERROR;
-    if (objc == 2) {
-        headers = NULL;
-    } else {
-        headers = Ns_SetCreate(NULL);
-    }
-    Ns_DStringInit(&ds);
-    url = Tcl_GetString(objv[1]);
-    if (url[1] == '/') {
-        status = Ns_FetchPage(&ds, url, itPtr->servPtr->server);
-    } else {
-        status = Ns_FetchURL(&ds, url, headers);
-    }
-    if (status != NS_OK) {
-        Ns_TclPrintfResult(interp, "could not fetch: %s", Tcl_GetString(objv[1]));
-        if (headers != NULL) {
-            Ns_SetFree(headers);
+        code = TCL_ERROR;
+        if (objc == 2) {
+            headers = NULL;
+        } else {
+            headers = Ns_SetCreate(NULL);
+        }
+        Ns_DStringInit(&ds);
+        url = Tcl_GetString(objv[1]);
+        if (url[1] == '/') {
+            status = Ns_FetchPage(&ds, url, itPtr->servPtr->server);
+        } else {
+            status = Ns_FetchURL(&ds, url, headers);
+        }
+        if (status != NS_OK) {
+            Ns_TclPrintfResult(interp, "could not fetch: %s", Tcl_GetString(objv[1]));
+            if (headers != NULL) {
+                Ns_SetFree(headers);
+            }
+
+        } else if (objc == 3) {
+            code = Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC);
+            if (code == TCL_OK
+                && Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_GetObjResult(interp),
+                                  TCL_LEAVE_ERR_MSG) == NULL) {
+                code = TCL_ERROR;
+            }
+        }
+        if (code == TCL_OK) {
+            Tcl_DStringResult(interp, &ds);
         }
 
-    } else if (objc == 3) {
-        code = Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC);
-        if (code == TCL_OK
-            && Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_GetObjResult(interp),
-                              TCL_LEAVE_ERR_MSG) == NULL) {
-            code = TCL_ERROR;
-        }
-    }
-    if (code == TCL_OK) {
-        Tcl_DStringResult(interp, &ds);
+        Ns_DStringFree(&ds);
     }
 
-    Ns_DStringFree(&ds);
     return code;
 }
 
