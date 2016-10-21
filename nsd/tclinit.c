@@ -1313,8 +1313,8 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
         
-    } else {
-        Defer                *deferPtr;
+    } else if (itPtr->firstDeferPtr != NULL) {
+        Defer  *deferPtr;
 
         for (deferPtr = itPtr->firstDeferPtr; deferPtr != NULL; deferPtr = deferPtr->nextPtr) {
             (*deferPtr->proc)(interp, deferPtr->arg);
