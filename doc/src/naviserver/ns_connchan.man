@@ -75,7 +75,7 @@
 Register a Tcl callback for the names connection [arg channel]. The argument
 [arg when] consist of one or more characters
 of r, w, e, or x, specifying, when the callback should fire.
-All timeouts are specified in the form secs:?microsecs?.
+All timeouts are specified in the form secs:?microsecs? or secs.fraction.
 
 When the callback is fired, the specified Tcl command will be called
 with two additional arguments, namely the [arg handle] and and
@@ -88,6 +88,18 @@ as follows:
 [item] x - the server is shutting down
 [item] t - timeout received
 [list_end]
+
+[call [cmd  "ns_connchan open"] \
+	[opt [option "-headers [arg s]"]] \
+	[opt [option "-method [arg s]"]] \
+	[opt [option "-timeout [arg s]"]] \	
+	[arg url] \
+]
+
+Open a connection channel to the specified URL. The URL might be an
+http or an https URL. [arg headers] refers to a ns_set of request
+header fields, [arg method] is the HTTP method (e.g. GET) and timeout
+is the timeout for establising the connection.
 
 [call [cmd  "ns_connchan read"] \
 	[arg channel] \
