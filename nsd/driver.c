@@ -5633,13 +5633,16 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     Tcl_DStringInit(dsPtr);
     Ns_DStringAppend(dsPtr, method);
     Ns_StrToUpper(Ns_DStringValue(dsPtr));
-    Tcl_DStringAppend(dsPtr, " /", 2);        
+    Tcl_DStringAppend(dsPtr, " /", 2);
     if (*path != '\0') {
+        if (*path == '/') {
+            path ++;
+        }
         Tcl_DStringAppend(dsPtr, path, -1);
         Tcl_DStringAppend(dsPtr, "/", 1);
     }
     Tcl_DStringAppend(dsPtr, tail, -1);        
-    Tcl_DStringAppend(dsPtr, " HTTP/1.0\r\n", 11);
+    Tcl_DStringAppend(dsPtr, " HTTP/1.0", 9);
     
     reqPtr->request.line = Ns_DStringExport(dsPtr);
     reqPtr->request.method = ns_strdup(method);
