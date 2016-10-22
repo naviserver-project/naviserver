@@ -71,7 +71,7 @@ static Ns_Thread     sockThread;
 static Ns_Mutex      lock;
 static Ns_Cond	     cond;
 static NS_SOCKET     trigPipe[2];
-static Tcl_HashTable table;
+static Tcl_HashTable activeCallbacks;
 
 
 /*
@@ -253,7 +253,7 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
     	status = NS_ERROR;
     } else {
 	if (!running) {
-    	    Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
+    	    Tcl_InitHashTable(&activeCallbacks, TCL_ONE_WORD_KEYS);
 	    Ns_MutexSetName(&lock, "ns:sockcallbacks");
 	    create = NS_TRUE;
 	    running = NS_TRUE;
@@ -338,7 +338,7 @@ SockCallbackThread(void *UNUSED(arg))
     pfds[0].events = (short)POLLIN;
 
     for (;;) {
-	int               pollto;
+	long              pollto;
         NS_POLL_NFDS_TYPE nfds;
         bool              stop;
 	Ns_Time           now, diff = {0, 0};
@@ -355,13 +355,13 @@ SockCallbackThread(void *UNUSED(arg))
 	Ns_MutexUnlock(&lock);
 
 	/*
-    	 * Move any queued callbacks to the active table.
+    	 * Move any queued callbacks to the activeCallbacks table.
 	 */
 
         while (cbPtr != NULL) {
             nextPtr = cbPtr->nextPtr;
             if ((cbPtr->when & (unsigned int)NS_SOCK_CANCEL) != 0u) {
-		hPtr = Tcl_FindHashEntry(&table, NSSOCK2PTR(cbPtr->sock));
+		hPtr = Tcl_FindHashEntry(&activeCallbacks, NSSOCK2PTR(cbPtr->sock));
                 if (hPtr != NULL) {
                     ns_free(Tcl_GetHashValue(hPtr));
                     Tcl_DeleteHashEntry(hPtr);
@@ -375,7 +375,7 @@ SockCallbackThread(void *UNUSED(arg))
                 }
                 ns_free(cbPtr);
             } else {
-                hPtr = Tcl_CreateHashEntry(&table, NSSOCK2PTR(cbPtr->sock), &isNew);
+                hPtr = Tcl_CreateHashEntry(&activeCallbacks, NSSOCK2PTR(cbPtr->sock), &isNew);
                 if (isNew == 0) {
                     ns_free(Tcl_GetHashValue(hPtr));
                 }
@@ -388,8 +388,8 @@ SockCallbackThread(void *UNUSED(arg))
 	 * Verify and set the poll bits for all active callbacks.
 	 */
 
-	if (max <= (size_t)table.numEntries) {
-	    max  = (size_t)table.numEntries + 100u;
+	if (max <= (size_t)activeCallbacks.numEntries) {
+	    max  = (size_t)activeCallbacks.numEntries + 100u;
 	    pfds = ns_realloc(pfds, sizeof(struct pollfd) * max);
 	}
 
@@ -401,7 +401,7 @@ SockCallbackThread(void *UNUSED(arg))
         Ns_GetTime(&now);
 
 	nfds = 1;
-        for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+        for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
             if ((cbPtr->timeout.sec > 0 || cbPtr->timeout.usec > 0)) {
 
@@ -429,7 +429,8 @@ SockCallbackThread(void *UNUSED(arg))
 		++nfds;
 
                 if (cbPtr->timeout.sec != 0 || cbPtr->timeout.usec != 0) {
-                    int to = (int)diff.sec * -1000 + (int)diff.usec / 1000 + 1;
+                    long to = diff.sec * -1000 + diff.usec / 1000 + 1;
+                    
                     if (to < pollto)  {
                         /*
                          * Reduce poll timeout to smaller value.
@@ -466,7 +467,7 @@ SockCallbackThread(void *UNUSED(arg))
             /*
              * Execute any ready callbacks.
              */
-            for (hPtr = Tcl_FirstHashEntry(&table, &search); n > 0 && hPtr != NULL; 
+            for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); n > 0 && hPtr != NULL; 
                  hPtr = Tcl_NextHashEntry(&search)) {
                 cbPtr = Tcl_GetHashValue(hPtr);
                 for (i = 0; i < Ns_NrElements(when); ++i) {
@@ -499,7 +500,7 @@ SockCallbackThread(void *UNUSED(arg))
      */
 
     Ns_Log(Notice, "socks: shutdown pending");
-    for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+    for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	cbPtr = Tcl_GetHashValue(hPtr);
 	if ((cbPtr->when & (unsigned int)NS_SOCK_EXIT) != 0u) {
 	    (void) ((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_EXIT));
@@ -508,10 +509,10 @@ SockCallbackThread(void *UNUSED(arg))
     /*
      * Clean up the registered callbacks.
      */
-    for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+    for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	ns_free(Tcl_GetHashValue(hPtr));
     }
-    Tcl_DeleteHashTable(&table);
+    Tcl_DeleteHashTable(&activeCallbacks);
 
     Ns_Log(Notice, "socks: shutdown complete");
 
@@ -554,7 +555,7 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
     if (running) {
         const Tcl_HashEntry *hPtr; 
 
-        for (hPtr = Tcl_FirstHashEntry(&table, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+        for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    const Callback *cbPtr = Tcl_GetHashValue(hPtr);
 	    char            buf[TCL_INTEGER_SPACE];
 
