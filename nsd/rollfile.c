@@ -276,6 +276,8 @@ Ns_PurgeFiles(const char *file, int max)
         status = NS_ERROR;
 
     } else {
+        bool success = NS_TRUE;
+        
         /*
          * Purge (any) excessive files after sorting them
          * on descening file mtime.
@@ -289,15 +291,18 @@ Ns_PurgeFiles(const char *file, int max)
             qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
             for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
                 if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
-                    goto err;
+                    status = NS_ERROR;
+                    success = NS_FALSE;
+                    break;
                 }
             }
         }
 
-        status = NS_OK;
+        if (success) {
+            status = NS_OK;
+        }
     }
     
- err:
     if (nfiles > 0) {
         int ii;
 
