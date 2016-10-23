@@ -494,12 +494,9 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
     if (!echo) {
 	(void)ns_send(sock, (const void*)will_echo, 3u, 0);
 	(void)ns_send(sock, (const void*)dont_echo, 3u, 0);
-        fprintf(stderr, "sent ECHO magic\n");
 	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
-        fprintf(stderr, "received flush client ack\n");
     }
     promptLength = strlen(prompt);
-    fprintf(stderr, "sending prompt <%s>\n", prompt);
     if (ns_send(sock, prompt, promptLength, 0) != (ssize_t)promptLength) {
 	goto bail;
     }
