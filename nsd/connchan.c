@@ -62,7 +62,7 @@ typedef struct Callback {
  * Local functions defined in this file
  */
 
-static void CallbackFree(Callback *cbPtr)
+static void Cancel(Callback *cbPtr)
     NS_GNUC_NONNULL(1);
 
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
@@ -97,13 +97,20 @@ static Tcl_ObjCmdProc   ConnChanOpenObjCmd;
 static Tcl_ObjCmdProc   ConnChanReadObjCmd;
 static Tcl_ObjCmdProc   ConnChanWriteObjCmd;
 
+static Ns_SockProc CallbackFree;
+
 
 /*
  *----------------------------------------------------------------------
  *
  * CallbackFree --
  *
- *    Free Callback structure and unregister socket callback
+ *    Free Callback structure and unregister socket callback. This
+ *    function is itself implemented as a callback (Ns_SockProc),
+ *    which is called, whenever a callback is freed from the socket
+ *    thread. Not that it is necessary to implement it as a callback,
+ *    since all sock callbacks are implemented via a queue operation
+ *    (in sockcallback.c).
  *
  * Results:
  *    None.
@@ -113,16 +120,52 @@ static Tcl_ObjCmdProc   ConnChanWriteObjCmd;
  *
  *----------------------------------------------------------------------
  */
+
+static bool CallbackFree(NS_SOCKET sock, void *arg, unsigned int why) {
+    bool result;
+        
+    if (why != (unsigned int)NS_SOCK_CANCEL) {
+        Ns_Log(Warning, "connchan: callback free operation called with unexpected reason code %u", why);
+        result = NS_FALSE;
+        
+    } else {
+        Callback *cbPtr = arg;
+
+        cbPtr->connChanPtr->cbPtr = NULL;
+        cbPtr->connChanPtr = NULL;
+
+        ns_free(cbPtr);
+        result = NS_TRUE;
+    }
+    
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Cancel --
+ *
+ *    Register socket callback cancel operation for unregistering the
+ *    socket callback.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Freeing memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
-CallbackFree(Callback *cbPtr)
+Cancel(Callback *cbPtr)
 {
     NS_NONNULL_ASSERT(cbPtr != NULL);
     NS_NONNULL_ASSERT(cbPtr->connChanPtr != NULL);
-    
-    (void)Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
-    cbPtr->connChanPtr->cbPtr = NULL;
-    
-    ns_free(cbPtr);
+
+    (void)Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, CallbackFree, cbPtr, NULL);    
 }
 
 
@@ -214,6 +257,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
     Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(connChanPtr != NULL);
+    
     assert(connChanPtr->sockPtr != NULL);
     assert(connChanPtr->sockPtr->servPtr != NULL);
 
@@ -236,7 +280,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
      * Free connChanPtr content.
      */
     if (connChanPtr->cbPtr != NULL) {
-        CallbackFree((Callback *)connChanPtr->cbPtr);
+        Cancel((Callback *)connChanPtr->cbPtr);
     }
     ns_free((char *)connChanPtr->channelName);
     if (connChanPtr->clientData != NULL) {
@@ -309,70 +353,100 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 static bool
 NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
-    Tcl_DString     script;
+
     const Callback *cbPtr;
-    Tcl_Interp     *interp;
-    const char     *w;
-    int             result;
+    bool            success = NS_TRUE;
 
     NS_NONNULL_ASSERT(arg != NULL);
 
     cbPtr = arg;
 
-    Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc why %u", why);
-    
-    assert(cbPtr->connChanPtr != NULL);
-    assert(cbPtr->connChanPtr->sockPtr != NULL);
-    assert(cbPtr->connChanPtr->sockPtr->servPtr != NULL);
-    
-    if (why == (unsigned int)NS_SOCK_EXIT) {
-    fail:
-        if (cbPtr->connChanPtr != NULL) {
-            ConnChanFree(cbPtr->connChanPtr);
-        }
-        return NS_FALSE;
-    }
-
-    Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, cbPtr->script, (int)cbPtr->scriptLength);
-    
-    if ((why & (unsigned int)NS_SOCK_TIMEOUT) != 0u) {
-        w = "t";
-    } else if ((why & (unsigned int)NS_SOCK_READ) != 0u) {
-        w = "r";
-    } else if ((why & (unsigned int)NS_SOCK_WRITE) != 0u) {
-        w = "w";
-    } else if ((why & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
-        w = "e";
-    } else {
-        w = "x";
-    }
+    if (cbPtr->connChanPtr == NULL) {
+        /*
+         * Safety belt.
+         */
+        Ns_Log(Warning, "NsTclConnChanProc called on a probably deleted callback %p", (void*)cbPtr);
+        success = NS_FALSE;
         
-    Tcl_DStringAppendElement(&script, w);
-
-    interp = NsTclAllocateInterp(cbPtr->connChanPtr->sockPtr->servPtr);
-    result = Tcl_EvalEx(interp, script.string, script.length, 0);
-    
-    if (result != TCL_OK) {
-        (void) Ns_TclLogErrorInfo(interp, "\n(context: connchan proc)");
     } else {
-        Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
-        int      ok = 1;
+        /*
+         * We should have a valid callback structure, that we test
+         * with asserts.
+         */
+        Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc why %u", why);
+    
+        assert(cbPtr->connChanPtr != NULL);
+        assert(cbPtr->connChanPtr->sockPtr != NULL);
+        assert(cbPtr->connChanPtr->sockPtr->servPtr != NULL);
 
-        Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: Tcl eval returned <%s>", Tcl_GetString(objPtr));
-        result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
-        if ((result == TCL_OK) && (ok == 0)) {
-            result = TCL_ERROR;
+        if (why == (unsigned int)NS_SOCK_EXIT) {
+            /*
+             * Treat the "exit" case like error cases and free in such
+             * cases the connChanPtr structure.
+             */
+            success = NS_FALSE;
+            
+        } else {
+            int             result;
+            Tcl_DString     script;
+            Tcl_Interp     *interp;
+            const char     *w;
+
+            /*
+             * In all remaining cases, the Tcl callback is executed.
+             */
+            
+            Tcl_DStringInit(&script);
+            Tcl_DStringAppend(&script, cbPtr->script, (int)cbPtr->scriptLength);
+    
+            if ((why & (unsigned int)NS_SOCK_TIMEOUT) != 0u) {
+                w = "t";
+            } else if ((why & (unsigned int)NS_SOCK_READ) != 0u) {
+                w = "r";
+            } else if ((why & (unsigned int)NS_SOCK_WRITE) != 0u) {
+                w = "w";
+            } else if ((why & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
+                w = "e";
+            } else {
+                w = "x";
+            }
+        
+            Tcl_DStringAppendElement(&script, w);
+            interp = NsTclAllocateInterp(cbPtr->connChanPtr->sockPtr->servPtr);
+            result = Tcl_EvalEx(interp, script.string, script.length, 0);
+    
+            if (result != TCL_OK) {
+                (void) Ns_TclLogErrorInfo(interp, "\n(context: connchan proc)");
+            } else {
+                Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+                int      ok = 1;
+
+                /*
+                 * The Tcl callback can signal with the result "0",
+                 * that the connection channel should be closed
+                 * automatically.
+                 */
+                Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: Tcl eval returned <%s>", Tcl_GetString(objPtr));
+                result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
+                if ((result == TCL_OK) && (ok == 0)) {
+                    result = TCL_ERROR;
+                }
+            }
+            Ns_TclDeAllocateInterp(interp);
+            Tcl_DStringFree(&script);
+    
+            if (result != TCL_OK) {
+                success = NS_FALSE;
+            }
+        }
+        
+        if (!success) {
+            if (cbPtr->connChanPtr != NULL) {
+                ConnChanFree(cbPtr->connChanPtr);
+            }
         }
     }
-    Ns_TclDeAllocateInterp(interp);
-    Tcl_DStringFree(&script);
-    
-    if (result != TCL_OK) {
-        goto fail;
-    }
-
-    return NS_TRUE;
+    return success;
 }
 
 
@@ -407,12 +481,12 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
 
     /*
      * If there is already a callback registered, free and cancel
-     * it. This has to be done as first step, since CallbackFree()
+     * it. This has to be done as first step, since Cancel()
      * calls finally Ns_SockCancelCallbackEx(), which deletes all
      * callbacks registered for the associated socket.
      */
     if (connChanPtr->cbPtr != NULL) {
-        CallbackFree((Callback *)connChanPtr->cbPtr);
+        Cancel((Callback *)connChanPtr->cbPtr);
     }
     
     scriptLength = strlen(script);
@@ -431,7 +505,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
         assert(connChanPtr->cbPtr == NULL);
         connChanPtr->cbPtr = cbPtr;
     } else {
-        CallbackFree(cbPtr);
+        Cancel(cbPtr);
     } 
     return result;
 }
@@ -689,13 +763,12 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             buf[2].iov_len = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
             buf[3].iov_base = (void *)"\r\n";
             buf[3].iov_len = 2u;
-                
+
             nSent = DriverSend(connChanPtr->sockPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
             Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
 
             if (nSent > -1) {
                 connChanPtr->wBytes += (size_t)nSent;
-                //Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
             } else {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(strerror(errno), -1));
