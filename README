@@ -1,0 +1,69 @@
+
+Reverse Proxy Module for NaviServer
+===================================
+Release 0.1
+-----------
+
+    neumann@wu-wien.ac.at
+
+This is a NaviServer module that implements a reverse proxy for
+NaviServer based on the ns_connchan command. The modules provides
+NaviServer filter procs, which can be registered for all or selected
+urls via wildcards, that will redirect the incoming requests to some
+backend service.
+
+When the filter procs are registed as "postauth" filters, it is
+possible to use NaviServer (or e.g. OpenACS) as authenticating reverse
+proxy server. It is possible to specify for every registered filter a
+validation callback (to validate access of the service) and a
+exception callback (e.g. for returning tailored error pages).
+
+Both the incoming and upstream connections might be based on http or
+https. The implementation works as well with WebSockets (including
+secure WebSockets).
+
+The module requires at least NaviServer 4.99.14. The implementation is
+based on nsf, which is available from e.g.  http://next-scripting.org/
+    
+***
+
+Configuration:
+--------------
+
+In order to configure the reverse proxy, add the following lines to the
+config file of NaviServer to make the ::revproxy::* functions available:
+
+    ns_section "ns/server/${server}/modules"
+       ns_param revproxy tcl
+
+During startup of the server register the ::revproxy::upstream
+function for some URLs, like in the following example, where GET and
+POST requests  with /shiny/ are tunneled to some back end service
+(here via https to my.backend.com).
+
+    ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/
+    ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/
+
+The registration might me happening in e.g. an OpenACS context in a
+*-init.tcl file or in the config file of the server:
+
+    ns_section "ns/server/${server}/module/revproxy"
+       ns_param filters {
+          ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/
+          ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/
+       }
+
+
+Installation:
+-------------
+
+    make install
+
+
+Authors:
+--------
+
+    Gustaf Neumann neumann@wu-wien.ac.at
+
+
+
