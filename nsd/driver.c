@@ -5561,13 +5561,7 @@ int
 NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
     char          *protocol, *host, *portString, *path, *tail, *url2;
-    const char    *query;
-    Driver        *drvPtr = NULL;
-    Tcl_DString    ds, *dsPtr = &ds;
-    unsigned short portNr;
-    NS_SOCKET      sock;
-    Sock          *sockPtr;
-    Request       *reqPtr;
+    int            result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -5577,93 +5571,102 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     url2 = ns_strdup(url);
 
     if (unlikely(Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)) {
-        goto fail;
-    }
-
-    assert(protocol != NULL);
-    assert(host != NULL);
-    assert(path != NULL);
-    assert(tail != NULL);
-    
-    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
-               drvPtr->protocol, drvPtr->server, drvPtr->name, drvPtr->location);
-        if (STREQ(drvPtr->protocol, protocol)) {
-            break;
-        }
-    }
-    if (drvPtr == NULL) {
-        Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
-        goto fail;
-    }
-
-    if (portString != NULL) {
-        portNr = (unsigned short) strtol(portString, NULL, 10);
-    } else if (STREQ(drvPtr->protocol, "http")) {
-        /* the default port should be in the driver structure */
-        portNr = 80u;
-    } else if (STREQ(drvPtr->protocol, "https")) {
-        portNr = 443u;
+        result = TCL_ERROR;
+        
     } else {
-        Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", protocol);
-        goto fail;
-    }
+        Driver        *drvPtr;
+        unsigned short portNr;
+
+        assert(protocol != NULL);
+        assert(host != NULL);
+        assert(path != NULL);
+        assert(tail != NULL);
     
-    sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr);
-
-    if (sock == NS_INVALID_SOCKET) {
-	Ns_TclPrintfResult(interp, "connect to '%s' failed: %s", url, 
-                           ns_sockstrerror(ns_sockerrno));
-        goto fail;
-    }
-
-    sockPtr = SockNew(drvPtr);
-    sockPtr->sock = sock;
-    sockPtr->servPtr  = drvPtr->servPtr;
-    if (sockPtr->servPtr == NULL) {
-        const NsInterp *itPtr = NsGetInterpData(interp);
-        sockPtr->servPtr = itPtr->servPtr;
-    }
-
-    RequestNew(sockPtr);
-
-    Ns_GetTime(&sockPtr->acceptTime);
-    reqPtr = sockPtr->reqPtr;
-
-    Tcl_DStringInit(dsPtr);
-    Ns_DStringAppend(dsPtr, method);
-    Ns_StrToUpper(Ns_DStringValue(dsPtr));
-    Tcl_DStringAppend(dsPtr, " /", 2);
-    if (*path != '\0') {
-        if (*path == '/') {
-            path ++;
+        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
+                   drvPtr->protocol, drvPtr->server, drvPtr->name, drvPtr->location);
+            if (STREQ(drvPtr->protocol, protocol)) {
+                break;
+            }
         }
-        Tcl_DStringAppend(dsPtr, path, -1);
-        Tcl_DStringAppend(dsPtr, "/", 1);
-    }
-    Tcl_DStringAppend(dsPtr, tail, -1);        
-    Tcl_DStringAppend(dsPtr, " HTTP/1.0", 9);
+        if (drvPtr == NULL) {
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
+            result = TCL_ERROR;
+
+        } else if (portString != NULL) {
+            portNr = (unsigned short) strtol(portString, NULL, 10);
+        } else if (STREQ(drvPtr->protocol, "http")) {
+            /* the default port should be in the driver structure */
+            portNr = 80u;
+        } else if (STREQ(drvPtr->protocol, "https")) {
+            portNr = 443u;
+        } else {
+            Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", protocol);
+            result = TCL_ERROR;
+        }
+
+        if (result == TCL_OK) {
+            NS_SOCKET      sock;
     
-    reqPtr->request.line = Ns_DStringExport(dsPtr);
-    reqPtr->request.method = ns_strdup(method);
-    reqPtr->request.protocol = ns_strdup(protocol);
-    reqPtr->request.host = ns_strdup(host);
-    query = strchr(tail, INTCHAR('?'));
-    if (query != NULL) {
-        reqPtr->request.query = ns_strdup(query+1);
-    } else {
-        reqPtr->request.query = NULL;
-    }
-    /*Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);*/
+            sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr);
+
+            if (sock == NS_INVALID_SOCKET) {
+                Ns_TclPrintfResult(interp, "connect to '%s' failed: %s", url, 
+                                   ns_sockstrerror(ns_sockerrno));
+                result = TCL_ERROR;
+
+            } else {
+                const char    *query;
+                Tcl_DString    ds, *dsPtr = &ds;
+                Request       *reqPtr;
+                Sock          *sockPtr = SockNew(drvPtr);
+                
+                sockPtr->sock = sock;
+                sockPtr->servPtr  = drvPtr->servPtr;
+                if (sockPtr->servPtr == NULL) {
+                    const NsInterp *itPtr = NsGetInterpData(interp);
+                    
+                    sockPtr->servPtr = itPtr->servPtr;
+                }
+
+                RequestNew(sockPtr);
+
+                Ns_GetTime(&sockPtr->acceptTime);
+                reqPtr = sockPtr->reqPtr;
+
+                Tcl_DStringInit(dsPtr);
+                Ns_DStringAppend(dsPtr, method);
+                Ns_StrToUpper(Ns_DStringValue(dsPtr));
+                Tcl_DStringAppend(dsPtr, " /", 2);
+                if (*path != '\0') {
+                    if (*path == '/') {
+                        path ++;
+                    }
+                    Tcl_DStringAppend(dsPtr, path, -1);
+                    Tcl_DStringAppend(dsPtr, "/", 1);
+                }
+                Tcl_DStringAppend(dsPtr, tail, -1);        
+                Tcl_DStringAppend(dsPtr, " HTTP/1.0", 9);
     
+                reqPtr->request.line = Ns_DStringExport(dsPtr);
+                reqPtr->request.method = ns_strdup(method);
+                reqPtr->request.protocol = ns_strdup(protocol);
+                reqPtr->request.host = ns_strdup(host);
+                query = strchr(tail, INTCHAR('?'));
+                if (query != NULL) {
+                    reqPtr->request.query = ns_strdup(query+1);
+                } else {
+                    reqPtr->request.query = NULL;
+                }
+                /*Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);*/
+
+                *sockPtrPtr = sockPtr;
+            }
+        }
+    }    
     ns_free(url2);
-    *sockPtrPtr = sockPtr;
     
-    return TCL_OK;
-    
- fail:
-    ns_free(url2);
-    return TCL_ERROR;
+    return result;
 }
 
 
