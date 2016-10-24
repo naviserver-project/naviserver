@@ -121,7 +121,7 @@ static Ns_SockProc CallbackFree;
  *----------------------------------------------------------------------
  */
 
-static bool CallbackFree(NS_SOCKET sock, void *arg, unsigned int why) {
+static bool CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
     bool result;
         
     if (why != (unsigned int)NS_SOCK_CANCEL) {
