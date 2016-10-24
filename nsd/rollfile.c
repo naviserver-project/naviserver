@@ -261,7 +261,7 @@ Ns_PurgeFiles(const char *file, int max)
     const File   *fiPtr;
     File         *files = NULL;
     int           nfiles;
-    Ns_ReturnCode status;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(file != NULL);
     
@@ -276,8 +276,6 @@ Ns_PurgeFiles(const char *file, int max)
         status = NS_ERROR;
 
     } else {
-        bool success = NS_TRUE;
-        
         /*
          * Purge (any) excessive files after sorting them
          * on descening file mtime.
@@ -292,14 +290,9 @@ Ns_PurgeFiles(const char *file, int max)
             for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
                 if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
                     status = NS_ERROR;
-                    success = NS_FALSE;
                     break;
                 }
             }
-        }
-
-        if (success) {
-            status = NS_OK;
         }
     }
     
