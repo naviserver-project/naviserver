@@ -92,7 +92,7 @@ as follows:
 [call [cmd  "ns_connchan open"] \
 	[opt [option "-headers [arg s]"]] \
 	[opt [option "-method [arg s]"]] \
-	[opt [option "-timeout [arg s]"]] \	
+	[opt [option "-timeout [arg s]"]] \
 	[arg url] \
 ]
 
