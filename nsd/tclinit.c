@@ -143,7 +143,7 @@ static Tcl_ObjCmdProc ICtlUpdateObjCmd;
 
 static Ns_Tls tls;  /* Slot for per-thread Tcl interp cache. */
 static Ns_Mutex interpLock = NULL; 
-
+static bool concurrent_interp_create = NS_FALSE;
 
 
 /*
@@ -169,6 +169,29 @@ Nsd_Init(Tcl_Interp *interp)
     NS_NONNULL_ASSERT(interp != NULL);
 
     return Ns_TclInit(interp);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigTcl --
+ *
+ *      Allow configuration of Tcl-specific parameters via the config file.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Setting static configuration variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigTcl(void)
+{
+    concurrent_interp_create = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "concurrentinterpcreate", NS_FALSE);
 }
 
 
@@ -1944,10 +1967,13 @@ Tcl_Interp *
 NsTclCreateInterp() {
     Tcl_Interp *interp;
 
-    Ns_MutexLock(&interpLock);
-    interp = Tcl_CreateInterp();
-    Ns_MutexUnlock(&interpLock);
-
+    if (concurrent_interp_create) {
+        interp = Tcl_CreateInterp();
+    } else {
+        Ns_MutexLock(&interpLock);
+        interp = Tcl_CreateInterp();
+        Ns_MutexUnlock(&interpLock);
+    }
     return interp;
 }
 

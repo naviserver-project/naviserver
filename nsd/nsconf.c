@@ -153,6 +153,7 @@ NsConfUpdate(void)
     Ns_DString ds;
     const char *path = NS_CONFIG_PARAMETERS;
 
+    NsConfigTcl();
     NsConfigLog();
     NsConfigAdp();
     NsConfigFastpath();

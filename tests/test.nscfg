@@ -112,6 +112,8 @@ ns_param   pidfile         [ns_config "test" home]/testserver/nsd.pid
 ns_param   logdebug        false
 ns_param   logdev          false
 ns_param   progressminsize 1
+ns_param   concurrentinterpcreate true   ;# default: false
+
 
 ns_section "ns/fastpath"
 ns_param gzip_static true

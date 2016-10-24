@@ -1296,6 +1296,7 @@ NS_EXTERN void NsConfigDNS(void);
 NS_EXTERN void NsConfigRedirects(void);
 NS_EXTERN void NsConfigVhost(void);
 NS_EXTERN void NsConfigEncodings(void);
+NS_EXTERN void NsConfigTcl(void);
 
 /*
  * Virtual server management routines.
@@ -1612,8 +1613,6 @@ NS_EXTERN Ns_ReturnCode NsConnRunProxyRequest(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 #endif /* NSD_H */
-
-NS_EXTERN bool NS_shutdown;
 
 /*
  * Local Variables:
