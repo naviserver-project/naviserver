@@ -75,7 +75,7 @@ Multiple prebind address might be specified in a comma separated list.
 
 [subsection {Using Watchdog}]
 
-NaviServer now has implemented a quite useful [emph watchdog] feature that allows the server to
+NaviServer has implemented a quite useful [emph watchdog] feature that allows the server to
 restart if it fails. In many situations you are now freed from setting up a special way of
 handling a server failure that would be solved with a simple restart.
 
@@ -94,9 +94,7 @@ codes and signals caught during the watch and correspondingly restarts the secon
 To restart the server from within your TCL code:
 
 [example_begin]
-
-ns_shutdown -restart
-
+   ns_shutdown -restart
 [example_end]
 
 To restart the server from the shell you can send the server the SIGINT.
@@ -121,7 +119,43 @@ To restart the server from the shell you can send the server the SIGINT.
 
 [list_end]
 
-[para]
+
+[subsection {Systemd}]
+
+Most Unix-like systems tends to use systemd (see
+e.g. https://www.freedesktop.org/wiki/Software/systemd). System admins might find
+the following sample configuration file for NaviServer helpful, which
+might be saved under [term /etc/systemd/system/nsd.service] or
+[term /usr/lib/systemd/system/nsd.service].
+
+[example_begin]
+   [lb]Unit[rb]
+   Description=NaviServer
+   After=network.target
+   # After=network.target postgresql.service
+   # Wants=postgresql.service
+   
+   [lb]Service[rb]
+   Type=forking
+   PIDFile=/usr/local/ns/logs/nsd.pid
+   Environment="LANG=en_US.UTF-8"
+   # In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
+   # Environment="LD_PRELOAD=/usr/lib64/libtcmalloc.so"
+   ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
+   
+   # standard startup (non-privileged port, like 8000)
+   ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl
+
+   # startup for privileged port, like 80
+   # ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl -b YOUR-IPV4-ADDRESS:80,YOUR-IPV6-ADDRESS:80
+   
+   Restart=on-abnormal
+   KillMode=process
+   
+   [lb]Install[rb]
+   #WantedBy=multi-user.target
+[example_end]
+
 
 [subsection {Other approaches}]
 
@@ -136,9 +170,7 @@ Very easy to setup but with it's own limitations. init is the parent of all proc
 It creates processes from the script /etc/inittab. Add a line like
 
 [example_begin]
-
-ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl
-
+   ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl
 [example_end]
 
 and init does the job of restarting the server if it crashes.
@@ -157,8 +189,11 @@ and init does the job of restarting the server if it crashes.
 [list_begin itemized]
 
 [item] You need to be root to edit /etc/inittab and make changes.
-[item] If there's an error during startup init tries to restart the server and then waits for some time. Repeats endlessly.
-[item] There's no simple way to just stop the server if you want to as init tries to keep it up. 
+[item] If there's an error during startup init tries to restart the
+server and then waits for some time. Repeats endlessly.
+
+[item] There's no simple way to just stop the server if you want to as
+init tries to keep it up.
 
 [list_end]
 
@@ -168,17 +203,13 @@ As you already have (or may have) a rc-script for starting your server during bo
 time you simply could run a cronjob that checks the status of something like
 
 [example_begin]
-
-rcnaviserver status || rcnaviserver start
-
+   rcnaviserver status || rcnaviserver start
 [example_end]
 
 as part of a script every 5 minutes by adding a crontab line (crontab -e) like
 
 [example_begin]
-
-*/5 * * * *		/root/cronjobs/nsd_crontab
-
+   */5 * * * *		/root/cronjobs/nsd_crontab
 [example_end]
 
 
@@ -186,7 +217,10 @@ as part of a script every 5 minutes by adding a crontab line (crontab -e) like
 
 [list_begin itemized]
 
-[item] If you wrap the status check in your own script you are more flexible in choosing the right action for the job, e.g. E-Mail notifications.
+[item] If you wrap the status check in your own script you are more
+flexible in choosing the right action for the job, e.g. E-Mail
+notifications.
+
 [item] Works fine if you don't have a requirement of virtually no downtime. 
 
 [list_end]
@@ -195,8 +229,12 @@ as part of a script every 5 minutes by adding a crontab line (crontab -e) like
 
 [list_begin itemized]
 
-[item] Slightly more work if you have the situation to just stop the server for maintenance etc. (E.g. just restart if a certain status file does not exist)
-[item] You have to touch at least three files: the rc-script, crontab list and restart script. 
+[item] Slightly more work if you have the situation to just stop the
+server for maintenance etc. (E.g. just restart if a certain status
+file does not exist)
+
+[item] You have to touch at least three files: the rc-script, crontab
+list and restart script.
 
 [list_end]
 
@@ -1004,32 +1042,12 @@ SGI platform, you would execute the following commands to create new
 directories and copy the necessary files to them:
 
 
-[para]
-
-
-mkdir $root/dev $root/tmp $root/etc
-
-
-[para]
-
-
-chmod 1777 $root/tmp
-
-
-[para]
-
-
-cd $root/dev; /dev/MAKEDEV generic usema
-
-
-[para]
-
-
-cp /etc/passwd /etc/resolve.conf $root/etc
-
-
-[para]
-
+[example_begin]
+   mkdir $root/dev $root/tmp $root/etc
+   chmod 1777 $root/tmp
+   $root/dev; /dev/MAKEDEV generic usema
+   cp /etc/passwd /etc/resolve.conf $root/etc
+[example_end]
 
 Then, you can run NaviServer with the -r option as in this example:
  nsd -t nsd.tcl -r $root
@@ -1121,19 +1139,17 @@ This code example disables the open command:
 
 
 [example_begin]
-
-static int
-AddCmds(Tcl_Interp, void *arg) {
-    Tcl_CreateCommand(interp, "open", BadCmd, NULL, NULL);
-    return TCL_OK;
-}
-
-static int
-BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
-    Tcl_AppendResult(interp, "disabled command: ", argv[lb]0[rb], NULL);
-    return TCL_ERROR;
-}
-
+   static int
+   AddCmds(Tcl_Interp, void *arg) {
+       Tcl_CreateCommand(interp, "open", BadCmd, NULL, NULL);
+       return TCL_OK;
+   }
+   
+   static int
+   BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
+       Tcl_AppendResult(interp, "disabled command: ", argv[lb]0[rb], NULL);
+       return TCL_ERROR;
+   }
 [example_end]
 
 
