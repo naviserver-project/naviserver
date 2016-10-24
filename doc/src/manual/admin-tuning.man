@@ -60,13 +60,14 @@ is hit.
 
 [subsection {Tune the Threads}]
 
-Thread settings are sometimes helpful, sometimes not. In ns/server/servername,
-the options are "connsperthread", "flushcontent", "maxconnections", 
-"maxthreads", "minthreads" and "threadtimeout". In nearly all cases the
-defaults are optimal, with the exception of maxthreads which should be carefully
-adjusted based on your load. Along with "maxthreads", the "maxconnections"
-setting can be tricky, since making it too large can cause your system to
-thrash.
+Thread settings are sometimes helpful, sometimes not. In
+ns/server/servername, the options are "connsperthread",
+"flushcontent", "maxconnections", "maxthreads", "minthreads" and
+"threadtimeout". In nearly all cases the defaults are optimal, with
+the exception of "minthread" and "maxthreads" which should be
+carefully adjusted based on your load. Along with "maxthreads", the
+"maxconnections" setting can be tricky, since making it too large can
+cause your system to thrash.
 
 [subsection {Monitor the Memory}]
 
@@ -99,5 +100,21 @@ more threads, etc).  The module "nsstats" can be dropped into any
 running server to get a snapshot of how it's doing. The module is available
 in the modules repository.
 
+[subsection {Further parameters for tuning}]
+
+A few further parameters might be used for tuning the performance of
+NaviServer in a certain application specific context.
+
+[para] Administrators might consider allowing concurrent Tcl
+interpreter create operations.  Versions of Tcl up to at least 8.5 are
+known to crash in case two threads create interpreters at the same
+time. These crashes were hard to reproduce, but serializing
+interpreter creation helped. Probably it is possible to allow
+concurrent interpreter create operations in Tcl 8.6.
+
+[example_begin]
+   ns_section ns/parameters 
+      ns_param        concurrentinterpcreate false   ; default false
+[example_end]
 
 [manpage_end]
