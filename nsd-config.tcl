@@ -49,6 +49,7 @@ ns_param        jobsperthread       1000               ;# default: 0
 ns_param        jobtimeout          0                  ;# default: 300
 ns_param        schedsperthread     10                 ;# default: 0
 ns_param        progressminsize     [expr 1024*1024*1] ;# default: 0
+#ns_param       concurrentinterpcreate true            ;# default: false
 
 # configure SMTP module
 ns_param        smtphost            "localhost"

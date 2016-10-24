@@ -99,7 +99,8 @@ ns_section ns/parameters
 	ns_param	serverlog	${logroot}/error.log 
 	ns_param	pidfile		${logroot}/nsd.pid
 	ns_param	home		$homedir 
-	ns_param	debug		$debug
+        ns_param	debug		$debug
+
 	#
 	# ns_param	logroll		on
         ns_param	logmaxbackup	100  ;# 10 is default
@@ -116,6 +117,14 @@ ns_section ns/parameters
 
 	# Write asynchronously to log files (access log and error log)
 	# ns_param	asynclogwriter	true		;# false
+
+        # Allow concurrent create operations of Tcl interpreters.
+        # Versions up to at least Tcl 8.5 are known that these might
+        # crash in case two threads create interpreters at the same
+        # time. These crashes were hard to reproduce, but serializeing
+        # interpreter creation helped. Probably it is possible to
+        # allow concurrent interpreter create operations in Tcl 8.6.
+        #ns_param        concurrentinterpcreate true   ;default false
 
 	# Enforce sequential thread initialization. This is not really
 	# desirably in general, but might be useful for hunting strange
