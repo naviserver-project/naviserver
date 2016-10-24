@@ -132,6 +132,7 @@ static Ns_Tls       tls;
 static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
+static bool         logOpenCalled = NS_FALSE;
 static const char  *file = NULL;
 static const char  *rollfmt = NULL;
 static unsigned int flags = 0u;
@@ -1343,10 +1344,14 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * Ns_LogRoll --
  *
- *      Signal handler for SIGHUP which will roll the files.
+ *      Utility function and signal handler for SIGHUP which will roll
+ *      the files. When NaviServer is logging to stderr (when
+ *      e.g. started with -f) no rolling will be performed. The
+ *      function returns potentially errors from opening the log file
+ *      as result.
  *
  * Results:
- *      NS_OK/NS_ERROR.
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
  *      Will rename the log file and reopen it.
@@ -1359,8 +1364,12 @@ Ns_LogRoll(void)
 {
     Ns_ReturnCode status = NS_OK;
 
-    if (file != NULL) {
+    if (file != NULL && logOpenCalled) {
         Tcl_Obj      *pathObj;
+        
+        /*
+         * We are already logging to some file
+         */
 
 	NsAsyncWriterQueueDisable(NS_FALSE);
 
@@ -1369,19 +1378,18 @@ Ns_LogRoll(void)
 
         if (Tcl_FSAccess(pathObj, F_OK) == 0) {
             /*
-             * We are already logging to some file
+             * The current logfile exists.
              */
             (void) Ns_RollFileFmt(pathObj,
                                   rollfmt,
                                   maxbackup);
-            //(void) Ns_RollFile(file, maxback);
         }
         Tcl_DecrRefCount(pathObj);
 
         Ns_Log(Notice, "log: re-opening log file '%s'", file);
-	status = LogOpen();
+        status = LogOpen();
 
-	NsAsyncWriterQueueEnable();
+        NsAsyncWriterQueueEnable();
     }
 
     return status;
@@ -1420,6 +1428,7 @@ NsLogOpen(void)
     if ((flags & LOG_ROLL) != 0u) {
         (void) Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
     }
+    logOpenCalled = NS_TRUE;
 }
 
 
