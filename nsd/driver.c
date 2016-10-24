@@ -5575,7 +5575,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
         
     } else {
         Driver        *drvPtr;
-        unsigned short portNr;
+        unsigned short portNr = 0u; /* make static checker happy */
 
         assert(protocol != NULL);
         assert(host != NULL);
@@ -5596,7 +5596,9 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
         } else if (portString != NULL) {
             portNr = (unsigned short) strtol(portString, NULL, 10);
         } else if (STREQ(drvPtr->protocol, "http")) {
-            /* the default port should be in the driver structure */
+            /* 
+             * The default port should be in the driver structure.
+             */
             portNr = 80u;
         } else if (STREQ(drvPtr->protocol, "https")) {
             portNr = 443u;
