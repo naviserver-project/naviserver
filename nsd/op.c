@@ -288,41 +288,44 @@ Ns_ConnRunRequest(Ns_Conn *conn)
      */
     if ((connPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u) {
         connPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
-        return Ns_ConnReturnEntityTooLarge(conn);
+        status = Ns_ConnReturnEntityTooLarge(conn);
+        
     } else if ((connPtr->flags & NS_CONN_REQUESTURITOOLONG) != 0u) {
         connPtr->flags &= ~NS_CONN_REQUESTURITOOLONG;
-        return Ns_ConnReturnRequestURITooLong(conn);
+        status = Ns_ConnReturnRequestURITooLong(conn);
+        
     } else if ((connPtr->flags & NS_CONN_LINETOOLONG) != 0u) {
         connPtr->flags &= ~NS_CONN_LINETOOLONG;
-        return Ns_ConnReturnHeaderLineTooLong(conn);
-    }
+        status = Ns_ConnReturnHeaderLineTooLong(conn);
 
-    /*
-     * True requests.
-     */
+    } else {
+        /*
+         * True requests.
+         */
     
-    if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
-        Req        *reqPtr;
+        if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
+            Req        *reqPtr;
 
-        Ns_MutexLock(&ulock);
-        reqPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
-                                  conn->request.method, conn->request.url, uid,
-                                  0u, NS_URLSPACE_DEFAULT);
-        if (reqPtr == NULL) {
-            Ns_MutexUnlock(&ulock);
-            if (STREQ(conn->request.method, "BAD")) {
-                status = Ns_ConnReturnBadRequest(conn, NULL);
-            } else {
-                status = Ns_ConnReturnInvalidMethod(conn);
-            }
-        } else {
-            ++reqPtr->refcnt;
-            Ns_MutexUnlock(&ulock);
-            status = (*reqPtr->proc) (reqPtr->arg, conn);
-            
             Ns_MutexLock(&ulock);
-            FreeReq(reqPtr);
-            Ns_MutexUnlock(&ulock);
+            reqPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
+                                      conn->request.method, conn->request.url, uid,
+                                      0u, NS_URLSPACE_DEFAULT);
+            if (reqPtr == NULL) {
+                Ns_MutexUnlock(&ulock);
+                if (STREQ(conn->request.method, "BAD")) {
+                    status = Ns_ConnReturnBadRequest(conn, NULL);
+                } else {
+                    status = Ns_ConnReturnInvalidMethod(conn);
+                }
+            } else {
+                ++reqPtr->refcnt;
+                Ns_MutexUnlock(&ulock);
+                status = (*reqPtr->proc) (reqPtr->arg, conn);
+            
+                Ns_MutexLock(&ulock);
+                FreeReq(reqPtr);
+                Ns_MutexUnlock(&ulock);
+            }
         }
     }
     return status;

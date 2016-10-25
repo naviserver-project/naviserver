@@ -813,35 +813,49 @@ ns_mkstemp(char *charTemplate)
 static bool
 SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *saPtr2)
 {
+    bool equal = NS_TRUE;
+    
 #ifdef HAVE_IPV6
     if (saPtr1->sa_family != saPtr2->sa_family) {
-        return NS_FALSE;
-    }
-    if (saPtr1->sa_family == AF_INET) {
+        /*
+         * Different families.
+         */
+        equal = NS_FALSE;
+    } else if (saPtr1->sa_family == AF_INET) {
+        /*
+         * IPv4, we can directly compare the IP addresses.
+         */
         if (((struct sockaddr_in *)saPtr1)->sin_addr.s_addr !=
             ((struct sockaddr_in *)saPtr2)->sin_addr.s_addr) {
-            return NS_FALSE;
+            equal = NS_FALSE;
         }
     } else if (saPtr1->sa_family == AF_INET6) {
         const struct in6_addr *sa1Bits = &(((struct sockaddr_in6 *)saPtr1)->sin6_addr);
         const struct in6_addr *sa2Bits = &(((struct sockaddr_in6 *)saPtr2)->sin6_addr);
         int i;
         
+        /*
+         * Compare the eight words
+         */
         for (i = 0; i < 8; i++) {
             if (sa1Bits->u.Word[i] != sa2Bits->u.Word[i]) {
-                return NS_FALSE;
+                equal = NS_FALSE;
+                break;
             }
         }
     } else {
-        return NS_FALSE;
+        equal = NS_FALSE;
     }
 #else
+    /*
+     * Handle here just IPv4.
+     */
     if (((struct sockaddr_in *)saPtr1)->sin_addr.s_addr !=
         ((struct sockaddr_in *)saPtr2)->sin_addr.s_addr) {
-        return NS_FALSE;
+        equal = NS_FALSE;
     }
 #endif
-    return NS_TRUE;
+    return equal;
 }
 
 

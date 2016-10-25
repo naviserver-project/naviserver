@@ -716,51 +716,50 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      * or if severity level out of range(s).
      */
 
-    if (Ns_LogSeverityEnabled(severity) == NS_FALSE) {
-        return;
-    }
+    if (Ns_LogSeverityEnabled(severity)) {
     
-    /*
-     * Track usage to provide statistics.
-     */
-    severityConfig[severity].count ++;
+        /*
+         * Track usage to provide statistics.
+         */
+        severityConfig[severity].count ++;
 
-    /*
-     * Append new or reuse log entry record.
-     */
-    cachePtr = GetCache();
-    if (cachePtr->currEntry != NULL) {
-        entryPtr = cachePtr->currEntry->nextPtr;
-    } else {
-        entryPtr = cachePtr->firstEntry;
-    }
-    if (entryPtr == NULL) {
-        entryPtr = ns_malloc(sizeof(LogEntry));
-        entryPtr->nextPtr = NULL;
+        /*
+         * Append new or reuse log entry record.
+         */
+        cachePtr = GetCache();
         if (cachePtr->currEntry != NULL) {
-            cachePtr->currEntry->nextPtr = entryPtr;
+            entryPtr = cachePtr->currEntry->nextPtr;
         } else {
-            cachePtr->firstEntry = entryPtr;
+            entryPtr = cachePtr->firstEntry;
         }
-    }
+        if (entryPtr == NULL) {
+            entryPtr = ns_malloc(sizeof(LogEntry));
+            entryPtr->nextPtr = NULL;
+            if (cachePtr->currEntry != NULL) {
+                cachePtr->currEntry->nextPtr = entryPtr;
+            } else {
+                cachePtr->firstEntry = entryPtr;
+            }
+        }
 
-    cachePtr->currEntry = entryPtr;
-    cachePtr->count++;
+        cachePtr->currEntry = entryPtr;
+        cachePtr->count++;
 
-    offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
-    Ns_DStringVPrintf(&cachePtr->buffer, fmt, *vaPtr);
-    length = (size_t)Ns_DStringLength(&cachePtr->buffer) - offset;
+        offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
+        Ns_DStringVPrintf(&cachePtr->buffer, fmt, *vaPtr);
+        length = (size_t)Ns_DStringLength(&cachePtr->buffer) - offset;
 
-    entryPtr->severity = severity;
-    entryPtr->offset   = offset;
-    entryPtr->length   = length;
-    Ns_GetTime(&entryPtr->stamp);
+        entryPtr->severity = severity;
+        entryPtr->offset   = offset;
+        entryPtr->length   = length;
+        Ns_GetTime(&entryPtr->stamp);
 
-    /*
-     * Flush it out if not held or severity is "Fatal"
-     */
-    if (cachePtr->hold == 0 || severity == Fatal) {
-        LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
+        /*
+         * Flush it out if not held or severity is "Fatal"
+         */
+        if (cachePtr->hold == 0 || severity == Fatal) {
+            LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
+        }
     }
 }
 
@@ -1756,12 +1755,6 @@ static Ns_ReturnCode
 LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          const char *msg, size_t len)
 {
-    int                   ii, ret;
-    void                 *logfile = INT2PTR(STDERR_FILENO);
-    Tcl_Obj              *stampObj;
-    Ns_DString            ds, ds2;
-    Tcl_Interp           *interp;
-    const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
     Ns_ReturnCode         status;
 
     NS_NONNULL_ASSERT(arg != NULL);
@@ -1769,65 +1762,77 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     NS_NONNULL_ASSERT(msg != NULL);
 
     if (severity == Fatal) {
-        return NS_OK;
-    }
+        /*
+         * In case of Fatal severity, do nothing. We have to assume
+         * that Tcl is not functioning anymore.
+         */
+        status = NS_OK;
 
-    /*
-     * Try to obtain an interpreter:
-     */ 
-    interp = Ns_TclAllocateInterp(cbPtr->server);
-    if (interp == NULL) {
-        (void)LogToFile(logfile, Error, stamp,
-                        "LogToTcl: can't get interpreter", 0u);
-        status = NS_ERROR;
     } else {
-
-        Ns_DStringInit(&ds);
-        stampObj = Tcl_NewObj();
-        Ns_TclSetTimeObj(stampObj, stamp);
-
-        /*
-         * Construct args for passing to the callback script:
-         *
-         *      callback severity timestamp log ?arg...?
-         *
-         * The script may contain blanks therefore append as regular
-         * string instead of as list element.  Other arguments are
-         * appended to it as elements.
-         */
-        Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
-        Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
-        Tcl_DecrRefCount(stampObj);
+        int                   ii, ret;
+        void                 *logfile = INT2PTR(STDERR_FILENO);
+        Tcl_Obj              *stampObj;
+        Ns_DString            ds, ds2;
+        Tcl_Interp           *interp;
+        const Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
         /*
-         * Append n bytes of msg as proper list element to ds. Since
-         * Tcl_DStringAppendElement has no length parameter, we have
-         * to use a temporary DString here.
-         */
-        Ns_DStringInit(&ds2);
-        Ns_DStringNAppend(&ds2, msg, (int)len);
-        Ns_DStringAppendElement(&ds, ds2.string);
-        Ns_DStringFree(&ds2);
+         * Try to obtain an interpreter:
+         */ 
+        interp = Ns_TclAllocateInterp(cbPtr->server);
+        if (interp == NULL) {
+            (void)LogToFile(logfile, Error, stamp,
+                            "LogToTcl: can't get interpreter", 0u);
+            status = NS_ERROR;
+        } else {
 
-        for (ii = 0; ii < cbPtr->argc; ii++) {
-            Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
-        }
-        ret = Tcl_EvalEx(interp, Ns_DStringValue(&ds), Ns_DStringLength(&ds), 0);
-        if (ret == TCL_ERROR) {
+            Ns_DStringInit(&ds);
+            stampObj = Tcl_NewObj();
+            Ns_TclSetTimeObj(stampObj, stamp);
 
             /*
-             * Error in Tcl callback is always logged to file.
+             * Construct args for passing to the callback script:
+             *
+             *      callback severity timestamp log ?arg...?
+             *
+             * The script may contain blanks therefore append as regular
+             * string instead of as list element.  Other arguments are
+             * appended to it as elements.
              */
-            Ns_DStringSetLength(&ds, 0);
-            Ns_DStringAppend(&ds, "LogToTcl: ");
-            Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
-            (void)LogToFile(logfile, Error, stamp, Ns_DStringValue(&ds),
-                            (size_t)Ns_DStringLength(&ds));
-        }
-        Ns_DStringFree(&ds);
-        Ns_TclDeAllocateInterp(interp);
+            Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
+            Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
+            Tcl_DecrRefCount(stampObj);
 
-        status = (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
+            /*
+             * Append n bytes of msg as proper list element to ds. Since
+             * Tcl_DStringAppendElement has no length parameter, we have
+             * to use a temporary DString here.
+             */
+            Ns_DStringInit(&ds2);
+            Ns_DStringNAppend(&ds2, msg, (int)len);
+            Ns_DStringAppendElement(&ds, ds2.string);
+            Ns_DStringFree(&ds2);
+
+            for (ii = 0; ii < cbPtr->argc; ii++) {
+                Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
+            }
+            ret = Tcl_EvalEx(interp, Ns_DStringValue(&ds), Ns_DStringLength(&ds), 0);
+            if (ret == TCL_ERROR) {
+
+                /*
+                 * Error in Tcl callback is always logged to file.
+                 */
+                Ns_DStringSetLength(&ds, 0);
+                Ns_DStringAppend(&ds, "LogToTcl: ");
+                Ns_DStringAppend(&ds, Tcl_GetStringResult(interp));
+                (void)LogToFile(logfile, Error, stamp, Ns_DStringValue(&ds),
+                                (size_t)Ns_DStringLength(&ds));
+            }
+            Ns_DStringFree(&ds);
+            Ns_TclDeAllocateInterp(interp);
+
+            status = (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
+        }
     }
     return status;
 }
