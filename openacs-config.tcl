@@ -124,7 +124,7 @@ ns_section ns/parameters
         # time. These crashes were hard to reproduce, but serializeing
         # interpreter creation helped. Probably it is possible to
         # allow concurrent interpreter create operations in Tcl 8.6.
-        #ns_param        concurrentinterpcreate true   ;default false
+        #ns_param        concurrentinterpcreate true   ;# default: false
 
 	# Enforce sequential thread initialization. This is not really
 	# desirably in general, but might be useful for hunting strange
