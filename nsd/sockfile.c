@@ -411,11 +411,15 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 	       sockPtr->sock);
     } else {
 	/*
-	 * The cork state changes, try to alter the socket options.
+	 * The cork state changes, try to alter the socket options, unless the
+	 * socket is already closed (don't complain in such cases to the
+	 * error.log).
 	 */
 #if defined(TCP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) == 0) {
-            if (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &corkInt, sizeof(corkInt)) == -1) {
+            if ((sockPtr->sock == NS_INVALID_SOCKET)
+                || (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &corkInt, sizeof(corkInt)) == -1)
+                ) {
                 Ns_Log(Error, "socket(%d): setsockopt(TCP_CORK) %d: %s",
                        sockPtr->sock, corkInt, ns_sockstrerror(ns_sockerrno));
             } else {
@@ -425,7 +429,9 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 #endif
 #if defined(UDP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) != 0) {
-            if (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1) {
+            if ((sockPtr->sock == NS_INVALID_SOCKET)
+                || (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1)
+                ) {
                 Ns_Log(Error, "socket(%d): setsockopt(UDP_CORK) %d: %s",
                        sockPtr->sock, corkInt, ns_sockstrerror(ns_sockerrno));
             } else {
