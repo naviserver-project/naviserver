@@ -64,8 +64,8 @@
  [list_end]
 
 [call [cmd  "ns_connchan callback"] \
-	[opt [option "-timeout [arg s]"]] \
-	[opt [option "-receivetimeout [arg s]"]] \
+	[opt [option "-timeout [arg t]"]] \
+	[opt [option "-receivetimeout [arg r]"]] \
 	[opt [option "-sendtimeout [arg s]"]] \
 	[arg channel] \
 	[arg command] \
@@ -90,16 +90,20 @@ as follows:
 [list_end]
 
 [call [cmd  "ns_connchan open"] \
-	[opt [option "-headers [arg s]"]] \
-	[opt [option "-method [arg s]"]] \
-	[opt [option "-timeout [arg s]"]] \
+	[opt [option "-headers [arg h]"]] \
+	[opt [option "-method [arg m]"]] \
+	[opt [option "-timeout [arg t]"]] \
+	[opt [option "-version [arg v]"]] \
 	[arg url] \
 ]
 
-Open a connection channel to the specified URL. The URL might be an
-http or an https URL. [arg headers] refers to a ns_set of request
-header fields, [arg method] is the HTTP method (e.g. GET) and timeout
-is the timeout for establising the connection.
+Open a connection channel to the specified [arg url].
+The URL might be an http or an https URL.
+[option -headers] refers to a [term ns_set] of request header fields,
+[option -method] is the HTTP method (default GET),
+[option -timeout] is the timeout for establising the connection
+(default 1 second), and
+[option -version] specifies the HTTP version (default 1.0)
 
 [call [cmd  "ns_connchan read"] \
 	[arg channel] \

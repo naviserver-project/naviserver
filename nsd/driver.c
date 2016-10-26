@@ -5558,7 +5558,7 @@ AsyncWriterThread(void *arg)
  */
 
 int
-NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
+NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const char *version, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
     char          *protocol, *host, *portString, *path, *tail, *url2;
     int            result = TCL_OK;
@@ -5566,6 +5566,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(version != NULL);
     NS_NONNULL_ASSERT(sockPtrPtr != NULL);
     
     url2 = ns_strdup(url);
@@ -5648,7 +5649,8 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
                     Tcl_DStringAppend(dsPtr, "/", 1);
                 }
                 Tcl_DStringAppend(dsPtr, tail, -1);        
-                Tcl_DStringAppend(dsPtr, " HTTP/1.0", 9);
+                Tcl_DStringAppend(dsPtr, " HTTP/", 6);
+                Tcl_DStringAppend(dsPtr, version, -1);
     
                 reqPtr->request.line = Ns_DStringExport(dsPtr);
                 reqPtr->request.method = ns_strdup(method);

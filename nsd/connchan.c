@@ -83,8 +83,8 @@ static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *s
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static ssize_t DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1);
+static ssize_t DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr, const struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 static Ns_SockProc NsTclConnChanProc;
 
@@ -570,12 +570,20 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
  */
 
 static ssize_t
-DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
+DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
+           const struct iovec *bufs, int nbufs, unsigned int flags,
+           const Ns_Time *timeoutPtr)
 {
-    Ns_Time timeout;
-    ssize_t result;
+    Ns_Time  timeout;
+    ssize_t  result;
+    Sock    *sockPtr;
+    
+    NS_NONNULL_ASSERT(connChanPtr != NULL);
+    NS_NONNULL_ASSERT(timeoutPtr != NULL);
 
-    NS_NONNULL_ASSERT(sockPtr != NULL);
+    sockPtr = connChanPtr->sockPtr;
+    
+    assert(sockPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
 
     if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
@@ -587,10 +595,32 @@ DriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flag
     }
 
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
+        bool timeout = NS_FALSE;
+        
         result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                               timeoutPtr, flags);
+        if (result == -1 && errno == EAGAIN) {
+            /*
+             * Retry, when the socket is writeable
+             */
+            if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                                      timeoutPtr, flags);
+            } else {
+                timeout = NS_TRUE;
+                Ns_TclPrintfResult(interp, "connchan %s: timeout on send operation (%ld:%ld)",
+                                   connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
+                result = -1;
+            }
+        } 
+            
+        if (result == -1 && !timeout) {
+            Ns_TclPrintfResult(interp, "connchan %s: send operation failed: %s",
+                               connChanPtr->channelName, strerror(errno));
+        }
     } else {
-        Ns_Log(Warning, "connchan: no sendProc registered for driver %s", sockPtr->drvPtr->name);
+        Ns_TclPrintfResult(interp, "connchan %s: no sendProc registered for driver %s",
+                           connChanPtr->channelName, sockPtr->drvPtr->name);
         result = -1;
     }
 
@@ -643,7 +673,9 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                                      connPtr->reqPtr->peer,
                                      (connPtr->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE,
                                      connPtr->clientData);
+        Ns_Log(Notice, "ConnChanDetachObjCmd sock %d", connPtr->sockPtr->sock);
         connPtr->sockPtr = NULL;
+
         Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
     }
     return result;
@@ -672,12 +704,14 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     Sock         *sockPtr;
     const Ns_Set *hdrPtr = NULL;
     const char   *method = "GET";
+    const char   *version = "1.0";
     Ns_Time       timeout = {1, 0};
     const Ns_Time*timeoutPtr = &timeout; 
     Ns_ObjvSpec   lopts[] = {
         {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
         {"-method",  Ns_ObjvString, &method, NULL},
         {"-timeout", Ns_ObjvTime,   &timeoutPtr,  NULL},
+        {"-version", Ns_ObjvString, &version, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -692,7 +726,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         NsServer       *servPtr = itPtr->servPtr;
         NsConnChan     *connChanPtr;
 
-        result = NSDriverClientOpen(interp, url, method, timeoutPtr, &sockPtr);
+        result = NSDriverClientOpen(interp, url, method, version, timeoutPtr, &sockPtr);
         if (likely(result == TCL_OK)) {
 
             Ns_Time      now;
@@ -764,14 +798,13 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             buf[3].iov_base = (void *)"\r\n";
             buf[3].iov_len = 2u;
 
-            nSent = DriverSend(connChanPtr->sockPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
+            nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
             Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
 
             if (nSent > -1) {
                 connChanPtr->wBytes += (size_t)nSent;
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
             } else {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(strerror(errno), -1));
                 result = TCL_ERROR;
             }
         }
@@ -1167,7 +1200,7 @@ ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              */
             buf.iov_base = (void *)msgString;
             buf.iov_len = (size_t)msgLen;
-            nSent = DriverSend(connChanPtr->sockPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
+            nSent = DriverSend(interp, connChanPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
 
             if (nSent > -1) {
                 connChanPtr->wBytes += (size_t)nSent;
