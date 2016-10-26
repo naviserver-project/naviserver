@@ -389,6 +389,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
         msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
     }
     pfd.fd = sock;
+    pfd.revents = 0;
     pfd.events = 0;
 
     if ((what & (unsigned int)NS_SOCK_READ) != 0u) {
@@ -401,13 +402,12 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 	pfd.events |= (short)POLLPRI;
     }
 
-    pfd.revents = 0;
     do {
 	n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
     } while (n < 0 && errno == EINTR);
 
-    if (n > 0) {
-        result =  NS_OK;
+    if (likely(n > 0)) {
+        result = NS_OK;
     } else {
         result = NS_TIMEOUT;
     }
