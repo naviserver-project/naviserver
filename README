@@ -1,7 +1,7 @@
 
 Reverse Proxy Module for NaviServer
 ===================================
-Release 0.1
+Release 0.2
 -----------
 
     neumann@wu-wien.ac.at
@@ -14,9 +14,12 @@ backend service.
 
 When the filter procs are registed as "postauth" filters, it is
 possible to use NaviServer (or e.g. OpenACS) as authenticating reverse
-proxy server. It is possible to specify for every registered filter a
-validation callback (to validate access of the service) and a
-exception callback (e.g. for returning tailored error pages).
+proxy server. It is possible to specify for every registered filter
+- a target url,
+- a list of regsub patterns (to e.g. remove certain parts from the current url),
+- a timeout for establishing connections,
+- a validation callback (to validate access of the service), and
+- a exception callback (e.g. for returning tailored error pages).
 
 Both the incoming and upstream connections might be based on http or
 https. The implementation works as well with WebSockets (including
@@ -41,16 +44,16 @@ function for some URLs, like in the following example, where GET and
 POST requests  with /shiny/ are tunneled to some back end service
 (here via https to my.backend.com).
 
-    ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/
-    ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/
+    ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+    ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
 
 The registration might me happening in e.g. an OpenACS context in a
 *-init.tcl file or in the config file of the server:
 
     ns_section "ns/server/${server}/module/revproxy"
        ns_param filters {
-          ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/
-          ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/
+          ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+          ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
        }
 
 
