@@ -104,8 +104,9 @@ test ns_connchan-1.4 {detach connection, return result via "ns_connchan write"} 
     ns_register_proc GET /conn {
 	set handle [ns_connchan detach]
 	set list [ns_connchan list]
-	# ns_connchan is not made for returning in the same connection
-	# thread, bug we can use this for testing.
+	# ns_connchan is not made for writing to the current
+	# connection (like e.g. ns_write) thread, but we can use this
+	# for testing.
 	ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\nHandle = $handle, lengths [llength $list]-[llength [lindex $list 0]]"
 	ns_connchan close $handle
     }
