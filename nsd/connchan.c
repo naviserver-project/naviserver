@@ -83,7 +83,7 @@ static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *s
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static ssize_t DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr, const struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
+static ssize_t DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr, struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 static Ns_SockProc NsTclConnChanProc;
@@ -571,7 +571,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 
 static ssize_t
 DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
-           const struct iovec *bufs, int nbufs, unsigned int flags,
+           struct iovec *bufs, int nbufs, unsigned int flags,
            const Ns_Time *timeoutPtr)
 {
     Ns_Time  timeout;
@@ -595,29 +595,56 @@ DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
     }
 
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
-        bool timeout = NS_FALSE;
-        
-        result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                              timeoutPtr, flags);
-        if (result == -1 && errno == EAGAIN) {
-            /*
-             * Retry, when the socket is writeable
-             */
-            if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                                      timeoutPtr, flags);
-            } else {
-                timeout = NS_TRUE;
-                Ns_TclPrintfResult(interp, "connchan %s: timeout on send operation (%ld:%ld)",
-                                   connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
-                result = -1;
+        bool    timeout = NS_FALSE;
+        ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs);
+
+        do {
+            result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                                  timeoutPtr, flags);
+            if (result == -1 && errno == EAGAIN) {
+                /*
+                 * Retry, when the socket is writeable
+                 */
+                if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                    result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                                          timeoutPtr, flags);
+                } else {
+                    timeout = NS_TRUE;
+                    Ns_TclPrintfResult(interp, "connchan %s: timeout on send operation (%ld:%ld)",
+                                       connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
+                    result = -1;
+                }
+            } 
+
+            if (result != -1) {
+                nSent += result;
+                // fprintf(stderr, "### tosend %ld sent %ld\n", toSend, nSent);
+                if (nSent < toSend) {
+                    fprintf(stderr, "### partial write\n");
+                    /*
+                     * Partial write operation: part of the iovec has
+                     * been sent, we have to retransmit the rest. We
+                     * could advance the nbufs counter, but the only
+                     * case of nbufs > 0 is the sending of the
+                     * headers, which is a one-time operation.
+                     */
+                    Ns_Log(Ns_LogConnchanDebug,
+                           "DriverSend %s: partial write operation, sent %ld instead of %ld bytes",
+                           connChanPtr->channelName, nSent, toSend);
+                    (void) Ns_ResetVec(bufs, nbufs, (size_t)nSent);
+                }
+            } else if (!timeout) {
+                /*
+                 * Timeout is handled above.
+                 */
+                Ns_TclPrintfResult(interp, "connchan %s: send operation failed: %s",
+                                   connChanPtr->channelName, strerror(errno));
             }
-        } 
-            
-        if (result == -1 && !timeout) {
-            Ns_TclPrintfResult(interp, "connchan %s: send operation failed: %s",
-                               connChanPtr->channelName, strerror(errno));
-        }
+
+            /*fprintf(stderr, "### check result %ld == -1 || %ld == %ld (%d && %d) == %d \n",
+                    result, toSend, nSent,
+                    (result != -1), (nSent < toSend), ((result != -1) && (nSent < toSend)));*/
+        } while ((result != -1) && (nSent < toSend));
     } else {
         Ns_TclPrintfResult(interp, "connchan %s: no sendProc registered for driver %s",
                            connChanPtr->channelName, sockPtr->drvPtr->name);
@@ -673,7 +700,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                                      connPtr->reqPtr->peer,
                                      (connPtr->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE,
                                      connPtr->clientData);
-        Ns_Log(Notice, "ConnChanDetachObjCmd sock %d", connPtr->sockPtr->sock);
+        Ns_Log(Ns_LogConnchanDebug, "ConnChanDetachObjCmd sock %d", connPtr->sockPtr->sock);
         connPtr->sockPtr = NULL;
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
