@@ -86,10 +86,11 @@ test ns_connchan-1.3 {detach connection} -setup {
     ns_register_proc GET /conn {
 	set handle [ns_connchan detach]
 	set list [ns_connchan list]
-	ns_connchan close $handle
 	# Since we detach the console and close it manually, we user
 	# nsvs for result communication
 	nsv_set connchan result $handle-[llength $list]-[llength [lindex $list 0]]
+	# finish the connection
+	ns_connchan close $handle
     }
     nsv_unset -nocomplain connchan
 } -body {
