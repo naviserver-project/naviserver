@@ -4,6 +4,11 @@
 #
 
 #
+# Make sure, the testfile runs with an expected locale
+#
+set env(LANG) en_US.UTF-8
+
+#
 # Parameters for test scripts.
 #
 
