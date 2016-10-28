@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.2
+    set version 0.3
     set verbose 0
 
     #
@@ -42,9 +42,7 @@ namespace eval ::revproxy {
 	    #
 	    foreach regsub $regsubs {
 		lassign $regsub from to
-		if {$::revproxy::verbose} {
-		    ns_log notice "PROXY: regsub $from $url $to url"
-		}
+		log notice "regsub $from $url $to url"
 		regsub $from $url $to url
 	    }
 	}
@@ -74,11 +72,9 @@ namespace eval ::revproxy {
 				  -version [ns_conn version] \
 				  $url]
 	    set frontendChan [ns_connchan detach]
-	    if {$::revproxy::verbose} {
-		ns_log notice "PROXY: back $backendChan front $frontendChan method [ns_conn method] version [ns_conn version] $url"
-	    }
+	    log notice "back $backendChan front $frontendChan method [ns_conn method] version 1.0 $url"
 	    
-	    ns_connchan callback $backendChan  [list ::revproxy::spool $backendChan $frontendChan $url 0] rex
+	    ns_connchan callback $backendChan  [list ::revproxy::backendReply $backendChan $frontendChan $url 0] rex
 	    ns_connchan callback $frontendChan [list ::revproxy::spool $frontendChan $backendChan client 0] rex
 	    
 	} errorMsg]} {
@@ -106,7 +102,7 @@ namespace eval ::revproxy {
     nsf::proc spool { from to url arg when } {
 	set msg [ns_connchan read $from]
 	if {$msg eq ""} {
-	    if {$::revproxy::verbose} {ns_log notice "... auto closing $from $url"}
+	    log notice "... auto closing $from $url"
 	    #
 	    # Close our end ...
 	    #
@@ -116,9 +112,8 @@ namespace eval ::revproxy {
 	    #
 	    ns_connchan close $to
 	} else {
-	    if {$::revproxy::verbose} {
-		ns_log notice "PROXY: send [string length $msg] bytes from $from to $to ($url)"
-	    }
+	    log notice "PROXY: send [string length $msg] bytes from $from to $to ($url)"
+	    
 	    ns_connchan write $to $msg
 	    # record $to $msg
 	    set result 1
@@ -127,16 +122,120 @@ namespace eval ::revproxy {
     }
 
     #
-    # Sample exception handler
+    # Handle backend replies in order to be able to post-process the
+    # reply header fields. This is e.g. necessary to downgrade to
+    # HTTP/1.0 requests.
+    #
+    nsf::proc backendReply { from to url arg when } {
+	set msg [ns_connchan read $from]
+	if {$msg eq ""} {
+	    log notice "... auto closing $from $url"
+	    #
+	    # Close our end ...
+	    #
+	    set result 0
+	    #
+	    # ... and close as well the other end.
+	    #
+	    ns_connchan close $to
+	} else {
+	    #
+	    # Receive reply from backend. We assume, that we can
+	    # receive the header of the reply in one sweep, ... which
+	    # seems to be the case on our tested systems.
+	    #
+	    log notice "send [string length $msg] bytes from $from to $to ($url)"
+	    #record $to $msg
+	    
+	    if {[regexp {^([^\n]+)\r\n(.*?)\r\n\r\n(.*)$} $msg . first header body]} {
+		log notice "first <$first> HEAD <$header>"
+		set status [lindex $first 1]
+		#
+		# For most error codes, we want to make sure that the
+		# connection is closed after every request. This is
+		# currently necessary, since for persistent
+		# connections, we can't substitute the request URL
+		# inside the stream without continuous parsing.
+		#
+		# For informational status codes (1xx) there is no
+		# need to close the connection (e.g. WebSockets).
+		#
+		if {$status >= 200} {
+		    #
+		    # Parse the header lines line by line. The current
+		    # code is slightly over-optimistic, since it does
+		    # not handle request header continuation lines.
+		    #
+		    set replyHeaders [ns_set create]
+		    foreach line [split $header \n] {
+			set line [string trimright $line \r]
+			#log notice "[list ns_parseheader $replyHeaders $line]"
+			ns_parseheader $replyHeaders $line preserve
+		    }
+		    
+		    #
+		    # Make sure to close the connection
+		    #
+		    ns_set idelkey $replyHeaders connection
+		    ns_set put $replyHeaders Connection close
+		    
+		    #
+		    # Build the reply
+		    #
+		    set reply $first\r\n
+		    set size [ns_set size $replyHeaders]
+		    for {set i 0} {$i < $size} {incr i} {
+			append reply "[ns_set key $replyHeaders $i]: [ns_set value $replyHeaders $i]\r\n"
+		    }
+		    append reply \r\n$body
+		    ns_connchan write $to $reply
+		    #record $to-rewritten $reply
+		    
+		} else {
+		    #
+		    # e.g. HTTP/1.1 101 Switching Protocols
+		    #
+		    ns_connchan write $to $msg
+		}
+		#
+		# Change the callback to regular spooling for the
+		# future requests.
+		#
+		ns_connchan callback $from [list ::revproxy::spool $from $to $url 0] rex
+		set result 1
+	    } else {
+		log notice "could not parse header <$msg>"
+		set result 0
+	    }
+	}
+	return $result
+    }
+
+    #
+    # Sample exception handler for reporting error messages to the
+    # browser.
     #
     nsf::proc exception { -error -url } {
 	ns_returnerror 503 \
 	    "Error during opening connection to backend [ns_quotehtml $url] failed. \
 	     <br>Error message: [ns_quotehtml $error]"
     }
-
+    
     #
-    # Simple file logger
+    # Simple logger for error log, evaluating the ::revproxy::verbose
+    # variable.
+    #
+    nsf::proc log {severity msg} {
+	if {$::revproxy::verbose} {
+	    ns_log $severity "PROXY: $msg"
+	}
+    }
+    
+    #
+    # Simple recorder for writing content to a file (for
+    # debugging). The files are saved in the tmp directory, under a
+    # folder named by the PID, channel identifier are used as file
+    # names.
     #
     nsf::proc record {chan msg} {
 	file mkdir [ns_config ns/parameters tmpdir]/[ns_info pid]
