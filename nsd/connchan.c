@@ -479,6 +479,8 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
     NS_NONNULL_ASSERT(connChanPtr != NULL);
     NS_NONNULL_ASSERT(script != NULL);
 
+    scriptLength = strlen(script);
+    
     /*
      * If there is already a callback registered, free and cancel
      * it. This has to be done as first step, since Cancel()
@@ -486,12 +488,12 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
      * callbacks registered for the associated socket.
      */
     if (connChanPtr->cbPtr != NULL) {
-        Cancel((Callback *)connChanPtr->cbPtr);
+        // Cancel((Callback *)connChanPtr->cbPtr);
+        //connChanPtr->cbPtr = NULL;
+        cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + (size_t)scriptLength);
+    } else {
+        cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
     }
-    
-    scriptLength = strlen(script);
-
-    cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
     memcpy(cbPtr->script, script, scriptLength + 1u);
     cbPtr->scriptLength = scriptLength;
     cbPtr->when = when;
@@ -502,7 +504,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
                                when | (unsigned int)NS_SOCK_EXIT, 
                                timeoutPtr, &cbPtr->threadName);
     if (result == NS_OK) {
-        assert(connChanPtr->cbPtr == NULL);
+        //assert(connChanPtr->cbPtr == NULL);
         connChanPtr->cbPtr = cbPtr;
     } else {
         Cancel(cbPtr);
@@ -614,13 +616,13 @@ DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
                                        connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
                     result = -1;
                 }
-            } 
+            }
 
             if (result != -1) {
                 nSent += result;
                 // fprintf(stderr, "### tosend %ld sent %ld\n", toSend, nSent);
                 if (nSent < toSend) {
-                    fprintf(stderr, "### partial write\n");
+                    fprintf(stderr, "### partial write wanted %ld sent %ld\n", toSend, result);
                     /*
                      * Partial write operation: part of the iovec has
                      * been sent, we have to retransmit the rest. We
@@ -632,6 +634,7 @@ DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
                            "DriverSend %s: partial write operation, sent %ld instead of %ld bytes",
                            connChanPtr->channelName, nSent, toSend);
                     (void) Ns_ResetVec(bufs, nbufs, (size_t)nSent);
+                    toSend -= result;
                 }
             } else if (!timeout) {
                 /*
