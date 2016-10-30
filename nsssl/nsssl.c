@@ -276,6 +276,11 @@ Ns_ModuleInit(const char *server, const char *module)
                 Ns_Log(Notice, "nsssl: disabling SSLv3");
             }
             if (strstr(value, "!TLSv1") != NULL) {
+                /*
+                 * Currently, we can't deselect v1.1 or v1.2 or 1.3 using
+                 * SSL_OP_NO_TLSv1_1 etc., but just the full "TLSv1" block.
+                 */
+
                 n |= SSL_OP_NO_TLSv1;
                 Ns_Log(Notice, "nsssl: disabling TLSv1");
             }
