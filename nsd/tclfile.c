@@ -258,7 +258,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
 
     } else /*if (objc == 2)*/ {
-	char *buffer = strdup(templateString);
+	char *buffer = ns_strdup(templateString);
 
 	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
     } 
