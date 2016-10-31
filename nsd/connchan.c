@@ -273,22 +273,24 @@ ConnChanFree(NsConnChan *connChanPtr) {
         Ns_Log(Error, "ns_connchan: could not delete hash entry for channel '%s'\n",
                connChanPtr->channelName);
     }
-            
     Ns_MutexUnlock(&servPtr->connchans.lock);
 
-    /*
-     * Free connChanPtr content.
-     */
-    if (connChanPtr->cbPtr != NULL) {
-        Cancel((Callback *)connChanPtr->cbPtr);
-    }
-    ns_free((char *)connChanPtr->channelName);
-    if (connChanPtr->clientData != NULL) {
-        ns_free((char *)connChanPtr->clientData);
-    }
+    if (hPtr != NULL) {
+        /*
+         * Only in cases, where we gound the entry, we can free the
+         * connChanPtr content.
+         */
+        if (connChanPtr->cbPtr != NULL) {
+            Cancel((Callback *)connChanPtr->cbPtr);
+        }
+        ns_free((char *)connChanPtr->channelName);
+        if (connChanPtr->clientData != NULL) {
+            ns_free((char *)connChanPtr->clientData);
+        }
 
-    NsSockClose(connChanPtr->sockPtr, (int)NS_FALSE);
-    ns_free((char *)connChanPtr);
+        NsSockClose(connChanPtr->sockPtr, (int)NS_FALSE);
+        ns_free((char *)connChanPtr);
+    }
 
 }
 
@@ -597,10 +599,14 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
     }
 
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
-        bool    timeout = NS_FALSE;
+        bool    timeout = NS_FALSE, partial = NS_FALSE;
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs);
 
         do {
+            /*Ns_Log(Ns_LogConnchanDebug,"DriverSend %s: try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
+                   connChanPtr->channelName,
+                   bufs->iov_len, (ssize_t)Ns_SumVec(bufs, nbufs));*/
+
             result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                                   timeoutPtr, flags);
             if (result == -1 && errno == EAGAIN) {
@@ -618,9 +624,9 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                 }
             }
 
+            partial = NS_FALSE;
             if (result != -1) {
                 nSent += result;
-                // fprintf(stderr, "### tosend %ld sent %ld\n", toSend, nSent);
                 if (nSent < toSend) {
                     /*
                      * Partial write operation: part of the iovec has
@@ -629,11 +635,12 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                      * case of nbufs > 0 is the sending of the
                      * headers, which is a one-time operation.
                      */
-                    Ns_Log(/*Ns_LogConnchanDebug*/ Notice,
-                           "DriverSend %s: partial write operation, sent %" PRIdz" instead of %" PRIdz " bytes",
+                    Ns_Log(Ns_LogConnchanDebug,
+                           "DriverSend %s: partial write operation, sent %" PRIdz " instead of %" PRIdz " bytes",
                            connChanPtr->channelName, nSent, toSend);
                     (void) Ns_ResetVec(bufs, nbufs, (size_t)nSent);
                     toSend -= result;
+                    partial = NS_TRUE;
                 }
             } else if (!timeout) {
                 /*
@@ -643,10 +650,13 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                                    connChanPtr->channelName, strerror(errno));
             }
 
-            /*fprintf(stderr, "### check result %ld == -1 || %ld == %ld (%d && %d) == %d \n",
-                    result, toSend, nSent,
-                    (result != -1), (nSent < toSend), ((result != -1) && (nSent < toSend)));*/
-        } while ((result != -1) && (nSent < toSend));
+            /*Ns_Log(Notice, "### check result %ld == -1 || %ld == %ld (%d && %d) == %d",
+                   result, toSend, nSent,
+                   (result != -1), (nSent < toSend), ((result != -1) && (nSent < toSend)));*/
+            
+        } while (partial && (result != -1));
+
+        
     } else {
         Ns_TclPrintfResult(interp, "connchan %s: no sendProc registered for driver %s",
                            connChanPtr->channelName, sockPtr->drvPtr->name);
