@@ -510,7 +510,24 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 	 */
 	nsconf.home = getenv("NAVISERVER");
 	if (nsconf.home == NULL) {
-	    nsconf.home = MakePath("");
+            /*
+             * There is no such environment variable. Try, if we can get the
+             * home from the binary. In such cases, we expect to find
+             * "bin/init.tcl" under home.
+             */
+            const char *path = MakePath("bin/init.tcl");
+            if (path != NULL) {
+                /*
+                 * Yep, we found it, use its parent directory.
+                 */
+                nsconf.home =  MakePath("");
+            } else {
+                /*
+                 * Desparate fallback. Use the name of the configured install
+                 * directory.
+                 */
+                nsconf.home = NS_NAVISERVER;
+            }
 	}
     }
     nsconf.home = SetCwd(nsconf.home);
