@@ -35,7 +35,7 @@
 
 AC_PREREQ([2.68])
 
-AC_INIT([NaviServer],[4.99.14d1],[naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer],[4.99.14d2],[naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 #AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
