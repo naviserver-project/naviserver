@@ -174,8 +174,8 @@ ns_param        keepalivemaxdownloadsize 1000000 ;# 0, don't allow keep-alive fo
 # Spooling Threads
 #
 #ns_param       spoolerthreads	1	;# default: 0; number of upload spooler threads
-#ns_param       maxupload	0       ;# default: 0, when specified, spool uploads larger than this value to a temp file
-#ns_param       writerthreads	1	;# default: 0, number of writer threads
+ns_param       maxupload	1000000 ;# default: 0, when specified, spool uploads larger than this value to a temp file
+ns_param       writerthreads	1	;# default: 0, number of writer threads
 #ns_param       writersize	1048576	;# default: 1024*1024, use writer threads for files larger than this value
 #ns_param       writerbufsize	8192	;# default: 8192, buffer size for writer threads
 
