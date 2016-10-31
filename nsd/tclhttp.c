@@ -736,7 +736,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		     && length >= httpPtr->spoolLimit
 		     ) || (int)contentSize >= httpPtr->spoolLimit
 		    ) {
-		    int fd;
+		    int   fd;
                     char *spoolFileName;
                     
 		    /*
