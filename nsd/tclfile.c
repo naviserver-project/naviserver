@@ -261,48 +261,6 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 	char *buffer = ns_strdup(templateString);
 
 	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
-    } 
-
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclTmpNamObjCmd --
- *
- *  Implements ns_tmpnam as obj command.
- *
- *  The fallback definition of L_tmpnam was removed in Tcl on
- *  2015-07-15, so we add it here locally, since this is the only
- *  usage
- *
- * Results:
- *  Tcl result.
- *
- * Side effects:
- *  See docs.
- *
- *----------------------------------------------------------------------
- */
-#ifndef L_tmpnam
-# define L_tmpnam	100
-#endif
-
-int
-NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* objv)
-{
-    char buf[L_tmpnam];
-    int  result = TCL_OK;
-
-    Ns_LogDeprecated(objv, 1, "ns_mktemp ?template?", NULL);
-
-    if (tmpnam(buf) == NULL) {
-        Tcl_SetResult(interp, "could not get temporary filename", TCL_STATIC);
-        result = TCL_ERROR;
-    } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     }
 
     return result;

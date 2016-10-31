@@ -418,6 +418,17 @@ proc ns_sha2 args {
     uplevel [list ns_crypto::md string -digest sha$length $message]
 }
 
+#
+# ns_tmpnam --
+#
+#   return a name of a temporary file
+#   use "::ns_mktemp" instead
+#
+proc ns_tmpnam {} {
+    ns_deprecated "ns_mktemp"
+    return [ns_mktemp]
+}
+
 
 # EOF
 

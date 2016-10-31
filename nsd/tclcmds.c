@@ -145,7 +145,6 @@ static const Cmd basicCmds[] = {
     {"ns_symlink",               NULL, NsTclSymlinkObjCmd},
     {"ns_thread",                NULL, NsTclThreadObjCmd},
     {"ns_time",                  NULL, NsTclTimeObjCmd},
-    {"ns_tmpnam",                NULL, NsTclTmpNamObjCmd},
     {"ns_truncate",              NULL, NsTclTruncateObjCmd},
     {"ns_unschedule_proc",       NULL, NsTclUnscheduleObjCmd},
     {"ns_urldecode",             NULL, NsTclUrlDecodeObjCmd},
