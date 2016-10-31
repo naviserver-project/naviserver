@@ -1754,7 +1754,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             char *valueString = Tcl_GetString(objv[2]);
             
             if (strcmp(valueString, "unlimited") == 0) {
-                value = RLIM_INFINITY;
+                value = (Tcl_WideInt)RLIM_INFINITY;
                 result = TCL_OK;
             }
         }
