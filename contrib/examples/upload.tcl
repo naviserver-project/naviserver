@@ -6,6 +6,9 @@
 # Command to perform
 set cmd [ns_queryget cmd]
 
+# Name of current server
+set server [ns_info server]
+
 # In case of very large files and if server set maxupload limit, this
 # will return temporary file name where all content is spooled
 set file [ns_conn contentfile]
@@ -42,22 +45,20 @@ switch -- $cmd {
   form {
      ns_return 200 text/html {
 
-     <FORM ACTION=upload.tcl METHOD=POST ENCTYPE=multipart/form-data>
-     <INPUT TYPE=HIDDEN NAME=cmd VALUE=upload>
+     <form action="upload.tcl" method="post" enctype="multipart/form-data">
+     <input type="hidden" name="cmd" value="upload">
 
-     File: <INPUT TYPE=FILE NAME=file>
+     File: <input type="file" name="file">
 
-     <INPUT TYPE=BUTTON VALUE=Submit onClick="parent.setTimeout('progress()',2000);this.form.submit();">
-     </FORM>
+     <input type="button" value="Submit" onClick="parent.setTimeout('progress()',2000);this.form.submit();">
+     </form>
      }
   }
 
   default {
+      ns_return 200 text/html [subst {
 
-     ns_return 200 text/html {
-
-     <SCRIPT>
-
+     <script>
      function progress()
      {
         var now = new Date();
@@ -75,41 +76,45 @@ switch -- $cmd {
           setTimeout('progress()',1000);
         }
      }
-     </SCRIPT>
+     </script>
 
-     <HEAD><TITLE>Upload Test</TITLE></HEAD>   
+     <head><title>Upload Test</title></head>   
 
-     <BODY>
+     <body>
 
-     Upload test page with progress statistics<P>
+     <h2>Upload test page with progress statistics</h2>
 
-     <UL>
-     <LI>To make test file:<P>
-         dd if=/dev/zero of=test.dat count=500000<P>
+     <ul>
+     <li>To make test file:
+     <pre>
+     dd if=/dev/zero of=test.dat count=500000
+     </pre>
+     <li>Adjust parameters to enable statistics and big uploads in the used <br>
+     configuration file (<code>[ns_info config]</code>) like the following if necessary:
+     <pre>
+     ns_section ns/parameters
+     ns_param progressminsize   [expr 1024*1024]     ;# configured value: [ns_config ns/parameters progressminsize]; show progress for files larger than this value
 
-     <LI>In nsd.tcl adjust parameters to enable statistics and big uploads<P>
+     ns_section ns/server/$server/adp
+     ns_param enabletclpages  true          ;# configured value: [ns_config ns/server/$server/adp enabletclpages]
 
-         ns_section ns/parameters<BR>
-         ns_param progressminsize   [expr 1024*1024]<P>
-
-         ns_section ns/server/servername/adp<BR>
-         ns_param enabletclpages  true
-
-         ns_section ns/server/servername/module/nssock<BR>
-         ns_param maxinput       3000000000<BR>
-         ns_param maxupload       700000000<BR>
-         ns_param spoolerthreads  1<BR>
-     </UL>
-     <P>
-     <TABLE WIDTH=100% BGCOLOR=#EEEEEE BORDER=0>
-     <TR><TD>
-         <IFRAME NAME=Form SRC=upload.tcl?cmd=form BORDER=0 FRAMEBORDER=0 WIDTH=100% HEIGHT=100></IFRAME>
-         </TD>
-         <TD WIDTH=50% BGCOLOR=#FFFFFF ID=Progress></TD>
-     </TR>
-     </TABLE>
-     </BODY>
+     ns_section ns/server/$server/module/nssock
+     ns_param maxinput       1000000000     ;# configured value: [ns_config ns/server/$server/module/nssock maxinput]; max accepted size of upload
+     ns_param maxupload       700000000     ;# configured value: [ns_config ns/server/$server/module/nssock maxupload]; spool files larger than this to disk
+     ns_param spoolerthreads          1     ;# configured value: [ns_config ns/server/$server/module/nssock spoolerthreads]; number of spooler threads
+     </pre>
+     </ul>
+     <p>
+     <table width="100%" bgcolor="#eeeeee" border="0">
+     <tr><td>
+         <iframe name="form" src="upload.tcl?cmd=form" border="0" frameborder="0" width="100%" height="100"></iframe>
+         </td>
+         <td width="50%" bgcolor="#ffffff" id="progress"></td>
+     </tr>
+     </table>
+     Back to <a href='.'>example page</a>.<br>
+     </body>
      
-     }
+     }]
   }
 }

@@ -17,8 +17,7 @@
      of completion during the upload.
 
 <li> <a href="writer.tcl">Writer</A> page with example how writer threads can be used
-     to return huge files. It shows all files that are in <%=[ns_info home]%>/modules/movies
-     directory.
+     to return huge files. 
 
 </ul>
 </body>
