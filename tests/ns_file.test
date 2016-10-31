@@ -1,0 +1,19 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_mktemp-1.0 {call without argument} -body {
+    set t [ns_mktemp]
+    return [list [file exists $t] [file readable $t]  [file isdirectory $t]]
+} -result {0 0 0}
+
+test ns_mktemp-1.1 {call with argument} -body {
+    set t [ns_mktemp [ns_config ns/parameters tmpdir]/ns-XXXXXX]
+    return [list [file exists $t] [file readable $t]  [file isdirectory $t]]
+} -result {0 0 0}
+
+
+cleanupTests
