@@ -234,7 +234,7 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *      Tcl result.
  *
  * Side effects:
- *      Allocates memory for the filename as a TCL_VOLATILE object.
+ *      Allocates potentially memory for the filename.
  *
  *----------------------------------------------------------------------
  */
@@ -1012,7 +1012,7 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
      * during the Tcl_UnregisterChannel().
      */
 
-    Tcl_RegisterChannel((Tcl_Interp *) NULL, chan);
+    Tcl_RegisterChannel(NULL, chan);
     (void) Tcl_UnregisterChannel(interp, chan);
 
     Tcl_CutChannel(chan);
