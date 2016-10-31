@@ -83,7 +83,7 @@ static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *s
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static ssize_t DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr, struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
+static ssize_t DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr, struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 static Ns_SockProc NsTclConnChanProc;
@@ -572,7 +572,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
  */
 
 static ssize_t
-DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
+DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
            struct iovec *bufs, int nbufs, unsigned int flags,
            const Ns_Time *timeoutPtr)
 {
@@ -622,7 +622,6 @@ DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
                 nSent += result;
                 // fprintf(stderr, "### tosend %ld sent %ld\n", toSend, nSent);
                 if (nSent < toSend) {
-                    fprintf(stderr, "### partial write wanted %ld sent %ld\n", toSend, result);
                     /*
                      * Partial write operation: part of the iovec has
                      * been sent, we have to retransmit the rest. We
@@ -630,8 +629,8 @@ DriverSend(Tcl_Interp *interp, NsConnChan *connChanPtr,
                      * case of nbufs > 0 is the sending of the
                      * headers, which is a one-time operation.
                      */
-                    Ns_Log(Ns_LogConnchanDebug,
-                           "DriverSend %s: partial write operation, sent %ld instead of %ld bytes",
+                    Ns_Log(/*Ns_LogConnchanDebug*/ Notice,
+                           "DriverSend %s: partial write operation, sent %" PRIdz" instead of %" PRIdz " bytes",
                            connChanPtr->channelName, nSent, toSend);
                     (void) Ns_ResetVec(bufs, nbufs, (size_t)nSent);
                     toSend -= result;
