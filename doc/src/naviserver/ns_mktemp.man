@@ -5,15 +5,17 @@
 
 [titledesc {Make a unique temporary file name}]
 
-[description]
-This command is a wrapper around the mktemp(3) function in the C standard library. 
-
+[description] This command is a wrapper around the mktemp(3) function
+in the C standard library.  This function generates a unique temporary
+filename from an optional template.  
+       
 [para]
-Note that some implementations of mktemp are not so safe - it creates
-predictable/only a small number of variations - please consult your 
-system's man pages if this might be an issue to you. NaviServer could
-potentially be improved to use mkstemp instead, but that command
-creates a file as well, so this is not fully compatible.
+Note that some implementations of mktemp are not safe (creating
+predictable/only a small number of variations) against attacks and
+race condidtions - please consult your 
+system's man pages if this might be an issue to you. In order to create
+temp files, the Tcl command [term "file tempfile"] should be used
+(introduced in Tcl 8.6), which is safe against race conditions.
 
 [section {COMMANDS}]
 
@@ -23,11 +25,11 @@ creates a file as well, so this is not fully compatible.
 
 [para]
 
-This command takes a optionally a template as argument, which is a
-string whose last six characters must be XXXXXX, and returns a new
-string where those are replaced with random characters such as to make
-the string a unique file name. It is commonly used to safely create
-temporary files.
+This command generates a unique temporary filename using optionally a
+template as argument, which is a string whose last six characters must
+be XXXXXX, and returns a new string where those are replaced with
+random characters such as to make the string a unique file name. It is
+commonly used to create temporary file names. 
 
 [para]
 If this command is called without the optional parameter it behaves
@@ -35,6 +37,7 @@ like
 [example_begin]
    ns_mktemp [lb]ns_config ns/parameters tmpdir[rb]/ns-XXXXXX
 [example_end]
+
 
 [list_end]
 
@@ -48,7 +51,6 @@ like
 
 
 [keywords tmp tmpfile]
-
 
 [manpage_end]
 
