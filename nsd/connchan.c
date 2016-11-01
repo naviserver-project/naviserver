@@ -62,7 +62,7 @@ typedef struct Callback {
  * Local functions defined in this file
  */
 
-static void Cancel(Callback *cbPtr)
+static void CancelCallback(NsConnChan *connChanPtr)
     NS_GNUC_NONNULL(1);
 
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
@@ -123,16 +123,13 @@ static Ns_SockProc CallbackFree;
 
 static bool CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
     bool result;
-        
+
     if (why != (unsigned int)NS_SOCK_CANCEL) {
         Ns_Log(Warning, "connchan: callback free operation called with unexpected reason code %u", why);
         result = NS_FALSE;
         
     } else {
         Callback *cbPtr = arg;
-
-        cbPtr->connChanPtr->cbPtr = NULL;
-        cbPtr->connChanPtr = NULL;
 
         ns_free(cbPtr);
         result = NS_TRUE;
@@ -145,7 +142,7 @@ static bool CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
 /*
  *----------------------------------------------------------------------
  *
- * Cancel --
+ * CancelCallback --
  *
  *    Register socket callback cancel operation for unregistering the
  *    socket callback.
@@ -160,12 +157,12 @@ static bool CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
  */
 
 static void
-Cancel(Callback *cbPtr)
+CancelCallback(NsConnChan *connChanPtr)
 {
-    NS_NONNULL_ASSERT(cbPtr != NULL);
-    NS_NONNULL_ASSERT(cbPtr->connChanPtr != NULL);
+    NS_NONNULL_ASSERT(connChanPtr != NULL);
+    NS_NONNULL_ASSERT(connChanPtr->cbPtr != NULL);
 
-    (void)Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, CallbackFree, cbPtr, NULL);    
+    (void)Ns_SockCancelCallbackEx(connChanPtr->sockPtr->sock, CallbackFree, connChanPtr->cbPtr, NULL);    
 }
 
 
@@ -270,18 +267,34 @@ ConnChanFree(NsConnChan *connChanPtr) {
     if (hPtr != NULL) {
         Tcl_DeleteHashEntry(hPtr);
     } else {
-        Ns_Log(Error, "ns_connchan: could not delete hash entry for channel '%s'\n",
+        Ns_Log(Error, "ns_connchan: could not delete hash entry for channel '%s'",
                connChanPtr->channelName);
     }
     Ns_MutexUnlock(&servPtr->connchans.lock);
 
+
     if (hPtr != NULL) {
         /*
-         * Only in cases, where we gound the entry, we can free the
+         * Only in cases, where we found the entry, we can free the
          * connChanPtr content.
          */
         if (connChanPtr->cbPtr != NULL) {
-            Cancel((Callback *)connChanPtr->cbPtr);
+            /*
+             * Add CancelCallback() to the sock callback queue.
+             */
+            CancelCallback(connChanPtr);
+            /*
+             * There might be a race condition, when a previously
+             * registered callback is currently active (or going to be
+             * processed). So make sure, it won't access a stale
+             * connChanPtr member.
+             */
+            connChanPtr->cbPtr->connChanPtr = NULL;
+            /*
+             * The cancel callback takes care about freeing the
+             * actual callback.
+             */
+            connChanPtr->cbPtr = NULL;
         }
         ns_free((char *)connChanPtr->channelName);
         if (connChanPtr->clientData != NULL) {
@@ -290,6 +303,9 @@ ConnChanFree(NsConnChan *connChanPtr) {
 
         NsSockClose(connChanPtr->sockPtr, (int)NS_FALSE);
         ns_free((char *)connChanPtr);
+    } else {
+        Ns_Log(Bug, "ns_connchan: could not delete hash entry for channel '%s'",
+               connChanPtr->channelName);
     }
 
 }
@@ -367,7 +383,7 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
         /*
          * Safety belt.
          */
-        Ns_Log(Warning, "NsTclConnChanProc called on a probably deleted callback %p", (void*)cbPtr);
+        Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc called on a probably deleted callback %p", (void*)cbPtr);
         success = NS_FALSE;
         
     } else {
@@ -379,7 +395,6 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
     
         assert(cbPtr->connChanPtr != NULL);
         assert(cbPtr->connChanPtr->sockPtr != NULL);
-        assert(cbPtr->connChanPtr->sockPtr->servPtr != NULL);
 
         if (why == (unsigned int)NS_SOCK_EXIT) {
             /*
@@ -397,6 +412,7 @@ NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
             /*
              * In all remaining cases, the Tcl callback is executed.
              */
+            assert(cbPtr->connChanPtr->sockPtr->servPtr != NULL);
             
             Tcl_DStringInit(&script);
             Tcl_DStringAppend(&script, cbPtr->script, (int)cbPtr->scriptLength);
@@ -485,13 +501,11 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
     
     /*
      * If there is already a callback registered, free and cancel
-     * it. This has to be done as first step, since Cancel()
+     * it. This has to be done as first step, since CancelCallback()
      * calls finally Ns_SockCancelCallbackEx(), which deletes all
      * callbacks registered for the associated socket.
      */
     if (connChanPtr->cbPtr != NULL) {
-        // Cancel((Callback *)connChanPtr->cbPtr);
-        //connChanPtr->cbPtr = NULL;
         cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + (size_t)scriptLength);
     } else {
         cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
@@ -506,10 +520,14 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
                                when | (unsigned int)NS_SOCK_EXIT, 
                                timeoutPtr, &cbPtr->threadName);
     if (result == NS_OK) {
-        //assert(connChanPtr->cbPtr == NULL);
         connChanPtr->cbPtr = cbPtr;
     } else {
-        Cancel(cbPtr);
+        /*
+         * The callback could not be registered, maybe the socket is
+         * not valid anymore. Free the callback.
+         */
+        (void) CallbackFree(connChanPtr->sockPtr->sock, cbPtr, (unsigned int)NS_SOCK_CANCEL);
+        connChanPtr->cbPtr = NULL;
     } 
     return result;
 }
