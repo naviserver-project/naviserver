@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.3
+    set version 0.4
     set verbose 0
 
     #
@@ -100,23 +100,40 @@ namespace eval ::revproxy {
     # automatically closed.
     #
     nsf::proc spool { from to url arg when } {
-	set msg [ns_connchan read $from]
-	if {$msg eq ""} {
-	    log notice "... auto closing $from $url"
-	    #
-	    # Close our end ...
-	    #
-	    set result 0
-	    #
-	    # ... and close as well the other end.
-	    #
-	    ns_connchan close $to
+	#log notice "spool from $from ([ns_connchan exists $from]) to $to ([ns_connchan exists $to]): $when"
+	if {[ns_connchan exists $from]} {
+	    set msg [ns_connchan read $from]
+	    if {$msg eq ""} {
+		log notice "... auto closing $from manual $to: $url "
+		#
+		# Close our end ...
+		#
+		set result 0
+		#
+		# ... and close as well the other end.
+		#
+		if {[ns_connchan exists $to]} {
+		    ns_connchan close $to
+		}
+	    } else {
+		log notice "spool: send [string length $msg] bytes from $from to $to ($url)"
+		
+		if {[catch {ns_connchan write $to $msg} errorMsg]} {
+		    #
+		    # A "broken pipe" erro might happen easily, when
+		    # the transfer is aborted by the client. Do't
+		    # complain about it.
+		    #
+		    if {![string match "*Broken pipe*" $errorMsg]} {
+			ns_log error $errorMsg
+		    }
+		}
+		# record $to $msg
+		set result 1
+	    }
 	} else {
-	    log notice "PROXY: send [string length $msg] bytes from $from to $to ($url)"
-	    
-	    ns_connchan write $to $msg
-	    # record $to $msg
-	    set result 1
+	    log notice "... called on closed channel $from reason $when"
+	    set result 0
 	}
 	return $result
     }
@@ -129,7 +146,7 @@ namespace eval ::revproxy {
     nsf::proc backendReply { from to url arg when } {
 	set msg [ns_connchan read $from]
 	if {$msg eq ""} {
-	    log notice "... auto closing $from $url"
+	    log notice "backendReply: ... auto closing $from $url"
 	    #
 	    # Close our end ...
 	    #
@@ -144,11 +161,11 @@ namespace eval ::revproxy {
 	    # receive the header of the reply in one sweep, ... which
 	    # seems to be the case on our tested systems.
 	    #
-	    log notice "send [string length $msg] bytes from $from to $to ($url)"
+	    log notice "backendReply: send [string length $msg] bytes from $from to $to ($url)"
 	    #record $to $msg
 	    
 	    if {[regexp {^([^\n]+)\r\n(.*?)\r\n\r\n(.*)$} $msg . first header body]} {
-		log notice "first <$first> HEAD <$header>"
+		log notice "backendReply: first <$first> HEAD <$header>"
 		set status [lindex $first 1]
 		#
 		# For most error codes, we want to make sure that the
@@ -169,7 +186,7 @@ namespace eval ::revproxy {
 		    set replyHeaders [ns_set create]
 		    foreach line [split $header \n] {
 			set line [string trimright $line \r]
-			#log notice "[list ns_parseheader $replyHeaders $line]"
+			#log notice "backendReply: [list ns_parseheader $replyHeaders $line]"
 			ns_parseheader $replyHeaders $line preserve
 		    }
 		    
@@ -187,6 +204,7 @@ namespace eval ::revproxy {
 		    for {set i 0} {$i < $size} {incr i} {
 			append reply "[ns_set key $replyHeaders $i]: [ns_set value $replyHeaders $i]\r\n"
 		    }
+		    log notice "backendReply: <$reply>"
 		    append reply \r\n$body
 		    ns_connchan write $to $reply
 		    #record $to-rewritten $reply
@@ -204,7 +222,7 @@ namespace eval ::revproxy {
 		ns_connchan callback $from [list ::revproxy::spool $from $to $url 0] rex
 		set result 1
 	    } else {
-		log notice "could not parse header <$msg>"
+		log notice "backendReply: could not parse header <$msg>"
 		set result 0
 	    }
 	}
