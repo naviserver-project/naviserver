@@ -361,15 +361,21 @@ SockCallbackThread(void *UNUSED(arg))
         while (cbPtr != NULL) {
             nextPtr = cbPtr->nextPtr;
             if ((cbPtr->when & (unsigned int)NS_SOCK_CANCEL) != 0u) {
+                /*
+                 * We have a cancel callback. Find active callback in
+                 * hash table and remove it.
+                 */
 		hPtr = Tcl_FindHashEntry(&activeCallbacks, NSSOCK2PTR(cbPtr->sock));
                 if (hPtr != NULL) {
                     ns_free(Tcl_GetHashValue(hPtr));
                     Tcl_DeleteHashEntry(hPtr);
                 }
+                /*
+                 * If there is a callback proc, execute it.
+                 */
                 if (cbPtr->proc != NULL) {
                     /*
-                     * Call Ns_SockProc to notify about cancel. For the
-                     * time being, ignore boolean result.
+                     * For the time being, ignore boolean result.
                      */
                     (void) (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_CANCEL);
                 }
