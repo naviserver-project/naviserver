@@ -27,7 +27,7 @@ append data \
     "to the client using asynchronous I/O. One writer thread can serve<br>" \
     "many clients concurrently with little resource consumptions.<br>" \
     "By using writer threads, connections thread are used for only short<br>" \
-    "time periods. Furthermore, this helps agains slow read attacks.<p>"
+    "time periods. Furthermore, this helps against slow read attacks.<p>"
 
 set writerthreads [ns_config ns/server/$server/module/nssock writerthreads]
 append data \
