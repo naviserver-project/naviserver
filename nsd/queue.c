@@ -1565,10 +1565,15 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
         }
     }
 
+    Ns_ConnTimeStats(conn);
+
     if ((status == NS_OK) || (status == NS_FILTER_RETURN)) {
         status = NsRunFilters(conn, NS_FILTER_TRACE);
         if (status == NS_OK) {
             (void) NsRunFilters(conn, NS_FILTER_VOID_TRACE);
+            /*
+             * Run Server traces (e.g. writing access log entries)
+             */
             NsRunTraces(conn);
         }
     }
@@ -1601,7 +1606,6 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
 
     (void) Ns_ConnClose(conn);
 
-    Ns_ConnTimeStats(conn);
     connPtr->reqPtr = NULL;
 
     /*

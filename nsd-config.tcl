@@ -154,6 +154,9 @@ ns_param        rollonsignal        false    ;# default: false; perform roll on 
 ns_param        rollhour            0        ;# default: 0; specify at which hour to roll
 ns_param        maxbackup           7        ;# default: 10; max number of backup log files
 #ns_param       rollfmt		    %Y-%m-%d-%H:%M	;# format appendend to log file name
+#ns_param       logpartialtimes     true     ;# default: false
+#ns_param	logreqtime	    true     ;# default: false; include time to service the request
+
 
 ns_section     "ns/server/default/module/nssock"
 ns_param        port                 $port

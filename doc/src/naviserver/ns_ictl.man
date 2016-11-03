@@ -107,7 +107,7 @@ has been modified in a way that cannot be safely cleaned up, such as by the
 TclPro debugger.
 
 
-[call [cmd "ns_ictl runtraces"] ]
+[call [cmd "ns_ictl runtraces"] [arg tracewhen] ]
 Run the scripts of the specified trace.
 
 [call [cmd "ns_ictl save"] [arg script] ]
