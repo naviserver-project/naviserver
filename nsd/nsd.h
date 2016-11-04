@@ -615,6 +615,7 @@ typedef struct Conn {
     Ns_Time requestQueueTime;    /* time stamp, when the request was queued */
     Ns_Time requestDequeueTime;  /* time stamp, when the request was dequeued */
     Ns_Time filterDoneTime;      /* time stamp, after filters */
+    Ns_Time runDoneTime;         /* time stamp, after running main connection task */
 
     Ns_Time acceptTimeSpan;
     Ns_Time queueTimeSpan;
@@ -747,10 +748,11 @@ typedef struct ConnPool {
         unsigned long queued;
         unsigned long processed;
         unsigned long connthreads;
-        Ns_Time acceptTime;
-        Ns_Time queueTime;
-        Ns_Time filterTime;
-        Ns_Time runTime;
+        Ns_Time acceptTime;          /* cumulated accept times */
+        Ns_Time queueTime;           /* cumulated queue times */
+        Ns_Time filterTime;          /* cumulated file times */
+        Ns_Time runTime;             /* cumulated run times */
+        Ns_Time traceTime;           /* cumulated trace times */
     } stats;
 
 } ConnPool;
@@ -1487,6 +1489,12 @@ NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
  * conn.c
  */
 NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void NsConnTimeStatsFinalize(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 /*

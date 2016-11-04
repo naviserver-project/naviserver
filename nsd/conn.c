@@ -990,7 +990,7 @@ Ns_ConnTimeSpans(const Ns_Conn *conn,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnTimeStats --
+ * NsConnTimeStatsUpdate --
  *
  *      Compute for a given connection various time spans such as
  *      acceptTimeSpan, queueTimeSpan, filterTimeSpan and
@@ -999,24 +999,62 @@ Ns_ConnTimeSpans(const Ns_Conn *conn,
  *         acceptTimeSpan = queueTime - acceptTime 
  *         queueTimeSpan  = dequeueTime - queueTime
  *         filterTimeSpan = filterDoneTime - dequeueTime
- *         runTimeSpan    = now - filterDoneTime
+ *         runTimeSpan    = runDoneTime - filterDoneTime
+ *
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Update time span values in connPtr
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsConnTimeStatsUpdate(Ns_Conn *conn) {
+    Conn     *connPtr;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    connPtr = (Conn *) conn;
+    
+    Ns_GetTime(&connPtr->runDoneTime);
+
+    (void)Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
+    (void)Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   &connPtr->queueTimeSpan);
+    (void)Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &connPtr->filterTimeSpan);
+    (void)Ns_DiffTime(&connPtr->runDoneTime,        &connPtr->filterDoneTime,     &connPtr->runTimeSpan);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConnTimeStatsFinalize --
+ *
+ *      Record the time after running the connection main task and the end of
+ *      the processing of this task called traceTimeSpan. This value is
+ *      calculated as follows:
+ *      
+ *         traceTimeSpan  = now - runDoneTime
  *
  *      In addition, this function updates the statistics and should
  *      be called only once per request.
  *
  * Results:
- *      none
+ *      None.
  *
  * Side effects:
- *      update statistics
+ *      Update statistics.
  *
  *----------------------------------------------------------------------
  */
 void
-Ns_ConnTimeStats(Ns_Conn *conn) {
+NsConnTimeStatsFinalize(Ns_Conn *conn) {
     Conn     *connPtr;
     ConnPool *poolPtr;
-    Ns_Time   now;
+    Ns_Time   now, diffTimeSpan;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -1026,16 +1064,14 @@ Ns_ConnTimeStats(Ns_Conn *conn) {
     
     Ns_GetTime(&now);
 
-    (void)Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
-    (void)Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   &connPtr->queueTimeSpan);
-    (void)Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &connPtr->filterTimeSpan);
-    (void)Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &connPtr->runTimeSpan);
+    (void)Ns_DiffTime(&now, &connPtr->runDoneTime, &diffTimeSpan);
 
     Ns_MutexLock(&poolPtr->threads.lock);
     Ns_IncrTime(&poolPtr->stats.acceptTime, connPtr->acceptTimeSpan.sec, connPtr->acceptTimeSpan.usec);
     Ns_IncrTime(&poolPtr->stats.queueTime,  connPtr->queueTimeSpan.sec,  connPtr->queueTimeSpan.usec);
     Ns_IncrTime(&poolPtr->stats.filterTime, connPtr->filterTimeSpan.sec, connPtr->filterTimeSpan.usec);
     Ns_IncrTime(&poolPtr->stats.runTime,    connPtr->runTimeSpan.sec,    connPtr->runTimeSpan.usec);
+    Ns_IncrTime(&poolPtr->stats.traceTime,  diffTimeSpan.sec,            diffTimeSpan.usec);
     Ns_MutexUnlock(&poolPtr->threads.lock);
 }
 

@@ -102,7 +102,7 @@ test ns_server-2.4.2 {basic operation} -body {
 test ns_server-2.5 {basic operation} -body {
     array set stats [ns_server stats]
     array size stats
-} -match exact -result 8
+} -match exact -result 9
 
 test ns_server-2.6 {basic operation} -body {
     array set threads [ns_server threads]

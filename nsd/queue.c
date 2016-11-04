@@ -759,6 +759,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Ns_DStringAppend(dsPtr, " runtime ");
 	Ns_DStringAppendTime(dsPtr, &poolPtr->stats.runTime);
 
+        Ns_DStringAppend(dsPtr, " tracetime ");
+	Ns_DStringAppendTime(dsPtr, &poolPtr->stats.traceTime);
+
         Tcl_DStringResult(interp, dsPtr);
         break;
 
@@ -1565,7 +1568,10 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
         }
     }
 
-    Ns_ConnTimeStats(conn);
+    /*
+     * Update runtime statistics to make these usable for traces (e.g. access log).
+     */
+    NsConnTimeStatsUpdate(conn);
 
     if ((status == NS_OK) || (status == NS_FILTER_RETURN)) {
         status = NsRunFilters(conn, NS_FILTER_TRACE);
@@ -1647,6 +1653,8 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
         ns_free(connPtr->clientData);
         connPtr->clientData = NULL;
     }
+
+    NsConnTimeStatsFinalize(conn);
 
 }
 
