@@ -196,7 +196,7 @@ NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 NS_EXTERN Ns_Set *Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
+NS_EXTERN Ns_ReturnCode Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg) 
