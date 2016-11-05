@@ -576,7 +576,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
             }
             ePtr->nextqueue = mktime(tp);
             if (ePtr->nextqueue <= *nowPtr) {
-                tp->tm_mday += (ePtr->flags & NS_SCHED_WEEKLY) != 0u ? 7 : 1;
+                tp->tm_mday += ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) ? 7 : 1;
                 ePtr->nextqueue = mktime(tp);
             }
         } else {
