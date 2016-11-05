@@ -1199,53 +1199,56 @@ TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key)
 int
 TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj **listObjPtrPtr)
 {
-    const keylIntObj_t *keylIntPtr;
-    int                 result = TCL_OK;
+    int result = TCL_OK;
 
     if (Tcl_ConvertToType(interp, keylPtr, &keyedListType) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    keylIntPtr = (keylIntObj_t *) keylPtr->internalRep.otherValuePtr;
+        result = TCL_ERROR;
 
-    /*
-     * If key is not NULL or empty, then recurse down until we go past
-     * the end of all of the elements of the key.
-     */
-    if ((key != NULL) && (key[0] != '\0')) {
-        const char *nextSubKey;
-        int         findIdx = FindKeyedListEntry(keylIntPtr, key, NULL, &nextSubKey);
-        
-        if (findIdx < 0) {
-            assert(keylIntPtr->arraySize >= keylIntPtr->numEntries);
-            result = TCL_BREAK;
-        } else {
-            assert(keylIntPtr->arraySize >= keylIntPtr->numEntries);
-            result = TclX_KeyedListGetKeys(interp, 
-                                           keylIntPtr->entries[findIdx].valuePtr,
-                                           nextSubKey,
-                                           listObjPtrPtr);
-        }
     } else {
-        /*
-         * Reached the end of the full key, return all keys at this level.
-         */
-        int      idx;
-        Tcl_Obj *listObjPtr = Tcl_NewListObj(0, NULL);
-        
-        for (idx = 0; idx < keylIntPtr->numEntries; idx++) {
-            Tcl_Obj  *nameObjPtr = Tcl_NewStringObj(keylIntPtr->entries[idx].key, -1);
+        const keylIntObj_t *keylIntPtr;
+            
+        keylIntPtr = (keylIntObj_t *) keylPtr->internalRep.otherValuePtr;
 
-            if (Tcl_ListObjAppendElement(interp, listObjPtr,
-                                         nameObjPtr) != TCL_OK) {
-                Tcl_DecrRefCount(nameObjPtr);
-                Tcl_DecrRefCount(listObjPtr);
-                result = TCL_ERROR;
-                break;
+        /*
+         * If key is not NULL or empty, then recurse down until we go past
+         * the end of all of the elements of the key.
+         */
+        if ((key != NULL) && (key[0] != '\0')) {
+            const char *nextSubKey;
+            int         findIdx = FindKeyedListEntry(keylIntPtr, key, NULL, &nextSubKey);
+        
+            if (findIdx < 0) {
+                assert(keylIntPtr->arraySize >= keylIntPtr->numEntries);
+                result = TCL_BREAK;
+            } else {
+                assert(keylIntPtr->arraySize >= keylIntPtr->numEntries);
+                result = TclX_KeyedListGetKeys(interp, 
+                                               keylIntPtr->entries[findIdx].valuePtr,
+                                               nextSubKey,
+                                               listObjPtrPtr);
             }
-        }
-        if (result == TCL_OK) {
-            *listObjPtrPtr = listObjPtr;
-            assert(keylIntPtr->arraySize >= keylIntPtr->numEntries);
+        } else {
+            /*
+             * Reached the end of the full key, return all keys at this level.
+             */
+            int      idx;
+            Tcl_Obj *listObjPtr = Tcl_NewListObj(0, NULL);
+        
+            for (idx = 0u; idx < keylIntPtr->numEntries; idx++) {
+                Tcl_Obj  *nameObjPtr = Tcl_NewStringObj(keylIntPtr->entries[idx].key, -1);
+
+                if (Tcl_ListObjAppendElement(interp, listObjPtr,
+                                             nameObjPtr) != TCL_OK) {
+                    Tcl_DecrRefCount(nameObjPtr);
+                    Tcl_DecrRefCount(listObjPtr);
+                    result = TCL_ERROR;
+                    break;
+                }
+            }
+            if (result == TCL_OK) {
+                *listObjPtrPtr = listObjPtr;
+                assert(keylIntPtr->arraySize >= keylIntPtr->numEntries);
+            }
         }
     }
     return result;

@@ -100,6 +100,7 @@ Ns_Set *
 Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 {
     Ns_Set *row;
+    bool    success = NS_TRUE;
 
     NS_NONNULL_ASSERT(handle != NULL);
     NS_NONNULL_ASSERT(sql != NULL);
@@ -125,10 +126,13 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 		    /* FALLTHROUGH */
 
 		default:
-		    return NULL;
+		    success = NS_FALSE;
+                    break;
 	    }
         }
-        row = Ns_SetCopy(row);
+        if (success) {
+            row = Ns_SetCopy(row);
+        }
     }
 
     return row;

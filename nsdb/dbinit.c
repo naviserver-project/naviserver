@@ -1220,97 +1220,102 @@ static Pool  *
 CreatePool(const char *pool, const char *path, const char *driver)
 {
     Pool            *poolPtr;
-    Handle          *handlePtr;
     struct DbDriver *driverPtr;
-    int              i;
-    const char	    *source, *minDurationString;
 
     NS_NONNULL_ASSERT(pool != NULL);
     NS_NONNULL_ASSERT(path != NULL);
 
     if (driver == NULL) {
 	Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);
-	return NULL;
+        driverPtr = NULL;
+    } else {
+        driverPtr = NsDbLoadDriver(driver);
     }
-    driverPtr = NsDbLoadDriver(driver);
+
     if (driverPtr == NULL) {
-	return NULL;
-    }
-    /*
-     * Load the configured values.
-     */
-    source = Ns_ConfigGetValue(path, "datasource");
-    if (source == NULL) {
-	Ns_Log(Error, "dbinit: missing datasource for pool '%s'", pool);
-	return NULL;
-    }
-    /*
-     * Allocate Pool structure and initialize its members
-     */
-    poolPtr = ns_calloc(1u, sizeof(Pool));
-    poolPtr->driver = driver;
-    poolPtr->driverPtr = driverPtr;
-    Ns_MutexInit(&poolPtr->lock);
-    Ns_MutexSetName2(&poolPtr->lock, "nsdb", pool);
-    Ns_CondInit(&poolPtr->waitCond);
-    Ns_CondInit(&poolPtr->getCond);
-    poolPtr->source = source;
-    poolPtr->name = pool;
-    poolPtr->user = Ns_ConfigGetValue(path, "user");
-    poolPtr->pass = Ns_ConfigGetValue(path, "password");
-    poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
-    poolPtr->stale_on_close = 0;
-    poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
-    poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
-    poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
-    poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
-    minDurationString = Ns_ConfigGetValue(path, "logminduration");
-    if (minDurationString != NULL) {
-        if (Ns_GetTimeFromString(NULL, minDurationString, &poolPtr->minDuration) != TCL_OK) {
-            Ns_Log(Error, "dbinit: invalid LogMinDuration '%s' specified", minDurationString);
-        } else {
-            Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s over %s to %" PRIu64 ".%06ld",
-                   pool, minDurationString,
-                   (int64_t)poolPtr->minDuration.sec,
-                   poolPtr->minDuration.usec);
+        poolPtr = NULL;
+        
+    } else {
+        int          i;
+        const char  *source, *minDurationString;
+
+        /*
+         * Load the configured values.
+         */
+        source = Ns_ConfigGetValue(path, "datasource");
+        if (source == NULL) {
+            Ns_Log(Error, "dbinit: missing datasource for pool '%s'", pool);
+            return NULL;
         }
+        /*
+         * Allocate Pool structure and initialize its members
+         */
+        poolPtr = ns_calloc(1u, sizeof(Pool));
+        poolPtr->driver = driver;
+        poolPtr->driverPtr = driverPtr;
+        Ns_MutexInit(&poolPtr->lock);
+        Ns_MutexSetName2(&poolPtr->lock, "nsdb", pool);
+        Ns_CondInit(&poolPtr->waitCond);
+        Ns_CondInit(&poolPtr->getCond);
+        poolPtr->source = source;
+        poolPtr->name = pool;
+        poolPtr->user = Ns_ConfigGetValue(path, "user");
+        poolPtr->pass = Ns_ConfigGetValue(path, "password");
+        poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
+        poolPtr->stale_on_close = 0;
+        poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
+        poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
+        poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
+        poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
+        minDurationString = Ns_ConfigGetValue(path, "logminduration");
+        if (minDurationString != NULL) {
+            if (Ns_GetTimeFromString(NULL, minDurationString, &poolPtr->minDuration) != TCL_OK) {
+                Ns_Log(Error, "dbinit: invalid LogMinDuration '%s' specified", minDurationString);
+            } else {
+                Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s over %s to %" PRIu64 ".%06ld",
+                       pool, minDurationString,
+                       (int64_t)poolPtr->minDuration.sec,
+                       poolPtr->minDuration.usec);
+            }
+        }
+
+        /*
+         * Allocate the handles in the pool
+         */
+        poolPtr->firstPtr = poolPtr->lastPtr = NULL;
+        for (i = 0; i < poolPtr->nhandles; ++i) {
+            Handle *handlePtr = ns_malloc(sizeof(Handle));
+            
+            Ns_DStringInit(&handlePtr->dsExceptionMsg);
+            handlePtr->poolPtr = poolPtr;
+            handlePtr->connection = NULL;
+            handlePtr->connected = NS_FALSE;
+            handlePtr->fetchingRows = 0;
+            handlePtr->row = Ns_SetCreate(NULL);
+            handlePtr->cExceptionCode[0] = '\0';
+            handlePtr->otime = handlePtr->atime = 0;
+            handlePtr->stale = NS_FALSE;
+            handlePtr->stale_on_close = 0;
+
+            /*
+             * The following elements of the Handle structure could be
+             * obtained by dereferencing the poolPtr.  They're only needed
+             * to maintain the original Ns_DbHandle structure definition
+             * which was designed to allow handles outside of pools, a
+             * feature no longer supported.
+             */
+
+            handlePtr->driver = driver;
+            handlePtr->datasource = poolPtr->source;
+            handlePtr->user = poolPtr->user;
+            handlePtr->password = poolPtr->pass;
+            handlePtr->verbose = NS_FALSE;
+            handlePtr->poolname = pool;
+            ReturnHandle(handlePtr);
+        }
+        (void) Ns_ScheduleProc(CheckPool, poolPtr, 0,
+                               Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
     }
-
-    /*
-     * Allocate the handles in the pool
-     */
-    poolPtr->firstPtr = poolPtr->lastPtr = NULL;
-    for (i = 0; i < poolPtr->nhandles; ++i) {
-    	handlePtr = ns_malloc(sizeof(Handle));
-    	Ns_DStringInit(&handlePtr->dsExceptionMsg);
-    	handlePtr->poolPtr = poolPtr;
-    	handlePtr->connection = NULL;
-    	handlePtr->connected = NS_FALSE;
-    	handlePtr->fetchingRows = 0;
-    	handlePtr->row = Ns_SetCreate(NULL);
-    	handlePtr->cExceptionCode[0] = '\0';
-    	handlePtr->otime = handlePtr->atime = 0;
-    	handlePtr->stale = NS_FALSE;
-    	handlePtr->stale_on_close = 0;
-
-	/*
-	 * The following elements of the Handle structure could be
-	 * obtained by dereferencing the poolPtr.  They're only needed
-	 * to maintain the original Ns_DbHandle structure definition
-	 * which was designed to allow handles outside of pools, a
-	 * feature no longer supported.
-	 */
-
-	handlePtr->driver = driver;
-	handlePtr->datasource = poolPtr->source;
-	handlePtr->user = poolPtr->user;
-	handlePtr->password = poolPtr->pass;
-	handlePtr->verbose = NS_FALSE;
-	handlePtr->poolname = pool;
-	ReturnHandle(handlePtr);
-    }
-    (void) Ns_ScheduleProc(CheckPool, poolPtr, 0,
-			   Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
     return poolPtr;
 }
 
