@@ -62,7 +62,7 @@ typedef struct Callback {
  * Local functions defined in this file
  */
 
-static void CancelCallback(NsConnChan *connChanPtr)
+static void CancelCallback(const NsConnChan *connChanPtr)
     NS_GNUC_NONNULL(1);
 
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
@@ -157,7 +157,7 @@ static bool CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
  */
 
 static void
-CancelCallback(NsConnChan *connChanPtr)
+CancelCallback(const NsConnChan *connChanPtr)
 {
     NS_NONNULL_ASSERT(connChanPtr != NULL);
     NS_NONNULL_ASSERT(connChanPtr->cbPtr != NULL);
