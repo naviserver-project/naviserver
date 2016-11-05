@@ -228,7 +228,15 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclMkTempObjCmd --
  *
- *      Implements ns_mktemp.
+ *      Implements ns_mktemp. The function generates a unique
+ *      temporary filename using optionally a template as argument.
+ *
+ *      In general, the function mktemp() is not recommended, since
+ *      there is a time gap between the generation of a file name and
+ *      the generation of a file or directory with the * name. This
+ *      can result in race conditions or * attacks. however, using the
+ *      finction is still better than * home-brewed solutions for the
+ *      same task.
  *
  * Results:
  *      Tcl result.
