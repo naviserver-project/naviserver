@@ -124,19 +124,20 @@ NsInitThreads(void)
  */
 
 void
-Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stack,
+Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize,
     	    	Ns_Thread *resultPtr)
 {
     Thread     *thrPtr;
     size_t      nameLength;
-    ssize_t     stackSize;
     const char *name;
 
     NS_NONNULL_ASSERT(proc != NULL);
 
     Ns_MasterLock();
 
-    stackSize = (stack < 0) ? (ssize_t)defstacksize : stack;
+    if (stackSize < 0) {
+        stackSize = (ssize_t)defstacksize;
+    }
 
     /*
      * Allocate a new thread structure and update values
