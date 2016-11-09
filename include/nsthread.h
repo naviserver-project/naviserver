@@ -397,19 +397,26 @@ typedef struct DIR_ *DIR;
 # endif
 
 #if defined(__APPLE__) || defined(__darwin__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-/* The *BSD family seem to requires these access macros */
 # ifndef s6_addr16
 #  define s6_addr16 __u6_addr.__u6_addr16
 # endif
 # ifndef s6_addr32
 #  define s6_addr32 __u6_addr.__u6_addr32
 # endif
+# define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
 # define NS_INITGROUPS_GID_T int
 # define NS_MSG_IOVLEN_T int
 #else
+# if defined(__sun)
+#  define S6_ADDR16(x) ((uint16_t*)((char*)&(x).s6_addr))
+#  ifndef s6_addr32
+#   define s6_addr32 _S6_un._S6_u32
+#  endif
+# else
+#  define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
+# endif
 # define NS_INITGROUPS_GID_T gid_t
 # define NS_MSG_IOVLEN_T size_t
-
 #endif
 
 # ifdef __OpenBSD__

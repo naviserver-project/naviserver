@@ -135,10 +135,10 @@ ns_inet_ntoa(struct sockaddr *saPtr)
         struct in6_addr addr = (((struct sockaddr_in6 *)saPtr)->sin6_addr);
 # ifndef _WIN32        
         sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
-                ntohs(addr.s6_addr16[0]), ntohs(addr.s6_addr16[1]),
-                ntohs(addr.s6_addr16[2]), ntohs(addr.s6_addr16[3]),
-                ntohs(addr.s6_addr16[4]), ntohs(addr.s6_addr16[5]),
-                ntohs(addr.s6_addr16[6]), ntohs(addr.s6_addr16[7]));
+                ntohs(S6_ADDR16(addr)[0]), ntohs(S6_ADDR16(addr)[1]),
+                ntohs(S6_ADDR16(addr)[2]), ntohs(S6_ADDR16(addr)[3]),
+                ntohs(S6_ADDR16(addr)[4]), ntohs(S6_ADDR16(addr)[5]),
+                ntohs(S6_ADDR16(addr)[6]), ntohs(S6_ADDR16(addr)[7]));
 # else
         sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                 ntohs(addr.u.Word[0]), ntohs(addr.u.Word[1]),
