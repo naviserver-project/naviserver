@@ -53,7 +53,7 @@ all:
 help:
 	@echo 'Commonly used make targets:'
 	@echo '  all          - build program and documentation'
-	@echo '  install      - install program and man pages to PREFIX ($(PREFIX))'
+	@echo '  install      - install program and man pages under $(NAVISERVER)'
 	@echo '  test         - run all tests in the automatic test suite'
 	@echo '  gdbtest      - run all tests, under the control of the debugger'
 	@echo '  runtest      - start the server in interactive command mode'
