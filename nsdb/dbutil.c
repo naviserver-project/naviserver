@@ -127,6 +127,7 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 
 		default:
 		    success = NS_FALSE;
+                    row = NULL;
                     break;
 	    }
         }
