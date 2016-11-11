@@ -41,7 +41,6 @@ test ns_urlspace-2.1 {flat set/get/unset/list} -setup {
 	[ns_urlspace list]
 } -cleanup {
     set v [expr {[info exists _] ? "<$_>" : "NO _"}]
-    ns_log notice "urlspace-2.1 [info exists _] -> $v"
     unset -nocomplain _
 } -result {foo 1 0 {} {}}
 
