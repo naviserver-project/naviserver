@@ -134,9 +134,17 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc
-	$(CP) doc/html/* $(DESTDIR)$(NAVISERVER)/pages/doc
-	$(CP) contrib/banners/*.png $(DESTDIR)$(NAVISERVER)/pages/doc
+	@if [ -d doc/html ]; then \
+		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc ; \
+		$(CP) doc/html/* $(DESTDIR)$(NAVISERVER)/pages/doc ; \
+		$(CP) contrib/banners/*.png $(DESTDIR)$(NAVISERVER)/pages/doc ; \
+		echo "\nThe documentation is installed under: $(DESTDIR)$(NAVISERVER)/pages/doc" ; \
+	else \
+		echo "\nNo documentation is installed locally; either generate the documentation with" ; \
+		echo "   make build-doc"; \
+		echo "(which requires tcllib to be installed, such that dtplite can be used for the generation)" ; \
+		echo "or use the online documentation from http://naviserver.sourceforge.net/n/toc.html" ; \
+	fi;
 
 install-examples:
 	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/examples
