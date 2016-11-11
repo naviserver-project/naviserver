@@ -1,4 +1,159 @@
 =======================================
+NaviServer 4.99.14, released 2016-11-XX
+=======================================
+
+ 66 files changed, 2391 insertions(+), 1327 deletions(-)
+
+New Features:
+
+  * Added statistics for "trace times": i.e. the time spent in a
+    connection thread after the main request was executed, for running
+    post filters, server traces (e.g. writing access.log) and
+    cleanups.  The statistic results are included in [ns_server
+    stats].
+
+  * Improved compatibility with FreeBSD and OminOS (Solaris).
+  
+  * Added module "revproxy" for implementing a reverse proxy based
+    on ns_connchan (working as well for proxying WebSockets).
+  
+Performance Improvements:
+
+  * Added new config flag "concurrentinterpcreate" to "ns/parameters"
+    to allow optionally concurrent creations of Tcl interpreters.
+    Concurrent creations of tcl interpreters were a problem with Tcl
+    8.5, but seems to work with Tcl 8.6. Per default, this feature is
+    turned off.
+    
+  * Don't update interp in "ns_ictl cleanup", when no defer callbacks
+    were executed.
+
+Bug Fixes:
+
+  * ns_connchan improvements:
+    - Handle potential race condition between ns_connchan and socket
+      callbacks during shutdown
+    - Make sure, channel is writable before we are writing to it
+    - Add support for partial write operations ("ns_connchan write"
+      and "ns_connchan open")
+    - Provide more detailed error messages
+    - Allow callback changes without invoking socket-shutdown
+      machinery
+
+  * Make sure, the tests are running with expected locale and
+    encoding (fixed a problem on FreeBSD)
+  
+  * Fix bug #77 (potential crash during ns_mktemp, strdup()
+    vs. ns_strdup(), introduced in 4.99.13, reported by
+    Patrick Heissenberger)
+
+  * Collect statistics before traces are run (i.e. before
+    access.log is written); this fixes a bug reported by
+    David Osborne.
+    
+  * In HTTP client requests, don't start urls with "//" under certain
+    conditions
+  
+  * Keep internally convention, that stored request lines do not end
+    with crlf to avoid unneeded tests
+    
+  * Don't "roll away" log file from stderr, when nsd was started with
+    "-c" or "-f" flags
+  
+  * Don't complain about uncorking, when user has already closed the
+    connection
+
+  * Make windows variant of ns_mkstemp() more compatible with unix/mac
+    (remove _O_TEMPORARY flag)
+  
+  * Use datatype "int" for parameters passed with Ns_ObjvBool (rather
+    than bool, which causes invalid values on gcc 4.8.4 (Ubuntu
+    4.8.4-2ubuntu1~14.04.3))
+
+  * Fix several bugs in keylist
+
+Documentation improvements:
+
+  * doc/src/naviserver/ns_connchan.man:
+    - Added documentation for "ns_connchan open"
+    - Clarified format in which timeouts can be specified
+    - document new flags
+
+  * doc/src/manual/admin-tuning.man:
+   - Added documentation of "ns/parameter" option "concurrentinterpcreate"
+   
+  * doc/src/manual/admin-maintenance.man:
+   - Added section with sample configuration for systemd
+
+  * doc/src/naviserver/ns_mktemp.man:
+    - Improved function, explain deprecation state of c-library function,
+
+  * General overhaul of the contrib/example scripts
+    contrib/examples/index.adp, contrib/examples/upload.tcl,
+    contrib/examples/writer.tcl
+
+  * Various small documentation improvements.
+  
+  * Improved sample config files.
+
+
+Tcl API Changes:
+  * ns_connchan:
+    Added flag "-version" to "ns_connchan open" to specify
+    HTTP version (default 1.0)
+
+C API Changes:
+
+Incompatible API Changes:
+
+Configuration Changes:
+  * Improved output of "make help"
+  
+  * Don't throw error message, when doing an install from a bitbucket
+    checkout and no documentation was generated locally.
+
+Command Line Changes:
+  * improve usefulness of "nsd -c": in case the environment variable
+    NAVISERVER is not set, and bin/init.tcl is not found under the
+    running binary, fall-back to the configured install directory as
+    "home".
+
+
+Code Changes:
+ * Extended regression test
+ * Keylists:
+   - Added new testset for keylists
+   - fixed several bugs
+   - use naviserver memory management
+   - prefer Tcl_Objs over string based interface
+   
+ * Improved source code documentation
+
+ * Turn ns_tmpnam into a proc and get rid of call to deprecated C
+   library function tmpnam()
+
+ * Added preprocessor variable NS_NAVISERVER to point to the
+   configured install directory (can be used as last resort to find
+   configuration data when started e.g. with "nsd -c").
+
+ * C-Code cleanup:
+   * Improved type cleanness on gcc 4.8.4 (Ubuntu) and
+     under gcc7.
+     
+   * Aligned function prototype with definition
+     (Ns_DbInterpretSqlFile(), Ns_ThreadCreate(),
+     Ns_ThreadStackSize(), caused complaints under Solaris)
+     
+   * Introduce macros for IPv6 support under Solaris, since
+     it does not define s6_addr16 members)
+     
+   * Reduced number of return statement before end of function.
+   * Reduced number of gotos.
+   * Reduced variable scopes.
+
+
+
+=======================================
 NaviServer 4.99.13, released 2016-10-15
 =======================================
 
