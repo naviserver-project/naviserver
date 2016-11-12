@@ -161,7 +161,6 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_HashEntry *hPtr;
     int            isNew;
     Ns_ReturnCode  result;
-    /*char *path;*/
 
     NS_NONNULL_ASSERT(module != NULL);
 
@@ -188,7 +187,6 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     servPtr = ns_malloc(sizeof(Server));
     servPtr->server = server;
-    /*path = Ns_ConfigGetPath(server, module, NULL);*/
     Tcl_InitHashTable(&servPtr->users, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
