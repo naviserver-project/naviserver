@@ -556,7 +556,7 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
     Ns_ReturnCode         status = NS_OK;
     const Ns_TclCallback *cbPtr = arg;
 
-    if (unlikely(Ns_TclEvalCallback(NULL, cbPtr, dsPtr, url, NULL) != TCL_OK)) {
+    if (unlikely(Ns_TclEvalCallback(NULL, cbPtr, dsPtr, url, (char *)0) != TCL_OK)) {
         status = NS_ERROR;
     }
     return status;
