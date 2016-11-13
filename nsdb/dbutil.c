@@ -100,7 +100,6 @@ Ns_Set *
 Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 {
     Ns_Set *row;
-    bool    success = NS_TRUE;
 
     NS_NONNULL_ASSERT(handle != NULL);
     NS_NONNULL_ASSERT(sql != NULL);
@@ -108,6 +107,8 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
 
     row = Ns_DbSelect(handle, sql);
     if (row != NULL) {
+        bool success = NS_TRUE;
+            
         if (Ns_DbGetRow(handle, row) == NS_END_DATA) {
             *nrows = 0;
         } else {
