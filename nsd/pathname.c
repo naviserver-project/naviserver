@@ -362,7 +362,7 @@ Ns_LibPath(Ns_DString *dsPtr, ...)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "lib", NULL);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "lib", (char *)0);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
     va_end(ap);
@@ -397,7 +397,7 @@ Ns_BinPath(Ns_DString *dsPtr, ...)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "bin", NULL);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "bin", (char *)0);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
     va_end(ap);
@@ -430,7 +430,7 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), (char *)0);
     va_start(ap, dsPtr);
     path = MakePath(dsPtr, &ap);
     va_end(ap);
@@ -466,7 +466,7 @@ Ns_HomePathExists(const char *path, ...)
     NS_NONNULL_ASSERT(path != NULL);
 
     Ns_DStringInit(&ds);
-    Ns_MakePath(&ds, Ns_InfoHomePath(), path, NULL);
+    Ns_MakePath(&ds, Ns_InfoHomePath(), path, (char *)0);
 
     va_start(ap, path);
     MakePath(&ds, &ap);
@@ -594,12 +594,12 @@ Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), NULL);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), (char *)0);
     if (server != NULL) {
-       Ns_MakePath(dsPtr, "servers", server, NULL);
+       Ns_MakePath(dsPtr, "servers", server, (char *)0);
     }
     if (module != NULL) {
-       Ns_MakePath(dsPtr, "modules", module, NULL);
+       Ns_MakePath(dsPtr, "modules", module, (char *)0);
     }
     va_start(ap, module);
     path = MakePath(dsPtr, &ap);
@@ -671,7 +671,7 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
         path = Ns_DStringAppend(dsPtr, servPtr->fastpath.pagedir);
     } else {
 	(void) ServerRoot(dsPtr, servPtr, host);
-        path = Ns_MakePath(dsPtr, servPtr->fastpath.pagedir, NULL);
+        path = Ns_MakePath(dsPtr, servPtr->fastpath.pagedir, (char *)0);
     }
 
     return path;
@@ -758,7 +758,7 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
          */
         Ns_ModulePath(&ds, Tcl_GetString(objv[1]), module, (char *)0);
         for (i = 3; i < objc; ++i) {
-            Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);
+            Ns_MakePath(&ds, Tcl_GetString(objv[i]), (char *)0);
         }
         Tcl_DStringResult(interp, &ds);
     }
@@ -839,7 +839,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
                 (void) ServerRoot(&ds, servPtr, host);
             }
             for (i = objc - npaths; i < objc; ++i) {
-                Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);
+                Ns_MakePath(&ds, Tcl_GetString(objv[i]), (char *)0);
             }
             Tcl_DStringResult(interp, &ds);
         }
@@ -1054,7 +1054,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
          */
 
         path = Ns_MakePath(dest, servPtr->fastpath.serverdir,
-                           servPtr->vhost.hostprefix, NULL);
+                           servPtr->vhost.hostprefix, (char *)0);
         if (servPtr->vhost.hosthashlevel > 0) {
             Ns_HashPath(dest, safehost, servPtr->vhost.hosthashlevel);
         }
@@ -1068,7 +1068,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
          */
 
     defpath:
-        path = Ns_MakePath(dest, servPtr->fastpath.serverdir, NULL);
+        path = Ns_MakePath(dest, servPtr->fastpath.serverdir, (char *)0);
     }
 
     return path;

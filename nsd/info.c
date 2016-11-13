@@ -830,7 +830,7 @@ NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
-        Ns_MakePath(&ds, lib, moduleString, NULL);
+        Ns_MakePath(&ds, lib, moduleString, (char *)0);
         Tcl_DStringResult(interp, &ds);
     }
     return result;

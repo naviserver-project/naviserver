@@ -150,7 +150,7 @@ ConfigServerFastpath(const char *server)
         servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
     } else {
         (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,
-                          servPtr->fastpath.pagedir, NULL);
+                          servPtr->fastpath.pagedir, (char *)0);
         servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
 
@@ -768,7 +768,7 @@ FastGetRestart(Ns_Conn *conn, const char *page)
     NS_NONNULL_ASSERT(page != NULL);
 
     Ns_DStringInit(&ds);
-    status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request.url, page, NULL));
+    status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request.url, page, (char *)0));
     Ns_DStringFree(&ds);
 
     return status;

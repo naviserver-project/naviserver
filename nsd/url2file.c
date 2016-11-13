@@ -205,7 +205,7 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
     if (NsPageRoot(dsPtr, servPtr, NULL) == NULL) {
         status = NS_ERROR;
     } else {
-        (void) Ns_MakePath(dsPtr, url, NULL);
+        (void) Ns_MakePath(dsPtr, url, (char *)0);
     }
 
     return status;
@@ -591,7 +591,7 @@ NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
         ++u; ++url;
     }
     if (Ns_PathIsAbsolute(mPtr->basepath)) {
-        Ns_MakePath(dsPtr, mPtr->basepath, url, NULL);
+        Ns_MakePath(dsPtr, mPtr->basepath, url, (char *)0);
     } else if (Ns_PagePath(dsPtr, mPtr->server, mPtr->basepath, url, NULL) == NULL) {
         status = NS_ERROR;
     }
