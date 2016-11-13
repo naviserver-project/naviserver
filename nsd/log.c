@@ -408,9 +408,9 @@ NsConfigLog(void)
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0)) {
-            Ns_HomePath(&ds, "logs", file, NULL);
+            Ns_HomePath(&ds, "logs", file, (char *)0);
         } else {
-            Ns_HomePath(&ds, file, NULL);
+            Ns_HomePath(&ds, file, (char *)0);
         }
         file = Ns_DStringExport(&ds);
 	Ns_SetUpdate(set, "serverlog", file);

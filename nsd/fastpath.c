@@ -141,7 +141,7 @@ ConfigServerFastpath(const char *server)
 
     servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
     if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
-        (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
+        (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     }
 

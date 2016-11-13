@@ -121,7 +121,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
 
     Ns_DStringInit(&ds);
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
-        file = Ns_HomePath(&ds, "bin", file, NULL);
+        file = Ns_HomePath(&ds, "bin", file, (char *)0);
     }
     pathObj = Tcl_NewStringObj(file, -1);
 

@@ -132,9 +132,9 @@ GetFile(void)
 
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0)) {
-	    (void) Ns_HomePath(&ds, "logs/nsd.pid", NULL);
+	    (void) Ns_HomePath(&ds, "logs/nsd.pid", (char *)0);
         } else {
-            (void) Ns_HomePath(&ds, "nsd.pid", NULL);
+            (void) Ns_HomePath(&ds, "nsd.pid", (char *)0);
         }
         path = Tcl_NewStringObj(ds.string, ds.length);
 

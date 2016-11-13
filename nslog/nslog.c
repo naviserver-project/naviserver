@@ -158,7 +158,7 @@ Ns_ModuleInit(const char *server, const char *module)
          */
 
         if (Ns_HomePathExists("logs", (char *)0)) {
-            (void) Ns_HomePath(&ds, "logs", "/", file, NULL);
+            (void) Ns_HomePath(&ds, "logs", "/", file, (char *)0);
         } else {
             Tcl_Obj *dirpath;
 	    int rc;
@@ -441,7 +441,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             Ns_DStringInit(&ds);
             strarg = Tcl_GetString(objv[2]);
             if (Ns_PathIsAbsolute(strarg) == NS_FALSE) {
-                Ns_HomePath(&ds, strarg, NULL);
+                Ns_HomePath(&ds, strarg, (char *)0);
                 strarg = ds.string;
             }
             Ns_MutexLock(&logPtr->lock);
