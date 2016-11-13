@@ -851,7 +851,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         result = TCL_ERROR;
     } else {
         const InterpData *idataPtr = clientData;
-        const char *section = Ns_ConfigGetPath(idataPtr->server, NULL, "db", NULL);
+        const char *section = Ns_ConfigGetPath(idataPtr->server, NULL, "db", (char *)0);
         
         Tcl_SetObjResult(interp, Tcl_NewStringObj(section, -1));
     }

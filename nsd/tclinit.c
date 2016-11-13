@@ -241,7 +241,7 @@ ConfigServerTcl(const char *server)
     servPtr = NsGetServer(server);
     assert(servPtr != NULL);
 
-    path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
+    path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0);
     set = Ns_ConfigCreateSection(path);
 
     Ns_DStringInit(&ds);

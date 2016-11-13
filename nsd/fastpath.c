@@ -106,7 +106,7 @@ NsConfigFastpath()
 {
     const char *path;
 
-    path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", NULL);
+    path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", (char *)0);
     useMmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
     useGzip = Ns_ConfigBool(path, "gzip_static", NS_FALSE);
     useGzipRefresh = Ns_ConfigBool(path, "gzip_refresh", NS_FALSE);
@@ -130,7 +130,7 @@ ConfigServerFastpath(const char *server)
     Ns_DString  ds;
     const char *path, *p;
 
-    path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
+    path = Ns_ConfigGetPath(server, NULL, "fastpath", (char *)0);
     Ns_DStringInit(&ds);
 
     p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");

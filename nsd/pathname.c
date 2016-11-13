@@ -89,7 +89,7 @@ ConfigServerVhost(const char *server)
 
     NS_NONNULL_ASSERT(server != NULL);
 
-    path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
+    path = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0);
 
     servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
     if (servPtr->vhost.enabled

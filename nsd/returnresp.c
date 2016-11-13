@@ -82,7 +82,7 @@ ConfigServerRedirects(const char *server)
 
     Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
 
-    path = Ns_ConfigGetPath(server, NULL, "redirects", NULL);
+    path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0);
     set = Ns_ConfigGetSection(path);
 
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {

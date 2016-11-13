@@ -614,7 +614,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         assert(defserver != NULL);
 
         defMapPtr = NULL;
-        path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
+        path = Ns_ConfigGetPath(NULL, module, "servers", (char *)0);
         lset  = Ns_ConfigGetSection(path);
         Ns_DStringInit(dsPtr);
         for (j = 0u; lset != NULL && j < Ns_SetSize(lset); ++j) {
