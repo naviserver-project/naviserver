@@ -225,7 +225,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), NULL);
+    Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), (char *)0);
     if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders,
                       &logPtr->extheaders) != TCL_OK) {
         Ns_Log(Error, "nslog: invalid %s/extendedHeaders parameter: '%s'",
@@ -610,9 +610,9 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote != 0) {
-            Ns_DStringVarAppend(dsPtr, " - \"", user, "\" ", NULL);
+            Ns_DStringVarAppend(dsPtr, " - \"", user, "\" ", (char *)0);
         } else {
-            Ns_DStringVarAppend(dsPtr, " - ", user, " ", NULL);
+            Ns_DStringVarAppend(dsPtr, " - ", user, " ", (char *)0);
         }
     }
 

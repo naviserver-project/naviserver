@@ -629,7 +629,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                 if (n == 0) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
-                    (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, NULL);
+                    (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
                     mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
                     mapPtr->servPtr  = servPtr;
                     memcpy(mapPtr->location, ds.string, (size_t)ds.length + 1u);

@@ -895,7 +895,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
 
 	Ns_DStringInit(&args);
 	Ns_DStringVarAppend(&args, paramname, " ", paramtype, " ", inout, " ",
-			    value, NULL);
+			    value, (char *)0);
 	status = (*driverPtr->spsetparamProc)(handle, args.string);
 	Ns_DStringFree(&args);
     }

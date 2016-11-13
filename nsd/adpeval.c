@@ -1262,7 +1262,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
             result = TCL_ERROR;
 	} else {
 	    Ns_DStringTrunc(&ds, 0);
-	    Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
+	    Ns_DStringVarAppend(&ds, "source ", debugfile, (char *)0);
 	    result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
 	}
 	(void) ns_close(fd);

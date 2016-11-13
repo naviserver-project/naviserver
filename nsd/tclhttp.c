@@ -861,12 +861,12 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *h
     NS_NONNULL_ASSERT(hostString != NULL);
 
     if (protoString != NULL) {
-        Ns_DStringVarAppend(dsPtr, protoString, "://", NULL);
+        Ns_DStringVarAppend(dsPtr, protoString, "://", (char *)0);
     }
     if (strchr(hostString, INTCHAR(':')) != NULL) {
-        Ns_DStringVarAppend(dsPtr, "[", hostString, "]", NULL);
+        Ns_DStringVarAppend(dsPtr, "[", hostString, "]", (char *)0);
     } else {
-        Ns_DStringVarAppend(dsPtr, hostString, NULL);
+        Ns_DStringVarAppend(dsPtr, hostString, (char *)0);
     }
     if (port != defPort) {
         (void) Ns_DStringPrintf(dsPtr, ":%d", port);

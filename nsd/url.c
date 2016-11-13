@@ -340,17 +340,17 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
          * We have to use IP literal notation to avoid ambiguity of colon
          * (part of address or separator for port).
          */
-        Ns_DStringVarAppend(dsPtr, proto, "://", host, NULL);
+        Ns_DStringVarAppend(dsPtr, proto, "://", host, (char *)0);
     } else {
-        Ns_DStringVarAppend(dsPtr, proto, "://[", host, "]", NULL);        
+        Ns_DStringVarAppend(dsPtr, proto, "://[", host, "]", (char *)0);        
     }
     if (port != NULL) {
-        Ns_DStringVarAppend(dsPtr, ":", port, NULL);
+        Ns_DStringVarAppend(dsPtr, ":", port, (char *)0);
     }
     if (*path == '\0') {
-        Ns_DStringVarAppend(dsPtr, "/", tail, NULL);
+        Ns_DStringVarAppend(dsPtr, "/", tail, (char *)0);
     } else {
-        Ns_DStringVarAppend(dsPtr, "/", path, "/", tail, NULL);
+        Ns_DStringVarAppend(dsPtr, "/", path, "/", tail, (char *)0);
     }
 done:
     Ns_DStringFree(&urlDs);

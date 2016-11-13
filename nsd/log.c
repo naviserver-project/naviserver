@@ -1080,7 +1080,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
             Ns_DStringInit(&ds);
             for (i = 2; i < objc; ++i) {
                 Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
-                                    i < (objc-1) ? " " : NULL, NULL);
+                                    i < (objc-1) ? " " : (char *)0, (char *)0);
             }
             Ns_Log(severity, "%s", Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
@@ -1799,7 +1799,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
              * string instead of as list element.  Other arguments are
              * appended to it as elements.
              */
-            Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
+            Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), (char *)0);
             Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
             Tcl_DecrRefCount(stampObj);
 

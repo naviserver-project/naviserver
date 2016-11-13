@@ -258,7 +258,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
             if (NsUrlToFile(&ds, servPtr, url) != NS_OK) {
                 goto notfound;
             }
-            Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
+            Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], (char *)0);
             if ((stat(ds.string, &connPtr->fileInfo) == 0)
                 && S_ISREG(connPtr->fileInfo.st_mode)
                 ) {
@@ -266,9 +266,9 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
                     const char* query = conn->request.query;
 
                     Ns_DStringSetLength(&ds, 0);
-                    Ns_DStringVarAppend(&ds, url, "/", NULL);
+                    Ns_DStringVarAppend(&ds, url, "/", (char *)0);
                     if (query != NULL) {
-                        Ns_DStringVarAppend(&ds, "?", query, NULL);
+                        Ns_DStringVarAppend(&ds, "?", query, (char *)0);
                     }
                     result = Ns_ConnReturnRedirect(conn, ds.string);
                 } else {

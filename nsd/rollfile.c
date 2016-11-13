@@ -198,7 +198,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
         (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt, ptm);
 
         Ns_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, file, ".", timeBuf, NULL);
+        Ns_DStringVarAppend(&ds, file, ".", timeBuf, (char *)0);
         newPath = Tcl_NewStringObj(ds.string, -1);
         Tcl_IncrRefCount(newPath);
         

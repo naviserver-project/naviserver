@@ -500,10 +500,10 @@ Ns_ConfigGetPath(const char *server, const char *module, ...)
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds, "ns");
     if (server != NULL) {
-        Ns_DStringVarAppend(&ds, "/server/", server, NULL);
+        Ns_DStringVarAppend(&ds, "/server/", server, (char *)0);
     }
     if (module != NULL) {
-        Ns_DStringVarAppend(&ds, "/module/", module, NULL);
+        Ns_DStringVarAppend(&ds, "/module/", module, (char *)0);
     }
     va_start(ap, module);
     for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {

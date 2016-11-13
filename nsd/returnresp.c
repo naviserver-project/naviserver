@@ -360,7 +360,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
         Ns_DStringAppend(&ds,
                          "<p>The HTTP request presented by your browser is invalid.");
         if (reason != NULL) {
-            Ns_DStringVarAppend(&ds, "<p>\n", reason, NULL);
+            Ns_DStringVarAppend(&ds, "<p>\n", reason, (char *)0);
         }
         result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
         Ns_DStringFree(&ds);
@@ -399,7 +399,7 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, "Basic realm=\"",
-                            connPtr->poolPtr->servPtr->opts.realm, "\"", NULL);
+                            connPtr->poolPtr->servPtr->opts.realm, "\"", (char *)0);
         Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
         Ns_DStringFree(&ds);
     }
