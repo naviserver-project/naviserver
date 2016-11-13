@@ -2,7 +2,7 @@
 NaviServer 4.99.14, released 2016-11-XX
 =======================================
 
- 66 files changed, 2391 insertions(+), 1327 deletions(-)
+ 83 files changed, 2503 insertions(+), 1434 deletions(-)
 
 New Features:
 
@@ -146,12 +146,23 @@ Code Changes:
      
    * Introduce macros for IPv6 support under Solaris, since
      it does not define s6_addr16 members)
-     
+
+   * don't use implementation defined NULL as last argument of
+     variadic function Ns_ConfigGetPath(), Ns_DStringVarAppend(),
+     Ns_HomePath(), Ns_MakePath(), Ns_TclEvalCallback()
+
    * Reduced number of return statement before end of function.
    * Reduced number of gotos.
    * Reduced variable scopes.
 
-
+Modules:
+   * revproxy:
+     New tcl module based on ns_connchan to implement
+     a reverse proxy (works as well with tuneling WebSockets).
+     
+   * nsexample, nsphp:
+     Aligned function definitions with ns.h to improve
+     cleanness of compilation
 
 =======================================
 NaviServer 4.99.13, released 2016-10-15
