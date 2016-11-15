@@ -474,7 +474,7 @@ during the request.
    }
 [example_end]
 
-[par] In the following example, we return for every GET request
+[para] In the following example, we return for every GET request
 for a .php file in the given path an info message.
 
 [example_begin]

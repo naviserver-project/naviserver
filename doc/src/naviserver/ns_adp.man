@@ -98,7 +98,7 @@ located under the  /stories  directly and also
 specifies a cache timeout in seconds. In this case, results
 will be retained and returned to subsequent requests without
 re-executing the ADP for up to 60 seconds (see the
- -cache  paramter to the  ns_adp_include  command
+ -cache  parameter to the  ns_adp_include  command
 for more details).
 
 [para]
