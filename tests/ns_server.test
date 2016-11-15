@@ -11,7 +11,7 @@ test ns_server-1.1 {basic syntax: plain call} -body {
 
 test ns_server-1.2 {basic syntax: wrong argument} -body {
     ns_server ?
-} -returnCodes error -result {bad option "?": must be active, all, connections, filters, keepalive, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, url2file, or waiting}
+} -returnCodes error -result {bad option "?": must be active, all, connections, filters, keepalive, map, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, url2file, or waiting}
 
 test ns_server-1.3.1 {plain call, option but no argument} -body {
     ns_server -pool {}
@@ -68,7 +68,7 @@ test ns_server-2.3.4.2 {query alternate pool from specified server} -body {
 
 test ns_server-2.3.4.3 {query alternate pool from incorrect server} -body {
     ns_server -server testvhost -pool emergency maxthreads
-} -returnCodes error -result {no such pool emergency for server testvhost}
+} -returnCodes error -result {no such pool 'emergency' for server 'testvhost'}
 
 test ns_server-2.3.5.1 {query alternate pool from server "test"} -body {
     ns_server -server test maxthreads

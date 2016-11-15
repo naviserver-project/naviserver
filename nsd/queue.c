@@ -59,6 +59,7 @@ static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr)
 static void WakeupConnThreads(ConnPool *poolPtr) 
     NS_GNUC_NONNULL(1);
 
+static Ns_ArgProc WalkCallback;
 
 /*
  * Static variables defined in this file.
@@ -508,6 +509,29 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     return queued;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * WalkCallback --
+ *
+ *    Callback for Ns_UrlSpecificWalk() used in "ns_server map".  Currently a
+ *    placeholder, might output useful information in the future.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+WalkCallback(Ns_DString *UNUSED(dsPtr), const void *UNUSED(arg))
+{
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -531,7 +555,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 {
     const NsInterp *itPtr = clientData;
     int             subcmd = 0, value = 0, result = TCL_OK;
-    const NsServer *servPtr = NULL;
+    NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
     char           *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString     ds, *dsPtr = &ds;
@@ -539,7 +563,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, 
         SFiltersIdx,
-        SKeepaliveIdx, 
+        SKeepaliveIdx,
+        SMapIdx, 
         SMaxthreadsIdx, SMinthreadsIdx,
         SPagedirIdx, SPoolsIdx, SQueuedIdx, 
         SRequestprocsIdx,
@@ -554,6 +579,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         {"connections",  (unsigned int)SConnectionsIdx},
         {"filters",      (unsigned int)SFiltersIdx},
         {"keepalive",    (unsigned int)SKeepaliveIdx},
+        {"map",          (unsigned int)SMapIdx},
         {"maxthreads",   (unsigned int)SMaxthreadsIdx},
         {"minthreads",   (unsigned int)SMinthreadsIdx},
         {"pagedir",      (unsigned int)SPagedirIdx},
@@ -596,9 +622,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 	    return TCL_ERROR;
     }
 
-    if (subcmd != SMinthreadsIdx && subcmd != SMaxthreadsIdx) {	
+    if (subcmd != SMinthreadsIdx && subcmd != SMaxthreadsIdx && subcmd != SMapIdx ) {
 	/*
-	 * just for backwards compatibility
+	 * Just for backwards compatibility
 	 */
 	if (optArg != NULL) {
 	    Ns_LogDeprecated(objv, objc, "ns_server ?-pool p? ...", 
@@ -617,7 +643,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             poolPtr = poolPtr->nextPtr;
         }
         if (unlikely(poolPtr == NULL)) {
-            Ns_TclPrintfResult(interp, "no such pool %s for server %s", pool, servPtr->server);
+            Ns_TclPrintfResult(interp, "no such pool '%s' for server '%s'", pool, servPtr->server);
             return TCL_ERROR;
         }
     } else {
@@ -692,6 +718,26 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
         break;
 
+    case SMapIdx:
+	if (optArg != NULL) {
+            fprintf(stderr, "HAVE arg, poolPtr %p '%s'\n", poolPtr, poolPtr->pool);
+            Ns_MutexLock(&servPtr->pools.lock);
+            NsMapPool(poolPtr, optArg);
+            Ns_MutexUnlock(&servPtr->pools.lock);
+        }
+        if (result == TCL_OK) {
+            Tcl_DString ds, *dsPtr = &ds;
+            
+            Ns_DStringInit(dsPtr);
+        
+            Ns_MutexLock(&servPtr->pools.lock);
+            Ns_UrlSpecificWalk(poolid, servPtr->server, WalkCallback, dsPtr);
+            Ns_MutexUnlock(&servPtr->pools.lock);
+            
+            Tcl_DStringResult(interp, dsPtr);
+        }
+	break;
+       
     case SMaxthreadsIdx:
 	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
