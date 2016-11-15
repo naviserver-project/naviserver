@@ -68,7 +68,7 @@
  * myId = Ns_UrlSpecificAlloc();
  *
  * Ns_UrlSpecificSet("server1", "GET", "/foo/bar/\*.html", myID, myData,
- *                   0, MyDeleteProc);
+ *                   0u, MyDeleteProc);
  *
  *
  *
