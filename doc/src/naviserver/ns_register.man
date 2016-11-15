@@ -464,7 +464,7 @@ during the request.
 
 [section EXAMPLES]
 
-In the following example, all files with the .adp extension in and below the
+[para] In the following example, all files with the .adp extension in and below the
 /big URL should be served by the [term ADP] handler, with the options
 [term stricterror] and [term stream] enabled:
 
@@ -474,7 +474,14 @@ In the following example, all files with the .adp extension in and below the
    }
 [example_end]
 
+[par] In the following example, we return for every GET request
+for a .php file in the given path an info message.
 
+[example_begin]
+   ns_register_proc GET /foo/bar/*.php {
+	ns_return 200 text/plain "Server refuses to execute PHP scripts here"
+    }
+[example_end]
 
 [see_also ns_adp ns_conn ns_info]
 [keywords ADP filter request callback fastpath]
