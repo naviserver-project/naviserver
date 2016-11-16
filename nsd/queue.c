@@ -527,8 +527,10 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
  */
 
 static void
-WalkCallback(Ns_DString *UNUSED(dsPtr), const void *UNUSED(arg))
+WalkCallback(Ns_DString *dsPtr, const void *arg)
 {
+    ConnPool *poolPtr = (ConnPool *)arg;
+    Tcl_DStringAppendElement(dsPtr, poolPtr->pool);
 }
 
 
@@ -727,13 +729,13 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         }
         if (result == TCL_OK) {
             Tcl_DString ds, *dsPtr = &ds;
-            
+
             Ns_DStringInit(dsPtr);
-        
+
             Ns_MutexLock(&servPtr->pools.lock);
             Ns_UrlSpecificWalk(poolid, servPtr->server, WalkCallback, dsPtr);
             Ns_MutexUnlock(&servPtr->pools.lock);
-            
+
             Tcl_DStringResult(interp, dsPtr);
         }
 	break;
