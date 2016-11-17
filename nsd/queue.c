@@ -643,6 +643,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         poolPtr = servPtr->pools.firstPtr;
         while (poolPtr != NULL && !STREQ(poolPtr->pool, pool)) {
             poolPtr = poolPtr->nextPtr;
+            if (poolPtr != NULL) {
+            }
         }
         if (unlikely(poolPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no such pool '%s' for server '%s'", pool, servPtr->server);
@@ -722,21 +724,86 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SMapIdx:
 	if (optArg != NULL) {
-            fprintf(stderr, "HAVE arg, poolPtr %p '%s'\n", poolPtr, poolPtr->pool);
             Ns_MutexLock(&servPtr->pools.lock);
             NsMapPool(poolPtr, optArg);
             Ns_MutexUnlock(&servPtr->pools.lock);
-        }
-        if (result == TCL_OK) {
-            Tcl_DString ds, *dsPtr = &ds;
+        } else {
+            Tcl_DString  ds, *dsPtr = &ds;
+            Tcl_Obj     **ov, *fullListObj;
+            int          oc;
 
+            /*
+             * Return the current mappings just in the case, when the map
+             * operation was called without the optional argument.
+             */
             Ns_DStringInit(dsPtr);
 
             Ns_MutexLock(&servPtr->pools.lock);
             Ns_UrlSpecificWalk(poolid, servPtr->server, WalkCallback, dsPtr);
             Ns_MutexUnlock(&servPtr->pools.lock);
 
-            Tcl_DStringResult(interp, dsPtr);
+            /*
+             * Convert the Tcl_Dstring into a list, and filter the elements
+             * from different pools.
+             */
+            fullListObj = Tcl_NewStringObj(dsPtr->string, dsPtr->length);
+            Tcl_IncrRefCount(fullListObj);
+
+            result = Tcl_ListObjGetElements(interp, fullListObj, &oc, &ov);
+            if (result == TCL_OK) {
+                Tcl_Obj *resultObj;
+                int i;
+
+                /*
+                 * The result should be always a proper list, so the potential
+                 * error should not occur.
+                 */
+                resultObj = Tcl_NewListObj(oc, NULL);
+                
+                for (i = 0; i < oc; i++) {
+                    Tcl_Obj *elemObj = ov[i];
+                    int      length;
+
+                    /*
+                     * Get the last element, which is the pool, and compare it
+                     * with the current pool name.
+                     */
+                    result = Tcl_ListObjLength(interp, elemObj, &length);
+                    if (result == TCL_OK) {
+                        Tcl_Obj *lastSubElem;
+                        
+                        result = Tcl_ListObjIndex(interp, elemObj, length-1, &lastSubElem);
+                        if (result == TCL_OK) {
+                            if (!STREQ(poolPtr->pool, Tcl_GetString(lastSubElem))) {
+                                continue;
+                            }
+                        }
+                    }
+                    /*
+                     * The element is from the current pool. Remove the last
+                     * element (poolname) from the list...
+                     */
+                    if (result == TCL_OK) {
+                        result = Tcl_ListObjReplace(interp, elemObj, length-1, 1, 0, NULL);
+                    }
+                    /*
+                     * ... and append the element.
+                     */
+                    if (result == TCL_OK) {
+                        Tcl_ListObjAppendElement(interp, resultObj, elemObj);
+                    } else {
+                        break;
+                    }
+                }
+                if (result == TCL_OK) {
+                    Tcl_SetObjResult(interp, resultObj);
+                } else {
+                    Ns_TclPrintfResult(interp, "invalid result from mapped URLs");
+                }
+            }
+            Tcl_DecrRefCount(fullListObj);
+            Tcl_DStringFree(dsPtr);
+
         }
 	break;
        
