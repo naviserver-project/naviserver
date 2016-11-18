@@ -16,7 +16,8 @@ New Features:
   
   * Added module "revproxy" for implementing a reverse proxy based
     on ns_connchan (working as well for proxying WebSockets).
-  
+
+
 Performance Improvements:
 
   * Added new config flag "concurrentinterpcreate" to "ns/parameters"
@@ -27,6 +28,7 @@ Performance Improvements:
     
   * Don't update interp in "ns_ictl cleanup", when no defer callbacks
     were executed.
+
 
 Bug Fixes:
 
@@ -72,6 +74,7 @@ Bug Fixes:
 
   * Fix several bugs in keylist
 
+
 Documentation improvements:
 
   * doc/src/naviserver/ns_connchan.man:
@@ -102,9 +105,6 @@ Tcl API Changes:
     Added flag "-version" to "ns_connchan open" to specify
     HTTP version (default 1.0)
 
-C API Changes:
-
-Incompatible API Changes:
 
 Configuration Changes:
   * Improved output of "make help"
@@ -163,6 +163,7 @@ Modules:
    * nsexample, nsphp:
      Aligned function definitions with ns.h to improve
      cleanness of compilation
+
 
 =======================================
 NaviServer 4.99.13, released 2016-10-15
