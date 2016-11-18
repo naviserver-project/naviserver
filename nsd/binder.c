@@ -87,7 +87,7 @@ static void Binder(void);
 
 #ifndef _WIN32
 NS_SOCKET
-Ns_SockListenEx(const char *address, unsigned short port, int backlog)
+Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reuseport)
 {
     NS_SOCKET           sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
@@ -111,7 +111,10 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog)
             /* 
              * Not prebound, try to bind now.
              */
-            sock = Ns_SockBind(saPtr);
+            sock = Ns_SockBind(saPtr, reuseport);
+            //fprintf(stderr, "listen on port %hd binding with reuseport %d\n", port, reuseport);
+        } else {
+            //fprintf(stderr, "listen on port %hd already prebound\n", port);
         }
         if (sock != NS_INVALID_SOCKET && listen(sock, backlog) == -1) {
             /* 
@@ -184,7 +187,7 @@ Ns_SockListenUdp(const char *address, unsigned short port)
             /* 
              * Not prebound, bind now 
              */
-            sock = Ns_SockBindUdp(saPtr);
+            sock = Ns_SockBindUdp(saPtr, NS_FALSE);
         }
     }
 
@@ -347,7 +350,7 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
  */
 
 NS_SOCKET
-Ns_SockBindUdp(const struct sockaddr *saPtr)
+Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 {
     NS_SOCKET sock;
     int       n = 1;
@@ -365,6 +368,13 @@ Ns_SockBindUdp(const struct sockaddr *saPtr)
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
+    } else {
+#if defined(SO_REUSEPORT)
+        if (reusePort) {
+            int optval = 1;
+            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+        }
+#endif
     }
 
     return sock;
@@ -749,7 +759,7 @@ PreBind(const char *spec)
 
             Ns_LogSockaddr(Notice, "prebind adds", (const struct sockaddr *)saPtr);
 
-            sock = Ns_SockBind(saPtr);
+            sock = Ns_SockBind(saPtr, NS_FALSE);
             if (sock == NS_INVALID_SOCKET) {
                 Ns_Log(Error, "prebind: tcp: [%s]:%d: %s", addr, port,
                        strerror(errno));
@@ -775,7 +785,7 @@ PreBind(const char *spec)
                        addr, port);
                 continue;
             }
-            sock = Ns_SockBindUdp(saPtr);
+            sock = Ns_SockBindUdp(saPtr, NS_FALSE);
             if (sock == NS_INVALID_SOCKET) {
                 Ns_Log(Error, "prebind: udp: [%s]:%d: %s", addr, port,
                        strerror(errno));
@@ -1151,7 +1161,7 @@ Binder(void)
             break;
         case 'T':
         default:
-            sock = Ns_SockListenEx(address, port, options);
+            sock = Ns_SockListenEx(address, port, options, NS_FALSE);
         }
         Ns_Log(Notice, "bind type %c addr %s port %d options %d to socket %d",
                type, address, port, options, sock);

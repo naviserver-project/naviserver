@@ -467,6 +467,7 @@ typedef struct Driver {
     int queuesize;                      /* Current number of sockets in the queue */
     int maxqueuesize;                   /* Maximum number of sockets in the queue */
     int acceptsize;                     /* Number requests to accept at once */
+    bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
     unsigned int loggingFlags;          /* Logging control flags */
 
     unsigned int flags;                 /* Driver state flags. */

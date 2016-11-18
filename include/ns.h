@@ -543,7 +543,7 @@ typedef enum {
  */
 
 typedef NS_SOCKET
-(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, unsigned short port, int backlog)
+(Ns_DriverListenProc)(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reusePort)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef NS_DRIVER_ACCEPT_STATUS
@@ -2601,7 +2601,7 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
  */
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenEx(const char *address, unsigned short port, int backlog);
+Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reuseport);
 
 NS_EXTERN NS_SOCKET
 Ns_SockListenUdp(const char *address, unsigned short port);
@@ -2614,7 +2614,7 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBindUdp(const struct sockaddr *saPtr)
+Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
@@ -2735,7 +2735,7 @@ Ns_BindSock(const struct sockaddr *saPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_SockBind);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBind(const struct sockaddr *saPtr)
+Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET

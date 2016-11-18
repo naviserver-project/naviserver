@@ -475,6 +475,16 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
                                              drvPtr->backlog, 1, INT_MAX);
 
+    drvPtr->reuseport   = Ns_ConfigBool(path, "reuseport", NS_FALSE);
+
+    if (drvPtr->reuseport) {
+#if !defined(SO_REUSEPORT)
+        Ns_Log(Warning,
+               "parameter %s reuseport was specified, but is not supported by the operating system",
+               path);
+#endif
+    }
+
     drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", nsconf.tmpDir));
 
     /*
@@ -990,7 +1000,8 @@ DriverListen(Driver *drvPtr)
     sock = (*drvPtr->listenProc)((Ns_Driver *) drvPtr,
                                  drvPtr->bindaddr,
                                  drvPtr->port,
-                                 drvPtr->backlog);
+                                 drvPtr->backlog,
+                                 drvPtr->reuseport);
     if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
                drvPtr->name, drvPtr->address, drvPtr->port,

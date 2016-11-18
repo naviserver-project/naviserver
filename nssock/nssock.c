@@ -129,11 +129,11 @@ Ns_ModuleInit(const char *server, const char *module)
  */
 
 static NS_SOCKET
-SockListen(Ns_Driver *driver, const char *address, unsigned short port, int backlog)
+SockListen(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reuseport)
 {
     NS_SOCKET sock;
 
-    sock = Ns_SockListenEx((char*)address, port, backlog);
+    sock = Ns_SockListenEx((char*)address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
         Config *cfg = driver->arg;
 

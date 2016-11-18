@@ -125,7 +125,7 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
 	 * Make sure we can bind to the specified interface.
 	 */
         Ns_SockaddrSetPort(saPtr, 0u);
-        sock = Ns_SockBind(saPtr);
+        sock = Ns_SockBind(saPtr, NS_FALSE);
         if (sock == NS_INVALID_SOCKET) {
             return NS_ERROR;
         }

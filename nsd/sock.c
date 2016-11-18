@@ -461,7 +461,7 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
 NS_SOCKET
 Ns_SockListen(const char *address, unsigned short port)
 {
-    return Ns_SockListenEx(address, port, nsconf.backlog);
+    return Ns_SockListenEx(address, port, nsconf.backlog, NS_FALSE);  // TODO: currently no parameter defined
 }
 
 
@@ -507,7 +507,8 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
  *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
- *      Will set SO_REUSEADDR on the socket.
+ *      Will set SO_REUSEADDR always on the socket, SO_REUSEPORT 
+ *      optionally.
  *
  *----------------------------------------------------------------------
  */
@@ -515,11 +516,11 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 NS_SOCKET
 Ns_BindSock(const struct sockaddr *saPtr)
 {
-    return Ns_SockBind(saPtr);
+    return Ns_SockBind(saPtr, NS_FALSE);
 }
 
 NS_SOCKET
-Ns_SockBind(const struct sockaddr *saPtr)
+Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 {
     NS_SOCKET sock;
 
@@ -528,6 +529,13 @@ Ns_SockBind(const struct sockaddr *saPtr)
     sock = socket(saPtr->sa_family, SOCK_STREAM, 0);
 
     if (sock != NS_INVALID_SOCKET) {
+        
+#if defined(SO_REUSEPORT)
+        if (reusePort) {
+            int optval = 1;
+            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+        }
+#endif
         sock = SockSetup(sock);
     }
     if (sock != NS_INVALID_SOCKET) {
@@ -1066,7 +1074,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
         sock = NS_INVALID_SOCKET;
         
     } else {
-        sock = Ns_SockBind(lsaPtr);
+        sock = Ns_SockBind(lsaPtr, NS_FALSE);
         if (sock != NS_INVALID_SOCKET) {
             if (async) {
                 if (Ns_SockSetNonBlocking(sock) != NS_OK) {
