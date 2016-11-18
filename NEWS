@@ -1,8 +1,8 @@
 =======================================
-NaviServer 4.99.14, released 2016-11-XX
+NaviServer 4.99.14, released 2016-11-18
 =======================================
 
- 83 files changed, 2503 insertions(+), 1434 deletions(-)
+ 86 files changed, 2655 insertions(+), 1451 deletions(-)
 
 New Features:
 
@@ -21,7 +21,7 @@ Performance Improvements:
 
   * Added new config flag "concurrentinterpcreate" to "ns/parameters"
     to allow optionally concurrent creations of Tcl interpreters.
-    Concurrent creations of tcl interpreters were a problem with Tcl
+    Concurrent creations of Tcl interpreters were a problem with Tcl
     8.5, but seems to work with Tcl 8.6. Per default, this feature is
     turned off.
     
@@ -157,7 +157,7 @@ Code Changes:
 
 Modules:
    * revproxy:
-     New tcl module based on ns_connchan to implement
+     New Tcl module based on ns_connchan to implement
      a reverse proxy (works as well with tuneling WebSockets).
      
    * nsexample, nsphp:
