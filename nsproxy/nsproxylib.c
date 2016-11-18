@@ -414,6 +414,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     }
     if (argc < 4) {
         active = NULL;
+        max = -1;
     } else {
         active = argv[3];
         max = (int)strlen(active) - 8;
@@ -528,6 +529,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
             script = Tcl_DStringValue(&in) + sizeof(Req);
             if (active != NULL) {
                 int n = (int)len;
+ 
                 if (n < max) {
                     dots = "";
                 } else {
