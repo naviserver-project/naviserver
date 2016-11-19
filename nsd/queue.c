@@ -336,7 +336,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(nowPtr != NULL);
-
+    assert(sockPtr->drvPtr != NULL);
+    
+    sockPtr->drvPtr->stats.received++;
     servPtr = sockPtr->servPtr;
 
     /*

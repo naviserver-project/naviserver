@@ -215,6 +215,7 @@ static const Cmd servCmds[] = {
     {"ns_connsendfp",            NULL, NsTclConnSendFpObjCmd},
     {"ns_critsec",               NULL, NsTclCritSecObjCmd},
     {"ns_deletecookie",          NULL, NsTclDeleteCookieObjCmd},
+    {"ns_driver",                NULL, NsTclDriverObjCmd},
     {"ns_event",                 NULL, NsTclCondObjCmd},
     {"ns_getcookie",             NULL, NsTclGetCookieObjCmd},
     {"ns_geturl",                NULL, NsTclGetUrlObjCmd},

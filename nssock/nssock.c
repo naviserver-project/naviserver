@@ -93,7 +93,7 @@ Ns_ModuleInit(const char *server, const char *module)
     cfg->nodelay = Ns_ConfigBool(path, "nodelay", NS_FALSE);
 
     init.version = NS_DRIVER_VERSION_4;
-    init.name = "nssock";
+    init.name         = "nssock";
     init.listenProc   = SockListen;
     init.acceptProc   = SockAccept;
     init.recvProc     = SockRecv;
@@ -102,11 +102,11 @@ Ns_ModuleInit(const char *server, const char *module)
     init.keepProc     = Keep;
     init.requestProc  = NULL;
     init.closeProc    = SockClose;
-    init.opts = NS_DRIVER_ASYNC;
-    init.arg = cfg;
-    init.path = (char*)path;
-    init.protocol = "http";
-    init.defaultPort = 80;
+    init.opts         = NS_DRIVER_ASYNC;
+    init.arg          = cfg;
+    init.path         = (char*)path;
+    init.protocol     = "http";
+    init.defaultPort  = 80;
 
     return Ns_DriverInit(server, module, &init);
 }

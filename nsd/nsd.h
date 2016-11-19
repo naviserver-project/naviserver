@@ -420,16 +420,16 @@ typedef struct Driver {
      * Visible in Ns_Driver.
      */
 
-    void  *arg;                         /* Driver callback data */
+    void        *arg;                   /* Driver callback data */
     const char  *server;                /* Virtual server name */
     const char  *module;                /* Driver module */
     const char  *name;                  /* Driver name */
     const char  *location;              /* Location, e.g, "http://foo:9090" */
     const char  *address;               /* Address in location, e.g. "foo" */
     const char  *protocol;              /* Protocol in location, e.g, "http" */
-    long   sendwait;                    /* send() I/O timeout */
-    long   recvwait;                    /* recv() I/O timeout */
-    size_t bufsize;                     /* Conn bufsize (0 for SSL) */
+    long         sendwait;              /* send() I/O timeout */
+    long         recvwait;              /* recv() I/O timeout */
+    size_t       bufsize;               /* Conn bufsize (0 for SSL) */
     const char  *extraHeaders;          /* Extra header fields added for every request */
 
     /*
@@ -468,6 +468,7 @@ typedef struct Driver {
     int maxqueuesize;                   /* Maximum number of sockets in the queue */
     int acceptsize;                     /* Number requests to accept at once */
     bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
+    int driverthreads;                  /* Number of identical driver threads to be created */
     unsigned int loggingFlags;          /* Logging control flags */
 
     unsigned int flags;                 /* Driver state flags. */
@@ -482,6 +483,13 @@ typedef struct Driver {
 
     DrvSpooler spooler;                 /* Tracks upload spooler threads */
     DrvWriter  writer;                  /* Tracks writer threads */
+
+    struct {
+        Tcl_WideInt spooled;            /* Spooled incoming requests .. */
+        Tcl_WideInt partial;            /* Partial operations */
+        Tcl_WideInt received;           /* Received requests */
+        Tcl_WideInt errors;             /* Dropped requests due to errors */
+    } stats;
 
 } Driver;
 
@@ -1121,6 +1129,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclCryptoHmacObjCmd,
     NsTclCryptoMdObjCmd,
     NsTclDeleteCookieObjCmd,
+    NsTclDriverObjCmd,
     NsTclEncodingForCharsetObjCmd,
     NsTclEnvObjCmd,
     NsTclFTruncateObjCmd,
@@ -1458,6 +1467,8 @@ NS_EXTERN void NsTclAddServerCmds(NsInterp *itPtr)       NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
+
+NS_EXTERN Tcl_Obj * NsDriverStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 
 /*
  * limits.c
