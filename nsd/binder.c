@@ -63,7 +63,7 @@ static NS_SOCKET binderResponse[2] = { NS_INVALID_SOCKET, NS_INVALID_SOCKET };
  * Local functions defined in this file
  */
 #ifndef _WIN32
-static void PreBind(const char *line) NS_GNUC_NONNULL(1);
+static Ns_ReturnCode PreBind(const char *line) NS_GNUC_NONNULL(1);
 static void Binder(void);
 #endif
 
@@ -518,19 +518,22 @@ NsInitBinder(void)
  *----------------------------------------------------------------------
  */
 
-void
+Ns_ReturnCode
 NsPreBind(const char *args, const char *file)
 {
+    Ns_ReturnCode status = NS_OK;
+
 #ifndef _WIN32
+    
     if (args != NULL) {
-        PreBind(args);
+        status = PreBind(args);
     }
     
     /*
      * Check, if the bind options were provided via file. If so, parse
      * and interprete it.
      */
-    if (file != NULL) {
+    if (status == NS_OK && file != NULL) {
         Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
         
         if (chan == NULL) {
@@ -543,7 +546,10 @@ NsPreBind(const char *args, const char *file)
             while (Tcl_Eof(chan) == 0) {
                 Tcl_DStringSetLength(&line, 0);
                 if (Tcl_Gets(chan, &line) > 0) {
-                    PreBind(Tcl_DStringValue(&line));
+                    status = PreBind(Tcl_DStringValue(&line));
+                    if (status != NS_OK) {
+                        break;
+                    }
                 }
             }
             Tcl_DStringFree(&line);
@@ -551,6 +557,7 @@ NsPreBind(const char *args, const char *file)
         }
     }
 #endif /* _WIN32 */
+    return status;
 }
 
 
@@ -684,13 +691,14 @@ NsClosePreBound(void)
  */
 #ifndef _WIN32
 
-static void
+static Ns_ReturnCode
 PreBind(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
     int                    isNew, sock;
     char                  *next, *str, *line;
     long                   l;
+    Ns_ReturnCode          status = NS_OK;
     struct NS_SOCKADDR_STORAGE  sa;
     struct sockaddr       *saPtr = (struct sockaddr *)&sa;
 
@@ -764,10 +772,20 @@ PreBind(const char *spec)
                 Ns_Log(Error, "prebind: tcp: [%s]:%d: %s", addr, port,
                        strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
-                continue;
+                status = NS_ERROR;
+                break;
             }
             Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
             Ns_Log(Notice, "prebind: tcp: [%s]:%d = %d", addr, port, sock);
+
+#if defined(SO_REUSEPORT)
+            {
+                int optval = 1;
+                setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+            }
+#endif
+
+            
         }
 
 	/*
@@ -790,10 +808,18 @@ PreBind(const char *spec)
                 Ns_Log(Error, "prebind: udp: [%s]:%d: %s", addr, port,
                        strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
-                continue;
+                status = NS_ERROR;
+                break;
             }
             Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
             Ns_Log(Notice, "prebind: udp: [%s]:%d = %d", addr, port, sock);
+#if defined(SO_REUSEPORT)
+            {
+                int optval = 1;
+                setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+            }
+#endif
+
         }
 
 	/*
@@ -856,6 +882,8 @@ PreBind(const char *spec)
         }
     }
     ns_free(line);
+    
+    return status;
 }
 #endif
 

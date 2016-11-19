@@ -97,28 +97,27 @@ extern void NsdInit();
 int
 Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 {
-    Args      cmd;
-    int       sig, optind;
-    const char *config = NULL;
-    Ns_Time   timeout;
-    Ns_Set   *set;
-
+    Args           cmd;
+    int            sig, optind;
+    const char    *config = NULL;
+    Ns_Time        timeout;
+    Ns_Set        *set;
 #ifndef _WIN32
-    int       debug = 0;
-    char      mode = '\0';
-    const char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
-    const char     *bindargs = NULL, *bindfile = NULL;
-    Ns_Set   *servers;
+    int            debug = 0;
+    char           mode = '\0';
+    const char    *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
+    const char    *bindargs = NULL, *bindfile = NULL;
+    Ns_Set        *servers;
     struct rlimit  rl;
+    Ns_ReturnCode  status;
 #else
     /*
      * The following variables are declared static so they
      * preserve their values when Ns_Main is re-entered by
      * the Win32 service control manager.
      */
-    static char    mode = '\0';
+    static char    mode = '\0', *procname, *server = NULL;
     static Ns_Set *servers;
-    static char   *procname, *server = NULL;
 #endif
 
     /*
@@ -383,12 +382,14 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
      * name-based addresses.
      */
 
-    NsPreBind(bindargs, bindfile);
+    status = NsPreBind(bindargs, bindfile);
+    if (status != NS_OK) {
+        Ns_Fatal("nsmain: prebind failed");
+    }
 
     /*
      * Chroot() if requested before setuid from root.
      */
-
     if (root != NULL) {
         if (chroot(root) != 0) {
             Ns_Fatal("nsmain: chroot(%s) failed: '%s'", root, strerror(errno));
