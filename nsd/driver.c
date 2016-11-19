@@ -1444,12 +1444,14 @@ DriverThread(void *arg)
      * connections are complete and gracefully closed.
      */
 
-    Ns_Log(Notice, "driver: accepting connections");
-
     PollCreate(&pdata);
     Ns_GetTime(&now);
     closePtr = waitPtr = readPtr = NULL;
     stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
+
+    if (!stopping) {
+        Ns_Log(Notice, "driver: accepting connections");
+    }
 
     while (!stopping) {
         int n;
