@@ -131,11 +131,13 @@ static bool    DriverKeep(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void    DriverClose(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static Ns_ReturnCode DriverInit(const char *server, const char *module, const Ns_DriverInitData *init,
+static Ns_ReturnCode DriverInit(const char *server, const char *genericModule, const char *module,
+                                const Ns_DriverInitData *init,
                                 NsServer *servPtr, const char *path, const char *bindaddr,
-                                const char *defserver, const char *address, const char *host)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5)
-    NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(8) NS_GNUC_NONNULL(9);
+                                const char *defserver, const char *address, const char *host,
+                                int driverCount)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
+    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(10);
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -404,7 +406,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
-                status = DriverInit(server, moduleName, init, servPtr, path, bindaddr, defserver, address, host);
+                status = DriverInit(server, module, moduleName, init,
+                                    servPtr, path, bindaddr, defserver, address, host, i);
                 if (status != NS_OK) {
                     break;
                 }
@@ -435,9 +438,11 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
  */
 
 Ns_ReturnCode
-DriverInit(const char *server, const char *module, const Ns_DriverInitData *init,
+DriverInit(const char *server, const char *genericModule, const char *module,
+           const Ns_DriverInitData *init,
            NsServer *servPtr, const char *path, const char *bindaddr,
-           const char *defserver, const char *address, const char *host)
+           const char *defserver, const char *address, const char *host,
+           int driverCount)
 {
     const char     *defproto;
     ServerMap      *mapPtr;
@@ -449,7 +454,6 @@ DriverInit(const char *server, const char *module, const Ns_DriverInitData *init
 
     NS_NONNULL_ASSERT(module != NULL);
     NS_NONNULL_ASSERT(init != NULL);
-    NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(bindaddr != NULL);
     NS_NONNULL_ASSERT(address != NULL);
@@ -690,19 +694,20 @@ DriverInit(const char *server, const char *module, const Ns_DriverInitData *init
      * Map Host headers for drivers not bound to servers.
      */
 
-    if (server == NULL) {
+    if (server == NULL && driverCount == 0) {
         const Ns_Set *lset;
         size_t        j;
         Tcl_DString ds, *dsPtr = &ds;
 
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
-                     " but %s has no defaultserver defined", module, path);
+                     " but %s has no defaultserver defined", genericModule, path);
         }
         assert(defserver != NULL);
 
         defMapPtr = NULL;
-        path = Ns_ConfigGetPath(NULL, module, "servers", (char *)0);
+        fprintf(stderr, "module '%s'\n", genericModule);
+        path = Ns_ConfigGetPath(NULL, genericModule, "servers", (char *)0);
         lset = Ns_ConfigGetSection(path);
         
         Ns_DStringInit(dsPtr);
@@ -711,12 +716,12 @@ DriverInit(const char *server, const char *module, const Ns_DriverInitData *init
             host    = Ns_SetValue(lset, j);
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
-                Ns_Log(Error, "%s: no such server: %s", module, server);
+                Ns_Log(Error, "%s: no such server: %s", genericModule, server);
             } else {
                 Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
 
                 if (n == 0) {
-                    Ns_Log(Error, "%s: duplicate host map: %s", module, host);
+                    Ns_Log(Error, "%s: duplicate host map: %s", genericModule, host);
                 } else {
                     (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
                     mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
@@ -733,8 +738,7 @@ DriverInit(const char *server, const char *module, const Ns_DriverInitData *init
         Ns_DStringFree(dsPtr);
 
         if (defMapPtr == NULL) {
-            Ns_Fatal("%s: default server %s not defined in %s",
-                     module, server, path);
+            Ns_Fatal("%s: default server %s not defined in %s", genericModule, server, path);
         }
     }
 
