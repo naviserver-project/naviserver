@@ -706,7 +706,6 @@ DriverInit(const char *server, const char *genericModule, const char *module,
         assert(defserver != NULL);
 
         defMapPtr = NULL;
-        fprintf(stderr, "module '%s'\n", genericModule);
         path = Ns_ConfigGetPath(NULL, genericModule, "servers", (char *)0);
         lset = Ns_ConfigGetSection(path);
         
