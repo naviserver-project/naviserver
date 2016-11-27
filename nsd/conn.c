@@ -1364,7 +1364,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	"location", 
 	"method",
 	"outputheaders", 
-	"peeraddr", "peerport", "pool", "port", "protocol",
+	"partialtimes", "peeraddr", "peerport", "pool", "port", "protocol",
 	"query", 
 	"request", 
 	"server", "sock", "start", "status", 
@@ -1387,7 +1387,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	CLocationIdx, 
 	CMethodIdx, 
 	COutputHeadersIdx, 
-	CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx, 
+	CPartialTimesIdx, CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx, 
 	CQueryIdx, 
 	CRequestIdx,
 	CServerIdx, CSockIdx, CStartIdx, CStatusIdx, 
@@ -1794,6 +1794,36 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case CMethodIdx:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->method, -1));
         break;
+        
+    case CPartialTimesIdx:
+        {
+            Ns_Time   now, acceptTime, queueTime, filterTime, runTime;
+            Tcl_DString ds, *dsPtr = &ds;
+            
+            Ns_GetTime(&now);
+            Tcl_DStringInit(dsPtr);
+
+            (void)Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &acceptTime);
+            (void)Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   &queueTime);
+            (void)Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &filterTime);
+            (void)Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &runTime);
+
+            Ns_DStringNAppend(dsPtr, "accepttime ", 11);
+            Ns_DStringAppendTime(dsPtr, &acceptTime);
+
+            Ns_DStringNAppend(dsPtr, " queuetime ", 11);
+            Ns_DStringAppendTime(dsPtr, &queueTime);
+
+            Ns_DStringNAppend(dsPtr, " filtertime ", 12);
+            Ns_DStringAppendTime(dsPtr, &filterTime);
+
+            Ns_DStringNAppend(dsPtr, " runtime ", 9);
+            Ns_DStringAppendTime(dsPtr, &runTime);
+
+            Tcl_DStringResult(interp, dsPtr);
+
+            break;
+        }
 
     case CProtocolIdx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->drvPtr->protocol, -1));
