@@ -1360,6 +1360,9 @@ NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPoo
 NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN bool NsUnmapPool(ConnPool *poolPtr, const char *map)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
 

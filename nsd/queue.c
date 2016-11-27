@@ -157,9 +157,8 @@ Ns_GetConn(void)
 void
 NsMapPool(ConnPool *poolPtr, const char *map)
 {
-    const char **mv;
-    const char *server;
-    int  mc;
+    const char **mv, *server;
+    int          mc;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
     NS_NONNULL_ASSERT(map != NULL);
@@ -175,6 +174,52 @@ NsMapPool(ConnPool *poolPtr, const char *map)
         Tcl_Free((char *) mv);
     }
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUnmapPool --
+ *
+ *      Remove a method/URL from the given pool.
+ *
+ * Results:
+ *      Boolean success.
+ *
+ * Side effects:
+ *      Remove mapping.
+ *
+ *----------------------------------------------------------------------
+ */
+
+bool
+NsUnmapPool(ConnPool *poolPtr, const char *map)
+{
+    const char **mv, *server;
+    int          mc;
+    bool         success = NS_FALSE;
+
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+    NS_NONNULL_ASSERT(map != NULL);
+
+    server = poolPtr->servPtr->server;
+
+    if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
+        if (mc == 2) {
+            void *data = Ns_UrlSpecificDestroy(server,  mv[0], mv[1], poolid, 0u);
+            
+            if (data != NULL) {
+                success = NS_TRUE;
+                Ns_Log(Notice, "pool[%s]: unmapped %s %s", server, mv[0], mv[1]);
+            } else
+                Ns_Log(Warning, "pool[%s]: could not unmap %s %s", server, mv[0], mv[1]);
+        }
+        Tcl_Free((char *) mv);
+    }
+    
+    return success;
+}
+
 
 
 /*
@@ -574,6 +619,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         SRequestprocsIdx,
         SServerdirIdx, SStatsIdx, 
         STcllibIdx, SThreadsIdx, STracesIdx,
+        SUnmapIdx, 
         SUrl2fileIdx, SWaitingIdx
     };
     
@@ -595,6 +641,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         {"tcllib",       (unsigned int)STcllibIdx},
         {"threads",      (unsigned int)SThreadsIdx},
         {"traces",       (unsigned int)STracesIdx},
+        {"unmap",        (unsigned int)SUnmapIdx},
         {"url2file",     (unsigned int)SUrl2fileIdx},
         {"waiting",      (unsigned int)SWaitingIdx},
         {NULL,           0u}
@@ -626,7 +673,11 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 	    return TCL_ERROR;
     }
 
-    if (subcmd != SMinthreadsIdx && subcmd != SMaxthreadsIdx && subcmd != SMapIdx ) {
+    if (subcmd != SMinthreadsIdx
+        && subcmd != SMaxthreadsIdx
+        && subcmd != SMapIdx
+        && subcmd != SUnmapIdx
+        ) {
 	/*
 	 * Just for backwards compatibility
 	 */
@@ -808,7 +859,22 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         }
 	break;
-       
+
+    case SUnmapIdx:
+	if (optArg != NULL) {
+            bool success;
+            
+            Ns_MutexLock(&servPtr->pools.lock);
+            success = NsUnmapPool(poolPtr, optArg);
+            Ns_MutexUnlock(&servPtr->pools.lock);
+
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(success));
+        } else {
+            Ns_TclPrintfResult(interp, "no agument for unmapping specified");
+            result = TCL_ERROR;
+        }
+        break;
+    
     case SMaxthreadsIdx:
 	if (optArg != NULL) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
