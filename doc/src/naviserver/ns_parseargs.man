@@ -2,26 +2,71 @@
 [manpage_begin ns_parseargs n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Parse list of arguments and store them into local Tcl variables}]
+[titledesc {Parse list of arguments}]
 
 [description]
+[para]
+This function parses a list of arguments against an argument specification
+and stores the resulting bindings in local Tcl variables.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_parseargs] [arg args]]
+[call [cmd ns_parseargs] [arg argspec] [arg arguments]]
+
+[arg argspec]
+argument specifications, which is a list of specifications
+for single positional or non-positional arguments. When an argument
+spec starts with a "-", it specifies a non-positional argument. When
+an argument spec consists of two values, the latter one is a default.
+The special argument spec "--" (two dashes) denotes a potential end of
+the block of non-positional arguments
 
 [para]
-[arg args]
-List of arguments, can be flags or parameters
-
+[arg arguments]
+List of arguments to be parsed
 [list_end]
 
 [section EXAMPLES]
 
-[example_begin]
+The first example shows the practical usage of ns_parseargs in a
+proc. The intention is to define a proc "ns_getcontent" which might be
+called with the optional arguments [arg -as_file] or [arg -binary]. The
+default value for both of these arguments is [const true]. To achieve this,
+the proc "ns_getcontent" is defined with the argument spec [arg args],
+which allows all kinds of arguments to be passed. As a fist call, it
+invokes the argument parser with the detailed argument spec. In case,
+the arguments can't be parsed according to the spec, "ns_parseargs"
+raises an error.
 
+[example_begin]
+    #
+    # Define a function with two positional arguments
+    #
+    proc ns_getcontent {args} {
+        ns_parseargs {
+            {-as_file true}
+            {-binary true}
+        } $args
+    
+        if {![lb]string is boolean -strict $as_file[rb]} {
+           return -code error "value of '$as_file' is not boolean"
+        }
+        if {![lb]string is boolean -strict $binary[rb]} {
+           return -code error "value of '$binary' is not boolean"
+        }
+        # ...
+    }
+[example_end]
+
+[para]
+The second example demonstrates non-positional and positional
+arguments with and without defaults.
+[example_begin]
+    % ns_parseargs {-a {-b 1} -- c {d x}} {-- 1 }
+    % lappend _ [lb]info exists a[rb] [lb]info exists b[rb] [lb]info exists c[rb] [lb]info exists d[rb]
+    0 1 1 1
 [example_end]
 
 
