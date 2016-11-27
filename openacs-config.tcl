@@ -108,7 +108,7 @@ ns_section ns/parameters
         ns_param	logdev		$dev
         ns_param	logcolorize	true
         ns_param	logprefixcolor 	green
-	ns_param	logrollfmt	%Y-%m-%d	;# format appendend to log file name
+	ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog file name when rolled
 
 	# ns_param	mailhost	localhost 
 	# ns_param	jobsperthread	0
@@ -382,7 +382,7 @@ ns_section ns/server/${server}/module/nslog
 	# ns_param	rolllog		true	;# true, should server log files automatically
 	# ns_param	rollhour	0	;# 0, specify at which hour to roll
 	# ns_param	rollonsignal	true	;# false, perform roll on a sighup
-	ns_param	rollfmt		%Y-%m-%d-%H:%M	;# format appendend to log file name
+	ns_param	rollfmt		%Y-%m-%d ;# format appendend to log file name
 
 
 #---------------------------------------------------------------------
