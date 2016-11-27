@@ -154,4 +154,33 @@ test ns_server-2.13.4 {basic operation} -body {
     ns_server -server testvhost2 serverdir
 } -match "glob" -result "*tests/testserver"
 
+#
+# Test mapping/unmapping of requests to connection pools.
+# Test with the pool "emergency"
+#
+# Initially, the mapping of the "emergency" pool should be empty.
+
+test ns_server-2.14.1 {basic operation} -body {
+    ns_server -pool emergency map 
+} -result {}
+
+#
+# Map some GET request, query the mapping, and unmap the GET requests
+#
+test ns_server-2.14.2 {mapping and unmapping of requsts} -setup {
+    ns_server -pool emergency map "GET /foo"
+} -body {
+    ns_server -pool emergency map 
+} -cleanup {
+    ns_server -pool emergency unmap "GET /foo"
+} -result {{GET /foo * inherit}}
+
+#
+# Finally, the map should be empty again.
+#
+test ns_server-2.14.3 {check, if cleanup of last test was succesful} -body {
+    ns_server -pool emergency map 
+} -result {}
+
+
 cleanupTests
