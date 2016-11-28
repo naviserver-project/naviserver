@@ -356,12 +356,10 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
 
     NsLockUnset(mutexPtr->lock);
 
-    /*
     if (diff.sec > 1 || diff.usec > 100000) {
-	fprintf(stderr, "Mutex unlock %s: lock duration %" PRIu64 ".%.6ld\n",
-		mutexPtr->name, (int64_t)diff.sec, diff.usec);
+        fprintf(stderr, "[%lx] Mutex unlock %s: lock duration %" PRIu64 ".%06ld\n",
+                (long)(void*)pthread_self(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
     }
-    */
 
 }
 
