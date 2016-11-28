@@ -495,8 +495,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     }
 
     if (connPtr == NULL) {
-	Ns_Log(Notice, "[%s] All avalaible connections are used, waiting %d idle %d current %d",
-	       poolPtr->servPtr->server, 
+	Ns_Log(Notice, "[%s pool %s] All available connections are used, waiting %d idle %d current %d",
+	       poolPtr->servPtr->server,
+               poolPtr->pool,
 	       poolPtr->wqueue.wait.num,
 	       poolPtr->threads.idle, 
 	       poolPtr->threads.current);
