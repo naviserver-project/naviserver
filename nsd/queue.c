@@ -763,9 +763,9 @@ ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 flags |= NS_OP_NOINHERIT;
             }
             
-            Ns_MutexLock(&servPtr->pools.lock);
+            Ns_MutexLock(&servPtr->urlspace.lock);
             Ns_UrlSpecificSet(servPtr->server, method, url, poolid, poolPtr, flags, NULL);
-            Ns_MutexUnlock(&servPtr->pools.lock);
+            Ns_MutexUnlock(&servPtr->urlspace.lock);
             
             Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", 
                    servPtr->server, method, url, poolPtr->pool);
@@ -783,9 +783,9 @@ ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         fprintf(stderr, "call list MapPool <%s>\n", poolPtr->pool);
         Ns_DStringInit(dsPtr);
         
-        Ns_MutexLock(&servPtr->pools.lock);
+        Ns_MutexLock(&servPtr->urlspace.lock);
         Ns_UrlSpecificWalk(poolid, servPtr->server, WalkCallback, dsPtr);
-        Ns_MutexUnlock(&servPtr->pools.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
         
         /*
          * Convert the Tcl_Dstring into a list, and filter the elements
@@ -915,9 +915,9 @@ ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             op = NS_URLSPACE_DEFAULT;
         }
 
-        Ns_MutexLock(&servPtr->pools.lock);
+        Ns_MutexLock(&servPtr->urlspace.lock);
         mappedPoolPtr = (ConnPool *)NsUrlSpecificGet(servPtr,  method, url, poolid, flags, op);
-        Ns_MutexUnlock(&servPtr->pools.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
 
         if (mappedPoolPtr != NULL) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(mappedPoolPtr->pool, -1));
@@ -977,9 +977,9 @@ ServerUnmapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             flags |= NS_OP_NOINHERIT;
         }
         
-        Ns_MutexLock(&servPtr->pools.lock);
+        Ns_MutexLock(&servPtr->urlspace.lock);
         data = Ns_UrlSpecificDestroy(servPtr->server,  method, url, poolid, flags);
-        Ns_MutexUnlock(&servPtr->pools.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.lock);
 
         success = (data != NULL);
         if (success) {
