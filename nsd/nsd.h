@@ -1357,10 +1357,7 @@ NS_EXTERN bool NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN bool NsUnmapPool(ConnPool *poolPtr, const char *map)
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)

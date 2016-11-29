@@ -399,7 +399,7 @@ CreatePool(NsServer *servPtr, const char *pool)
         set = Ns_ConfigGetSection(path);
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
-                NsMapPool(poolPtr, Ns_SetValue(set, i));
+                NsMapPool(poolPtr, Ns_SetValue(set, i), 0u);
             }
         }
     }

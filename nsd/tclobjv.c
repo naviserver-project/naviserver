@@ -826,7 +826,7 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
  *	    unprocessed.
  *
  * Results:
- *	    Always TCL_BREAK.
+ *	    Always TCL_OK.
  *
  * Side effects:
  *	    Argument processing will end sucessfully.

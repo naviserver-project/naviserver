@@ -7,27 +7,27 @@ namespace import -force ::tcltest::*
 
 test ns_server-1.1 {basic syntax: plain call} -body {
     ns_server
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?args?"}
 
 test ns_server-1.2 {basic syntax: wrong argument} -body {
     ns_server ?
-} -returnCodes error -result {bad option "?": must be active, all, connections, filters, keepalive, map, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, or waiting}
+} -returnCodes error -result {bad option "?": must be active, all, connections, filters, keepalive, map, mapped, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, or waiting}
 
 test ns_server-1.3.1 {plain call, option but no argument} -body {
     ns_server -pool {}
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?args?"}
 
 test ns_server-1.3.2 {plain call, option but no argument} -body {
     ns_server -pool {} --
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?args?"}
 
 test ns_server-1.4.1 {plain call, option but no argument} -body {
     ns_server -server test
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?args?"}
 
 test ns_server-1.4.2 {plain call, option but no argument} -body {
     ns_server -server test --
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server server? ?-pool pool? ?--? subcmd ?args?"}
 
 test ns_server-1.5 {provide invalid server argument} -body {
     ns_server -server foo
@@ -56,7 +56,7 @@ test ns_server-2.3.2 {query modfied minthreads} -body {
 
 test ns_server-2.3.3 {provided too large minthreads value} -body {
     ns_server minthreads 100
-} -returnCodes error -result {argument is not a integer in the valid range: 100}
+} -returnCodes error -result {argument is not an integer in valid range: 100}
 
 test ns_server-2.3.4.1 {query alternate pool from default server} -body {
     ns_server -pool emergency maxthreads
@@ -164,6 +164,15 @@ test ns_server-2.14.1 {basic operation} -body {
     ns_server -pool emergency map 
 } -result {}
 
+test ns_server-2.14.1a {basic operation with invalid pool} -body {
+    ns_server -pool emergencyx map 
+} -returnCodes error -result {no such pool 'emergencyx' for server 'test'}
+
+test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
+    ns_server -pool emergency map "XXX"
+} -returnCodes error -result {invalid mapspec 'XXX'; must be 2-element list containing http method and URL}
+
+
 #
 # Map some GET request, query the mapping, and unmap the GET requests
 #
@@ -176,11 +185,32 @@ test ns_server-2.14.2 {mapping and unmapping of requsts} -setup {
 } -result {{GET /foo * inherit}}
 
 #
-# Finally, the map should be empty again.
+# After cleanup, the map should be empty again.
 #
 test ns_server-2.14.3 {check, if cleanup of last test was succesful} -body {
     ns_server -pool emergency map 
 } -result {}
 
+#
+# Map some GET request, query the mapping, and unmap the GET requests
+#
+test ns_server-2.14.4 {mapping and unmapping of requsts, return mapping} -setup {
+    ns_server -pool emergency map "GET /foo"
+} -body {
+    ns_server mapped "GET /foo"
+} -cleanup {
+    ns_server -pool emergency unmap "GET /foo"
+} -result {emergency}
+
+#
+# Map some GET request, query the mapping, and unmap the GET requests
+#
+test ns_server-2.14.5 {mapping and unmapping of requsts, return mapping with inheritance} -setup {
+    ns_server -pool emergency map "GET /foo/*.png"
+} -body {
+    return [list [ns_server mapped "GET /foo"] [ns_server mapped "GET /foo/1.png"] [ns_server mapped "GET /foo/bar/2.png"]]
+} -cleanup {
+    ns_server -pool emergency unmap "GET /foo"
+} -result {{} emergency emergency}
 
 cleanupTests
