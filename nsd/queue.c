@@ -1866,13 +1866,14 @@ NsConnThread(void *arg)
     Ns_MutexLock(&servPtr->pools.lock);
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);
+    Ns_MutexUnlock(&servPtr->pools.lock);
+
     /*fprintf(stderr, "###stopping joinThread %p, self %p\n",
       joinThread, servPtr->pools.joinThread);*/
     
     if (joinThread != NULL) {
         JoinConnThread(&joinThread);
     }
-    Ns_MutexUnlock(&servPtr->pools.lock);
     
     Ns_Log(Notice, "exiting: %s", exitMsg);
 
