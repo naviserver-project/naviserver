@@ -229,6 +229,9 @@ static char *errCode[] = {
     NULL
 };
 
+Ns_LogSeverity Ns_LogNsProxyDebug = 0;
+
+
 /*
  * Static functions defined in this file.
  */
@@ -342,6 +345,8 @@ Nsproxy_LibInit(void)
 
         Ns_RegisterAtShutdown(Shutdown, NULL);
         Ns_RegisterProcInfo((Ns_Callback *)Shutdown, "nsproxy:shutdown", NULL);
+
+        Ns_LogNsProxyDebug = Ns_CreateLogSeverity("Debug(nsproxy)");
     }
 }
 
@@ -870,7 +875,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
 
     SetExpire(slavePtr, proxyPtr->conf.tidle);
 
-    Ns_Log(Debug, "nsproxy: slave %ld started", (long) slavePtr->pid);
+    Ns_Log(Ns_LogNsProxyDebug, "nsproxy: slave %ld started", (long) slavePtr->pid);
 
     return slavePtr;
 }
@@ -2631,7 +2636,10 @@ static void
 CloseSlave(Slave *slavePtr, int ms)
 {
     NS_NONNULL_ASSERT(slavePtr != NULL);
-        
+
+    Ns_Log(Ns_LogNsProxyDebug, "nsproxy [%s]: close slave %ld (expire %d ms)",
+           slavePtr->poolPtr->name, (long) slavePtr->pid, ms);
+
     /*
      * Set the time to kill the slave. Reaper thread will
      * use passed time to wait for the slave to exit gracefully.
@@ -2657,7 +2665,7 @@ CloseSlave(Slave *slavePtr, int ms)
     slavePtr->nextPtr = firstClosePtr;
     firstClosePtr = slavePtr;
 
-    Ns_Log(Debug, "nsproxy: slave %ld closed", (long) slavePtr->pid);
+    Ns_Log(Ns_LogNsProxyDebug, "nsproxy: slave %ld closed", (long) slavePtr->pid);
 }
 
 /*

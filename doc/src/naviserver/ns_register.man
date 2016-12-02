@@ -134,23 +134,6 @@ Be aware that executing the same [term ns_register_filter] statement more than o
 you might do when re-initializing Tcl) will add the filter more than once! You
 may want to have a shared variable set so that you don't do this.
 
-[para]
-This example shows how to expire all HTML files after an hour:
-
-[example_begin]
-    if {![lb]nsv_exists filters installed[rb]} {
-      nsv_set filters installed 1
-      ns_register_filter postauth GET /*.html ExpireSoon 3600
-    }
-    
-    proc ExpireSoon {seconds why} {
-      ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
-    }
-    
-[example_end]
-
-The command [cmd ns_info] [arg requestprocs] can be used to list the
-currently registered procs.
 
 
 [call [cmd ns_register_proc] \
@@ -482,6 +465,25 @@ for a .php file in the given path an info message.
 	ns_return 200 text/plain "Server refuses to execute PHP scripts here"
     }
 [example_end]
+
+[para]
+This example shows how to expire all HTML files after an hour:
+
+[example_begin]
+    if {![lb]nsv_exists filters installed[rb]} {
+      nsv_set filters installed 1
+      ns_register_filter postauth GET /*.html ExpireSoon 3600
+    }
+    
+    proc ExpireSoon {seconds why} {
+      ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
+    }
+    
+[example_end]
+
+[para] The command [cmd ns_info] [arg requestprocs] can be used to list the
+currently registered procs.
+
 
 [see_also ns_adp ns_conn ns_info]
 [keywords ADP filter request callback fastpath]

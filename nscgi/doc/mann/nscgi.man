@@ -1158,7 +1158,7 @@ should also do some error checking.
  char inputtext[lb]MAX_INPUT_LENGTH+1[rb];
 
  inputlenstr = getenv("CONTENT_LENGTH");
- inputlen = atoi(inputlenstr);
+ inputlen = strtol(inputlenstr, NULL, 10);
  status = fread(inputtext, 1, inputlen, stdin);
 [example_end]
 
