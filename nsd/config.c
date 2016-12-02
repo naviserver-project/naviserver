@@ -443,7 +443,7 @@ Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
  *      a boolean value.
  *
  * Results:
- *      NS_TRUE/NS_FALSE
+ *      NS_TRUE/NS_FALSE when parameter was found
  *
  * Side effects:
  *      The boolean value is returned by reference
