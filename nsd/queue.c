@@ -780,7 +780,6 @@ ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
          * Return the current mappings just in the case, when the map
          * operation was called without the optional argument.
          */
-        fprintf(stderr, "call list MapPool <%s>\n", poolPtr->pool);
         Ns_DStringInit(dsPtr);
         
         Ns_MutexLock(&servPtr->urlspace.lock);
@@ -841,7 +840,6 @@ ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                 }
             }
             if (result == TCL_OK) {
-                fprintf(stderr, "call list MapPool <%s> DONE\n", poolPtr->pool);
                 Tcl_SetObjResult(interp, resultObj);
             } else {
                 Ns_TclPrintfResult(interp, "invalid result from mapped URLs");
