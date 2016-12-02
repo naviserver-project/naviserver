@@ -2665,7 +2665,7 @@ CloseSlave(Slave *slavePtr, int ms)
     slavePtr->nextPtr = firstClosePtr;
     firstClosePtr = slavePtr;
 
-    Ns_Log(Ns_LogNsProxyDebug, "nsproxy: slave %ld closed", (long) slavePtr->pid);
+    Ns_Log(Ns_LogNsProxyDebug, "nsproxy [%s]: slave %ld closed", slavePtr->poolPtr->name, (long) slavePtr->pid);
 }
 
 /*
@@ -2759,6 +2759,9 @@ ReaperThread(void *ignored)
              */
 
             poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+            
+            Ns_Log(Ns_LogNsProxyDebug, "reaper checks pool %s", poolPtr->name);
+            
             Ns_MutexLock(&poolPtr->lock);
             if (poolPtr->conf.tidle != 0) {
                 diff = now;
