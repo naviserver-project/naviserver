@@ -326,6 +326,7 @@ List of all currently available NaviServer commands.
 
 [section {Server introspection}]
 [list_begin definitions]
+[call [cmd ns_driver]]
 [call [cmd ns_env]]
 [call [cmd ns_info]]
 [call [cmd ns_server]]

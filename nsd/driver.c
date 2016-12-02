@@ -492,8 +492,8 @@ DriverInit(const char *server, const char *genericModule, const char *module,
     }
 
     drvPtr->server         = server;
-    drvPtr->module         = ns_strdup(module);
-    drvPtr->name           = drvPtr->module;
+    drvPtr->module         = ns_strdup(genericModule);
+    drvPtr->name           = ns_strdup(module);
     drvPtr->listenProc     = init->listenProc;
     drvPtr->acceptProc     = init->acceptProc;
     drvPtr->recvProc       = init->recvProc;
@@ -912,6 +912,81 @@ DriverStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     return TCL_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverThreadsObjCmd --
+ *
+ *      Return the names of driver threads
+ *
+ * Results:
+ *      Standard Tcl Result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+DriverThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    Driver  *drvPtr;
+    Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
+
+    /*
+     * Iterate over all drivers and collect results.
+     */
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->name, -1));
+    }
+    Tcl_SetObjResult(interp, resultObj);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DriverNamesObjCmd --
+ *
+ *      Return the names of drivers.
+ *
+ * Results:
+ *      Standard Tcl Result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+DriverNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    Driver       *drvPtr;
+    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+    Tcl_HashTable names;     /* names of the drivers without duplicates */
+
+    Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+
+    /*
+     * Iterate over all drivers and collect results.
+     */
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        int            isNew;
+
+        (void)Tcl_CreateHashEntry(&names, drvPtr->module, &isNew);
+        if (isNew == 1) {
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->module, -1));
+        }
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    Tcl_DeleteHashTable(&names);
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -931,6 +1006,8 @@ int
 NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
+        {"names",      DriverNamesObjCmd},
+        {"threads",    DriverThreadsObjCmd},        
         {"stats",      DriverStatsObjCmd},
         {NULL, NULL}
     };
