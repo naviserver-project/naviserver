@@ -367,7 +367,9 @@ the control port (module nscp) might be the right thing for you.
 
 [para]
 
-Just a quick example: The server is started and two commands are issued, ns_info threads and ns_info requestprocs.
+Just a quick example: The server is started and two commands are
+issued, [cmd "ns_info threads"]
+and [cmd "ns_server requestprocs"].
 
 [example_begin]
 
@@ -391,15 +393,8 @@ buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.t
 {-driver- -main- 1084140464 0 1119862183 p:0x40037cfb a:0x0} 
 {-sched- -main- 1082039216 0 1119862183 p:0x4004a09a a:0x0} 
 {-main- {} 1076887680 1 1119862183 p:0x0 a:0x0}
-% ns_info requestprocs
-{server1 GET *.u_adp  p:0x4002e9e4 a:0x80585e0} {server1 HEAD *.u_adp  
-p:0x4002e9e4 a:0x80585e0} {server1 POST *.u_adp  p:0x4002e9e4 a:0x80585e0} 
-{server1GET *.sjis_adp  p:0x4002e9e4 a:0x80585e0} {server1 HEAD *.sjis_adp  
-p:0x4002e9e4 a:0x80585e0} {server1 POST *.sjis_adp  p:0x4002e9e4 a:0x80585e0} {server1GET *.
-gb_adp  p:0x4002e9e4 a:0x80585e0} {server1 HEAD *.gb_adp  p:0x4002e9e4 a:0x80585e0} {server1 POST
-*.gb_adp  p:0x4002e9e4 a:0x80585e0} {server1 GET *.adp  p:0x4002e9e4 a:0x80585e0} {server1 HEAD
-*.adp  p:0x4002e9e4 a:0x80585e0} {server1 POST *.adp  p:0x4002e9e4 a:0x80585e0} {server1 GET *
-ns:fastget server1} {server1 HEAD * ns:fastget server1} {server1 POST * ns:fastget server1}
+% ns_server requestprocs
+{GET / * inherit ns:fastget a:0x0} {HEAD / * inherit ns:fastget a:0x0} {POST / * inherit ns:fastget a:0x0}
 %
 
 [example_end]
@@ -1216,7 +1211,7 @@ from localhost, it still poses a risk potential.
 For more information about the control port interface, see the
 documentation of the [term nscp] ("NaviServer's Control Port") module.
 
-[see_also admin-install]
+[see_also admin-install ns_server commandlist]
 
 [keywords nsd command-line-options nscp ns_db]
 
