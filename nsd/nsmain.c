@@ -452,6 +452,13 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     }
 
     /*
+     * This is the first place, where we can use values from the config file.
+     *
+     * Turn on logging of long mutex calls if desired.
+     */
+    NS_mutexlocktrace = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
+    
+    /*
      * If no servers were defained, autocreate server "default"
      * so all default config values will be used for that server
      */
@@ -479,7 +486,6 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
         }
         server = Ns_SetKey(servers, i);
     }
-
 
     /*
      * Verify and change to the home directory.
@@ -533,6 +539,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     }
     nsconf.home = SetCwd(nsconf.home);
 
+    
     /* 
      * Make the result queryable.
      */

@@ -71,6 +71,8 @@ typedef struct Mutex {
 static Mutex *GetMutex(Ns_Mutex *mutex) NS_GNUC_NONNULL(1);
 static Mutex *firstMutexPtr;
 
+bool NS_mutexlocktrace = NS_FALSE;
+
 
 /*
  *----------------------------------------------------------------------
@@ -267,7 +269,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
         Ns_DiffTime(&end, &startTime, &diff);
 	Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
 
-	if (diff.sec > 1 || diff.usec > 100000) {
+	if (NS_mutexlocktrace && (diff.sec > 1 || diff.usec > 100000)) {
 	    fprintf(stderr, "[%lx] Mutex lock %s: wait duration %" PRIu64 ".%06ld\n",
                     (long)(void*)pthread_self(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
 	}
@@ -356,7 +358,7 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
 
     NsLockUnset(mutexPtr->lock);
 
-    if (diff.sec > 1 || diff.usec > 100000) {
+    if (NS_mutexlocktrace && (diff.sec > 1 || diff.usec > 100000)) {
         fprintf(stderr, "[%lx] Mutex unlock %s: lock duration %" PRIu64 ".%06ld\n",
                 (long)(void*)pthread_self(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
     }
