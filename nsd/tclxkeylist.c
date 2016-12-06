@@ -1264,7 +1264,6 @@ int
 TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj    *keylPtr, *valuePtr;
-    const char *key;
     int         keyLen, status = TCL_OK;
 
     if ((objc < 2) || (objc > 4)) {
@@ -1277,12 +1276,13 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         status = TclX_KeylkeysObjCmd(clientData, interp, objc, objv);
         
     } else {
-
         keylPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
         if (keylPtr == NULL) {
             status = TCL_ERROR;
             
         } else {
+            const char *key;
+
             /*
              * Handle retrieving a value for a specified key.
              */
