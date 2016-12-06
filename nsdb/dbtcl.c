@@ -691,7 +691,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case VERBOSE:
         {
-            int         verbose;
+            int         verbose = 0;
             const char *idString;
             Ns_ObjvSpec args[] = {
                 {"dbID",     Ns_ObjvString, &idString, NULL},
