@@ -890,8 +890,11 @@ DriverStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("name", 4));
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("thread", 6));
         Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->name, -1));
+
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->module, -1));
 
         Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("received", 8));
         Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.received));
