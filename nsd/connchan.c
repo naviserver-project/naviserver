@@ -1008,9 +1008,8 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char    *name;
     int            result = TCL_OK;
-    const char    *script, *whenString;
+    const char    *name, *script, *whenString;
     const Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
             
     Ns_ObjvSpec lopts[] = {
@@ -1033,6 +1032,8 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         NsServer       *servPtr = itPtr->servPtr;
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
 
+        assert(whenString != NULL);
+        
         if (unlikely(connChanPtr == NULL)) {
             result = TCL_ERROR;
         } else {

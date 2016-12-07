@@ -694,7 +694,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
     int            result = TCL_OK;
     const Ns_Time *deltaTimeoutPtr = NULL;
     const char    *jobIdString;
-    Queue         *queue;
+    Queue         *queue = NULL;
     Ns_ObjvSpec    lopts[] = {
         {"-timeout",  Ns_ObjvTime,   &deltaTimeoutPtr, NULL},
         {NULL, NULL, NULL, NULL}
@@ -720,6 +720,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
             Ns_IncrTime(&timeout, deltaTimeoutPtr->sec, deltaTimeoutPtr->usec);
         }
 
+        assert(queue != NULL);
         hPtr = Tcl_FindHashEntry(&queue->jobs, jobIdString);
         if (hPtr == NULL) {
             Ns_TclPrintfResult(interp, "no such job: %s", jobIdString);
@@ -823,7 +824,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
 static int
 JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Queue        *queue;
+    Queue        *queue = NULL;
     int          result = TCL_OK;
     const char  *jobIdString;
     Ns_ObjvSpec  args[] = {
@@ -837,8 +838,10 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     } else {
         Job                  *jobPtr = NULL;
-        const Tcl_HashEntry  *hPtr = Tcl_FindHashEntry(&queue->jobs, jobIdString);
+        const Tcl_HashEntry  *hPtr;
 
+        assert(queue != NULL);
+        hPtr = Tcl_FindHashEntry(&queue->jobs, jobIdString);
         if (hPtr == NULL) {
             (void)ReleaseQueue(queue, NS_FALSE);
             Ns_TclPrintfResult(interp, "no such job: %s", jobIdString);

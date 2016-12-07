@@ -173,7 +173,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
     TclCache        *cPtr;
     const char      *key;
     Ns_Time         *timeoutPtr = NULL, *expPtr = NULL;
-    int              nargs, isNew, force = (int)NS_FALSE, status;
+    int              nargs = 0, isNew, force = (int)NS_FALSE, status;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -195,7 +195,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 
     } else {
         Ns_Entry *entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr);
-        
+
         if (entry == NULL) {
             status = TCL_ERROR;
             
@@ -514,6 +514,7 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
          * cases, or when the option "-exact" is specified, a single hash
          * lookup is sufficient.
          */
+        assert(cPtr != NULL);
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFindEntry(cPtr->cache, pattern);
         if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {
@@ -531,7 +532,7 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
          * characters. We need to iterate over all entries, which can
          * take a while for large caches.
          */
-
+        assert(cPtr != NULL);
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFirstEntry(cPtr->cache, &search);
         while (entry != NULL) {
