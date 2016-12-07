@@ -638,8 +638,10 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
                    (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
         }
         if (rl.rlim_cur > FD_SETSIZE) {
-            Ns_Log(Warning, "nsmain: rl_cur > FD_SETSIZE, select() calls should not be used");
+            Ns_Log(Warning, "nsmain: rl_cur (%ld) > FD_SETSIZE (%d), select() calls should not be used",
+                   (long)rl.rlim_cur, FD_SETSIZE);
         }
+        /* fprintf(stderr, "FD_SETSIZE %d\n", FD_SETSIZE); */
     }
 
 #endif

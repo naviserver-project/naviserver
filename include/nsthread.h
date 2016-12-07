@@ -616,13 +616,6 @@ typedef int bool;
 # define F_CLOEXEC                  1
 #endif
 
-#ifndef __linux
-# ifdef FD_SETSIZE
-#  undef FD_SETSIZE
-# endif
-# define FD_SETSIZE                  1024
-#endif
-
 #ifndef PATH_MAX
 # define PATH_MAX 1024
 #endif
