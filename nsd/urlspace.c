@@ -751,10 +751,16 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
         if (stack[depth] == NULL) {
             Tcl_DStringAppendElement(&subDs, "/");
         } else {
+            Tcl_DString   elementDs;
+
+            Tcl_DStringInit(&elementDs);
             while (stack[depth] != NULL) {
-                Ns_DStringVarAppend(&subDs, "/", stack[depth], (char *)0);
+                Ns_DStringVarAppend(&elementDs, "/", stack[depth], (char *)0);
                 depth++;
             }
+            Tcl_DStringAppendElement(&subDs, elementDs.string);
+            Tcl_DStringFree(&elementDs);
+            
         }
 
         Ns_DStringVarAppend(&subDs, " ", filter, " ", (char *)0);
