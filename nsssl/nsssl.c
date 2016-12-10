@@ -134,11 +134,11 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    Ns_DString ds;
-    int num;
-    const char *path, *value;
-    SSLDriver *drvPtr;
-    Ns_DriverInitData init = {0};
+    Ns_DString         ds;
+    int                num;
+    const char        *path, *value;
+    SSLDriver         *drvPtr;
+    Ns_DriverInitData  init = {0};
 
     Ns_DStringInit(&ds);
 
