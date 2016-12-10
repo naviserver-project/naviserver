@@ -153,7 +153,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
  * Ns_SockListenUdp --
  *
  *      Listen on the UDP socket for the given IP address and port.  The
- *      given address might be NULL, which implies the inspecified IP
+ *      given address might be NULL, which implies the unspecified IP
  *      address ("0.0.0.0" or "::").
  *
  * Results:
