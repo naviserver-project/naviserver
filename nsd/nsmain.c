@@ -370,7 +370,7 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
         }
     }
 
-    if (mode != 'c' || nsconf.config != NULL) {
+    if (nsconf.config != NULL) {
 	config = NsConfigRead(nsconf.config);
     }
 
