@@ -1,4 +1,4 @@
-[manpage_begin {Template for new COMMAND} n 4.99.5]
+[manpage_begin {Template for new COMMAND} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {One-line summary what the command does}]
