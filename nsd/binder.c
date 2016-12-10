@@ -45,6 +45,11 @@
 #endif
 
 
+typedef struct Prebind {
+    size_t count;
+    NS_SOCKET sockets[1];
+} Prebind;
+
 /*
  * Local variables defined in this file
  */
@@ -63,8 +68,218 @@ static NS_SOCKET binderResponse[2] = { NS_INVALID_SOCKET, NS_INVALID_SOCKET };
  * Local functions defined in this file
  */
 #ifndef _WIN32
-static Ns_ReturnCode PreBind(const char *line) NS_GNUC_NONNULL(1);
+static Ns_ReturnCode PrebindSockets(const char *line)
+    NS_GNUC_NONNULL(1);
+
 static void Binder(void);
+
+static struct Prebind* PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+static bool PrebindGet(const char *proto, struct sockaddr *saPtr, NS_SOCKET *sockPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *pPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+#endif
+
+
+#ifndef _WIN32
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindAlloc --
+ *
+ *      Create a Prebind structure with potentially multiple sockets
+ *      binding to the identical port. This is needed for e.g. multiple
+ *      listeners with SO_REUSEPORT.
+ *
+ * Results:
+ *      Either a prebind structure or NULL inc ase of failure.
+ *
+ * Side effects:
+ *      Allocating memory, binding of TCP or UDP sockets.
+ *
+ *----------------------------------------------------------------------
+ */
+static struct Prebind*
+PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
+{
+    struct Prebind *pPtr;
+    bool            reuseport;
+    size_t          i;
+
+    NS_NONNULL_ASSERT(proto != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
+
+    pPtr = ns_malloc(sizeof(Prebind) + sizeof(NS_SOCKET)*reuses-1);
+    pPtr->count = reuses;
+
+    reuseport = (reuses > 1);
+
+    for (i = 0u; i < reuses; i++) {
+        if (*proto == 't') {
+            pPtr->sockets[i] = Ns_SockBind(saPtr, reuseport);
+        } else if (*proto == 't') {
+            pPtr->sockets[i] = Ns_SockBindUdp(saPtr, reuseport);
+        } else {
+            Ns_Log(Error, "prebind: invalid protocol %s", proto);
+            ns_free(pPtr);
+            pPtr = NULL;
+            break;
+        }
+
+        if (pPtr->sockets[i] == NS_INVALID_SOCKET) {
+            Ns_LogSockaddr(Error, "prebind error on ", (const struct sockaddr *)saPtr);
+            Ns_Log(Error, "prebind error: %s", strerror(errno));
+            if (i == 0) {
+                /*
+                 * Could not bind to a single port. Return NULL to
+                 * signal an invalid attempt.
+                 */
+                ns_free(pPtr);
+                pPtr = NULL;
+                break;
+            }
+        }
+    }
+
+    return pPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindGet --
+ *
+ *      Get a single socket from the prebind structure. In case of
+ *      success, the function returns in its last argument the prebound
+ *      socket and removes it from the set of available sockets. When
+ *      all sockets are consumed the prebind structure is freed and the
+ *      hash entry is removed.
+ *
+ * Results:
+ *
+ *      NS_TRUE in case, there is a prebind structure for the provided
+ *      sockaddr or NS_FALSE on failure.
+ *
+ * Side effects:
+ *      Potentially freeing memory.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+PrebindGet(const char *proto, struct sockaddr *saPtr, NS_SOCKET *sockPtr)
+{
+    static Tcl_HashTable *tablePtr;
+    Tcl_HashEntry        *hPtr;
+    bool                  foundEntry = NS_FALSE;
+
+    NS_NONNULL_ASSERT(proto != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    if (*proto == 't') {
+        tablePtr = &preboundTcp;
+    } else {
+        tablePtr = &preboundUdp;
+    }
+
+    Ns_MutexLock(&lock);
+    hPtr = Tcl_FindHashEntry(tablePtr, (char *)saPtr);
+    if (hPtr != NULL) {
+        struct Prebind *pPtr;
+        size_t          i;
+        bool            allConsumed = NS_TRUE;
+
+        /*
+         * We found a prebound entry.
+         */
+        foundEntry = NS_TRUE;
+
+        pPtr = (struct Prebind *)Tcl_GetHashValue(hPtr);
+        for (i = 0u; i < pPtr->count; i++) {
+            /*
+             * Find an entry, which is usable
+             */
+            if (pPtr->sockets[i] != NS_INVALID_SOCKET) {
+                *sockPtr = pPtr->sockets[i];
+                pPtr->sockets[i] = NS_INVALID_SOCKET;
+                break;
+            }
+        }
+        if (*sockPtr !=  NS_INVALID_SOCKET) {
+            /*
+             * Check, if there are more unconsumed entries.
+             */
+            for (; i < pPtr->count; i++) {
+                if (pPtr->sockets[i] != NS_INVALID_SOCKET) {
+                    /*
+                     * Yes, there are more unconsumed entries.
+                     */
+                    allConsumed = NS_FALSE;
+                    break;
+                }
+            }
+        }
+        if (allConsumed) {
+            ns_free(pPtr);
+            Tcl_DeleteHashEntry(hPtr);
+        }
+    }
+    Ns_MutexUnlock(&lock);
+
+    return foundEntry;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrebindCloseSockets --
+ *
+ *      Close the remaining prebound sockets.
+ *
+ * Results:
+ *
+ *      None.
+ *
+ * Side effects:
+ *      Freeing memory.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *pPtr)
+{
+    size_t         i;
+    unsigned short port;
+    const char    *addr;
+    char           ipString[NS_IPADDR_SIZE];
+    NS_SOCKET      sock;
+    int            count = 0;
+
+    NS_NONNULL_ASSERT(proto != NULL);
+    NS_NONNULL_ASSERT(saPtr != NULL);
+    NS_NONNULL_ASSERT(pPtr != NULL);
+
+    addr = ns_inet_ntop((struct sockaddr *)saPtr, ipString, sizeof(ipString));
+    port = Ns_SockaddrGetPort((struct sockaddr *)saPtr);
+
+    for (i = 0u; i < pPtr->count; i++) {
+        sock = pPtr->sockets[i];
+        if (sock != NS_INVALID_SOCKET) {
+            count ++;
+            Ns_Log(Debug, "prebind closing %s socket %d\n", proto, sock);
+            ns_sockclose(sock);
+        }
+    }
+    ns_free(pPtr);
+    Ns_Log(Warning, "prebind: closed unused %d %s socket(s): [%s]:%hd",
+           count, proto, addr, port);
+}
 #endif
 
 
@@ -94,34 +309,25 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
     struct sockaddr     *saPtr = (struct sockaddr *)&sa;
 
     if (Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
-        Tcl_HashEntry *hPtr;
+        bool found;
 
-        Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(&preboundTcp, (char *)saPtr);
-        if (hPtr != NULL) {
+        found = PrebindGet("tcp", saPtr, &sock);
+        if (!found) {
             /*
-             * Found prebound entry, consume it...
-             */
-	    sock = PTR2INT(Tcl_GetHashValue(hPtr));
-            Tcl_DeleteHashEntry(hPtr);
-        }
-        Ns_MutexUnlock(&lock);
-        
-        if (hPtr == NULL) {
-            /* 
-             * Not prebound, try to bind now.
+             * Prebind did not find a prebound entry, try to bind now.
              */
             sock = Ns_SockBind(saPtr, reuseport);
             //fprintf(stderr, "listen on port %hd binding with reuseport %d\n", port, reuseport);
         } else {
             //fprintf(stderr, "listen on port %hd already prebound\n", port);
         }
+
         if (sock != NS_INVALID_SOCKET && listen(sock, backlog) == -1) {
-            /* 
-             * Can't listen; close the opened socket 
+            /*
+             * Can't listen; close the opened socket
              */
             int err = errno;
-            
+
             ns_sockclose(sock);
             errno = err;
             sock = NS_INVALID_SOCKET;
@@ -134,7 +340,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
          */
         saPtr = NULL;
     }
-    
+
     /*
      * If forked binder is running and we could not allocate socket
      * directly, try to do it through the binder
@@ -146,6 +352,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
     return sock;
 }
 #endif /* _WIN32 */
+
 
 /*
  *----------------------------------------------------------------------
@@ -173,19 +380,16 @@ Ns_SockListenUdp(const char *address, unsigned short port)
     struct sockaddr *saPtr = (struct sockaddr *)&sa;
 
     if (Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
-        Tcl_HashEntry *hPtr;
-        
-        Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(&preboundUdp, (char *) &sa);
-        if (hPtr != NULL) {
-            sock = PTR2INT(Tcl_GetHashValue(hPtr));
-            Tcl_DeleteHashEntry(hPtr);
-        }
-        Ns_MutexUnlock(&lock);
-        
-        if (hPtr == NULL) {
-            /* 
-             * Not prebound, bind now 
+        bool           found;
+
+#ifndef _WIN32
+        found = PrebindGet("udp", saPtr, &sock);
+#else
+        found = NS_FALSE;
+#endif
+        if (!found) {
+            /*
+             * Not prebound, bind now
              */
             sock = Ns_SockBindUdp(saPtr, NS_FALSE);
         }
@@ -239,8 +443,8 @@ Ns_SockListenRaw(int proto)
     }
     Ns_MutexUnlock(&lock);
     if (hPtr == NULL) {
-        /* 
-         * Not prebound, bind now 
+        /*
+         * Not prebound, bind now
          */
         sock = Ns_SockBindRaw(proto);
     }
@@ -301,16 +505,16 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
         hPtr = Tcl_NextHashEntry(&search);
     }
     Ns_MutexUnlock(&lock);
-    
+
     if (hPtr == NULL) {
-        /* 
-         * Not prebound, bind now 
+        /*
+         * Not prebound, bind now
          */
         sock = Ns_SockBindUnix(path, backlog > 0 ? SOCK_STREAM : SOCK_DGRAM, mode);
     }
     if (sock >= 0 && backlog > 0 && listen(sock, backlog) == -1) {
-        /* 
-         * Can't listen; close the opened socket 
+        /*
+         * Can't listen; close the opened socket
          */
         int err = errno;
 
@@ -356,7 +560,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
     int       n = 1;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
-    
+
     sock = socket(saPtr->sa_family, SOCK_DGRAM, 0);
 
     if (sock == NS_INVALID_SOCKET
@@ -364,7 +568,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
         || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
         || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
         int err = errno;
-        
+
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
@@ -427,7 +631,7 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
         || (mode && chmod(path, mode) == -1)) {
         int err = errno;
-        
+
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
@@ -464,7 +668,7 @@ Ns_SockBindRaw(int proto)
 
     if (sock == NS_INVALID_SOCKET) {
         int err = errno;
-        
+
         ns_sockclose(sock);
         Ns_SetSockErrno(err);
     }
@@ -494,7 +698,7 @@ NsInitBinder(void)
 {
     Ns_MutexInit(&lock);
     Ns_MutexSetName(&lock, "binder");
-    
+
     Tcl_InitHashTable(&preboundTcp, (int)(sizeof(struct NS_SOCKADDR_STORAGE) / sizeof(int)));
     Tcl_InitHashTable(&preboundUdp, (int)(sizeof(struct NS_SOCKADDR_STORAGE) / sizeof(int)));
     Tcl_InitHashTable(&preboundRaw, TCL_ONE_WORD_KEYS);
@@ -524,29 +728,29 @@ NsPreBind(const char *args, const char *file)
     Ns_ReturnCode status = NS_OK;
 
 #ifndef _WIN32
-    
+
     if (args != NULL) {
-        status = PreBind(args);
+        status = PrebindSockets(args);
     }
-    
+
     /*
      * Check, if the bind options were provided via file. If so, parse
      * and interprete it.
      */
     if (status == NS_OK && file != NULL) {
         Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
-        
+
         if (chan == NULL) {
             Ns_Log(Error, "NsPreBind: can't open file '%s': '%s'", file,
                    strerror(Tcl_GetErrno()));
         } else {
             Tcl_DString line;
-            
+
             Tcl_DStringInit(&line);
             while (Tcl_Eof(chan) == 0) {
                 Tcl_DStringSetLength(&line, 0);
                 if (Tcl_Gets(chan, &line) > 0) {
-                    status = PreBind(Tcl_DStringValue(&line));
+                    status = PrebindSockets(Tcl_DStringValue(&line));
                     if (status != NS_OK) {
                         break;
                     }
@@ -584,26 +788,18 @@ NsClosePreBound(void)
     Tcl_HashEntry         *hPtr;
     Tcl_HashSearch         search;
     const char            *addr;
-    int                    port;
     NS_SOCKET              sock;
-    struct NS_SOCKADDR_STORAGE *saPtr;
-    char                   ipString[NS_IPADDR_SIZE];
+    struct sockaddr       *saPtr;
 
     Ns_MutexLock(&lock);
 
     /*
      * Close TCP sockets
      */
-
     hPtr = Tcl_FirstHashEntry(&preboundTcp, &search);
     while (hPtr != NULL) {
-        saPtr = (struct NS_SOCKADDR_STORAGE *) Tcl_GetHashKey(&preboundTcp, hPtr);
-        addr = ns_inet_ntop((struct sockaddr *)saPtr, ipString, sizeof(ipString));
-        port = Ns_SockaddrGetPort((struct sockaddr *)saPtr);
-        sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
-        Ns_Log(Warning, "prebind: closed unused TCP socket: [%s]:%d = %d",
-               addr, port, sock);
-        ns_sockclose(sock);
+        saPtr = (struct sockaddr *)Tcl_GetHashKey(&preboundTcp, hPtr);
+        PrebindCloseSockets("tcp", saPtr, Tcl_GetHashValue(hPtr));
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -613,16 +809,10 @@ NsClosePreBound(void)
     /*
      * Close UDP sockets
      */
-
     hPtr = Tcl_FirstHashEntry(&preboundUdp, &search);
     while (hPtr != NULL) {
-        saPtr = (struct NS_SOCKADDR_STORAGE *) Tcl_GetHashKey(&preboundUdp, hPtr);
-        addr = ns_inet_ntop((struct sockaddr *)saPtr, ipString, sizeof(ipString));
-        port = Ns_SockaddrGetPort((struct sockaddr *)saPtr);
-        sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
-        Ns_Log(Warning, "prebind: closed unused UDP socket: [%s]:%d = %d",
-               addr, port, sock);
-        ns_sockclose(sock);
+        saPtr = (struct sockaddr *)Tcl_GetHashKey(&preboundUdp, hPtr);
+        PrebindCloseSockets("udp", saPtr, Tcl_GetHashValue(hPtr));
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -632,9 +822,10 @@ NsClosePreBound(void)
     /*
      * Close raw sockets
      */
-
     hPtr = Tcl_FirstHashEntry(&preboundRaw, &search);
     while (hPtr != NULL) {
+        int port;
+
         sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
         port = PTR2INT(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused raw socket: %d = %d",
@@ -649,7 +840,6 @@ NsClosePreBound(void)
     /*
      * Close Unix-domain sockets
      */
-
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
         addr = (char *) Tcl_GetHashKey(&preboundUnix, hPtr);
@@ -675,8 +865,8 @@ NsClosePreBound(void)
  *
  *      Pre-bind to one or more ports in a comma-separated list:
  *
- *          addr:port[/protocol]
- *          port[/protocol]
+ *          addr:port[/protocol][#number]
+ *          port[/protocol][#number]
  *          0/icmp[/count]
  *          /path[|mode]
  *
@@ -692,11 +882,11 @@ NsClosePreBound(void)
 #ifndef _WIN32
 
 static Ns_ReturnCode
-PreBind(const char *spec)
+PrebindSockets(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
     int                    isNew, sock;
-    char                  *next, *str, *line;
+    char                  *next, *str, *line, *lines;
     long                   l;
     Ns_ReturnCode          status = NS_OK;
     struct NS_SOCKADDR_STORAGE  sa;
@@ -704,13 +894,15 @@ PreBind(const char *spec)
 
     NS_NONNULL_ASSERT(spec != NULL);
 
-    line = ns_strdup(spec);
+    line = lines = ns_strdup(spec);
     Ns_Log(Notice, "trying to prebind <%s>", line);
 
     for (; line != NULL; line = next) {
-        const char    *proto;
-        char          *addr;
-        unsigned short port;
+        const char     *proto;
+        char           *addr, *p;
+        unsigned short  port;
+        long            reuses;
+        struct Prebind *pPtr;
 
         /*
          * Find the next comma separated token.
@@ -725,9 +917,23 @@ PreBind(const char *spec)
          */
         proto = "tcp";
         addr = NS_IP_UNSPECIFIED;
+        reuses = 1;
 
-        /* 
-	 * Parse port 
+        /*
+	 * Parse reuses count
+	 */
+        p = strrchr(line, INTCHAR('#'));
+        if (p != NULL) {
+            *p++ = '\0';
+            reuses = strtol(p, NULL, 10);
+            if (reuses < 1) {
+                Ns_Log(Warning, "prebind: ignore invalid number of protoport reuses: '%s'", p);
+                reuses = 1;
+            }
+        }
+
+        /*
+	 * Parse port
 	 */
         Ns_HttpParseHost(line, &addr, &str);
         if (str != NULL) {
@@ -740,8 +946,9 @@ PreBind(const char *spec)
         }
         port = (l >= 0) ? (unsigned short)l : 0u;
 
-        /* 
-	 * Parse protocol 
+        /*
+	 * Parse protocol; a line starting with a '/' means: path, which
+	 * implies a unix-domain socket.
 	 */
         if (*line != '/' && (str = strchr(line, INTCHAR('/')))) {
             *str++ = '\0';
@@ -751,7 +958,7 @@ PreBind(const char *spec)
 	/*
 	 * TCP
 	 */
-        Ns_Log(Notice, "prebind: proto %s addr %s port %d", proto, addr, port);
+        Ns_Log(Notice, "prebind: proto %s addr %s port %d reuses %ld", proto, addr, port, reuses);
 
         if (STREQ(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
@@ -767,25 +974,14 @@ PreBind(const char *spec)
 
             Ns_LogSockaddr(Notice, "prebind adds", (const struct sockaddr *)saPtr);
 
-            sock = Ns_SockBind(saPtr, NS_FALSE);
-            if (sock == NS_INVALID_SOCKET) {
-                Ns_Log(Error, "prebind: tcp: [%s]:%d: %s", addr, port,
-                       strerror(errno));
+            pPtr = PrebindAlloc(proto, (size_t)reuses, saPtr);
+            if (pPtr == NULL) {
                 Tcl_DeleteHashEntry(hPtr);
                 status = NS_ERROR;
                 break;
             }
-            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
-            Ns_Log(Notice, "prebind: tcp: [%s]:%d = %d", addr, port, sock);
-
-#if defined(SO_REUSEPORT)
-            {
-                int optval = 1;
-                setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
-            }
-#endif
-
-            
+            Tcl_SetHashValue(hPtr, pPtr);
+            Ns_Log(Notice, "prebind: tcp: [%s]:%d", addr, port);
         }
 
 	/*
@@ -803,23 +999,14 @@ PreBind(const char *spec)
                        addr, port);
                 continue;
             }
-            sock = Ns_SockBindUdp(saPtr, NS_FALSE);
-            if (sock == NS_INVALID_SOCKET) {
-                Ns_Log(Error, "prebind: udp: [%s]:%d: %s", addr, port,
-                       strerror(errno));
+            pPtr = PrebindAlloc(proto, (size_t)reuses, saPtr);
+            if (pPtr == NULL) {
                 Tcl_DeleteHashEntry(hPtr);
                 status = NS_ERROR;
                 break;
             }
-            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
-            Ns_Log(Notice, "prebind: udp: [%s]:%d = %d", addr, port, sock);
-#if defined(SO_REUSEPORT)
-            {
-                int optval = 1;
-                setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
-            }
-#endif
-
+            Tcl_SetHashValue(hPtr, pPtr);
+            Ns_Log(Notice, "prebind: udp: [%s]:%d", addr, port);
         }
 
 	/*
@@ -828,7 +1015,7 @@ PreBind(const char *spec)
         if (strncmp(proto, "icmp", 4u) == 0) {
             long count = 1;
             /* Parse count */
-            
+
             str = strchr(str, INTCHAR('/'));
             if (str != NULL) {
                 *(str++) = '\0';
@@ -857,7 +1044,7 @@ PreBind(const char *spec)
         if (Ns_PathIsAbsolute(line) == NS_TRUE) {
             unsigned short mode = 0u;
             /* Parse mode */
-            
+
             str = strchr(str, INTCHAR('|'));
             if (str != NULL) {
                 *(str++) = '\0';
@@ -881,8 +1068,8 @@ PreBind(const char *spec)
             Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
         }
     }
-    ns_free(line);
-    
+    ns_free(lines);
+
     return status;
 }
 #endif
@@ -925,10 +1112,10 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     if (address == NULL) {
         address = NS_IP_UNSPECIFIED;
     }
-    
+
     /*
      * Build and send message.
-     */    
+     */
     iov[0].iov_base = (caddr_t) &options;
     iov[0].iov_len = sizeof(options);
     iov[1].iov_base = (caddr_t) &port;
@@ -951,7 +1138,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
 
     /*
      * Reveive reply.
-     */    
+     */
     iov[0].iov_base = (caddr_t) &err;
     iov[0].iov_len = sizeof(int);
     memset(&msg, 0, sizeof(msg));
@@ -974,7 +1161,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
 #ifdef HAVE_CMMSG
     {
       struct cmsghdr *c = CMSG_FIRSTHDR(&msg);
-      if ((c != NULL) && c->cmsg_type == SCM_RIGHTS) { 
+      if ((c != NULL) && c->cmsg_type == SCM_RIGHTS) {
 	  int *ptr = (int*)CMSG_DATA(c);
           sock = *ptr;
       }
@@ -1213,16 +1400,16 @@ Binder(void)
             c = CMSG_FIRSTHDR(&msg);
             c->cmsg_level = SOL_SOCKET;
             c->cmsg_type  = SCM_RIGHTS;
-            pfd = (int*)CMSG_DATA(c); 
+            pfd = (int*)CMSG_DATA(c);
             *pfd = sock;
             c->cmsg_len = CMSG_LEN(sizeof(int));
-            msg.msg_controllen = c->cmsg_len; 
+            msg.msg_controllen = c->cmsg_len;
 #else
             msg.msg_accrights = (caddr_t) &sock;
             msg.msg_accrightslen = sizeof(sock);
 #endif
         }
-            
+
         do {
             n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
         } while (n == -1 && errno == EINTR);
