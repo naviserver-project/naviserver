@@ -46,11 +46,11 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 
 #define NSSSL_VERSION  "2.0"
 
-/* 
+/*
  * The maximum chunk size from TLS is 2^14 => 16384 (see RFC 5246). OpenSSL
  * can't send more than this number of bytes in one attempt.
  */
-#define CHUNK_SIZE 16384 
+#define CHUNK_SIZE 16384
 
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
@@ -94,7 +94,7 @@ static Ns_Mutex *driver_locks;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
-static void 
+static void
 SSL_infoCB(const SSL *ssl, int where, int ret) {
     if ((where & SSL_CB_HANDSHAKE_DONE)) {
         ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
@@ -102,7 +102,7 @@ SSL_infoCB(const SSL *ssl, int where, int ret) {
 }
 
 /*
- * Include pre-generated DH parameters 
+ * Include pre-generated DH parameters
  */
 #include "dhparams.h"
 
@@ -198,8 +198,8 @@ Ns_ModuleInit(const char *server, const char *module)
     drvPtr->dhKey512 = get_dh512();
     drvPtr->dhKey1024 = get_dh1024();
 
-    /* 
-     * Load certificate and private key 
+    /*
+     * Load certificate and private key
      */
     value = Ns_ConfigGetValue(path, "certificate");
     if (value == NULL) {
@@ -215,7 +215,7 @@ Ns_ModuleInit(const char *server, const char *module)
         return NS_ERROR;
     }
 
-    /* 
+    /*
      * Get DH parameters from .pem file
      */
     {
@@ -232,14 +232,14 @@ Ns_ModuleInit(const char *server, const char *module)
         }
     }
 
-    /* 
+    /*
      * Generate key for eliptic curve cryptography (potentially used
      * for Elliptic Curve Digital Signature Algorithm (ECDSA) and
      * Elliptic Curve Diffie-Hellman (ECDH).
      */
     {
 	EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-        
+
 	if (ecdh == NULL) {
 	    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
 	    return NS_ERROR;
@@ -252,7 +252,7 @@ Ns_ModuleInit(const char *server, const char *module)
 	EC_KEY_free (ecdh);
     }
 
-    /* 
+    /*
      * Https cache support
      */
     Ns_DStringPrintf(&ds, "nsssl:%d", getpid());
@@ -264,7 +264,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
     {
         long n = SSL_OP_ALL;
-        
+
         value = Ns_ConfigGetValue(path, "protocols");
         if (value != NULL) {
             if (strstr(value, "!SSLv2") != NULL) {
@@ -335,7 +335,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_DStringSetLength(&ds, 1024);
     for (num = 0; !RAND_status() && num < 3; num++) {
         int n;
-        
+
         Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
         for (n = 0; n < 1024; n++) {
             ds.string[n] = (char)Ns_DRand();
@@ -400,7 +400,7 @@ Listen(Ns_Driver *driver, CONST char *address, unsigned short port, int backlog,
  *
  *----------------------------------------------------------------------
  */
- 
+
 static NS_DRIVER_ACCEPT_STATUS
 Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
@@ -410,7 +410,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
     if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__
-      /* 
+      /*
        * Darwin's poll returns per default writable in situations,
        * where nothing can be written.  Setting the socket option for
        * the send low watermark to 1 fixes this problem.
@@ -425,8 +425,8 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
             sslPtr->ssl = SSL_new(drvPtr->ctx);
             if (sslPtr->ssl == NULL) {
                 char ipString[NS_IPADDR_SIZE];
-                Ns_Log(Error, "%d: SSL session init error for %s: [%s]", 
-		       sock->sock, 
+                Ns_Log(Error, "%d: SSL session init error for %s: [%s]",
+		       sock->sock,
 		       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)),
 		       strerror(errno));
                 ns_free(sslPtr);
@@ -500,9 +500,9 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
         err = SSL_get_error(sslPtr->ssl, n);
 
         switch (err) {
-        case SSL_ERROR_NONE: 
-            if (n < 0) { 
-		fprintf(stderr, "### SSL_read should not happen\n"); 
+        case SSL_ERROR_NONE:
+            if (n < 0) {
+		fprintf(stderr, "### SSL_read should not happen\n");
 		return n;
 	    }
             /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
@@ -513,18 +513,18 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
             }
             /*Ns_Log(Notice, "### SSL_read %d got <%s>", got, p);*/
 	    return got;
-            
-        case SSL_ERROR_WANT_READ: 
+
+        case SSL_ERROR_WANT_READ:
             /*fprintf(stderr, "### SSL_read WANT_READ returns %d\n", got);*/
             return got;
-            
+
         default:
             /*fprintf(stderr, "### SSL_read error\n");*/
             SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
             return -1;
         }
     }
-    
+
     return -1;
 }
 
@@ -546,7 +546,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
  */
 
 static ssize_t
-Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, 
+Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
      const Ns_Time *timeoutPtr, unsigned int flags)
 {
     SSLContext *sslPtr = sock->arg;
@@ -678,7 +678,7 @@ static int
 SSLPassword(char *buf, int num, int rwflag, void *userdata)
 {
     const char *pwd;
-    
+
     fprintf(stdout, "Enter SSL password:");
     pwd = fgets(buf, num, stdin);
     return (pwd != NULL ? (int)strlen(buf) : 0);
@@ -723,7 +723,7 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
     SSL          *ssl;
     SSLContext   *sslPtr;
     int           result;
-        
+
     result = Ns_TLS_SSLConnect(interp, sockPtr->sock, ctx, &ssl);
 
     if (likely(result == TCL_OK)) {
