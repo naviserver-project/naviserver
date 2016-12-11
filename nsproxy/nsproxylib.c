@@ -993,6 +993,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
         }
         if (err == ENone) {
 	    size_t len = script == NULL ? 0u : strlen(script);
+            
             req.len   = htonl((uint32_t)len);
             req.major = htons(MAJOR_VERSION);
             req.minor = htons(MINOR_VERSION);
@@ -1015,8 +1016,10 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             proxyPtr->poolPtr->runPtr = proxyPtr;
             Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
 
-            Ns_Log(Ns_LogNsProxyDebug, "proxy send pool %s slave %ld: %s",
-                   proxyPtr->poolPtr->name, (long)proxyPtr->slavePtr->pid, script);
+            if (script != NULL) {
+                Ns_Log(Ns_LogNsProxyDebug, "proxy send pool %s slave %ld: %s",
+                       proxyPtr->poolPtr->name, (long)proxyPtr->slavePtr->pid, script);
+            }
 
             if (SendBuf(proxyPtr->slavePtr, proxyPtr->conf.tsend,
                          &proxyPtr->in) == NS_FALSE) {
@@ -1182,8 +1185,9 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         do {
             n = writev(slavePtr->wfd, iov, 2);
         } while (n == -1 && errno == EINTR);
+        
         if (n == -1) {
-            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
                 return NS_FALSE;
             }
             if (msec > 0) {
@@ -1589,6 +1593,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
             return TCL_ERROR;
         }
+        fprintf(stderr, "ns_proxy send sends script <%s>\n", Tcl_GetString(objv[3]));
         err = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
         result = (err == ENone) ? TCL_OK : TCL_ERROR;
         break;
@@ -2492,7 +2497,9 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
     
-    if (proxyPtr->slavePtr && Eval(interp, proxyPtr, NULL, -1) != TCL_OK) {
+    if ((proxyPtr->slavePtr != NULL)
+        && (Eval(interp, proxyPtr, NULL, -1) != TCL_OK)
+        ) {
         CloseProxy(proxyPtr);
         Tcl_ResetResult(interp);
     }
@@ -2543,8 +2550,9 @@ CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     proxyPtr->slavePtr = ExecSlave(interp, proxyPtr);
     if (proxyPtr->slavePtr == NULL) {
         err = EExec;
-    } else if (init && Eval(interp, proxyPtr,
-                            Tcl_DStringValue(&ds), -1) != TCL_OK) {
+    } else if (init != 0
+               && (Eval(interp, proxyPtr, Tcl_DStringValue(&ds), -1) != TCL_OK)
+               ) {
         CloseProxy(proxyPtr);
         err = EInit;
     } else if (Eval(interp, proxyPtr, NULL, -1) != TCL_OK) {
