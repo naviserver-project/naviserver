@@ -901,10 +901,13 @@ static void
 SetExpire(Slave *slavePtr, int ms)
 {
     NS_NONNULL_ASSERT(slavePtr != NULL);
-    
+
+    Ns_Log(Ns_LogNsProxyDebug, "set expire in %d ms for pool %s slave %ld",
+           ms, slavePtr->poolPtr->name, (long)slavePtr->pid);
+
     if (ms > 0) {
         Ns_GetTime(&slavePtr->expire);
-        Ns_IncrTime(&slavePtr->expire, ms/1000, (ms%1000) * 1000);
+        Ns_IncrTime(&slavePtr->expire, (ms / 1000), ((ms % 1000) * 1000) );
     } else {
         slavePtr->expire.sec  = TIME_T_MAX;
         slavePtr->expire.usec = 0;
@@ -983,6 +986,8 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
         proxyPtr->numruns++;
         if (proxyPtr->conf.maxruns > 0
             && proxyPtr->numruns > proxyPtr->conf.maxruns) {
+            Ns_Log(Ns_LogNsProxyDebug, "proxy maxrun reached pool %s slave %ld",
+                   proxyPtr->poolPtr->name, (long)proxyPtr->slavePtr->pid);
             CloseProxy(proxyPtr);
             err = CreateSlave(interp, proxyPtr);
         }
@@ -1009,6 +1014,9 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             proxyPtr->runPtr = proxyPtr->poolPtr->runPtr;
             proxyPtr->poolPtr->runPtr = proxyPtr;
             Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
+
+            Ns_Log(Ns_LogNsProxyDebug, "proxy send pool %s slave %ld: %s",
+                   proxyPtr->poolPtr->name, (long)proxyPtr->slavePtr->pid, script);
 
             if (SendBuf(proxyPtr->slavePtr, proxyPtr->conf.tsend,
                          &proxyPtr->in) == NS_FALSE) {
@@ -2725,7 +2733,7 @@ ReaperThread(void *ignored)
     Pool           *poolPtr;
     Slave           *slavePtr, *tmpSlavePtr;
     Ns_Time         tout, now, diff;
-    int             ms, expire, ntotal;
+    int             ms, ntotal;
 
     Ns_ThreadSetName("-nsproxy:reap-");
     Ns_Log(Notice, "starting");
@@ -2743,6 +2751,8 @@ ReaperThread(void *ignored)
 
         tout.sec  = TIME_T_MAX;
         tout.usec = 0;
+
+        Ns_Log(Ns_LogNsProxyDebug, "reaper run");
 
         /*
          * Check all proxy pools and see if there are
@@ -2769,6 +2779,8 @@ ReaperThread(void *ignored)
                 Ns_IncrTime(&diff, ms/1000, (ms%1000) * 1000);
                 if (Ns_DiffTime(&diff, &tout, NULL) < 0) {
                     tout = diff;
+                    Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on idle diff %ld.%06ld of pool %s",
+                           tout.sec, tout.usec, poolPtr->name);
                 }
             }
 
@@ -2779,18 +2791,24 @@ ReaperThread(void *ignored)
 
             proxyPtr = poolPtr->firstPtr;
             prevPtr = NULL;
-            expire = 0;
             while (proxyPtr != NULL) {
-                nextPtr = proxyPtr->nextPtr;
+                bool expired;
+
+                nextPtr  = proxyPtr->nextPtr;
                 slavePtr = proxyPtr->slavePtr;
-                ntotal  = poolPtr->nfree + poolPtr->nused;
+                ntotal   = poolPtr->nfree + poolPtr->nused;
                 if (slavePtr != NULL) {
-                    if (Ns_DiffTime(&slavePtr->expire, &tout, NULL) <= 0) {
+                    expired = (Ns_DiffTime(&slavePtr->expire, &now, NULL) <= 0);
+                    Ns_Log(Ns_LogNsProxyDebug, "pool %s slave %ld expired %d",
+                           poolPtr->name, (long)slavePtr->pid, expired);
+                    
+                    if (!expired && Ns_DiffTime(&slavePtr->expire, &tout, NULL) <= 0) {
                         tout = slavePtr->expire;
+                        Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on expire %ld.%06ld pool %s slave %ld",
+                               tout.sec, tout.usec, poolPtr->name, (long)slavePtr->pid);
                     }
-                    expire |= Ns_DiffTime(&slavePtr->expire, &now, NULL) <= 0;
                 } else {
-                    expire = 0;
+                    expired = NS_FALSE;
                 }
                 if (poolPtr->maxslaves < ntotal) {
                     /*
@@ -2808,7 +2826,7 @@ ReaperThread(void *ignored)
                     FreeProxy(proxyPtr);
                     proxyPtr = NULL;
                     poolPtr->nfree--;
-                } else if (expire != 0) {
+                } else if (expired) {
                     /*
                      * Close the slave but leave the proxy
                      */
@@ -2885,6 +2903,8 @@ ReaperThread(void *ignored)
                  */
 
                 if (Ns_DiffTime(&slavePtr->expire, &tout, NULL) < 0) {
+                    Ns_Log(Ns_LogNsProxyDebug, "reaper shortens timeout to %ld.%06ld based on expire in pool %s slave %ld kill %d",
+                           tout.sec, tout.usec, slavePtr->poolPtr->name, (long)slavePtr->pid, slavePtr->signal);
                     tout = slavePtr->expire;
                 }
                 if (slavePtr->signal != slavePtr->sigsent) {
@@ -2911,9 +2931,12 @@ ReaperThread(void *ignored)
         if (Ns_DiffTime(&tout, &now, &diff) > 0) {
             reaperState = Sleeping;
             Ns_CondBroadcast(&pcond);
-            if (tout.sec == TIME_T_MAX && tout.usec == LONG_MAX) {
+            if (tout.sec == TIME_T_MAX && tout.usec == 0) {
+                Ns_Log(Ns_LogNsProxyDebug, "reaper waits unlimited for cond");
                 Ns_CondWait(&pcond, &plock);
             } else {
+                Ns_Log(Ns_LogNsProxyDebug, "reaper waits for cond with timeout %ld.%06ld",
+                       tout.sec, tout.usec);
                 (void) Ns_CondTimedWait(&pcond, &plock, &tout);
             }
             if (reaperState == Stopping) {

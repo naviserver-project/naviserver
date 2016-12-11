@@ -121,7 +121,7 @@ PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
     for (i = 0u; i < reuses; i++) {
         if (*proto == 't') {
             pPtr->sockets[i] = Ns_SockBind(saPtr, reuseport);
-        } else if (*proto == 't') {
+        } else if (*proto == 'u') {
             pPtr->sockets[i] = Ns_SockBindUdp(saPtr, reuseport);
         } else {
             Ns_Log(Error, "prebind: invalid protocol %s", proto);
@@ -258,7 +258,6 @@ PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *p
     unsigned short port;
     const char    *addr;
     char           ipString[NS_IPADDR_SIZE];
-    NS_SOCKET      sock;
     int            count = 0;
 
     NS_NONNULL_ASSERT(proto != NULL);
@@ -269,7 +268,8 @@ PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *p
     port = Ns_SockaddrGetPort((struct sockaddr *)saPtr);
 
     for (i = 0u; i < pPtr->count; i++) {
-        sock = pPtr->sockets[i];
+        NS_SOCKET sock = pPtr->sockets[i];
+        
         if (sock != NS_INVALID_SOCKET) {
             count ++;
             Ns_Log(Debug, "prebind closing %s socket %d\n", proto, sock);
@@ -787,7 +787,6 @@ NsClosePreBound(void)
 #ifndef _WIN32
     Tcl_HashEntry         *hPtr;
     Tcl_HashSearch         search;
-    const char            *addr;
     NS_SOCKET              sock;
     struct sockaddr       *saPtr;
 
@@ -842,7 +841,8 @@ NsClosePreBound(void)
      */
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
-        addr = (char *) Tcl_GetHashKey(&preboundUnix, hPtr);
+        const char *addr = (char *) Tcl_GetHashKey(&preboundUnix, hPtr);
+ 
         sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused Unix-domain socket: [%s] %d",
                addr, sock);
