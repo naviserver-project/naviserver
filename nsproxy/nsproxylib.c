@@ -534,7 +534,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
             script = Tcl_DStringValue(&in) + sizeof(Req);
             if (active != NULL) {
                 int n = (int)len;
- 
+
                 if (n < max) {
                     dots = "";
                 } else {
@@ -634,7 +634,7 @@ Shutdown(const Ns_Time *toutPtr, void *arg)
 
     if (toutPtr == NULL) {
         Tcl_HashEntry *hPtr;
-      
+
         Ns_MutexLock(&plock);
         hPtr = Tcl_FirstHashEntry(&pools, &search);
         while (hPtr != NULL) {
@@ -719,12 +719,12 @@ Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY* handlePtr, int ms)
     Proxy *proxyPtr;
     Err    err;
     int    result;
-    
+
     /*
      * Get just one proxy from the pool
      */
     poolPtr = GetPool(poolName, NULL);
-    
+
     err = PopProxy(poolPtr, &proxyPtr, 1, ms);
     if (unlikely(err != 0)) {
         Ns_TclPrintfResult(interp, "could not allocate from pool \"%s\": %s",
@@ -739,7 +739,7 @@ Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY* handlePtr, int ms)
         PushProxy(proxyPtr);
         Ns_CondBroadcast(&poolPtr->cond);
         result = TCL_ERROR;
-        
+
     } else {
         /*
          * Valid proxy for connection.
@@ -977,7 +977,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
-    
+
     if (proxyPtr->slavePtr == NULL) {
         err = EDead;
     } else if (proxyPtr->state != Idle) {
@@ -993,7 +993,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
         }
         if (err == ENone) {
 	    size_t len = script == NULL ? 0u : strlen(script);
-            
+
             req.len   = htonl((uint32_t)len);
             req.major = htons(MAJOR_VERSION);
             req.minor = htons(MINOR_VERSION);
@@ -1115,7 +1115,7 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
-    
+
     if (proxyPtr->state == Idle) {
         err = EIdle;
     } else if (proxyPtr->state == Busy) {
@@ -1147,7 +1147,7 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
  *
  * SendBuf --
  *
- *      Send a dstring buffer.
+ *      Send a dstring buffer to the specified slave.
  *
  * Results:
  *      NS_TRUE if sent, NS_FALSE on error.
@@ -1166,10 +1166,11 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     uint32       ulen;
     struct iovec iov[2];
     Ns_Time      end;
+    bool         success = NS_TRUE;
 
     NS_NONNULL_ASSERT(slavePtr != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     if (msec > 0) {
         Ns_GetTime(&end);
         Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
@@ -1185,28 +1186,31 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         do {
             n = writev(slavePtr->wfd, iov, 2);
         } while (n == -1 && errno == EINTR);
-        
+
         if (n == -1) {
             if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
-                return NS_FALSE;
-            }
-            if (msec > 0) {
+                success = NS_FALSE;
+                break;
+
+            } else if (msec > 0) {
                 ms = GetTimeDiff(&end);
                 if (ms < 0) {
-                    return NS_FALSE;
+                    success = NS_FALSE;
+                    break;
                 }
             } else {
                 ms = msec;
             }
             if (WaitFd(slavePtr->wfd, POLLOUT, ms) == 0) {
-                return NS_FALSE;
+                success = NS_FALSE;
+                break;
             }
         } else if (n > 0) {
             UpdateIov(iov, (size_t)n);
         }
     }
 
-    return NS_TRUE;
+    return success;
 }
 
 
@@ -1230,12 +1234,12 @@ static bool
 RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
     uint32       ulen;
-    char        *ptr;
     long         ms;
-    ssize_t      n, len;
+    ssize_t      n;
     size_t       avail;
     struct iovec iov[2];
     Ns_Time      end;
+    bool         success = NS_TRUE;
 
     NS_NONNULL_ASSERT(slavePtr != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -1254,62 +1258,80 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     while (iov[0].iov_len > 0) {
         do {
             n = readv(slavePtr->rfd, iov, 2);
-        } while (n == -1 && errno == EINTR);
+        } while ((n == -1) && (errno == EINTR));
+
         if (n == 0) {
-            return NS_FALSE; /* EOF */
+            success = NS_FALSE; /* EOF */
+            break;
+
         } else if (n < 0) {
             if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                return NS_FALSE;
-            }
-            if (msec > 0) {
+                success = NS_FALSE;
+                break;
+
+            } else if (msec > 0) {
                 ms = GetTimeDiff(&end);
                 if (ms < 0) {
-                    return NS_FALSE;
+                    success = NS_FALSE;
+                    break;
                 }
             } else {
                 ms = msec;
             }
             if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
-                return NS_FALSE;
+                success = NS_FALSE;
+                break;
             }
         } else if (n > 0) {
             UpdateIov(iov, (size_t)n);
         }
     }
-    n = (ssize_t)(avail - iov[1].iov_len);
-    Tcl_DStringSetLength(dsPtr, (int)n);
-    len = (ssize_t)ntohl(ulen);
-    Tcl_DStringSetLength(dsPtr, (int)len);
-    len -= n;
-    ptr  = dsPtr->string + n;
-    while (len > 0) {
-        do {
-            n = ns_read(slavePtr->rfd, ptr, (size_t)len);
-        } while (n == -1 && errno == EINTR);
-        if (n == 0) {
-            return NS_FALSE; /* EOF */
-        } else if (n < 0) {
-            if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                return NS_FALSE;
-            }
-            if (msec > 0) {
-                ms = GetTimeDiff(&end);
-                if (ms < 0) {
-                    return NS_FALSE;
+    if (success) {
+        char    *ptr;
+        ssize_t  len;
+
+        n = (ssize_t)(avail - iov[1].iov_len);
+        Tcl_DStringSetLength(dsPtr, (int)n);
+        len = (ssize_t)ntohl(ulen);
+        Tcl_DStringSetLength(dsPtr, (int)len);
+        len -= n;
+        ptr  = dsPtr->string + n;
+
+        while (len > 0) {
+            do {
+                n = ns_read(slavePtr->rfd, ptr, (size_t)len);
+            } while ((n == -1) && (errno == EINTR));
+
+            if (n == 0) {
+                success = NS_FALSE; /* EOF */
+                break;
+
+            } else if (n < 0) {
+                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    success = NS_FALSE;
+                    break;
+
+                } else if (msec > 0) {
+                    ms = GetTimeDiff(&end);
+                    if (ms < 0) {
+                        success = NS_FALSE;
+                        break;
+                    }
+                } else {
+                    ms = msec;
                 }
-            } else {
-                ms = msec;
+                if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
+                    success = NS_FALSE;
+                    break;
+                }
+            } else if (n > 0) {
+                len -= n;
+                ptr += n;
             }
-            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
-                return NS_FALSE;
-            }
-        } else if (n > 0) {
-            len -= n;
-            ptr += n;
         }
     }
 
-    return NS_TRUE;
+    return success;
 }
 
 
@@ -1410,7 +1432,7 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
     unsigned int clen = 0, ilen = 0, rlen = 0;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     if (interp != NULL) {
         if (code == TCL_OK) {
             einfo = NULL;
@@ -1465,7 +1487,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
-    
+
     if (dsPtr->length < (int)sizeof(Res)) {
         result = TCL_ERROR;
 
@@ -1473,13 +1495,13 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
         Res        *resPtr = (Res *) dsPtr->string;
         const char *str    = dsPtr->string + sizeof(Res);
         size_t      rlen, clen, ilen;
-        
+
         clen = ntohl(resPtr->clen);
         ilen = ntohl(resPtr->ilen);
         rlen = ntohl(resPtr->rlen);
         if (clen > 0) {
             Tcl_Obj *err=Tcl_NewStringObj(str,-1);
-            
+
             Tcl_SetObjErrorCode(interp, err);
             str += clen;
         }
@@ -1516,10 +1538,10 @@ static int
 ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData    *idataPtr = data;
-    Pool          *poolPtr, *thePoolPtr;
+    Pool          *poolPtr;
     Proxy         *proxyPtr;
     Err            err;
-    int            ms, reap, opt, result = TCL_OK;
+    int            ms, opt, result = TCL_OK;
     const char    *proxyId;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1551,18 +1573,18 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     case PPingIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
-            return TCL_ERROR;
-        }
-        proxyId = Tcl_GetString(objv[2]);
-        proxyPtr = GetProxy(proxyId, idataPtr);
-        if (proxyPtr == NULL) {
-            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
-            return TCL_ERROR;
-        }
-        if (opt == PPutIdx || opt == PReleaseIdx) {
-            result = ReleaseProxy(interp, proxyPtr);
-        } else /* opt == PPingIdx */ {
-            result = Eval(interp, proxyPtr, NULL, -1);
+            result = TCL_ERROR;
+        } else {
+            proxyId  = Tcl_GetString(objv[2]);
+            proxyPtr = GetProxy(proxyId, idataPtr);
+            if (proxyPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
+                result = TCL_ERROR;
+            } else if (opt == PPutIdx || opt == PReleaseIdx) {
+                result = ReleaseProxy(interp, proxyPtr);
+            } else /* opt == PPingIdx */ {
+                result = Eval(interp, proxyPtr, NULL, -1);
+            }
         }
         break;
 
@@ -1573,9 +1595,10 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     case PCleanupIdx:
         if (objc != 2) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            ReleaseHandles(interp, idataPtr);
         }
-        ReleaseHandles(interp, idataPtr);
         break;
 
     case PGetIdx:
@@ -1585,88 +1608,96 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     case PSendIdx:
         if (objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle script");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            proxyId = Tcl_GetString(objv[2]);
+            proxyPtr = GetProxy(proxyId, idataPtr);
+            if (proxyPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
+                result = TCL_ERROR;
+            } else {
+                err = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
+                result = (err == ENone) ? TCL_OK : TCL_ERROR;
+            }
         }
-        proxyId = Tcl_GetString(objv[2]);
-        proxyPtr = GetProxy(proxyId, idataPtr);
-        if (proxyPtr == NULL) {
-            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
-            return TCL_ERROR;
-        }
-        fprintf(stderr, "ns_proxy send sends script <%s>\n", Tcl_GetString(objv[3]));
-        err = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
-        result = (err == ENone) ? TCL_OK : TCL_ERROR;
         break;
 
     case PWaitIdx:
         if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle ?timeout?");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            proxyId = Tcl_GetString(objv[2]);
+            proxyPtr = GetProxy(proxyId, idataPtr);
+            if (proxyPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
+                result = TCL_ERROR;
+            } else if (objc == 3) {
+                ms = -1;
+            } else if (Tcl_GetIntFromObj(interp, objv[3], &ms) != TCL_OK) {
+                result = TCL_ERROR;
+            }
+            if (result == TCL_OK) {
+                err = Wait(interp, proxyPtr, ms);
+                result = (err == ENone) ? TCL_OK : TCL_ERROR;
+            }
         }
-        proxyId = Tcl_GetString(objv[2]);
-        proxyPtr = GetProxy(proxyId, idataPtr);
-        if (proxyPtr == NULL) {
-            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
-            return TCL_ERROR;
-        }
-        if (objc == 3) {
-            ms = -1;
-        } else if (Tcl_GetIntFromObj(interp, objv[3], &ms) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        err = Wait(interp, proxyPtr, ms);
-        result = (err == ENone) ? TCL_OK : TCL_ERROR;
         break;
 
     case PRecvIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            proxyId = Tcl_GetString(objv[2]);
+            proxyPtr = GetProxy(proxyId, idataPtr);
+            if (proxyPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
+                result = TCL_ERROR;
+            } else {
+                err = Recv(interp, proxyPtr, &result);
+                result = (err == ENone) ? result : TCL_ERROR;
+            }
         }
-        proxyId = Tcl_GetString(objv[2]);
-        proxyPtr = GetProxy(proxyId, idataPtr);
-        if (proxyPtr == NULL) {
-            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
-            return TCL_ERROR;
-        }
-        err = Recv(interp, proxyPtr, &result);
-        result = (err == ENone) ? result : TCL_ERROR;
         break;
 
     case PEvalIdx:
         if (objc != 4 && objc != 5) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle script");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            proxyId = Tcl_GetString(objv[2]);
+            proxyPtr = GetProxy(proxyId, idataPtr);
+            if (proxyPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
+                result = TCL_ERROR;
+            } else if (objc == 4) {
+                ms = -1;
+            } else if (Tcl_GetIntFromObj(interp, objv[4], &ms) != TCL_OK) {
+                result = TCL_ERROR;
+            }
+            if (result == TCL_OK) {
+                result = Eval(interp, proxyPtr, Tcl_GetString(objv[3]), ms);
+            }
         }
-        proxyId = Tcl_GetString(objv[2]);
-        proxyPtr = GetProxy(proxyId, idataPtr);
-        if (proxyPtr == NULL) {
-            Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
-            return TCL_ERROR;
-        }
-        if (objc == 4) {
-            ms = -1;
-        } else if (Tcl_GetIntFromObj(interp, objv[4], &ms) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        result = Eval(interp, proxyPtr, Tcl_GetString(objv[3]), ms);
         break;
 
     case PFreeIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "pool");
-            return TCL_ERROR;
+            result = TCL_ERROR;
+        } else {
+            listObj = Tcl_NewListObj(0, NULL);
+            poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+            Ns_MutexLock(&poolPtr->lock);
+            proxyPtr = poolPtr->firstPtr;
+            while (proxyPtr != NULL) {
+                Tcl_ListObjAppendElement(interp, listObj, StringObj(proxyPtr->id));
+                proxyPtr = proxyPtr->nextPtr;
+            }
+            Ns_MutexUnlock(&poolPtr->lock);
+            Tcl_SetObjResult(interp, listObj);
         }
-        listObj = Tcl_NewListObj(0, NULL);
-        poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-        Ns_MutexLock(&poolPtr->lock);
-        proxyPtr = poolPtr->firstPtr;
-        while (proxyPtr != NULL) {
-            Tcl_ListObjAppendElement(interp, listObj, StringObj(proxyPtr->id));
-            proxyPtr = proxyPtr->nextPtr;
-        }
-        Ns_MutexUnlock(&poolPtr->lock);
-        Tcl_SetObjResult(interp, listObj);
         break;
 
     case PHandlesIdx:
@@ -1690,64 +1721,69 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     case PActiveIdx:
         if (objc < 3 || objc > 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "pool ?handle?");
-            return TCL_ERROR;
-        }
-        poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-        proxyId = (objc >= 4) ? Tcl_GetString(objv[3]) : NULL;
-        Ns_MutexLock(&plock);
-        Ns_MutexLock(&poolPtr->lock);
-        proxyPtr = poolPtr->runPtr;
-        while (proxyPtr != NULL) {
-            if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
-                FmtActiveProxy(interp, proxyPtr);
+            result = TCL_ERROR;
+        } else {
+            poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+            proxyId = (objc >= 4) ? Tcl_GetString(objv[3]) : NULL;
+            Ns_MutexLock(&plock);
+            Ns_MutexLock(&poolPtr->lock);
+            proxyPtr = poolPtr->runPtr;
+            while (proxyPtr != NULL) {
+                if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
+                    FmtActiveProxy(interp, proxyPtr);
+                }
+                proxyPtr = proxyPtr->runPtr;
             }
-            proxyPtr = proxyPtr->runPtr;
+            Ns_MutexUnlock(&poolPtr->lock);
+            Ns_MutexUnlock(&plock);
         }
-        Ns_MutexUnlock(&poolPtr->lock);
-        Ns_MutexUnlock(&plock);
         break;
 
     case PStopIdx:
     case PClearIdx:
         if (objc < 3 || objc > 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "pool ?handle?");
-            return TCL_ERROR;
-        }
-        thePoolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-        proxyId = (objc >= 4) ? Tcl_GetString(objv[3]) : NULL;
-        reap = 0;
-        Ns_MutexLock(&plock);
-        hPtr = Tcl_FirstHashEntry(&pools, &search);
-        while (hPtr != NULL) {
-            poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
-            if (thePoolPtr == poolPtr) {
-                Ns_MutexLock(&poolPtr->lock);
-                switch (opt) {
-                default:
-                case PStopIdx:  proxyPtr = poolPtr->runPtr;   break;
-                case PClearIdx: proxyPtr = poolPtr->firstPtr; break;
-                }
-                while (proxyPtr != NULL) {
-                    if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
-                        if (proxyPtr->slavePtr != NULL) {
-                            CloseSlave(proxyPtr->slavePtr,proxyPtr->conf.twait);
-                            proxyPtr->slavePtr = NULL;
-                            reap++;
-                        }
-                    }
+            result = TCL_ERROR;
+        } else {
+            Pool *thePoolPtr;
+            int   reap;
+
+            thePoolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+            proxyId = (objc >= 4) ? Tcl_GetString(objv[3]) : NULL;
+            reap = 0;
+            Ns_MutexLock(&plock);
+            hPtr = Tcl_FirstHashEntry(&pools, &search);
+            while (hPtr != NULL) {
+                poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+                if (thePoolPtr == poolPtr) {
+                    Ns_MutexLock(&poolPtr->lock);
                     switch (opt) {
                     default:
-                    case PStopIdx:  proxyPtr = proxyPtr->runPtr;  break;
-                    case PClearIdx: proxyPtr = proxyPtr->nextPtr; break;
+                    case PStopIdx:  proxyPtr = poolPtr->runPtr;   break;
+                    case PClearIdx: proxyPtr = poolPtr->firstPtr; break;
                     }
+                    while (proxyPtr != NULL) {
+                        if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
+                            if (proxyPtr->slavePtr != NULL) {
+                                CloseSlave(proxyPtr->slavePtr,proxyPtr->conf.twait);
+                                proxyPtr->slavePtr = NULL;
+                                reap++;
+                            }
+                        }
+                        switch (opt) {
+                        default:
+                        case PStopIdx:  proxyPtr = proxyPtr->runPtr;  break;
+                        case PClearIdx: proxyPtr = proxyPtr->nextPtr; break;
+                        }
+                    }
+                    Ns_MutexUnlock(&poolPtr->lock);
                 }
-                Ns_MutexUnlock(&poolPtr->lock);
+                hPtr = Tcl_NextHashEntry(&search);
             }
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        Ns_MutexUnlock(&plock);
-        if (reap != 0) {
-            ReapProxies();
+            Ns_MutexUnlock(&plock);
+            if (reap != 0) {
+                ReapProxies();
+            }
         }
         break;
 
@@ -1808,7 +1844,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         Tcl_WrongNumArgs(interp, 2, objv, "pool ?opt? ?val? ?opt val?...");
         return TCL_ERROR;
     }
-    
+
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
     Ns_MutexLock(&poolPtr->lock);
     if (objc == 4) {
@@ -1931,12 +1967,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
                 result = TCL_ERROR;
             } else {
-                /* 
+                /*
                  * Ns_TclEnterSet() sets the result
                  */
             }
         }
-        
+
         if (result == TCL_OK) {
             Tcl_ListObjAppendElement(interp, listObj, Tcl_GetObjResult(interp));
             AppendStr(listObj, flags[CExecIdx],     poolPtr->exec);
@@ -1952,7 +1988,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             AppendInt(listObj, flags[CIdleIdx],     poolPtr->conf.tidle);
             Tcl_SetObjResult(interp, listObj);
         }
-        
+
     } else if (objc == 4) {
         switch (flag) {
         case CExecIdx:     Tcl_SetObjResult(interp, StringObj(poolPtr->exec));
@@ -1979,7 +2015,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
             break;
         case CEnvIdx:
             if (poolPtr->env) {
-                /* 
+                /*
                  * Ns_TclEnterSet() sets the result
                  */
                 if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
@@ -2018,7 +2054,7 @@ SetOpt(const char *str, char const **optPtr)
 {
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(optPtr != NULL);
-    
+
     if (*optPtr != NULL) {
         ns_free((char*)*optPtr);
     }
@@ -2032,7 +2068,7 @@ SetOpt(const char *str, char const **optPtr)
 static Tcl_Obj*
 StringObj(const char* chars) {
     Tcl_Obj *resultObj;
-    
+
     if (chars != NULL) {
         resultObj = Tcl_NewStringObj(chars, -1);
     } else {
@@ -2048,7 +2084,7 @@ AppendInt(Tcl_Obj *listObj, const char *flag, int i)
     NS_NONNULL_ASSERT(flag != NULL);
 
     Tcl_ListObjAppendElement(NULL, listObj, StringObj(flag));
-    Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewIntObj(i)); 
+    Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewIntObj(i));
 }
 
 static void
@@ -2101,7 +2137,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     assert(idataPtr != NULL);
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
     assert(poolPtr != NULL);
-    
+
     cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &isNew);
     if ((intptr_t) Tcl_GetHashValue(cntPtr) > 0) {
         err = EDeadlock;
@@ -2111,7 +2147,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     if (Ns_ParseObjv(lopts, NULL, interp, 3, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    
+
     if (timeoutMs == -1) {
         Ns_MutexLock(&poolPtr->lock);
         ms = poolPtr->conf.tget;
@@ -2187,7 +2223,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             Tcl_ListObjAppendElement(interp, listObj,  StringObj(proxyPtr->id));
             proxyPtr = proxyPtr->nextPtr;
         }
-        
+
         if (result == TCL_OK) {
             Tcl_SetObjResult(interp, listObj);
         } else {
@@ -2225,7 +2261,7 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
     NS_NONNULL_ASSERT(proxyPtrPtr != NULL);
-    
+
     if (ms > 0) {
         Ns_GetTime(&tout);
         Ns_IncrTime(&tout, ms/1000, (ms/1000) * 1000);
@@ -2303,7 +2339,7 @@ FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
-    
+
     Tcl_DStringInit(&ds);
     Tcl_DStringGetResult(interp, &ds);
 
@@ -2345,7 +2381,7 @@ GetPool(const char *poolName, InterpData *idataPtr)
     int            isNew;
 
     NS_NONNULL_ASSERT(poolName != NULL);
-    
+
     Ns_MutexLock(&plock);
     hPtr = Tcl_CreateHashEntry(&pools, poolName, &isNew);
     if (isNew == 0) {
@@ -2422,7 +2458,7 @@ CreateProxy(Pool *poolPtr)
     int idLength;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
-    
+
     idLength = snprintf(buf, sizeof(buf), "%" PRIuPTR, poolPtr->nextid++);
     nameLength = strlen(poolPtr->name);
 
@@ -2496,7 +2532,7 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
-    
+
     if ((proxyPtr->slavePtr != NULL)
         && (Eval(interp, proxyPtr, NULL, -1) != TCL_OK)
         ) {
@@ -2537,7 +2573,7 @@ CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
-    
+
     poolPtr = proxyPtr->poolPtr;
 
     Tcl_DStringInit(&ds);
@@ -2608,7 +2644,7 @@ ResetProxy(Proxy *proxyPtr)
     /*
      * Splice out of the run queue
      */
-   
+
     Ns_MutexLock(&poolPtr->lock);
     runPtr = prevPtr = poolPtr->runPtr;
     while (runPtr != NULL && runPtr != proxyPtr) {
@@ -2704,7 +2740,7 @@ static void
 CloseProxy(Proxy *proxyPtr)
 {
     NS_NONNULL_ASSERT(proxyPtr);
-    
+
     if (proxyPtr->slavePtr != NULL) {
         Ns_MutexLock(&plock);
         CloseSlave(proxyPtr->slavePtr, proxyPtr->conf.twait);
@@ -2777,9 +2813,9 @@ ReaperThread(void *ignored)
              */
 
             poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
-            
+
             Ns_Log(Ns_LogNsProxyDebug, "reaper checks pool %s", poolPtr->name);
-            
+
             Ns_MutexLock(&poolPtr->lock);
             if (poolPtr->conf.tidle != 0) {
                 diff = now;
@@ -2809,7 +2845,7 @@ ReaperThread(void *ignored)
                     expired = (Ns_DiffTime(&slavePtr->expire, &now, NULL) <= 0);
                     Ns_Log(Ns_LogNsProxyDebug, "pool %s slave %ld expired %d",
                            poolPtr->name, (long)slavePtr->pid, expired);
-                    
+
                     if (!expired && Ns_DiffTime(&slavePtr->expire, &tout, NULL) <= 0) {
                         tout = slavePtr->expire;
                         Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on expire %ld.%06ld pool %s slave %ld",
@@ -2920,7 +2956,7 @@ ReaperThread(void *ignored)
                            slavePtr->poolPtr->name, (long)slavePtr->pid,
                            slavePtr->signal);
                     if (kill(slavePtr->pid, slavePtr->signal) != 0 && errno != ESRCH) {
-                        Ns_Log(Error, "kill(%ld, %d) failed: %s", 
+                        Ns_Log(Error, "kill(%ld, %d) failed: %s",
                                (long)slavePtr->pid, slavePtr->signal, strerror(errno));
                     }
                     slavePtr->sigsent = slavePtr->signal;
@@ -3010,7 +3046,7 @@ static void
 FreePool(Pool *poolPtr)
 {
     NS_NONNULL_ASSERT(poolPtr != NULL);
-    
+
     if (poolPtr->exec != NULL) {
         ns_free((char *)poolPtr->exec);
     }
@@ -3053,7 +3089,7 @@ PushProxy(Proxy *proxyPtr)
     Pool     *poolPtr;
 
     NS_NONNULL_ASSERT(proxyPtr != NULL);
-    
+
     poolPtr = proxyPtr->poolPtr;
     /*
      * Clears the proxy for the next use
@@ -3132,7 +3168,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
-    
+
     if (proxyPtr->state == Idle) {
         Tcl_DString ds;
         int reinit;
@@ -3192,13 +3228,13 @@ RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         {"?timeout",  Ns_ObjvInt,    &ms,           NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         Proxy *proxyPtr = (Proxy *)clientData;
-        
+
         result = Eval(interp, proxyPtr, scriptString, ms);
     }
     return result;
@@ -3260,7 +3296,7 @@ ReleaseHandles(Tcl_Interp *interp, InterpData *idataPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(idataPtr != NULL);
-    
+
     hPtr = Tcl_FirstHashEntry(&idataPtr->ids, &search);
     while (hPtr != NULL) {
         Proxy  *proxyPtr = (Proxy *)Tcl_GetHashValue(hPtr);
@@ -3358,7 +3394,7 @@ GetTimeDiff(Ns_Time *timePtr)
     Ns_Time now, diff;
 
     NS_NONNULL_ASSERT(timePtr != NULL);
-    
+
     Ns_GetTime(&now);
     return Ns_DiffTime(timePtr, &now, &diff) * (diff.sec/1000 + diff.usec*1000);
 }
@@ -3385,7 +3421,7 @@ ProxyError(Tcl_Interp *interp, Err err)
     const char *sysmsg;
 
     NS_NONNULL_ASSERT(interp != NULL);
-    
+
     sysmsg = NULL;
     Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, NULL);
 }
