@@ -464,7 +464,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 	    }
 	    cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), url);
             cgiPtr->path = Ns_DStringVarAppend(CgiDs(cgiPtr),
-	    	    	    	    	      mapPtr->path, "/", s, (char *)0);
+	    	    	    	    	      mapPtr->path, "/", s, (char *)0l);
     	    if (e == NULL) {
 		cgiPtr->pathinfo = "";
 	    } else {
@@ -826,7 +826,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
          Ns_SetUpdate(cgiPtr->env, "PATH_INFO", "");
     }
     Ns_SetUpdate(cgiPtr->env, "GATEWAY_INTERFACE", "CGI/1.1");
-    Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), (char *)0);
+    Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), (char *)0l);
     Ns_SetUpdate(cgiPtr->env, "SERVER_SOFTWARE", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
     Ns_DStringPrintf(dsPtr, "HTTP/%2.1f", conn->request.version);
@@ -1348,7 +1348,7 @@ SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, Ns_SetValue(set, index),
-                        sep, value, (char *)0);
+                        sep, value, (char *)0l);
     Ns_SetPutValue(set, (size_t)index, ds.string);
     Ns_DStringFree(&ds);
 }

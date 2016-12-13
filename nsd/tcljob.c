@@ -750,7 +750,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
                                                           &queue->lock, &timeout);
                 if (timedOut == NS_TIMEOUT) {
                     Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0l);
                     jobPtr->req = JOB_NONE;
                     result = TCL_ERROR;
                     goto releaseQueue;
