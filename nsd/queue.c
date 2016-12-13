@@ -818,7 +818,9 @@ ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                         
                     result = Tcl_ListObjIndex(interp, elemObj, length-1, &lastSubElem);
                     if (result == TCL_OK) {
-                        if (!STREQ(poolPtr->pool, Tcl_GetString(lastSubElem))) {
+                        const char *pool = Tcl_GetString(lastSubElem);
+                        
+                        if (!STREQ(poolPtr->pool, pool)) {
                             continue;
                         }
                     }
