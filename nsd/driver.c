@@ -437,7 +437,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
  *----------------------------------------------------------------------
  */
 
-Ns_ReturnCode
+static Ns_ReturnCode
 DriverInit(const char *server, const char *genericModule, const char *module,
            const Ns_DriverInitData *init,
            NsServer *servPtr, const char *path, const char *bindaddr,
