@@ -880,8 +880,8 @@ NsStopSpoolers(void)
 static int
 DriverStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Driver  *drvPtr;
-    Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
+    const Driver *drvPtr;
+    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
 
     /*
      * Iterate over all drivers and collect results.
@@ -934,8 +934,8 @@ DriverStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 static int
 DriverThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Driver  *drvPtr;
-    Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
+    const Driver *drvPtr;
+    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
 
     /*
      * Iterate over all drivers and collect results.
@@ -967,7 +967,7 @@ DriverThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 DriverNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Driver       *drvPtr;
+    const Driver *drvPtr;
     Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
     Tcl_HashTable names;     /* names of the drivers without duplicates */
 
