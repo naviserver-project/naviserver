@@ -42,13 +42,13 @@
 
 # define REQUEST_SIZE  (sizeof(int) + sizeof(int) + sizeof(int) + NS_IPADDR_SIZE)
 # define RESPONSE_SIZE (sizeof(int))
-#endif
-
 
 typedef struct Prebind {
     size_t count;
     NS_SOCKET sockets[1];
 } Prebind;
+
+#endif
 
 /*
  * Local variables defined in this file
