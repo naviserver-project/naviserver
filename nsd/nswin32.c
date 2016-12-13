@@ -942,7 +942,7 @@ ns_sockpair(NS_SOCKET socks[2])
  */
 
 NS_SOCKET
-Ns_SockListenEx(const char *address, unsigned short port, int backlog)
+Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool UNUSED(reuseport))
 {
     NS_SOCKET sock;
     struct NS_SOCKADDR_STORAGE sa;
