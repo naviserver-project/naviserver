@@ -878,7 +878,7 @@ NsStopSpoolers(void)
  *----------------------------------------------------------------------
  */
 static int
-DriverStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     const Driver *drvPtr;
     Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
@@ -932,7 +932,7 @@ DriverStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *----------------------------------------------------------------------
  */
 static int
-DriverThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     const Driver *drvPtr;
     Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
@@ -965,7 +965,7 @@ DriverThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
  */
 static int
-DriverNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     const Driver *drvPtr;
     Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);

@@ -59,28 +59,28 @@ static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr)
 static void WakeupConnThreads(ConnPool *poolPtr) 
     NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode MapspecParse( Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url)
+static Ns_ReturnCode MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static int ServerMaxThreadsObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                                  const NsServer *servPtr, ConnPool *poolPtr, int nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+                                  ConnPool *poolPtr, int nargs)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static int ServerMinThreadsObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                                  const NsServer *servPtr, ConnPool *poolPtr, int nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+                                  ConnPool *poolPtr, int nargs)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
-static int ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+static int ServerMapObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
                            NsServer  *servPtr, ConnPool *poolPtr, int nargs)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
 static int ServerMappedObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                              NsServer *servPtr, const ConnPool *poolPtr, int nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+                              NsServer *servPtr, int nargs)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static int ServerUnmapObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                             NsServer *servPtr, const ConnPool *poolPtr, int nargs)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+                             NsServer *servPtr, int nargs)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static Ns_ArgProc WalkCallback;
 
@@ -576,8 +576,8 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
  *----------------------------------------------------------------------
  */
 static int
-ServerMaxThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                       const NsServer *servPtr, ConnPool *poolPtr, int nargs)
+ServerMaxThreadsObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                       ConnPool *poolPtr, int nargs)
 {
     int             result = TCL_OK, value = 0;
     Ns_ObjvSpec args[] = {
@@ -587,7 +587,6 @@ ServerMaxThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objv != NULL);
-    NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(poolPtr != NULL);
     
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
@@ -631,8 +630,8 @@ ServerMaxThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *----------------------------------------------------------------------
  */
 static int
-ServerMinThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                       const NsServer *servPtr, ConnPool *poolPtr, int nargs)
+ServerMinThreadsObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                       ConnPool *poolPtr, int nargs)
 {
     int             result = TCL_OK, value = 0;
     Ns_ObjvSpec args[] = {
@@ -642,7 +641,6 @@ ServerMinThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objv != NULL);
-    NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(poolPtr != NULL);
     
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
@@ -730,7 +728,7 @@ MapspecParse( Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url
  *----------------------------------------------------------------------
  */
 static int
-ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+ServerMapObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
                 NsServer  *servPtr, ConnPool *poolPtr, int nargs)
 {
     int             result = TCL_OK, noinherit = 0;
@@ -872,8 +870,8 @@ ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *----------------------------------------------------------------------
  */
 static int
-ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                  NsServer *servPtr, const ConnPool *poolPtr, int nargs)
+ServerMappedObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                  NsServer *servPtr, int nargs)
 {
     int          result = TCL_OK, noinherit = 0, exact = 0;
     Tcl_Obj     *mapspecObj;
@@ -891,7 +889,6 @@ ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objv != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
-    NS_NONNULL_ASSERT(poolPtr != NULL);
     
     if (Ns_ParseObjv(lopts, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -908,9 +905,6 @@ ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
         if (exact == (int)NS_TRUE) {
             op = NS_URLSPACE_EXACT;
-            if (noinherit) {
-                flags |= NS_OP_NOINHERIT;
-            }
         } else {
             op = NS_URLSPACE_DEFAULT;
         }
@@ -945,7 +939,7 @@ ServerMappedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 static int
 ServerUnmapObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
-                  NsServer *servPtr, const ConnPool *poolPtr, int nargs)
+                  NsServer *servPtr, int nargs)
 {
     int          result = TCL_OK, noinherit = 0;
     char        *method, *url;
@@ -962,7 +956,6 @@ ServerUnmapObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objv != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
-    NS_NONNULL_ASSERT(poolPtr != NULL);
     
     if (Ns_ParseObjv(lopts, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1195,19 +1188,19 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 	break;
 
     case SMappedIdx:
-        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, nargs);
+        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr,nargs);
         break;
 
     case SUnmapIdx:
-        result = ServerUnmapObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, nargs);
+        result = ServerUnmapObjCmd(clientData, interp, objc, objv, servPtr, nargs);
         break;
     
     case SMaxthreadsIdx:
-        result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, nargs);
+        result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
 	break;
 
     case SMinthreadsIdx:
-        result = ServerMinThreadsObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, nargs);
+        result = ServerMinThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
 	break;
     
     case SConnectionsIdx:

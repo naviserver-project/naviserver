@@ -942,7 +942,7 @@ ns_sockpair(NS_SOCKET socks[2])
  */
 
 NS_SOCKET
-Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool UNUSED(reuseport))
+Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reuseport)
 {
     NS_SOCKET sock;
     struct NS_SOCKADDR_STORAGE sa;
@@ -951,7 +951,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool UNUS
     if (Ns_GetSockAddr(saPtr, address, port) != NS_OK) {
         sock = NS_INVALID_SOCKET;
     } else {
-        sock = Ns_SockBind(saPtr);
+        sock = Ns_SockBind(saPtr, reuseport);
         if (sock != NS_INVALID_SOCKET && listen(sock, backlog) != 0) {
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
