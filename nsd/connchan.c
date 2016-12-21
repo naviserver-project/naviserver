@@ -568,7 +568,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     if (likely(sockPtr->drvPtr->recvProc != NULL)) {
         result = (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, timeoutPtr, 0u);
     } else {
-        Ns_Log(Warning, "connchan: no recvProc registered for driver %s", sockPtr->drvPtr->name);
+        Ns_Log(Warning, "connchan: no recvProc registered for driver %s", sockPtr->drvPtr->moduleName);
         result = -1;
     }
     
@@ -677,7 +677,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
         
     } else {
         Ns_TclPrintfResult(interp, "connchan %s: no sendProc registered for driver %s",
-                           connChanPtr->channelName, sockPtr->drvPtr->name);
+                           connChanPtr->channelName, sockPtr->drvPtr->moduleName);
         result = -1;
     }
 
@@ -930,7 +930,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                              ((connChanPtr->cbPtr != NULL && connChanPtr->cbPtr->threadName != NULL) ?
                               connChanPtr->cbPtr->threadName : "{}"),
                              (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec,
-                             connChanPtr->sockPtr->drvPtr->name,
+                             connChanPtr->sockPtr->drvPtr->moduleName,
                              connChanPtr->peer,
                              connChanPtr->wBytes,
                              connChanPtr->rBytes);

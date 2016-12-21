@@ -444,8 +444,9 @@ typedef struct Ns_TclCallback {
 typedef struct Ns_Driver {
     void       *arg;           /* Driver callback data. */
     const char *server;        /* Virtual server name. */
-    const char *module;        /* Driver module. */
-    const char *name;          /* Driver name. */
+    const char *type;          /* Type of driver, e.g. "nssock" */
+    const char *moduleName;    /* Module name, e.g. "nssock1" */    
+    const char *threadName;    /* Thread name, e.g. "nssock1:1" */
     const char *location;      /* Location, e.g, "http://foo:9090" */
     const char *address;       /* Address in location, e.g. "foo" */
     const char *protocol;      /* Protocol in location, e.g, "http" */
@@ -2556,7 +2557,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reuseport);
 
 NS_EXTERN NS_SOCKET
-Ns_SockListenUdp(const char *address, unsigned short port);
+Ns_SockListenUdp(const char *address, unsigned short port, bool reuseport);
 
 NS_EXTERN NS_SOCKET
 Ns_SockListenRaw(int proto);

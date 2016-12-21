@@ -373,7 +373,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
  */
 
 NS_SOCKET
-Ns_SockListenUdp(const char *address, unsigned short port)
+Ns_SockListenUdp(const char *address, unsigned short port, bool resuseport)
 {
     NS_SOCKET        sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
@@ -391,7 +391,7 @@ Ns_SockListenUdp(const char *address, unsigned short port)
             /*
              * Not prebound, bind now
              */
-            sock = Ns_SockBindUdp(saPtr, NS_FALSE);
+            sock = Ns_SockBindUdp(saPtr, resuseport);
         }
     }
 
@@ -1366,7 +1366,7 @@ Binder(void)
          */
         switch (type) {
         case 'U':
-            sock = Ns_SockListenUdp(address, port);
+            sock = Ns_SockListenUdp(address, port, NS_FALSE);
             break;
         case 'D':
             sock = Ns_SockListenUnix(address, options, port);

@@ -877,7 +877,7 @@ Ns_ConnDriverName(const Ns_Conn *conn)
     drvPtr = ((const Conn *)conn)->drvPtr;
     assert(drvPtr != NULL);
     
-    return drvPtr->name;
+    return drvPtr->moduleName;
 }
 
 
