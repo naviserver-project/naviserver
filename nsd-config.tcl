@@ -166,7 +166,7 @@ ns_param        port                 $port
 ns_param        address             $address
 ns_param        hostname            [ns_info hostname]
 ns_param        maxinput            [expr 1024*1024*10] ;# default: 1024*1024, maximum size for inputs (uploads)
-ns_param        readahead           [expr 1024*1024*1]  ;# default: 16384; size of readahead for requests
+#ns_param        readahead           [expr 1024*1024*1]  ;# default: 16384; size of readahead for requests
 ns_param        backlog             1024         ;# default: 256; backlog for listen operations
 ns_param        acceptsize          10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
 ns_param        closewait           0            ;# default: 2; timeout in seconds for close on socket
