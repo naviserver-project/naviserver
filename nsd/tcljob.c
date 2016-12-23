@@ -750,7 +750,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
                                                           &queue->lock, &timeout);
                 if (timedOut == NS_TIMEOUT) {
                     Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0l);
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
                     jobPtr->req = JOB_NONE;
                     result = TCL_ERROR;
                     goto releaseQueue;
@@ -788,7 +788,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
             result = jobPtr->code;
             if (result == TCL_ERROR) {
                 if (jobPtr->errorCode != NULL) {
-                    Tcl_SetErrorCode(interp, jobPtr->errorCode, NULL);
+                    Tcl_SetErrorCode(interp, jobPtr->errorCode, (char *)0l);
                 }
                 if (jobPtr->errorInfo != NULL) {
                     Tcl_AddObjErrorInfo(interp, "\n", 1);
@@ -973,7 +973,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                                                           &queue->lock, &timeout);
                 if (timedOut == NS_TIMEOUT) {
                     Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0l);
                     result = TCL_ERROR;
                 }
             }
@@ -1605,7 +1605,7 @@ static int
 JobAbort(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(code))
 {
     if (interp != NULL) {
-        Tcl_SetErrorCode(interp, "ECANCEL", NULL);
+        Tcl_SetErrorCode(interp, "ECANCEL", (char *)0l);
         Tcl_SetResult(interp, "Job cancelled.", TCL_STATIC);
     } else {
         Ns_Log(Warning, "ns_job: job cancelled");
