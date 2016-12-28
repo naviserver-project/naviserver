@@ -1,0 +1,49 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_driver-1.1 {basic syntax: plain call} -body {
+     ns_driver
+} -returnCodes error -result {wrong # args: should be "ns_driver command ?args?"}
+
+test ns_driver-1.2 {basic syntax: wrong key} -body {
+     ns_driver 123
+} -returnCodes error -result {bad subcmd "123": must be info, names, threads, or stats}
+
+
+test ns_driver-1.3a {basic syntax: key but too many arguments} -body {
+     ns_driver info x
+} -returnCodes error -result {wrong # args: should be "ns_driver info"}
+test ns_driver-1.3b {basic syntax: key but too many arguments} -body {
+     ns_driver names x
+} -returnCodes error -result {wrong # args: should be "ns_driver names"}
+test ns_driver-1.3c {basic syntax: key but too many arguments} -body {
+     ns_driver threads x
+} -returnCodes error -result {wrong # args: should be "ns_driver threads"}
+test ns_driver-1.3d {basic syntax: key but too many arguments} -body {
+     ns_driver stats x
+} -returnCodes error -result {wrong # args: should be "ns_driver stats"}
+
+
+
+test ns_driver-1.4a {result of ns_driver info} -body {
+    set info [ns_driver info]
+    list [llength $info]-[llength [lindex $info 0]]
+} -result "1-18"
+test ns_driver-1.4b {result of ns_driver names} -body {
+    set info [ns_driver names]
+} -result "nssock"
+test ns_driver-1.4c {result of ns_driver threads} -body {
+    set info [ns_driver threads]
+} -result "nssock:0"
+test ns_driver-1.4d {result of ns_driver stats} -body {
+    set info [ns_driver stats]
+    list [llength $info]-[llength [lindex $info 0]]
+} -result "1-12"
+
+
+
+cleanupTests
