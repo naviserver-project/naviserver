@@ -1,0 +1,122 @@
+[include version_include.man]
+[manpage_begin ns_driver n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Obtain Network Driver Information.}]
+
+[description] The command [cmd ns_driver] allows to obtain information
+ about the loaded drivers, their configuration and their usage.
+
+[para] In general, one NaviServer process might have multiple driver
+modules loaded. Every driver module has a type (such as e.g. "nssock"
+for HTTP connections or "nsssl" for HTTPS) and a name, where the type
+of the driver module is often used for its name as well. However, when
+a driver module of a certain type is loaded multiple times
+(e.g. listening at different addresses or ports) every driver module
+instance must have a distinct name.
+
+[para] In case the operating system supports SO_REUSEPORT, a driver
+module might be configured with one or more threads listening at the
+same port. This way, NaviServer can receive multiple requests in
+different threads, which might improve performance.
+
+[para] A driver module might be loaded globally (especially in
+connection with virtual server configuration) or it might be
+associated with a certain server. See below a few configuration
+snippets showing some options.
+
+[para] Configuration snippet 1: Load the nssock module with the name
+"nssock" globally.
+
+[example_begin]
+   ns_section "ns/modules"
+   ns_param    nssock nssock.so
+   
+   ns_section "ns/module/nssock"
+   ns_param    port 80
+   ...
+[example_end]   
+
+[para] Configuration snippet 2: Load the nssock module with the name
+"nssock" for a server named "server1".
+
+[example_begin]
+   ns_section "ns/server/server1/modules"
+   ns_param    nssock nssock.so
+   
+   ns_section "ns/server/server1/module/nssock"
+   ns_param    port 80
+   ...
+[example_end]   
+
+[para] Configuration snippet 3:  Load the nssock module twice under
+the name "nssock1" and "nssock2". The server will listen via driver
+module "nssock1" on port 8000 and via module "nssock2" on port 8001.
+
+[example_begin]
+   ns_section ns/server/server1/modules
+   ns_param   nssock1   nssock.so
+   ns_param   nssock2   nssock.so
+ 
+   ns_section ns/server/server1/module/nssock1
+   ns_param   port    8000
+   
+   ns_section ns/server/server1/module/nssock2
+   ns_param   port    8001
+[example_end]
+
+The [term nssock] man page contains the detailed configuration options.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+[call [cmd  "ns_driver info"]]
+
+ The command [cmd "ns_driver info"] returns a list of lists containing
+ driver information. Every outer list element describes a different
+ driver module instance. For every driver module instance the
+ following information elements are returned:
+
+[list_begin itemized]
+[item] [term module] refers to the name of the driver module, such as
+e.g. "nssock"
+[item] [term type] refers to the type of the driver module, such as
+e.g. "nssock"
+[item] [term server] is the associated server, if this module is
+loaded for a certain server; for global drivers, the value is empty.
+[item] [term location] is the location as derived from the
+configuration data, might be e.g. "http://localhost:8091"
+[item] [term address] is the IP address (IPv4 or IPv6), on which the server is
+listening, might be e.g. "0.0.0.0"
+[item] [term protocol] is the name of the protocol, such as e.g. "http"
+[item] [term sendwait] timeout for send operations in seconds, default
+is "30".
+[item] [term recvwait] timeout for receive operations in seconds, default
+is "30".
+[item] [term extraheaders] are the configured value of header fields
+return on every request.
+[list_end]
+
+
+[call [cmd  "ns_driver names"] [arg channel]]
+
+ Return a list of the names of the loaded driver modules.
+
+[call [cmd  "ns_driver threads"] [arg channel]]
+
+Return a list of the names of the driver threads
+
+[call [cmd  "ns_driver stats"] [arg channel]]
+
+Return for every driver thread the name of the driver module, the
+number of received requests, the number of spooled requests, the
+partial requests (received via multiple receive operations), and the
+number of errors.
+
+[list_end]
+
+[see_also ns_info ns_server nssock]
+[keywords address socket driver configuration SO_REUSEPORT]
+
+[manpage_end]
+
