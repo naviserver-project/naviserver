@@ -1451,8 +1451,13 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
                              (*specPtr->key == '?') ? "?" : "");
         }
     }
-    Ns_DStringSetLength(&ds, Ns_DStringLength(&ds) - 1);
-    Tcl_WrongNumArgs(interp, objc, objv, ds.string);
+    if (ds.length > 0) {
+        Ns_DStringSetLength(&ds, ds.length - 1);
+        Tcl_WrongNumArgs(interp, objc, objv, ds.string);
+    } else {
+        Tcl_WrongNumArgs(interp, objc, objv, NULL);
+    }
+
     Ns_DStringFree(&ds);
 }
 
