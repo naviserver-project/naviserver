@@ -865,7 +865,7 @@ NsStopSpoolers(void)
 /*
  *----------------------------------------------------------------------
  *
- * DriverStatsObjCmd --
+ * DriverInfoObjCmd --
  *
  *      Return public info of all drivers.
  *      Subcommand of NsTclDriverObjCmd.
@@ -879,58 +879,65 @@ NsStopSpoolers(void)
  *----------------------------------------------------------------------
  */
 static int
-DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Driver *drvPtr;
-    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
-    Tcl_HashTable names;     /* names of the driver modules without duplicates */
+    int result = TCL_OK;
 
-    Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    /*
-     * Iterate over all modules, not necessarily all driver threads
-     */
-    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        int isNew = 0;
+    } else {
+        const Driver *drvPtr;
+        Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+        Tcl_HashTable names;     /* names of the driver modules without duplicates */
+        
+        Tcl_InitHashTable(&names, TCL_STRING_KEYS);
 
-        (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
-        if (isNew == 1) {
-            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+        /*
+         * Iterate over all modules, not necessarily all driver threads
+         */
+        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            int isNew = 0;
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+            (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+            if (isNew == 1) {
+                Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("type", 4));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("type", 4));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, -1));
             
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("server", 6));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ? drvPtr->server : "", -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("server", 6));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ? drvPtr->server : "", -1));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("location", 8));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->location, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("location", 8));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->location, -1));
         
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, -1));
         
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("protocol", 8));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("protocol", 8));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, -1));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sendwait", 8));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sendwait", 8));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
         
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("recvwait", 8));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("recvwait", 8));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("extraheaders", 12));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->extraHeaders, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("extraheaders", 12));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->extraHeaders, -1));
 
-            Tcl_ListObjAppendElement(interp, resultObj, listObj);
+                Tcl_ListObjAppendElement(interp, resultObj, listObj);
+            }
         }
+        Tcl_SetObjResult(interp, resultObj);
+        Tcl_DeleteHashTable(&names);
     }
-    Tcl_SetObjResult(interp, resultObj);
-    Tcl_DeleteHashTable(&names);
-
-    return TCL_OK;
+    
+    return result;
 }
 
 
@@ -952,41 +959,49 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(o
  *----------------------------------------------------------------------
  */
 static int
-DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Driver *drvPtr;
-    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+    int result = TCL_OK;
 
-    /*
-     * Iterate over all drivers and collect results.
-     */
-    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+
+        const Driver *drvPtr;
+        Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+
+        /*
+         * Iterate over all drivers and collect results.
+         */
+        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
         
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("thread", 6));
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("thread", 6));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, -1));
 
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
 
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("received", 8));
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.received));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("received", 8));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.received));
 
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("spooled", 7));
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.spooled));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("spooled", 7));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.spooled));
         
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("partial", 7));
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.partial));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("partial", 7));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.partial));
         
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("errors", 6));
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.errors));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("errors", 6));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.errors));
 
-        Tcl_ListObjAppendElement(interp, resultObj, listObj);
+            Tcl_ListObjAppendElement(interp, resultObj, listObj);
+        }
+        Tcl_SetObjResult(interp, resultObj);
     }
-    Tcl_SetObjResult(interp, resultObj);
-
-    return TCL_OK;
+    
+    return result;
 }
 
 
@@ -1006,20 +1021,26 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(
  *----------------------------------------------------------------------
  */
 static int
-DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Driver *drvPtr;
-    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+    int result = TCL_OK;
 
-    /*
-     * Iterate over all drivers and collect results.
-     */
-    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->threadName, -1));
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const Driver *drvPtr;
+        Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+
+        /*
+         * Iterate over all drivers and collect results.
+         */
+        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->threadName, -1));
+        }
+        Tcl_SetObjResult(interp, resultObj);
     }
-    Tcl_SetObjResult(interp, resultObj);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1039,29 +1060,36 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSE
  *----------------------------------------------------------------------
  */
 static int
-DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Driver *drvPtr;
-    Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
-    Tcl_HashTable names;     /* names of the drivers without duplicates */
+    int result = TCL_OK;
 
-    Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    /*
-     * Iterate over all drivers and collect results.
-     */
-    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        int            isNew;
+    } else {
+        const Driver *drvPtr;
+        Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
+        Tcl_HashTable names;     /* names of the drivers without duplicates */
 
-        (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
-        if (isNew == 1) {
-            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+        Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+
+        /*
+         * Iterate over all drivers and collect results.
+         */
+        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+            int            isNew;
+
+            (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+            if (isNew == 1) {
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+            }
         }
+        Tcl_SetObjResult(interp, resultObj);
+        Tcl_DeleteHashTable(&names);
     }
-    Tcl_SetObjResult(interp, resultObj);
-    Tcl_DeleteHashTable(&names);
-
-    return TCL_OK;
+    
+    return result;
 }
 
 /*
