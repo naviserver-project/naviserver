@@ -19,7 +19,7 @@
     </shortdesc>
 
     <shortdesc xml:lang="de">
-        NaviServer ist ein in C und TCL entwickelter hoch performanter Webserver.
+        NaviServer ist ein in C und Tcl entwickelter hoch performanter Webserver.
     </shortdesc>
 
     <description xml:lang="en">Project description: NaviServer is a high
@@ -28,7 +28,7 @@
     web sites and services.</description>
 
     <description xml:lang="de">Projektbeschreibung: NaviServer ist ein
-    in C und TCL entwickelter hoch performanter Webserver.
+    in C und Tcl entwickelter hoch performanter Webserver.
     Er kann mit jeder der beiden Sprachen leicht erweitert werden
     um interessante Websites und -services zu entwickeln.</description>
 

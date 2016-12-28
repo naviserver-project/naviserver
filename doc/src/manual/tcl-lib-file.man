@@ -36,7 +36,7 @@ If you set first option to true this is what happens at server startup when file
 
   [enum] If a requested file does not exist on the filesystem it returns via ns_returnnotfound
 
-  [enum] An existing TCL file is sourced via ns_sourcefile (see above)
+  [enum] An existing Tcl file is sourced via ns_sourcefile (see above)
 
   [enum] If a custom error page exists it is sourced. That error page is responsible for 
          handling the error, e.g. communication with a user. 
@@ -45,14 +45,14 @@ If you set first option to true this is what happens at server startup when file
 
 [list_end]
 
-[section {Setting up a TCL error page}]
+[section {Setting up a Tcl error page}]
 
-Similar to the ADP error page example in your sample-config.tcl file you could setup a TCL error page:
+Similar to the ADP error page example in your sample-config.tcl file you could setup a Tcl error page:
 
 [example_begin]
 
 ns_section "ns/server/${servername}/tcl"
-ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.tcl  ;# TCL error page
+ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.tcl  ;# Tcl error page
 
 [example_end]
 

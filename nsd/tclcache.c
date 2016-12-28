@@ -76,7 +76,7 @@ static Ns_ObjvProc ObjvCache;
  *      Create a new Tcl cache.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -158,7 +158,7 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *      The -force switch causes an existing valid entry to replaced.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      Other threads may block waiting for this update to complete.
@@ -263,7 +263,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *      increment it.  New values start at zero.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -328,7 +328,7 @@ NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *      Append one or more elements to cached value.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -456,7 +456,7 @@ NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int UNUSED(objc
  *      pattern, if given.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -562,7 +562,7 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *      NB: Concurrent updates are skipped.
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.

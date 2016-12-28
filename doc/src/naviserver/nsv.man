@@ -110,7 +110,7 @@ check for existence followed by a get operation.
 
 If increment is supplied then its value (which must be an integer) is added to the
 value of the element key; otherwise 1 is added to the value of the element key.
-Unlike the TCL equivalent if key does not exists it is created. Returns the new value
+Unlike the Tcl equivalent if key does not exists it is created. Returns the new value
 of the element specified by key. Internally interlocked so it is thread safe, no mutex required.
 
 

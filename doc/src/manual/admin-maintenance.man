@@ -99,7 +99,7 @@ codes and signals caught during the watch and correspondingly restarts the secon
 
 [emph {Restarting the Server}]
 
-To restart the server from within your TCL code:
+To restart the server from within your Tcl code:
 
 [example_begin]
    ns_shutdown -restart
@@ -305,7 +305,7 @@ It's simply a convenience for people that need it to not have to rewrite code to
 [subsection {Running inside Chroot Environment}]
 
 Chrooting NaviServer effectively means to run it with a special root directory.
-When using TCL commands like file, glob or exec only files "below" the specified
+When using Tcl commands like file, glob or exec only files "below" the specified
 path are visible, limiting access to critical files and devices. This is an important
 means to limit the access attackers of a website might gain.
 
@@ -361,8 +361,8 @@ If you start NaviServer with
 
 [example_end]
 
-it runs a TCL shell and waits for commands. You are then able to do more comprehensive
-tests than going the other way with using a TCL shell and loading libnsd.so.
+it runs a Tcl shell and waits for commands. You are then able to do more comprehensive
+tests than going the other way with using a Tcl shell and loading libnsd.so.
 
 [para]
 

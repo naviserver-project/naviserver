@@ -635,7 +635,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                     cachePtr = ns_malloc(sizeof(AdpCache));
 
                     /*
-                     * Turn off TCL mode after cached result, in caching mode
+                     * Turn off Tcl mode after cached result, in caching mode
                      * we wrap Tcl file into proc 'adp:filename' and return
                      * as result only
                      *      ns_adp_append {<% adp:filename %>}

@@ -1256,7 +1256,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
 
 /*-----------------------------------------------------------------------------
  * Tcl_KeylgetObjCmd --
- *     Implements the TCL keylget command:
+ *     Implements the Tcl keylget command:
  *         keylget listvar ?key? ?retvar | {}?
  *-----------------------------------------------------------------------------
  */
@@ -1335,7 +1335,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
 /*-----------------------------------------------------------------------------
  * Tcl_KeylsetObjCmd --
- *     Implements the TCL keylset command:
+ *     Implements the Tcl keylset command:
  *         keylset listvar key value ?key value...?
  *-----------------------------------------------------------------------------
  */
@@ -1395,7 +1395,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
 /*-----------------------------------------------------------------------------
  * Tcl_KeyldelObjCmd --
- *     Implements the TCL keyldel command:
+ *     Implements the Tcl keyldel command:
  *         keyldel listvar key ?key ...?
  *----------------------------------------------------------------------------
  */
@@ -1460,7 +1460,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
 /*-----------------------------------------------------------------------------
  * Tcl_KeylkeysObjCmd --
- *     Implements the TCL keylkeys command:
+ *     Implements the Tcl keylkeys command:
  *         keylkeys listvar ?key?
  *-----------------------------------------------------------------------------
  */

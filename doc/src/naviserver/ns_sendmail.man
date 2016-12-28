@@ -134,7 +134,7 @@ Note: "boolean" in NaviServer configuration means value can be one of "true", "f
 [list_end]
 
 [section ALTERNATIVES]
-See the excellent TCL Standard Library smtp and mime packages.
+See the excellent Tcl Standard Library smtp and mime packages.
 
 [section EXAMPLES]
 [emph "Log current configuration to server log:"]

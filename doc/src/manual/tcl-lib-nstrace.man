@@ -2,7 +2,7 @@
 [manpage_begin {tcl-lib-nstrace} n [vset version]]
 [moddesc {NaviServer Manual}]
 
-[titledesc {Managing TCL interpreter initialization}]
+[titledesc {Managing Tcl interpreter initialization}]
 
 [description]
 

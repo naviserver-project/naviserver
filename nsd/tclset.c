@@ -142,7 +142,7 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
  *      Like Ns_TclGetSet, but sends errors to the tcl interp. 
  *
  * Results:
- *      TCL result.
+ *      Tcl result.
  *
  * Side effects:
  *      None.

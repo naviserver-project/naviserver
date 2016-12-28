@@ -15,7 +15,7 @@ the type of the file in the same form returned by the command file type.  This c
 call was successful and array varianle is set or 0 in case of any error or file not found.
 
 [para]
-If TCL VFS was compiled this command is similar to Tcl file stat command. In case of no TCL VFS, this
+If Tcl VFS was compiled this command is similar to Tcl file stat command. In case of no Tcl VFS, this
 command uses direct system call stat and is much faster.
 
 [section {COMMANDS}]

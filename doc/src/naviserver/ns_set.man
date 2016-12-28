@@ -372,7 +372,7 @@ idelete and purge.  These are both noops (idelete may be a mistake as delete is 
 [para]
 NULL values, distinct from the empty string, are useful when representing a
 database row as an ns_set.  Currently, it is difficult to get a NULL value
-in an ns_set through the TCL API.  You may get a NULL value in the set created
+in an ns_set through the Tcl API.  You may get a NULL value in the set created
 by ns_parsequery or by omitting the last value when seeding the ns_set in the
 create/new subcommand, etc.  It is possible to create NULL-valued fields through the C API.
 
