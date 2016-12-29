@@ -1221,6 +1221,6 @@ documentation of the [term nscp] ("NaviServer's Control Port") module.
 
 [see_also admin-install ns_server commandlist]
 
-[keywords nsd command-line-options nscp ns_db]
+[keywords nsd command-line-options nscp ns_db prebind]
 
 [manpage_end]

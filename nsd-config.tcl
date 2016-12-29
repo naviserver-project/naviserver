@@ -182,6 +182,7 @@ ns_param       maxupload	1000000 ;# default: 0, when specified, spool uploads la
 ns_param       writerthreads	1	;# default: 0, number of writer threads
 #ns_param       writersize	1048576	;# default: 1024*1024, use writer threads for files larger than this value
 #ns_param       writerbufsize	8192	;# default: 8192, buffer size for writer threads
+#ns_param       driverthreads   2	;# default: 1, number of driver threads (requires support of SO_REUSEPORT)
 
 
 ns_section     "ns/server/default/module/nscp"

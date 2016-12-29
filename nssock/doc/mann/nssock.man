@@ -54,13 +54,14 @@ Maximum size in bytes (octets) for a single receive operation
 Timeout in seconds for close on socket to drain potential garbage if
 no keep alive is performed. (integer, default: 2)
 
-[def defaultserver]
-When virtual servers are defined, this refers to the default server
-(the server, receiving all urls not mapped to a specific server)
+[def defaultserver] In a virtual server setup (when the driver module
+is loaded gloablly), this parameter is required and refers to the
+default server (the server, receiving all requests without host header
+fields unspecified or with unspecified host header fields, not mapped
+to a specific server)
 
 [def deferaccept]
-
-TCP Performance option; use TCP_FASTOPEN or TCP_DEFER_ACCEPT or
+TCP performance option; use TCP_FASTOPEN or TCP_DEFER_ACCEPT or
 SO_ACCEPTFILTER, whatever is available in your operating system to
 improve the performance of the initial TCP 3-way handshake. The
 capabilities of the operating system are determined at compile time.
@@ -69,6 +70,16 @@ you might have to activate this option in your kernel,
 by using [example {
    sudo sysctl net.ipv4.tcp_fastopen=1
 }] (boolean, default: false)
+
+[def driverthreads]
+Number of driver threads threads. Specifying multiple driver threads
+require the OS kernel to support SO_REUSEPORT and can improve the
+performance for high load applications slightly. (integer, default: 1)
+
+[para] Note: When using multiple driver threads on privileged ports,
+one has to add "#" followed by the number of necessary bind operations
+to the prebind address. Otherwise, prebind will bind to the address
+only once, and only one driverthread can be used.
 
 [def hostname]
 Hostname of the server, can be looked up automatically if not specified.
@@ -183,6 +194,6 @@ More to come here...
 
 [see_also ns_log ns_write ns_http ns_ssl]
 [keywords performance tuning configuration TCP TCP_FASTOPEN nssock \
-nsssl driver]
+nsssl driver prebind]
 
 [manpage_end]

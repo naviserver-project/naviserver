@@ -14,8 +14,8 @@ enabled.
 
 [section CONFIGURATION]
 
-This module provides the following configuration options in
-addition to the options of [term nssock], which can he used here as well.
+This module support all configuration options of [term nssock] module,
+plus in addition the following configuration options:
 
 [list_begin definitions]
 
