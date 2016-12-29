@@ -15,11 +15,11 @@ This command provides a simple HTTP and HTTPS client functionality.
 [call [cmd "ns_http cancel"] \
 	[arg id]]
 
-Cancel queued http/https request by id (ns_set id of request).
+Cancel queued HTTP/HTTPS request by id (ns_set id of request).
 
 [call [cmd "ns_http cleanup"]]
 
-Cancel all pending http/https requests
+Cancel all pending HTTP/HTTPS requests
 
 [call [cmd "ns_http list"]]
 
@@ -69,7 +69,7 @@ Otherwise it is overwritten.
 
 [para]
 [option "-cert"]
-allows for https URIs to use the specified client certificate. The
+allows for HTTPS URIs to use the specified client certificate. The
 certificates must be in PEM format and must be sorted starting with
 the subject's certificate (actual client or server certificate),
 followed by intermediate CA certificates if applicable, and ending at
@@ -77,7 +77,7 @@ the highest level (root) CA.
 
 [para]
 [option "-cafile"]
-allows for https URIs to specify the locations, at which CA
+allows for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. The certificates
 available via cafile and capath are trusted. The cafile points to a
 file of CA certificates in PEM format. The file can contain several CA
@@ -85,7 +85,7 @@ certificates.
 
 [para]
 [option "-capath"]
-allows for https URIs to specify the locations, at which CA
+allows for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. capath points to a
 directory containing CA certificates in PEM format. The files each
 contain one CA certificate. For more details, see
@@ -93,7 +93,7 @@ https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html
 
 [para]
 [option -verify]
-allows for https URIs to specify that the server certificate should be
+allows for HTTPS URIs to specify that the server certificate should be
 verified. If the verification process fails, the TLS/SSL handshake is
 immediately terminated with an alert message containing the reason for
 the verification failure. If no server certificate is sent, because an

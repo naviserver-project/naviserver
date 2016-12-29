@@ -7,8 +7,8 @@
 [description]
 This command is deprecated; use [cmd ns_http] instead.
 [para]
-This command opens an http connection to a web page used to fetch its contents
-via the method, which may be POST, GET, or another valid http method.  If the
+This command opens an HTTP connection to a web page used to fetch its contents
+via the method, which may be POST, GET, or another valid HTTP method.  If the
 act of opening the connections fails, it may throw an error.
 The url may be either absolute () or local (/page). If it is local, the host and
 port number of the server are added.

@@ -2,12 +2,12 @@
 
 [manpage_begin nssock n [vset version]]
 [moddesc   {NaviServer Modules}]
-[titledesc {Configuring http socket communications}]
+[titledesc {Configuring HTTP socket communications}]
 
 [description]
 
-This module [term nssock] is used for the socket communication for http. For
-the communication via https, the module [term nsssl] is used, which shares
+This module [term nssock] is used for the socket communication over HTTP. For
+the communication over HTTPS, the module [term nsssl] is used, which shares
 the configuration parameters presented here and adds additional parameters.
 
 [para]

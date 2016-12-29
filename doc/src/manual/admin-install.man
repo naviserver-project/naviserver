@@ -158,7 +158,7 @@ This configuration will:
 
 [list_begin enum]
 
-  [enum]Listen for http connections on your computer's  primary interface at port 8080.  To use another port  and/or
+  [enum]Listen for HTTP connections on your computer's  primary interface at port 8080.  To use another port  and/or
         select interfaces, you can set the "post" and "address" parameters.
 
   [enum]Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
