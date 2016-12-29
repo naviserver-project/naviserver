@@ -55,7 +55,7 @@ Timeout in seconds for close on socket to drain potential garbage if
 no keep alive is performed. (integer, default: 2)
 
 [def defaultserver] In a virtual server setup (when the driver module
-is loaded gloablly), this parameter is required and refers to the
+is loaded globally), this parameter is required and refers to the
 default server (the server, receiving all requests without host header
 fields unspecified or with unspecified host header fields, not mapped
 to a specific server)
@@ -116,7 +116,7 @@ Size of the queue of accepted requests waiting for a connection thread
 
 [def maxupload] Spool uploads to tmp-files for uploads larger than
 this size in bytes in order to keep the memory footprint small. This
-is especially important when large upoads are allowed via [term maxinput]. If
+is especially important when large uploads are allowed via [term maxinput]. If
 this value is 0, this feature is deactivated. When spool-to-file is
 activated, the minimal size is the size of [term readahead]
 (see as well [term spoolerthreads]).
@@ -133,7 +133,7 @@ loaded, but the driver will not be listening on any port.
 
 [def extraheaders]
 This parameter can be used to add extra response headers
-for every reponse sent over this driver. The extraheaders
+for every response sent over this driver. The extraheaders
 have the form for attribute/value pairs. This mechanism can be used
 to implement for example HTTP Strict Transport Security in 
 nsssl, which uses the same parameter definition.
