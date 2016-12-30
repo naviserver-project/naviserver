@@ -98,15 +98,15 @@ return on every request.
 [list_end]
 
 
-[call [cmd  "ns_driver names"] [arg channel]]
+[call [cmd  "ns_driver names"] ]
 
  Return a list of the names of the loaded driver modules.
 
-[call [cmd  "ns_driver threads"] [arg channel]]
+[call [cmd  "ns_driver threads"] ]
 
 Return a list of the names of the driver threads
 
-[call [cmd  "ns_driver stats"] [arg channel]]
+[call [cmd  "ns_driver stats"] ]
 
 Return for every driver thread the name of the driver module, the
 number of received requests, the number of spooled requests, the
