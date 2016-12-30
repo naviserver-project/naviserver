@@ -76,10 +76,20 @@ Number of driver threads threads. Specifying multiple driver threads
 require the OS kernel to support SO_REUSEPORT and can improve the
 performance for high load applications slightly. (integer, default: 1)
 
+[para] When multiple driver threads are configured, parameter "reuseport" is
+automatically set to "true".
+
 [para] Note: When using multiple driver threads on privileged ports,
 one has to add "#" followed by the number of necessary bind operations
 to the prebind address. Otherwise, prebind will bind to the address
 only once, and only one driverthread can be used.
+
+[def extraheaders]
+This parameter can be used to add extra response headers
+for every response sent over this driver. The extraheaders
+have the form for attribute/value pairs. This mechanism can be used
+to implement for example HTTP Strict Transport Security in 
+nsssl, which uses the same parameter definition.
 
 [def hostname]
 Hostname of the server, can be looked up automatically if not specified.
@@ -131,12 +141,6 @@ the module with its defined commands (such as [cmd ns_http] is
 loaded, but the driver will not be listening on any port.
 (integer, default: 80)
 
-[def extraheaders]
-This parameter can be used to add extra response headers
-for every response sent over this driver. The extraheaders
-have the form for attribute/value pairs. This mechanism can be used
-to implement for example HTTP Strict Transport Security in 
-nsssl, which uses the same parameter definition.
 
 [def readahead]
 Maximum size in bytes (octets) for asynchronous read ahead operations
@@ -144,6 +148,11 @@ Maximum size in bytes (octets) for asynchronous read ahead operations
 
 [def recvwait]
 Timeout in seconds for receive operations. (integer, default: 30)
+
+[def reuseport] When the parameter is set and SO_REUSEPORT is
+supported by the os, NaviServer will allow multiple listen operations
+on the same port (default: false)
+
 
 [def sendwait]
 Timeout in seconds for send operations. (integer, default: 30)
@@ -193,7 +202,8 @@ More to come here...
 
 
 [see_also ns_log ns_write ns_http ns_ssl]
-[keywords performance tuning configuration TCP TCP_FASTOPEN nssock \
+[keywords performance tuning configuration \
+SO_REUSEPORT TCP TCP_FASTOPEN nssock \
 nsssl driver prebind]
 
 [manpage_end]
