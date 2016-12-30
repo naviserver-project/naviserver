@@ -227,6 +227,16 @@ This is only set, when the NaviServer is used as a proxy server.
 Returns any query data that was part of the HTTP request.
 
 
+[call [cmd  "ns_conn partialtimes"]]
+
+Returns detailed timing information about the current requests. The
+result is a dict containing the keys "accepttime" (the time between
+the accept of a socket and its adding to the queue; not always easy to
+interprete), "queuetime" (time in the queue), "filtertime" (time spent
+during running of filters) and "runtime" (time spent so far during the
+main request).
+
+
 [call [cmd  "ns_conn request"]]
 
 Returns the HTTP request line as presented by the client, e.g. GET / HTTP/1.1.
