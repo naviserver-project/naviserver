@@ -35,7 +35,7 @@
 
 AC_PREREQ([2.68])
 
-AC_INIT([NaviServer],[4.99.15d2],[naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer],[4.99.15b1],[naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 #AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
@@ -51,7 +51,7 @@ AC_CONFIG_HEADERS([include/nsconfig.h])
 AC_SUBST([NS_MAJOR_VERSION],  [4])
 AC_SUBST([NS_MINOR_VERSION],  [99])
 AC_SUBST([NS_RELEASE_SERIAL], [15])
-AC_SUBST([NS_RELEASE_LEVEL],  [NS_ALPHA_RELEASE]) # ALPHA/BETA/FINAL
+AC_SUBST([NS_RELEASE_LEVEL],  [NS_BETA_RELEASE]) # ALPHA/BETA/FINAL
 
 AC_SUBST([NS_VERSION],     [\"${NS_MAJOR_VERSION}.${NS_MINOR_VERSION}\"])
 AC_SUBST([NS_PATCH_LEVEL], [\"$PACKAGE_VERSION\"])
