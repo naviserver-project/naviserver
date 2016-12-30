@@ -15,27 +15,27 @@ connection pools and queues.  The legal options (which may be abbreviated) are:
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg filters]]
+	[cmd filters]]
 
 Returns a list of the currently defined filters.
 
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg pagedir]]
+	[cmd pagedir]]
 
 Returns the path of the virtual server's page directory root.
 
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg pools]]
+	[cmd pools]]
 
 Returns a list of the pools defined for this server.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg requestprocs]]
+	[cmd requestprocs]]
 
 Returns a list of the currently defined requestprocs  (the registered
 procs for certain request patterns).
@@ -43,27 +43,27 @@ procs for certain request patterns).
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg serverdir]]
+	[cmd serverdir]]
 
 Returns the path of the virtual server's base directory.
 
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg tcllib]]
+	[cmd tcllib]]
 
 Returns the path of the virtual server's private Tcl library.
 
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg traces]]
+	[cmd traces]]
 
 Returns a list of the currently defined traces.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
-	[arg url2file]]
+	[cmd url2file]]
 
 Returns a list of the mappings from urls to files.
 
@@ -71,15 +71,15 @@ Returns a list of the mappings from urls to files.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg active]]
+	[cmd active]]
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg all]]
+	[cmd all]]
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg queued]]
+	[cmd queued]]
 
 These three commands return information about queued or running
 requests. For every request the command returns a list containing
@@ -91,25 +91,61 @@ requests.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg connections]]
+	[cmd connections]]
 
 Returns the number of connection requests processed by this pool since
 startup. 
 
+
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg maxthreads] \
+	[cmd map] \
+	[opt [option "-noinherit"]] \
+	[opt [arg "mapspec"]] \
+	]
+
+When the optional mapping specification (argument [arg mapspec]) is
+provided add this mapping to the server and pool (as specified or
+default). As a consequence matching requests (based on HTTP method and
+path) will be mapped to this connection pool.
+
+[para] When the optional argument [arg mapspec] is not provided, the
+command returns a list of mappings for the (given or default) server
+and pool.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[cmd mapped] \
+	[opt [option "-exact"]] \
+	[opt [option "-noinherit"]] \
+	[arg "mapspec"] \
+	]
+
+Return the connection pool associated with the mapping specification
+(HTTP method and path).  When the option [option -exact] is used, the
+inheritance is deactivated, and only the values are returned directly
+assigned to the URL. When the option [option -noinherit] is specified,
+only values set with the [option -noinherit] flag are returned. For
+requests handled by the default connection pool, empty is returned.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[cmd maxthreads] \
 	[opt [arg value]]]
 
 Query or set the maximum number of connection threads for this server
 and pool. The value must be large than [arg minthreads] and less than
 the maximum number of connections.
 
+
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg minthreads] \
+	[cmd minthreads] \
 	[opt [arg value]]]
 
 Query or set the minimum number of connection threads for this server
@@ -119,7 +155,7 @@ and pool. The value must be between 1 and [arg maxthreads].
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg stats]]
+	[cmd stats]]
 
 Returns a list of attribute value pairs containing statistics for the
 server and pool, containing the number of requests, queued requests,
@@ -128,7 +164,7 @@ cumulative times.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg threads]]
+	[cmd threads]]
 
 Returns a list of attribute value pairs containg information about the
 number of connection threads for the server and pool.
@@ -136,7 +172,20 @@ number of connection threads for the server and pool.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg waiting]]
+	[cmd unmap] \
+	[opt [option "-noinherit"]] \
+	[arg "mapspec"] \
+	]
+
+Undo the effect of a [cmd "ns_server map"] operation.  As a
+consequence formerky mapped requests will be served by the default
+connection pool.
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[cmd waiting]]
 
 Returns the number of connections waiting to be processed.
 
@@ -153,7 +202,64 @@ specified, the current server is used as a source.
 Specifies the pool to be queried. If this option is not
 specified, the default pool of the server is used as a source.
 
+[opt_def -noinherit ""] Optional flag for the connection pool
+mappings. When used, the specified path will be used literally, i.e.,
+only exactly this path, but no sub-paths are mapped.
+
+[opt_def mapspec ""]
+A list of two arguments, containing an HTTP method and a path. 
+Example: "HTTP /*.tcl".
 [list_end]
+
+
+[section EXAMPLES]
+
+The following example shows, how dynamic connection pool mapping can
+be impllemented based on the "partialtimes" of a request: When a
+request is taking longer than a certain threshold, the combination of
+HTTP method and request path (the [arg mapspec]) is mapped dynamically
+to a pool named "slow". This means that later requests with the same
+HTTP method and path will be served from this connection pool.
+
+[example_begin]
+   ns_register_trace GET /* {
+      set pt [lb]ns_conn partialtimes[rb]
+      set req [lb]list [lb]ns_conn method[rb] [lb]ns_conn url[rb][rb]
+      set ctime [lb]expr {[lb]dict get $pt runtime[rb] + [lb]dict get $pt filtertime[rb]}[rb]
+      if {$ctime > 3.0 && [lb]ns_server mapped $req[rb] eq ""} {
+         ns_server -pool slow map -noinherit $req
+      }
+   }
+[example_end]
+
+The connection thread pools can bed defined as usual in the config
+file:
+[example_begin]
+   ns_section "ns/server/${server}/pools"
+   ns_param fast "Fast lane pool"
+   ns_param slow "Slow lane pool"
+   
+   ns_section "ns/server/${server}/pool/fast"
+   ns_param minthreads 4
+   ns_param maxthreads 4
+   ns_param map "GET /*.png"
+   ns_param map "GET /*.jpg"
+   ns_param map "GET /*.pdf"
+   
+   ns_section "ns/server/${server}/pool/slow"
+   ns_param minthreads 5
+   ns_param maxthreads 15
+   ns_param maxconnections 200
+[example_end]
+
+Query a certain mapping:
+[example_begin]
+   % ns_server mapped "GET /images/logo.png"
+   fast
+[example_end]
+
+[see_also ns_conn ns_register]
+[keywords configuration pools]
 
 [manpage_end]
 
