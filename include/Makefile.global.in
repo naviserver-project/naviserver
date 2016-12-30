@@ -38,6 +38,8 @@
 NAVISERVER       = @NAVISERVER@
 srcdir           = @SRCDIR@
 
+CPPCHECK         = cppcheck
+
 NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 
 @SET_MAKE@

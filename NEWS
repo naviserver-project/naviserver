@@ -134,6 +134,7 @@ Documentation improvements:
  
 Tcl API Changes:
 
+
 C API Changes:
 
  - Additional argument for reuseport for Ns_SockBind(),
@@ -141,6 +142,7 @@ C API Changes:
    Ns_SockListenUdp().
 
 Incompatible API Changes:
+
 
 Configuration Changes:
  - New parameter for drivers (e.g. nssock)
@@ -176,10 +178,13 @@ Code Changes:
 
  - Driver reform: make distinction explicit between driver type
    (e.g. "nssock"), driver name (e.g. "nssock1"), and driver thread
-   name (e.g.  "nssock1:1")
+   name (e.g. "nssock1:1")
 
  - Moved definition of type "bool" from ns.h to nsthread.h to make
    boolean types as well available in nsthread implementation.
+
+ - Make it possible to pass alternative implementation of CPPCHECK
+   to Makefile
 
  - Don't mess around with FD_SETSIZE
  - Don't use implementation defined NULL as last argument of variadic functions
