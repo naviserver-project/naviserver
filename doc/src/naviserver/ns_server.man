@@ -85,7 +85,7 @@ These three commands return information about queued or running
 requests. For every request the command returns a list containing
 connection id, the peer address, state ("running" or "queued"), the
 request (HTTP method and url), running time, and bytes sent. The
-subcommand [arg all] returns the union of the running and queued
+sub-command [arg all] returns the union of the running and queued
 requests.
 
 [call [cmd  ns_server] \
@@ -166,7 +166,7 @@ cumulative times.
 	[opt [option "-pool [arg p]"]] \
 	[cmd threads]]
 
-Returns a list of attribute value pairs containg information about the
+Returns a list of attribute value pairs containing information about the
 number of connection threads for the server and pool.
 
 [call [cmd  ns_server] \
@@ -178,7 +178,7 @@ number of connection threads for the server and pool.
 	]
 
 Undo the effect of a [cmd "ns_server map"] operation.  As a
-consequence formerky mapped requests will be served by the default
+consequence formerly mapped requests will be served by the default
 connection pool.
 
 
@@ -215,7 +215,7 @@ Example: "HTTP /*.tcl".
 [section EXAMPLES]
 
 The following example shows, how dynamic connection pool mapping can
-be impllemented based on the "partialtimes" of a request: When a
+be implemented based on the "partialtimes" of a request: When a
 request is taking longer than a certain threshold, the combination of
 HTTP method and request path (the [arg mapspec]) is mapped dynamically
 to a pool named "slow". This means that later requests with the same
