@@ -208,7 +208,7 @@ only exactly this path, but no sub-paths are mapped.
 
 [opt_def mapspec ""]
 A list of two arguments, containing an HTTP method and a path. 
-Example: "HTTP /*.tcl".
+Example: "GET /*.tcl".
 [list_end]
 
 
@@ -232,7 +232,7 @@ HTTP method and path will be served from this connection pool.
    }
 [example_end]
 
-The connection thread pools can bed defined as usual in the config
+The connection thread pools can be defined as usual in the config
 file:
 [example_begin]
    ns_section "ns/server/${server}/pools"
