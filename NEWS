@@ -1,4 +1,196 @@
 =======================================
+NaviServer 4.99.15, released 2017-XX-XX
+=======================================
+
+New Features:
+
+ - Multiple driver threads for listening on the same port:
+
+   When OS kernels support SO_REUSEPORT (which is the case on Linux
+   since Kernel 3.9, Mac OS 10.3, Solaris 11, *BSD), one can specify
+   now multiple driver threads for exactly the same listening address
+   (protocol/IP-address/port) via the new config option
+   "driverthreads" with a value larger than 1. With this new feature,
+   NaviServer supports now for all stages of a request multi-threaded
+   execution (driverthreads, spoolerthreads, connection threads, and
+   writerthreads).
+
+   Tests show that even with high number of concurrent clients, one
+   can improve the throughput for high numbers of concurrent clients
+   slightly (e.g. for 2 driverthreads and 250 concurrent clients, the
+   throughput increases by ~9%, see
+   https://www.mail-archive.com/naviserver-devel@lists.sourceforge.net/msg03445.html)
+
+   Note: When using multiple driver threads on privileged ports, one
+   has to add "#" followed by the number of necessary bind operations
+   to the prebind address. Otherwise, prebind will bind to the address
+   only once, and only one driver thread can be used.
+
+
+ - Dynamic connection thread pool mapping:
+ 
+   The new version of NaviServer extends the mapping of requests to
+   connection thread pools by making it (a) introspectible and (b)
+   dynamic (changeable at runtime). Dynamic thread pool mapping can
+   avoid overlong blocking of connection threads by an unexpected peak
+   of slow requests by moving these to a separate connection pool.
+   For a detailed motivation, see
+   https://www.mail-archive.com/naviserver-devel@lists.sourceforge.net/msg03446.html.
+   
+   The following new subcommands of "ns_server" implement the
+   dynamic mapping to connection pools:
+   
+     * ns_server ?-server /s/? ?-pool /p/? map ?-noinherit? ?/mapspec/?
+       Map HTTP-method and path (mapspec) to a certain pool, or list
+       mappings from a pool (when no mapspec is given)
+       
+     * ns_server ?-server /s/? mapped ?-exact? ?-noinherit? /mapspec/
+       Obtain the pool for a mapspec (HTTP method and path)
+       
+     * ns_server ?-server /s/? ?-pool /p/? unmap ?-noinherit? /mapspec/
+       Undo previous mapping
+
+
+ - New commands to obtain network driver information:
+
+     * ns_driver info
+       Return per driver detailed configuration information (name of
+       module, type of driver, associated server, configured location,
+       protocol, address, sendwait recvwait, and extraheaders)
+       
+     * ns_driver names
+       Return a list of the names of the loaded driver modules.
+       
+     * ns_driver threads
+       Return a list of the names of the driver threads
+     
+     * ns_driver stats
+       Return for every driver thread the name of the driver module,
+       the number of received requests, the number of spooled
+       requests, the partial requests (received via multiple receive
+       operations), and the number of errors.
+
+
+
+ - Obtain detailed timing results from currently running request
+
+     * ns_conn partialtimes
+
+       Returns detailed timing snapshot about the current
+       requests. The result is a dict containing the keys
+       "accepttime", "queuetime", "filtertime", and "runtime" (similar
+       to the per-pool timing statistics in "ns_server stats")
+
+ - Added debug severity "Debug(nsproxy)" for separate debugging of nsproxy.
+
+
+Performance Improvements:
+
+ - Move JoinConnThread() out of lock to reduce locking duration and to
+   improve scalability.
+
+
+Bug Fixes:
+
+ - Better error behavior, when prebind fails.
+
+ - Make sure, that URLs produced by urlspace's walk callbacks are
+   proper list elements.
+
+ - Make startup more robust, when called with invalid arguments.
+
+ - nsproxy:
+     * Don't reset timeout for for reaper when slaves already expired
+     * Improve debug messages
+
+
+Documentation improvements:
+
+ - improved sample config files
+    * added new config parameters
+    * document parameter "listenbacklog"
+
+ - improved/new documentation pages of
+    * admin-maintenance
+    * ns_cgi
+    * ns_conn
+    * ns_connchan
+    * ns_driver
+    * ns_filestat
+    * ns_http
+    * ns_httpopen
+    * ns_itcl
+    * ns_parseargs
+    * ns_register
+    * ns_sendmail
+    * ns_server
+    * nssock
+    * nsssl
+    * nsv
+
+  - more consistent capitalization:
+    * use Tcl instead of TCL
+    * use HTTP (or HTTPS) instead of http (or https).
+ 
+Tcl API Changes:
+
+C API Changes:
+
+ - Additional argument for reuseport for Ns_SockBind(),
+   Ns_DriverListenProc(), Ns_SockListenEx(), Ns_SockBindUdp(), and
+   Ns_SockListenUdp().
+
+Incompatible API Changes:
+
+Configuration Changes:
+ - New parameter for drivers (e.g. nssock)
+ 
+   * Boolean Parameter "reuseport": When the parameter is set and
+     SO_REUSEPORT is supported by the os, NaviServer will allow
+     multiple listen operations on the same port (default: false)
+
+   * Integer Parameter "driverthreads": set to a value > 1 when
+     multiple driver threads should be used (default: 1). When
+     multiple driver threads are configured, parameter "reuseport" is
+     automatically set to "true".
+
+ - New Boolean parameter "mutexlocktrace" for section "ns/parameters":
+ 
+   When this parameter is set to true, timing of long mutex calls are
+   printed to stderr.
+
+
+Command Line Changes:
+
+ - Value provided to prebind option (-b) can be extended by a suffix
+   "#n", where n is the number of prebound sockets (when e.g. multiple
+   driver threads are used on privileged ports)
+
+
+Code Changes:
+
+ - Extended regression tests
+    * ns_conn.test
+    * ns_driver.test
+    * ns_server.test
+
+ - Driver reform: make distinction explicit between driver type
+   (e.g. "nssock"), driver name (e.g. "nssock1"), and driver thread
+   name (e.g.  "nssock1:1")
+
+ - Moved definition of type "bool" from ns.h to nsthread.h to make
+   boolean types as well available in nsthread implementation.
+
+ - Don't mess around with FD_SETSIZE
+ - Don't use implementation defined NULL as last argument of variadic functions
+ - Reduced size of huge switch statements
+ - Reduced variable scopes
+ - Reduce number of return statements before end of function
+ - Added const declarations
+ - Silenced static checker
+
+	
+=======================================
 NaviServer 4.99.14, released 2016-11-18
 =======================================
 
