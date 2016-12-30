@@ -373,7 +373,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
  */
 
 NS_SOCKET
-Ns_SockListenUdp(const char *address, unsigned short port, bool resuseport)
+Ns_SockListenUdp(const char *address, unsigned short port, bool reuseport)
 {
     NS_SOCKET        sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
@@ -391,7 +391,7 @@ Ns_SockListenUdp(const char *address, unsigned short port, bool resuseport)
             /*
              * Not prebound, bind now
              */
-            sock = Ns_SockBindUdp(saPtr, resuseport);
+            sock = Ns_SockBindUdp(saPtr, reuseport);
         }
     }
 
