@@ -118,6 +118,8 @@ ns_section ns/parameters
 	# Write asynchronously to log files (access log and error log)
 	# ns_param	asynclogwriter	true		;# false
 
+        #ns_param       mutexlocktrace       true   ;# default false; print duractions of long mutex calls to stderr
+
         # Allow concurrent create operations of Tcl interpreters.
         # Versions up to at least Tcl 8.5 are known that these might
         # crash in case two threads create interpreters at the same
@@ -145,7 +147,7 @@ ns_section ns/parameters
 	# ns_param	URLCharset	utf-8
 
 	# Running behind proxy? Used by OpenACS...
-	ns_param	ReverseProxyMode	$proxy_mode
+        ns_param	ReverseProxyMode	$proxy_mode
 
 
 #---------------------------------------------------------------------

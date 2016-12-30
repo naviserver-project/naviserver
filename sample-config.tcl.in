@@ -127,6 +127,9 @@ ns_section	"ns/parameters"
    # Write asynchronously to log files (access log and error log)
    ns_param	asynlogcwriter		true ;# default: false
 
+   # Print duractions of long mutex calls to stderr
+   ns_param    mutexlocktrace           true ;# default false
+
    #
    # I18N Parameters
    #
