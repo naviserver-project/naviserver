@@ -2215,62 +2215,64 @@ static Tcl_Channel
 MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 {
     Conn       *connPtr;
-    Tcl_Channel chan;
+    Tcl_Channel chan = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(itPtr != NULL);
 
     connPtr = (Conn *) conn;
-    if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
+    if (unlikely((connPtr->flags & NS_CONN_CLOSED) != 0u)) {
         Ns_TclPrintfResult(itPtr->interp, "connection closed");
-        return NULL;
-    }
 
-    assert(connPtr->sockPtr != NULL);
-    if (connPtr->sockPtr->sock == NS_INVALID_SOCKET) {
-        Ns_TclPrintfResult(itPtr->interp, "no socket for connection");
-        return NULL;
-    }
+    } else {
 
-    /*
-     * Create Tcl channel arround the connection socket
-     */
+        assert(connPtr->sockPtr != NULL);
+        if (connPtr->sockPtr->sock == NS_INVALID_SOCKET) {
+            Ns_TclPrintfResult(itPtr->interp, "no socket for connection");
 
-    chan = Tcl_MakeTcpClientChannel(NSSOCK2PTR(connPtr->sockPtr->sock));
-    if (chan == NULL) {
-        Ns_TclPrintfResult(itPtr->interp, "%s", Tcl_PosixError(itPtr->interp));
-        return NULL;
-    }
-
-    /*
-     * Disable keep-alive and chunking headers.
-     */
-
-    if (connPtr->responseLength < 0) {
-        connPtr->keep = (int)NS_FALSE;
-    }
-
-    /*
-     * Check to see if HTTP headers are required and flush
-     * them now before the conn socket is dissociated.
-     */
-
-    if ((conn->flags & NS_CONN_SENTHDRS) == 0u) {
-        if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0u) {
-            conn->flags |= NS_CONN_SKIPHDRS;
         } else {
-            if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != NS_OK) {
-		Ns_Log(Error, "make channel: error writing headers");
-	    }
+
+            /*
+             * Create Tcl channel arround the connection socket
+             */
+
+            chan = Tcl_MakeTcpClientChannel(NSSOCK2PTR(connPtr->sockPtr->sock));
+            if (unlikely(chan == NULL)) {
+                Ns_TclPrintfResult(itPtr->interp, "%s", Tcl_PosixError(itPtr->interp));
+
+            } else {
+                /*
+                 * Disable keep-alive and chunking headers.
+                 */
+
+                if (connPtr->responseLength < 0) {
+                    connPtr->keep = (int)NS_FALSE;
+                }
+
+                /*
+                 * Check to see if HTTP headers are required and flush
+                 * them now before the conn socket is dissociated.
+                 */
+
+                if ((conn->flags & NS_CONN_SENTHDRS) == 0u) {
+                    if ((itPtr->nsconn.flags & CONN_TCLHTTP) == 0u) {
+                        conn->flags |= NS_CONN_SKIPHDRS;
+                    } else {
+                        if (Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM) != NS_OK) {
+                            Ns_Log(Error, "make channel: error writing headers");
+                        }
+                    }
+                }
+
+                if (Ns_SockSetBlocking(connPtr->sockPtr->sock) != NS_OK) {
+                    Ns_Log(Error, "make channel: error while making channel blocking");
+                }
+
+                connPtr->sockPtr->sock = NS_INVALID_SOCKET;
+            }
         }
     }
-
-    if (Ns_SockSetBlocking(connPtr->sockPtr->sock) != NS_OK) {
-	Ns_Log(Error, "make channel: error while making channel blocking");
-    }
-
-    connPtr->sockPtr->sock = NS_INVALID_SOCKET;
-
+    
     return chan;
 }
 
