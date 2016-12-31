@@ -262,7 +262,7 @@ Ns_ParseHttpTime(char *chars)
       Ns_MasterLock();
       if (lock == NULL) {
 	Ns_MutexInit(&lock);
-	Ns_MutexSetName2(&lock,"ns:httptime",NULL);
+	Ns_MutexSetName2(&lock, "ns:httptime", NULL);
       }
       Ns_MasterUnlock();
     }

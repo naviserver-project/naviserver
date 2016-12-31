@@ -851,7 +851,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             jobPtr = Tcl_GetHashValue(hPtr);
             if (unlikely(jobPtr->req == JOB_WAIT)) {
                 (void)ReleaseQueue(queue, NS_FALSE);
-                Ns_TclPrintfResult(interp,"can't cancel job \"%s\", someone is waiting on it",
+                Ns_TclPrintfResult(interp, "can't cancel job \"%s\", someone is waiting on it",
                                    Tcl_DStringValue(&jobPtr->id));
                 result = TCL_ERROR;
             }

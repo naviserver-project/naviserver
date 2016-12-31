@@ -1941,7 +1941,7 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
     memset(&(connPtr->reqPtr->request), 0, sizeof(struct Ns_Request));
 
     /*{ConnPool *poolPtr = argPtr->poolPtr;
-      Ns_Log(Notice,"ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
+      Ns_Log(Notice, "ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
       } */   
     connPtr->headers = Ns_SetRecreate(connPtr->reqPtr->headers);
     connPtr->contentLength = connPtr->reqPtr->length;

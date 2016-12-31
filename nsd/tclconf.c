@@ -244,7 +244,7 @@ NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     } else {
         Ns_Set **sets;
         int      i;
-        Tcl_Obj *resultList = Tcl_NewListObj(0,NULL);
+        Tcl_Obj *resultList = Tcl_NewListObj(0, NULL);
         
         result = TCL_OK;
         sets = Ns_ConfigGetSections();

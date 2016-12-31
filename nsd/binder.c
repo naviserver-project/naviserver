@@ -960,7 +960,7 @@ PrebindSockets(const char *spec)
 	 */
         Ns_Log(Notice, "prebind: proto %s addr %s port %d reuses %ld", proto, addr, port, reuses);
 
-        if (STREQ(proto,"tcp") && port > 0) {
+        if (STREQ(proto, "tcp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: [%s]:%d", addr, port);
                 continue;
@@ -987,7 +987,7 @@ PrebindSockets(const char *spec)
 	/*
 	 * UDP
 	 */
-        if (STREQ(proto,"udp") && port > 0) {
+        if (STREQ(proto, "udp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: udp: invalid address: [%s]:%d",
                        addr, port);

@@ -209,7 +209,7 @@ ns_localtime(const time_t *clock)
     
     errNum = localtime_s(&tlsPtr->ltbuf, clock);
     if (errNum != 0) {
-        NsThreadFatal("ns_localtime","localtime_s", errNum);
+        NsThreadFatal("ns_localtime", "localtime_s", errNum);
     }
 
     return &tlsPtr->ltbuf;
@@ -245,7 +245,7 @@ ns_gmtime(const time_t *clock)
     NS_NONNULL_ASSERT(clock != NULL);
     errNum = gmtime_s(&tlsPtr->gtbuf, clock);
     if (errNum != 0) {
-        NsThreadFatal("ns_gmtime","gmtime_s", errNum);
+        NsThreadFatal("ns_gmtime", "gmtime_s", errNum);
     }
 
     return &tlsPtr->gtbuf;
@@ -283,7 +283,7 @@ ns_ctime(const time_t *clock)
     NS_NONNULL_ASSERT(clock != NULL);
     errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
     if (errNum != 0) {
-        NsThreadFatal("ns_ctime","ctime_s", errNum);
+        NsThreadFatal("ns_ctime", "ctime_s", errNum);
     }
 
     return tlsPtr->ctbuf;
@@ -321,7 +321,7 @@ ns_asctime(const struct tm *tmPtr)
 
     errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
     if (errNum != 0) {
-        NsThreadFatal("ns_asctime","asctime_s", errNum);
+        NsThreadFatal("ns_asctime", "asctime_s", errNum);
     }
 
     return tlsPtr->asbuf;

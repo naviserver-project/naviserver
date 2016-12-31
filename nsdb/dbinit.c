@@ -1539,7 +1539,7 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
      */
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
-        Ns_TclPrintfResult(interp,"Invalid pool '%s'", pool);
+        Ns_TclPrintfResult(interp, "Invalid pool '%s'", pool);
         result = TCL_ERROR;
     } else {
         /*
@@ -1583,7 +1583,7 @@ Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDura
      */
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
-        Ns_TclPrintfResult(interp,"Invalid pool '%s'", pool);
+        Ns_TclPrintfResult(interp, "Invalid pool '%s'", pool);
         result = TCL_ERROR;
     } else {
         /*
