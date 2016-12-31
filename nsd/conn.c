@@ -1357,7 +1357,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 	"contentfile", "contentlength", "contentsentlength", "copy", 
 	"driver", 
 	"encoding", 
-	"fileheaders", "filelength", "fileoffset","files", "flags", "form", 
+	"fileheaders", "filelength", "fileoffset", "files", "flags", "form", 
 	"headers", "host", 
 	"id", "isconnected", 
 	"keepalive", 
