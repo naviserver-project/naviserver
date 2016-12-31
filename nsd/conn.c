@@ -1500,13 +1500,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CAuthUserIdx:
         if (connPtr->auth != NULL) {
-            Tcl_AppendResult(interp, Ns_ConnAuthUser(conn), NULL);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnAuthUser(conn), -1));
         }
         break;
 
     case CAuthPasswordIdx:
         if (connPtr->auth != NULL) {
-            Tcl_AppendResult(interp, Ns_ConnAuthPasswd(conn), NULL);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnAuthPasswd(conn), -1));
         }
         break;
 
@@ -1621,7 +1621,12 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CContentFileIdx:
-        Tcl_AppendResult(interp, Ns_ConnContentFile(conn), NULL);
+        {
+            const char *file = Ns_ConnContentFile(conn);
+            if (file != NULL) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(file, -1));
+            }
+        }
         break;
 
     case CEncodingIdx:
@@ -2233,7 +2238,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 
     chan = Tcl_MakeTcpClientChannel(NSSOCK2PTR(connPtr->sockPtr->sock));
     if (chan == NULL) {
-        Tcl_AppendResult(itPtr->interp, Tcl_PosixError(itPtr->interp), NULL);
+        Ns_TclPrintfResult(itPtr->interp, "%s", Tcl_PosixError(itPtr->interp));
         return NULL;
     }
 
