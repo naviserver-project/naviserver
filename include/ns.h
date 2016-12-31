@@ -1074,7 +1074,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest) NS_GNUC_NONNULL(1) NS_GNU
 NS_EXTERN const char *
 Ns_ConnHost(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN unsigned short
 Ns_ConnPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET

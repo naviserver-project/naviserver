@@ -753,7 +753,7 @@ Ns_ConnHost(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+unsigned short
 Ns_ConnPort(const Ns_Conn *conn)
 {
     const Driver *drvPtr;

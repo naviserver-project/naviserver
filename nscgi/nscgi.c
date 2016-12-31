@@ -855,7 +855,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
     if (p == NULL) {
-        Ns_DStringPrintf(dsPtr, "%d", Ns_ConnPort(conn));
+        Ns_DStringPrintf(dsPtr, "%hu", Ns_ConnPort(conn));
         Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", dsPtr->string);
         Ns_DStringTrunc(dsPtr, 0);
     }
