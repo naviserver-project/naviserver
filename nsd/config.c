@@ -41,8 +41,8 @@
  * Local functions defined in this file.
  */
 
-static Tcl_CmdProc SectionCmd;
-static Tcl_CmdProc ParamCmd;
+static Tcl_ObjCmdProc SectionObjCmd;
+static Tcl_ObjCmdProc ParamObjCmd;
 
 static Ns_Set* GetSection(const char *section, bool create)
     NS_GNUC_NONNULL(1);
@@ -744,8 +744,8 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
 
     set = NULL;
     interp = Ns_TclCreateInterp();
-    (void)Tcl_CreateCommand(interp, "ns_section", SectionCmd, &set, NULL);
-    (void)Tcl_CreateCommand(interp, "ns_param", ParamCmd, &set, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_section", SectionObjCmd, &set, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_param", ParamObjCmd, &set, NULL);
     for (i = 0; argv[i] != NULL; ++i) {
         (void) Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
@@ -762,7 +762,7 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
 /*
  *----------------------------------------------------------------------
  *
- * ParamCmd --
+ * ParamObjCmd --
  *
  *      Add a single entry to the current section of the config.  This
  *      command may only be run from within an ns_section.
@@ -777,23 +777,28 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
  */
 
 static int
-ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Set *set;
-    int     result = TCL_OK;
+    int         result = TCL_OK;
+    const char *paramName = NULL, *paramValue = NULL;
+    Ns_ObjvSpec args[] = {
+        {"name",  Ns_ObjvString,  &paramName, NULL},
+        {"value", Ns_ObjvString,  &paramValue, NULL},        
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (argc != 3) {
-        Ns_TclPrintfResult(interp, "wrong # args: should be \"%s key value\"", argv[0]);
-        return TCL_ERROR;
-    }
-    
-    set = *((Ns_Set **) clientData);
-
-    if (likely(set != NULL)) {
-        (void)Ns_SetPut(set, argv[1], argv[2]);
-    } else {
-        Ns_TclPrintfResult(interp, "%s not preceded by an ns_section command.", argv[0]);
+    if (unlikely(Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
+        
+    } else {
+        Ns_Set *set = *((Ns_Set **) clientData);
+        
+        if (likely(set != NULL)) {
+            (void)Ns_SetPut(set, paramName, paramValue);
+        } else {
+            Ns_TclPrintfResult(interp, "parameter %s not preceded by an ns_section command.", paramName);
+            result = TCL_ERROR;
+        }
     }
 
     return result;
@@ -803,14 +808,14 @@ ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv
 /*
  *----------------------------------------------------------------------
  *
- * SectionCmd --
+ * SectionObjCmd --
  *
  *      This creates a new config section and sets a shared variable
  *      to point at a newly-allocated set for holding config data.
  *      ns_param stores config data in the set.
  *
  * Results:
- *      Standard tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
  *      Section set is created (if necessary).
@@ -819,17 +824,22 @@ ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv
  */
 
 static int
-SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int       result = TCL_OK;
+    int         result = TCL_OK;
+    const char *sectionName = NULL;
+    Ns_ObjvSpec args[] = {
+        {"sectionname", Ns_ObjvString,  &sectionName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (unlikely(argc != 2)) {
-        Ns_TclPrintfResult(interp, "wrong # args: should be \"%s sectionname\"", argv[0]);
+    if (unlikely(Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
+        
     } else {
         Ns_Set  **set = (Ns_Set **) clientData;
         
-        *set = GetSection(argv[1], NS_TRUE);
+        *set = GetSection(sectionName, NS_TRUE);
     }
 
     return result;

@@ -70,7 +70,7 @@ typedef struct Sess {
  */
 
 static Ns_SockProc AcceptProc;
-static Tcl_CmdProc ExitCmd;
+static Tcl_ObjCmdProc ExitObjCmd;
 static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
 static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo);
 static Ns_ArgProc ArgProc;
@@ -401,7 +401,7 @@ EvalThread(void *arg)
      */
 
     stop = 0;
-    (void)Tcl_CreateCommand(interp, "exit", ExitCmd, (ClientData) &stop, NULL);
+    (void)Tcl_CreateObjCommand(interp, "exit", ExitObjCmd, (ClientData) &stop, NULL);
 
     ncmd = 0;
     while (stop == 0) {
@@ -641,7 +641,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
 /*
  *----------------------------------------------------------------------
  *
- * ExitCmd --
+ * ExitObjCmd --
  *
  *	Special exit command for nscp.
  *
@@ -655,14 +655,13 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
+ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-
     int result = TCL_OK;
-    
-    if (argc != 1) {
-	Ns_TclPrintfResult(interp, "wrong # args: should be \"%s\"", argv[0]);
-	result = TCL_ERROR;
+
+    if (unlikely(Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK)) {
+        result = TCL_ERROR;
+        
     } else {
         int *stopPtr = (int *) clientData;
         
