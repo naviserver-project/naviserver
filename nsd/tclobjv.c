@@ -1570,34 +1570,34 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
          * Produce a fancy error message.
          */
         resultPtr = Tcl_NewObj();
-        Tcl_AppendStringsToObj(resultPtr,"bad ", msg, " \"", key, NULL);
+        Tcl_AppendStringsToObj(resultPtr, "bad ", msg, " \"", key, (char *)0);
 
         entryPtr = tablePtr;
         if (entryPtr->key == NULL) {
             /*
              * The table is empty
              */
-            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NULL);
+            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)0);
         } else {
             int count = 0;
             /*
              * The table has keys
              */
-            Tcl_AppendStringsToObj(resultPtr, "\": must be ", entryPtr->key, NULL);
+            Tcl_AppendStringsToObj(resultPtr, "\": must be ", entryPtr->key, (char *)0);
             entryPtr++;
             while (entryPtr->key != NULL) {
                 if ((entryPtr+1)->key == NULL) {
                     Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
                                            " or ", entryPtr->key, NULL);
                 } else if (entryPtr->key != NULL) {
-                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, NULL);
+                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0);
                     count++;
                 }
                 entryPtr++;
             }
         }
         Tcl_SetObjResult(interp, resultPtr);
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)0L);
     }
 
    return result;

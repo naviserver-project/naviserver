@@ -455,7 +455,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         if (itPtr->adp.cwd == NULL) {
-            file = Ns_PagePath(&tmp, servPtr->server, file, NULL);
+            file = Ns_PagePath(&tmp, servPtr->server, file, (char *)0);
         } else {
             file = Ns_MakePath(&tmp, itPtr->adp.cwd, file, (char *)0);
         }

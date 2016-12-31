@@ -3423,7 +3423,7 @@ ProxyError(Tcl_Interp *interp, Err err)
     NS_NONNULL_ASSERT(interp != NULL);
 
     sysmsg = NULL;
-    Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, NULL);
+    Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, (char *)0L);
 }
 
 /*

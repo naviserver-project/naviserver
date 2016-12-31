@@ -350,7 +350,7 @@ NsAdpPageProc(const void *arg, Ns_Conn *conn)
             file = ds.string;
         }
     } else if (Ns_PathIsAbsolute(adp->file) == NS_FALSE) {
-        file = Ns_PagePath(&ds, server, adp->file, NULL);
+        file = Ns_PagePath(&ds, server, adp->file, (char *)0);
     } else {
         file = adp->file;
     }
