@@ -1052,13 +1052,13 @@ NsConnTimeStatsUpdate(Ns_Conn *conn) {
  */
 void
 NsConnTimeStatsFinalize(Ns_Conn *conn) {
-    Conn     *connPtr;
-    ConnPool *poolPtr;
-    Ns_Time   now, diffTimeSpan;
+    const Conn *connPtr;
+    ConnPool   *poolPtr;
+    Ns_Time     now, diffTimeSpan;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    connPtr = (Conn *) conn;
+    connPtr = (const Conn *) conn;
     poolPtr = connPtr->poolPtr;
     assert(poolPtr != NULL);
     

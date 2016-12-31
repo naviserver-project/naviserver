@@ -893,7 +893,7 @@ Ns_Fatal(const char *fmt, ...)
 }
 
 static void
-Panic(CONST char *fmt, ...)
+Panic(const char *fmt, ...)
 {
     va_list ap;
 

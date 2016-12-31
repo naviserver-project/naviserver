@@ -1197,7 +1197,7 @@ static int
 IncrVar(Array *arrayPtr, const char *key, int incr, Tcl_WideInt *valuePtr)
 {
     Tcl_HashEntry *hPtr;
-    CONST char    *oldString;
+    const char    *oldString;
     int            isNew, status;
     Tcl_WideInt    counter = -1;
 

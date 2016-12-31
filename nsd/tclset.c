@@ -316,12 +316,12 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         case SCopyIdx:
             if (unlikely(offset >= objc)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId");
-                return TCL_ERROR;
+                result = TCL_ERROR;
+            } else if (LookupObjSet(itPtr, objv[offset], NS_FALSE, &set) != TCL_OK) {
+                result = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, EnterSet(itPtr, Ns_SetCopy(set), NS_TCL_SET_DYNAMIC));
             }
-            if (LookupObjSet(itPtr, objv[offset], NS_FALSE, &set) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            Tcl_SetObjResult(interp, EnterSet(itPtr, Ns_SetCopy(set), NS_TCL_SET_DYNAMIC));
             break;
 
         case SSplitIdx: {
@@ -621,19 +621,21 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
             if (unlikely(objc != 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
-                return TCL_ERROR;
-            }
-	    set2Ptr = NULL;
-            if (unlikely(LookupObjSet(itPtr, objv[3], NS_FALSE, &set2Ptr) != TCL_OK)) {
-                return TCL_ERROR;
-            }
-	    assert (set2Ptr != NULL);
-            if (opt == SMergeIdx) {
-                Ns_SetMerge(set, set2Ptr);
+                result = TCL_ERROR;
             } else {
-                Ns_SetMove(set, set2Ptr);
+                set2Ptr = NULL;
+                if (unlikely(LookupObjSet(itPtr, objv[3], NS_FALSE, &set2Ptr) != TCL_OK)) {
+                    result = TCL_ERROR;
+                } else {
+                    assert (set2Ptr != NULL);
+                    if (opt == SMergeIdx) {
+                        Ns_SetMerge(set, set2Ptr);
+                    } else {
+                        Ns_SetMove(set, set2Ptr);
+                    }
+                    Tcl_SetObjResult(interp, objv[2]);
+                }
             }
-            Tcl_SetObjResult(interp, objv[2]);
             break;
 
         default:

@@ -198,7 +198,7 @@ Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
 {
     Cache               *cachePtr = (Cache *) cache;
     const Tcl_HashEntry *hPtr;
-    Entry               *ePtr;
+    Ns_Entry            *result;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -209,30 +209,38 @@ Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
          * Entry does not exist at all.
          */
         ++cachePtr->stats.nmiss;
-        return NULL;
-    }
-    ePtr = Tcl_GetHashValue(hPtr);
-    if (ePtr->value == NULL) {
-        /*
-         * Entry is being updated by some other thread.
-         */
-        ++cachePtr->stats.nmiss;
-        return NULL;
-    }
-    if (Expired(ePtr, NULL) == NS_TRUE) {
-        /*
-         * Entry exists but has expired.
-         */
-        Ns_CacheDeleteEntry((Ns_Entry *) ePtr);
-        ++cachePtr->stats.nmiss;
-        return NULL;
-    }
-    ++cachePtr->stats.nhit;
-    Delink(ePtr);
-    ePtr->count ++;
-    Push(ePtr);
+        result = NULL;
 
-    return (Ns_Entry *) ePtr;
+    } else {
+        Entry *ePtr = Tcl_GetHashValue(hPtr);
+
+        if (ePtr->value == NULL) {
+            /*
+             * Entry is being updated by some other thread.
+             */
+            ++cachePtr->stats.nmiss;
+            result = NULL;
+
+        } else if (Expired(ePtr, NULL) == NS_TRUE) {
+            /*
+             * Entry exists but has expired.
+             */
+            Ns_CacheDeleteEntry((Ns_Entry *) ePtr);
+            ++cachePtr->stats.nmiss;
+            result = NULL;
+
+        } else {
+            /*
+             * Entry is valid.
+             */
+            ++cachePtr->stats.nhit;
+            Delink(ePtr);
+            ePtr->count ++;
+            Push(ePtr);
+            result = (Ns_Entry *) ePtr;
+        }
+    }
+    return result;
 }
 
 
@@ -634,6 +642,7 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 {
     Cache               *cachePtr = (Cache *) cache;
     const Tcl_HashEntry *hPtr;
+    Ns_Entry            *result = NULL;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(search != NULL);
@@ -645,14 +654,15 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 
         if (Ns_CacheGetValue(entry) != NULL) {
             if (Expired((Entry *) entry, &search->now) == NS_FALSE) {
-                return entry;
+                result = entry;
+                break;
             }
             ++cachePtr->stats.nexpired;
             Ns_CacheDeleteEntry(entry);
         }
         hPtr = Tcl_NextHashEntry(&search->hsearch);
     }
-    return NULL;
+    return result;
 }
 
 
@@ -677,6 +687,7 @@ Ns_Entry *
 Ns_CacheNextEntry(Ns_CacheSearch *search)
 {
     const Tcl_HashEntry  *hPtr;
+    Ns_Entry             *result = NULL;
 
     NS_NONNULL_ASSERT(search != NULL);
 
@@ -686,14 +697,15 @@ Ns_CacheNextEntry(Ns_CacheSearch *search)
 
         if (Ns_CacheGetValue(entry) != NULL) {
             if (Expired((Entry *) entry, &search->now) == NS_FALSE) {
-                return entry;
+                result = entry;
+                break;
             }
             ((Entry *) entry)->cachePtr->stats.nexpired++;
             Ns_CacheDeleteEntry(entry);
         }
         hPtr = Tcl_NextHashEntry(&search->hsearch);
     }
-    return NULL;
+    return result;
 }
 
 

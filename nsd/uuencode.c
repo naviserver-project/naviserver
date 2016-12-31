@@ -100,9 +100,9 @@ size_t
 Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
 {
     register const unsigned char *p;
-    register unsigned char *q;
-    register int line = 0;
-    register size_t n;
+    register unsigned char       *q;
+    register int                  line = 0;
+    register size_t               n;
 
     NS_NONNULL_ASSERT(input != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
@@ -174,10 +174,10 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
 size_t
 Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
 {
-    register int n;
-    unsigned char chars[4] = {0u, 0u, 0u, 0u};
+    register int                  n;
+    unsigned char                 chars[4] = {0u, 0u, 0u, 0u};
     register const unsigned char *p;
-    register unsigned char *q;
+    register unsigned char       *q;
 
     NS_NONNULL_ASSERT(input != NULL);
     NS_NONNULL_ASSERT(buf != NULL);

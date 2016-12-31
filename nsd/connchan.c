@@ -715,8 +715,8 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         result = TCL_ERROR;
         
     } else {
-        NsServer  *servPtr = itPtr->servPtr;
-        NsConnChan     *connChanPtr;
+        NsServer         *servPtr = itPtr->servPtr;
+        const NsConnChan *connChanPtr;
         
         /*
          * Lock the channel table and create a new entry for the
@@ -1119,9 +1119,9 @@ ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = itPtr->servPtr;
-        NsConnChan     *connChanPtr;
+        const NsInterp   *itPtr = clientData;
+        NsServer         *servPtr = itPtr->servPtr;
+        const NsConnChan *connChanPtr;
         
         connChanPtr = ConnChanGet(interp, servPtr, name);
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connChanPtr != NULL));

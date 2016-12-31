@@ -469,8 +469,7 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int             opt, cnt = 0, result = TCL_OK;
-
+    int                      opt = 0, cnt = 0, result = TCL_OK;
     static const char *const opts[] = {
         "create", "destroy", "release", "wait", NULL
     };
