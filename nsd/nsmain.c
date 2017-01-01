@@ -95,7 +95,7 @@ extern void NsdInit();
  */
 
 int
-Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
+Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 {
     Args           cmd;
     int            sig, optind;
@@ -119,6 +119,12 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
     static char    mode = '\0', *procname, *server = NULL;
     static Ns_Set *servers;
 #endif
+
+    /*
+     * The call to Tcl_FindExecutable() must be done before we ever
+     * attempt any Tcl related call.
+     */
+    Tcl_FindExecutable(argv[0]);
 
     /*
      * Initialise the Nsd library.
@@ -343,18 +349,6 @@ Ns_Main(int argc, char *const*argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    /*
-     * The call to Tcl_FindExecutable() must be done before we ever
-     * attempt any file-related operation, because it is initializing
-     * the Tcl library and Tcl VFS (virtual filesystem interface)
-     * which is used throughout the code.
-     * Side-effect of this call is initialization of the notifier
-     * subsystem. The notifier subsystem creates special private
-     * notifier thread and we should better do this after all those
-     * ns_fork's above...
-     */
-
-    Tcl_FindExecutable(argv[0]);
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*

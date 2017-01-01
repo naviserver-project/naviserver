@@ -411,6 +411,12 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     char        *group = NULL, *active;
     uint16       major, minor;
 
+    /*
+     * The call to Tcl_FindExecutable() must be done before we ever
+     * attempt any Tcl related call.
+     */
+    Tcl_FindExecutable(argv[0]);
+
     Nsproxy_LibInit();
 
     if (argc > 4 || argc < 3) {
@@ -469,7 +475,6 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
      * Create the interp, initialize with user init proc, if any.
      */
 
-    Tcl_FindExecutable(argv[0]);
     interp = Ns_TclCreateInterp();
     if (init != NULL) {
         if ((*init)(interp) != TCL_OK) {
