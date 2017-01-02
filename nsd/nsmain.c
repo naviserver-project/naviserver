@@ -121,10 +121,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * The call to Tcl_FindExecutable() must be done before we ever
-     * attempt any Tcl related call.
+     * The call to Tcl_FindExecutable() should be done before we attempt any
+     * Tcl related call... at least. wiht the current alpha version of Tcl
+     * 8.7. However, when we do so, there will be a Fatal: "Tcl_WaitForEvent:
+     * Notifier not initialized" in tclconnio-3.1 (after thread::create).
      */
-    Tcl_FindExecutable(argv[0]);
+    /*Tcl_FindExecutable(argv[0]);*/
 
     /*
      * Initialise the Nsd library.
@@ -348,6 +350,18 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NsBlockSignals(debug);
 
 #endif /* ! _WIN32 */
+
+    /*
+     * The call to Tcl_FindExecutable() must be done before we ever
+     * attempt any file-related operation, because it is initializing
+     * the Tcl library and Tcl VFS (virtual filesystem interface)
+     * which is used throughout the code.
+     * Side-effect of this call is initialization of the notifier
+     * subsystem. The notifier subsystem creates special private
+     * notifier thread and we should better do this after all those
+     * ns_fork's above...
+     */
+    Tcl_FindExecutable(argv[0]);
 
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
