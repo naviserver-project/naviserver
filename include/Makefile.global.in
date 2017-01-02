@@ -72,7 +72,7 @@ CFLAGS_INCLUDE   = -I$(INCDIR) @TCL_INCLUDES@
 CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@
 DEFS             = @DEFS@
 CFLAGS_DEFAULT   = @CFLAGS_DEFAULT@
-#CFLAGS_DEFAULT  = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED -DTCL_NO_DEPRECATED -Wconversion -Wsign-conversion -Wfloat-conversion -Wsign-compare
+#CFLAGS_DEFAULT  = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED -Wconversion -Wsign-conversion -Wfloat-conversion -Wsign-compare
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
 LIBS		 = @LIBS@
 DL_LIBS		 = 
