@@ -336,6 +336,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         host = Ns_ConfigGetValue(path, "hostname");
         noHostNameGiven = (host == NULL);
         bindaddr = address = Ns_ConfigGetValue(path, "address");
+        if (bindaddr == NULL) {
+            bindaddr = address = NS_IP_UNSPECIFIED;
+        }
         defserver = Ns_ConfigGetValue(path, "defaultserver");
 
         /*
