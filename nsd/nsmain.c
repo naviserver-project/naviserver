@@ -121,15 +121,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * The call to Tcl_FindExecutable() should be done before we attempt any
-     * Tcl related call... at least. wiht the current alpha version of Tcl
-     * 8.7. However, when we do so, there will be a Fatal: "Tcl_WaitForEvent:
-     * Notifier not initialized" in tclconnio-3.1 (after thread::create).
-     */
-    /*Tcl_FindExecutable(argv[0]);*/
-
-    /*
-     * Initialise the Nsd library.
+     * Initialize the Nsd library.
      */
     Nsd_LibInit();
 
@@ -360,6 +352,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * subsystem. The notifier subsystem creates special private
      * notifier thread and we should better do this after all those
      * ns_fork's above...
+     * Starting with Tcl 8.7, the notifier thread is created on-demand
+     * hence the above call may be placed anywhere (preferably at
+     * the startup of the procedure, before anything else). We still
+     * leave it here as to be backward-compatible with older versions.
+     * In case the notifier thread is entirely removed (as it may be
+     * the case for some platforms), this does not apply anyways.
      */
     Tcl_FindExecutable(argv[0]);
 
