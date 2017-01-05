@@ -28,19 +28,9 @@ AC_ARG_WITH([openssl],
     if test "${ac_openssl}" != "no" ; then
       ac_openssl=yes
       if test -d "$withval" ; then
-        echo "==== withval is a directory=$withval"
+        echo "Trying to use directory $withval/include and -L$withval/lib"
         OPENSSL_INCLUDES="-I$withval/include"
         OPENSSL_LIBS="-L$withval/lib -lssl -lcrypto"
-      elif test "${withval}" = "yes"; then
-        dnl First try to find pkg-config
-        if test -z "$PKG_CONFIG"; then
-           AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
-        fi
-	if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
-	   echo "OpenSSL is configured via $PKG_CONFIG"
-	   OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
-           OPENSSL_INCLUDES=`$PKG_CONFIG --cflags-only-I openssl`
-	fi
       fi
     fi
   ],
@@ -49,9 +39,26 @@ AC_ARG_WITH([openssl],
     OPENSSL_INCLUDES=""
     OPENSSL_LIBS="-lssl -lcrypto"
   ])
-AC_MSG_RESULT([$ac_openssl])
+
+
+# AC_MSG_RESULT([$ac_openssl])
 
 if test "${ac_openssl}" = "yes" ; then
+
+  dnl OpenSSL is configured
+  dnl Was a path being provided?
+  if test -z "$OPENSSL_INCLUDES"; then
+     dnl No path provided, check PKG_CONFIG
+     if test -z "$PKG_CONFIG"; then
+     	AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+     fi
+     if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
+     	echo "OpenSSL is configured via $PKG_CONFIG"
+     	OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
+     	OPENSSL_INCLUDES=`$PKG_CONFIG --cflags-only-I openssl`
+     fi
+  fi
+
   save_CPPFLAGS="$CPPFLAGS"
   save_LIBS="$LIBS"
   CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
