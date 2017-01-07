@@ -904,7 +904,7 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *h
 void
 Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
 {
-    bool ipv6 = NS_FALSE;
+    bool ip_literal = NS_FALSE;
     
     NS_NONNULL_ASSERT(hostString != NULL);
     NS_NONNULL_ASSERT(portStart != NULL);
@@ -913,11 +913,11 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
         char *p;
         
         /*
-         * Maybe this is an IPv6 address in square braces
+         * Maybe this is an address in IP-literal notation in square braces
          */
         p = strchr(hostString + 1, INTCHAR(']'));
         if (p != NULL) {
-            ipv6 = NS_TRUE;
+            ip_literal = NS_TRUE;
             
             /*
              * Terminate the IP-literal if hostStart is given.
@@ -934,7 +934,7 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
             }
         }
     }
-    if (!ipv6) {
+    if (!ip_literal) {
         *portStart = strchr(hostString, INTCHAR(':'));
         if (hostStart != NULL) {
             *hostStart = hostString;
