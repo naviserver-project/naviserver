@@ -389,31 +389,31 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char     *url, *protocol, *host, *portString, *path, *tail;
+        char *url, *protocol, *host, *portString, *path, *tail;
 
         url = ns_strdup(urlString);
         if (Ns_ParseUrl(url, &protocol, &host, &portString, &path, &tail) == NS_OK) {
-            Tcl_Obj  *resultObj = Tcl_NewListObj(0, NULL);
+            Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
             if (protocol != NULL) {
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("proto", 5));
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(protocol, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("proto", 5));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(protocol, -1));
             }
             if (host != NULL) {
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("host", 4));
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(host, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(host, -1));
             }
             if (portString != NULL) {
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("port", 4));
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(portString, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portString, -1));
             }
             if (path != NULL) {
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("path", 4));
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(path, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("path", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(path, -1));
             }
             if (tail != NULL) {
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj("tail", 4));
-                Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(tail, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("tail", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(tail, -1));
             }
             
             Tcl_SetObjResult(interp, resultObj);
@@ -423,9 +423,8 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             result = TCL_ERROR;
         }
         ns_free(url);
-
-
     }
+    
     return result;
 }
 
