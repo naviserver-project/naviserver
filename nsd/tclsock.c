@@ -689,7 +689,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
             
-            if (sock == 0) {
+            if (sock == (NS_SOCKET)0) {
                 /*
                  * The sets can have any random value now
                  */
