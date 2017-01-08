@@ -502,11 +502,11 @@ int
 NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn       *conn = GetConn(interp);
-    const char    *name, *data, *domain = NULL, *path = NULL;
+    char          *name, *data, *domain = NULL, *path = NULL;
     int            secure = 0, scriptable = 0, discard = 0, replace = 0;
     unsigned int   flags = 0u;
     time_t         maxage;
-    const Ns_Time *expiresPtr = NULL;
+    Ns_Time       *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-discard",    Ns_ObjvBool,   &discard,    NULL},
@@ -588,7 +588,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 {
     const Ns_Conn *conn;
     Ns_DString     ds;
-    const char    *nameString;
+    char          *nameString;
     Tcl_Obj       *defaultObj = NULL;
     int            idx = -1, status = TCL_OK;
     int            withSetCookies = (int)NS_FALSE;
@@ -655,7 +655,7 @@ int
 NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const Ns_Conn  *conn = GetConn(interp);
-    const char     *name, *domain = NULL, *path = NULL;
+    char           *name, *domain = NULL, *path = NULL;
     unsigned int    flags = 0;
     int             secure = 0, replace = 0;
 

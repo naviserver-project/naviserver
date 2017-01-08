@@ -126,7 +126,7 @@ NsTclSockArgProc(Tcl_DString *dsPtr, const void *arg)
 int
 NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *addr;
+    char       *addr;
     int         result = TCL_OK;
     Ns_ObjvSpec args[] = {
         {"address",  Ns_ObjvString, &addr,    NULL},
@@ -175,7 +175,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *host;
+    char       *host;
     int         all = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-all",      Ns_ObjvBool,  &all, INT2PTR(NS_TRUE)},
@@ -331,7 +331,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char    *addr;
+    char          *addr;
     int            result = TCL_OK;
     unsigned short port;
     Ns_ObjvSpec    args[] = {
@@ -485,10 +485,10 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char    *host, *lhost = NULL;
+    char          *lhost = NULL, *host;
     unsigned short lport = 0u, port;
     int            nonblock = 0, async = 0, msec = -1, result;
-    const Ns_Time *timeoutPtr = NULL;
+    Ns_Time       *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
 	{"-nonblock",  Ns_ObjvBool,   &nonblock,   INT2PTR(NS_TRUE)},
@@ -789,11 +789,11 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
 int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *script, *sockId, *whenString;
+    char           *script, *sockId, *whenString;
     NS_SOCKET       sock;
     int             result = TCL_OK;
     size_t          scriptLength;
-    const Ns_Time  *timeoutPtr = NULL;
+    Ns_Time        *timeoutPtr = NULL;
     unsigned int    when = 0u;
     Callback       *cbPtr;
     const NsInterp *itPtr = clientData;
@@ -901,7 +901,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *addr, *script;
+    char           *addr, *script;
     unsigned short  port;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {

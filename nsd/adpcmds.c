@@ -403,9 +403,9 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
     Tcl_DString   *dsPtr;
     int            result;
     unsigned int   flags;
-    const char    *file;
+    char          *file;
     int            tcl = 0, nocache = 0, nargs = 0;
-    const Ns_Time *ttlPtr = NULL;
+    Ns_Time       *ttlPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cache",       Ns_ObjvTime,   &ttlPtr,  NULL},
@@ -485,7 +485,8 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     int          result, nargs = 0;
     unsigned int savedFlags;
     bool         asFile = NS_FALSE, safe = NS_FALSE, asString = NS_FALSE, tcl = NS_FALSE;
-    const char  *cwd = NULL, *savedCwd = NULL, *resvar = NULL;
+    const char  *savedCwd = NULL, *resvar = NULL;
+    char        *cwd = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,      NULL},
@@ -597,9 +598,9 @@ NsTclAdpAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = clientData;
-    const char *s;
-    int         length, nonewline = 0;
+    NsInterp *itPtr = clientData;
+    char     *s;
+    int       length, nonewline = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-nonewline", Ns_ObjvBool,  &nonewline, INT2PTR(NS_TRUE)},
@@ -1133,7 +1134,7 @@ int
 NsTclAdpDebugObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = clientData;
-    const char *host = NULL, *port = NULL, *procs = NULL;
+    char     *host = NULL, *port = NULL, *procs = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-host",  Ns_ObjvString, &host,  NULL},

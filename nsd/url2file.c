@@ -390,10 +390,9 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 int
 NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *url;
-    Tcl_Obj        *scriptObj;
-    int             remain = 0, noinherit = 0, result = TCL_OK;
-    
+    char       *url;
+    Tcl_Obj    *scriptObj;
+    int         remain = 0, noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
@@ -444,10 +443,9 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 int
 NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *url = NULL;
+    char       *url = NULL;
     int         noinherit = 0, recurse = 0, result = TCL_OK;
-
-    Ns_ObjvSpec     opts[] = {
+    Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,   NULL},
@@ -493,9 +491,8 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
 int
 NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *url = NULL, *basepath = NULL;
+    char       *url = NULL, *basepath = NULL;
     int         noinherit = 0, result = TCL_OK;
-
     Ns_ObjvSpec opts[] = {
 	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},

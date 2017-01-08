@@ -394,7 +394,7 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     int            result = TCL_OK;
     int            jpt = -1;
-    const Ns_Time *timeoutPtr = NULL;
+    Ns_Time       *timeoutPtr = NULL;
     Ns_ObjvSpec    lopts[] = {
         {"-jobsperthread",  Ns_ObjvInt,  &jpt,        NULL},
         {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
@@ -444,7 +444,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     int          result = TCL_OK, max = NS_JOB_DEFAULT_MAXTHREADS;
     Tcl_Obj     *queueIdObj;
-    const char  *descString  = "";
+    char        *descString  = "";
     Ns_ObjvSpec  lopts[] = {
         {"-desc",   Ns_ObjvString,   &descString,   NULL},
         {NULL, NULL, NULL, NULL}
@@ -544,7 +544,7 @@ static int
 JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK, create = 0, head = 0, detached = 0;
-    const char *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
+    char       *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
     char        buf[100];
     Ns_ObjvSpec lopts[] = {
         {"-head",      Ns_ObjvBool,    &head,        INT2PTR(NS_TRUE)},
@@ -692,8 +692,8 @@ static int
 JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int            result = TCL_OK;
-    const Ns_Time *deltaTimeoutPtr = NULL;
-    const char    *jobIdString;
+    Ns_Time       *deltaTimeoutPtr = NULL;
+    char          *jobIdString;
     Queue         *queue = NULL;
     Ns_ObjvSpec    lopts[] = {
         {"-timeout",  Ns_ObjvTime,   &deltaTimeoutPtr, NULL},
@@ -826,7 +826,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 {
     Queue        *queue = NULL;
     int          result = TCL_OK;
-    const char  *jobIdString;
+    char        *jobIdString;
     Ns_ObjvSpec  args[] = {
         {"queueId",  ObjvQueue,      &queue,       NULL},
         {"jobId",    Ns_ObjvString,  &jobIdString, NULL},
@@ -895,7 +895,7 @@ JobExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 {
     Queue       *queue = NULL;
     int          result = TCL_OK;
-    const char  *jobIdString;
+    char        *jobIdString;
     Ns_ObjvSpec  args[] = {
         {"queueId",  ObjvQueue,     &queue,       NULL},
         {"jobId",    Ns_ObjvString, &jobIdString, NULL},
@@ -936,7 +936,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 {
     Queue         *queue;
     int            result = TCL_OK;
-    const Ns_Time *deltaTimeoutPtr = NULL;
+    Ns_Time       *deltaTimeoutPtr = NULL;
     Ns_ObjvSpec    lopts[] = {
         {"-timeout",  Ns_ObjvTime, &deltaTimeoutPtr, NULL},
         {NULL, NULL, NULL, NULL}

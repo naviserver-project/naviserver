@@ -118,8 +118,7 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user);
 
 static bool ValidateUserAddr(User * userPtr, const char *peer);
-static int AuthProc(const char *server, const char *method, const char *url,
-		    const char *user, const char *pwd, const char *peer);
+static Ns_RequestAuthorizeProc AuthProc;
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, char *uri);
 static int CreateHeader(Server * servPtr, Ns_Conn *conn, bool stale);
@@ -361,18 +360,18 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *C
  *----------------------------------------------------------------------
  */
 
-static int AuthProc(const char *server, const char *method, const char *url,
-		    const char *user, const char *pwd, const char *peer)
+static Ns_ReturnCode AuthProc(const char *server, const char *method, const char *url,
+                              const char *user, const char *pwd, const char *peer)
 {
-    int status;
-    Ns_Set *set;
-    Server *servPtr;
-    Perm *permPtr;
-    User *userPtr;
+    Ns_ReturnCode  status;
+    Ns_Set        *set;
+    Server        *servPtr;
+    Perm          *permPtr;
+    User          *userPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    char buf[NS_ENCRYPT_BUFSIZE], *group, *auth = NULL;
-    Ns_Conn *conn = Ns_GetConn();
+    char           buf[NS_ENCRYPT_BUFSIZE], *group, *auth = NULL;
+    Ns_Conn       *conn = Ns_GetConn();
 
     if (user == NULL) {
         user = "";

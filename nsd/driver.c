@@ -2693,7 +2693,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     snprintf(header, sizeof(header), "HTTP/1.0 %d ", code);
     iov[0].iov_base = header;
     iov[0].iov_len  = strlen(header);
-    iov[1].iov_base = (caddr_t) response;
+    iov[1].iov_base = (void *)response;
     iov[1].iov_len  = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len  = 4u;
@@ -5156,7 +5156,7 @@ WriterSubmitFileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     int         result = TCL_OK;
     Ns_Conn    *conn;
-    const char *fileNameString;
+    char       *fileNameString;
     int         headers = 0;
     Tcl_WideInt offset = 0, size = 0;
     Ns_ObjvSpec lopts[] = {
@@ -5268,9 +5268,9 @@ WriterSubmitFileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 static int
 WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int               result = TCL_OK;
-    const NsServer   *servPtr = NULL;
-    Ns_ObjvSpec       lopts[] = {
+    int          result = TCL_OK;
+    NsServer    *servPtr = NULL;
+    Ns_ObjvSpec  lopts[] = {
         {"-server",  Ns_ObjvServer,    &servPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };

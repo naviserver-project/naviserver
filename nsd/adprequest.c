@@ -215,10 +215,10 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
 int
 NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char    *method, *url, *file = NULL;
+    char          *method, *url, *file = NULL;
     int            noinherit = 0;
     unsigned int   rflags = 0u, aflags = 0u;
-    const Ns_Time *expiresPtr = NULL;
+    Ns_Time       *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
 	{"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
@@ -245,7 +245,7 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     int          noinherit = 0;
     unsigned int rflags = 0u;
-    const char  *method, *url, *file = NULL;
+    char        *method, *url, *file = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},

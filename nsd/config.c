@@ -780,7 +780,7 @@ static int
 ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
-    const char *paramName = NULL, *paramValue = NULL;
+    char       *paramName = NULL, *paramValue = NULL;
     Ns_ObjvSpec args[] = {
         {"name",  Ns_ObjvString,  &paramName, NULL},
         {"value", Ns_ObjvString,  &paramValue, NULL},        
@@ -827,7 +827,7 @@ static int
 SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
-    const char *sectionName = NULL;
+    char       *sectionName = NULL;
     Ns_ObjvSpec args[] = {
         {"sectionname", Ns_ObjvString,  &sectionName, NULL},
         {NULL, NULL, NULL, NULL}

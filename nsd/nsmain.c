@@ -74,7 +74,6 @@ extern void NsthreadsInit();
 extern void NsdInit();
 #endif
 
-
 
 /*
  *----------------------------------------------------------------------
@@ -460,9 +459,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     /*
      * This is the first place, where we can use values from the config file.
      *
-     * Turn on logging of long mutex calls if desired.
+     * Turn on logging of long mutex calls if desired. For whatever reason, we
+     * can't access NS_mutexlocktrace from here (unknown external symbol),
+     * although it is defined exactly like NS_finalshutdown;
      */
+#ifndef _WIN32
     NS_mutexlocktrace = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
+#endif
     
     /*
      * If no servers were defained, autocreate server "default"

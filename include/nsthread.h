@@ -136,6 +136,7 @@ typedef unsigned long int uintmax_t;
 typedef          DWORD pid_t;
 typedef          long uid_t;
 typedef          long gid_t;
+typedef          long suseconds_t;
 
 #  define NS_INITGROUPS_GID_T int
 #  define NS_MSG_IOVLEN_T int
@@ -183,10 +184,6 @@ MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
 
 #  define getpid()                    (pid_t)GetCurrentProcessId()
 #  define ftruncate(f,s)              _chsize((f),(s))
-
-#  ifndef P_tmpdir
-#   define P_tmpdir "/tmp"
-#  endif
 
 # else
 /*
@@ -263,6 +260,7 @@ MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
 #  define HAVE_IPV6                   1
 #  define HAVE_INET_NTOP              1
 #  define HAVE_INET_PTON              1
+#  define NS_NAVISERVER               "c:/ns"
 # endif
 
 /*
@@ -517,7 +515,6 @@ typedef struct DIR_ *DIR;
 # include <sys/param.h>
 #endif
 
-
 #ifdef HAVE_IPV6
 # ifndef AF_INET6
 #  warning "Strange System: have no AF_INET6. Deactivating IPv6 support."
@@ -601,6 +598,9 @@ typedef int bool;
 # endif
 # ifndef ETIMEDOUT
 #  define ETIMEDOUT                 1
+# endif
+# ifndef P_tmpdir
+#  define P_tmpdir "/tmp"
 # endif
 #endif
 

@@ -99,7 +99,7 @@ int
 NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj      *scriptObj;
-    const char   *method, *url;
+    char         *method, *url;
     int           remain = 0, noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec   opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
@@ -155,7 +155,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tc
 {
     const NsInterp *itPtr = clientData;
     Tcl_Obj        *scriptObj;
-    const char     *method, *protocol;
+    char           *method, *protocol;
     int             remain = 0, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
@@ -202,7 +202,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tc
 int
 NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *method, *url;
+    char       *method, *url;
     int         noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
@@ -252,7 +252,7 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 int
 NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *method = NULL, *url = NULL;
+    char       *method = NULL, *url = NULL;
     int         noinherit = 0, recurse = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
@@ -297,7 +297,7 @@ NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 int
 NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char   *method, *urlPattern;
+    char         *method, *urlPattern;
     Tcl_Obj      *scriptObj;
     int           remain = 0, first = (int)NS_FALSE, result = TCL_OK;
     unsigned int  when = 0u;
@@ -349,7 +349,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 int
 NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *method, *urlPattern;
+    char           *method, *urlPattern;
     unsigned int    when = 0u;
     int             result = TCL_OK;
     Ns_ObjvSpec args[] = {
@@ -392,7 +392,7 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 int
 NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *method, *urlPattern;
+    char       *method, *urlPattern;
     Tcl_Obj    *scriptObj;
     int         remain = 0, result = TCL_OK;
     Ns_ObjvSpec args[] = {

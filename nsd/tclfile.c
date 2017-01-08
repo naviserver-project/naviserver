@@ -250,7 +250,7 @@ int
 NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          result = TCL_OK;
-    const char  *templateString = NULL;
+    char        *templateString = NULL;
     Ns_ObjvSpec  args[] = {
         {"?template", Ns_ObjvString, &templateString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -337,7 +337,7 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file1, *file2;
+    char       *file1, *file2;
     int         nocomplain = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
@@ -434,9 +434,9 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *fileString;
-    off_t       length = 0;
-    int         result = TCL_OK;
+    char    *fileString;
+    off_t    length = 0;
+    int      result = TCL_OK;
 
     Ns_ObjvSpec args[] = {
 	{"file",      Ns_ObjvString, &fileString, NULL},
@@ -479,8 +479,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 {
     int         fd, result = TCL_OK;
     off_t       length = 0;
-    const char *fileIdString;
-
+    char       *fileIdString;
     Ns_ObjvSpec args[] = {
 	{"fileId",    Ns_ObjvString, &fileIdString, NULL},
 	{"?length",   Ns_ObjvInt,    &length,  NULL},
@@ -557,7 +556,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 static int
 ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *name, *chanName;
+    char           *name, *chanName;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {
         {"channel", Ns_ObjvString, &chanName, NULL},
@@ -632,10 +631,10 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
 static int
 ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *name;
-    int             result = TCL_OK;
-    Ns_ObjvSpec     args[] = {
-        {"name",     Ns_ObjvString, &name, NULL},
+    char        *name;
+    int          result = TCL_OK;
+    Ns_ObjvSpec  args[] = {
+        {"name", Ns_ObjvString, &name, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -694,9 +693,9 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 static int
 ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char     *name;
-    int             result = TCL_OK;
-    Ns_ObjvSpec     args[] = {
+    char         *name;
+    int           result = TCL_OK;
+    Ns_ObjvSpec   args[] = {
         {"name",     Ns_ObjvString, &name, NULL},
         {NULL, NULL, NULL, NULL}
     };

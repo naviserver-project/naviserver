@@ -380,7 +380,7 @@ int
 NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
-    const char *urlString;
+    char       *urlString;
     Ns_ObjvSpec args[] = {
         {"url",  Ns_ObjvString, &urlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -449,7 +449,7 @@ int
 NsTclAbsoluteUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
-    const char *urlString, *baseString;
+    char       *urlString, *baseString;
     Ns_ObjvSpec args[] = {
         {"partialurl", Ns_ObjvString, &urlString, NULL},
         {"baseurl",    Ns_ObjvString, &baseString, NULL},        

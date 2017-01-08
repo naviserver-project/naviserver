@@ -757,13 +757,10 @@ static int
 ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int           result = TCL_OK;
-    const char   *url;
     Sock         *sockPtr;
-    const Ns_Set *hdrPtr = NULL;
-    const char   *method = "GET";
-    const char   *version = "1.0";
-    Ns_Time       timeout = {1, 0};
-    const Ns_Time*timeoutPtr = &timeout; 
+    Ns_Set       *hdrPtr = NULL;
+    char         *url, *method = "GET", *version = "1.0";
+    Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
     Ns_ObjvSpec   lopts[] = {
         {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
         {"-method",  Ns_ObjvString, &method, NULL},
@@ -890,7 +887,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
-    const char     *server = NULL;
+    char           *server = NULL;
     Ns_ObjvSpec     lopts[] = {
         {"-server", Ns_ObjvString, &server, NULL},
         {NULL, NULL, NULL, NULL}
@@ -964,7 +961,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *name;
+    char        *name;
     int          result = TCL_OK;
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -1008,9 +1005,9 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int            result = TCL_OK;
-    const char    *name, *script, *whenString;
-    const Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
+    int      result = TCL_OK;
+    char    *name, *script, *whenString;
+    Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
             
     Ns_ObjvSpec lopts[] = {
         {"-timeout",        Ns_ObjvTime, &pollTimeoutPtr, NULL},
@@ -1109,7 +1106,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 static int
 ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char   *name;
+    char         *name;
     int           result = TCL_OK;
     Ns_ObjvSpec   args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -1148,7 +1145,7 @@ ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 static int
 ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *name;
+    char        *name;
     int          result = TCL_OK;
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -1220,10 +1217,10 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *name;
-    int          result = TCL_OK;
-    Tcl_Obj     *msgObj;
-    Ns_ObjvSpec  args[] = {
+    char       *name;
+    int         result = TCL_OK;
+    Tcl_Obj    *msgObj;
+    Ns_ObjvSpec args[] = {
         {"channel", Ns_ObjvString, &name,   NULL},
         {"msg",     Ns_ObjvObj,    &msgObj, NULL},
         {NULL, NULL, NULL, NULL}

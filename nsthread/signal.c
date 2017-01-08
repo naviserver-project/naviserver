@@ -133,5 +133,4 @@ ns_sigwait(sigset_t *set, int *sig)
 
 NS_EXTERN int NS_finalshutdown;
 int NS_finalshutdown = 0;
-
 #endif

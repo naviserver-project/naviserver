@@ -2288,7 +2288,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1;
-    const char     *key = ".", *url;
+    char           *key = ".", *url;
     int             exact = (int)NS_FALSE, noinherit = (int)NS_FALSE;
     Ns_ObjvSpec     lopts[] = {
         {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
@@ -2451,7 +2451,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1, noinherit = 0;
-    const char     *key = ".", *url, *data;
+    char           *key = ".", *url, *data;
     Ns_ObjvSpec     lopts[] = {
         {"-id",        Ns_ObjvInt,    &id,        NULL},
         {"-key",       Ns_ObjvString, &key,       NULL},
@@ -2513,7 +2513,7 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1;
-    const char     *key = ".", *url;
+    char           *key = ".", *url;
     int             recurse = (int)NS_FALSE, noinherit = (int)NS_FALSE;
     Ns_ObjvSpec     lopts[] = {
         {"-id",        Ns_ObjvInt,    &id,        NULL},

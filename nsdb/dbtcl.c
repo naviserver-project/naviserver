@@ -274,17 +274,17 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case GETHANDLE: {
 	int            nhandles = 1;
-        const Ns_Time *timeoutPtr = NULL;
+        Ns_Time       *timeoutPtr = NULL;
 	Ns_DbHandle  **handlesPtrPtr;
         Ns_ReturnCode  status;
-
-        Ns_ObjvSpec opts[] = {
+        char          *poolString = NULL;
+        Ns_ObjvSpec    opts[] = {
             {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
             {"--",       Ns_ObjvBreak,  NULL,       NULL},
             {NULL, NULL, NULL, NULL}
         };
-        Ns_ObjvSpec args[] = {
-            {"?pool", 	    Ns_ObjvString, &pool, NULL},
+        Ns_ObjvSpec    args[] = {
+            {"?pool", 	    Ns_ObjvString, &poolString, NULL},
             {"?nhandles",   Ns_ObjvInt,    &nhandles,  NULL},
             {NULL, NULL, NULL, NULL}
         };
@@ -298,13 +298,16 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	 * from the remaining args.
 	 */
 
-	if (pool == NULL) {
+	if (poolString == NULL) {
 	    pool = Ns_DbPoolDefault(idataPtr->server);
             if (pool == NULL) {
                 Tcl_SetResult(interp, "no defaultpool configured", TCL_STATIC);
                 return TCL_ERROR;
             }
+        } else {
+            pool = (const char *)poolString;
         }
+        
         if (Ns_DbPoolAllowable(idataPtr->server, pool) == NS_FALSE) {
             Ns_TclPrintfResult(interp, "no access to pool: \"%s\"", pool);
             return TCL_ERROR;
@@ -358,9 +361,9 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case LOGMINDURATION: {
         Ns_Time     *minDurationPtr = NULL;
-        
+        char        *poolString;
         Ns_ObjvSpec args[] = {
-            {"?pool", 	     Ns_ObjvString, &pool, NULL},
+            {"?pool", 	     Ns_ObjvString, &poolString, NULL},
             {"?minduration", Ns_ObjvTime,   &minDurationPtr,  NULL},
             {NULL, NULL, NULL, NULL}
         };
@@ -368,13 +371,14 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
             result = TCL_ERROR;
 
-        } else if (pool == NULL) {
+        } else if (poolString == NULL) {
             /*
              * No argument, list min duration for every pool.
              */
             Tcl_SetObjResult(interp, Ns_DbListMinDurations(interp, idataPtr->server));
 
 	} else if (minDurationPtr == NULL) {
+            pool = (const char *)poolString;
             /*
              * In this case, minduration was not given, return the
              * actual minduration of this pool.
@@ -387,6 +391,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             }
 
         } else {
+            pool = (const char *)poolString;
             /*
              * Set the minduration the the specified value.
              */
@@ -692,7 +697,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
     case VERBOSE:
         {
             int         verbose = 0;
-            const char *idString;
+            char       *idString;
             Ns_ObjvSpec args[] = {
                 {"dbID",     Ns_ObjvString, &idString, NULL},
                 {"?verbose", Ns_ObjvBool,   &verbose, NULL},
@@ -983,15 +988,15 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 static int
 GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int             result = TCL_OK;
-    const char     *delimiter = ",", *fileId, *varName;
-    Tcl_Channel	    chan;
-    Ns_ObjvSpec     opts[] = {
+    int           result = TCL_OK;
+    char         *delimiter = ",", *fileId, *varName;
+    Tcl_Channel	  chan;
+    Ns_ObjvSpec   opts[] = {
         {"-delimiter", Ns_ObjvString,   &delimiter, NULL},
         {"--",         Ns_ObjvBreak,    NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec     args[] = {
+    Ns_ObjvSpec   args[] = {
         {"fileId",     Ns_ObjvString, &fileId,   NULL},
         {"varName",    Ns_ObjvString, &varName,  NULL},
         {NULL, NULL, NULL, NULL}

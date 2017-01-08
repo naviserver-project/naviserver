@@ -799,8 +799,8 @@ NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
 {
-    const char     *host = NULL;
-    int             npaths = 0, result = TCL_OK;
+    char *host = NULL;
+    int   npaths = 0, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
         {"-host", Ns_ObjvString, &host, NULL},

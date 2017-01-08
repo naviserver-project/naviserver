@@ -2024,8 +2024,8 @@ int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = clientData;
-    int             toCopy = 0, result = TCL_OK;;
-    const char     *chanName;
+    int             toCopy = 0, result = TCL_OK;
+    char           *chanName;
     Tcl_Channel     chan;
 
     /*

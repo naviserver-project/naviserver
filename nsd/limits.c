@@ -139,9 +139,9 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
 int
 NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int             result = TCL_OK;
-    const NsLimits *limitsPtr;
-    Ns_ObjvSpec     args[] = {
+    int          result = TCL_OK;
+    NsLimits    *limitsPtr;
+    Ns_ObjvSpec  args[] = {
         {"limits", ObjvLimits, &limitsPtr, INT2PTR(NS_FALSE)},
         {NULL, NULL, NULL, NULL}
     };
@@ -283,7 +283,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 {
     const NsInterp *itPtr = clientData;
     NsLimits       *limitsPtr;
-    const char     *method, *url, *server = itPtr->servPtr->server;
+    char           *method, *url, *server;
     int             noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec     opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
@@ -297,11 +297,13 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         {"url",    Ns_ObjvString, &url,       NULL},
         {NULL, NULL, NULL, NULL}
     };
+
+    server = (char *)itPtr->servPtr->server;
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        unsigned int    flags = 0u;
+        unsigned int flags = 0u;
 
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;

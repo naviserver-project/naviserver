@@ -143,7 +143,7 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 	        *elapsedVarPtr = NULL, *resultVarPtr = NULL, 
 	        *statusVarPtr = NULL, *fileVarPtr = NULL;
     Ns_Time     *timeoutPtr = NULL;
-    const char  *id = NULL;
+    char        *id = NULL;
     Ns_Set      *hdrPtr = NULL;
     Ns_HttpTask *httpPtr = NULL;
     Ns_Time      diff;
@@ -287,7 +287,7 @@ static int
 HttpCancelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp    *itPtr = clientData;
-    const char  *idString;
+    char        *idString;
     int          result = TCL_OK;
     Ns_ObjvSpec  args[] = {
         {"id", Ns_ObjvString,  &idString, NULL},
@@ -453,11 +453,11 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     Tcl_Interp    *interp;
     int            verifyInt = 0, result = TCL_OK;
     Ns_HttpTask   *httpPtr;
-    const char    *cert = NULL, *caFile = NULL, *caPath = NULL;
-    const char    *method = "GET", *url = NULL, *bodyFileName = NULL;
+    char          *cert = NULL, *caFile = NULL, *caPath = NULL;
+    char          *method = "GET", *url = NULL, *bodyFileName = NULL;
     Ns_Set        *hdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
-    const Ns_Time *timeoutPtr = NULL;
+    Ns_Time       *timeoutPtr = NULL;
     int            keepInt = 0;
 
     Ns_ObjvSpec opts[] = {

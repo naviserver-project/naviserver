@@ -79,7 +79,7 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     NsInterp   *itPtr = clientData;
     Ns_Conn    *conn = NULL;
     int         httpStatus, length = -1, binary = 0, result;
-    const char *mimeType = NULL;
+    char       *mimeType = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
@@ -153,7 +153,7 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     Ns_Conn      *conn = NULL;
     Tcl_Encoding  encoding = NULL;
     int           result;
-    const char   *charset = NULL, *type = NULL;
+    char         *charset = NULL, *type = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
@@ -339,10 +339,10 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
 int
 NsTclReturnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn      *conn = NULL;
-    Tcl_Obj      *dataObj;
-    const char   *type;
-    int           result, httpStatus, len, binary = (int)NS_FALSE;
+    Ns_Conn    *conn = NULL;
+    Tcl_Obj    *dataObj;
+    char       *type;
+    int         result, httpStatus, len, binary = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
@@ -401,8 +401,8 @@ NsTclRespondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     Ns_Conn       *conn = NULL;
     int            result = TCL_OK, httpStatus = 200, length = -1;
-    const char    *type = "*/*", *setid = NULL, *binary = NULL;
-    const char    *chars = NULL, *filename = NULL, *chanid = NULL;
+    char          *type = "*/*", *setid = NULL;
+    char          *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL;
     const Ns_Set  *set = NULL;
     Tcl_Channel    chan;
 
@@ -511,7 +511,7 @@ NsTclReturnFileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 {
     Ns_Conn      *conn = NULL;
     int           httpStatus, result;
-    const char   *mimeType, *fileName;
+    char         *mimeType, *fileName;
     Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},
         {"type",     Ns_ObjvString, &mimeType, NULL},
@@ -554,7 +554,7 @@ int
 NsTclReturnFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int           len, httpStatus, result;
-    const char   *mimeType, *channelName;
+    char         *mimeType, *channelName;
     Ns_Conn      *conn = NULL;
     Tcl_Channel   chan = NULL;
     Ns_ObjvSpec   args[] = {
@@ -605,8 +605,8 @@ NsTclConnSendFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
     Ns_Conn     *conn = NULL;
     Tcl_Channel  chan = NULL;
     int          len, result = TCL_OK;
-    const char  *channelName;
-    Ns_ObjvSpec   args[] = {
+    char        *channelName;
+    Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString,  &channelName, NULL},
         {"len",     Ns_ObjvInt,     &len,         NULL},
         {NULL, NULL, NULL, NULL}
@@ -765,10 +765,10 @@ NsTclReturnTooLargeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 int
 NsTclReturnErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int           httpStatus, result;
-    Ns_Conn      *conn = NULL;    
-    const char   *message;
-    Ns_ObjvSpec   args[] = {
+    int          httpStatus, result;
+    Ns_Conn     *conn = NULL;    
+    char        *message;
+    Ns_ObjvSpec  args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},
         {"message",  Ns_ObjvString, &message, NULL},
         {NULL, NULL, NULL, NULL}
@@ -805,10 +805,10 @@ NsTclReturnErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclReturnMovedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn       *conn = NULL;
-    const char    *location;
-    int            result;
-    Ns_ObjvSpec    args[] = {
+    Ns_Conn     *conn = NULL;
+    char        *location;
+    int          result;
+    Ns_ObjvSpec  args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -845,10 +845,10 @@ NsTclReturnMovedObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclReturnNoticeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn       *conn = NULL;
-    int            httpStatus, result;
-    const char    *title, *message;
-    Ns_ObjvSpec    args[] = {
+    Ns_Conn      *conn = NULL;
+    int           httpStatus, result;
+    char         *title, *message;
+    Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},
         {"title",    Ns_ObjvString, &title,   NULL},
         {"message",  Ns_ObjvString, &message, NULL},
@@ -889,7 +889,7 @@ NsTclReturnRedirectObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 {
     Ns_Conn       *conn = NULL;
     int            result;
-    const char    *location;
+    char          *location;
     Ns_ObjvSpec    args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}
@@ -928,7 +928,7 @@ NsTclInternalRedirectObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 {
     Ns_Conn       *conn = NULL;
     int            result;
-    const char    *location;
+    char          *location;
     Ns_ObjvSpec    args[] = {
         {"location",  Ns_ObjvString, &location, NULL},
         {NULL, NULL, NULL, NULL}

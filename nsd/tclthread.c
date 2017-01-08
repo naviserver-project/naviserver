@@ -186,7 +186,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     case TBeginIdx:         /* fall through */
     case TBeginDetachedIdx:
         {
-            const char *threadName = NULL, *script;
+            char       *threadName = NULL, *script;
             Ns_ObjvSpec lopts[] = {
                 {"-name", Ns_ObjvString, &threadName, NULL},
                 {"--",    Ns_ObjvBreak,  NULL,    NULL},

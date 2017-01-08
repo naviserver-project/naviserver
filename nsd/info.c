@@ -805,7 +805,8 @@ int
 NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          result = TCL_OK;
-    const char  *kindString, *moduleString = NULL, *lib = "";
+    char        *kindString, *moduleString = NULL;
+    const char  *lib = "";
     const NsInterp *itPtr = clientData;
     Ns_ObjvSpec  args[] = {
         {"kind",    Ns_ObjvString,  &kindString, NULL},

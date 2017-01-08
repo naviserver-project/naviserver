@@ -322,7 +322,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     case TIncrIdx:
         {
             Ns_Time        t2 = {0, 0};
-            const Ns_Time *tPtr;
+            Ns_Time       *tPtr;
             Ns_ObjvSpec    largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},                
                 {"sec",   Ns_ObjvLong, &t2.sec,  NULL},
@@ -342,7 +342,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TDiffIdx:
         {
-            const Ns_Time *tPtr1, *tPtr2;
+            Ns_Time       *tPtr1, *tPtr2;
             Ns_ObjvSpec    largs[] = {
                 {"time1",  Ns_ObjvTime, &tPtr1,  NULL},                
                 {"time2",  Ns_ObjvTime, &tPtr2,  NULL},
@@ -360,8 +360,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TAdjustIdx:
         {
-            const Ns_Time *tPtr;
-            Ns_ObjvSpec    largs[] = {
+            Ns_Time     *tPtr;
+            Ns_ObjvSpec  largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -379,8 +379,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     case TSecondsIdx:
     case TMicroSecondsIdx:
         {
-            const Ns_Time *tPtr;
-            Ns_ObjvSpec    largs[] = {
+            Ns_Time     *tPtr;
+            Ns_ObjvSpec  largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -396,8 +396,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     case TFormatIdx:
         {
-            const Ns_Time *tPtr;
-            Ns_ObjvSpec    largs[] = {
+            Ns_Time     *tPtr;
+            Ns_ObjvSpec  largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -510,9 +510,9 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int            rc = TCL_OK;
-    const Ns_Time *tPtr = NULL;
-    Ns_ObjvSpec    args[] = {
+    int          rc = TCL_OK;
+    Ns_Time     *tPtr = NULL;
+    Ns_ObjvSpec  args[] = {
         {"timespec", Ns_ObjvTime, &tPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
