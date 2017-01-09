@@ -2,6 +2,8 @@
 NaviServer 4.99.15, released 2017-XX-XX
 =======================================
 
+ 138 files changed, 5971 insertions(+), 2900 deletions(-)
+
 New Features:
 
  - Multiple driver threads for listening on the same port:
@@ -93,6 +95,9 @@ Performance Improvements:
 Bug Fixes:
 
  - Better error behavior, when prebind fails.
+ 
+ - Fixed underspecifed config file (simple-config does not set
+   address, fallback to NS_IP_UNSPECIFIED.
 
  - Make sure, that URLs produced by urlspace's walk callbacks are
    proper list elements.
@@ -103,14 +108,27 @@ Bug Fixes:
      * Don't reset timeout for for reaper when slaves already expired
      * Improve debug messages
 
+ - Improve forward compatibility to forthcoming Tcl 8.7 (fixed bug in
+   Tcl's Memory allocator; Zoran).
+
+ - configure: Align behavior when "--with-openssl" is speicifed
+   without arguments vs. when it is not specified (--with-openssl is
+   actviated per default). Previously, pkg-config was only looked at
+   when "--with-openssl" was specified.
+
 
 Documentation improvements:
 
- - improved sample config files
+ - Improved sample config files
     * added new config parameters
     * document parameter "listenbacklog"
+    * make simple-config working with default installed tree (activate
+      .adp parsing)
 
- - improved/new documentation pages of
+ - Improved inline documentation about usage of
+   Tcl_FindExecutable(argv[0]) (before fork vs. after fork)
+   
+ - Improved/new documentation pages of
     * admin-maintenance
     * ns_cgi
     * ns_conn
@@ -161,6 +179,8 @@ Configuration Changes:
    When this parameter is set to true, timing of long mutex calls are
    printed to stderr.
 
+- Improve configuratbility: Allow to pass alternative implementation
+  of CPPCHECK to "make"
 
 Command Line Changes:
 
@@ -175,6 +195,8 @@ Code Changes:
     * ns_conn.test
     * ns_driver.test
     * ns_server.test
+    * ns_adp_compress.test (fixed compatibility with lib version >
+      1.2.8, which leads to differnt encoding)
 
  - Driver reform: make distinction explicit between driver type
    (e.g. "nssock"), driver name (e.g. "nssock1"), and driver thread
@@ -183,8 +205,17 @@ Code Changes:
  - Moved definition of type "bool" from ns.h to nsthread.h to make
    boolean types as well available in nsthread implementation.
 
- - Make it possible to pass alternative implementation of CPPCHECK
-   to Makefile
+  - Improve compilation under windows:
+     * don't pass "const char*" as member dest of Ns_ObjvSpec
+     * add compatibility type "suseconds_t" for windows
+     * define NS_NAVISERVER fro windows (no configure script)
+     * move conditional definition of P_tmpdir after the .h files are
+       loaded
+     * fix type in macro PTR2UINT in windows code
+
+ - Further Tcl cleanup
+   * Replaced remaining Tcl_CmdProcs into Tcl_ObjCmdProcs
+   * Reduced usage of Tcl_AppendResult()
 
  - Don't mess around with FD_SETSIZE
  - Don't use implementation defined NULL as last argument of variadic functions
@@ -192,9 +223,30 @@ Code Changes:
  - Reduced variable scopes
  - Reduce number of return statements before end of function
  - Added const declarations
+ - Use "unsigned short" consistently for ports
+ - Align argument names in prototypes and function definitions
  - Silenced static checker
 
-	
+
+Modules:
+
+ - nsdhcpd, nsdns, nsldapd, nsradiusd, nssip, nssmtpd, nssnmp,
+   nssyslogd, nstftpd, and nsudp: Aligned function definitions with
+   ns.h due to changes in
+
+       Ns_SockListenUdp()
+       Ns_SockListenEx()
+
+   Note: Not all of these drivers are aligned yet with IPv6 interfaces.
+
+ - nssyslogd: Added support for IPv6.
+ 
+ - nsstats:
+    * Added statistics for driver usage
+    * Added Page for showing urls mapped to connection threads pools
+    * Added information about driver threads
+
+
 =======================================
 NaviServer 4.99.14, released 2016-11-18
 =======================================
