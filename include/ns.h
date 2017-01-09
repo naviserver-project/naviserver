@@ -849,7 +849,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
-Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(const char *buf, int len, Tcl_DString *dsPtr, int level)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode

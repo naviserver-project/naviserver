@@ -63,7 +63,7 @@ static bool UrlIs(const char *server, const char *url, bool isDir)
 static Ns_ReturnCode FastGetRestart(Ns_Conn *conn, const char *page)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Ns_ReturnCode FastReturn(Ns_Conn *conn, int status, const char *mimeType, const char *file)
+static Ns_ReturnCode FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static int  GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)

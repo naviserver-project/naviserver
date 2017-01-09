@@ -289,7 +289,7 @@ static void   SetOpt(const char *str, char const **optPtr) NS_GNUC_NONNULL(1) NS
 static void   ReaperThread(void *ignored);
 static void   CloseSlave(Slave *slavePtr, int ms) NS_GNUC_NONNULL(1);
 static void   ReapProxies(void);
-static long   GetTimeDiff(Ns_Time *tsPtr) NS_GNUC_NONNULL(1);
+static long   GetTimeDiff(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 
 static void   AppendStr(Tcl_Obj *listObj, const char *flag, const char *val) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   AppendInt(Tcl_Obj *listObj, const char *flag, int i) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1164,9 +1164,8 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
  */
 
 static bool
-SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
+SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
 {
-    long         ms;
     ssize_t      n;
     uint32       ulen;
     struct iovec iov[2];
@@ -1176,9 +1175,9 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     NS_NONNULL_ASSERT(slavePtr != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    if (msec > 0) {
+    if (ms > 0) {
         Ns_GetTime(&end);
-        Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
+        Ns_IncrTime(&end, ms/1000, (ms % 1000) * 1000);
     }
 
     ulen = htonl((unsigned int)dsPtr->length);
@@ -1193,20 +1192,22 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
         } while (n == -1 && errno == EINTR);
 
         if (n == -1) {
+            long waitMs;
+
             if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
                 success = NS_FALSE;
                 break;
 
-            } else if (msec > 0) {
-                ms = GetTimeDiff(&end);
-                if (ms < 0) {
+            } else if (ms > 0) {
+                waitMs = GetTimeDiff(&end);
+                if (waitMs < 0) {
                     success = NS_FALSE;
                     break;
                 }
             } else {
-                ms = msec;
+                waitMs = ms;
             }
-            if (WaitFd(slavePtr->wfd, POLLOUT, ms) == 0) {
+            if (WaitFd(slavePtr->wfd, POLLOUT, waitMs) == 0) {
                 success = NS_FALSE;
                 break;
             }
@@ -1236,10 +1237,9 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
  */
 
 static bool
-RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
+RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
 {
     uint32       ulen;
-    long         ms;
     ssize_t      n;
     size_t       avail;
     struct iovec iov[2];
@@ -1249,9 +1249,9 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
     NS_NONNULL_ASSERT(slavePtr != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    if (msec > 0) {
+    if (ms > 0) {
         Ns_GetTime(&end);
-        Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
+        Ns_IncrTime(&end, ms/1000, (ms % 1000) * 1000);
     }
 
     avail = (size_t)dsPtr->spaceAvl - 1u;
@@ -1270,20 +1270,22 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
             break;
 
         } else if (n < 0) {
+            long  waitMs;
+
             if (errno != EAGAIN && errno != EWOULDBLOCK) {
                 success = NS_FALSE;
                 break;
 
-            } else if (msec > 0) {
-                ms = GetTimeDiff(&end);
-                if (ms < 0) {
+            } else if (ms > 0) {
+                waitMs = GetTimeDiff(&end);
+                if (waitMs < 0) {
                     success = NS_FALSE;
                     break;
                 }
             } else {
-                ms = msec;
+                waitMs = ms;
             }
-            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
+            if (WaitFd(slavePtr->rfd, POLLIN, waitMs) == 0) {
                 success = NS_FALSE;
                 break;
             }
@@ -1312,20 +1314,22 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
                 break;
 
             } else if (n < 0) {
+                long waitMs;
+
                 if (errno != EAGAIN && errno != EWOULDBLOCK) {
                     success = NS_FALSE;
                     break;
 
-                } else if (msec > 0) {
-                    ms = GetTimeDiff(&end);
-                    if (ms < 0) {
+                } else if (ms > 0) {
+                    waitMs = GetTimeDiff(&end);
+                    if (waitMs < 0) {
                         success = NS_FALSE;
                         break;
                     }
                 } else {
-                    ms = msec;
+                    waitMs = ms;
                 }
-                if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
+                if (WaitFd(slavePtr->rfd, POLLIN, waitMs) == 0) {
                     success = NS_FALSE;
                     break;
                 }
@@ -1505,7 +1509,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
         ilen = ntohl(resPtr->ilen);
         rlen = ntohl(resPtr->rlen);
         if (clen > 0) {
-            Tcl_Obj *err=Tcl_NewStringObj(str,-1);
+            Tcl_Obj *err = Tcl_NewStringObj(str, -1);
 
             Tcl_SetObjErrorCode(interp, err);
             str += clen;

@@ -42,7 +42,7 @@
 static int ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
                            AdpResult exception) NS_GNUC_NONNULL(1);
 static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv) NS_GNUC_NONNULL(1);
-static int GetFrame(const ClientData arg, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int GetFrame(const ClientData clientData, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int GetOutput(ClientData clientData, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

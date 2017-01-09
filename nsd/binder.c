@@ -68,7 +68,7 @@ static NS_SOCKET binderResponse[2] = { NS_INVALID_SOCKET, NS_INVALID_SOCKET };
  * Local functions defined in this file
  */
 #ifndef _WIN32
-static Ns_ReturnCode PrebindSockets(const char *line)
+static Ns_ReturnCode PrebindSockets(const char *spec)
     NS_GNUC_NONNULL(1);
 
 static void Binder(void);

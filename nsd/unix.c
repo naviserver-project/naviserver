@@ -314,7 +314,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 {
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(mapPtr != NULL);
-    
+
     /*
      * Open the file according to map mode
      */
@@ -396,7 +396,7 @@ int
 ns_sockpair(int *socks)
 {
     NS_NONNULL_ASSERT(socks != NULL);
-    
+
     return Pipe(socks, 1);
 }
 
@@ -413,7 +413,7 @@ Pipe(int *fds, int sockpair)
     int err;
 
     NS_NONNULL_ASSERT(fds != NULL);
-    
+
     if (sockpair != 0) {
         err = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
     } else {
@@ -443,20 +443,20 @@ Pipe(int *fds, int sockpair)
  */
 
 int
-ns_sock_set_blocking(NS_SOCKET fd, bool blocking) 
+ns_sock_set_blocking(NS_SOCKET sock, bool blocking)
 {
     int result;
 #if defined USE_FIONBIO
     int state = (blocking == 0);
 
-    result = ioctl(fd, FIONBIO, &state);
+    result = ioctl(sock, FIONBIO, &state);
 #else
-    int flags = fcntl(fd, F_GETFL, 0);
+    int flags = fcntl(sock, F_GETFL, 0);
 
     if (blocking != 0) {
-	result = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+	result = fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
     } else {
-	result = fcntl(fd, F_SETFL, flags|O_NONBLOCK);
+	result = fcntl(sock, F_SETFL, flags|O_NONBLOCK);
     }
 #endif
     return result;
@@ -489,7 +489,7 @@ GetPwNam(const char *user, PwElement elem, long *longResult, Ns_DString *dsPtr, 
 
     NS_NONNULL_ASSERT(user != NULL);
     NS_NONNULL_ASSERT(freePtr != NULL);
-    
+
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
     do {
@@ -507,16 +507,16 @@ GetPwNam(const char *user, PwElement elem, long *longResult, Ns_DString *dsPtr, 
 
     Ns_MutexLock(&lock);
     pwPtr = getpwnam(user);
-#endif    
+#endif
 
     if (pwPtr != NULL) {
         success = NS_TRUE;
 
         switch (elem) {
-        case PwUID: 
+        case PwUID:
             *longResult = (long) pwPtr->pw_uid;
             break;
-        case PwGID: 
+        case PwGID:
             *longResult = (long) pwPtr->pw_gid;
             break;
         case PwNAME:
@@ -577,7 +577,7 @@ GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **fr
         buffer = ns_realloc(buffer, bufSize);
     } while (1);
     *freePtr = buffer;
-    
+
 #else
     Ns_MutexLock(&lock);
     pwPtr = getpwuid(uid);
@@ -587,10 +587,10 @@ GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **fr
         success = NS_TRUE;
 
         switch (elem) {
-        case PwUID: 
+        case PwUID:
             *intResult = (int) pwPtr->pw_uid;
             break;
-        case PwGID: 
+        case PwGID:
             *intResult = (int) pwPtr->pw_gid;
             break;
         case PwNAME:
@@ -638,7 +638,7 @@ Ns_GetNameForUid(Ns_DString *dsPtr, uid_t uid)
     bool success;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     success = GetPwUID(uid, PwNAME, NULL, dsPtr, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);
@@ -720,7 +720,7 @@ Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
     bool success;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     success = GetPwNam(user, PwDIR, NULL, dsPtr, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);
@@ -751,7 +751,7 @@ Ns_GetUserGid(const char *user)
     long retcode = -1;
 
     NS_NONNULL_ASSERT(user != NULL);
-    
+
     (void) GetPwNam(user, PwGID, &retcode, NULL, &ptr);
     if (ptr != NULL) {
         ns_free(ptr);

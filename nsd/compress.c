@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -77,7 +77,7 @@ Ns_CompressInit(Ns_CompressStream *cStream)
     z->zfree = ZFree;
     z->opaque = Z_NULL;
 
-    /*  
+    /*
      * Memory requirements (see zconf.h):
      *    (1 << (windowBits+2)) +  (1 << (memLevel+9)) =
      *    (1 << (15+2)) +  (1 << (9+9)) = 393216 = ~400KB
@@ -163,7 +163,7 @@ Ns_InflateInit(Ns_CompressStream *cStream)
 
 
 Ns_ReturnCode
-Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize)
 {
     z_stream *zPtr = &cStream->z;
 
@@ -174,12 +174,12 @@ Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSi
 }
 
 int
-Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes)
 {
     z_stream     *zPtr = &cStream->z;
     int           rc;
     int           tclStatus = TCL_OK;
-    
+
     zPtr->avail_out = (uInt)outSize;
     zPtr->next_out  = (unsigned char *)buffer;
     rc = inflate(zPtr, Z_NO_FLUSH);
@@ -191,14 +191,14 @@ Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize,
     } else if (zPtr->avail_out == 0) {
 	tclStatus = TCL_CONTINUE;
     }
-    
+
     *nrBytes = outSize - (size_t)zPtr->avail_out;
 
     return tclStatus;
 }
 
 Ns_ReturnCode
-Ns_InflateEnd(Ns_CompressStream *cStream) 
+Ns_InflateEnd(Ns_CompressStream *cStream)
 {
     z_stream     *zPtr = &cStream->z;
     int           rc;
@@ -285,7 +285,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 	    z->next_in  = (void *)bufs[i].iov_base;
 	    z->avail_in = (uInt)bufs[i].iov_len;
 	    nCompressed += (size_t)z->avail_in;;
-	    
+	
 	    if (z->avail_in == 0 && i < nbufs -1) {
 		continue;
 	    }
@@ -294,7 +294,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 	    } else {
 		flushFlags = Z_NO_FLUSH;
 	    }
-	    
+	
 	    DeflateOrAbort(z, flushFlags);
 	}
     }
@@ -334,7 +334,7 @@ Ns_CompressGzip(const char *buf, int len, Ns_DString *dsPtr, int level)
 
     NS_NONNULL_ASSERT(buf != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     status = Ns_CompressInit(&cStream);
     if (status == NS_OK) {
         (void)Ns_SetVec(&iov, 0, buf, (size_t)len);
@@ -432,31 +432,31 @@ Ns_CompressBufsGzip(Ns_CompressStream *UNUSED(cStream), struct iovec *UNUSED(buf
 }
 
 Ns_ReturnCode
-Ns_CompressGzip(const char *UNUSED(buf), int UNUSED(len), Tcl_DString *UNUSED(outPtr), int UNUSED(level))
-{
-    return NS_ERROR;
-}
-
-Ns_ReturnCode 
-Ns_InflateInit(Ns_CompressStream *UNUSED(cStream)) 
+Ns_CompressGzip(const char *UNUSED(buf), int UNUSED(len), Tcl_DString *UNUSED(dsPtr), int UNUSED(level))
 {
     return NS_ERROR;
 }
 
 Ns_ReturnCode
-Ns_InflateBufferInit(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer), size_t UNUSED(inSize)) 
+Ns_InflateInit(Ns_CompressStream *UNUSED(cStream))
+{
+    return NS_ERROR;
+}
+
+Ns_ReturnCode
+Ns_InflateBufferInit(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer), size_t UNUSED(inSize))
 {
     return NS_ERROR;
 }
 int
 Ns_InflateBuffer(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer),
-		 size_t UNUSED(outSize), size_t *UNUSED(nrBytes)) 
+		 size_t UNUSED(outSize), size_t *UNUSED(nrBytes))
 {
     return TCL_ERROR;
 }
 
 Ns_ReturnCode
-Ns_InflateEnd(Ns_CompressStream *UNUSED(cStream)) 
+Ns_InflateEnd(Ns_CompressStream *UNUSED(cStream))
 {
     return NS_ERROR;
 }
