@@ -66,10 +66,12 @@ Nsd_LibInit(void)
         initialized = NS_TRUE;
 
 	nsconf.state.lock = NULL;
-	Ns_MutexInit(&nsconf.state.lock);
-	Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
 	
         Nsthreads_LibInit();
+	
+	Ns_MutexInit(&nsconf.state.lock);
+	Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
+
         NsInitSls();
     	NsInitConf(); /* <- Server marked 'started' during library load. */
     	NsInitLog();
