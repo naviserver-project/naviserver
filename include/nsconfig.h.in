@@ -304,7 +304,7 @@
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
 
-/* Is this a static build? */
+/* This a static build */
 #undef STATIC_BUILD
 
 /* Define to 1 if you have the ANSI C header files. */
@@ -343,8 +343,17 @@
 /* Define to 1 if the <mach-o/dyld.h> header should be used. */
 #undef USE_DYLD
 
+/* Use TclOO stubs */
+#undef USE_TCLOO_STUBS
+
+/* Use Tcl stubs */
+#undef USE_TCL_STUBS
+
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
+
+/* Use Tk stubs */
+#undef USE_TK_STUBS
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
