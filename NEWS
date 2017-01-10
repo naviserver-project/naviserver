@@ -2,7 +2,7 @@
 NaviServer 4.99.15, released 2017-XX-XX
 =======================================
 
- 138 files changed, 5971 insertions(+), 2900 deletions(-)
+ 140 files changed, 6044 insertions(+), 2919 deletions(-)
 
 New Features:
 
@@ -96,7 +96,7 @@ Bug Fixes:
 
  - Better error behavior, when prebind fails.
  
- - Fixed underspecifed config file (simple-config does not set
+ - Fixed underspecified config file (simple-config does not set
    address, fallback to NS_IP_UNSPECIFIED.
 
  - Make sure, that URLs produced by urlspace's walk callbacks are
@@ -111,9 +111,9 @@ Bug Fixes:
  - Improve forward compatibility to forthcoming Tcl 8.7 (fixed bug in
    Tcl's Memory allocator; Zoran).
 
- - configure: Align behavior when "--with-openssl" is speicifed
+ - configure: Align behavior when "--with-openssl" is specified
    without arguments vs. when it is not specified (--with-openssl is
-   actviated per default). Previously, pkg-config was only looked at
+   activated per default). Previously, pkg-config was only looked at
    when "--with-openssl" was specified.
 
 
@@ -149,8 +149,6 @@ Documentation improvements:
   - more consistent capitalization:
     * use Tcl instead of TCL
     * use HTTP (or HTTPS) instead of http (or https).
- 
-Tcl API Changes:
 
 
 C API Changes:
@@ -158,9 +156,7 @@ C API Changes:
  - Additional argument for reuseport for Ns_SockBind(),
    Ns_DriverListenProc(), Ns_SockListenEx(), Ns_SockBindUdp(), and
    Ns_SockListenUdp().
-
-Incompatible API Changes:
-
+   
 
 Configuration Changes:
  - New parameter for drivers (e.g. nssock)
@@ -179,13 +175,14 @@ Configuration Changes:
    When this parameter is set to true, timing of long mutex calls are
    printed to stderr.
 
-- Improve configuratbility: Allow to pass alternative implementation
-  of CPPCHECK to "make"
+ - Improve configurability: Allow to pass alternative implementation
+   of CPPCHECK to "make"
+
 
 Command Line Changes:
 
  - Value provided to prebind option (-b) can be extended by a suffix
-   "#n", where n is the number of prebound sockets (when e.g. multiple
+   "#n", where n is the number of pre-bound sockets (when e.g. multiple
    driver threads are used on privileged ports)
 
 
@@ -196,7 +193,7 @@ Code Changes:
     * ns_driver.test
     * ns_server.test
     * ns_adp_compress.test (fixed compatibility with lib version >
-      1.2.8, which leads to differnt encoding)
+      1.2.8, which leads to different encoding)
 
  - Driver reform: make distinction explicit between driver type
    (e.g. "nssock"), driver name (e.g. "nssock1"), and driver thread
