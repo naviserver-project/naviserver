@@ -733,6 +733,28 @@ void
 Ns_ThreadExit(void *arg)
 {
     NsThreadShutdownStarted();
+
+    /*
+     * Clear TLS slots for this (now exiting) thread controllably,
+     * augmenting the TLS cleanup invoked automatically by
+     * the system's thread exit machinery. It is at this place
+     * that we have the thread completely initalized, so an
+     * proper cleanup has better chance to finish it's work.
+     */
+    NsCleanupTls(NsGetTls());
+
+    /*
+     * Exiting thread needs to finalize the Tcl API after
+     * all of the cleanup has been performed. Failing to
+     * do so results in severe memory leakage.
+     */
+    Tcl_FinalizeThread();
+
+   /*
+    * Now, exit the thread really. This will invoke all of the
+    * registerd TLS cleanup callbacks again (no harm).
+    */
+
     _endthreadex( PTR2UINT(arg) ); 
 }
 
