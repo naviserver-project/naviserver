@@ -201,11 +201,10 @@ Ns_ThreadStackSize(ssize_t size)
  *	structure and calls the user specified procedure.
  *
  * Results:
- *	None.  Will call Ns_ThreadExit if not called by the
- *	user code.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Will call Ns_ThreadExit() if not alreday done by the user code.
  *
  *----------------------------------------------------------------------
  */
@@ -221,10 +220,22 @@ NsThreadMain(void *arg)
     snprintf(name, sizeof(name), "-thread:%" PRIxPTR "-", thrPtr->tid);
     Ns_ThreadSetName(name);
     SetBottomOfStack(&thrPtr);
+
 #ifdef HAVE_GETTID
     thrPtr->ostid = (pid_t)syscall(SYS_gettid);
 #endif
+
+    /*
+     * Invoke the user-supplied workhorse for this thread.
+     * "Hier spielt die Musik!"
+     */
     (*thrPtr->proc) (thrPtr->arg);
+
+    /*
+     * Controllaby exit this thread, pulling all of the
+     * cleanup callbacks that need to be run.
+     */
+    Ns_ThreadExit(NULL);
 }
 
 
@@ -461,7 +472,7 @@ GetThread(void)
  *  None.
  *
  * Side effects:
- *  Adding thread flag NS_THREAD_EXITED
+ *  None. 
  *
  *----------------------------------------------------------------------
  */

@@ -189,7 +189,7 @@ NsCleanupTls(void **slots)
 #endif
         ) {
         int trys, retry;
-        
+
         trys = 0;
         do {
             int i;
@@ -208,7 +208,6 @@ NsCleanupTls(void **slots)
             }
         } while (retry && trys++ < 5);
     }
-    Tcl_FinalizeThread();
 }
 
 /*

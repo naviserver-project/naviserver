@@ -58,11 +58,13 @@ static void *ThreadMain(void *arg);
 #endif
 
 /*
- * The following single Tls key is used to store the nsthread
- * Tls slots.
+ * The following single TLS key is used to store the nsthread
+ * TLS slots. Due to system limitation(s), we stuff all of the 
+ * slots into a private array keyed onto this per-thread key,
+ * instead of using separate TLS keys for each consumer.
  */
 
-static pthread_key_t	key;
+static pthread_key_t key;
 
 
 /*
@@ -89,26 +91,25 @@ Nsthreads_LibInit(void)
     if (once == 0) {
         int err;
         once = 1;
+#ifdef __linux
+        {
+            size_t n;
+            n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
+            if (n > 0) {
+                char *buf = alloca(n);
+                confstr(_CS_GNU_LIBPTHREAD_VERSION, buf, n);
+                if (!strstr (buf, "NPTL")) {
+                    Tcl_Panic("Linux \"NPTL\" thread library required. Found: \"%s\"", buf);
+                }
+            }
+        }
+#endif
         err = pthread_key_create(&key, CleanupTls);
         if (err != 0) {
             NsThreadFatal("Nsthreads_LibInit", "pthread_key_create", err);
         }
         NsInitThreads();
     }
-
-#ifdef __linux
-    {
-    size_t n;
-    n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
-    if (n > 0) {
-        char *buf = alloca(n);
-        confstr(_CS_GNU_LIBPTHREAD_VERSION, buf, n);
-        if (!strstr (buf, "NPTL")) {
-            Tcl_Panic("Linux \"NPTL\" thread library required. Found: \"%s\"", buf);
-        }
-    }
-    }
-#endif
 }
 
 
@@ -123,7 +124,10 @@ Nsthreads_LibInit(void)
  *	Pointer to slots array.
  *
  * Side effects:
- *	None.
+ *      Storage for the slot array is allocated bypassing the
+ *      currently configured memory allocator because at the
+ *      time this storage is to be reclaimed (see: CleanupTls) 
+ *      the allocator may already be finalized for this thread.
  *
  *----------------------------------------------------------------------
  */
@@ -135,7 +139,7 @@ NsGetTls(void)
 
     slots = pthread_getspecific(key);
     if (slots == NULL) {
-	slots = ns_calloc(NS_THREAD_MAXTLS, sizeof(void *));
+	slots = calloc(NS_THREAD_MAXTLS, sizeof(void *));
 	pthread_setspecific(key, slots);
     }
     return slots;
@@ -283,9 +287,11 @@ NsLockTry(void *lock)
     err = pthread_mutex_trylock((pthread_mutex_t *) lock);
     if (unlikely(err == EBUSY)) {
 	return 0;
-    } else if (unlikely(err != 0)) {
+    }
+    if (unlikely(err != 0)) {
     	NsThreadFatal("NsLockTry", "pthread_mutex_trylock", err);
     }
+
     return 1;
 }
 
@@ -410,14 +416,13 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
  *
  * Ns_ThreadExit --
  *
- *	Terminate a thread.  Note the use of _endthreadex instead of
- *	ExitThread which, as above, is corrent.
+ *	Terminate a thread.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Thread will clean itself up via the DllMain thread detach code.
+ *	Thread will clean itself up via the TLS cleanup code.
  *
  *----------------------------------------------------------------------
  */
@@ -426,6 +431,27 @@ void
 Ns_ThreadExit(void *arg)
 {
     NsThreadShutdownStarted();
+
+    /*
+     * Clear TLS slots for this (now exiting) thread controllably,
+     * augmenting the TLS cleanup invoked automatically by
+     * the system's thread exit machinery. It is at this place
+     * that we have the thread completely initalized, so an
+     * proper cleanup has better chance to finish it's work.
+     */
+    NsCleanupTls(NsGetTls());
+
+    /*
+     * Exiting thread needs to finalize the Tcl API after
+     * all of the cleanup has been performed. Failing to
+     * do so results in severe memory leakage.
+     */
+    Tcl_FinalizeThread();
+
+   /*
+    * Now, exit the thread really. This will invoke all of the
+    * registerd TLS cleanup callbacks again (no harm).
+    */
     pthread_exit(arg);
 }
 
@@ -825,7 +851,9 @@ ThreadMain(void *arg)
  *	None.
  *
  * Side effects:
- *	None.
+ *      Storage for the TLS slot array is reclaimed bypassing the
+ *      current memory allocator. It is because at this point,
+ *      the allocator may already be finalized for this thread.
  *
  *----------------------------------------------------------------------
  */
@@ -835,7 +863,7 @@ CleanupTls(void *arg)
 {
     void **slots = arg;
     Ns_Thread thread = NULL;
-    
+
     NS_NONNULL_ASSERT(arg != NULL);
     
     /*
@@ -847,7 +875,7 @@ CleanupTls(void *arg)
     Ns_ThreadSelf(&thread);
     NsCleanupTls(slots);
     pthread_setspecific(key, NULL);
-    ns_free(slots);
+    free(slots);
 }
 
 #endif

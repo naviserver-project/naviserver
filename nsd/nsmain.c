@@ -120,13 +120,23 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
+     * Before doing anything else, initalize the Tcl API
+     * as we rely heavily on it, even for the most basic
+     * functions like memory allocation.
+     */
+
+    Tcl_FindExecutable(argv[0]);
+
+    /*
      * Initialize the Nsd library.
      */
+
     Nsd_LibInit();
 
     /*
      * Mark the server stopped until initialization is complete.
      */
+
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.started = NS_FALSE;
     Ns_MutexUnlock(&nsconf.state.lock);
@@ -343,22 +353,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif /* ! _WIN32 */
 
     /*
-     * The call to Tcl_FindExecutable() must be done before we ever
-     * attempt any file-related operation, because it is initializing
-     * the Tcl library and Tcl VFS (virtual filesystem interface)
-     * which is used throughout the code.
-     * Side-effect of this call is initialization of the notifier
-     * subsystem. The notifier subsystem creates special private
-     * notifier thread and we should better do this after all those
-     * ns_fork's above...
-     * Starting with Tcl 8.7, the notifier thread is created on-demand
-     * hence the above call may be placed anywhere (preferably at
-     * the startup of the procedure, before anything else). We still
-     * leave it here as to be backward-compatible with older versions.
-     * In case the notifier thread is entirely removed (as it may be
-     * the case for some platforms), this does not apply anyways.
+     * The notifier subsystem creates special private notifer thread,
+     * so we should re-init notifier after the (potential) fork above.
+     * Starting with Tcl 8.6, the notifier thread is created on-demand
+     * hence the above call may be ommited. We still leave it here,
+     * as it does no harm if invoked many times, plus it is backward
+     * compatible with older Tcl versions.
      */
-    Tcl_FindExecutable(argv[0]);
+
+    Tcl_InitNotifier();
 
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
@@ -448,6 +451,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif /* ! _WIN32 */
 
     if (config != NULL) {
+
 	/*
 	 * Evaluate the config file.
 	 */
@@ -552,6 +556,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     /* 
      * Make the result queryable.
      */
+
     set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
     Ns_SetUpdate(set, "home", nsconf.home);
 
@@ -575,6 +580,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     /*
      * Set the procname used for the pid file.
      */
+
     procname = ((server != NULL) ? server : Ns_SetKey(servers, 0));
 
     /*
@@ -817,10 +823,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 Ns_ReturnCode
 Ns_WaitForStartup(void)
 {
-
     /*
      * This dirty-read is worth the effort.
      */
+
     if (unlikely(!nsconf.state.started)) {
         Ns_MutexLock(&nsconf.state.lock);
         while (nsconf.state.started == NS_FALSE) {
@@ -1046,6 +1052,7 @@ UsageError(const char *msg, ...)
     exit ((msg != NULL) ? 1 : 0);
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
