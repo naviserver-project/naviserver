@@ -32,7 +32,7 @@
 /*
  * pthread.c --
  *
- *	Interface routines for nsthreads using pthreads.
+ *      Interface routines for nsthreads using pthreads.
  *
  */
 
@@ -118,10 +118,10 @@ Nsthreads_LibInit(void)
  *
  * NsGetTls --
  *
- *	Return the TLS slots.
+ *      Return the TLS slots.
  *
  * Results:
- *	Pointer to slots array.
+ *      Pointer to slots array.
  *
  * Side effects:
  *      Storage for the slot array is allocated bypassing the
@@ -139,8 +139,8 @@ NsGetTls(void)
 
     slots = pthread_getspecific(key);
     if (slots == NULL) {
-	slots = calloc(NS_THREAD_MAXTLS, sizeof(void *));
-	pthread_setspecific(key, slots);
+        slots = calloc(NS_THREAD_MAXTLS, sizeof(void *));
+        pthread_setspecific(key, slots);
     }
     return slots;
 }
@@ -151,13 +151,13 @@ NsGetTls(void)
  *
  * NsThreadLibName --
  *
- *	Return the string name of the thread library.
+ *      Return the string name of the thread library.
  *
  * Results:
- *	Pointer to static string.
+ *      Pointer to static string.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -174,13 +174,13 @@ NsThreadLibName(void)
  *
  * NsLockAlloc --
  *
- *	Allocate and initialize a mutex lock.
+ *      Allocate and initialize a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -194,7 +194,7 @@ NsLockAlloc(void)
     lock = ns_malloc(sizeof(pthread_mutex_t));
     err = pthread_mutex_init(lock, NULL);
     if (err != 0) {
-    	NsThreadFatal("NsLockAlloc", "pthread_mutex_init", err);
+        NsThreadFatal("NsLockAlloc", "pthread_mutex_init", err);
     }
     return lock;
 }
@@ -205,13 +205,13 @@ NsLockAlloc(void)
  *
  * NsLockFree --
  *
- *	Free a mutex lock.
+ *      Free a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -225,7 +225,7 @@ NsLockFree(void *lock)
 
     err = pthread_mutex_destroy((pthread_mutex_t *) lock);
     if (err != 0) {
-    	NsThreadFatal("NsLockFree", "pthread_mutex_destroy", err);
+        NsThreadFatal("NsLockFree", "pthread_mutex_destroy", err);
     }
     ns_free(lock);
 }
@@ -236,13 +236,13 @@ NsLockFree(void *lock)
  *
  * NsLockSet --
  *
- *	Set a mutex lock.
+ *      Set a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May wait wakeup event if lock already held.
+ *      May wait wakeup event if lock already held.
  *
  *----------------------------------------------------------------------
  */
@@ -256,7 +256,7 @@ NsLockSet(void *lock)
 
     err = pthread_mutex_lock((pthread_mutex_t *) lock);
     if (err != 0) {
-    	NsThreadFatal("NsLockSet", "pthread_mutex_lock", err);
+        NsThreadFatal("NsLockSet", "pthread_mutex_lock", err);
     }
 }
 
@@ -266,13 +266,13 @@ NsLockSet(void *lock)
  *
  * NsLockTry --
  *
- *	Try to set a mutex lock once.
+ *      Try to set a mutex lock once.
  *
  * Results:
- *	1 if lock set, 0 otherwise.
+ *      1 if lock set, 0 otherwise.
  *
  * Side effects:
- * 	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -286,10 +286,10 @@ NsLockTry(void *lock)
 
     err = pthread_mutex_trylock((pthread_mutex_t *) lock);
     if (unlikely(err == EBUSY)) {
-	return 0;
+        return 0;
     }
     if (unlikely(err != 0)) {
-    	NsThreadFatal("NsLockTry", "pthread_mutex_trylock", err);
+        NsThreadFatal("NsLockTry", "pthread_mutex_trylock", err);
     }
 
     return 1;
@@ -301,13 +301,13 @@ NsLockTry(void *lock)
  *
  * NsLockUnset --
  *
- *	Unset a mutex lock.
+ *      Unset a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May signal wakeup event for a waiting thread.
+ *      May signal wakeup event for a waiting thread.
  *
  *----------------------------------------------------------------------
  */
@@ -321,7 +321,7 @@ NsLockUnset(void *lock)
 
     err = pthread_mutex_unlock((pthread_mutex_t *) lock);
     if (unlikely(err != 0)) {
-    	NsThreadFatal("NsLockUnset", "pthread_mutex_unlock", err);
+        NsThreadFatal("NsLockUnset", "pthread_mutex_unlock", err);
     }
 }
 
@@ -331,14 +331,14 @@ NsLockUnset(void *lock)
  *
  * NsCreateThread --
  *
- *	Pthread specific thread create function called by
- *	Ns_ThreadCreate.
+ *      Pthread specific thread create function called by
+ *      Ns_ThreadCreate.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Depends on thread startup routine.
+ *      Depends on thread startup routine.
  *
  *----------------------------------------------------------------------
  */
@@ -366,17 +366,17 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
         if (stacksize < PTHREAD_STACK_MIN) {
             stacksize = PTHREAD_STACK_MIN;
         } else {
-	  /*
-	   * The stack-size has to be a multiple of the page-size,
-	   * otherwise pthread_attr_setstacksize fails. When we have
-	   * _SC_PAGESIZE defined, try to be friendly and round the
-	   * stack-size to the next multiple of the page-size.
-	   */
+          /*
+           * The stack-size has to be a multiple of the page-size,
+           * otherwise pthread_attr_setstacksize fails. When we have
+           * _SC_PAGESIZE defined, try to be friendly and round the
+           * stack-size to the next multiple of the page-size.
+           */
 #if defined(_SC_PAGESIZE)
-	    long pageSize = sysconf(_SC_PAGESIZE);
-	    stacksize = (((stacksize-1) / pageSize) + 1) * pageSize;
+            long pageSize = sysconf(_SC_PAGESIZE);
+            stacksize = (((stacksize-1) / pageSize) + 1) * pageSize;
 #endif
-	}
+        }
         err = pthread_attr_setstacksize(&attr, (size_t) stacksize);
         if (err != 0) {
             NsThreadFatal(func, "pthread_attr_setstacksize", err);
@@ -401,9 +401,9 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
         NsThreadFatal(func, "pthread_attr_destroy", err);
     }
     if (resultPtr != NULL) {
-	*resultPtr = (Ns_Thread) thr;
+        *resultPtr = (Ns_Thread) thr;
     } else {
-    	err = pthread_detach(thr);
+        err = pthread_detach(thr);
         if (err != 0) {
             NsThreadFatal(func, "pthread_detach", err);
         }
@@ -414,44 +414,27 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ThreadExit --
+ * NsThreadExit --
  *
- *	Terminate a thread.
+ *      Terminate a thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread will clean itself up via the TLS cleanup code.
+ *      Thread will clean itself up via the TLS cleanup code.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_ThreadExit(void *arg)
+NsThreadExit(void *arg)
 {
-    NsThreadShutdownStarted();
-
-    /*
-     * Clear TLS slots for this (now exiting) thread controllably,
-     * augmenting the TLS cleanup invoked automatically by
-     * the system's thread exit machinery. It is at this place
-     * that we have the thread completely initalized, so an
-     * proper cleanup has better chance to finish it's work.
-     */
-    NsCleanupTls(NsGetTls());
-
-    /*
-     * Exiting thread needs to finalize the Tcl API after
-     * all of the cleanup has been performed. Failing to
-     * do so results in severe memory leakage.
-     */
-    Tcl_FinalizeThread();
-
    /*
-    * Now, exit the thread really. This will invoke all of the
+    * Exit the thread really. This will invoke all of the
     * registerd TLS cleanup callbacks again (no harm).
     */
+
     pthread_exit(arg);
 }
 
@@ -461,13 +444,13 @@ Ns_ThreadExit(void *arg)
  *
  * Ns_ThreadJoin --
  *
- *	Wait for exit of a non-detached thread.
+ *      Wait for exit of a non-detached thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Requested thread is destroyed after join.
+ *      Requested thread is destroyed after join.
  *
  *----------------------------------------------------------------------
  */
@@ -482,7 +465,7 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
 
     err = pthread_join(thr, argPtr);
     if (err != 0) {
-	NsThreadFatal("Ns_ThreadJoin", "pthread_join", err);
+        NsThreadFatal("Ns_ThreadJoin", "pthread_join", err);
     }
 }
 
@@ -492,13 +475,13 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
  *
  * Ns_ThreadYield --
  *
- *	Yield the cpu to another thread.
+ *      Yield the cpu to another thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	See sched_yield().
+ *      See sched_yield().
  *
  *----------------------------------------------------------------------
  */
@@ -515,13 +498,13 @@ Ns_ThreadYield(void)
  *
  * Ns_ThreadId --
  *
- *	Return the numeric thread id.
+ *      Return the numeric thread id.
  *
  * Results:
- *	Integer thread id.
+ *      Integer thread id.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -538,13 +521,13 @@ Ns_ThreadId(void)
  *
  * Ns_ThreadSelf --
  *
- *	Return thread handle suitable for Ns_ThreadJoin.
+ *      Return thread handle suitable for Ns_ThreadJoin.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Value at threadPtr is updated with thread's handle.
+ *      Value at threadPtr is updated with thread's handle.
  *
  *----------------------------------------------------------------------
  */
@@ -563,15 +546,15 @@ Ns_ThreadSelf(Ns_Thread *threadPtr)
  *
  * Ns_CondInit --
  *
- *	Pthread condition variable initialization.  Note this routine
- *	isn't used directly very often as static condition variables
- *	are now self initialized when first used.
+ *      Pthread condition variable initialization.  Note this routine
+ *      isn't used directly very often as static condition variables
+ *      are now self initialized when first used.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -587,7 +570,7 @@ Ns_CondInit(Ns_Cond *cond)
     condPtr = ns_malloc(sizeof(pthread_cond_t));
     err = pthread_cond_init(condPtr, NULL);
     if (err != 0) {
-    	NsThreadFatal("Ns_CondInit", "pthread_cond_init", err);
+        NsThreadFatal("Ns_CondInit", "pthread_cond_init", err);
     }
     *cond = (Ns_Cond) condPtr;
 }
@@ -598,15 +581,15 @@ Ns_CondInit(Ns_Cond *cond)
  *
  * Ns_CondDestroy --
  *
- *	Pthread condition destroy.  Note this routine is almost never
- *	used as condition variables normally exist in memory until
- *	the process exits.
+ *      Pthread condition destroy.  Note this routine is almost never
+ *      used as condition variables normally exist in memory until
+ *      the process exits.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -619,12 +602,12 @@ Ns_CondDestroy(Ns_Cond *cond)
     if (condPtr != NULL) {
         int err;
 
-    	err = pthread_cond_destroy(condPtr);
-    	if (err != 0) {
-    	    NsThreadFatal("Ns_CondDestroy", "pthread_cond_destroy", err);
-    	}
-    	ns_free(condPtr);
-    	*cond = NULL;
+        err = pthread_cond_destroy(condPtr);
+        if (err != 0) {
+            NsThreadFatal("Ns_CondDestroy", "pthread_cond_destroy", err);
+        }
+        ns_free(condPtr);
+        *cond = NULL;
     }
 }
 
@@ -634,13 +617,13 @@ Ns_CondDestroy(Ns_Cond *cond)
  *
  * Ns_CondSignal --
  *
- *	Pthread condition signal.
+ *      Pthread condition signal.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	See pthread_cond_signal.
+ *      See pthread_cond_signal.
  *
  *----------------------------------------------------------------------
  */
@@ -664,13 +647,13 @@ Ns_CondSignal(Ns_Cond *cond)
  *
  * Ns_CondBroadcast --
  *
- *	Pthread condition broadcast.
+ *      Pthread condition broadcast.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	See pthread_cond_broadcast.
+ *      See pthread_cond_broadcast.
  *
  *----------------------------------------------------------------------
  */
@@ -694,13 +677,13 @@ Ns_CondBroadcast(Ns_Cond *cond)
  *
  * Ns_CondWait --
  *
- *	Pthread indefinite condition wait.
+ *      Pthread indefinite condition wait.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	See pthread_cond_wait.
+ *      See pthread_cond_wait.
  *
  *----------------------------------------------------------------------
  */
@@ -715,7 +698,7 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
 
     err = pthread_cond_wait(GetCond(cond), NsGetLock(mutex));
     if (err != 0) {
-	NsThreadFatal("Ns_CondWait", "pthread_cond_wait", err);
+        NsThreadFatal("Ns_CondWait", "pthread_cond_wait", err);
     }
 }
 
@@ -725,13 +708,13 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
  *
  * Ns_CondTimedWait --
  *
- *	Pthread absolute time wait.
+ *      Pthread absolute time wait.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	See pthread_cond_timewait.
+ *      See pthread_cond_timewait.
  *
  *----------------------------------------------------------------------
  */
@@ -747,8 +730,8 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     NS_NONNULL_ASSERT(mutex != NULL);
     
     if (timePtr == NULL) {
-	Ns_CondWait(cond, mutex);
-	return NS_OK;
+        Ns_CondWait(cond, mutex);
+        return NS_OK;
     }
 
     /*
@@ -769,14 +752,14 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      */
 
     do {
-    	err = pthread_cond_timedwait(GetCond(cond), NsGetLock(mutex), &ts);
+        err = pthread_cond_timedwait(GetCond(cond), NsGetLock(mutex), &ts);
     } while (err == EINTR);
     if (err == ETIMEDOUT) {
-	status = NS_TIMEOUT;
+        status = NS_TIMEOUT;
     } else if (err != 0) {
-	NsThreadFatal("Ns_CondTimedWait", "pthread_cond_timedwait", err);
+        NsThreadFatal("Ns_CondTimedWait", "pthread_cond_timedwait", err);
     } else {
-	status = NS_OK;
+        status = NS_OK;
     }
     return status;
 }
@@ -787,13 +770,13 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
  *
  * GetCond --
  *
- *	Cast an Ns_Cond to pthread_cond_t, initializing if needed.
+ *      Cast an Ns_Cond to pthread_cond_t, initializing if needed.
  *
  * Results:
- *	Pointer to pthread_cond_t.
+ *      Pointer to pthread_cond_t.
  *
  * Side effects:
- *	Ns_Cond is initialized the first time.
+ *      Ns_Cond is initialized the first time.
  *
  *----------------------------------------------------------------------
  */
@@ -804,11 +787,11 @@ GetCond(Ns_Cond *cond)
     NS_NONNULL_ASSERT(cond != NULL);
     
     if (*cond == NULL) {
-    	Ns_MasterLock();
-    	if (*cond == NULL) {
-	    Ns_CondInit(cond);
-    	}
-    	Ns_MasterUnlock();
+        Ns_MasterLock();
+        if (*cond == NULL) {
+            Ns_CondInit(cond);
+        }
+        Ns_MasterUnlock();
     }
     return (pthread_cond_t *) *cond;
 }
@@ -819,13 +802,13 @@ GetCond(Ns_Cond *cond)
  *
  * ThreadMain --
  *
- *	Pthread startup routine.
+ *      Pthread startup routine.
  *
  * Results:
- *	Does not return.
+ *      Does not return.
  *
  * Side effects:
- *	NsThreadMain will call Ns_ThreadExit.
+ *      NsThreadMain will call Ns_ThreadExit.
  *
  *----------------------------------------------------------------------
  */
@@ -843,12 +826,12 @@ ThreadMain(void *arg)
  *
  * CleanupTls --
  *
- *	Pthread TLS cleanup.  This routine is called during thread
- *	exit.  This routine could be called more than once if some
- *	other pthread cleanup requires nsthreads TLS.
+ *      Pthread TLS cleanup.  This routine is called during thread
+ *      exit.  This routine could be called more than once if some
+ *      other pthread cleanup requires nsthreads TLS.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
  *      Storage for the TLS slot array is reclaimed bypassing the

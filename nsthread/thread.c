@@ -31,7 +31,7 @@
 /*
  * thread.c --
  *
- *	Routines for creating, exiting, and joining threads.
+ *      Routines for creating, exiting, and joining threads.
  */
 
 #include "thread.h"
@@ -46,16 +46,16 @@
  */
 
 typedef struct Thread {
-    struct Thread  *nextPtr;	     /* Next in list of all threads. */
-    time_t	    ctime;	     /* Thread structure create time. */
-    unsigned int    flags;	     /* Detached, joined, etc. */
-    Ns_ThreadProc  *proc;	     /* Thread startup routine. */
-    void           *arg;	     /* Argument to startup proc. */
+    struct Thread  *nextPtr;         /* Next in list of all threads. */
+    time_t          ctime;           /* Thread structure create time. */
+    unsigned int    flags;           /* Detached, joined, etc. */
+    Ns_ThreadProc  *proc;            /* Thread startup routine. */
+    void           *arg;             /* Argument to startup proc. */
     uintptr_t       tid;             /* Id set by thread for logging. */
     pid_t           ostid;           /* OS level thread id (if available) */
     unsigned char  *bottomOfStack;   /* for estimating currentStackSize */
-    char	    name[NS_THREAD_NAMESIZE+1];   /* Thread name. */
-    char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
+    char            name[NS_THREAD_NAMESIZE+1];   /* Thread name. */
+    char            parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 } Thread;
 
 static Thread *NewThread(void) NS_GNUC_RETURNS_NONNULL;
@@ -82,13 +82,13 @@ static size_t defstacksize = 0u;
  *
  * NsInitThreads --
  *
- *	Initialize threads interface.
+ *      Initialize threads interface.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Allocates pthread_key_t for thread context.
+ *      Allocates pthread_key_t for thread context.
  *
  *----------------------------------------------------------------------
  */
@@ -99,10 +99,10 @@ NsInitThreads(void)
     static int once = 0;
 
     if (once == 0) {
-	once = 1;
-    	NsInitMaster();
-    	NsInitReentrant();
-    	Ns_TlsAlloc(&key, CleanupThread);
+        once = 1;
+        NsInitMaster();
+        NsInitReentrant();
+        Ns_TlsAlloc(&key, CleanupThread);
     }
 }
 
@@ -112,20 +112,20 @@ NsInitThreads(void)
  *
  * Ns_ThreadCreate --
  *
- *	Create a new thread thread.
+ *      Create a new thread thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	A new thread is allocated and started.
+ *      A new thread is allocated and started.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize,
-    	    	Ns_Thread *resultPtr)
+                Ns_Thread *resultPtr)
 {
     Thread     *thrPtr;
     size_t      nameLength;
@@ -148,14 +148,14 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize,
     thrPtr->proc = proc;
     thrPtr->arg = arg;
     if (resultPtr == NULL) {
-    	thrPtr->flags = NS_THREAD_DETACHED;
+        thrPtr->flags = NS_THREAD_DETACHED;
     }
     name = Ns_ThreadGetName();
     nameLength = strlen(name);
     assert(nameLength <= NS_THREAD_NAMESIZE);
     memcpy(thrPtr->parent, name, nameLength + 1u);
     Ns_MasterUnlock();
-    
+
     NsCreateThread(thrPtr, stackSize, resultPtr);
 }
 
@@ -197,14 +197,14 @@ Ns_ThreadStackSize(ssize_t size)
  *
  * ThreadMain --
  *
- *	Thread startup routine.  Sets the given pre-allocated thread
- *	structure and calls the user specified procedure.
+ *      Thread startup routine.  Sets the given pre-allocated thread
+ *      structure and calls the user specified procedure.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Will call Ns_ThreadExit() if not alreday done by the user code.
+ *      Will call Ns_ThreadExit() if not alreday done by the user code.
  *
  *----------------------------------------------------------------------
  */
@@ -244,13 +244,13 @@ NsThreadMain(void *arg)
  *
  * Ns_ThreadGetName --
  *
- *	Return a pointer to calling thread's string name.
+ *      Return a pointer to calling thread's string name.
  *
  * Results:
- *	Pointer to thread name string.
+ *      Pointer to thread name string.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -269,13 +269,13 @@ Ns_ThreadGetName(void)
  *
  * Ns_ThreadSetName --
  *
- *	Set the name of the calling thread.
+ *      Set the name of the calling thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	String is copied to thread data structure.
+ *      String is copied to thread data structure.
  *
  *----------------------------------------------------------------------
  */
@@ -287,7 +287,7 @@ Ns_ThreadSetName(const char *name,...)
     va_list ap;
 
     NS_NONNULL_ASSERT(name != NULL);
-    
+
     Ns_MasterLock();
     va_start(ap, name);
     vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
@@ -301,13 +301,13 @@ Ns_ThreadSetName(const char *name,...)
  *
  * Ns_ThreadGetParent --
  *
- *	Return a pointer to calling thread's parent name.
+ *      Return a pointer to calling thread's parent name.
  *
  * Results:
- *	Pointer to thread parent name string.
+ *      Pointer to thread parent name string.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -326,13 +326,13 @@ Ns_ThreadGetParent(void)
  *
  * Ns_ThreadList --
  *
- *	Append info for each thread.
+ *      Append info for each thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -383,6 +383,53 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     }
     Ns_MasterUnlock();
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ThreadExit --
+ *
+ *      Terminate a thread.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Thread will clean itself up via the TLS cleanup code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ThreadExit(void *arg)
+{
+    NsThreadShutdownStarted();
+
+    /*
+     * Clear TLS slots for this (now exiting) thread controllably,
+     * augmenting the TLS cleanup invoked automatically by
+     * the system's thread exit machinery. It is at this place
+     * that we have the thread completely initalized, so an
+     * proper cleanup has better chance to finish it's work.
+     */
+
+    NsCleanupTls(NsGetTls());
+
+    /*
+     * Exiting thread needs to finalize the Tcl API after
+     * all of the cleanup has been performed. Failing to
+     * do so results in severe memory leakage.
+     */
+
+    Tcl_FinalizeThread();
+
+   /*
+    * Now, exit the thread really. This will invoke all of the
+    * registerd TLS cleanup callbacks again (no harm).
+    */
+
+    NsThreadExit(arg);
+}
 
 
 /*
@@ -390,16 +437,16 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
  *
  * NewThread --
  *
- *	Allocate a new thread data structure and add it to the list
- *	of all threads.  The new thread is suitable for a detached,
- *	unknown thread such as the initial thread but Ns_ThreadCreate
- *	will update as necessary before creating the new threads.
+ *      Allocate a new thread data structure and add it to the list
+ *      of all threads.  The new thread is suitable for a detached,
+ *      unknown thread such as the initial thread but Ns_ThreadCreate
+ *      will update as necessary before creating the new threads.
  *
  * Results:
- *	Pointer to new Thread.
+ *      Pointer to new Thread.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -425,15 +472,15 @@ NewThread(void)
  *
  * GetThread --
  *
- *	Return this thread's nsthread data structure, initializing
- *	it if necessary, normally for the first thread but also
- *	for threads created without Ns_ThreadCreate.
+ *      Return this thread's nsthread data structure, initializing
+ *      it if necessary, normally for the first thread but also
+ *      for threads created without Ns_ThreadCreate.
  *
  * Results:
- *	Pointer to per-thread data structure.
+ *      Pointer to per-thread data structure.
  *
  * Side effects:
- *	Key is allocated the first time.
+ *      Key is allocated the first time.
  *
  *----------------------------------------------------------------------
  */
@@ -524,14 +571,14 @@ CleanupThread(void *arg)
  *
  * SetBottomOfStack --
  *
- *	Sets the bottom of the thread stack for estimating available
- *	stack size.
+ *      Sets the bottom of the thread stack for estimating available
+ *      stack size.
  *
  * Results:
- *	None,
+ *      None,
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -541,7 +588,7 @@ SetBottomOfStack(void *ptr) {
     Thread *thisPtr = GetThread();
 
     NS_NONNULL_ASSERT(ptr != NULL);
-    
+
     thisPtr->bottomOfStack = ptr;
 }
 
@@ -551,13 +598,13 @@ SetBottomOfStack(void *ptr) {
  *
  * Ns_ThreadGetThreadInfo --
  *
- *	Obtains various size information about the current C stack.
+ *      Obtains various size information about the current C stack.
  *
  * Results:
- *	returns maxStackSize and estimatedSize into passed integers
+ *      returns maxStackSize and estimatedSize into passed integers
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -567,11 +614,11 @@ Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize) {
 
   NS_NONNULL_ASSERT(maxStackSize != NULL);
   NS_NONNULL_ASSERT(estimatedSize != NULL);
-  
+
   Ns_MasterLock();
   *maxStackSize = defstacksize;
   *estimatedSize = (size_t)labs((long)(thisPtr->bottomOfStack - (unsigned char *)&thisPtr));
-  Ns_MasterUnlock();  
+  Ns_MasterUnlock();
 }
 
 /*
