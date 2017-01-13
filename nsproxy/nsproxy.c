@@ -36,7 +36,7 @@
 #include "nsproxy.h"
 
 static int
-MyInit(Tcl_Interp *interp)
+MyInit(Tcl_Interp *UNUSED(interp))
 {
     return TCL_OK;
 }

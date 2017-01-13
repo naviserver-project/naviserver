@@ -193,7 +193,7 @@ typedef enum Err {
     EEvalTimeout
 } Err;
 
-static char *errMsg[] = {
+static const char *errMsg[] = {
     "no error",
     "currently evaluating a script",
     "child process died",
@@ -211,7 +211,7 @@ static char *errMsg[] = {
     NULL
 };
 
-static char *errCode[] = {
+static const char *errCode[] = {
     "ENone",
     "EBusy",
     "EDead",
@@ -591,7 +591,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
  */
 
 int
-Ns_ProxyCleanup(Tcl_Interp *interp, const void *ignored)
+Ns_ProxyCleanup(Tcl_Interp *interp, const void *UNUSED(arg))
 {
     InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);
 
@@ -621,7 +621,7 @@ Ns_ProxyCleanup(Tcl_Interp *interp, const void *ignored)
  */
 
 void
-Shutdown(const Ns_Time *toutPtr, void *arg)
+Shutdown(const Ns_Time *toutPtr, void *UNUSED(arg))
 {
     Pool           *poolPtr;
     Proxy          *proxyPtr, *tmpPtr;
@@ -2779,7 +2779,7 @@ CloseProxy(Proxy *proxyPtr)
  */
 
 static void
-ReaperThread(void *ignored)
+ReaperThread(void *UNUSED(arg))
 {
     Tcl_HashSearch  search;
     Proxy          *proxyPtr, *prevPtr, *nextPtr;
