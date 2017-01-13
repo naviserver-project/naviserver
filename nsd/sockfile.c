@@ -415,7 +415,7 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 	 * socket is already closed (don't complain in such cases to the
 	 * error.log).
 	 */
-#if defined(TCP_CORK)
+# if defined(TCP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) == 0) {
             if ((sockPtr->sock == NS_INVALID_SOCKET)
                 || (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &corkInt, sizeof(corkInt)) == -1)
@@ -426,8 +426,8 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
                 success = NS_TRUE;
             }
         }
-#endif
-#if defined(UDP_CORK)
+# endif
+# if defined(UDP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) != 0) {
             if ((sockPtr->sock == NS_INVALID_SOCKET)
                 || (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1)
@@ -438,7 +438,7 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
                 success = NS_TRUE;
             }
         }
-#endif
+# endif
         if (success) {
             /*
              * On success, update the corked flag.
@@ -450,6 +450,9 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 	    }
 	}
     }
+#else
+    (void)cork;
+    (void)sock;
 #endif
     return success;
 }

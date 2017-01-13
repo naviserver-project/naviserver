@@ -808,6 +808,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
     } else {
         Ns_Log(Notice, "deferaccept: socket option TCP_FASTOPEN activated");
     }
+    (void)secs;
 #else
 # ifdef TCP_DEFER_ACCEPT
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
@@ -832,6 +833,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
         Ns_Log(Notice, "deferaccept: socket option SO_ACCEPTFILTER activated");
 
     }
+    (void)secs;
 #  endif
 # endif
 #endif

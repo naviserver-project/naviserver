@@ -5152,7 +5152,7 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitFileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
     Ns_Conn    *conn;

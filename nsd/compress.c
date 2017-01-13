@@ -45,8 +45,8 @@
  */
 
 static void DeflateOrAbort(z_stream *z, int flushFlags);
-static voidpf ZAlloc(voidpf arg, uInt items, uInt size);
-static void ZFree(voidpf arg, voidpf address);
+static voidpf ZAlloc(voidpf UNUSED(arg), uInt items, uInt size);
+static void ZFree(voidpf UNUSED(arg), voidpf address);
 
 
 /*
@@ -399,13 +399,13 @@ DeflateOrAbort(z_stream *z, int flushFlags)
  */
 
 static voidpf
-ZAlloc(voidpf arg, uInt items, uInt size)
+ZAlloc(voidpf UNUSED(arg), uInt items, uInt size)
 {
     return ns_calloc(items, size);
 }
 
 static void
-ZFree(voidpf arg, voidpf address)
+ZFree(voidpf UNUSED(arg), voidpf address)
 {
     ns_free(address);
 }

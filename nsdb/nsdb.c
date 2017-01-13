@@ -56,7 +56,7 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
  */
 
 NS_EXPORT Ns_ReturnCode
-Ns_ModuleInit(const char *server, const char *module)
+Ns_ModuleInit(const char *server, const char *UNUSED(module))
 {
     Ns_ReturnCode status = NS_OK;
     static bool   once = NS_FALSE;

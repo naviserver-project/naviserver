@@ -432,7 +432,7 @@ retry:
 	if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
 	    (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
 	}
-	Tcl_AppendResult(interp, "\r\n", NULL);
+	Tcl_AppendResult(interp, "\r\n", (char *)0);
 	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
 	while (len > 0u) {

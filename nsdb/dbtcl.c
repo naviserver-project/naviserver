@@ -165,7 +165,7 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
  */
 
 int
-NsDbReleaseHandles(Tcl_Interp *interp, const void *arg)
+NsDbReleaseHandles(Tcl_Interp *interp, const void *UNUSED(arg))
 {
     InterpData     *idataPtr;
 

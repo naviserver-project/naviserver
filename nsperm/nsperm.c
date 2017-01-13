@@ -983,7 +983,7 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
  */
 
-static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv)
+static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     Server         *servPtr = data;
     Tcl_HashSearch  search, msearch;
@@ -1228,7 +1228,7 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *----------------------------------------------------------------------
  */
 
-static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv)
+static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     Server         *servPtr = data;
     Tcl_HashSearch  search;
@@ -1446,7 +1446,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
  */
 
-static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv)
+static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     Server *servPtr = data;
     Ns_DString ds;

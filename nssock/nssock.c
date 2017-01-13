@@ -81,12 +81,13 @@ static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    Ns_DriverInitData  init = {0};
+    Ns_DriverInitData  init;
     Config            *cfg;
     const char        *path;
 
     NS_NONNULL_ASSERT(module != NULL);
-    
+
+    memset(&init, 0, sizeof(init));
     path = Ns_ConfigGetPath(server, module, (char *)0);
     cfg = ns_malloc(sizeof(Config));
     cfg->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
@@ -249,7 +250,7 @@ SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 
 static ssize_t
 SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
-         const Ns_Time *timeoutPtr, unsigned int flags)
+         const Ns_Time *UNUSED(timeoutPtr), unsigned int flags)
 {
     ssize_t   n;
     bool      decork;
@@ -331,7 +332,7 @@ SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
  */
 
 static bool
-Keep(Ns_Sock *sock)
+Keep(Ns_Sock *UNUSED(sock))
 {
     return NS_TRUE;
 }

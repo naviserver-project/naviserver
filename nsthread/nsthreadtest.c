@@ -127,7 +127,7 @@ RecursiveStackCheck(uintptr_t n)
 }
 
 static void
-CheckStackThread(void *arg)
+CheckStackThread(void *UNUSED(arg))
 {
     uintptr_t n;
 
@@ -318,7 +318,7 @@ DumpString(Tcl_DString *dsPtr)
 
 
 static void
-DumperThread(void *arg)
+DumperThread(void *UNUSED(arg))
 {
     Ns_Time         to;
     Tcl_DString     ds;

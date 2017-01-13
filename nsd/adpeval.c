@@ -786,7 +786,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
 
 int
 NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp, 
-		 int UNUSED(objc), Tcl_Obj *CONST* (objv))
+                    int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;

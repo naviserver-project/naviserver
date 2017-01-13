@@ -59,7 +59,7 @@
  */
 
 static void WatchdogSIGTERMHandler(int sig);
-static void WatchdogSIGALRMHandler(int sig);
+static void WatchdogSIGALRMHandler(int UNUSED(sig));
 static int  WaitForServer();
 static void SysLog(int priority, char *fmt, ...);
 
@@ -295,7 +295,7 @@ WatchdogSIGTERMHandler(int sig)
  */
 
 static void
-WatchdogSIGALRMHandler(int sig)
+WatchdogSIGALRMHandler(int UNUSED(sig))
 {
     if (watchedPid && kill((pid_t) watchedPid, 0) && errno == ESRCH) {
         SysLog(LOG_WARNING, "watchdog: server %d terminated?", watchedPid);

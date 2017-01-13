@@ -352,7 +352,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 /*
  *----------------------------------------------------------------------
  *
- * NsTclSockProc --
+ * NsTclConnChanProc --
  *
  *      A wrapper function callback that is called, when the callback
  *      is fired. The function allocates an interpreter if necessary,
@@ -369,7 +369,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
  */
 
 static bool
-NsTclConnChanProc(NS_SOCKET sock, void *arg, unsigned int why)
+NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
 {
 
     const Callback *cbPtr;
