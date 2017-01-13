@@ -399,7 +399,7 @@ typedef struct Ns_List {
  */
 
 typedef struct Ns_ObjvSpec {
-    char            *key;
+    const char      *key;
     Ns_ObjvProc     *proc;
     void            *dest;
     void            *arg;

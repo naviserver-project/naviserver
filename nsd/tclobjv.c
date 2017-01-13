@@ -1062,10 +1062,11 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
         if ((key[0] != '-' && defObjPtr != NULL)
             || (i + 1 == numSpecs && STREQ(key, "args"))) {
-
-            specPtr->key = ns_malloc((size_t)keyLen + 2u);
-            specPtr->key[0] = '?';
-            memcpy(specPtr->key + 1, key, (size_t)keyLen + 1u);
+            char *rewrittenKey  = ns_malloc((size_t)keyLen + 2u);
+            
+            *rewrittenKey = '?';
+            memcpy(rewrittenKey + 1, key, (size_t)keyLen + 1u);
+            specPtr->key = rewrittenKey;
         } else {
             specPtr->key = ns_strdup(key);
         }
@@ -1124,7 +1125,7 @@ FreeSpecs(Ns_ObjvSpec *specPtr)
             specPtr++;
             continue;
         }
-        ns_free(specPtr->key);
+        ns_free((char *)specPtr->key);
         if (specPtr->arg != NULL) {
             Tcl_DecrRefCount((Tcl_Obj *) specPtr->arg);
         }
