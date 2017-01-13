@@ -218,7 +218,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
 int
 NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    char         *module, *file, *init = "Ns_ModuleInit";
+    char         *module, *file, *init = (char *)"Ns_ModuleInit";
     int           global = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec   opts[] = {
 	{"-global", Ns_ObjvBool,   &global, INT2PTR(NS_TRUE)},
@@ -236,7 +236,7 @@ NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         result = TCL_ERROR;
 
     } else if (Ns_InfoStarted()) {
-        Tcl_SetResult(interp, "server already started", TCL_STATIC);
+        Tcl_SetResult(interp, (char *)"server already started", TCL_STATIC);
         result = TCL_ERROR;
 
     } else {

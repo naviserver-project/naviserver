@@ -120,7 +120,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
 static bool ValidateUserAddr(User * userPtr, const char *peer);
 static Ns_RequestAuthorizeProc AuthProc;
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
-static int CreateNonce(const char *privatekey, char **nonce, char *uri);
+static int CreateNonce(const char *privatekey, char **nonce, const char *uri);
 static int CreateHeader(Server * servPtr, Ns_Conn *conn, bool stale);
 /*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
@@ -370,7 +370,8 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     User          *userPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    char           buf[NS_ENCRYPT_BUFSIZE], *group, *auth = NULL;
+    char           buf[NS_ENCRYPT_BUFSIZE], *group;
+    const char *auth = NULL;
     Ns_Conn       *conn = Ns_GetConn();
 
     if (user == NULL) {
@@ -1626,7 +1627,7 @@ static int SetPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
 */
 
-static int CreateNonce(const char *privatekey, char **nonce, char *uri)
+static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
 {
     time_t now;
     Ns_DString ds;

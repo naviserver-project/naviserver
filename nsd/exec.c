@@ -182,7 +182,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
         return NS_ERROR;
     }
     if (WIFSIGNALED(status)) {
-        char *coredump = "";
+        const char *coredump = "";
 #ifdef WCOREDUMP
         if (WCOREDUMP(status)) {
             coredump = " - core dumped";
@@ -415,8 +415,8 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
 
     if (argv == NULL) {
         argv = argvSh;
-        argv[0] = "/bin/sh";
-        argv[1] = "-c";
+        argv[0] = (char *)"/bin/sh";
+        argv[1] = (char *)"-c";
         argv[2] = (char *)exec;
         argv[3] = NULL;
         exec = argv[0];

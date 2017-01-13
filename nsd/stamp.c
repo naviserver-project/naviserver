@@ -33,4 +33,4 @@
  *	Timestamp for link return by Ns_InfoBuildDate().
  */
 
-char *nsBuildDate = __DATE__ " at " __TIME__;
+const char *nsBuildDate = __DATE__ " at " __TIME__;

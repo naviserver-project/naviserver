@@ -214,8 +214,8 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
              * No path or tail specified. Return.
              */
 
-            *ppath = "";
-            *ptail = "";
+            *ppath = (char *)"";
+            *ptail = (char *)"";
 
         } else {
             *end = '\0';
@@ -239,7 +239,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             end = strrchr(url, INTCHAR('/'));
             if (end == NULL) {
                 *ptail = *ppath;
-                *ppath = "";
+                *ppath = (char *)"";
             } else {
                 *end = '\0';
                 *ptail = end + 1;
@@ -266,7 +266,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             end = strrchr(url, INTCHAR('/'));
             if (end == NULL) {
                 *ptail = *ppath;
-                *ppath = "";
+                *ppath = (char *)"";
             } else {
                 *end = '\0';
                 *ptail = end + 1;
