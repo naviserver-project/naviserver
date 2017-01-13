@@ -167,7 +167,7 @@ Ns_ModuleInit(const char *server, const char *module)
         double d;
         char buf[TCL_INTEGER_SPACE];
         Ns_CtxMD5 md5;
-        unsigned long result;
+        unsigned long bigRamdomNumber;
         unsigned char sig[16];
 
         uskey = Ns_UrlSpecificAlloc();
@@ -175,11 +175,11 @@ Ns_ModuleInit(const char *server, const char *module)
 
         /* Make a really big random number */
         d = Ns_DRand();
-        result = (unsigned long) (d * 1024 * 1024 * 1024);
+        bigRamdomNumber = (unsigned long) (d * 1024 * 1024 * 1024);
 
         /* There is no requirement to hash it but it won't hurt */
         Ns_CtxMD5Init(&md5);
-        snprintf(buf, sizeof(buf), "%lu", result);
+        snprintf(buf, sizeof(buf), "%lu", bigRamdomNumber);
         Ns_CtxMD5Update(&md5, (unsigned char *) buf, strlen(buf));
         Ns_CtxMD5Final(&md5, sig);
         Ns_HexString(sig, usdigest, 16, NS_TRUE);
