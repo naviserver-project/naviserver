@@ -272,11 +272,11 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     SSL_set_connect_state(ssl);
     
     for (;;) {
-	int rc, err;
+	int sslRc, err;
 
 	Ns_Log(Debug, "ssl connect");
-	rc  = SSL_connect(ssl);
-	err = SSL_get_error(ssl, rc);
+	sslRc = SSL_connect(ssl);
+	err   = SSL_get_error(ssl, sslRc);
 
 	if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
 	    Ns_Time timeout = { 0, 10000 }; /* 10ms */
