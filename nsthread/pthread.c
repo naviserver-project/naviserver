@@ -346,10 +346,10 @@ NsLockUnset(void *lock)
 void
 NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
 {
-    static char   *func = "NsCreateThread";
-    pthread_attr_t attr;
-    pthread_t      thr;
-    int            err;
+    static const char *func = "NsCreateThread";
+    pthread_attr_t     attr;
+    pthread_t          thr;
+    int                err;
 
     err = pthread_attr_init(&attr);
     if (err != 0) {

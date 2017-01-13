@@ -958,7 +958,7 @@ LogRoll(Log *logPtr)
  */
 
 static void
-LogCallback(Ns_ReturnCode(proc)(Log *), void *arg, char *desc)
+LogCallback(Ns_ReturnCode(proc)(Log *), void *arg, const char *desc)
 {
     int  status;
     Log *logPtr = arg;

@@ -65,13 +65,21 @@ static Ns_Cond  dcond = NULL;
 static int      dstop = 0;
 
 /*
+ * Local Prototypes
+ */
+static void AtExit(void);
+static void MemThread(void *arg);
+
+
+
+/*
  * Msg -
  *
  *	Simple message logger with thread id and name.
  */
 
 static void
-Msg(char *fmt,...)
+Msg(const char *fmt,...)
 {
     va_list         ap;
     char           *s, *r;
@@ -213,7 +221,7 @@ WorkThread(void *arg)
  *	Test of atexit() handler.
  */
 
-void
+static void
 AtExit(void)
 {
     Msg("atexit handler called!");
@@ -232,7 +240,7 @@ int nthreads = 10;
 int memstart;
 int nrunning;
 
-void
+static void
 MemThread(void *arg)
 {
     int    i;
@@ -491,13 +499,13 @@ int main(int argc, char *argv[])
     Ns_ThreadJoin(&dumper, NULL);
     Msg("threads joined");
     {
-        int i;
-        for (i = 0; i < 10; ++i) {
-            Ns_ThreadCreate(CheckStackThread, NULL, 8192*(i+1), &threads[i]);
+        int j;
+        for (j = 0; j < 10; ++j) {
+            Ns_ThreadCreate(CheckStackThread, NULL, 8192*(j+1), &threads[j]);
         }
-        for (i = 0; i < 10; ++i) {
-            Ns_ThreadJoin(&threads[i], &arg);
-            printf("check stack %d = %" PRIdPTR "\n", i, (intptr_t) arg);
+        for (j = 0; j < 10; ++j) {
+            Ns_ThreadJoin(&threads[j], &arg);
+            printf("check stack %d = %" PRIdPTR "\n", j, (intptr_t) arg);
         }
     }
     /*Ns_ThreadEnum(DumpThreads, NULL);*/
