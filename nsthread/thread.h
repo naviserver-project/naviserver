@@ -58,6 +58,9 @@ extern void   NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr)
 extern void   NsThreadExit(void *arg);
 extern void   NsThreadFatal(const char *func, const char *osfunc, int err);
 extern void   NsThreadShutdownStarted(void);
+extern const char *NsThreadLibName(void);
+extern pid_t  Ns_Fork(void);
+
 
 
 #endif /* THREAD_H */
