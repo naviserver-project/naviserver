@@ -95,7 +95,7 @@ static Ns_Mutex *driver_locks;
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 static void
-SSL_infoCB(const SSL *ssl, int where, int ret) {
+SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
     if ((where & SSL_CB_HANDSHAKE_DONE)) {
         ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
     }
@@ -138,8 +138,9 @@ Ns_ModuleInit(const char *server, const char *module)
     int                num;
     const char        *path, *value;
     SSLDriver         *drvPtr;
-    Ns_DriverInitData  init = {0};
+    Ns_DriverInitData  init;
 
+    memset(&init, 0, sizeof(init));
     Ns_DStringInit(&ds);
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
@@ -462,7 +463,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
  */
 
 static ssize_t
-Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned int flags)
+Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
@@ -547,7 +548,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned
 
 static ssize_t
 Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
-     const Ns_Time *timeoutPtr, unsigned int flags)
+     const Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
     SSLContext *sslPtr = sock->arg;
     int         rc, size;
@@ -675,7 +676,7 @@ Close(Ns_Sock *sock)
  */
 
 static int
-SSLPassword(char *buf, int num, int rwflag, void *userdata)
+SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
 {
     const char *pwd;
 
@@ -685,7 +686,7 @@ SSLPassword(char *buf, int num, int rwflag, void *userdata)
 }
 
 static void
-SSLLock(int mode, int n, const char *file, int line)
+SSLLock(int mode, int n, const char *UNUSED(file), int UNUSED(line))
 {
     if (mode & CRYPTO_LOCK) {
         Ns_MutexLock(driver_locks + n);
