@@ -352,17 +352,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    /*
-     * The notifier subsystem creates special private notifer thread,
-     * so we should re-init notifier after the (potential) fork above.
-     * Starting with Tcl 8.6, the notifier thread is created on-demand
-     * hence the above call may be ommited. We still leave it here,
-     * as it does no harm if invoked many times, plus it is backward
-     * compatible with older Tcl versions.
-     */
-
-    Tcl_InitNotifier();
-
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*
