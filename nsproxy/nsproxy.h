@@ -60,9 +60,10 @@ typedef struct InterpData {
 
 
 NS_EXTERN void Nsproxy_LibInit (void);
+NS_EXTERN int Nsproxy_Init(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 
-NS_EXTERN int Ns_ProxyMain (int argc, char **argv, Tcl_AppInitProc *init);
-NS_EXTERN int Ns_ProxyTclInit (Tcl_Interp *interp);
+NS_EXTERN int Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init);
+NS_EXTERN int Ns_ProxyTclInit(Tcl_Interp *interp);
 
 NS_EXTERN Ns_TclTraceProc  Ns_ProxyCleanup;
 
