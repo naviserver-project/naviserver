@@ -66,8 +66,8 @@ static Ns_ThreadProc CmdThread;
 static void UsageError(const char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
-static const char *MakePath(char *file);
-static const char *SetCwd(const char *path);
+static const char *MakePath(const char *file) NS_GNUC_NONNULL(1);
+static const char *SetCwd(const char *path) NS_GNUC_NONNULL(1);
 
 #if defined(STATIC_BUILD) && (STATIC_BUILD == 1)
 extern void NsthreadsInit();
@@ -538,6 +538,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                 nsconf.home = NS_NAVISERVER;
             }
 	}
+        assert(nsconf.home != NULL);
     }
     nsconf.home = SetCwd(nsconf.home);
 
@@ -1059,10 +1060,12 @@ UsageError(const char *msg, ...)
  */
 
 static const char *
-MakePath(char *file)
+MakePath(const char *file)
 {
     const char *result = NULL;
-    
+
+    NS_NONNULL_ASSERT(file != NULL);
+
     if (Ns_PathIsAbsolute(nsconf.nsd) == NS_TRUE) {
 	const char *str = strstr(nsconf.nsd, "/bin/");
         
@@ -1123,6 +1126,8 @@ SetCwd(const char *path)
 {
     Tcl_Obj *pathObj;
 
+    NS_NONNULL_ASSERT(path != NULL);
+    
     pathObj = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSChdir(pathObj) == -1) {
