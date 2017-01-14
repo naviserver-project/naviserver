@@ -89,7 +89,7 @@ static Tcl_ObjType specType = {
  */
 
 void
-NsTclInitSpecType()
+NsTclInitSpecType(void)
 {
     Tcl_RegisterObjType(&specType);
 }

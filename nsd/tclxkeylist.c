@@ -578,7 +578,7 @@ ValidateKey(Tcl_Interp *interp, const char *key, int keyLen, int isPath)
  *-----------------------------------------------------------------------------
  */
 static keylIntObj_t *
-AllocKeyedListIntRep()
+AllocKeyedListIntRep(void)
 {
     keylIntObj_t *keylIntPtr;
 
@@ -940,7 +940,7 @@ UpdateStringOfKeyedList(Tcl_Obj *keylPtr)
  *-----------------------------------------------------------------------------
  */
 Tcl_Obj *
-TclX_NewKeyedListObj()
+TclX_NewKeyedListObj(void)
 {
     Tcl_Obj *keylPtr = Tcl_NewObj();
     keylIntObj_t *keylIntPtr = AllocKeyedListIntRep();

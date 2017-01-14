@@ -298,7 +298,7 @@ NsRunAtExitProcs(void)
  */
 
 void
-NsStartShutdownProcs()
+NsStartShutdownProcs(void)
 {
     Ns_MutexLock(&lock);
     shutdownPending = 1;

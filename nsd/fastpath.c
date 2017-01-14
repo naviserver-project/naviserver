@@ -102,7 +102,7 @@ static bool      useGzipRefresh = NS_FALSE; /* Update outdated gzip files automa
  */
 
 void
-NsConfigFastpath()
+NsConfigFastpath(void)
 {
     const char *path;
 

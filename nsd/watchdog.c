@@ -60,7 +60,7 @@
 
 static void WatchdogSIGTERMHandler(int sig);
 static void WatchdogSIGALRMHandler(int UNUSED(sig));
-static int  WaitForServer();
+static int  WaitForServer(void);
 static void SysLog(int priority, const char *fmt, ...);
 
 
@@ -98,7 +98,7 @@ static int   processDied  = 0; /* 1 if watched process died unexpectedly. */
  */
 
 int
-NsForkWatchedProcess()
+NsForkWatchedProcess(void)
 {
     struct itimerval timer;
     unsigned int numRestarts = 0, restartWait = 0;
@@ -220,7 +220,7 @@ NsForkWatchedProcess()
  */
 
 static int
-WaitForServer()
+WaitForServer(void)
 {
     int         ret, status;
     pid_t       pid;

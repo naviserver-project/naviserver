@@ -3362,7 +3362,7 @@ DeleteData(ClientData clientData, Tcl_Interp *interp)
  */
 
 static void
-ReapProxies()
+ReapProxies(void)
 {
     Ns_MutexLock(&plock);
     if (reaperState == Stopped) {

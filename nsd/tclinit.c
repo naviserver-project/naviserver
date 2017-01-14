@@ -1964,7 +1964,7 @@ GetCacheEntry(const NsServer *servPtr)
  */
 
 Tcl_Interp *
-NsTclCreateInterp() {
+NsTclCreateInterp(void) {
     Tcl_Interp *interp;
 
     if (concurrent_interp_create) {

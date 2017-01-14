@@ -89,7 +89,7 @@ static const Tcl_ObjType *intTypePtr;
  */
 
 void
-NsTclInitTimeType()
+NsTclInitTimeType(void)
 {
 #ifndef _WIN32
     Tcl_Obj obj;
