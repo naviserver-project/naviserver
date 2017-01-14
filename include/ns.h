@@ -1891,54 +1891,59 @@ Ns_StopServer(char *server);
 /*
  * info.c:
  */
+NS_EXTERN char *
+Ns_InfoAddress(void);
+
+NS_EXTERN time_t
+Ns_InfoBootTime(void);
+
+NS_EXTERN const char *
+Ns_InfoBuildDate(void);
+
+NS_EXTERN const char *
+Ns_InfoConfigFile(void);
 
 NS_EXTERN const char *
 Ns_InfoHomePath(void);
 
-NS_EXTERN const char *
-Ns_InfoServerName(void);
+NS_EXTERN char *
+Ns_InfoHostname(void);
+
+NS_EXTERN bool
+Ns_InfoIPv6(void);
 
 NS_EXTERN const char *
-Ns_InfoServerVersion(void);
-
-NS_EXTERN const char *
-Ns_InfoConfigFile(void);
+Ns_InfoNameOfExecutable(void);
 
 NS_EXTERN pid_t
 Ns_InfoPid(void);
 
 NS_EXTERN const char *
-Ns_InfoNameOfExecutable(void);
-
-NS_EXTERN const char *
 Ns_InfoPlatform(void);
 
-NS_EXTERN long
-Ns_InfoUptime(void);
-
-NS_EXTERN time_t
-Ns_InfoBootTime(void);
-
-NS_EXTERN char *
-Ns_InfoHostname(void);
-
-NS_EXTERN char *
-Ns_InfoAddress(void);
-
 NS_EXTERN const char *
-Ns_InfoBuildDate(void);
-
-NS_EXTERN bool
-Ns_InfoShutdownPending(void);
-
-NS_EXTERN bool
-Ns_InfoStarted(void);
+Ns_InfoServerName(void);
 
 NS_EXTERN bool
 Ns_InfoServersStarted(void);
 
 NS_EXTERN const char *
+Ns_InfoServerVersion(void);
+
+NS_EXTERN bool
+Ns_InfoShutdownPending(void);
+
+NS_EXTERN bool
+Ns_InfoSSL(void);
+
+NS_EXTERN bool
+Ns_InfoStarted(void);
+
+NS_EXTERN const char *
 Ns_InfoTag(void);
+
+NS_EXTERN long
+Ns_InfoUptime(void);
 
 /*
  * mimetypes.c:
