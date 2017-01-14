@@ -109,8 +109,8 @@ SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
 #ifndef HEADER_DH_H
 #include <openssl/dh.h>
 #endif
-static DH *get_dh512();
-static DH *get_dh1024();
+static DH *get_dh512(void);
+static DH *get_dh1024(void);
 
 #include "dhparams.h"
 
