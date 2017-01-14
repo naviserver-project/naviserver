@@ -1154,7 +1154,7 @@ NsTclAdpDebugObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     }
 
     if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
-        Tcl_SetResult(interp, "could not initialize debugger", TCL_STATIC);
+        Tcl_SetResult(interp, (char *)"could not initialize debugger", TCL_STATIC);
         return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(itPtr->adp.debugLevel));
@@ -1229,7 +1229,7 @@ GetFrame(const ClientData clientData, AdpFrame **framePtrPtr)
 
     itPtr = clientData;
     if (itPtr->adp.framePtr == NULL) {
-        Tcl_SetResult(itPtr->interp, "no active adp", TCL_STATIC);
+        Tcl_SetResult(itPtr->interp, (char *)"no active adp", TCL_STATIC);
         return TCL_ERROR;
     }
     *framePtrPtr = itPtr->adp.framePtr;
@@ -1297,7 +1297,7 @@ GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
-        Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
+        Tcl_SetResult(interp, (char *)"not a server interp", TCL_STATIC);
         return TCL_ERROR;
     }
     *itPtrPtr = itPtr;

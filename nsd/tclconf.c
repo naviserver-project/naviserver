@@ -124,7 +124,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
                     done = NS_TRUE;
                 } else {
-                    Tcl_SetResult(interp, "value out of range", TCL_STATIC);
+                    Ns_TclPrintfResult(interp, "value '%s' out of range", value);
                     status = TCL_ERROR;
                 }
             }
@@ -153,7 +153,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
                     status = TCL_ERROR;
                 } else if (v < min || v > max) {
-                    Tcl_SetResult(interp, "value out of range", TCL_STATIC);
+                    Ns_TclPrintfResult(interp, "value '%s' out of range", Tcl_GetString(defObj));
                     status = TCL_ERROR;
                 }
             }

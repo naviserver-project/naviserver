@@ -916,7 +916,7 @@ PrebindSockets(const char *spec)
          * Set default proto and addr.
          */
         proto = "tcp";
-        addr = NS_IP_UNSPECIFIED;
+        addr = (char *)NS_IP_UNSPECIFIED;
         reuses = 1;
 
         /*
@@ -942,7 +942,7 @@ PrebindSockets(const char *spec)
             line = str;
         } else {
             l = strtol(addr, NULL, 10);
-            addr = NS_IP_UNSPECIFIED;
+            addr = (char *)NS_IP_UNSPECIFIED;
         }
         port = (l >= 0) ? (unsigned short)l : 0u;
 

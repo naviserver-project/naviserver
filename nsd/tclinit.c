@@ -1574,7 +1574,7 @@ NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         result = TCL_ERROR;
 
     } else if (itPtr->conn == NULL) {
-        Tcl_SetResult(interp, "no connection", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "no connection");
 
     } else {
     

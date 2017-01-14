@@ -617,7 +617,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
     }
 
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
-        bool    timeout = NS_FALSE, partial = NS_FALSE;
+        bool    haveTimeout = NS_FALSE, partial = NS_FALSE;
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs);
 
         do {
@@ -635,7 +635,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                     result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                                           timeoutPtr, flags);
                 } else {
-                    timeout = NS_TRUE;
+                    haveTimeout = NS_TRUE;
                     Ns_TclPrintfResult(interp, "connchan %s: timeout on send operation (%ld:%ld)",
                                        connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
                     result = -1;
@@ -660,7 +660,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                     toSend -= result;
                     partial = NS_TRUE;
                 }
-            } else if (!timeout) {
+            } else if (!haveTimeout) {
                 /*
                  * Timeout is handled above.
                  */
@@ -759,7 +759,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     int           result = TCL_OK;
     Sock         *sockPtr;
     Ns_Set       *hdrPtr = NULL;
-    char         *url, *method = "GET", *version = "1.0";
+    char         *url, *method = (char *)"GET", *version = (char *)"1.0";
     Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
     Ns_ObjvSpec   lopts[] = {
         {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
@@ -1078,7 +1078,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
                 status = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
                 
                 if (unlikely(status != NS_OK)) {
-                    Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+                    Ns_TclPrintfResult(interp, "could not register callback");
                     ConnChanFree(connChanPtr);
                     result = TCL_ERROR;
                 }

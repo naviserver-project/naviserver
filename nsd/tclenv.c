@@ -219,7 +219,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         name = Tcl_GetString(objv[2]);
         value = getenv(name);
         if (value == NULL && objc != 4) {
-            Tcl_SetResult(interp, "no such environment variable", TCL_STATIC);
+            Ns_TclPrintfResult(interp, "no such environment variable: %s", name);
             goto done;
         }
         if ((opt == IUnsetIdx) && (PutEnv(interp, name, NULL) != TCL_OK)) {
@@ -287,8 +287,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
      */
     s = malloc(len + 1u);
     if (s == NULL) {
-        Tcl_SetResult(interp, "could not allocate memory for new env entry",
-                      TCL_STATIC);
+        Ns_TclPrintfResult(interp, "could not allocate memory for new env entry");
         result = TCL_ERROR;
     } else {
 

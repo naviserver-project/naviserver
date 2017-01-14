@@ -569,7 +569,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     switch (opt) {
     case IArgv0Idx:
-        Tcl_SetResult(interp, (char *)nsconf.argv0, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.argv0, -1));
         break;
 
     case IStartedIdx:
@@ -581,11 +581,11 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case INsdIdx:
-        Tcl_SetResult(interp, (char *)nsconf.nsd, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.nsd, -1));
         break;
 
     case INameIdx:
-        Tcl_SetResult(interp, (char *)Ns_InfoServerName(), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoServerName(), -1));
         break;
 
     case IConfigIdx:
@@ -631,11 +631,11 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case IPlatformIdx:
 	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
-        Tcl_SetResult(interp, (char *)Ns_InfoPlatform(), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoPlatform(), -1));
         break;
 
     case IHostNameIdx:
-        Tcl_SetResult(interp, (char *)Ns_InfoHostname(), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHostname(), -1));
         break;
 
     case IIpv6Idx:
@@ -643,7 +643,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
         
     case IAddressIdx:
-        Tcl_SetResult(interp, (char *)Ns_InfoAddress(), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoAddress(), -1));
         break;
 
     case IUptimeIdx:
@@ -672,11 +672,11 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case IVersionIdx:
-        Tcl_SetResult(interp, NS_VERSION, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(NS_VERSION, -1));
         break;
 
     case IPatchLevelIdx:
-        Tcl_SetResult(interp, NS_PATCH_LEVEL, TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(NS_PATCH_LEVEL, -1));
         break;
 
     case IHomeIdx:
@@ -686,18 +686,18 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     case IWinntIdx:
 	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
 #ifdef _WIN32
-        Tcl_SetResult(interp, "1", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 #else
-        Tcl_SetResult(interp, "0", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 #endif
         break;
 
     case IBuilddateIdx:
-        Tcl_SetResult(interp, (char *)Ns_InfoBuildDate(), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoBuildDate(), -1));
         break;
 
     case ITagIdx:
-        Tcl_SetResult(interp, (char *)Ns_InfoTag(), TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoTag(), -1));
         break;
 
     case IServersIdx:
@@ -728,7 +728,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
      */
     
     if (unlikely(itPtr->servPtr == NULL)) {
-        Tcl_SetResult(interp, "no server", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("no server", -1));
         return TCL_ERROR;
     }
 
@@ -776,7 +776,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     default:
-        Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", -1));
         result = TCL_ERROR;
         break;
     }

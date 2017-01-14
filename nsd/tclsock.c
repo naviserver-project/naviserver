@@ -868,7 +868,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
                               when | (unsigned int)NS_SOCK_EXIT, 
                               timeoutPtr, NULL) != NS_OK) {
-            Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+            Ns_TclPrintfResult(interp, "could not register callback");
             ns_sockclose(sock);
             ns_free(cbPtr);
             result = TCL_ERROR;
@@ -930,7 +930,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
         memcpy(lcbPtr->script, script, scriptLength + 1u);
 
         if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr) != NS_OK) {
-            Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
+            Ns_TclPrintfResult(interp, "could not register callback");
             ns_free(lcbPtr);
             result = TCL_ERROR;
         }

@@ -437,7 +437,7 @@ Ns_AdpFlush(Tcl_Interp *interp, bool doStream)
     if (likely(itPtr != NULL)) {
         result = NsAdpFlush(itPtr, doStream);
     } else {
-        Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
+        Tcl_SetResult(interp, (char *)"not a server interp", TCL_STATIC);
         result = TCL_ERROR;
     }
     return result;
@@ -465,7 +465,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
 
     if (conn == NULL) {
         assert(itPtr->adp.chan == NULL);
-        Tcl_SetResult(interp, "no adp output context", TCL_STATIC);
+        Tcl_SetResult(interp, (char *)"no adp output context", TCL_STATIC);
         return TCL_ERROR;
     }
     assert(conn != NULL);
@@ -508,7 +508,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
     Tcl_ResetResult(interp);
 
     if (itPtr->adp.exception == ADP_ABORT) {
-        Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
+        Tcl_SetResult(interp, (char *)"adp flush disabled: adp aborted", TCL_STATIC);
     } else
     if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream)) {
         result = TCL_OK;
@@ -529,7 +529,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
         } else {
             if ((conn->flags & NS_CONN_CLOSED) != 0u) {
                 result = TCL_OK;
-                Tcl_SetResult(interp, "adp flush failed: connection closed",
+                Tcl_SetResult(interp, (char *)"adp flush failed: connection closed",
                               TCL_STATIC);
             } else {
 		struct iovec sbuf;
@@ -551,7 +551,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
                 }
                 if (result != TCL_OK) {
                     Tcl_SetResult(interp,
-                                  "adp flush failed: connection flush error",
+                                  (char *)"adp flush failed: connection flush error",
                                   TCL_STATIC);
                 }
             }

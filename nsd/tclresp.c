@@ -166,8 +166,7 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
 
     } else if (charset != NULL && type != NULL) {
-        Tcl_SetResult(interp, "only one of -charset or -type may be specified",
-                      TCL_STATIC);
+        Ns_TclPrintfResult(interp, "only one of -charset or -type may be specified");
         result = TCL_ERROR;
         
     } else {
@@ -401,7 +400,7 @@ NsTclRespondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     Ns_Conn       *conn = NULL;
     int            result = TCL_OK, httpStatus = 200, length = -1;
-    char          *type = "*/*", *setid = NULL;
+    char          *type = (char *)"*/*", *setid = NULL;
     char          *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL;
     const Ns_Set  *set = NULL;
     Tcl_Channel    chan;
@@ -422,8 +421,7 @@ NsTclRespondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         result = TCL_ERROR;
 
     } else if (chanid != NULL && length < 0) {
-        Tcl_SetResult(interp, "length required when -fileid is used",
-                      TCL_STATIC);
+        Ns_TclPrintfResult(interp, "length required when -fileid is used");
         result = TCL_ERROR;
 
     } else if ((binary != NULL)
@@ -431,8 +429,8 @@ NsTclRespondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         + (filename != NULL)
         + (chanid != NULL) != 1
         ) {
-        Tcl_SetResult(interp, "must specify only one of -string, "
-                      "-file, -binary or -fileid", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "must specify only one of -string, "
+                           "-file, -binary or -fileid");
         result = TCL_ERROR;
 
     } else if (setid != NULL) {
@@ -1001,7 +999,7 @@ GetConn(const ClientData clientData, Tcl_Interp *interp, Ns_Conn **connPtr)
     NS_NONNULL_ASSERT(connPtr != NULL);
 
     if (itPtr->conn == NULL) {
-        Tcl_SetResult(interp, "no connection", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "no connection");
         result = TCL_ERROR;
     } else {
 

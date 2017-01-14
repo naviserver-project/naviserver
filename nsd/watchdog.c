@@ -61,7 +61,7 @@
 static void WatchdogSIGTERMHandler(int sig);
 static void WatchdogSIGALRMHandler(int UNUSED(sig));
 static int  WaitForServer();
-static void SysLog(int priority, char *fmt, ...);
+static void SysLog(int priority, const char *fmt, ...);
 
 
 /*
@@ -222,9 +222,9 @@ NsForkWatchedProcess()
 static int
 WaitForServer()
 {
-    int    ret, status;
-    pid_t  pid;
-    char  *msg;
+    int         ret, status;
+    pid_t       pid;
+    const char *msg;
 
     do {
         pid = waitpid(watchedPid, &status, 0);
@@ -321,7 +321,7 @@ WatchdogSIGALRMHandler(int UNUSED(sig))
  */
 
 static void
-SysLog(int priority, char *fmt, ...)
+SysLog(int priority, const char *fmt, ...)
 {
     va_list ap;
 

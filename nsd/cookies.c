@@ -626,7 +626,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     } else if (defaultObj != NULL) {
         Tcl_SetObjResult(interp, defaultObj);
     } else {
-        Tcl_SetResult(interp, "no matching cookie", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("no matching cookie", -1));
         status = TCL_ERROR;
     }
     Ns_DStringFree(&ds);
@@ -700,7 +700,7 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *      Ns_Conn pointer or NULL.
  *
  * Side effects:
- *      None.
+ *      Sets Tcl result on error.
  *
  *----------------------------------------------------------------------
  */
@@ -714,7 +714,7 @@ GetConn(Tcl_Interp *interp)
     
     conn = Ns_TclGetConn(interp);
     if (conn == NULL) {
-        Tcl_SetResult(interp, "No connection available.", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "No connection available.");
     }
 
     return conn;

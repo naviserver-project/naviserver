@@ -1211,7 +1211,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
     }
     if (stat(Tcl_GetString(objv[1]), &st) != 0) {
-        Tcl_SetResult(interp, "0", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
     } else {
         if (objc > 2) {
             const char *name = Tcl_GetString(objv[2]);
@@ -1246,7 +1246,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 #endif
                    ""), -1), 0);
         }
-        Tcl_SetResult(interp, "1", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
     }
     return result;
 }

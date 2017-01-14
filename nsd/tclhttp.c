@@ -454,7 +454,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     int            verifyInt = 0, result = TCL_OK;
     Ns_HttpTask   *httpPtr;
     char          *cert = NULL, *caFile = NULL, *caPath = NULL;
-    char          *method = "GET", *url = NULL, *bodyFileName = NULL;
+    char          *method = (char *)"GET", *url = NULL, *bodyFileName = NULL;
     Ns_Set        *hdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
     Ns_Time       *timeoutPtr = NULL;

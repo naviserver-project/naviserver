@@ -446,6 +446,8 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
 
 #undef Ns_DStringInit
 
+NS_EXTERN void Ns_DStringInit(Ns_DString *dsPtr) NS_GNUC_DEPRECATED_FOR(Tcl_DStringInit);
+ 
 void
 Ns_DStringInit(Ns_DString *dsPtr)
 {
@@ -454,6 +456,8 @@ Ns_DStringInit(Ns_DString *dsPtr)
 
 #undef Ns_DStringFree
 
+NS_EXTERN void Ns_DStringFree(Ns_DString *dsPtr) NS_GNUC_DEPRECATED_FOR(Tcl_DStringFree);
+ 
 void
 Ns_DStringFree(Ns_DString *dsPtr)
 {
@@ -461,6 +465,8 @@ Ns_DStringFree(Ns_DString *dsPtr)
 }
 
 #undef Ns_DStringSetLength
+
+NS_EXTERN void Ns_DStringSetLength(Ns_DString *dsPtr, int length) NS_GNUC_DEPRECATED_FOR(Tcl_DStringSetLength);
 
 void
 Ns_DStringSetLength(Ns_DString *dsPtr, int length)
@@ -470,6 +476,8 @@ Ns_DStringSetLength(Ns_DString *dsPtr, int length)
 
 #undef Ns_DStringTrunc
 
+NS_EXTERN void Ns_DStringTrunc(Ns_DString *dsPtr, int length) NS_GNUC_DEPRECATED_FOR(Tcl_DStringTrunc);
+
 void
 Ns_DStringTrunc(Ns_DString *dsPtr, int length)
 {
@@ -477,6 +485,8 @@ Ns_DStringTrunc(Ns_DString *dsPtr, int length)
 }
 
 #undef Ns_DStringNAppend
+
+NS_EXTERN char *Ns_DStringNAppend(Ns_DString *dsPtr, const char *bytes, int length) NS_GNUC_DEPRECATED_FOR(Tcl_DStringAppend);
 
 char *
 Ns_DStringNAppend(Ns_DString *dsPtr, const char *bytes, int length)
@@ -486,6 +496,8 @@ Ns_DStringNAppend(Ns_DString *dsPtr, const char *bytes, int length)
 
 #undef Ns_DStringAppend
 
+NS_EXTERN char *Ns_DStringAppend(Ns_DString *dsPtr, const char *bytes) NS_GNUC_DEPRECATED_FOR(Tcl_DStringAppend);
+
 char *
 Ns_DStringAppend(Ns_DString *dsPtr, const char *bytes)
 {
@@ -493,6 +505,8 @@ Ns_DStringAppend(Ns_DString *dsPtr, const char *bytes)
 }
 
 #undef Ns_DStringAppendElement
+
+NS_EXTERN char *Ns_DStringAppendElement(Ns_DString *dsPtr, const char *bytes) NS_GNUC_DEPRECATED_FOR(Tcl_DStringAppendElement);
 
 char *
 Ns_DStringAppendElement(Ns_DString *dsPtr, const char *bytes)
@@ -502,6 +516,8 @@ Ns_DStringAppendElement(Ns_DString *dsPtr, const char *bytes)
 
 #undef Ns_DStringLength
 
+NS_EXTERN int Ns_DStringLength(const Ns_DString *dsPtr) NS_GNUC_DEPRECATED_FOR(TclstringlDStringLength);
+
 int
 Ns_DStringLength(const Ns_DString *dsPtr)
 {
@@ -509,6 +525,8 @@ Ns_DStringLength(const Ns_DString *dsPtr)
 }
 
 #undef Ns_DStringValue
+
+NS_EXTERN char *Ns_DStringValue(const Ns_DString *dsPtr) NS_GNUC_DEPRECATED_FOR(Tcl_DStringValue);
 
 char *
 Ns_DStringValue(const Ns_DString *dsPtr)

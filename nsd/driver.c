@@ -2695,7 +2695,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     iov[0].iov_len  = strlen(header);
     iov[1].iov_base = (void *)response;
     iov[1].iov_len  = strlen(response);
-    iov[2].iov_base = "\r\n\r\n";
+    iov[2].iov_base = (void *)"\r\n\r\n";
     iov[2].iov_len  = 4u;
     sent = NsDriverSend(sockPtr, iov, 3, 0u);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
