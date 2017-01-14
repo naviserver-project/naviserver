@@ -45,8 +45,8 @@
 typedef struct Tls {
     char        nabuf[NS_IPADDR_SIZE];
     char        asbuf[27];
-    char       *stbuf;
     char        ctbuf[27];
+    char       *stbuf;
     struct tm   gtbuf;
     struct tm   ltbuf;
 #ifndef _WIN32

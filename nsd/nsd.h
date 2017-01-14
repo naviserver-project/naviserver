@@ -246,10 +246,9 @@ typedef struct WriterSock {
     SpoolerState         status;
     int                  err;
     int                  refCount;
-    bool                 keep;
+    unsigned int         flags;
     Tcl_WideInt          nsent;
     size_t               size;
-    unsigned int         flags;
     NsWriterStreamState  doStream;
     int                  fd;
     char                *headerString;
@@ -278,6 +277,7 @@ typedef struct WriterSock {
 
     char              *clientData;
     Ns_Time            startTime;
+    bool               keep;
 
 } WriterSock;
 
@@ -294,11 +294,11 @@ typedef struct SpoolerQueue {
     Ns_Mutex             lock;        /* Lock around spooled list */
     Ns_Cond              cond;        /* Cond for stopped flag */
     Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
-    bool                 stopped;     /* Flag to indicate thread stopped */
-    bool                 shutdown;    /* Flag to indicate shutdown */
     int                  id;          /* Queue id */
     int                  queuesize;   /* Number of active sockets in the queue */
     const char          *threadname;  /* name of the thread working on this queue */
+    bool                 stopped;     /* Flag to indicate thread stopped */
+    bool                 shutdown;    /* Flag to indicate shutdown */
 } SpoolerQueue;
 
 
@@ -308,17 +308,17 @@ typedef struct SpoolerQueue {
 
 typedef struct AdpFrame {
     struct AdpFrame   *prevPtr;
-    unsigned short     line;
-    unsigned short     objc;
     time_t             mtime;
     off_t              size;
     Tcl_Obj          *ident;
     Tcl_Obj          **objv;
     char              *savecwd;
     const char        *file;
-    unsigned int       flags;
     Ns_DString         cwdbuf;
     Tcl_DString       *outputPtr;
+    unsigned int       flags;
+    unsigned short     line;
+    unsigned short     objc;
 } AdpFrame;
 
 
@@ -398,20 +398,20 @@ typedef struct Request {
  */
 
 typedef struct {
-    int threads;                        /* Number of spooler threads to run */
     Ns_Mutex lock;                      /* Lock around spooler queue */
     SpoolerQueue *firstPtr;             /* Spooler thread queue */
     SpoolerQueue *curPtr;               /* Current spooler thread */
+    int threads;                        /* Number of spooler threads to run */
 } DrvSpooler;
 
 typedef struct {
-    int       threads;                  /* Number of writer threads to run */
-    size_t    maxsize;                  /* Max content size to use writer thread */
-    size_t    bufsize;                  /* Size of the output buffer */
+    size_t              maxsize;        /* Max content size to use writer thread */
+    size_t              bufsize;        /* Size of the output buffer */
+    Ns_Mutex            lock;           /* Lock around writer queues */
+    SpoolerQueue       *firstPtr;       /* List of writer threads */
+    SpoolerQueue       *curPtr;         /* Current writer thread */
+    int                 threads;        /* Number of writer threads to run */
     NsWriterStreamState doStream;       /* Activate writer for HTML streaming */
-    Ns_Mutex lock;                      /* Lock around writer queues */
-    SpoolerQueue *firstPtr;             /* List of writer threads */
-    SpoolerQueue *curPtr;               /* Current writer thread */
 } DrvWriter;
 
 typedef struct Driver {
@@ -449,15 +449,15 @@ typedef struct Driver {
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
 
-    unsigned int opts;                  /* NS_DRIVER_* options */
     long closewait;                     /* Graceful close timeout */
     long keepwait;                      /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
     size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
+    Ns_Mutex lock;                      /* Lock to protect lists below. */
     NS_SOCKET sock;                     /* Listening socket */
     NS_POLL_NFDS_TYPE pidx;             /* poll() index */
     const char *bindaddr;               /* Numerical listen address */
-    unsigned short port;                /* Port in location */
+    unsigned int opts;                  /* NS_DRIVER_* options */
     int backlog;                        /* listen() backlog */
     Tcl_WideInt maxinput;               /* Maximum request bytes to read */
     Tcl_WideInt maxupload;              /* Uploads that exceed will go into temp file without parsing */
@@ -468,13 +468,11 @@ typedef struct Driver {
     int queuesize;                      /* Current number of sockets in the queue */
     int maxqueuesize;                   /* Maximum number of sockets in the queue */
     int acceptsize;                     /* Number requests to accept at once */
-    bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
     int driverthreads;                  /* Number of identical driver threads to be created */
     unsigned int loggingFlags;          /* Logging control flags */
 
     unsigned int flags;                 /* Driver state flags. */
     Ns_Thread thread;                   /* Thread id to join on shutdown. */
-    Ns_Mutex lock;                      /* Lock to protect lists below. */
     Ns_Cond cond;                       /* Cond to signal reader threads,
                                          * driver query, startup, and shutdown. */
     NS_SOCKET trigger[2];               /* Wakeup trigger pipe. */
@@ -491,6 +489,8 @@ typedef struct Driver {
         Tcl_WideInt received;           /* Received requests */
         Tcl_WideInt errors;             /* Dropped requests due to errors */
     } stats;
+    unsigned short port;                /* Port in location */
+    bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
 
 } Driver;
 
@@ -506,12 +506,11 @@ typedef struct Sock {
     /*
      * Visible in Ns_Sock.
      */
-
-    struct Driver         *drvPtr;
-    NS_SOCKET              sock;
-    struct NS_SOCKADDR_STORAGE  sa;         /* Actual peer address */
-    void                  *arg;             /* Driver context. */
-
+    NS_SOCKET                  sock;    
+    struct Driver             *drvPtr;
+    void                      *arg;        /* Driver context. */
+    struct NS_SOCKADDR_STORAGE sa;         /* Actual peer address */
+    
     /*
      * Private to Sock.
      */
@@ -520,7 +519,6 @@ typedef struct Sock {
     struct NsServer    *servPtr;
 
     const char         *location;
-    bool                keep;
     NS_POLL_NFDS_TYPE   pidx;            /* poll() index */
     unsigned int        flags;           /* state flags used by driver */
     Ns_Time             timeout;
@@ -528,11 +526,12 @@ typedef struct Sock {
 
     Ns_Time             acceptTime;
 
-    int                 tfd;             /* file descriptor with request contents */
     char               *taddr;           /* mmap-ed temporary file */
     size_t              tsize;           /* size of mmap region */
     char               *tfile;           /* name of regular temporary file */
-
+    int                 tfd;             /* file descriptor with request contents */
+    bool                keep;
+    
     void               *sls[1];          /* Slots for sls storage */
 
 } Sock;
@@ -677,10 +676,10 @@ typedef enum {
 typedef struct ConnThreadArg {
     struct ConnPool      *poolPtr;
     struct Conn          *connPtr;
-    ConnThreadState       state;
     Ns_Cond               cond;        /* Cond for signaling this conn thread */
     Ns_Mutex              lock;
     struct ConnThreadArg *nextPtr;     /* used for the conn thread queue */
+    ConnThreadState       state;
 } ConnThreadArg;
 
 /*
@@ -703,9 +702,9 @@ typedef struct ConnPool {
         int maxconns;
 
         struct {
-            int   num;
             Conn *firstPtr;
             Conn *lastPtr;
+            int   num;            
         } wait;
 
         Ns_Cond  cond;
@@ -725,15 +724,15 @@ typedef struct ConnPool {
      */
 
     struct {
+        Ns_Mutex  lock;
+        long      timeout;
         uintptr_t nextid;
-        int min;
-        int max;
-        int current;
-        int idle;
-        int connsperthread;
-        long timeout;
-        int creating;
-        Ns_Mutex lock;
+        int       min;
+        int       max;
+        int       current;
+        int       idle;
+        int       connsperthread;
+        int       creating;
     } threads;
 
     /*
@@ -782,10 +781,10 @@ typedef struct NsServer {
     struct {
         Ns_Mutex lock;
         uintptr_t nextconnid;
-        bool shutdown;
         ConnPool *firstPtr;
         ConnPool *defaultPtr;
         Ns_Thread joinThread;
+        bool shutdown;
     } pools;
 
     /*
@@ -793,8 +792,8 @@ typedef struct NsServer {
      */
 
     struct {
-        int  errorminsize;
         const char *realm;
+        int  errorminsize;
         Ns_HeaderCaseDisposition hdrcase;
         bool flushcontent;
         bool modsince;
@@ -822,10 +821,10 @@ typedef struct NsServer {
         const char *pagedir;    /* Path to public pages */
         const char *pageroot;   /* Absolute path to public pages */
         const char **dirv;
-        int dirc;
         const char *dirproc;
         const char *diradp;
         Ns_UrlToFileProc *url2file;
+        int dirc;
     } fastpath;
 
     /*
@@ -833,15 +832,15 @@ typedef struct NsServer {
      */
 
     struct {
-        bool enabled;
-        unsigned int opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
-        const char *hostprefix;
-        int hosthashlevel;
-        Ns_ServerRootProc *serverRootProc;
-        void *serverRootArg;
+        unsigned int         opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
+        int                  hosthashlevel;
+        const char          *hostprefix;
+        Ns_ServerRootProc   *serverRootProc;
+        void                *serverRootArg;
         Ns_ConnLocationProc *connLocationProc;
-        void *connLocationArg;
-        Ns_LocationProc *locationProc; /* Depreciated */
+        void                *connLocationArg;
+        Ns_LocationProc     *locationProc; /* Depreciated */
+        bool                 enabled;
     } vhost;
 
     /*
@@ -900,9 +899,9 @@ typedef struct NsServer {
          */
 
         struct {
+            Ns_Mutex      lock;
             Tcl_HashTable mutexTable, csTable, semaTable, condTable, rwTable;
             unsigned int  mutexId, csId, semaId, condId, rwId;
-            Ns_Mutex      lock;
         } synch;
 
     } tcl;
@@ -935,9 +934,9 @@ typedef struct NsServer {
     } adp;
 
     struct {
-        bool enable;    /* on/off */
         int  level;     /* 1-9 */
         int  minsize;   /* min size of response to compress, in bytes */
+        bool enable;    /* on/off */
         bool preinit;   /* initialize the compression stream buffers in advance */
     } compress;
 
@@ -981,10 +980,9 @@ typedef struct NsInterp {
 
     Tcl_Interp *interp;
     NsServer   *servPtr;
-    bool        deleteInterp;  /* Interp should be deleted on next deallocation */
     int         epoch;         /* Run the update script if != to server epoch */
     int         refcnt;        /* Counts recursive allocations of cached interp */
-
+    
     /*
      * The following pointer maintains the first in
      * a FIFO list of callbacks to invoke at interp
@@ -1023,21 +1021,21 @@ typedef struct NsInterp {
      */
 
     struct adp {
+        size_t            bufsize;
         unsigned int      flags;
         AdpResult         exception;
         int               refresh;
-        size_t            bufsize;
         int               errorLevel;
         int               debugLevel;
         int               debugInit;
         const char       *debugFile;
         Ns_Cache         *cache;
-        int               depth;
         const char       *cwd;
         struct AdpFrame  *framePtr;
         Ns_Conn          *conn;
         Tcl_Channel       chan;
         Tcl_DString       output;
+        int               depth;
     } adp;
 
     /*
@@ -1058,6 +1056,8 @@ typedef struct NsInterp {
      * The following table maintains the Tcl HTTP requests.
      */
     Tcl_HashTable httpRequests;
+
+    bool        deleteInterp;  /* Interp should be deleted on next deallocation */
 
 } NsInterp;
 

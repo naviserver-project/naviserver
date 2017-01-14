@@ -349,10 +349,10 @@ typedef struct Ns_Request {
     const char     *method;
     const char     *protocol;
     const char     *host;
-    unsigned short  port;
     const char     *url;
     char           *query;
     int             urlc;
+    unsigned short  port;    
     char          **urlv;
     double          version;
 } Ns_Request;
@@ -462,10 +462,10 @@ typedef struct Ns_Driver {
  */
 
 typedef struct Ns_Sock {
-    Ns_Driver                  *driver;
     NS_SOCKET                   sock;     /* Connection socket */
-    struct NS_SOCKADDR_STORAGE  sa;       /* Actual peer address */
+    Ns_Driver                  *driver;
     void                       *arg;      /* Driver context. */
+    struct NS_SOCKADDR_STORAGE  sa;       /* Actual peer address */
 } Ns_Sock;
 
 /*
@@ -475,9 +475,9 @@ typedef struct Ns_Sock {
  */
 
 typedef struct Ns_FileVec {
-    int        fd;      /* File descriptor of file to send, or < 0 for memory. */
     off_t      offset;  /* Offset into file to begin sending, or void *. */
     size_t     length;  /* Number of bytes to send from offset. */
+    int        fd;      /* File descriptor of file to send, or < 0 for memory. */
 } Ns_FileVec;
 
 /*
