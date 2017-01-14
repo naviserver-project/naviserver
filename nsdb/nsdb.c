@@ -59,12 +59,12 @@ NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *UNUSED(module))
 {
     Ns_ReturnCode status = NS_OK;
-    static bool   once = NS_FALSE;
+    static bool   initialized = NS_FALSE;
 
-    if (!once) {
+    if (!initialized) {
         Ns_LogSqlDebug = Ns_CreateLogSeverity("Debug(sql)");
 	NsDbInitPools();
-	once = NS_TRUE;
+	initialized = NS_TRUE;
     }
     NsDbInitServer(server);
     if (Ns_TclRegisterTrace(server, NsDbAddCmds, server,

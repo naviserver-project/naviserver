@@ -119,10 +119,10 @@ static DWORD tlskey;
 void
 Nsthreads_LibInit(void)
 {
-    static int once = 0;
+    static bool initialized = NS_FALSE;
 
-    if (once == 0) {
-        once = 1;
+    if (!initialized) {
+        initialized = NS_TRUE;
         tlskey = TlsAlloc();
         if (tlskey == 0xFFFFFFFF) {
             return;

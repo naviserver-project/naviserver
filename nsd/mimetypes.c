@@ -1221,10 +1221,10 @@ NsConfigMimeTypes(void)
 {
     const Ns_Set *set;
     size_t        i;
-    static int    once = 0;
+    static bool   initialized = NS_FALSE;
 
-    if (once == 0) {
-        once = 1;
+    if (!initialized) {
+        initialized = NS_TRUE;
 
         /*
          * Initialize hash table of file extensions.

@@ -331,13 +331,13 @@ NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 int
 NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int             result = TCL_OK;
-    static int      once = 0;
+    int         result = TCL_OK;
+    static bool initialized = 0;
 
-    if (once == 0) {
+    if (!initialized) {
         Ns_RegisterProcInfo((Ns_Callback *)ShutdownProc, "ns:tclshutdown",
                             Ns_TclCallbackArgProc);
-        once = 1;
+        initialized = NS_TRUE;
     }
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");

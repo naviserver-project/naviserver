@@ -96,10 +96,10 @@ static size_t defstacksize = 0u;
 void
 NsInitThreads(void)
 {
-    static int once = 0;
+    static bool initialized = NS_FALSE;
 
-    if (once == 0) {
-        once = 1;
+    if (!initialized) {
+        initialized = NS_TRUE;
         NsInitMaster();
         NsInitReentrant();
         Ns_TlsAlloc(&key, CleanupThread);

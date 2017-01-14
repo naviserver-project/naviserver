@@ -59,7 +59,7 @@ static void *ThreadMain(void *arg);
 
 /*
  * The following single TLS key is used to store the nsthread
- * TLS slots. Due to system limitation(s), we stuff all of the 
+ * TLS slots. Due to system limitation(s), we stuff all of the
  * slots into a private array keyed onto this per-thread key,
  * instead of using separate TLS keys for each consumer.
  */
@@ -86,11 +86,12 @@ static pthread_key_t key;
 void
 Nsthreads_LibInit(void)
 {
-    static int once = 0;
+    static bool initialized = NS_FALSE;
 
-    if (once == 0) {
+    if (!initialized) {
         int err;
-        once = 1;
+
+        initialized = NS_TRUE;
 #ifdef __linux
         {
             size_t n;
@@ -126,7 +127,7 @@ Nsthreads_LibInit(void)
  * Side effects:
  *      Storage for the slot array is allocated bypassing the
  *      currently configured memory allocator because at the
- *      time this storage is to be reclaimed (see: CleanupTls) 
+ *      time this storage is to be reclaimed (see: CleanupTls)
  *      the allocator may already be finalized for this thread.
  *
  *----------------------------------------------------------------------
@@ -536,7 +537,7 @@ void
 Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
     NS_NONNULL_ASSERT(threadPtr != NULL);
-    
+
     *threadPtr = (Ns_Thread) pthread_self();
 }
 
@@ -566,7 +567,7 @@ Ns_CondInit(Ns_Cond *cond)
     int             err;
 
     NS_NONNULL_ASSERT(cond != NULL);
-    
+
     condPtr = ns_malloc(sizeof(pthread_cond_t));
     err = pthread_cond_init(condPtr, NULL);
     if (err != 0) {
@@ -634,7 +635,7 @@ Ns_CondSignal(Ns_Cond *cond)
     int             err;
 
     NS_NONNULL_ASSERT(cond != NULL);
-    
+
     err = pthread_cond_signal(GetCond(cond));
     if (err != 0) {
         NsThreadFatal("Ns_CondSignal", "pthread_cond_signal", err);
@@ -728,7 +729,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 
     NS_NONNULL_ASSERT(cond != NULL);
     NS_NONNULL_ASSERT(mutex != NULL);
-    
+
     if (timePtr == NULL) {
         Ns_CondWait(cond, mutex);
         return NS_OK;
@@ -785,7 +786,7 @@ static pthread_cond_t *
 GetCond(Ns_Cond *cond)
 {
     NS_NONNULL_ASSERT(cond != NULL);
-    
+
     if (*cond == NULL) {
         Ns_MasterLock();
         if (*cond == NULL) {
@@ -848,7 +849,7 @@ CleanupTls(void *arg)
     Ns_Thread thread = NULL;
 
     NS_NONNULL_ASSERT(arg != NULL);
-    
+
     /*
      * Restore the current slots during cleanup so handlers can access
      * TLS in other slots.

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * master.c --
  *
  *	Master lock critical section.
@@ -36,7 +36,7 @@
 #include "thread.h"
 
 static Ns_Cs master;
-static int initialized;
+static bool initialized = NS_FALSE;
 
 
 /*
@@ -59,13 +59,13 @@ void
 NsInitMaster(void)
 {
     Ns_CsInit(&master);
-    initialized = 1;
+    initialized = NS_TRUE;
 }
 
 void
 Ns_MasterLock(void)
 {
-    if (initialized != 0) {
+    if (initialized) {
         Ns_CsEnter(&master);
     }
 }
@@ -73,7 +73,7 @@ Ns_MasterLock(void)
 void
 Ns_MasterUnlock(void)
 {
-    if (initialized != 0) {
+    if (initialized) {
         Ns_CsLeave(&master);
     }
 }
