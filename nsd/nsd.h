@@ -1219,6 +1219,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclReturnNoticeObjCmd,
     NsTclReturnObjCmd,
     NsTclReturnRedirectObjCmd,
+    NsTclReturnTooLargeObjCmd,
     NsTclReturnUnauthorizedObjCmd,
     NsTclReturnUnavailableObjCmd,
     NsTclRlimitObjCmd,
