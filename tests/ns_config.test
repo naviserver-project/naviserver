@@ -80,7 +80,7 @@ test ns_config-4.1 {int min} -body {
 
 test ns_config-4.2 {int min} -body {
     ns_config -min 43 ns/testconfig intval
-} -returnCodes error -result {value out of range}
+} -returnCodes error -result {value '42' out of range}
 
 test ns_config-4.3 {int max} -body {
     ns_config -max 43 ns/testconfig intval
@@ -88,7 +88,7 @@ test ns_config-4.3 {int max} -body {
 
 test ns_config-4.4 {int max} -body {
     ns_config -max 41 ns/testconfig intval
-} -returnCodes error -result {value out of range}
+} -returnCodes error -result {value '42' out of range}
 
 test ns_config-4.5 {int min max} -body {
     ns_config -min 41 -max 43 ns/testconfig intval
@@ -104,7 +104,7 @@ test ns_config-4.7 {int max def} -body {
 
 test ns_config-4.8 {int max def oob} -body {
     ns_config -max 41 ns/testconfig missing 42
-} -returnCodes error -result {value out of range}
+} -returnCodes error -result {value '42' out of range}
 
 
 

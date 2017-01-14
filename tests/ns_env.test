@@ -66,7 +66,7 @@ test ns_env-2.4 {exists, no} -body {
 
 test ns_env-2.6 {get non existing variable} -body {
     ns_env get NSTEST_NOEXIST
-} -returnCodes error -result {no such environment variable}
+} -returnCodes error -result {no such environment variable: NSTEST_NOEXIST}
 
 test ns_env-2.7 {get non existing variable without complaint} -body {
     ns_env get -nocomplain NSTEST_NOEXIST
