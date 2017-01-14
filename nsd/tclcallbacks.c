@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -75,7 +75,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbProc, Tcl_Obj *scriptObjPtr
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cbProc != NULL);
     NS_NONNULL_ASSERT(scriptObjPtr != NULL);
-    
+
     cbPtr = ns_malloc(sizeof(Ns_TclCallback) + (size_t)objc * sizeof(char *));
     cbPtr->cbProc = cbProc;
     cbPtr->server = Ns_TclInterpServer(interp);
@@ -152,7 +152,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
     int          status = TCL_ERROR;
 
     NS_NONNULL_ASSERT(cbPtr != NULL);
-    
+
     if (interp == NULL) {
         interp = Ns_TclAllocateInterp(cbPtr->server);
         deallocInterp = 1;
@@ -229,7 +229,7 @@ Ns_TclCallbackProc(void *arg)
  *      Proc info routine to copy Tcl callback script.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      Will copy script to given dstring.
@@ -278,14 +278,14 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         result = TCL_ERROR;
 	
     } else {
-      Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1], 
+      Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1],
 						objc - 2, objv + 2);
       (void) (*atProc)(Ns_TclCallbackProc, cbPtr);
     }
-    
+
     return result;
 }
-    
+
 int
 NsTclAtPreStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
@@ -344,7 +344,7 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         result = TCL_ERROR;
 
     } else {
-        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc, 
+        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)ShutdownProc,
                                                   objv[1], objc - 2, objv + 2);
         (void) Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
     }

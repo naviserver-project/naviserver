@@ -73,7 +73,7 @@ Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (unlikely(servPtr == NULL) || servPtr->request.authProc == NULL) {
     	status = NS_OK;
@@ -107,7 +107,7 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(procPtr != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
 	servPtr->request.authProc = procPtr;
@@ -158,15 +158,15 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
     case NS_ERROR:
         Tcl_SetResult(interp, (char *)"ERROR", TCL_STATIC);
         break;
-        
+
     case NS_FORBIDDEN:
         Tcl_SetResult(interp, (char *)"FORBIDDEN", TCL_STATIC);
         break;
-        
+
     case NS_UNAUTHORIZED:
         Tcl_SetResult(interp, (char *)"UNAUTHORIZED", TCL_STATIC);
         break;
-        
+
     case NS_FILTER_BREAK:  /* fall through */
     case NS_FILTER_RETURN: /* fall through */
     case NS_TIMEOUT:
@@ -200,10 +200,10 @@ Ns_ReturnCode
 Ns_AuthorizeUser(const char *user, const char *passwd)
 {
     Ns_ReturnCode status;
-    
+
     NS_NONNULL_ASSERT(user != NULL);
     NS_NONNULL_ASSERT(passwd != NULL);
-    
+
     if (userProcPtr == NULL) {
 	status = NS_ERROR;
     } else {
@@ -233,7 +233,7 @@ void
 Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 {
     NS_NONNULL_ASSERT(procPtr != NULL);
-    
+
     userProcPtr = procPtr;
 }
 
@@ -260,7 +260,7 @@ NsParseAuth(Conn *connPtr, char *auth)
 
     NS_NONNULL_ASSERT(connPtr != NULL);
     NS_NONNULL_ASSERT(auth != NULL);
-    
+
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NULL);
     }

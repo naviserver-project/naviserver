@@ -100,7 +100,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
         if (
             ((itPtr->adp.flags & ADP_STREAM) != 0u
              || (size_t)bufPtr->length > itPtr->adp.bufsize
-             ) 
+             )
             && NsAdpFlush(itPtr, NS_TRUE) != TCL_OK) {
             status = TCL_ERROR;
         }
@@ -250,7 +250,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
-                                  (int)sizeof(adpCtlOpts[0]), 
+                                  (int)sizeof(adpCtlOpts[0]),
 				  "option", TCL_EXACT, &opt
 				  ) != TCL_OK) {
         return TCL_ERROR;
@@ -366,7 +366,7 @@ static int
 EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 {
     int status;
-    
+
     NS_NONNULL_ASSERT(itPtr != NULL);
 
     if (unlikely(objc < 2)) {
@@ -432,7 +432,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
     if (tcl != 0) {
         itPtr->adp.flags |= ADP_TCLFILE;
     }
-    
+
     /*
      * In cache refresh mode, append include command to the output
      * buffer. It will be compiled into the cached result.
@@ -866,7 +866,7 @@ NsTclAdpInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     if (likely(result == TCL_OK)) {
         result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
     }
-    if (likely(result == TCL_OK)) {    
+    if (likely(result == TCL_OK)) {
         result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(framePtr->mtime));
     }
     if (likely(result == TCL_OK)) {

@@ -59,7 +59,7 @@ static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, in
 
 static void RunCallbacks(const char *list, const Callback *cbPtr)
     NS_GNUC_NONNULL(1);
-    
+
 static void AppendList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -325,13 +325,13 @@ ShutdownThread(void *arg)
 
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DString ds;
-            
+
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
             Ns_Log(Debug, "ns:callback:shutdown: %s", Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
         }
-        
+
         (*proc)(NULL, cbPtr->arg);
     }
 
@@ -367,7 +367,7 @@ NsWaitShutdownProcs(const Ns_Time *toPtr)
      */
     if (shutdownThread != NULL) {
         Ns_ReturnCode     status = NS_OK;
-        
+
         /*
          * Wait for the shutdown thread to finish running shutdown
          * notification and one-shot callbacks.
@@ -419,7 +419,7 @@ void
 NsGetCallbacks(Tcl_DString *dsPtr)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
-        
+
     Ns_MutexLock(&lock);
     AppendList(dsPtr, "prestartup", firstPreStartup);
     AppendList(dsPtr, "startup", firstStartup);
@@ -434,7 +434,7 @@ AppendList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(list != NULL);
-           
+
     while (cbPtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, list);
@@ -523,7 +523,7 @@ static void
 RunCallbacks(const char *list, const Callback *cbPtr)
 {
     NS_NONNULL_ASSERT(list != NULL);
-    
+
     while (cbPtr != NULL) {
 	Ns_Callback *proc;
 	Ns_DString   ds;

@@ -127,7 +127,7 @@ Ns_TclNewTimeObj(const Ns_Time *timePtr)
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     NS_NONNULL_ASSERT(timePtr != NULL);
-    
+
     Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
 
@@ -239,7 +239,7 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(timePtrPtr != NULL);
-    
+
     if (objPtr->typePtr != &timeType) {
         if (unlikely(Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK)) {
             result = TCL_ERROR;
@@ -297,7 +297,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     switch (opt) {
     case TGetIdx:
-        {            
+        {
             Ns_GetTime(&resultTime);
             Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
         }
@@ -324,12 +324,12 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             Ns_Time        t2 = {0, 0};
             Ns_Time       *tPtr;
             Ns_ObjvSpec    largs[] = {
-                {"time",  Ns_ObjvTime, &tPtr,  NULL},                
+                {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {"sec",   Ns_ObjvLong, &t2.sec,  NULL},
                 {"?usec", Ns_ObjvLong, &t2.usec, NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            
+
             if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
                 rc = TCL_ERROR;
             } else {
@@ -344,11 +344,11 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         {
             Ns_Time       *tPtr1, *tPtr2;
             Ns_ObjvSpec    largs[] = {
-                {"time1",  Ns_ObjvTime, &tPtr1,  NULL},                
+                {"time1",  Ns_ObjvTime, &tPtr1,  NULL},
                 {"time2",  Ns_ObjvTime, &tPtr2,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            
+
             if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
                 rc = TCL_ERROR;
             } else {
@@ -365,7 +365,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            
+
             if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
                 rc = TCL_ERROR;
             } else {
@@ -384,7 +384,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            
+
             if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
                 rc = TCL_ERROR;
             } else {
@@ -401,14 +401,14 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
                 {NULL, NULL, NULL, NULL}
             };
-            
+
             if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
                 rc = TCL_ERROR;
             } else {
                 Tcl_DString ds, *dsPtr = &ds;
 
                 Tcl_DStringInit(dsPtr);
-                Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+                Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld",
                                  (int64_t)tPtr->sec, tPtr->usec);
                 Tcl_DStringResult(interp, dsPtr);
             }
@@ -448,7 +448,7 @@ TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     int              rc = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
-    
+
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "");
         rc = TCL_ERROR;
@@ -516,9 +516,9 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         {"timespec", Ns_ObjvTime, &tPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        rc = TCL_ERROR;    
+        rc = TCL_ERROR;
     } else if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
         Ns_TclPrintfResult(interp, "invalid timespec: %s", Tcl_GetString(objv[1]));
         rc = TCL_ERROR;
@@ -571,7 +571,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         } else {
             fmt = "%c";
         }
-        
+
         bufLength = strftime(buf, sizeof(buf), fmt, ns_localtime(&t));
         if (unlikely(bufLength == 0u)) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
@@ -581,7 +581,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, (int)bufLength));
         }
     }
-    
+
     return rc;
 }
 
@@ -661,7 +661,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
     sep = strchr(str, (int)UCHAR(separator));
     if (sep != NULL) {
         int intValue;
-        
+
         /*
          * First get sec from the string.
          */
@@ -672,7 +672,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
             tPtr->sec = 0L;
         } else {
             int result;
-            
+
             /*
              * Overwrite the separator with a null-byte to make the
              * first part null-terminated.
@@ -698,21 +698,21 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
              */
             if (separator == '.') {
                 double dblValue;
-                
+
                 if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
                     rc = TCL_ERROR;
                 } else {
                     tPtr->usec = (long)(dblValue * 1000000.0);
                     rc = TCL_OK;
                 }
-                
+
             } else {
                 /*
                  * The separator must be the ":", the traditional
                  * separator for sec:usec.
                  */
                 assert(separator == ':');
-                
+
                 if (Tcl_GetInt(interp, sep+1, &intValue) != TCL_OK) {
                     rc = TCL_ERROR;
                 } else {
@@ -755,7 +755,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
-    
+
     if (objPtr->typePtr == intTypePtr) {
         /*
          * When the type is "int", usec is 0.
@@ -769,7 +769,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     } else {
         result = Ns_GetTimeFromString(interp, Tcl_GetString(objPtr), &t);
     }
-    
+
     if (result == TCL_OK) {
         Ns_AdjTime(&t);
         SetTimeInternalRep(objPtr, &t);
@@ -788,9 +788,9 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  *      Convert string to time structure.  Check, if the string contains the
  *      classical NaviServer separator for sec:usec and interprete the string
  *      in this format.  If not, check if this has a "." as separator, and use
- *      a floating point notation. 
+ *      a floating point notation.
  *
- * Results: 
+ * Results:
  *      Tcl result code.
  *
  * Side effects:
@@ -808,19 +808,19 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
     NS_NONNULL_ASSERT(tPtr != NULL);
 
     result = GetTimeFromString(interp, str, ':', tPtr);
-    
+
     if (result == TCL_CONTINUE) {
         result = GetTimeFromString(interp, str, '.', tPtr);
     }
     if (result == TCL_CONTINUE) {
         char *ptr = NULL;
         long sec;
-        
+
         /*
          * No separator found, so try to interprete the string as integer
          */
         sec = strtol(str, &ptr, 10);
-        
+
         if (likely(str != ptr)) {
             /*
              * We could parse at least a part of the string as integer.
@@ -832,7 +832,7 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
         } else {
             /*
              * Still no success. If we have an interp, leave error message.
-             */ 
+             */
             if (interp != NULL) {
                 Ns_TclPrintfResult(interp, "Invalid time value '%s'", str);
             }
@@ -865,7 +865,7 @@ SetTimeInternalRep(Tcl_Obj *objPtr, const Ns_Time *timePtr)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
-    
+
     Ns_TclSetTwoPtrValue(objPtr, &timeType,
                          INT2PTR(timePtr->sec), INT2PTR(timePtr->usec));
 }

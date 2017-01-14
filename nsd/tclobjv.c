@@ -941,7 +941,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         args = objv[1]->internalRep.twoPtrValue.ptr2;
         if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
             status = TCL_ERROR;
-        
+
         } else {
             int          doneOpts = 0;
             Ns_ObjvSpec *specPtr = opts;
@@ -969,7 +969,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             }
 
         }
-    }    
+    }
     if (argsObj != objv[2]) {
         Tcl_DecrRefCount(argsObj);
     }
@@ -1063,7 +1063,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         if ((key[0] != '-' && defObjPtr != NULL)
             || (i + 1 == numSpecs && STREQ(key, "args"))) {
             char *rewrittenKey  = ns_malloc((size_t)keyLen + 2u);
-            
+
             *rewrittenKey = '?';
             memcpy(rewrittenKey + 1, key, (size_t)keyLen + 1u);
             specPtr->key = rewrittenKey;

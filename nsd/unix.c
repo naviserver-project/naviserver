@@ -56,7 +56,7 @@ static void Abort(int signal);
 static bool GetPwNam(const char *user, PwElement elem, long *longResult, Ns_DString *dsPtr, char **freePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
-static bool GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr) 
+static bool GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **freePtr)
     NS_GNUC_NONNULL(5);
 
 /*
@@ -569,8 +569,8 @@ GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **fr
     char          *buffer;
     size_t         bufSize = 4096u;
 
-    NS_NONNULL_ASSERT(freePtr != NULL);    
-    
+    NS_NONNULL_ASSERT(freePtr != NULL);
+
     pwPtr = NULL;
     buffer = ns_malloc(bufSize);
     do {

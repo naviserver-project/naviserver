@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * reentrant.c --
  *
  *    Reentrant versions of common system utilities using per-thread
@@ -114,7 +114,7 @@ GetTls(void)
 /*
  *----------------------------------------------------------------------
  *
- * ns_inet_ntoa 
+ * ns_inet_ntoa
  *
  *----------------------------------------------------------------------
  */
@@ -133,7 +133,7 @@ ns_inet_ntoa(struct sockaddr *saPtr)
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
         struct in6_addr addr = (((struct sockaddr_in6 *)saPtr)->sin6_addr);
-# ifndef _WIN32        
+# ifndef _WIN32
         sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                 ntohs(S6_ADDR16(addr)[0]), ntohs(S6_ADDR16(addr)[1]),
                 ntohs(S6_ADDR16(addr)[2]), ntohs(S6_ADDR16(addr)[3]),
@@ -150,7 +150,7 @@ ns_inet_ntoa(struct sockaddr *saPtr)
         addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
         sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
     }
-#else    
+#else
     addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
     sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
 #endif
@@ -161,7 +161,7 @@ ns_inet_ntoa(struct sockaddr *saPtr)
 /*
  *----------------------------------------------------------------------
  *
- * ns_readdir 
+ * ns_readdir
  *
  *----------------------------------------------------------------------
  */
@@ -178,10 +178,10 @@ ns_readdir(DIR * dir)
 {
     struct dirent *ent;
     Tls *tlsPtr = GetTls();
-    
+
     NS_NONNULL_ASSERT(dir != NULL);
-    
-    ent = &tlsPtr->ent; 
+
+    ent = &tlsPtr->ent;
     if (readdir_r(dir, ent, &ent) != 0) {
         ent = NULL;
     }
@@ -193,7 +193,7 @@ ns_readdir(DIR * dir)
 /*
  *----------------------------------------------------------------------
  *
- * ns_localtime 
+ * ns_localtime
  *
  *----------------------------------------------------------------------
  */
@@ -206,7 +206,7 @@ ns_localtime(const time_t *clock)
     int errNum;
 
     NS_NONNULL_ASSERT(clock != NULL);
-    
+
     errNum = localtime_s(&tlsPtr->ltbuf, clock);
     if (errNum != 0) {
         NsThreadFatal("ns_localtime", "localtime_s", errNum);
@@ -219,7 +219,7 @@ ns_localtime(const time_t *clock)
     return localtime(clock);
 #else
     Tls *tlsPtr = GetTls();
-    
+
     NS_NONNULL_ASSERT(clock != NULL);
     return localtime_r(clock, &tlsPtr->ltbuf);
 
@@ -230,7 +230,7 @@ ns_localtime(const time_t *clock)
 /*
  *----------------------------------------------------------------------
  *
- * ns_gmtime 
+ * ns_gmtime
  *
  *----------------------------------------------------------------------
  */
@@ -268,7 +268,7 @@ ns_gmtime(const time_t *clock)
 /*
  *----------------------------------------------------------------------
  *
- * ns_ctime 
+ * ns_ctime
  *
  *----------------------------------------------------------------------
  */
@@ -304,7 +304,7 @@ ns_ctime(const time_t *clock)
 /*
  *----------------------------------------------------------------------
  *
- * ns_asctime 
+ * ns_asctime
  *
  *----------------------------------------------------------------------
  */
@@ -328,9 +328,9 @@ ns_asctime(const struct tm *tmPtr)
 
 #elif defined(_WIN32)
     Tls *tlsPtr = GetTls();
-    
+
     NS_NONNULL_ASSERT(tmPtr != NULL);
-    
+
     (void)strftime(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), "%a %b %e %T %Y", tmPtr);
     return tlsPtr->asbuf;
 
@@ -347,7 +347,7 @@ ns_asctime(const struct tm *tmPtr)
 /*
  *----------------------------------------------------------------------
  *
- * ns_strtok 
+ * ns_strtok
  *
  *----------------------------------------------------------------------
  */
@@ -365,7 +365,7 @@ ns_strtok(char *str, const char *sep)
     return strtok_s(str, sep, &tlsPtr->stbuf);
 
 #elif defined(_WIN32)
-    
+
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(sep != NULL);
     return strtok(str, sep);
@@ -373,7 +373,7 @@ ns_strtok(char *str, const char *sep)
 #else
 
     Tls *tlsPtr = GetTls();
-    
+
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(sep != NULL);
     return strtok_r(str, sep, &tlsPtr->stbuf);

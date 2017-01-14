@@ -177,7 +177,7 @@ typedef enum {
  */
 
 typedef enum {
-    NS_TCL_TRACE_NONE         = 0x00u, /* for initializing variable */ 
+    NS_TCL_TRACE_NONE         = 0x00u, /* for initializing variable */
     NS_TCL_TRACE_CREATE       = 0x01u, /* New interp created */
     NS_TCL_TRACE_DELETE       = 0x02u, /* Interp destroyed */
     NS_TCL_TRACE_ALLOCATE     = 0x04u, /* Interp allocated, possibly from thread cache */
@@ -352,7 +352,7 @@ typedef struct Ns_Request {
     const char     *url;
     char           *query;
     int             urlc;
-    unsigned short  port;    
+    unsigned short  port;
     char          **urlv;
     double          version;
 } Ns_Request;
@@ -445,7 +445,7 @@ typedef struct Ns_Driver {
     void       *arg;           /* Driver callback data. */
     const char *server;        /* Virtual server name. */
     const char *type;          /* Type of driver, e.g. "nssock" */
-    const char *moduleName;    /* Module name, e.g. "nssock1" */    
+    const char *moduleName;    /* Module name, e.g. "nssock1" */
     const char *threadName;    /* Thread name, e.g. "nssock1:1" */
     const char *location;      /* Location, e.g, "http://foo:9090" */
     const char *address;       /* Address in location, e.g. "foo" */
@@ -711,7 +711,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
 
 NS_EXTERN Ns_Entry *
 Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
-                        const Ns_Time *timeoutPtr) 
+                        const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *
@@ -739,7 +739,7 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 
 NS_EXTERN void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        const Ns_Time *timeoutPtr, int cost) 
+                        const Ns_Time *timeoutPtr, int cost)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -844,7 +844,7 @@ Ns_CompressFree(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs, 
+Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 		    Ns_DString *dsPtr, int level, bool flush)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
@@ -853,19 +853,19 @@ Ns_CompressGzip(const char *buf, int len, Tcl_DString *dsPtr, int level)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_InflateInit(Ns_CompressStream *cStream) 
+Ns_InflateInit(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *cStream, const char *buffer, size_t inSize)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize, size_t *nrBytes)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
-Ns_InflateEnd(Ns_CompressStream *cStream) 
+Ns_InflateEnd(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -893,7 +893,7 @@ typedef struct {
     bool               sendSpoolMode;    /* flag, whether a file is to be transmitted via bodyFileFd */
     int                bodyFileFd;       /* fd of a file which is sent as body */
     NS_TLS_SSL_CTX    *ctx;
-    NS_TLS_SSL        *ssl;    
+    NS_TLS_SSL        *ssl;
     Tcl_DString        ds;
 } Ns_HttpTask;
 
@@ -1065,7 +1065,7 @@ NS_EXTERN unsigned short
 Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
-Ns_ConnLocation(Ns_Conn *conn) 
+Ns_ConnLocation(Ns_Conn *conn)
     NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
 
 NS_EXTERN char *
@@ -1114,7 +1114,7 @@ NS_EXTERN Ns_Time *
 Ns_ConnFilterTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN void
-Ns_ConnTimeSpans(const Ns_Conn *conn, Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
+Ns_ConnTimeSpans(const Ns_Conn *conn, Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr,
 		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
@@ -1471,7 +1471,7 @@ Ns_IndexInit(Ns_Index *indexPtr, size_t inc, int (*CmpEls) (const void *left, co
 
 NS_EXTERN void
 Ns_IndexTrunc(Ns_Index*indexPtr) NS_GNUC_NONNULL(1);
-    
+
 NS_EXTERN void
 Ns_IndexDestroy(Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
@@ -1821,11 +1821,11 @@ Ns_LogTime2(char *timeBuf, bool gmt)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) 
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
 
 NS_EXTERN void
-Ns_SetNsLogProc(Ns_LogProc *procPtr)  
+Ns_SetNsLogProc(Ns_LogProc *procPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
 
 NS_EXTERN void
@@ -2016,7 +2016,7 @@ Ns_GetThreadServer(void);
 
 NS_EXTERN void
 Ns_RegisterRequest(const char *server, const char *method, const char *url,
-                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, 
+                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
 		   int unsigned flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4);
@@ -2233,12 +2233,12 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, const char *html, ssize_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data, 
+Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
 		      ssize_t len, const char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data, 
+Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
 		  ssize_t len, const char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
@@ -2689,7 +2689,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_BindSock(const struct sockaddr *saPtr) 
+Ns_BindSock(const struct sockaddr *saPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_SockBind);
 
 NS_EXTERN NS_SOCKET
@@ -3026,11 +3026,11 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 
 NS_EXTERN void
 Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
-    NS_GNUC_NONNULL(1); 
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize) 
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2); 
+Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
@@ -3065,7 +3065,7 @@ Ns_TclLogError(Tcl_Interp *interp)
 
 NS_EXTERN const char *
 Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
-    NS_GNUC_NONNULL(1) 
+    NS_GNUC_NONNULL(1)
     NS_GNUC_DEPRECATED_FOR(Ns_TclLoggErrorInfo);
 
 NS_EXTERN void
@@ -3203,22 +3203,22 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodi
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding) 
+Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
     NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding) 
+Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset) 
+Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset)
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset) 
+Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *charset)
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

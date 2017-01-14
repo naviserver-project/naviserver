@@ -1182,8 +1182,10 @@ truncate(const char *path, off_t length)
     return 0;
 }
 #else
-/* avoid empty translation unit */
-   typedef void empty; 
+/*
+ *avoid empty translation unit
+ */
+   typedef void empty;
 #endif
 
 /*

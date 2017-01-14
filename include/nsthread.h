@@ -59,7 +59,7 @@
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 /* Use gcc branch prediction hint to minimize cost of e.g. DTrace
- * ENABLED checks. 
+ * ENABLED checks.
  */
 # define unlikely(x) (__builtin_expect((x), 0))
 # define likely(x) (__builtin_expect((x), 1))
@@ -69,9 +69,9 @@
 #endif
 
 /***************************************************************
- * Main Windows defines, including 
+ * Main Windows defines, including
  *
- *  - mingw 
+ *  - mingw
  *  - Visual Studio
  *  - WIN32
  *  - WIN64
@@ -90,11 +90,11 @@
 #  define WIN32_LEAN_AND_MEAN
 # endif
 
-/* 
+/*
  * 0x0400  Windows NT
  * 0x0500  Windows XP
  * 0x0600  Windows Vista
- * 0x0601  Windows 7 
+ * 0x0601  Windows 7
  * 0x0602  Windows 8
  * 0x0603  Windows 8.1
  */
@@ -313,13 +313,13 @@ struct dirent {
 };
 
 typedef struct DIR_ *DIR;
-/* 
- * End of Windows section 
+/*
+ * End of Windows section
  */
 # else
 /***************************************************************
  *
- * Not windows 
+ * Not windows
  *
  * mostly Unix style OSes, including Mac OS X
  *
@@ -349,7 +349,7 @@ typedef struct DIR_ *DIR;
 #define NS_INVALID_PID        (-1)
 #define NS_INVALID_FD         (-1)
 
-/* 
+/*
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
  * the time being, allthough the use of SOCKET should be deprecated.
  */
@@ -499,7 +499,7 @@ typedef struct DIR_ *DIR;
 #include <assert.h>
 #include <sys/stat.h>
 
-#if !defined(NS_POLL_NFDS_TYPE) 
+#if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int
 #endif
 
@@ -551,7 +551,7 @@ typedef struct DIR_ *DIR;
 # endif
 #endif
 
-/* 
+/*
  * Starting with Visual Studio 2013, Microsoft provides C99 library support.
  */
 #if (!defined(NS_HAVE_C99)) && defined(_MSC_VER) && (_MSC_VER >= 1800)
@@ -562,24 +562,24 @@ typedef struct DIR_ *DIR;
  * Boolean type "bool" and constants
  */
 #ifdef NS_HAVE_C99
-   /* 
-    * C99 
+   /*
+    * C99
     */
 # include <stdbool.h>
 # define NS_TRUE                    true
 # define NS_FALSE                   false
 #else
-   /* 
-    * Not C99 
+   /*
+    * Not C99
     */
 # if defined(__cplusplus)
-   /* 
+   /*
     * C++ is similar to C99, but no include necessary
     */
 #  define NS_TRUE                    true
 #  define NS_FALSE                   false
 # else
-   /* 
+   /*
     * If everything fails, use int type and int values for bool
     */
 typedef int bool;
@@ -620,7 +620,7 @@ typedef int bool;
 # define PATH_MAX 1024
 #endif
 
-/* 
+/*
  * Some very old gcc versions do not have LLONG_* defined, instead of
  * messing with configure here it is a simple define for such cases
  */
@@ -668,7 +668,7 @@ typedef int bool;
 #endif
 
 /*
- * Define a few macros from inttypes.h which are 
+ * Define a few macros from inttypes.h which are
  * missing on some platforms.
  */
 #if !defined(PRId64)
@@ -809,7 +809,7 @@ typedef int bool;
 # endif
 #endif
 
-/* 
+/*
  * Starting with Visual Studio 2013, Microsoft provides C99 library support.
  */
 #if (!defined(NS_HAVE_C99)) && defined(_MSC_VER) && (_MSC_VER >= 1800)
@@ -820,24 +820,24 @@ typedef int bool;
  * Boolean type "bool" and constants
  */
 #ifdef NS_HAVE_C99
-   /* 
-    * C99 
+   /*
+    * C99
     */
 # include <stdbool.h>
 # define NS_TRUE                    true
 # define NS_FALSE                   false
 #else
-   /* 
-    * Not C99 
+   /*
+    * Not C99
     */
 # if defined(__cplusplus)
-   /* 
+   /*
     * C++ is similar to C99, but no include necessary
     */
 #  define NS_TRUE                    true
 #  define NS_FALSE                   false
 # else
-   /* 
+   /*
     * If everything fails, use int type and int values for bool
     */
 typedef int bool;
@@ -846,7 +846,7 @@ typedef int bool;
 # endif
 #endif
 
-   
+
 /*
  * NaviServer return codes. Similar to Tcl return codes, but not compatible,
  * since negative numbers denote different kinds of non-success.
@@ -858,16 +858,16 @@ typedef enum {
     NS_UNAUTHORIZED =     (-3), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
     NS_FORBIDDEN =        (-4), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
     NS_FILTER_BREAK =     (-5), /* filter result, returned by e.g. Ns_FilterProc */
-    NS_FILTER_RETURN =    (-6), /* filter result, returned by e.g. Ns_FilterProc */    
+    NS_FILTER_RETURN =    (-6), /* filter result, returned by e.g. Ns_FilterProc */
 } Ns_ReturnCode;
 
 /*
- * Constants for nsthread 
+ * Constants for nsthread
  */
 #define NS_THREAD_DETACHED          0x01u
 #define NS_THREAD_JOINED            0x02u
 #define NS_THREAD_EXITED            0x04u
-    
+
 #define NS_THREAD_NAMESIZE          64
 #define NS_THREAD_MAXTLS            100
 
@@ -1035,7 +1035,7 @@ NS_EXTERN void Ns_GetTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)  NS_GNUC_NONNULL(1);
-NS_EXTERN long Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)  
+NS_EXTERN long Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 /*
  * tls.c:

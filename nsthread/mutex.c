@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * mutex.c --
  *
  *	Mutex locks with metering.
@@ -85,7 +85,7 @@ static Mutex *firstMutexPtr;
 
 /*
  *----------------------------------------------------------------------
- 
+
  * Ns_MutexInit --
  *
  *	Mutex initialization, often called the first time a mutex
@@ -110,7 +110,7 @@ Ns_MutexInit(Ns_Mutex *mutex)
 
     //fprintf(stderr, "=== Ns_MutexInit *mutex = %p current id %ld\n", (void*)*mutex, nextid);
     //assert(*mutex == NULL);
-    
+
     mutexPtr = ns_calloc(1u, sizeof(Mutex));
     mutexPtr->lock = NsLockAlloc();
     Ns_MasterLock();
@@ -121,17 +121,17 @@ Ns_MutexInit(Ns_Mutex *mutex)
     Ns_MasterUnlock();
     //fprintf(stderr, "=== created mutex %ld name %s\n", mutexPtr->id, mutexPtr->name);
 #if 0
-    /* 
-     *   221 tclenv.c:113 
+    /*
+     *   221 tclenv.c:113
      *   CreateSynchObject: 209, 210, 212
      */
     // 141 145 206 209 230
-    // 210 211 213 
+    // 210 211 213
     if (0 && mutexPtr->id == 13) {
         char *p = NULL;
         *p = 1;
     }
-#endif    
+#endif
     *mutex = (Ns_Mutex) mutexPtr;
 }
 
@@ -264,7 +264,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
 #endif
 
     NS_NONNULL_ASSERT(mutex != NULL);
-    
+
     mutexPtr = GETMUTEX(mutex);
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
@@ -283,7 +283,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
                     (long)NS_THREAD_ID, mutexPtr->name, (int64_t)diff.sec, diff.usec);
 	}
 
-        /* 
+        /*
          * Keep max waiting time since server start. It might be a
 	 * good idea to either provide a call to reset the max-time,
 	 * or to report wait times above a certain threshold (as an
@@ -291,7 +291,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
          */
         if (Ns_DiffTime(&mutexPtr->max_waiting_time, &diff, NULL) < 0) {
             mutexPtr->max_waiting_time = diff;
-            /*fprintf(stderr, "Mutex %s max time %" PRIu64 ".%06ld\n", 
+            /*fprintf(stderr, "Mutex %s max time %" PRIu64 ".%06ld\n",
 	      mutexPtr->name, (int64_t)diff.sec, diff.usec);*/
         }
 #endif
@@ -403,8 +403,8 @@ Ns_MutexList(Tcl_DString *dsPtr)
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
         snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu %" PRIu64 ".%06ld %" PRIu64 ".%06ld %" PRIu64 ".%06ld", 
-                 mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy, 
+                 " %" PRIuPTR " %lu %lu %" PRIu64 ".%06ld %" PRIu64 ".%06ld %" PRIu64 ".%06ld",
+                 mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy,
                  (int64_t)mutexPtr->total_waiting_time.sec, mutexPtr->total_waiting_time.usec,
                  (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec,
                  (int64_t)mutexPtr->total_lock_time.sec, mutexPtr->total_lock_time.usec
@@ -441,7 +441,7 @@ NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
     NS_NONNULL_ASSERT(mutex != NULL);
     NS_NONNULL_ASSERT(prefix != NULL);
     NS_NONNULL_ASSERT(nextPtr != NULL);
-    
+
     Ns_MasterLock();
     id = *nextPtr;
     *nextPtr = id + 1u;
@@ -474,7 +474,7 @@ NsGetLock(Ns_Mutex *mutex)
     Mutex *mutexPtr;
 
     NS_NONNULL_ASSERT(mutex != NULL);
-    
+
     mutexPtr = GETMUTEX(mutex);
     return mutexPtr->lock;
 }
@@ -500,7 +500,7 @@ static Mutex *
 GetMutex(Ns_Mutex *mutex)
 {
     NS_NONNULL_ASSERT(mutex != NULL);
-    
+
     Ns_MasterLock();
     if (*mutex == NULL) {
 	Ns_MutexInit(mutex);
@@ -528,9 +528,9 @@ const char *
 Ns_MutexGetName(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
-    
+
     NS_NONNULL_ASSERT(mutex != NULL);
-    
+
     mutexPtr = GETMUTEX(mutex);
     return mutexPtr->name;
 }

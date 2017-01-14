@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -45,16 +45,16 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     NS_NONNULL_ASSERT(pw != NULL);
     NS_NONNULL_ASSERT(salt != NULL);
     NS_NONNULL_ASSERT(iobuf != NULL);
-    
+
     data.initialized = 0;
     enc = crypt_r(pw, salt, &data);
-    
+
     if (enc == NULL) {
 	*iobuf = '\0';
     } else {
 	strcpy(iobuf, enc);
     }
-    
+
     return iobuf;
 }
 
@@ -72,7 +72,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     NS_NONNULL_ASSERT(pw != NULL);
     NS_NONNULL_ASSERT(salt != NULL);
     NS_NONNULL_ASSERT(iobuf != NULL);
-    
+
     Ns_MutexLock(&lock);
     enc = crypt(pw, salt);
     Ns_MutexUnlock(&lock);
@@ -308,7 +308,7 @@ static const unsigned int S[8][64] = {
     { 13u,  2u,  8u,  4u,  6u, 15u, 11u,  1u, 10u,  9u,  3u, 14u,  5u,  0u, 12u,  7u,
        1u, 15u, 13u,  8u, 10u,  3u,  7u,  4u, 12u,  5u,  6u, 11u,  0u, 14u,  9u,  2u,
        7u, 11u,  4u,  1u,  9u, 12u, 14u,  2u,  0u,  6u, 10u, 13u, 15u,  3u,  5u,  8u,
-       2u,  1u, 14u,  7u,  4u, 10u,  8u, 13u, 15u, 12u,  9u,  0u,  3u,  5u,  6u, 11u}, 
+       2u,  1u, 14u,  7u,  4u, 10u,  8u, 13u, 15u, 12u,  9u,  0u,  3u,  5u,  6u, 11u},
 };
 
 /*
