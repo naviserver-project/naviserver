@@ -101,9 +101,17 @@ SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
     }
 }
 
+
+
 /*
  * Include pre-generated DH parameters
  */
+#ifndef HEADER_DH_H
+#include <openssl/dh.h>
+#endif
+static DH *get_dh512();
+static DH *get_dh1024();
+
 #include "dhparams.h"
 
 /*

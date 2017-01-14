@@ -1,7 +1,4 @@
-#ifndef HEADER_DH_H
-#include <openssl/dh.h>
-#endif
-DH *get_dh512()
+static DH *get_dh512()
 	{
 	static unsigned char dh512_p[]={
 		0xC3,0x88,0x01,0x3A,0xF1,0xF3,0xCB,0x8C,0x66,0xDF,0x6F,0x8D,
@@ -23,10 +20,7 @@ DH *get_dh512()
 		{ DH_free(dh); return(NULL); }
 	return(dh);
 	}
-#ifndef HEADER_DH_H
-#include <openssl/dh.h>
-#endif
-DH *get_dh1024()
+static DH *get_dh1024()
 	{
 	static unsigned char dh1024_p[]={
 		0xE8,0x0D,0xF9,0x9E,0x76,0xD2,0xA9,0xCE,0x6C,0x62,0xE5,0x99,
