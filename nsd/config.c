@@ -730,7 +730,7 @@ NsConfigRead(const char *file)
  */
 
 void
-NsConfigEval(const char *config, int argc, char *const *argv, int optind)
+NsConfigEval(const char *config, int argc, char *const *argv, int optionIndex)
 {
     Tcl_Interp   *interp;
     const Ns_Set *set;
@@ -750,7 +750,7 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optind)
         (void) Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
     (void) Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
-    (void) Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optind), TCL_GLOBAL_ONLY);
+    (void) Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optionIndex), TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: config eval)");
         Ns_Fatal("config error");

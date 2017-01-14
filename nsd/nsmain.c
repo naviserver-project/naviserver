@@ -97,7 +97,7 @@ int
 Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 {
     Args           cmd;
-    int            sig, optind;
+    int            sig, optionIndex;
     const char    *config = NULL;
     Ns_Time        timeout;
     Ns_Set        *set;
@@ -161,11 +161,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * Parse the command line arguments.
      */
 
-    for (optind = 1; optind < argc; optind++) {
-        if (argv[optind][0] != '-') {
+    for (optionIndex = 1; optionIndex < argc; optionIndex++) {
+        if (argv[optionIndex][0] != '-') {
             break;
         }
-        switch (argv[optind][1]) {
+        switch (argv[optionIndex][1]) {
         case 'h':
             UsageError(NULL);
             break;
@@ -189,14 +189,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                            " options may be specified");
 #endif
             }
-            mode = argv[optind][1];
+            mode = argv[optionIndex][1];
             break;
         case 's':
             if (server != NULL) {
                 UsageError("multiple -s <server> options");
             }
-            if (optind + 1 < argc) {
-                server = argv[++optind];
+            if (optionIndex + 1 < argc) {
+                server = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -s option");
             }
@@ -205,8 +205,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             if (nsconf.config != NULL) {
                 UsageError("multiple -t <file> options");
             }
-            if (optind + 1 < argc) {
-                nsconf.config = argv[++optind];
+            if (optionIndex + 1 < argc) {
+                nsconf.config = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -t option");
             }
@@ -217,22 +217,22 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             break;
 #ifndef _WIN32
         case 'b':
-            if (optind + 1 < argc) {
-            	bindargs = argv[++optind];
+            if (optionIndex + 1 < argc) {
+            	bindargs = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -b option");
             }
             break;
         case 'B':
-            if (optind + 1 < argc) {
-            	bindfile = argv[++optind];
+            if (optionIndex + 1 < argc) {
+            	bindfile = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -B option");
             }
             break;
         case 'r':
-            if (optind + 1 < argc) {
-            	root = argv[++optind];
+            if (optionIndex + 1 < argc) {
+            	root = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -r option");
             }
@@ -241,22 +241,22 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             debug = 1;
             break;
         case 'g':
-            if (optind + 1 < argc) {
-                garg = argv[++optind];
+            if (optionIndex + 1 < argc) {
+                garg = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -g option");
             }
             break;
         case 'u':
-            if (optind + 1 < argc) {
-                uarg = argv[++optind];
+            if (optionIndex + 1 < argc) {
+                uarg = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -u option");
             }
             break;
 #endif
         default:
-            UsageError("invalid option: -%c", argv[optind][1]);
+            UsageError("invalid option: -%c", argv[optionIndex][1]);
             break;
         }
     }
@@ -271,10 +271,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (mode == 'c') {
 	int i;
-        cmd.argv = ns_calloc(((size_t)argc - (size_t)optind) + 2u, sizeof(char *));
+        cmd.argv = ns_calloc(((size_t)argc - (size_t)optionIndex) + 2u, sizeof(char *));
         cmd.argc = 0;
         cmd.argv[cmd.argc++] = argv[0];
-        for (i = optind; i < argc; i++) {
+        for (i = optionIndex; i < argc; i++) {
             cmd.argv[cmd.argc++] = argv[i];
         }
         Ns_ThreadCreate(CmdThread, &cmd, 0, NULL);
@@ -445,7 +445,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 	 * Evaluate the config file.
 	 */
 	
-	NsConfigEval(config, argc, argv, optind);
+	NsConfigEval(config, argc, argv, optionIndex);
 	ns_free((char *)config);
     }
 
