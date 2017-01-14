@@ -92,7 +92,7 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
 
     itPtr = NsGetInterpData(interp);
     if (unlikely(itPtr == NULL)) {
-        Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "ns_set not supported");
         result = TCL_ERROR;
     } else {
         Tcl_SetObjResult(interp, EnterSet(itPtr, set, type));
@@ -284,8 +284,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
                  hPtr != NULL;
                  hPtr = Tcl_NextHashEntry(&search)
                  ) {
-                const char *key = Tcl_GetHashKey(tablePtr, hPtr);
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+                const char *listKey = Tcl_GetHashKey(tablePtr, hPtr);
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(listKey, -1));
             }
             Tcl_SetObjResult(interp, listObj);
         }
@@ -802,7 +802,7 @@ LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **s
 
     itPtr = NsGetInterpData(interp);
     if (unlikely(itPtr == NULL)) {
-        Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "ns_set not supported");
         result = TCL_ERROR;
     } else {
         result = LookupSet(itPtr, id, deleteEntry, setPtr);
