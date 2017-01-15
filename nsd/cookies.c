@@ -656,7 +656,7 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     const Ns_Conn  *conn = GetConn(interp);
     char           *name, *domain = NULL, *path = NULL;
-    unsigned int    flags = 0;
+    unsigned int    flags = 0u;
     int             secure = 0, replace = 0;
 
     Ns_ObjvSpec     opts[] = {

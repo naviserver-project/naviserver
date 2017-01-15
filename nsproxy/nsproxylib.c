@@ -1438,7 +1438,7 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
 {
     Res          hdr;
     const char  *einfo = NULL, *ecode = NULL, *result = NULL;
-    unsigned int clen = 0, ilen = 0, rlen = 0;
+    unsigned int clen = 0u, ilen = 0u, rlen = 0u;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
@@ -1450,8 +1450,8 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
             ecode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
             einfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
         }
-        clen = (ecode != NULL) ? ((unsigned int)strlen(ecode) + 1) : 0;
-        ilen = (einfo != NULL) ? ((unsigned int)strlen(einfo) + 1) : 0;
+        clen = (ecode != NULL) ? ((unsigned int)strlen(ecode) + 1) : 0u;
+        ilen = (einfo != NULL) ? ((unsigned int)strlen(einfo) + 1) : 0u;
         result = Tcl_GetStringResult(interp);
         rlen = (unsigned int)strlen(result);
     }

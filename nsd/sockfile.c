@@ -399,11 +399,11 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
     
     /* fprintf(stderr, "### Ns_SockCork sock %d %d\n", sockPtr->sock, cork); */
 
-    if (cork && (sockPtr->flags & NS_CONN_SOCK_CORKED)) {
+    if (cork && (sockPtr->flags & NS_CONN_SOCK_CORKED) != 0u) {
 	/*
 	 * Don't cork an already corked connection.
 	 */
-    } else if (!cork && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0) {
+    } else if (!cork && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0u) {
 	/*
 	 * Don't uncork an already uncorked connection.
 	 */
