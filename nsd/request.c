@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -52,7 +52,7 @@ static void FreeUrl(Ns_Request *request)
 static const char *GetQvalue(const char *str, int *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static const char *GetEncodingFormat(const char *encodingString, 
+static const char *GetEncodingFormat(const char *encodingString,
                                      const char *encodingFormat, double *qValue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -62,15 +62,15 @@ static const char *GetEncodingFormat(const char *encodingString,
  *
  * Ns_ResetRequest --
  *
- *	Free the Ns_Request members. This function is usually called on
- *	embedded Ns_Request structures, such as these part of the Request
- *	structure. 
+ *    Free the Ns_Request members. This function is usually called on
+ *    embedded Ns_Request structures, such as these part of the Request
+ *    structure.
  *
  * Results:
- *	None. 
+ *    None.
  *
  * Side effects:
- *	None. 
+ *    None.
  *
  *----------------------------------------------------------------------
  */
@@ -79,7 +79,7 @@ void
 Ns_ResetRequest(Ns_Request *request)
 {
     NS_NONNULL_ASSERT(request != NULL);
-    
+
     if (request->line != NULL) {
         Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
     }
@@ -89,7 +89,7 @@ Ns_ResetRequest(Ns_Request *request)
     ns_free((char *)request->host);
     ns_free(request->query);
     FreeUrl(request);
-        
+
     /*
      * There is no need to clear the full structuce, since
      * Ns_ParseRequest() clears all fields. However, we have to protect
@@ -103,13 +103,13 @@ Ns_ResetRequest(Ns_Request *request)
  *
  * Ns_FreeRequest --
  *
- *	Free an Ns_Request structure and all its members. 
+ *    Free an Ns_Request structure and all its members.
  *
  * Results:
- *	None. 
+ *    None.
  *
  * Side effects:
- *	None. 
+ *    None.
  *
  *----------------------------------------------------------------------
  */
@@ -118,7 +118,7 @@ void
 Ns_FreeRequest(Ns_Request *request)
 {
     if (request != NULL) {
-        
+
         if (request->line != NULL) {
             Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
         }
@@ -139,13 +139,13 @@ Ns_FreeRequest(Ns_Request *request)
  *
  * Ns_ParseRequests --
  *
- *	Parse a request from a browser into an Ns_Request structure. 
+ *    Parse a request from a browser into an Ns_Request structure.
  *
  * Results:
- *	NS_OK on success, NS_ERROR on error
+ *    NS_OK on success, NS_ERROR on error
  *
  * Side effects:
- *	The request if not NULL is always zero-ed before filled with values
+ *    The request if not NULL is always zero-ed before filled with values
  *
  *----------------------------------------------------------------------
  */
@@ -168,14 +168,14 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      */
     assert(strrchr(line, INTCHAR('\n')) == NULL);
 #endif
-    
+
     memset(request, 0, sizeof(Ns_Request));
     Ns_DStringInit(&ds);
 
     /*
      * Make a copy of the line to chop up. Make sure it isn't blank.
      */
-    
+
     Ns_DStringAppend(&ds, line);
     l = Ns_StrTrim(ds.string);
     if (*l == '\0') {
@@ -186,7 +186,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      * Save the trimmed line for logging purposes.
      */
     request->line = ns_strdup(l);
-    
+
     Ns_Log(Ns_LogRequestDebug, "begin %s", request->line);
 
     /*
@@ -194,7 +194,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      *
      * Collect non-space characters as first token.
      */
-    
+
     url = l;
     while (*url != '\0' && CHARTYPE(space, *url) == 0) {
         ++url;
@@ -208,7 +208,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      */
     *url++ = '\0';
     request->method = ns_strdup(l);
-    
+
     /*
      * Skip spaces.
      */
@@ -299,7 +299,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
                     *p++ = '\0';
                 }
                 url = p;
-                
+
                 /*
                  * Check for port
                  */
@@ -317,7 +317,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     Ns_DStringFree(&ds);
     return NS_OK;
 
-done:
+ done:
 
     Ns_Log(Warning, "Ns_ParseRequest <%s> -> ERROR", line);
     Ns_DStringFree(&ds);
@@ -330,13 +330,13 @@ done:
  *
  * Ns_SkipUrl --
  *
- *	Return a pointer n elements into the request's url. 
+ *    Return a pointer n elements into the request's url.
  *
  * Results:
- *	The url beginning n elements in. 
+ *    The url beginning n elements in.
  *
  * Side effects:
- *	None. 
+ *    None.
  *
  *----------------------------------------------------------------------
  */
@@ -350,7 +350,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
 
     if (n <= request->urlc) {
         size_t skip = 0u;
-        
+
         while (--n >= 0) {
             skip += strlen(request->urlv[n]) + 1u;
         }
@@ -365,13 +365,13 @@ Ns_SkipUrl(const Ns_Request *request, int n)
  *
  * Ns_SetRequestUrl --
  *
- *	Set the url in a request structure. 
+ *    Set the url in a request structure.
  *
  * Results:
- *	None. 
+ *    None.
  *
  * Side effects:
- *	Makes a copy of url. 
+ *    Makes a copy of url.
  *
  *----------------------------------------------------------------------
  */
@@ -397,13 +397,13 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
  *
  * FreeUrl --
  *
- *	Free the url in a request. 
+ *    Free the url in a request.
  *
  * Results:
- *	None. 
+ *    None.
  *
  * Side effects:
- *	None. 
+ *    None.
  *
  *----------------------------------------------------------------------
  */
@@ -414,7 +414,7 @@ FreeUrl(Ns_Request *request)
     NS_NONNULL_ASSERT(request != NULL);
 
     if (request->url != NULL) {
-	ns_free((char *)request->url);
+        ns_free((char *)request->url);
         request->url = NULL;
     }
     if (request->urlv != NULL) {
@@ -430,13 +430,13 @@ FreeUrl(Ns_Request *request)
  *
  * SetUrl --
  *
- *	Break up an URL and put it in the request. 
+ *    Break up an URL and put it in the request.
  *
  * Results:
- *	None. 
+ *    None.
  *
  * Side effects:
- *	Memory allocated for members.
+ *    Memory allocated for members.
  *
  *----------------------------------------------------------------------
  */
@@ -456,7 +456,7 @@ SetUrl(Ns_Request *request, char *url)
     /*
      * Look for a query string at the end of the URL.
      */
-    
+
     p = strchr(url, INTCHAR('?'));
     if (p != NULL) {
         *p++ = '\0';
@@ -488,7 +488,7 @@ SetUrl(Ns_Request *request, char *url)
         ++url;
     }
     if (*url != '\0' && url[strlen(url) - 1u] == '/') {
-      Tcl_DStringAppend(&ds2, "/", 1);
+        Tcl_DStringAppend(&ds2, "/", 1);
     }
     request->url = ns_strdup(ds2.string);
     Tcl_DStringFree(&ds2);
@@ -506,10 +506,10 @@ SetUrl(Ns_Request *request, char *url)
         if (*p == '/') {
             *p++ = '\0';
             if (*p == '\0') {
-		/*
-		 * Stop on a trailing slash.
-		 */
-		
+                /*
+                 * Stop on a trailing slash.
+                 */
+
                 break;
             }
             Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
@@ -530,14 +530,14 @@ SetUrl(Ns_Request *request, char *url)
  *
  * Ns_ParseHeader --
  *
- *	Consume a header line, handling header continuation, placing
- *	results in given set.
+ *    Consume a header line, handling header continuation, placing
+ *    results in given set.
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *    NS_OK/NS_ERROR
  *
  * Side effects:
- *	None
+ *    None
  *
  *----------------------------------------------------------------------
  */
@@ -547,7 +547,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 {
     Ns_ReturnCode   status = NS_OK;
 
-    /* 
+    /*
      * Header lines are first checked if they continue a previous
      * header indicated by any preceeding white space.  Otherwise,
      * they must be in well form key: value form.
@@ -558,11 +558,11 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 
     if (CHARTYPE(space, *line) != 0) {
         if (Ns_SetSize(set) == 0u) {
-            /* 
-             * Continue before first header. 
+            /*
+             * Continue before first header.
              */
             status = NS_ERROR;
-            
+
         } else {
             size_t index = Ns_SetLast(set);
             while (CHARTYPE(space, *line) != 0) {
@@ -571,7 +571,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
             if (*line != '\0') {
                 Ns_DString ds;
                 char      *value = Ns_SetValue(set, index);
-                
+
                 Ns_DStringInit(&ds);
                 Ns_DStringVarAppend(&ds, value, " ", line, (char *)0);
                 Ns_SetPutValue(set, index, ds.string);
@@ -580,15 +580,15 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
         }
     } else {
         char *sep;
-       
+
         sep = strchr(line, INTCHAR(':'));
         if (sep == NULL) {
-            /* 
-             * Malformed header. 
+            /*
+             * Malformed header.
              */
-	    status = NS_ERROR;	
-            
-	} else {
+            status = NS_ERROR;
+
+        } else {
             const char *value;
             char       *key;
             size_t      index;
@@ -617,7 +617,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
             *sep = ':';
         }
     }
-    
+
     return status;
 }
 
@@ -674,22 +674,22 @@ GetQvalue(const char *str, int *lenPtr) {
     str++;
     if (*str == '.') {
         /*
-	 * Looks like a floating point number; RFC2612 allows up to
-	 * three digits after the comma.
-	 */
-      str ++;
-      if (CHARTYPE(digit, *str) != 0) {
-	  str++;
-	  if (CHARTYPE(digit, *str) != 0) {
-	      str++;
-	      if (CHARTYPE(digit, *str) != 0) {
-		  str++;
-	      }
-	  }
-      }
+         * Looks like a floating point number; RFC2612 allows up to
+         * three digits after the comma.
+         */
+        str ++;
+        if (CHARTYPE(digit, *str) != 0) {
+            str++;
+            if (CHARTYPE(digit, *str) != 0) {
+                str++;
+                if (CHARTYPE(digit, *str) != 0) {
+                    str++;
+                }
+            }
+        }
     }
-    /* 
-     * str should point to a valid terminator of the number 
+    /*
+     * str should point to a valid terminator of the number
      */
     if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
         *lenPtr = (int)(str - resultString);
@@ -729,14 +729,14 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
     encodingStr = strstr(encodingString, encodingFormat);
 
     if (encodingStr != NULL) {
-	int         len = 0;
-	const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+        int         len = 0;
+        const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
 
-	if (qValueString != NULL) {
-	    *qValue = strtod(qValueString, NULL);
-	} else {
-	    *qValue = 1.0;
-	}
+        if (qValueString != NULL) {
+            *qValue = strtod(qValueString, NULL);
+        } else {
+            *qValue = 1.0;
+        }
 
     } else {
         *qValue = -1.0;
@@ -763,7 +763,7 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
  *----------------------------------------------------------------------
  */
 bool
-NsParseAcceptEncoding(double version, const char *hdr) 
+NsParseAcceptEncoding(double version, const char *hdr)
 {
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
     bool   gzipAccept;
@@ -771,60 +771,60 @@ NsParseAcceptEncoding(double version, const char *hdr)
     NS_NONNULL_ASSERT(hdr != NULL);
 
     if (GetEncodingFormat(hdr, "gzip", &gzipQvalue) != NULL) {
-	/* 
-         * we have gzip specified in accept-encoding 
+        /*
+         * we have gzip specified in accept-encoding
          */
-	if (gzipQvalue > 0.999) {
-	    /* 
-             * gzip qvalue 1, use it, nothing else can be higher 
+        if (gzipQvalue > 0.999) {
+            /*
+             * gzip qvalue 1, use it, nothing else can be higher
              */
-	    gzipAccept = NS_TRUE;
-	} else if (gzipQvalue < 0.0009) {
-	    /* 
-             * gzip qvalue 0, forbid gzip 
+            gzipAccept = NS_TRUE;
+        } else if (gzipQvalue < 0.0009) {
+            /*
+             * gzip qvalue 0, forbid gzip
              */
-	    gzipAccept = NS_FALSE;
-	} else {
-	    /* 
-             * a middle gzip qvalue, compare it with identity and default 
+            gzipAccept = NS_FALSE;
+        } else {
+            /*
+             * a middle gzip qvalue, compare it with identity and default
              */
-	    if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
-		/* 
-                 * gzip qvalue larger than identity 
+            if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
+                /*
+                 * gzip qvalue larger than identity
                  */
-		gzipAccept = (gzipQvalue >= identityQvalue);
-	    } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
-		/* 
-                 * gzip qvalue larger than default 
+                gzipAccept = (gzipQvalue >= identityQvalue);
+            } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
+                /*
+                 * gzip qvalue larger than default
                  */
-		gzipAccept = (gzipQvalue >= starQvalue);
-	    } else {
-		/* 
-                 * just the low qvalue was specified 
+                gzipAccept = (gzipQvalue >= starQvalue);
+            } else {
+                /*
+                 * just the low qvalue was specified
                  */
-		gzipAccept = NS_TRUE;
-	    }
-	}
+                gzipAccept = NS_TRUE;
+            }
+        }
     } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
-	/* 
-         * star matches everything, so as well gzip 
+        /*
+         * star matches everything, so as well gzip
          */
-	if (starQvalue < 0.0009) {
-	    /* 
-             * star qvalue forbids gzip 
+        if (starQvalue < 0.0009) {
+            /*
+             * star qvalue forbids gzip
              */
-	    gzipAccept = NS_FALSE;
-	} else if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
-	    /* 
-             * star qvalue allows gzip in HTTP/1.1 
+            gzipAccept = NS_FALSE;
+        } else if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
+            /*
+             * star qvalue allows gzip in HTTP/1.1
              */
-	    gzipAccept = (starQvalue >= identityQvalue) && (version >= 1.1);
-	} else {
-	    /* 
-             * no identity specified, assume gzip is matched with * in HTTP/1.1 
+            gzipAccept = (starQvalue >= identityQvalue) && (version >= 1.1);
+        } else {
+            /*
+             * no identity specified, assume gzip is matched with * in HTTP/1.1
              */
-	    gzipAccept = (version >= 1.1);
-	}
+            gzipAccept = (version >= 1.1);
+        }
     } else {
         gzipAccept = NS_FALSE;
     }
