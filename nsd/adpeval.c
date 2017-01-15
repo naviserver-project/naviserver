@@ -63,10 +63,10 @@ typedef struct Page {
     unsigned int   flags;    /* Flags used on last compile, e.g., SAFE. */
     int            refcnt;   /* Refcnt of current interps using page. */
     int            evals;    /* Count of page evaluations. */
-    int            locked;   /* Page locked for cache update. */
     int            cacheGen; /* Cache generation id. */
     AdpCache      *cachePtr; /* Cached output. */
     AdpCode        code;     /* ADP code blocks. */
+    bool           locked;   /* Page locked for cache update. */
 } Page;
 
 /*
@@ -598,7 +598,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
              * First, wait for an initial cache if already executing.
              */
 
-            while ((cachePtr = pagePtr->cachePtr) == NULL && pagePtr->locked == 1) {
+            while ((cachePtr = pagePtr->cachePtr) == NULL && pagePtr->locked) {
                 Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
             }
 
@@ -606,10 +606,10 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
              * Next, if a cache exists and isn't locked, check expiration.
              */
 
-            if (cachePtr != NULL && pagePtr->locked == 0) {
+            if (cachePtr != NULL && ! pagePtr->locked) {
                 Ns_GetTime(&now);
                 if (Ns_DiffTime(&cachePtr->expires, &now, NULL) < 0) {
-                    pagePtr->locked = 1;
+                    pagePtr->locked = NS_TRUE;
                     cachePtr = NULL;
                 }
             }
@@ -661,7 +661,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                     ++pagePtr->cacheGen;
                     pagePtr->cachePtr = cachePtr;
                 }
-                pagePtr->locked = 0;
+                pagePtr->locked = NS_FALSE;
                 Ns_CondBroadcast(&servPtr->adp.pagecond);
             }
             cacheGen = pagePtr->cacheGen;
