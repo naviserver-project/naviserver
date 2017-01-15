@@ -943,7 +943,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             status = TCL_ERROR;
 
         } else {
-            int          doneOpts = 0;
+            bool         doneOpts = NS_FALSE;
             Ns_ObjvSpec *specPtr = opts;
 
             /*
@@ -954,10 +954,10 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
             for (;;) {
                 if (specPtr->key == NULL) {
-                    if (doneOpts != 0) {
+                    if (doneOpts) {
                         break;
                     }
-                    doneOpts = 1;
+                    doneOpts = NS_TRUE;
                     specPtr++;
                     continue;
                 }
@@ -1112,16 +1112,16 @@ static void
 FreeSpecs(Ns_ObjvSpec *specPtr)
 {
     Ns_ObjvSpec  *saveSpec = specPtr;
-    int           doneOpts = 0;
+    bool          doneOpts = NS_FALSE;
 
     NS_NONNULL_ASSERT(specPtr != NULL);
 
     for (;;) {
         if (specPtr->key == NULL) {
-            if (doneOpts != 0) {
+            if (doneOpts) {
                 break;
             }
-            doneOpts = 1;
+            doneOpts = NS_TRUE;
             specPtr++;
             continue;
         }
@@ -1186,14 +1186,14 @@ UpdateStringOfSpec(Tcl_Obj *objPtr)
     const Ns_ObjvSpec *specPtr;
     Tcl_Obj           *defaultObj;
     Tcl_DString        ds;
-    int                doneOpts = 0;
+    bool               doneOpts = NS_FALSE;
 
     Tcl_DStringInit(&ds);
     Tcl_DStringStartSublist(&ds);
     specPtr = (Ns_ObjvSpec *) objPtr->internalRep.twoPtrValue.ptr1;
     for (;;) {
         if (specPtr->key == NULL) {
-            if (doneOpts != 0) {
+            if (doneOpts) {
                 break;
             }
             doneOpts = 1;

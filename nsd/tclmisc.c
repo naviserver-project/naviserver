@@ -120,12 +120,12 @@ NsTclRunOnceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         const NsInterp       *itPtr = clientData;
         int                   isNew;
         static Tcl_HashTable  runTable;
-        static int            initialized = (int)NS_FALSE;
+        static bool           initialized = NS_FALSE;
 
         Ns_MasterLock();
-        if (initialized == 0) {
+        if (!initialized) {
             Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
-            initialized = (int)NS_TRUE;
+            initialized = NS_TRUE;
         }
         (void) Tcl_CreateHashEntry((global != (int)NS_FALSE) ? &runTable :
                                    &itPtr->servPtr->tcl.runTable, script, &isNew);

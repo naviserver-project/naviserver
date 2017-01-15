@@ -148,14 +148,14 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
                    Ns_DString *result, ...)
 {
     Ns_DString   ds;
-    int          deallocInterp = 0;
+    bool         deallocInterp = NS_FALSE;
     int          status = TCL_ERROR;
 
     NS_NONNULL_ASSERT(cbPtr != NULL);
 
     if (interp == NULL) {
         interp = Ns_TclAllocateInterp(cbPtr->server);
-        deallocInterp = 1;
+        deallocInterp = NS_TRUE;
     }
     if (interp != NULL) {
         const char *arg;
@@ -180,14 +180,14 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
             Ns_DStringAppend(&ds, "\n    while executing callback\n");
             Ns_GetProcInfo(&ds, (Ns_Callback *)cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
-            if (deallocInterp != 0) {
+            if (deallocInterp) {
 		(void) Ns_TclLogErrorInfo(interp, NULL);
             }
         } else if (result != NULL) {
             Ns_DStringAppend(result, Tcl_GetStringResult(interp));
         }
         Ns_DStringFree(&ds);
-        if (deallocInterp != 0) {
+        if (deallocInterp) {
             Ns_TclDeAllocateInterp(interp);
         }
     }
@@ -332,7 +332,7 @@ int
 NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK;
-    static bool initialized = 0;
+    static bool initialized = NS_FALSE;
 
     if (!initialized) {
         Ns_RegisterProcInfo((Ns_Callback *)ShutdownProc, "ns:tclshutdown",

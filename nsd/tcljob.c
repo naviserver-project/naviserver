@@ -543,7 +543,8 @@ JobDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 static int
 JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int         result = TCL_OK, create = 0, head = 0, detached = 0;
+    int         result = TCL_OK, head = 0, detached = 0;
+    bool        create = NS_FALSE;
     char       *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
     char        buf[100];
     Ns_ObjvSpec lopts[] = {
@@ -646,10 +647,10 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
          */
 
         if (tp.nidle == 0 && tp.nthreads < tp.maxThreads) {
-            create = 1;
+            create = NS_TRUE;
             ++tp.nthreads;
         } else {
-            create = 0;
+            create = NS_FALSE;
         }
 
         Tcl_DStringAppend(&jobPtr->id, jobIdString, -1);
@@ -661,7 +662,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             (void)ReleaseQueue(queue, NS_TRUE);
         }
         Ns_MutexUnlock(&tp.queuelock);
-        if (create != 0) {
+        if (create) {
             Ns_ThreadCreate(JobThread, NULL, 0, NULL);
         }
         if (result == TCL_OK) {
@@ -1637,11 +1638,11 @@ GetNextJob(void)
 {
     Queue         *queue;
     Job           *prevPtr, *jobPtr;
-    int            done = 0;
+    bool           done = NS_FALSE;
 
     jobPtr = prevPtr = tp.firstPtr;
 
-    while (done == 0 && jobPtr != NULL) {
+    while (!done && jobPtr != NULL) {
 
         if (LookupQueue(NULL, jobPtr->queueId, &queue, NS_TRUE) != TCL_OK) {
             Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
@@ -1659,7 +1660,7 @@ GetNextJob(void)
                 prevPtr->nextPtr = jobPtr->nextPtr;
             }
 
-            done = 1;
+            done = NS_TRUE;
 
         } else {
 
