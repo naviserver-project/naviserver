@@ -46,7 +46,7 @@ static Ns_Conn *GetConn(Tcl_Interp *interp)
 static int SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static int DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
+static bool DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
@@ -305,10 +305,10 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
 {
-    int success = 0;
+    int success = NS_FALSE;
 
     NS_NONNULL_ASSERT(hdrs != NULL);
     NS_NONNULL_ASSERT(setName != NULL);
@@ -318,7 +318,7 @@ DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
 	int idx = SearchFirstCookie(NULL, hdrs, setName, name);
 	if (idx != -1) {
 	    Ns_SetDelete(hdrs, idx);
-	    success = 1;
+	    success = NS_TRUE;
 	} else {
 	    break;
 	}
