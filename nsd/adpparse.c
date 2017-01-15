@@ -308,13 +308,14 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
 static void
 AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 {
-    int                  level, scriptStreamDone;
+    int                  level;
     unsigned int         scriptFlags;
     const Tcl_HashEntry *hPtr;
     const Tag           *tagPtr = NULL;
     const char          *script = "", *ae = "";
     char                *s, *e, *n, *a, *text, null = '\0', *as = &null;
     Tcl_DString          tag;
+    bool                 scriptStreamDone;
     enum {
         TagNext,
         TagScript,
@@ -340,7 +341,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
      * Parse ADP one tag at a time.
      */
     text = adp;
-    scriptStreamDone = 0;
+    scriptStreamDone = NS_FALSE;
     scriptFlags = 0u;
     level = 0;
     state = TagNext;
@@ -453,12 +454,12 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
                      */
 
                     if ((flags & ADP_SAFE) == 0u) {
-                        if (((scriptFlags & SERV_STREAM) != 0u) && (scriptStreamDone == 0)) {
+                        if (((scriptFlags & SERV_STREAM) != 0u) && (! scriptStreamDone)) {
 			    static char *const buffer = (char *)"ns_adp_ctl stream on";
 			    char *end = buffer + strlen(buffer);
 
                             AppendBlock(&parse, buffer, end, 's', flags);
-                            scriptStreamDone = 1;
+                            scriptStreamDone = NS_TRUE;
                         }
                         AppendBlock(&parse, script, s, 's', flags);
                     }

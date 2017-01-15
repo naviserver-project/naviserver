@@ -920,7 +920,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         pagePtr->flags = flags;
         pagePtr->refcnt = 0;
         pagePtr->evals = 0;
-        pagePtr->locked = 0;
+        pagePtr->locked = NS_FALSE;
         pagePtr->cacheGen = 0;
         pagePtr->cachePtr = NULL;
         pagePtr->mtime = stPtr->st_mtime;
