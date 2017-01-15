@@ -1636,7 +1636,7 @@ static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
     char buf[33];
     char bufcoded[1 + (4 * 48) / 2];
 
-    if (privatekey == 0) {
+    if (privatekey == NULL) {
         return NS_ERROR;
     }
 
@@ -1695,7 +1695,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
     unsigned char sig[16];
     time_t now, nonce_time;
 
-    if (privatekey == 0) {
+    if (privatekey == NULL) {
         return NS_ERROR;
     }
 
