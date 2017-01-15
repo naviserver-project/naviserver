@@ -50,9 +50,9 @@ static unsigned long Roulette(void);
  */
 
 static volatile unsigned long counter = 0u;  /* Counter in counting thread */
-static volatile int fRun = 0; 	/* Flag for counting thread outer loop. */
-static volatile int fCount= 0; 	/* Flag for counting thread inner loop. */
-static Ns_Sema      sema = NULL;	/* Semaphore that controls counting threads. */
+static volatile bool fRun = NS_FALSE; 	     /* Flag for counting thread outer loop. */
+static volatile bool fCount = NS_FALSE;      /* Flag for counting thread inner loop. */
+static Ns_Sema       sema = NULL;	     /* Semaphore that controls counting threads. */
 
 /*
  * Critical section around initial and subsequent seed generation.
@@ -201,12 +201,12 @@ GenSeeds(unsigned long seeds[], int nseeds)
 	nseeds == 1 ? "" : "s");
     Ns_CsEnter(&lock);
     Ns_SemaInit(&sema, 0);
-    fRun = 1;
+    fRun = NS_TRUE;
     Ns_ThreadCreate(CounterThread, NULL, 0, &thr);
     while (nseeds-- > 0) {
     	seeds[nseeds] = TrueRand();
     }
-    fRun = 0;
+    fRun = NS_FALSE;
     Ns_SemaPost(&sema, 1);
     Ns_ThreadJoin(&thr, NULL);
     Ns_SemaDestroy(&sema);
@@ -236,10 +236,10 @@ GenSeeds(unsigned long seeds[], int nseeds)
 static void
 CounterThread(void *UNUSED(arg))
 {
-    while (fRun != 0) {
+    while (fRun) {
         Ns_SemaWait(&sema);
-        if (fRun != 0) {
-	    while (fCount != 0) {
+        if (fRun) {
+	    while (fCount) {
 		counter++;
             }
         }
@@ -288,12 +288,12 @@ Roulette(void)
     struct timeval tv;
 
     counter = 0u;
-    fCount = 1;
+    fCount = NS_TRUE;
     Ns_SemaPost(&sema, 1);
     tv.tv_sec =  0;
     tv.tv_usec = MSEC_TO_COUNT * 1000;
     select(0, NULL, NULL, NULL, &tv);
-    fCount = 0;
+    fCount = NS_FALSE;
     counter ^= (counter >> 3) ^ (counter >> 6) ^ (ocount);
     counter &= 0x7u;
     ocount = counter;
