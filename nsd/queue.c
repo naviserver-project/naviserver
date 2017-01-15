@@ -1487,8 +1487,8 @@ NsConnThread(void *arg)
     Conn          *connPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
     uintptr_t      id;
-    bool           shutdown;
-    int            cpt, ncons, current, fromQueue;
+    bool           shutdown, fromQueue;
+    int            cpt, ncons, current;
     Ns_ReturnCode  status = NS_OK;
     long           timeout;
     const char    *exitMsg;
@@ -1592,9 +1592,9 @@ NsConnThread(void *arg)
 	    Ns_MutexUnlock(wqueueLockPtr);
 	  
 	    argPtr->connPtr = connPtr;
-	    fromQueue = 1;
+	    fromQueue = NS_TRUE;
 	} else {
-	    fromQueue = 0;
+	    fromQueue = NS_FALSE;
 	}
       
 	if (argPtr->connPtr == NULL) {
@@ -1783,7 +1783,7 @@ NsConnThread(void *arg)
 		       " netrun %" PRIu64 ".%06ld"
 		       " total %" PRIu64 ".%06ld",
 		       ThreadNr(poolPtr, argPtr),
-		       waiting, poolPtr->threads.current, idle, ncons, fromQueue,
+		       waiting, poolPtr->threads.current, idle, ncons, (int)fromQueue,
 		       (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
 		       (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
 		       (int64_t) acceptTime.sec, acceptTime.usec,

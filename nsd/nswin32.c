@@ -59,10 +59,11 @@ static Ns_Thread tickThread;
 static SERVICE_STATUS_HANDLE hStatus = NULL;
 static SERVICE_STATUS curStatus;
 static Ns_Tls tls;
-static int serviceRunning = 0;
+static bool serviceRunning = NS_FALSE;
+static bool serviceFailed = NS_FALSE;
 static int tick = 0;
 static unsigned int sigpending = 0u;
-static int serviceFailed = 0;
+
 
 #define SysErrMsg() (NsWin32ErrMsg(GetLastError()))
 
@@ -265,7 +266,7 @@ NsConnectService(void)
 
     Ns_Log(Notice, "nswin32: connecting to service control manager");
 
-    serviceRunning = 1;
+    serviceRunning = NS_TRUE;
 
     table[0].lpServiceName = PACKAGE_NAME;
     table[0].lpServiceProc = ServiceMain;
@@ -444,7 +445,7 @@ NsHandleSignals(void)
      * initiate an orderly shutdown on Ctrl-C.
      */
 
-    if (serviceRunning == 0) {
+    if (!serviceRunning) {
         SetConsoleCtrlHandler(ConsoleHandler, TRUE);
     } else {
         StopTicker();
@@ -465,7 +466,7 @@ NsHandleSignals(void)
             * to restart the service.
             */
 
-            serviceFailed = 1;
+            serviceFailed = NS_TRUE;
         }
         Ns_MutexUnlock(&lock);
         if ((sig & (unsigned int)(1u << NS_SIGHUP)) != 0u) {
@@ -478,7 +479,7 @@ NsHandleSignals(void)
      * to keep updating status until shutdown is complete.
      */
 
-    if (serviceRunning != 0) {
+    if (serviceRunning) {
         StartTicker((DWORD)SERVICE_STOP_PENDING);
     }
 
@@ -1118,12 +1119,12 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     (void) Ns_Main((int)argc, argv, NULL);
     StopTicker();
     ReportStatus((DWORD)SERVICE_STOP_PENDING, NO_ERROR, 100u);
-    if (serviceFailed == 0) {
+    if (!serviceFailed) {
         Ns_Log(Notice, "nswin32: noitifying SCM about exit");
         ReportStatus((DWORD)SERVICE_STOPPED, 0u, 0u);
     }
     Ns_Log(Notice, "nswin32: service exiting");
-    if (serviceFailed != 0) {
+    if (serviceFailed) {
         exit(-1);
     }
 }
