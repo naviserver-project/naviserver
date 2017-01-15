@@ -70,8 +70,8 @@ static void SysLog(int priority, const char *fmt, ...);
 
 static pid_t watchedPid   = 0; /* PID of the server to watch. */
 
-static int   watchdogExit = 0; /* Watchdog process should exit. */
-static int   processDied  = 0; /* 1 if watched process died unexpectedly. */
+static bool  watchdogExit = NS_FALSE; /* Watchdog process should exit. */
+static bool  processDied  = NS_FALSE; /* NS_TRUE if watched process died unexpectedly. */
 
 
 
@@ -105,7 +105,7 @@ NsForkWatchedProcess(void)
 
     SysLog(LOG_NOTICE, "watchdog: started.");
 
-    while (watchdogExit == 0) {
+    while (!watchdogExit) {
         time_t startTime;
 
         if (restartWait != 0) {
@@ -230,7 +230,7 @@ WaitForServer(void)
         pid = waitpid(watchedPid, &status, 0);
     } while (pid == NS_INVALID_PID && errno == EINTR && watchedPid);
 
-    if (processDied != 0) {
+    if (processDied) {
         msg = "terminated";
         ret = -1; /* Alarm handler found no server present? */
     } else if (WIFEXITED(status)) {
@@ -273,7 +273,7 @@ WatchdogSIGTERMHandler(int sig)
     if (watchedPid != 0) {
         kill((pid_t) watchedPid, sig);
     }
-    watchdogExit = 1;
+    watchdogExit = NS_TRUE;
 }
 
 
@@ -299,7 +299,7 @@ WatchdogSIGALRMHandler(int UNUSED(sig))
 {
     if (watchedPid && kill((pid_t) watchedPid, 0) && errno == ESRCH) {
         SysLog(LOG_WARNING, "watchdog: server %d terminated?", watchedPid);
-        processDied = 1;
+        processDied = NS_TRUE;
     }
 }
 

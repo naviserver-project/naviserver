@@ -1196,7 +1196,7 @@ UpdateStringOfSpec(Tcl_Obj *objPtr)
             if (doneOpts) {
                 break;
             }
-            doneOpts = 1;
+            doneOpts = NS_TRUE;
             specPtr++;
             continue;
         }

@@ -450,13 +450,13 @@ ns_sock_set_blocking(NS_SOCKET sock, bool blocking)
 {
     int result;
 #if defined USE_FIONBIO
-    int state = (blocking == 0);
+    int state = (!blocking);
 
     result = ioctl(sock, FIONBIO, &state);
 #else
     int flags = fcntl(sock, F_GETFL, 0);
 
-    if (blocking != 0) {
+    if (blocking) {
 	result = fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
     } else {
 	result = fcntl(sock, F_SETFL, flags|O_NONBLOCK);
