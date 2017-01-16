@@ -160,7 +160,7 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *time
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    const Ns_Time *timeoutPtr, unsigned int flags)
+                    const Ns_Time *timeoutPtr, unsigned int UNUSED(flags))
 {
 
     ssize_t       sent, towrite, nwrote;
