@@ -1589,7 +1589,7 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
             while (entryPtr->key != NULL) {
                 if ((entryPtr+1)->key == NULL) {
                     Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
-                                           " or ", entryPtr->key, NULL);
+                                           " or ", entryPtr->key, (char *)0);
                 } else if (entryPtr->key != NULL) {
                     Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0);
                     count++;
