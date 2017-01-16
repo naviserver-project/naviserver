@@ -800,7 +800,7 @@ ServerMapObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * The result should be always a proper list, so the potential
              * error should not occur.
              */
-            resultObj = Tcl_NewListObj(oc, NULL);
+            resultObj = Tcl_NewListObj(0, NULL);
                 
             for (i = 0; i < oc; i++) {
                 Tcl_Obj *elemObj = ov[i];

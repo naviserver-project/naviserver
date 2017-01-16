@@ -414,7 +414,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
             result = TCL_ERROR;
 
         } else {
-            Tcl_Obj *listObj = Tcl_NewListObj(2, NULL);
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
             
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->cExceptionCode, -1));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->dsExceptionMsg.string, -1));

@@ -1775,7 +1775,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     }
 
     if (result == TCL_OK) {
-        Tcl_Obj *listPtr = Tcl_NewListObj(2, NULL);
+        Tcl_Obj *listPtr = Tcl_NewListObj(0, NULL);
         
         Tcl_ListObjAppendElement(interp, listPtr, GetLimitObj(rlimit.rlim_cur));
         Tcl_ListObjAppendElement(interp, listPtr, GetLimitObj(rlimit.rlim_max));

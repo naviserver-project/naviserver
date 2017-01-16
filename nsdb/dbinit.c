@@ -711,7 +711,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             }
             Ns_MutexUnlock(&poolPtr->lock);
 
-            valuesObj = Tcl_NewListObj(1, NULL);
+            valuesObj = Tcl_NewListObj(0, NULL);
             result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("statements", 10));
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->statementCount));

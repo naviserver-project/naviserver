@@ -427,9 +427,9 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
                 filePtr = ns_malloc(sizeof(FormFile));
                 Tcl_SetHashValue(hPtr, filePtr);
                 
-                filePtr->hdrObj = Tcl_NewListObj(1, NULL);
-                filePtr->offObj = Tcl_NewListObj(1, NULL);
-                filePtr->sizeObj = Tcl_NewListObj(1, NULL);
+                filePtr->hdrObj = Tcl_NewListObj(0, NULL);
+                filePtr->offObj = Tcl_NewListObj(0, NULL);
+                filePtr->sizeObj = Tcl_NewListObj(0, NULL);
                 
                 Tcl_IncrRefCount(filePtr->hdrObj);
                 Tcl_IncrRefCount(filePtr->offObj);

@@ -133,19 +133,21 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
                 int *doStreamPtr, size_t *maxBufferPtr)
 {
     NsInterp *itPtr;
+    int       status = TCL_OK;
 
     if (unlikely(GetInterp(interp, &itPtr) != TCL_OK)
         || unlikely(GetOutput(itPtr, dsPtrPtr) != TCL_OK)) {
-        return TCL_ERROR;
-    }
-    if (doStreamPtr != NULL) {
-        *doStreamPtr = (itPtr->adp.flags & ADP_STREAM) != 0u ? 1 : 0;
-    }
-    if (maxBufferPtr != NULL) {
-        *maxBufferPtr = itPtr->adp.bufsize;
+        status = TCL_ERROR;
+    } else {
+        if (doStreamPtr != NULL) {
+            *doStreamPtr = (itPtr->adp.flags & ADP_STREAM) != 0u ? 1 : 0;
+        }
+        if (maxBufferPtr != NULL) {
+            *maxBufferPtr = itPtr->adp.bufsize;
+        }
     }
 
-    return TCL_OK;
+    return status;
 }
 
 
@@ -169,7 +171,8 @@ int
 NsTclAdpIdentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     AdpFrame *framePtr = NULL;
-
+    int       result = TCL_OK;
+    
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?ident?");
         return TCL_ERROR;
