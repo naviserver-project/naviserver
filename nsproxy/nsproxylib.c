@@ -286,7 +286,7 @@ static void   Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr) NS_GNUC_N
 
 static void   UpdateIov(struct iovec *iov, size_t n) NS_GNUC_NONNULL(1);
 static void   SetOpt(const char *str, char const **optPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void   ReaperThread(void *ignored);
+static void   ReaperThread(void *UNUSED(arg));
 static void   CloseSlave(Slave *slavePtr, int ms) NS_GNUC_NONNULL(1);
 static void   ReapProxies(void);
 static long   GetTimeDiff(Ns_Time *timePtr) NS_GNUC_NONNULL(1);
