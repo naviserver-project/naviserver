@@ -97,12 +97,12 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     assert(servPtr != NULL);
 
     fPtr = ns_malloc(sizeof(Filter));
-    Ns_MutexLock(&servPtr->filter.lock);
     fPtr->proc = proc;
     fPtr->method = ns_strdup(method);
     fPtr->url = ns_strdup(url);
     fPtr->when = when;
     fPtr->arg = arg;
+    Ns_MutexLock(&servPtr->filter.lock);
     if (first) {
         fPtr->nextPtr = servPtr->filter.firstFilterPtr;
         servPtr->filter.firstFilterPtr = fPtr;
