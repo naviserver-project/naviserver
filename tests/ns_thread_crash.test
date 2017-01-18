@@ -1,0 +1,36 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+if {![catch {package require Thread}]} {
+    testConstraint Thread true
+}
+#ns_log notice "====================starting t1"
+
+test t-1 {object type conversion / display} -body {
+    set tid [ns_thread begin {set x 1}]
+    ns_thread wait $tid
+} -cleanup {
+    unset -nocomplain -- tid
+} -result {1}
+
+#ns_log notice "====================starting t2"
+test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
+    ns_register_proc GET /tclconnio {
+        package require Thread
+        set tid [thread::create]
+	thread::release $tid
+	ns_return 200 text/plain 1
+    }
+} -body {
+    nstest::http -getbody 1 -getheaders {Content-Length Connection} GET /tclconnio
+} -cleanup {
+    ns_unregister_op GET /tclconnio
+} -result {200 1 close 1}
+
+#ns_log notice "====================cleanupTests"
+cleanupTests
+#ns_log notice "====================cleanupTests DONE"
