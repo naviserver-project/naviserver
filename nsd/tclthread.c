@@ -835,10 +835,13 @@ NsTclThread(void *arg)
      * which does not exist.
      */
     if (!initialized) {
-        Ns_TlsAlloc(&argtls, ThreadArgFree);
-        initialized = NS_TRUE;
+        Ns_MasterLock();
+        if (!initialized) {
+            Ns_TlsAlloc(&argtls, ThreadArgFree);
+            initialized = NS_TRUE;
+        }
+        Ns_MasterUnlock();
     }
-
     Ns_TlsSet(&argtls, argPtr);
     
     if (argPtr->threadName != NULL) {
