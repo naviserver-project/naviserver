@@ -203,6 +203,8 @@ ns_param   map             *.adp
 ns_param   map             *_adp
 ns_param   nocache         true
 ns_param   enabletclpages  true
+ns_param   defaultextension .adp
+
 
 ns_section "ns/server/test/redirects"
 ns_param   400             "/400return.adp"

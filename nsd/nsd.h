@@ -924,6 +924,7 @@ typedef struct NsServer {
         const char *errorpage;
         const char *startpage;
         const char *debuginit;
+        const char *defaultExtension;
 
         Ns_Cond pagecond;
         Ns_Mutex pagelock;

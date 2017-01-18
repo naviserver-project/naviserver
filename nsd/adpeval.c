@@ -180,6 +180,7 @@ ConfigServerAdp(const char *server)
     servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
     servPtr->adp.cachesize = (size_t)Ns_ConfigInt(path, "cachesize", 5000 * 1024);
     servPtr->adp.bufsize   = (size_t)Ns_ConfigInt(path, "bufsize",   1 * 1024 * 1000);
+    servPtr->adp.defaultExtension = Ns_ConfigString(path, "defaultextension", NULL);
 
     servPtr->adp.flags = 0u;
     (void) Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
