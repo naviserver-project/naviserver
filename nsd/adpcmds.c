@@ -175,22 +175,25 @@ NsTclAdpIdentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?ident?");
-        return TCL_ERROR;
-    }
-    if (GetFrame(clientData, &framePtr) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (objc == 2) {
-        if (framePtr->ident != NULL) {
-            Tcl_DecrRefCount(framePtr->ident);
+        result = TCL_ERROR;
+        
+    } else if (GetFrame(clientData, &framePtr) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        if (objc == 2) {
+            if (framePtr->ident != NULL) {
+                Tcl_DecrRefCount(framePtr->ident);
+            }
+            framePtr->ident = objv[1];
+            Tcl_IncrRefCount(framePtr->ident);
         }
-        framePtr->ident = objv[1];
-        Tcl_IncrRefCount(framePtr->ident);
+        if (framePtr->ident != NULL) {
+            Tcl_SetObjResult(interp, framePtr->ident);
+        }
     }
-    if (framePtr->ident != NULL) {
-        Tcl_SetObjResult(interp, framePtr->ident);
-    }
-    return TCL_OK;
+    
+    return result;
 }
 
 
