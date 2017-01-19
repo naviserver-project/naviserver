@@ -293,5 +293,52 @@ test ns_urlspace-4.1 {id set/list/unset/list} -setup {
     } -result {foo bar 1 1 {} {}}
 
 
+test ns_urlspace-5.1 {wild-card-filter with ordering} -setup {
+    ns_urlspace set -key 5.1 /*        ADP
+    ns_urlspace set -key 5.1 /*.adp    ADP
+    ns_urlspace set -key 5.1 /*.tcl    TCL
+    ns_urlspace set -key 5.1 /*.*      FILE
+    ns_urlspace set -key 5.1 /static/* FILE
+} -body {
+    foreach url {
+	/test.adp /test.txt /test.tcl /test 
+	/static/test.adp /static/test.txt /static/test.tcl /static/test	
+    } {
+	lappend _ [ns_urlspace get -key 5.1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 5.1 /*     
+    ns_urlspace unset -key 5.1 /*.adp 
+    ns_urlspace unset -key 5.1 /*.tcl 
+    ns_urlspace unset -key 5.1 /*.*   
+    ns_urlspace unset -key 5.1 /static/*
+} -result {ADP FILE TCL ADP FILE FILE FILE FILE}
+
+
+test ns_urlspace-5.2 {wild-card-filter with different ordering} -setup {
+    ns_urlspace set -key 5.2 /*.adp    ADP
+    ns_urlspace set -key 5.2 /*.tcl    TCL
+    ns_urlspace set -key 5.2 /static/* FILE
+    ns_urlspace set -key 5.2 /*        ADP
+    ns_urlspace set -key 5.2 /*.*      FILE
+} -body {
+    foreach url {
+	/test.adp /test.txt /test.tcl /test 
+	/static/test.adp /static/test.txt /static/test.tcl /static/test	
+    } {
+	lappend _ [ns_urlspace get -key 5.2 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 5.2 /*     
+    ns_urlspace unset -key 5.2 /*.adp 
+    ns_urlspace unset -key 5.2 /*.tcl 
+    ns_urlspace unset -key 5.2 /*.*   
+    ns_urlspace unset -key 5.2 /static/*
+} -result {ADP FILE TCL ADP FILE FILE FILE FILE}
+
 
 cleanupTests
