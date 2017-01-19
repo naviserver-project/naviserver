@@ -103,7 +103,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_Set        *set;
 #ifndef _WIN32
     int            debug = 0;
-    bool           forked = 0;
+    bool           forked = NS_FALSE;
     char           mode = '\0';
     const char    *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
     const char    *bindargs = NULL, *bindfile = NULL;
@@ -315,7 +315,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (i > 0) {
             return 0;
         }
-        forked = 1;
+        forked = NS_TRUE;
         setsid(); /* Detach from the controlling terminal device */
     }
 
@@ -341,7 +341,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         /*
          * Continue as watched server process.
          */
-        forked = 1;
+        forked = NS_TRUE;
     }
 
    /*
@@ -350,6 +350,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (forked) {
         int major, minor;
+        
         Tcl_GetVersion(&major, &minor, NULL, NULL);
         if (major == 8 && minor <= 4) {
 
