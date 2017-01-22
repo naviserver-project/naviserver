@@ -152,19 +152,19 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 
     switch (status) {
     case NS_OK:
-        Tcl_SetResult(interp, (char *)"OK", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("OK", 2));
         break;
 
     case NS_ERROR:
-        Tcl_SetResult(interp, (char *)"ERROR", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("ERROR", 5));
         break;
 
     case NS_FORBIDDEN:
-        Tcl_SetResult(interp, (char *)"FORBIDDEN", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("FORBIDDEN", -1));
         break;
 
     case NS_UNAUTHORIZED:
-        Tcl_SetResult(interp, (char *)"UNAUTHORIZED", TCL_STATIC);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("UNAUTHORIZED", -1));
         break;
 
     case NS_FILTER_BREAK:  /* fall through */
