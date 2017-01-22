@@ -915,7 +915,7 @@ NsTclServerRoot(Ns_DString *dest, const char *host, const void *arg)
     const Ns_TclCallback *cbPtr = arg;
     const char           *result = NULL;
 
-    if (Ns_TclEvalCallback(NULL, cbPtr, dest, host, NULL) == TCL_OK) {
+    if (Ns_TclEvalCallback(NULL, cbPtr, dest, host, (char *)0) == TCL_OK) {
         result = Ns_DStringValue(dest);
     }
     return result;

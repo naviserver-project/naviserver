@@ -629,7 +629,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                     (void) Ns_DStringVarAppend(dsPtr,
                                                Tcl_GetString(objv[i]), ": ",
                                                Tcl_GetString(objv[i+1]), "\r\n",
-                                               NULL);
+                                               (char *)0);
                 }
                 drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
             }
