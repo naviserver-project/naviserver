@@ -350,7 +350,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         sock = Ns_ConnSockPtr(conn);
     }
     if (sock == NULL) {
-        Tcl_SetResult(interp, (char *)"No connection available.", NULL);
+        Ns_TclPrintfResult(interp, "No connection available");
         return TCL_ERROR;
     }
     if (objc < 2) {
@@ -380,7 +380,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
                 if (objc == 4) {
                     Tcl_SetObjResult(interp, objv[3]);
                 } else {
-                    Tcl_SetResult(interp, (char *)"key does not exist and no default given", TCL_STATIC);
+                    Ns_TclPrintfResult(interp, "key does not exist and no default given");
                     result =  TCL_ERROR;
                 }
             } else {

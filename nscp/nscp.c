@@ -666,7 +666,7 @@ ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         int *stopPtr = (int *) clientData;
         
         *stopPtr = 1;
-        Tcl_SetResult(interp, (char *)"\nGoodbye!", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "\nGoodbye!");
     }
     return result;
 }

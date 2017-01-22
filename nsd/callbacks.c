@@ -78,7 +78,7 @@ static Ns_Mutex  lock;
 static Ns_Cond   cond;
 
 static bool      shutdownPending  = NS_FALSE;
-static int       shutdownComplete = NS_FALSE;
+static bool      shutdownComplete = NS_FALSE;
 static Ns_Thread shutdownThread   = NULL;
 
 

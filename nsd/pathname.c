@@ -825,7 +825,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
             servPtr = NsGetInitServer();
         }
         if (servPtr == NULL) {
-            Tcl_SetResult(interp, (char *)"no server available", TCL_STATIC);
+            Ns_TclPrintfResult(interp, "no server available");
             result = TCL_ERROR;
             
         } else {

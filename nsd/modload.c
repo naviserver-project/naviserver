@@ -236,7 +236,7 @@ NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         result = TCL_ERROR;
 
     } else if (Ns_InfoStarted()) {
-        Tcl_SetResult(interp, (char *)"server already started", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "server already started");
         result = TCL_ERROR;
 
     } else {

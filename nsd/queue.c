@@ -1783,7 +1783,7 @@ NsConnThread(void *arg)
 		       " netrun %" PRIu64 ".%06ld"
 		       " total %" PRIu64 ".%06ld",
 		       ThreadNr(poolPtr, argPtr),
-		       waiting, poolPtr->threads.current, idle, ncons, (int)fromQueue,
+		       waiting, poolPtr->threads.current, idle, ncons, fromQueue ? 1 : 0,
 		       (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
 		       (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
 		       (int64_t) acceptTime.sec, acceptTime.usec,

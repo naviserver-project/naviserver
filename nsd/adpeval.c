@@ -1254,7 +1254,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
              level, nscript);
     fd = ns_mkstemp(debugfile);
     if (fd < 0) {
-        Tcl_SetResult(interp, (char *)"could not create adp debug file", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "could not create adp debug file");
         result = TCL_ERROR;
     } else {
         if (ns_write(fd, ds.string, (size_t)ds.length) < 0) {

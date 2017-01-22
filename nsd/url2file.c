@@ -360,7 +360,7 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         
         Ns_DStringInit(&ds);
         if (NsUrlToFile(&ds, itPtr->servPtr, Tcl_GetString(objv[1])) != NS_OK) {
-            Tcl_SetResult(interp, (char *)"url2file lookup failed", TCL_STATIC);
+            Ns_TclPrintfResult(interp, "url2file lookup failed for %s", Tcl_GetString(objv[1]));
             Ns_DStringFree(&ds);
             result = TCL_ERROR;
         } else {

@@ -1331,7 +1331,7 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 		   int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
-        Tcl_SetResult(interp, (char *)"could not roll server log", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "could not roll server log");
     }
 
     return TCL_OK;

@@ -308,7 +308,7 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
 static bool
 DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
 {
-    int success = NS_FALSE;
+    bool success = NS_FALSE;
 
     NS_NONNULL_ASSERT(hdrs != NULL);
     NS_NONNULL_ASSERT(setName != NULL);
