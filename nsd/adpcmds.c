@@ -835,17 +835,21 @@ int
 NsTclAdpDumpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_DString *dsPtr;
+    int          result;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
-        return TCL_ERROR;
-    }
-    if (GetOutput(clientData, &dsPtr) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    Tcl_DStringResult(interp, dsPtr);
+        result = TCL_ERROR;
 
-    return TCL_OK;
+    } else if (GetOutput(clientData, &dsPtr) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DStringResult(interp, dsPtr);
+        result = TCL_OK;
+    }
+    
+    return result;
 }
 
 
@@ -870,26 +874,28 @@ int
 NsTclAdpInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     AdpFrame *framePtr = NULL;
-    Tcl_Obj  *resultObj;
     int       result;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
-        return TCL_ERROR;
-    }
-    if (GetFrame(clientData, &framePtr) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    resultObj = Tcl_NewListObj(0, NULL);
-    result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(framePtr->file, -1));
-    if (likely(result == TCL_OK)) {
-        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
-    }
-    if (likely(result == TCL_OK)) {
-        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(framePtr->mtime));
-    }
-    if (likely(result == TCL_OK)) {
-        Tcl_SetObjResult(interp, resultObj);
+        result = TCL_ERROR;
+
+    } else if (GetFrame(clientData, &framePtr) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_Obj  * resultObj = Tcl_NewListObj(0, NULL);
+        
+        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(framePtr->file, -1));
+        if (likely(result == TCL_OK)) {
+            result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
+        }
+        if (likely(result == TCL_OK)) {
+            result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(framePtr->mtime));
+        }
+        if (likely(result == TCL_OK)) {
+            Tcl_SetObjResult(interp, resultObj);
+        }
     }
 
     return result;
@@ -1268,7 +1274,7 @@ GetFrame(const ClientData clientData, AdpFrame **framePtrPtr)
 
     itPtr = clientData;
     if (itPtr->adp.framePtr == NULL) {
-        Tcl_SetResult(itPtr->interp, (char *)"no active adp", TCL_STATIC);
+        Ns_TclPrintfResult(itPtr->interp, "no active adp");
         result = TCL_ERROR;
     } else {
         *framePtrPtr = itPtr->adp.framePtr;
@@ -1342,7 +1348,7 @@ GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
-        Tcl_SetResult(interp, (char *)"not a server interp", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "not a server interp");
         result = TCL_ERROR;
     } else {
         *itPtrPtr = itPtr;
