@@ -63,7 +63,7 @@ test url2file-3.4 {ns_register_url2file} -setup {
     ns_logctl flush
 } -cleanup {
     ns_unregister_url2file /x
-} -returnCodes error -result "url2file lookup failed"
+} -returnCodes error -result "url2file lookup failed for /x"
 
 
 

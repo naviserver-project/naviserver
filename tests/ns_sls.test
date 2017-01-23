@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test sls-1.1 {basic syntax} -body {
     ns_sls
-} -returnCodes error -result {No connection available.}
+} -returnCodes error -result {No connection available}
 
 test sls-1.2 {basic syntax} -setup {
     ns_register_proc GET /sls-1.2 {

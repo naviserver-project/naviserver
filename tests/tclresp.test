@@ -36,17 +36,55 @@ test tclresp-1.3.2 {basic syntax} -body {
     ns_respond -string x
 } -returnCodes error -result {no connection}
 
+
 test tclresp-1.3.3 {basic syntax} -body {
     ns_respond -string x -file y
-} -returnCodes error -result {must specify only one of -string, -file, -binary or -fileid}
+} -returnCodes error -result {no connection}
+
+test tclresp-1.3.3-c {basic syntax connected} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+	catch {ns_respond -string x -file y} errorMsg
+	ns_return 200 text/plain $errorMsg
+    }
+} -body {
+    nstest::http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 {must specify only one of -string, -file, -binary or -fileid}}
+
 
 test tclresp-1.3.4 {basic syntax} -body {
     ns_respond -fileid x
-} -returnCodes error -result {length required when -fileid is used}
+} -returnCodes error -result {no connection}
+
+test tclresp-1.3.4-c {basic syntax connected} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+	catch {ns_respond -fileid x} errorMsg
+	ns_return 200 text/plain $errorMsg
+    }
+} -body {
+    nstest::http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 {length required when -fileid is used}}
+
 
 test tclresp-1.3.5 {basic syntax} -body {
     ns_respond -headers h -string x
-} -returnCodes error -result {illegal ns_set id: "h"}
+} -returnCodes error -result {no connection}
+
+test tclresp-1.3.5-c {basic syntax connected} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+	catch {ns_respond -headers h -string x} errorMsg
+	ns_return 200 text/plain $errorMsg
+    }
+} -body {
+    nstest::http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 {invalid ns_set id: "h"}}
+
+
 
 test tclresp-1.4.1 {basic syntax} -body {
     ns_returnfile

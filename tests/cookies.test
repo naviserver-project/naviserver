@@ -13,11 +13,11 @@ test cookie-1.1 {basic syntax} -body {
 
 test cookie-1.2 {basic syntax} -body {
     ns_setcookie
-} -returnCodes error -result {No connection available.}
+} -returnCodes error -result {wrong # args: should be "ns_setcookie ?-discard discard? ?-replace replace? ?-secure secure? ?-scriptable scriptable? ?-domain domain? ?-path path? ?-expires expires? ?--? name data"}
 
 test cookie-1.3 {basic syntax} -body {
     ns_deletecookie
-} -returnCodes error -result {No connection available.}
+} -returnCodes error -result {wrong # args: should be "ns_deletecookie ?-secure secure? ?-domain domain? ?-path path? ?-replace replace? ?--? name"}
 
 
 
