@@ -2045,11 +2045,8 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         {NULL,       NULL,          NULL,      NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-        
-    } else if (itPtr->conn == NULL) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", -1));
+    if (NsConnRequire(interp, NULL) != NS_OK
+        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
         
     } else if (GetChan(interp, chanName, &chan) != TCL_OK) {
@@ -2278,6 +2275,47 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     
     return chan;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConnRequire --
+ *
+ *      Return the conn for the given interp. In case that interp is not
+ *      connected, return NS_ERROR. If connPtr is given, it sets the conn to
+ *      that address on success.
+ *
+ * Results:
+ *      NaviServer result code
+ *
+ * Side effects:
+ *      Sets Tcl result on error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_ReturnCode
+NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
+{
+    Ns_Conn      *conn;
+    Ns_ReturnCode status;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+
+    conn = Ns_TclGetConn(interp);
+    if (conn == NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", -1));
+        status = NS_ERROR;
+    } else {
+        if (connPtr != NULL) {
+            *connPtr = conn;
+        }
+        status = NS_OK;
+    }
+    
+    return status;
+}
+
 
 /*
  * Local Variables:

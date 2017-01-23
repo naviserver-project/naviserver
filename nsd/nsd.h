@@ -1512,6 +1512,9 @@ NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
 NS_EXTERN void NsConnTimeStatsFinalize(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
+    NS_GNUC_NONNULL(1);
+
 /*
  * request parsing
  */

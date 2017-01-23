@@ -40,9 +40,6 @@
  * Local functions defined in this file.
  */
 
-static Ns_Conn *GetConn(Tcl_Interp *interp)
-    NS_GNUC_NONNULL(1);
-
 static int SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
@@ -501,7 +498,7 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
 int
 NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Ns_Conn       *conn = GetConn(interp);
+    Ns_Conn       *conn;
     char          *name, *data, *domain = NULL, *path = NULL;
     int            secure = 0, scriptable = 0, discard = 0, replace = 0;
     unsigned int   flags = 0u;
@@ -524,7 +521,9 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {"data", Ns_ObjvString, &data, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (conn == NULL || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    
+    if (NsConnRequire(interp, &conn) != NS_OK
+        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
@@ -586,7 +585,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Ns_Conn *conn;
+    Ns_Conn       *conn;
     Ns_DString     ds;
     char          *nameString;
     Tcl_Obj       *defaultObj = NULL;
@@ -603,15 +602,12 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {"?default",  Ns_ObjvObj,    &defaultObj,  NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+
+    if (NsConnRequire(interp, &conn) != NS_OK
+        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
     
-    conn = GetConn(interp);
-    if (unlikely(conn == NULL)) {
-        return TCL_ERROR;
-    }
-
     Ns_DStringInit(&ds);
 
     if (withSetCookies == (int)NS_TRUE) {
@@ -654,10 +650,10 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const Ns_Conn  *conn = GetConn(interp);
+    Ns_Conn        *conn;
     char           *name, *domain = NULL, *path = NULL;
     unsigned int    flags = 0u;
-    int             secure = 0, replace = 0;
+    int             secure = 0, replace = 0, result;
 
     Ns_ObjvSpec     opts[] = {
         {"-secure",  Ns_ObjvBool,   &secure,  NULL},
@@ -671,53 +667,25 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         {"name",  Ns_ObjvString, &name, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (conn == NULL || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
+
+    if (NsConnRequire(interp, &conn) != NS_OK
+        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+
+        if (replace != 0) {
+            flags |= NS_COOKIE_REPLACE;
+        }
+        if (secure != 0) {
+            flags |= NS_COOKIE_SECURE;
+        }
+
+        Ns_ConnSetCookieEx(conn, name, NULL, (time_t)0, domain, path, NS_COOKIE_EXPIRENOW|flags);
+        result = TCL_OK;
     }
 
-    if (replace != 0) {
-        flags |= NS_COOKIE_REPLACE;
-    }
-    if (secure != 0) {
-        flags |= NS_COOKIE_SECURE;
-    }
-
-    Ns_ConnSetCookieEx(conn, name, NULL, (time_t)0, domain, path, NS_COOKIE_EXPIRENOW|flags);
-
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetConn --
- *
- *      Return the conn for the given interp, logging an error if
- *      not available.
- *
- * Results:
- *      Ns_Conn pointer or NULL.
- *
- * Side effects:
- *      Sets Tcl result on error.
- *
- *----------------------------------------------------------------------
- */
-
-static Ns_Conn *
-GetConn(Tcl_Interp *interp)
-{
-    Ns_Conn *conn;
-
-    NS_NONNULL_ASSERT(interp != NULL);
-    
-    conn = Ns_TclGetConn(interp);
-    if (conn == NULL) {
-        Ns_TclPrintfResult(interp, "No connection available.");
-    }
-
-    return conn;
+    return result;
 }
 
 /*
