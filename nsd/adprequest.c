@@ -245,11 +245,10 @@ int
 NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char          *method, *url, *file = NULL;
-    int            noinherit = 0;
-    unsigned int   rflags = 0u, aflags = 0u;
+    int            noinherit = 0, result;
+    unsigned int   aflags = 0u;
     Ns_Time       *expiresPtr = NULL;
-
-    Ns_ObjvSpec opts[] = {
+    Ns_ObjvSpec    opts[] = {
 	{"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
         {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
         {"-options",   Ns_ObjvFlags, &aflags,     adpOpts},
@@ -262,20 +261,26 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         {"?file",    Ns_ObjvString, &file,     NULL},
         {NULL, NULL, NULL, NULL}
     };
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else {
+        unsigned int rflags = 0u;
+        
+        if (noinherit != 0) {
+            rflags |= NS_OP_NOINHERIT;
+        }
+        result = RegisterPage(clientData, method, url, file, expiresPtr, rflags, aflags);
     }
-    if (noinherit != 0) {rflags |= NS_OP_NOINHERIT;}
-    return RegisterPage(clientData, method, url, file, expiresPtr, rflags, aflags);
+    return result;
 }
 
 int
 NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int          noinherit = 0;
-    unsigned int rflags = 0u;
-    char        *method, *url, *file = NULL;
-
+    int         noinherit = 0, result;
+    char       *method, *url, *file = NULL;
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,    NULL},
@@ -287,11 +292,18 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         {"?file",    Ns_ObjvString, &file,     NULL},
         {NULL, NULL, NULL, NULL}
     };
+    
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
+    } else {
+        unsigned int rflags = 0u;
+
+        if (noinherit != 0) {
+            rflags |= NS_OP_NOINHERIT;
+        }
+        result = RegisterPage(clientData, method, url, file, NULL, rflags, ADP_TCLFILE);
     }
-    if (noinherit != 0) {rflags |= NS_OP_NOINHERIT;}
-    return RegisterPage(clientData, method, url, file, NULL, rflags, ADP_TCLFILE);
+    return result;
 }
 
 

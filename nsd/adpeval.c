@@ -729,13 +729,13 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
 {
     Tcl_Interp  *interp;
     Tcl_DString  ds;
-    int          code;
+    int          result;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
 
     interp = itPtr->interp;
+    result = TCL_OK;
 
-    code = TCL_OK;
     if (itPtr->adp.debugInit == 0) {
         itPtr->deleteInterp = NS_TRUE;
         Tcl_DStringInit(&ds);
@@ -743,28 +743,29 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
         Tcl_DStringAppendElement(&ds, (procs != NULL) ? procs : "");
         Tcl_DStringAppendElement(&ds, (host  != NULL) ? host : "");
         Tcl_DStringAppendElement(&ds, (port  != NULL) ? port : "");
-        code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+        result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         Tcl_DStringFree(&ds);
-        if (code != TCL_OK) {
+        if (result != TCL_OK) {
             NsAdpLogError(itPtr);
-            return TCL_ERROR;
+            result = TCL_ERROR;
+            
+        } else {
+            /*
+             * Link the ADP output buffer result to a global variable
+             * which can be monitored with a variable watch.
+             */
+
+            if (Tcl_LinkVar(interp, "ns_adp_output",
+                            (char *) &itPtr->adp.output.string,
+                            TCL_LINK_STRING | TCL_LINK_READ_ONLY) != TCL_OK) {
+                NsAdpLogError(itPtr);
+            }
+
+            itPtr->adp.debugInit = 1;
+            itPtr->adp.debugLevel = 1;
         }
-
-        /*
-         * Link the ADP output buffer result to a global variable
-         * which can be monitored with a variable watch.
-         */
-
-        if (Tcl_LinkVar(interp, "ns_adp_output",
-                        (char *) &itPtr->adp.output.string,
-                        TCL_LINK_STRING | TCL_LINK_READ_ONLY) != TCL_OK) {
-            NsAdpLogError(itPtr);
-        }
-
-        itPtr->adp.debugInit = 1;
-        itPtr->adp.debugLevel = 1;
     }
-    return code;
+    return result;
 }
 
 

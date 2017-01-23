@@ -137,44 +137,47 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
     const NsInterp *itPtr = clientData;
     Ns_ReturnCode   status;
     int             result = TCL_OK;
-
-    if ((objc != 5) && (objc != 6)) {
-        Tcl_WrongNumArgs(interp, 1, objv,
-			"method url authuser authpasswd ?ipaddr?");
-        return TCL_ERROR;
-    }
-    status = Ns_AuthorizeRequest(itPtr->servPtr->server,
-	    Tcl_GetString(objv[1]),
-	    Tcl_GetString(objv[2]),
-	    Tcl_GetString(objv[3]),
-	    Tcl_GetString(objv[4]),
-	    objc < 6 ? NULL : Tcl_GetString(objv[5]));
-
-    switch (status) {
-    case NS_OK:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("OK", 2));
-        break;
-
-    case NS_ERROR:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("ERROR", 5));
-        break;
-
-    case NS_FORBIDDEN:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("FORBIDDEN", -1));
-        break;
-
-    case NS_UNAUTHORIZED:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("UNAUTHORIZED", -1));
-        break;
-
-    case NS_FILTER_BREAK:  /* fall through */
-    case NS_FILTER_RETURN: /* fall through */
-    case NS_TIMEOUT:
-        Ns_TclPrintfResult(interp, "could not authorize \"%s %s\"",
-                         Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));
+    char           *method, *url, *authuser, *authpasswd, *ipaddr = NULL;
+    Ns_ObjvSpec     args[] = {
+        {"method",     Ns_ObjvString, &method,     NULL},
+        {"url",        Ns_ObjvString, &url,        NULL},
+        {"authuser",   Ns_ObjvString, &authuser,   NULL},
+        {"authpasswd", Ns_ObjvString, &authpasswd, NULL},
+        {"?ipaddr",    Ns_ObjvString, &ipaddr,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    }
 
+    } else {
+        status = Ns_AuthorizeRequest(itPtr->servPtr->server, method, url,
+                                     authuser, authpasswd, ipaddr);
+        switch (status) {
+        case NS_OK:
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("OK", 2));
+            break;
+
+        case NS_ERROR:
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("ERROR", 5));
+            break;
+
+        case NS_FORBIDDEN:
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("FORBIDDEN", -1));
+            break;
+
+        case NS_UNAUTHORIZED:
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("UNAUTHORIZED", -1));
+            break;
+
+        case NS_FILTER_BREAK:  /* fall through */
+        case NS_FILTER_RETURN: /* fall through */
+        case NS_TIMEOUT:
+            Ns_TclPrintfResult(interp, "could not authorize \"%s %s\"",
+                               Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));
+            result = TCL_ERROR;
+        }
+    }
     return result;
 }
 
