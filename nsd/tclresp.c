@@ -436,7 +436,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     } else if (setid != NULL) {
         set = Ns_TclGetSet(interp, setid);
         if (set == NULL) {
-            Ns_TclPrintfResult(interp, "illegal ns_set id: \"%s\"", setid);
+            Ns_TclPrintfResult(interp, "invalid ns_set id: \"%s\"", setid);
             result = TCL_ERROR;
         }
     }
