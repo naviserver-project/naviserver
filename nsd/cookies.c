@@ -522,8 +522,8 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {NULL, NULL, NULL, NULL}
     };
     
-    if (NsConnRequire(interp, &conn) != NS_OK
-        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
+        || NsConnRequire(interp, &conn) != NS_OK) {
         return TCL_ERROR;
     }
 
@@ -603,8 +603,8 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {NULL, NULL, NULL, NULL}
     };
 
-    if (NsConnRequire(interp, &conn) != NS_OK
-        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
+        || NsConnRequire(interp, &conn) != NS_OK) {
         return TCL_ERROR;
     }
     
@@ -666,8 +666,8 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         {NULL, NULL, NULL, NULL}
     };
 
-    if (NsConnRequire(interp, &conn) != NS_OK
-        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
+        || NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
