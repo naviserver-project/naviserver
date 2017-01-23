@@ -387,20 +387,21 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     const NsInterp *itPtr = clientData;
     Tcl_Channel     chan;
     int             nbytes = INT_MAX, result = TCL_OK;
+    char           *fileidString;
+    Ns_ObjvSpec     args[] = {
+        {"fileid", Ns_ObjvString, &fileidString, NULL},
+        {"nbytes", Ns_ObjvInt,    &nbytes, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    if (NsConnRequire(interp, NULL) != NS_OK
+        || Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");
+    if (Ns_TclGetOpenChannel(interp, fileidString, 0, NS_TRUE, &chan) != TCL_OK) {
         result = TCL_ERROR;
 
-    } else if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, NS_TRUE, &chan) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else if (objc == 3 && Tcl_GetIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else if (unlikely(itPtr->conn == NULL)) {
-        Ns_TclPrintfResult(interp, "no connection");
-        result = TCL_ERROR;
     } else  {
         /*
          * All parameters are ok.

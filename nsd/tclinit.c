@@ -1573,11 +1573,10 @@ NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         result = TCL_ERROR;
 
-    } else if (itPtr->conn == NULL) {
-        Ns_TclPrintfResult(interp, "no connection");
+    } else if (NsConnRequire(interp, NULL) != NS_OK) {
+        result = TCL_ERROR;
 
     } else {
-
         atPtr = ns_malloc(sizeof(AtClose));
         atPtr->nextPtr = itPtr->firstAtClosePtr;
         itPtr->firstAtClosePtr = atPtr;

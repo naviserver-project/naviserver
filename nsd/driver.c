@@ -118,8 +118,6 @@ static Tcl_ObjCmdProc WriterSubmitFileObjCmd;
 
 static DrvWriter *DriverWriterFromObj(Tcl_Obj *driverObj)
     NS_GNUC_NONNULL(1);
-static Ns_ReturnCode RequireConnection(Tcl_Interp *interp, Ns_Conn **connPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static NS_SOCKET DriverListen(Driver *drvPtr)
     NS_GNUC_NONNULL(1);
@@ -5019,38 +5017,6 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 /*
  *----------------------------------------------------------------------
  *
- * RequireConnection --
- *
- *      Helper function to get the current connection an to set an error
- *      message, when no connection is available.
- *
- * Results:
- *      Standard Tcl result.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static Ns_ReturnCode
-RequireConnection(Tcl_Interp *interp, Ns_Conn **connPtr) {
-    Ns_ReturnCode status = NS_OK;
-
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(connPtr != NULL);
-
-    *connPtr = Ns_GetConn();
-
-    if (unlikely(*connPtr == NULL)) {
-        Ns_TclPrintfResult(interp, "no connection");
-        status = NS_ERROR;
-    }
-    return status;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * DriverWriterFromObj --
  *
  *      Lookup driver by name and return its DrvWriter.
@@ -5114,7 +5080,7 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK
-        || RequireConnection(interp, &conn) != NS_OK) {
+        || NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -5171,7 +5137,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     };
 
     if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)
-        || RequireConnection(interp, &conn) != NS_OK) {
+        || NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
