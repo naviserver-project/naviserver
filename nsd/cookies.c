@@ -652,9 +652,7 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     Ns_Conn        *conn;
     char           *name, *domain = NULL, *path = NULL;
-    unsigned int    flags = 0u;
     int             secure = 0, replace = 0, result;
-
     Ns_ObjvSpec     opts[] = {
         {"-secure",  Ns_ObjvBool,   &secure,  NULL},
         {"-domain",  Ns_ObjvString, &domain,  NULL},
@@ -673,6 +671,7 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         result = TCL_ERROR;
 
     } else {
+        unsigned int flags = 0u;
 
         if (replace != 0) {
             flags |= NS_COOKIE_REPLACE;
