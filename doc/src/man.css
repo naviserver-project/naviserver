@@ -146,7 +146,7 @@ b.const {
 }
 
 span.logo {
-    background-image: url('http://naviserver.sourceforge.net/ns-icon-16.png');
+    background-image: url('//naviserver.sourceforge.io/ns-icon-16.png');
     background-repeat: no-repeat;
-    padding-left: 20px;  /* width of the image plus a little extra padding */
+    padding-left: 17px;  /* width of the image plus a little extra padding */
 }
