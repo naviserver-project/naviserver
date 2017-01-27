@@ -114,11 +114,11 @@ Return a list of the job IDs.
 
 [call [cmd  ns_job] [arg queue] \
 	[opt [arg {-detached}]] \
-	[opt [arg {-head}]] \
+	[opt [arg -head]] \
 	[opt [arg {-jobid id}]] \
 	[arg queueId] [arg script]]
 
-Add a new job to the queue. When [opt [arg {-head}] is specified, add
+Add a new job to the queue. When [opt [arg {-head}]] is specified, add
 the new jab to the front of the queue. If there are less than
 maxthreads current running then the job will be started. If there are
 maxthreads currently running then this new job will be queued.
