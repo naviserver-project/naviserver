@@ -89,25 +89,25 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     char    *name = NULL;
     int      result = TCL_OK;
-    int      iMaxSize = 0, iMaxEntry = 0;
+    long     maxSize = 0, maxEntry = 0;
     Ns_Time *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
         {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
-        {"-maxentry", Ns_ObjvInt,   &iMaxEntry,   NULL},
+        {"-maxentry", Ns_ObjvLong,  &maxEntry,   NULL},
         {"--",        Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"cache",   Ns_ObjvString, &name,    NULL},
-        {"size",    Ns_ObjvInt,    &iMaxSize, NULL},
+        {"size",    Ns_ObjvLong,   &maxSize, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
         
-    } else if (iMaxSize < 0 || iMaxEntry < 0) {
+    } else if (maxSize < 0 || maxEntry < 0) {
       Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			     "maxsize and maxentry must be positive numbers", NULL);
       result = TCL_ERROR;
@@ -123,8 +123,8 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         if (isNew != 0) {
             TclCache      *cPtr = ns_calloc(1u, sizeof(TclCache));
 
-            cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)iMaxSize, ns_free);
-            cPtr->maxEntry = (size_t)iMaxEntry;
+            cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)maxSize, ns_free);
+            cPtr->maxEntry = (size_t)maxEntry;
             if (timeoutPtr != NULL) {
                 cPtr->timeout = *timeoutPtr;
             }
