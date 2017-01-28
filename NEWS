@@ -472,7 +472,7 @@ C API Changes:
        Ns_SockListenUnix(), Ns_SockBindUnix()
    - using "long" for secs
        Ns_SockSetDeferAccept(), ns_poll(), Ns_DiffTime()
-   - makeing argument types more precise
+   - making argument types more precise
        NsPoll(), Ns_SockBinderListen(), Ns_GetNameForGid(), Ns_ThreadStackSize()
 
 Code Changes:
@@ -886,7 +886,7 @@ Changes relative to 4.99.9
  32 files changed, 404 insertions(+), 123 deletions(-)
 
 Bug Fixes:
-- fix potential race condidion for configure value "connsperthread"
+- fix potential race condition for configure value "connsperthread"
 - fix conflicting prototypes in nsdbpg (on some compilers)
 
 Documentation improvements:
@@ -896,7 +896,7 @@ Documentation improvements:
 Code Changes:
  * added log entries, when deprecated tcl-commands are called
  * remove obsolete .cvsignore files from repo
- * use SCNd64 instread of PRId64 for scanning numbers
+ * use SCNd64 instead of PRId64 for scanning numbers
  * further cleanup of the compatibility layer of the PRI*PTR macros
  * add parallel checks and inconclusive results to cppcheck options
  * use native bool definition when available
@@ -1722,7 +1722,7 @@ Performance Improvements:
       in naviserver, namely "nsd:conf".
     * Compiler optimizations for branch prediction - likely(),unlikely() macros.  
     * Improved concurrency in writer threads by supporting asynchronous 
-      parial writes.
+      partial writes.
 
 
 Bug Fixes:
@@ -1947,7 +1947,7 @@ Configuration Changes:
                                   ;# more than 80% full. Specifying 
                                   ;# 100% effectively disables this.
 
-    * New boolen parameter asynclogwriter under ns/parameter to
+    * New Boolean parameter asynclogwriter under ns/parameter to
       turn on/off asynchronous writes to access log and error log
 
     * Obsolete flushcontent parameter is no longer supported.
@@ -2030,7 +2030,7 @@ Code Changes:
     * Remove spread factor, which is not needed due to connection
       thread queue
 
-    * use gettimeofday() if available instead of the rount trip to tcl
+    * use gettimeofday() if available instead of the round trip to tcl
 
     * Adjusting server exit to new infrastructure; new function
       NsWakeupConnThreads(ConnPool *poolPtr) to wake up every idle
@@ -2041,7 +2041,7 @@ Code Changes:
 
     * Let Ns_ConnSend() use the writer thread to deliver adp-content
       etc. without blocking a connection thread. This improves the request
-      latency and avoids potential slow-delovery DOS attacks.
+      latency and avoids potential slow-delivery DOS attacks.
       
     * Extend the interface of SockWriterRelease() to contain the
       queue. SockWriterRelease() manages now the queue entries as seen
@@ -2402,7 +2402,7 @@ Code Changes:
      bsearch appears to be buggy.
 
     * Rewritten cancellation logic. Cancelled jobs stay in the queue
-      and get run on the thread as any other jobs. The differnce is
+      and get run on the thread as any other jobs. The difference is
       only that we mark the cancellation state early (even before
       running the script) so the very first Tcl command in the script
       will be cancelled thus resulting in whole job cancellation. This
