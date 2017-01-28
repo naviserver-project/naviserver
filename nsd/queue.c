@@ -45,8 +45,6 @@ static void ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
 
 static void CreateConnThread(ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
-static void JoinConnThread(Ns_Thread *threadPtr)
-    NS_GNUC_NONNULL(1);
 
 static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
@@ -1420,7 +1418,7 @@ NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr)
       Ns_Log(Warning, "server [%s]: timeout waiting for connection thread exit", servPtr->server);
     } else {
         if (joinThread != NULL) {
-            JoinConnThread(&joinThread);
+            Ns_ThreadJoin(&joinThread, NULL);
         }
         Ns_Log(Notice, "server [%s]: connection threads stopped", servPtr->server);
     }
@@ -1511,6 +1509,9 @@ NsConnThread(void *arg)
 
     Ns_MutexLock(threadsLockPtr);
     id = poolPtr->threads.nextid++;
+    if (poolPtr->threads.creating > 0) {
+        poolPtr->threads.creating--;
+    }
     Ns_MutexUnlock(threadsLockPtr);
 
     /*
@@ -1555,13 +1556,6 @@ NsConnThread(void *arg)
     /*
      * Start handling connections.
      */
-
-    Ns_MutexLock(threadsLockPtr);
-    if (poolPtr->threads.creating > 0) {
-	poolPtr->threads.creating--;
-    }
-    Ns_MutexUnlock(threadsLockPtr);
-
 
     for (;;) {
 
@@ -1865,7 +1859,7 @@ NsConnThread(void *arg)
       joinThread, servPtr->pools.joinThread);*/
     
     if (joinThread != NULL) {
-        JoinConnThread(&joinThread);
+        Ns_ThreadJoin(&joinThread, NULL);
     }
     
     Ns_Log(Notice, "exiting: %s", exitMsg);
@@ -2205,37 +2199,14 @@ CreateConnThread(ConnPool *poolPtr)
         Ns_ThreadCreate(NsConnThread, argPtr, 0, &thread);
     } else {
         Ns_MutexUnlock(&poolPtr->tqueue.lock);
+        
+        Ns_MutexLock(&poolPtr->threads.lock);
+	poolPtr->threads.current --;
+	poolPtr->threads.creating --;
+        Ns_MutexUnlock(&poolPtr->threads.lock);
+        
         Ns_Log(Notice, "Cannot create connection thread, all available slots (%d) are used\n", i);
     }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * JoinConnThread --
- *
- *      Join a connection thread, freeing the threads connPtrPtr.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-JoinConnThread(Ns_Thread *threadPtr)
-{
-    NS_NONNULL_ASSERT(threadPtr != NULL);
-
-    Ns_ThreadJoin(threadPtr, NULL);
-    /*
-     * There is no need to free ConnThreadArg here, since it is
-     * allocated in the driver
-     */
 }
 
 
