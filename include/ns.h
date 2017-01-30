@@ -802,16 +802,24 @@ NS_EXTERN void
 Ns_CacheResetStats(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN size_t
+Ns_CacheGetMaxSize(const Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheSetMaxSize(Ns_Cache *cache, size_t maxSize)
+    NS_GNUC_NONNULL(1);
+
 /*
  * callbacks.c:
  */
 
-NS_EXTERN void *Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg) NS_GNUC_NONNULL(1);
-NS_EXTERN void *Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)    NS_GNUC_NONNULL(1);
-NS_EXTERN void *Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)     NS_GNUC_NONNULL(1);
-NS_EXTERN void *Ns_RegisterAtReady(Ns_Callback *proc, void *arg)      NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)   NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)      NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)       NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtReady(Ns_Callback *proc, void *arg)        NS_GNUC_NONNULL(1);
 NS_EXTERN void *Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg) NS_GNUC_NONNULL(1);
-NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg)       NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg)         NS_GNUC_NONNULL(1);
 
 /*
  * cls.c:

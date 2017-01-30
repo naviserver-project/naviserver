@@ -197,6 +197,7 @@ static const Cmd servCmds[] = {
     {"ns_adp_trunc",             NULL, NsTclAdpTruncObjCmd},
     {"ns_atclose",               NULL, NsTclAtCloseObjCmd},
     {"ns_cache_append",          NULL, NsTclCacheAppendObjCmd},
+    {"ns_cache_configure",       NULL, NsTclCacheConfigureObjCmd},
     {"ns_cache_create",          NULL, NsTclCacheCreateObjCmd},
     {"ns_cache_eval",            NULL, NsTclCacheEvalObjCmd},
     {"ns_cache_flush",           NULL, NsTclCacheFlushObjCmd},

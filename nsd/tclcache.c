@@ -148,6 +148,125 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclCacheConfigureObjCmd --
+ *
+ *      Configure a Tcl cache. Usage:
+ *         ns_cache_configure /cache/ ?-timeout T1? ?-expires T2? ?-maxentry E? ?-maxsize S? 
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int       result = TCL_OK, nargs = 0;
+    long      maxSize = 0, maxEntry = 0;
+    Ns_Time  *timeoutPtr = NULL, *expPtr = NULL;
+    TclCache *cPtr;
+    Ns_ObjvSpec opts[] = {
+        {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
+        {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
+        {"-maxentry", Ns_ObjvLong,  &maxEntry,   NULL},
+        {"-maxsize",  Ns_ObjvLong,  &maxSize,    NULL},        
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"cache",     ObjvCache,     &cPtr,   NULL},
+        {"?args",     Ns_ObjvArgs,   &nargs,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    /*
+     * We want to have to configure options after the cache name. So parse the
+     * argument vector in two parts.
+     */
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (objc > 2 && Ns_ParseObjv(opts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+        
+    } else if (maxSize < 0) {
+        Ns_TclPrintfResult(interp, "maxsize must be a positive number");
+        result = TCL_ERROR;
+
+    } else if (maxEntry < 0) {
+        Ns_TclPrintfResult(interp, "maxEntry must be a positive number");
+        result = TCL_ERROR;
+        
+    } else if (objc > 2) {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        Ns_MutexLock(&servPtr->tcl.cachelock);
+        if (maxEntry > 0) {
+            cPtr->maxEntry = (size_t)maxEntry;
+        }
+        if (maxSize > 0) {
+            Ns_CacheSetMaxSize(cPtr->cache, (size_t)maxSize);
+        }
+        if (timeoutPtr != NULL) {
+            cPtr->timeout = *timeoutPtr;
+        }
+        if (expPtr != NULL) {
+            cPtr->expires = *expPtr;
+        }
+        Ns_MutexUnlock(&servPtr->tcl.cachelock);
+
+    } else if (objc == 2) {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        Tcl_Obj        *resultObj = Tcl_NewListObj(0, NULL);
+        Tcl_DString     ds;
+
+        Tcl_DStringInit(&ds);
+                
+        Ns_MutexLock(&servPtr->tcl.cachelock);
+        maxSize = (long)Ns_CacheGetMaxSize(cPtr->cache);
+        maxEntry = (long)cPtr->maxEntry;
+        Ns_MutexUnlock(&servPtr->tcl.cachelock);
+
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxsize", 7));
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewLongObj(maxSize));
+
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxentry", 8));
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewLongObj(maxEntry));
+                
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("expires", 7));
+        if (cPtr->expires.sec != 0 || cPtr->expires.usec != 0) {
+            Ns_DStringAppendTime(&ds, &cPtr->expires);
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
+        } else {
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("", 0));
+        }
+        Tcl_DStringTrunc(&ds, 0);
+        
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("timeout", 7));
+        if (cPtr->timeout.sec != 0 || cPtr->timeout.usec != 0) {
+            Ns_DStringAppendTime(&ds, &cPtr->timeout);
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
+        } else {
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("", 0));
+        }
+
+        Tcl_DStringFree(&ds);
+        Tcl_SetObjResult(interp, resultObj);
+    }
+
+    return result;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclCacheEvalObjCmd --
  *
  *      Get data from a cache by key.  If key is not present or data
@@ -196,14 +315,15 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
     } else {
         Ns_Entry *entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr);
 
-        if (entry == NULL) {
+        if (unlikely(entry == NULL)) {
             status = TCL_ERROR;
             
-        } else if (isNew == 0 && force == 0) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_CacheGetValue(entry),
-                                                      (int)Ns_CacheGetSize(entry)));
-            status = TCL_OK;
+        } else if (likely(isNew == 0 && force == 0)) {
+            Tcl_Obj *resultObj = Tcl_NewStringObj(Ns_CacheGetValue(entry),
+                                                  (int)Ns_CacheGetSize(entry));
             Ns_CacheUnlock(cPtr->cache);
+            Tcl_SetObjResult(interp, resultObj);
+            status = TCL_OK;
 
         } else {
             Ns_Time start, end, diff;
@@ -219,7 +339,6 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             Ns_GetTime(&end);
             (void)Ns_DiffTime(&end, &start, &diff);
             
-            Ns_CacheLock(cPtr->cache);
             if (status != TCL_OK && status != TCL_RETURN) {
 
                 /* 
@@ -239,11 +358,14 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                  *     status = TCL_ERROR;
                  * }
                  */
-                
+                Ns_CacheLock(cPtr->cache);
                 Ns_CacheDeleteEntry(entry);
             } else {
+                Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
+                
                 status = TCL_OK;
-                SetEntry(cPtr, entry, Tcl_GetObjResult(interp), expPtr, 
+                Ns_CacheLock(cPtr->cache);
+                SetEntry(cPtr, entry, resultObj, expPtr, 
                          (int)(diff.sec * 1000000 + diff.usec));
             }
             Ns_CacheBroadcast(cPtr->cache);

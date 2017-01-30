@@ -1106,6 +1106,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclAtSignalObjCmd,
     NsTclAtStartupObjCmd,
     NsTclCacheAppendObjCmd,
+    NsTclCacheConfigureObjCmd,
     NsTclCacheCreateObjCmd,
     NsTclCacheEvalObjCmd,
     NsTclCacheFlushObjCmd,
