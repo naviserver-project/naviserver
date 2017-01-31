@@ -387,27 +387,37 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
     /*
      * System scope always preferred, ignore any unsupported error.
      */
-
     err = pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     if (err != 0 && err != ENOTSUP) {
         NsThreadFatal(func, "pthread_setscope", err);
     }
 
+    /*
+     * In case, there is no resultPtr given, create a detached thread.
+     */
+    if (resultPtr == NULL) {
+        err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if (err != 0 && err != ENOTSUP) {
+            NsThreadFatal(func, "pthread_setdetachstate", err);
+        }
+    }
+
+    /*
+     * Create the work horse thread
+     */
     err = pthread_create(&thr, &attr, ThreadMain, arg);
     if (err != 0) {
         NsThreadFatal(func, "pthread_create", err);
+    } else if (resultPtr != NULL) {
+        *resultPtr = (Ns_Thread) thr;
     }
+
+    /*
+     *
+     */
     err = pthread_attr_destroy(&attr);
     if (err != 0) {
         NsThreadFatal(func, "pthread_attr_destroy", err);
-    }
-    if (resultPtr != NULL) {
-        *resultPtr = (Ns_Thread) thr;
-    } else {
-        err = pthread_detach(thr);
-        if (err != 0) {
-            NsThreadFatal(func, "pthread_detach", err);
-        }
     }
 }
 
