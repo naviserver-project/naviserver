@@ -500,7 +500,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 {
     Ns_Conn       *conn;
     char          *name, *data, *domain = NULL, *path = NULL;
-    int            secure = 0, scriptable = 0, discard = 0, replace = 0;
+    int            secure = 0, scriptable = 0, discard = 0, replace = 0, result;
     unsigned int   flags = 0u;
     time_t         maxage;
     Ns_Time       *expiresPtr = NULL;
@@ -524,44 +524,46 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK) {
-        return TCL_ERROR;
-    }
-
-    if (secure != 0) {
-        flags |= NS_COOKIE_SECURE;
-    }
-    if (scriptable != 0) {
-        flags |= NS_COOKIE_SCRIPTABLE;
-    }
-    if (discard != 0) {
-        flags |= NS_COOKIE_DISCARD;
-    }
-    if (replace != 0) {
-        flags |= NS_COOKIE_REPLACE;
-    }
-
-    /*
-     * Accept expiry time as relative or absolute and adjust to the relative
-     * time Ns_ConnSetCookieEx expects, taking account of the special value
-     * -1 which is short hand for infinite.
-     */
-
-    if (expiresPtr != NULL) {
-        const Ns_Time *nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
-        if (expiresPtr->sec < 0) {
-            maxage = TIME_T_MAX;
-        } else if (expiresPtr->sec > nowPtr->sec) {
-            maxage = (time_t)expiresPtr->sec - (time_t)nowPtr->sec;
-        } else {
-            maxage = expiresPtr->sec;
-        }
+        result = TCL_ERROR;
     } else {
-        maxage = 0;
+
+        if (secure != 0) {
+            flags |= NS_COOKIE_SECURE;
+        }
+        if (scriptable != 0) {
+            flags |= NS_COOKIE_SCRIPTABLE;
+        }
+        if (discard != 0) {
+            flags |= NS_COOKIE_DISCARD;
+        }
+        if (replace != 0) {
+            flags |= NS_COOKIE_REPLACE;
+        }
+
+        /*
+         * Accept expiry time as relative or absolute and adjust to the relative
+         * time Ns_ConnSetCookieEx expects, taking account of the special value
+         * -1 which is short hand for infinite.
+         */
+
+        if (expiresPtr != NULL) {
+            const Ns_Time *nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
+            if (expiresPtr->sec < 0) {
+                maxage = TIME_T_MAX;
+            } else if (expiresPtr->sec > nowPtr->sec) {
+                maxage = (time_t)expiresPtr->sec - (time_t)nowPtr->sec;
+            } else {
+                maxage = expiresPtr->sec;
+            }
+        } else {
+            maxage = 0;
+        }
+
+        Ns_ConnSetCookieEx(conn, name, data, maxage, domain, path, flags);
+        result = TCL_OK;
     }
 
-    Ns_ConnSetCookieEx(conn, name, data, maxage, domain, path, flags);
-
-    return TCL_OK;
+    return result;
 }
 
 
