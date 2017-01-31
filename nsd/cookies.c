@@ -525,8 +525,8 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
-    } else {
 
+    } else {
         if (secure != 0) {
             flags |= NS_COOKIE_SECURE;
         }
@@ -588,10 +588,9 @@ int
 NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn       *conn;
-    Ns_DString     ds;
     char          *nameString;
     Tcl_Obj       *defaultObj = NULL;
-    int            idx = -1, status = TCL_OK;
+    int            status = TCL_OK;
     int            withSetCookies = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
@@ -607,28 +606,32 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK) {
-        return TCL_ERROR;
-    }
-    
-    Ns_DStringInit(&ds);
-
-    if (withSetCookies == (int)NS_TRUE) {
-	idx = SearchFirstCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", nameString);
-    }
-    if (idx == -1) {
-	idx = SearchFirstCookie(&ds, Ns_ConnHeaders(conn), "cookie", nameString);
-    }
-    
-    if (idx != -1) {
-        Tcl_DStringResult(interp, &ds);
-    } else if (defaultObj != NULL) {
-        Tcl_SetObjResult(interp, defaultObj);
-    } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("no matching cookie", -1));
         status = TCL_ERROR;
-    }
-    Ns_DStringFree(&ds);
 
+    } else {
+        Ns_DString     ds;
+        int            idx = -1;
+
+        Ns_DStringInit(&ds);
+
+        if (withSetCookies == (int)NS_TRUE) {
+            idx = SearchFirstCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", nameString);
+        }
+        if (idx == -1) {
+            idx = SearchFirstCookie(&ds, Ns_ConnHeaders(conn), "cookie", nameString);
+        }
+    
+        if (idx != -1) {
+            Tcl_DStringResult(interp, &ds);
+        } else if (defaultObj != NULL) {
+            Tcl_SetObjResult(interp, defaultObj);
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("no matching cookie", -1));
+            status = TCL_ERROR;
+        }
+        Ns_DStringFree(&ds);
+    }
+    
     return status;
 }
 
