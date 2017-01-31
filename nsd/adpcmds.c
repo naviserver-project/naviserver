@@ -1190,7 +1190,7 @@ NsTclAdpDebugObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
-        Tcl_SetResult(interp, (char *)"could not initialize debugger", TCL_STATIC);
+        Ns_TclPrintfResult(interp, "could not initialize debugger");
         result = TCL_ERROR;
 
     } else {
