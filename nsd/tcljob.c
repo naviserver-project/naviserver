@@ -548,8 +548,8 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     char       *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
     char        buf[100];
     Ns_ObjvSpec lopts[] = {
+        {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(NS_TRUE)},        
         {"-head",      Ns_ObjvBool,    &head,        INT2PTR(NS_TRUE)},
-        {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(NS_TRUE)},
         {"-jobid",     Ns_ObjvString,  &jobIdString, NULL},
         {NULL, NULL, NULL, NULL}
     };
