@@ -501,11 +501,8 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     Ns_Conn       *conn;
     char          *name, *data, *domain = NULL, *path = NULL;
     int            secure = 0, scriptable = 0, discard = 0, replace = 0, result;
-    unsigned int   flags = 0u;
-    time_t         maxage;
     Ns_Time       *expiresPtr = NULL;
-
-    Ns_ObjvSpec opts[] = {
+    Ns_ObjvSpec    opts[] = {
         {"-discard",    Ns_ObjvBool,   &discard,    NULL},
         {"-replace",    Ns_ObjvBool,   &replace,    NULL},
         {"-secure",     Ns_ObjvBool,   &secure,     NULL},
@@ -516,7 +513,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {"--",          Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec args[] = {
+    Ns_ObjvSpec    args[] = {
         {"name", Ns_ObjvString, &name, NULL},
         {"data", Ns_ObjvString, &data, NULL},
         {NULL, NULL, NULL, NULL}
@@ -527,6 +524,9 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
 
     } else {
+        unsigned int   flags = 0u;
+        time_t         maxage;
+
         if (secure != 0) {
             flags |= NS_COOKIE_SECURE;
         }
