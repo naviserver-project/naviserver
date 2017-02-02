@@ -5472,7 +5472,7 @@ NsAsyncWriterQueueEnable(void)
 {
     if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
         SpoolerQueue  *queuePtr;
-        
+
         /*
          * In case, the async writer is not allocated started, the static
          * variable asyncWriter is NULL.
@@ -5584,7 +5584,7 @@ Ns_ReturnCode
 NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 {
     Ns_ReturnCode returnCode = NS_TRUE;
-    
+
     NS_NONNULL_ASSERT(buffer != NULL);
 
     /*
@@ -5647,7 +5647,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
             SockTrigger(queuePtr->pipe[1]);
         }
     }
-    
+
     return returnCode;
 }
 
