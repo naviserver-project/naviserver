@@ -45,6 +45,7 @@ typedef struct TclCache {
     Ns_Time     timeout;  /* Default timeout for concurrent updates. */
     Ns_Time     expires;  /* Default time-to-live for cache entries. */
     size_t      maxEntry; /* Maximum size of a single entry in the cache. */
+    size_t      maxSize;  /* Maximum size of the entire cache. */
 } TclCache;
 
 
@@ -108,8 +109,7 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         result = TCL_ERROR;
         
     } else if (maxSize < 0 || maxEntry < 0) {
-      Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			     "maxsize and maxentry must be positive numbers", NULL);
+      Ns_TclPrintfResult(interp, "maxsize and maxentry must be positive numbers");
       result = TCL_ERROR;
 
     } else {
@@ -121,10 +121,11 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         Ns_MutexLock(&servPtr->tcl.cachelock);
         hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &isNew);
         if (isNew != 0) {
-            TclCache      *cPtr = ns_calloc(1u, sizeof(TclCache));
+            TclCache *cPtr = ns_calloc(1u, sizeof(TclCache));
 
             cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)maxSize, ns_free);
             cPtr->maxEntry = (size_t)maxEntry;
+            cPtr->maxSize  = (size_t)maxSize;
             if (timeoutPtr != NULL) {
                 cPtr->timeout = *timeoutPtr;
             }
@@ -209,7 +210,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
             cPtr->maxEntry = (size_t)maxEntry;
         }
         if (maxSize > 0) {
-            Ns_CacheSetMaxSize(cPtr->cache, (size_t)maxSize);
+            cPtr->maxSize = (size_t)maxSize;
         }
         if (timeoutPtr != NULL) {
             cPtr->timeout = *timeoutPtr;
@@ -228,7 +229,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         Tcl_DStringInit(&ds);
                 
         Ns_MutexLock(&servPtr->tcl.cachelock);
-        maxSize = (long)Ns_CacheGetMaxSize(cPtr->cache);
+        maxSize  = (long)cPtr->maxSize;
         maxEntry = (long)cPtr->maxEntry;
         Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
@@ -242,10 +243,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         if (cPtr->expires.sec != 0 || cPtr->expires.usec != 0) {
             Ns_DStringAppendTime(&ds, &cPtr->expires);
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
+            Tcl_DStringTrunc(&ds, 0);
         } else {
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("", 0));
         }
-        Tcl_DStringTrunc(&ds, 0);
         
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("timeout", 7));
         if (cPtr->timeout.sec != 0 || cPtr->timeout.usec != 0) {
@@ -1003,7 +1004,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
         } else {
             expPtr = Ns_AbsoluteTime(&t, expPtr);
         }
-        Ns_CacheSetValueExpires(entry, value, length, expPtr, cost);
+        Ns_CacheSetValueExpires(entry, value, length, expPtr, cost, cPtr->maxSize);
     }
 }
 

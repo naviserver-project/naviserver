@@ -441,12 +441,13 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 {
     NS_NONNULL_ASSERT(entry != NULL);
     NS_NONNULL_ASSERT(value != NULL);
-    Ns_CacheSetValueExpires(entry, value, size, NULL, 0);
+    Ns_CacheSetValueExpires(entry, value, size, NULL, 0, 0u);
 }
 
 void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        const Ns_Time *timeoutPtr, int cost)
+                        const Ns_Time *timeoutPtr, int cost,
+                        size_t maxSize)
 {
     Entry *ePtr;
     Cache *cachePtr;
@@ -466,7 +467,20 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
         ePtr->expires = *timeoutPtr;
     }
     cachePtr->currentSize += size;
-    if (cachePtr->maxSize > 0u) {
+
+    if (maxSize == 0u) {
+        /*
+         * Use the maxSize setting as configured in cPtr
+         */
+        maxSize = cachePtr->maxSize;
+    } else if (maxSize != cachePtr->maxSize) {
+        /*
+         * Update the cache max size via the provided setting
+         */
+        cachePtr->maxSize = maxSize;
+    }
+        
+    if (maxSize > 0u) {
         /* 
 	 * Make space for the new entry, but don't delete the current
 	 * entry, and don't delete other newborn entries (with a value
@@ -474,7 +488,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
 	 * created.  There might be concurrent updates, since
 	 * e.g. nscache_eval releases its mutex.
 	 */
-        while (cachePtr->currentSize > cachePtr->maxSize &&
+        while (cachePtr->currentSize > maxSize &&
                cachePtr->lastEntryPtr != ePtr &&
                cachePtr->lastEntryPtr->value != NULL) {
             Ns_CacheDeleteEntry((Ns_Entry *) cachePtr->lastEntryPtr);
