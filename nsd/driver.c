@@ -5470,52 +5470,47 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 void
 NsAsyncWriterQueueEnable(void)
 {
-    SpoolerQueue  *queuePtr;
-
-    if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_FALSE) {
+    if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
+        SpoolerQueue  *queuePtr;
+        
         /*
-         * Asyncwriter is disabled, nothing to do.
+         * In case, the async writer is not allocated started, the static
+         * variable asyncWriter is NULL.
          */
-        return;
-    }
-
-    /*
-     * In case, the async writer is not allocated started, the static
-     * variable asyncWriter is NULL.
-     */
-    if (asyncWriter == NULL) {
-        Ns_MutexLock(&reqLock);
         if (asyncWriter == NULL) {
-            /*
-             * Allocate and initialize writer thread context.
-             */
-            asyncWriter = ns_calloc(1u, sizeof(AsyncWriter));
-            Ns_MutexUnlock(&reqLock);
-            Ns_MutexSetName2(&asyncWriter->lock, "ns:driver", "async-writer");
-            /*
-             * Allocate and initialize a Spooler Queue for this thread.
-             */
-            queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
-            Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer", "queue");
-            asyncWriter->firstPtr = queuePtr;
-            /*
-             * Start the spooler queue
-             */
-            SpoolerQueueStart(queuePtr, AsyncWriterThread);
+            Ns_MutexLock(&reqLock);
+            if (asyncWriter == NULL) {
+                /*
+                 * Allocate and initialize writer thread context.
+                 */
+                asyncWriter = ns_calloc(1u, sizeof(AsyncWriter));
+                Ns_MutexUnlock(&reqLock);
+                Ns_MutexSetName2(&asyncWriter->lock, "ns:driver", "async-writer");
+                /*
+                 * Allocate and initialize a Spooler Queue for this thread.
+                 */
+                queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
+                Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer", "queue");
+                asyncWriter->firstPtr = queuePtr;
+                /*
+                 * Start the spooler queue
+                 */
+                SpoolerQueueStart(queuePtr, AsyncWriterThread);
 
-        } else {
-            Ns_MutexUnlock(&reqLock);
+            } else {
+                Ns_MutexUnlock(&reqLock);
+            }
         }
+
+
+        assert(asyncWriter != NULL);
+        queuePtr = asyncWriter->firstPtr;
+        assert(queuePtr != NULL);
+
+        Ns_MutexLock(&queuePtr->lock);
+        queuePtr->stopped = NS_FALSE;
+        Ns_MutexUnlock(&queuePtr->lock);
     }
-
-
-    assert(asyncWriter != NULL);
-    queuePtr = asyncWriter->firstPtr;
-    assert(queuePtr != NULL);
-
-    Ns_MutexLock(&queuePtr->lock);
-    queuePtr->stopped = NS_FALSE;
-    Ns_MutexUnlock(&queuePtr->lock);
 }
 
 /*
@@ -5588,11 +5583,8 @@ NsAsyncWriterQueueDisable(bool shutdown)
 Ns_ReturnCode
 NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 {
-    SpoolerQueue         *queuePtr;
-    bool                  trigger = NS_FALSE;
-    const AsyncWriteData *wdPtr;
-    AsyncWriteData       *newWdPtr;
-
+    Ns_ReturnCode returnCode = NS_TRUE;
+    
     NS_NONNULL_ASSERT(buffer != NULL);
 
     /*
@@ -5607,50 +5599,56 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
         if (unlikely(written != (ssize_t)nbyte)) {
             WriteError("sync write", fd, nbyte, written);
         }
-        return NS_ERROR;
-    }
+        returnCode = NS_ERROR;
 
-    /*
-     * Allocate a writer cmd and initialize it. In order to provide an
-     * interface compatible to ns_write(), we copy the provided data,
-     * such it can be freed by the caller. Wen we would give up the
-     * interface, we could free the memory block after writing, and
-     * save a malloc/free operation on the data.
-     */
-    newWdPtr = ns_calloc(1u, sizeof(AsyncWriteData));
-    newWdPtr->fd = fd;
-    newWdPtr->bufsize = nbyte;
-    newWdPtr->data = ns_malloc(nbyte + 1u);
-    memcpy(newWdPtr->data, buffer, newWdPtr->bufsize);
-    newWdPtr->buf  = newWdPtr->data;
-    newWdPtr->size = newWdPtr->bufsize;
-
-    /*
-     * Now add new writer socket to the writer thread's queue. In most
-     * cases, the queue will be empty.
-     */
-    queuePtr = asyncWriter->firstPtr;
-    assert(queuePtr != NULL);
-
-    Ns_MutexLock(&queuePtr->lock);
-    wdPtr = queuePtr->sockPtr;
-    if (wdPtr != NULL) {
-        newWdPtr->nextPtr = queuePtr->sockPtr;
-        queuePtr->sockPtr = newWdPtr;
     } else {
-        queuePtr->sockPtr = newWdPtr;
-        trigger = NS_TRUE;
-    }
-    Ns_MutexUnlock(&queuePtr->lock);
+        SpoolerQueue         *queuePtr;
+        bool                  trigger = NS_FALSE;
+        const AsyncWriteData *wdPtr;
+        AsyncWriteData       *newWdPtr;
 
-    /*
-     * Wake up writer thread if desired
-     */
-    if (trigger) {
-        SockTrigger(queuePtr->pipe[1]);
-    }
+        /*
+         * Allocate a writer cmd and initialize it. In order to provide an
+         * interface compatible to ns_write(), we copy the provided data,
+         * such it can be freed by the caller. Wen we would give up the
+         * interface, we could free the memory block after writing, and
+         * save a malloc/free operation on the data.
+         */
+        newWdPtr = ns_calloc(1u, sizeof(AsyncWriteData));
+        newWdPtr->fd = fd;
+        newWdPtr->bufsize = nbyte;
+        newWdPtr->data = ns_malloc(nbyte + 1u);
+        memcpy(newWdPtr->data, buffer, newWdPtr->bufsize);
+        newWdPtr->buf  = newWdPtr->data;
+        newWdPtr->size = newWdPtr->bufsize;
 
-    return NS_OK;
+        /*
+         * Now add new writer socket to the writer thread's queue. In most
+         * cases, the queue will be empty.
+         */
+        queuePtr = asyncWriter->firstPtr;
+        assert(queuePtr != NULL);
+
+        Ns_MutexLock(&queuePtr->lock);
+        wdPtr = queuePtr->sockPtr;
+        if (wdPtr != NULL) {
+            newWdPtr->nextPtr = queuePtr->sockPtr;
+            queuePtr->sockPtr = newWdPtr;
+        } else {
+            queuePtr->sockPtr = newWdPtr;
+            trigger = NS_TRUE;
+        }
+        Ns_MutexUnlock(&queuePtr->lock);
+
+        /*
+         * Wake up writer thread if desired
+         */
+        if (trigger) {
+            SockTrigger(queuePtr->pipe[1]);
+        }
+    }
+    
+    return returnCode;
 }
 
 /*

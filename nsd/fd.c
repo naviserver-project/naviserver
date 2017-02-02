@@ -321,56 +321,71 @@ Ns_DupHigh(int *fdPtr)
 int
 Ns_GetTemp(void)
 {
-    Tmp *tmpPtr;
-    Ns_Time now;
-    Ns_DString ds;
-    char *path, buf[64];
-    int fd, flags, trys;
+    Tmp  *tmpPtr;
+    int   fd;
 
+    /*
+     * Get temp file from the already allocated pool of temp files.
+     */
     Ns_MutexLock(&lock);
     tmpPtr = firstTmpPtr;
     if (tmpPtr != NULL) {
         firstTmpPtr = tmpPtr->nextPtr;
     }
     Ns_MutexUnlock(&lock);
+    
     if (tmpPtr != NULL) {
+        /*
+         * Return fd of found temp file
+         */
         fd = tmpPtr->fd;
         ns_free(tmpPtr);
-        return fd;
-    }
 
-    Ns_DStringInit(&ds);
-    flags = O_RDWR|O_CREAT|O_TRUNC|O_EXCL;
-    trys = 0;
-#ifdef _WIN32
-    flags |= _O_SHORT_LIVED|_O_NOINHERIT|_O_TEMPORARY|_O_BINARY;
-#endif
-
-    do {
-        Ns_GetTime(&now);
-        snprintf(buf, sizeof(buf), "nstmp.%" PRId64 ".%06ld", (int64_t)now.sec, now.usec);
-        path = Ns_MakePath(&ds, P_tmpdir, buf, (char *)0);
-#ifdef _WIN32
-        fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
-#else
-        fd = ns_open(path, flags, 0600);
-#endif
-    } while (fd < 0 && trys++ < 10 && errno == EEXIST);
-
-    if (fd < 0) {
-        Ns_Log(Error, "tmp: could not open temp file %s: %s",
-               path, strerror(errno));
-#ifndef _WIN32
     } else {
-        (void) Ns_DupHigh(&fd);
-        (void) Ns_CloseOnExec(fd);
-        if (unlink(path) != 0) {
-            Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
-        }
-#endif
-    }
-    Ns_DStringFree(&ds);
+        /*
+         * Create a new temp file
+         */
+        int         flags, trys;
+        char       *path, buf[64];
+        Ns_DString  ds;
 
+        Ns_DStringInit(&ds);
+
+#ifdef _WIN32
+        flags |= _O_SHORT_LIVED|_O_NOINHERIT|_O_TEMPORARY|_O_BINARY;
+#else
+        flags = O_RDWR|O_CREAT|O_TRUNC|O_EXCL;
+#endif
+        
+        trys = 0;
+        do {
+            Ns_Time     now;
+
+            Ns_GetTime(&now);
+            snprintf(buf, sizeof(buf), "nstmp.%" PRId64 ".%06ld", (int64_t)now.sec, now.usec);
+            path = Ns_MakePath(&ds, P_tmpdir, buf, (char *)0);
+#ifdef _WIN32
+            fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
+#else
+            fd = ns_open(path, flags, 0600);
+#endif
+        } while (fd < 0 && trys++ < 10 && errno == EEXIST);
+
+        if (fd < 0) {
+            Ns_Log(Error, "tmp: could not open temp file %s: %s",
+                   path, strerror(errno));
+#ifndef _WIN32
+        } else {
+            (void) Ns_DupHigh(&fd);
+            (void) Ns_CloseOnExec(fd);
+            if (unlink(path) != 0) {
+                Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
+            }
+#endif
+        }
+        Ns_DStringFree(&ds);
+    }
+    
     return fd;
 }
 
