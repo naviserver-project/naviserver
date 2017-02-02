@@ -275,7 +275,7 @@ Ns_DupHigh(int *fdPtr)
 {
 #ifdef USE_DUPHIGH
     assert(fdPtr != NULL);
-    
+
     if (dupHigh != 0) {
         int  nfd, ofd, flags;
 
@@ -333,7 +333,7 @@ Ns_GetTemp(void)
         firstTmpPtr = tmpPtr->nextPtr;
     }
     Ns_MutexUnlock(&lock);
-    
+
     if (tmpPtr != NULL) {
         /*
          * Return fd of found temp file
@@ -356,7 +356,7 @@ Ns_GetTemp(void)
 #else
         flags = O_RDWR|O_CREAT|O_TRUNC|O_EXCL;
 #endif
-        
+
         trys = 0;
         do {
             Ns_Time     now;
@@ -385,7 +385,7 @@ Ns_GetTemp(void)
         }
         Ns_DStringFree(&ds);
     }
-    
+
     return fd;
 }
 
