@@ -41,10 +41,10 @@
  */
 
 static bool WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
-static void SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
+static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
-static void MD5Transform(uint32_t buf[4], uint8_t const block[64]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void MD5Transform(uint32_t buf[4], const uint8_t block[64]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 
@@ -750,7 +750,7 @@ WordEndsInSemi(const char *ip)
 
 
 static void
-SHAByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
+SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
 {
     do {
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
@@ -1013,7 +1013,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
     } else {
         if (i != 0u) {				/* First chunk is an odd size */
             memcpy(ctx->key + i, buf, SHA_BLOCKBYTES - i);
-            SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, SHA_BLOCKWORDS);
+            SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, SHA_BLOCKWORDS);
             SHATransform(ctx);
             buf += SHA_BLOCKBYTES - i;
             len -= SHA_BLOCKBYTES - i;
@@ -1059,13 +1059,13 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 
     if (i < 8u) {				/* Padding forces an extra block */
         memset(p, 0, i);
-        SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, 16u);
+        SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, 16u);
         SHATransform(ctx);
         p = (uint8_t *) ctx->key;
         i = 64u;
     }
     memset(p, 0, i - 8u);
-    SHAByteSwap(ctx->key, (uint8_t const *) ctx->key, 14u);
+    SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, 14u);
 
     /* 
      * Append length in bits and transform 
@@ -1312,7 +1312,7 @@ void Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, size_t len)
+void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
 {
     uint32_t t;
 
@@ -1460,7 +1460,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
  * the addition of 16 32-bit words (64 bytes) of new data.  MD5Update blocks the
  * data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(uint32_t buf[4], uint8_t const block[64])
+static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
 {
     register uint32_t a, b, c, d;
 

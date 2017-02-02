@@ -2834,13 +2834,13 @@ Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when)
 
 NS_EXTERN Ns_ReturnCode
 Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
-                  const Ns_Time *timeout, char const**threadNamePtr);
+                  const Ns_Time *timeout, const char **threadNamePtr);
 
 NS_EXTERN void
 Ns_SockCancelCallback(NS_SOCKET sock);
 
 NS_EXTERN Ns_ReturnCode
-Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, char const**threadNamePtr);
+Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, const char **threadNamePtr);
 
 /*
  * str.c:
