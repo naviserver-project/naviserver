@@ -218,9 +218,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 {
     NsInterp    *itPtr = clientData;
     Tcl_Channel  chan;
-    const char  *id;
-    size_t       size;
-    int          opt;
+    int          opt, result = TCL_OK;
     unsigned int flag, oldFlag;
 
     enum {
@@ -253,86 +251,101 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
-                                  (int)sizeof(adpCtlOpts[0]),
-                                  "option", TCL_EXACT, &opt
-                                  ) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    flag = adpCtlOpts[opt].flag;
+        result = TCL_ERROR;
 
-    switch (flag) {
+    } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
+                                         (int)sizeof(adpCtlOpts[0]),
+                                         "option", TCL_EXACT, &opt
+                                         ) != TCL_OK) {
+        result = TCL_ERROR;
+    } else {
+        flag = adpCtlOpts[opt].flag;
 
-    case CBufSizeIdx:
-        if (objc != 2 && objc !=3 ) {
-            Tcl_WrongNumArgs(interp, 2, objv, "?size?");
-            return TCL_ERROR;
-        }
-        size = itPtr->adp.bufsize;
-        if (objc == 3) {
-            int intVal;
+        switch (flag) {
 
-            if (Tcl_GetIntFromObj(interp, objv[2], &intVal) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            if (intVal < 0) {
-                intVal = 0;
-            }
-            itPtr->adp.bufsize = (size_t)intVal;
-        }
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)size));
-        break;
-
-    case CChanIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "channel");
-            return TCL_ERROR;
-        }
-        id = Tcl_GetString(objv[2]);
-        if (*id == '\0') {
-            if (itPtr->adp.chan != NULL) {
-                if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK) {
-                    return TCL_ERROR;
-                }
-                itPtr->adp.chan = NULL;
-            }
-        } else {
-            if (Ns_TclGetOpenChannel(interp, id, 1, NS_TRUE, &chan) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            itPtr->adp.chan = chan;
-        }
-        break;
-
-    default:
-        /*
-         * Query or update an ADP option.
-         */
-
-        if (objc != 2 && objc !=3 ) {
-            Tcl_WrongNumArgs(interp, 2, objv, "?bool?");
-            return TCL_ERROR;
-        }
-        oldFlag = (itPtr->adp.flags & flag);
-        if (objc == 3) {
-            int boolVal;
-
-            if (Tcl_GetBooleanFromObj(interp, objv[2], &boolVal) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            if (boolVal != 0) {
-                itPtr->adp.flags |= flag;
+        case CBufSizeIdx:
+            if (objc != 2 && objc !=3 ) {
+                Tcl_WrongNumArgs(interp, 2, objv, "?size?");
+                result = TCL_ERROR;
+                
             } else {
-                itPtr->adp.flags &= ~flag;
-            }
-        }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag != 0u));
-        break;
-    }
+                size_t  size = itPtr->adp.bufsize;
+                
+                if (objc == 3) {
+                    int intVal;
 
-    return TCL_OK;
+                    if (Tcl_GetIntFromObj(interp, objv[2], &intVal) != TCL_OK) {
+                        result = TCL_ERROR;
+                    } else {
+                        if (intVal < 0) {
+                            intVal = 0;
+                        }
+                        itPtr->adp.bufsize = (size_t)intVal;
+                    }
+                }
+                if (result == TCL_OK) {
+                    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)size));
+                }
+            }
+            break;
+
+        case CChanIdx:
+            if (objc != 3) {
+                Tcl_WrongNumArgs(interp, 2, objv, "channel");
+                result = TCL_ERROR;
+            } else {
+                const char  *id = Tcl_GetString(objv[2]);
+                
+                if (*id == '\0') {
+                    if (itPtr->adp.chan != NULL) {
+                        if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK) {
+                            result = TCL_ERROR;
+                        } else {
+                            itPtr->adp.chan = NULL;
+                        }
+                    }
+                } else {
+                    if (Ns_TclGetOpenChannel(interp, id, 1, NS_TRUE, &chan) != TCL_OK) {
+                        result = TCL_ERROR;
+                    } else {
+                        itPtr->adp.chan = chan;
+                    }
+                }
+            }
+            break;
+
+        default:
+            /*
+             * Query or update an ADP option.
+             */
+
+            if (objc != 2 && objc !=3 ) {
+                Tcl_WrongNumArgs(interp, 2, objv, "?bool?");
+                result = TCL_ERROR;
+                
+            } else {
+                oldFlag = (itPtr->adp.flags & flag);
+                if (objc == 3) {
+                    int boolVal;
+                    
+                    if (Tcl_GetBooleanFromObj(interp, objv[2], &boolVal) != TCL_OK) {
+                        result = TCL_ERROR;
+                    } else {
+                        if (boolVal != 0) {
+                            itPtr->adp.flags |= flag;
+                        } else {
+                            itPtr->adp.flags &= ~flag;
+                        }
+                    }
+                }
+                if (result == TCL_OK) {
+                    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag != 0u));
+                }
+            }
+            break;
+        }
+    }
+    return result;
 }
 
 
@@ -405,10 +418,7 @@ EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 int
 NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp      *itPtr = clientData;
-    Tcl_DString   *dsPtr;
     int            result = TCL_OK;
-    unsigned int   flags;
     char          *file;
     int            tcl = 0, nocache = 0, nargs = 0;
     Ns_Time       *ttlPtr = NULL;
@@ -426,44 +436,49 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    objv = objv + (objc - nargs);
-    objc = nargs;
-
-    flags = itPtr->adp.flags;
-    if (nocache != 0) {
-        itPtr->adp.flags &= ~ADP_CACHE;
-    }
-    if (tcl != 0) {
-        itPtr->adp.flags |= ADP_TCLFILE;
-    }
-
-    /*
-     * In cache refresh mode, append include command to the output
-     * buffer. It will be compiled into the cached result.
-     */
-
-    if (nocache != 0 && itPtr->adp.refresh > 0) {
-        if (GetOutput(clientData, &dsPtr) != TCL_OK) {
-            result = TCL_ERROR;
-
-        } else {
-            int i;
-
-            Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
-            if ((itPtr->adp.flags & ADP_TCLFILE) != 0u) {
-                Tcl_DStringAppendElement(dsPtr, "-tcl");
-            }
-            for (i = 0; i < objc; ++i) {
-                Tcl_DStringAppendElement(dsPtr, Tcl_GetString(objv[i]));
-            }
-            Tcl_DStringAppend(dsPtr, "%>", 2);
-            result = TCL_OK;
-        }
+        result = TCL_ERROR;
     } else {
-        result = NsAdpInclude(clientData, objc, objv, file, ttlPtr);
-        itPtr->adp.flags = flags;
+        NsInterp      *itPtr = clientData;
+        unsigned int   flags;
+        Tcl_DString   *dsPtr;
+            
+        objv = objv + (objc - nargs);
+        objc = nargs;
+
+        flags = itPtr->adp.flags;
+        if (nocache != 0) {
+            itPtr->adp.flags &= ~ADP_CACHE;
+        }
+        if (tcl != 0) {
+            itPtr->adp.flags |= ADP_TCLFILE;
+        }
+
+        /*
+         * In cache refresh mode, append include command to the output
+         * buffer. It will be compiled into the cached result.
+         */
+
+        if (nocache != 0 && itPtr->adp.refresh > 0) {
+            if (GetOutput(clientData, &dsPtr) != TCL_OK) {
+                result = TCL_ERROR;
+
+            } else {
+                int i;
+
+                Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
+                if ((itPtr->adp.flags & ADP_TCLFILE) != 0u) {
+                    Tcl_DStringAppendElement(dsPtr, "-tcl");
+                }
+                for (i = 0; i < objc; ++i) {
+                    Tcl_DStringAppendElement(dsPtr, Tcl_GetString(objv[i]));
+                }
+                Tcl_DStringAppend(dsPtr, "%>", 2);
+                result = TCL_OK;
+            }
+        } else {
+            result = NsAdpInclude(clientData, objc, objv, file, ttlPtr);
+            itPtr->adp.flags = flags;
+        }
     }
 
     return result;
@@ -490,13 +505,9 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 int
 NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = clientData;
-    int          result, nargs = 0;
-    unsigned int savedFlags;
-    bool         asFile = NS_FALSE, safe = NS_FALSE, asString = NS_FALSE, tcl = NS_FALSE;
-    const char  *savedCwd = NULL, *resvar = NULL;
-    char        *cwd = NULL;
-
+    int         result = TCL_OK, nargs = 0;
+    int         asFile = (int)NS_FALSE, safe = (int)NS_FALSE, asString = (int)NS_FALSE, tcl = (int)NS_FALSE;
+    char       *cwd = NULL;
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,      NULL},
         {"-file",        Ns_ObjvBool,   &asFile,   INT2PTR(NS_TRUE)},
@@ -511,57 +522,63 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    objv = objv + (objc - nargs);
-    objc = nargs;
-
-    if (asString && asFile) {
-        Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");
-        return TCL_ERROR;
-    }
-
-    savedFlags = itPtr->adp.flags;
-
-    /*
-     * We control the following three flags via parameter for this
-     * function, so clear the values first.
-     */
-    itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
-
-    if (asFile) {
-        /* file mode */
-        itPtr->adp.flags |= ADP_ADPFILE;
+        result = TCL_ERROR;
+        
     } else {
-        /* string mode */
-    }
-    if (tcl) {
-        /* tcl script */
-        itPtr->adp.flags |= ADP_TCLFILE;
-    }
-    if (safe) {
-        itPtr->adp.flags |= ADP_SAFE;
-    }
+        objv = objv + (objc - nargs);
+        objc = nargs;
 
-    /*
-     * Check the adp field in the nsInterp, and construct any support
-     * Also, set the cwd.
-     */
+        if (asString && asFile) {
+            Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");
+            result = TCL_ERROR;
+            
+        } else {
+            NsInterp    *itPtr = clientData;
+            unsigned int savedFlags;
+            const char  *savedCwd = NULL, *resvar = NULL;
+            
+            savedFlags = itPtr->adp.flags;
 
-    if (cwd != NULL) {
-        savedCwd = itPtr->adp.cwd;
-        itPtr->adp.cwd = cwd;
-    }
-    if (asFile) {
-        result = NsAdpSource(clientData, objc, objv, resvar);
-    } else {
-        result = NsAdpEval(clientData, objc, objv, resvar);
-    }
-    if (cwd != NULL) {
-        itPtr->adp.cwd = savedCwd;
-    }
-    itPtr->adp.flags = savedFlags;
+            /*
+             * We control the following three flags via parameter for this
+             * function, so clear the values first.
+             */
+            itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
 
+            if (asFile == (int)NS_TRUE) {
+                /* file mode */
+                itPtr->adp.flags |= ADP_ADPFILE;
+            } else {
+                /* string mode */
+            }
+            if (tcl == (int)NS_TRUE) {
+                /* tcl script */
+                itPtr->adp.flags |= ADP_TCLFILE;
+            }
+            if (safe == (int)NS_TRUE) {
+                itPtr->adp.flags |= ADP_SAFE;
+            }
+
+            /*
+             * Check the adp field in the nsInterp, and construct any support
+             * Also, set the cwd.
+             */
+
+            if (cwd != NULL) {
+                savedCwd = itPtr->adp.cwd;
+                itPtr->adp.cwd = cwd;
+            }
+            if (asFile == (int)NS_TRUE) {
+                result = NsAdpSource(clientData, objc, objv, resvar);
+            } else {
+                result = NsAdpEval(clientData, objc, objv, resvar);
+            }
+            if (cwd != NULL) {
+                itPtr->adp.cwd = savedCwd;
+            }
+            itPtr->adp.flags = savedFlags;
+        }
+    }
     return result;
 }
 

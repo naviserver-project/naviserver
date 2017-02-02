@@ -2847,6 +2847,7 @@ ChunkedDecode(Request *reqPtr, int update)
 {
     const Tcl_DString *bufPtr;
     const char        *end, *chunkStart;
+    int                result = 1;
 
     NS_NONNULL_ASSERT(reqPtr != NULL);
 
@@ -2860,7 +2861,8 @@ ChunkedDecode(Request *reqPtr, int update)
 
         if (p == NULL) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
-            return -1;
+            result = -1;
+            break;
         }
 
         *p = '\0';
@@ -2869,7 +2871,8 @@ ChunkedDecode(Request *reqPtr, int update)
 
         if (p + 2 + chunk_length > end) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk length past end of buffer");
-            return -1;
+            result = -1;
+            break;
         }
         if (update != 0) {
             char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
@@ -2882,7 +2885,7 @@ ChunkedDecode(Request *reqPtr, int update)
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
 
-    return 1;
+    return result;
 }
 
 

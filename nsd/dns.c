@@ -204,31 +204,34 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
         if (entry == NULL) {
             Ns_CacheUnlock(cache);
             Ns_Log(Notice, "dns: timeout waiting for concurrent update");
-            return NS_FALSE;
-        }
-        if (isNew != 0) {
-            Ns_CacheUnlock(cache);
-            success = (*getProc)(&ds, key);
-            Ns_CacheLock(cache);
-            if (!success) {
-                Ns_CacheDeleteEntry(entry);
-            } else {
-	        Ns_Time endTime, diffTime;
+            success = NS_FALSE;
 
-                Ns_GetTime(&endTime);
-		(void)Ns_DiffTime(&endTime, &t, &diffTime);
-                Ns_IncrTime(&endTime, ttl, 0);
-                Ns_CacheSetValueExpires(entry, ns_strdup(ds.string),
-					(size_t)ds.length, &endTime,
-					(int)(diffTime.sec * 1000000 + diffTime.usec));
-            }
-            Ns_CacheBroadcast(cache);
         } else {
-            Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
-                              (int)Ns_CacheGetSize(entry));
-            success = NS_TRUE;
+            if (isNew != 0) {
+                Ns_CacheUnlock(cache);
+                success = (*getProc)(&ds, key);
+                Ns_CacheLock(cache);
+                if (!success) {
+                    Ns_CacheDeleteEntry(entry);
+                } else {
+                    Ns_Time endTime, diffTime;
+
+                    Ns_GetTime(&endTime);
+                    (void)Ns_DiffTime(&endTime, &t, &diffTime);
+                    Ns_IncrTime(&endTime, ttl, 0);
+                    Ns_CacheSetValueExpires(entry, ns_strdup(ds.string),
+                                            (size_t)ds.length, &endTime,
+                                            (int)(diffTime.sec * 1000000 + diffTime.usec));
+                }
+                Ns_CacheBroadcast(cache);
+            } else {
+                Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
+                                  (int)Ns_CacheGetSize(entry));
+                success = NS_TRUE;
+            }
+            Ns_CacheUnlock(cache);
         }
-        Ns_CacheUnlock(cache);
+
     }
 
     if (success) {
