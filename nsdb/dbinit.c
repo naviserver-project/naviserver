@@ -94,11 +94,12 @@ typedef struct Handle {
     /* Members above must match Ns_DbHandle */
     struct Handle  *nextPtr;
     struct Pool	   *poolPtr;
-    time_t          otime;
-    time_t          atime;
+    time_t          otime;           /* open time */
+    time_t          atime;           /* last access time */
     bool            stale;
     int             stale_on_close;
     bool            used;
+    uintptr_t       sessionId;
 } Handle;
 
 /*
@@ -134,7 +135,7 @@ static Ns_ArgProc CheckArgProc;
 static Tcl_HashTable poolsTable;
 static Tcl_HashTable serversTable;
 static Ns_Tls tls;
-
+static Ns_Mutex sessionMutex = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -1349,8 +1350,15 @@ Connect(Handle *handlePtr)
     	handlePtr->atime = handlePtr->otime = 0;
 	handlePtr->stale = NS_FALSE;
     } else {
+        static uintptr_t sessionId = 0u;
+        
+        Ns_MutexLock(&sessionMutex);
+        sessionId++;
+        Ns_MutexUnlock(&sessionMutex);
+        
     	handlePtr->connected = NS_TRUE;
     	handlePtr->atime = handlePtr->otime = time(NULL);
+        handlePtr->sessionId = sessionId;
     }
 
     return status;
@@ -1459,6 +1467,32 @@ FreeTable(void *arg)
 
     Tcl_DeleteHashTable(tablePtr);
     ns_free(tablePtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDbGetSessionId --
+ *
+ *	Return the current sessionId
+ *
+ * Results:
+ *	sessionId
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+uintptr_t
+NsDbGetSessionId(const Ns_DbHandle *handle)
+{
+    const Handle *handlePtr = (const Handle *)handle;
+
+    NS_NONNULL_ASSERT(handle != NULL);
+
+    return handlePtr->sessionId;
 }
 
 

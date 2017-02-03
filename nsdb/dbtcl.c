@@ -222,7 +222,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	BINDROW, FLUSH, RELEASEHANDLE, RESETHANDLE, CONNECTED, SP_EXEC,
 	SP_GETPARAMS, SP_RETURNCODE, GETROW, DML, ONE_ROW, ZERO_OR_ONE_ROW, EXEC,
 	SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM,
-        STATS, LOGMINDURATION
+        STATS, LOGMINDURATION, SESSIONID
     };
     static const char *const subcmd[] = {
         "pools", "bouncepool", "gethandle", "exception", "poolname",
@@ -230,7 +230,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 	"bindrow", "flush", "releasehandle", "resethandle", "connected", "sp_exec",
 	"sp_getparams", "sp_returncode", "getrow", "dml", "1row", "0or1row", "exec",
 	"select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam",
-        "stats", "logminduration",
+        "stats", "logminduration", "session_id",
         NULL
     };
 
@@ -432,22 +432,23 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         break;
     }
 
-    case POOLNAME:
-    case PASSWORD:
-    case USER:
-    case DATASOURCE:
-    case DISCONNECT:
-    case DBTYPE:
-    case DRIVER:
-    case CANCEL:
-    case BINDROW:
-    case FLUSH:
-    case RELEASEHANDLE:
-    case RESETHANDLE:
-    case CONNECTED:
-    case SP_EXEC:
-    case SP_GETPARAMS:
-    case SP_RETURNCODE:
+    case POOLNAME:       /* fall through */
+    case PASSWORD:       /* fall through */
+    case USER:           /* fall through */
+    case DATASOURCE:     /* fall through */
+    case DISCONNECT:     /* fall through */
+    case DBTYPE:         /* fall through */
+    case DRIVER:         /* fall through */
+    case CANCEL:         /* fall through */
+    case BINDROW:        /* fall through */
+    case FLUSH:          /* fall through */
+    case RELEASEHANDLE:  /* fall through */
+    case RESETHANDLE:    /* fall through */
+    case CONNECTED:      /* fall through */
+    case SP_EXEC:        /* fall through */
+    case SP_GETPARAMS:   /* fall through */
+    case SP_RETURNCODE:  /* fall through */
+    case SESSIONID:   
 
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "dbId");
@@ -535,6 +536,15 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
       	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(handlePtr->connected));
             break;
 
+        case SESSIONID:
+            {
+                char idstr[TCL_INTEGER_SPACE + 4];
+                
+                snprintf(idstr, sizeof(idstr), "sid%" PRIuPTR, NsDbGetSessionId(handlePtr));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(idstr, -1));
+            }
+            break;
+            
         case SP_EXEC:
 	    switch (Ns_DbSpExec(handlePtr)) {
 	    case NS_DML:
