@@ -5583,7 +5583,7 @@ NsAsyncWriterQueueDisable(bool shutdown)
 Ns_ReturnCode
 NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
 {
-    Ns_ReturnCode returnCode = NS_TRUE;
+    Ns_ReturnCode returnCode = NS_OK;
 
     NS_NONNULL_ASSERT(buffer != NULL);
 
