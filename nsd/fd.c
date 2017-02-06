@@ -352,7 +352,7 @@ Ns_GetTemp(void)
         Ns_DStringInit(&ds);
 
 #ifdef _WIN32
-        flags |= _O_SHORT_LIVED|_O_NOINHERIT|_O_TEMPORARY|_O_BINARY;
+        flags = _O_SHORT_LIVED|_O_NOINHERIT|_O_TEMPORARY|_O_BINARY;
 #else
         flags = O_RDWR|O_CREAT|O_TRUNC|O_EXCL;
 #endif
