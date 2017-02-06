@@ -1183,7 +1183,6 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
 		   unsigned int flags, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
-    const char *keepString;
     int         success = NS_TRUE;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1198,6 +1197,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
         }
         success = NS_FALSE;
     } else {
+    const char *keepString;
 
         /*
          * Check for streaming vs. non-streaming.
