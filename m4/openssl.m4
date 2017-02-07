@@ -65,14 +65,16 @@ if test "${ac_openssl}" = "yes" ; then
   LIBS="$LIBS $OPENSSL_LIBS"
 
   AC_CHECK_HEADERS([openssl/evp.h])
-  AC_CHECK_LIB([ssl], [SSL_library_init])
+  FOUND_SSL_LIB="no"
+  AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
+  AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])
   AC_CHECK_LIB([crypto], [PEM_read_bio_DHparams])
   
   dnl echo "OpenSSL headers found:    $ac_cv_header_openssl_evp_h"
   dnl echo "OpenSSL lib ssl found:    $ac_cv_lib_ssl_SSL_library_init"
   dnl echo "OpenSSL lib crypto found: $ac_cv_lib_crypto_PEM_read_bio_DHparams"
 
-  if test "${ac_cv_header_openssl_evp_h}" != "yes" -o "${ac_cv_lib_ssl_SSL_library_init}" != "yes" -o "${ac_cv_lib_crypto_PEM_read_bio_DHparams}" != "yes"; then
+  if test "${ac_cv_header_openssl_evp_h}" != "yes" -o "${FOUND_SSL_LIB}" != "yes" -o "${ac_cv_lib_crypto_PEM_read_bio_DHparams}" != "yes"; then
     AC_MSG_ERROR([OpenSSL support requested but not available])
   fi
 
