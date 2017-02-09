@@ -44,7 +44,7 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "2.0"
+#define NSSSL_VERSION  "2.1"
 
 /*
  * The maximum chunk size from TLS is 2^14 => 16384 (see RFC 5246). OpenSSL
@@ -82,9 +82,13 @@ static Ns_DriverCloseProc Close;
 static Ns_DriverClientInitProc ClientInit;
 
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
+
+static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L        
 static void SSLLock(int mode, int n, const char *file, int line);
 static unsigned long SSLThreadId(void);
-static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
+#endif
 
 /*
  * Static variables defined in this file.
@@ -94,13 +98,20 @@ static Ns_Mutex *driver_locks;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+/*
+ * The renegotiation issue was fixed in recent versions of OpenSSL,
+ * and the flag was removed.
+ */
 static void
 SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
     if ((where & SSL_CB_HANDSHAKE_DONE)) {
+
         ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
     }
 }
-
+#endif
 
 
 /*
@@ -189,9 +200,10 @@ Ns_ModuleInit(const char *server, const char *module)
             Ns_DStringTrunc(&ds, 0);
         }
     }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L        
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
-
+#endif
     Ns_Log(Notice, "OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
 
     drvPtr->ctx = SSL_CTX_new(SSLv23_server_method());
@@ -272,7 +284,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Parse SSL protocols
      */
     {
-        long n = SSL_OP_ALL;
+        long unsigned n = SSL_OP_ALL;
 
         value = Ns_ConfigGetValue(path, "protocols");
         if (value != NULL) {
@@ -297,12 +309,14 @@ Ns_ModuleInit(const char *server, const char *module)
         SSL_CTX_set_options(drvPtr->ctx, n);
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     /*
      * Set info callback to prevent client-initiated renegotiation
      * (after the handshake).
      */
     SSL_CTX_set_info_callback(drvPtr->ctx, SSL_infoCB);
-
+#endif
+    
     /*
      * Parse SSL ciphers
      */
@@ -693,6 +707,7 @@ SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
     return (pwd != NULL ? (int)strlen(buf) : 0);
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L        
 static void
 SSLLock(int mode, int n, const char *UNUSED(file), int UNUSED(line))
 {
@@ -708,7 +723,7 @@ SSLThreadId(void)
 {
     return (unsigned long) Ns_ThreadId();
 }
-
+#endif
 
 
 /*

@@ -103,9 +103,6 @@
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
-/* Define to 1 if you have the `ssl' library (-lssl). */
-#undef HAVE_LIBSSL
-
 /* Define to 1 if you have the `z' library (-lz). */
 #undef HAVE_LIBZ
 
