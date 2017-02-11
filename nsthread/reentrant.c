@@ -165,7 +165,7 @@ ns_inet_ntoa(struct sockaddr *saPtr)
  *
  *----------------------------------------------------------------------
  */
-#ifdef _WIN32
+#ifndef USE_READDIR_R
 struct dirent *
 ns_readdir(DIR *dir)
 {
