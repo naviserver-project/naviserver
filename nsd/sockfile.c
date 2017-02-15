@@ -417,8 +417,8 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 	 */
 # if defined(TCP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) == 0) {
-            if ((sockPtr->sock == NS_INVALID_SOCKET)
-                || (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &corkInt, sizeof(corkInt)) == -1)
+            if ((sockPtr->sock != NS_INVALID_SOCKET)
+                && (setsockopt(sockPtr->sock, IPPROTO_TCP, TCP_CORK, &corkInt, sizeof(corkInt)) == -1)
                 ) {
                 Ns_Log(Error, "socket(%d): setsockopt(TCP_CORK) %d: %s",
                        sockPtr->sock, corkInt, ns_sockstrerror(ns_sockerrno));
@@ -429,8 +429,8 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 # endif
 # if defined(UDP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) != 0) {
-            if ((sockPtr->sock == NS_INVALID_SOCKET)
-                || (setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1)
+            if ((sockPtr->sock != NS_INVALID_SOCKET)
+                && setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1)
                 ) {
                 Ns_Log(Error, "socket(%d): setsockopt(UDP_CORK) %d: %s",
                        sockPtr->sock, corkInt, ns_sockstrerror(ns_sockerrno));
