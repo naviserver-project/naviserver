@@ -169,7 +169,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     int       result = TCL_OK, nargs = 0;
     long      maxSize = 0, maxEntry = 0;
     Ns_Time  *timeoutPtr = NULL, *expPtr = NULL;
-    TclCache *cPtr;
+    TclCache *cPtr = NULL;
     Ns_ObjvSpec opts[] = {
         {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
         {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
@@ -178,7 +178,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",     ObjvCache,     &cPtr,   NULL},
+        {"cache",     ObjvCache,     &cPtr,   clientData},
         {"?args",     Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -290,7 +290,7 @@ int
 NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = clientData;
-    TclCache        *cPtr;
+    TclCache        *cPtr = NULL;
     char            *key;
     Ns_Time         *timeoutPtr = NULL, *expPtr = NULL;
     int              nargs = 0, isNew, force = (int)NS_FALSE, status;
@@ -303,7 +303,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,   NULL},
+        {"cache",    ObjvCache,     &cPtr,   clientData},
         {"key",      Ns_ObjvString, &key,    NULL},
         {"args",     Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
@@ -410,7 +410,7 @@ NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,  NULL},
+        {"cache",    ObjvCache,     &cPtr,  clientData},
         {"key",      Ns_ObjvString, &key,   NULL},
         {"?incr",    Ns_ObjvInt,    &incr,  NULL},
         {NULL, NULL, NULL, NULL}
@@ -487,7 +487,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache", ObjvCache,     &cPtr,      NULL},
+        {"cache", ObjvCache,     &cPtr,      clientData},
         {"key",   Ns_ObjvString, &key,       NULL},
         {"args",  Ns_ObjvArgs,   &nelements, NULL},
         {NULL, NULL, NULL, NULL}
@@ -619,7 +619,7 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,    NULL},
+        {"cache",    ObjvCache,     &cPtr,    clientData},
         {"?pattern", Ns_ObjvString, &pattern, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -704,7 +704,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   args[] = {
-        {"cache",    ObjvCache,    &cPtr,      NULL},
+        {"cache",    ObjvCache,    &cPtr,      clientData},
         {"?args",    Ns_ObjvArgs,  &npatterns, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -785,7 +785,7 @@ NsTclCacheGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     int         result = TCL_OK;
     Tcl_Obj    *varNameObj = NULL;
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,        NULL},
+        {"cache",    ObjvCache,     &cPtr,        clientData},
         {"key",      Ns_ObjvString, &key,         NULL},
         {"?varName", Ns_ObjvObj,    &varNameObj,  NULL},
         {NULL, NULL, NULL, NULL}
@@ -856,7 +856,7 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache", ObjvCache, &cPtr, NULL},
+        {"cache", ObjvCache, &cPtr, clientData},
         {NULL, NULL, NULL, NULL}
     };
     args[0].arg = clientData; /* pass non-constant clientData for "cache" */
@@ -1037,23 +1037,43 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
     } else {
         static const char  *const cacheType = "ns:cache";
+        const NsInterp     *itPtr = spec->arg;
+        Tcl_Obj            *cacheNameObj = objv[0];
+        const char         *cacheName = Tcl_GetString(cacheNameObj);
 
-        if (unlikely(Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **)cPtrPtr) != TCL_OK)) {
-            const NsInterp      *itPtr   = spec->arg;
-            NsServer            *servPtr = itPtr->servPtr;
-            const Tcl_HashEntry *hPtr;
+        if (unlikely(Ns_TclGetOpaqueFromObj(cacheNameObj, cacheType, (void **)cPtrPtr) != TCL_OK)) {
+            /*
+             * Ns_TclGetOpaqueFromObj failed, try to add the Tcl_Objobject to
+             * tcl.caches, when we have an interpreter with an attached
+             * server.
+             */
+            if ((itPtr != NULL) && (itPtr->servPtr != NULL)) {
+                NsServer            *servPtr = itPtr->servPtr;
+                const Tcl_HashEntry *hPtr;
 
-            Ns_MutexLock(&servPtr->tcl.cachelock);
-            hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, Tcl_GetString(objv[0]));
-            Ns_MutexUnlock(&servPtr->tcl.cachelock);
-            if (hPtr == NULL) {
-                Ns_TclPrintfResult(interp, "no such cache: %s", Tcl_GetString(objv[0]));
-                result = TCL_ERROR;
+                Ns_MutexLock(&servPtr->tcl.cachelock);
+                hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, cacheName);
+                Ns_MutexUnlock(&servPtr->tcl.cachelock);
+                if (hPtr == NULL) {
+                    Ns_TclPrintfResult(interp, "no such cache: %s", cacheName);
+                    result = TCL_ERROR;
+                } else {
+                    *cPtrPtr = Tcl_GetHashValue(hPtr);
+                    Ns_TclSetOpaqueObj(cacheNameObj, cacheType, *cPtrPtr);
+                }
             } else {
-                *cPtrPtr = Tcl_GetHashValue(hPtr);
-                Ns_TclSetOpaqueObj(objv[0], cacheType, *cPtrPtr);
+                /*
+                 * No server, we can't store the entry in the cache
+                 */
+                Ns_TclPrintfResult(interp, "no server for cache %s", cacheName);
+                result = TCL_ERROR;
             }
+        } else {
+            /*
+             * Common case: we could fetch the cache pointer from the Tcl_Obj.
+             */
         }
+        
         if (result == TCL_OK) {
             *objcPtr -= 1;
         }

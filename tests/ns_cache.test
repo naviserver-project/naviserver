@@ -47,6 +47,11 @@ test cache-1.10 {basic syntax} -body {
     ns_memoize
 } -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-expires expires? ?--? script ?args?"}
 
+test cache-1.11 {basic syntax} -body {
+    ns_cache_configure
+} -returnCodes error -result {wrong # args: should be "ns_cache_configure cache ?args?"}
+
+
 
 
 test cache-2.1 {cache names} -body {
@@ -58,6 +63,31 @@ test cache-2.1 {cache names} -body {
 test cache-3.1 {cache create} -body {
     ns_cache_create -expires 3 -- c3 1024
 } -result {}
+
+
+test cache-3.2 {query configuration} -body {
+    ns_cache_configure c3
+} -result {maxsize 1024 maxentry 0 expires 3.000000 timeout {}}
+
+test cache-3.3 {query configuration} -body {
+    ns_cache_configure c3 -maxsize 1025
+    ns_cache_configure c3
+} -result {maxsize 1025 maxentry 0 expires 3.000000 timeout {}}
+
+test cache-3.4 {query configuration} -body {
+    ns_cache_configure c3 -maxentry 1000
+    ns_cache_configure c3
+} -result {maxsize 1025 maxentry 1000 expires 3.000000 timeout {}}
+
+test cache-3.5 {query configuration} -body {
+    ns_cache_configure c3 -expires 4
+    ns_cache_configure c3
+} -result {maxsize 1025 maxentry 1000 expires 4.000000 timeout {}}
+
+test cache-3.6 {query configuration} -body {
+    ns_cache_configure c3 -timeout 1
+    ns_cache_configure c3
+} -result {maxsize 1025 maxentry 1000 expires 4.000000 timeout 1.000000}
 
 
 
@@ -488,6 +518,8 @@ test ns_cache-11.1 {stability} -constraints stress -body {
     unset -nocomplain a i j nt
     ns_cache_flush c1
 } -result {}
+
+
 
 
 
