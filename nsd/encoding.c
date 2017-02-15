@@ -615,7 +615,7 @@ LoadEncoding(const char *name)
         Ns_MutexUnlock(&lock);
         encoding = Tcl_GetEncoding(NULL, name);
         if (encoding == NULL) {
-            Ns_Log(Warning, "encoding: could not load: %s", name);
+            Ns_Log(Warning, "encoding: could not load: '%s'", name);
         } else {
             Ns_Log(Debug, "encoding: loaded: %s", name);
         }
