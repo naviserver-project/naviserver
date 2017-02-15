@@ -69,7 +69,7 @@ ns_realloc(void *ptr, size_t size)
 void *
 ns_malloc(size_t size)
 {
-    return ckalloc((int)size);
+    return ckalloc((unsigned int)size);
 }
 
 void
