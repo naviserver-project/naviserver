@@ -63,7 +63,7 @@ void *ns_calloc(size_t num, size_t esize) { return calloc(num, esize); }
 void *
 ns_realloc(void *ptr, size_t size)
 {
-  return ((ptr != NULL) ? ckrealloc(ptr, (int)size) : ckalloc((int)size));
+  return ((ptr != NULL) ? ckrealloc(ptr, (unsigned int)size) : ckalloc((unsigned int)size));
 }
 
 void *
