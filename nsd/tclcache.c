@@ -608,7 +608,7 @@ noGlobChars(const char *pattern)
 int
 NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    TclCache       *cPtr;
+    TclCache       *cPtr = NULL;
     const Ns_Entry *entry;
     char           *pattern = NULL;
     int             exact = (int)NS_FALSE, result = TCL_OK;
