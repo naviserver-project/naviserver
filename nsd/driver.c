@@ -4837,8 +4837,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         conn->flags |= NS_CONN_SENTHDRS;
         (void)Ns_CompleteHeaders(conn, nsend, 0u, &ds);
 
-        wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
         headerSize = (size_t)Ns_DStringLength(&ds);
+        if (headerSize > 0u) {
+            wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
+        }
         Ns_DStringFree(&ds);
     } else {
         headerSize = 0u;
