@@ -1052,7 +1052,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
                 const Tcl_HashEntry *hPtr;
 
                 Ns_MutexLock(&servPtr->tcl.cachelock);
-                hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, cacheName);
+                hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, (const void *)cacheName);
                 Ns_MutexUnlock(&servPtr->tcl.cachelock);
                 if (hPtr == NULL) {
                     Ns_TclPrintfResult(interp, "no such cache: %s", cacheName);
