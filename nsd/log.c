@@ -705,7 +705,6 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
 void
 Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
 {
-    size_t    length, offset;
     LogCache *cachePtr;
     LogEntry *entryPtr = NULL;
 
@@ -717,7 +716,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
      */
 
     if (Ns_LogSeverityEnabled(severity)) {
-    
+        size_t    length, offset;
+        
         /*
          * Track usage to provide statistics.
          */
