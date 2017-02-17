@@ -208,7 +208,7 @@ Exec(const Ns_DbHandle *handle, char *sql)
 {
     int result;
     
-    if (handle->verbose != 0) {
+    if (handle->verbose) {
         Ns_Log(Notice, "nsdbtest(%s): Querying '%s'", handle->driver, sql);
     }
 

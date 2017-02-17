@@ -243,7 +243,7 @@ NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         const NsInterp *itPtr = clientData;
         const char     *server;
         
-        if (global == NS_TRUE) {
+        if (global == (int)NS_TRUE) {
             server = NULL;
         } else {
             server = itPtr->servPtr->server;
