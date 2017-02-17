@@ -2076,11 +2076,11 @@ Ns_PathIsAbsolute(const char *path)
 
 NS_EXTERN char *
 Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN char *
 Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN char *
 Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
@@ -2088,15 +2088,15 @@ Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
 
 NS_EXTERN char *
 Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN char *
 Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN char *
 Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN bool
 Ns_HomePathExists(const char *path, ...) NS_GNUC_SENTINEL
@@ -2104,7 +2104,7 @@ Ns_HomePathExists(const char *path, ...) NS_GNUC_SENTINEL
 
 NS_EXTERN char *
 Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...) NS_GNUC_SENTINEL
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN char *
 Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL

@@ -52,7 +52,7 @@ static int ConfigServerVhost(const char *server)
 static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 static const char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -88,7 +88,8 @@ ConfigServerVhost(const char *server)
     const char *path;
 
     NS_NONNULL_ASSERT(server != NULL);
-
+    assert(servPtr->fastpath.pagedir != NULL);
+    
     path = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0);
 
     servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
@@ -667,6 +668,8 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
 
+    assert(servPtr->fastpath.pagedir != NULL);
+    
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
         path = Ns_DStringAppend(dsPtr, servPtr->fastpath.pagedir);
     } else {
