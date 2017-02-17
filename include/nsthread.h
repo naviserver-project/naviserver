@@ -164,12 +164,13 @@ MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
 MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
 MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
 MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
+MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 */
 
 #  if _MSC_VER < 1900
-#    define snprintf                  _snprintf
 #    define vsnprintf                 _vsnprintf
 #  endif
+#  define snprintf                    ns_snprintf
 
 #  define strtoll                     _strtoi64
 
@@ -1075,6 +1076,7 @@ NS_EXTERN int     ns_dup(int fildes);
 NS_EXTERN int     ns_dup2(int fildes, int fildes2);
 NS_EXTERN ssize_t ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags);
 NS_EXTERN ssize_t ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags);
+NS_EXTERN int     ns_snprintf(char *buf, int len, const char *fmt, ...);
 #endif
 
 

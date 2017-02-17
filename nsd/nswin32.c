@@ -1374,6 +1374,19 @@ ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags)
     return send(socket, buffer, (int)length, flags);
 }
 
+
+int
+ns_snprintf(char *buf, int len, const char *fmt, ...)
+{
+    va_list ap;
+    int cc;
+
+    va_start(ap, fmt);
+    cc = vsprintf(buf, fmt, ap);
+    va_end(ap);
+    return cc;
+}
+
 #else
 /* avoid empty translation unit */
    typedef void empty; 
