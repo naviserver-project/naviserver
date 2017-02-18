@@ -118,7 +118,7 @@ NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
  *
  * Results:
  *      TCL_ERROR if no active ADP, TCL_OK otherwise.
- *      doStreamPtr set to 1 if steaming mode active.
+ *      doStreamPtr set to 1 if streaming mode active.
  *      maxBufferPtr set to length of buffer before Flush
  *      should be called.
  *
