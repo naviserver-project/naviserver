@@ -159,80 +159,80 @@ NsTclAdpRegisterAdptagObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
 static int
 RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
-    const NsInterp *itPtr;
-    NsServer       *servPtr;
-    const char     *end, *tag, *content;
-    Tcl_HashEntry  *hPtr;
-    int             isNew, slen, elen, tlen;
-    Tcl_DString     tbuf;
-    Tag            *tagPtr;
+    int result = TCL_OK;
 
     NS_NONNULL_ASSERT(clientData != NULL);
     NS_NONNULL_ASSERT(interp != NULL);
 
-    itPtr = clientData;
-    servPtr = itPtr->servPtr;
 
     if (objc != 4 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "tag ?endtag? [adp|proc]");
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    /*
-     * Get the content
-     */
-    content = Tcl_GetStringFromObj(objv[objc-1], &slen);
-    ++slen;
-    if (objc == 3) {
-        /*
-         * no end tag
-         */
-        end = NULL;
-        elen = 0;
     } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        const char     *end, *tag, *content;
+        Tcl_HashEntry  *hPtr;
+        int             isNew, slen, elen, tlen;
+        Tcl_DString     tbuf;
+        Tag            *tagPtr;
+        
         /*
-         * end tag provided.
+         * Get the content
          */
-        end = Tcl_GetStringFromObj(objv[2], &elen);
-        ++elen;
-    }
+        content = Tcl_GetStringFromObj(objv[objc-1], &slen);
+        ++slen;
+        if (objc == 3) {
+            /*
+             * no end tag
+             */
+            end = NULL;
+            elen = 0;
+        } else {
+            /*
+             * end tag provided.
+             */
+            end = Tcl_GetStringFromObj(objv[2], &elen);
+            ++elen;
+        }
 
-    /*
-     * Allocate piggypacked memory chunk containing 
-     *   - tag structure, 
-     *   - tag begin string,
-     *   - tag end string
-     */
-    tagPtr = ns_malloc(sizeof(Tag) + (size_t)slen + (size_t)elen);
-    tagPtr->type = type;
-    tagPtr->content = (char *)tagPtr + sizeof(Tag);
-    memcpy(tagPtr->content, content, (size_t) slen);
-    Tcl_UtfToLower(tagPtr->content);
-    if (end == NULL) {
-        tagPtr->endtag = NULL;
-    } else {
-        tagPtr->endtag = tagPtr->content + slen;
-        memcpy(tagPtr->endtag, end, (size_t) elen);
-        Tcl_UtfToLower(tagPtr->endtag);
-    }
+        /*
+         * Allocate piggypacked memory chunk containing 
+         *   - tag structure, 
+         *   - tag begin string,
+         *   - tag end string
+         */
+        tagPtr = ns_malloc(sizeof(Tag) + (size_t)slen + (size_t)elen);
+        tagPtr->type = type;
+        tagPtr->content = (char *)tagPtr + sizeof(Tag);
+        memcpy(tagPtr->content, content, (size_t) slen);
+        Tcl_UtfToLower(tagPtr->content);
+        if (end == NULL) {
+            tagPtr->endtag = NULL;
+        } else {
+            tagPtr->endtag = tagPtr->content + slen;
+            memcpy(tagPtr->endtag, end, (size_t) elen);
+            Tcl_UtfToLower(tagPtr->endtag);
+        }
 
-    /*
-     * Get the tag string and add it to the adp.tag table.
-     */
-    Tcl_DStringInit(&tbuf);
-    tag = Tcl_GetStringFromObj(objv[1], &tlen);
-    Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
-    Ns_RWLockWrLock(&servPtr->adp.taglock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
-    if (isNew == 0) {
-        ns_free(Tcl_GetHashValue(hPtr));
+        /*
+         * Get the tag string and add it to the adp.tag table.
+         */
+        Tcl_DStringInit(&tbuf);
+        tag = Tcl_GetStringFromObj(objv[1], &tlen);
+        Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
+        Ns_RWLockWrLock(&servPtr->adp.taglock);
+        hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
+        if (isNew == 0) {
+            ns_free(Tcl_GetHashValue(hPtr));
+        }
+        Tcl_SetHashValue(hPtr, tagPtr);
+        tagPtr->tag = Tcl_GetHashKey(&servPtr->adp.tags, hPtr);
+        Ns_RWLockUnlock(&servPtr->adp.taglock);
+        Tcl_DStringFree(&tbuf);
     }
-    Tcl_SetHashValue(hPtr, tagPtr);
-    tagPtr->tag = Tcl_GetHashKey(&servPtr->adp.tags, hPtr);
-    Ns_RWLockUnlock(&servPtr->adp.taglock);
-    Tcl_DStringFree(&tbuf);
-
-    return TCL_OK;
+    return result;
 }
 
 
