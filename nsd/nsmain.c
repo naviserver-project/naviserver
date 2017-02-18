@@ -308,7 +308,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 0 || mode == 'w') {
-	int i = ns_fork();
+	int i;
+
+#ifdef HAVE_COREFOUNDATION
+        Ns_Fatal("nsmain: Tcl compiled with Core Foundation support does not support forking modes; "
+                 "use e.g. the '-i' mode parameter in the command line.\n");
+#endif        
+        i = ns_fork();
         if (i == -1) {
             Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
         }

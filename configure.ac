@@ -68,6 +68,16 @@ AC_SUBST([ISO_BUILD_DATE], [`date +%Y-%m-%d`])
 TEA_INIT([3.9])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
+
+# we have to check TCL_LIBS here, because this variable is later rewritten
+case "$TCL_LIBS" in
+  *CoreFoundation*)
+     AC_DEFINE([HAVE_COREFOUNDATION], [1], [Define to 1 if tcl was compiled with Core Foundation support.])
+     ;;
+   *)
+     ;;
+esac     
+
 TEA_SETUP_COMPILER
 TEA_ENABLE_THREADS
 if test "${TCL_THREADS}" != "1"; then
@@ -333,8 +343,6 @@ AC_CHECK_LIB([crypt], [crypt],
   CRYPT_LIBS=""
 )
 AC_SUBST([CRYPT_LIBS])
-
-
 
 AC_CONFIG_FILES([
 include/nsversion.h

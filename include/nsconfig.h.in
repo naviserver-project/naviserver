@@ -15,6 +15,9 @@
 /* Define if you have support for BSD4.4 style msg passing. */
 #undef HAVE_CMMSG
 
+/* Define to 1 if tcl was compiled with Core Foundation support. */
+#undef HAVE_COREFOUNDATION
+
 /* Define to 1 if the native crypt library should be used */
 #undef HAVE_CRYPT
 
