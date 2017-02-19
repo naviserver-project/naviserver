@@ -52,6 +52,17 @@ up.
 
 [list_begin definitions]
 
+[call [cmd ns_cache_configure] \
+     [arg name] \
+     [opt [option "-timeout [arg t]"]] \
+     [opt [option "-expires [arg t]"]] \
+     [opt [option "-maxentry [arg s]"]] \
+     [opt [option "-maxsize [arg s]"]] ]
+
+Query or change the parameters of a previously created cache.
+If none of the options are used, the current settings are returned in
+form of an attribute value list.
+
 [call [cmd ns_cache_create] \
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
