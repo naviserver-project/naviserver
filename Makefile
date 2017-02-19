@@ -94,7 +94,7 @@ install-notice:
 	fi; \
 	echo "You can now run NaviServer by typing the following command: "; \
 	echo ""; \
-	echo "  $(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/nsd-config.tcl"; \
+	echo "  $(NAVISERVER)/bin/nsd $$user -t $(NAVISERVER)/conf/nsd-config.tcl -f"; \
 	echo ""; \
 	echo "As a next step, you need to configure the server according to your needs."; \
 	echo "Consult as a reference the alternate configuration files in $(NAVISERVER)/conf/"; \
