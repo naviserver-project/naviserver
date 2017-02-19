@@ -313,14 +313,45 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #ifdef HAVE_COREFOUNDATION
         Ns_Fatal("nsmain: Tcl compiled with Core Foundation support does not support forking modes; "
                  "use e.g. the '-i' mode parameter in the command line.\n");
-#endif        
+#endif
+
+        /*
+         * Setup pipe for realizing non-zero return codes in case setup fails.
+         */
+        ns_pipe(nsconf.state.pipefd);
+        
         i = ns_fork();
         if (i == -1) {
             Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
         }
         if (i > 0) {
-            return 0;
+            /*
+             * We are in the parent process.
+             */
+            char buf = '\0';
+
+            /*
+             * Close the write-end of the pipe, we do not use it
+             */
+            ns_close(nsconf.state.pipefd[1]);
+            
+            /*
+             * Read the status from the child process. We expect as result
+             * either 'O' (when initialzation went OK) or 'F' (for Fatal).
+             */
+            (void) read(nsconf.state.pipefd[0], &buf, 1);
+
+            ns_close(nsconf.state.pipefd[0]); 
+            return (buf == 'O') ? 0 : 1;
         }
+        
+        /*
+         * We are in the child process.
+         *
+         * Close the read-end of the pipe, we do not use it
+         */
+        ns_close(nsconf.state.pipefd[0]);
+        
         forked = NS_TRUE;
         setsid(); /* Detach from the controlling terminal device */
     }
@@ -731,6 +762,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.state.started = NS_TRUE;
     Ns_CondBroadcast(&nsconf.state.cond);
     Ns_MutexUnlock(&nsconf.state.lock);
+
+    if (nsconf.state.pipefd[1] != 0) {
+        /*
+         * Tell the parent process, that initialization went OK.
+         */
+        ns_write(nsconf.state.pipefd[1], "O", 1);
+        ns_close(nsconf.state.pipefd[1]);
+    }
+
 
     /*
      * Run any post-startup procs.

@@ -889,6 +889,13 @@ Ns_Fatal(const char *fmt, ...)
     Ns_VALog(Fatal, fmt, &ap);
     va_end(ap);
 
+    if (nsconf.state.pipefd[1] != 0) {
+        /*
+         * Tell the parent process, that something went wrong.
+         */
+        ns_write(nsconf.state.pipefd[1], "F", 1);
+    }
+        
     _exit(1);
 }
 

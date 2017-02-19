@@ -190,6 +190,7 @@ struct nsconf {
     struct {
         Ns_Mutex lock;
         Ns_Cond cond;
+        int pipefd[2];
         bool started;
         bool stopping;
     } state;
