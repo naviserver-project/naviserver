@@ -774,7 +774,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (ns_write(nsconf.state.pipefd[1], "O", 1) < 1) {
             Ns_Fatal("nsmain: can't communicate with parent process");
         }
-        ns_write(nsconf.state.pipefd[1], "O", 1);
         ns_close(nsconf.state.pipefd[1]);
     }
 
