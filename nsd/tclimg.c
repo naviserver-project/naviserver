@@ -410,7 +410,7 @@ static int
 GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned char count, buf[0x300];
-    unsigned int  depth, colormap;
+    unsigned int  depth, colormap, result = TCL_OK;
 
     NS_NONNULL_ASSERT(chan != NULL);
     NS_NONNULL_ASSERT(wPtr != NULL);
@@ -420,57 +420,69 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
      * Skip the magic as caller has already
      * checked it allright.
      */
+    do {
+        if (Tcl_Read(chan, (char*)buf, 6) != 6) {
+            result = TCL_ERROR;
+            break;
 
-    if (Tcl_Read(chan, (char*)buf, 6) != 6) {
-        return TCL_ERROR;
-    }
+        } else if (Tcl_Read(chan, (char*)buf, 7) != 7) {
+            result = TCL_ERROR;
+            break;
 
-    if (Tcl_Read(chan, (char*)buf, 7) != 7) {
-        return TCL_ERROR;
-    }
-
-    depth = (unsigned int)(1u << ((buf[4] & 0x7u) + 1u));
-    colormap = (((buf[4] & 0x80u) != 0u) ? 1u : 0u);
-
-    if (colormap != 0u) {
-        int bytesToRead = 3 * (int)depth;
-        if (Tcl_Read(chan, (char *)buf, bytesToRead) != bytesToRead) {
-            return TCL_ERROR;
         }
-    }
 
-  outerloop:
-    if (Tcl_Read(chan, (char *)buf, 1) != 1) {
-        return TCL_ERROR;
-    }
+        depth = (unsigned int)(1u << ((buf[4] & 0x7u) + 1u));
+        colormap = (((buf[4] & 0x80u) != 0u) ? 1u : 0u);
 
-    if (buf[0] == UCHAR('!')) {
+        if (colormap != 0u) {
+            int bytesToRead = 3 * (int)depth;
+            if (Tcl_Read(chan, (char *)buf, bytesToRead) != bytesToRead) {
+                result = TCL_ERROR;
+                break;
+            }
+        }
+
+    outerloop:
         if (Tcl_Read(chan, (char *)buf, 1) != 1) {
-            return TCL_ERROR;
+            result = TCL_ERROR;
+            break;
         }
-    innerloop:
-        if (Tcl_Read(chan, (char *) &count, 1) != 1) {
-            return TCL_ERROR;
-        }
-        if (count == 0u) {
-            goto outerloop;
-        }
-        if (Tcl_Read(chan, (char *)buf, (int)count) != (int)count) {
-            return TCL_ERROR;
-        }
-        goto innerloop;
-    } else if (buf[0] != UCHAR(',')) {
-        return TCL_ERROR;
-    }
 
-    if (Tcl_Read(chan, (char*)buf, 9) != 9) {
-        return TCL_ERROR;
-    }
+        if (buf[0] == UCHAR('!')) {
+            if (Tcl_Read(chan, (char *)buf, 1) != 1) {
+                result = TCL_ERROR;
+                break;
+            }
+        innerloop:
+            if (Tcl_Read(chan, (char *) &count, 1) != 1) {
+                result = TCL_ERROR;
+                break;
+            } else if (count == 0u) {
+                goto outerloop;
+            }
+            
+            if (Tcl_Read(chan, (char *)buf, (int)count) != (int)count) {
+                result = TCL_ERROR;
+                break;
+            }
+            goto innerloop;
 
-    *wPtr = (uint32_t)(0x100u * buf[5] + buf[4]);
-    *hPtr = (uint32_t)(0x100u * buf[7] + buf[6]);
+        } else if (buf[0] != UCHAR(',')) {
+            result = TCL_ERROR;
+            break;
+        }
 
-    return TCL_OK;
+        if (Tcl_Read(chan, (char*)buf, 9) != 9) {
+            result = TCL_ERROR;
+            break;
+        }
+
+        *wPtr = (uint32_t)(0x100u * buf[5] + buf[4]);
+        *hPtr = (uint32_t)(0x100u * buf[7] + buf[6]);
+
+    } while (0);
+    
+    return result;
 }
 
 

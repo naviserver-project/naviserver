@@ -360,55 +360,56 @@ Ns_ListLength(const Ns_List *lPtr)
 Ns_List *
 Ns_ListWeightSort(Ns_List *wPtr)
 {
-    Ns_List   *curPtr, *mPtr, *nPtr;
-    Ns_List   *axisnodePtr;
-    Ns_List **lastmPtrPtr, **lastnPtrPtr;
-    float     axis;
+    Ns_List  *result;
 
     if ((wPtr == NULL) || (wPtr->rest == NULL)) {
-        return wPtr;
-    }
+        result = wPtr;
+    } else {
+        Ns_List   *mPtr, *nPtr, *curPtr = wPtr->rest;
+        Ns_List   *axisnodePtr = wPtr;
+        Ns_List **lastmPtrPtr, **lastnPtrPtr;
+        float     axis;
 
-    curPtr = wPtr->rest;
+        axisnodePtr->rest = NULL;
+        axis = wPtr->weight;
 
-    axisnodePtr = wPtr;
-    axisnodePtr->rest = NULL;
-    axis = wPtr->weight;
+        mPtr = NULL;
+        nPtr = NULL;
 
-    mPtr = NULL;
-    nPtr = NULL;
-
-    /*
-     * Loop over the whole list and build two sublists, one with
-     * elements < axis, the other with elements >= axis.
-     */
+        /*
+         * Loop over the whole list and build two sublists, one with
+         * elements < axis, the other with elements >= axis.
+         */
     
-    lastmPtrPtr = &mPtr;
-    lastnPtrPtr = &nPtr;
-    while (curPtr != NULL) {
-        if (curPtr->weight >= axis) {
-            *lastmPtrPtr = curPtr;
-            lastmPtrPtr = &(curPtr->rest);
-        } else {
-            *lastnPtrPtr = curPtr;
-            lastnPtrPtr = &(curPtr->rest);
+        lastmPtrPtr = &mPtr;
+        lastnPtrPtr = &nPtr;
+        while (curPtr != NULL) {
+            if (curPtr->weight >= axis) {
+                *lastmPtrPtr = curPtr;
+                lastmPtrPtr = &(curPtr->rest);
+            } else {
+                *lastnPtrPtr = curPtr;
+                lastnPtrPtr = &(curPtr->rest);
+            }
+            curPtr = curPtr->rest;
         }
-        curPtr = curPtr->rest;
+        *lastmPtrPtr = NULL;
+        *lastnPtrPtr = NULL;
+
+        /*
+         * Sort the list of larger elements and append it to axis
+         */
+    
+        (void) Ns_ListNconc(axisnodePtr, Ns_ListWeightSort(nPtr));
+
+        /*
+         * Sort the list of smaller elements and append axis to it.
+         */
+    
+        result = Ns_ListNconc(Ns_ListWeightSort(mPtr), axisnodePtr);
     }
-    *lastmPtrPtr = NULL;
-    *lastnPtrPtr = NULL;
-
-    /*
-     * Sort the list of larger elements and append it to axis
-     */
     
-    (void) Ns_ListNconc(axisnodePtr, Ns_ListWeightSort(nPtr));
-
-    /*
-     * Sort the list of smaller elements and append axis to it.
-     */
-    
-    return Ns_ListNconc(Ns_ListWeightSort(mPtr), axisnodePtr);
+    return result;
 }
 
 
@@ -431,41 +432,43 @@ Ns_ListWeightSort(Ns_List *wPtr)
 Ns_List *
 Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
 {
-    Ns_List  *curPtr, *mPtr, *nPtr;
-    Ns_List  *axisnodePtr;
-    void     *axisPtr;
-    Ns_List **lastmPtrPtr, **lastnPtrPtr;
+    Ns_List  *result;
 
     if ((wPtr == NULL) || (wPtr->rest == NULL)) {
-        return wPtr;
+        result = wPtr;
+
+    } else {
+        Ns_List  *mPtr, *nPtr, *curPtr = wPtr->rest;
+        Ns_List  *axisnodePtr = wPtr;
+        void     *axisPtr;
+        Ns_List **lastmPtrPtr, **lastnPtrPtr;
+    
+        axisnodePtr->rest = NULL;
+        axisPtr = wPtr->first;
+
+        mPtr = NULL;
+        nPtr = NULL;
+
+        lastmPtrPtr = &mPtr;
+        lastnPtrPtr = &nPtr;
+        while (curPtr != NULL) {
+            if ((*sortProc) (curPtr->first, axisPtr) <= 0) {
+                *lastmPtrPtr = curPtr;
+                lastmPtrPtr = &(curPtr->rest);
+            } else {
+                *lastnPtrPtr = curPtr;
+                lastnPtrPtr = &(curPtr->rest);
+            }
+            curPtr = curPtr->rest;
+        }
+        *lastmPtrPtr = NULL;
+        *lastnPtrPtr = NULL;
+
+        (void) Ns_ListNconc(axisnodePtr, Ns_ListSort(nPtr, sortProc));
+        result = Ns_ListNconc(Ns_ListSort(mPtr, sortProc), axisnodePtr);
     }
     
-    curPtr = wPtr->rest;
-
-    axisnodePtr = wPtr;
-    axisnodePtr->rest = NULL;
-    axisPtr = wPtr->first;
-
-    mPtr = NULL;
-    nPtr = NULL;
-
-    lastmPtrPtr = &mPtr;
-    lastnPtrPtr = &nPtr;
-    while (curPtr != NULL) {
-        if ((*sortProc) (curPtr->first, axisPtr) <= 0) {
-            *lastmPtrPtr = curPtr;
-            lastmPtrPtr = &(curPtr->rest);
-        } else {
-            *lastnPtrPtr = curPtr;
-            lastnPtrPtr = &(curPtr->rest);
-        }
-        curPtr = curPtr->rest;
-    }
-    *lastmPtrPtr = NULL;
-    *lastnPtrPtr = NULL;
-
-    (void) Ns_ListNconc(axisnodePtr, Ns_ListSort(nPtr, sortProc));
-    return Ns_ListNconc(Ns_ListSort(mPtr, sortProc), axisnodePtr);
+    return result;
 }
 
 
