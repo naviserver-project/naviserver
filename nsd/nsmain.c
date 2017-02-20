@@ -272,6 +272,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (mode == 'c') {
 	int i;
+
         cmd.argv = ns_calloc(((size_t)argc - (size_t)optionIndex) + 2u, sizeof(char *));
         cmd.argc = 0;
         cmd.argv[cmd.argc++] = argv[0];
@@ -308,12 +309,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 0 || mode == 'w') {
-	int i;
-
 #ifdef HAVE_COREFOUNDATION
         Ns_Fatal("nsmain: Tcl compiled with Core Foundation support does not support forking modes; "
                  "use e.g. the '-i' mode parameter in the command line.\n");
-#endif
+#else
+        int i;
 
         /*
          * Setup pipe for realizing non-zero return codes in case setup fails.
@@ -339,12 +339,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
              * Read the status from the child process. We expect as result
              * either 'O' (when initialzation went OK) or 'F' (for Fatal).
              */
-            (void) read(nsconf.state.pipefd[0], &buf, 1);
-
+            if (ns_read(nsconf.state.pipefd[0], &buf, 1) < 1) {
+                /*
+                 * Do nothing, even when the read fails
+                 */
+                ;
+            }
             ns_close(nsconf.state.pipefd[0]); 
             return (buf == 'O') ? 0 : 1;
         }
-        
         /*
          * We are in the child process.
          *
@@ -354,6 +357,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         
         forked = NS_TRUE;
         setsid(); /* Detach from the controlling terminal device */
+#endif
     }
 
     /*
@@ -767,6 +771,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         /*
          * Tell the parent process, that initialization went OK.
          */
+        if (ns_write(nsconf.state.pipefd[1], "O", 1) < 1) {
+            Ns_Fatal("nsmain: can't communicate with parent process");
+        }
         ns_write(nsconf.state.pipefd[1], "O", 1);
         ns_close(nsconf.state.pipefd[1]);
     }

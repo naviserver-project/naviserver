@@ -893,7 +893,14 @@ Ns_Fatal(const char *fmt, ...)
         /*
          * Tell the parent process, that something went wrong.
          */
-        ns_write(nsconf.state.pipefd[1], "F", 1);
+        if (ns_write(nsconf.state.pipefd[1], "F", 1) < 1) {
+            /*
+             * In case, the write did not work, do nothing. Ignoring
+             * the result can lead to warnings due to
+             * warn_unused_result.
+             */
+            ;
+        }
     }
         
     _exit(1);
