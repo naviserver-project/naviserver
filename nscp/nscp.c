@@ -72,8 +72,12 @@ typedef struct Sess {
 static Ns_SockProc AcceptProc;
 static Tcl_ObjCmdProc ExitObjCmd;
 static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
-static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo);
+static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static void LoadUsers(Mod *modPtr, const char *server, const char *module)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static Ns_ArgProc ArgProc;
+
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 /*
@@ -107,69 +111,31 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  *
  * Ns_ModuleInit --
  *
- *	Load the config parameters, setup the structures, and
- *	listen on the control port.
+ *     Initialize the hash table of authorized users.  Entry values are either
+ *     NULL indicating authorization should be checked via the
+ *     Ns_AuthorizeUser() API or contain a Unix crypt(3) sytle encrypted
+ *     password.  For the later, the entry is compatible with /etc/passwd
+ *     (i.e., username followed by password separated by colons).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Server will listen for control connections on specified
- *  	address and port.
+ *	Initialize and populate user hash table.
  *
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT Ns_ReturnCode
-Ns_ModuleInit(const char *server, const char *module)
+static void
+LoadUsers(Mod *modPtr, const char *server, const char *module)
 {
-    Mod           *modPtr;
-    char          *end;
-    const char    *addr, *path;
-    int            isNew;
-    unsigned short port;
-    Ns_ReturnCode  result;
-    size_t         i;
-    NS_SOCKET      lsock;
-    Tcl_HashEntry *hPtr;
-    Ns_Set        *set;
+    Ns_Set     *set;
+    const char *path;
+    size_t      i;
 
+    NS_NONNULL_ASSERT(modPtr != NULL);
+    NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(module != NULL);
-
-    /*
-     * Create the listening socket and callback.
-     */
-
-    path = Ns_ConfigGetPath(server, module, (char *)0);
-    addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
-    port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
-
-    lsock = Ns_SockListen(addr, port);
-    if (lsock == NS_INVALID_SOCKET) {
-	Ns_Log(Error, "nscp: could not listen on [%s]:%hu", addr, port);
-	return NS_ERROR;
-    }
-    Ns_Log(Notice, "nscp: listening on [%s]:%hu", addr, port);
-
-    /*
-     * Create a new Mod structure for this instance.
-     */
-
-    modPtr = ns_malloc(sizeof(Mod));
-    modPtr->server = server;
-    modPtr->addr = addr;
-    modPtr->port = port;
-    modPtr->echo = Ns_ConfigBool(path, "echopasswd", NS_TRUE);
-    modPtr->commandLogging = Ns_ConfigBool(path, "cpcmdlogging", NS_FALSE);
-
-    /*
-     * Initialize the hash table of authorized users.  Entry values
-     * are either NULL indicating authorization should be checked
-     * via the Ns_AuthorizeUser() API or contain a Unix crypt(3)
-     * sytle encrypted password.  For the later, the entry is
-     * compatible with /etc/passwd (i.e., username followed by
-     * password separated by colons).
-     */
 
     Tcl_InitHashTable(&modPtr->users, TCL_STRING_KEYS);
     path = Ns_ConfigGetPath(server, module, "users", (char *)0);
@@ -179,7 +145,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * In default local mode just create empty user without password
      */
 
-    if (set == NULL && STREQ(addr, NS_IP_LOOPBACK)) {
+    if (set == NULL && STREQ(modPtr->addr, NS_IP_LOOPBACK)) {
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
@@ -193,11 +159,13 @@ Ns_ModuleInit(const char *server, const char *module)
      * Process the setup ns_set
      */
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
-	const char *key  = Ns_SetKey(set, i);
-	const char *user = Ns_SetValue(set, i);
-        const char *passPart;
-        char *scratch, *p;
-        size_t userLength;
+	const char    *key  = Ns_SetKey(set, i);
+	const char    *user = Ns_SetValue(set, i);
+        const char    *passPart;
+        char          *scratch, *p, *end;
+        size_t         userLength;
+        Tcl_HashEntry *hPtr;
+        int            isNew;
  
         if (!STRIEQ(key, "user")) {
             continue;
@@ -249,16 +217,78 @@ Ns_ModuleInit(const char *server, const char *module)
     if (modPtr->users.numEntries == 0) {
 	Ns_Log(Warning, "nscp: no authorized users");
     }
-    result = Ns_SockCallback(lsock, AcceptProc, modPtr, 
-                             ((unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ModuleInit --
+ *
+ *	Load the config parameters, setup the structures, and
+ *	listen on the control port.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Server will listen for control connections on specified
+ *  	address and port.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_EXPORT Ns_ReturnCode
+Ns_ModuleInit(const char *server, const char *module)
+{
+    const char    *addr, *path;
+    unsigned short port;
+    Ns_ReturnCode  result;
+    NS_SOCKET      lsock;
+
+    NS_NONNULL_ASSERT(module != NULL);
+
+    /*
+     * Create the listening socket and callback.
+     */
+
+    path = Ns_ConfigGetPath(server, module, (char *)0);
+    addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
+    port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
+
+    lsock = Ns_SockListen(addr, port);
+    if (lsock == NS_INVALID_SOCKET) {
+	Ns_Log(Error, "nscp: could not listen on [%s]:%hu", addr, port);
+	result = NS_ERROR;
+        
+    } else {
+        Mod           *modPtr;
+        
+        Ns_Log(Notice, "nscp: listening on [%s]:%hu", addr, port);
+
+        /*
+         * Create a new Mod structure for this instance.
+         */
+        modPtr = ns_malloc(sizeof(Mod));
+        modPtr->server = server;
+        modPtr->addr = addr;
+        modPtr->port = port;
+        modPtr->echo = Ns_ConfigBool(path, "echopasswd", NS_TRUE);
+        modPtr->commandLogging = Ns_ConfigBool(path, "cpcmdlogging", NS_FALSE);
+
+        LoadUsers(modPtr, server, module);
+    
+        result = Ns_SockCallback(lsock, AcceptProc, modPtr, 
+                                 ((unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT));
 
 #ifndef PCLINT_BUG
-    if (result == NS_OK) {
-        Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
-    }
+        if (result == NS_OK) {
+            Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+        }
 #else
-    if (result == NS_OK) Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+        if (result == NS_OK) Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
 #endif
+    }
     
     return result;
 }
@@ -481,11 +511,14 @@ done:
 static bool
 GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
 {
-    char   buf[2048];
-    int    retry = 0;
-    bool   result = NS_FALSE;
+    char    buf[2048];
+    int     retry = 0;
+    bool    result = NS_FALSE;
     ssize_t n;
-    size_t promptLength;
+    size_t  promptLength;
+
+    NS_NONNULL_ASSERT(prompt != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
 
     /*
      * Suppress output on things like password prompts.
