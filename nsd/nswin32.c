@@ -1376,13 +1376,13 @@ ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags)
 
 
 int
-ns_snprintf(char *buf, int len, const char *fmt, ...)
+ns_snprintf(char *buf, size_t len, const char *fmt, ...)
 {
     va_list ap;
     int cc;
 
     va_start(ap, fmt);
-    cc = vsprintf(buf, fmt, ap);
+    cc = vsnprintf(buf, len, fmt, ap);
     va_end(ap);
     return cc;
 }

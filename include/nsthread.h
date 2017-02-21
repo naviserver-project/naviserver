@@ -1076,7 +1076,7 @@ NS_EXTERN int     ns_dup(int fildes);
 NS_EXTERN int     ns_dup2(int fildes, int fildes2);
 NS_EXTERN ssize_t ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags);
 NS_EXTERN ssize_t ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags);
-NS_EXTERN int     ns_snprintf(char *buf, int len, const char *fmt, ...);
+NS_EXTERN int     ns_snprintf(char *buf, size_t len, const char *fmt, ...);
 #endif
 
 
