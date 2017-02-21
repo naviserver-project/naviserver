@@ -201,6 +201,7 @@ static const Cmd servCmds[] = {
     {"ns_cache_create",          NULL, NsTclCacheCreateObjCmd},
     {"ns_cache_eval",            NULL, NsTclCacheEvalObjCmd},
     {"ns_cache_flush",           NULL, NsTclCacheFlushObjCmd},
+    {"ns_cache_exists",          NULL, NsTclCacheExistsObjCmd},
     {"ns_cache_get",             NULL, NsTclCacheGetObjCmd},
     {"ns_cache_incr",            NULL, NsTclCacheIncrObjCmd},
     {"ns_cache_keys",            NULL, NsTclCacheKeysObjCmd},

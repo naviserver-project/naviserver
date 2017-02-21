@@ -51,6 +51,10 @@ test cache-1.11 {basic syntax} -body {
     ns_cache_configure
 } -returnCodes error -result {wrong # args: should be "ns_cache_configure cache ?args?"}
 
+test cache-1.12 {basic syntax} -body {
+    ns_cache_exists
+} -returnCodes error -result {wrong # args: should be "ns_cache_exists cache"}
+
 
 
 
@@ -88,6 +92,13 @@ test cache-3.6 {query configuration} -body {
     ns_cache_configure c3 -timeout 1
     ns_cache_configure c3
 } -result {maxsize 1025 maxentry 1000 expires 4.000000 timeout 1.000000}
+
+test cache-3.6 {check cache existence} -body {
+    ns_cache_exists c3
+} -result {1}
+test cache-3.7 {check cache existence} -body {
+    ns_cache_exists c3333
+} -result {0}
 
 
 

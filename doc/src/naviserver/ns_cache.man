@@ -76,6 +76,10 @@ Create a new Tcl cache identified by [arg name] with maximum size
 and a default [option -expires] and the maximum size of a single 
 entry (parameter [option -maxentry]).
 
+[call [cmd ns_cache_exists] \
+     [arg name]]
+
+Check for the existence of a cache and return 0 (failure) or 1 (success).
 
 
 [call [cmd ns_cache_names] ]
@@ -183,13 +187,11 @@ If the cache value does not already exist it is created.
         [arg name] \
         [opt [arg args]] ]
 
-Flush the entries in a cache. If 
-
-[para]
-The number of entries flushed are returned. If [arg args] are given then
-they are the keys in the cache to be flushed. If the [option -glob] option
-is given then the keys are treated as globbing patterns and only the keys which
-match are flushed.
+Flush the entries in a cache and return the number of flushed entries.
+If [arg args] are given then they are the keys in the cache to be
+flushed. If the [option -glob] option is given then the keys are
+treated as globbing patterns and only the keys which match are
+flushed.
 
 
 
