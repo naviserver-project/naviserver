@@ -334,6 +334,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
              * Close the write-end of the pipe, we do not use it
              */
             ns_close(nsconf.state.pipefd[1]);
+            nsconf.state.pipefd[1] = 0;
             
             /*
              * Read the status from the child process. We expect as result
@@ -345,7 +346,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                  */
                 ;
             }
-            ns_close(nsconf.state.pipefd[0]); 
+            ns_close(nsconf.state.pipefd[0]);
+            nsconf.state.pipefd[0] = 0;
+ 
             return (buf == 'O') ? 0 : 1;
         }
         /*
@@ -354,6 +357,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
          * Close the read-end of the pipe, we do not use it
          */
         ns_close(nsconf.state.pipefd[0]);
+        nsconf.state.pipefd[0] = 0;
         
         forked = NS_TRUE;
         setsid(); /* Detach from the controlling terminal device */
@@ -775,8 +779,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             Ns_Fatal("nsmain: can't communicate with parent process");
         }
         ns_close(nsconf.state.pipefd[1]);
+        nsconf.state.pipefd[1] = 0;
     }
-
 
     /*
      * Run any post-startup procs.
