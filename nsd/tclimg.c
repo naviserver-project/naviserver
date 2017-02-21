@@ -410,7 +410,8 @@ static int
 GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     unsigned char count, buf[0x300];
-    unsigned int  depth, colormap, result = TCL_OK;
+    unsigned int  depth, colormap;
+    int           result = TCL_OK;
 
     NS_NONNULL_ASSERT(chan != NULL);
     NS_NONNULL_ASSERT(wPtr != NULL);
@@ -480,7 +481,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         *wPtr = (uint32_t)(0x100u * buf[5] + buf[4]);
         *hPtr = (uint32_t)(0x100u * buf[7] + buf[6]);
 
-    } while (0);
+    } while (NS_FALSE);
     
     return result;
 }
