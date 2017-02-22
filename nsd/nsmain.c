@@ -328,7 +328,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             /*
              * We are in the parent process.
              */
-            char buf = '\0';
+            char    buf = '\0';
+            ssize_t nread;
 
             /*
              * Close the write-end of the pipe, we do not use it
@@ -340,12 +341,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
              * Read the status from the child process. We expect as result
              * either 'O' (when initialzation went OK) or 'F' (for Fatal).
              */
-            if (ns_read(nsconf.state.pipefd[0], &buf, 1) < 1) {
+            nread = ns_read(nsconf.state.pipefd[0], &buf, 1);
+            if (nread < 0) {
                 /*
                  * Do nothing, even when the read fails
                  */
                 ;
             }
+            Ns_Log(Notice, "main: received from child %ld bytes", nread);
             ns_close(nsconf.state.pipefd[0]);
             nsconf.state.pipefd[0] = 0;
  
@@ -772,11 +775,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_MutexUnlock(&nsconf.state.lock);
 
     if (nsconf.state.pipefd[1] != 0) {
+        ssize_t nwrite;
         /*
          * Tell the parent process, that initialization went OK.
          */
-        if (ns_write(nsconf.state.pipefd[1], "O", 1) < 1) {
-            Ns_Fatal("nsmain: can't communicate with parent process");
+        nwrite = ns_write(nsconf.state.pipefd[1], "O", 1);
+        if (nwrite < 1) {
+            Ns_Fatal("nsmain: can't communicate with parent process, nwrite %ld", nwrite);
         }
         ns_close(nsconf.state.pipefd[1]);
         nsconf.state.pipefd[1] = 0;
