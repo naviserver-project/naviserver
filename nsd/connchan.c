@@ -759,13 +759,14 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     int           result = TCL_OK;
     Sock         *sockPtr;
     Ns_Set       *hdrPtr = NULL;
-    char         *url, *method = (char *)"GET", *version = (char *)"1.0";
+    char         *url, *method = (char *)"GET", *version = (char *)"1.0", *driverName = NULL;
     Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
     Ns_ObjvSpec   lopts[] = {
         {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
         {"-method",  Ns_ObjvString, &method, NULL},
         {"-timeout", Ns_ObjvTime,   &timeoutPtr,  NULL},
         {"-version", Ns_ObjvString, &version, NULL},
+        {"-driver",  Ns_ObjvString, &driverName, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -780,7 +781,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         NsServer       *servPtr = itPtr->servPtr;
         NsConnChan     *connChanPtr;
 
-        result = NSDriverClientOpen(interp, url, method, version, timeoutPtr, &sockPtr);
+        result = NSDriverClientOpen(interp, driverName, url, method, version, timeoutPtr, &sockPtr);
         if (likely(result == TCL_OK)) {
 
             Ns_Time      now;

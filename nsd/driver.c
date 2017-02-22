@@ -5879,28 +5879,30 @@ AsyncWriterThread(void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * AsyncWriterThread --
+ * NSDriverClientOpen --
  *
- *      Thread that implements non-blocking write operations to files
+ *      Open an client HTTP connection using the driver interface
  *
  * Results:
  *      Tcl return code.
  *
  * Side effects:
- *      Write to files.
+ *      Opening a connection
  *
  *----------------------------------------------------------------------
  */
 
 int
-NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, const char *version, const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
+NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
+                   const char *url, const char *httpMethod, const char *version,
+                   const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
-    char          *protocol, *host, *portString, *path, *tail, *url2;
-    int            result = TCL_OK;
+    char   *protocol, *host, *portString, *path, *tail, *url2;
+    int     result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(url != NULL);
-    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(httpMethod != NULL);
     NS_NONNULL_ASSERT(version != NULL);
     NS_NONNULL_ASSERT(sockPtrPtr != NULL);
 
@@ -5922,7 +5924,11 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
             Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
                    drvPtr->protocol, drvPtr->server, drvPtr->threadName, drvPtr->location);
             if (STREQ(drvPtr->protocol, protocol)) {
-                break;
+                if (driverName != NULL && STREQ(drvPtr->moduleName, driverName)) {
+                    break;
+                } else {
+                    break;
+                }
             }
         }
         if (drvPtr == NULL) {
@@ -5973,7 +5979,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
                 reqPtr = sockPtr->reqPtr;
 
                 Tcl_DStringInit(dsPtr);
-                Ns_DStringAppend(dsPtr, method);
+                Ns_DStringAppend(dsPtr, httpMethod);
                 Ns_StrToUpper(Ns_DStringValue(dsPtr));
                 Tcl_DStringAppend(dsPtr, " /", 2);
                 if (*path != '\0') {
@@ -5988,7 +5994,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *url, const char *method, cons
                 Tcl_DStringAppend(dsPtr, version, -1);
 
                 reqPtr->request.line = Ns_DStringExport(dsPtr);
-                reqPtr->request.method = ns_strdup(method);
+                reqPtr->request.method = ns_strdup(httpMethod);
                 reqPtr->request.protocol = ns_strdup(protocol);
                 reqPtr->request.host = ns_strdup(host);
                 query = strchr(tail, INTCHAR('?'));
