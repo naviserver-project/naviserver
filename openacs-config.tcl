@@ -16,10 +16,10 @@ set httpsport		8443
 # The hostname and address should be set to actual values.
 # setting the address to 0.0.0.0 means aolserver listens on all interfaces
 set hostname		localhost
-set address_v4		127.0.0.1
-#set address_v4		0.0.0.0  ;# listen on all IPv4-Adresses
-#set address_v6		::1
-#set address_v6		::0      ;#  listen on all IPv6-Adresses
+set address_v4		127.0.0.1  ;# listen on loopback via IPv4
+#set address_v4		0.0.0.0    ;# listen on all IPv4-Adresses
+#set address_v6		::1        ;# listen on loopback via IPv6
+#set address_v6		::0        ;# listen on all IPv6-Adresses
 
 # Note: If port is privileged (usually < 1024), OpenACS must be
 # started by root, and the run script must contain the flag 
@@ -67,6 +67,16 @@ set max_file_upload_min        5
 #
 set env(HOME) $homedir
 set env(LANG) en_US.UTF-8
+
+#---------------------------------------------------------------------
+# Set headers that should be included in every reply from the server
+#
+set extraheaders {
+    X-Frame-Options            "SAMEORIGIN"
+    X-Content-Type-Options     "nosniff"
+    X-XSS-Protection           "1; mode=block"
+    Referrer-Policy            "strict-origin"
+}
 
 ###################################################################### 
 #
@@ -352,7 +362,8 @@ foreach address $addresses suffix $suffixes {
 	ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
 	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
-	# ns_param	driverthreads	2	;# 1; use multiple driver threads  (requires support of SO_REUSEPORT)
+        # ns_param	driverthreads	2	;# 1; use multiple driver threads  (requires support of SO_REUSEPORT)
+        ns_param        extraheaders    $extraheaders
 }
 
 
@@ -433,6 +444,7 @@ foreach address $addresses suffix $suffixes {
        #ns_param	writerstreaming	true	;# false
        #ns_param	deferaccept	true    ;# false, Performance optimization
        ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
+       ns_param         extraheaders    $extraheaders
 }
 
 #---------------------------------------------------------------------
