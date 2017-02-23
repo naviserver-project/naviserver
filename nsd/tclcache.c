@@ -65,6 +65,9 @@ static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *
 static bool noGlobChars(const char *pattern) 
     NS_GNUC_NONNULL(1);
 
+static TclCache *TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeoutPtr, Ns_Time *expPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+
 static Ns_ObjvProc ObjvCache;
 
 
@@ -72,9 +75,47 @@ static Ns_ObjvProc ObjvCache;
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCacheCreateObjCmd --
+ * TclCacheCreate --
  *
  *      Create a new Tcl cache.
+ *
+ * Results:
+ *      TclCache *
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static TclCache *
+TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeoutPtr, Ns_Time *expPtr)
+{
+    TclCache *cPtr;
+
+    NS_NONNULL_ASSERT(name != NULL);
+
+    cPtr = ns_calloc(1u, sizeof(TclCache));
+    cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, maxSize, ns_free);
+    cPtr->maxEntry = maxEntry;
+    cPtr->maxSize  = maxSize;
+    if (timeoutPtr != NULL) {
+        cPtr->timeout = *timeoutPtr;
+    }
+    if (expPtr != NULL) {
+        cPtr->expires = *expPtr;
+    }
+
+    return cPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCacheCreateObjCmd --
+ *
+ *      Implementation of ns_cache_create
  *
  * Results:
  *      Tcl result.
@@ -121,29 +162,17 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         Ns_MutexLock(&servPtr->tcl.cachelock);
         hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &isNew);
         if (isNew != 0) {
-            TclCache *cPtr = ns_calloc(1u, sizeof(TclCache));
-
-            cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)maxSize, ns_free);
-            cPtr->maxEntry = (size_t)maxEntry;
-            cPtr->maxSize  = (size_t)maxSize;
-            if (timeoutPtr != NULL) {
-                cPtr->timeout = *timeoutPtr;
-            }
-            if (expPtr != NULL) {
-                cPtr->expires = *expPtr;
-            }
+            TclCache *cPtr = TclCacheCreate(name, (size_t)maxEntry, (size_t)maxSize, timeoutPtr, expPtr);
             Tcl_SetHashValue(hPtr, cPtr);
         }
         Ns_MutexUnlock(&servPtr->tcl.cachelock);
-        
-        if (isNew == 0) {
-            Ns_TclPrintfResult(interp, "duplicate cache name: %s", name);
-            result = TCL_ERROR;
-        }
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj( isNew == 1));
     }
     
     return result;
 }
+
 
 
 /*
@@ -272,7 +301,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         Tcl_DString     ds;
 
         Tcl_DStringInit(&ds);
-                
+
         Ns_MutexLock(&servPtr->tcl.cachelock);
         maxSize  = (long)cPtr->maxSize;
         maxEntry = (long)cPtr->maxEntry;
@@ -353,7 +382,6 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         {"args",     Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
     };
-    args[0].arg = clientData; /* pass non-constant clientData for "cache" */
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         status = TCL_ERROR;
@@ -373,7 +401,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 
         } else {
             Ns_Time start, end, diff;
-            
+                        
             Ns_CacheUnlock(cPtr->cache);
             Ns_GetTime(&start);
             
@@ -1088,9 +1116,9 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         if (unlikely(Ns_TclGetOpaqueFromObj(cacheNameObj, cacheType, (void **)cPtrPtr) != TCL_OK)) {
             /*
-             * Ns_TclGetOpaqueFromObj failed, try to add the Tcl_Objobject to
-             * tcl.caches, when we have an interpreter with an attached
-             * server.
+             * Ns_TclGetOpaqueFromObj failed, try to add the cached named by
+             * Tcl_Obj to tcl.caches, when we have an interpreter with an
+             * attached server.
              */
             if ((itPtr != NULL) && (itPtr->servPtr != NULL)) {
                 NsServer            *servPtr = itPtr->servPtr;
@@ -1101,7 +1129,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
                 Ns_MutexUnlock(&servPtr->tcl.cachelock);
                 if (hPtr == NULL) {
                     Ns_TclPrintfResult(interp, "no such cache: %s", cacheName);
-                    Tcl_SetErrorCode(interp, "NSCACHE", "LOOKUP", NULL);
+                    Tcl_SetErrorCode(interp, "NSCACHE", "LOOKUP", cacheName, NULL);
                     result = TCL_ERROR;
                 } else {
                     *cPtrPtr = Tcl_GetHashValue(hPtr);
@@ -1109,14 +1137,17 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
                 }
             } else {
                 /*
-                 * No server, we can't store the entry in the cache
+                 * No interpreter or no server, we can't store the entry in
+                 * the cache.
                  */
                 Ns_TclPrintfResult(interp, "no server for cache %s", cacheName);
+                Tcl_SetErrorCode(interp, "NSCACHE", "LOOKUP", cacheName, NULL);
                 result = TCL_ERROR;
             }
         } else {
             /*
-             * Common case: we could fetch the cache pointer from the Tcl_Obj.
+             * Common case: fetch the cache pointer from the Tcl_Obj internal
+             * representation.
              */
         }
         

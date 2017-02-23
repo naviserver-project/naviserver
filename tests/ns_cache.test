@@ -64,9 +64,12 @@ test cache-2.1 {cache names} -body {
 
 
 
-test cache-3.1 {cache create} -body {
+test cache-3.1a {cache create} -body {
     ns_cache_create -expires 3 -- c3 1024
-} -result {}
+} -result {1}
+test cache-3.1b {cache create} -body {
+    ns_cache_create -expires 3 -- c3 1024
+} -result {0}
 
 
 test cache-3.2 {query configuration} -body {
