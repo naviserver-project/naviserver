@@ -759,7 +759,7 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
         SSL_free(ssl);
     }
 
-    return TCL_OK;
+    return result;
 }
 #else
 
