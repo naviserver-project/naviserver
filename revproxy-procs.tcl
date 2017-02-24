@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.4
+    set version 0.5
     set verbose 0
 
     #
@@ -71,6 +71,44 @@ namespace eval ::revproxy {
 				  -headers $queryHeaders \
 				  -version [ns_conn version] \
 				  $url]
+	    #
+	    # Check, if we have requests with a body
+	    #
+            set contentLength [ns_set iget $queryHeaders content-length {}]
+            if {$contentLength ne ""} {
+                set contentfile [ns_conn contentfile]
+		set chunk 16000
+                if {$contentfile eq ""} {
+		    #
+		    # string content 
+		    #
+                    set data [ns_conn content -binary]
+                    set length [string length $data] 
+                    set i 0 
+                    set j [expr {$chunk -1}] 
+                    while {$i < $length} {
+			log notice "upstream: send max $chunk bytes from string to $backendChan (length $contentLength)"
+                        ns_connchan write $backendChan [string range $data $i $j] 
+                        incr i $chunk 
+                        incr j $chunk 
+                    } 
+                } else {
+		    #
+		    # file content 
+		    #
+                    set F [open $contentfile r]
+                    fconfigure $F -encoding binary -translation binary
+                    while {1} {
+			log notice "upstream: send max $chunk bytes from file to $backendChan (length $contentLength)"
+			ns_connchan write $backendChan [read $F $chunk]
+			if {[eof $F]} break
+                    }
+                    close $F
+                }
+            }
+	    #
+	    # Full request was received and transmitted upstream, now handle replies
+	    #	    
 	    set frontendChan [ns_connchan detach]
 	    log notice "back $backendChan front $frontendChan method [ns_conn method] version 1.0 $url"
 	    
