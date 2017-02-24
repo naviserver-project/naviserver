@@ -337,7 +337,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             ns_close(nsconf.state.pipefd[1]);
             nsconf.state.pipefd[1] = 0;
 
-            Ns_Log(Notice, "nsmain: wait for feedback from forked child, read from fd %d", nsconf.state.pipefd[0]);
+            Ns_Log(Debug, "nsmain: wait for feedback from forked child, read from fd %d",
+                   nsconf.state.pipefd[0]);
             /*
              * Read the status from the child process. We expect as result
              * either 'O' (when initialzation went OK) or 'F' (for Fatal).
@@ -348,9 +349,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                  * Do nothing, even when the read fails
                  */
                 ;
-                Ns_Log(Notice, "nsmain: received no feedback from child process, error: %s", strerror(errno));
+                Ns_Log(Warning, "nsmain: received no feedback from child process, error: %s", strerror(errno));
             }
-            Ns_Log(Notice, "nsmain: received from child %ld byte", nread);
+            Ns_Log(Debug, "nsmain: received from child %ld byte", nread);
             ns_close(nsconf.state.pipefd[0]);
             nsconf.state.pipefd[0] = 0;
             
@@ -783,7 +784,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
          */
         nwrite = ns_write(nsconf.state.pipefd[1], "O", 1);
         if (nwrite < 1) {
-            Ns_Fatal("nsmain: can't communicate with parent process, nwrite %ld, error: %s",
+            Ns_Fatal("nsmain: can't communicate with parent process, nwrite %ld, error: %s (parent process was probably killed)",
                      nwrite, strerror(errno));
         }
         ns_close(nsconf.state.pipefd[1]);
