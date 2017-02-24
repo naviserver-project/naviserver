@@ -261,7 +261,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
                   NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;
-    int             rc = TCL_OK;
+    int             result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(ctx != NULL);
@@ -271,35 +271,37 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     *sslPtr = ssl;
     if (ssl == NULL) {
 	Ns_TclPrintfResult(interp, "SSLCreate failed: %s", ERR_error_string(ERR_get_error(), NULL));
-	return TCL_ERROR;
-    }
+	result = TCL_ERROR;
+        
+    } else {
     
-    SSL_set_fd(ssl, sock);
-    SSL_set_connect_state(ssl);
+        SSL_set_fd(ssl, sock);
+        SSL_set_connect_state(ssl);
     
-    for (;;) {
-	int sslRc, err;
+        for (;;) {
+            int sslRc, err;
 
-	Ns_Log(Debug, "ssl connect");
-	sslRc = SSL_connect(ssl);
-	err   = SSL_get_error(ssl, sslRc);
+            Ns_Log(Debug, "ssl connect");
+            sslRc = SSL_connect(ssl);
+            err   = SSL_get_error(ssl, sslRc);
 
-	if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
-	    Ns_Time timeout = { 0, 10000 }; /* 10ms */
-	    (void) Ns_SockTimedWait(sock,
-                                    ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ),
-                                    &timeout);
-	    continue;
-	}
-	break;
+            if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
+                Ns_Time timeout = { 0, 10000 }; /* 10ms */
+                (void) Ns_SockTimedWait(sock,
+                                        ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ),
+                                        &timeout);
+                continue;
+            }
+            break;
+        }
+
+        if (!SSL_is_init_finished(ssl)) {
+            Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            result = TCL_ERROR;
+        }
     }
 
-    if (!SSL_is_init_finished(ssl)) {
-	Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
-	rc = TCL_ERROR;
-    }
-
-    return rc;
+    return result;
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x010000000
