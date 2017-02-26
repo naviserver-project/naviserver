@@ -9,7 +9,7 @@ test ns_set-1.1 {basic syntax ns_set} -body {
 
 test ns_set-1.2 {basic syntax ns_set} -body {
     ns_set 123
-} -returnCodes error -result {bad option "123": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelete, idelkey, ifind, iget, isnull, iunique, key, list, merge, move, name, new, print, put, size, split, truncate, unique, update, or value}
+} -returnCodes error -result {bad option "123": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelkey, ifind, iget, isnull, iunique, key, list, merge, move, name, new, print, put, size, split, truncate, unique, update, or value}
 
 test ns_set-1.6 {basic syntax ns_set array} -body {
     ns_set array
@@ -56,10 +56,6 @@ test ns_set-1.15 {basic syntax ns_set get} -body {
 test ns_set-1.16 {basic syntax ns_set icput} -body {
     ns_set icput
 } -returnCodes error -result {wrong # args: should be "ns_set icput setId ?args?"}
-
-test ns_set-1.17 {basic syntax ns_set idelete} -body {
-    ns_set idelete
-} -returnCodes error -result {wrong # args: should be "ns_set idelete setId ?args?"}
 
 test ns_set-1.18 {basic syntax ns_set idelkey} -body {
     ns_set idelkey

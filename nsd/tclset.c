@@ -230,7 +230,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
     static const char *const opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",
-        "delkey", "find", "free", "get", "icput", "idelete",
+        "delkey", "find", "free", "get", "icput", 
         "idelkey", "ifind", "iget", "isnull", "iunique", "key",
         "list", "merge", "move", "name", "new", "print",
         "put", "size", "split", "truncate", "unique", "update",
@@ -239,7 +239,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     enum {
         SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
-        SICPutIdx, SIDeleteIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
+        SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
         SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
         SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
