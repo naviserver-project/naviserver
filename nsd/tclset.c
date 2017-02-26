@@ -220,14 +220,13 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 {
     NsInterp            *itPtr = clientData;
     Ns_Set              *set = NULL, *set2Ptr;
-    int                  opt;
     const char          *key, *val, *def;
     Tcl_DString          ds;
     Tcl_HashTable       *tablePtr;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
     Tcl_Obj             *objPtr;
-    int                  result = TCL_OK;
+    int                  opt, result = TCL_OK;
 
     static const char *const opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",
@@ -475,12 +474,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
                 Tcl_SetObjResult(interp, objPtr);
                 break;
 
-            case SIDeleteIdx:
             case SIDelkeyIdx:
                 Ns_SetIDeleteKey(set, key);
                 break;
 
-            case SDeleteIdx:
             case SDelkeyIdx:
                 Ns_SetDeleteKey(set, key);
                 break;
