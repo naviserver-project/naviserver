@@ -76,6 +76,10 @@ Create a new Tcl cache identified by [arg name] with maximum size
 and a default [option -expires] and the maximum size of a single 
 entry (parameter [option -maxentry]).
 
+[para] The function returns 1 when the cache is newly created. When
+the cache exists already, the function return 0 and leaves the
+existing cache unmodified.
+
 [call [cmd ns_cache_exists] \
      [arg name]]
 
