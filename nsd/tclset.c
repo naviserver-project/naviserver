@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -30,7 +30,7 @@
 /*
  * tclset.c --
  *
- *      Implements the tcl ns_set commands 
+ *      Implements the tcl ns_set commands
  */
 
 #include "nsd.h"
@@ -75,7 +75,7 @@ static Tcl_Obj *EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *      A pointer to the Ns_Set is added to the interpreter's list of 
+ *      A pointer to the Ns_Set is added to the interpreter's list of
  *      sets; a new handle is generated and appended to interp result.
  *
  *----------------------------------------------------------------------
@@ -98,7 +98,7 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
         Tcl_SetObjResult(interp, EnterSet(itPtr, set, type));
         result = TCL_OK;
     }
-    
+
     return result;
 }
 
@@ -111,7 +111,7 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
  *      Given a Tcl ns_set handle, return a pointer to the Ns_Set.
  *
  * Results:
- *      An Ns_Set pointer, or NULL if error. 
+ *      An Ns_Set pointer, or NULL if error.
  *
  * Side effects:
  *      None.
@@ -126,7 +126,7 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(setId != NULL);
-	
+    
     if (LookupInterpSet(interp, setId, NS_FALSE, &set) != TCL_OK) {
         set = NULL;
     }
@@ -139,7 +139,7 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
  *
  * Ns_TclGetSet2 --
  *
- *      Like Ns_TclGetSet, but sends errors to the tcl interp. 
+ *      Like Ns_TclGetSet, but sends errors to the tcl interp.
  *
  * Results:
  *      Tcl result.
@@ -172,7 +172,7 @@ Ns_TclGetSet2(Tcl_Interp *interp, const char *setId, Ns_Set **setPtr)
  *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *      Will free the set matching the passed-in set id, and all of 
+ *      Will free the set matching the passed-in set id, and all of
  *      its associated data.
  *
  *----------------------------------------------------------------------
@@ -230,7 +230,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
     static const char *const opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",
-        "delkey", "find", "free", "get", "icput", 
+        "delkey", "find", "free", "get", "icput",
         "idelkey", "ifind", "iget", "isnull", "iunique", "key",
         "list", "merge", "move", "name", "new", "print",
         "put", "size", "split", "truncate", "unique", "update",
@@ -251,7 +251,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-				     &opt) != TCL_OK)) {
+                     &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
     if (unlikely(opt == SCreateidx)) {
@@ -336,7 +336,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
                 Ns_Set     **sets;
                 const char  *split;
                 int          i;
-                
+
                 split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
                 sets = Ns_SetSplit(set, *split);
                 for (i = 0; sets[i] != NULL; i++) {
@@ -348,7 +348,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             }
             break;
         }
-            
+
         default:
             /* unexpected value */
             assert(opt && 0);
@@ -357,12 +357,12 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         break;
     }
 
-    default: 
+    default:
         /*
          * All futher commands require a valid set.
          */
 
-	if (unlikely(objc < 3)) {
+    if (unlikely(objc < 3)) {
             Tcl_WrongNumArgs(interp, 2, objv, "setId ?args?");
             return TCL_ERROR;
         }
@@ -432,7 +432,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
                 result = TCL_ERROR;
             } else {
                 const char *def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
-                
+
                 key = Tcl_GetString(objv[3]);
 
                 switch (opt) {
@@ -704,7 +704,7 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
     } else if (STREQ(dispositionString, "preserve")) {
         disp = Preserve;
     } else {
-        Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve", 
+        Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
                            dispositionString);
         result = TCL_ERROR;
     }
@@ -813,7 +813,7 @@ LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **s
     } else {
         result = LookupSet(itPtr, id, deleteEntry, setPtr);
     }
-    
+
     return result;
 }
 
