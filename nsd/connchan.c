@@ -784,10 +784,6 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         result = NSDriverClientOpen(interp, driverName, url, method, version, timeoutPtr, &sockPtr);
         if (likely(result == TCL_OK)) {
 
-            Ns_Time      now;
-            struct iovec buf[4];
-            ssize_t      nSent;
-
             if (STREQ(sockPtr->drvPtr->protocol, "https")) {
                 NS_TLS_SSL_CTX *ctx;
 
@@ -815,54 +811,63 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                         Ns_TLS_CtxFree(ctx);
                     }
                 }
+            }
+
+            if (likely(result == TCL_OK)) {
+                struct iovec buf[4];
+                Ns_Time      now;
+                ssize_t      nSent;
+
+                Ns_GetTime(&now);
+                connChanPtr = ConnChanCreate(servPtr,
+                                             sockPtr,
+                                             &now,
+                                             sockPtr->reqPtr->peer,
+                                             NS_TRUE /* binary, fixed for the time being */,
+                                             NULL);
+                if (hdrPtr != NULL) {
+                    size_t i;
                     
-                if (unlikely(result != TCL_OK)) {
-                    if (sockPtr->sock > 0) {
-                        ns_sockclose(sockPtr->sock);
+                    for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
+                        const char *key = Ns_SetKey(hdrPtr, i);
+                        Ns_DStringPrintf(&sockPtr->reqPtr->buffer, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
                     }
-                    return TCL_ERROR;
                 }
-            }
                 
-            Ns_GetTime(&now);
-            connChanPtr = ConnChanCreate(servPtr,
-                                         sockPtr,
-                                         &now,
-                                         sockPtr->reqPtr->peer,
-                                         NS_TRUE /* binary, fixed for the time being */,
-                                         NULL);
-            if (hdrPtr != NULL) {
-                size_t i;
-                    
-                for (i = 0u; i < Ns_SetSize(hdrPtr); i++) {
-                    const char *key = Ns_SetKey(hdrPtr, i);
-                    Ns_DStringPrintf(&sockPtr->reqPtr->buffer, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
+                /*
+                 * Write the request header via the "send" operation of
+                 * the driver.
+                 */
+                buf[0].iov_base = (void *)sockPtr->reqPtr->request.line;
+                buf[0].iov_len  = strlen(buf[0].iov_base);
+
+                buf[1].iov_base = (void *)"\r\n";
+                buf[1].iov_len  = 2u;
+
+                buf[2].iov_base = (void *)sockPtr->reqPtr->buffer.string;
+                buf[2].iov_len  = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
+
+                buf[3].iov_base = (void *)"\r\n";
+                buf[3].iov_len  = 2u;
+
+                nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
+                Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
+
+                if (nSent > -1) {
+                    connChanPtr->wBytes += (size_t)nSent;
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+                } else {
+                    result = TCL_ERROR;
                 }
-            }
-                
-            /*
-             * Write the request header via the "send" operation of
-             * the driver.
-             */
-            buf[0].iov_base = (void *)sockPtr->reqPtr->request.line;
-            buf[0].iov_len = strlen(buf[0].iov_base);
-            buf[1].iov_base = (void *)"\r\n";
-            buf[1].iov_len = 2u;
-            buf[2].iov_base = (void *)sockPtr->reqPtr->buffer.string;
-            buf[2].iov_len = (size_t)Tcl_DStringLength(&sockPtr->reqPtr->buffer);
-            buf[3].iov_base = (void *)"\r\n";
-            buf[3].iov_len = 2u;
-
-            nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
-            Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
-
-            if (nSent > -1) {
-                connChanPtr->wBytes += (size_t)nSent;
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
-            } else {
-                result = TCL_ERROR;
             }
         }
+        
+        if (unlikely(result != TCL_OK)) {
+            if (sockPtr->sock > 0) {
+                ns_sockclose(sockPtr->sock);
+            }
+        }
+        
     }
     return result;
 }
