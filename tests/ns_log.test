@@ -24,7 +24,7 @@ test ns_log-2.1 {basic syntax} -body {
 
 test ns_log-2.2 {basic syntax} -body {
     ns_logctl ?
-} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, truncate, severity, severities, stats, register, or unregister}
+} -returnCodes error -result {bad option "?": must be count, flush, get, hold, peek, register, release, severities, severity, stats, truncate, or unregister}
 
 
 
