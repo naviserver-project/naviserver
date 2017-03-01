@@ -1125,7 +1125,6 @@ NsLogCtlServerityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     Ns_LogSeverity    severity = 0; /* default value for the error cases */
     void             *addrPtr = NULL;
-    bool              enabled;
     int               result = TCL_OK, color = -1, intensity = -1, givenEnabled = -1;
     Ns_ObjvSpec       lopts[] = {
         {"-color",     Ns_ObjvIndex,  &color,     colors},
@@ -1170,6 +1169,7 @@ NsLogCtlServerityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     }
 
     if (likely(result == TCL_OK)) {
+        bool enabled;
 
         assert(severity < severityMaxCount);
 

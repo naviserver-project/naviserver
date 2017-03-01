@@ -643,7 +643,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        int        i, lobjc, size;
+        int        lobjc, size;
         Array     *arrayPtr;
         Tcl_Obj  **lobjv;
             
@@ -662,6 +662,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 result = TCL_ERROR;
 
             } else {
+                int  i;
 
                 arrayPtr = LockArrayObj(interp, objv[2], NS_TRUE);
                 assert(arrayPtr != NULL);
