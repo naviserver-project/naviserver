@@ -106,6 +106,8 @@ static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
 static Ns_LogFilter LogToDString;
 
+static Tcl_ObjCmdProc NsLogCtlSeverityObjCmd;
+
 static LogCache* GetCache(void)
     NS_GNUC_RETURNS_NONNULL;
 
@@ -123,6 +125,13 @@ static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Tcl_Obj *LogStats(void);
+
+static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NONNULL(1);
+
+static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+
 
 /*
  * Static variables defined in this file
@@ -183,11 +192,6 @@ static Ns_ObjvTable intensities[] = {
     {"bright",   COLOR_BRIGHT},
     {NULL,       0u}
 };
-
-static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NONNULL(1);
-static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
-
 
 /*
  * The following table defines which severity levels
@@ -1107,7 +1111,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 /*
  *----------------------------------------------------------------------
  *
- * NsLogCtlServerityObjCmd --
+ * NsLogCtlSeverityObjCmd --
  *
  *      Implements "ns_logctl severtiy" command.
  *
@@ -1121,7 +1125,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  */
 
 static int
-NsLogCtlServerityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogSeverity    severity = 0; /* default value for the error cases */
     void             *addrPtr = NULL;
@@ -1333,7 +1337,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             break;
 
         case CSeverityIdx:
-            result = NsLogCtlServerityObjCmd(clientData, interp, objc, objv);
+            result = NsLogCtlSeverityObjCmd(clientData, interp, objc, objv);
             break;
 
         case CSeveritiesIdx:
