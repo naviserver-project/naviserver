@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * tclenv.c --
  *
  *      Implement the "ns_env" command.
@@ -143,11 +143,7 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
 int
 NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *name, *value;
-    char        *const*envp;
-    int          status, i, opt;
-    Tcl_Obj     *result;
-
+    int                      result, opt;
     static const char *const opts[] = {
         "exists", "names", "get", "set", "unset", NULL
     };
@@ -157,89 +153,97 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "command ?args ...?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "command", 0,
+        result = TCL_ERROR;
+
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "command", 0,
                             &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    status = TCL_ERROR;
-    Ns_MutexLock(&lock);
+    } else {
+        const char  *name, *value;
+        char        *const *envp;
+        Tcl_Obj     *resultObj;
+        int          i;
+        
+        result = TCL_OK;
+        Ns_MutexLock(&lock);
 
-    switch (opt) {
-    case IExistsIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "name");
-            goto done;
-        }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(getenv(Tcl_GetString(objv[2])) != NULL ? 1 : 0));
-        break;
-
-    case INamesIdx:
-        envp = Ns_GetEnviron();
-        result = Tcl_GetObjResult(interp);
-        for (i = 0; envp[i] != NULL; ++i) {
-            Tcl_Obj *obj;
-            
-            name = envp[i];
-            value = strchr(name, INTCHAR('='));
-            obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : -1);
-            if (Tcl_ListObjAppendElement(interp, result, obj) != TCL_OK) {
-                goto done;
+        switch (opt) {
+        case IExistsIdx:
+            if (objc != 3) {
+                Tcl_WrongNumArgs(interp, 2, objv, "name");
+                result = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(getenv(Tcl_GetString(objv[2])) != NULL ? 1 : 0));
             }
-        }
-        break;
+            break;
 
-    case ISetIdx:
-        if (objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "name value");
-            goto done;
-        }
-        if (PutEnv(interp, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]))
-            != TCL_OK) {
-            goto done;
-        }
-        break;
+        case INamesIdx:
+            envp = Ns_GetEnviron();
+            resultObj = Tcl_GetObjResult(interp);
+            for (i = 0; envp[i] != NULL; ++i) {
+                Tcl_Obj *obj;
+            
+                name = envp[i];
+                value = strchr(name, INTCHAR('='));
+                obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : -1);
+                if (Tcl_ListObjAppendElement(interp, resultObj, obj) != TCL_OK) {
+                    result = TCL_ERROR;
+                    break;
+                }
+            }
+            break;
 
-    case IGetIdx:
-    case IUnsetIdx:
-	if (objc != 3 && objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
-            goto done;
+        case ISetIdx:
+            if (objc != 4) {
+                Tcl_WrongNumArgs(interp, 2, objv, "name value");
+                result = TCL_ERROR;
+
+            } else if (PutEnv(interp, Tcl_GetString(objv[2]), Tcl_GetString(objv[3])) != TCL_OK) {
+                result = TCL_ERROR;
+            }
+            break;
+
+        case IGetIdx:
+        case IUnsetIdx:
+            if (objc != 3 && objc != 4) {
+                Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
+                result = TCL_ERROR;
+
+            } else if (objc == 4) {
+                const char *arg = Tcl_GetString(objv[2]);
+                
+                if (!STREQ(arg, "-nocomplain")) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
+                    result = TCL_ERROR;
+                }
+            }
+
+            if (result == TCL_OK) {
+                name = Tcl_GetString(objv[2]);
+                value = getenv(name);
+                if (value == NULL && objc != 4) {
+                    Ns_TclPrintfResult(interp, "no such environment variable: %s", name);
+                    result = TCL_ERROR;
+
+                } else if ((opt == IUnsetIdx) && (PutEnv(interp, name, NULL) != TCL_OK)) {
+                    result = TCL_ERROR;
+
+                } else {
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
+                }
+            }
+            break;
+
+        default:
+            /* unexpected value */
+            assert(opt && 0);
+            break;
         }
 
-        if (objc == 4) {
-	    const char *arg = Tcl_GetString(objv[2]);
-	    if (!STREQ(arg, "-nocomplain")) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
-		goto done;
-	    }
-        }
-        name = Tcl_GetString(objv[2]);
-        value = getenv(name);
-        if (value == NULL && objc != 4) {
-            Ns_TclPrintfResult(interp, "no such environment variable: %s", name);
-            goto done;
-        }
-        if ((opt == IUnsetIdx) && (PutEnv(interp, name, NULL) != TCL_OK)) {
-            goto done;
-        } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
-        }
-        break;
-
-    default:
-        /* unexpected value */
-        assert(opt && 0);
-        break;
+        Ns_MutexUnlock(&lock);
     }
-    status = TCL_OK;
-
- done:
-    Ns_MutexUnlock(&lock);
-
-    return status;
+    return result;
 }
 
 
