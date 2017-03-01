@@ -251,7 +251,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                     &opt) != TCL_OK)) {
+                                     &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
     if (unlikely(opt == SCreateidx)) {
@@ -362,298 +362,300 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
          * All futher commands require a valid set.
          */
 
-    if (unlikely(objc < 3)) {
+        if (unlikely(objc < 3)) {
             Tcl_WrongNumArgs(interp, 2, objv, "setId ?args?");
-            return TCL_ERROR;
-        }
-        if (unlikely(LookupObjSet(itPtr, objv[2], NS_FALSE, &set) != TCL_OK)) {
-            return TCL_ERROR;
-        }
+            result = TCL_ERROR;
 
-        switch (opt) {
-        case SArrayIdx:
-        case SSizeIdx:
-        case sINameIdx:
-        case SPrintIdx:
-        case SFreeIdx:
-            /*
-             * These commands require only the set.
-             */
+        } else if (unlikely(LookupObjSet(itPtr, objv[2], NS_FALSE, &set) != TCL_OK)) {
+            result = TCL_ERROR;
 
-            if (unlikely(objc != 3)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setId");
-                result = TCL_ERROR;
+        } else {
 
-            } else {
+            switch (opt) {
+            case SArrayIdx:
+            case SSizeIdx:
+            case sINameIdx:
+            case SPrintIdx:
+            case SFreeIdx:
+                /*
+                 * These commands require only the set.
+                 */
 
-                switch (opt) {
-                case SArrayIdx:
-                    {
-                        size_t i;
+                if (unlikely(objc != 3)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId");
+                    result = TCL_ERROR;
 
-                        Tcl_DStringInit(&ds);
-                        for (i = 0u; i < Ns_SetSize(set); ++i) {
-                            Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
-                            Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
+                } else {
+
+                    switch (opt) {
+                    case SArrayIdx:
+                        {
+                            size_t i;
+
+                            Tcl_DStringInit(&ds);
+                            for (i = 0u; i < Ns_SetSize(set); ++i) {
+                                Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
+                                Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
+                            }
+                            Tcl_DStringResult(interp, &ds);
+                            break;
                         }
-                        Tcl_DStringResult(interp, &ds);
+
+                    case SSizeIdx:
+                        objPtr = Tcl_NewLongObj((long)Ns_SetSize(set));
+                        Tcl_SetObjResult(interp, objPtr);
+                        break;
+
+                    case sINameIdx:
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, -1));
+                        break;
+
+                    case SPrintIdx:
+                        Ns_SetPrint(set);
+                        break;
+
+                    case SFreeIdx:
+                        (void) Ns_TclFreeSet(interp, Tcl_GetString(objv[2]));
+                        break;
+
+                    default:
+                        /* unexpected value */
+                        assert(opt && 0);
                         break;
                     }
-
-                case SSizeIdx:
-                    objPtr = Tcl_NewLongObj((long)Ns_SetSize(set));
-                    Tcl_SetObjResult(interp, objPtr);
-                    break;
-
-                case sINameIdx:
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, -1));
-                    break;
-
-                case SPrintIdx:
-                    Ns_SetPrint(set);
-                    break;
-
-                case SFreeIdx:
-                    (void) Ns_TclFreeSet(interp, Tcl_GetString(objv[2]));
-                    break;
-
-                default:
-                    /* unexpected value */
-                    assert(opt && 0);
-                    break;
                 }
-            }
-            break;
+                break;
 
-        case SGetIdx:
-        case SIGetIdx:
-            if (unlikely(objc < 4)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setId key ?default?");
-                result = TCL_ERROR;
-            } else {
-                const char *def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
-
-                key = Tcl_GetString(objv[3]);
-
-                switch (opt) {
-                case SGetIdx:
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetGetValue(set, key, def), -1));
-                    break;
-
-                case SIGetIdx:
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), -1));
-                    break;
-
-                default:
-                    /* unexpected value */
-                    assert(opt && 0);
-                    break;
-                }
-            }
-            break;
-
-        case SFindIdx:
-        case SIFindIdx:
-        case SDelkeyIdx:
-        case SIDelkeyIdx:
-        case SUniqueIdx:
-        case SIUniqueIdx:
-            /*
-             * These commands require a set and string key.
-             */
-
-            if (unlikely(objc != 4)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setId key");
-                result = TCL_ERROR;
-
-            } else {
-                key = Tcl_GetString(objv[3]);
-
-                switch (opt) {
-                case SIFindIdx:
-                    objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
-                    Tcl_SetObjResult(interp, objPtr);
-                    break;
-
-                case SFindIdx:
-                    objPtr = Tcl_NewIntObj(Ns_SetFind(set, key));
-                    Tcl_SetObjResult(interp, objPtr);
-                    break;
-
-                case SIDelkeyIdx:
-                    Ns_SetIDeleteKey(set, key);
-                    break;
-
-                case SDelkeyIdx:
-                    Ns_SetDeleteKey(set, key);
-                    break;
-
-                case SUniqueIdx:
-                    objPtr = Tcl_NewBooleanObj(Ns_SetUnique(set, key));
-                    Tcl_SetObjResult(interp, objPtr);
-                    break;
-
-                case SIUniqueIdx:
-                    objPtr = Tcl_NewBooleanObj(Ns_SetIUnique(set, key));
-                    Tcl_SetObjResult(interp, objPtr);
-                    break;
-
-                default:
-                    /* unexpected value */
-                    assert(opt && 0);
-                    break;
-                }
-            }
-            break;
-
-        case SValueIdx:
-        case SIsNullIdx:
-        case SKeyIdx:
-        case SDeleteIdx:
-        case STruncateIdx: {
-            /*
-             * These commands require a set and key/value index.
-             */
-            int i;
-
-            if (unlikely(objc != 4)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setId index");
-                result = TCL_ERROR;
-
-            } else if (unlikely(Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK)) {
-                result = TCL_ERROR;
-
-            } else if (unlikely(i < 0)) {
-                Ns_TclPrintfResult(interp, "invalid index %d: must be >= 0", i);
-                result = TCL_ERROR;
-
-            } else if (unlikely((size_t)i >= Ns_SetSize(set))) {
-                Ns_TclPrintfResult(interp, "invalid index %d: beyond range of set fields", i);
-                result = TCL_ERROR;
-
-            } else {
-                switch (opt) {
-                case SValueIdx:
-                    val = Ns_SetValue(set, i);
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
-                    break;
-
-                case SIsNullIdx:
-                    val = Ns_SetValue(set, i);
-                    objPtr = Tcl_NewBooleanObj((val != NULL) ? 0 : 1);
-                    Tcl_SetObjResult(interp, objPtr);
-                    break;
-
-                case SKeyIdx:
-                    key = Ns_SetKey(set, i);
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(key, -1));
-                    break;
-
-                case SDeleteIdx:
-                    Ns_SetDelete(set, i);
-                    break;
-
-                case STruncateIdx:
-                    Ns_SetTrunc(set, (size_t)i);
-                    break;
-
-                default:
-                    /* unexpected value */
-                    assert(opt && 0);
-                    break;
-                }
-            }
-            break;
-        }
-
-        case SPutIdx:
-        case SUpdateIdx:
-        case SCPutIdx:
-        case SICPutIdx:
-            /*
-             * These commands require a set, key, and value.
-             */
-
-            if (unlikely(objc != 5)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setId key value");
-                result = TCL_ERROR;
-            } else {
-                int i;
-
-                key = Tcl_GetString(objv[3]);
-                val = Tcl_GetString(objv[4]);
-
-                switch (opt) {
-                case SUpdateIdx:
-                    Ns_SetDeleteKey(set, key);
-                    i = (int)Ns_SetPut(set, key, val);
-                    break;
-
-                case SICPutIdx:
-                    i = Ns_SetIFind(set, key);
-                    if (i < 0) {
-                        i = (int)Ns_SetPut(set, key, val);
-                    }
-                    break;
-
-                case SCPutIdx:
-                    i = Ns_SetFind(set, key);
-                    if (i < 0) {
-                        i = (int)Ns_SetPut(set, key, val);
-                    }
-                    break;
-
-                case SPutIdx:
-                    i = (int)Ns_SetPut(set, key, val);
-                    break;
-
-                default:
-                    /* should not happen */
-                    assert(opt && 0);
-                    i = 0;
-                    break;
-                }
-                objPtr = Tcl_NewIntObj(i);
-                Tcl_SetObjResult(interp, objPtr);
-            }
-            break;
-
-        case SMergeIdx:
-        case SMoveIdx:
-            /*
-             * These commands require two sets.
-             */
-
-            if (unlikely(objc != 4)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
-                result = TCL_ERROR;
-            } else {
-                Ns_Set *set2Ptr = NULL;
-
-                if (unlikely(LookupObjSet(itPtr, objv[3], NS_FALSE, &set2Ptr) != TCL_OK)) {
+            case SGetIdx:
+            case SIGetIdx:
+                if (unlikely(objc < 4)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId key ?default?");
                     result = TCL_ERROR;
                 } else {
-                    assert (set2Ptr != NULL);
-                    if (opt == SMergeIdx) {
-                        Ns_SetMerge(set, set2Ptr);
-                    } else {
-                        Ns_SetMove(set, set2Ptr);
-                    }
-                    Tcl_SetObjResult(interp, objv[2]);
-                }
-            }
-            break;
+                    const char *def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
 
-        default:
-            /* unexpected value */
-            assert(opt && 0);
-            break;
+                    key = Tcl_GetString(objv[3]);
+
+                    switch (opt) {
+                    case SGetIdx:
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetGetValue(set, key, def), -1));
+                        break;
+
+                    case SIGetIdx:
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), -1));
+                        break;
+
+                    default:
+                        /* unexpected value */
+                        assert(opt && 0);
+                        break;
+                    }
+                }
+                break;
+
+            case SFindIdx:
+            case SIFindIdx:
+            case SDelkeyIdx:
+            case SIDelkeyIdx:
+            case SUniqueIdx:
+            case SIUniqueIdx:
+                /*
+                 * These commands require a set and string key.
+                 */
+
+                if (unlikely(objc != 4)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId key");
+                    result = TCL_ERROR;
+
+                } else {
+                    key = Tcl_GetString(objv[3]);
+
+                    switch (opt) {
+                    case SIFindIdx:
+                        objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
+                        Tcl_SetObjResult(interp, objPtr);
+                        break;
+
+                    case SFindIdx:
+                        objPtr = Tcl_NewIntObj(Ns_SetFind(set, key));
+                        Tcl_SetObjResult(interp, objPtr);
+                        break;
+
+                    case SIDelkeyIdx:
+                        Ns_SetIDeleteKey(set, key);
+                        break;
+
+                    case SDelkeyIdx:
+                        Ns_SetDeleteKey(set, key);
+                        break;
+
+                    case SUniqueIdx:
+                        objPtr = Tcl_NewBooleanObj(Ns_SetUnique(set, key));
+                        Tcl_SetObjResult(interp, objPtr);
+                        break;
+
+                    case SIUniqueIdx:
+                        objPtr = Tcl_NewBooleanObj(Ns_SetIUnique(set, key));
+                        Tcl_SetObjResult(interp, objPtr);
+                        break;
+
+                    default:
+                        /* unexpected value */
+                        assert(opt && 0);
+                        break;
+                    }
+                }
+                break;
+
+            case SValueIdx:
+            case SIsNullIdx:
+            case SKeyIdx:
+            case SDeleteIdx:
+            case STruncateIdx: {
+                /*
+                 * These commands require a set and key/value index.
+                 */
+                int i;
+
+                if (unlikely(objc != 4)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId index");
+                    result = TCL_ERROR;
+
+                } else if (unlikely(Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK)) {
+                    result = TCL_ERROR;
+
+                } else if (unlikely(i < 0)) {
+                    Ns_TclPrintfResult(interp, "invalid index %d: must be >= 0", i);
+                    result = TCL_ERROR;
+
+                } else if (unlikely((size_t)i >= Ns_SetSize(set))) {
+                    Ns_TclPrintfResult(interp, "invalid index %d: beyond range of set fields", i);
+                    result = TCL_ERROR;
+
+                } else {
+                    switch (opt) {
+                    case SValueIdx:
+                        val = Ns_SetValue(set, i);
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
+                        break;
+
+                    case SIsNullIdx:
+                        val = Ns_SetValue(set, i);
+                        objPtr = Tcl_NewBooleanObj((val != NULL) ? 0 : 1);
+                        Tcl_SetObjResult(interp, objPtr);
+                        break;
+
+                    case SKeyIdx:
+                        key = Ns_SetKey(set, i);
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(key, -1));
+                        break;
+
+                    case SDeleteIdx:
+                        Ns_SetDelete(set, i);
+                        break;
+
+                    case STruncateIdx:
+                        Ns_SetTrunc(set, (size_t)i);
+                        break;
+
+                    default:
+                        /* unexpected value */
+                        assert(opt && 0);
+                        break;
+                    }
+                }
+                break;
+            }
+
+            case SPutIdx:
+            case SUpdateIdx:
+            case SCPutIdx:
+            case SICPutIdx:
+                /*
+                 * These commands require a set, key, and value.
+                 */
+
+                if (unlikely(objc != 5)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId key value");
+                    result = TCL_ERROR;
+                } else {
+                    int i;
+
+                    key = Tcl_GetString(objv[3]);
+                    val = Tcl_GetString(objv[4]);
+
+                    switch (opt) {
+                    case SUpdateIdx:
+                        Ns_SetDeleteKey(set, key);
+                        i = (int)Ns_SetPut(set, key, val);
+                        break;
+
+                    case SICPutIdx:
+                        i = Ns_SetIFind(set, key);
+                        if (i < 0) {
+                            i = (int)Ns_SetPut(set, key, val);
+                        }
+                        break;
+
+                    case SCPutIdx:
+                        i = Ns_SetFind(set, key);
+                        if (i < 0) {
+                            i = (int)Ns_SetPut(set, key, val);
+                        }
+                        break;
+
+                    case SPutIdx:
+                        i = (int)Ns_SetPut(set, key, val);
+                        break;
+
+                    default:
+                        /* should not happen */
+                        assert(opt && 0);
+                        i = 0;
+                        break;
+                    }
+                    objPtr = Tcl_NewIntObj(i);
+                    Tcl_SetObjResult(interp, objPtr);
+                }
+                break;
+
+            case SMergeIdx:
+            case SMoveIdx:
+                /*
+                 * These commands require two sets.
+                 */
+
+                if (unlikely(objc != 4)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
+                    result = TCL_ERROR;
+                } else {
+                    Ns_Set *set2Ptr = NULL;
+
+                    if (unlikely(LookupObjSet(itPtr, objv[3], NS_FALSE, &set2Ptr) != TCL_OK)) {
+                        result = TCL_ERROR;
+                    } else {
+                        assert (set2Ptr != NULL);
+                        if (opt == SMergeIdx) {
+                            Ns_SetMerge(set, set2Ptr);
+                        } else {
+                            Ns_SetMove(set, set2Ptr);
+                        }
+                        Tcl_SetObjResult(interp, objv[2]);
+                    }
+                }
+                break;
+
+            default:
+                /* unexpected value */
+                assert(opt && 0);
+                break;
+            }
         }
     }
-
+    
     return result;
 }
-
+    
 
 /*
  *----------------------------------------------------------------------
