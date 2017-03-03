@@ -225,7 +225,6 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Tcl_HashTable       *tablePtr;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
-    Tcl_Obj             *objPtr;
     int                  opt, result = TCL_OK;
 
     static const char *const opts[] = {
@@ -370,6 +369,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             result = TCL_ERROR;
 
         } else {
+            Tcl_Obj *objPtr;
 
             switch (opt) {
             case SArrayIdx:
