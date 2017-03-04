@@ -111,6 +111,13 @@ ns_section ns/parameters
 	ns_param	home		$homedir 
         ns_param	debug		$debug
 
+        # Define optionally the tmpdir. If not specified, the
+        # environment variable TMPDIR is used. If that is not
+        # specified either, a system specific constant us used
+        # (compile time macro P_tmpdir)
+        #
+        # ns_param        tmpdir          c:/tmp
+
 	#
 	# ns_param	logroll		on
         ns_param	logmaxbackup	100  ;# 10 is default
