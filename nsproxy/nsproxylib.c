@@ -1194,7 +1194,7 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
         if (n == -1) {
             long waitMs;
 
-            if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
+            if ((errno != EAGAIN) && (errno != NS_EWOULDBLOCK)) {
                 success = NS_FALSE;
                 break;
 
@@ -1272,7 +1272,7 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
         } else if (n < 0) {
             long  waitMs;
 
-            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            if (errno != EAGAIN && errno != NS_EWOULDBLOCK) {
                 success = NS_FALSE;
                 break;
 
@@ -1316,7 +1316,7 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
             } else if (n < 0) {
                 long waitMs;
 
-                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                if (errno != EAGAIN && errno != NS_EWOULDBLOCK) {
                     success = NS_FALSE;
                     break;
 

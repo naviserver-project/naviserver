@@ -187,7 +187,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 
     n = SockRecv(sock, bufs, nbufs, flags);
     if (n < 0
-        && (ns_sockerrno == EWOULDBLOCK)
+        && (ns_sockerrno == NS_EWOULDBLOCK)
         && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ, timeoutPtr) == NS_OK) {
         n = SockRecv(sock, bufs, nbufs, flags);
     }
@@ -254,7 +254,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 
         sent = NsDriverSend(sock, sbufPtr, nsbufs, flags);
         if (sent < 0
-            && ns_sockerrno == EWOULDBLOCK
+            && ns_sockerrno == NS_EWOULDBLOCK
             && Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
             sent = NsDriverSend(sock, sbufPtr, nsbufs, flags);
         }
@@ -318,7 +318,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, const Ns_Time *timeoutP
 
     nread = ns_recv(sock, buffer, length, 0);
     if (nread == -1
-        && ns_sockerrno == EWOULDBLOCK
+        && ns_sockerrno == NS_EWOULDBLOCK
         && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ, timeoutPtr) == NS_OK) {
         nread = ns_recv(sock, buffer, length, 0);
     }
@@ -353,7 +353,7 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 
     nwrote = ns_send(sock, buffer, length, 0);
     if (nwrote == -1
-        && ns_sockerrno == EWOULDBLOCK
+        && ns_sockerrno == NS_EWOULDBLOCK
         && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
         nwrote = ns_send(sock, buffer, length, 0);
     }
@@ -1087,7 +1087,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
             if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                 int err = ns_sockerrno;
                 
-                if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
+                if (!async || (err != EINPROGRESS && err != NS_EWOULDBLOCK)) {
                     ns_sockclose(sock);
                     Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
                     sock = NS_INVALID_SOCKET;

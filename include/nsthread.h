@@ -594,14 +594,21 @@ typedef int bool;
 # ifndef EINPROGRESS
 #  define EINPROGRESS                WSAEINPROGRESS
 # endif
-# ifndef EWOULDBLOCK
-#  define EWOULDBLOCK                WSAEWOULDBLOCK
+/*
+ * Starting with VS2010 EWOULDBLOCK is defined in errno.h != WSAEWOULDBLOCK,
+ * so we have to abstract to NS_EWOULDBLOCK to cope with earlier versions and
+ * to provide cross_platform support.
+ * http://stackoverflow.com/questions/14714654/c-project-in-vs2008-works-but-in-vs2010-does-not
+ */
+# define NS_EWOULDBLOCK              WSAEWOULDBLOCK
 # endif
 # ifndef ETIMEDOUT
 #  define ETIMEDOUT                 1
 # endif
 # ifndef P_tmpdir
 #  define P_tmpdir "/tmp"
+# else
+#  define NS_EWOULDBLOCK            EWOULDBLOCK
 # endif
 #endif
 
