@@ -601,15 +601,14 @@ typedef int bool;
  * http://stackoverflow.com/questions/14714654/c-project-in-vs2008-works-but-in-vs2010-does-not
  */
 # define NS_EWOULDBLOCK              WSAEWOULDBLOCK
-# endif
 # ifndef ETIMEDOUT
 #  define ETIMEDOUT                 1
 # endif
 # ifndef P_tmpdir
 #  define P_tmpdir "c:/tmp"
-# else
-#  define NS_EWOULDBLOCK            EWOULDBLOCK
 # endif
+#else
+# define NS_EWOULDBLOCK            EWOULDBLOCK
 #endif
 
 #ifndef S_ISREG
