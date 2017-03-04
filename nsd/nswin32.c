@@ -1036,7 +1036,7 @@ StartTicker(DWORD pending)
     Ns_MutexLock(&lock);
     tick = 1;
     Ns_MutexUnlock(&lock);
-    Ns_ThreadCreate(ServiceTicker, (void *) pending, 0, &tickThread);
+    Ns_ThreadCreate(ServiceTicker, UINT2PTR(pending), 0, &tickThread);
 }
 
 static void
@@ -1071,7 +1071,7 @@ static void
 ServiceTicker(void *arg)
 {
     Ns_Time timeout;
-    DWORD pending = (DWORD) arg;
+    DWORD pending = (DWORD) PTR2UINT(arg);
 
     Ns_ThreadSetName("-ticker-");
 
