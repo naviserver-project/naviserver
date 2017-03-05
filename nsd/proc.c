@@ -188,11 +188,13 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
     } else {
         infoPtr = &nullInfo;
     }
+    /* Ns_Log(Notice, "Ns_GetProcInfo: infoPtr->desc %p", infoPtr->desc);*/
     if (infoPtr->desc != NULL) {
         Tcl_DStringAppendElement(dsPtr, infoPtr->desc);
     } else {
         AppendAddr(dsPtr, "p", (void *)procAddr);
     }
+    /*Ns_Log(Notice, "Ns_GetProcInfo: infoPtr->proc %p", infoPtr->proc);*/
     if (infoPtr->proc != NULL) {
         (*infoPtr->proc)(dsPtr, arg);
     } else {
