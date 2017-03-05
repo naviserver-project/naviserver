@@ -62,3 +62,46 @@ NsThreadFatal(const char *func, const char *osfunc, int err)
     Tcl_Panic("nsthreads: %s failed in %s: %s", osfunc, func, strerror(err));
 #endif
 }
+
+#ifdef _WIN32
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_snprintf --
+ *
+ *      Provide an emulation of snprintf for windows, to keep code smells
+ *      little. The function is defined here and not in nswin32.c, since
+ *      functions defined in nsthread use this.
+ *
+ * Results:
+ *      return number of "written" chars (not including null character)
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_snprintf(char *buf, size_t len, const char *fmt, ...)
+{
+    va_list ap;
+    int     chars;
+
+    va_start(ap, fmt);
+    chars = vsnprintf(buf, len, fmt, ap);
+    va_end(ap);
+    
+    return chars;
+}
+#endif
+
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

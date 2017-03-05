@@ -1042,6 +1042,7 @@ StartTicker(DWORD pending)
 static void
 StopTicker(void)
 {
+    Ns_Log(Notice, "StopTicker -ticker-");
     Ns_MutexLock(&lock);
     tick = 0;
     Ns_CondBroadcast(&cond);
@@ -1075,6 +1076,8 @@ ServiceTicker(void *arg)
 
     Ns_ThreadSetName("-ticker-");
 
+    Ns_Log(Notice, "starting, SERVICE_START_PENDING %d", pending);
+    
     Ns_MutexLock(&lock);
     do {
         ReportStatus(pending, NO_ERROR, 2000u);
@@ -1115,12 +1118,13 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     }
     curStatus.dwServiceType = (DWORD)SERVICE_WIN32_OWN_PROCESS;
     curStatus.dwServiceSpecificExitCode = 0u;
+
     StartTicker((DWORD)SERVICE_START_PENDING);
     (void) Ns_Main((int)argc, argv, NULL);
     StopTicker();
     ReportStatus((DWORD)SERVICE_STOP_PENDING, NO_ERROR, 100u);
     if (!serviceFailed) {
-        Ns_Log(Notice, "nswin32: noitifying SCM about exit");
+        Ns_Log(Notice, "nswin32: notifying SCM about exit");
         ReportStatus((DWORD)SERVICE_STOPPED, 0u, 0u);
     }
     Ns_Log(Notice, "nswin32: service exiting");
@@ -1372,19 +1376,6 @@ ssize_t
 ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags)
 {
     return send(socket, buffer, (int)length, flags);
-}
-
-
-int
-ns_snprintf(char *buf, size_t len, const char *fmt, ...)
-{
-    va_list ap;
-    int cc;
-
-    va_start(ap, fmt);
-    cc = vsnprintf(buf, len, fmt, ap);
-    va_end(ap);
-    return cc;
 }
 
 #else
