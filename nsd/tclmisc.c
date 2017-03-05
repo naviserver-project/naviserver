@@ -100,9 +100,8 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
 int
 NsTclRunOnceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char           *script;
-    int                   global = (int)NS_FALSE, result = TCL_OK;
-
+    char       *script = NULL;
+    int         global = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-global", Ns_ObjvBool,  &global, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
@@ -346,7 +345,7 @@ int
 NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          result = TCL_OK;
-    const char  *htmlString;
+    char        *htmlString = NULL;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -489,7 +488,7 @@ int
 NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          result = TCL_OK;
-    const char  *htmlString;
+    char        *htmlString = NULL;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}

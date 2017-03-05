@@ -733,7 +733,7 @@ void
 NsConfigEval(const char *config, int argc, char *const *argv, int optionIndex)
 {
     Tcl_Interp   *interp;
-    const Ns_Set *set;
+    Ns_Set *set;
     int i;
 
     NS_NONNULL_ASSERT(config != NULL);

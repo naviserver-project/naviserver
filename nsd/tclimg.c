@@ -91,7 +91,7 @@ static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NON
 int
 NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char  *file;
+    char        *file = NULL;
     int          result;
     Ns_ObjvSpec  args[] = {
         {"file",  Ns_ObjvString, &file, NULL},
@@ -143,7 +143,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file;
+    char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
         {"file",  Ns_ObjvString, &file, NULL},
@@ -196,7 +196,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file;
+    char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
         {"file",  Ns_ObjvString, &file, NULL},
@@ -259,7 +259,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file;
+    char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
         {"gif_file", Ns_ObjvString, &file, NULL},
@@ -309,7 +309,7 @@ NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file;
+    char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
         {"png_file", Ns_ObjvString, &file, NULL},
@@ -359,7 +359,7 @@ NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *file;
+    char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
         {"jpeg_file", Ns_ObjvString, &file, NULL},

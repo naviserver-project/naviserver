@@ -474,7 +474,7 @@ int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          nargs, result = TCL_OK;
-    const char  *charset = NULL;
+    char        *charset = NULL;
     char         part = 'q';
     Ns_ObjvTable parts[] = {
         {"query",    UCHAR('q')},
@@ -541,7 +541,7 @@ int
 NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          result = TCL_OK;
-    const char  *charset = NULL, *chars;
+    char        *charset = NULL, *chars = NULL;
     char         part = 'q';
     Ns_ObjvTable parts[] = {
         {"query",    UCHAR('q')},
