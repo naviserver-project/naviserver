@@ -341,7 +341,7 @@ void
 Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
 {
     Thread *thrPtr;
-    char buf[100];
+    char    buf[100];
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
