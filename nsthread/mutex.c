@@ -108,30 +108,17 @@ Ns_MutexInit(Ns_Mutex *mutex)
 
     NS_NONNULL_ASSERT(mutex != NULL);
 
-    //fprintf(stderr, "=== Ns_MutexInit *mutex = %p current id %ld\n", (void*)*mutex, nextid);
-    //assert(*mutex == NULL);
-
     mutexPtr = ns_calloc(1u, sizeof(Mutex));
     mutexPtr->lock = NsLockAlloc();
     Ns_MasterLock();
     mutexPtr->nextPtr = firstMutexPtr;
     firstMutexPtr = mutexPtr;
     mutexPtr->id = nextid++;
+
     snprintf(mutexPtr->name, sizeof(mutexPtr->name), "mu%" PRIuPTR, mutexPtr->id);
+
     Ns_MasterUnlock();
     //fprintf(stderr, "=== created mutex %ld name %s\n", mutexPtr->id, mutexPtr->name);
-#if 0
-    /*
-     *   221 tclenv.c:113
-     *   CreateSynchObject: 209, 210, 212
-     */
-    // 141 145 206 209 230
-    // 210 211 213
-    if (0 && mutexPtr->id == 13) {
-        char *p = NULL;
-        *p = 1;
-    }
-#endif
     *mutex = (Ns_Mutex) mutexPtr;
 }
 
