@@ -686,8 +686,8 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
                 int err;
             
                 len = (socklen_t)sizeof(err);
-                if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) != -1) {
-                    return sock;
+                if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) == -1) {
+                    status = NS_ERROR;
                 }
                 break;
             }
@@ -702,8 +702,10 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
         case NS_UNAUTHORIZED:  
             break;
         }
-        ns_sockclose(sock);
-        sock = NS_INVALID_SOCKET;
+        if (status != NS_OK) {
+            ns_sockclose(sock);
+            sock = NS_INVALID_SOCKET;
+        }
     }
 
     return sock;
