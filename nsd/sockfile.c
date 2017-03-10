@@ -488,11 +488,15 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     ssize_t       nwrote = 0, toRead = (ssize_t)length, result;
     bool          decork;
 
+    // Ns_Log(Notice, "SendFd offset %ld length %lu", offset, length); 
+
     decork = Ns_SockCork(sock, NS_TRUE);
     while (toRead > 0) {
 	ssize_t sent, nread;
 
         nread = pread(fd, buf, MIN((size_t)toRead, sizeof(buf)), offset);
+        
+        // Ns_Log(Notice, "... pread toread %lu offset %ld => read %ld", MIN((size_t)toRead, sizeof(buf)), offset, nread);
         if (nread <= 0) {
             break;
         }
