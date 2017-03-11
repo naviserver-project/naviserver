@@ -757,7 +757,7 @@ static int
 ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int           result = TCL_OK;
-    Sock         *sockPtr;
+    Sock         *sockPtr = NULL;
     Ns_Set       *hdrPtr = NULL;
     char         *url, *method = (char *)"GET", *version = (char *)"1.0", *driverName = NULL;
     Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout; 
@@ -862,10 +862,8 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             }
         }
         
-        if (unlikely(result != TCL_OK)) {
-            if (sockPtr->sock > 0) {
-                ns_sockclose(sockPtr->sock);
-            }
+        if (unlikely(result != TCL_OK && sockPtr != NULL && sockPtr->sock > 0)) {
+            ns_sockclose(sockPtr->sock);
         }
         
     }
