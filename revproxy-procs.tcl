@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.5
+    set version 0.6
     set verbose 0
 
     #
@@ -57,6 +57,20 @@ namespace eval ::revproxy {
 	#
 	set queryHeaders [ns_conn headers]
 	ns_set update $queryHeaders X-Forwarded-For [ns_conn peeraddr]
+
+	#
+	# Inject a "connection close" instruction to avoid persistent
+	# connections to the backend. Otherwise we would not be able
+	# to use the registration url (the url passed to
+	# ns_register_filter) for rewriting incoming requests, since
+	# the client sends for persistent connections the request
+	# unmodified sent via the already open channel.
+	#
+	# We might have to take precautions for WebSockets here.
+	#
+	ns_set update $queryHeaders Connection close
+
+	#ns_log notice queryHeaders=[ns_set array $queryHeaders]
 
 	if {$validation_callback ne ""} {
 	    {*}$validation_callback -url $url
