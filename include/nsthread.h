@@ -761,7 +761,11 @@ typedef int bool;
  */
 #if !defined(__PRIPTR_PREFIX)
 # if defined(_LP64) || defined(_I32LPx) || defined(HAVE_64BIT)
-#  define __PRIPTR_PREFIX "l"
+#  if defined(_WIN32)
+#   define __PRIPTR_PREFIX "ll"
+#  else
+#   define __PRIPTR_PREFIX "l"
+#  endif
 # else
 #  define __PRIPTR_PREFIX
 # endif
