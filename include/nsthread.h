@@ -167,10 +167,14 @@ MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
 MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 */
 
+/* 
+ * Cope with changes in Universal CRT in Visual Studio 2015 where
+ * e.g. vsnprintf() is no longer identical to _vsnprintf()
+ */
 #  if _MSC_VER < 1900
-#    define vsnprintf                 _vsnprintf
+#   define vsnprintf                  _vsnprintf
+#   define snprintf                   ns_snprintf
 #  endif
-#  define snprintf                    ns_snprintf
 
 #  define strtoll                     _strtoi64
 
@@ -182,6 +186,9 @@ MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 #  define open                        _open
 #  define putenv                      _putenv
 #  define unlink                      _unlink
+
+#  define timezone                    _timezone
+#  define daylight                    _daylight
 
 #  define getpid()                    (pid_t)GetCurrentProcessId()
 #  define ftruncate(f,s)              _chsize((f),(s))
@@ -240,7 +247,9 @@ MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 #  define W_OK                        2
 #  define R_OK                        4
 #  define X_OK                        (R_OK)
-#  define va_copy(dst,src)            ((void)((dst) = (src)))
+#  ifndef va_copy
+#   define va_copy(dst,src)           ((void)((dst) = (src)))
+#  endif
 #  define USE_TCLVFS                  1
 #  define USE_THREAD_ALLOC            1
 #  define VERSION                     (NS_PATCH_LEVEL)

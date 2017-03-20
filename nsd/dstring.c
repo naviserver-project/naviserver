@@ -223,15 +223,13 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
      * Check for overflow and retry. For win32 just double the buffer size
      * and iterate, otherwise we should get this correct first time.
      */
-
-#ifdef _WIN32
+#if defined(_WIN32) && _MSC_VER < 1900
     while (result == -1 && errno == ERANGE) {
         newLength = dsPtr->spaceAvl * 2;
 #else
-        if ((size_t)result >= bufLength) {
-        newLength = dsPtr->spaceAvl + (result - (int)bufLength);
+    if ((size_t)result >= bufLength) {
+         newLength = dsPtr->spaceAvl + (result - (int)bufLength);
 #endif
-
         Ns_DStringSetLength(dsPtr, newLength);
 
         buf = dsPtr->string + origLength;
