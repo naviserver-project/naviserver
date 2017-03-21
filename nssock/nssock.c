@@ -260,12 +260,17 @@ SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 
     {
 #ifdef _WIN32
-        DWORD n1;
-        if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n1, flags,
-                    NULL, NULL) != 0) {
-            n1 = -1;
+        DWORD bytesReceived;
+        int   rc;
+
+        rc = WSASend(sock, (LPWSABUF)bufs, nbufs, &bytesReceived, flags,
+                     NULL, NULL);
+        
+        if (rc == 0) {
+            n = bytesReceived;
+        } else {
+            n = -1;
         }
-        n = n1;
 #else
         struct msghdr msg;
       
