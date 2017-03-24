@@ -753,10 +753,10 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {NULL,    0u}
     };
     Ns_ObjvSpec lopts[] = {
-        {"-charset",   Ns_ObjvString, &charset, NULL},
-        {"-part",      Ns_ObjvIndex,  &part,    parts},
-        {"-uppercase", Ns_ObjvBool,   &toUpper, INT2PTR(NS_TRUE)},
-        {"--",         Ns_ObjvBreak,  NULL,     NULL},
+        {"-charset",   Ns_ObjvString, &charset,   NULL},
+        {"-part",      Ns_ObjvIndex,  &part,      parts},
+        {"-uppercase", Ns_ObjvBool,   &upperCase, INT2PTR(NS_TRUE)},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
