@@ -893,7 +893,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 	n += enc[UCHAR(*p)].len;
     }
     i = dsPtr->length;
-    Ns_DStringSetLength(dsPtr, dsPtr->length + n);
+    Ns_DStringSetLength(dsPtr, dsPtr->length + n + 1);
 
     /*
      * Copy the result directly to the pre-sized dstring.
@@ -922,11 +922,12 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
             *q++ = c2;
         }
     }
+    *q = '\0';
 
     if (encoding != NULL) {
         Tcl_DStringFree(&ds);
     }
-
+    
     return dsPtr->string;
 }
 
