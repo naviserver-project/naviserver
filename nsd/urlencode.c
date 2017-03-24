@@ -270,7 +270,7 @@ static const ByteKey queryenc[] = {
     /* 0x14 */  {-1, 3, "14"}, {-1, 3, "15"}, {-1, 3, "16"}, {-1, 3, "17"}, 
     /* 0x18 */  {-1, 3, "18"}, {-1, 3, "19"}, {-1, 3, "1a"}, {-1, 3, "1b"}, 
     /* 0x1c */  {-1, 3, "1c"}, {-1, 3, "1d"}, {-1, 3, "1e"}, {-1, 3, "1f"}, 
-    /* 0x20 */  {-1, 3, "20"}, {-1, 1, NULL}, {-1, 3, "22"}, {-1, 3, "23"}, 
+    /* 0x20 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 3, "22"}, {-1, 3, "23"}, 
     /* 0x24 */  {-1, 1, NULL}, {-1, 3, "25"}, {-1, 3, "26"}, {-1, 1, NULL}, 
     /* 0x28 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 3, "2b"}, 
     /* 0x2c */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
@@ -881,6 +881,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 
     if (encoding != NULL) {
         urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, -1, &ds);
+        fprintf(stderr, "urlSegment <%s>\n", urlSegment);
     }
 
     /*
@@ -893,7 +894,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 	n += enc[UCHAR(*p)].len;
     }
     i = dsPtr->length;
-    Ns_DStringSetLength(dsPtr, dsPtr->length + n + 1);
+    Ns_DStringSetLength(dsPtr, dsPtr->length + n);
 
     /*
      * Copy the result directly to the pre-sized dstring.
@@ -922,7 +923,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
             *q++ = c2;
         }
     }
-    *q = '\0';
+    //*q = '\0';
 
     if (encoding != NULL) {
         Tcl_DStringFree(&ds);
