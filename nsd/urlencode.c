@@ -478,7 +478,6 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
             if (queryenc[i].str == NULL) {
                 mustBeEncoded[i] = NS_FALSE;
             }
-            /* fprintf(stderr, "%lu (%c): %d\n", i, (char)i, mustBeEncoded[i]);*/
         }
         initialized = NS_TRUE;
         Ns_MasterUnlock();
@@ -881,7 +880,6 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 
     if (encoding != NULL) {
         urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, -1, &ds);
-        fprintf(stderr, "urlSegment <%s>\n", urlSegment);
     }
 
     /*
@@ -923,7 +921,6 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
             *q++ = c2;
         }
     }
-    //*q = '\0';
 
     if (encoding != NULL) {
         Tcl_DStringFree(&ds);
