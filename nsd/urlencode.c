@@ -466,9 +466,10 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
 
         /*
          * Don't try to distinguish for now between percents in
-         * pct-encoded chars and literal percents.
+         * pct-encoded chars and literal percents (same with '=').
          */
         mustBeEncoded[UCHAR('%')] = NS_FALSE;
+        mustBeEncoded[UCHAR('=')] = NS_FALSE;
         
         for (i = 0u; i < 256; i++) {
             if (pathenc[i].str == NULL) {
