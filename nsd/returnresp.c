@@ -310,6 +310,8 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
         Ns_DStringAppend(&urlDs, url);
+        
+        Ns_UrlEncodingWarnUnencoded("header field location", urlDs.string);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
         
         Ns_DStringAppend(&msgDs, "<a href=\"");

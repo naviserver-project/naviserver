@@ -3230,6 +3230,10 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment, const char *chars
      NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * urlopen.c:
  */
