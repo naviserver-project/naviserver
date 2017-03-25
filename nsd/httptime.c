@@ -233,46 +233,45 @@ Ns_ParseHttpTime(char *chars)
             return 0;
         }
         timeInfo.tm_mday = MakeNum(s + 8);
-        timeInfo.tm_mon = MakeMonth(s + 4);
+        timeInfo.tm_mon  = MakeMonth(s + 4);
         timeInfo.tm_year = MakeNum(s + 22);
         timeInfo.tm_hour = MakeNum(s + 11);
-        timeInfo.tm_min = MakeNum(s + 14);
-        timeInfo.tm_sec = MakeNum(s + 17);
+        timeInfo.tm_min  = MakeNum(s + 14);
+        timeInfo.tm_sec  = MakeNum(s + 17);
     }
 
     /*
      * If there are any impossible values, then return an error.
      */
 
-    if (timeInfo.tm_sec < 0 || timeInfo.tm_sec > 59 ||
-        timeInfo.tm_min < 0 || timeInfo.tm_min > 59 ||
-        timeInfo.tm_hour < 0 || timeInfo.tm_hour > 23 ||
-        timeInfo.tm_mday < 1 || timeInfo.tm_mday > 31 ||
-        timeInfo.tm_mon < 0 || timeInfo.tm_mon > 11 ||
-        timeInfo.tm_year < 70 || timeInfo.tm_year > 120) {
-        return 0;
-    }
-    timeInfo.tm_isdst = 0;
-#ifdef HAVE_TIMEGM
-    /*
-     * Initialize the mutex (if this did not happen so far) and
-     * provide a name for it.
-     */
-    if (lock == NULL) {
-      Ns_MasterLock();
-      if (lock == NULL) {
-	Ns_MutexInit(&lock);
-	Ns_MutexSetName2(&lock, "ns:httptime", NULL);
-      }
-      Ns_MasterUnlock();
-    }
-    Ns_MutexLock(&lock);
-    t = timegm(&timeInfo);
-    Ns_MutexUnlock(&lock);
-#else
-    t = mktime(&timeInfo) - timezone;
-#endif
+    if (!(timeInfo.tm_sec < 0  || timeInfo.tm_sec  > 59 ||
+         timeInfo.tm_min  < 0  || timeInfo.tm_min  > 59 ||
+         timeInfo.tm_hour < 0  || timeInfo.tm_hour > 23 ||
+         timeInfo.tm_mday < 1  || timeInfo.tm_mday > 31 ||
+         timeInfo.tm_mon  < 0  || timeInfo.tm_mon  > 11 ||
+         timeInfo.tm_year < 70 || timeInfo.tm_year > 120)) {
 
+        timeInfo.tm_isdst = 0;
+#ifdef HAVE_TIMEGM
+        /*
+         * Initialize the mutex (if this did not happen so far) and
+         * provide a name for it.
+         */
+        if (lock == NULL) {
+            Ns_MasterLock();
+            if (lock == NULL) {
+                Ns_MutexInit(&lock);
+                Ns_MutexSetName2(&lock, "ns:httptime", NULL);
+            }
+            Ns_MasterUnlock();
+        }
+        Ns_MutexLock(&lock);
+        t = timegm(&timeInfo);
+        Ns_MutexUnlock(&lock);
+#else
+        t = mktime(&timeInfo) - timezone;
+#endif
+    }
     return t;
 }
 
