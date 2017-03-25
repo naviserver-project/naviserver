@@ -393,9 +393,8 @@ static void
 EvalThread(void *arg)
 {
     Tcl_Interp *interp;
-    Tcl_DString ds;
-    Tcl_DString unameDS;
-    char        buf[64], ipString[NS_IPADDR_SIZE];
+    Tcl_DString ds, unameDS;
+    char        ipString[NS_IPADDR_SIZE];
     int         ncmd, stop;
     size_t      len;
     Sess       *sessPtr = arg;
@@ -408,8 +407,9 @@ EvalThread(void *arg)
     interp = NULL;
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
-    snprintf(buf, sizeof(buf), "-nscp:%d-", sessPtr->id);
-    Ns_ThreadSetName(buf);
+    Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);
+    Ns_ThreadSetName(ds.string);
+    Tcl_DStringTrunc(&ds, 0);
     Ns_Log(Notice, "nscp: %s connected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
 
@@ -435,6 +435,8 @@ EvalThread(void *arg)
 
     ncmd = 0;
     while (stop == 0) {
+        char buf[64];
+            
 	Tcl_DStringTrunc(&ds, 0);
 	++ncmd;
 retry:
