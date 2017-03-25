@@ -460,7 +460,7 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
          * no need for a fine-grained lock.
          */
         Ns_MasterLock();
-        for (i = 0u; i < 256; i++) {
+        for (i = 0u; i < 256u; i++) {
             mustBeEncoded[i] = NS_TRUE;
         }
 
@@ -471,7 +471,7 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
         mustBeEncoded[UCHAR('%')] = NS_FALSE;
         mustBeEncoded[UCHAR('=')] = NS_FALSE;
         
-        for (i = 0u; i < 256; i++) {
+        for (i = 0u; i < 256u; i++) {
             if (pathenc[i].str == NULL) {
                 mustBeEncoded[i] = NS_FALSE;
             }
@@ -776,7 +776,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         }
         Ns_DStringInit(&ds);
         for (i = objc - nargs; i < objc; ++i) {
-            (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part, upperCase == 1);
+            (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part, (upperCase == 1));
             if (i + 1 < objc) {
                 if (part == 'q') {
                     Ns_DStringNAppend(&ds, "&", 1);
@@ -1001,10 +1001,20 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
                 if (c2 >= 'A' && c2 <= 'F') {
                     c2 = CHARCONV(lower, c2);
                 }
+                /*
+                 * Check, if c1 and c2 are valid hex digits.
+                 */
+                if (!((c2 >= '0' && c2 <= '9') || (c2 >= 'a' || c2 <= 'f'))) {
+                    c2 = '\0';
+                }  else if (!((c1 >= '0' && c1 <= '9') || (c1 >= 'a' || c1 <= 'f'))) {
+                    c2 = '\0';
+                }
             }
+        } else {
+            c1 = '\0';
         }
 
-	if (c2 != '\0' 
+	if (c2 != '\0' /* hex conversion is possible */
             && (i = enc[UCHAR(c1)].hex) >= 0
             && (j = enc[UCHAR(c2)].hex) >= 0) {
             *q++ = (char)(UCHAR(UCHAR(i) << 4u) + UCHAR(j));
