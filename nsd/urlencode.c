@@ -251,14 +251,19 @@ static const ByteKey pathenc[] = {
  * meanings (https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1)
  * so only the following sub-delims are allowed literally.
  *
- *   query-sub-delims = "!" / "$" / "'" / "(" / ")" / "*" / "," / ";" 
+ *   query-sub-delims1 = "!" / "$" / "'" / "(" / ")" / "*" / "," / ";" 
  *
- * This means a total of 78 characters are allowed unencoded in query
+ * In order to make query-component usable for encoding/decoding cookies,
+ * the characters "," and ";" have to be percent-encoded as well.
+ *
+ *   query-sub-delims = "!" / "$" / "'" / "(" / ")" / "*"
+ *
+ * This means a total of 76 characters are allowed unencoded in query
  * parts:
  *    unreserved:       26 + 26 + 10 + 4 = 66
- *    query-sub-delims: 8
- *    pchar:            66 + 8 + 2 = 76
- *    query:            76 + 2 = 78
+ *    query-sub-delims: 6
+ *    pchar:            66 + 6 + 2 = 74
+ *    query:            76 + 2 = 76
  */
 
 static const ByteKey queryenc[] = {
@@ -273,10 +278,10 @@ static const ByteKey queryenc[] = {
     /* 0x20 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 3, "22"}, {-1, 3, "23"}, 
     /* 0x24 */  {-1, 1, NULL}, {-1, 3, "25"}, {-1, 3, "26"}, {-1, 1, NULL}, 
     /* 0x28 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 3, "2b"}, 
-    /* 0x2c */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x2c */  {-1, 3, "2c"}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
     /* 0x30 */  { 0, 1, NULL}, { 1, 1, NULL}, { 2, 1, NULL}, { 3, 1, NULL}, 
     /* 0x34 */  { 4, 1, NULL}, { 5, 1, NULL}, { 6, 1, NULL}, { 7, 1, NULL}, 
-    /* 0x38 */  { 8, 1, NULL}, { 9, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x38 */  { 8, 1, NULL}, { 9, 1, NULL}, {-1, 1, NULL}, {-1, 3, "3b"}, 
     /* 0x3c */  {-1, 3, "3c"}, {-1, 3, "3d"}, {-1, 3, "3e"}, {-1, 1, NULL}, 
     /* 0x40 */  {-1, 1, NULL}, {10, 1, NULL}, {11, 1, NULL}, {12, 1, NULL}, 
     /* 0x44 */  {13, 1, NULL}, {14, 1, NULL}, {15, 1, NULL}, {-1, 1, NULL}, 
@@ -900,14 +905,14 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
 
     q = dsPtr->string + i;
     for (p = urlSegment; *p != '\0'; p++) {
-        if (enc[UCHAR(*p)].str == NULL) {
-            *q++ = *p;
-        } else if (*p == ' ' && part == 'q') {
+        if ((unlikely (*p == ' ' && part == 'q'))) {
             *q++ = '+';
+        } else if (enc[UCHAR(*p)].str == NULL) {
+            *q++ = *p;
         } else {
             char c1 = enc[UCHAR(*p)].str[0];
             char c2 = enc[UCHAR(*p)].str[1];
-            
+
             if (upperCase) {
                 if (c1 >= 'a' && c1 <= 'f') {
                     c1 = CHARCONV(upper, c1);
@@ -989,26 +994,11 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
         if (unlikely(p[0] == '%')) {
             /*
              * Decode percent code and make sure not to read date after
-             * the NULL character. Convert character to lower if
-             * necessary.
+             * the NULL character. 
              */
             c1 = p[1];
             if (c1 != '\0') {
-                if (c1 >= 'A' && c1 <= 'F') {
-                    c1 = CHARCONV(lower, c1);
-                }
                 c2 = p[2];
-                if (c2 >= 'A' && c2 <= 'F') {
-                    c2 = CHARCONV(lower, c2);
-                }
-                /*
-                 * Check, if c1 and c2 are valid hex digits.
-                 */
-                if (!((c2 >= '0' && c2 <= '9') || (c2 >= 'a' || c2 <= 'f'))) {
-                    c2 = '\0';
-                }  else if (!((c1 >= '0' && c1 <= '9') || (c1 >= 'a' || c1 <= 'f'))) {
-                    c2 = '\0';
-                }
             }
         } else {
             c1 = '\0';
