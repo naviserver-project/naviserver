@@ -326,7 +326,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
             /*
              * Can't listen; close the opened socket
              */
-            int err = errno;
+            ns_sockerrno_t err = errno;
 
             ns_sockclose(sock);
             errno = err;
@@ -516,7 +516,7 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
         /*
          * Can't listen; close the opened socket
          */
-        int err = errno;
+        ns_sockerrno_t err = errno;
 
         ns_sockclose(sock);
         errno = err;
@@ -567,7 +567,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
         || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
         || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
-        int err = errno;
+        ns_sockerrno_t err = errno;
 
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
@@ -630,7 +630,7 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
     if (sock == NS_INVALID_SOCKET
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
         || (mode && chmod(path, mode) == -1)) {
-        int err = errno;
+        ns_sockerrno_t err = errno;
 
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
@@ -667,7 +667,7 @@ Ns_SockBindRaw(int proto)
     sock = socket(AF_INET, SOCK_RAW, proto);
 
     if (sock == NS_INVALID_SOCKET) {
-        int err = errno;
+        ns_sockerrno_t err = errno;
 
         ns_sockclose(sock);
         Ns_SetSockErrno(err);
@@ -1103,7 +1103,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
-    int           err;
+    ns_sockerrno_t err;
     ssize_t       n;
     char          data[NS_IPADDR_SIZE];
     struct msghdr msg;

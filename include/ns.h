@@ -2753,24 +2753,21 @@ Ns_SockCloseLater(NS_SOCKET sock);
 NS_EXTERN char *
 Ns_SockError(void);
 
-NS_EXTERN int
-Ns_SockErrno(void);
-
 NS_EXTERN void
 Ns_ClearSockErrno(void);
 
-NS_EXTERN int
+NS_EXTERN ns_sockerrno_t
 Ns_GetSockErrno(void);
 
 NS_EXTERN void
-Ns_SetSockErrno(int err);
+Ns_SetSockErrno(ns_sockerrno_t err);
 
 NS_EXTERN char *
-Ns_SockStrError(int err);
+Ns_SockStrError(ns_sockerrno_t err);
 
 #ifdef _WIN32
 NS_EXTERN char *
-NsWin32ErrMsg(DWORD err);
+NsWin32ErrMsg(ns_sockerrno_t err);
 
 NS_EXTERN NS_SOCKET
 ns_sockdup(NS_SOCKET sock);

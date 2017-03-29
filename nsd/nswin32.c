@@ -183,7 +183,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID UNUSED(lpReserved))
  */
 
 char *
-NsWin32ErrMsg(DWORD err)
+NsWin32ErrMsg(ns_sockerrno_t err)
 {
     char  *msg;
     size_t len;

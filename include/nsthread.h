@@ -134,6 +134,7 @@ typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
 typedef          DWORD pid_t;
+typedef          DWORD ns_sockerrno_t;
 typedef          long uid_t;
 typedef          long gid_t;
 typedef          long suseconds_t;
@@ -366,6 +367,9 @@ typedef struct DIR_ *DIR;
 #ifndef SOCKET
 # define SOCKET NS_SOCKET
 #endif
+
+typedef int ns_sockerrno_t;
+
 
 # if defined(HAVE_SYS_UIO_H)
 #  include <sys/uio.h>
@@ -1036,7 +1040,7 @@ NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize
 NS_EXTERN void Ns_ThreadExit(void *arg);
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadYield(void);
-NS_EXTERN void Ns_ThreadSetName(const char *name, ...) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_ThreadSetName(const char *name, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 0);
 NS_EXTERN uintptr_t Ns_ThreadId(void);
 NS_EXTERN void Ns_ThreadSelf(Ns_Thread *threadPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *Ns_ThreadGetName(void)       NS_GNUC_RETURNS_NONNULL;

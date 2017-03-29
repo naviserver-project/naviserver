@@ -543,7 +543,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
         if (Ns_SockaddrGetPort((const struct sockaddr *)saPtr) != 0u) {
             int n = 1;
 
-            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n));
+            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &n, sizeof(n));
 #ifdef HAVE_IPV6
             /*
              * IPv4 connectivity through AF_INET6 can be disabled by default, for
@@ -552,7 +552,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
              * for v4 and v6.
              */
             n = 0;
-            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &n, sizeof(n));
+            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, sizeof(n));
 #endif
         }
 
@@ -686,7 +686,7 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
                 int err;
             
                 len = (socklen_t)sizeof(err);
-                if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len) == -1) {
+                if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (void *)&err, &len) == -1) {
                     status = NS_ERROR;
                 }
                 break;
@@ -802,9 +802,9 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 # else
     int qlen = 5;
 # endif
-
+    
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
-		   &qlen, sizeof(qlen)) == -1) {
+		   (const void *)&qlen, sizeof(qlen)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
 	       ns_sockstrerror(ns_sockerrno));
     } else {
@@ -814,7 +814,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 #else
 # ifdef TCP_DEFER_ACCEPT
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
-		   &secs, sizeof(secs)) == -1) {
+		   (const void *)&secs, sizeof(secs)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
 	       ns_sockstrerror(ns_sockerrno));
     } else {
@@ -910,7 +910,7 @@ Ns_SockCloseLater(NS_SOCKET sock)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockErrno --
+ * Ns_ClearSockErrno, Ns_GetSockErrno, Ns_SetSockErrno, Ns_SockStrError  --
  *
  *      Errno/GetLastError utility routines.
  *
@@ -933,28 +933,28 @@ Ns_ClearSockErrno(void)
 #endif
 }
 
-int
+ns_sockerrno_t
 Ns_GetSockErrno(void)
 {
 #ifdef _WIN32
-    return (int) WSAGetLastError();
+    return WSAGetLastError();
 #else
     return errno;
 #endif
 }
 
 void
-Ns_SetSockErrno(int err)
+Ns_SetSockErrno(ns_sockerrno_t err)
 {
 #ifdef _WIN32
-    SetLastError((DWORD) err);
+    SetLastError(err);
 #else
     errno = err;
 #endif
 }
 
 char *
-Ns_SockStrError(int err)
+Ns_SockStrError(ns_sockerrno_t err)
 {
 #ifdef _WIN32
     return NsWin32ErrMsg(err);
