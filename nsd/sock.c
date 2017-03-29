@@ -1165,7 +1165,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 
 #ifdef _WIN32
     DWORD RecvBytes, Flags = (DWORD)flags;
-    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &RecvBytes, &Flags,
+    if (WSARecv(sock, (LPWSABUF)bufs, (unsigned long)nbufs, &RecvBytes, &Flags,
                 NULL, NULL) != 0) {
         n = -1;
     } else {
