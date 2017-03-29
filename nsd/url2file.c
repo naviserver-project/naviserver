@@ -408,15 +408,12 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
     } else {
         const NsInterp *itPtr = clientData;
+        unsigned int    flags;
         Ns_TclCallback *cbPtr;
-        unsigned int    flags = 0u;
-
-        if (noinherit != 0) {
-            flags |= NS_OP_NOINHERIT;
-        }
 
         cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclUrl2FileProc, 
                                   scriptObj, remain, objv + (objc - remain));
+        flags = (noinherit != 0) ? NS_OP_NOINHERIT : 0u;
         Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
                                 NsTclUrl2FileProc, Ns_TclFreeCallback, cbPtr, flags);
     }
