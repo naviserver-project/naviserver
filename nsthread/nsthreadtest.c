@@ -70,7 +70,8 @@ static int      dstop = 0;
 static void AtExit(void);
 static void MemThread(void *arg);
 
-
+static void Msg(const char *fmt,...)
+    NS_GNUC_PRINTF(1, 2);
 
 /*
  * Msg -

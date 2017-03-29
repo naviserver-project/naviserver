@@ -63,7 +63,8 @@ typedef enum {
 
 static Ns_ThreadProc CmdThread;
 
-static void UsageError(const char *msg, ...);
+static void UsageError(const char *msg, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 2);
+static void UsageMsg(int exitCode);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
 static const char *MakePath(const char *file) NS_GNUC_NONNULL(1);
@@ -168,7 +169,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         }
         switch (argv[optionIndex][1]) {
         case 'h':
-            UsageError(NULL);
+            UsageMsg(0);
             break;
         case 'c':
         case 'f':
@@ -1094,14 +1095,20 @@ LogTclVersion(void)
 static void
 UsageError(const char *msg, ...)
 {
-    if (msg != NULL) {
-    	va_list ap;
-    	va_start(ap, msg);
-    	fprintf(stderr, "\nError: ");
-        vfprintf(stderr, msg, ap);
-        fprintf(stderr, "\n");
-        va_end(ap);
-    }
+    va_list ap;
+    
+    va_start(ap, msg);
+    fprintf(stderr, "\nError: ");
+    vfprintf(stderr, msg, ap);
+    fprintf(stderr, "\n");
+    va_end(ap);
+
+    UsageMsg(1);
+}
+
+static void
+UsageMsg(int exitCode)
+{
     fprintf(stderr, "\n"
 #ifdef _WIN32
         "Usage: %s [-h|V] [-c|f|I|R|S] "
@@ -1132,7 +1139,7 @@ UsageError(const char *msg, ...)
         "  -s  use server named <server> in config file\n"
         "  -t  read config from <file>\n"
         "\n", nsconf.argv0);
-    exit ((msg != NULL) ? 1 : 0);
+    exit(exitCode);
 }
 
 

@@ -1330,7 +1330,7 @@ Ns_DStringPrintf(Ns_DString *dsPtr, const char *fmt, ...)
 
 NS_EXTERN char *
 Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2, 0);
 
 NS_EXTERN char **
 Ns_DStringAppendArgv(Ns_DString *dsPtr)
@@ -1813,7 +1813,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
 
 NS_EXTERN void
 Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
-    NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(2)  NS_GNUC_PRINTF(2, 0);
 
 NS_EXTERN void
 Ns_Fatal(const char *fmt, ...)
@@ -2013,7 +2013,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  */
 
 NS_EXTERN void
-Ns_SetThreadServer(const char *server);
+Ns_SetThreadServer(const char *server) NS_GNUC_PRINTF(1, 0);
 
 NS_EXTERN const char *
 Ns_GetThreadServer(void);

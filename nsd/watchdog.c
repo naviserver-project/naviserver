@@ -61,7 +61,7 @@
 static void WatchdogSIGTERMHandler(int sig);
 static void WatchdogSIGALRMHandler(int UNUSED(sig));
 static int  WaitForServer(void);
-static void SysLog(int priority, const char *fmt, ...);
+static void SysLog(int priority, const char *fmt, ...)  NS_GNUC_PRINTF(2, 3);
 
 
 /*
