@@ -469,7 +469,7 @@ SetUrl(Ns_Request *request, char *url)
     }
 
     /*
-     * Decode and normalize the URL.
+     * Decode and normalize the URL (remove ".", "..").
      */
 
     p = Ns_UrlPathDecode(&ds1, url, Ns_GetUrlEncoding(NULL));
