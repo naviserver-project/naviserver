@@ -404,7 +404,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 
     do {
 	n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
-    } while (n < 0 && errno == EINTR);
+    } while (n < 0 && errno == NS_EINTR);
 
     if (likely(n > 0)) {
         result = NS_OK;
@@ -1013,7 +1013,7 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
             }
         }
         n = ns_poll(pfds, nfds, ms);
-    } while (n < 0 && ns_sockerrno == EINTR);
+    } while (n < 0 && ns_sockerrno == NS_EINTR);
 
     /*
      * Poll errors are not tolerated in as they must indicate
@@ -1089,7 +1089,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
             if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                 int err = ns_sockerrno;
                 
-                if (!async || (err != EINPROGRESS && err != NS_EWOULDBLOCK)) {
+                if (!async || (err != NS_EINPROGRESS && err != NS_EWOULDBLOCK)) {
                     ns_sockclose(sock);
                     Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
                     sock = NS_INVALID_SOCKET;

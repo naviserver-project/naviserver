@@ -604,24 +604,34 @@ typedef int bool;
 
 
 #ifdef _WIN32
-# ifndef EINPROGRESS
-#  define EINPROGRESS                WSAEINPROGRESS
-# endif
 /*
- * Starting with VS2010 EWOULDBLOCK is defined in errno.h != WSAEWOULDBLOCK,
- * so we have to abstract to NS_EWOULDBLOCK to cope with earlier versions and
- * to provide cross_platform support.
+ * Starting with VS2010 constants like EWOULDBLOCK are defined defined in
+ * errno.h differently to the WSA* counterparts.  Relevant to NaviServer are
+ *
+ *     EWOULDBLOCK != WSAEWOULDBLOCK
+ *     EINPROGRESS != WSAEINPROGRESS
+ *     EINTR       != WSAEINTR
+ * 
+ * However, winsock2 continues to return the WSA values, but defined as well
+ * the names without the "WSA" prefix.  So we have to abstract to NS_* to cope
+ * with earlier versions and to provide cross_platform support.
+ *
  * http://stackoverflow.com/questions/14714654/c-project-in-vs2008-works-but-in-vs2010-does-not
+ * https://lists.gnu.org/archive/html/bug-gnulib/2011-10/msg00256.html
  */
 # define NS_EWOULDBLOCK              WSAEWOULDBLOCK
+# define NS_EINPROGRESS              WSAEINPROGRESS
+# define NS_EINTR                    WSAEINTR
 # ifndef ETIMEDOUT
-#  define ETIMEDOUT                 1
+#  define ETIMEDOUT                  1
 # endif
 # ifndef P_tmpdir
 #  define P_tmpdir "c:/tmp"
 # endif
 #else
-# define NS_EWOULDBLOCK            EWOULDBLOCK
+# define NS_EWOULDBLOCK              EWOULDBLOCK
+# define NS_EINPROGRESS              EINPROGRESS
+# define NS_EINTR                    EINTR
 #endif
 
 #ifndef S_ISREG

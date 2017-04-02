@@ -228,7 +228,7 @@ WaitForServer(void)
 
     do {
         pid = waitpid(watchedPid, &status, 0);
-    } while (pid == NS_INVALID_PID && errno == EINTR && watchedPid);
+    } while (pid == NS_INVALID_PID && errno == NS_EINTR && watchedPid);
 
     if (processDied) {
         msg = "terminated";

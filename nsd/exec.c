@@ -176,7 +176,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
     
     do {
         p = waitpid(pid, &status, 0);
-    } while (p != pid && errno == EINTR);
+    } while (p != pid && errno == NS_EINTR);
     if (p != pid) {
         Ns_Log(Error, "waitpid(%d) failed: %s", pid, strerror(errno));
         return NS_ERROR;
@@ -547,7 +547,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
         ns_close(errpipe[1]);
 	do {
             nread = readv(errpipe[0], iov, 2);
-	} while (nread < 0 && errno == EINTR);
+	} while (nread < 0 && errno == NS_EINTR);
         ns_close(errpipe[0]);
         if (nread == 0) {
 	    errnum = 0;

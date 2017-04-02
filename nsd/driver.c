@@ -2089,7 +2089,7 @@ PollWait(const PollData *pdata, int waittime)
 
     do {
         n = ns_poll(pdata->pfds, pdata->nfds, waittime);
-    } while (n < 0  && errno == EINTR);
+    } while (n < 0  && errno == NS_EINTR);
 
     if (n < 0) {
         Ns_Fatal("PollWait: ns_poll() failed: %s", ns_sockstrerror(ns_sockerrno));

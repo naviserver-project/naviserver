@@ -1027,7 +1027,7 @@ CgiRead(Cgi *cgiPtr)
     cgiPtr->ptr = cgiPtr->buf;
     do {
     	n = ns_read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
-    } while (n < 0 && errno == EINTR);
+    } while (n < 0 && errno == NS_EINTR);
     if (n > 0) {
 	cgiPtr->cnt = n;
     } else if (n < 0) {

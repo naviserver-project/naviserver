@@ -682,7 +682,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         
         do {
             sock = select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
-        } while (sock == NS_INVALID_SOCKET && errno == EINTR);
+        } while (sock == NS_INVALID_SOCKET && errno == NS_EINTR);
         if (sock == NS_INVALID_SOCKET) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
                                    Tcl_PosixError(interp), NULL);

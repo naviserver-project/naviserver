@@ -233,13 +233,14 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *time
     if (sent == -1) {
         switch (errno) {
 
-        case EAGAIN:
+        case EAGAIN: /* fall through */
+        case NS_EWOULDBLOCK:            
             if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
                 sent = sendfile(sock->sock, fd, &offset, toSend);
             }
             break;
 
-        case EINVAL:
+        case EINVAL: /* fall through */
         case ENOSYS:
             /* File system does not support sendfile? */
             sent = SendFd(sock, fd, offset, toSend, timeoutPtr, 0,

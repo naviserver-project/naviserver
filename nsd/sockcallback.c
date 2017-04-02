@@ -458,7 +458,7 @@ SockCallbackThread(void *UNUSED(arg))
 	pfds[0].revents = 0;
         do {
             n = ns_poll(pfds, nfds, pollto);
-        } while (n < 0  && errno == EINTR);
+        } while (n < 0  && errno == NS_EINTR);
 
         if (n < 0) {
             Ns_Fatal("sockcallback: ns_poll() failed: %s",

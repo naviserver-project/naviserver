@@ -1189,7 +1189,7 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
     while ((iov[0].iov_len + iov[1].iov_len) > 0u) {
         do {
             n = writev(slavePtr->wfd, iov, 2);
-        } while (n == -1 && errno == EINTR);
+        } while (n == -1 && errno == NS_EINTR);
 
         if (n == -1) {
             long waitMs;
@@ -1263,7 +1263,7 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
     while (iov[0].iov_len > 0) {
         do {
             n = readv(slavePtr->rfd, iov, 2);
-        } while ((n == -1) && (errno == EINTR));
+        } while ((n == -1) && (errno == NS_EINTR));
 
         if (n == 0) {
             success = NS_FALSE; /* EOF */
@@ -1307,7 +1307,7 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
         while (len > 0) {
             do {
                 n = ns_read(slavePtr->rfd, ptr, (size_t)len);
-            } while ((n == -1) && (errno == EINTR));
+            } while ((n == -1) && (errno == NS_EINTR));
 
             if (n == 0) {
                 success = NS_FALSE; /* EOF */
@@ -1371,7 +1371,7 @@ WaitFd(int fd, short events, long ms)
     pfd.revents = pfd.events;
     do {
         n = ns_poll(&pfd, 1, ms);
-    } while (n == -1 && errno == EINTR);
+    } while (n == -1 && errno == NS_EINTR);
     if (n == -1) {
         n = 0;
         Ns_Log(Error, "nsproxy: poll failed: %s", strerror(errno));

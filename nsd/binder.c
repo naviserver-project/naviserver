@@ -1349,7 +1349,7 @@ Binder(void)
         err = 0;
         do {
             n = recvmsg(binderRequest[0], (struct msghdr *) &msg, 0);
-        } while (n == -1 && errno == EINTR);
+        } while (n == -1 && errno == NS_EINTR);
         if (n == 0) {
             break;
         }
@@ -1412,7 +1412,7 @@ Binder(void)
 
         do {
             n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
-        } while (n == -1 && errno == EINTR);
+        } while (n == -1 && errno == NS_EINTR);
         if (n != RESPONSE_SIZE) {
             Ns_Fatal("binder: sendmsg() failed: sent %" PRIdz " bytes, '%s'", n, strerror(errno));
         }

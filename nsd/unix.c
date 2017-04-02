@@ -245,7 +245,7 @@ NsHandleSignals(void)
     do {
         do {
             err = ns_sigwait(&set, &sig);
-        } while (err == EINTR);
+        } while (err == NS_EINTR);
         if (err != 0) {
             Ns_Fatal("signal: ns_sigwait failed: %s", strerror(errno));
         }

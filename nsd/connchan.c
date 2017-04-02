@@ -627,7 +627,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
 
             result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                                   timeoutPtr, flags);
-            if (result == -1 && errno == EAGAIN) {
+            if (result == -1 && ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK))) {
                 /*
                  * Retry, when the socket is writeable
                  */
