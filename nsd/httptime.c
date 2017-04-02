@@ -241,7 +241,7 @@ Ns_ParseHttpTime(char *chars)
     }
 
     /*
-     * If there are any impossible values, then return an error.
+     * If there are any impossible values, then return 0.
      */
 
     if (!(timeInfo.tm_sec < 0  || timeInfo.tm_sec  > 59 ||
