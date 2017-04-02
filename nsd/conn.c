@@ -1465,17 +1465,16 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
     case CUrlvIdx:
         if (objc == 2) {
-            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
-
-            for (idx = 0; idx < request->urlc; idx++) {
-                Tcl_ListObjAppendElement(interp, listObj,
-                                         Tcl_NewStringObj(request->urlv[idx], -1));
-            }
-            Tcl_SetObjResult(interp, listObj);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(request->urlv, request->urlv_len));
         } else if (Tcl_GetIntFromObj(interp, objv[2], &idx) != TCL_OK) {
             result = TCL_ERROR;
         } else if (idx >= 0 && idx < request->urlc) {
-            Tcl_SetResult(interp, request->urlv[idx], TCL_STATIC);
+            const char **elements;
+            int          length;
+            
+            Tcl_SplitList(NULL, request->urlv, &length, &elements);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], -1));
+            Tcl_Free((char *) elements);
         }
         break;
 
@@ -1842,7 +1841,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CUrlIdx:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->url, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(request->url, request->url_len));
         break;
 
     case CQueryIdx:

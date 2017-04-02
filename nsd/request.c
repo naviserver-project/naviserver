@@ -344,18 +344,23 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
 const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
 {
-    const char *result = NULL;
+    const char **elements, *result = NULL;
+    int          length;
 
     NS_NONNULL_ASSERT(request != NULL);
+    
+    Tcl_SplitList(NULL, request->urlv, &length, &elements);
 
     if (n <= request->urlc) {
         size_t skip = 0u;
 
         while (--n >= 0) {
-            skip += strlen(request->urlv[n]) + 1u;
+            skip += strlen(elements[n]) + 1u;
         }
         result = (request->url + skip);
     }
+    Tcl_Free((char *)elements);
+
     return result;
 }
 
@@ -418,9 +423,9 @@ FreeUrl(Ns_Request *request)
         request->url = NULL;
     }
     if (request->urlv != NULL) {
-        ns_free(request->urlv[0]);
-        ns_free(request->urlv);
+        ns_free((char *)request->urlv);
         request->urlv = NULL;
+        request->urlc = 0;
     }
 }
 
@@ -445,7 +450,8 @@ static void
 SetUrl(Ns_Request *request, char *url)
 {
     Tcl_DString  ds1, ds2;
-    char       *p;
+    char        *p, *encodedPath;
+    Tcl_Encoding encoding;
 
     NS_NONNULL_ASSERT(request != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -471,8 +477,10 @@ SetUrl(Ns_Request *request, char *url)
     /*
      * Decode and normalize the URL (remove ".", "..").
      */
-
-    p = Ns_UrlPathDecode(&ds1, url, Ns_GetUrlEncoding(NULL));
+    //Ns_Log(Notice, "call DECODE on <%s>", url);
+    encodedPath = url;
+    encoding = Ns_GetUrlEncoding(NULL);
+    p = Ns_UrlPathDecode(&ds1, encodedPath, encoding);
     if (p == NULL) {
         p = url;
     }
@@ -491,36 +499,53 @@ SetUrl(Ns_Request *request, char *url)
         Tcl_DStringAppend(&ds2, "/", 1);
     }
     request->url = ns_strdup(ds2.string);
+    request->url_len = ds2.length;
     Tcl_DStringFree(&ds2);
 
     /*
-     * Build the urlv and set urlc. The following loop is somewhat an
-     * abuse of Tcl_DStringAppend, since we build here urlv (an array
-     * of (char *)) based on operations intended on strings. However,
-     * this way we can reuse the Tcl_DString infrastructure.
+     * Build the urlv and set urlc. 
      */
+    {
+        Tcl_Obj *listPtr, *segmentObj;
 
-    p = ns_strdup(request->url + 1);
-    Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
-    while (*p != '\0') {
-        if (*p == '/') {
-            *p++ = '\0';
-            if (*p == '\0') {
-                /*
-                 * Stop on a trailing slash.
-                 */
-
+        listPtr = Tcl_NewListObj(0, NULL);
+        Tcl_IncrRefCount(listPtr);
+        /*
+         * Skip the leading slash.
+         */
+        encodedPath++;
+        
+        while (*encodedPath != '\0') {
+            p = strchr(encodedPath, (int)UCHAR('/'));
+            if (p == NULL) {
                 break;
             }
-            Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
+            *p = '\0';
+            Ns_UrlPathDecode(&ds1, encodedPath, encoding);
+            segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
+            Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
+            Tcl_DStringSetLength(&ds1, 0);
+	    encodedPath = p + 1;
+	}
+        /*
+         * Append last segment if not empty (for compatibility with previous
+         * versions).
+         */
+        if (*encodedPath != '\0') {
+            Ns_UrlPathDecode(&ds1, encodedPath, encoding);
+            segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
+            Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
         }
-        ++p;
+
+        /*
+         * Set request->urlc and request->urlv based on the listPtr.
+         */
+        Tcl_ListObjLength(NULL, listPtr, &request->urlc);
+        request->urlv = ns_strdup(Tcl_GetString(listPtr));
+        request->urlv_len = (int)strlen(request->urlv);
+
+        Tcl_DecrRefCount(listPtr);
     }
-    request->urlc = ds1.length / (int)sizeof(char *);
-    p = NULL;
-    Tcl_DStringAppend(&ds1, (char *) &p, (int)sizeof(char *));
-    request->urlv = (char **) ns_malloc((size_t)ds1.length);
-    memcpy(request->urlv, ds1.string, (size_t)ds1.length);
     Tcl_DStringFree(&ds1);
 }
 

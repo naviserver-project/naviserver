@@ -350,10 +350,12 @@ typedef struct Ns_Request {
     const char     *protocol;
     const char     *host;
     const char     *url;
+    const char     *urlv;
     char           *query;
+    int             url_len;
+    int             urlv_len;
     int             urlc;
     unsigned short  port;
-    char          **urlv;
     double          version;
 } Ns_Request;
 
