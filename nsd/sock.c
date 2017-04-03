@@ -936,11 +936,7 @@ Ns_ClearSockErrno(void)
 ns_sockerrno_t
 Ns_GetSockErrno(void)
 {
-#ifdef _WIN32
-    return WSAGetLastError();
-#else
-    return errno;
-#endif
+    return ns_sockerrno;
 }
 
 void
