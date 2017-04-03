@@ -326,7 +326,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
             /*
              * Can't listen; close the opened socket
              */
-            ns_sockerrno_t err = errno;
+            ns_sockerrno_t err = ns_sockerrno;
 
             ns_sockclose(sock);
             errno = err;
@@ -516,7 +516,7 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
         /*
          * Can't listen; close the opened socket
          */
-        ns_sockerrno_t err = errno;
+        ns_sockerrno_t err = ns_sockerrno;
 
         ns_sockclose(sock);
         errno = err;
