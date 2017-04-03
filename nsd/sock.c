@@ -1083,7 +1083,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
             }
 
             if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
-                int err = ns_sockerrno;
+                ns_sockerrno_t err = ns_sockerrno;
                 
                 if (!async || (err != NS_EINPROGRESS && err != NS_EWOULDBLOCK)) {
                     ns_sockclose(sock);
