@@ -567,7 +567,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
         || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
         || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
-        ns_sockerrno_t err = errno;
+        ns_sockerrno_t err = ns_sockerrno;
 
         ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
@@ -667,7 +667,7 @@ Ns_SockBindRaw(int proto)
     sock = socket(AF_INET, SOCK_RAW, proto);
 
     if (sock == NS_INVALID_SOCKET) {
-        ns_sockerrno_t err = errno;
+        ns_sockerrno_t err = ns_sockerrno;
 
         ns_sockclose(sock);
         Ns_SetSockErrno(err);
