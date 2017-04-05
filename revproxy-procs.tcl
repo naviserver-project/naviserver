@@ -24,7 +24,7 @@ namespace eval ::revproxy {
     nsf::proc upstream {
 	what
 	-target
-	{-timeout 2.0}
+	{-timeout 10.0}
 	{-validation_callback ""}
 	{-regsubs:0..n ""}
 	{-exception_callback "::revproxy::exception"}
