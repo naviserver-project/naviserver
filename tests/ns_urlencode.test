@@ -16,7 +16,7 @@ test ns_urlencode-1.1.1 {basic syntax} -body {
 
 test ns_urlencode-1.1.2 {basic syntax} -body {
     ns_urlencode -part x y
-} -returnCodes error -result {bad option "x": must be query or path}
+} -returnCodes error -result {bad option "x": must be query, path, or cookie}
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
@@ -24,7 +24,7 @@ test ns_urlencode-1.2.1 {basic syntax} -body {
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
-} -returnCodes error -result {bad option "x": must be query or path}
+} -returnCodes error -result {bad option "x": must be query, path, or cookie}
 
 
 test ns_urlencode-2.1.1a {basic operation} -body {
