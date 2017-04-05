@@ -450,7 +450,8 @@ static void
 SetUrl(Ns_Request *request, char *url)
 {
     Tcl_DString  ds1, ds2;
-    char        *p, *encodedPath;
+    char        *p;
+    const char  *encodedPath;
     Tcl_Encoding encoding;
 
     NS_NONNULL_ASSERT(request != NULL);
