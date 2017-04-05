@@ -231,21 +231,15 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *time
     sent = sendfile(sock->sock, fd, &offset, toSend);
 
     if (sent == -1) {
-        switch (errno) {
-
-        case EAGAIN: /* fall through */
-        case NS_EWOULDBLOCK:            
+        if ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK)) {
             if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
                 sent = sendfile(sock->sock, fd, &offset, toSend);
             }
-            break;
-
-        case EINVAL: /* fall through */
-        case ENOSYS:
-            /* File system does not support sendfile? */
-            sent = SendFd(sock, fd, offset, toSend, timeoutPtr, 0,
-                          SendBufs);
-            break;
+        } else if ((errno == EINVAL) || (errno == ENOSYS)) {
+            /* 
+             * File system does not support sendfile? 
+             */
+            sent = SendFd(sock, fd, offset, toSend, timeoutPtr, 0, SendBufs);
         }
     }
 
