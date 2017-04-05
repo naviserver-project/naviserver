@@ -94,6 +94,7 @@ ns_section     "ns/servers"
 ns_param        default             "NaviServer"
 
 ns_section     "ns/server/default"
+ns_param        enabletclpages      true  ;# default: false
 ns_param        checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup
 ns_param        connsperthread      1000  ;# default: 0; number of connections (requests) handled per thread
 ns_param        minthreads          5     ;# default: 1; minimal number of connection threads
@@ -131,7 +132,6 @@ ns_section     "ns/server/default/adp"
 ns_param        map                 "/*.adp"
 ns_param        enableexpire        false    ;# default: false; set "Expires: now" on all ADP's 
 #ns_param        enabledebug         true     ;# default: false
-ns_param        enabletclpages      true     ;# default: false
 ns_param        singlescript        false    ;# default: false; collapse Tcl blocks to a single Tcl script
 ns_param        cache               false    ;# default: false; enable ADP caching
 ns_param        cachesize           [expr 5000*1024]
