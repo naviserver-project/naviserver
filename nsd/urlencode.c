@@ -30,7 +30,12 @@
 /* 
  * urlencode.c --
  *
- *      Encode and decode URLs, as described in RFC 1738.
+ *      Encode and decode strings with percent encoding, as covered in
+ *      - RFC 3986 (Uniform Resource Identifier (URI): Generic Syntax)
+ *      - RFC 6265 (HTTP State Management Mechanism)
+ *      
+ *      When the code is complied with RFC1738 activated, the encoding
+ *      of prior versions is used.
  */
 
 #include "nsd.h"
@@ -80,7 +85,7 @@ static char *UrlDecode(Ns_DString *dsPtr, const char *urlSegment,
  *
  */
 
-static const ByteKey queryenc[] = {
+static const ByteKey query_enc[] = {
     {-1, 3, "00"}, {-1, 3, "01"}, {-1, 3, "02"}, {-1, 3, "03"}, 
     {-1, 3, "04"}, {-1, 3, "05"}, {-1, 3, "06"}, {-1, 3, "07"}, 
     {-1, 3, "08"}, {-1, 3, "09"}, {-1, 3, "0a"}, {-1, 3, "0b"}, 
@@ -159,7 +164,7 @@ static const ByteKey queryenc[] = {
  *
  */
 
-static const ByteKey pathenc[] = {
+static const ByteKey path_enc[] = {
     {-1, 3, "00"}, {-1, 3, "01"}, {-1, 3, "02"}, {-1, 3, "03"}, 
     {-1, 3, "04"}, {-1, 3, "05"}, {-1, 3, "06"}, {-1, 3, "07"}, 
     {-1, 3, "08"}, {-1, 3, "09"}, {-1, 3, "0a"}, {-1, 3, "0b"}, 
@@ -228,7 +233,8 @@ static const ByteKey pathenc[] = {
 #else
 /*
  * The following table is used for encoding and decoding the segments of
- * a URI query component based on RFC 3986 (2005)
+ * a URI query component based on RFC 3986 (Uniform Resource Identifier
+ * (URI): Generic Syntax, 2005)
  *
  * A percent-encoding is used to represent a data octet in a component
  * when that octet's corresponding character is outside the allowed set
@@ -246,7 +252,7 @@ static const ByteKey pathenc[] = {
  *    sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
  *                   / "*" / "+" / "," / ";" / "="
  *
- * The rfc just defines the "outer" syntax of the query, the content is
+ * The RFC just defines the "outer" syntax of the query, the content is
  * usually form-urlencoded, where "&", "=" and "+" have special
  * meanings (https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1)
  * so only the following sub-delims are allowed literally.
@@ -264,9 +270,15 @@ static const ByteKey pathenc[] = {
  *    query-sub-delims: 6
  *    pchar:            66 + 6 + 2 = 74
  *    query:            76 + 2 = 76
+ *
+ * Unprotected characters:
+ *
+ *   ! $ ' ( ) * + - . / 0 1 2 3 4 5 6 7 8 9 : ? @ 
+ *   A B C D E F G H I J K L M N O P Q R S T U V W X Y Z _ 
+ *   a b c d e f g h i j k l m n o p q r s t u v w x y z ~
  */
 
-static const ByteKey queryenc[] = {
+static const ByteKey query_enc[] = {
     /* 0x00 */  {-1, 3, "00"}, {-1, 3, "01"}, {-1, 3, "02"}, {-1, 3, "03"}, 
     /* 0x04 */  {-1, 3, "04"}, {-1, 3, "05"}, {-1, 3, "06"}, {-1, 3, "07"}, 
     /* 0x08 */  {-1, 3, "08"}, {-1, 3, "09"}, {-1, 3, "0a"}, {-1, 3, "0b"}, 
@@ -336,7 +348,8 @@ static const ByteKey queryenc[] = {
 
 /*
  * The following table is used for encoding and decoding the segments of
- * a URI path component based on RFC 3986 (2005)
+ * a URI path component based on RFC 3986 (Uniform Resource Identifier
+ * (URI): Generic Syntax, 2005)
  *
  * The query part of a URL is defined as: 
  *
@@ -348,22 +361,28 @@ static const ByteKey queryenc[] = {
  * 
  * The RFC states that semicolon (";") and equals ("=") reserved
  * characters are often used to delimit parameters and parameter values
- * applicable to that segment. Whatever "often" means! to be on the safe
- * side, and to support that charaters as part of the segment, these are
+ * applicable to that segment (whatever "often" means!). To be on the safe
+ * side, and to support that characters as part of the segment, these are
  * encoded.
  * 
  *    segment-sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
- *                         / "*" / "+" / "," 
+ *                         / "*" / "+" / ","
 
- * This means a total of 7cters are allowed unencoded in query
+ * This means a total of 77 characters are allowed unencoded in query
  * parts:
  *    unreserved:         26 + 26 + 10 + 4 = 66
  *    segment-sub-delims: 9
  *    segment-chars:      66 + 2 + 9 = 77
+ *
+ * Unprotected characters:
+ *
+ *    ! $ & ' ( ) * + , - . 0 1 2 3 4 5 6 7 8 9 : @ 
+ *    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z _ 
+ *    a b c d e f g h i j k l m n o p q r s t u v w x y z ~
  */
 
 
-static const ByteKey pathenc[] = {
+static const ByteKey path_enc[] = {
     /* 0x00 */  {-1, 3, "00"}, {-1, 3, "01"}, {-1, 3, "02"}, {-1, 3, "03"}, 
     /* 0x04 */  {-1, 3, "04"}, {-1, 3, "05"}, {-1, 3, "06"}, {-1, 3, "07"}, 
     /* 0x08 */  {-1, 3, "08"}, {-1, 3, "09"}, {-1, 3, "0a"}, {-1, 3, "0b"}, 
@@ -431,6 +450,95 @@ static const ByteKey pathenc[] = {
 };
 #endif
 
+/*
+ * The following table is used for encoding and decoding the segments of
+ * a cookie based on RFC 6265 (HTTP State Management Mechanism, 2011)
+ *
+ * A percent-encoding is used to represent a data octet except for
+ * characters which are explicitly allowed in the RFC.
+ *
+ * Allowed cookie characters are defined as:
+ *
+ *    cookie-octet      = %x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E
+ *                      ; US-ASCII characters excluding CTLs,
+ *                      ; whitespace DQUOTE, comma, semicolon,
+ *                      ; and backslash
+ *
+ * This definition implies that a total of 90 characters are allowed
+ * unencoded in a cookie:
+ * 
+ *     ! # $ % & ' ( ) * + - . / 0 1 2 3 4 5 6 7 8 9 : < = > ? @ 
+ *     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` 
+ *     a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~
+ */
+
+static const ByteKey cookie_enc[] = {
+    /* 0x00 */  {-1, 3, "00"}, {-1, 3, "01"}, {-1, 3, "02"}, {-1, 3, "03"}, 
+    /* 0x04 */  {-1, 3, "04"}, {-1, 3, "05"}, {-1, 3, "06"}, {-1, 3, "07"}, 
+    /* 0x08 */  {-1, 3, "08"}, {-1, 3, "09"}, {-1, 3, "0a"}, {-1, 3, "0b"}, 
+    /* 0x0c */  {-1, 3, "0c"}, {-1, 3, "0d"}, {-1, 3, "0e"}, {-1, 3, "0f"}, 
+    /* 0x10 */  {-1, 3, "10"}, {-1, 3, "11"}, {-1, 3, "12"}, {-1, 3, "13"}, 
+    /* 0x14 */  {-1, 3, "14"}, {-1, 3, "15"}, {-1, 3, "16"}, {-1, 3, "17"}, 
+    /* 0x18 */  {-1, 3, "18"}, {-1, 3, "19"}, {-1, 3, "1a"}, {-1, 3, "1b"}, 
+    /* 0x1c */  {-1, 3, "1c"}, {-1, 3, "1d"}, {-1, 3, "1e"}, {-1, 3, "1f"}, 
+    /* 0x20 */  {-1, 3, "20"}, {-1, 1, NULL}, {-1, 3, "22"}, {-1, 1, NULL}, 
+    /* 0x24 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x28 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x2c */  {-1, 3, "2c"}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x30 */  { 0, 1, NULL}, { 1, 1, NULL}, { 2, 1, NULL}, { 3, 1, NULL}, 
+    /* 0x34 */  { 4, 1, NULL}, { 5, 1, NULL}, { 6, 1, NULL}, { 7, 1, NULL}, 
+    /* 0x38 */  { 8, 1, NULL}, { 9, 1, NULL}, {-1, 1, NULL}, {-1, 3, "3b"}, 
+    /* 0x3c */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x40 */  {-1, 1, NULL}, {10, 1, NULL}, {11, 1, NULL}, {12, 1, NULL}, 
+    /* 0x44 */  {13, 1, NULL}, {14, 1, NULL}, {15, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x48 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x4c */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x50 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x54 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x58 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x5c */  {-1, 3, "5c"}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x60 */  {-1, 1, NULL}, {10, 1, NULL}, {11, 1, NULL}, {12, 1, NULL}, 
+    /* 0x64 */  {13, 1, NULL}, {14, 1, NULL}, {15, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x68 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x6c */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x70 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x74 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x78 */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, 
+    /* 0x7c */  {-1, 1, NULL}, {-1, 1, NULL}, {-1, 1, NULL}, {-1, 3, "7f"}, 
+    /* 0x80 */  {-1, 3, "80"}, {-1, 3, "81"}, {-1, 3, "82"}, {-1, 3, "83"}, 
+    /* 0x84 */  {-1, 3, "84"}, {-1, 3, "85"}, {-1, 3, "86"}, {-1, 3, "87"}, 
+    /* 0x88 */  {-1, 3, "88"}, {-1, 3, "89"}, {-1, 3, "8a"}, {-1, 3, "8b"}, 
+    /* 0x8c */  {-1, 3, "8c"}, {-1, 3, "8d"}, {-1, 3, "8e"}, {-1, 3, "8f"}, 
+    /* 0x90 */  {-1, 3, "90"}, {-1, 3, "91"}, {-1, 3, "92"}, {-1, 3, "93"}, 
+    /* 0x94 */  {-1, 3, "94"}, {-1, 3, "95"}, {-1, 3, "96"}, {-1, 3, "97"}, 
+    /* 0x98 */  {-1, 3, "98"}, {-1, 3, "99"}, {-1, 3, "9a"}, {-1, 3, "9b"}, 
+    /* 0x9c */  {-1, 3, "9c"}, {-1, 3, "9d"}, {-1, 3, "9e"}, {-1, 3, "9f"}, 
+    /* 0xa0 */  {-1, 3, "a0"}, {-1, 3, "a1"}, {-1, 3, "a2"}, {-1, 3, "a3"}, 
+    /* 0xa4 */  {-1, 3, "a4"}, {-1, 3, "a5"}, {-1, 3, "a6"}, {-1, 3, "a7"}, 
+    /* 0xa8 */  {-1, 3, "a8"}, {-1, 3, "a9"}, {-1, 3, "aa"}, {-1, 3, "ab"}, 
+    /* 0xac */  {-1, 3, "ac"}, {-1, 3, "ad"}, {-1, 3, "ae"}, {-1, 3, "af"}, 
+    /* 0xb0 */  {-1, 3, "b0"}, {-1, 3, "b1"}, {-1, 3, "b2"}, {-1, 3, "b3"}, 
+    /* 0xb4 */  {-1, 3, "b4"}, {-1, 3, "b5"}, {-1, 3, "b6"}, {-1, 3, "b7"}, 
+    /* 0xb8 */  {-1, 3, "b8"}, {-1, 3, "b9"}, {-1, 3, "ba"}, {-1, 3, "bb"}, 
+    /* 0xbc */  {-1, 3, "bc"}, {-1, 3, "bd"}, {-1, 3, "be"}, {-1, 3, "bf"}, 
+    /* 0xc0 */  {-1, 3, "c0"}, {-1, 3, "c1"}, {-1, 3, "c2"}, {-1, 3, "c3"}, 
+    /* 0xc4 */  {-1, 3, "c4"}, {-1, 3, "c5"}, {-1, 3, "c6"}, {-1, 3, "c7"}, 
+    /* 0xc8 */  {-1, 3, "c8"}, {-1, 3, "c9"}, {-1, 3, "ca"}, {-1, 3, "cb"}, 
+    /* 0xcc */  {-1, 3, "cc"}, {-1, 3, "cd"}, {-1, 3, "ce"}, {-1, 3, "cf"}, 
+    /* 0xd0 */  {-1, 3, "d0"}, {-1, 3, "d1"}, {-1, 3, "d2"}, {-1, 3, "d3"}, 
+    /* 0xd4 */  {-1, 3, "d4"}, {-1, 3, "d5"}, {-1, 3, "d6"}, {-1, 3, "d7"}, 
+    /* 0xd8 */  {-1, 3, "d8"}, {-1, 3, "d9"}, {-1, 3, "da"}, {-1, 3, "db"}, 
+    /* 0xdc */  {-1, 3, "dc"}, {-1, 3, "dd"}, {-1, 3, "de"}, {-1, 3, "df"}, 
+    /* 0xe0 */  {-1, 3, "e0"}, {-1, 3, "e1"}, {-1, 3, "e2"}, {-1, 3, "e3"}, 
+    /* 0xe4 */  {-1, 3, "e4"}, {-1, 3, "e5"}, {-1, 3, "e6"}, {-1, 3, "e7"}, 
+    /* 0xe8 */  {-1, 3, "e8"}, {-1, 3, "e9"}, {-1, 3, "ea"}, {-1, 3, "eb"}, 
+    /* 0xec */  {-1, 3, "ec"}, {-1, 3, "ed"}, {-1, 3, "ee"}, {-1, 3, "ef"}, 
+    /* 0xf0 */  {-1, 3, "f0"}, {-1, 3, "f1"}, {-1, 3, "f2"}, {-1, 3, "f3"}, 
+    /* 0xf4 */  {-1, 3, "f4"}, {-1, 3, "f5"}, {-1, 3, "f6"}, {-1, 3, "f7"}, 
+    /* 0xf8 */  {-1, 3, "f8"}, {-1, 3, "f9"}, {-1, 3, "fa"}, {-1, 3, "fb"}, 
+    /* 0xfc */  {-1, 3, "fc"}, {-1, 3, "fd"}, {-1, 3, "fe"}, {-1, 3, "ff"}
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -477,10 +585,10 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
         mustBeEncoded[UCHAR('=')] = NS_FALSE;
         
         for (i = 0u; i < 256u; i++) {
-            if (pathenc[i].str == NULL) {
+            if (path_enc[i].str == NULL) {
                 mustBeEncoded[i] = NS_FALSE;
             }
-            if (queryenc[i].str == NULL) {
+            if (query_enc[i].str == NULL) {
                 mustBeEncoded[i] = NS_FALSE;
             }
         }
@@ -662,6 +770,52 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodi
 
     return UrlDecode(dsPtr, urlSegment, encoding, 'q');
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CookieEncode, Ns_CookieDecode --
+ *
+ *      Encode/decode the given string in cookie encoding.
+ *      If encoding is NULL, UTF8 is assumed.
+ *
+ * Results:
+ *      A pointer to the dstring's value, containing the encoded/decoded
+ *      string component.
+ *
+ * Side effects:
+ *      Transformed query string component will be copied to given
+ *      dstring.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_CookieEncode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+{
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(cookie != NULL);
+
+#ifdef RFC1738
+    return UrlEncode(dsPtr, cookie, encoding, 'q', NS_FALSE);
+#else
+    return UrlEncode(dsPtr, cookie, encoding, 'c', NS_FALSE);
+#endif
+}
+
+char *
+Ns_CookieDecode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+{
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(cookie != NULL);
+
+#ifdef RFC1738
+    return UrlDecode(dsPtr, cookie, encoding, 'q');
+#else    
+    return UrlDecode(dsPtr, cookie, encoding, 'c');
+#endif    
+}
+
 
 
 /*
@@ -753,8 +907,9 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char        *charset = NULL;
     char         part = 'q';
     Ns_ObjvTable parts[] = {
-        {"query", UCHAR('q')},
-        {"path",  UCHAR('p')},
+        {"query",  UCHAR('q')},
+        {"path",   UCHAR('p')},
+        {"cookie", UCHAR('c')},
         {NULL,    0u}
     };
     Ns_ObjvSpec lopts[] = {
@@ -823,6 +978,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     Ns_ObjvTable parts[] = {
         {"query",    UCHAR('q')},
         {"path",     UCHAR('p')},
+        {"cookie",   UCHAR('c')},
         {NULL,       0u}
     };
     Ns_ObjvSpec  lopts[] = {
@@ -888,15 +1044,24 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     }
 
     /*
-     * Determine and set the requried dstring length.
+     * Get the encoding table
      */
+    switch (part) {
+    case 'q': enc = query_enc; break;
+    case 'p': enc = path_enc; break;
+    case 'c': enc = cookie_enc; break;
+    default:  enc = query_enc; break;
+    }
 
-    enc = (part == 'q') ? queryenc : pathenc;
+    /*
+     * Save old dstring length, determine and set the full required
+     * dstring length.
+     */
+    i = dsPtr->length;
     n = 0;
     for (p = urlSegment; *p != '\0'; p++) {
 	n += enc[UCHAR(*p)].len;
     }
-    i = dsPtr->length;
     Ns_DStringSetLength(dsPtr, dsPtr->length + n);
 
     /*
@@ -984,7 +1149,16 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
         q = dsPtr->string + i;
     }
 
-    enc = (part == 'q') ? queryenc : pathenc;
+    /*
+     * Get the encoding table
+     */
+    switch (part) {
+    case 'q': enc = query_enc; break;
+    case 'p': enc = path_enc; break;
+    case 'c': enc = cookie_enc; break;
+    default:  enc = query_enc; break;
+    }
+
     p = urlSegment;
     n = 0;
     while (likely(*p != '\0')) {

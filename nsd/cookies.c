@@ -90,7 +90,7 @@ CopyCookieValue(Tcl_DString *dest, char *valueStart)
     }
     save = *q;
     *q = '\0';
-    Ns_UrlQueryDecode(dest, valueStart, NULL);
+    Ns_CookieDecode(dest, valueStart, NULL);
     *q = save;
 }
 
@@ -357,7 +357,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value, tim
     Ns_DStringInit(&cookie);
     Ns_DStringVarAppend(&cookie, name, "=\"", (char *)0);
     if (value != NULL) {
-        Ns_UrlQueryEncode(&cookie, value, NULL);
+        Ns_CookieEncode(&cookie, value, NULL);
     }
     Ns_DStringAppend(&cookie, "\"");
     if ((flags & NS_COOKIE_EXPIRENOW) != 0u) {
@@ -457,7 +457,7 @@ Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, const char *name, const char *dom
  *      dest->string or NULL on error.
  *
  * Side effects:
- *      Cookie value is UrlQueryDecoded before placement in dest.
+ *      Cookie value is CookieDecoded before placement in dest.
  *
  *----------------------------------------------------------------------
  */
