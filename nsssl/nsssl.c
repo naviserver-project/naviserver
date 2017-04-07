@@ -679,6 +679,13 @@ Close(Ns_Sock *sock)
             shutdown(SSL_get_fd(sslPtr->ssl), SHUT_RDWR);
             r = SSL_shutdown(sslPtr->ssl);
         }
+        if (r == -1) {
+            unsigned long err = ERR_get_error();
+            
+            if (err != 0) {
+                Ns_Log(Notice, "SSL_shutdown has failed: %s", ERR_error_string(err, NULL));
+            }
+        }
         SSL_free(sslPtr->ssl);
         ns_free(sslPtr);
     }
