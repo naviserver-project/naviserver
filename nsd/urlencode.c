@@ -1126,7 +1126,6 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     char            *copy = NULL;
     size_t           length;
     Tcl_DString      ds;
-    const ByteKey   *enc;
     static const int hex_code[] = {
         /* 0x00 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
         /* 0x10 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
@@ -1165,16 +1164,6 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
         i = dsPtr->length;
         Ns_DStringSetLength(dsPtr, i + (int)length);
         q = dsPtr->string + i;
-    }
-
-    /*
-     * Get the encoding table
-     */
-    switch (part) {
-    case 'q': enc = query_enc; break;
-    case 'p': enc = path_enc; break;
-    case 'c': enc = cookie_enc; break;
-    default:  enc = query_enc; break;
     }
 
     p = urlSegment;
