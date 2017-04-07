@@ -227,12 +227,13 @@ Ns_ModuleInit(const char *server, const char *module)
         Ns_Log(Error, "nsssl: certificate parameter must be specified in the config file under %s", path);
         return NS_ERROR;
     }
+
     if (SSL_CTX_use_certificate_chain_file(drvPtr->ctx, value) != 1) {
-        Ns_Log(Error, "nsssl: certificate load error [%s]", ERR_error_string(ERR_get_error(), NULL));
+        Ns_Log(Error, "nsssl: certificate load error from cert %s: %s", value, ERR_error_string(ERR_get_error(), NULL));
         return NS_ERROR;
     }
     if (SSL_CTX_use_PrivateKey_file(drvPtr->ctx, value, SSL_FILETYPE_PEM) != 1) {
-        Ns_Log(Error, "nsssl: private key load error [%s]", ERR_error_string(ERR_get_error(), NULL));
+        Ns_Log(Error, "nsssl: private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
         return NS_ERROR;
     }
 
@@ -666,9 +667,17 @@ Close(Ns_Sock *sock)
     SSLContext *sslPtr = sock->arg;
 
     if (sslPtr != NULL) {
-	int i;
-        for (i = 0; i < 4 && !SSL_shutdown(sslPtr->ssl); i++) {
-            ;
+        int r;
+                
+        r = SSL_shutdown(sslPtr->ssl);
+        if (r == 0) {
+            /*
+             * The first shutdown did not work, so try again. However, to be
+             * sure that SSL_shutdown() does not block, issue a socket
+             * shutdown() command first.
+             */
+            shutdown(SSL_get_fd(sslPtr->ssl), SHUT_RDWR);
+            r = SSL_shutdown(sslPtr->ssl);
         }
         SSL_free(sslPtr->ssl);
         ns_free(sslPtr);
