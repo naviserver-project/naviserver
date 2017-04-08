@@ -241,7 +241,7 @@ Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, unsigned int flags,
     NS_NONNULL_ASSERT(proc != NULL);
 
     if (hour > 23 || hour < 0 || minute > 59 || minute < 0) {
-        result = NS_ERROR;
+        result = (int)NS_ERROR;
     } else {
         int seconds = (hour * 3600) + (minute * 60);
         result = Ns_ScheduleProcEx(proc, clientData, flags | NS_SCHED_DAILY, seconds, cleanupProc);
@@ -275,7 +275,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
     NS_NONNULL_ASSERT(proc != NULL);
 
     if (day < 0 || day > 6 || hour > 23 || hour < 0 || minute > 59 || minute < 0) {
-        result = NS_ERROR;
+        result = (int)NS_ERROR;
     } else {
         int seconds = (((day * 24) + hour) * 3600) + (minute * 60);
         result = Ns_ScheduleProcEx(proc, clientData, flags | NS_SCHED_WEEKLY, seconds, cleanupProc);

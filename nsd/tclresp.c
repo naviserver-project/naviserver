@@ -613,15 +613,17 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     } else {
         result = Ns_TclGetOpenChannel(interp, channelName, 0, NS_TRUE, &chan);
         if (likely( result == TCL_OK )) {
-
+            Ns_ReturnCode status;
+            
             Ns_LogDeprecated(objv, 3, "ns_writefp fileid ?nbytes?", NULL);
             
             conn->flags |= NS_CONN_SKIPHDRS;
-            result = Ns_ConnSendChannel(conn, chan, (size_t)len);
+            status = Ns_ConnSendChannel(conn, chan, (size_t)len);
             
-            if (result != TCL_OK) {
+            if (status != NS_OK) {
                 Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
                                    len, channelName);
+                result = TCL_ERROR;
             }
         }
     }
@@ -956,7 +958,7 @@ Result(Tcl_Interp *interp, Ns_ReturnCode result)
 {
     NS_NONNULL_ASSERT(interp != NULL);
     
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result == NS_OK ? 1 : 0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj((result == NS_OK) ? 1 : 0));
     return TCL_OK;
 }
 

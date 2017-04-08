@@ -308,7 +308,7 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
 
     } else {
-        int rc = kill(pid, sig);
+        int rc = kill((pid_t)pid, sig);
 
         if (rc != 0 && !nocomplain) {
             Ns_TclPrintfResult(interp, "kill %d %d failed: %s", pid, sig, Tcl_PosixError(interp));

@@ -174,7 +174,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
                 Tcl_WrongNumArgs(interp, 2, objv, "name");
                 result = TCL_ERROR;
             } else {
-                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(getenv(Tcl_GetString(objv[2])) != NULL ? 1 : 0));
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj((getenv(Tcl_GetString(objv[2])) != NULL) ? 1 : 0));
             }
             break;
 
