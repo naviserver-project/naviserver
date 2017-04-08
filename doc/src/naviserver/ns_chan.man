@@ -101,8 +101,8 @@
 [example_end]
 
 
-[see_also ns_conn ns_connchan]
-[keywords channels]
+[see_also ns_conn ns_connchan ns_sockcallback]
+[keywords channels callback]
 
 [manpage_end]
 

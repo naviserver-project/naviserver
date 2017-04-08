@@ -18,12 +18,11 @@ of r, w, e, or x, specifying, when the callback should fire.
 
 The optional argument [arg timeout] can be of the form
 secs:?microsecs?.
+[para]
 
-When the callback is fired, the script will be called with additional
-[arg sockid] and [arg when]. The value of [arg when]  will be
-as follows:
-
-Value of, when Condition under which the script will be called:
+When the callback is fired, the specified [arg script] will be called
+with additional arguments [arg sockid] and [arg condition].
+The value of the reported [arg condition] will be as follows:
 [list_begin itemized]
 
 [item] r - the socket is readable
@@ -58,7 +57,7 @@ proc newconn {sock when} {
 [example_end]
 
 
-[see_also ns_connchan ns_socklisten]
+[see_also ns_chan ns_connchan ns_socklisten ns_sockaccept]
 [keywords NaviServer socket callback]
 [manpage_end]
 
