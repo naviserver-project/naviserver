@@ -14,6 +14,7 @@ List of all currently available NaviServer commands.
 
 [section {ADP commands}]
 [list_begin definitions]
+
 [call [cmd ns_adp_register]]
 [list_begin definitions]
 [call [cmd ns_adp_registeradp]]
@@ -181,9 +182,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_striphtml]]
 [call [cmd ns_tagelement]]
 [call [cmd ns_tagelementset]]
-[call [cmd ns_write]]
 [call [cmd ns_writecontent]]
-[call [cmd ns_writefp]]
 [list_end]
 
 [section {HTTP commands}]
@@ -265,9 +264,18 @@ List of all currently available NaviServer commands.
 [call [cmd {nsv_names}]]
 [call [cmd {nsv_set}]]
 [call [cmd {nsv_unset}]]
+[list_end]
+[list_end]
 
+[section {Streaming commands}]
+[list_begin definitions]
+[call [cmd ns_write]]
+[list_begin definitions]
+[call [cmd ns_headers]]
+[call [cmd ns_writefp]]
 [list_end]
 [list_end]
+
 
 
 [section {Tcl channel management}]
@@ -408,7 +416,6 @@ List of all currently available NaviServer commands.
 [call [cmd ns_rand]]
 [call [cmd ns_tcl_abort]]
 [call [cmd ns_set_precision]]
-[call [cmd ns_headers]]
 [call [cmd ns_hrefs]]
 [call [cmd ns_issmallint]]
 [call [cmd ns_module]]

@@ -8,15 +8,12 @@
 
 [description]
 
-These commands are used to manually construct and send a complete HTTP
-response, or some other non-HTTP response type, to the client.
-
+These commands are used to manually construct and send a HTTP
+response piecewise (in a streaming manner), to the client.
 
 
 [section {COMMANDS}]
 [list_begin definitions]
-
-
 
 [call [cmd ns_headers] \
      [opt [option -binary]] \
@@ -69,21 +66,14 @@ After the command completes the connection remains open and available in
 the calling connection thread.
 
 
+[call [cmd ns_writefp] \
+	[arg fileid] \
+	[opt [arg nbytes]]]
 
-[call [cmd ns_connsendfp] \
-     [arg channel] \
-     [arg length] ]
+The command [cmd ns_writefp] writes the contents of the specified file
+to the connection.  One can specify the number of bytes to be copied
+in the [arg nbytes] argument. By default, the entire file is transmitted.
 
-Send [arg length] bytes from [arg channel] directly to the client. No headers
-are sent unless [cmd ns_headers] has been called. No character encoding is done.
-
-[para]
-An error is raised if all of [arg length] bytes could not be sent or if the
-[arg channel] is invalid.
-
-[para]
-After the command completes the connection remains open and available in
-the calling connection thread.
 
 [list_end]
 
@@ -91,7 +81,7 @@ the calling connection thread.
 
 [section EXAMPLES]
 
-Report results progressively.
+Report results progressively:
 
 [example_begin]
 ns_register_proc GET /long-running-process {
@@ -109,12 +99,12 @@ ns_register_proc GET /long-running-process {
 
 
 
-Sending binary data.
+Sending binary data:
 
 [example_begin]
 ns_register_proc GET /blobs {
     ...
-    [cmd ns_headers] -binary -- 200 application/x-whateva
+    [cmd ns_headers] -binary -- 200 application/x-whatever
     [cmd ns_write] $blob1 $blob2
     ...
     [cmd ns_write] $blob3
@@ -122,8 +112,20 @@ ns_register_proc GET /blobs {
 [example_end]
 
 
+Sending data to the connection from a file:
 
-[see_also ns_return ns_conn]
+[example_begin]
+    [cmd ns_register_proc] GET /sampleWriteFp {
+        [cmd ns_headers] -- 200 text/plain
+        set file [lb]open "/usr/local/ns/copyright.txt" r[rb]
+        [cmd ns_writefp] $file
+        close $file
+    }
+[example_end]
+
+
+
+[see_also ns_return ns_conn ns_register]
 [keywords return response status charset encoding writer]
 
 [manpage_end]
