@@ -351,68 +351,69 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     }
     if (sock == NULL) {
         Ns_TclPrintfResult(interp, "No connection available");
-        return TCL_ERROR;
-    }
-    if (objc < 2) {
+        result = TCL_ERROR;
+        
+    } else if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "command");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd) != TCL_OK) {
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    switch (cmd) {
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd) != TCL_OK) {
+        result = TCL_ERROR;
 
-    case CArrayIdx:
-        Ns_DStringInit(&ds);
-        (void) Ns_SlsAppendKeyed(&ds, sock);
-        Tcl_DStringResult(interp, &ds);
-        break;
+    } else {
 
-    case CGetIdx:
-        if (objc < 3 || objc > 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "key ?default?");
-            result = TCL_ERROR;
-        } else {
-            const char *data = Ns_SlsGetKeyed(sock, Tcl_GetString(objv[2]));
-            
-            if (data == NULL) {
-                if (objc == 4) {
-                    Tcl_SetObjResult(interp, objv[3]);
-                } else {
-                    Ns_TclPrintfResult(interp, "key does not exist and no default given");
-                    result =  TCL_ERROR;
-                }
+        switch (cmd) {
+
+        case CArrayIdx:
+            Ns_DStringInit(&ds);
+            (void) Ns_SlsAppendKeyed(&ds, sock);
+            Tcl_DStringResult(interp, &ds);
+            break;
+
+        case CGetIdx:
+            if (objc < 3 || objc > 4) {
+                Tcl_WrongNumArgs(interp, 2, objv, "key ?default?");
+                result = TCL_ERROR;
             } else {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+                const char *data = Ns_SlsGetKeyed(sock, Tcl_GetString(objv[2]));
+            
+                if (data == NULL) {
+                    if (objc == 4) {
+                        Tcl_SetObjResult(interp, objv[3]);
+                    } else {
+                        Ns_TclPrintfResult(interp, "key does not exist and no default given");
+                        result =  TCL_ERROR;
+                    }
+                } else {
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+                }
             }
-        }
-        break;
+            break;
 
-    case CSetIdx:
-        if (objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "key value");
-            result = TCL_ERROR;
-        } else {
-            Ns_SlsSetKeyed(sock, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
-        }
-        break;
+        case CSetIdx:
+            if (objc != 4) {
+                Tcl_WrongNumArgs(interp, 2, objv, "key value");
+                result = TCL_ERROR;
+            } else {
+                Ns_SlsSetKeyed(sock, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
+            }
+            break;
 
-    case CUnsetIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "key");
-            result = TCL_ERROR;
-        } else {
-            Ns_SlsUnsetKeyed(sock, Tcl_GetString(objv[2]));
-        }
-        break;
+        case CUnsetIdx:
+            if (objc != 3) {
+                Tcl_WrongNumArgs(interp, 2, objv, "key");
+                result = TCL_ERROR;
+            } else {
+                Ns_SlsUnsetKeyed(sock, Tcl_GetString(objv[2]));
+            }
+            break;
 
-    default:
-        /* unexpected value */
-        assert(cmd && 0);
-        break;
+        default:
+            /* unexpected value */
+            assert(cmd && 0);
+            break;
+        }
     }
-
     return result;
 }
 

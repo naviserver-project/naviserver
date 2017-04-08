@@ -2533,15 +2533,14 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     } else if (CheckTclUrlSpaceId(interp, servPtr, &id) != TCL_OK) {
         result = TCL_ERROR;
 
+    } else if (NS_strlen(key) < 1u) {
+        Ns_TclPrintfResult(interp, "provided key must be at least one character");
+        result = TCL_ERROR;
+        
     } else {
         const char   *data;
         unsigned int  flags = 0u;
         
-        if (NS_strlen(key) < 1u) {
-            Ns_TclPrintfResult(interp, "provided key must be at least one character");
-            return TCL_ERROR;
-        }
-
         if (noinherit == (int)NS_TRUE) {
             flags |= NS_OP_NOINHERIT;
         }
