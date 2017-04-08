@@ -286,7 +286,9 @@ GetHost(Ns_DString *dsPtr, const char *addr)
         int  err;
 
         err = getnameinfo(saPtr,
-                          (sa.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+                          ((sa.ss_family == AF_INET6)
+                           ? (socklen_t)sizeof(struct sockaddr_in6)
+                           : (socklen_t)sizeof(struct sockaddr_in)),
                           buf, sizeof(buf),
                           NULL, 0, NI_NAMEREQD);
         if (err != 0) {
