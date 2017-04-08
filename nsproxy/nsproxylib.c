@@ -47,8 +47,62 @@
 
 #include "nsproxy.h"
 
-#include <grp.h>
-#include <poll.h>
+#ifdef _WIN32
+# define SIGKILL 9
+# define SIGTERM 15
+
+ssize_t writev(int fildes, const struct iovec *iov, int iovcnt);
+
+/* 
+ * Minimal writev() and readv() emulation for windows. Must be probably
+ * extended to be useful.
+ */
+ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
+{
+    ssize_t result = 0;
+    int i;
+    
+    for (i = 0; i < iovcnt; i++) {
+        ssize_t written = ns_write(fildes, iov[i].iov_base, iov[i].iov_len);
+        
+        if (written != iov[i].iov_len) {
+            /*
+             * Give up, since we did not receive the expected data. 
+             * Maybe overly cautious and we have to handle partial
+             * writes.
+             */
+            result = -1;
+            break;
+        } else {
+            result += written;
+        }
+    }
+
+    return result;
+}
+
+ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
+{
+    ssize_t result = 0;
+    int i;
+    
+    for (i = 0; i < iovcnt; i++) {
+        ssize_t read = ns_read(fildes, iov[i].iov_base, iov[i].iov_len);
+        
+        if (read < 0) {
+            result = -1;
+            break;
+        } else {
+            result += read;
+        }
+    }
+
+    return result;
+}
+#else
+# include <grp.h>
+# include <poll.h>
+#endif
 
 /*
  * It is pain in the neck to get a satisfactory definition of
@@ -1181,7 +1235,7 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
     }
 
     ulen = htonl((unsigned int)dsPtr->length);
-    iov[0].iov_base = (caddr_t) &ulen;
+    iov[0].iov_base = (void *)&ulen;
     iov[0].iov_len  = sizeof(ulen);
     iov[1].iov_base = dsPtr->string;
     iov[1].iov_len  = (size_t)dsPtr->length;
@@ -1255,7 +1309,7 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
     }
 
     avail = (size_t)dsPtr->spaceAvl - 1u;
-    iov[0].iov_base = (caddr_t) &ulen;
+    iov[0].iov_base = (void *)&ulen;
     iov[0].iov_len  = sizeof(ulen);
     iov[1].iov_base = dsPtr->string;
     iov[1].iov_len  = avail;
@@ -3230,7 +3284,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 static int
 RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const char *scriptString;
+    char       *scriptString;
     int         ms = -1, result = TCL_OK;
     Ns_ObjvSpec args[] = {
         {"script",    Ns_ObjvString, &scriptString, NULL},
