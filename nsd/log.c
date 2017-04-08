@@ -260,7 +260,7 @@ NsInitLog(void)
      */
 
     for (i = PredefinedLogSeveritiesCount; i < severityMaxCount; i++) {
-        snprintf(buf, sizeof(buf), "%d", i);
+        snprintf(buf, sizeof(buf), "%d", (int)i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
         severityConfig[i].label = Tcl_GetHashKey(&severityTable, hPtr);
