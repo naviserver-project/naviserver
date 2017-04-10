@@ -2534,7 +2534,7 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else if (NS_strlen(key) < 1u) {
-        Ns_TclPrintfResult(interp, "provided key must be at least one character");
+        Ns_TclPrintfResult(interp, "the provided key must contain at least one character");
         result = TCL_ERROR;
         
     } else {
