@@ -2266,7 +2266,7 @@ Bug Fixes:
     * Fix Ns_Time for platforms, where time_t is long.
     * Updated documentation
     * Various 64bit fixes.
-    * Fix path attribute of HTP Cookie string.
+    * Fix path attribute of HTTP Cookie string.
     * Make sure upload stats lock is unlocked after use.
     * Fix crash in writer thread logging already freed data.
     * Fix crashes in cache code due to incorrect expired entry flushing fixed.
