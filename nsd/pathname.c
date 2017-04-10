@@ -54,7 +54,8 @@ static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 static const char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL;
 
 
 
@@ -999,7 +1000,7 @@ static const char *
 ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 {
     char           *safehost;
-    const char     *path;
+    const char     *path = NULL;
     const Ns_Conn  *conn;
     const Ns_Set   *headers;
     Ns_DString      ds;
@@ -1014,9 +1015,6 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
          */
 
         path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
-        if (path == NULL) {
-            goto defpath;
-        }
 
     } else if (servPtr->vhost.enabled
                && (rawHost != NULL
@@ -1030,47 +1028,47 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
          */
 
         if (!Ns_StrIsHost(rawHost)) {
-            goto defpath;
-        }
+            path = NULL;
+            
+        } else {
 
-        /*
-         * Normalize the Host string.
-         */
+            /*
+             * Normalize the Host string.
+             */
 
-        Ns_DStringInit(&ds);
-        safehost = Ns_DStringAppend(&ds, rawHost);
+            Ns_DStringInit(&ds);
+            safehost = Ns_DStringAppend(&ds, rawHost);
 
-        (void) Ns_StrToLower(safehost);
-        if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0u
-            && strncmp(safehost, "www.", 4u) == 0) {
-            safehost = &safehost[4];
-        }
-        if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u) {
-            char *p = strrchr(safehost, INTCHAR(':'));
-            if (p != NULL) {
-                *p = '\0';
+            (void) Ns_StrToLower(safehost);
+            if ((servPtr->vhost.opts & NSD_STRIP_WWW) != 0u
+                && strncmp(safehost, "www.", 4u) == 0) {
+                safehost = &safehost[4];
             }
+            if ((servPtr->vhost.opts & NSD_STRIP_PORT) != 0u) {
+                char *p = strrchr(safehost, INTCHAR(':'));
+                if (p != NULL) {
+                    *p = '\0';
+                }
+            }
+
+            /*
+             * Build the final path.
+             */
+
+            path = Ns_MakePath(dest, servPtr->fastpath.serverdir,
+                               servPtr->vhost.hostprefix, (char *)0);
+            if (servPtr->vhost.hosthashlevel > 0) {
+                Ns_HashPath(dest, safehost, servPtr->vhost.hosthashlevel);
+            }
+            Ns_NormalizePath(dest, safehost);
+            Ns_DStringFree(&ds);
         }
+    } 
 
-        /*
-         * Build the final path.
-         */
-
-        path = Ns_MakePath(dest, servPtr->fastpath.serverdir,
-                           servPtr->vhost.hostprefix, (char *)0);
-        if (servPtr->vhost.hosthashlevel > 0) {
-            Ns_HashPath(dest, safehost, servPtr->vhost.hosthashlevel);
-        }
-        Ns_NormalizePath(dest, safehost);
-        Ns_DStringFree(&ds);
-
-    } else {
-
+    if (path == NULL) {
         /*
          * Default to static server root.
          */
-
-    defpath:
         path = Ns_MakePath(dest, servPtr->fastpath.serverdir, (char *)0);
     }
 
