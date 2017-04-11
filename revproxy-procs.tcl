@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.7
+    set version 0.8
     set verbose 0
 
     #
@@ -80,12 +80,12 @@ namespace eval ::revproxy {
 	    #
 	    # Open backend channel, get frontend channel and connect these.
 	    #
-	    set backendChan  [ns_connchan open \
-				  -method [ns_conn method] \
-				  -headers $queryHeaders \
-				  -timeout $timeout \
-				  -version [ns_conn version] \
-				  $url]
+	    set backendChan [ns_connchan open \
+				 -method [ns_conn method] \
+				 -headers $queryHeaders \
+				 -timeout $timeout \
+				 -version [ns_conn version] \
+				 $url]
 	    #
 	    # Check, if we have requests with a body
 	    #
@@ -127,8 +127,8 @@ namespace eval ::revproxy {
 	    set frontendChan [ns_connchan detach]
 	    log notice "back $backendChan front $frontendChan method [ns_conn method] version 1.0 $url"
 	    
-	    ns_connchan callback -timeout $timeout $backendChan  [list ::revproxy::backendReply $backendChan $frontendChan $url $timeout 0] rex
 	    ns_connchan callback -timeout $timeout $frontendChan [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
+	    ns_connchan callback -timeout $timeout $backendChan  [list ::revproxy::backendReply $backendChan $frontendChan $url $timeout 0] rex
 	    
 	} errorMsg]} {
 	    ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
@@ -143,30 +143,45 @@ namespace eval ::revproxy {
 	}
 	return filter_return
     }
+
+    nsf::proc gateway_timeout { from msg } {
+	log notice $msg
+	#
+	# We received a timeout and we might send a "504 Gateway
+	# Timeout" to the client. However, this can be only done, when
+	# on the outgoing channel no data was sent so far. If the
+	# timeout occurs in the middle of the datastream, the timeout
+	# will be logged and the connection terminated (by the
+	# caller).
+	#
+	foreach entry [ns_connchan list] {
+           if {[lindex $entry 0] eq $from} {
+               lassign $entry . . . . . sent received .
+               #log notice "FROM channel <$entry> sent $sent reveived $received"
+               if {$sent == 0} {
+                   ns_connchan write $from "HTTP/1.0 504 Gateway Timeout\r\n\r\n"
+               }
+           }
+       }
+    }
     
     #
-    # Spool data from $to to $to. The arguments "url" and "arg" might
-    # be used for debugging, "when" is the one-character reason code
+    # Spool data from $from to $to. The arguments "url" and "arg" might
+    # be used for debugging, "condition" is the one-character reason code
     # for calling this function.
     #
     # When this function returns 0, this channel end will be
     # automatically closed.
     #
-    nsf::proc spool { from to url arg timeout when } {
-	log notice "spool from $from ([ns_connchan exists $from]) to $to ([ns_connchan exists $to]): $when"
-	if {$when eq "t"} {
-	    log notice "timeout occured while spooling $from to $to"
-	    #log notice [ns_connchan list]
-	    foreach entry [ns_connchan list] {
-		if {[lindex $entry 0] eq $from} {
-		    lassign $entry . . . . . sent received .
-		    log notice "FROM channel <$entry> sent $sent reveived $received"
-		    if {$sent == 0} {
-			ns_connchan write $from "HTTP/1.0 504 Gateway Timout\r\n\r\n"
-		    }
-		}
-	    }
+    nsf::proc spool { from to url arg timeout condition } {
+	log notice "spool from $from ([ns_connchan exists $from]) to $to ([ns_connchan exists $to]): $condition"
+	
+	if {$condition eq "t"} {
+	    ::revproxy::gateway_timeout $from "timeout occured while spooling $from to $to"
+	} elseif {$condition ne "r"} {
+	    log notice "unexpected condition $condition while spooling $from to $to"
 	}
+	
 	if {[ns_connchan exists $from]} {
 	    set msg [ns_connchan read $from]
 	    if {$msg eq ""} {
@@ -198,9 +213,11 @@ namespace eval ::revproxy {
 		set result 1
 	    }
 	} else {
-	    log notice "... called on closed channel $from reason $when"
+	    log notice "... called on closed channel $from reason $condition"
 	    set result 0
 	}
+	
+	# log notice "... return $result"
 	return $result
     }
 
@@ -209,8 +226,26 @@ namespace eval ::revproxy {
     # reply header fields. This is e.g. necessary to downgrade to
     # HTTP/1.0 requests.
     #
-    nsf::proc backendReply { from to url timeout arg when } {
-	set msg [ns_connchan read $from]
+    nsf::proc backendReply { from to url timeout arg condition } {
+
+	if { $condition eq "r" } {
+	    #
+            # Read from backend
+	    #
+	    set msg [ns_connchan read $from]
+	    
+	} elseif { $condition eq "t" } {
+	    #
+            # Timeout
+	    #
+	    ::revproxy::gateway_timeout $to "timeout occured while waiting for backend reply $from to $to"
+            set msg ""
+           
+        } else {
+	    log notice "unexpected condition $condition while processing backend reply"
+           set msg ""
+        }
+	
 	if {$msg eq ""} {
 	    log notice "backendReply: ... auto closing $from $url"
 	    #
@@ -292,6 +327,8 @@ namespace eval ::revproxy {
 		set result 0
 	    }
 	}
+	
+	# log notice "... return $result"
 	return $result
     }
 
@@ -340,3 +377,10 @@ namespace eval ::revproxy {
    
     ns_log notice "revproxy module version $version loaded"
 }
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
