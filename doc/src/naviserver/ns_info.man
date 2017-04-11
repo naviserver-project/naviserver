@@ -24,7 +24,9 @@ This command provides information about the current state of the running NaviSer
 
 [call [cmd  ns_info] [arg address]]
 
-Returns the primary IP address of this machine, or "0.0.0.0" if unable to determine
+Returns the primary IP address of the hostname of this machine, or
+the unspecified IP address (for IPv4 "0.0.0.0", for IPv6 "::") if
+unable to determine.
 
 [call [cmd  ns_info] [arg argv0]]
 
