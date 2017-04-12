@@ -44,6 +44,10 @@
 
  Close the named connection channel.
 
+[call [cmd  "ns_connchan exists"] [arg channel]]
+
+ Returns 1 if the named connection channel exists, 0 otherwise.
+
 [call [cmd  "ns_connchan list"] \
 	[opt [option "-server [arg server]"]] ]
 
