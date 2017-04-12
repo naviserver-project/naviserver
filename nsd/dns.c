@@ -70,7 +70,7 @@ typedef bool (GetProc)(Ns_DString *dsPtr, const char *key);
 static GetProc GetAddr;
 static GetProc GetHost;
 static bool DnsGet(GetProc *getProc, Ns_DString *dsPtr,
-                   Ns_Cache *cache, const char *key, int all)
+                   Ns_Cache *cache, const char *key, bool all)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 
@@ -152,7 +152,7 @@ Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(addr != NULL);
 
-    return DnsGet(GetHost, dsPtr, hostCache, addr, 0);
+    return DnsGet(GetHost, dsPtr, hostCache, addr, NS_FALSE);
 }
 
 bool
@@ -161,7 +161,7 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
 
-    return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
+    return DnsGet(GetAddr, dsPtr, addrCache, host, NS_FALSE);
 }
 
 
@@ -171,11 +171,11 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(host != NULL);
 
-    return DnsGet(GetAddr, dsPtr, addrCache, host, 1);
+    return DnsGet(GetAddr, dsPtr, addrCache, host, NS_TRUE);
 }
 
 static bool
-DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, int all)
+DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bool all)
 {
     Ns_DString  ds;
     Ns_Time     t;
@@ -236,8 +236,9 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
     }
 
     if (success) {
-        if (getProc == GetAddr && all == 0) {
+        if (getProc == GetAddr && !all) {
             const char *p = ds.string;
+
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;
             }
