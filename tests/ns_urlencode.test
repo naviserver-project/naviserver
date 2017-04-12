@@ -201,7 +201,7 @@ test ns_urlencode-2.8.2 {path component unreserved characters} -body {
 
 test ns_urlencode-2.9.1 {rfc2396 section 3.4 URI query component reserved characters} -body {
     ns_urlencode -part query {;/?:@&=+,$}
-} -result {%3b%2f%3f%3a%40%26%3d%2b%2c%24}
+} -result {%3b/?:@%26%3d%2b%2c$}
 
 test ns_urlencode-2.10.1 {charset decode} -body {
     ns_urldecode -charset iso8859-1 "%FA"
@@ -222,7 +222,7 @@ test ns_urlencode-3.0 {test request with unencoded path segments} -constraints {
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo/bar.tcl
 } -cleanup {
-    ns_unregister_op GET /limits
+    ns_unregister_op GET /foo/*
 } -result "200 {/foo/bar.tcl {foo bar.tcl}}"
 
 test ns_urlencode-3.1 {test request with unencoded path segments, 2 elements, ending with slash} -constraints {serverListen} -setup {
@@ -232,7 +232,7 @@ test ns_urlencode-3.1 {test request with unencoded path segments, 2 elements, en
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo/bar/
 } -cleanup {
-    ns_unregister_op GET /limits
+    ns_unregister_op GET /foo/*
 } -result "200 {/foo/bar/ {foo bar}}"
 
 test ns_urlencode-3.2 {test request with unencoded path segments, 1 element ending with slash} -constraints {serverListen} -setup {
@@ -242,7 +242,7 @@ test ns_urlencode-3.2 {test request with unencoded path segments, 1 element endi
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo/
 } -cleanup {
-    ns_unregister_op GET /limits
+    ns_unregister_op GET /foo*
 } -result "200 {/foo/ foo}"
 
 test ns_urlencode-3.3 {test request with unencoded path segments, 1 element, no slash} -constraints {serverListen} -setup {
@@ -252,7 +252,7 @@ test ns_urlencode-3.3 {test request with unencoded path segments, 1 element, no 
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo
 } -cleanup {
-    ns_unregister_op GET /limits
+    ns_unregister_op GET /foo*
 } -result "200 {/foo foo}"
 
 
@@ -263,7 +263,7 @@ test ns_urlencode-4.0 {test request with encoded path segments} -constraints {se
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo/bar%20baz.tcl
 } -cleanup {
-    ns_unregister_op GET /limits
+    ns_unregister_op GET /foo/*
 } -result "200 {{/foo/bar baz.tcl} {foo {bar baz.tcl}}}"
 
 test ns_urlencode-4.1 {test request with encoded path segments} -constraints {serverListen} -setup {
@@ -273,10 +273,46 @@ test ns_urlencode-4.1 {test request with encoded path segments} -constraints {se
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo/bar%2fbaz.tcl
 } -cleanup {
-    ns_unregister_op GET /limits
+    ns_unregister_op GET /foo/*
 } -result "200 {/foo/bar/baz.tcl {foo bar/baz.tcl}}"
 
 
+
+test ns_urlencode-5.0 {encode and unencode character sequence with percent codes - path segment} -constraints {serverListen} -setup {
+    ns_register_proc GET /encode-decode {
+	set s "/%20,'\".=+"
+	set sEnc [ns_urlencode -part path $s]
+        ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part path $sEnc] eq $s}]]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /encode-decode
+} -cleanup {
+    ns_unregister_op GET /encode-decode
+} -result "200 {/%20,'\\\".=+ %2f%2520,'%22.%3d+ 1}"
+
+test ns_urlencode-5.1 {encode and unencode character sequence with percent codes - query segment} -constraints {serverListen} -setup {
+    ns_register_proc GET /encode-decode {
+	set s "/%20,'\".=+"
+	set sEnc [ns_urlencode -part query $s]
+        ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part query $sEnc] eq $s}]]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /encode-decode
+} -cleanup {
+    ns_unregister_op GET /encode-decode
+} -result "200 {/%20,'\\\".=+ /%2520%2c'%22.%3d%2b 1}"
+
+test ns_urlencode-5.2 {encode and unencode character sequence with percent codes - cookie} -constraints {serverListen} -setup {
+    ns_register_proc GET /encode-decode {
+	set s "/%20,'\".=+"
+	set sEnc [ns_urlencode -part cookie $s]
+        ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part cookie $sEnc] eq $s}]]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /encode-decode
+} -cleanup {
+    ns_unregister_op GET /encode-decode
+} -result "200 {/%20,'\\\".=+ /%2520%2c'%22.=+ 1}"
 
 unset unreservedChars
 
