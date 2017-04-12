@@ -463,10 +463,14 @@ static const ByteKey path_enc[] = {
  *                      ; whitespace DQUOTE, comma, semicolon,
  *                      ; and backslash
  *
- * This definition implies that a total of 90 characters are allowed
+ * In additions, '%' has to be encoded, because elsewise a raw string
+ * "%20" would be encoded as "%20" (no need to encode anything) but
+ * decoded as " " (space).
+ *
+ * This definition implies that a total of 89 characters are allowed
  * unencoded in a cookie:
  * 
- *     ! # $ % & ' ( ) * + - . / 0 1 2 3 4 5 6 7 8 9 : < = > ? @ 
+ *     ! # $ & ' ( ) * + - . / 0 1 2 3 4 5 6 7 8 9 : < = > ? @ 
  *     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` 
  *     a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~
  */
@@ -481,7 +485,7 @@ static const ByteKey cookie_enc[] = {
     /* 0x18 */  {3, "18"}, {3, "19"}, {3, "1a"}, {3, "1b"}, 
     /* 0x1c */  {3, "1c"}, {3, "1d"}, {3, "1e"}, {3, "1f"}, 
     /* 0x20 */  {3, "20"}, {1, NULL}, {3, "22"}, {1, NULL}, 
-    /* 0x24 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL}, 
+    /* 0x24 */  {1, NULL}, {3, "25"}, {1, NULL}, {1, NULL}, 
     /* 0x28 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL}, 
     /* 0x2c */  {3, "2c"}, {1, NULL}, {1, NULL}, {1, NULL}, 
     /* 0x30 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL}, 
