@@ -717,70 +717,71 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
     }
 
-    if (done) {
-        return result;
+    if (!done) {
+        /*
+         * The following subcommands require a virtual server.
+         */
         
+        if (unlikely(itPtr->servPtr == NULL)) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("no server", -1));
+            result = TCL_ERROR;
+
+        } else {
+
+            server = itPtr->servPtr->server;
+
+            switch (opt) {
+            case IServerIdx:
+                Tcl_SetObjResult(interp,  Tcl_NewStringObj(server, -1));
+                break;
+
+                /*
+                 * All following cases are deprecated.
+                 */
+                
+            case IPageDirIdx: /* fall through */
+            case IPageRootIdx:
+                Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
+                NsPageRoot(&ds, itPtr->servPtr, NULL);
+                Tcl_DStringResult(interp, &ds);
+                break;
+
+            case ITclLibIdx:
+                Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->servPtr->tcl.library, -1));
+                break;
+
+            case IFiltersIdx:
+                Ns_LogDeprecated(objv, 2, "ns_server ?-server s? filters", NULL);
+                NsGetFilters(&ds, server);
+                Tcl_DStringResult(interp, &ds);
+                break;
+
+            case ITracesIdx:
+                Ns_LogDeprecated(objv, 2, "ns_server ?-server s? traces", NULL);
+                NsGetTraces(&ds, server);
+                Tcl_DStringResult(interp, &ds);
+                break;
+
+            case IRequestProcsIdx:
+                Ns_LogDeprecated(objv, 2, "ns_server ?-server s? requestprocs", NULL);
+                NsGetRequestProcs(&ds, server);
+                Tcl_DStringResult(interp, &ds);
+                break;
+
+            case IUrl2FileIdx:
+                Ns_LogDeprecated(objv, 2, "ns_server ?-server s? url2file", NULL);
+                NsGetUrl2FileProcs(&ds, server);
+                Tcl_DStringResult(interp, &ds);
+                break;
+
+            default:
+                Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", -1));
+                result = TCL_ERROR;
+                break;
+            }
+        }
     }
-
-
-    /*
-     * The following subcommands require a virtual server.
-     */
-    
-    if (unlikely(itPtr->servPtr == NULL)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("no server", -1));
-        return TCL_ERROR;
-    }
-
-    server = itPtr->servPtr->server;
-
-    switch (opt) {
-    case IPageDirIdx:
-    case IPageRootIdx:
-	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
-        NsPageRoot(&ds, itPtr->servPtr, NULL);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    case IServerIdx:
-        Tcl_SetObjResult(interp,  Tcl_NewStringObj(server, -1));
-        break;
-
-    case ITclLibIdx:
-	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->servPtr->tcl.library, -1));
-        break;
-
-    case IFiltersIdx:
-	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? filters", NULL);
-        NsGetFilters(&ds, server);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    case ITracesIdx:
-	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? traces", NULL);
-        NsGetTraces(&ds, server);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    case IRequestProcsIdx:
-	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? requestprocs", NULL);
-        NsGetRequestProcs(&ds, server);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    case IUrl2FileIdx:
-	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? url2file", NULL);
-        NsGetUrl2FileProcs(&ds, server);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    default:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", -1));
-        result = TCL_ERROR;
-        break;
-    }
-
     return result;
 }
 
