@@ -7,11 +7,20 @@
 [description]
 This function parses the HTTP header specified by header into an ns_set specified by set.
 
+[para]
+ Optional arguement [arg disposition] can be one of the following
+ [list_begin itemized]
+	[item] toupper - convert header names to upper case
+	[item] tolower - convert header names to lower case
+	[item] preserve - preserve the existing case
+ [list_end]
+
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_parseheader] [arg set] [arg header]]
+[call [cmd ns_parseheader] [arg set] [arg header] \
+        [opt  [arg disposition]] ]
 
 [list_end]
 
