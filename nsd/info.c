@@ -530,7 +530,6 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     int             opt, result = TCL_OK;
     bool            done = NS_TRUE; 
     const NsInterp *itPtr = clientData;
-    const char     *server, *elog;
     Tcl_DString     ds;
 
     static const char *const opts[] = {
@@ -625,8 +624,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case ILogIdx:
-        elog = Ns_InfoErrorLog();
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, -1));
+        {
+            const char *elog = Ns_InfoErrorLog();
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, -1));
+        }
         break;
 
     case IPlatformIdx:
@@ -727,6 +728,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
             result = TCL_ERROR;
 
         } else {
+            const char *server;
 
             server = itPtr->servPtr->server;
 
