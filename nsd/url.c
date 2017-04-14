@@ -328,13 +328,20 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     if (proto == NULL) {
         proto = bproto;
     }
+    assert(proto != NULL);
+    
     if (host == NULL) {
         host = bhost;
         port = bport;
     }
+    assert(host != NULL);
+    assert(port != NULL);
+    
     if (path == NULL) {
         path = bpath;
     }
+    assert(port != NULL);
+
     if (strchr(host, INTCHAR(':')) == NULL) {
         /*
          * We have to use IP literal notation to avoid ambiguity of colon
