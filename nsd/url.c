@@ -335,12 +335,11 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
         port = bport;
     }
     assert(host != NULL);
-    assert(port != NULL);
     
     if (path == NULL) {
         path = bpath;
     }
-    assert(port != NULL);
+    assert(path != NULL);
 
     if (strchr(host, INTCHAR(':')) == NULL) {
         /*
