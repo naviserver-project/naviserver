@@ -643,7 +643,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     const NsServer *servPtr;
     const Ns_Set   *headers;
     const char     *host;
-    char           *location;
+    char           *location = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(dest != NULL);
@@ -662,9 +662,6 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 
         location = (*servPtr->vhost.connLocationProc)
             (conn, dest, servPtr->vhost.connLocationArg);
-        if (location == NULL) {
-            goto deflocation;
-        }
 
     } else if (servPtr->vhost.locationProc != NULL) {
 
@@ -673,33 +670,30 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
          */
 
         location = (*servPtr->vhost.locationProc)(conn);
-        if (location == NULL) {
-            goto deflocation;
+        if (location != NULL) {
+            location = Ns_DStringAppend(dest, location);
         }
-        location = Ns_DStringAppend(dest, location);
 
     } else if (servPtr->vhost.enabled
                && (headers = Ns_ConnHeaders(conn)) != NULL
                && (host = Ns_SetIGet(headers, "Host")) != NULL
                && *host != '\0') {
-
         /*
          * Construct a location string from the HTTP host header.
          */
-
-        if (!Ns_StrIsHost(host)) {
-            goto deflocation;
+        if (Ns_StrIsHost(host)) {
+            /* 
+             * We have here no port and no default port
+             */
+            location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0, 0);
         }
-        /* we have here no port and no default port */
-        location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0, 0);
 
-    } else {
+    }
 
-        /*
-         * If everything else fails, append the static driver location.
-         */
-
-    deflocation:
+    /*
+     * If everything else fails, append the static driver location.
+     */
+    if (location == NULL) {
         location = Ns_DStringAppend(dest, connPtr->location);
     }
 
