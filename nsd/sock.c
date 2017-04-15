@@ -533,7 +533,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 #if defined(SO_REUSEPORT)
         if (reusePort) {
             int optval = 1;
-            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, (socklen_t)sizeof(optval));
         }
 #endif
         sock = SockSetup(sock);
@@ -543,7 +543,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
         if (Ns_SockaddrGetPort((const struct sockaddr *)saPtr) != 0u) {
             int n = 1;
 
-            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &n, sizeof(n));
+            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &n, (socklen_t)sizeof(n));
 #ifdef HAVE_IPV6
             /*
              * IPv4 connectivity through AF_INET6 can be disabled by default, for
@@ -552,7 +552,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
              * for v4 and v6.
              */
             n = 0;
-            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, sizeof(n));
+            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, (socklen_t)sizeof(n));
 #endif
         }
 
@@ -804,7 +804,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 # endif
     
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
-		   (const void *)&qlen, sizeof(qlen)) == -1) {
+		   (const void *)&qlen, (socklen_t)sizeof(qlen)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
 	       ns_sockstrerror(ns_sockerrno));
     } else {
@@ -814,7 +814,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 #else
 # ifdef TCP_DEFER_ACCEPT
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
-		   (const void *)&secs, sizeof(secs)) == -1) {
+		   (const void *)&secs, (socklen_t)sizeof(secs)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
 	       ns_sockstrerror(ns_sockerrno));
     } else {
