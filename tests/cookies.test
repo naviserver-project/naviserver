@@ -41,7 +41,7 @@ test cookie-2.2 {set cookie w/wierd chars} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.2
 } -cleanup {
     ns_unregister_op GET /cookie-2.2
-} -result {200 {x="%20%/&"; HttpOnly}}
+} -result {200 {x="%20%25/&"; HttpOnly}}
 
 test cookie-2.3 {secure cookie} -setup {
     ns_register_proc GET /cookie-2.3 {
