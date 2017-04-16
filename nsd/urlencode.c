@@ -1005,6 +1005,8 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Ns_DStringInit(&ds);
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
+        } else {
+            encoding = Ns_GetUrlEncoding(NULL);
         }
         
         (void)UrlDecode(&ds, chars, encoding, part);
@@ -1153,7 +1155,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, char
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
     /*
-     * Copy the decoded characters directly to the dstring,
+     * Copy the decoded characters directly to the Tcl_DString,
      * unless we need to do encoding.
      */
     length = strlen(urlSegment);
