@@ -602,7 +602,7 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
 
     for (i = 0u; i < strlen(chars); i++) {
         if (mustBeEncoded[UCHAR(chars[i])]) {
-            Ns_Log(Warning, "%s value '%s': byte with binary value %u must be url encoded",
+            Ns_Log(Warning, "%s value '%s': byte with binary value 0x%.2x must be url encoded",
                    msg, chars, UCHAR(chars[i]));
             /* 
              * Just warn about the first invalid character 
