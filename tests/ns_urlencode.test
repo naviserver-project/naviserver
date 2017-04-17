@@ -314,6 +314,20 @@ test ns_urlencode-5.2 {encode and unencode character sequence with percent codes
     ns_unregister_op GET /encode-decode
 } -result "200 {/%20,'\\\".=+ /%2520%2c'%22.=+ 1}"
 
+
+test ns_urlencode-6.0 {security check: see, if we can sneek in a binary 0 to trick "string is integer"} -constraints {serverListen} -setup {
+    ns_register_proc GET /encode-decode {
+	set s "1%00%27"
+	set decoded [ns_urldecode -part query $s]
+        ns_return 200 text/plain [list $s [string is integer -strict $decoded]]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /encode-decode
+} -cleanup {
+    ns_unregister_op GET /encode-decode
+} -result "200 {1%00%27 0}"
+
+
 unset unreservedChars
 
 

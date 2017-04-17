@@ -2014,12 +2014,13 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
     /*
      * Make sure, the system encoding is UTF-8. Changing the system
      * encoding at runtime is a potentially dangerous operation, since
-     * tcl might be loading already files based on a previous
+     * Tcl might be loading already files based on a previous
      * enconding in another thread. So, we want to perform this
      * operation only once for all threads.
      */
     if (strcmp("utf-8", Tcl_GetEncodingName(Tcl_GetEncoding(interp, NULL))) != 0) {
 	int result = Tcl_SetSystemEncoding(interp, "utf-8");
+        
 	if (result != TCL_OK) {
 	    (void) Ns_TclLogErrorInfo(interp, "\n(context: set system encoding to utf-8)");
 	}

@@ -62,7 +62,7 @@ static Tcl_HashTable  encodings;    /* Cache of loaded Tcl encodings */
 static Ns_Mutex       lock;         /* Lock around encodings. */
 static Ns_Cond        cond;
 
-static Tcl_Encoding   utf8Encoding; /* Cached pointer to utf-8 encoding. */
+Tcl_Encoding          NS_utf8Encoding = NULL; /* Cached pointer to utf-8 encoding. */
 
 #define EncodingLocked ((Tcl_Encoding) (-1))
 
@@ -185,7 +185,7 @@ NsConfigEncodings(void)
     Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
     Tcl_InitHashTable(&encnames, TCL_STRING_KEYS);
     Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
-    utf8Encoding = Ns_GetCharsetEncoding("utf-8");
+    NS_utf8Encoding = Ns_GetCharsetEncoding("utf-8");
 
     /*
      * Add default charsets and file mappings.
@@ -574,7 +574,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 bool
 NsEncodingIsUtf8(const Tcl_Encoding encoding)
 {
-    return (encoding == utf8Encoding);
+    return (encoding == NS_utf8Encoding);
 }
 
 
