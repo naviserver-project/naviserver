@@ -3310,7 +3310,7 @@ SockParse(Sock *sockPtr)
     const Tcl_DString  *bufPtr;
     const Driver       *drvPtr;
     Request            *reqPtr;
-    char                save;
+    char                save, *host, *p;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
@@ -3452,6 +3452,18 @@ SockParse(Sock *sockPtr)
          * (maybe just two line feeds).
          */
         return SOCK_BADREQUEST;
+    }
+
+    if (reqPtr->request.port == 0u) {
+        /*
+         * If we have no port assignement from the request line, check the Host header.
+         */
+        host = Ns_SetIGet(reqPtr->headers, "Host");
+        Ns_HttpParseHost(host, NULL, &p);
+        if (p != NULL) {
+            *p++ = '\0';
+            reqPtr->request.port = (unsigned short)strtol(p, NULL, 10);
+        }
     }
 
     /*
