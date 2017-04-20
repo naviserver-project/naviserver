@@ -525,7 +525,7 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  */
 
 static char *
-NextBoundsry(const Tcl_DString *dsPtr, char *s, const char *e)
+NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
 {
     char c, sc;
     const char *find;
