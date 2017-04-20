@@ -2319,7 +2319,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
 
         if (noinherit == (int)NS_TRUE) {
-            exact = NS_TRUE;
+            exact = (int)NS_TRUE;
         }
         
         if (exact == (int)NS_TRUE) {
