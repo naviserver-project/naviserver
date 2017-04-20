@@ -40,13 +40,16 @@
 #include "ns.h"
 
 /*
- * The following are nsdb return codes.
+ * Nsdb return codes, extending NaviServer return codes. 
  */
-
-#define NS_DML  		  1
-#define NS_ROWS 		  2
-#define NS_END_DATA 		  4
-#define NS_NO_DATA 		  8
+typedef enum {
+    NS_DML =              ( 1),
+    NS_ROWS =             ( 2),
+    NS_END_DATA =         ( 4),
+    NS_NO_DATA =          ( 8),
+    NSDB_OK =             (NS_OK), /* success */
+    NSDB_ERROR =          (NS_ERROR) /* error */
+} NsDb_ReturnCode;
 
 /* 
  * The following enum defines known nsdb driver function ids.
@@ -123,6 +126,9 @@ typedef struct {
 } Ns_DbTableInfo;
 
 NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
+
+
+typedef Ns_ReturnCode (NsDb_DriverInitProc)(const char *driver, const char *configPath);
 
 /*
  * dbdrv.c:
@@ -203,3 +209,12 @@ NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, const char *code, const ch
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #endif /* NSDB_H */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
