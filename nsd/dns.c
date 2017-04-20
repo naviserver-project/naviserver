@@ -101,7 +101,7 @@ static int       timeout;   /* Time in seconds to wait for concurrent update.  *
  *      None.
  *
  * Side effects:
- *      Futher DNS lookups will be cached using given ttl.
+ *      Further DNS lookups will be cached using given ttl.
  *
  *----------------------------------------------------------------------
  */

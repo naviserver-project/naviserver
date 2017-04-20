@@ -329,7 +329,7 @@ Function definitions should follow this template:
 
 [para]
 All functions definitions begin on a new page (which is to say they
-should be preceeded by a control-L character). All functions must be
+should be preceded by a control-L character). All functions must be
 typed: use void if the function returns no result. The second line
 gives the function's name and argument list. If there are many
 arguments, they should spill onto additional lines as such:
@@ -695,7 +695,7 @@ make contact with both:
 
 [item]
 If a function ends with a return statement which is neither the only
-statement in the function body and is not preceeded by a label, an empty
+statement in the function body and is not preceded by a label, an empty
 line should appear before it:
 
 [example_begin]

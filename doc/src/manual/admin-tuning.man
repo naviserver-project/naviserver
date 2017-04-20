@@ -38,7 +38,7 @@ and "threadcache". NaviServer defaults to a 5-megabyte cache. This cache
 is used to store parsed ADP pages -- this means that ADP scripts are only
 parsed once and every subsequent time they are run directly out of memory.
 This means, though, that you should have a fair amount of core memory on
-your system to accomodate the cache if you decide to make it very large.
+your system to accommodate the cache if you decide to make it very large.
 
 [subsection {Experiment with the FastPath cache}]
 

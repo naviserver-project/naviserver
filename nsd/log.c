@@ -695,7 +695,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
  *
  * Ns_VALog --
  *
- *      Add an entry to the log cache if the severity is not surpressed.
+ *      Add an entry to the log cache if the severity is not suppressed.
  *
  * Results:
  *      None.
@@ -1936,7 +1936,7 @@ GetCache(void)
  *
  * FreeCache --
  *
- *      TLS cleanup callback to destory per-thread Cache struct.
+ *      TLS cleanup callback to destroy per-thread Cache struct.
  *
  * Results:
  *      None.

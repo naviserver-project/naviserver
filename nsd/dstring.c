@@ -292,7 +292,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
 
     /*
      * Resize the dstring with space for the argv aligned
-     * on an 8 byte boundry.
+     * on an 8 byte boundary.
      */
 
     len = ((dsPtr->length / 8) + 1) * 8;

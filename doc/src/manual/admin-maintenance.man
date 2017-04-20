@@ -249,7 +249,7 @@ list and restart script.
 
 [subsection {Using daemontools}]
 
-Daemontools is a collection of software to controll other processes.
+Daemontools is a collection of software to control other processes.
 
 [para]
 

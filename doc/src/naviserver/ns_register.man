@@ -238,7 +238,7 @@ Example of HTTP proxy server:
 	[opt [arg file]]]
 
 Register Tcl file to be called when request matches method/URL
-combination. This is to enable extention-less URLs or for mapping
+combination. This is to enable extension-less URLs or for mapping
 actual files into virtual URLs. The command [cmd ns_register_tcl]
 works similar as [cmd ns_register_adp] except the file to evaluate
 should be a Tcl file which might use [cmd ns_return], [cmd ns_write]

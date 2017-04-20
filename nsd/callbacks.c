@@ -140,7 +140,7 @@ Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
  *
  * Ns_RegisterAtSignal --
  *
- *      Register a callback to run when the server recieves a SIGHUP.
+ *      Register a callback to run when the server receives a SIGHUP.
  *      Callbacks will run in FIFO order.
  *
  * Results:

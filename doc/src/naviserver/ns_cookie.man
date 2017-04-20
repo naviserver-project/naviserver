@@ -133,7 +133,7 @@ value [emph -1] may be used to indicate that the cookie should never expire.
 [para]
 The expiry time is valid across browser sessions.  If no expiry is
 specified then the cookie will expire when the browser session ends,
-which is ususally when the user closes their browser.
+which is usually when the user closes their browser.
 
 [list_end]
 

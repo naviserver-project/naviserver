@@ -200,7 +200,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
  *	Pointer to trace.
  *
  * Side effects:
- *      Proc will be called in FIFO order at end of successfull
+ *      Proc will be called in FIFO order at end of successful
  *  	connections.
  *
  *----------------------------------------------------------------------

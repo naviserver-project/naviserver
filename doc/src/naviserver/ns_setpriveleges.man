@@ -2,7 +2,7 @@
 [manpage_begin ns_setuser n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Set the current procces priveleges}]
+[titledesc {Set the current procces privileges}]
 
 [description]
 

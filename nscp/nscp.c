@@ -100,7 +100,7 @@ static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
 static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
 
 /*
- * Define the version of the module (ususally 1).
+ * Define the version of the module (usually 1).
  */
 
 NS_EXPORT const int Ns_ModuleVersion = 1;
@@ -113,7 +113,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  *
  *     Initialize the hash table of authorized users.  Entry values are either
  *     NULL indicating authorization should be checked via the
- *     Ns_AuthorizeUser() API or contain a Unix crypt(3) sytle encrypted
+ *     Ns_AuthorizeUser() API or contain a Unix crypt(3) style encrypted
  *     password.  For the later, the entry is compatible with /etc/passwd
  *     (i.e., username followed by password separated by colons).
  *

@@ -325,7 +325,7 @@ Ns_ConnServer(const Ns_Conn *conn)
  *
  * Ns_ConnResponseStatus, Ns_ConnSetResponseStatus --
  *
- *      Get (set) the HTTP reponse code that will be sent.
+ *      Get (set) the HTTP response code that will be sent.
  *
  * Results:
  *      An integer response code (e.g., 200 for OK).
@@ -1528,7 +1528,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
                  * content will crash the server. Although we might not have
                  * the same problem when the content is allocated
                  * differently, we use here the restrictive strategy to
-                 * provide consistant behavior independent of the allocation
+                 * provide consistent behavior independent of the allocation
                  * strategy.
                  */
                 Ns_TclPrintfResult(interp, "connection already closed, can't get content");
@@ -2192,7 +2192,7 @@ GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *o
  *
  * MakeConnChannel --
  *
- *      Wraps a Tcl channel arround the current connection socket
+ *      Wraps a Tcl channel around the current connection socket
  *      and returns the channel handle to the caller.
  *
  * Result:
@@ -2226,7 +2226,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
         } else {
 
             /*
-             * Create Tcl channel arround the connection socket
+             * Create Tcl channel around the connection socket
              */
 
             chan = Tcl_MakeTcpClientChannel(NSSOCK2PTR(connPtr->sockPtr->sock));

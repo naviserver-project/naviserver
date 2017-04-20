@@ -1191,7 +1191,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             } else {
                 /*
                  * The receive operation failed, maybe a receive
-                 * timeout happend.  The read call will simply return
+                 * timeout happened.  The read call will simply return
                  * an empty string. We could notice this fact
                  * internally by a timeout counter, but for the time
                  * being no application has usage for it.
