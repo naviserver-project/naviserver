@@ -122,7 +122,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * Before doing anything else, initalize the Tcl API
+     * Before doing anything else, initialize the Tcl API
      * as we rely heavily on it, even for the most basic
      * functions like memory allocation.
      */
@@ -612,7 +612,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                 nsconf.home =  MakePath("");
             } else {
                 /*
-                 * Desparate fallback. Use the name of the configured install
+                 * Desperate fallback. Use the name of the configured install
                  * directory.
                  */
                 nsconf.home = NS_NAVISERVER;

@@ -31,7 +31,7 @@
 /*
  * nsthread.c --
  *
- *	Compatability wrappers for thread calls. 
+ *	Compatibility wrappers for thread calls. 
  */
 
 #include "nsd.h"
