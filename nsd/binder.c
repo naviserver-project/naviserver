@@ -561,11 +561,11 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    sock = socket(saPtr->sa_family, SOCK_DGRAM, 0);
+    sock = (NS_SOCKET)socket(saPtr->sa_family, SOCK_DGRAM, 0);
 
     if (sock == NS_INVALID_SOCKET
-        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
-        || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
+        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, (socklen_t)sizeof(n)) == -1
+        || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, (socklen_t)sizeof(n)) == -1
         || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
         ns_sockerrno_t err = ns_sockerrno;
 
@@ -576,7 +576,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 #if defined(SO_REUSEPORT)
         if (reusePort) {
             int optval = 1;
-            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, (socklen_t)sizeof(optval));
         }
 #endif
     }
@@ -664,7 +664,7 @@ Ns_SockBindRaw(int proto)
 {
     NS_SOCKET sock;
 
-    sock = socket(AF_INET, SOCK_RAW, proto);
+    sock = (NS_SOCKET)socket(AF_INET, SOCK_RAW, proto);
 
     if (sock == NS_INVALID_SOCKET) {
         ns_sockerrno_t err = ns_sockerrno;
