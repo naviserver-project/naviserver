@@ -526,7 +526,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    sock = socket(saPtr->sa_family, SOCK_STREAM, 0);
+    sock = (NS_SOCKET)socket(saPtr->sa_family, SOCK_STREAM, 0);
 
     if (sock != NS_INVALID_SOCKET) {
         
@@ -827,7 +827,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 
     memset(&afa, 0, sizeof(afa));
     strcpy(afa.af_name, "httpready");
-    n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa));
+    n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, (socklen_t)sizeof(afa));
     if (n < 0) {
 	Ns_Log(Error, "deferaccept setsockopt(SO_ACCEPTFILTER): %s",
 	       ns_sockstrerror(ns_sockerrno));
