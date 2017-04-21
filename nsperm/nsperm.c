@@ -336,7 +336,7 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *C
  * AuthProc --
  *
  *	Authorize a URL--this callback is called when a new
- *	connection is recieved
+ *	connection is received.
 
  *	Digest authentication per RFC 2617 but currently
  * 	supports qop="auth" and MD5 hashing only.
@@ -818,7 +818,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 
     /*
      * Loop over each parameter and figure out what it is. The
-     * possiblities are ipaddr/netmask, hostname, or partial hostname:
+     * possibilities are ipaddr/netmask, hostname, or partial hostname:
      * 192.168.2.3/255.255.255.0, foo.bar.com, or .bar.com
      */
 

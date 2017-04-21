@@ -757,7 +757,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      * As documented on Linux, pthread_cond_timedwait may return
      * NS_EINTR if a signal arrives.  We have noticed that
      * NS_EINTR can be returned on Solaris as well although this
-     * is not documented.  We assume the wakeup is truely
+     * is not documented.  We assume the wakeup is truly
      * spurious and simply restart the wait knowing that the
      * ts structure has not been modified.
      */

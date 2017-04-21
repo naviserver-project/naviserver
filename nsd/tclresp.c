@@ -244,7 +244,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
 
         /*
          * On first write, check to see if headers were requested by ns_headers.
-         * Otherwise, supress them -- caller will ns_write the headers
+         * Otherwise, suppress them -- caller will ns_write the headers
          * or this is some other protocol.
          */
 

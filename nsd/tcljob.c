@@ -1797,7 +1797,7 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
  *
  * FreeJob --
  *
- *	    Destory a Job structure.
+ *	    Destroy a Job structure.
  *
  * Results:
  *	    None.

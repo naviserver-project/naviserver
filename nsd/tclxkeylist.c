@@ -163,7 +163,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key,
  * key names.  It is dynamically allocated, containing both the array and the
  * strings. A single call to ckfree will release it. Returns: TCL_OK - If the
  * field was found. TCL_BREAK - If the field was not found. TCL_ERROR - If an
- * error occured.
+ * error occurred.
  * ---------------------------------------------------------------------------
  */
 
@@ -238,13 +238,13 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
  *
  * Parameters: o interp (I/O) - Error message will be return in result if there
  * is an error. o fieldName (I) - The name of the field to extract.  Will
- * recusively process sub-field names seperated by `.'. o keyedList (I) - The
+ * recusively process sub-field names separated by `.'. o keyedList (I) - The
  * list to search for the field. o fieldValuePtr (O) - If the field is found,
  * a pointer to a dynamicly allocated string containing the value is returned
  * here.  If NULL is specified, then only the presence of the field is
  * validated, the value is not returned. Returns: TCL_OK - If the field was
  * found. TCL_BREAK - If the field was not found. TCL_ERROR - If an error
- * occured.
+ * occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
@@ -289,11 +289,11 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *
  * Parameters: o interp (I/O) - Error message will be return in result if there
  * is an error. o fieldName (I) - The name of the field to extract.  Will
- * recusively process sub-field names seperated by `.'. o fieldValue (I) -
+ * recusively process sub-field names separated by `.'. o fieldValue (I) -
  * The value to set for the field. o keyedList (I) - The keyed list to set a
  * field value in, may be an NULL or an empty list to create a new keyed
  * list. Returns: A pointer to a dynamically allocated string, or NULL if an
- * error occured.
+ * error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
@@ -333,10 +333,10 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *
  * Parameters: o interp (I/O) - Error message will be return in result if there
  * is an error. o fieldName (I) - The name of the field to extract.  Will
- * recusively process sub-field names seperated by `.'. o fieldValue (I) -
+ * recusively process sub-field names separated by `.'. o fieldValue (I) -
  * The value to set for the field. o keyedList (I) - The keyed list to delete
  * the field from. Returns: A pointer to a dynamically allocated string
- * containing the new list, or NULL if an error occured.
+ * containing the new list, or NULL if an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
@@ -958,13 +958,13 @@ TclX_NewKeyedListObj(void)
  *   o interp - Error message will be return in result if there is an error.
  *   o keylPtr - Keyed list object to get key from.
  *   o key - The name of the key to extract.  Will recusively process sub-keys
- *     seperated by `.'.
+ *     separated by `.'.
  *   o valueObjPtrPtr - If the key is found, a pointer to the key object
  *     is returned here.  NULL is returned if the key is not present.
  * Returns:
  *   o TCL_OK - If the key value was returned.
  *   o TCL_BREAK - If the key was not found.
- *   o TCL_ERROR - If an error occured.
+ *   o TCL_ERROR - If an error occurred.
  *-----------------------------------------------------------------------------
  */
 int
@@ -1017,7 +1017,7 @@ TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
  *   o interp - Error message will be return in result object.
  *   o keylPtr - Keyed list object to update.
  *   o key - The name of the key to extract.  Will recusively process
- *     sub-key seperated by `.'.
+ *     sub-key separated by `.'.
  *   o valueObjPtr - The value to set for the key.
  * Returns:
  *   TCL_OK or TCL_ERROR.
@@ -1066,7 +1066,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
 
             /*
              * If we are not at the last subkey, recurse down, creating
-             * new entries if neccessary.  If this level key was not
+             * new entries if necessary.  If this level key was not
              * found, it means we must build new subtree. Don't insert the
              * new tree until we come back without error.
              */
@@ -1115,11 +1115,11 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj
  *   o interp - Error message will be return in result if there is an error.
  *   o keylPtr - Keyed list object to update.
  *   o key - The name of the key to extract.  Will recusively process
- *     sub-key seperated by `.'.
+ *     sub-key separated by `.'.
  * Returns:
  *   o TCL_OK - If the key was deleted.
  *   o TCL_BREAK - If the key was not found.
- *   o TCL_ERROR - If an error occured.
+ *   o TCL_ERROR - If an error occurred.
  *-----------------------------------------------------------------------------
  */
 int
@@ -1193,7 +1193,7 @@ TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key)
  * Returns:
  *   o TCL_OK - If the zero or more key where returned.
  *   o TCL_BREAK - If the key was not found.
- *   o TCL_ERROR - If an error occured.
+ *   o TCL_ERROR - If an error occurred.
  *-----------------------------------------------------------------------------
  */
 int

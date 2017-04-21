@@ -32,7 +32,7 @@ test cookie-2.1 {set plain cookie} -setup {
     ns_unregister_op GET /cookie-2.1
 } -result {200 {x="y"; HttpOnly}}
 
-test cookie-2.2 {set cookie w/wierd chars} -setup {
+test cookie-2.2 {set cookie w/weird chars} -setup {
     ns_register_proc GET /cookie-2.2 {
         ns_setcookie x " %/&"
         ns_return 200 text/plain ok

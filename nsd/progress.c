@@ -165,7 +165,7 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  * NsUpdateProgress --
  *
  *      Note the current progress of a large upload. Called repeatedly
- *      untill all bytes have been read.
+ *      until all bytes have been read.
  *
  * Results:
  *      None.

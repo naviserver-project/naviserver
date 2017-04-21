@@ -155,7 +155,7 @@ ns_section ns/parameters
 	#
 	# ns_param	HackContentType	1
 
-	# NaviServer's defaults charsets are all utf-8.  Allthough the
+	# NaviServer's defaults charsets are all utf-8.  Although the
 	# default charset is utf-8, set the parameter "OutputCharset"
 	# here, since otherwise OpenACS uses in the meta-tags the charset
 	# from [ad_conn charset], which is taken from the db and

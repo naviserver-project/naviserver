@@ -399,7 +399,7 @@ NsInstallService(char *service)
  *----------------------------------------------------------------------
  * NsRestoreSignals --
  *
- *      Noop to avoid ifdefs and make symetrical to Unix part
+ *      Noop to avoid ifdefs and make symmetrical to Unix part
  *
  * Results:
  *      None.

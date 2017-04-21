@@ -42,7 +42,7 @@
 
 	* nsssl.c:
 	Possibly should check for cases where Host header is expected by
-	isnt given
+	isn't given
 
 2015-06-30 15:32 +0100  David Osborne  <david@qcode.co.uk>  (1c80f02687ae)
 
@@ -307,7 +307,7 @@
 2014-02-14 11:38 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5165ff9750b1)
 
 	* README, nsssl.c:
-	- added addtional parameter "-decompress" for "ns_ssl wait" to
+	- added additional parameter "-decompress" for "ns_ssl wait" to
 	compress the result on the fly (incrementally) in case it is content
 	encoding is "gzip"
 

@@ -924,7 +924,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
 
     if (handle->dsExceptionMsg.length > 0) {
         /*
-         * An exception occured.
+         * An exception occurred.
          */
         if (poolPtr->fVerboseError) {
 	    

@@ -344,7 +344,7 @@ proc ns_isformcached {} {
 #
 # Result: 
 #   Parses query parameters and uploaded files, puts name/value
-#   pairs into provided ns_set, all files are copied into seperate temp 
+#   pairs into provided ns_set, all files are copied into separate temp 
 #   files and stored as name.tmpfile in the ns_set
 #
 

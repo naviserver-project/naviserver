@@ -479,7 +479,7 @@ if {$use_trace_inits} {
     # Create a job queue for ns_eval processing
     # This queue must be a single-server queue;
     # we don't want to be processing multiple 
-    # ns_eval requests simultanously.
+    # ns_eval requests simultaneously.
     #
 
     ns_runonce {

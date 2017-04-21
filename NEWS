@@ -2227,7 +2227,7 @@ Security Improvements:
 
 Bug Fixes:
     * Fixed timeout keep-alive management: When many requests were
-      posted into a persistent connection, it happend frequently that
+      posted into a persistent connection, it happened frequently that
       a few of these requests were processed after the keep-alive
       timeout (keepwait) was firing.
 

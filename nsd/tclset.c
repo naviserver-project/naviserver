@@ -358,7 +358,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
     default:
         /*
-         * All futher commands require a valid set.
+         * All further commands require a valid set.
          */
 
         if (unlikely(objc < 3)) {

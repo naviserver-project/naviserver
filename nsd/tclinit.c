@@ -649,7 +649,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
  * Ns_TclMarkForDelete --
  *
  *      Mark the interp to be deleted after next cleanup.  This routine
- *      is useful for destory interps after they've been modified in
+ *      is useful for destroy interps after they've been modified in
  *      weird ways, e.g., by the TclPro debugger.
  *
  * Results:
@@ -1673,7 +1673,7 @@ NsTclInitServer(const char *server)
  *      Tcl result.
  *
  * Side effects:
- *      Override Tcl exit command so that propper server shutdown
+ *      Override Tcl exit command so that proper server shutdown
  *      takes place.
  *
  *----------------------------------------------------------------------

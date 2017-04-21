@@ -659,7 +659,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     LeaveCriticalSection(&condPtr->critsec);
 
     /*
-     * Re-aquire the outer lock and return.
+     * Re-acquire the outer lock and return.
      */
 
     Ns_MutexLock(mutex);

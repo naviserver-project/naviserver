@@ -169,7 +169,7 @@ GetOptIndexObjvSpec(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
  *
  * Ns_ParseObjv --
  *
- *      Process objv acording to given option and arg specs.
+ *      Process objv according to given option and arg specs.
  *
  * Results:
  *      NS_OK or NS_ERROR.
@@ -829,7 +829,7 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
  *	    Always TCL_OK.
  *
  * Side effects:
- *	    Argument processing will end sucessfully.
+ *	    Argument processing will end successfully.
  *
  *----------------------------------------------------------------------
  */

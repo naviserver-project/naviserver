@@ -29,7 +29,7 @@
 #
 
 dnl
-dnl Check to see wether we have the arc4random generator
+dnl Check to see whether we have the arc4random generator
 dnl available.
 dnl
 

@@ -362,7 +362,7 @@ typedef struct DIR_ *DIR;
 
 /*
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
- * the time being, allthough the use of SOCKET should be deprecated.
+ * the time being, although the use of SOCKET should be deprecated.
  */
 #ifndef SOCKET
 # define SOCKET NS_SOCKET
@@ -1114,7 +1114,7 @@ NS_EXTERN int     ns_snprintf(char *buf, size_t len, const char *fmt, ...);
 
 
 /*
- * Tcl 8.6 and TIP 330/336 compatability
+ * Tcl 8.6 and TIP 330/336 compatibility
  */
 
 #if (TCL_MAJOR_VERSION < 8) || ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6))

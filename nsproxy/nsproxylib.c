@@ -490,7 +490,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     /*
      * Move the proxy input and output fd's from 0 and 1 to avoid
-     * protocal errors with scripts accessing stdin and stdout.
+     * protocol errors with scripts accessing stdin and stdout.
      * Stdin is open on /dev/null and stdout is dup'ed to stderr.
      */
 
@@ -3004,7 +3004,7 @@ ReaperThread(void *UNUSED(arg))
             } else {
 
                 /*
-                 * Process is still arround, try killing it but leave it
+                 * Process is still around, try killing it but leave it
                  * in the list. Calculate the latest time we'll visit
                  * this one again.
                  */

@@ -394,7 +394,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
         if (connPtr != NULL) {
 	    /*
-	     * We have got a free connPtr from the pool. Initalize the
+	     * We have got a free connPtr from the pool. Initialize the
 	     * connPtr and copy flags from the socket.
 	     */
 	  
@@ -435,7 +435,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 	    if (argPtr != NULL) {
 		/* 
 		 * We could obtain an idle thread. Dequeue the entry,
-		 * such that noone else might grab it, and fill in the
+		 * such that no one else might grab it, and fill in the
 		 * connPtr that should be run by this thread.
 		 */
 	        

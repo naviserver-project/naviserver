@@ -569,7 +569,7 @@ test tclresp-12.3 {ns_write multiple binary buffers} -setup {
 } -result {200 xxx}
 
 test tclresp-12.3.1 {
-    ns_write stream binary buffers, supress chunking w/specific length
+    ns_write stream binary buffers, suppress chunking w/specific length
 } -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
         ns_headers -binary 200 foo/bar 3

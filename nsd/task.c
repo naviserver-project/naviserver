@@ -164,7 +164,7 @@ Ns_CreateTaskQueue(const char *name)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DestoryTaskQueue --
+ * Ns_DestroyTaskQueue --
  *
  *      Stop and join a task queue.
  *

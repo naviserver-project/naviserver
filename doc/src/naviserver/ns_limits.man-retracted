@@ -123,7 +123,7 @@ Register the named limits for the given URL.
 
 [opt_def -noinherit [arg boolean]]
 If specified, a request URL such as /foo/bar will not match a limit registered
-on /foo. The default is false -- URL inheritence applies. The mechanism is the
+on /foo. The default is false -- URL inheritance applies. The mechanism is the
 same as [cmd ns_register_proc].
 
 [opt_def -server [arg server]]

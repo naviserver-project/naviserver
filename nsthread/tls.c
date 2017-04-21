@@ -164,7 +164,7 @@ Ns_TlsGet(Ns_Tls *keyPtr)
  *	Cleanup thread local storage in LIFO order for an exiting thread.
  *	Note the careful use of the counters to keep iterating over the
  *	list, up to 5 times, until all TLS values are NULL.  This emulates
- *	the Pthread TLS behavior which catches a destructor inadvertantly
+ *	the Pthread TLS behavior which catches a destructor inadvertently
  *	calling a library which resets a TLS value after it's been destroyed.
  *
  * Results:

@@ -163,7 +163,7 @@ The default is no script.
 
 [opt_def -reinit [arg script]]
 Specifies a script to evaluate after being allocated and before
-being returned to the caller. This can be used to re-initalize
+being returned to the caller. This can be used to re-initialize
 the slave state. The default is no script.
 
 [opt_def -maxslaves [arg n]]

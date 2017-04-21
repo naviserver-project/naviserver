@@ -147,7 +147,7 @@ CheckStackThread(void *UNUSED(arg))
 /*
  * WorkThread -
  *
- *	Thread which exercies a varity of sync objects and TLS.
+ *	Thread which exercies a variety of sync objects and TLS.
  */
 
 static void

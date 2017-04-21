@@ -248,7 +248,7 @@ Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
  * Ns_SlsAppendKeyed --
  *
  *      Append all key/value pairs from socket local storage to
- *      given dstring in propper Tcl list format.
+ *      given dstring in proper Tcl list format.
  *
  * Results:
  *      Pointer to dest.string.
@@ -425,7 +425,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  *
  *      Cleanup socket local storage in LIFO order for a closing comm
  *      socket.  Iterate up to 5 times to catch cases where a cleanup
- *      callback inadvertantly resets a SLS value after it's been destroyed.
+ *      callback inadvertently resets a SLS value after it's been destroyed.
  *
  * Results:
  *      None.

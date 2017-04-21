@@ -31,8 +31,8 @@
  * rwlock.c --
  *
  *	Routines for read/write locks.  Read/write locks differ from a mutex
- *	in that multiple threads can aquire the read lock until a single
- *	thread aquires a write lock.  This code is adapted from that in 
+ *	in that multiple threads can acquire the read lock until a single
+ *	thread acquires a write lock.  This code is adapted from that in 
  *	Steven's Unix Network Programming, Volume 3. 
  *
  *	Note:  Read/write locks are not often a good idea.  The reason
@@ -107,7 +107,7 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockDestroy --
  *
- *	Destory a read/write lock if it was previously initialized.
+ *	Destroy a read/write lock if it was previously initialized.
  *
  * Results:
  *	None.
@@ -139,7 +139,7 @@ Ns_RWLockDestroy(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockRdLock --
  *
- *	Aquire a read lock.
+ *	Acquire a read lock.
  *
  * Results:
  *	None.
@@ -182,7 +182,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockWrLock --
  *
- *	Aquire a write lock.
+ *	Acquire a write lock.
  *
  * Results:
  *	None.

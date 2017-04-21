@@ -405,7 +405,7 @@ Ns_StrCaseFind(const char *chars, const char *subString)
  *
  *      Does the given string contain only characters permitted in a
  *      Host header? Letters, digits, single periods and the colon port
- *      seperator are valid.
+ *      separator are valid.
  *
  * Results:
  *      NS_TRUE or NS_FALSE.
