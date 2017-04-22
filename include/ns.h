@@ -1870,15 +1870,15 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled);
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_RollFile(const char *file, int max)
+Ns_RollFile(const char *fileName, int max)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_PurgeFiles(const char *file, int max)
+Ns_PurgeFiles(const char *fileName, int max)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_RollFileByDate(const char *file, int max)
+Ns_RollFileByDate(const char *fileName, int max)
     NS_GNUC_NONNULL(1)
     NS_GNUC_DEPRECATED_FOR(Ns_PurgeFiles);
 
