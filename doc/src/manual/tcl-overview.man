@@ -1055,9 +1055,9 @@ Content File=$inp"
     if $WinCGI(debug) {
             ns_log Notice "CGI $pgm: ini: $ini, inp: $inp, out: $out"
     } else {
-            file delete $ini
-            file delete $inp
-            file delete $out
+            file delete -- $ini
+            file delete -- $inp
+            file delete -- $out
     }
 }
 

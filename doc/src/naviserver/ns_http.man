@@ -214,7 +214,7 @@ when the result is larger than 100 bytes.
  
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
-   file delete $F
+   file delete -- $F
  } else {
    ns_log notice "Got [lb]string length $R[rb] bytes"
  }
