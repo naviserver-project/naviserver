@@ -1340,9 +1340,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Tcl_Channel          chan;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
-    int                  idx, off, len, opt = 0, n, result = TCL_OK;
+    int                  setNameLength, idx, off, len, opt = 0, n, result = TCL_OK;
     const char          *setName;
-    int                  setNameLength;
 
     static const char *const opts[] = {
 	"auth", "authpassword", "authuser", 
