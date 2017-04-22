@@ -42,7 +42,7 @@ proc init_nsperm { } {
     if {[catch {set file [open $filename r]} ignore] == 0} {
         while {![eof $file]} {
             set line [gets $file]
-            if {[string range $line 0 0] != "#"} {
+            if {[string index $line 0] != "#"} {
                 if {$line ne ""} {
                     set pos [string first : $line]
                     if {$pos < 0} {
@@ -69,7 +69,7 @@ proc init_nsperm { } {
     if {[catch {set file [open $filename r]} ignore] == 0} {
         while {![eof $file]} {
             set line [gets $file]
-            if {[string range $line 0 0] != "#"} {
+            if {[string index $line 0] != "#"} {
                 if {$line ne ""} {
                     set pos [string first : $line]
                     if {$pos < 0} {
@@ -99,7 +99,7 @@ proc init_nsperm { } {
     if {[catch {set file [open $filename r]} ignore] == 0} {
         while {![eof $file]} {
             set line [gets $file]
-            if {[string range $line 0 0] != "#"} {
+            if {[string index $line 0] != "#"} {
                 if {$line ne ""} {
                     set list [split $line :]
                     if {[llength $list] != 7} {
@@ -141,7 +141,7 @@ proc init_nsperm { } {
     if {[catch {set file [open $filename r]} ignore] == 0} {
         while {![eof $file]} {
             set line [gets $file]
-            if {[string range $line 0 0] != "#"} {
+            if {[string index $line 0] != "#"} {
                 if {$line ne ""} {
                     set list [split $line :]
                     if {[llength $list] != 4} {
@@ -172,7 +172,7 @@ proc init_nsperm { } {
     if {[catch {set file [open $filename r]} ignore] == 0} {
         while {![eof $file]} {
             set line [gets $file]
-            if {[string range $line 0 0] != "#"} {
+            if {[string index $line 0] != "#"} {
                 if {$line ne ""} {
                     if {[llength $line] != 5} {
                         ns_log error "nsperm_init: bad line in $filename: $line"
@@ -228,7 +228,7 @@ proc ns_permpasswd { targetuser oldpass newpass } {
     while {![eof $file]} {
         set line [gets $file]
         set aline $line
-        if {[string range $line 0 0] != "#"} {
+        if {[string index $line 0] != "#"} {
             if {$line ne ""} {
                 set list [split $line :]
                 if {[llength $list] != 7} {
