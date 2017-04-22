@@ -193,7 +193,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
  *
  *      Register a connection trace procedure.  Traces registered
  *  	with this procedure are only called in FIFO order if the
- *  	connection request procedure successfully responds to the
+ *  	connection request procedure successfuly responds to the
  *  	clients request.
  *
  * Results:

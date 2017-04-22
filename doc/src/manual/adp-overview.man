@@ -611,7 +611,7 @@ administrator and the user, and displays a confirmation message:
     ns_sendmail "subscript@thecompany.com" "dbadmin@thecompany.com" "New Subscription" $body
  
     # Send email message to user
-    set body "Your online newsletter subscription has been successfully processed."
+    set body "Your online newsletter subscription has been successfuly processed."
     ns_sendmail $emailaddr "dbadmin@thecompany.com" "Your Online Subscription" $body
  
     # Show type of subscription to user

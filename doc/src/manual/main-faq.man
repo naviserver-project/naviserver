@@ -40,7 +40,7 @@ has been ported to. To link a shared object, we recommend the default which is:
 
 On some Solaris installations the Cygnus compiler is unable to build working shared objects.
 We're told that if you put the -Wl,-E option in the nsd/Makefile when linking the executable,
-Cygnus works, but we have not verified this successfully.  GCC from just about anywhere else
+Cygnus works, but we have not verified this successfuly.  GCC from just about anywhere else
 [emph {will}] work. You can get a pre-built copy of GCC from
 <a href="http://www.sunfreeware.com/">http://www.sunfreeware.com or
 build your own from <a href="ftp://ftp.gnu.org/">ftp://ftp.gnu.org. Just install it and

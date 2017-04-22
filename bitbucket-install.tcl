@@ -19,7 +19,7 @@ switch -exact $pageName {
         }
       }
       ns_return 200 text/html \
-          "<html><body>$pageName successfully downloaded and installed. <a href='/'>return</a>"
+          "<html><body>$pageName successfuly downloaded and installed. <a href='/'>return</a>"
     }
     ns_return 200 text/html \
         "<html><body>$pageName already installed. <a href='/'>return</a>"

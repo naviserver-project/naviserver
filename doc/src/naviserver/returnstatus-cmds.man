@@ -12,7 +12,7 @@ different HTTP status codes. Any queued headers, such as those set by
 [cmd "ns_set put"], are added to the default headers and sent in the response.
 
 [para]
-These commands return 0 (zero) if the response was successfully
+These commands return 0 (zero) if the response was successfuly
 sent to the client and 1 if the write to the connection failed.
 They will raise an error if no connection is available, e.g. they are called from
 a non-connection thread or the response has already been sent and the connection

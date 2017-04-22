@@ -65,7 +65,7 @@ ns/server/servername, the options are "connsperthread",
 "flushcontent", "maxconnections", "maxthreads", "minthreads" and
 "threadtimeout". In nearly all cases the defaults are optimal, with
 the exception of "minthread" and "maxthreads" which should be
-carefully adjusted based on your load. Along with "maxthreads", the
+carefuly adjusted based on your load. Along with "maxthreads", the
 "maxconnections" setting can be tricky, since making it too large can
 cause your system to thrash.
 

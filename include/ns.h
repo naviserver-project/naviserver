@@ -124,7 +124,7 @@
 typedef enum {
     NS_FILTER_PRE_AUTH =        0x01u, /* Runs before any Ns_UserAuthProc */
     NS_FILTER_POST_AUTH =       0x02u, /* Runs after any Ns_UserAuthProc */
-    NS_FILTER_TRACE =           0x04u, /* Runs after Ns_OpProc completes successfully */
+    NS_FILTER_TRACE =           0x04u, /* Runs after Ns_OpProc completes successfuly */
     NS_FILTER_VOID_TRACE =      0x08u  /* Run ns_register_trace procs after previous traces */
 } Ns_FilterType;
 

@@ -80,7 +80,7 @@ typedef struct PollData {
 #define PollHup(ppd, i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
- * Async writer definitons
+ * Async writer definitions
  */
 
 typedef struct AsyncWriter {
