@@ -72,7 +72,7 @@ TEA_LOAD_TCLCONFIG
 # we have to check TCL_LIBS here, because this variable is later rewritten
 case "$TCL_LIBS" in
   *CoreFoundation*)
-     AC_DEFINE([HAVE_COREFOUNDATION], [1], [Define to 1 if tcl was compiled with Core Foundation support.])
+     AC_DEFINE([HAVE_COREFOUNDATION], [1], [Define to 1 if Tcl was compiled with Core Foundation support.])
      ;;
    *)
      ;;
