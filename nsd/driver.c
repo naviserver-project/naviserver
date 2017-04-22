@@ -4808,7 +4808,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         } else if (chan != NULL) {
             ClientData clientData;
             /*
-             * The client provided an open tcl channel and closes it
+             * The client provided an open Tcl channel and closes it
              */
             if (Tcl_GetChannelHandle(chan, TCL_READABLE, &clientData) != TCL_OK) {
                 return NS_ERROR;

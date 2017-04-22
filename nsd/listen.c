@@ -287,7 +287,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
             success = (result == 0) ? NS_TRUE : NS_FALSE;
         } else {
             /*
-             * The hash entry was found, so fire the callback (e.g. exec tcl
+             * The hash entry was found, so fire the callback (e.g. exec Tcl
              * code).
              */
             success = (*ldPtr->proc) (newSock, ldPtr->arg, why);

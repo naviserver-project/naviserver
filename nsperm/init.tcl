@@ -200,7 +200,7 @@ proc init_nsperm { } {
 
 #
 # ns_permpasswd lets you set a password in the nsperm passwd file.
-# It is implemented in tcl because the passwd file is no inherently a
+# It is implemented in Tcl because the passwd file is no inherently a
 # part of the nsperm module--just a nice interface provided by the
 # supporting Tcl code.
 #

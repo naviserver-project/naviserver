@@ -148,7 +148,7 @@ static Tcl_HashTable serversTable;
  *	NS_OK/NS_ERROR
  *
  * Side effects:
- *	Init hash table, add tcl commands.
+ *	Init hash table, add Tcl commands.
  *
  *----------------------------------------------------------------------
  */
@@ -204,13 +204,13 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * AddCmds --
  *
- *	Add tcl commands for perms
+ *	Add Tcl commands for perms
  *
  * Results:
  *	NS_OK
  *
  * Side effects:
- *	Adds tcl commands
+ *	Adds Tcl commands
  *
  *----------------------------------------------------------------------
  */
@@ -227,10 +227,10 @@ static int AddCmds(Tcl_Interp * interpermPtr, const void *arg)
  *
  * PermCmd --
  *
- *	The ns_perm tcl command
+ *	The ns_perm Tcl command
  *
  * Results:
- *	Std tcl ret val
+ *	Std Tcl ret val
  *
  * Side effects:
  *	Yes.
@@ -1055,7 +1055,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc
  *	Add a group to the global groups list
  *
  * Results:
- *	Standard tcl
+ *	Standard Tcl
  *
  * Side effects:
  *	A group will be created
@@ -1276,7 +1276,7 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(obj
  *	Add a record that will allow or deny access to the specified url
  *
  * Results:
- *	Std tcl
+ *	Std Tcl
  *
  * Side effects:
  *	A perm record may be created
@@ -1371,7 +1371,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
  *	Remove permission record
  *
  * Results:
- *	Std tcl
+ *	Std Tcl
  *
  * Side effects:
  *	A perm record may be deleted

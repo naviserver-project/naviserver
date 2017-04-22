@@ -287,8 +287,8 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
  *      top to bottom pass, looking for the following four types of
  *      embedded script sequences:
  *
- *      1. <% tcl script %>
- *      2. <script runat=server language=tcl> tcl script </script>
+ *      1. <% Tcl script %>
+ *      2. <script runat=server language=tcl> Tcl script </script>
  *      3. <registered-tag arg=val arg=val>
  *      4. <registered-start-tag arg=val arg=val> text </registered-end-tag>
  *

@@ -27,7 +27,7 @@ if {1} {
     # and we can use nsf in the regression test suite.
 
     # Requiring the XOTcl/NX and the serializer here is not necessary
-    # for the ns-cache emulation, but since the tcl files are sourced in
+    # for the ns-cache emulation, but since the Tcl files are sourced in
     # alphabetical order, we make sure that we can use nx here (if
     # installed).
 

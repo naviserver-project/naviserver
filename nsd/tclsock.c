@@ -574,7 +574,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclSelectObjCmd --
  *
- *      Imlements select: basically a tcl version of select(2).
+ *      Imlements select: basically a Tcl version of select(2).
  *
  * Results:
  *      Tcl result. 
@@ -1115,7 +1115,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
  *
  * EnterSock, EnterDup, EnterDupedSocks --
  *
- *      Append a socket handle to the tcl result and register its 
+ *      Append a socket handle to the Tcl result and register its 
  *      channel.
  *
  * Results:

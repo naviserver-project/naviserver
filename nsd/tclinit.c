@@ -363,7 +363,7 @@ Ns_TclInit(Tcl_Interp *interp)
  *
  * Ns_TclEval --
  *
- *      Execute a tcl script in the context of the given server.
+ *      Execute a Tcl script in the context of the given server.
  *
  * Results:
  *      NaviServer result code. String result or error placed in dsPtr if
@@ -884,7 +884,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  *
  * Ns_TclLibrary --
  *
- *      Return the name of the private tcl lib if configured, or the
+ *      Return the name of the private Tcl lib if configured, or the
  *      global shared library otherwise.
  *
  * Results:

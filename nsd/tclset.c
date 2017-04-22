@@ -30,7 +30,7 @@
 /*
  * tclset.c --
  *
- *      Implements the tcl ns_set commands
+ *      Implements the Tcl ns_set commands
  */
 
 #include "nsd.h"
@@ -139,7 +139,7 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
  *
  * Ns_TclGetSet2 --
  *
- *      Like Ns_TclGetSet, but sends errors to the tcl interp.
+ *      Like Ns_TclGetSet, but sends errors to the Tcl interp.
  *
  * Results:
  *      Tcl result.
@@ -776,7 +776,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
  *
  * LookupSet --
  *
- *      Take a tcl set handle and return a matching Set.
+ *      Take a Tcl set handle and return a matching Set.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.

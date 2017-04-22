@@ -552,7 +552,7 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 /* string mode */
             }
             if (tclScript == (int)NS_TRUE) {
-                /* tcl script */
+                /* Tcl script */
                 itPtr->adp.flags |= ADP_TCLFILE;
             }
             if (safe == (int)NS_TRUE) {

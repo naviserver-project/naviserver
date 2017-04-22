@@ -63,7 +63,7 @@
  *   We can no longer use a Tcl_Obj to represent the queue because
  *   queues can now be deleted. Tcl_Objs are deleted when the object
  *   goes out of scope, whereas queues are deleted when delete is
- *   called. By doing this the queue can be used across tcl
+ *   called. By doing this the queue can be used across Tcl
  *   interpreters.
  *
  * ToDo:
