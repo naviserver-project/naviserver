@@ -14,7 +14,7 @@ set httpport		8000
 set httpsport		8443 
 
 # The hostname and address should be set to actual values.
-# setting the address to 0.0.0.0 means aolserver listens on all interfaces
+# setting the address to 0.0.0.0 means AOLserver listens on all interfaces
 set hostname		localhost
 set address_v4		127.0.0.1  ;# listen on loopback via IPv4
 #set address_v4		0.0.0.0    ;# listen on all IPv4-Adresses

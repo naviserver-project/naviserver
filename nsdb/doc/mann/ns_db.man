@@ -191,8 +191,8 @@ ns_db setexception returns the specified status code and message to the client.
 
 ns_db sp_exec executes a stored procedure that has been initialized with ns_db
 sp_start and ns_db sp_setparam. It returns "NS_DML" if the command was
-successfuly executed but did not return rows, or it returns "NS_ROWS" if the
-command was successfuly executed and did return rows (which can then be fetched
+successfully executed but did not return rows, or it returns "NS_ROWS" if the
+command was successfully executed and did return rows (which can then be fetched
 with ns_db bindrow and ns_db getrow). It throws an error if the command failed.
 This function is implemented only for the Sybase database driver. See the
 Examples section, below, for an example of this function.

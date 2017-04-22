@@ -602,7 +602,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
 
     itPtr = NsGetInterpData(interp);
     /*
-     * If this is an naviserver interp, clean it up
+     * If this is an NaviServer interp, clean it up
      */
 
     if (itPtr != NULL) {

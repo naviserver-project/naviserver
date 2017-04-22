@@ -67,7 +67,7 @@ Use this as a template for module makefiles:
 # NaviServer's location
 #
 #  Since your module probably doesn't live inside the "naviserver"
-#  directory, you can tell make where to find naviserver.
+#  directory, you can tell make where to find NaviServer.
 #
 #NAVISERVER   =  /usr/local/ns
 NAVISERVER    =  ../naviserver

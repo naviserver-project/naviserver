@@ -182,7 +182,7 @@ Number of writer threads. (integer, default: 0)
 
 [section EXAMPLES]
 
-In case, one requires for one naviserver to listen on several ports, 
+In case, one requires for one NaviServer to listen on several ports, 
 it is possible to load the nssock module twice with different names,
 here [term nssock1] and [term nssock2].
 

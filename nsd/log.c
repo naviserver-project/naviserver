@@ -1498,7 +1498,7 @@ NsLogOpen(void)
  * LogOpen --
  *
  *      Open the log file name specified in the 'logFile' global. If
- *      it's successfuly opened, make that file the sink for stdout
+ *      it's successfully opened, make that file the sink for stdout
  *      and stderr too.
  *
  * Results:

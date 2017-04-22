@@ -58,7 +58,7 @@ keep-alive is disabled. Prefer to send a complete response using e.g.
 [cmd ns_return] if possible.
 
 [para]
-[cmd ns_write] returns [term true] if all the data was written successfuly and
+[cmd ns_write] returns [term true] if all the data was written successfully and
 [term false] otherwise. On failure, no more writes should be attempted.
 
 [para]

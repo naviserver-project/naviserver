@@ -757,7 +757,7 @@ Ns_CacheLock(Ns_Cache *cache)
  *      Try to lock the cache.
  *
  * Results:
- *      NS_OK if successfuly locked, NS_TIMEOUT if already locked.
+ *      NS_OK if successfully locked, NS_TIMEOUT if already locked.
  *
  * Side effects:
  *      None.

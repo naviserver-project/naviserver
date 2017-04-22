@@ -682,7 +682,7 @@ Ns_GetUrlEncoding(const char *charset)
                literal checks against path traversal based on
                character data (here in Ns_NormalizePath()) fail. As a
                consequence, it would be possible to retrieve
-               e.g. /etc/passwd from naviserver. For more details,
+               e.g. /etc/passwd from NaviServer. For more details,
                see Section "Canonicalization" in
 
                http://www.cgisecurity.com/owasp/html/ch11s03.html 

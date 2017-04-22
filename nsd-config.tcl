@@ -77,7 +77,7 @@ ns_section     "ns/db/drivers"
 #ns_param       postgres           nsdbpg.so
 
 ns_section     "ns/db/pools"
-#ns_param       postgres           "PostgresSQL Database"
+#ns_param       postgres           "PostgreSQL Database"
 
 ns_section     "ns/db/pool/pgsql"
 ns_param        driver              postgres

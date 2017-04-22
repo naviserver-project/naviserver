@@ -1346,7 +1346,7 @@ GetOutput(ClientData clientData, Tcl_DString **dsPtrPtr)
  *      Get the NsInterp structure..
  *
  * Results:
- *      TCL_ERROR if not a naviserver interp, TCL_OK otherwise.
+ *      TCL_ERROR if not a NaviServer interp, TCL_OK otherwise.
  *
  * Side effects:
  *      None.

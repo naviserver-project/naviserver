@@ -815,7 +815,7 @@ ns_runonce {
 
         #
         # Procedure invoking registered resolvers to lookup
-        # the given command. First resolver which successfuly
+        # the given command. First resolver which successfully
         # resolves the command stops the resolving process.
         #
 

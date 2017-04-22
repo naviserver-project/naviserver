@@ -49,7 +49,7 @@ the [arg script] are returned by the command.
 [call [cmd  ns_mutex] [cmd trylock] [arg mutexid]]
 
 ns_mutex trylock tries to acquire the specified mutual exclusion lock. If the mutex is locked
-successfuly, return value of 0 is returned. non-zero return value indicates that the mutex is
+successfully, return value of 0 is returned. non-zero return value indicates that the mutex is
 already locked by someone else.
 
 [call [cmd  ns_mutex] [cmd unlock] [arg mutexid]]

@@ -803,7 +803,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *      Always TCL_BREAK.
  *
  * Side effects:
- *      Option processing will end successfuly, argument processing
+ *      Option processing will end successfully, argument processing
  *      will begin.
  *
  *----------------------------------------------------------------------
@@ -829,7 +829,7 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
  *	    Always TCL_OK.
  *
  * Side effects:
- *	    Argument processing will end successfuly.
+ *	    Argument processing will end successfully.
  *
  *----------------------------------------------------------------------
  */

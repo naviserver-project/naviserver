@@ -323,7 +323,7 @@ typedef struct ns_DbHandle {
      This function takes the information contained in the handle and
              opens a connection to the database named in the handle
              along with the username and password. If a connection is
-             successfuly established, then OpenDb performs some
+             successfully established, then OpenDb performs some
              database specific functions, and returns NS_OK. If it is
              unable to establish a connection to the database server,
              or if it is unable to perform the required database
@@ -678,7 +678,7 @@ The set of functions that need to be implemented are:
 
 
      This function executes a SQL query. If the SQL is executed
-             successfuly, this function should call ns_PdSendString
+             successfully, this function should call ns_PdSendString
              with OK_STATUS followed by either
              ns_PdSendString(EXEC_RET_ROWS) or
              ns_PdSendString(EXEC_RET_DML), depending on whether the
@@ -817,7 +817,7 @@ The set of functions that need to be implemented are:
 [para]
 
 
-     If an exception is raised before successfuly retrieving some of
+     If an exception is raised before successfully retrieving some of
              the table data, then this function should call
              ns_PdSendException to return an error.
 
@@ -888,7 +888,7 @@ The set of functions that need to be implemented are:
 [para]
 
 
-     If an exception is raised before successfuly retrieving some of
+     If an exception is raised before successfully retrieving some of
              the row info, then this function should call
              ns_PdSendException to return an error.
 

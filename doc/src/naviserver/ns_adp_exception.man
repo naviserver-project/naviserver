@@ -24,7 +24,7 @@ following possible values:
 
 [call [cmd  ok]]
 
-ADP was evaluated successfuly
+ADP was evaluated successfully
 
 [call [cmd  overflow]]
 
