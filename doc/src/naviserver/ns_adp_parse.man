@@ -51,7 +51,7 @@ The option [opt [arg -string]] is provided for backwards compatibility, but
 does nothing since string mode is the default mode.
 
 [para]
-The option [opt [arg -tcl]] can be provided to process a tcl file.
+The option [opt [arg -tcl]] can be provided to process a Tcl file.
 
 [para]
 Additional arguments can be provided, which are passed to the adp evaluation.  The arguments can be accessed within the

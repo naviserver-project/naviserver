@@ -93,7 +93,7 @@ together those ns_getrow structures.
 [subsection {Collect metrics and use them}]
 
 NaviServer has a built-in statistics-gathering system that collects data on
-the caches, tcl interps, threads, and other interesting data. We use these
+the caches, Tcl interps, threads, and other interesting data. We use these
 at AOL to gather an immense amount of data on how the systems are working
 and where they need to be improved (more cache, less cache, more memory,
 more threads, etc).  The module "nsstats" can be dropped into any

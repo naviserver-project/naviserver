@@ -708,7 +708,7 @@ Files:
 
 
 Contains directories for each configured module that operates across
-servers, such as the tcl module.
+servers, such as the Tcl module.
 
 
 [para]

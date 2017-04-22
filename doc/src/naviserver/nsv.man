@@ -390,7 +390,7 @@ potential for lock contention which is to split the locks to achieve
 finer grained locking.  This technique groups arrays randomly into
 buckets and only the arrays within a particular bucket share a lock.
 The number of buckets to be used can be configured by setting the
-[const nsvbuckets] tcl parameters, e.g.:
+[const nsvbuckets] Tcl parameters, e.g.:
 
 [example_begin]
     ns_section      "ns/server/${servername}/tcl"
