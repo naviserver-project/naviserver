@@ -177,7 +177,7 @@ namespace eval ::revproxy {
         log notice "spool from $from ([ns_connchan exists $from]) to $to ([ns_connchan exists $to]): $condition"
 
         if {$condition eq "t"} {
-            ::revproxy::gateway_timeout $from "timeout occured while spooling $from to $to"
+            ::revproxy::gateway_timeout $from "timeout occurred while spooling $from to $to"
         } elseif {$condition ne "r"} {
             log notice "unexpected condition $condition while spooling $from to $to"
         }
@@ -238,7 +238,7 @@ namespace eval ::revproxy {
             #
             # Timeout
             #
-            ::revproxy::gateway_timeout $to "timeout occured while waiting for backend reply $from to $to"
+            ::revproxy::gateway_timeout $to "timeout occurred while waiting for backend reply $from to $to"
             set msg ""
 
         } else {
