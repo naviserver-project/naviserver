@@ -139,7 +139,7 @@ time_t
 Ns_ParseHttpTime(char *chars)
 {
     char      *s;
-    struct tm  timeInfo;
+    struct tm  timeInfo = {0};
     time_t     t = 0;
 
     NS_NONNULL_ASSERT(chars != NULL);

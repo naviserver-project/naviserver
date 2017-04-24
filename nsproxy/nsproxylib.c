@@ -458,7 +458,7 @@ int
 Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 {
     Tcl_Interp  *interp;
-    Slave         proc;
+    Slave        proc = {0};
     int          result, max;
     Tcl_DString  in, out;
     const char  *script, *dots, *uarg = NULL, *user = NULL;
