@@ -244,9 +244,9 @@ ns_section ns/server/${server}
 	# ns_param	headercase	preserve;# preserve, might be "tolower" or "toupper"
 	# ns_param	checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
 
-#
+#---------------------------------------------------------------------
 # Special HTTP pages
-#
+#---------------------------------------------------------------------
 ns_section ns/server/${server}/redirects
 	ns_param	404	"/global/file-not-found.html"
 	ns_param	403	"/global/forbidden.html"
@@ -254,9 +254,7 @@ ns_section ns/server/${server}/redirects
 	ns_param	500	"/global/error.html"
 
 #---------------------------------------------------------------------
-# 
 # ADP (AOLserver Dynamic Page) configuration 
-# 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/adp 
 	ns_param	enabledebug	$debug
@@ -312,9 +310,25 @@ ns_section "ns/server/${server}/fastpath"
 	#
 
 #---------------------------------------------------------------------
+# OpenACS specfic settings (per server)
+#---------------------------------------------------------------------
 #
+# Define/override kernel parameters in section /acs
+#
+ns_section ns/server/${server}/acs
+        ns_param LogIncludeUserId 1
+#
+# Define/override OpenACS package parameters in section /acs/PACKAGENAME
+#
+# Set for all package instances of acs-mail-lite the EmailDeliveryMode
+#
+#ns_section ns/server/${server}/acs/acs-mail-lite
+#        ns_param EmailDeliveryMode log
+
+
+
+#---------------------------------------------------------------------
 # WebDAV Support (optional, requires oacs-dav package to be installed
-#
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/tdav
 	ns_param	propdir		${serverroot}/data/dav/properties
@@ -337,9 +351,7 @@ ns_section ns/server/${server}/tdav/share/share1
 
 
 #---------------------------------------------------------------------
-# 
 # Socket driver module (HTTP)  -- nssock 
-# 
 #---------------------------------------------------------------------
 foreach address $addresses suffix $suffixes {
     ns_section ns/server/${server}/module/nssock_$suffix
@@ -375,9 +387,7 @@ foreach address $addresses suffix $suffixes {
 
 
 #---------------------------------------------------------------------
-# 
 # Access log -- nslog 
-# 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/module/nslog 
 	#
@@ -393,9 +403,16 @@ ns_section ns/server/${server}/module/nslog
 	ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations (accept, queue, filter, run)
 	# ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	# ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
-	# ns_param	extendedheaders	COOKIE	;# space delimited list of HTTP heads to log per entry
 	ns_param	checkforproxy	$proxy_mode ;# false, check for proxy header (X-Forwarded-For)
-	#
+        #
+        # Add extra entries to the access log via specfiying a comma delimited
+        # list of request header fields in "extendedheaders"
+        #
+        if {[ns_config "ns/server/${server}/acs" LogIncludeUserId 0]} {
+	    ns_param   extendedheaders    "X-User-Id"
+	}
+
+        #
 	#
 	# Control log file rolling
 	#
@@ -432,9 +449,7 @@ ns_section ns/server/${server}/module/nspam
 
 
 #---------------------------------------------------------------------
-#
-# SSL
-# 
+# SSL/TLS
 #---------------------------------------------------------------------
 foreach address $addresses suffix $suffixes {
     ns_section    "ns/server/${server}/module/nsssl_$suffix"
