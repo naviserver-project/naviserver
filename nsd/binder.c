@@ -1116,13 +1116,13 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     /*
      * Build and send message.
      */
-    iov[0].iov_base = (caddr_t) &options;
+    iov[0].iov_base = (void*) &options;
     iov[0].iov_len = sizeof(options);
-    iov[1].iov_base = (caddr_t) &port;
+    iov[1].iov_base = (void*) &port;
     iov[1].iov_len = sizeof(port);
-    iov[2].iov_base = (caddr_t) &type;
+    iov[2].iov_base = (void*) &type;
     iov[2].iov_len = sizeof(type);
-    iov[3].iov_base = (caddr_t) data;
+    iov[3].iov_base = (void*) data;
     iov[3].iov_len = sizeof(data);
 
     strncpy(data, address, sizeof(data)-1);
@@ -1139,7 +1139,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     /*
      * Reveive reply.
      */
-    iov[0].iov_base = (caddr_t) &err;
+    iov[0].iov_base = (void*) &err;
     iov[0].iov_len = sizeof(int);
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
@@ -1148,7 +1148,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     msg.msg_control = (void *) data;
     msg.msg_controllen = sizeof(data);
 #else
-    msg.msg_accrights = (caddr_t) &sock;
+    msg.msg_accrights = (void*) &sock;
     msg.msg_accrightslen = sizeof(sock);
 #endif
     n = recvmsg(binderResponse[0], (struct msghdr *) &msg, 0);
@@ -1334,13 +1334,13 @@ Binder(void)
         /*
          * Receive a message with the following contents.
          */
-        iov[0].iov_base = (caddr_t) &options;
+        iov[0].iov_base = (void*) &options;
         iov[0].iov_len = sizeof(options);
-        iov[1].iov_base = (caddr_t) &port;
+        iov[1].iov_base = (void*) &port;
         iov[1].iov_len = sizeof(port);
-        iov[2].iov_base = (caddr_t) &type;
+        iov[2].iov_base = (void*) &type;
         iov[2].iov_len = sizeof(type);
-        iov[3].iov_base = (caddr_t) address;
+        iov[3].iov_base = (void*) address;
         iov[3].iov_len = sizeof(address);
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
@@ -1385,7 +1385,7 @@ Binder(void)
             err = errno;
         }
 
-        iov[0].iov_base = (caddr_t) &err;
+        iov[0].iov_base = (void*) &err;
         iov[0].iov_len = sizeof(err);
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
@@ -1405,7 +1405,7 @@ Binder(void)
             c->cmsg_len = CMSG_LEN(sizeof(int));
             msg.msg_controllen = c->cmsg_len;
 #else
-            msg.msg_accrights = (caddr_t) &sock;
+            msg.msg_accrights = (void*) &sock;
             msg.msg_accrightslen = sizeof(sock);
 #endif
         }

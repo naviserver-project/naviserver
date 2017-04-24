@@ -494,8 +494,8 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
 	return NS_INVALID_PID;
     }
-    iov[0].iov_base = (caddr_t) &result;
-    iov[1].iov_base = (caddr_t) &errnum;
+    iov[0].iov_base = (void*) &result;
+    iov[1].iov_base = (void*) &errnum;
     iov[0].iov_len = iov[1].iov_len = sizeof(int);
     if (pid == 0) {
 
