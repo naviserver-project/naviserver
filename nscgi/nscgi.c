@@ -90,7 +90,7 @@ typedef struct Cgi {
 
 /*
  * The following structure defines the context of a single CGI config
- * mapping, supporting both directory-style and pageroot-style CGI locations.
+ * mapping, supporting both directory-style and pagedir-style CGI locations.
  */
 
 typedef struct Map {
