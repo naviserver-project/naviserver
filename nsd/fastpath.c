@@ -69,6 +69,9 @@ static Ns_ReturnCode FastReturn(Ns_Conn *conn, int statusCode, const char *mimeT
 static int  GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static void NormalizePath(const char **pathPtr) 
+    NS_GNUC_NONNULL(1);
+
 static Ns_Callback FreeEntry;
 static Ns_ServerInitProc ConfigServerFastpath;
 
@@ -123,6 +126,74 @@ NsConfigFastpath(void)
     NsRegisterServerInit(ConfigServerFastpath);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NormalizePath --
+ *
+ *      Normalize the path to provide canonical directory names. The
+ *      canonicalization is called, when the path contains a slash,
+ *      otherwise the provided path is not touched.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Potentially replacing the string in *pathPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+NormalizePath(const char **pathPtr) {
+    
+    NS_NONNULL_ASSERT(pathPtr != NULL);
+    assert(*pathPtr != NULL);
+    
+    if (strchr(*pathPtr, '/') != NULL) {
+        Tcl_Obj *pathObj, *normalizedPathObj;
+        /*
+         * The path contains a slash, it might be not normalized;
+         */
+        pathObj = Tcl_NewStringObj(*pathPtr, -1);
+        Tcl_IncrRefCount(pathObj);
+        
+        normalizedPathObj = Tcl_FSGetNormalizedPath(NULL, pathObj);
+        if (normalizedPathObj != NULL) {
+            /*
+             * Normalization was successful, replace the string in
+             * *pathPtr with the normalized string.
+             *
+             * The values returned by Ns_ConfigString() are the string
+             * values from the ns_set. We do not want to free *pathPtr
+             * here, but we overwrite it with a freshly allocated
+             * string. When this function is used from other contexts,
+             * not freeing the old value could be a protential memory
+             * leak.
+             *
+             */
+            *pathPtr = ns_strdup(Tcl_GetString(normalizedPathObj));
+        }
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConfigServerFastpath --
+ *
+ *      Load the config values for the specified server and register
+ *      Ns_FastPathProc() for GET, HEAD and POST requests.
+ *
+ * Results:
+ *      Return always NS_OK.
+ *
+ * Side effects:
+ *      Updating the fastpath configuration for the specifed server.
+ *
+ *----------------------------------------------------------------------
+ */
 static Ns_ReturnCode
 ConfigServerFastpath(const char *server)
 {
@@ -143,17 +214,25 @@ ConfigServerFastpath(const char *server)
     if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
         (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
+    }  else {
+        NormalizePath(&servPtr->fastpath.serverdir);
     }
 
+    /*
+     * Not sure, we still need fastpath.pageroot AND fastpath.pagedir.
+     * "pageroot" always points to the absolute path, while "pagedir"
+     * might contain the relative path (or is the same as "pageroot").
+     */
     servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
         servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
+        NormalizePath(&servPtr->fastpath.pageroot);
     } else {
         (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,
                           servPtr->fastpath.pagedir, (char *)0);
         servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
-
+    
     servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", "_ns_dirlist");
     servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 

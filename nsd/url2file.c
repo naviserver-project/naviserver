@@ -188,7 +188,7 @@ Ns_UnRegisterUrl2FileProc(const char *server, const char *url, unsigned int flag
  *      Construct a path name relative to the server pages directory.
  *
  * Results:
- *      NS_OK or NS_ERROR if the pageroot proc fails.
+ *      NS_OK or NS_ERROR if the NsPageRoot() proc fails.
  *
  * Side effects:
  *      None.
