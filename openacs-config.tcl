@@ -71,13 +71,17 @@ set env(LANG) en_US.UTF-8
 #---------------------------------------------------------------------
 # Set headers that should be included in every reply from the server
 #
-set extraheaders {
+set nssock_extraheaders {
     X-Frame-Options            "SAMEORIGIN"
     X-Content-Type-Options     "nosniff"
     X-XSS-Protection           "1; mode=block"
     Referrer-Policy            "strict-origin"
 }
-
+    
+set nsssl_extraheaders {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}
+append nsssl_extraheaders $nssock_extraheaders
 ###################################################################### 
 #
 # End of instance-specific settings 
@@ -316,7 +320,7 @@ ns_section "ns/server/${server}/fastpath"
 # Define/override kernel parameters in section /acs
 #
 ns_section ns/server/${server}/acs
-        ns_param LogIncludeUserId 1
+#        ns_param LogIncludeUserId 1
 #
 # Define/override OpenACS package parameters in section /acs/PACKAGENAME
 #
@@ -466,7 +470,7 @@ foreach address $addresses suffix $suffixes {
        #ns_param	writerstreaming	true	;# false
        #ns_param	deferaccept	true    ;# false, Performance optimization
        ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
-       ns_param         extraheaders    $extraheaders
+       ns_param         extraheaders    $nsssl_extraheaders
 }
 
 #---------------------------------------------------------------------
