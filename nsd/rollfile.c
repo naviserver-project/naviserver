@@ -289,7 +289,7 @@ Ns_PurgeFiles(const char *fileName, int max)
         }
     }
 
-    if (status == TCL_OK) {
+    if (status == NS_OK) {
         /*
          * Purge (any) excessive files after sorting them
          * on descening file mtime.
