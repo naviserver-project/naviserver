@@ -4671,6 +4671,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                nsend, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM,
                (void *)chan, fd);
         status = NS_ERROR;
+        wrPtr = NULL;
     } else {
 
         wrPtr = &connPtr->sockPtr->drvPtr->writer;
@@ -4693,6 +4694,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     if (status != NS_OK) {
         return status;
     }
+
+    assert(wrPtr != NULL);
         
     if (((connPtr->flags & NS_CONN_STREAM) != 0u) || connPtr->fd > 0) {
         bool        first = NS_FALSE;
