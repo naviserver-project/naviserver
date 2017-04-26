@@ -561,7 +561,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    sock = (NS_SOCKET)socket(saPtr->sa_family, SOCK_DGRAM, 0);
+    sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_DGRAM, 0);
 
     if (sock == NS_INVALID_SOCKET
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, (socklen_t)sizeof(n)) == -1
