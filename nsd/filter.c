@@ -139,13 +139,12 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
 Ns_ReturnCode
 NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 {
-    const Conn    *connPtr = (const Conn *) conn;
     NsServer      *servPtr;
     const Filter  *fPtr;
     Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    servPtr = connPtr->poolPtr->servPtr;
+    servPtr = ((const Conn *)conn)->poolPtr->servPtr;
 
     status = NS_OK;
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
@@ -305,21 +304,17 @@ RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
 void
 NsRunTraces(Ns_Conn *conn)
 {
-    const Conn *connPtr = (const Conn *) conn;
-
     NS_NONNULL_ASSERT(conn != NULL);
 
-    RunTraces(conn, connPtr->poolPtr->servPtr->filter.firstTracePtr);
+    RunTraces(conn, ((const Conn *) conn)->poolPtr->servPtr->filter.firstTracePtr);
 }
 
 void
 NsRunCleanups(Ns_Conn *conn)
 {
-    const Conn *connPtr = (const Conn *) conn;
-
     NS_NONNULL_ASSERT(conn != NULL);
 
-    RunTraces(conn, connPtr->poolPtr->servPtr->filter.firstCleanupPtr);
+    RunTraces(conn, ((const Conn *) conn)->poolPtr->servPtr->filter.firstCleanupPtr);
 }
 
 static void

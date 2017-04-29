@@ -987,21 +987,17 @@ Ns_CacheResetStats(Ns_Cache *cache)
 void
 Ns_CacheSetMaxSize(Ns_Cache *cache, size_t maxSize)
 {
-    Cache *cachePtr = (Cache *) cache;
-
     NS_NONNULL_ASSERT(cache != NULL);
     
-    cachePtr->maxSize = maxSize;
+    ((Cache *) cache)->maxSize = maxSize;
 }
 
 size_t
 Ns_CacheGetMaxSize(const Ns_Cache *cache)
 {
-    const Cache *cachePtr = (const Cache *) cache;
-
     NS_NONNULL_ASSERT(cache != NULL);
     
-    return cachePtr->maxSize;
+    return ((const Cache *) cache)->maxSize;
 }
 
 

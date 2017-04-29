@@ -667,7 +667,6 @@ Ns_ReturnCode
 Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     const char *title, const char *notice)
 {
-    const Conn      *connPtr = (const Conn *) conn;
     const NsServer  *servPtr;
     Ns_DString       ds;
     Ns_ReturnCode    result;
@@ -676,7 +675,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     NS_NONNULL_ASSERT(title != NULL);
     NS_NONNULL_ASSERT(notice != NULL);
 
-    servPtr = connPtr->poolPtr->servPtr;
+    servPtr = ((Conn *) conn)->poolPtr->servPtr;
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds,
                      "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 4.01//EN\">\n"

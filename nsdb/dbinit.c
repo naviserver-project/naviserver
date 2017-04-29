@@ -1488,11 +1488,9 @@ FreeTable(void *arg)
 uintptr_t
 NsDbGetSessionId(const Ns_DbHandle *handle)
 {
-    const Handle *handlePtr = (const Handle *)handle;
-
     NS_NONNULL_ASSERT(handle != NULL);
 
-    return handlePtr->sessionId;
+    return ((const Handle *)handle)->sessionId;
 }
 
 

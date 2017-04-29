@@ -510,10 +510,11 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
 Tcl_Interp *
 Ns_GetConnInterp(Ns_Conn *conn)
 {
-    Conn     *connPtr = (Conn *) conn;
+    Conn     *connPtr;
     NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *) conn;
 
     if (connPtr->itPtr == NULL) {
         itPtr = PopInterp(connPtr->poolPtr->servPtr, NULL);

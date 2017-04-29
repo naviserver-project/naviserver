@@ -785,9 +785,10 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 static void ThreadArgFree(void *arg)
 {
-    TclThreadArg *argPtr = (TclThreadArg *)arg;
+    TclThreadArg *argPtr;
     
     NS_NONNULL_ASSERT(arg != NULL);
+    argPtr = (TclThreadArg *)arg;
     
     if (argPtr->threadName != NULL) {
         ns_free((char *)argPtr->threadName);

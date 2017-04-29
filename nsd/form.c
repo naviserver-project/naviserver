@@ -82,10 +82,11 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
 Ns_Set  *
 Ns_ConnGetQuery(Ns_Conn *conn)
 {
-    Conn           *connPtr = (Conn *) conn;
+    Conn           *connPtr;
     char           *form;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *) conn;
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -174,9 +175,10 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 void
 Ns_ConnClearQuery(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *) conn;
     
     if (connPtr->query != NULL) {
         const Tcl_HashEntry *hPtr;

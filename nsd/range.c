@@ -133,7 +133,6 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
                  int fd, const void *data, size_t objLength,
                  Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
-    const Conn *connPtr = (const Conn *) conn;
     int         rangeCount = 0;
     off_t       start, end;
     size_t      len, responseLength;
@@ -152,7 +151,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
     
     Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
 
-    if (MatchRange(conn, connPtr->fileInfo.st_mtime)) {
+    if (MatchRange(conn, ((Conn *) conn)->fileInfo.st_mtime)) {
         int maxranges = NS_MAX_RANGES;
         
         rangeCount = ParseRangeOffsets(conn, objLength, ranges, maxranges);

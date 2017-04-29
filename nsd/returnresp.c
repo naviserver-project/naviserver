@@ -743,13 +743,14 @@ static bool
 ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
 {
     const Tcl_HashEntry *hPtr;
-    Conn                *connPtr = (Conn *) conn;
+    Conn                *connPtr;
     NsServer            *servPtr;
     bool                 result = NS_FALSE;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
-
+    connPtr = (Conn *) conn;
+ 
     servPtr = connPtr->poolPtr->servPtr;
     assert(servPtr != NULL);
 

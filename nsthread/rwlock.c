@@ -233,9 +233,10 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 void
 Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 {
-    RwLock *lockPtr = (RwLock *) *rwPtr;
+    RwLock *lockPtr;
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
+    lockPtr = (RwLock *) *rwPtr;
     
     Ns_MutexLock(&lockPtr->mutex);
     if (--lockPtr->lockcnt < 0) {

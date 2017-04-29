@@ -552,7 +552,7 @@ GzipFile(Tcl_Interp *interp, const char *fileName, const char *gzFileName)
 static Ns_ReturnCode
 FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file)
 {
-    Conn          *connPtr = (Conn *) conn;
+    Conn          *connPtr;
     int            isNew, fd;
     Ns_ReturnCode  status = NS_OK;
     Tcl_DString    ds, *dsPtr = &ds;
@@ -560,6 +560,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(file != NULL);
+    connPtr = (Conn *) conn;
 
     if (unlikely(Ns_ConnSockPtr(conn) == NULL)) {
         Ns_Log(Warning,

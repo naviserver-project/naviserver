@@ -4655,7 +4655,7 @@ Ns_ReturnCode
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs, int everysize)
 {
-    Conn          *connPtr = (Conn *)conn;
+    Conn          *connPtr;
     WriterSock    *wrSockPtr;
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
@@ -4664,7 +4664,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     Ns_ReturnCode  status = NS_OK;
 
     NS_NONNULL_ASSERT(conn != NULL);
-
+    connPtr = (Conn *)conn;
+    
     if (unlikely(connPtr->sockPtr == NULL)) {
         Ns_Log(Warning,
                "NsWriterQueue: called without sockPtr size %" PRIdz " bufs %d flags %.6x stream %.6x chan %p fd %d",
