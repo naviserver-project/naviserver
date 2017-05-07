@@ -90,7 +90,7 @@ Ns_RollFile(const char *fileName, int max)
 
     NS_NONNULL_ASSERT(fileName != NULL);
     
-    if (max < 0 || max > 999) {
+    if (max <= 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
                "must be > 0 and < 999", max);
         status = NS_ERROR;
