@@ -241,9 +241,9 @@ NsConnectService(void)
      * to nul: device forever.
      */
 
-    freopen(DEVNULL, "rt", stdin);
-    freopen(DEVNULL, "wt", stdout);
-    freopen(DEVNULL, "wt", stderr);
+    (void)freopen(DEVNULL, "rt", stdin);
+    (void)freopen(DEVNULL, "wt", stdout);
+    (void)freopen(DEVNULL, "wt", stderr);
 
     /*
      * Ensure that stdio handles are correctly set.
