@@ -139,7 +139,7 @@ time_t
 Ns_ParseHttpTime(char *chars)
 {
     char      *s;
-    struct tm  timeInfo = {0};
+    struct tm  timeInfo;
     time_t     t = 0;
 
     NS_NONNULL_ASSERT(chars != NULL);
@@ -238,7 +238,7 @@ Ns_ParseHttpTime(char *chars)
         timeInfo.tm_hour = MakeNum(s + 11);
         timeInfo.tm_min  = MakeNum(s + 14);
         timeInfo.tm_sec  = MakeNum(s + 17);
-    }
+    } 
 
     /*
      * If there are any impossible values, then return 0.

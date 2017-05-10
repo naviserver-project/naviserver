@@ -458,7 +458,7 @@ int
 Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 {
     Tcl_Interp  *interp;
-    Slave        proc = {0};
+    Slave        proc;
     int          result, max;
     Tcl_DString  in, out;
     const char  *script, *dots, *uarg = NULL, *user = NULL;
@@ -487,6 +487,11 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
             active = NULL;
         }
     }
+
+    /*
+     * Initialize Slave structure
+     */
+    memset(&proc, 0, sizeof(proc));
 
     /*
      * Move the proxy input and output fd's from 0 and 1 to avoid
