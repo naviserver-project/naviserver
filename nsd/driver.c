@@ -3613,7 +3613,7 @@ static void
 SockSetServer(Sock *sockPtr)
 {
     const ServerMap *mapPtr = NULL;
-    const char      *host;
+    char            *host;
     int              status = 1;
     Request         *reqPtr;
 
@@ -3627,7 +3627,7 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = sockPtr->drvPtr->location;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer host %s request line %s", host, reqPtr->request.line);
+    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s'", host, reqPtr->request.line);
 
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
@@ -3639,8 +3639,17 @@ SockSetServer(Sock *sockPtr)
     }
     if (sockPtr->servPtr == NULL) {
         if (host != NULL) {
-            const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&hosts, host);
+            const Tcl_HashEntry *hPtr;
+            size_t               hostLength = strlen(host);
 
+            /*
+             * Remove trailing dot of host header field, since RFC 2976 allows
+             * fully qualified "abolute" DNS names in host fields (see e.g. §3.2.2).
+             */
+            if (host[hostLength] == '.') {
+                host[hostLength] = '\0';
+            }
+            hPtr = Tcl_FindHashEntry(&hosts, host);
             if (hPtr != NULL) {
                 mapPtr = Tcl_GetHashValue(hPtr);
             }
