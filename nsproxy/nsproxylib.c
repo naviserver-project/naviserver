@@ -3002,7 +3002,9 @@ ReaperThread(void *UNUSED(arg))
                 }
 
                 tmpSlavePtr = slavePtr->nextPtr;
-                ns_close(slavePtr->rfd);
+                if (slavePtr->rfd != NS_INVALID_FD) {
+                    ns_close(slavePtr->rfd);
+                }
                 ns_free(slavePtr);
                 slavePtr = tmpSlavePtr;
 
@@ -3239,7 +3241,8 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 
     if (proxyPtr->state == Idle) {
         Tcl_DString ds;
-        int reinit;
+        int         reinit;
+        
         Tcl_DStringInit(&ds);
         Ns_MutexLock(&proxyPtr->poolPtr->lock);
         reinit = proxyPtr->poolPtr->reinit != NULL;
@@ -3251,6 +3254,16 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
             result = Eval(interp, proxyPtr, Tcl_DStringValue(&ds), -1);
         }
         Tcl_DStringFree(&ds);
+    } else if (proxyPtr->state == Busy) {
+        Ns_Log(Notice, "releasing busy proxy %s", proxyPtr->id);
+        /*
+         * In case the proxy is busy, make sure to drain the pipe, otherwise
+         * the proxy might be hanging in a send operation. Closing our end
+         * causes in the slave an exception and terminates the potentially
+         * blocking write operation.
+         */
+        ns_close(proxyPtr->slavePtr->rfd);
+        proxyPtr->slavePtr->rfd = NS_INVALID_FD;
     }
     if (proxyPtr->cmdToken != NULL) {
         /*
