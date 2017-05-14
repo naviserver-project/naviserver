@@ -826,7 +826,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
     int n;
 
     memset(&afa, 0, sizeof(afa));
-    strcpy(afa.af_name, "httpready");
+    strncpy(afa.af_name, "httpready", sizeof(afa.af_name));
     n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, (socklen_t)sizeof(afa));
     if (n < 0) {
 	Ns_Log(Error, "deferaccept setsockopt(SO_ACCEPTFILTER): %s",
