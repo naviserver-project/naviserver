@@ -3254,7 +3254,8 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
             result = Eval(interp, proxyPtr, Tcl_DStringValue(&ds), -1);
         }
         Tcl_DStringFree(&ds);
-    } else if (proxyPtr->state == Busy) {
+
+    } else if ( (proxyPtr->state == Busy) && (proxyPtr->slavePtr != NULL) ) {
         Ns_Log(Notice, "releasing busy proxy %s", proxyPtr->id);
         /*
          * In case the proxy is busy, make sure to drain the pipe, otherwise
