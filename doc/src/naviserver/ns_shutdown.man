@@ -5,21 +5,30 @@
 [titledesc {Shut down NaviServer}]
 
 [description]
-This command shuts down the server.  If [emph timeout] is not specified
-a default value (normally 20) is used; if it is specified, it should be
-an integer >= 0.  The server will wait for up to the specified (or default)
-number of seconds for existing connections to finish processing.  If this
-time limit is exceeded then existing connections are immediately stopped.
+
+This command shuts down the server, optionally waiting [arg timeout]
+seconds to let existing connections and background jobs finish.  When 
+this time limit is exceeded the server shuts down immediately.
+
+[para] When [arg timeout] is not specified the default or configured
+[arg timeout] is used (default 20). The default can be changed by the
+parameter [term shutdowntimeout] in the global server parameters
+(section [term ns/parameters] in the config file). When [arg timeout]
+it is specified, it must be an integer >= 0.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_shutdown] [arg ?timeout?]]
+[call [cmd ns_shutdown] [opt [option -restart]] [opt [arg timeout]]]
 
 [para]
 [arg timeout]
-How long to wait before shuting down the server
+Time in seconds to wait before shuting down the server
+
+[para]
+[option -restart]
+send an interrupt signal to the server, leading to a non-zero exit code.
 
 [list_end]
 
@@ -31,7 +40,8 @@ How long to wait before shuting down the server
 [example_end]
 
 
-[see_also nsd]
+[see_also ns_kill]
+[keywords restart]
 
 
 [manpage_end]

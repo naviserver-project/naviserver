@@ -22,8 +22,8 @@ no error will be returned on failure.  signal should be an integer, i.e., 1 for 
 
 
 
-[see_also nsd]
-[keywords ns_job]
+[see_also ns_shutdown ns_job]
+[keywords restart]
 
 [manpage_end]
 
