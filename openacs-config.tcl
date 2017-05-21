@@ -320,6 +320,7 @@ ns_section "ns/server/${server}/fastpath"
 # Define/override kernel parameters in section /acs
 #
 ns_section ns/server/${server}/acs
+         ns_param NsShutdownWithNonZeroExitCode 1
 #        ns_param LogIncludeUserId 1
 #
 # Define/override OpenACS package parameters in section /acs/PACKAGENAME
