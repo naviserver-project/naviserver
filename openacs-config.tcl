@@ -314,7 +314,7 @@ ns_section "ns/server/${server}/fastpath"
 	#
 
 #---------------------------------------------------------------------
-# OpenACS specfic settings (per server)
+# OpenACS specific settings (per server)
 #---------------------------------------------------------------------
 #
 # Define/override kernel parameters in section /acs
@@ -410,7 +410,7 @@ ns_section ns/server/${server}/module/nslog
 	# ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
 	ns_param	checkforproxy	$proxy_mode ;# false, check for proxy header (X-Forwarded-For)
         #
-        # Add extra entries to the access log via specfiying a comma delimited
+        # Add extra entries to the access log via specifying a comma delimited
         # list of request header fields in "extendedheaders"
         #
         if {[ns_config "ns/server/${server}/acs" LogIncludeUserId 0]} {
