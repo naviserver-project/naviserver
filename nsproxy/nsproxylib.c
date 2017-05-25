@@ -2983,15 +2983,41 @@ ReaperThread(void *UNUSED(arg))
                 case SIGKILL: slavePtr->signal = -1;      break;
                 }
             }
-            if (slavePtr->signal == -1 || WaitFd(slavePtr->rfd, POLLIN, 0)) {
-
+                            
+            if (slavePtr->signal == -1
+                || slavePtr->rfd == NS_INVALID_FD
+                || WaitFd(slavePtr->rfd, POLLIN, 0)) {
+                
                 /*
-                 * We either have a zombie or the process has exited ok
-                 * so splice it out the list.
+                 * We either have timeouted eval (rfd==NS_INVALID_FD), a
+                 * zombie or the process has exited ok so splice it out the
+                 * list.
                  */
-
                 if (slavePtr->signal >= 0) {
-                    (void) Ns_WaitProcess(slavePtr->pid); /* Should not really wait */
+                    int waitStatus = 0;
+                    
+                    /*
+                     * Pass waitStatus ptr to Ns_WaitForProcessStatus() to
+                     * indicate that we want to handle the signal here and to
+                     * suppress warning entries in the error.log.
+                     *
+                     * The following wait operation should not really wait.
+                     */
+                    (void) Ns_WaitForProcessStatus(slavePtr->pid, NULL, &waitStatus);
+#ifdef WTERMSIG
+                    if (slavePtr->signal != 0) {
+                        Ns_LogSeverity severity;
+
+                        if (WTERMSIG(waitStatus) != slavePtr->signal) {
+                            severity = Warning;
+                        } else {
+                            severity = Notice;
+                        }
+                        Ns_Log(severity, "nsproxy process %d killed with signal %d (%s)",
+                               slavePtr->pid,
+                               WTERMSIG(waitStatus), strsignal(WTERMSIG(waitStatus)));
+                    }
+#endif
                 } else {
                     Ns_Log(Warning, "nsproxy: zombie: %ld", (long)slavePtr->pid);
                 }
@@ -3256,7 +3282,9 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
         Tcl_DStringFree(&ds);
 
     } else if ( (proxyPtr->state == Busy) && (proxyPtr->slavePtr != NULL) ) {
+        proxyPtr->slavePtr->signal = 0;
         Ns_Log(Notice, "releasing busy proxy %s", proxyPtr->id);
+
         /*
          * In case the proxy is busy, make sure to drain the pipe, otherwise
          * the proxy might be hanging in a send operation. Closing our end

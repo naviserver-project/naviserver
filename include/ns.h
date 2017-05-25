@@ -1409,10 +1409,14 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout, char **argv,
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_WaitProcess(pid_t pid);
+Ns_WaitProcess(pid_t pid)
+    NS_GNUC_DEPRECATED_FOR(Ns_WaitForProcessStatus);
 
 NS_EXTERN Ns_ReturnCode
 Ns_WaitForProcess(pid_t pid, int *exitcodePtr);
+
+NS_EXTERN Ns_ReturnCode
+Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr);
 
 /*
  * fastpath.c:

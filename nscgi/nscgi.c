@@ -702,7 +702,7 @@ CgiFree(Cgi *cgiPtr)
      * Reap the process.
      */
 
-    if (cgiPtr->pid != NS_INVALID_PID && Ns_WaitProcess(cgiPtr->pid) != NS_OK) {
+    if (cgiPtr->pid != NS_INVALID_PID && Ns_WaitForProcessStatus(cgiPtr->pid, NULL, NULL) != NS_OK) {
 	Ns_Log(Error, "nscgi: wait for %s failed: %s",
 	       cgiPtr->exec, strerror(errno));
     }
