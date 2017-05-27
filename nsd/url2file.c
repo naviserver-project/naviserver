@@ -107,12 +107,18 @@ static Ns_ReturnCode
 ConfigServerUrl2File(const char *server)
 {
     NsServer *servPtr;
+    Ns_ReturnCode result;
 
     servPtr = NsGetServer(server);
-    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0u);
-    Ns_SetUrlToFileProc(server, NsUrlToFileProc);
+    if (likely(servPtr != NULL)) {
+        Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0u);
+        Ns_SetUrlToFileProc(server, NsUrlToFileProc);
+        result = NS_OK;
+    } else {
+        result = NS_ERROR;
+    }
 
-    return NS_OK;
+    return result;
 }
 
 
@@ -143,16 +149,18 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
     NsServer *servPtr = NsGetServer(server);
     Url2File *u2fPtr;
 
-    servPtr->fastpath.url2file = NULL;
-    u2fPtr = ns_malloc(sizeof(Url2File));
-    u2fPtr->proc = proc;
-    u2fPtr->deleteCallback = deleteCallback;
-    u2fPtr->arg = arg;
-    u2fPtr->flags = flags;
-    u2fPtr->refcnt = 1;
-    Ns_MutexLock(&ulock);
-    Ns_UrlSpecificSet(server, "x", url, uid, u2fPtr, flags, FreeUrl2File);
-    Ns_MutexUnlock(&ulock);
+    if (servPtr != NULL) {
+        servPtr->fastpath.url2file = NULL;
+        u2fPtr = ns_malloc(sizeof(Url2File));
+        u2fPtr->proc = proc;
+        u2fPtr->deleteCallback = deleteCallback;
+        u2fPtr->arg = arg;
+        u2fPtr->flags = flags;
+        u2fPtr->refcnt = 1;
+        Ns_MutexLock(&ulock);
+        Ns_UrlSpecificSet(server, "x", url, uid, u2fPtr, flags, FreeUrl2File);
+        Ns_MutexUnlock(&ulock);
+    }
 }
 
 
@@ -231,14 +239,21 @@ Ns_FastUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
 Ns_ReturnCode
 Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 {
-    NsServer *servPtr;
+    NsServer      *servPtr;
+    Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(url != NULL);
     
     servPtr = NsGetServer(server);
-    return NsUrlToFile(dsPtr, servPtr, url);
+    if (likely(servPtr != NULL)) {
+        status = NsUrlToFile(dsPtr, servPtr, url);
+    } else {
+        status = NS_ERROR;
+    }
+    
+    return status;
 }
 
 Ns_ReturnCode
@@ -301,7 +316,9 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
 {
     NsServer *servPtr = NsGetServer(server);
 
-    servPtr->fastpath.url2file = procPtr;
+    if (servPtr != NULL) {
+        servPtr->fastpath.url2file = procPtr;
+    }
 }
 
 
@@ -325,8 +342,14 @@ Ns_ReturnCode
 NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
 {
     const NsServer *servPtr = NsGetServer(server);
+    Ns_ReturnCode   result;
 
-    return Ns_FastUrl2FileProc(dsPtr, url, servPtr);
+    if (likely(servPtr != NULL)) {
+        result = Ns_FastUrl2FileProc(dsPtr, url, servPtr);
+    } else {
+        result = NS_ERROR;
+    }
+    return result;
 }
 
 

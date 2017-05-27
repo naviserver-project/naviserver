@@ -571,9 +571,13 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         result = TCL_ERROR;
 
     } else {
-        int         isNew;
-        Ns_Entry   *entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr);
-            
+        int       isNew;
+        Ns_Entry *entry;
+
+        assert(cPtr != NULL);
+        assert(key != NULL);
+
+        entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr);
         if (entry == NULL) {
             result = TCL_ERROR;
         } else {

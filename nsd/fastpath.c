@@ -197,50 +197,59 @@ NormalizePath(const char **pathPtr) {
 static Ns_ReturnCode
 ConfigServerFastpath(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server);
-    Ns_DString  ds;
-    const char *path, *p;
+    NsServer     *servPtr = NsGetServer(server);
+    Ns_ReturnCode result;
 
-    path = Ns_ConfigGetPath(server, NULL, "fastpath", (char *)0);
-    Ns_DStringInit(&ds);
+    if (unlikely(servPtr == NULL)) {
+        Ns_Log(Warning, "Could configure fastpath; server '%s' unknown", server);
+        result = NS_ERROR;
 
-    p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
-    if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
-                                   &servPtr->fastpath.dirv) != TCL_OK) {
-        Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
-    }
-
-    servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
-    if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
-        (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0);
-        servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
-    }  else {
-        NormalizePath(&servPtr->fastpath.serverdir);
-    }
-
-    /*
-     * Not sure, we still need fastpath.pageroot AND fastpath.pagedir.
-     * "pageroot" always points to the absolute path, while "pagedir"
-     * might contain the relative path (or is the same as "pageroot").
-     */
-    servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
-    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
-        servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
-        NormalizePath(&servPtr->fastpath.pageroot);
     } else {
-        (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,
-                          servPtr->fastpath.pagedir, (char *)0);
-        servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
-    }
+        Ns_DString  ds;
+        const char *path, *p;
+
+        path = Ns_ConfigGetPath(server, NULL, "fastpath", (char *)0);
+        Ns_DStringInit(&ds);
+
+        p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
+        if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
+                                       &servPtr->fastpath.dirv) != TCL_OK) {
+            Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
+        }
+
+        servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
+        if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
+            (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0);
+            servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
+        }  else {
+            NormalizePath(&servPtr->fastpath.serverdir);
+        }
+
+        /*
+         * Not sure, we still need fastpath.pageroot AND fastpath.pagedir.
+         * "pageroot" always points to the absolute path, while "pagedir"
+         * might contain the relative path (or is the same as "pageroot").
+         */
+        servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
+        if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
+            servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
+            NormalizePath(&servPtr->fastpath.pageroot);
+        } else {
+            (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,
+                              servPtr->fastpath.pagedir, (char *)0);
+            servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
+        }
     
-    servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", "_ns_dirlist");
-    servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
+        servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", "_ns_dirlist");
+        servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 
-    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u);
-    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u);
-    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0u);
-
-    return NS_OK;
+        Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u);
+        Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u);
+        Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0u);
+        
+        result = NS_OK;
+    }
+    return result;
 }
 
 

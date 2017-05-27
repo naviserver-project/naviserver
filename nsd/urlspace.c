@@ -452,7 +452,6 @@ Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int i
                   void *data, unsigned int flags, void (*deletefunc) (void *data))
 {
     NsServer   *servPtr;
-    Ns_DString  ds;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -460,16 +459,20 @@ Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int i
     NS_NONNULL_ASSERT(data != NULL);
 
     servPtr = NsGetServer(server);
+    
+    if (likely(servPtr != NULL)) {
+        Ns_DString  ds;
 
-    Ns_DStringInit(&ds);
-    MkSeq(&ds, method, url);
+        Ns_DStringInit(&ds);
+        MkSeq(&ds, method, url);
     
 #ifdef DEBUG
-    PrintSeq(ds.string);
+        PrintSeq(ds.string);
 #endif
     
-    JunctionAdd(JunctionGet(servPtr, id), ds.string, data, flags, deletefunc);
-    Ns_DStringFree(&ds);
+        JunctionAdd(JunctionGet(servPtr, id), ds.string, data, flags, deletefunc);
+        Ns_DStringFree(&ds);
+    }
 }
 
 
@@ -624,7 +627,6 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
                       int id, unsigned int flags)
 {
     NsServer   *servPtr;
-    Ns_DString  ds;
     void       *data = NULL;
 
     NS_NONNULL_ASSERT(server != NULL);
@@ -633,15 +635,19 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
 
     servPtr = NsGetServer(server);
 
-    Ns_DStringInit(&ds);
-    MkSeq(&ds, method, url);
-    if ((flags & NS_OP_RECURSE) != 0u) {
-        JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
-        data = NULL;
-    } else {
-        data = JunctionDeleteNode(JunctionGet(servPtr, id), ds.string, flags);
+    if (likely(servPtr != NULL)) {
+        Ns_DString ds;
+
+        Ns_DStringInit(&ds);
+        MkSeq(&ds, method, url);
+        if ((flags & NS_OP_RECURSE) != 0u) {
+            JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
+            data = NULL;
+        } else {
+            data = JunctionDeleteNode(JunctionGet(servPtr, id), ds.string, flags);
+        }
+        Ns_DStringFree(&ds);
     }
-    Ns_DStringFree(&ds);
 
     return data;
 }

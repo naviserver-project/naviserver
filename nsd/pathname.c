@@ -84,40 +84,51 @@ NsConfigVhost(void)
 static Ns_ReturnCode
 ConfigServerVhost(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server);
-    Ns_DString  ds;
-    const char *path;
+    NsServer     *servPtr;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(server != NULL);
-    assert(servPtr->fastpath.pagedir != NULL);
+
+    servPtr = NsGetServer(server);
+    if (unlikely(servPtr == NULL)) {
+        Ns_Log(Warning, "Could configure vhost; server '%s' unknown", server);
+        result = NS_ERROR;
+
+    } else {
+        Ns_DString  ds;
+        const char *path;
+
+        assert(servPtr->fastpath.pagedir != NULL);
     
-    path = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0);
+        path = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0);
 
-    servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
-    if (servPtr->vhost.enabled
-	&& Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
-	Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
-               server, servPtr->fastpath.pagedir);
-        servPtr->vhost.enabled = NS_FALSE;
-    }
-    if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
-        servPtr->vhost.opts |= NSD_STRIP_WWW;
-    }
-    if (Ns_ConfigBool(path, "stripport", NS_TRUE)) {
-        servPtr->vhost.opts |= NSD_STRIP_PORT;
-    }
-    servPtr->vhost.hostprefix = Ns_ConfigGetValue(path, "hostprefix");
-    servPtr->vhost.hosthashlevel =
-        Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
+        servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
+        if (servPtr->vhost.enabled
+            && Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
+            Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
+                   server, servPtr->fastpath.pagedir);
+            servPtr->vhost.enabled = NS_FALSE;
+        }
+        if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
+            servPtr->vhost.opts |= NSD_STRIP_WWW;
+        }
+        if (Ns_ConfigBool(path, "stripport", NS_TRUE)) {
+            servPtr->vhost.opts |= NSD_STRIP_PORT;
+        }
+        servPtr->vhost.hostprefix = Ns_ConfigGetValue(path, "hostprefix");
+        servPtr->vhost.hosthashlevel =
+            Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
 
-    if (servPtr->vhost.enabled) {
-        Ns_DStringInit(&ds);
-        (void) NsPageRoot(&ds, servPtr, "www.example.com:80");
-        Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
-        Ns_DStringFree(&ds);
+        if (servPtr->vhost.enabled) {
+            Ns_DStringInit(&ds);
+            (void) NsPageRoot(&ds, servPtr, "www.example.com:80");
+            Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
+            Ns_DStringFree(&ds);
+        }
+        result = NS_OK;
     }
-
-    return NS_OK;
+    
+    return result;
 }
 
 

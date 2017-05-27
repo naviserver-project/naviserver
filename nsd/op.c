@@ -580,11 +580,11 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
     NS_NONNULL_ASSERT(server != NULL);
     
     servPtr = NsGetServer(server);
-    assert(servPtr != NULL);
-    
-    Ns_MutexLock(&ulock);
-    Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
-    Ns_MutexUnlock(&ulock);
+    if (likely(servPtr != NULL)) {
+        Ns_MutexLock(&ulock);
+        Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
+        Ns_MutexUnlock(&ulock);
+    }
 }
 
 static void

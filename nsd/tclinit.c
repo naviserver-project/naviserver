@@ -231,75 +231,82 @@ static Ns_ReturnCode
 ConfigServerTcl(const char *server)
 {
     NsServer   *servPtr;
-    Ns_DString  ds;
-    const char *path, *p, *initFileString;
-    int         n;
-    Ns_Set     *set;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(server != NULL);
 
     servPtr = NsGetServer(server);
-    assert(servPtr != NULL);
 
-    path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0);
-    set = Ns_ConfigCreateSection(path);
+    if (unlikely(servPtr == NULL)) {
+        Ns_Log(Warning, "Could configure Tcl; server '%s' unknown", server);
+        result = NS_ERROR;
 
-    Ns_DStringInit(&ds);
+    } else {
+        Ns_DString  ds;
+        const char *path, *p, *initFileString;
+        int         n;
+        Ns_Set     *set;
 
-    servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
-        Ns_HomePath(&ds, servPtr->tcl.library, (char *)0);
-        servPtr->tcl.library = Ns_DStringExport(&ds);
-	Ns_SetUpdate(set, "library", servPtr->tcl.library);
+        path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0);
+        set = Ns_ConfigCreateSection(path);
+
+        Ns_DStringInit(&ds);
+
+        servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
+        if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
+            Ns_HomePath(&ds, servPtr->tcl.library, (char *)0);
+            servPtr->tcl.library = Ns_DStringExport(&ds);
+            Ns_SetUpdate(set, "library", servPtr->tcl.library);
+        }
+
+        initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
+        if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
+            Ns_HomePath(&ds, initFileString, (char *)0);
+            initFileString = Ns_DStringExport(&ds);
+            Ns_SetUpdate(set, "initfile", initFileString);
+        }
+        servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
+        Tcl_IncrRefCount(servPtr->tcl.initfile);
+
+        servPtr->tcl.modules = Tcl_NewObj();
+        Tcl_IncrRefCount(servPtr->tcl.modules);
+
+        Ns_RWLockInit(&servPtr->tcl.lock);
+        Ns_MutexInit(&servPtr->tcl.cachelock);
+        Ns_MutexSetName2(&servPtr->tcl.cachelock, "ns:tcl.cache", server);
+        Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.mutexTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.csTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.semaTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
+
+        servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
+        servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
+
+        /*
+         * Initialize the list of connection headers to log for Tcl errors.
+         */
+
+        p = Ns_ConfigGetValue(path, "errorlogheaders");
+        if (p != NULL
+            && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
+            Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
+        }
+
+        /*
+         * Initialize the Tcl detached channel support.
+         */
+
+        Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
+        Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
+
+        Tcl_InitHashTable(&servPtr->connchans.table, TCL_STRING_KEYS);
+        Ns_MutexSetName2(&servPtr->connchans.lock, "nstcl:connchans", server);
+        result = NS_OK;
     }
-
-    initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
-        Ns_HomePath(&ds, initFileString, (char *)0);
-        initFileString = Ns_DStringExport(&ds);
-	Ns_SetUpdate(set, "initfile", initFileString);
-    }
-    servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
-    Tcl_IncrRefCount(servPtr->tcl.initfile);
-
-    servPtr->tcl.modules = Tcl_NewObj();
-    Tcl_IncrRefCount(servPtr->tcl.modules);
-
-    Ns_RWLockInit(&servPtr->tcl.lock);
-    Ns_MutexInit(&servPtr->tcl.cachelock);
-    Ns_MutexSetName2(&servPtr->tcl.cachelock, "ns:tcl.cache", server);
-    Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.mutexTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.csTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.semaTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
-
-    servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
-    servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
-
-    /*
-     * Initialize the list of connection headers to log for Tcl errors.
-     */
-
-    p = Ns_ConfigGetValue(path, "errorlogheaders");
-    if (p != NULL
-	&& Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
-        Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
-    }
-
-    /*
-     * Initialize the Tcl detached channel support.
-     */
-
-    Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
-
-    Tcl_InitHashTable(&servPtr->connchans.table, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->connchans.lock, "nstcl:connchans", server);
-
-    return NS_OK;
+    return result;
 }
 
 
