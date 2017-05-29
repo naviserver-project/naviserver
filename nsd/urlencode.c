@@ -1002,6 +1002,8 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Ns_DString    ds;
         Tcl_Encoding  encoding = NULL;
 
+        assert(chars != NULL);
+        
         Ns_DStringInit(&ds);
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);

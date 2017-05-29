@@ -5234,9 +5234,8 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
 
             (void) ns_close(fd);
-        }
 
-        if (fd != NS_INVALID_FD) {
+        } else if (fd != NS_INVALID_FD) {
             (void) ns_close(fd);
         }
     }

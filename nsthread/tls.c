@@ -106,19 +106,20 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
 void
 Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 {
-    void      **slots = NsGetTls();
     uintptr_t   key;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
 
     key = (uintptr_t) *keyPtr;
-     
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
         Tcl_Panic("Ns_TlsSet: invalid key: %" PRIuPTR
                   ": should be between 1 and %" PRIuPTR,
                   key, nsThreadMaxTls);
+    } else {
+        void **slots = NsGetTls();
+        
+        slots[key] = value;
     }
-    slots[key] = value;
 }
 
 
@@ -141,8 +142,7 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 void *
 Ns_TlsGet(Ns_Tls *keyPtr)
 {
-    void      **slots = NsGetTls();
-    uintptr_t   key;
+    uintptr_t key;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
     
@@ -151,8 +151,11 @@ Ns_TlsGet(Ns_Tls *keyPtr)
         Tcl_Panic("Ns_TlsGet: invalid key: %" PRIuPTR
                   ": should be between 1 and %" PRIuPTR,
                   key, nsThreadMaxTls);
+    } else {
+        void  **slots = NsGetTls();
+
+        return slots[key];
     }
-    return slots[key];
 }
 
 

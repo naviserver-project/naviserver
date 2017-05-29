@@ -263,12 +263,14 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         char buffer[PATH_MAX] = "";
 
         snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
-
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
+        
     } else /*if (objc == 2)*/ {
-	char *buffer = ns_strdup(templateString);
+        char *buffer;
 
-	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
+        assert(templateString != NULL);
+        buffer = ns_strdup(templateString);
+        Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
     }
 
     return result;

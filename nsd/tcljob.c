@@ -907,8 +907,10 @@ JobExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
 
     } else {
-        const Tcl_HashEntry  *hPtr = Tcl_FindHashEntry(&queue->jobs, jobIdString);
+        const Tcl_HashEntry *hPtr;
 
+        assert(queue != NULL);
+        hPtr = Tcl_FindHashEntry(&queue->jobs, jobIdString);
         (void)ReleaseQueue(queue, NS_FALSE);
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(hPtr != NULL));
     }
@@ -1025,6 +1027,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
         Tcl_HashSearch       search;
         Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
+        assert(queue != NULL);
         /*
          * Collect the jobIdString in the listObj.
          */

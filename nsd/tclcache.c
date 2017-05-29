@@ -279,6 +279,8 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
 
+        assert(cPtr != NULL);
+        
         Ns_MutexLock(&servPtr->tcl.cachelock);
         if (maxEntry > 0) {
             cPtr->maxEntry = (size_t)maxEntry;
@@ -299,6 +301,8 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         NsServer       *servPtr = itPtr->servPtr;
         Tcl_Obj        *resultObj = Tcl_NewListObj(0, NULL);
         Tcl_DString     ds;
+
+        assert(cPtr != NULL);
 
         Tcl_DStringInit(&ds);
 
@@ -387,8 +391,12 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         status = TCL_ERROR;
 
     } else {
-        Ns_Entry *entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr);
+        Ns_Entry *entry;
 
+        assert(cPtr != NULL);
+        assert(key != NULL);
+        
+        entry = CreateEntry(itPtr, cPtr, key, &isNew, timeoutPtr);
         if (unlikely(entry == NULL)) {
             status = TCL_ERROR;
             
