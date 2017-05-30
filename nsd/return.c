@@ -1008,7 +1008,9 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
             (void) Ns_SetFileVec(bufs, 0, fd, data, 0, len);
             nbufs = 1;
         }
-
+        /*
+         * Flush Headers and send file contents.
+         */
 	result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
         if (result == NS_OK) {
             result = Ns_ConnSendFileVec(conn, bufs, nbufs);
