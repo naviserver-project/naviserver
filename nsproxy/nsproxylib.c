@@ -3005,7 +3005,7 @@ ReaperThread(void *UNUSED(arg))
                      */
                     (void) Ns_WaitForProcessStatus(slavePtr->pid, NULL, &waitStatus);
 #ifdef WTERMSIG
-                    if (slavePtr->signal != 0) {
+                    if (slavePtr->signal != 0 && WTERMSIG(waitStatus) != 0) {
                         Ns_LogSeverity severity;
 
                         if (WTERMSIG(waitStatus) != slavePtr->signal) {
