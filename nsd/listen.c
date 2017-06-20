@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,8 +31,8 @@
 /*
  * listen.c --
  *
- *	Listen on sockets and register callbacks for incoming 
- *	connections. 
+ *	Listen on sockets and register callbacks for incoming
+ *	connections.
  */
 
 #include "nsd.h"
@@ -50,7 +50,7 @@ typedef struct ListenData {
  * Local functions defined in this file
  */
 
-static Ns_SockProc  ListenCallback; 
+static Ns_SockProc  ListenCallback;
 
 /*
  * Static variables defined in this file
@@ -71,7 +71,7 @@ static Ns_Mutex      lock;            /* Lock around portsTable. */
  *	None.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -90,100 +90,128 @@ NsInitListen(void)
  *
  * Ns_SockListenCallback --
  *
- *	Listen on an address/port and register a callback to be run 
- *	when connections come in on it. 
+ *	Listen on an address/port and register a callback to be run
+ *	when connections come in on it.
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *	A valid NS_SOCK or  NS_INVALID_SOCKET
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
-Ns_ReturnCode
-Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, void *arg)
+NS_SOCKET
+Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, bool bind, void *arg)
 {
-    Tcl_HashTable        *tablePtr = NULL;
-    Tcl_HashEntry        *hPtr;
-    NS_SOCKET             sock;
-    int                   isNew;
-    Ns_ReturnCode         status;
+    NS_SOCKET             bindsock = NS_INVALID_SOCKET, sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr      *saPtr = (struct sockaddr *)&sa;
+    Ns_ReturnCode         status = NS_OK;
 
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
 
-    if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
-        return NS_ERROR;
-    }
+    if (Ns_GetSockAddr(saPtr, addr, port) == NS_OK) {
 
-    if (addr != NULL) {
-        /*
-	 * Make sure we can bind to the specified interface.
-	 */
-        Ns_SockaddrSetPort(saPtr, 0u);
-        sock = Ns_SockBind(saPtr, NS_FALSE);
-        if (sock == NS_INVALID_SOCKET) {
-            return NS_ERROR;
+        if (addr != NULL) {
+            Ns_SockaddrSetPort(saPtr, 0u);
+            bindsock = Ns_SockBind(saPtr, NS_FALSE);
         }
-        ns_sockclose(sock);
-    }
-    status = NS_OK;
 
-    Ns_MutexLock(&lock);
+        if (port == 0u) {
+            /*
+             * The specified port might be 0 to allocate a fresh, unused
+             * port for listening. Ns_SockBind() will update the port in
+             * the saPtr, update the local variable here to have a valid
+             * entry for the hash table below.
+             */
+            port = Ns_SockaddrGetPort(saPtr);
+            Ns_Log(Debug, "Ns_SockListenCallback: Ns_GetSockAddr obtained port %hu", port);
+        }
 
-    /*
-     * Update the global hash table that keeps track of which ports
-     * we're listening on.
-     */
-  
-    hPtr = Tcl_CreateHashEntry(&portsTable, INT2PTR(port), &isNew);
-    if (isNew == 0) {
-        tablePtr = Tcl_GetHashValue(hPtr);
-    } else {
-        
-        sock = Ns_SockListen(NULL, port);
-        if (sock == NS_INVALID_SOCKET) {
-            Tcl_DeleteHashEntry(hPtr);
-            status = NS_ERROR;
-        } else {
-	    status = Ns_SockSetNonBlocking(sock);
-	}
-	if (status == NS_OK) {
-            tablePtr = ns_malloc(sizeof(Tcl_HashTable));
-            Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
-            Tcl_SetHashValue(hPtr, tablePtr);
-            status = Ns_SockCallback(sock, ListenCallback, tablePtr,
-				     (unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT);
+        if (!bind && addr != NULL) {
+            /*
+             * Just make sure, we can bind to the specified interface.
+             */
+            if (likely(bindsock != NS_INVALID_SOCKET)) {
+                ns_sockclose(bindsock);
+                bindsock = NS_INVALID_SOCKET;
+            } else {
+                sock = NS_INVALID_SOCKET;
+                status = NS_ERROR;
+            }
+        }
+
+        if (status == NS_OK) {
+            Tcl_HashTable        *tablePtr = NULL;
+            Tcl_HashEntry        *hPtr;
+            int                   isNew;
+
+            Ns_MutexLock(&lock);
+
+            /*
+             * Update the global hash table that keeps track of which ports
+             * we're listening on.
+             */
+            hPtr = Tcl_CreateHashEntry(&portsTable, INT2PTR(port), &isNew);
+            if (isNew == 0) {
+                tablePtr = Tcl_GetHashValue(hPtr);
+            } else {
+
+                if (bindsock != NS_INVALID_SOCKET) {
+                    listen(bindsock, 5);
+                    sock = bindsock;
+                } else {
+                    sock = Ns_SockListen(NULL, port);
+                }
+
+                if (sock == NS_INVALID_SOCKET) {
+                    Tcl_DeleteHashEntry(hPtr);
+                    status = NS_ERROR;
+                } else {
+                    status = Ns_SockSetNonBlocking(sock);
+                }
+                if (status == NS_OK) {
+                    tablePtr = ns_malloc(sizeof(Tcl_HashTable));
+                    Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
+                    Tcl_SetHashValue(hPtr, tablePtr);
+                    status = Ns_SockCallback(sock, ListenCallback, tablePtr,
+                                             (unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT);
+                }
+                if (status != NS_OK && sock != NS_INVALID_SOCKET) {
+                    ns_sockclose(sock);
+                    sock = NS_INVALID_SOCKET;
+                }
+            }
+            if (sock != NS_INVALID_SOCKET) {
+                char ipString[NS_IPADDR_SIZE] = {'\0'};
+
+                assert(tablePtr != NULL);
+
+                hPtr = Tcl_CreateHashEntry(tablePtr,
+                                           ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE),
+                                           &isNew);
+
+                if (isNew == 0) {
+                    Ns_Log(Error, "listen callback: there is already a listen callback registered");
+                    ns_sockclose(sock);
+                    sock = NS_INVALID_SOCKET;
+                } else {
+                    ListenData *ldPtr;
+
+                    ldPtr = ns_malloc(sizeof(ListenData));
+                    ldPtr->proc = proc;
+                    ldPtr->arg = arg;
+                    Tcl_SetHashValue(hPtr, ldPtr);
+                }
+            }
+            Ns_MutexUnlock(&lock);
         }
     }
-    if (status == NS_OK) {
-        char ipString[NS_IPADDR_SIZE] = {'\0'};
 
-	assert(tablePtr != NULL);
-        
-        hPtr = Tcl_CreateHashEntry(tablePtr,
-                                   ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE),
-                                   &isNew);
-
-        if (isNew == 0) {
-            Ns_Log(Error, "listen callback: there is already a listen callback registered");
-            status = NS_ERROR;
-        } else {
-            ListenData *ldPtr;
-
-            ldPtr = ns_malloc(sizeof(ListenData));
-            ldPtr->proc = proc;
-            ldPtr->arg = arg;
-            Tcl_SetHashValue(hPtr, ldPtr);
-        }
-    }
-    Ns_MutexUnlock(&lock);
-    
-    return status;
+    return sock;
 }
 
 
@@ -192,14 +220,14 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
  *
  * Ns_SockPortBound --
  *
- *	Determine if we're already listening on a given port on any 
- *	address. 
+ *	Determine if we're already listening on a given port on any
+ *	address.
  *
  * Results:
  *	Boolean
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -221,14 +249,14 @@ Ns_SockPortBound(unsigned short port)
  *
  * ListenCallback --
  *
- *	This is a wrapper callback that runs the user's callback iff 
- *	a valid socket exists. 
+ *	This is a wrapper callback that runs the user's callback iff
+ *	a valid socket exists.
  *
  * Results:
- *	NS_TRUE or NS_FALSE 
+ *	NS_TRUE or NS_FALSE
  *
  * Side effects:
- *	May close the socket if no user context can be found. 
+ *	May close the socket if no user context can be found.
  *
  *----------------------------------------------------------------------
  */
@@ -250,7 +278,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
     }
 
     newSock = Ns_SockAccept(sock, NULL, NULL);
-    
+
     if (likely(newSock != NS_INVALID_SOCKET)) {
         const Tcl_HashEntry *hPtr;
         const ListenData    *ldPtr;
@@ -260,15 +288,16 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         (void) Ns_SockSetBlocking(newSock);
         len = (socklen_t)sizeof(sa);
         retVal = getsockname(newSock, (struct sockaddr *) &sa, &len);
+        fprintf(stderr, "ListenCallback: getsockname() called %d\n", retVal);
         if (retVal == -1) {
             Ns_Log(Warning, "listencallback: can't obtain socket info %s", ns_sockstrerror(ns_sockerrno));
             (void) ns_sockclose(sock);
             return NS_FALSE;
         }
         ldPtr = NULL;
-        
+
         (void)ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
-        
+
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(tablePtr, ipString);
         if (hPtr == NULL) {
