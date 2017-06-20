@@ -922,7 +922,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
         assert(script != NULL);
         
         if (STREQ(addr, "*")) {
-            addr = NULL;
+            addr = (char *)NS_IP_UNSPECIFIED;
         }
         scriptLength = strlen(script);
         lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);

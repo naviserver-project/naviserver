@@ -110,15 +110,14 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
     struct sockaddr      *saPtr = (struct sockaddr *)&sa;
     Ns_ReturnCode         status = NS_OK;
 
+    NS_NONNULL_ASSERT(addr != NULL);
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
 
     if (Ns_GetSockAddr(saPtr, addr, port) == NS_OK) {
 
-        if (addr != NULL) {
-            Ns_SockaddrSetPort(saPtr, 0u);
-            bindsock = Ns_SockBind(saPtr, NS_FALSE);
-        }
+        Ns_SockaddrSetPort(saPtr, 0u);
+        bindsock = Ns_SockBind(saPtr, NS_FALSE);
 
         if (port == 0u) {
             /*
@@ -131,7 +130,7 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
             Ns_Log(Debug, "Ns_SockListenCallback: Ns_GetSockAddr obtained port %hu", port);
         }
 
-        if (!bind && addr != NULL) {
+        if (!bind) {
             /*
              * Just make sure, we can bind to the specified interface.
              */
