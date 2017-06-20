@@ -548,7 +548,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     char       *script = NULL, *jobIdString = NULL, *queueIdString = NULL;
     char        buf[100];
     Ns_ObjvSpec lopts[] = {
-        {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(NS_TRUE)},        
+        {"-detached",  Ns_ObjvBool,    &detached,    INT2PTR(NS_TRUE)},
         {"-head",      Ns_ObjvBool,    &head,        INT2PTR(NS_TRUE)},
         {"-jobid",     Ns_ObjvString,  &jobIdString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1018,7 +1018,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
         {"queueId",  ObjvQueue,    &queue,   NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -1124,7 +1124,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         {"queueId", ObjvQueue, &queue,   NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -1228,7 +1228,7 @@ JobQueueListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         const Tcl_HashEntry  *hPtr;
         Tcl_HashSearch        search;
         Tcl_Obj              *queueList;
-            
+
         /*
          * Create a Tcl List to hold the list of jobs.
          */
@@ -1305,13 +1305,13 @@ JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
     } else {
         char    buf[100];
         Ns_Time currentTime;
-    
+
         Ns_GetTime(&currentTime);
         Ns_MutexLock(&tp.queuelock);
         snprintf(buf, sizeof(buf), "queue_id_%lx_%" TCL_LL_MODIFIER "x",
                  tp.nextQueueId++, (Tcl_WideInt) currentTime.sec);
         Ns_MutexUnlock(&tp.queuelock);
-        
+
         Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     }
     return result;
@@ -1504,7 +1504,7 @@ JobThread(void *UNUSED(arg))
         if (jobPtr->cancel != 0) {
             Tcl_AsyncMark(jobPtr->async);
         }
-        
+
         /*
          * ... rename the thread to job thread...
          */
@@ -1576,7 +1576,10 @@ JobThread(void *UNUSED(arg))
         (void)ReleaseQueue(queue, NS_TRUE);
 
         if ((jpt != 0) && --njobs <= 0) {
-            break; /* Served given # of jobs in this thread */
+            /*
+             * Served given # of jobs in this thread
+             */
+            break;
         }
     }
 
@@ -1615,7 +1618,10 @@ JobAbort(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(code))
         Ns_Log(Warning, "ns_job: job cancelled");
     }
 
-    return TCL_ERROR; /* Forces current command error */
+    /*
+     * Force current command error
+     */
+    return TCL_ERROR;
 }
 
 /*
@@ -1707,10 +1713,8 @@ NewQueue(const char *queueName, const char *queueDesc, int maxThreads)
 
     queue = ns_calloc(1u, sizeof(Queue));
     queue->req = QUEUE_REQ_NONE;
-
     queue->name = ns_strdup(queueName);
     queue->desc = ns_strdup(queueDesc);
-
     queue->maxThreads = maxThreads;
     queue->refCount = 0;
 
@@ -1783,7 +1787,6 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
     jobPtr->state  = JOB_SCHEDULED;
     jobPtr->code   = TCL_OK;
     jobPtr->req    = JOB_NONE;
-
     jobPtr->queueId = ns_strdup(queueName);
 
     Tcl_DStringInit(&jobPtr->id);
@@ -1867,13 +1870,13 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
         Ns_MutexLock(&tp.queuelock);
     }
 
-    *queuePtr = NULL;
-
     hPtr = Tcl_FindHashEntry(&tp.queues, queueName);
     if (hPtr != NULL) {
         *queuePtr = Tcl_GetHashValue(hPtr);
         Ns_MutexLock(&(*queuePtr)->lock);
         ++(*queuePtr)->refCount;
+    } else {
+        *queuePtr = NULL;
     }
 
     if (!locked) {
@@ -2066,7 +2069,9 @@ GetJobCodeStr(int code)
         "UNKNOWN_CODE"  /* 5 */
     };
 
-    /* Check the caller's input. */
+    /*
+     * Check the caller's input and limit to the max.
+     */
     if (code > max_code_index) {
         code = max_code_index;
     }
@@ -2298,8 +2303,8 @@ AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, const char *name, int value)
     NS_NONNULL_ASSERT(name != NULL);
 
     /*
-     * Note: If there occurs within Tcl_ListObjAppendElement it will
-     * set the result anyway.
+     * Note: If there occurs an error within Tcl_ListObjAppendElement
+     * it will set the result anyway.
      */
 
     elObj = Tcl_NewStringObj(name, -1);
