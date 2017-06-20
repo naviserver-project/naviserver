@@ -16,6 +16,7 @@ syntax: glob
 nsd/nsd
 nsproxy/nsproxy
 nsthread/nsthreadtest
+infer-out
 
 sample-config.tcl
 naviserver.rdf
