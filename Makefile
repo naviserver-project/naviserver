@@ -90,7 +90,6 @@ install-notice:
 	  echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
 	  echo ""; \
 	  user="-u nsadmin"; \
-	  chown -R nobody $(NAVISERVER)/logs; \
 	fi; \
 	echo "You can now run NaviServer by typing the following command: "; \
 	echo ""; \
