@@ -937,9 +937,9 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             serverName = (itPtr->servPtr != NULL ? (char *)itPtr->servPtr->server : NULL);
         }
         if (serverName == NULL) {
-            serverName = Tcl_DStringValue(&nsconf.servers);
+            serverName = (char *)nsconf.defaultServer;
         }
-        //fprintf(stderr, "SERVERNAME <%s>\n",serverName);
+
         lcbPtr->server = serverName;
         memcpy(lcbPtr->script, script, scriptLength + 1u);
         lcbPtr->driverName = ns_strcopy(driverName);
