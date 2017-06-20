@@ -5899,6 +5899,57 @@ AsyncWriterThread(void *arg)
 
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LookupDriver --
+ *
+ *      Find a matching driver for the specified protocol and optionally the
+ *      specified driver name.
+ *
+ * Results:
+ *      Driver pointer or NULL on failure.
+ *
+ * Side effects:
+ *      When no driver is found, an error ist left int the interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Driver *
+LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
+{
+    Driver *drvPtr;
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
+               drvPtr->protocol, drvPtr->server, drvPtr->threadName, drvPtr->location);
+
+        if (STREQ(drvPtr->protocol, protocol)) {
+            if (driverName == NULL) {
+                /*
+                 * If there is no driver name given, take the first driver
+                 * with the matching protocol.
+                 */
+                break;
+            } else if (STREQ(drvPtr->moduleName, driverName)) {
+                /*
+                 * The driver name (name of the loaded module) is equal
+                 */
+                break;
+            }
+        }
+    }
+
+    if (drvPtr == NULL) {
+        if (driverName != NULL) {
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' & driver name '%s' found", protocol, driverName);
+        } else {
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
+        }
+    }
+    return drvPtr;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -5947,30 +5998,8 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
          * Find a matching driver for the specified protocol and optionally
          * the specified driver name.
          */
-        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-            Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
-                   drvPtr->protocol, drvPtr->server, drvPtr->threadName, drvPtr->location);
-            if (STREQ(drvPtr->protocol, protocol)) {
-                if (driverName == NULL) {
-                    /*
-                     * If there is no driver name given, take the first driver
-                     * with the matching protocol.
-                     */
-                    break;
-                } else if (STREQ(drvPtr->moduleName, driverName)) {
-                    /*
-                     * The driver name (name of the loaded module) is equal
-                     */
-                    break;
-                }
-            }
-        }
+        drvPtr = LookupDriver(interp, protocol, driverName);
         if (drvPtr == NULL) {
-            if (driverName != NULL) {
-                Ns_TclPrintfResult(interp, "no driver for protocol '%s' & driver name '%s' found", protocol, driverName);
-            } else {
-                Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
-            }
             result = TCL_ERROR;
 
         } else if (portString != NULL) {
@@ -6052,6 +6081,69 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NSDriverSockNew --
+ *
+ *      Create a Sock structure based on the driver interface
+ *
+ * Results:
+ *      Tcl return code.
+ *
+ * Side effects:
+ *      Accepting a connection
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
+                 const char *protocol, const char *driverName, const char *methodName,
+                 Sock **sockPtrPtr)
+{
+    int     result = TCL_OK;
+    Driver *drvPtr;
+    Sock   *sockPtr = NULL;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(protocol != NULL);
+    NS_NONNULL_ASSERT(methodName != NULL);
+    NS_NONNULL_ASSERT(sockPtrPtr != NULL);
+
+    drvPtr = LookupDriver(interp, protocol, driverName);
+    if (drvPtr == NULL) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_DString    ds, *dsPtr = &ds;
+        Request       *reqPtr;
+
+        sockPtr = SockNew(drvPtr);
+        sockPtr->servPtr = drvPtr->servPtr;
+        sockPtr->sock = sock;
+
+        RequestNew(sockPtr); // not sure of needed
+        // peerAddr is missing
+
+        Ns_GetTime(&sockPtr->acceptTime);
+        reqPtr = sockPtr->reqPtr;
+
+        Tcl_DStringInit(dsPtr);
+        Ns_DStringAppend(dsPtr, methodName);
+        Ns_StrToUpper(Ns_DStringValue(dsPtr));
+
+        reqPtr->request.line = Ns_DStringExport(dsPtr);
+        reqPtr->request.method = ns_strdup("CONNCHAN");
+        reqPtr->request.protocol = ns_strdup(protocol);
+        reqPtr->request.host = NULL;
+        reqPtr->request.query = NULL;
+        Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);
+
+        *sockPtrPtr = sockPtr;
+    }
+
+    return result;
+}
 
 /*
  * Local Variables:
