@@ -2,7 +2,7 @@
 [manpage_begin ns_base64decode n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Binary-to-text decoding using "base64" encoding}]
+[titledesc {Text-to-binary decoding using "base64" encoding}]
 
 [description]
 
