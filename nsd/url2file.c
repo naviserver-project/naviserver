@@ -147,9 +147,10 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
                         unsigned int flags)
 {
     NsServer *servPtr = NsGetServer(server);
-    Url2File *u2fPtr;
 
     if (servPtr != NULL) {
+        Url2File *u2fPtr;
+
         servPtr->fastpath.url2file = NULL;
         u2fPtr = ns_malloc(sizeof(Url2File));
         u2fPtr->proc = proc;
