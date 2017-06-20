@@ -1699,7 +1699,6 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
      * dsWord will eventually be used to set or find&reuse a channel
      * filter.
      */
-    assert(p != NULL);
     if ((depth > 0) && (strchr(p, INTCHAR('*')) != NULL || strchr(p, INTCHAR('?')) != NULL )) {
         Ns_DStringAppend(&dsFilter, p);
         *p = '\0';
