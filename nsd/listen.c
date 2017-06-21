@@ -114,9 +114,11 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
 
+    Ns_Log(Debug, "Ns_SockListenCallback: called with addr <%s> and port %hu", addr, port);
+
     if (Ns_GetSockAddr(saPtr, addr, port) == NS_OK) {
 
-        Ns_SockaddrSetPort(saPtr, 0u);
+        //Ns_SockaddrSetPort(saPtr, 0u);
         bindsock = Ns_SockBind(saPtr, NS_FALSE);
 
         if (port == 0u) {
@@ -147,6 +149,8 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
             Tcl_HashTable        *tablePtr = NULL;
             Tcl_HashEntry        *hPtr;
             int                   isNew;
+
+            Ns_Log(Debug, "Ns_SockListenCallback: registering port %hu", port);
 
             Ns_MutexLock(&lock);
 
@@ -192,6 +196,8 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
                 hPtr = Tcl_CreateHashEntry(tablePtr,
                                            ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE),
                                            &isNew);
+                Ns_Log(Debug, "Ns_SockListenCallback: registering IP addr %s isNew %d", ipString, isNew);
+                Ns_LogSockaddr(Debug, "... register IP + PROTO", (const struct sockaddr *) saPtr);
 
                 if (isNew == 0) {
                     Ns_Log(Error, "listen callback: there is already a listen callback registered");
@@ -287,7 +293,6 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         (void) Ns_SockSetBlocking(newSock);
         len = (socklen_t)sizeof(sa);
         retVal = getsockname(newSock, (struct sockaddr *) &sa, &len);
-        fprintf(stderr, "ListenCallback: getsockname() called %d\n", retVal);
         if (retVal == -1) {
             Ns_Log(Warning, "listencallback: can't obtain socket info %s", ns_sockstrerror(ns_sockerrno));
             (void) ns_sockclose(sock);
@@ -296,6 +301,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         ldPtr = NULL;
 
         (void)ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
+        Ns_Log(Debug, "ListenCallback: ipstring <%s>", ipString);
 
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(tablePtr, ipString);
@@ -306,6 +312,8 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
             ldPtr = Tcl_GetHashValue(hPtr);
         }
         Ns_MutexUnlock(&lock);
+
+        Ns_LogSockaddr(Notice, "... query IP + PROTO", (const struct sockaddr *) &sa);
 
         if (ldPtr == NULL) {
             /*
