@@ -526,6 +526,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
     NS_SOCKET sock;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
+    Ns_LogSockaddr(Debug, "Ns_SockBind called with", (const struct sockaddr *) saPtr);
 
     sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_STREAM, 0);
 
@@ -558,6 +559,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
             setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, (socklen_t)sizeof(n));
 #endif
         }
+        Ns_LogSockaddr(Debug, "trying to bind on", (const struct sockaddr *) saPtr);
 
         if (bind(sock, (const struct sockaddr *)saPtr,
                  Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr)) != 0) {
