@@ -6133,7 +6133,7 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         Ns_StrToUpper(Ns_DStringValue(dsPtr));
 
         reqPtr->request.line = Ns_DStringExport(dsPtr);
-        reqPtr->request.method = ns_strdup("CONNCHAN");
+        reqPtr->request.method = ns_strdup(methodName);
         reqPtr->request.protocol = ns_strdup(protocol);
         reqPtr->request.host = NULL;
         reqPtr->request.query = NULL;
