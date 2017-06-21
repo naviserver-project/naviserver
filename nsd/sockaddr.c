@@ -274,6 +274,34 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
 
     if (saPtr->sa_family == AF_INET6) {
         result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr, buffer, (socklen_t)size);
+
+        if (result != NULL) {
+            const struct in6_addr *addr = &(((struct sockaddr_in6 *)saPtr)->sin6_addr);
+            /*
+             * In case the address is V4MAPPED, return just the IPv4 portion,
+             * since ns_inet_pton() tries to return as well first an IPv4
+             * address. This is important, since getsockname() might return
+             * for a socket AF_INET6, although the socket was created with
+             * AF_INET (see e.g. ListenCallback() in listen.c).
+             */
+            if (IN6_IS_ADDR_V4MAPPED(addr)) {
+                const char *tail = strrchr(result, INTCHAR(':'));
+
+                /*
+                 * When the last ':' in the converted string is further away
+                 * from the end as possible with an pure IPv6 notation, then
+                 * assume the last portion is an IPv4 address.
+                 */
+                if (tail != NULL) {
+                    size_t len = strlen(tail);
+
+                    if (len > 6) {
+                        tail ++;
+                        memcpy(buffer, tail, len);
+                    }
+                }
+            }
+        }
     } else {
         result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr, buffer, (socklen_t)size);
     }
@@ -409,6 +437,7 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
     return status;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -476,6 +505,7 @@ Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
 
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -507,6 +537,7 @@ Ns_SockaddrGetSockLen(const struct sockaddr *saPtr)
     return (socklen_t)socklen;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
