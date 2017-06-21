@@ -2816,8 +2816,8 @@ SockClose(Sock *sockPtr, int keep)
      */
     if (sockPtr->taddr != NULL) {
         munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
+        sockPtr->taddr = NULL;
     }
-    sockPtr->taddr = NULL;
 #endif
 }
 
@@ -6122,7 +6122,7 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         sockPtr->servPtr = drvPtr->servPtr;
         sockPtr->sock = sock;
 
-        RequestNew(sockPtr); // not sure of needed
+        RequestNew(sockPtr); // not sure if needed
         // peerAddr is missing
 
         Ns_GetTime(&sockPtr->acceptTime);
