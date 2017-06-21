@@ -975,6 +975,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                     result = TCL_ERROR;
                 } else {
                     Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
+                    char      ipString[NS_IPADDR_SIZE];
 
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("channel", 7));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(connChanPtr->channelName, -1));
@@ -985,6 +986,10 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sock", 4));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj((int)sock));
+
+                    ns_inet_ntop((struct sockaddr *) &sa, ipString, sizeof(ipString));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ipString, -1));
 
                     Tcl_SetObjResult(interp, listObj);
                 }
