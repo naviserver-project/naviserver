@@ -40,8 +40,8 @@
  * Local functions defined in this file
  */
 
-static void ConnRun(const ConnThreadArg *argPtr, Conn *connPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void ConnRun(Conn *connPtr)
+    NS_GNUC_NONNULL(1);
 
 static void CreateConnThread(ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
@@ -79,6 +79,10 @@ static int ServerMappedObjCmd(const ClientData clientData, Tcl_Interp *interp, i
 static int ServerUnmapObjCmd(const ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
                              NsServer *servPtr, int nargs)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+static void ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uintptr_t connId)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 static Ns_ArgProc WalkCallback;
 
@@ -1463,6 +1467,46 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
+ * ConnThreadSetName --
+ *
+ *      Set the conn thread name based on server name, pool name, threadID and
+ *      connID. The pool name is always non-null, but might have an empty
+ *      string as "name".
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Update thread name (internally just a printf operation)
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uintptr_t connId)
+{
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(pool != NULL);
+
+    if (*pool != '\0') {
+        /*
+         * Non-Empty pool name.
+         */
+        Ns_ThreadSetName("-conn:%s:%s:%" PRIuPTR ":%" PRIuPTR "-",
+                         server, pool, threadId, connId);
+    } else {
+        /*
+         * Empty pool name.
+         */
+        Ns_ThreadSetName("-conn:%s:%" PRIuPTR ":%" PRIuPTR "-",
+                         server, threadId, connId);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsConnThread --
  *
  *      Main connection service thread.
@@ -1484,7 +1528,7 @@ NsConnThread(void *arg)
     NsServer      *servPtr = poolPtr->servPtr;
     Conn          *connPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
-    uintptr_t      id;
+    uintptr_t      threadId;
     bool           shutdown, fromQueue;
     int            cpt, ncons, current;
     Ns_ReturnCode  status = NS_OK;
@@ -1508,25 +1552,13 @@ NsConnThread(void *arg)
     Ns_MutexUnlock(tqueueLockPtr);
 
     Ns_MutexLock(threadsLockPtr);
-    id = poolPtr->threads.nextid++;
+    threadId = poolPtr->threads.nextid++;
     if (poolPtr->threads.creating > 0) {
         poolPtr->threads.creating--;
     }
     Ns_MutexUnlock(threadsLockPtr);
 
-    /*
-     * Set the conn thread name. The pool name is always non-null, but
-     * might have an empty string as "name".
-     */
-    assert(poolPtr->pool != NULL);
-    {
-        const char *p = *poolPtr->pool != '\0' ? poolPtr->pool : NULL;
-        Ns_ThreadSetName("-conn:%s%s%s:%" PRIuPTR "-",
-                         servPtr->server, 
-			 (p != NULL) ? ":" : "", 
-			 (p != NULL) ? p : "",
-                         id);
-    }
+    ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, 0);
 
     Ns_ThreadSelf(&joinThread);
     /*fprintf(stderr, "### starting conn thread %p <%s>\n", (void *)joinThread, Ns_ThreadGetName());*/
@@ -1709,9 +1741,38 @@ NsConnThread(void *arg)
 	Ns_GetTime(&connPtr->requestDequeueTime);
 
 	/*
-	 * Run the connection.
+	 * Run the connection if possible (requires a valid sockPtr and a
+	 * successful NsGetRequest() operation).
 	 */
-	ConnRun(argPtr, connPtr);
+        if (likely(connPtr->sockPtr != NULL)) {
+            /*
+             * Get the request from the sockPtr (either from read-ahead or via
+             * parsing).
+             */
+            connPtr->reqPtr = NsGetRequest(connPtr->sockPtr, &connPtr->requestDequeueTime);
+
+            /*
+             * If there is no request, produce a warning and close the
+             * connection.
+             */
+            if (connPtr->reqPtr == NULL) {
+                Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
+                (void) Ns_ConnClose((Ns_Conn *)connPtr);
+            } else {
+                /*
+                 * Everything is supplied, run the request. ConnRun()
+                 * closes finally the connection.
+                 */
+                ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, connPtr->id);
+                ConnRun(connPtr);
+            }
+        } else {
+            /*
+             * If we have no sockPtr, we can't do much here.
+             */
+            Ns_Log(Warning, "connPtr %p has no socket, close this connection", (void *)connPtr);
+            (void) Ns_ConnClose((Ns_Conn *)connPtr);
+        }
 
         /*
          * push connection to the free list.
@@ -1877,47 +1938,31 @@ NsConnThread(void *arg)
  *
  * ConnRun --
  *
- *      Run a valid connection.
+ *      Run the actual non-null request and close it finally the connection.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Connection request is read and parsed and the corresponding
- *      service routine is called.
+ *      Potential side-effects caused by the callbacks.
  *
  *----------------------------------------------------------------------
  */
+
 static void
-ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
+ConnRun(Conn *connPtr)
 {
+    Sock           *sockPtr;
     Ns_Conn        *conn;
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_OK;
-    Sock           *sockPtr;
     char           *auth;
 
-    /*NS_NONNULL_ASSERT(argPtr != NULL);*/
     NS_NONNULL_ASSERT(connPtr != NULL);
 
-    conn = (Ns_Conn *) connPtr;
-    servPtr = connPtr->poolPtr->servPtr;
+    conn = (Ns_Conn *)connPtr;
     sockPtr = connPtr->sockPtr;
     
-    /*
-     * Re-initialize and run the connection. 
-     */
-    if (sockPtr != NULL) {
-        connPtr->reqPtr = NsGetRequest(sockPtr, &connPtr->requestDequeueTime);
-    } else {
-        connPtr->reqPtr = NULL;
-    }
-
-    if (connPtr->reqPtr == NULL) {
-        Ns_Log(Warning, "connPtr %p has no reqPtr, close this connection", (void *)connPtr);
-        (void) Ns_ConnClose(conn);
-        return;
-    }
     assert(sockPtr != NULL);
     assert(sockPtr->reqPtr != NULL);
 
@@ -1945,9 +1990,12 @@ ConnRun(const ConnThreadArg *UNUSED(argPtr), Conn *connPtr)
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
+    /*
+     * keep == -1 means: Undecided, the default keep-alive rules are applied.
+     */
+    connPtr->keep = -1;
 
-    connPtr->keep = -1;            /* Undecided, default keep-alive rules apply */
-
+    servPtr = connPtr->poolPtr->servPtr;
     Ns_ConnSetCompression(conn, servPtr->compress.enable ? servPtr->compress.level : 0);
     connPtr->compress = -1;
 
