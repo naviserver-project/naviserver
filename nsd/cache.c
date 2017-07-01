@@ -204,7 +204,7 @@ Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
     NS_NONNULL_ASSERT(key != NULL);
 
     hPtr = Tcl_FindHashEntry(&cachePtr->entriesTable, key);
-    if (hPtr == NULL) {
+    if (unlikely(hPtr == NULL)) {
         /*
          * Entry does not exist at all.
          */
@@ -214,14 +214,14 @@ Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
     } else {
         Entry *ePtr = Tcl_GetHashValue(hPtr);
 
-        if (ePtr->value == NULL) {
+        if (unlikely(ePtr->value == NULL)) {
             /*
              * Entry is being updated by some other thread.
              */
             ++cachePtr->stats.nmiss;
             result = NULL;
 
-        } else if (Expired(ePtr, NULL) == NS_TRUE) {
+        } else if (unlikely(Expired(ePtr, NULL))) {
             /*
              * Entry exists but has expired.
              */
@@ -282,7 +282,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
         ++cachePtr->stats.nmiss;
     } else {
         ePtr = Tcl_GetHashValue(hPtr);
-        if (Expired(ePtr, NULL) == NS_TRUE) {
+        if (Expired(ePtr, NULL)) {
             ++cachePtr->stats.nexpired;
             Ns_CacheUnsetValue((Ns_Entry *) ePtr);
             isNew = 1;
@@ -667,7 +667,7 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
         Ns_Entry  *entry = Tcl_GetHashValue(hPtr);
 
         if (Ns_CacheGetValue(entry) != NULL) {
-            if (Expired((Entry *) entry, &search->now) == NS_FALSE) {
+            if (!Expired((Entry *) entry, &search->now)) {
                 result = entry;
                 break;
             }
@@ -710,7 +710,7 @@ Ns_CacheNextEntry(Ns_CacheSearch *search)
         Ns_Entry *entry = Tcl_GetHashValue(hPtr);
 
         if (Ns_CacheGetValue(entry) != NULL) {
-            if (Expired((Entry *) entry, &search->now) == NS_FALSE) {
+            if (!Expired((Entry *) entry, &search->now)) {
                 result = entry;
                 break;
             }
