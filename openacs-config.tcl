@@ -387,7 +387,7 @@ foreach address $addresses suffix $suffixes {
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
 	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
         # ns_param	driverthreads	2	;# 1; use multiple driver threads  (requires support of SO_REUSEPORT)
-        ns_param        extraheaders    $extraheaders
+        ns_param        extraheaders    $nssock_extraheaders
 }
 
 
