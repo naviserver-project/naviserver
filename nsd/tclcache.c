@@ -53,7 +53,7 @@ typedef struct TclCache {
  * Local functions defined in this file
  */
 
-static int CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int append);
+static int CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, bool append);
 
 static Ns_Entry *CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key,
                              int *newPtr, Ns_Time *timeoutPtr)
@@ -543,17 +543,17 @@ NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 int
 NsTclCacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return CacheAppendObjCmd(clientData, interp, objc, objv, 1);
+    return CacheAppendObjCmd(clientData, interp, objc, objv, NS_TRUE);
 }
 
 int
 NsTclCacheLappendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return CacheAppendObjCmd(clientData, interp, objc, objv, 0);
+    return CacheAppendObjCmd(clientData, interp, objc, objv, NS_FALSE);
 }
 
 static int
-CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int append)
+CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, bool append)
 {
     const NsInterp *itPtr = clientData;
     TclCache       *cPtr = NULL;
@@ -597,7 +597,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
                                  (int)Ns_CacheGetSize(entry));
             }
             for (i = objc - nelements; i < objc; i++) {
-                if (append != 0) {
+                if (append) {
                     Tcl_AppendObjToObj(valObj, objv[i]);
                 } else if (Tcl_ListObjAppendElement(interp, valObj, objv[i]) != TCL_OK) {
                     result = TCL_ERROR;
