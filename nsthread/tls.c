@@ -142,20 +142,23 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 void *
 Ns_TlsGet(Ns_Tls *keyPtr)
 {
-    uintptr_t key;
+    uintptr_t  key;
+    void      *result;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
     
     key = (uintptr_t) *keyPtr;
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
+        result = NULL;
         Tcl_Panic("Ns_TlsGet: invalid key: %" PRIuPTR
                   ": should be between 1 and %" PRIuPTR,
                   key, nsThreadMaxTls);
     } else {
         void  **slots = NsGetTls();
 
-        return slots[key];
+        result = slots[key];
     }
+    return result;
 }
 
 
