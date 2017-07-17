@@ -1615,7 +1615,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     Tcl_HashSearch search;
     Tcl_Obj       *listObj;
 
-    static const char *const opts[] = {
+    static const char *opts[] = {
         "get", "put", "release", "eval", "cleanup", "configure",
         "ping", "free", "active", "handles", "clear", "stop",
         "send", "wait", "recv", "pools", NULL
@@ -1898,7 +1898,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
     Proxy      *proxyPtr;
     int         flag, n, result = TCL_OK, reap = 0;
 
-    static const char *const flags[] = {
+    static const char *flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", "-env",
         "-gettimeout", "-evaltimeout", "-sendtimeout", "-recvtimeout",
         "-waittimeout", "-idletimeout", "-maxruns", NULL
