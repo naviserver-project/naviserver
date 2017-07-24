@@ -880,19 +880,20 @@ typedef struct NsServer {
      */
 
     struct {
-        const char *library;
-        struct TclTrace *firstTracePtr;
-        struct TclTrace *lastTracePtr;
-        Tcl_Obj *initfile;
-        Ns_RWLock lock;
-        const char *script;
-        int length;
-        int epoch;
-        Tcl_Obj *modules;
-        Tcl_HashTable runTable;
-        const char **errorLogHeaders;
-        Tcl_HashTable caches;
-        Ns_Mutex cachelock;
+        const char       *library;
+        struct TclTrace  *firstTracePtr;
+        struct TclTrace  *lastTracePtr;
+        Tcl_Obj          *initfile;
+        Ns_RWLock         lock;
+        const char       *script;
+        int               length;
+        int               epoch;
+        Tcl_Obj          *modules;
+        Tcl_HashTable     runTable;
+        const char      **errorLogHeaders;
+        Tcl_HashTable     caches;
+        Ns_Mutex          cachelock;
+        uintptr_t         transactionEpoch;
 
         /*
          * The following tracks synchronization
@@ -1059,7 +1060,8 @@ typedef struct NsInterp {
      */
     Tcl_HashTable httpRequests;
 
-    bool        deleteInterp;  /* Interp should be deleted on next deallocation */
+    Ns_CacheTransactionStack cacheTransactionStack;
+    bool          deleteInterp;  /* Interp should be deleted on next deallocation */
 
 } NsInterp;
 
@@ -1118,6 +1120,9 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclCacheLappendObjCmd,
     NsTclCacheNamesObjCmd,
     NsTclCacheStatsObjCmd,
+    NsTclCacheTransactionBeginObjCmd,
+    NsTclCacheTransactionCommitObjCmd,
+    NsTclCacheTransactionRollbackObjCmd,
     NsTclCancelObjCmd,
     NsTclChanObjCmd,
     NsTclCharsetsObjCmd,

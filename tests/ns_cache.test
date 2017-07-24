@@ -342,7 +342,7 @@ test cache-7.1 {cache stats entries} -body {
     lsort [array names stats]
 } -cleanup {
     unset -nocomplain stats
-} -result {entries expired flushed hitrate hits maxsize missed pruned saved size}
+} -result {commit entries expired flushed hitrate hits maxsize missed pruned rollback saved size}
 
 test cache-7.2 {cache stats contents} -body {
     ns_cache_eval c1 k1 {return a}
@@ -494,9 +494,6 @@ test cache-10.5 {memoize flush glob} -body {
 
 
 
-
-
-
 test ns_cache-11.1 {stability} -constraints stress -body {
 
     ns_log Notice Begin cache stress test.
@@ -534,6 +531,136 @@ test ns_cache-11.1 {stability} -constraints stress -body {
 } -result {}
 
 
+
+test ns_cache-12.1 {transaction rollback} -body {
+
+    ns_cache_create trans_c1 1024
+
+    #
+    # set some value in the cache before the transactions
+    #
+    ns_cache_eval trans_c1 k1 {return 1}
+    #
+    # start the transaction
+    #
+    ns_cache_transaction_begin
+        #
+        # get some old value in the transaction
+        #
+        lappend result [ns_cache_get trans_c1 k1]
+
+        #
+        # set three values in the transaction via ns_cache_eval
+        #
+        ns_cache_eval trans_c1 k2 {return 2}
+        ns_cache_eval trans_c1 k3 {return 3}
+        lappend result [ns_cache_incr trans_c1 k4]
+
+        #
+        # check, if we can obtain the just fresh value inside the transaction
+
+        # ... via _eval
+        lappend result [ns_cache_eval trans_c1 k2 {return 2}]
+
+        # ... via _get
+        lappend result [ns_cache_get trans_c1 k2]
+        lappend result [ns_cache_get trans_c1 k3]
+
+        # get keys inside transaction
+        lappend result [ns_cache_keys trans_c1 k2]
+        lappend result [ns_cache_keys trans_c1]
+
+        # flush the value added by this transaction inside the transaction
+        lappend result [ns_cache_flush trans_c1 k3]
+
+        # increment k4 once again, get the value via ns_cache_get
+        lappend result [ns_cache_incr trans_c1 k4]
+        lappend result [ns_cache_get trans_c1 k4]
+
+        #
+        # rollback the transaction
+        #
+    ns_cache_transaction_rollback
+
+    #
+    # get the all the entries from the cache
+    #
+    lappend result [ns_cache_keys trans_c1]
+
+    #
+    # k2 should not be obtainable  (catch -> 1)
+    lappend result [catch {ns_cache_get trans_c1 k2}]
+
+} -cleanup {
+    unset -nocomplain result
+    ns_cache_flush trans_c1
+} -result {1 1 2 2 3 k2 {k1 k2 k3 k4} 1 2 2 k1 1}
+
+
+test ns_cache-12.2 {transaction commit} -body {
+
+    ns_cache_create trans_c1 1024
+
+    #
+    # set some value in the cache before the transactions
+    #
+    ns_cache_eval trans_c1 k1 {return 1}
+
+    #
+    # start the transaction
+    #
+    ns_cache_transaction_begin
+        #
+        # get some old value in the transaction
+        #
+        lappend result [ns_cache_get trans_c1 k1]
+
+        #
+        # set three values in the transaction via ns_cache_eval
+        #
+        ns_cache_eval trans_c1 k2 {return 2}
+        ns_cache_eval trans_c1 k3 {return 3}
+        lappend result [ns_cache_incr trans_c1 k4]
+
+        #
+        # check, if we can obtain the just fresh value inside the transaction
+
+        # ... via _eval
+        lappend result [ns_cache_eval trans_c1 k2 {return 2}]
+
+        # ... via _get
+        lappend result [ns_cache_get trans_c1 k2]
+        lappend result [ns_cache_get trans_c1 k3]
+
+        # get keys inside transaction
+        lappend result [ns_cache_keys trans_c1 k2]
+        lappend result [ns_cache_keys trans_c1]
+
+        # flush the value added by this transaction inside the transaction
+        lappend result [ns_cache_flush trans_c1 k3]
+
+        # increment k4 once again, get the value via ns_cache_get
+        lappend result [ns_cache_incr trans_c1 k4]
+        lappend result [ns_cache_get trans_c1 k4]
+
+        #
+        # commit the transaction
+        #
+    ns_cache_transaction_commit
+
+    #
+    # get the all the entries from the cache
+    #
+    lappend result [ns_cache_keys trans_c1]
+
+    #
+    # k2 should be obtainable (catch -> 0)
+    lappend result [catch {ns_cache_get trans_c1 k2}]
+
+} -cleanup {
+    unset -nocomplain result
+    ns_cache_flush trans_c1
+} -result {1 1 2 2 3 k2 {k1 k2 k3 k4} 1 2 2 {k1 k2 k4} 0}
 
 
 

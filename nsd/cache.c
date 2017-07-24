@@ -49,11 +49,13 @@ typedef struct Entry {
     struct Entry   *prevPtr;
     struct Cache   *cachePtr;
     Tcl_HashEntry  *hPtr;
-    Ns_Time         expires;  /* Absolute ttl timeout. */
+    Ns_Time         expires;          /* Absolute ttl timeout. */
     size_t          size;
-    int		    cost;     /* cost to compute a single entry */
-    int		    count;    /* reuse of this entry */
-    void           *value;    /* Will appear NULL for concurrent updates. */
+    int		    cost;             /* cost to compute a single entry */
+    int		    count;            /* reuse count of this entry */
+    void           *value;            /* Will appear NULL for concurrent updates. */
+    void           *uncommittedValue; /* Used for transactional mode */
+    uintptr_t       transactionEpoch; /* Used for identifying transaction */
 } Entry;
 
 /*
@@ -70,6 +72,7 @@ typedef struct Cache {
     Ns_Mutex       lock;
     Ns_Cond        cond;
     Tcl_HashTable  entriesTable;
+    uintptr_t      transactionEpoch;
 
     struct {
         unsigned long   nhit;      /* Successful gets. */
@@ -77,6 +80,8 @@ typedef struct Cache {
         unsigned long   nexpired;  /* Unsuccessful gets due to entry expiry. */
         unsigned long   nflushed;  /* Explicit flushes by user code. */
         unsigned long   npruned;   /* Evictions due to size constraint. */
+        unsigned long   ncommit;   /* number of commits. */
+        unsigned long   nrollback; /* number of rollback operations. */
     } stats;
 
     char name[1];
@@ -95,6 +100,10 @@ static void Delink(Entry *ePtr)
     NS_GNUC_NONNULL(1);
 
 static void Push(Entry *ePtr)
+    NS_GNUC_NONNULL(1);
+
+static unsigned long
+CacheTransaction(Cache *cachePtr, uintptr_t epoch, bool commit)
     NS_GNUC_NONNULL(1);
 
 
@@ -127,15 +136,17 @@ Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freePr
     cachePtr = ns_calloc(1u, sizeof(Cache) + nameLength);
     memcpy(cachePtr->name, name, nameLength + 1u);
     
-    cachePtr->freeProc       = freeProc;
-    cachePtr->maxSize        = maxSize;
-    cachePtr->currentSize    = 0u;
-    cachePtr->keys           = keys;
-    cachePtr->stats.nhit     = 0u;
-    cachePtr->stats.nmiss    = 0u;
-    cachePtr->stats.nexpired = 0u;
-    cachePtr->stats.nflushed = 0u;
-    cachePtr->stats.npruned  = 0u;
+    cachePtr->freeProc        = freeProc;
+    cachePtr->maxSize         = maxSize;
+    cachePtr->currentSize     = 0u;
+    cachePtr->keys            = keys;
+    cachePtr->stats.nhit      = 0u;
+    cachePtr->stats.nmiss     = 0u;
+    cachePtr->stats.nexpired  = 0u;
+    cachePtr->stats.nflushed  = 0u;
+    cachePtr->stats.npruned   = 0u;
+    cachePtr->stats.ncommit   = 0u;
+    cachePtr->stats.nrollback = 0u;
 
     Ns_MutexInit(&cachePtr->lock);
     Ns_MutexSetName2(&cachePtr->lock, "ns:cache", name);
@@ -192,9 +203,14 @@ Ns_CacheDestroy(Ns_Cache *cache)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_Entry *
 Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
+{
+    return Ns_CacheFindEntryT(cache, key, NULL);
+}
+
+Ns_Entry *
+Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionStack *transactionStackPtr)
 {
     Cache               *cachePtr = (Cache *) cache;
     const Tcl_HashEntry *hPtr;
@@ -214,7 +230,7 @@ Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
     } else {
         Entry *ePtr = Tcl_GetHashValue(hPtr);
 
-        if (unlikely(ePtr->value == NULL)) {
+        if (unlikely(ePtr->value == NULL && transactionStackPtr->depth == 0)) {
             /*
              * Entry is being updated by some other thread.
              */
@@ -230,14 +246,28 @@ Ns_CacheFindEntry(Ns_Cache *cache, const char *key)
             result = NULL;
 
         } else {
-            /*
-             * Entry is valid.
-             */
-            ++cachePtr->stats.nhit;
-            Delink(ePtr);
-            ePtr->count ++;
-            Push(ePtr);
-            result = (Ns_Entry *) ePtr;
+            void *value;
+
+            if (ePtr->value == NULL) {
+                value = Ns_CacheGetValueT((Ns_Entry *) ePtr, transactionStackPtr);
+                if (value == NULL) {
+                    ++cachePtr->stats.nmiss;
+                }
+            } else {
+                value = ePtr->value;
+            }
+            if (value != NULL) {
+                /*
+                 * Entry is valid.
+                 */
+                ++cachePtr->stats.nhit;
+                Delink(ePtr);
+                ePtr->count ++;
+                Push(ePtr);
+                result = (Ns_Entry *) ePtr;
+            } else {
+                result = NULL;
+            }
         }
     }
     return result;
@@ -316,10 +346,16 @@ Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_Entry *
 Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
                         const Ns_Time *timeoutPtr)
+{
+    return Ns_CacheWaitCreateEntryT(cache, key, newPtr, timeoutPtr,  NULL);
+}
+
+Ns_Entry *
+Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
+                        const Ns_Time *timeoutPtr, const Ns_CacheTransactionStack *transactionStackPtr)
 {
     Ns_Entry      *entry;
     int            isNew;
@@ -330,13 +366,13 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, const char *key, int *newPtr,
     NS_NONNULL_ASSERT(newPtr != NULL);
 
     entry = Ns_CacheCreateEntry(cache, key, &isNew);
-    if (isNew == 0 && Ns_CacheGetValue(entry) == NULL) {
+    if (isNew == 0 && Ns_CacheGetValueT(entry, transactionStackPtr) == NULL) {
         do {
             status = Ns_CacheTimedWait(cache, timeoutPtr);
             entry = Ns_CacheCreateEntry(cache, key, &isNew);
         } while (status == NS_OK
                  && isNew == 0
-                 && Ns_CacheGetValue(entry) == NULL);
+                 && Ns_CacheGetValueT(entry, transactionStackPtr) == NULL);
     }
     *newPtr = isNew;
 
@@ -395,6 +431,42 @@ Ns_CacheGetValue(const Ns_Entry *entry)
     return ((const Entry *) entry)->value;
 }
 
+void *
+Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transactionStackPtr)
+{
+    const Entry *e;
+    void        *result;
+
+    NS_NONNULL_ASSERT(entry != NULL);
+
+    e = (const Entry *)entry;
+    /*
+     * In case, there is a value, we are sure this is a committed value.
+     */
+    if (e->value != NULL) {
+        result = e->value;
+    } else {
+        /*
+         * If there is no value, it might be an ongoing ns_cache_eval in
+         * another thread or there might be an uncommitted value from the same
+         * or another thread. In these cases this function might return NULL.
+         */
+
+        result = NULL;
+        if (transactionStackPtr != NULL) {
+            unsigned int i;
+
+            for (i = 0; i < transactionStackPtr->depth; i++) {
+                if (e->transactionEpoch == transactionStackPtr->stack[i]) {
+                    result = e->uncommittedValue;
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
+
 size_t
 Ns_CacheGetSize(const Ns_Entry *entry)
 {
@@ -408,6 +480,14 @@ Ns_CacheGetExpirey(const Ns_Entry *entry)
     NS_NONNULL_ASSERT(entry != NULL);
     return &((const Entry *) entry)->expires;
 }
+
+uintptr_t
+Ns_CacheGetTransactionEpoch(const Ns_Entry *entry)
+{
+    NS_NONNULL_ASSERT(entry != NULL);
+    return ((const Entry *) entry)->transactionEpoch;
+}
+
 
 
 /*
@@ -441,16 +521,17 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 {
     NS_NONNULL_ASSERT(entry != NULL);
     NS_NONNULL_ASSERT(value != NULL);
-    Ns_CacheSetValueExpires(entry, value, size, NULL, 0, 0u);
+    (void)Ns_CacheSetValueExpires(entry, value, size, NULL, 0, 0u, 0u);
 }
 
-void
+int
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        const Ns_Time *timeoutPtr, int cost,
-                        size_t maxSize)
+                        const Ns_Time *timeoutPtr, int cost, size_t maxSize,
+                        uintptr_t transactionEpoch)
 {
     Entry *ePtr;
     Cache *cachePtr;
+    int    result;
 
     NS_NONNULL_ASSERT(entry != NULL);
 
@@ -458,7 +539,15 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
     cachePtr = ePtr->cachePtr;
 
     Ns_CacheUnsetValue(entry);
-    ePtr->value = value;
+
+    if (transactionEpoch == 0) {
+        ePtr->value = value;
+        result = 0;
+    } else {
+        ePtr->uncommittedValue = value;
+        ePtr->transactionEpoch = transactionEpoch;
+        result = 1;
+    }
     ePtr->size = size;
     ePtr->cost = cost;
     ePtr->count = 1;
@@ -495,6 +584,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
             ++cachePtr->stats.npruned;
         }
     }
+    return result;
 }
 
 
@@ -650,9 +740,14 @@ Ns_CacheFlush(Ns_Cache *cache)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_Entry *
 Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
+{
+    return Ns_CacheFirstEntryT(cache, search, NULL);
+}
+
+Ns_Entry *
+Ns_CacheFirstEntryT(Ns_Cache *cache, Ns_CacheSearch *search, const Ns_CacheTransactionStack *transactionStackPtr)
 {
     Cache               *cachePtr = (Cache *) cache;
     const Tcl_HashEntry *hPtr;
@@ -666,7 +761,7 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
     while (hPtr != NULL) {
         Ns_Entry  *entry = Tcl_GetHashValue(hPtr);
 
-        if (Ns_CacheGetValue(entry) != NULL) {
+        if (Ns_CacheGetValueT(entry, transactionStackPtr) != NULL) {
             if (!Expired((Entry *) entry, &search->now)) {
                 result = entry;
                 break;
@@ -677,6 +772,116 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
         hPtr = Tcl_NextHashEntry(&search->hsearch);
     }
     return result;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheCommitEntries --
+ *
+ *      Commit all cache entries at the end of a successful transaction.
+ *
+ * Results:
+ *      number of committed entries.
+ *
+ * Side effects:
+ *      Storing value like for transaction less cache entries.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned long
+Ns_CacheCommitEntries(Ns_Cache *cache, uintptr_t epoch)
+{
+    unsigned long  result;
+    Cache         *cachePtr;
+
+    NS_NONNULL_ASSERT(cache != NULL);
+
+    cachePtr = (Cache *) cache;
+    result = CacheTransaction(cachePtr, epoch, NS_TRUE);
+    cachePtr->stats.ncommit += result;
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheRollbackEntries --
+ *
+ *      Rollback all cache entries at the end of a successful transaction.
+ *
+ * Results:
+ *      Number of rolled-back entries.
+ *
+ * Side effects:
+ *      Freeing unneeded entries.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned long
+Ns_CacheRollbackEntries(Ns_Cache *cache, uintptr_t epoch)
+{
+    unsigned long  result;
+    Cache         *cachePtr;
+
+    NS_NONNULL_ASSERT(cache != NULL);
+
+    cachePtr = (Cache *) cache;
+    result = CacheTransaction(cachePtr, epoch, NS_FALSE);
+    cachePtr->stats.nrollback += result;
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CacheTransaction --
+ *
+ *      Helper function to iterate over caches and either commit or roll back
+ *      write operations in the caches.
+ *
+ * Results:
+ *      Number of modified entries.
+ *
+ * Side effects:
+ *      Potentially freeing unneeded entries.
+ *
+ *----------------------------------------------------------------------
+ */
+static unsigned long
+CacheTransaction(Cache *cachePtr, uintptr_t epoch, bool commit)
+{
+    Ns_CacheSearch       search;
+    const Tcl_HashEntry *hPtr;
+    unsigned long        count = 0u;
+
+    NS_NONNULL_ASSERT(cachePtr != NULL);
+
+    hPtr = Tcl_FirstHashEntry(&cachePtr->entriesTable, &search.hsearch);
+    while (hPtr != NULL) {
+        Ns_Entry  *entry = Tcl_GetHashValue(hPtr);
+        Entry     *e = (Entry *) entry;
+
+        if (e->value == NULL && e->transactionEpoch == epoch) {
+
+            if (commit) {
+                e->value = e->uncommittedValue;
+                e->uncommittedValue = NULL;
+                e->transactionEpoch = 0u;
+            } else {
+                ((Entry *) entry)->cachePtr->stats.nexpired++;
+                Ns_CacheDeleteEntry(entry);
+            }
+            count ++;
+        }
+        hPtr = Tcl_NextHashEntry(&search.hsearch);
+    }
+    return count;
 }
 
 
@@ -700,6 +905,12 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 Ns_Entry *
 Ns_CacheNextEntry(Ns_CacheSearch *search)
 {
+    return Ns_CacheNextEntryT(search, NULL);
+}
+
+Ns_Entry *
+Ns_CacheNextEntryT(Ns_CacheSearch *search, const Ns_CacheTransactionStack *transactionStackPtr)
+{
     const Tcl_HashEntry  *hPtr;
     Ns_Entry             *result = NULL;
 
@@ -709,7 +920,7 @@ Ns_CacheNextEntry(Ns_CacheSearch *search)
     while (hPtr != NULL) {
         Ns_Entry *entry = Tcl_GetHashValue(hPtr);
 
-        if (Ns_CacheGetValue(entry) != NULL) {
+        if (Ns_CacheGetValueT(entry, transactionStackPtr) != NULL) {
             if (!Expired((Entry *) entry, &search->now)) {
                 result = entry;
                 break;
@@ -932,12 +1143,13 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
                "flushed %lu hits %lu missed %lu hitrate %lu "
-               "expired %lu pruned %lu saved %.6f",
+               "expired %lu pruned %lu commit %lu rollback %lu saved %.6f",
                (unsigned long) cachePtr->maxSize,
                (unsigned long) cachePtr->currentSize,
                cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,
                cachePtr->stats.nhit, cachePtr->stats.nmiss, hitrate,
 			    cachePtr->stats.nexpired, cachePtr->stats.npruned,
+                            cachePtr->stats.ncommit, cachePtr->stats.nrollback,
 			    savedCost);
 }
 
@@ -999,6 +1211,7 @@ Ns_CacheGetMaxSize(const Ns_Cache *cache)
     
     return ((const Cache *) cache)->maxSize;
 }
+
 
 
 /*
