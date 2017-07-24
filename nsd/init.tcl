@@ -220,11 +220,12 @@ ns_ictl trace allocate ns_init
 ns_ictl trace deallocate ns_cleanup
 
 proc ns_cleanup {} {
-    ns_cleanupchans;  # Close files
-    ns_cleanupvars;   # Destroy global variables
-    ns_set  cleanup;  # Destroy non-shared sets
-    ns_http cleanup;  # Abort any http requests
-    ns_ictl cleanup;  # Run depreciated 1-shot Ns_TclRegisterDefer's.
+    ns_cache_transaction_rollback -all ;# in case, ns_cache_transactions are not terminated correctly, do it now
+    ns_cleanupchans      ;# Close files
+    ns_cleanupvars       ;# Destroy global variables
+    ns_set  cleanup      ;# Destroy non-shared sets
+    ns_http cleanup      ;# Abort any http requests
+    ns_ictl cleanup      ; # Run depreciated 1-shot Ns_TclRegisterDefer's.
 }
 
 #
