@@ -68,7 +68,7 @@ static bool noGlobChars(const char *pattern)
 static TclCache *TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeoutPtr, Ns_Time *expPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
-static Tcl_Obj*GetCacheNames(NsServer *servPtr)
+static Tcl_Obj*GetCacheNames(NsServer *servPtr, bool withUncommittedEntries)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 static int
@@ -104,7 +104,7 @@ static Ns_ObjvProc ObjvCache;
  */
 
 static Tcl_Obj*
-GetCacheNames(NsServer *servPtr) {
+GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
     Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
@@ -118,7 +118,15 @@ GetCacheNames(NsServer *servPtr) {
          ) {
         const char *key = Tcl_GetHashKey(&servPtr->tcl.caches, hPtr);
 
-        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
+        if (withUncommittedEntries) {
+            const TclCache *cPtr = Tcl_GetHashValue(hPtr);
+
+            if (Ns_CacheGetNrUncommitedEntries(cPtr->cache) > 0) {
+                Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
+            }
+        } else {
+            Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
+        }
     }
     Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
@@ -709,7 +717,7 @@ NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int UNUSED(objc
     const NsInterp      *itPtr = clientData;
     NsServer            *servPtr = itPtr->servPtr;
 
-    Tcl_SetObjResult(interp, GetCacheNames(servPtr));
+    Tcl_SetObjResult(interp, GetCacheNames(servPtr, NS_FALSE));
     return TCL_OK;
 }
 
@@ -1353,7 +1361,7 @@ CacheTransactionFinishObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
 
         Ns_GetTime(&startTime);
 
-        listObj = GetCacheNames(itPtr->servPtr);
+        listObj = GetCacheNames(itPtr->servPtr, NS_TRUE);
         Tcl_IncrRefCount(listObj);
 
         if (all == (int)NS_FALSE) {
@@ -1472,7 +1480,6 @@ CacheTransactionFinish(NsServer *servPtr, const char *cacheName, uintptr_t trans
 static int
 CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsigned long *countPtr)
 {
-    unsigned int   i;
     uintptr_t      transactionEpoch;
     int            result = TCL_OK;
     Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
@@ -1496,6 +1503,7 @@ CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsign
     if (transactionStackPtr->uncommitted[transactionStackPtr->depth] > 0) {
         Tcl_Obj      **lobjv;
         int            lobjc;
+        unsigned int   i;
 
         Tcl_ListObjGetElements(itPtr->interp, listObj, &lobjc, &lobjv);
         for (i = 0u; i < (unsigned int)lobjc; i++) {
