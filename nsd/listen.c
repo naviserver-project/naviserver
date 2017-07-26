@@ -105,7 +105,7 @@ NsInitListen(void)
 NS_SOCKET
 Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, bool bind, void *arg)
 {
-    NS_SOCKET             bindsock = NS_INVALID_SOCKET, sock = NS_INVALID_SOCKET;
+    NS_SOCKET             sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr      *saPtr = (struct sockaddr *)&sa;
     Ns_ReturnCode         status = NS_OK;
@@ -117,6 +117,7 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
     Ns_Log(Debug, "Ns_SockListenCallback: called with addr <%s> and port %hu", addr, port);
 
     if (Ns_GetSockAddr(saPtr, addr, port) == NS_OK) {
+        NS_SOCKET  bindsock;
 
         //Ns_SockaddrSetPort(saPtr, 0u);
         bindsock = Ns_SockBind(saPtr, NS_FALSE);
@@ -269,64 +270,63 @@ Ns_SockPortBound(unsigned short port)
 static bool
 ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 {
-    struct NS_SOCKADDR_STORAGE sa;
-    socklen_t           len;
-    Tcl_HashTable      *tablePtr;
     NS_SOCKET           newSock;
     bool                success;
 
-    tablePtr = arg;
-
     if (why == (unsigned int)NS_SOCK_EXIT) {
         (void) ns_sockclose(sock);
-        return NS_FALSE;
+        newSock = NS_INVALID_SOCKET;
+    } else {
+        newSock = Ns_SockAccept(sock, NULL, NULL);
     }
 
-    newSock = Ns_SockAccept(sock, NULL, NULL);
-
     if (likely(newSock != NS_INVALID_SOCKET)) {
-        const Tcl_HashEntry *hPtr;
-        const ListenData    *ldPtr;
-        int                  retVal;
-        char                 ipString[NS_IPADDR_SIZE] = {'\0'};
+        struct NS_SOCKADDR_STORAGE sa;
+        socklen_t  len = (socklen_t)sizeof(sa);
+        int        retVal;
 
         (void) Ns_SockSetBlocking(newSock);
-        len = (socklen_t)sizeof(sa);
         retVal = getsockname(newSock, (struct sockaddr *) &sa, &len);
+
         if (retVal == -1) {
             Ns_Log(Warning, "listencallback: can't obtain socket info %s", ns_sockstrerror(ns_sockerrno));
             (void) ns_sockclose(sock);
-            return NS_FALSE;
-        }
-        ldPtr = NULL;
+            success = NS_FALSE;
 
-        (void)ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
-        Ns_Log(Debug, "ListenCallback: ipstring <%s>", ipString);
-
-        Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(tablePtr, ipString);
-        if (hPtr == NULL) {
-            hPtr = Tcl_FindHashEntry(tablePtr, NS_IP_UNSPECIFIED);
-        }
-        if (hPtr != NULL) {
-            ldPtr = Tcl_GetHashValue(hPtr);
-        }
-        Ns_MutexUnlock(&lock);
-
-        Ns_LogSockaddr(Notice, "... query IP + PROTO", (const struct sockaddr *) &sa);
-
-        if (ldPtr == NULL) {
-            /*
-             * There was no hash entry for the listen callback
-             */
-            int result = ns_sockclose(newSock);
-            success = (result == 0) ? NS_TRUE : NS_FALSE;
         } else {
-            /*
-             * The hash entry was found, so fire the callback (e.g. exec Tcl
-             * code).
-             */
-            success = (*ldPtr->proc) (newSock, ldPtr->arg, why);
+            const Tcl_HashEntry *hPtr;
+            Tcl_HashTable       *tablePtr = arg;
+            const ListenData    *ldPtr = NULL;
+            char                 ipString[NS_IPADDR_SIZE] = {'\0'};
+
+            (void)ns_inet_ntop((struct sockaddr *)&sa, ipString, NS_IPADDR_SIZE);
+            Ns_Log(Debug, "ListenCallback: ipstring <%s>", ipString);
+
+            Ns_MutexLock(&lock);
+            hPtr = Tcl_FindHashEntry(tablePtr, ipString);
+            if (hPtr == NULL) {
+                hPtr = Tcl_FindHashEntry(tablePtr, NS_IP_UNSPECIFIED);
+            }
+            if (hPtr != NULL) {
+                ldPtr = Tcl_GetHashValue(hPtr);
+            }
+            Ns_MutexUnlock(&lock);
+
+            Ns_LogSockaddr(Notice, "... query IP + PROTO", (const struct sockaddr *) &sa);
+
+            if (ldPtr == NULL) {
+                /*
+                 * There was no hash entry for the listen callback
+                 */
+                int result = ns_sockclose(newSock);
+                success = (result == 0) ? NS_TRUE : NS_FALSE;
+            } else {
+                /*
+                 * The hash entry was found, so fire the callback (e.g. exec Tcl
+                 * code).
+                 */
+                success = (*ldPtr->proc) (newSock, ldPtr->arg, why);
+            }
         }
     } else {
         success = NS_FALSE;

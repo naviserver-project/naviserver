@@ -109,6 +109,7 @@ static Tcl_ObjCmdProc   ConnChanListenObjCmd;
 static Tcl_ObjCmdProc   ConnChanOpenObjCmd;
 static Tcl_ObjCmdProc   ConnChanReadObjCmd;
 static Tcl_ObjCmdProc   ConnChanWriteObjCmd;
+static Tcl_ObjCmdProc   ConnChanStartTLSObjCmd;
 
 static Ns_SockProc CallbackFree;
 
@@ -1076,6 +1077,112 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
     Tcl_DecrRefCount(listObj);
 
     return (result == TCL_OK);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanStartTLSObjCmd --
+ *
+ *    Implements the "ns_connchan starttls" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanStartTLSObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    char       *name;
+    int         result = TCL_OK;
+    Ns_ObjvSpec args[] = {
+        {"channel", Ns_ObjvString, &name,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
+        
+        if (unlikely(connChanPtr == NULL)) {
+            result = TCL_ERROR;
+        } else {
+            /*
+             * The provided channel name exists.
+             */
+            NS_TLS_SSL_CTX *ctx;
+            NS_TLS_SSL     *ssl;
+
+#if 0            
+            /* 
+             * For the time being, just pass NULL
+             * structures. Probably, we could create the
+             * SSLcontext.
+             */
+            result = Ns_TLS_CtxClientCreate(interp,
+                                            NULL /*cert*/, NULL /*caFile*/,
+                                            NULL /* caPath*/, NS_FALSE /*verify*/,
+                                            &ctx);
+                    
+            if (likely(result == TCL_OK)) {
+                result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, ctx);
+                        
+                /*
+                 * For the time being, we create/delete the ctx in
+                 * an eager fashion. We could probably make it
+                 * reusable and keep it around.
+                 */
+                if (ctx != NULL)  {
+                    Ns_TLS_CtxFree(ctx);
+                }
+            }
+#endif
+
+#if 0            
+            result = Ns_TLS_CtxServerCreate(
+                                            interp,
+                                            conn->config->certificate,
+                                            conn->config->cafile,
+                                            conn->config->capath,
+                                            0 /*verify*/,
+                                            conn->config->ciphers,
+                                            &ctx);
+            Ns_Log(Notice, "startTLS-tls-server-create result=%d", result);
+
+            if (likely(result == TCL_OK)) {
+                /*
+                 * Establish the SSL/TLS connection.
+                 */
+                result = Ns_TLS_SSLAccept(conn->interp, conn->sock->sock, ctx, &ssl);
+                Ns_Log(SmtpdDebug, "STARTTLS-ssl-accept result=%d", result);
+                if (result != TCL_OK) {
+                    Ns_Log(SmtpdDebug, "STARTTLS-ssl-accept failed");
+                    goto error;
+                }
+                conn->sock->arg = ssl;
+            } else {
+                goto error;
+            }
+            Ns_Log(SmtpdDebug, "STARTTLS-ssl-command result=%d", result);
+
+            conn->flags &= ~(SMTPD_GOTHELO);
+            conn->flags |= (SMTPD_GOTSTARTTLS);
+
+            continue;
+#endif
+        }
+    }
+    return result;
 }
 
 /*

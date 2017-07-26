@@ -592,20 +592,15 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
         ePtr->value = value;
         result = 0;
     } else {
-        Tcl_HashEntry *hPtr;
         int            isNew;
 
         ePtr->uncommittedValue = value;
         ePtr->transactionEpoch = transactionEpoch;
 
-        hPtr = Tcl_CreateHashEntry(&cachePtr->uncommittedTable, ePtr, &isNew);
-
-        fprintf(stderr, "... add entry %p (cache %s value %s) to pending table (pending %d)\n",
-                (void*)ePtr, cachePtr->name, value, cachePtr->uncommittedTable.numEntries);
-
+        (void) Tcl_CreateHashEntry(&cachePtr->uncommittedTable, ePtr, &isNew);
         if (unlikely(isNew == 0)) {
             Ns_Log(Warning, "cache %s: adding entry %p with value '%s' multiple times to pending table",
-                   ePtr->cachePtr->name, (void *)ePtr, value);
+                   ePtr->cachePtr->name, (void *)ePtr, (char *)value);
         }
 
         result = 1;
