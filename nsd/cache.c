@@ -666,15 +666,14 @@ void
 Ns_CacheUnsetValue(Ns_Entry *entry)
 {
     Entry *ePtr;
-    void *value;
 
     NS_NONNULL_ASSERT(entry != NULL);
 
     ePtr = (Entry *) entry;
-    value = ePtr->value;
 
-    if (value != NULL) {
+    if (ePtr->value != NULL || ePtr->uncommittedValue != NULL) {
         Cache *cachePtr;
+        void  *value;
 
 	/*
 	 * In case, the freeProc() wants to allocate itself
@@ -684,12 +683,19 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 	 * ePtr->value to NULL before it is actually deallocated and
 	 * call the freeProc after updating all entry members.
 	 */
+        if (likely(ePtr->value != NULL)) {
+            value = ePtr->value;
+            ePtr->value = NULL;
+        } else {
+            value = ePtr->uncommittedValue;
+            ePtr->uncommittedValue = NULL;
+        }
+
         cachePtr = ePtr->cachePtr;
         cachePtr->currentSize -= ePtr->size;
 	ePtr->size = 0u;
-        ePtr->value = NULL;
         ePtr->expires.sec = ePtr->expires.usec = 0;
-		
+
         if (cachePtr->freeProc != NULL) {
             (*cachePtr->freeProc)(value);
         }
