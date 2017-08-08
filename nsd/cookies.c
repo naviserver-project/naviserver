@@ -40,20 +40,23 @@
  * Local functions defined in this file.
  */
 
-static int SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
+static int GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+static int GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static bool DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
-typedef char* (CookieParser)(Ns_DString *dest, char *chars, const char *name, size_t nameLen)
+typedef char* (CookieParser)(Ns_DString *dest, char *chars, const char *name, size_t nameLen, char **nextPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static CookieParser GetFromCookieHeader;
 static CookieParser GetFromSetCookieHeader;
 
-static void CopyCookieValue(Tcl_DString *dest, char *valueStart)
+static char *CopyCookieValue(Tcl_DString *dest, char *valueStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -73,7 +76,7 @@ static void CopyCookieValue(Tcl_DString *dest, char *valueStart)
  *----------------------------------------------------------------------
  */
 
-static void
+static char *
 CopyCookieValue(Tcl_DString *dest, char *valueStart)
 {
     char save, *q;
@@ -82,7 +85,10 @@ CopyCookieValue(Tcl_DString *dest, char *valueStart)
     NS_NONNULL_ASSERT(valueStart != NULL);
                     
     if (*valueStart == '"') {
-        ++valueStart; /* advance past optional quote mark */
+        /*
+         * Advance past optional quote.
+         */
+        ++valueStart;
     }
     q = valueStart;
     while (*q != '"' && *q != ';' && *q != '\0') {
@@ -92,6 +98,15 @@ CopyCookieValue(Tcl_DString *dest, char *valueStart)
     *q = '\0';
     Ns_CookieDecode(dest, valueStart, NULL);
     *q = save;
+
+    /*
+     * Advance past delimiter.
+     */
+    while (*q == '"' || *q == ';') {
+        q++;
+    }
+
+    return q;
 }
 
 
@@ -121,7 +136,7 @@ CopyCookieValue(Tcl_DString *dest, char *valueStart)
  */
 
 static char *
-GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t nameLen)
+GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t nameLen, char **nextPtr)
 {
     char *cookieStart = NULL, *p = chars;
 
@@ -151,7 +166,10 @@ GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t name
                 cookieStart = p;
                 if (dest != NULL) {
                     q++; /* advance past equals sign */
-                    CopyCookieValue(dest, q);
+                    q = CopyCookieValue(dest, q);
+                    if (nextPtr != NULL) {
+                        *nextPtr = q;
+                    }
                 }
                 break;
             }
@@ -199,7 +217,7 @@ GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t name
  */
 
 static char *
-GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t nameLen) {
+GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t nameLen, char **nextPtr) {
     char *cookieStart = NULL, *p = chars;
 
     NS_NONNULL_ASSERT(chars != NULL);
@@ -225,7 +243,10 @@ GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t n
             cookieStart = p;
             if (dest != NULL) {
                 q++; /* advance past equals sign */
-                CopyCookieValue(dest, q);
+                q = CopyCookieValue(dest, q);
+                if (nextPtr != NULL) {
+                    *nextPtr = q;
+                }
             }
         }
     }
@@ -237,9 +258,9 @@ GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t n
 /*
  *----------------------------------------------------------------------
  *
- * SearchFirstCookie --
+ * GetFirstNamedCookie --
  *
- *      Search for a coockie with the given name in the given set and
+ *      Search for a cookie with the given name in the given set and
  *      return the first hit.
  *
  * Results:
@@ -253,7 +274,7 @@ GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name, size_t n
  */
 
 static int 
-SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name) 
+GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name)
 {
     int      index = -1;
     size_t   nameLen, i;
@@ -266,13 +287,13 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
     nameLen = strlen(name);
 
     cookieParser = (*setName == 'c') ? GetFromCookieHeader : GetFromSetCookieHeader;
-    
+
     for (i = 0u; i < hdrs->size; ++i) {
         if (strcasecmp(hdrs->fields[i].name, setName) == 0) {
             /*
              * We have the right header.
              */
-            if ((*cookieParser)(dest, hdrs->fields[i].value, name, nameLen) != NULL) {
+            if ((*cookieParser)(dest, hdrs->fields[i].value, name, nameLen, NULL) != NULL) {
                 /*
                  * We found the result.
                  */
@@ -283,6 +304,64 @@ SearchFirstCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, con
     }
 
     return index;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAllNamedCookies --
+ *
+ *      Search for a cookie with the given name in the given set and
+ *      return all hits.
+ *
+ * Results:
+ *      Number of cookies with the given name
+ *
+ * Side effects:
+ *      Update the first argument with a list of cookie values
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, const char *name)
+{
+    int           count = 0;
+    size_t        nameLen, i;
+    CookieParser *cookieParser;
+
+    NS_NONNULL_ASSERT(dest != NULL);
+    NS_NONNULL_ASSERT(hdrs != NULL);
+    NS_NONNULL_ASSERT(setName != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+
+    nameLen = strlen(name);
+    cookieParser = (*setName == 'c') ? GetFromCookieHeader : GetFromSetCookieHeader;
+
+    for (i = 0u; i < hdrs->size; ++i) {
+        if (strcasecmp(hdrs->fields[i].name, setName) == 0) {
+            char  *toParse;
+
+            /*
+             * We have the right header, parse the string;
+             */
+            for (toParse = hdrs->fields[i].value; *toParse != '\0'; ) {
+                Ns_DString cookie;
+
+                Ns_DStringInit(&cookie);
+                if ((*cookieParser)(&cookie, toParse, name, nameLen, &toParse) != NULL) {
+                    /*
+                     * We found the named cookie;
+                     */
+                    count ++;
+                    Tcl_DStringAppendElement(dest, cookie.string);
+                }
+                Ns_DStringFree(&cookie);
+            }
+        }
+        break;
+    }
+
+    return count;
 }
 
 
@@ -312,7 +391,7 @@ DeleteNamedCookies(Ns_Set *hdrs, const char *setName, const char *name)
     NS_NONNULL_ASSERT(name != NULL);
 
     for (;;) {
-	int idx = SearchFirstCookie(NULL, hdrs, setName, name);
+	int idx = GetFirstNamedCookie(NULL, hdrs, setName, name);
 	if (idx != -1) {
 	    Ns_SetDelete(hdrs, idx);
 	    success = NS_TRUE;
@@ -472,7 +551,7 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(name != NULL);
       
-    idx = SearchFirstCookie(dest, Ns_ConnHeaders(conn), "cookie", name);
+    idx = GetFirstNamedCookie(dest, Ns_ConnHeaders(conn), "cookie", name);
     
     return idx != -1 ? Ns_DStringValue(dest) : NULL;
 }
@@ -591,9 +670,10 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char          *nameString;
     Tcl_Obj       *defaultObj = NULL;
     int            status = TCL_OK;
-    int            withSetCookies = (int)NS_FALSE;
+    int            withSetCookies = (int)NS_FALSE, withAll = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
+        {"-all",                 Ns_ObjvBool,  &withAll, NULL},
         {"-include_set_cookies", Ns_ObjvBool,  &withSetCookies, NULL},
         {"--",                   Ns_ObjvBreak, NULL, NULL},
         {NULL, NULL,  NULL, NULL}
@@ -608,17 +688,26 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         || NsConnRequire(interp, &conn) != NS_OK) {
         status = TCL_ERROR;
 
+    } else if (withSetCookies == (int)NS_TRUE && withAll == (int)NS_TRUE) {
+        Ns_TclPrintfResult(interp, "%s", "invalid combination of flags -include_set_cookies and -all");
+        status = TCL_ERROR;
+
     } else {
         Ns_DString     ds;
         int            idx = -1;
 
         Ns_DStringInit(&ds);
 
-        if (withSetCookies == (int)NS_TRUE) {
-            idx = SearchFirstCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", nameString);
-        }
-        if (idx == -1) {
-            idx = SearchFirstCookie(&ds, Ns_ConnHeaders(conn), "cookie", nameString);
+        if (withAll == (int)NS_TRUE) {
+            idx = GetAllNamedCookies(&ds, Ns_ConnHeaders(conn), "cookie", nameString);
+
+        } else {
+            if (withSetCookies == (int)NS_TRUE) {
+                idx = GetFirstNamedCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", nameString);
+            }
+            if (idx == -1) {
+                idx = GetFirstNamedCookie(&ds, Ns_ConnHeaders(conn), "cookie", nameString);
+            }
         }
     
         if (idx != -1) {

@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test cookie-1.1 {basic syntax} -body {
     ns_getcookie
-} -returnCodes error -result {wrong # args: should be "ns_getcookie ?-include_set_cookies include_set_cookies? ?--? name ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_getcookie ?-all all? ?-include_set_cookies include_set_cookies? ?--? name ?default?"}
 
 test cookie-1.2 {basic syntax} -body {
     ns_setcookie
@@ -271,6 +271,47 @@ test cookie-4.7 {get missing cookie} -setup {
     ns_unregister_op GET /cookie-4.7
 } -result {200 {foo="foovalue"; HttpOnly} {no matching cookie}}
 
+
+test cookie-4.8 {get all named cookies, single cookie} -setup {
+    ns_register_proc GET /cookie-4.8 {
+        ns_return 200 text/plain [ns_getcookie -all t x]
+    }
+} -body {
+    nstest::http -setheaders {Cookie x=\"hello\"} -getbody 1 GET /cookie-4.8
+} -cleanup {
+    ns_unregister_op GET /cookie-4.8
+} -result {200 hello}
+
+
+test cookie-4.9a {get all named cookies, multiple cookies} -setup {
+    ns_register_proc GET /cookie-4.9 {
+        ns_return 200 text/plain [ns_getcookie -all t x]
+    }
+} -body {
+    nstest::http -setheaders {Cookie {x="hello"; x="world"}} -getbody 1 GET /cookie-4.9
+} -cleanup {
+    ns_unregister_op GET /cookie-4.9
+} -result {200 {hello world}}
+
+test cookie-4.9b {get all named cookies, multiple cookies, skip} -setup {
+    ns_register_proc GET /cookie-4.9 {
+        ns_return 200 text/plain [ns_getcookie -all t x]
+    }
+} -body {
+    nstest::http -setheaders {Cookie {x=hello; y="njet"; x=world}} -getbody 1 GET /cookie-4.9
+} -cleanup {
+    ns_unregister_op GET /cookie-4.9
+} -result {200 {hello world}}
+
+test cookie-4.9c {get all named cookies, multiple cookies, no spaces, terminator} -setup {
+    ns_register_proc GET /cookie-4.9 {
+        ns_return 200 text/plain [ns_getcookie -all t x]
+    }
+} -body {
+    nstest::http -setheaders {Cookie {x=hello;y=njet;x=world;}} -getbody 1 GET /cookie-4.9
+} -cleanup {
+    ns_unregister_op GET /cookie-4.9
+} -result {200 {hello world}}
 
 
 #
