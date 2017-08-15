@@ -5363,7 +5363,11 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                                Tcl_GetString(driverObj));
             result = TCL_ERROR;
 
-        } else if (objc == 4) {
+        }
+    }
+    if (result == TCL_OK) {
+        assert(wrPtr != NULL);
+        if (objc == 4) {
             /*
              * The optional argument was provided.
              */
@@ -6030,8 +6034,11 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                 const char    *query;
                 Tcl_DString    ds, *dsPtr = &ds;
                 Request       *reqPtr;
-                Sock          *sockPtr = SockNew(drvPtr);
+                Sock          *sockPtr;
 
+                assert(drvPtr != NULL);
+
+                sockPtr = SockNew(drvPtr);
                 sockPtr->sock = sock;
                 sockPtr->servPtr  = drvPtr->servPtr;
                 if (sockPtr->servPtr == NULL) {
