@@ -45,7 +45,7 @@ if {1} {
             package require XOTcl 2
             package require nx::serializer
             namespace import -force ::xotcl::*
-            ns_log notice "XOTcl [package require XOTcl 2] loaded"
+            ns_log notice "XOTcl [package require XOTcl 2] loaded featuring: [array get ::nsf::config]"
         }]} {
             # We could not load XOTcl 2; fall back and try to load XOTcl 1
             set xotcl 1
