@@ -1150,9 +1150,6 @@ Ns_ConnSockContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *
 Ns_ConnDriverName(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
-NS_EXTERN void
-Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
-
 NS_EXTERN Ns_ReturnCode
 Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -3377,8 +3374,10 @@ NS_EXTERN int
 ns_pipe(int *fds)
     NS_GNUC_NONNULL(1);
 
+#ifdef _WIN32
 NS_EXTERN int
 ns_mkstemp(char *charTemplate);
+#endif
 
 NS_EXTERN int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
