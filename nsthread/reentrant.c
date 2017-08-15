@@ -359,14 +359,12 @@ ns_strtok(char *str, const char *sep)
 
     Tls *tlsPtr = GetTls();
 
-    NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(sep != NULL);
 
     return strtok_s(str, sep, &tlsPtr->stbuf);
 
 #elif defined(_WIN32)
 
-    NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(sep != NULL);
     return strtok(str, sep);
 
@@ -374,7 +372,6 @@ ns_strtok(char *str, const char *sep)
 
     Tls *tlsPtr = GetTls();
 
-    NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(sep != NULL);
     return strtok_r(str, sep, &tlsPtr->stbuf);
 
