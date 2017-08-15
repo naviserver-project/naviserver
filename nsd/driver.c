@@ -5404,7 +5404,8 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                      int objc, Tcl_Obj *CONST* objv)
 {
     int          boolValue, result = TCL_OK;
     Tcl_Obj     *driverObj;
@@ -5459,7 +5460,8 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *----------------------------------------------------------------------
  */
 int
-NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
+                  int objc, Tcl_Obj *CONST* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"list",       WriterListObjCmd},
