@@ -125,7 +125,7 @@ ns_inet_ntoa(struct sockaddr *saPtr)
     Tls *tlsPtr = GetTls();
     union {
         unsigned int i;
-    	unsigned char b[4];
+        unsigned char b[4];
     } addr4;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
