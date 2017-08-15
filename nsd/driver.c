@@ -4674,7 +4674,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (Conn *)conn;
-    
+
     if (unlikely(connPtr->sockPtr == NULL)) {
         Ns_Log(Warning,
                "NsWriterQueue: called without sockPtr size %" PRIdz " bufs %d flags %.6x stream %.6x chan %p fd %d",
@@ -4706,7 +4706,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     assert(wrPtr != NULL);
-        
+
     if (((connPtr->flags & NS_CONN_STREAM) != 0u) || connPtr->fd > 0) {
         bool        first = NS_FALSE;
         size_t      wrote = 0u;
@@ -4722,7 +4722,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         } else {
 
             Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
-        
+
             if (connPtr->fd == 0) {
                 /*
                  * Create a new temporary spool file.
@@ -4731,7 +4731,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                 fd = connPtr->fd = Ns_GetTemp();
 
                 Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", fd);
-                
+
             } else {
                 /*
                  * Reuse previously created spool file.
@@ -4741,7 +4741,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                     Ns_Log(Notice,
                            "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
                     status = NS_ERROR;
-                    
+
                 } else {
                     Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
                     (void)ns_lseek(connPtr->fd, 0, SEEK_END);
@@ -5421,7 +5421,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
 
         if (unlikely(wrPtr == NULL)) {
-            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
+            Ns_TclPrintfResult(interp, "no writer configured for driver '%s'",
                                Tcl_GetString(driverObj));
             result = TCL_ERROR;
 
