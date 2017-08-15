@@ -337,7 +337,7 @@ GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, co
     nameLen = strlen(name);
     cookieParser = (*setName == 'c') ? GetFromCookieHeader : GetFromSetCookieHeader;
 
-    for (i = 0u; i < hdrs->size; ++i) {
+    for (i = 0u; i < hdrs->size; i++) {
         if (strcasecmp(hdrs->fields[i].name, setName) == 0) {
             char  *toParse;
 
@@ -357,8 +357,8 @@ GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName, co
                 }
                 Ns_DStringFree(&cookie);
             }
+            break;
         }
-        break;
     }
 
     return count;
