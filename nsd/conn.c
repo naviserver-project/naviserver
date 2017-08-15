@@ -1414,6 +1414,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return result;
     }
 
+    assert(connPtr != NULL);
+
     request = &connPtr->request;
     switch (opt) {
 
