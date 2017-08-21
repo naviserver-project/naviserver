@@ -232,7 +232,9 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
     } else {
         Entry *ePtr = Tcl_GetHashValue(hPtr);
 
-        if (unlikely(ePtr->value == NULL && transactionStackPtr->depth == 0)) {
+        if (unlikely(ePtr->value == NULL
+                     && (transactionStackPtr == NULL || transactionStackPtr->depth == 0)
+                     )) {
             /*
              * Entry is being updated by some other thread.
              */
