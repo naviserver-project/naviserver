@@ -5346,6 +5346,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 {
     int          intValue = -1, result = TCL_OK;
     Tcl_Obj     *driverObj;
+    DrvWriter   *wrPtr;
     Ns_ObjvSpec  args[] = {
         {"driver", Ns_ObjvObj, &driverObj, NULL},
         {"?value", Ns_ObjvInt, &intValue, NULL},
@@ -5356,7 +5357,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         result = TCL_ERROR;
 
     } else {
-        DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
+        wrPtr = DriverWriterFromObj(driverObj);
 
         if (unlikely(wrPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
