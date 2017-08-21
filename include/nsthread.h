@@ -364,9 +364,9 @@ typedef struct DIR_ *DIR;
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
  * the time being, although the use of SOCKET should be deprecated.
  */
-#ifndef SOCKET
-# define SOCKET NS_SOCKET
-#endif
+# ifndef SOCKET
+#  define SOCKET NS_SOCKET
+# endif
 
 typedef int ns_sockerrno_t;
 
@@ -408,28 +408,28 @@ typedef int ns_sockerrno_t;
 #  define _POSIX_PTHREAD_SEMANTICS
 # endif
 
-#if defined(__APPLE__) || defined(__darwin__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-# ifndef s6_addr16
-#  define s6_addr16 __u6_addr.__u6_addr16
-# endif
-# ifndef s6_addr32
-#  define s6_addr32 __u6_addr.__u6_addr32
-# endif
-# define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
-# define NS_INITGROUPS_GID_T int
-# define NS_MSG_IOVLEN_T int
-#else
-# if defined(__sun)
-#  define S6_ADDR16(x) ((uint16_t*)((char*)&(x).s6_addr))
-#  ifndef s6_addr32
-#   define s6_addr32 _S6_un._S6_u32
+# if defined(__APPLE__) || defined(__darwin__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#  ifndef s6_addr16
+#   define s6_addr16 __u6_addr.__u6_addr16
 #  endif
-# else
+#  ifndef s6_addr32
+#   define s6_addr32 __u6_addr.__u6_addr32
+#  endif
 #  define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
+#  define NS_INITGROUPS_GID_T int
+#  define NS_MSG_IOVLEN_T int
+# else
+#  if defined(__sun)
+#   define S6_ADDR16(x) ((uint16_t*)((char*)&(x).s6_addr))
+#   ifndef s6_addr32
+#    define s6_addr32 _S6_un._S6_u32
+#   endif
+#  else
+#   define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
+#  endif
+#  define NS_INITGROUPS_GID_T gid_t
+#  define NS_MSG_IOVLEN_T size_t
 # endif
-# define NS_INITGROUPS_GID_T gid_t
-# define NS_MSG_IOVLEN_T size_t
-#endif
 
 # ifdef __OpenBSD__
 #  ifndef ENOTSUP
@@ -892,7 +892,7 @@ typedef enum {
     NS_UNAUTHORIZED =     (-3), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
     NS_FORBIDDEN =        (-4), /* authorize result, returned by e.g. Ns_UserAuthorizeProc */
     NS_FILTER_BREAK =     (-5), /* filter result, returned by e.g. Ns_FilterProc */
-    NS_FILTER_RETURN =    (-6), /* filter result, returned by e.g. Ns_FilterProc */
+    NS_FILTER_RETURN =    (-6)  /* filter result, returned by e.g. Ns_FilterProc */
 } Ns_ReturnCode;
 
 /*
@@ -1019,7 +1019,7 @@ NS_EXTERN struct tm *ns_localtime(const time_t *clock)   NS_GNUC_NONNULL(1);
 NS_EXTERN struct tm *ns_gmtime(const time_t *clock)      NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_ctime(const time_t *clock)            NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_asctime(const struct tm *tmPtr)       NS_GNUC_NONNULL(1);
-NS_EXTERN char *ns_strtok(char *s1, const char *s2)      NS_GNUC_NONNULL(1);
+NS_EXTERN char *ns_strtok(char *s1, const char *s2)      NS_GNUC_NONNULL(2);
 NS_EXTERN char *ns_inet_ntoa(struct sockaddr *saPtr)     NS_GNUC_NONNULL(1);
 
 /*
