@@ -105,18 +105,18 @@ NsInitListen(void)
 NS_SOCKET
 Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, bool bind, void *arg)
 {
-    NS_SOCKET             bindsock = NS_INVALID_SOCKET, sock = NS_INVALID_SOCKET;
+    NS_SOCKET             sock = NS_INVALID_SOCKET;
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr      *saPtr = (struct sockaddr *)&sa;
-    Ns_ReturnCode         status = NS_OK;
 
-    NS_NONNULL_ASSERT(addr != NULL);
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
 
     Ns_Log(Debug, "Ns_SockListenCallback: called with addr <%s> and port %hu", addr, port);
 
     if (Ns_GetSockAddr(saPtr, addr, port) == NS_OK) {
+        NS_SOCKET     bindsock;
+        Ns_ReturnCode status = NS_OK;
 
         //Ns_SockaddrSetPort(saPtr, 0u);
         bindsock = Ns_SockBind(saPtr, NS_FALSE);
