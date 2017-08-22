@@ -1335,7 +1335,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsInterp            *itPtr = clientData;
     Ns_Conn             *conn = itPtr->conn;
     Conn                *connPtr = (Conn *) conn;
-    const Ns_Request    *request;
+    const Ns_Request    *request = NULL;
     Tcl_Encoding         encoding;
     Tcl_Channel          chan;
     const Tcl_HashEntry *hPtr;
@@ -1399,28 +1399,41 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         result = TCL_ERROR;
     }
 
-    /*
-     * Only the "isconnected" option operates without a conn.
-     */
-    if (likely(result == TCL_OK)
-        && unlikely(opt != (int)CIsConnectedIdx)
-        && unlikely(connPtr == NULL)
-        ) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("no current connection", -1));
-        result = TCL_ERROR;
+    if (likely(result == TCL_OK)) {
+        /*
+         * Only the "isconnected" option operates without a conn.
+         */
+        if (unlikely(opt == (int)CIsConnectedIdx)) {
+            /*
+             * Handle "isconnected" subcommand here.
+             */
+            Tcl_SetObjResult(interp,
+                             Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
+        } else if (unlikely(connPtr == NULL)) {
+            /*
+             * Other subcommands require connPtr
+             */
+            Tcl_SetObjResult(interp,
+                             Tcl_NewStringObj("no current connection", -1));
+            result = TCL_ERROR;
+        } else {
+            /*
+             * We know, connPtr != NULL
+             */
+            request = &connPtr->request;
+        }
     }
 
     if (result == TCL_ERROR) {
         return result;
     }
 
-    assert(connPtr != NULL);
-
-    request = &connPtr->request;
     switch (opt) {
-
     case CIsConnectedIdx:
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
+        /*
+         * This case is handled above. We keep this entry to keep static
+         * checkers happy about case enumeration.
+         */
         break;
 
     case CKeepAliveIdx:
