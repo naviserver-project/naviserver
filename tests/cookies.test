@@ -244,7 +244,7 @@ test cookie-4.5 {get missing cookie} -setup {
     nstest::http -getbody 1 GET /cookie-4.5
 } -cleanup {
     ns_unregister_op GET /cookie-4.5
-} -result {200 {no matching cookie}}
+} -result {200 {no such cookie}}
 
 
 test cookie-4.6 {get cookie with cookie-set values} -setup {
@@ -269,7 +269,7 @@ test cookie-4.7 {get missing cookie} -setup {
     nstest::http -getbody 1 -getheaders {Set-Cookie} GET /cookie-4.7
 } -cleanup {
     ns_unregister_op GET /cookie-4.7
-} -result {200 {foo="foovalue"; HttpOnly} {no matching cookie}}
+} -result {200 {foo="foovalue"; HttpOnly} {no such cookie}}
 
 
 test cookie-4.8 {get all named cookies, single cookie} -setup {
