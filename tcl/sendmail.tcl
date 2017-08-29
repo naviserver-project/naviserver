@@ -182,7 +182,7 @@ proc ns_sendmail args {
     # Put message essentials
     #
 
-    set date  [ns_httptime [clock seconds]]
+    set date  [clock format [clock seconds] -format "%a, %d %b %Y %T %z"]
     set rfcto [join $tolist ", "]
 
     append msg "To: "      $rfcto   \n
