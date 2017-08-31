@@ -213,49 +213,48 @@ better-suited to different situations:
 
 [section {Tcl Interpreters}]
 
-   During NaviServer initialization, only one interpreter exists. While
-   modules are loaded and initialized, they may add procedures to the
-   interpreter. When initialization is complete (all modules are loaded
-   and all Tcl libraries have been executed), the interpreter may no
-   longer be changed.
-
-
-[para]
-
-
-   Each connection thread that requires Tcl will create a copy of the
-   original interpreter.
-
+   During NaviServer initialization, only one interpreter
+   exists. While modules are loaded and initialized, they may add
+   procedures to the interpreter. When initialization is complete (all
+   modules are loaded and all Tcl libraries have been executed),
+   NaviServer creates from this a blueprint consisting of the
+   sources. This blueprint is provided to every thread at
+   initialization.
 
 [para]
 
+   When e.g. a connection thread processes a request, all the Tcl code
+   of the blueprint is immediately available (without any latency for
+   loading).
 
+[para]
+
+   NaviServer provides built-in support for updating a blueprint,
+   e.g. via [cmd ns_eval] or via the lower level [cmd ns_ictl]
+   commands.
 
 [section {Global Variables}]
 
-
-   Tcl interpreter has its own global variable table, so global
-   variables are shared only within each Tcl interpreter by default. The
-   nsv_ commands allows you to make a variable available to all
-   interpreters in a virtual server.
-
+   The NaviServer blueprint contains Tcl functions, XOTcl/NX classes
+   and objects and also namespaced variables. This are all Tcl
+   variables, which are not in the topmost namespace "::". The
+   toplevel variables are treated as "scratch variables", which are
+   flushed automatically after every request. The global variables are
+   often used for providing values for templating; cleaning these
+   automatically can avoid unexpected interactions.
 
 [para]
 
-
-   Global variables are flushed when the Tcl interpreter is deallocated.
-   A Tcl interpreter is deallocated explicitly when
-   ns_TclDeallocateInterp is called or implicitly at the end of a
-   connection. This allows Tcl filter functions to access global
-   variables set in ADPs.
-
-
+   In addition of the per-interpreter variables, NaviServer provides
+   shared variables, which can be accessed via the nsv_* interface
+   (see below for an example). When such a variable is altered, its
+   value is immediately available in all threads.
 
 
 [section {Sharing Files Between Interpreters}]
 
 
-   To share vairables between the interpreters in a group, use the Tcl
+   To share variables between the interpreters in a group, use the Tcl
    nsv_* command.
    
 [para]
