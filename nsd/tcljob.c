@@ -35,8 +35,8 @@
  *
  * Lock rules:
  *
- *   o. lock the queuelock when modifing tp structure elements.
- *   o. lock the queue's lock when modifing queue structure elements.
+ *   o. lock the queuelock when modifying tp structure elements.
+ *   o. lock the queue's lock when modifying queue structure elements.
  *   o. jobs are shared between tp and the queue but are owned by the
  *      queue, so use queue's lock is used to control access to the
  *      jobs.
@@ -72,7 +72,7 @@
  *   cleans it up. It order to help the user out we would like to add
  *   an "-autoclean" option to queue create function. However,
  *   AOLServer does not currently supply a "good" connection cleanup
- *   callback. We tryed to use "Ns_RegisterConnCleanup" however it
+ *   callback. We tried to use "Ns_RegisterConnCleanup" however it
  *   does not have a facility to remove registered callbacks.
  *
  */
@@ -161,7 +161,7 @@ typedef struct Queue {
 
 
 /*
- * A threadpool mananges a global set of threads.
+ * A threadpool manages a global set of threads.
  */
 typedef struct ThreadPool {
     Ns_Cond            cond;
@@ -259,12 +259,9 @@ static double ComputeDelta(const Ns_Time *start, const Ns_Time *end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
-
-
 /*
  * Globals
  */
-
 static ThreadPool tp;
 
 
@@ -313,11 +310,11 @@ NsTclInitQueueType(void)
  *          None.
  *
  * Side effects:
- *          All pending jobs are removed and waiting threads interrupted.
+ *          All pending jobs are removed and waiting threads
+ *          interrupted.
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsStartJobsShutdown(void)
 {
@@ -350,7 +347,6 @@ NsStartJobsShutdown(void)
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsWaitJobsShutdown(const Ns_Time *toPtr)
 {
@@ -441,7 +437,6 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 static int
 JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-
     int          result = TCL_OK, max = NS_JOB_DEFAULT_MAXTHREADS;
     Tcl_Obj     *queueIdObj;
     char        *descString  = (char *)"";
@@ -602,7 +597,6 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
          * Job id is given, try to see if it is taken already,
          * if yes, return error, it should be unique.
          */
-
         if (jobIdString != NULL && *jobIdString != '\0') {
             hPtr = Tcl_CreateHashEntry(&queue->jobs, jobIdString, &isNew);
             if (isNew == 0) {
@@ -624,11 +618,10 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         }
 
         /*
-         * Add the job to the thread pool's job list, if -head is
+         * Add the job to the thread pool's job list, if "-head" is
          * specified, insert new job at the beginning, otherwise
          * append new job to the end.
          */
-
         if (head != 0) {
             jobPtr->nextPtr = tp.firstPtr;
             tp.firstPtr = jobPtr;
@@ -645,7 +638,6 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
          * Start a new thread if there are less than maxThreads
          * currently running and there currently no idle threads.
          */
-
         if (tp.nidle == 0 && tp.nthreads < tp.maxThreads) {
             create = NS_TRUE;
             ++tp.nthreads;
@@ -775,8 +767,8 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
         if (hPtr == NULL || jobPtr == Tcl_GetHashValue(hPtr)) {
             Ns_TclPrintfResult(interp, "Internal ns_job error.");
             /*
-             * logically, there should be a "result = TCL_ERROR;"
-             * here. however, this would change the results of the
+             * Logically, there should be a "result = TCL_ERROR;"
+             * here. However, this would change the results of the
              * regression test.
              */
         }
@@ -881,7 +873,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  * JobExistsObjCmd, subcommand of NsTclJobCmd --
  *
  *          Implements the "ns_job exists" command.  Sets the
- *          Tcl-result to 1if job is running otherwise to 0.
+ *          Tcl-result to "1" if job is running otherwise to "0".
  *
  * Results:
  *          Standard Tcl result.
@@ -1451,7 +1443,7 @@ JobThread(void *UNUSED(arg))
 
     /*
      * Setting this parameter to > 0 will cause the thread to
-     * graceously exit after processing that many job requests,
+     * graciously exit after processing that many job requests,
      * thus initiating kind-of Tcl-level garbage collection.
      */
 
@@ -1849,7 +1841,7 @@ FreeJob(Job *jobPtr)
  *      queue can be referenced then we will again need the refCount.
  *
  * Results:
- *      Stanard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
  *      None.
@@ -1965,7 +1957,7 @@ ReleaseQueue(Queue *queue, bool locked)
     --queue->refCount;
 
     /*
-     * Delete the queue, honouring constraints
+     * Delete the queue, honoring constraints
      */
 
     if (queue->req == QUEUE_REQ_DELETE
