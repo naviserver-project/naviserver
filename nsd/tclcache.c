@@ -748,7 +748,7 @@ noGlobChars(const char *pattern)
     NS_NONNULL_ASSERT(pattern != NULL);
 
     for (c = *p; likely(c != '\0'); c = *++p) {
-	if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {
+        if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {
             result = NS_FALSE;
             break;
         }
