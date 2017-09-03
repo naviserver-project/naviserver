@@ -51,7 +51,7 @@ proc ns_sendmail args {
     
     lassign $args to from subject body headers bcc cc
     if {![string match -* $to]} {
-        ns_log warning "Deprecated syntax. Use: [list ns_sendmail -to $to -from $from -subject $subject -body $body -headers $headers -bcc $bcc -cc $cc]"
+        ns_log warning "Deprecated syntax. Use: [list ns_sendmail -to $to -from $from -subject $subject -body BODY -headers HEADERS -bcc $bcc -cc $cc]"
     } else {
         ns_parseargs {
             {-to ""}
@@ -182,7 +182,7 @@ proc ns_sendmail args {
     # Put message essentials
     #
 
-    set date  [ns_httptime [clock seconds]]
+    set date  [clock format [clock seconds] -format "%a, %d %b %Y %T %z"]
     set rfcto [join $tolist ", "]
 
     append msg "To: "      $rfcto   \n
