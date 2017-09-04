@@ -129,6 +129,94 @@ ns_strdup(const char *old)
     return p;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_uint32toa, ns_uint64toa --
+ *
+ *	This procedure formats an uint32_t or uint62_t into a sequence of
+ *	decimal digits in a buffer. It is the caller's responsibility to
+ *	ensure that enough storage is available. This procedure has the effect
+ *	of sprintf(buffer, "%...d", n) but is substantially faster
+ *
+ * Results:
+ *	Length of the written digits, not including the terminating "\0".
+ *
+ * Side effects:
+ *	The formatted characters are written into the storage pointer to by
+ *	the "buffer" argument.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_uint32toa(
+    char *buffer,		/* Points to the storage into which the
+				 * formatted characters are written. */
+    uint32_t n)			/* The value to be converted. */
+{
+    char            temp[TCL_INTEGER_SPACE];
+    register char  *p = temp;
+    int             len = 0;
+
+    /*
+     * Compute the digits.
+     */
+    do {
+        *p++ = (char)((n % 10u) + UCHAR('0'));
+        n /= 10u;
+        len ++;
+    } while (likely(n > 0u));
+
+    /*
+     * Reverse the digits.
+     */
+    do {
+        *buffer++ = *--p;
+    } while (likely(p != temp));
+
+    /*
+     * Terminate the string
+     */
+    *buffer = '\0';
+
+    return len;
+}
+
+int
+ns_uint64toa(
+    char *buffer,		/* Points to the storage into which the
+				 * formatted characters are written. */
+    uint64_t n)			/* The value to be converted. */
+{
+    char            temp[TCL_INTEGER_SPACE];
+    register char  *p = temp;
+    int             len = 0;
+
+    /*
+     * Compute the digits.
+     */
+    do {
+        *p++ = (char)((n % 10u) + UCHAR('0'));
+        n /= 10u;
+        len ++;
+    } while (likely(n > 0u));
+
+    /*
+     * Reverse the digits.
+     */
+    do {
+        *buffer++ = *--p;
+    } while (likely(p != temp));
+
+    /*
+     * Terminate the string
+     */
+    *buffer = '\0';
+
+    return len;
+}
 /*
  * Local Variables:
  * mode: c

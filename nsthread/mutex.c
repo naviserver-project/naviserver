@@ -115,7 +115,9 @@ Ns_MutexInit(Ns_Mutex *mutex)
     firstMutexPtr = mutexPtr;
     mutexPtr->id = nextid++;
 
-    snprintf(mutexPtr->name, sizeof(mutexPtr->name), "mu%" PRIuPTR, mutexPtr->id);
+    mutexPtr->name[0] = 'm';
+    mutexPtr->name[1] = 'u';
+    (void) ns_uint64toa(&mutexPtr->name[2], (uint64_t)mutexPtr->id);
 
     Ns_MasterUnlock();
     //fprintf(stderr, "=== created mutex %ld name %s\n", mutexPtr->id, mutexPtr->name);

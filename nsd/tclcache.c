@@ -1302,7 +1302,7 @@ NsTclCacheTransactionBeginObjCmd(ClientData clientData, Tcl_Interp *interp, int 
             transactionStackPtr->stack[transactionStackPtr->depth] = transactionEpoch;
             transactionStackPtr->uncommitted[transactionStackPtr->depth] = 0;
             transactionStackPtr->depth++;
-            Ns_TclPrintfResult(interp, "%" PRIuPTR, transactionEpoch);
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)transactionEpoch));
             result = TCL_OK;
 
         } else {

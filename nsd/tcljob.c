@@ -609,8 +609,9 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             /*
              * Add the job to queue.
              */
+            memcpy(buf, "job", 3);
             do {
-                snprintf(buf, sizeof(buf), "job%" PRIuPTR, queue->nextid++);
+                (void) ns_uint64toa(&buf[3], (uint64_t)queue->nextid++);
                 hPtr = Tcl_CreateHashEntry(&queue->jobs, buf, &isNew);
             } while (isNew == 0);
 

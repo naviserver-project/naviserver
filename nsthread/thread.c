@@ -375,7 +375,9 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                 written = snprintf(buf, sizeof(buf), " %p", thrPtr->arg);
                 Tcl_DStringAppend(dsPtr, buf, written);
             }
-            written = snprintf(buf, sizeof(buf), " %lu", (unsigned long) thrPtr->ostid);
+
+            Tcl_DStringAppend(dsPtr, " ", 1);
+            written = ns_uint32toa(buf, (uint32_t)thrPtr->ostid);
             Tcl_DStringAppend(dsPtr, buf, written);
 
             Tcl_DStringEndSublist(dsPtr);

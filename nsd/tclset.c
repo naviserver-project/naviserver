@@ -49,7 +49,7 @@
  * Local functions defined in this file
  */
 
-static int LookupSet(NsInterp *itPtr, CONST char *id, bool deleteEntry, Ns_Set **setPtr)
+static int LookupSet(NsInterp *itPtr, const char *id, bool deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, bool deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
@@ -744,30 +744,30 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
 {
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;
-    int             isNew;
-    int             next;
-    char            typeChar;
+    int             isNew, len;
+    uint32_t        next;
     char            buf[TCL_INTEGER_SPACE + 1];
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(set != NULL);
 
     tablePtr = &itPtr->sets;
-    typeChar = (type == NS_TCL_SET_DYNAMIC) ? SET_DYNAMIC : SET_STATIC;
+    buf[0] = (type == NS_TCL_SET_DYNAMIC) ? SET_DYNAMIC : SET_STATIC;
 
     /*
      * Allocate a new set IDs until we find an unused one.
      */
-
-    next = tablePtr->numEntries;
-    do {
-        snprintf(buf, sizeof(buf), "%c%d", typeChar, next);
-        ++next;
+    for (next = (uint32_t)tablePtr->numEntries; ; ++ next) {
+        len = ns_uint32toa(buf+1, next); 
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
-    } while (isNew == 0);
+        if (isNew != 0) {
+            break;
+        }
+    }
 
     Tcl_SetHashValue(hPtr, set);
-    return Tcl_NewStringObj(buf, -1);
+
+    return Tcl_NewStringObj(buf, len+1);
 }
 
 
@@ -820,7 +820,7 @@ LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **s
 }
 
 static int
-LookupSet(NsInterp *itPtr, CONST char *id, bool deleteEntry, Ns_Set **setPtr)
+LookupSet(NsInterp *itPtr, const char *id, bool deleteEntry, Ns_Set **setPtr)
 {
     Tcl_HashEntry *hPtr;
     Ns_Set        *set = NULL;

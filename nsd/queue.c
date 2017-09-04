@@ -2003,7 +2003,10 @@ ConnRun(Conn *connPtr)
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
 
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
-    snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%" PRIuPTR, connPtr->id);
+
+    memcpy(connPtr->idstr, "cns", 3u);
+    ns_uint64toa(&connPtr->idstr[3], connPtr->id);
+
     connPtr->outputheaders = Ns_SetCreate(NULL);
     if (connPtr->request.version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;

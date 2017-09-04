@@ -425,7 +425,7 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     return Ns_DStringPrintf(dsPtr, "%" PRIu64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
 }
  
- 
+
 
 /*
  *----------------------------------------------------------------------

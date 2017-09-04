@@ -117,8 +117,9 @@ NsTclCreateBuckets(const char *server, int nbuckets)
     NS_NONNULL_ASSERT(server != NULL);
 
     buckets = ns_malloc(sizeof(Bucket) * (size_t)nbuckets);
+    memcpy(buf, "nsv:", 4);
     while (--nbuckets >= 0) {
-        snprintf(buf, sizeof(buf), "nsv:%d", nbuckets);
+        (void) ns_uint32toa(&buf[4], (uint32_t)nbuckets);
         Tcl_InitHashTable(&buckets[nbuckets].arrays, TCL_STRING_KEYS);
         buckets[nbuckets].lock = NULL;
         Ns_MutexInit(&buckets[nbuckets].lock);

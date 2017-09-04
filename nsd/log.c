@@ -256,11 +256,10 @@ NsInitLog(void)
     Ns_AddLogFilter(LogToFile, INT2PTR(STDERR_FILENO), NULL);
 
     /*
-     * Initialise the entire space with backwards-compatible integer keys.
+     * Initialize the entire space with backwards-compatible integer keys.
      */
-
     for (i = PredefinedLogSeveritiesCount; i < severityMaxCount; i++) {
-        snprintf(buf, sizeof(buf), "%d", (int)i);
+        (void) ns_uint32toa(buf, (uint32_t)i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, INT2PTR(i));
         severityConfig[i].label = Tcl_GetHashKey(&severityTable, hPtr);
@@ -268,9 +267,8 @@ NsInitLog(void)
     }
 
     /*
-     * Initialise the built-in severities and lower-case aliases.
+     * Initialize the built-in severities and lower-case aliases.
      */
-
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
         size_t labelLength;
 

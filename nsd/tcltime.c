@@ -622,7 +622,7 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
     timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
-        len = snprintf(buf, sizeof(buf), "%ld", timePtr->sec);
+        len = ns_uint64toa(buf, (uint64_t)timePtr->sec);
     } else {
         len = snprintf(buf, sizeof(buf), "%ld:%ld",
                        timePtr->sec, timePtr->usec);
