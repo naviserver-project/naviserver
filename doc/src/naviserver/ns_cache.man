@@ -192,12 +192,10 @@ If the cache value does not already exist it is created.
         [opt [arg args]] ]
 
 Flush the entries in a cache and return the number of flushed entries.
-If [arg args] are given then they are the keys in the cache to be
-flushed. If the [option -glob] option is given then the keys are
-treated as globbing patterns and only the keys which match are
-flushed.
-
-
+If the optional [arg args] are given these are used as the keys in the
+cache to be flushed. If the [option -glob] option is given then the
+keys are treated as globbing patterns and only the entries with
+matching keys are flushed.
 
 [call [cmd ns_cache_stats] \
         [opt [option "-contents"]] \
