@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * quotehtml.c --
  *
- *	Take text and make it safe for HTML. 
+ *	Take text and make it safe for HTML.
  */
 
 #include "nsd.h"
@@ -58,34 +58,58 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(htmlString != NULL);
-    
-    while (likely(*htmlString != '\0')) {
-        switch (*htmlString) {
-        case '<':
-            Ns_DStringAppend(dsPtr, "&lt;");
-            break;
 
-        case '>':
-            Ns_DStringAppend(dsPtr, "&gt;");
-            break;
+    /*
+     * If the character is a null character, there is nothing to do.
+     */
+    if (*htmlString != '\0') {
+        const char *p, *toProcess;
 
-	case '&':
-            Ns_DStringAppend(dsPtr, "&amp;");
-            break;
+        for (toProcess = htmlString;;toProcess = ++p) {
+            /*
+             * Check for protected characters.
+             */
+            p = strpbrk(toProcess, "<>&'\"");
 
-	case '\'':
-            Ns_DStringAppend(dsPtr, "&#39;");
-	    break;
+            if (p == NULL) {
+                /*
+                 * No protected char found, append the string and finish.
+                 */
+                Ns_DStringAppend(dsPtr, toProcess);
+                break;
+            } else {
+                /*
+                 * Append the first part, escape the protected char, and
+                 * continue.
+                 */
+                Ns_DStringNAppend(dsPtr, toProcess, (int)(p - toProcess));
+                switch (*p) {
+                case '<':
+                    Ns_DStringNAppend(dsPtr, "&lt;", 4);
+                    break;
 
-	case '"':
-            Ns_DStringAppend(dsPtr, "&#34;");
-	    break;
-	    
-	default:
-            Ns_DStringNAppend(dsPtr, htmlString, 1);
-            break;
+                case '>':
+                    Ns_DStringNAppend(dsPtr, "&gt;", 4);
+                    break;
+
+                case '&':
+                    Ns_DStringNAppend(dsPtr, "&amp;", 5);
+                    break;
+
+                case '\'':
+                    Ns_DStringNAppend(dsPtr, "&#39;", 5);
+                    break;
+
+                case '"':
+                    Ns_DStringNAppend(dsPtr, "&#34;", 5);
+                    break;
+
+                default:
+                    /*should not happen */ assert(0);
+                    break;
+                }
+            }
         }
-        ++htmlString;
     }
 }
 
@@ -95,13 +119,13 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
  *
  * NsTclQuoteHtmlObjCmd --
  *
- *	Implements ns_quotehtml. 
+ *	Implements ns_quotehtml.
  *
  * Results:
- *	Tcl result. 
+ *	Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *	See docs.
  *
  *----------------------------------------------------------------------
  */
