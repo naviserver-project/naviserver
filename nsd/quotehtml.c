@@ -60,7 +60,7 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
     NS_NONNULL_ASSERT(htmlString != NULL);
 
     /*
-     * If the character is a null character, there is nothing to do.
+     * If the first character is a null character, there is nothing to do.
      */
     if (*htmlString != '\0') {
         const char *p, *toProcess;
