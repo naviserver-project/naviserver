@@ -3612,13 +3612,11 @@ SockParse(Sock *sockPtr)
 static void
 SockSetServer(Sock *sockPtr)
 {
-    const ServerMap *mapPtr = NULL;
     char            *host;
-    int              status = 1;
     Request         *reqPtr;
+    bool             bad_request = NS_FALSE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
-
 
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
@@ -3635,9 +3633,11 @@ SockSetServer(Sock *sockPtr)
          */
         Ns_Log(Notice, "request header field \"Host\" is missing in HTTP/1.1 request: \"%s\"\n",
                reqPtr->request.line);
-        status = 0;
+        bad_request = NS_TRUE;
     }
     if (sockPtr->servPtr == NULL) {
+        const ServerMap *mapPtr = NULL;
+
         if (host != NULL) {
             const Tcl_HashEntry *hPtr;
             size_t               hostLength = strlen(host);
@@ -3652,11 +3652,14 @@ SockSetServer(Sock *sockPtr)
             hPtr = Tcl_FindHashEntry(&hosts, host);
             if (hPtr != NULL) {
                 mapPtr = Tcl_GetHashValue(hPtr);
+            } else {
+                Ns_Log(DriverDebug,
+                       "cannot locate host header content '%s' in virtual hosts table, fall back to default '%s'",
+                       host, defMapPtr->location);
             }
         }
         if (mapPtr == NULL) {
             mapPtr = defMapPtr;
-            Ns_Log(DriverDebug, "cannot locate '%s' in virtual hosts table, fall back to default", mapPtr->location);
         }
         if (mapPtr != NULL) {
             sockPtr->servPtr  = mapPtr->servPtr;
@@ -3665,11 +3668,11 @@ SockSetServer(Sock *sockPtr)
         if (sockPtr->servPtr == NULL) {
             Ns_Log(Warning, "cannot determine server for request: \"%s\" (host \"%s\")\n",
                    reqPtr->request.line, host);
-            status = 0;
+            bad_request = NS_TRUE;
         }
     }
 
-    if (unlikely(status == 0)) {
+    if (unlikely(bad_request)) {
         Ns_Log(DriverDebug, "SockSetServer sets method to BAD");
         ns_free((char *)reqPtr->request.method);
         reqPtr->request.method = ns_strdup("BAD");
