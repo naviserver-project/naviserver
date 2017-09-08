@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * url.c --
  *
  *      Parse URLs.
@@ -42,13 +42,13 @@
  *
  * Ns_RelativeUrl --
  *
- *      If the url passed in is for this server, then the initial 
- *      part of the URL is stripped off. e.g., on a server whose 
- *      location is http://www.foo.com, Ns_RelativeUrl of 
- *      "http://www.foo.com/hello" will return "/hello". 
+ *      If the url passed in is for this server, then the initial
+ *      part of the URL is stripped off. e.g., on a server whose
+ *      location is http://www.foo.com, Ns_RelativeUrl of
+ *      "http://www.foo.com/hello" will return "/hello".
  *
  * Results:
- *      A pointer to the beginning of the relative url in the 
+ *      A pointer to the beginning of the relative url in the
  *      passed-in url, or NULL if error.
  *
  * Side effects:
@@ -93,13 +93,13 @@ Ns_RelativeUrl(const char *url, const char *location)
  *
  * Ns_ParseUrl --
  *
- *      Parse a URL into its component parts 
+ *      Parse a URL into its component parts
  *
  * Results:
- *      NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR
  *
  * Side effects:
- *      Pointers to the protocol, host, port, path, and "tail" (last 
+ *      Pointers to the protocol, host, port, path, and "tail" (last
  *      path element) will be set by reference in the passed-in pointers.
  *      The passed-in url will be modified.
  *
@@ -140,12 +140,12 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          * |   +-- end
          * +-------- *pprotocol
          */
-    
+
         *end = '\0';
         *pprotocol = url;
         url = end + 1;
     }
-    
+
     if (url[0] == '/' && url[1] == '/') {
 
         /*
@@ -185,7 +185,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             *pport = url;
         } else {
             /*
-             * No port was specified. 
+             * No port was specified.
              *
              * If the url has the host specified in IP literal notation, the
              * host entry is terminated with a null character. The next string
@@ -329,13 +329,13 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
         proto = bproto;
     }
     assert(proto != NULL);
-    
+
     if (host == NULL) {
         host = bhost;
         port = bport;
     }
     assert(host != NULL);
-    
+
     if (path == NULL) {
         path = bpath;
     }
@@ -348,7 +348,7 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
          */
         Ns_DStringVarAppend(dsPtr, proto, "://", host, (char *)0);
     } else {
-        Ns_DStringVarAppend(dsPtr, proto, "://[", host, "]", (char *)0);        
+        Ns_DStringVarAppend(dsPtr, proto, "://[", host, "]", (char *)0);
     }
     if (port != NULL) {
         Ns_DStringVarAppend(dsPtr, ":", port, (char *)0);
@@ -421,7 +421,7 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("tail", 4));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(tail, -1));
             }
-            
+
             Tcl_SetObjResult(interp, resultObj);
 
         } else {
@@ -430,7 +430,7 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         }
         ns_free(url);
     }
-    
+
     return result;
 }
 
@@ -458,7 +458,7 @@ NsTclAbsoluteUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     char       *urlString, *baseString;
     Ns_ObjvSpec args[] = {
         {"partialurl", Ns_ObjvString, &urlString, NULL},
-        {"baseurl",    Ns_ObjvString, &baseString, NULL},        
+        {"baseurl",    Ns_ObjvString, &baseString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -476,7 +476,7 @@ NsTclAbsoluteUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             result = TCL_ERROR;
         }
     }
-    
+
     return result;
 }
 
