@@ -868,13 +868,22 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *h
     if (protoString != NULL) {
         Ns_DStringVarAppend(dsPtr, protoString, "://", (char *)0);
     }
-    if (strchr(hostString, INTCHAR(':')) != NULL) {
-        Ns_DStringVarAppend(dsPtr, "[", hostString, "]", (char *)0);
-    } else {
+    if (port == 0 && defPort == 0) {
+        /*
+         * We assume, that the host contains already a port (as provided from
+         * the host header field), and all we have to do is to prepend the
+         * protocol prefix.
+         */
         Ns_DStringVarAppend(dsPtr, hostString, (char *)0);
-    }
-    if (port != defPort) {
-        (void) Ns_DStringPrintf(dsPtr, ":%d", port);
+    } else {
+        if (strchr(hostString, INTCHAR(':')) != NULL) {
+            Ns_DStringVarAppend(dsPtr, "[", hostString, "]", (char *)0);
+        } else {
+            Ns_DStringVarAppend(dsPtr, hostString, (char *)0);
+        }
+        if (port != defPort) {
+            (void) Ns_DStringPrintf(dsPtr, ":%d", port);
+        }
     }
     return dsPtr->string;
 }
