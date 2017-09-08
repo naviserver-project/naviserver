@@ -3656,6 +3656,7 @@ SockSetServer(Sock *sockPtr)
         }
         if (mapPtr == NULL) {
             mapPtr = defMapPtr;
+            Ns_Log(DriverDebug, "cannot locate '%s' in virtual hosts table, fall back to default", mapPtr->location);
         }
         if (mapPtr != NULL) {
             sockPtr->servPtr  = mapPtr->servPtr;
