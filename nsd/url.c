@@ -119,7 +119,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
     *ptail = NULL;
 
     /*
-     * Set end to the end of the protocol
+     * Set variable "end" to the end of the protocol
      * http://www.foo.com:8000/baz/blah/spoo.html
      *     ^
      *     +--end
