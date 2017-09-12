@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -89,7 +89,7 @@ static Array *LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
 static Array *GetArray(Bucket *bucketPtr, const char *arrayName, bool create)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static unsigned int BucketIndex(const char *arrayName) 
+static unsigned int BucketIndex(const char *arrayName)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -158,7 +158,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     } else {
         Array *arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE);
-        
+
         if (unlikely(arrayPtr == NULL)) {
             result = TCL_ERROR;
 
@@ -212,7 +212,7 @@ NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      int objc, Tcl_Obj *CONST* objv)
 {
     int result;
-    
+
     if (unlikely(objc != 3)) {
         Tcl_WrongNumArgs(interp, 1, objv, "array key");
         result = TCL_ERROR;
@@ -330,7 +330,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Tcl_WideInt  current;
         Array       *arrayPtr = LockArrayObj(interp, objv[1], NS_TRUE);
-        
+
         assert(arrayPtr != NULL);
         result = IncrVar(arrayPtr, Tcl_GetString(objv[2]), count, &current);
         UnlockArray(arrayPtr);
@@ -353,10 +353,10 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *      Implements nsv_lappend command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *-----------------------------------------------------------------------------
  */
@@ -376,7 +376,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         const char    *value;
         int            isNew, len;
         Tcl_Obj       *listObj;
-    
+
         arrayPtr = LockArrayObj(interp, objv[1], NS_TRUE);
         assert(arrayPtr != NULL);
 
@@ -394,7 +394,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         value = Tcl_GetStringFromObj(listObj, &len);
         UpdateVar(hPtr, value, (size_t)len);
         UnlockArray(arrayPtr);
-        
+
         Tcl_SetObjResult(interp, listObj);
     }
     return result;
@@ -409,10 +409,10 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *      Implements nsv_append command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *-----------------------------------------------------------------------------
  */
@@ -432,7 +432,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         const char    *value;
         int            i, isNew, len;
         Tcl_Obj       *resultObj;
-        
+
         arrayPtr = LockArrayObj(interp, objv[1], NS_TRUE);
         assert(arrayPtr != NULL);
 
@@ -459,13 +459,13 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclNsvUnsetObjCmd --
  *
- *      Implements nsv_unset as an obj command. 
+ *      Implements nsv_unset as an obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *-----------------------------------------------------------------------------
  */
@@ -487,18 +487,18 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {"?key",  Ns_ObjvString, &key,      NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         Array *arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE);
-        
+
         if (unlikely(arrayPtr == NULL)) {
             result = TCL_ERROR;
 
         } else {
-    
+
             assert(arrayPtr != NULL);
 
             if (Unset(arrayPtr, key) != NS_OK && key != NULL) {
@@ -519,7 +519,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 Tcl_DeleteHashEntry(arrayPtr->entryPtr);
             }
             UnlockArray(arrayPtr);
-        
+
             if (result == TCL_OK && key == NULL) {
                 /*
                  * Free the actual array data strucure and invalidate the
@@ -571,7 +571,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         Tcl_Obj        *resultObj;
         const char     *pattern;
         int             i;
-        
+
         pattern = (objc < 2) ? NULL : Tcl_GetString(objv[1]);
 
         /*
@@ -583,12 +583,12 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             const Tcl_HashEntry *hPtr;
             Tcl_HashSearch       search;
             Bucket              *bucketPtr = &servPtr->nsv.buckets[i];
-            
+
             Ns_MutexLock(&bucketPtr->lock);
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
                 const char *key = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
-                
+
                 if ((pattern == NULL) || (Tcl_StringMatch(key, pattern) != 0)) {
                     result = Tcl_ListObjAppendElement(interp, resultObj,
                                                       Tcl_NewStringObj(key, -1));
@@ -649,7 +649,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         int        lobjc, size;
         Array     *arrayPtr;
         Tcl_Obj  **lobjv;
-            
+
         switch (opt) {
         case CSetIdx:   /* fall through */
         case CResetIdx:
@@ -669,7 +669,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
                 arrayPtr = LockArrayObj(interp, objv[2], NS_TRUE);
                 assert(arrayPtr != NULL);
-	
+
                 if (opt == (int)CResetIdx) {
                     Flush(arrayPtr);
                 }
@@ -724,7 +724,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             } else {
                 Tcl_HashSearch  search;
-                    
+
                 arrayPtr = LockArrayObj(interp, objv[2], NS_FALSE);
                 Tcl_ResetResult(interp);
                 if (arrayPtr != NULL) {
@@ -791,13 +791,13 @@ Ns_VarGet(const char *server, const char *array, const char *key, Ns_DString *ds
     if (likely(servPtr != NULL)) {
         Array *arrayPtr = LockArray(servPtr, array, NS_FALSE);
         if (likely(arrayPtr != NULL)) {
-	    const Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
-	    if (likely(hPtr != NULL)) {
-		Ns_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr));
-		status = NS_OK;
-	    }
-	    UnlockArray(arrayPtr);
-	}
+            const Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
+            if (likely(hPtr != NULL)) {
+                Ns_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr));
+                status = NS_OK;
+            }
+            UnlockArray(arrayPtr);
+        }
     }
     return status;
 }
@@ -830,14 +830,14 @@ Ns_VarExists(const char *server, const char *array, const char *key)
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-	Array *arrayPtr = LockArray(servPtr, array, NS_FALSE);
-        
+        Array *arrayPtr = LockArray(servPtr, array, NS_FALSE);
+
         if (likely(arrayPtr != NULL)) {
-	    if (Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL) != NULL) {
-		exists = NS_TRUE;
-	    }
-	    UnlockArray(arrayPtr);
-	}
+            if (Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL) != NULL) {
+                exists = NS_TRUE;
+            }
+            UnlockArray(arrayPtr);
+        }
     }
     return exists;
 }
@@ -872,13 +872,13 @@ Ns_VarSet(const char *server, const char *array, const char *key,
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-	Array *arrayPtr = LockArray(servPtr, array, NS_TRUE);
-        
-	if (likely(arrayPtr != NULL)) {
-	    SetVar(arrayPtr, key, value, (len > -1) ? (size_t)len : strlen(value));
-	    UnlockArray(arrayPtr);
-	    status = NS_OK;
-	}
+        Array *arrayPtr = LockArray(servPtr, array, NS_TRUE);
+
+        if (likely(arrayPtr != NULL)) {
+            SetVar(arrayPtr, key, value, (len > -1) ? (size_t)len : strlen(value));
+            UnlockArray(arrayPtr);
+            status = NS_OK;
+        }
     }
     return status;
 }
@@ -911,12 +911,12 @@ Ns_VarIncr(const char *server, const char *array, const char *key, int incr)
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-	Array *arrayPtr = LockArray(servPtr, array, NS_TRUE);
-        
-	if (likely(arrayPtr != NULL)) {
-	    (void) IncrVar(arrayPtr, key, incr, &counter);
-	    UnlockArray(arrayPtr);
-	}
+        Array *arrayPtr = LockArray(servPtr, array, NS_TRUE);
+
+        if (likely(arrayPtr != NULL)) {
+            (void) IncrVar(arrayPtr, key, incr, &counter);
+            UnlockArray(arrayPtr);
+        }
     }
     return counter;
 }
@@ -952,26 +952,26 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-	Array  *arrayPtr = LockArray(servPtr, array, NS_TRUE);
+        Array  *arrayPtr = LockArray(servPtr, array, NS_TRUE);
         if (likely(arrayPtr != NULL)) {
-	    Tcl_HashEntry *hPtr;
-	    size_t         oldLen, newLen;
-	    char          *oldString, *newString;
+            Tcl_HashEntry *hPtr;
+            size_t         oldLen, newLen;
+            char          *oldString, *newString;
 
-	    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
+            hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
 
-	    oldString = Tcl_GetHashValue(hPtr);
-	    oldLen = (oldString != NULL) ? strlen(oldString) : 0u;
+            oldString = Tcl_GetHashValue(hPtr);
+            oldLen = (oldString != NULL) ? strlen(oldString) : 0u;
 
-	    newLen = oldLen + ((len > -1) ? (size_t)len : strlen(value)) + 1u;
-	    newString = ns_realloc(oldString, newLen + 1u);
-	    memcpy(newString + oldLen, value, newLen + 1u);
+            newLen = oldLen + ((len > -1) ? (size_t)len : strlen(value)) + 1u;
+            newString = ns_realloc(oldString, newLen + 1u);
+            memcpy(newString + oldLen, value, newLen + 1u);
 
-	    Tcl_SetHashValue(hPtr, newString);
-	    
-	    UnlockArray(arrayPtr);
-	    status = NS_OK;
-	}
+            Tcl_SetHashValue(hPtr, newString);
+
+            UnlockArray(arrayPtr);
+            status = NS_OK;
+        }
     }
 
     return status;
@@ -1005,11 +1005,11 @@ Ns_VarUnset(const char *server, const char *array, const char *key)
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
-	Array  *arrayPtr = LockArray(servPtr, array, NS_FALSE);
+        Array  *arrayPtr = LockArray(servPtr, array, NS_FALSE);
         if (likely(arrayPtr != NULL)) {
-	    status = Unset(arrayPtr, key);
-	    UnlockArray(arrayPtr);
-	}
+            status = Unset(arrayPtr, key);
+            UnlockArray(arrayPtr);
+        }
     }
     return status;
 }
@@ -1037,8 +1037,8 @@ BucketIndex(const char *arrayName) {
     unsigned int index = 0u;
 
     for (;;) {
-	register unsigned int i = UCHAR(*(arrayName++));
-	if (unlikely(i == 0u)) {
+        register unsigned int i = UCHAR(*(arrayName++));
+        if (unlikely(i == 0u)) {
             break;
         }
         index += (index << 3u) + i;
@@ -1071,23 +1071,23 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
 
     NS_NONNULL_ASSERT(bucketPtr != NULL);
     NS_NONNULL_ASSERT(arrayName != NULL);
-        
+
     if (unlikely(create)) {
         int isNew;
-        
+
         hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, arrayName, &isNew);
         if (isNew == 0) {
             arrayPtr = Tcl_GetHashValue(hPtr);
         } else {
             arrayPtr = ns_malloc(sizeof(Array));
-	    arrayPtr->locks = 0;
+            arrayPtr->locks = 0;
             arrayPtr->bucketPtr = bucketPtr;
             arrayPtr->entryPtr = hPtr;
             Tcl_InitHashTable(&arrayPtr->vars, TCL_STRING_KEYS);
             Tcl_SetHashValue(hPtr, arrayPtr);
         }
     } else {
-    
+
         hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, arrayName, NULL);
         if (unlikely(hPtr == NULL)) {
             Ns_MutexUnlock(&bucketPtr->lock);
@@ -1129,7 +1129,7 @@ LockArray(const NsServer *servPtr, const char *arrayName, bool create)
     index = BucketIndex(arrayName);
     bucketPtr = &servPtr->nsv.buckets[index % (unsigned int)servPtr->nsv.nbuckets];
     Ns_MutexLock(&bucketPtr->lock);
-    
+
     return GetArray(bucketPtr, arrayName, create);
 }
 
@@ -1372,7 +1372,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
             Ns_TclSetOpaqueObj(arrayObj, arrayType, arrayPtr->bucketPtr);
         }
     }
-    
+
     if (arrayPtr == NULL && !create) {
         Ns_TclPrintfResult(interp, "no such array: %s", arrayName);
     }
@@ -1407,23 +1407,23 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;
-    int		    bucketNr = -1, i, result = TCL_OK;
+    int             bucketNr = -1, i, result = TCL_OK;
 
     if (objc > 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?bucket-number?");
-	result = TCL_ERROR;
+        result = TCL_ERROR;
 
-    } else if (objc == 2 && 
-	(Tcl_GetIntFromObj(interp, objv[1], &bucketNr) != TCL_OK 
-	 || bucketNr < 0 
-	 || bucketNr >= servPtr->nsv.nbuckets
-	 )) {
+    } else if (objc == 2 &&
+        (Tcl_GetIntFromObj(interp, objv[1], &bucketNr) != TCL_OK
+         || bucketNr < 0
+         || bucketNr >= servPtr->nsv.nbuckets
+         )) {
         Ns_TclPrintfResult(interp, "bucket number is not a valid integer");
         result = TCL_ERROR;
 
     } else {
         Tcl_Obj *resultObj;
-        
+
         /* LOCK for servPtr->nsv ? */
         resultObj = Tcl_GetObjResult(interp);
         for (i = 0; i < servPtr->nsv.nbuckets; i++) {
@@ -1431,7 +1431,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             Tcl_Obj             *listObj;
             Tcl_HashSearch       search;
             Bucket              *bucketPtr;
-            
+
             if (bucketNr > -1 && i != bucketNr) {
                 continue;
             }
