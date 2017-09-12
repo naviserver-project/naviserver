@@ -450,6 +450,7 @@ typedef struct Driver {
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
 
+    const char *defserver;              /* default server, might be NULL */
     long closewait;                     /* Graceful close timeout */
     long keepwait;                      /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
@@ -491,6 +492,7 @@ typedef struct Driver {
         Tcl_WideInt errors;             /* Dropped requests due to errors */
     } stats;
     unsigned short port;                /* Port in location */
+    unsigned short defport;             /* Default port */
     bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
 
 } Driver;
@@ -1486,6 +1488,7 @@ NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
 
 NS_EXTERN Tcl_Obj * NsDriverStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsDriverMapVirtualServers(void);
 
 /*
  * limits.c

@@ -20,6 +20,7 @@ namespace import -force ::tcltest::*
 set serverroot [file join [ns_config "test" home] \
                     [ns_config "ns/server/testvhost/fastpath" serverdir]]
 set vhosts [ns_config "ns/server/testvhost/vhost" hostprefix]
+set port   [ns_config "test" listenport]
 
 
 test ns_serverpath-1.1 {basic path} -body {
@@ -47,49 +48,49 @@ test ns_serverpath-2.1 {host path} -body {
 
 
 test ns_serverpath-3.1 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath
 } -result [list 200 ${serverroot}/${vhosts}/t/e/s/testvhost]
 
 test ns_serverpath-3.2 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=example.com
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath?host=example.com
 } -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
 
 test ns_serverpath-3.3 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=EXAMPLE.COM
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath?host=EXAMPLE.COM
 } -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
 
 test ns_serverpath-3.4 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=www.example.com
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath?host=www.example.com
 } -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
 
 test ns_serverpath-3.5 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=www.example.com:80
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath?host=www.example.com:80
 } -result [list 200 ${serverroot}/${vhosts}/e/x/a/example.com]
 
 test ns_serverpath-3.6 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=1
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath?host=1
 } -result [list 200 ${serverroot}/${vhosts}/1/_/_/1]
 
 test ns_serverpath-3.7 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /serverpath?host=
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /serverpath?host=
 } -result [list 200 ${serverroot}]
 
 
 
 test ns_serverpath-4.1 {custom serverroot} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /serverpath
 } -result {200 testserverroot/arg}
 
 test ns_serverpath-4.2 {custom serverroot} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath?host=example.com
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /serverpath?host=example.com
 } -result {200 testserverroot/example.com/arg}
 
 test ns_serverpath-4.3 {custom serverroot} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath?path=x
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /serverpath?path=x
 } -result {200 testserverroot/arg/x}
 
 test ns_serverpath-4.4 {custom serverroot} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /serverpath?host=example.com&path=x
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /serverpath?host=example.com&path=x
 } -result {200 testserverroot/example.com/arg/x}
 
 

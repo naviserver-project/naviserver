@@ -9,12 +9,11 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-
 set serverroot [file join [ns_config "test" home] \
                     [ns_config "ns/server/testvhost/fastpath" serverdir] ]
 set pagedir [ns_config "ns/server/testvhost/fastpath" pagedir]
 set vhosts  [ns_config "ns/server/testvhost/vhost" hostprefix]
-
+set port    [ns_config "test" listenport]
 
 
 test ns_pagepath-1.1 {basic path} -body {
@@ -42,29 +41,29 @@ test ns_pagepath-2.2 {host path} -body {
 
 
 test ns_pagepath-3.1 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /pagepath
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /pagepath
 } -result [list 200 ${serverroot}/${vhosts}/t/e/s/testvhost/${pagedir}]
 
 test ns_pagepath-3.2 {virtual host path} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /pagepath?path=x
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /pagepath?path=x
 } -result [list 200 ${serverroot}/${vhosts}/t/e/s/testvhost/${pagedir}/x]
 
 
 
 test ns_pagepath-4.1 {custom serverroot} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /pagepath
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /pagepath
 } -result [list 200 testserverroot/arg/${pagedir}]
 
 test ns_pagepath-4.2 {custom serverroot} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /pagepath?host=example.com
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /pagepath?host=example.com
 } -result [list 200 testserverroot/example.com/arg/${pagedir}]
 
 test ns_pagepath-4.3 {custom serverroot} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /pagepath?path=x
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /pagepath?path=x
 } -result [list 200 testserverroot/arg/${pagedir}/x]
 
 test ns_pagepath-4.4 {custom serverroot} -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /pagepath?host=example.com&path=x
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /pagepath?host=example.com&path=x
 } -result [list 200 testserverroot/example.com/arg/${pagedir}/x]
 
 

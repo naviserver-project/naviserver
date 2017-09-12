@@ -132,10 +132,11 @@ static void    DriverClose(Sock *sockPtr)
 static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, const char *threadName,
                                 const Ns_DriverInitData *init,
                                 NsServer *servPtr, const char *path, const char *bindaddr,
-                                const char *defserver, const char *address, const char *host,
-                                int driverCount)
+                                const char *defserver, const char *address, const char *host)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
     NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(10);
+static bool DriverModuleInitialized(const char *module)
+    NS_GNUC_NONNULL(1);
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -204,6 +205,11 @@ static void RequestFree(Sock *sockPtr)
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
+                              NsServer *servPtr, Driver *drvPtr, const ServerMap **defMapPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+
 /*
  * Static variables defined in this file.
  */
@@ -266,6 +272,42 @@ NsInitDrivers(void)
 /*
  *----------------------------------------------------------------------
  *
+ * DriverModuleInitialized --
+ *
+ *      Check if a driver with the specified name is already initialized.
+ *
+ * Results:
+ *      Boolean
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+DriverModuleInitialized(const char *module)
+{
+    Driver *drvPtr;
+    bool found = NS_FALSE;
+
+    NS_NONNULL_ASSERT(module != NULL);
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+
+        if (strcmp(drvPtr->moduleName, module) == 0) {
+            found = NS_TRUE;
+            Ns_Log(Notice, "Driver %s is already initialzed", module);
+            break;
+        }
+    }
+
+    return found;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_DriverInit --
  *
  *      Initialize a driver.
@@ -284,6 +326,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 {
     Ns_ReturnCode  status = NS_OK;
     NsServer      *servPtr = NULL;
+    bool           alreadyInitialized = NS_FALSE;
 
     NS_NONNULL_ASSERT(module != NULL);
     NS_NONNULL_ASSERT(init != NULL);
@@ -297,8 +340,13 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Ns_Log(Bug, "cannot lookup server structure for server: %s", module);
             status = NS_ERROR;
         }
+    } else {
+        alreadyInitialized = DriverModuleInitialized(module);
     }
 
+    /*
+     * Check versions of drivers.
+     */
     if (status == NS_OK && init->version < NS_DRIVER_VERSION_4) {
         Ns_Log(Warning, "%s: driver version is too old (version %d), Version 4 is recommended",
                module, init->version);
@@ -316,7 +364,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         status = NS_ERROR;
     }
 
-    if (status == NS_OK) {
+    if (!alreadyInitialized && status == NS_OK) {
         const char *path, *host, *address, *bindaddr, *defserver;
         bool        noHostNameGiven;
         int         nrDrivers;
@@ -408,7 +456,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
                 status = DriverInit(server, module, moduleName, init,
-                                    servPtr, path, bindaddr, defserver, address, host, i);
+                                    servPtr, path, bindaddr, defserver, address, host);
                 if (status != NS_OK) {
                     break;
                 }
@@ -418,6 +466,208 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     }
 
     return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServerMapEntryAdd --
+ *
+ *      Add an entry to the virtual server map. The entry consists of the
+ *      value as provided by the host header field and location string,
+ *      containing as well the protocol.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Potentially adding an entry to the virtual server map.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
+                  NsServer *servPtr, Driver *drvPtr, const ServerMap **defMapPtrPtr) {
+    Tcl_HashEntry *hPtr;
+    int            isNew;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(moduleName != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    hPtr = Tcl_CreateHashEntry(&hosts, host, &isNew);
+    if (isNew != 0) {
+        ServerMap *mapPtr;
+
+        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
+        mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
+        mapPtr->servPtr  = servPtr;
+        memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
+
+        Tcl_SetHashValue(hPtr, mapPtr);
+        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s",
+               moduleName, host, mapPtr->location);
+
+        if (defMapPtrPtr != NULL && *defMapPtrPtr == NULL) {
+            *defMapPtrPtr = mapPtr;
+        }
+        /*
+         * Always reset the DString
+         */
+        Ns_DStringSetLength(dsPtr, 0);
+    } else {
+        Ns_Log(Notice, "===== %s: ignore duplicate virtual host entry: %s", moduleName, host);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverMapVirtualServers --
+ *
+ *      Map "Host:" headers for drivers not bound to phsical servers.  This
+ *      function has to be called a time, when all servers are already defined
+ *      such that NsGetServer(server) can succeed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Add an entry to the virtual server map via ServerMapEntryAdd()
+ *
+ *----------------------------------------------------------------------
+ */
+void NsDriverMapVirtualServers(void)
+{
+    Driver *drvPtr;
+    Tcl_HashTable names;
+
+    Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        const Ns_Set *lset;
+        size_t        j;
+        int           isNew = 0;
+        Tcl_DString   ds, *dsPtr = &ds;
+        const char   *path, *defserver, *moduleName;
+
+        /*
+         * We might have multiple entries, when multiple driver threads are
+         * used. Skip these.
+         */
+        (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+        if (isNew == 0) {
+            continue;
+        }
+
+        moduleName = drvPtr->moduleName;
+        defserver  = drvPtr->defserver;
+        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
+        lset = Ns_ConfigGetSection(path);
+
+        if (Ns_SetSize(lset) == 0u) {
+            /*
+             * The driver module has no ".../servers" section, there are no
+             * virtual servers for this driver defined.
+             */
+            continue;
+        }
+
+        if (defserver == NULL) {
+            Ns_Fatal("%s: virtual servers configured,"
+                     " but %s has no defaultserver defined", moduleName, path);
+        }
+        assert(defserver != NULL);
+
+        defMapPtr = NULL;
+
+        Ns_DStringInit(dsPtr);
+        for (j = 0u; lset != NULL && j < Ns_SetSize(lset); ++j) {
+            const char *server  = Ns_SetKey(lset, j);
+            const char *host    = Ns_SetValue(lset, j);
+            NsServer   *servPtr;
+
+            /*
+             * Perform an explicit lookup of the server.
+             */
+            servPtr = NsGetServer(server);
+            if (servPtr == NULL) {
+                Ns_Log(Error, "%s: no such server: %s", moduleName, server);
+            } else {
+                char *writableHost, *hostName, *portStart;
+
+                writableHost = ns_strdup(host);
+                Ns_HttpParseHost(writableHost, &hostName, &portStart);
+
+                if (portStart == NULL) {
+                    Tcl_DString hostDString;
+
+                    /*
+                     * The provided host entry does NOT contain a port.
+                     *
+                     * Add the provided entry to the virtual server map only,
+                     * when the configured port is the default port for the
+                     * protocol.
+                     */
+                    if (drvPtr->port == drvPtr->defport) {
+                        ServerMapEntryAdd(dsPtr, host, moduleName, servPtr, drvPtr,
+                                          STREQ(defserver, server) ? &defMapPtr : NULL);
+                    }
+
+                    /*
+                     * Auto-add configured port: Add always an entry with the
+                     * explicitly configured port of the driver.
+                     */
+                    Tcl_DStringInit(&hostDString);
+                    Tcl_DStringAppend(&hostDString, host, -1);
+                    (void) Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
+
+                    ServerMapEntryAdd(dsPtr, hostDString.string, moduleName, servPtr, drvPtr,
+                                      STREQ(defserver, server) ? &defMapPtr : NULL);
+
+                    Tcl_DStringFree(&hostDString);
+                } else {
+                    /*
+                     * The provided host entry does contain a port.
+                     *
+                     * In case, the provided port is equal to the configured port
+                     * of the driver, add an entry.
+                     */
+                    unsigned short providedPort = (unsigned short)strtol(portStart+1, NULL, 10);
+
+                    if (providedPort == drvPtr->port) {
+                        ServerMapEntryAdd(dsPtr, host, moduleName, servPtr, drvPtr,
+                                          STREQ(defserver, server) ? &defMapPtr : NULL);
+                        /*
+                         * In case, the provided port is equal to the default
+                         * port of the driver, make sure that we have an entry
+                         * without the port.
+                         */
+                        if (providedPort == drvPtr->defport) {
+                            ServerMapEntryAdd(dsPtr, hostName, moduleName, servPtr, drvPtr,
+                                              STREQ(defserver, server) ? &defMapPtr : NULL);
+                        }
+                    } else {
+                        Ns_Log(Warning, "%s: driver is listening on port %hu; "
+                               "virtual host entry %s ignored",
+                               moduleName, drvPtr->port, host);
+                    }
+                }
+                ns_free(writableHost);
+            }
+        }
+        Ns_DStringFree(dsPtr);
+
+        if (defMapPtr == NULL) {
+            Ns_Fatal("%s: default server %s not defined in %s", moduleName, defserver, path);
+        }
+    }
+    Tcl_DeleteHashTable(&names);
 }
 
 
@@ -442,15 +692,13 @@ static Ns_ReturnCode
 DriverInit(const char *server, const char *moduleName, const char *threadName,
            const Ns_DriverInitData *init,
            NsServer *servPtr, const char *path, const char *bindaddr,
-           const char *defserver, const char *address, const char *host,
-           int driverCount)
+           const char *defserver, const char *address, const char *host)
 {
     const char     *defproto;
-    ServerMap      *mapPtr;
     Driver         *drvPtr;
     DrvWriter      *wrPtr;
     DrvSpooler     *spPtr;
-    int             i, n;
+    int             i;
     unsigned short  defport;
 
     NS_NONNULL_ASSERT(threadName != NULL);
@@ -496,6 +744,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->type           = init->name;
     drvPtr->moduleName     = ns_strdup(moduleName);
     drvPtr->threadName     = ns_strdup(threadName);
+    drvPtr->defserver      = defserver;
     drvPtr->listenProc     = init->listenProc;
     drvPtr->acceptProc     = init->acceptProc;
     drvPtr->recvProc       = init->recvProc;
@@ -508,6 +757,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->arg            = init->arg;
     drvPtr->opts           = init->opts;
     drvPtr->servPtr        = servPtr;
+    drvPtr->defport        = defport;
 
     drvPtr->bufsize        = (size_t)Ns_ConfigIntRange(path, "bufsize", 16384, 1024, INT_MAX);
     drvPtr->maxinput       = Ns_ConfigWideIntRange(path, "maxinput",
@@ -692,59 +942,9 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                threadName, wrPtr->threads);
     }
 
-    /*
-     * Map Host headers for drivers not bound to servers.
-     */
-
-    if (server == NULL && driverCount == 0) {
-        const Ns_Set *lset;
-        size_t        j;
-        Tcl_DString ds, *dsPtr = &ds;
-
-        if (defserver == NULL) {
-            Ns_Fatal("%s: virtual servers configured,"
-                     " but %s has no defaultserver defined", moduleName, path);
-        }
-        assert(defserver != NULL);
-
-        defMapPtr = NULL;
-        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
-        lset = Ns_ConfigGetSection(path);
-
-        Ns_DStringInit(dsPtr);
-        for (j = 0u; lset != NULL && j < Ns_SetSize(lset); ++j) {
-            server  = Ns_SetKey(lset, j);
-            host    = Ns_SetValue(lset, j);
-            servPtr = NsGetServer(server);
-            if (servPtr == NULL) {
-                Ns_Log(Error, "%s: no such server: %s", moduleName, server);
-            } else {
-                Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
-
-                if (n == 0) {
-                    Ns_Log(Error, "%s: duplicate host map: %s", moduleName, host);
-                } else {
-                    (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
-                    mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
-                    mapPtr->servPtr  = servPtr;
-                    memcpy(mapPtr->location, ds.string, (size_t)ds.length + 1u);
-                    Ns_DStringSetLength(&ds, 0);
-                    if (defMapPtr == NULL && STREQ(defserver, server)) {
-                        defMapPtr = mapPtr;
-                    }
-                    Tcl_SetHashValue(hPtr, mapPtr);
-                }
-            }
-        }
-        Ns_DStringFree(dsPtr);
-
-        if (defMapPtr == NULL) {
-            Ns_Fatal("%s: default server %s not defined in %s", moduleName, server, path);
-        }
-    }
-
     return NS_OK;
 }
+
 
 
 /*

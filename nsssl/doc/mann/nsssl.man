@@ -58,13 +58,13 @@ HTTP Strict Transport Security (HSTS) is enabled.
 [section EXAMPLES]
 
 The module is typically loaded per server (specified
-below in the variable "servername"):
+below in the variable "server"):
 
 [example_begin]
-   ns_section    ns/server/${servername}/modules
+   ns_section    ns/server/${server}/modules
       ns_param      nsssl            nsssl.so
  
-   ns_section    ns/server/${servername}/module/nsssl
+   ns_section    ns/server/${server}/module/nsssl
       ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
       ns_param   address       0.0.0.0
       ns_param   port          443

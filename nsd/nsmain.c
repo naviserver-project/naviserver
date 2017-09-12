@@ -779,6 +779,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         for (i = 0u; i < Ns_SetSize(servers); ++i) {
             server = Ns_SetKey(servers, i);
             NsInitServer(server, initProc);
+
         }
     }
     nsconf.defaultServer = server;
@@ -790,10 +791,23 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NsInitStaticModules(NULL);
 
     /*
-     * Run pre-startups and start the servers.
+     * Run pre-startup procs
      */
 
     NsRunPreStartupProcs();
+
+    /*
+     * Map virtual servers. This requires that all servers and all drivers are
+     * initialized (can be found via global data structures). Drivers are
+     * created via NsRunPreStartupProcs().
+     */
+
+    NsDriverMapVirtualServers();
+
+    /*
+     * Start the servers and drivers.
+     */
+
     NsStartServers();
     NsStartDrivers();
 
