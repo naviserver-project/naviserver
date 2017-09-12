@@ -170,8 +170,8 @@ Set the value for a key in an nsv array. Returns the value the key is set to.
 [call [cmd nsv_unset] [opt [arg -nocomplain]] [opt --] [arg array] [opt [arg key]]]
 
 Unset an array or a single key from an array. If successful returns an
-empty string. If -nocomplain is specified as the first argument, the
-command does not complain when the specified variable does not exist.
+empty string. When [arg -nocomplain] is specified the command does not
+complain when the specified array or key does not exist.
 
 [example_begin]
    % nsv_unset shared_array key1

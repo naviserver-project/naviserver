@@ -495,12 +495,8 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Array *arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE);
         
         if (unlikely(arrayPtr == NULL)) {
-            if (nocomplain != 0) {
-                Tcl_ResetResult(interp);
-            } else {
-                result = TCL_ERROR;
-            }
-        
+            result = TCL_ERROR;
+
         } else {
     
             assert(arrayPtr != NULL);
@@ -533,7 +529,13 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 Ns_TclSetTwoPtrValue(arrayObj, NULL, NULL, NULL);
             }
         }
-    }    
+    }
+
+    if (nocomplain != 0) {
+        Tcl_ResetResult(interp);
+        result = TCL_OK;
+    }
+
     return result;
 }
 
