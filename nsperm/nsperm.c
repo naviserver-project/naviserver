@@ -1651,7 +1651,7 @@ static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
     Ns_HexString(sig, buf, 16, NS_TRUE);
 
     /* encode the current time and MD5 string into the nonce */
-    Ns_DStringTrunc(&ds, 0);
+    Ns_DStringSetLength(&ds, 0);
     Ns_DStringPrintf(&ds, "%" PRIu64 " %s", (int64_t) now, buf);
     Ns_HtuuEncode((unsigned char *) ds.string, (unsigned int) ds.length, bufcoded);
 

@@ -824,7 +824,7 @@ NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         if (GetOutput(clientData, &dsPtr) != TCL_OK) {
             result = TCL_ERROR;
         } else {
-            Ns_DStringTrunc(dsPtr, length);
+            Ns_DStringSetLength(dsPtr, length);
         }
     }
     return result;

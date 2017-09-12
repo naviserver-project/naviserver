@@ -383,7 +383,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         if (cPtr->expires.sec != 0 || cPtr->expires.usec != 0) {
             Ns_DStringAppendTime(&ds, &cPtr->expires);
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
-            Tcl_DStringTrunc(&ds, 0);
+            Tcl_DStringSetLength(&ds, 0);
         } else {
             Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("", 0));
         }

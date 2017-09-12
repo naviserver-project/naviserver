@@ -398,7 +398,7 @@ NsAdpReset(NsInterp *itPtr)
         itPtr->adp.bufsize = 1024u * 1000u;
         itPtr->adp.flags = 0u;
     }
-    Tcl_DStringTrunc(&itPtr->adp.output, 0);
+    Tcl_DStringSetLength(&itPtr->adp.output, 0);
 }
 
 /*
@@ -462,7 +462,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
         }
     }
     file = Ns_NormalizePath(&path, file);
-    Ns_DStringTrunc(&tmp, 0);
+    Ns_DStringSetLength(&tmp, 0);
 
     /*
      * Check for TclPro debugging.
@@ -493,7 +493,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 	Ns_DStringPrintf(&tmp, "nsadp:%p", (void *)itPtr);
         itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
                                itPtr->servPtr->adp.cachesize, FreeInterpPage);
-        Ns_DStringTrunc(&tmp, 0);
+        Ns_DStringSetLength(&tmp, 0);
     }
 
     /*
@@ -653,7 +653,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
                     Ns_IncrTime(&cachePtr->expires, expiresPtr->sec, expiresPtr->usec);
                     cachePtr->refcnt = 1;
                 }
-                Ns_DStringTrunc(&tmp, 0);
+                Ns_DStringSetLength(&tmp, 0);
                 Ns_MutexLock(&servPtr->adp.pagelock);
                 if (cachePtr != NULL) {
                     if (pagePtr->cachePtr != NULL) {
@@ -1019,7 +1019,7 @@ NsAdpLogError(NsInterp *itPtr)
     }
     err = Ns_TclLogErrorInfo(interp, ds.string);
     if ((itPtr->adp.flags & ADP_DISPLAY) != 0u) {
-        Ns_DStringTrunc(&ds, 0);
+        Ns_DStringSetLength(&ds, 0);
         Ns_DStringAppend(&ds, "<br><pre>\n");
         Ns_QuoteHtml(&ds, err);
         Ns_DStringAppend(&ds, "\n<br></pre>\n");
@@ -1263,7 +1263,7 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
                                debugfile, Tcl_PosixError(interp));
             result = TCL_ERROR;
 	} else {
-	    Ns_DStringTrunc(&ds, 0);
+	    Ns_DStringSetLength(&ds, 0);
 	    Ns_DStringVarAppend(&ds, "source ", debugfile, (char *)0);
 	    result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
 	}

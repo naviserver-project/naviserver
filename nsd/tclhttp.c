@@ -787,7 +787,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 
             Tcl_DStringInit(dsPtr);
             Tcl_DStringAppend(dsPtr, httpPtr->ds.string + httpPtr->replyHeaderSize, (int)contentSize);
-            Tcl_DStringTrunc(&httpPtr->ds, httpPtr->replyHeaderSize);
+            Tcl_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
             Ns_HttpAppendBuffer(httpPtr, dsPtr->string, contentSize);
 
             Tcl_DStringFree(dsPtr);
@@ -1643,7 +1643,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
                     if (n < CHUNK_SIZE) {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data spooled, switch to read reply");
                         HttpTaskShutdown(httpPtr);
-                        Tcl_DStringTrunc(&httpPtr->ds, 0);
+                        Tcl_DStringSetLength(&httpPtr->ds, 0);
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
                     taskDone = NS_FALSE;
@@ -1666,11 +1666,11 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
                     if (httpPtr->bodyFileFd > 0) {
                         httpPtr->sendSpoolMode = NS_TRUE;
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d", httpPtr->bodyFileFd);
-                        Tcl_DStringTrunc(&httpPtr->ds, CHUNK_SIZE);
+                        Tcl_DStringSetLength(&httpPtr->ds, CHUNK_SIZE);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
                         HttpTaskShutdown(httpPtr);
-                        Tcl_DStringTrunc(&httpPtr->ds, 0);
+                        Tcl_DStringSetLength(&httpPtr->ds, 0);
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
                 }

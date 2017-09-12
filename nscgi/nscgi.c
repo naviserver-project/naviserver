@@ -213,7 +213,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Ns_Log(Warning, "nscgi: no such interps section: %s",
                    ds.string);
         }
-    	Ns_DStringTrunc(&ds, 0);
+    	Ns_DStringSetLength(&ds, 0);
     }
     section = Ns_ConfigGetValue(path, "environment");
     if (section != NULL) {
@@ -223,7 +223,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Ns_Log(Warning, "nscgi: no such environment section: %s",
                    ds.string);
         }
-    	Ns_DStringTrunc(&ds, 0);
+    	Ns_DStringSetLength(&ds, 0);
     }
     if (Ns_ConfigBool(path, "systemenvironment", NS_FALSE)) {
         modPtr->flags |= CGI_SYSENV;
@@ -784,7 +784,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 	    }
 	    ++envp;
 	}
-	Ns_DStringTrunc(dsPtr, 0);
+	Ns_DStringSetLength(dsPtr, 0);
     }
 
     /*
@@ -812,7 +812,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         } else {
             Ns_SetUpdate(cgiPtr->env, "PATH_INFO", cgiPtr->pathinfo);
         }
-	Ns_DStringTrunc(dsPtr, 0);
+	Ns_DStringSetLength(dsPtr, 0);
 	Ns_DStringInit(&tmp);
         (void)Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
         if (Ns_UrlPathDecode(&tmp, dsPtr->string, NULL) != NULL) {
@@ -821,17 +821,17 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
              Ns_SetUpdate(cgiPtr->env, "PATH_TRANSLATED", dsPtr->string);
         }
 	Ns_DStringFree(&tmp);
-	Ns_DStringTrunc(dsPtr, 0);
+	Ns_DStringSetLength(dsPtr, 0);
     } else {
          Ns_SetUpdate(cgiPtr->env, "PATH_INFO", "");
     }
     Ns_SetUpdate(cgiPtr->env, "GATEWAY_INTERFACE", "CGI/1.1");
     Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), (char *)0L);
     Ns_SetUpdate(cgiPtr->env, "SERVER_SOFTWARE", dsPtr->string);
-    Ns_DStringTrunc(dsPtr, 0);
+    Ns_DStringSetLength(dsPtr, 0);
     Ns_DStringPrintf(dsPtr, "HTTP/%2.1f", conn->request.version);
     Ns_SetUpdate(cgiPtr->env, "SERVER_PROTOCOL", dsPtr->string);
-    Ns_DStringTrunc(dsPtr, 0);
+    Ns_DStringSetLength(dsPtr, 0);
 
     /*
      * Determine SERVER_NAME and SERVER_PORT from the conn location.
@@ -850,14 +850,14 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         for (j = 0; *p != '\0'; ++p, ++j) {
             ;
         }
-        Ns_DStringTrunc(dsPtr, j);
+        Ns_DStringSetLength(dsPtr, j);
     }
     Ns_SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
-    Ns_DStringTrunc(dsPtr, 0);
+    Ns_DStringSetLength(dsPtr, 0);
     if (p == NULL) {
         Ns_DStringPrintf(dsPtr, "%hu", Ns_ConnPort(conn));
         Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", dsPtr->string);
-        Ns_DStringTrunc(dsPtr, 0);
+        Ns_DStringSetLength(dsPtr, 0);
     }
 
     /*
@@ -876,7 +876,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                 if (Ns_GetHostByAddr(dsPtr, peer) == NS_TRUE) {
                     Ns_SetUpdate(cgiPtr->env, "REMOTE_HOST", dsPtr->string);
                 }
-                Ns_DStringTrunc(dsPtr, 0);
+                Ns_DStringSetLength(dsPtr, 0);
             } else {
                 Ns_SetUpdate(cgiPtr->env, "REMOTE_HOST", peer);
             }
@@ -905,7 +905,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     } else {
         Ns_DStringPrintf(dsPtr, "%u", (unsigned) conn->contentLength);
         Ns_SetUpdate(cgiPtr->env, "CONTENT_LENGTH", dsPtr->string);
-        Ns_DStringTrunc(dsPtr, 0);
+        Ns_DStringSetLength(dsPtr, 0);
     }
 
     /*
@@ -934,14 +934,14 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         } else {
 	    SetAppend(cgiPtr->env, index, ", ", e);
         }
-        Ns_DStringTrunc(dsPtr, 5);
+        Ns_DStringSetLength(dsPtr, 5);
     }
 
     /*
      * Build up the argument block.
      */
 
-    Ns_DStringTrunc(dsPtr, 0);
+    Ns_DStringSetLength(dsPtr, 0);
     if (cgiPtr->interp != NULL) {
         Ns_DStringAppendArg(dsPtr, cgiPtr->interp);
     }
@@ -1071,7 +1071,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 	    if (c == '\n') {
 		while (dsPtr->length > 0
 		    && CHARTYPE(space, dsPtr->string[dsPtr->length - 1]) != 0) {
-		    Ns_DStringTrunc(dsPtr, dsPtr->length-1);
+		    Ns_DStringSetLength(dsPtr, dsPtr->length-1);
 		}
 		return (ssize_t)dsPtr->length;
 	    }
@@ -1160,7 +1160,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                 last = (int)Ns_SetPut(hdrs, ds.string, value);
             }
         }
-        Ns_DStringTrunc(&ds, 0);
+        Ns_DStringSetLength(&ds, 0);
     }
     Ns_DStringFree(&ds);
     if (n < 0) {

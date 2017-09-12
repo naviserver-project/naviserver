@@ -721,7 +721,7 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     while (s < e  && CHARTYPE(space, *s) == 0) {
         ++s;
     }
-    Tcl_DStringTrunc(dsPtr, 0);
+    Tcl_DStringSetLength(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
 	while (s < e && CHARTYPE(space, *s) != 0) {

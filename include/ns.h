@@ -232,7 +232,7 @@ typedef enum {
 #define Ns_DStringAppendElement    Tcl_DStringAppendElement
 #define Ns_DStringInit             Tcl_DStringInit
 #define Ns_DStringFree             Tcl_DStringFree
-#define Ns_DStringTrunc            Tcl_DStringTrunc
+#define Ns_DStringTrunc            Tcl_DStringSetLength
 #define Ns_DStringSetLength        Tcl_DStringSetLength
 #define NS_DSTRING_STATIC_SIZE     (TCL_DSTRING_STATIC_SIZE)
 #define NS_DSTRING_PRINTF_MAX      2048

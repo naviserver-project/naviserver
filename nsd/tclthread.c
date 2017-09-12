@@ -1001,7 +1001,7 @@ CreateSynchObject(const NsInterp *itPtr,
         
             Ns_DStringInit(&ds);
             do {
-                Ns_DStringTrunc(&ds, 0);
+                Ns_DStringSetLength(&ds, 0);
                 Ns_DStringPrintf(&ds, "%s:tcl:%u", type, (*idPtr)++);
                 hPtr = Tcl_CreateHashEntry(typeTable, ds.string, &isNew);
             } while (isNew == 0);

@@ -409,7 +409,7 @@ EvalThread(void *arg)
     Tcl_DStringInit(&unameDS);
     Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);
     Ns_ThreadSetName(ds.string);
-    Tcl_DStringTrunc(&ds, 0);
+    Tcl_DStringSetLength(&ds, 0);
     Ns_Log(Notice, "nscp: %s connected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
 
@@ -437,7 +437,7 @@ EvalThread(void *arg)
     while (stop == 0) {
         char buf[64];
             
-	Tcl_DStringTrunc(&ds, 0);
+	Tcl_DStringSetLength(&ds, 0);
 	++ncmd;
 retry:
 	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
@@ -451,7 +451,7 @@ retry:
 	    snprintf(buf, sizeof(buf), "%s:nscp %d>>> ", server, ncmd);
 	}
 	while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
-	    Tcl_DStringTrunc(&ds, ds.length-1);
+	    Tcl_DStringSetLength(&ds, ds.length-1);
 	}
 	if (STREQ(ds.string, "")) {
 	    goto retry; /* Empty command - try again. */

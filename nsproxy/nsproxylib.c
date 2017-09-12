@@ -618,8 +618,8 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         if (SendBuf(&proc, -1, &out) == NS_FALSE) {
             break;
         }
-        Tcl_DStringTrunc(&in, 0);
-        Tcl_DStringTrunc(&out, 0);
+        Tcl_DStringSetLength(&in, 0);
+        Tcl_DStringSetLength(&out, 0);
     }
 
     if (uarg != NULL) {
@@ -1061,7 +1061,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             req.len   = htonl((uint32_t)len);
             req.major = htons(MAJOR_VERSION);
             req.minor = htons(MINOR_VERSION);
-            Tcl_DStringTrunc(&proxyPtr->in, 0);
+            Tcl_DStringSetLength(&proxyPtr->in, 0);
             Tcl_DStringAppend(&proxyPtr->in, (char *) &req, sizeof(req));
             if (len > 0u) {
                 Tcl_DStringAppend(&proxyPtr->in, script, (int)len);
@@ -1185,7 +1185,7 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
     } else if (proxyPtr->state == Busy) {
         err = ENoWait;
     } else {
-        Tcl_DStringTrunc(&proxyPtr->out, 0);
+        Tcl_DStringSetLength(&proxyPtr->out, 0);
         if (RecvBuf(proxyPtr->slavePtr, proxyPtr->conf.trecv,
                     &proxyPtr->out) == NS_FALSE) {
             err = ERecv;
@@ -2730,8 +2730,8 @@ ResetProxy(Proxy *proxyPtr)
     }
     Ns_MutexUnlock(&poolPtr->lock);
 
-    Tcl_DStringTrunc(&proxyPtr->in, 0);
-    Tcl_DStringTrunc(&proxyPtr->out, 0);
+    Tcl_DStringSetLength(&proxyPtr->in, 0);
+    Tcl_DStringSetLength(&proxyPtr->out, 0);
 }
 
 

@@ -163,7 +163,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Tcl_Obj *dirpath;
 	    int rc;
 
-            Ns_DStringTrunc(&ds, 0);
+            Ns_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
@@ -175,7 +175,7 @@ Ns_ModuleInit(const char *server, const char *module)
                 Ns_DStringFree(&ds);
                 return NS_ERROR;
             }
-            Ns_DStringTrunc(&ds, 0);
+            Ns_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, file, (char *)0);
         }
         logPtr->file = Ns_DStringExport(&ds);
@@ -405,7 +405,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
                 if (strstr(ds.string, "suppressquery")) {
                     flags |= LOG_SUPPRESSQUERY;
                 }
-                Ns_DStringTrunc(&ds, 0);
+                Ns_DStringSetLength(&ds, 0);
                 Ns_MutexLock(&logPtr->lock);
                 logPtr->flags = flags;
                 Ns_MutexUnlock(&logPtr->lock);
@@ -757,7 +757,7 @@ LogTrace(void *arg, Ns_Conn *conn)
                  */
 	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
 	      bufferPtr = buffer;
-	      Ns_DStringTrunc(&logPtr->buffer, 0);
+	      Ns_DStringSetLength(&logPtr->buffer, 0);
               status = NS_OK;
 	    } else {
 	      status = LogFlush(logPtr, &logPtr->buffer);
@@ -882,7 +882,7 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
             ns_close(logPtr->fd);
             logPtr->fd = NS_INVALID_FD;
         }
-        Ns_DStringTrunc(dsPtr, 0);
+        Ns_DStringSetLength(dsPtr, 0);
     }
 
     return (logPtr->fd == NS_INVALID_FD) ? NS_ERROR : NS_OK;

@@ -606,7 +606,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
             itPtr->adp.exception = ADP_ABORT;
         }
     }
-    Tcl_DStringTrunc(&itPtr->adp.output, 0);
+    Tcl_DStringSetLength(&itPtr->adp.output, 0);
 
     if (!doStream) {
         NsAdpReset(itPtr);

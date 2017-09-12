@@ -412,7 +412,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
              */
 
             if (host == NULL) {
-                Tcl_DStringTrunc(&ds, 0);
+                Tcl_DStringSetLength(&ds, 0);
 
                 if (Ns_GetHostByAddr(&ds, address) == NS_TRUE) {
                     host = ns_strdup(Tcl_DStringValue(&ds));

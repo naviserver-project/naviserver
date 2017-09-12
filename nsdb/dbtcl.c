@@ -946,7 +946,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             if (CHARTYPE(space, *quotelist) != 0 && !inquotes) {
                 if (ds.length != 0) {
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
-                    Ns_DStringTrunc(&ds, 0);
+                    Ns_DStringSetLength(&ds, 0);
                 }
                 while (CHARTYPE(space, *quotelist) != 0) {
                     quotelist++;
@@ -958,7 +958,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                 if (inquotes) {
                     /* Finish element */
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
-                    Ns_DStringTrunc(&ds, 0);
+                    Ns_DStringSetLength(&ds, 0);
                     inquotes = NS_FALSE;
                 } else {
                     /* Start element */
@@ -1095,7 +1095,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
                         (void) Ns_StrTrimRight(elem.string);
                     }
                     Tcl_DStringAppendElement(&cols, elem.string);
-                    Tcl_DStringTrunc(&elem, 0);
+                    Tcl_DStringSetLength(&elem, 0);
                     ncols++;
                     quoted = NS_FALSE;
                 } else {

@@ -322,7 +322,7 @@ DumpString(Tcl_DString *dsPtr)
 	}
 	Tcl_Free((char *) largv);
     }
-    Tcl_DStringTrunc(dsPtr, 0);
+    Tcl_DStringSetLength(dsPtr, 0);
 }
 
 
