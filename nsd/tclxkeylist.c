@@ -268,9 +268,9 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
         }
     } else if (status == TCL_OK) {
         if (fieldValuePtr != NULL) {
-	    int valueLen;
+	    int         valueLen;
             const char *keyValue = Tcl_GetStringFromObj(objValPtr, &valueLen);
-            char *newValue = ns_strncopy(keyValue, (ssize_t)valueLen);
+            char       *newValue = ns_strncopy(keyValue, (ssize_t)valueLen);
 
             *fieldValuePtr = newValue;
         }
