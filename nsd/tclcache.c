@@ -1151,7 +1151,6 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
     const char *bytes;
     int         len;
     size_t      length;
-    Ns_Time     t;
 
     NS_NONNULL_ASSERT(cPtr != NULL);
     NS_NONNULL_ASSERT(entry != NULL);
@@ -1165,7 +1164,8 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
         Ns_CacheDeleteEntry(entry);
     } else {
         Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
-        char *value = ns_malloc(length + 1u);
+        char    *value = ns_malloc(length + 1u);
+        Ns_Time  t;
 
         memcpy(value, bytes, length);
         value[length] = '\0';

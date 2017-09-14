@@ -1224,7 +1224,6 @@ static int
 IncrVar(Array *arrayPtr, const char *key, int incr, Tcl_WideInt *valuePtr)
 {
     Tcl_HashEntry *hPtr;
-    const char    *oldString;
     int            isNew, status;
     Tcl_WideInt    counter = -1;
 
@@ -1233,14 +1232,17 @@ IncrVar(Array *arrayPtr, const char *key, int incr, Tcl_WideInt *valuePtr)
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
-    oldString = Tcl_GetHashValue(hPtr);
 
     if (isNew != 0) {
         counter = 0;
         status = TCL_OK;
     } else {
+        const char *oldString;
+
+        oldString = Tcl_GetHashValue(hPtr);
         status = (Ns_StrToWideInt(oldString, &counter) == NS_OK)
-            ? TCL_OK : TCL_ERROR;
+            ? TCL_OK
+            : TCL_ERROR;
     }
 
     if (status == TCL_OK) {
