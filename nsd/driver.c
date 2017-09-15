@@ -570,10 +570,10 @@ void NsDriverMapVirtualServers(void)
         path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
         lset = Ns_ConfigGetSection(path);
 
-        if (Ns_SetSize(lset) == 0u) {
+        if (lset == NULL || Ns_SetSize(lset) == 0u) {
             /*
-             * The driver module has no ".../servers" section, there are no
-             * virtual servers for this driver defined.
+             * The driver module has no ".../servers" section or an empty
+             * section, there are no virtual servers for this driver defined.
              */
             continue;
         }
@@ -587,7 +587,7 @@ void NsDriverMapVirtualServers(void)
         defMapPtr = NULL;
 
         Ns_DStringInit(dsPtr);
-        for (j = 0u; lset != NULL && j < Ns_SetSize(lset); ++j) {
+        for (j = 0u; j < Ns_SetSize(lset); ++j) {
             const char *server  = Ns_SetKey(lset, j);
             const char *host    = Ns_SetValue(lset, j);
             NsServer   *servPtr;

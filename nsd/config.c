@@ -911,9 +911,10 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
  *
  * Results:
  *      Pointer to new or existing Ns_Set for given section.
+ *      When "create" is not set, the function might return NULL.
  *
  * Side effects:
- *      Section set created (if necessary).
+ *      Section set created (if necessary and "create" is given as true).
  *
  *----------------------------------------------------------------------
  */
