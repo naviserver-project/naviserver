@@ -56,15 +56,17 @@ static Tcl_ObjType addrType = {
 };
 
 static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
-
+static const Tcl_ObjType *properByteArrayTypePtr;  /* For NsTclIsByteArray(). */
 
 /*
  *----------------------------------------------------------------------
  *
  * NsTclInitAddrType --
  *
- *      Initialize the Tcl address object type and cache the bytearray
- *      Tcl built-in type.
+ *      Initialize the Tcl address object type and cache the bytearray Tcl
+ *      built-in type. Starting with Tcl 8.7a1, Tcl has actually two different
+ *      types for bytearrays, the old "tclByteArrayType" and a new
+ *      "properByteArrayType", where both have the string name "bytearray".
  *
  * Results:
  *      None.
@@ -78,8 +80,21 @@ static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
 void
 NsTclInitAddrType(void)
 {
+    Tcl_Obj *newByteObj;
+
     Tcl_RegisterObjType(&addrType);
+    /*
+     * Get the "tclByteArrayType" via name "bytearray".
+     */
     byteArrayTypePtr = Tcl_GetObjType("bytearray");
+    newByteObj = Tcl_NewByteArrayObj(NULL,0);
+
+    /*
+     * Get the "properByteArrayType" via a TclObj.
+     * In versions before Tcl 8.7, both values will be the same.
+     */
+    properByteArrayTypePtr = newByteObj->typePtr;
+    Tcl_DecrRefCount(newByteObj);
 }
 
 
@@ -379,8 +394,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
  *
  *      Does the given Tcl object have a byte array internal rep?  The
  *      function determines when it is safe to interpret a string as a
- *      byte array directly. It is the same as Tcl 8.6's
- *      TclIsPureByteArray(Tcl_Obj *objPtr)
+ *      byte array directly.
  *
  * Results:
  *      Boolean.
@@ -395,8 +409,10 @@ bool
 NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
-  
-    return (objPtr->typePtr == byteArrayTypePtr) ? NS_TRUE : NS_FALSE;
+
+    return ((objPtr->typePtr == properByteArrayTypePtr)
+            || (objPtr->typePtr == byteArrayTypePtr)
+            ) ? NS_TRUE : NS_FALSE;
 }
 
 
