@@ -860,7 +860,7 @@ Ns_CacheSetMaxSize(Ns_Cache *cache, size_t maxSize)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_CacheGetNrUncommitedEntries(const Ns_Cache *cache)
+Ns_CacheGetNrUncommittedEntries(const Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
 /*

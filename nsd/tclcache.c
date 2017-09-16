@@ -121,7 +121,7 @@ GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
         if (withUncommittedEntries) {
             const TclCache *cPtr = Tcl_GetHashValue(hPtr);
 
-            if (Ns_CacheGetNrUncommitedEntries(cPtr->cache) > 0) {
+            if (Ns_CacheGetNrUncommittedEntries(cPtr->cache) > 0) {
                 Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
             }
         } else {
@@ -1398,7 +1398,7 @@ CacheTransactionFinishObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
             Ns_DiffTime(&endTime, &startTime, &diffTime);
 
             Ns_Log(Notice, "CacheTransactionFinish: %s %lu elements in (%" PRIu64 ".%06ld secs)",
-                   commit ? "commited" : "rolled back",
+                   commit ? "committed" : "rolled back",
                    count, (int64_t)diffTime.sec, diffTime.usec);
         }
     }

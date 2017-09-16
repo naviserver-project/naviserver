@@ -516,7 +516,7 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheGetNrUncommitedEntries --
+ * Ns_CacheGetNrUncommittedEntries --
  *
  *      Return for a given cache the number of uncommitted entries.
  *
@@ -529,7 +529,7 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
  *----------------------------------------------------------------------
  */
 int
-Ns_CacheGetNrUncommitedEntries(const Ns_Cache *cache)
+Ns_CacheGetNrUncommittedEntries(const Ns_Cache *cache)
 {
     const Cache *cachePtr;
 
