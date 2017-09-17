@@ -2902,24 +2902,33 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 
     if (sockPtr->reqPtr != NULL) {
         Request     *reqPtr = sockPtr->reqPtr;
-        Tcl_DString  dsReqLine;
         const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : "";
 
         (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
 
-        Tcl_DStringInit(&dsReqLine);
-        Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
-               code, errMsg,
-               reqPtr->peer,
-               Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
-               reqPtr->roff,
-               reqPtr->woff,
-               reqPtr->coff,
-               reqPtr->avail);
-        Tcl_DStringFree(&dsReqLine);
+        /*
+         * Check, if bad request looks like a TLS handshake. If yes, there is
+         * no need to print out the received buffer.
+         */
+        if (requestLine[0] == (char)0x16 && requestLine[1] >= 3 && requestLine[2] == 1) {
+            Ns_Log(Warning, "invalid request %d (%s) from peer %s: recveived TLS handshake on a non-TLS connection",
+                   code, errMsg, reqPtr->peer);
+        } else {
+            Tcl_DString  dsReqLine;
 
-        LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+            Tcl_DStringInit(&dsReqLine);
+            Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
+                   code, errMsg,
+                   reqPtr->peer,
+                   Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
+                   reqPtr->roff,
+                   reqPtr->woff,
+                   reqPtr->coff,
+                   reqPtr->avail);
+            Tcl_DStringFree(&dsReqLine);
 
+            LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+        }
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
                code, errMsg);
