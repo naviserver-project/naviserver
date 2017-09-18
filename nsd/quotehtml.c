@@ -36,6 +36,13 @@
 
 #include "nsd.h"
 
+/*
+ * Static functions defined in this file.
+ */
+static void
+QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 
 /*
  *----------------------------------------------------------------------
@@ -52,6 +59,62 @@
  *
  *----------------------------------------------------------------------
  */
+static void
+QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
+{
+    const char *toProcess = htmlString;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(breakChar != NULL);
+    NS_NONNULL_ASSERT(htmlString != NULL);
+
+    do {
+        /*
+         * Append the first part, escape the protected char, and
+         * continue.
+         */
+        Ns_DStringNAppend(dsPtr, toProcess, (int)(breakChar - toProcess));
+        switch (*breakChar) {
+        case '<':
+            Ns_DStringNAppend(dsPtr, "&lt;", 4);
+            break;
+
+        case '>':
+            Ns_DStringNAppend(dsPtr, "&gt;", 4);
+            break;
+
+        case '&':
+            Ns_DStringNAppend(dsPtr, "&amp;", 5);
+            break;
+
+        case '\'':
+            Ns_DStringNAppend(dsPtr, "&#39;", 5);
+            break;
+
+        case '"':
+            Ns_DStringNAppend(dsPtr, "&#34;", 5);
+            break;
+
+        default:
+            /*should not happen */ assert(0);
+            break;
+        }
+        /*
+         * Check for further protected characters.
+         */
+        toProcess = breakChar + 1;
+        breakChar = strpbrk(toProcess, "<>&'\"");
+
+    } while (breakChar != NULL);
+
+    /*
+     * Append the last part if non-empty.
+     */
+    if (toProcess != NULL) {
+        Ns_DStringAppend(dsPtr, toProcess);
+    }
+}
+
 
 void
 Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
@@ -63,55 +126,16 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
      * If the first character is a null character, there is nothing to do.
      */
     if (*htmlString != '\0') {
-        const char *p, *toProcess;
+        const char *breakChar = strpbrk(htmlString, "<>&'\"");
 
-        for (toProcess = htmlString;;toProcess = ++p) {
-            /*
-             * Check for protected characters.
-             */
-            p = strpbrk(toProcess, "<>&'\"");
-
-            if (p == NULL) {
-                /*
-                 * No protected char found, append the string and finish.
-                 */
-                Ns_DStringAppend(dsPtr, toProcess);
-                break;
-            } else {
-                /*
-                 * Append the first part, escape the protected char, and
-                 * continue.
-                 */
-                Ns_DStringNAppend(dsPtr, toProcess, (int)(p - toProcess));
-                switch (*p) {
-                case '<':
-                    Ns_DStringNAppend(dsPtr, "&lt;", 4);
-                    break;
-
-                case '>':
-                    Ns_DStringNAppend(dsPtr, "&gt;", 4);
-                    break;
-
-                case '&':
-                    Ns_DStringNAppend(dsPtr, "&amp;", 5);
-                    break;
-
-                case '\'':
-                    Ns_DStringNAppend(dsPtr, "&#39;", 5);
-                    break;
-
-                case '"':
-                    Ns_DStringNAppend(dsPtr, "&#34;", 5);
-                    break;
-
-                default:
-                    /*should not happen */ assert(0);
-                    break;
-                }
-            }
+        if (breakChar != NULL) {
+            QuoteHtml(dsPtr, strpbrk(htmlString, "<>&'\""), htmlString);
+        } else {
+            Ns_DStringAppend(dsPtr, htmlString);
         }
     }
 }
+
 
 
 /*
@@ -134,9 +158,9 @@ int
 NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString;
+    Tcl_Obj     *htmlObj;
     Ns_ObjvSpec  args[] = {
-        {"html", Ns_ObjvString,  &htmlString, NULL},
+        {"html", Ns_ObjvObj,  &htmlObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -144,12 +168,25 @@ NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
 
     } else {
-        Ns_DString ds;
+        const char *htmlString = Tcl_GetString(htmlObj);
 
-        Ns_DStringInit(&ds);
-        Ns_QuoteHtml(&ds, htmlString);
+        if (*htmlString != '\0') {
+            const char *breakChar = strpbrk(htmlString, "<>&'\"");
 
-        Tcl_DStringResult(interp, &ds);
+            if (breakChar == NULL) {
+                /*
+                 * No need to copy anything.
+                 */
+                Tcl_SetObjResult(interp, htmlObj);
+            } else {
+                Ns_DString ds;
+
+                Ns_DStringInit(&ds);
+                QuoteHtml(&ds, breakChar, htmlString);
+                Tcl_DStringResult(interp, &ds);
+
+            }
+        }
     }
 
     return result;
