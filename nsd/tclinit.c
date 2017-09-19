@@ -742,7 +742,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
         /*
          * Run CREATE and ALLOCATE traces immediately so that commands registered
          * by binary modules can be called by Tcl init scripts sourced by the
-         * already initialised interp which loads the modules.
+         * already initialized interp which loads the modules.
          */
 
         if ((when == NS_TCL_TRACE_CREATE) || (when == NS_TCL_TRACE_ALLOCATE)) {
@@ -1351,7 +1351,7 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             (*deferPtr->proc)(interp, deferPtr->arg);
             ns_free(deferPtr);
         }
-	itPtr->firstDeferPtr = NULL;
+        itPtr->firstDeferPtr = NULL;
 
         result = UpdateInterp(itPtr);
     }
@@ -1660,7 +1660,7 @@ NsTclInitServer(const char *server)
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
-	Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
+        Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
         if ( Tcl_FSEvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: init server)");
@@ -2027,11 +2027,11 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      * operation only once for all threads.
      */
     if (strcmp("utf-8", Tcl_GetEncodingName(Tcl_GetEncoding(interp, NULL))) != 0) {
-	int result = Tcl_SetSystemEncoding(interp, "utf-8");
-        
-	if (result != TCL_OK) {
-	    (void) Ns_TclLogErrorInfo(interp, "\n(context: set system encoding to utf-8)");
-	}
+        int result = Tcl_SetSystemEncoding(interp, "utf-8");
+
+        if (result != TCL_OK) {
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: set system encoding to utf-8)");
+        }
     }
 
     /*
@@ -2336,7 +2336,7 @@ DeleteInterps(void *arg)
 
         itPtr = Tcl_GetHashValue(hPtr);
         if ((itPtr != NULL) && (itPtr->interp != NULL)) {
-	    Ns_TclDestroyInterp(itPtr->interp);
+            Ns_TclDestroyInterp(itPtr->interp);
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
