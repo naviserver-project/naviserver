@@ -2066,7 +2066,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 static NsInterp *
 NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 {
-    static volatile int initialized = 0;
+    static volatile bool initialized = NS_FALSE;
     NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -2077,14 +2077,14 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
      * Tcl is not fully initialized at libnsd load time.
      */
 
-    if (initialized == 0) {
+    if (!initialized) {
         Ns_MasterLock();
-        if (initialized == 0) {
+        if (!initialized) {
             NsTclInitQueueType();
             NsTclInitAddrType();
             NsTclInitTimeType();
             NsTclInitKeylistType();
-            initialized = 1;
+            initialized = NS_TRUE;
         }
         Ns_MasterUnlock();
     }
