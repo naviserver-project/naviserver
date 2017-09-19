@@ -1558,7 +1558,7 @@ CmpKeyWithChannelAsStrings(const char *key, const Channel *const*channelPtrPtr)
  *      Pointer to junction.
  *
  * Side effects:
- *      Will initialise the junction on first access.
+ *      Will initialize the junction on first access.
  *
  *----------------------------------------------------------------------
  */

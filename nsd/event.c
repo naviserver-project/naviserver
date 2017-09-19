@@ -60,7 +60,7 @@ typedef struct Event {
  */
 
 typedef struct EventQueue {
-    Event             *firstInitPtr;  /* New events to be initialised. */
+    Event             *firstInitPtr;  /* New events to be initialized. */
     Event             *firstWaitPtr;  /* Sockets waiting for events or timeout. */
     Event             *firstFreePtr;  /* Free, unused Event structs. */
     struct pollfd     *pfds;          /* Array of pollfd structs. */

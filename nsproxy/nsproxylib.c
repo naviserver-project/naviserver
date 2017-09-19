@@ -369,7 +369,7 @@ static Ns_DString defexec;             /* Stores full path of the proxy executab
  *
  * Nsproxy_Init --
  *
- *      libnsproxy initialisation.
+ *      libnsproxy initialization.
  *
  * Results:
  *      None.

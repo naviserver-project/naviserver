@@ -81,7 +81,7 @@ Nsproxy_Init(Tcl_Interp *interp)
  *
  * Ns_ModuleInit --
  *
- *      NaviServer module initialisation routine.
+ *      NaviServer module initialization routine.
  *
  * Results:
  *      NS_OK/NS_ERROR

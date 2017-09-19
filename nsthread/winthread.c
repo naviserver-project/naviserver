@@ -104,7 +104,7 @@ static DWORD tlskey;
  *
  * Nsthreads_LibInit --
  *
- *      Pthread library initialisation routine.
+ *      Pthread library initialization routine.
  *
  * Results:
  *      None.

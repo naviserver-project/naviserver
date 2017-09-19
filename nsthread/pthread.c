@@ -72,7 +72,7 @@ static pthread_key_t key;
  *
  * Nsthreads_LibInit --
  *
- *      Pthread library initialisation routine.
+ *      Pthread library initialization routine.
  *
  * Results:
  *      None.

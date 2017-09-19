@@ -895,7 +895,7 @@ Ns_VarSet(const char *server, const char *array, const char *key,
  *      The new value of the counter.
  *
  * Side effects:
- *      Missing keys are initialised to 1.
+ *      Missing keys are initialized to 1.
  *
  *-----------------------------------------------------------------------------
  */
