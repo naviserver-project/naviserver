@@ -678,10 +678,9 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
             /*
              * Increment line numbers based on the passed-in segment
              */
-            while (likely(s < e)) {
-                if (unlikely(*s++ == '\n')) {
-                    ++parsePtr->line;
-                }
+            while( ((s = strchr(s, '\n')) != NULL) && (s < e)) {
+                ++parsePtr->line;
+                ++s;
             }
         }
     }
