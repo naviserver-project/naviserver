@@ -948,7 +948,6 @@ CacheTransaction(Cache *cachePtr, uintptr_t epoch, bool commit)
 
                 Tcl_DeleteHashEntry(hPtr);
             } else {
-                ((Entry *) entry)->cachePtr->stats.nexpired++;
                 /*
                  * Ns_CacheDeleteEntry() will try to delete the same hPtr of above.
                  */
