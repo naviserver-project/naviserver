@@ -777,14 +777,14 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 
         if (nodePtr->dataInherit != NULL) {
             Tcl_DStringStartSublist(dsPtr);
-            Tcl_DStringAppend(dsPtr, subDs.string, -1);
+            Tcl_DStringAppend(dsPtr, subDs.string, subDs.length);
             Tcl_DStringAppendElement(dsPtr, "inherit");
             (*func)(dsPtr, nodePtr->dataInherit);
             Tcl_DStringEndSublist(dsPtr);
         }
         if (nodePtr->dataNoInherit != NULL) {
             Tcl_DStringStartSublist(dsPtr);
-            Tcl_DStringAppend(dsPtr, subDs.string, -1);
+            Tcl_DStringAppend(dsPtr, subDs.string, subDs.length);
             Tcl_DStringAppendElement(dsPtr, "noinherit");
             (*func)(dsPtr, nodePtr->dataNoInherit);
             Tcl_DStringEndSublist(dsPtr);
