@@ -9,7 +9,7 @@
 
 Cookies are small pieces of data which the server sends to the [term "user agent"]
 and the user agent sends back during subsequent requests. You can use this
-mechanism to save state between otherwise statelss HTTP requests.
+mechanism to save state between otherwise stateless HTTP requests.
 
 [para]
 Cookie size limits are user agent dependent. Practically, as cookies are sent
@@ -65,6 +65,7 @@ Get the cookie data identified by [arg name]. If no such cookie exists then
 exists, an error is raised. When the option [opt -include_set_cookies] is set
 true, then this command will search as well in the cookies being
 currently set in the output headers.
+
 [para]
 By default, only the first cookie identified by [arg name] is returned. If two cookies
 with the same name are sent by the user agent, each with a different [arg domain]
@@ -100,7 +101,7 @@ for the cookie to be deleted. If the provided domain is empty, it is ignored.
 [list_begin options]
 
 [opt_def -discard [arg boolean]]
-If the discard option is true then the cookie will be automaticalled
+If the discard option is true then the cookie will be automatically
 deleted at the end of the current session (when the user agent terminates).
 
 [opt_def -secure [arg boolean]]
