@@ -313,6 +313,16 @@ test cookie-4.9c {get all named cookies, multiple cookies, no spaces, terminator
     ns_unregister_op GET /cookie-4.9
 } -result {200 {hello world}}
 
+test cookie-4.9d {get all named cookies, multiple cookies, no spaces, terminator, other cookie at the end} -setup {
+    ns_register_proc GET /cookie-4.9 {
+        ns_return 200 text/plain [ns_getcookie -all t x]
+    }
+} -body {
+    nstest::http -setheaders {Cookie {x=hello;y=njet;x=world;z=1}} -getbody 1 GET /cookie-4.9
+} -cleanup {
+    ns_unregister_op GET /cookie-4.9
+} -result {200 {hello world}}
+
 
 #
 # TODO: exercise the cookie parser with bad input...
