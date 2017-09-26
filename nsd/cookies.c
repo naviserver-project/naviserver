@@ -143,23 +143,23 @@ static char *
 GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name,
                     size_t nameLen, char **nextPtr)
 {
-    char *cookieStart = NULL, *p = chars;
+    char *cookieStart = NULL, *toParse = chars;
 
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(name != NULL);
 
-    for ( ; likely(*p != '\0'); ) {
+    for ( ; likely(*toParse != '\0'); ) {
         /*
          * Skip optional white space.
          */
-        for (; (CHARTYPE(space, *p) != 0); p++) {
+        for (; (CHARTYPE(space, *toParse) != 0); toParse++) {
         }
-        if (*p == '\0') {
+        if (*toParse == '\0') {
             break;
         }
 
-        if (strncmp(p, name, nameLen) == 0) {
-            char *q = p + nameLen;
+        if (strncmp(toParse, name, nameLen) == 0) {
+            char *q = toParse + nameLen;
 
             /*
              * Name starts correctly
@@ -168,29 +168,31 @@ GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name,
                 /*
                  * Full match, we found the cookie
                  */
-                cookieStart = p;
+                cookieStart = toParse;
+                q++; /* advance past equals sign */
                 if (dest != NULL) {
-                    q++; /* advance past equals sign */
                     q = CopyCookieValue(dest, q);
-                    if (nextPtr != NULL) {
-                        *nextPtr = q;
-                    }
                 }
+                toParse = q;
                 break;
             }
         }
         /*
          * Look for the next semicolon
          */
-        for (; (*p != '\0') && (*p != ';'); p++) {
+        for (; (*toParse != '\0') && (*toParse != ';'); toParse++) {
             ;
         }
-        /*
-         * We found a semicolon and skip it;
-         */
-        if (*p == ';') {
-            p++;
+        if (*toParse == ';') {
+            /*
+             * We found a semicolon and skip it;
+             */
+            toParse++;
         }
+    }
+
+    if (nextPtr != NULL) {
+        *nextPtr = toParse;
     }
 
     return cookieStart;
@@ -224,7 +226,7 @@ GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name,
 static char *
 GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name,
                        size_t nameLen, char **nextPtr) {
-    char *cookieStart = NULL, *p = chars;
+    char *cookieStart = NULL, *toParse = chars;
 
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(name != NULL);
@@ -232,11 +234,11 @@ GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name,
     /*
      * Skip white space (should not be needed).
      */
-    for (; (CHARTYPE(space, *p) != 0); p++) {
+    for (; (CHARTYPE(space, *toParse) != 0); toParse++) {
         ;
     }
-    if (strncmp(p, name, nameLen) == 0) {
-        char *q = p + nameLen;
+    if (strncmp(toParse, name, nameLen) == 0) {
+        char *q = toParse + nameLen;
 
         /*
          * Name starts correctly
@@ -246,15 +248,16 @@ GetFromSetCookieHeader(Ns_DString *dest, char *chars, const char *name,
             /*
              * Full match, we found the cookie
              */
-            cookieStart = p;
+            cookieStart = toParse;
+            q++; /* advance past equals sign */
             if (dest != NULL) {
-                q++; /* advance past equals sign */
                 q = CopyCookieValue(dest, q);
-                if (nextPtr != NULL) {
-                    *nextPtr = q;
-                }
             }
+            toParse = q;
         }
+    }
+    if (nextPtr != NULL) {
+        *nextPtr = toParse;
     }
 
     return cookieStart;
@@ -352,7 +355,7 @@ GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
 
     for (i = 0u; i < hdrs->size; i++) {
         if (strcasecmp(hdrs->fields[i].name, setName) == 0) {
-            char  *toParse;
+            char *toParse;
 
             /*
              * We have the right header, parse the string;
