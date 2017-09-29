@@ -2296,6 +2296,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 	if (connPtr->reqPtr != NULL) {
             if ( checkforproxy ) {
+                p = NULL;
                 p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
                 if (p != NULL && !strcasecmp(p, "unknown")) {
                     p = NULL;
