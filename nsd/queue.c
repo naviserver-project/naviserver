@@ -46,9 +46,9 @@ static void ConnRun(Conn *connPtr)
 static void CreateConnThread(ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
 
-static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
+static void AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool checkforproxy)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state)
+static void AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state, bool checkforproxy)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr) 
@@ -1011,10 +1011,13 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 {
     const NsInterp *itPtr = clientData;
     int             subcmd = 0, result = TCL_OK, nargs = 0;
+    bool            checkforproxy = NS_FALSE;
     NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
     char           *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString     ds, *dsPtr = &ds;
+
+    checkforproxy = NS_FALSE;
 
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, 
@@ -1054,8 +1057,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         {"waiting",      (unsigned int)SWaitingIdx},
         {NULL,           0u}
     };
-    
     Ns_ObjvSpec opts[] = {
+        {"-checkforproxy", Ns_ObjvBool,   &checkforproxy, INT2PTR(NS_TRUE)},
         {"-server", Ns_ObjvServer,  &servPtr, NULL},
         {"-pool",   Ns_ObjvString,  &pool,    NULL},
         {"--",      Ns_ObjvBreak,   NULL,     NULL},
@@ -1265,14 +1268,14 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 	        const ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
                 
 		if (argPtr->connPtr != NULL) {
-		    AppendConnList(dsPtr, argPtr->connPtr, "running");
+		    AppendConnList(dsPtr, argPtr->connPtr, "running", checkforproxy);
 		}
 	    }
 	    Ns_MutexUnlock(&poolPtr->tqueue.lock);
         }
         if (subcmd != SActiveIdx) {
 	    Ns_MutexLock(&poolPtr->wqueue.lock);
-            AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued");
+            AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued", checkforproxy);
 	    Ns_MutexUnlock(&poolPtr->wqueue.lock);
         }
         Tcl_DStringResult(interp, dsPtr);
@@ -1456,7 +1459,7 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
         ConnPool     *poolPtr = argPtr->poolPtr;
 
 	Ns_MutexLock(&poolPtr->tqueue.lock);
-        AppendConn(dsPtr, argPtr->connPtr, "running");
+        AppendConn(dsPtr, argPtr->connPtr, "running", NS_FALSE);
 	Ns_MutexUnlock(&poolPtr->tqueue.lock);
     } else {
         Tcl_DStringAppendElement(dsPtr, "");
@@ -2278,9 +2281,10 @@ CreateConnThread(ConnPool *poolPtr)
  */
 
 static void
-AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
+AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool checkforproxy)
 {
     Ns_Time now, diff;
+    const char *p;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(state != NULL);
@@ -2293,7 +2297,16 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
     if (connPtr != NULL) {
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 	if (connPtr->reqPtr != NULL) {
-	    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((const Ns_Conn *) connPtr));
+            if ( checkforproxy ) {
+                p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
+                if (p != NULL && !strcasecmp(p, "unknown")) {
+                    p = NULL;
+                }
+                Tcl_DStringAppendElement(dsPtr,
+                     ((p != NULL) && (*p != '\0')) ? p : Ns_ConnPeer((const Ns_Conn *) connPtr));
+            } else {
+	        Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((const Ns_Conn *) connPtr));
+            }
 	} else {
 	    /* Actually, this should not happen, but it does, maybe due
 	     * to the above mentioned race condition; we notice in the
@@ -2339,13 +2352,13 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state)
  */
 
 static void
-AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state)
+AppendConnList(Tcl_DString *dsPtr, const Conn *firstPtr, const char *state, bool checkforproxy)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(state != NULL);
 
     while (firstPtr != NULL) {
-        AppendConn(dsPtr, firstPtr, state);
+        AppendConn(dsPtr, firstPtr, state, checkforproxy);
         firstPtr = firstPtr->nextPtr;
     }
 }
