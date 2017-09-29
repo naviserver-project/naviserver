@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -56,15 +56,17 @@ static Tcl_ObjType addrType = {
 };
 
 static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
-
+static const Tcl_ObjType *properByteArrayTypePtr;  /* For NsTclIsByteArray(). */
 
 /*
  *----------------------------------------------------------------------
  *
  * NsTclInitAddrType --
  *
- *      Initialize the Tcl address object type and cache the bytearray
- *      Tcl built-in type.
+ *      Initialize the Tcl address object type and cache the bytearray Tcl
+ *      built-in type. Starting with Tcl 8.7a1, Tcl has actually two different
+ *      types for bytearrays, the old "tclByteArrayType" and a new
+ *      "properByteArrayType", where both have the string name "bytearray".
  *
  * Results:
  *      None.
@@ -78,8 +80,21 @@ static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
 void
 NsTclInitAddrType(void)
 {
+    Tcl_Obj *newByteObj;
+
     Tcl_RegisterObjType(&addrType);
+    /*
+     * Get the "tclByteArrayType" via name "bytearray".
+     */
     byteArrayTypePtr = Tcl_GetObjType("bytearray");
+    newByteObj = Tcl_NewByteArrayObj(NULL,0);
+
+    /*
+     * Get the "properByteArrayType" via a TclObj.
+     * In versions before Tcl 8.7, both values will be the same.
+     */
+    properByteArrayTypePtr = newByteObj->typePtr;
+    Tcl_DecrRefCount(newByteObj);
 }
 
 
@@ -137,7 +152,7 @@ Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
                      void *ptr1, void *ptr2)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
-    
+
     Ns_TclResetObjType(objPtr, newTypePtr);
     objPtr->internalRep.twoPtrValue.ptr1 = ptr1;
     objPtr->internalRep.twoPtrValue.ptr2 = ptr2;
@@ -167,7 +182,7 @@ Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(newTypePtr != NULL);
     NS_NONNULL_ASSERT(value != NULL);
-    
+
     Ns_TclResetObjType(objPtr, newTypePtr);
     objPtr->internalRep.otherValuePtr = value;
 }
@@ -196,7 +211,7 @@ Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(bytes != NULL);
-    
+
     if (length < 1) {
         length = (int)strlen(bytes);
     }
@@ -257,18 +272,18 @@ Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                      const char *type, void **addrPtrPtr)
 {
     int result = TCL_OK;
-    
+
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
     NS_NONNULL_ASSERT(addrPtrPtr != NULL);
-    
+
     if (Tcl_ConvertToType(interp, objPtr, &addrType) != TCL_OK) {
         result = TCL_ERROR;
-        
+
     } else if (objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
         Ns_TclPrintfResult(interp, "incorrect type: %s", Tcl_GetString(objPtr));
         result = TCL_ERROR;
-        
+
     } else {
         *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
     }
@@ -299,7 +314,7 @@ Ns_TclSetAddrObj(Tcl_Obj *objPtr, const char *type, void *addr)
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
     NS_NONNULL_ASSERT(addr != NULL);
-    
+
     if (Tcl_IsShared(objPtr)) {
         Tcl_Panic("Ns_TclSetAddrObj called with shared object");
     }
@@ -328,11 +343,11 @@ int
 Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPtr)
 {
     int result = TCL_OK;
-    
+
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
     NS_NONNULL_ASSERT(addrPtrPtr != NULL);
-    
+
     if (objPtr->typePtr != &addrType
         || objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
         result = TCL_ERROR;
@@ -367,7 +382,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
-        
+
     Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
 }
 
@@ -379,8 +394,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
  *
  *      Does the given Tcl object have a byte array internal rep?  The
  *      function determines when it is safe to interpret a string as a
- *      byte array directly. It is the same as Tcl 8.6's
- *      TclIsPureByteArray(Tcl_Obj *objPtr)
+ *      byte array directly.
  *
  * Results:
  *      Boolean.
@@ -395,8 +409,10 @@ bool
 NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
-  
-    return (objPtr->typePtr == byteArrayTypePtr) ? NS_TRUE : NS_FALSE;
+
+    return ((objPtr->typePtr == properByteArrayTypePtr)
+            || (objPtr->typePtr == byteArrayTypePtr)
+            ) ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -407,7 +423,7 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
  *
  *      Update the string representation for an address object.
  *      Note: This procedure does not free an existing old string rep
- *      so storage will be lost if this has not already been done. 
+ *      so storage will be lost if this has not already been done.
  *
  * Results:
  *      None.

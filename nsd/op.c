@@ -522,7 +522,6 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
 Ns_ReturnCode
 NsConnRunProxyRequest(Ns_Conn *conn)
 {
-    const Conn          *connPtr = (const Conn *) conn;
     NsServer            *servPtr;
     Req                 *reqPtr = NULL;
     Ns_ReturnCode        status;
@@ -531,7 +530,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
     
-    servPtr = connPtr->poolPtr->servPtr;
+    servPtr = ((Conn *) conn)->poolPtr->servPtr;
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, conn->request.method, conn->request.protocol, (char *)0);
@@ -581,20 +580,21 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
     NS_NONNULL_ASSERT(server != NULL);
     
     servPtr = NsGetServer(server);
-    assert(servPtr != NULL);
-    
-    Ns_MutexLock(&ulock);
-    Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
-    Ns_MutexUnlock(&ulock);
+    if (likely(servPtr != NULL)) {
+        Ns_MutexLock(&ulock);
+        Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
+        Ns_MutexUnlock(&ulock);
+    }
 }
 
 static void
 WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
-     const Req *reqPtr = arg;
-
+     const Req *reqPtr;
+     
      NS_NONNULL_ASSERT(dsPtr != NULL);
      NS_NONNULL_ASSERT(arg != NULL);
+     reqPtr = arg;
      
      Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
 }

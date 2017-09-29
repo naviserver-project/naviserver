@@ -66,7 +66,7 @@ set	port			8080
 set	serverdir		${homedir}
 
 # Alternatively in case when multiple server share the same
-# installation, server can be put into seperate directories
+# installation, server can be put into separate directories
 #set	serverdir		${homedir}/servers/${servername}
 
 # Relative directory under serverdir for html/adp files
@@ -113,6 +113,11 @@ ns_section	"ns/parameters"
 
    # Pid file of the server process
    ns_param	pidfile         	${logdir}/nsd-${servername}.pid
+
+   # Timeout for shutdown in seconds to let existing connections and
+   # background jobs finish.  When this time limit is exceeded the server
+   # shuts down immediately.
+   ns_param     shutdowntimeout         20
 
    # Min size of the uploaded file to enable progress tracking
    ns_param	progressminsize		0

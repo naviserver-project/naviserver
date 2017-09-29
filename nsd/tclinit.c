@@ -231,75 +231,82 @@ static Ns_ReturnCode
 ConfigServerTcl(const char *server)
 {
     NsServer   *servPtr;
-    Ns_DString  ds;
-    const char *path, *p, *initFileString;
-    int         n;
-    Ns_Set     *set;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(server != NULL);
 
     servPtr = NsGetServer(server);
-    assert(servPtr != NULL);
 
-    path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0);
-    set = Ns_ConfigCreateSection(path);
+    if (unlikely(servPtr == NULL)) {
+        Ns_Log(Warning, "Could configure Tcl; server '%s' unknown", server);
+        result = NS_ERROR;
 
-    Ns_DStringInit(&ds);
+    } else {
+        Ns_DString  ds;
+        const char *path, *p, *initFileString;
+        int         n;
+        Ns_Set     *set;
 
-    servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
-    if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
-        Ns_HomePath(&ds, servPtr->tcl.library, (char *)0);
-        servPtr->tcl.library = Ns_DStringExport(&ds);
-	Ns_SetUpdate(set, "library", servPtr->tcl.library);
+        path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0);
+        set = Ns_ConfigCreateSection(path);
+
+        Ns_DStringInit(&ds);
+
+        servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
+        if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
+            Ns_HomePath(&ds, servPtr->tcl.library, (char *)0);
+            servPtr->tcl.library = Ns_DStringExport(&ds);
+            Ns_SetUpdate(set, "library", servPtr->tcl.library);
+        }
+
+        initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
+        if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
+            Ns_HomePath(&ds, initFileString, (char *)0);
+            initFileString = Ns_DStringExport(&ds);
+            Ns_SetUpdate(set, "initfile", initFileString);
+        }
+        servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
+        Tcl_IncrRefCount(servPtr->tcl.initfile);
+
+        servPtr->tcl.modules = Tcl_NewObj();
+        Tcl_IncrRefCount(servPtr->tcl.modules);
+
+        Ns_RWLockInit(&servPtr->tcl.lock);
+        Ns_MutexInit(&servPtr->tcl.cachelock);
+        Ns_MutexSetName2(&servPtr->tcl.cachelock, "ns:tcl.cache", server);
+        Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.mutexTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.csTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.semaTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
+
+        servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
+        servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
+
+        /*
+         * Initialize the list of connection headers to log for Tcl errors.
+         */
+
+        p = Ns_ConfigGetValue(path, "errorlogheaders");
+        if (p != NULL
+            && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
+            Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
+        }
+
+        /*
+         * Initialize the Tcl detached channel support.
+         */
+
+        Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
+        Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
+
+        Tcl_InitHashTable(&servPtr->connchans.table, TCL_STRING_KEYS);
+        Ns_MutexSetName2(&servPtr->connchans.lock, "nstcl:connchans", server);
+        result = NS_OK;
     }
-
-    initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
-        Ns_HomePath(&ds, initFileString, (char *)0);
-        initFileString = Ns_DStringExport(&ds);
-	Ns_SetUpdate(set, "initfile", initFileString);
-    }
-    servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
-    Tcl_IncrRefCount(servPtr->tcl.initfile);
-
-    servPtr->tcl.modules = Tcl_NewObj();
-    Tcl_IncrRefCount(servPtr->tcl.modules);
-
-    Ns_RWLockInit(&servPtr->tcl.lock);
-    Ns_MutexInit(&servPtr->tcl.cachelock);
-    Ns_MutexSetName2(&servPtr->tcl.cachelock, "ns:tcl.cache", server);
-    Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.mutexTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.csTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.semaTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
-
-    servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
-    servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
-
-    /*
-     * Initialize the list of connection headers to log for Tcl errors.
-     */
-
-    p = Ns_ConfigGetValue(path, "errorlogheaders");
-    if (p != NULL
-	&& Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
-        Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
-    }
-
-    /*
-     * Initialize the Tcl detached channel support.
-     */
-
-    Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
-
-    Tcl_InitHashTable(&servPtr->connchans.table, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->connchans.lock, "nstcl:connchans", server);
-
-    return NS_OK;
+    return result;
 }
 
 
@@ -363,7 +370,7 @@ Ns_TclInit(Tcl_Interp *interp)
  *
  * Ns_TclEval --
  *
- *      Execute a tcl script in the context of the given server.
+ *      Execute a Tcl script in the context of the given server.
  *
  * Results:
  *      NaviServer result code. String result or error placed in dsPtr if
@@ -510,10 +517,11 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
 Tcl_Interp *
 Ns_GetConnInterp(Ns_Conn *conn)
 {
-    Conn     *connPtr = (Conn *) conn;
+    Conn     *connPtr;
     NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *) conn;
 
     if (connPtr->itPtr == NULL) {
         itPtr = PopInterp(connPtr->poolPtr->servPtr, NULL);
@@ -602,7 +610,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
 
     itPtr = NsGetInterpData(interp);
     /*
-     * If this is an naviserver interp, clean it up
+     * If this is an NaviServer interp, clean it up
      */
 
     if (itPtr != NULL) {
@@ -649,7 +657,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
  * Ns_TclMarkForDelete --
  *
  *      Mark the interp to be deleted after next cleanup.  This routine
- *      is useful for destory interps after they've been modified in
+ *      is useful for destroy interps after they've been modified in
  *      weird ways, e.g., by the TclPro debugger.
  *
  * Results:
@@ -734,7 +742,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
         /*
          * Run CREATE and ALLOCATE traces immediately so that commands registered
          * by binary modules can be called by Tcl init scripts sourced by the
-         * already initialised interp which loads the modules.
+         * already initialized interp which loads the modules.
          */
 
         if ((when == NS_TCL_TRACE_CREATE) || (when == NS_TCL_TRACE_ALLOCATE)) {
@@ -884,7 +892,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  *
  * Ns_TclLibrary --
  *
- *      Return the name of the private tcl lib if configured, or the
+ *      Return the name of the private Tcl lib if configured, or the
  *      global shared library otherwise.
  *
  * Results:
@@ -1343,7 +1351,7 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             (*deferPtr->proc)(interp, deferPtr->arg);
             ns_free(deferPtr);
         }
-	itPtr->firstDeferPtr = NULL;
+        itPtr->firstDeferPtr = NULL;
 
         result = UpdateInterp(itPtr);
     }
@@ -1652,7 +1660,7 @@ NsTclInitServer(const char *server)
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
-	Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
+        Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
         if ( Tcl_FSEvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: init server)");
@@ -1673,7 +1681,7 @@ NsTclInitServer(const char *server)
  *      Tcl result.
  *
  * Side effects:
- *      Override Tcl exit command so that propper server shutdown
+ *      Override Tcl exit command so that proper server shutdown
  *      takes place.
  *
  *----------------------------------------------------------------------
@@ -2019,11 +2027,11 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      * operation only once for all threads.
      */
     if (strcmp("utf-8", Tcl_GetEncodingName(Tcl_GetEncoding(interp, NULL))) != 0) {
-	int result = Tcl_SetSystemEncoding(interp, "utf-8");
-        
-	if (result != TCL_OK) {
-	    (void) Ns_TclLogErrorInfo(interp, "\n(context: set system encoding to utf-8)");
-	}
+        int result = Tcl_SetSystemEncoding(interp, "utf-8");
+
+        if (result != TCL_OK) {
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: set system encoding to utf-8)");
+        }
     }
 
     /*
@@ -2058,7 +2066,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 static NsInterp *
 NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 {
-    static volatile int initialized = 0;
+    static volatile bool initialized = NS_FALSE;
     NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -2069,14 +2077,14 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
      * Tcl is not fully initialized at libnsd load time.
      */
 
-    if (initialized == 0) {
+    if (!initialized) {
         Ns_MasterLock();
-        if (initialized == 0) {
+        if (!initialized) {
             NsTclInitQueueType();
             NsTclInitAddrType();
             NsTclInitTimeType();
             NsTclInitKeylistType();
-            initialized = 1;
+            initialized = NS_TRUE;
         }
         Ns_MasterUnlock();
     }
@@ -2328,7 +2336,7 @@ DeleteInterps(void *arg)
 
         itPtr = Tcl_GetHashValue(hPtr);
         if ((itPtr != NULL) && (itPtr->interp != NULL)) {
-	    Ns_TclDestroyInterp(itPtr->interp);
+            Ns_TclDestroyInterp(itPtr->interp);
         }
         hPtr = Tcl_NextHashEntry(&search);
     }

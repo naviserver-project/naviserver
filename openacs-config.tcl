@@ -11,10 +11,10 @@ ns_log notice "nsd.tcl: starting to read config file..."
 #---------------------------------------------------------------------
 # change to 80 and 443 for production use
 set httpport		8000
-set httpsport		8443 
+#set httpsport		8443
 
 # The hostname and address should be set to actual values.
-# setting the address to 0.0.0.0 means aolserver listens on all interfaces
+# setting the address to 0.0.0.0 means AOLserver listens on all interfaces
 set hostname		localhost
 set address_v4		127.0.0.1  ;# listen on loopback via IPv4
 #set address_v4		0.0.0.0    ;# listen on all IPv4-Adresses
@@ -71,13 +71,17 @@ set env(LANG) en_US.UTF-8
 #---------------------------------------------------------------------
 # Set headers that should be included in every reply from the server
 #
-set extraheaders {
+set nssock_extraheaders {
     X-Frame-Options            "SAMEORIGIN"
     X-Content-Type-Options     "nosniff"
     X-XSS-Protection           "1; mode=block"
     Referrer-Policy            "strict-origin"
 }
-
+    
+set nsssl_extraheaders {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}
+append nsssl_extraheaders $nssock_extraheaders
 ###################################################################### 
 #
 # End of instance-specific settings 
@@ -155,7 +159,7 @@ ns_section ns/parameters
 	#
 	# ns_param	HackContentType	1
 
-	# NaviServer's defaults charsets are all utf-8.  Allthough the
+	# NaviServer's defaults charsets are all utf-8.  Although the
 	# default charset is utf-8, set the parameter "OutputCharset"
 	# here, since otherwise OpenACS uses in the meta-tags the charset
 	# from [ad_conn charset], which is taken from the db and
@@ -244,9 +248,9 @@ ns_section ns/server/${server}
 	# ns_param	headercase	preserve;# preserve, might be "tolower" or "toupper"
 	# ns_param	checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
 
-#
+#---------------------------------------------------------------------
 # Special HTTP pages
-#
+#---------------------------------------------------------------------
 ns_section ns/server/${server}/redirects
 	ns_param	404	"/global/file-not-found.html"
 	ns_param	403	"/global/forbidden.html"
@@ -254,9 +258,7 @@ ns_section ns/server/${server}/redirects
 	ns_param	500	"/global/error.html"
 
 #---------------------------------------------------------------------
-# 
 # ADP (AOLserver Dynamic Page) configuration 
-# 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/adp 
 	ns_param	enabledebug	$debug
@@ -312,9 +314,26 @@ ns_section "ns/server/${server}/fastpath"
 	#
 
 #---------------------------------------------------------------------
+# OpenACS specific settings (per server)
+#---------------------------------------------------------------------
 #
+# Define/override kernel parameters in section /acs
+#
+ns_section ns/server/${server}/acs
+         ns_param NsShutdownWithNonZeroExitCode 1
+#        ns_param LogIncludeUserId 1
+#
+# Define/override OpenACS package parameters in section /acs/PACKAGENAME
+#
+# Set for all package instances of acs-mail-lite the EmailDeliveryMode
+#
+#ns_section ns/server/${server}/acs/acs-mail-lite
+#        ns_param EmailDeliveryMode log
+
+
+
+#---------------------------------------------------------------------
 # WebDAV Support (optional, requires oacs-dav package to be installed
-#
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/tdav
 	ns_param	propdir		${serverroot}/data/dav/properties
@@ -337,9 +356,7 @@ ns_section ns/server/${server}/tdav/share/share1
 
 
 #---------------------------------------------------------------------
-# 
 # Socket driver module (HTTP)  -- nssock 
-# 
 #---------------------------------------------------------------------
 foreach address $addresses suffix $suffixes {
     ns_section ns/server/${server}/module/nssock_$suffix
@@ -370,14 +387,12 @@ foreach address $addresses suffix $suffixes {
 	# ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
 	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
         # ns_param	driverthreads	2	;# 1; use multiple driver threads  (requires support of SO_REUSEPORT)
-        ns_param        extraheaders    $extraheaders
+        ns_param        extraheaders    $nssock_extraheaders
 }
 
 
 #---------------------------------------------------------------------
-# 
 # Access log -- nslog 
-# 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/module/nslog 
 	#
@@ -393,9 +408,16 @@ ns_section ns/server/${server}/module/nslog
 	ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations (accept, queue, filter, run)
 	# ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	# ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
-	# ns_param	extendedheaders	COOKIE	;# space delimited list of HTTP heads to log per entry
 	ns_param	checkforproxy	$proxy_mode ;# false, check for proxy header (X-Forwarded-For)
-	#
+        #
+        # Add extra entries to the access log via specifying a comma delimited
+        # list of request header fields in "extendedheaders"
+        #
+        if {[ns_config "ns/server/${server}/acs" LogIncludeUserId 0]} {
+	    ns_param   extendedheaders    "X-User-Id"
+	}
+
+        #
 	#
 	# Control log file rolling
 	#
@@ -431,27 +453,27 @@ ns_section ns/server/${server}/module/nspam
 	ns_param	PamDomain          "pam_domain"
 
 
-#---------------------------------------------------------------------
-#
-# SSL
-# 
-#---------------------------------------------------------------------
-foreach address $addresses suffix $suffixes {
-    ns_section    "ns/server/${server}/module/nsssl_$suffix"
-       ns_param		address    	$address
-       ns_param		port       	$httpsport
-       ns_param		hostname       	$hostname
-       ns_param		ciphers		"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-       ns_param		protocols	"!SSLv2"
-       ns_param		certificate	$serverroot/etc/certfile.pem
-       ns_param		verify     	0
-       ns_param		writerthreads	2
-       ns_param		writersize	1024
-       ns_param		writerbufsize	16384	;# 8192, buffer size for writer threads
-       #ns_param	writerstreaming	true	;# false
-       #ns_param	deferaccept	true    ;# false, Performance optimization
-       ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
-       ns_param         extraheaders    $extraheaders
+if {[info exists httpsport]} {
+    #---------------------------------------------------------------------
+    # SSL/TLS
+    #---------------------------------------------------------------------
+    foreach address $addresses suffix $suffixes {
+	ns_section    "ns/server/${server}/module/nsssl_$suffix"
+	ns_param		address    	$address
+	ns_param		port       	$httpsport
+	ns_param		hostname       	$hostname
+	ns_param		ciphers		"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
+	ns_param		protocols	"!SSLv2"
+	ns_param		certificate	$serverroot/etc/certfile.pem
+	ns_param		verify     	0
+	ns_param		writerthreads	2
+	ns_param		writersize	1024
+	ns_param		writerbufsize	16384	;# 8192, buffer size for writer threads
+	#ns_param	writerstreaming	true	;# false
+	#ns_param	deferaccept	true    ;# false, Performance optimization
+	ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
+	ns_param         extraheaders    $nsssl_extraheaders
+    }
 }
 
 #---------------------------------------------------------------------
@@ -568,8 +590,8 @@ ns_section ns/server/${server}/modules
 	ns_param	nsproxy		${bindir}/nsproxy.so
         if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock.so }
         if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock.so }
-        #if {[info exists address_v4]} { ns_param nsssl_v4 ${bindir}/nsssl.so }
-        #if {[info exists address_v6]} { ns_param nsssl_v6 ${bindir}/nsssl.so }
+        if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl.so }
+        if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl.so }
 
 	#
 	# Determine, if libthread is installed

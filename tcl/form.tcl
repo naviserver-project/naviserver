@@ -210,7 +210,7 @@ proc ns_getform {{charset ""}}  {
                         set tmpfile [ns_mktemp]
                         set fp [ns_openexcl $tmpfile]
                     }
-                    ns_atclose [list file delete $tmpfile]
+                    ns_atclose [list file delete -- $tmpfile]
                     fconfigure $fp -translation binary 
                     ns_conn copy $off $len $fp
                     close $fp
@@ -228,7 +228,7 @@ proc ns_getform {{charset ""}}  {
             #
             set ::_ns_form [ns_set create]
             ns_parseformfile $tmpfile $::_ns_form [ns_set iget [ns_conn headers] content-type]
-            ns_atclose [list file delete $tmpfile]
+            ns_atclose [list file delete -- $tmpfile]
         }
     }
 
@@ -344,7 +344,7 @@ proc ns_isformcached {} {
 #
 # Result: 
 #   Parses query parameters and uploaded files, puts name/value
-#   pairs into provided ns_set, all files are copied into seperate temp 
+#   pairs into provided ns_set, all files are copied into separate temp 
 #   files and stored as name.tmpfile in the ns_set
 #
 
@@ -451,7 +451,7 @@ proc ns_parseformfile { file form contentType } {
             ns_set put $form $name.tmpfile $tmpfile
 
             if { [ns_conn isconnected] } {
-                ns_atclose [list file delete $tmpfile]
+                ns_atclose [list file delete -- $tmpfile]
             }
 
         } else {

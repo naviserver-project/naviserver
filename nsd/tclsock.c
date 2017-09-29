@@ -574,7 +574,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclSelectObjCmd --
  *
- *      Imlements select: basically a tcl version of select(2).
+ *      Imlements select: basically a Tcl version of select(2).
  *
  * Results:
  *      Tcl result. 
@@ -681,7 +681,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
         
         do {
-            sock = select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
+            sock = (NS_SOCKET)select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
         } while (sock == NS_INVALID_SOCKET && errno == NS_EINTR);
         if (sock == NS_INVALID_SOCKET) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
@@ -922,14 +922,14 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
         assert(script != NULL);
         
         if (STREQ(addr, "*")) {
-            addr = NULL;
+            addr = (char *)NS_IP_UNSPECIFIED;
         }
         scriptLength = strlen(script);
         lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
         lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
         memcpy(lcbPtr->script, script, scriptLength + 1u);
 
-        if (Ns_SockListenCallback(addr, port, SockListenCallback, lcbPtr) != NS_OK) {
+        if (Ns_SockListenCallback(addr, port, SockListenCallback, NS_FALSE, lcbPtr) == NS_INVALID_SOCKET) {
             Ns_TclPrintfResult(interp, "could not register callback");
             ns_free(lcbPtr);
             result = TCL_ERROR;
@@ -1115,7 +1115,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
  *
  * EnterSock, EnterDup, EnterDupedSocks --
  *
- *      Append a socket handle to the tcl result and register its 
+ *      Append a socket handle to the Tcl result and register its 
  *      channel.
  *
  * Results:

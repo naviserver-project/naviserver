@@ -200,9 +200,51 @@ First, a minimal example:
  1
 [example_end]
 
-The second example set a larger timeout on the request, provides
-query-headers and returns reply-headers, and spools results to a file,
-when the result is larger than 100 bytes.
+[para] The second example is a code snippet making a POST requests via
+https and provides url-encoded POST data. The examples sets a larger
+timeout on the request, provides query-headers and returns
+reply-headers. This example assumes that NaviServer was compiled with
+OpenSSL support.
+
+[example_begin]
+ #######################
+ # construct POST data
+ #######################
+
+ set post_data {}
+ foreach {key value} {
+   q NaviServer
+ } {
+     lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
+ }
+ set post_data [lb]join $post_data &[rb]
+
+
+ #######################
+ # submit POST request
+ #######################
+ set queryHeaders [lb]ns_set create[rb]
+ set replyHeaders [lb]ns_set create[rb]
+ ns_set update $queryHeaders "Content-type" "application/x-www-form-urlencoded"
+
+ set h [lb]ns_http queue -method POST \
+     -headers $queryHeaders \
+     -timeout 10.0 \
+     -body $post_data \
+     https://duckduckgo.com/[rb]
+ ns_http wait -result R -headers $replyHeaders -status S $h
+
+ #######################
+ # output results
+ #######################
+ ns_log notice "status code $S"
+ ns_log notice "reply $R"
+[example_end]
+
+
+The third example is a code snippet that sets a larger timeout on the
+request, provides query-headers and returns reply-headers, and spools
+results to a file, when the result is larger than 100 bytes.
 
 [example_begin]
  set queryHeaders [lb]ns_set create[rb]
@@ -214,15 +256,15 @@ when the result is larger than 100 bytes.
  
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
-   file delete $F
+   file delete -- $F
  } else {
    ns_log notice "Got [lb]string length $R[rb] bytes"
  }
 [example_end]
 
 
-[see_also ns_httpget ns_httppost ns_httptime]
-[keywords http-client nssock] 
+[see_also ns_httptime]
+[keywords http-client HTTP HTTPS POST GET nssock spooling] 
 
 [manpage_end]
 

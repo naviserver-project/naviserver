@@ -109,7 +109,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
     Ns_DStringInit(&gzDs);
 
     /*
-     * Transcode from utf8 if neccessary.
+     * Transcode from utf8 if necessary.
      */
 
     if (connPtr->outputEncoding != NULL

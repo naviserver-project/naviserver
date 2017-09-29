@@ -151,7 +151,7 @@ proc ns_rmdir {dir} {
     if {![file isdirectory $dir]} {
         error "error deleting \"$dir\": not a directory"
     }
-    file delete $dir
+    file delete -- $dir
 }
 
 
@@ -188,7 +188,7 @@ proc ns_unlink {args} {
     if {$complain && ![file exists $filepath]} {
         error "error deleting \"$filepath\": no such file"
     }
-    file delete $filepath
+    file delete -- $filepath
 }
 
 
@@ -264,9 +264,9 @@ proc ns_rename {from to} {
         } elseif {$from == $to} {
             error "error renaming \"$from\": file already exists"
         }
-        file delete $to
+        file delete -- $to
     }
-    file rename $from $to
+    file rename -- $from $to
 }
 
 

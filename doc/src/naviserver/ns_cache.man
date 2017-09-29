@@ -192,12 +192,10 @@ If the cache value does not already exist it is created.
         [opt [arg args]] ]
 
 Flush the entries in a cache and return the number of flushed entries.
-If [arg args] are given then they are the keys in the cache to be
-flushed. If the [option -glob] option is given then the keys are
-treated as globbing patterns and only the keys which match are
-flushed.
-
-
+If the optional [arg args] are given these are used as the keys in the
+cache to be flushed. If the [option -glob] option is given then the
+keys are treated as globbing patterns and only the entries with
+matching keys are flushed.
 
 [call [cmd ns_cache_stats] \
         [opt [option "-contents"]] \
@@ -253,6 +251,34 @@ Number of time an entry reached the end of the LRU list and was removed to make
 way for a new entry.
 
 [list_end]
+
+
+[call [cmd ns_cache_transaction_begin]]
+
+Begin a cache transaction. A cache transaction provides in essence the
+ability to rollback the added/updated values, while providing cache
+isolations to other transactions. The cached values from incomplete
+cache transactions are just visible from the current thread, but not
+from other threads. Cache transactions effect always all caches.
+
+[para] Typically, cache transactions are used in accordance with
+database transactions.
+
+[call [cmd ns_cache_transaction_commit] \
+        [opt [option "-all"]]]
+
+Successfully terminate a cache transaction. All added values are made
+visible to other threads. The option [option "-all"] can be used to
+commit all nested transactions currently open in this thread.
+
+[call [cmd ns_cache_transaction_rollback] \
+        [opt [option "-all"]]]
+
+Terminate a cache transaction and undo changes in all caches since
+the matching [cmd ns_cache_transaction_begin]. 
+The option [option "-all"] can be used to
+rollback all nested transactions currently open in this thread.
+
 
 
 [call [cmd ns_fastpath_cache_stats] \

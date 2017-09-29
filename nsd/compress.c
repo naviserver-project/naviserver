@@ -221,9 +221,9 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
  *
  *      Compress a vector of bufs and append to dstring.
  *
- *      Flags must contain NS_COMPRESS_BEGIN on first call and
- *      NS_COMPRESS_END on the last, to add correct gzip
- *      header/footer. Function may be called any number of times inbetween.
+ *      Flags must contain NS_COMPRESS_BEGIN on first call and NS_COMPRESS_END
+ *      on the last, to add correct gzip header/footer. Function may be called
+ *      any number of times in-between.
  *
  * Results:
  *      NS_OK.

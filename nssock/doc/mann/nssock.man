@@ -182,9 +182,9 @@ Number of writer threads. (integer, default: 0)
 
 [section EXAMPLES]
 
-In case, one requires for one naviserver to listen on several ports, 
-it is possible to load the nssock module twice with different names,
-here [term nssock1] and [term nssock2].
+In case, one requires for one server (here [term server1]) to listen
+on several ports, it is possible to load the nssock driver twice with
+different names, here [term nssock1] and [term nssock2].
 
 [example_begin]
    ns_section ns/server/server1/modules
@@ -197,6 +197,66 @@ here [term nssock1] and [term nssock2].
    ns_section ns/server/server1/module/nssock2
    ns_param   port    8001
 [example_end]
+
+The second example shows how to define two web servers "s1" and "s2",
+which receive requests from three virtual servers "foo.com", "bar.com"
+and "baz.com".  Using virtual servers is a common technique, where
+e.g. for the same IP address, multiple DNS names are
+registered. According to HTTP/1.1, clients send the host name in the
+host header field to the server, which can behave differently
+depending on contents of this field. This is called a "virtual web
+server".
+
+[para]
+
+Assume for the IP address of the server the DNS names [term foo.com],
+[term bar.com] and [term baz.com] are registered. We define server
+"s1" and "s2" such that "s1" should receive requests from
+[term foo.com], and "s2" should receive requests from [term bar.com]
+and [term baz.com]. Servers "s1" and "s2" have different
+[term pagedir] definitions. For requests with missing/invalid host
+header fields, we have to define a [term defaultserver] to handle such
+requests.
+
+[para]
+
+In the section [term ns/module/nssock/servers] we define the
+mapping between the host names and the defined servers. Note, that one
+can define multiple DNS names also for a single server.
+
+[example_begin]
+   #
+   # Define two servers
+   #
+   ns_section ns/servers
+   ns_param   s1      "Virtual Server s1"
+   ns_param   s2      "Virtual Server s2 "
+   
+   ns_section ns/server/s1/fastpath
+   ns_param   pagedir  /var/www/s1
+   
+   ns_section ns/server/s2/fastpath
+   ns_param   pagedir  /var/www/s2
+   
+   #
+   # Define nssock driver, directing requests to the virtual servers
+   #
+   ns_section ns/modules
+   ns_param   nssock   nssock.so
+   
+   ns_section ns/module/nssock
+   ns_param   port     8000
+   ns_param   defaultserver s1
+   
+   #
+   # Define the mapping between the DNS names and the servers.
+   #
+   ns_section ns/module/nssock/servers
+   ns_param   s1      foo.com
+   ns_param   s2      bar.com
+   ns_param   s2      baz.com
+[example_end]
+
 
 More to come here...
 

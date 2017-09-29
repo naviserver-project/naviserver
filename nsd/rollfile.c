@@ -44,7 +44,7 @@ typedef struct File {
  * Local functions defined in this file.
  */
 
-static int MatchFiles(const char *fileName, File **files)
+static int MatchFiles(Tcl_Obj *pathObj, File **files)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int CmpFile(const void *arg1, const void *arg2)
@@ -84,13 +84,13 @@ static int Unlink(const char *file)
  */
 
 Ns_ReturnCode
-Ns_RollFile(const char *file, int max)
+Ns_RollFile(const char *fileName, int max)
 {
     Ns_ReturnCode status = NS_OK;
 
-    NS_NONNULL_ASSERT(file != NULL);
+    NS_NONNULL_ASSERT(fileName != NULL);
     
-    if (max < 0 || max > 999) {
+    if (max <= 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
                "must be > 0 and < 999", max);
         status = NS_ERROR;
@@ -99,8 +99,8 @@ Ns_RollFile(const char *file, int max)
         char *first;
         int   err;
 
-        first = ns_malloc(strlen(file) + 5u);
-        sprintf(first, "%s.000", file);
+        first = ns_malloc(strlen(fileName) + 5u);
+        sprintf(first, "%s.000", fileName);
         err = Exists(first);
 
         if (err > 0) {
@@ -139,9 +139,9 @@ Ns_RollFile(const char *file, int max)
         }
 
         if (err == 0) {
-            err = Exists(file);
+            err = Exists(fileName);
             if (err > 0) {
-                err = Rename(file, first);
+                err = Rename(fileName, first);
             }
         }
 
@@ -250,32 +250,46 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
  */
 
 Ns_ReturnCode
-Ns_RollFileByDate(const char *file, int max)
+Ns_RollFileByDate(const char *fileName, int max)
 {
-    return Ns_PurgeFiles(file, max);
+    return Ns_PurgeFiles(fileName, max);
 }
 
 Ns_ReturnCode
-Ns_PurgeFiles(const char *file, int max)
+Ns_PurgeFiles(const char *fileName, int max)
 {
     const File   *fiPtr;
     File         *files = NULL;
     int           nfiles;
+    Tcl_Obj      *pathObj;
     Ns_ReturnCode status = NS_OK;
 
-    NS_NONNULL_ASSERT(file != NULL);
-    
-    /*
-     * Get all files matching "file*" pattern.
-     */
+    NS_NONNULL_ASSERT(fileName != NULL);
 
-    nfiles = MatchFiles(file, &files);
-    if (nfiles == -1) {
-        Ns_Log(Error, "rollfile: failed to match files '%s': %s",
-               file, strerror(Tcl_GetErrno()));
+    pathObj = Tcl_NewStringObj(fileName, -1);
+    Tcl_IncrRefCount(pathObj);
+
+    /*
+     * Obtain fully qualified path of the passed filename
+     */
+    if (Tcl_FSGetNormalizedPath(NULL, pathObj) == NULL) {
+        Ns_Log(Error, "rollfile: invalid path '%s'", fileName);
+        nfiles = -1;
         status = NS_ERROR;
 
     } else {
+        /*
+         * Get all files matching "file*" pattern.
+         */
+        nfiles = MatchFiles(pathObj, &files);
+        if (nfiles == -1) {
+            Ns_Log(Error, "rollfile: failed to match files '%s': %s",
+                   fileName, strerror(Tcl_GetErrno()));
+            status = NS_ERROR;
+        }
+    }
+
+    if (status == NS_OK) {
         /*
          * Purge (any) excessive files after sorting them
          * on descening file mtime.
@@ -307,6 +321,7 @@ Ns_PurgeFiles(const char *file, int max)
         ns_free(files);
     }
 
+    Tcl_DecrRefCount(pathObj);
     return status;
 }
 
@@ -331,34 +346,22 @@ Ns_PurgeFiles(const char *file, int max)
  */
 
 static int
-MatchFiles(const char *fileName, File **files)
+MatchFiles(Tcl_Obj *pathObj, File **files)
 {
-    Tcl_Obj          *path, *pathElems, *parent, *patternObj;
-    Tcl_Obj          *matched, **matchElems;
+    Tcl_Obj          *pathElems, *parent, *patternObj, *matched, **matchElems;
     Tcl_GlobTypeData  types;
     Tcl_StatBuf       st;
     int               numElems, code;
     const char       *pattern;
 
-    NS_NONNULL_ASSERT(fileName != NULL);
+    NS_NONNULL_ASSERT(pathObj != NULL);
     NS_NONNULL_ASSERT(files != NULL);
     
-    /*
-     * Obtain fully qualified path of the passed filename
-     */
-
-    path = Tcl_NewStringObj(fileName, -1);
-    Tcl_IncrRefCount(path);
-    if (Tcl_FSGetNormalizedPath(NULL, path) == NULL) {
-        Tcl_DecrRefCount(path);
-        return -1;
-    }
-
     /*
      * Get the parent directory of the passed filename
      */
 
-    pathElems = Tcl_FSSplitPath(path, &numElems);
+    pathElems = Tcl_FSSplitPath(pathObj, &numElems);
     parent = Tcl_FSJoinPath(pathElems, numElems - 1);
     Tcl_IncrRefCount(parent);
 
@@ -370,7 +373,7 @@ MatchFiles(const char *fileName, File **files)
         Tcl_AppendToObj(patternObj, "*", 1);
         pattern = Tcl_GetString(patternObj);
     } else {
-        Ns_Log(Notice, "filename '%s' does not contain a path", fileName);
+        Ns_Log(Notice, "filename '%s' does not contain a path", Tcl_GetString(pathObj));
         pattern = "";
     }
 
@@ -417,7 +420,6 @@ MatchFiles(const char *fileName, File **files)
         }
     }
 
-    Tcl_DecrRefCount(path);
     Tcl_DecrRefCount(parent);
     Tcl_DecrRefCount(pathElems);
     Tcl_DecrRefCount(matched);

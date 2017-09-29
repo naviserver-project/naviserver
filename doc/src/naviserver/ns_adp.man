@@ -161,7 +161,7 @@ ns_param singlescript false; # Combine code blocks into one scripts.
 
 [example_end]
 
-Setting this option would covert the script above into the following
+Setting this option would convert the script above into the following
 equivalent:
 
 
@@ -220,7 +220,7 @@ enabled to support compression of ADP output.
 The ADP interface uses the server's mimetype configuration
 to map file extensions to charsets and cooresponding encoding. This
 configuration is necessary to ensure the file text and
-script blocks are properly coverted to UTF-8 for use
+script blocks are properly converted to UTF-8 for use
 internally. This mimetype is also used to set the character
 output encoding although the  ns_conn encoding  option
 can be used to override the encoding if necessary.

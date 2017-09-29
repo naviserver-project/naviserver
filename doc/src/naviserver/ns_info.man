@@ -138,7 +138,7 @@ procname, arg}:
     [item] lastend - Last time run finished
 
     [item] procname - for tasks scheduled with ns_schedule_proc this
-    will be ns:tclschedproc and arg will be the actual scheduled tcl
+    will be ns:tclschedproc and arg will be the actual scheduled Tcl
     script.
 
     [item] arg - client data 

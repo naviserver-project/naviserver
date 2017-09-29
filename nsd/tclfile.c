@@ -263,12 +263,14 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         char buffer[PATH_MAX] = "";
 
         snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
-
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
+        
     } else /*if (objc == 2)*/ {
-	char *buffer = ns_strdup(templateString);
+        char *buffer;
 
-	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
+        assert(templateString != NULL);
+        buffer = ns_strdup(templateString);
+        Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
     }
 
     return result;
@@ -384,7 +386,6 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    const NsInterp *itPtr = clientData;
     Tcl_Channel     chan;
     int             nbytes = INT_MAX, result = TCL_OK;
     char           *fileidString;
@@ -405,7 +406,8 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         /*
          * All parameters are ok.
          */
-        Ns_ReturnCode status = Ns_ConnSendChannel(itPtr->conn, chan, (size_t)nbytes);
+        const NsInterp *itPtr = clientData;
+        Ns_ReturnCode   status = Ns_ConnSendChannel(itPtr->conn, chan, (size_t)nbytes);
 
         if (unlikely(status != NS_OK)) {
             Ns_TclPrintfResult(interp, "I/O failed");

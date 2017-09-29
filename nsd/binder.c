@@ -561,11 +561,11 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 
     NS_NONNULL_ASSERT(saPtr != NULL);
 
-    sock = socket(saPtr->sa_family, SOCK_DGRAM, 0);
+    sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_DGRAM, 0);
 
     if (sock == NS_INVALID_SOCKET
-        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
-        || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
+        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, (socklen_t)sizeof(n)) == -1
+        || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, (socklen_t)sizeof(n)) == -1
         || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
         ns_sockerrno_t err = ns_sockerrno;
 
@@ -576,7 +576,7 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 #if defined(SO_REUSEPORT)
         if (reusePort) {
             int optval = 1;
-            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+            setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, (socklen_t)sizeof(optval));
         }
 #endif
     }
@@ -664,7 +664,7 @@ Ns_SockBindRaw(int proto)
 {
     NS_SOCKET sock;
 
-    sock = socket(AF_INET, SOCK_RAW, proto);
+    sock = (NS_SOCKET)socket(AF_INET, SOCK_RAW, proto);
 
     if (sock == NS_INVALID_SOCKET) {
         ns_sockerrno_t err = ns_sockerrno;
@@ -1116,13 +1116,13 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     /*
      * Build and send message.
      */
-    iov[0].iov_base = (caddr_t) &options;
+    iov[0].iov_base = (void*) &options;
     iov[0].iov_len = sizeof(options);
-    iov[1].iov_base = (caddr_t) &port;
+    iov[1].iov_base = (void*) &port;
     iov[1].iov_len = sizeof(port);
-    iov[2].iov_base = (caddr_t) &type;
+    iov[2].iov_base = (void*) &type;
     iov[2].iov_len = sizeof(type);
-    iov[3].iov_base = (caddr_t) data;
+    iov[3].iov_base = (void*) data;
     iov[3].iov_len = sizeof(data);
 
     strncpy(data, address, sizeof(data)-1);
@@ -1139,7 +1139,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     /*
      * Reveive reply.
      */
-    iov[0].iov_base = (caddr_t) &err;
+    iov[0].iov_base = (void*) &err;
     iov[0].iov_len = sizeof(int);
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
@@ -1148,7 +1148,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     msg.msg_control = (void *) data;
     msg.msg_controllen = sizeof(data);
 #else
-    msg.msg_accrights = (caddr_t) &sock;
+    msg.msg_accrights = (void*) &sock;
     msg.msg_accrightslen = sizeof(sock);
 #endif
     n = recvmsg(binderResponse[0], (struct msghdr *) &msg, 0);
@@ -1334,13 +1334,13 @@ Binder(void)
         /*
          * Receive a message with the following contents.
          */
-        iov[0].iov_base = (caddr_t) &options;
+        iov[0].iov_base = (void*) &options;
         iov[0].iov_len = sizeof(options);
-        iov[1].iov_base = (caddr_t) &port;
+        iov[1].iov_base = (void*) &port;
         iov[1].iov_len = sizeof(port);
-        iov[2].iov_base = (caddr_t) &type;
+        iov[2].iov_base = (void*) &type;
         iov[2].iov_len = sizeof(type);
-        iov[3].iov_base = (caddr_t) address;
+        iov[3].iov_base = (void*) address;
         iov[3].iov_len = sizeof(address);
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
@@ -1385,7 +1385,7 @@ Binder(void)
             err = errno;
         }
 
-        iov[0].iov_base = (caddr_t) &err;
+        iov[0].iov_base = (void*) &err;
         iov[0].iov_len = sizeof(err);
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
@@ -1405,7 +1405,7 @@ Binder(void)
             c->cmsg_len = CMSG_LEN(sizeof(int));
             msg.msg_controllen = c->cmsg_len;
 #else
-            msg.msg_accrights = (caddr_t) &sock;
+            msg.msg_accrights = (void*) &sock;
             msg.msg_accrightslen = sizeof(sock);
 #endif
         }

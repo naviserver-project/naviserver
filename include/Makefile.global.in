@@ -72,11 +72,11 @@ CFLAGS_INCLUDE   = -I$(INCDIR) @TCL_INCLUDES@
 CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@
 DEFS             = @DEFS@
 CFLAGS_CONVERSION= -Wconversion -Wsign-conversion -Wsign-compare
-CFLAGS_DEFINITON = -Wwrite-strings -Wextra -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes 
+CFLAGS_DEFINITION = -Wwrite-strings -Wextra -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes 
 CFLAGS_TIDY      = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security 
 CFLAGS_DEFAULT   = @CFLAGS_DEFAULT@
 #CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED  
-#CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITON) $(CFLAGS_TIDY) 
+#CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY) 
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
 LIBS		 = @LIBS@
 DL_LIBS		 = 

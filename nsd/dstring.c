@@ -292,7 +292,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
 
     /*
      * Resize the dstring with space for the argv aligned
-     * on an 8 byte boundry.
+     * on an 8 byte boundary.
      */
 
     len = ((dsPtr->length / 8) + 1) * 8;
@@ -392,7 +392,7 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
     for (i = 0; i < len; i++) {
         unsigned char c = UCHAR(buffer[i]);
             
-        if ((CHARTYPE(print, c) == 0) || (c > 127)) {
+        if ((CHARTYPE(print, c) == 0) || (c > UCHAR(127))) {
             Ns_DStringPrintf(dsPtr, "\\x%.2x", (c & 0xffu));
         } else {
             Ns_DStringPrintf(dsPtr, "%c", c);
@@ -425,7 +425,7 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     return Ns_DStringPrintf(dsPtr, "%" PRIu64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
 }
  
- 
+
 
 /*
  *----------------------------------------------------------------------
@@ -474,7 +474,7 @@ Ns_DStringSetLength(Ns_DString *dsPtr, int length)
 
 #undef Ns_DStringTrunc
 
-NS_EXTERN void Ns_DStringTrunc(Ns_DString *dsPtr, int length) NS_GNUC_DEPRECATED_FOR(Tcl_DStringTrunc);
+NS_EXTERN void Ns_DStringTrunc(Ns_DString *dsPtr, int length) NS_GNUC_DEPRECATED_FOR(Tcl_DStringSetLength);
 
 void
 Ns_DStringTrunc(Ns_DString *dsPtr, int length)

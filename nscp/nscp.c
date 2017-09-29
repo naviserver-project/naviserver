@@ -100,7 +100,7 @@ static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
 static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
 
 /*
- * Define the version of the module (ususally 1).
+ * Define the version of the module (usually 1).
  */
 
 NS_EXPORT const int Ns_ModuleVersion = 1;
@@ -113,7 +113,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  *
  *     Initialize the hash table of authorized users.  Entry values are either
  *     NULL indicating authorization should be checked via the
- *     Ns_AuthorizeUser() API or contain a Unix crypt(3) sytle encrypted
+ *     Ns_AuthorizeUser() API or contain a Unix crypt(3) style encrypted
  *     password.  For the later, the entry is compatible with /etc/passwd
  *     (i.e., username followed by password separated by colons).
  *
@@ -409,7 +409,7 @@ EvalThread(void *arg)
     Tcl_DStringInit(&unameDS);
     Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);
     Ns_ThreadSetName(ds.string);
-    Tcl_DStringTrunc(&ds, 0);
+    Tcl_DStringSetLength(&ds, 0);
     Ns_Log(Notice, "nscp: %s connected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
 
@@ -437,7 +437,7 @@ EvalThread(void *arg)
     while (stop == 0) {
         char buf[64];
             
-	Tcl_DStringTrunc(&ds, 0);
+	Tcl_DStringSetLength(&ds, 0);
 	++ncmd;
 retry:
 	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
@@ -451,7 +451,7 @@ retry:
 	    snprintf(buf, sizeof(buf), "%s:nscp %d>>> ", server, ncmd);
 	}
 	while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
-	    Tcl_DStringTrunc(&ds, ds.length-1);
+	    Tcl_DStringSetLength(&ds, ds.length-1);
 	}
 	if (STREQ(ds.string, "")) {
 	    goto retry; /* Empty command - try again. */

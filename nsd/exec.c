@@ -120,7 +120,7 @@ Ns_ExecProc(const char *exec, char **argv)
 Ns_ReturnCode
 Ns_WaitProcess(pid_t pid)
 {
-    return Ns_WaitForProcess(pid, NULL);
+    return Ns_WaitForProcessStatus(pid, NULL, NULL);
 }
 
 
@@ -138,13 +138,19 @@ Ns_WaitProcess(pid_t pid)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
 Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 {
+    return Ns_WaitForProcessStatus(pid, exitcodePtr, NULL);
+}
+
+
+Ns_ReturnCode
+Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
+{
+    Ns_ReturnCode status = NS_OK;
 #ifdef _WIN32
     HANDLE        process = (HANDLE) pid;
-    Ns_ReturnCode status = NS_OK;
     DWORD         exitcode = 0u;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
@@ -168,32 +174,35 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
             status = NS_ERROR;
         }
     }
-    return status;
     
 #else
-    int status = 0;
+    int   waitstatus = 0;
     pid_t p;
     
     do {
-        p = waitpid(pid, &status, 0);
+        p = waitpid(pid, &waitstatus, 0);
     } while (p != pid && errno == NS_EINTR);
+
     if (p != pid) {
         Ns_Log(Error, "waitpid(%d) failed: %s", pid, strerror(errno));
-        return NS_ERROR;
-    }
-    if (WIFSIGNALED(status)) {
+        status = NS_ERROR;
+        
+    } else if (WIFSIGNALED(waitstatus)) {
         const char *coredump = "";
 #ifdef WCOREDUMP
-        if (WCOREDUMP(status)) {
+        if (WCOREDUMP(waitstatus)) {
             coredump = " - core dumped";
         }
 #endif
-        Ns_Log(Error, "process %d killed with signal %d (%s)%s", pid,
-               WTERMSIG(status), strsignal(WTERMSIG(status)), coredump);
-    } else if (!WIFEXITED(status)) {
-    	Ns_Log(Error, "waitpid(%d): invalid status: %d", pid, status);
+        if (*coredump != '\0' || waitstatusPtr == NULL) {
+            Ns_Log(Error, "process %d killed with signal %d (%s)%s", pid,
+                   WTERMSIG(waitstatus), strsignal(WTERMSIG(waitstatus)), coredump);
+        }
+    } else if (!WIFEXITED(waitstatus)) {
+    	Ns_Log(Error, "waitpid(%d): invalid status: %d", pid, waitstatus);
     } else {
-    	int exitcode = WEXITSTATUS(status);
+    	int exitcode = WEXITSTATUS(waitstatus);
+        
     	if (exitcode != 0) {
             Ns_Log(Warning, "process %d exited with non-zero exit code: %d",
                    pid, exitcode);
@@ -202,8 +211,14 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
     	    *exitcodePtr = exitcode;
         }
     }
-    return NS_OK;
+    
+    if (waitstatusPtr != NULL) {
+        *waitstatusPtr = waitstatus;
+    }
+
 #endif /* _WIN32 */
+
+    return status;
 }
 
 
@@ -494,8 +509,8 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
 	return NS_INVALID_PID;
     }
-    iov[0].iov_base = (caddr_t) &result;
-    iov[1].iov_base = (caddr_t) &errnum;
+    iov[0].iov_base = (void*) &result;
+    iov[1].iov_base = (void*) &errnum;
     iov[0].iov_len = iov[1].iov_len = sizeof(int);
     if (pid == 0) {
 

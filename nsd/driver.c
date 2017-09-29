@@ -80,7 +80,7 @@ typedef struct PollData {
 #define PollHup(ppd, i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
- * Async writer definitons
+ * Async writer definitions
  */
 
 typedef struct AsyncWriter {
@@ -132,10 +132,11 @@ static void    DriverClose(Sock *sockPtr)
 static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, const char *threadName,
                                 const Ns_DriverInitData *init,
                                 NsServer *servPtr, const char *path, const char *bindaddr,
-                                const char *defserver, const char *address, const char *host,
-                                int driverCount)
+                                const char *defserver, const char *address, const char *host)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
     NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(10);
+static bool DriverModuleInitialized(const char *module)
+    NS_GNUC_NONNULL(1);
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -204,6 +205,11 @@ static void RequestFree(Sock *sockPtr)
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
+                              NsServer *servPtr, Driver *drvPtr, const ServerMap **defMapPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+
 /*
  * Static variables defined in this file.
  */
@@ -266,6 +272,42 @@ NsInitDrivers(void)
 /*
  *----------------------------------------------------------------------
  *
+ * DriverModuleInitialized --
+ *
+ *      Check if a driver with the specified name is already initialized.
+ *
+ * Results:
+ *      Boolean
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+DriverModuleInitialized(const char *module)
+{
+    Driver *drvPtr;
+    bool found = NS_FALSE;
+
+    NS_NONNULL_ASSERT(module != NULL);
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+
+        if (strcmp(drvPtr->moduleName, module) == 0) {
+            found = NS_TRUE;
+            Ns_Log(Notice, "Driver %s is already initialzed", module);
+            break;
+        }
+    }
+
+    return found;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_DriverInit --
  *
  *      Initialize a driver.
@@ -284,6 +326,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 {
     Ns_ReturnCode  status = NS_OK;
     NsServer      *servPtr = NULL;
+    bool           alreadyInitialized = NS_FALSE;
 
     NS_NONNULL_ASSERT(module != NULL);
     NS_NONNULL_ASSERT(init != NULL);
@@ -297,8 +340,13 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Ns_Log(Bug, "cannot lookup server structure for server: %s", module);
             status = NS_ERROR;
         }
+    } else {
+        alreadyInitialized = DriverModuleInitialized(module);
     }
 
+    /*
+     * Check versions of drivers.
+     */
     if (status == NS_OK && init->version < NS_DRIVER_VERSION_4) {
         Ns_Log(Warning, "%s: driver version is too old (version %d), Version 4 is recommended",
                module, init->version);
@@ -316,7 +364,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         status = NS_ERROR;
     }
 
-    if (status == NS_OK) {
+    if (!alreadyInitialized && status == NS_OK) {
         const char *path, *host, *address, *bindaddr, *defserver;
         bool        noHostNameGiven;
         int         nrDrivers;
@@ -364,7 +412,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
              */
 
             if (host == NULL) {
-                Tcl_DStringTrunc(&ds, 0);
+                Tcl_DStringSetLength(&ds, 0);
 
                 if (Ns_GetHostByAddr(&ds, address) == NS_TRUE) {
                     host = ns_strdup(Tcl_DStringValue(&ds));
@@ -408,7 +456,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
                 status = DriverInit(server, module, moduleName, init,
-                                    servPtr, path, bindaddr, defserver, address, host, i);
+                                    servPtr, path, bindaddr, defserver, address, host);
                 if (status != NS_OK) {
                     break;
                 }
@@ -418,6 +466,208 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     }
 
     return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServerMapEntryAdd --
+ *
+ *      Add an entry to the virtual server map. The entry consists of the
+ *      value as provided by the host header field and location string,
+ *      containing as well the protocol.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Potentially adding an entry to the virtual server map.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
+                  NsServer *servPtr, Driver *drvPtr, const ServerMap **defMapPtrPtr) {
+    Tcl_HashEntry *hPtr;
+    int            isNew;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(moduleName != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    hPtr = Tcl_CreateHashEntry(&hosts, host, &isNew);
+    if (isNew != 0) {
+        ServerMap *mapPtr;
+
+        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
+        mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
+        mapPtr->servPtr  = servPtr;
+        memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
+
+        Tcl_SetHashValue(hPtr, mapPtr);
+        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s",
+               moduleName, host, mapPtr->location);
+
+        if (defMapPtrPtr != NULL && *defMapPtrPtr == NULL) {
+            *defMapPtrPtr = mapPtr;
+        }
+        /*
+         * Always reset the DString
+         */
+        Ns_DStringSetLength(dsPtr, 0);
+    } else {
+        Ns_Log(Notice, "===== %s: ignore duplicate virtual host entry: %s", moduleName, host);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverMapVirtualServers --
+ *
+ *      Map "Host:" headers for drivers not bound to phsical servers.  This
+ *      function has to be called a time, when all servers are already defined
+ *      such that NsGetServer(server) can succeed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Add an entry to the virtual server map via ServerMapEntryAdd()
+ *
+ *----------------------------------------------------------------------
+ */
+void NsDriverMapVirtualServers(void)
+{
+    Driver *drvPtr;
+    Tcl_HashTable names;
+
+    Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        const Ns_Set *lset;
+        size_t        j;
+        int           isNew = 0;
+        Tcl_DString   ds, *dsPtr = &ds;
+        const char   *path, *defserver, *moduleName;
+
+        /*
+         * We might have multiple entries, when multiple driver threads are
+         * used. Skip these.
+         */
+        (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+        if (isNew == 0) {
+            continue;
+        }
+
+        moduleName = drvPtr->moduleName;
+        defserver  = drvPtr->defserver;
+        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
+        lset = Ns_ConfigGetSection(path);
+
+        if (lset == NULL || Ns_SetSize(lset) == 0u) {
+            /*
+             * The driver module has no ".../servers" section or an empty
+             * section, there are no virtual servers for this driver defined.
+             */
+            continue;
+        }
+
+        if (defserver == NULL) {
+            Ns_Fatal("%s: virtual servers configured,"
+                     " but %s has no defaultserver defined", moduleName, path);
+        }
+        assert(defserver != NULL);
+
+        defMapPtr = NULL;
+
+        Ns_DStringInit(dsPtr);
+        for (j = 0u; j < Ns_SetSize(lset); ++j) {
+            const char *server  = Ns_SetKey(lset, j);
+            const char *host    = Ns_SetValue(lset, j);
+            NsServer   *servPtr;
+
+            /*
+             * Perform an explicit lookup of the server.
+             */
+            servPtr = NsGetServer(server);
+            if (servPtr == NULL) {
+                Ns_Log(Error, "%s: no such server: %s", moduleName, server);
+            } else {
+                char *writableHost, *hostName, *portStart;
+
+                writableHost = ns_strdup(host);
+                Ns_HttpParseHost(writableHost, &hostName, &portStart);
+
+                if (portStart == NULL) {
+                    Tcl_DString hostDString;
+
+                    /*
+                     * The provided host entry does NOT contain a port.
+                     *
+                     * Add the provided entry to the virtual server map only,
+                     * when the configured port is the default port for the
+                     * protocol.
+                     */
+                    if (drvPtr->port == drvPtr->defport) {
+                        ServerMapEntryAdd(dsPtr, host, moduleName, servPtr, drvPtr,
+                                          STREQ(defserver, server) ? &defMapPtr : NULL);
+                    }
+
+                    /*
+                     * Auto-add configured port: Add always an entry with the
+                     * explicitly configured port of the driver.
+                     */
+                    Tcl_DStringInit(&hostDString);
+                    Tcl_DStringAppend(&hostDString, host, -1);
+                    (void) Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
+
+                    ServerMapEntryAdd(dsPtr, hostDString.string, moduleName, servPtr, drvPtr,
+                                      STREQ(defserver, server) ? &defMapPtr : NULL);
+
+                    Tcl_DStringFree(&hostDString);
+                } else {
+                    /*
+                     * The provided host entry does contain a port.
+                     *
+                     * In case, the provided port is equal to the configured port
+                     * of the driver, add an entry.
+                     */
+                    unsigned short providedPort = (unsigned short)strtol(portStart+1, NULL, 10);
+
+                    if (providedPort == drvPtr->port) {
+                        ServerMapEntryAdd(dsPtr, host, moduleName, servPtr, drvPtr,
+                                          STREQ(defserver, server) ? &defMapPtr : NULL);
+                        /*
+                         * In case, the provided port is equal to the default
+                         * port of the driver, make sure that we have an entry
+                         * without the port.
+                         */
+                        if (providedPort == drvPtr->defport) {
+                            ServerMapEntryAdd(dsPtr, hostName, moduleName, servPtr, drvPtr,
+                                              STREQ(defserver, server) ? &defMapPtr : NULL);
+                        }
+                    } else {
+                        Ns_Log(Warning, "%s: driver is listening on port %hu; "
+                               "virtual host entry %s ignored",
+                               moduleName, drvPtr->port, host);
+                    }
+                }
+                ns_free(writableHost);
+            }
+        }
+        Ns_DStringFree(dsPtr);
+
+        if (defMapPtr == NULL) {
+            Ns_Fatal("%s: default server %s not defined in %s", moduleName, defserver, path);
+        }
+    }
+    Tcl_DeleteHashTable(&names);
 }
 
 
@@ -442,15 +692,13 @@ static Ns_ReturnCode
 DriverInit(const char *server, const char *moduleName, const char *threadName,
            const Ns_DriverInitData *init,
            NsServer *servPtr, const char *path, const char *bindaddr,
-           const char *defserver, const char *address, const char *host,
-           int driverCount)
+           const char *defserver, const char *address, const char *host)
 {
     const char     *defproto;
-    ServerMap      *mapPtr;
     Driver         *drvPtr;
     DrvWriter      *wrPtr;
     DrvSpooler     *spPtr;
-    int             i, n;
+    int             i;
     unsigned short  defport;
 
     NS_NONNULL_ASSERT(threadName != NULL);
@@ -496,6 +744,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->type           = init->name;
     drvPtr->moduleName     = ns_strdup(moduleName);
     drvPtr->threadName     = ns_strdup(threadName);
+    drvPtr->defserver      = defserver;
     drvPtr->listenProc     = init->listenProc;
     drvPtr->acceptProc     = init->acceptProc;
     drvPtr->recvProc       = init->recvProc;
@@ -508,6 +757,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->arg            = init->arg;
     drvPtr->opts           = init->opts;
     drvPtr->servPtr        = servPtr;
+    drvPtr->defport        = defport;
 
     drvPtr->bufsize        = (size_t)Ns_ConfigIntRange(path, "bufsize", 16384, 1024, INT_MAX);
     drvPtr->maxinput       = Ns_ConfigWideIntRange(path, "maxinput",
@@ -692,59 +942,9 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                threadName, wrPtr->threads);
     }
 
-    /*
-     * Map Host headers for drivers not bound to servers.
-     */
-
-    if (server == NULL && driverCount == 0) {
-        const Ns_Set *lset;
-        size_t        j;
-        Tcl_DString ds, *dsPtr = &ds;
-
-        if (defserver == NULL) {
-            Ns_Fatal("%s: virtual servers configured,"
-                     " but %s has no defaultserver defined", moduleName, path);
-        }
-        assert(defserver != NULL);
-
-        defMapPtr = NULL;
-        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
-        lset = Ns_ConfigGetSection(path);
-
-        Ns_DStringInit(dsPtr);
-        for (j = 0u; lset != NULL && j < Ns_SetSize(lset); ++j) {
-            server  = Ns_SetKey(lset, j);
-            host    = Ns_SetValue(lset, j);
-            servPtr = NsGetServer(server);
-            if (servPtr == NULL) {
-                Ns_Log(Error, "%s: no such server: %s", moduleName, server);
-            } else {
-                Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
-
-                if (n == 0) {
-                    Ns_Log(Error, "%s: duplicate host map: %s", moduleName, host);
-                } else {
-                    (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
-                    mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)ds.length);
-                    mapPtr->servPtr  = servPtr;
-                    memcpy(mapPtr->location, ds.string, (size_t)ds.length + 1u);
-                    Ns_DStringSetLength(&ds, 0);
-                    if (defMapPtr == NULL && STREQ(defserver, server)) {
-                        defMapPtr = mapPtr;
-                    }
-                    Tcl_SetHashValue(hPtr, mapPtr);
-                }
-            }
-        }
-        Ns_DStringFree(dsPtr);
-
-        if (defMapPtr == NULL) {
-            Ns_Fatal("%s: default server %s not defined in %s", moduleName, server, path);
-        }
-    }
-
     return NS_OK;
 }
+
 
 
 /*
@@ -1741,8 +1941,8 @@ DriverThread(void *arg)
                     /*
                      * Got some data
                      */
-                    ssize_t recieved = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
-                    if (recieved <= 0) {
+                    ssize_t received = ns_recv(sockPtr->sock, drain, sizeof(drain), 0);
+                    if (received <= 0) {
                         Ns_Log(DriverDebug, "poll closewait pollin; sockrelease SOCK_READERROR (sock %d)",
                                sockPtr->sock);
                         SockRelease(sockPtr, SOCK_READERROR, 0);
@@ -2702,24 +2902,33 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 
     if (sockPtr->reqPtr != NULL) {
         Request     *reqPtr = sockPtr->reqPtr;
-        Tcl_DString  dsReqLine;
         const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : "";
 
         (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
 
-        Tcl_DStringInit(&dsReqLine);
-        Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
-               code, errMsg,
-               reqPtr->peer,
-               Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
-               reqPtr->roff,
-               reqPtr->woff,
-               reqPtr->coff,
-               reqPtr->avail);
-        Tcl_DStringFree(&dsReqLine);
+        /*
+         * Check, if bad request looks like a TLS handshake. If yes, there is
+         * no need to print out the received buffer.
+         */
+        if (requestLine[0] == (char)0x16 && requestLine[1] >= 3 && requestLine[2] == 1) {
+            Ns_Log(Warning, "invalid request %d (%s) from peer %s: recveived TLS handshake on a non-TLS connection",
+                   code, errMsg, reqPtr->peer);
+        } else {
+            Tcl_DString  dsReqLine;
 
-        LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+            Tcl_DStringInit(&dsReqLine);
+            Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
+                   code, errMsg,
+                   reqPtr->peer,
+                   Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
+                   reqPtr->roff,
+                   reqPtr->woff,
+                   reqPtr->coff,
+                   reqPtr->avail);
+            Tcl_DStringFree(&dsReqLine);
 
+            LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+        }
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
                code, errMsg);
@@ -2816,8 +3025,8 @@ SockClose(Sock *sockPtr, int keep)
      */
     if (sockPtr->taddr != NULL) {
         munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
+        sockPtr->taddr = NULL;
     }
-    sockPtr->taddr = NULL;
 #endif
 }
 
@@ -3624,13 +3833,11 @@ SockParse(Sock *sockPtr)
 static void
 SockSetServer(Sock *sockPtr)
 {
-    const ServerMap *mapPtr = NULL;
-    const char      *host;
-    int              status = 1;
+    char            *host;
     Request         *reqPtr;
+    bool             bad_request = NS_FALSE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
-
 
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
@@ -3639,7 +3846,7 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = sockPtr->drvPtr->location;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer host %s request line %s", host, reqPtr->request.line);
+    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s'", host, reqPtr->request.line);
 
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
@@ -3647,14 +3854,29 @@ SockSetServer(Sock *sockPtr)
          */
         Ns_Log(Notice, "request header field \"Host\" is missing in HTTP/1.1 request: \"%s\"\n",
                reqPtr->request.line);
-        status = 0;
+        bad_request = NS_TRUE;
     }
     if (sockPtr->servPtr == NULL) {
-        if (host != NULL) {
-            const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&hosts, host);
+        const ServerMap *mapPtr = NULL;
 
+        if (host != NULL) {
+            const Tcl_HashEntry *hPtr;
+            size_t               hostLength = strlen(host);
+
+            /*
+             * Remove trailing dot of host header field, since RFC 2976 allows
+             * fully qualified "abolute" DNS names in host fields (see e.g. §3.2.2).
+             */
+            if (host[hostLength] == '.') {
+                host[hostLength] = '\0';
+            }
+            hPtr = Tcl_FindHashEntry(&hosts, host);
             if (hPtr != NULL) {
                 mapPtr = Tcl_GetHashValue(hPtr);
+            } else {
+                Ns_Log(DriverDebug,
+                       "cannot locate host header content '%s' in virtual hosts table, fall back to default '%s'",
+                       host, defMapPtr->location);
             }
         }
         if (mapPtr == NULL) {
@@ -3667,11 +3889,11 @@ SockSetServer(Sock *sockPtr)
         if (sockPtr->servPtr == NULL) {
             Ns_Log(Warning, "cannot determine server for request: \"%s\" (host \"%s\")\n",
                    reqPtr->request.line, host);
-            status = 0;
+            bad_request = NS_TRUE;
         }
     }
 
-    if (unlikely(status == 0)) {
+    if (unlikely(bad_request)) {
         Ns_Log(DriverDebug, "SockSetServer sets method to BAD");
         ns_free((char *)reqPtr->request.method);
         reqPtr->request.method = ns_strdup("BAD");
@@ -4525,7 +4747,7 @@ WriterThread(void *arg)
             } else {
 
                 /*
-                 *  Mark when first timeout occured or check if it is already
+                 *  Mark when first timeout occurred or check if it is already
                  *  for too long and we need to stop this socket
                  */
                 if (sockPtr->timeout.sec == 0) {
@@ -4667,7 +4889,7 @@ Ns_ReturnCode
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs, int everysize)
 {
-    Conn          *connPtr = (Conn *)conn;
+    Conn          *connPtr;
     WriterSock    *wrSockPtr;
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
@@ -4676,6 +4898,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     Ns_ReturnCode  status = NS_OK;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *)conn;
 
     if (unlikely(connPtr->sockPtr == NULL)) {
         Ns_Log(Warning,
@@ -4683,6 +4906,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                nsend, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM,
                (void *)chan, fd);
         status = NS_ERROR;
+        wrPtr = NULL;
     } else {
 
         wrPtr = &connPtr->sockPtr->drvPtr->writer;
@@ -4705,7 +4929,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     if (status != NS_OK) {
         return status;
     }
-        
+
+    assert(wrPtr != NULL);
+
     if (((connPtr->flags & NS_CONN_STREAM) != 0u) || connPtr->fd > 0) {
         bool        first = NS_FALSE;
         size_t      wrote = 0u;
@@ -4721,7 +4947,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         } else {
 
             Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
-        
+
             if (connPtr->fd == 0) {
                 /*
                  * Create a new temporary spool file.
@@ -4730,7 +4956,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                 fd = connPtr->fd = Ns_GetTemp();
 
                 Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", fd);
-                
+
             } else {
                 /*
                  * Reuse previously created spool file.
@@ -4740,7 +4966,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                     Ns_Log(Notice,
                            "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
                     status = NS_ERROR;
-                    
+
                 } else {
                     Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
                     (void)ns_lseek(connPtr->fd, 0, SEEK_END);
@@ -4820,7 +5046,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         } else if (chan != NULL) {
             ClientData clientData;
             /*
-             * The client provided an open tcl channel and closes it
+             * The client provided an open Tcl channel and closes it
              */
             if (Tcl_GetChannelHandle(chan, TCL_READABLE, &clientData) != TCL_OK) {
                 return NS_ERROR;
@@ -5233,9 +5459,8 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
 
             (void) ns_close(fd);
-        }
 
-        if (fd != NS_INVALID_FD) {
+        } else if (fd != NS_INVALID_FD) {
             (void) ns_close(fd);
         }
     }
@@ -5346,6 +5571,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 {
     int          intValue = -1, result = TCL_OK;
     Tcl_Obj     *driverObj;
+    DrvWriter   *wrPtr;
     Ns_ObjvSpec  args[] = {
         {"driver", Ns_ObjvObj, &driverObj, NULL},
         {"?value", Ns_ObjvInt, &intValue, NULL},
@@ -5356,14 +5582,18 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         result = TCL_ERROR;
 
     } else {
-        DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
+        wrPtr = DriverWriterFromObj(driverObj);
 
         if (unlikely(wrPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
                                Tcl_GetString(driverObj));
             result = TCL_ERROR;
 
-        } else if (objc == 4) {
+        }
+    }
+    if (result == TCL_OK) {
+        assert(wrPtr != NULL);
+        if (objc == 4) {
             /*
              * The optional argument was provided.
              */
@@ -5400,7 +5630,8 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                      int objc, Tcl_Obj *CONST* objv)
 {
     int          boolValue, result = TCL_OK;
     Tcl_Obj     *driverObj;
@@ -5417,7 +5648,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
 
         if (unlikely(wrPtr == NULL)) {
-            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
+            Ns_TclPrintfResult(interp, "no writer configured for driver '%s'",
                                Tcl_GetString(driverObj));
             result = TCL_ERROR;
 
@@ -5455,7 +5686,8 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *----------------------------------------------------------------------
  */
 int
-NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
+                  int objc, Tcl_Obj *CONST* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"list",       WriterListObjCmd},
@@ -5899,6 +6131,57 @@ AsyncWriterThread(void *arg)
 
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LookupDriver --
+ *
+ *      Find a matching driver for the specified protocol and optionally the
+ *      specified driver name.
+ *
+ * Results:
+ *      Driver pointer or NULL on failure.
+ *
+ * Side effects:
+ *      When no driver is found, an error ist left int the interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+static Driver *
+LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
+{
+    Driver *drvPtr;
+
+    for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
+        Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
+               drvPtr->protocol, drvPtr->server, drvPtr->threadName, drvPtr->location);
+
+        if (STREQ(drvPtr->protocol, protocol)) {
+            if (driverName == NULL) {
+                /*
+                 * If there is no driver name given, take the first driver
+                 * with the matching protocol.
+                 */
+                break;
+            } else if (STREQ(drvPtr->moduleName, driverName)) {
+                /*
+                 * The driver name (name of the loaded module) is equal
+                 */
+                break;
+            }
+        }
+    }
+
+    if (drvPtr == NULL) {
+        if (driverName != NULL) {
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' & driver name '%s' found", protocol, driverName);
+        } else {
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
+        }
+    }
+    return drvPtr;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -5947,30 +6230,8 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
          * Find a matching driver for the specified protocol and optionally
          * the specified driver name.
          */
-        for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-            Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
-                   drvPtr->protocol, drvPtr->server, drvPtr->threadName, drvPtr->location);
-            if (STREQ(drvPtr->protocol, protocol)) {
-                if (driverName == NULL) {
-                    /*
-                     * If there is no driver name given, take the first driver
-                     * with the matching protocol.
-                     */
-                    break;
-                } else if (STREQ(drvPtr->moduleName, driverName)) {
-                    /*
-                     * The driver name (name of the loaded module) is equal
-                     */
-                    break;
-                }
-            }
-        }
+        drvPtr = LookupDriver(interp, protocol, driverName);
         if (drvPtr == NULL) {
-            if (driverName != NULL) {
-                Ns_TclPrintfResult(interp, "no driver for protocol '%s' & driver name '%s' found", protocol, driverName);
-            } else {
-                Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
-            }
             result = TCL_ERROR;
 
         } else if (portString != NULL) {
@@ -6001,8 +6262,11 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                 const char    *query;
                 Tcl_DString    ds, *dsPtr = &ds;
                 Request       *reqPtr;
-                Sock          *sockPtr = SockNew(drvPtr);
+                Sock          *sockPtr;
 
+                assert(drvPtr != NULL);
+
+                sockPtr = SockNew(drvPtr);
                 sockPtr->sock = sock;
                 sockPtr->servPtr  = drvPtr->servPtr;
                 if (sockPtr->servPtr == NULL) {
@@ -6052,6 +6316,69 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NSDriverSockNew --
+ *
+ *      Create a Sock structure based on the driver interface
+ *
+ * Results:
+ *      Tcl return code.
+ *
+ * Side effects:
+ *      Accepting a connection
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
+                 const char *protocol, const char *driverName, const char *methodName,
+                 Sock **sockPtrPtr)
+{
+    int     result = TCL_OK;
+    Driver *drvPtr;
+    Sock   *sockPtr = NULL;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(protocol != NULL);
+    NS_NONNULL_ASSERT(methodName != NULL);
+    NS_NONNULL_ASSERT(sockPtrPtr != NULL);
+
+    drvPtr = LookupDriver(interp, protocol, driverName);
+    if (drvPtr == NULL) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_DString    ds, *dsPtr = &ds;
+        Request       *reqPtr;
+
+        sockPtr = SockNew(drvPtr);
+        sockPtr->servPtr = drvPtr->servPtr;
+        sockPtr->sock = sock;
+
+        RequestNew(sockPtr); // not sure if needed
+        // peerAddr is missing
+
+        Ns_GetTime(&sockPtr->acceptTime);
+        reqPtr = sockPtr->reqPtr;
+
+        Tcl_DStringInit(dsPtr);
+        Ns_DStringAppend(dsPtr, methodName);
+        Ns_StrToUpper(Ns_DStringValue(dsPtr));
+
+        reqPtr->request.line = Ns_DStringExport(dsPtr);
+        reqPtr->request.method = ns_strdup(methodName);
+        reqPtr->request.protocol = ns_strdup(protocol);
+        reqPtr->request.host = NULL;
+        reqPtr->request.query = NULL;
+        Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);
+
+        *sockPtrPtr = sockPtr;
+    }
+
+    return result;
+}
 
 /*
  * Local Variables:

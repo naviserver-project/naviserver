@@ -60,7 +60,7 @@ ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.tcl  ;# Tcl error page
 
 Another way to support .tcl pages to use ADP engine to process .tcl file as
 ADP pages. the engine will source Tcl file and wrap it as <% ns_adp_include filename %>,
-then compiled it as regular ADP page. If caching enabled, the tcl file will be compiled as
+then compiled it as regular ADP page. If caching enabled, the Tcl file will be compiled as
 Tcl proc into bytecode. Using ADP engine is faster than using file.tcl based approach.
 
 [example_begin]

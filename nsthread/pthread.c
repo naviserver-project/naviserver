@@ -72,7 +72,7 @@ static pthread_key_t key;
  *
  * Nsthreads_LibInit --
  *
- *      Pthread library initialisation routine.
+ *      Pthread library initialization routine.
  *
  * Results:
  *      None.
@@ -469,12 +469,11 @@ NsThreadExit(void *arg)
 void
 Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
 {
-    pthread_t thr = (pthread_t) *thread;
     int err;
 
     NS_NONNULL_ASSERT(thread != NULL);
 
-    err = pthread_join(thr, argPtr);
+    err = pthread_join((pthread_t)*thread, argPtr);
     if (err != 0) {
         NsThreadFatal("Ns_ThreadJoin", "pthread_join", err);
     }
@@ -757,7 +756,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      * As documented on Linux, pthread_cond_timedwait may return
      * NS_EINTR if a signal arrives.  We have noticed that
      * NS_EINTR can be returned on Solaris as well although this
-     * is not documented.  We assume the wakeup is truely
+     * is not documented.  We assume the wakeup is truly
      * spurious and simply restart the wait knowing that the
      * ts structure has not been modified.
      */

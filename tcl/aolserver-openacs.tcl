@@ -1,14 +1,14 @@
 #
 # This is a small compatibility layer for OpenACS when used with 
-# naviserver 4.99.3 or newer.  
+# NaviServer 4.99.3 or newer.  
 #
 # WARNING: The procs defined in this file are not intended to be a
-# fully aolserver 4.* compliant implementation of these commands, but
+# fully AOLserver 4.* compliant implementation of these commands, but
 # are intended only for the functionality used in OpenACS currently.
 #
 # The script implements 3 commands:
 #  * ns_share (obsolete, but called from OpenACS)
-#  * ns_cache (the naviserver implementation for ns cache
+#  * ns_cache (the NaviServer implementation for ns cache
 #    has a different interface)
 #  * ns_cache_size 
 #
@@ -27,7 +27,7 @@ if {1} {
     # and we can use nsf in the regression test suite.
 
     # Requiring the XOTcl/NX and the serializer here is not necessary
-    # for the ns-cache emulation, but since the tcl files are sourced in
+    # for the ns-cache emulation, but since the Tcl files are sourced in
     # alphabetical order, we make sure that we can use nx here (if
     # installed).
 
@@ -45,7 +45,7 @@ if {1} {
             package require XOTcl 2
             package require nx::serializer
             namespace import -force ::xotcl::*
-            ns_log notice "XOTcl [package require XOTcl 2] loaded"
+            ns_log notice "XOTcl [package require XOTcl 2] loaded featuring: [array get ::nsf::config]"
         }]} {
             # We could not load XOTcl 2; fall back and try to load XOTcl 1
             set xotcl 1

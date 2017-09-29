@@ -106,19 +106,20 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
 void
 Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 {
-    void      **slots = NsGetTls();
     uintptr_t   key;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
 
     key = (uintptr_t) *keyPtr;
-     
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
         Tcl_Panic("Ns_TlsSet: invalid key: %" PRIuPTR
                   ": should be between 1 and %" PRIuPTR,
                   key, nsThreadMaxTls);
+    } else {
+        void **slots = NsGetTls();
+        
+        slots[key] = value;
     }
-    slots[key] = value;
 }
 
 
@@ -141,18 +142,23 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 void *
 Ns_TlsGet(Ns_Tls *keyPtr)
 {
-    void      **slots = NsGetTls();
-    uintptr_t   key;
+    uintptr_t  key;
+    void      *result;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
     
     key = (uintptr_t) *keyPtr;
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
+        result = NULL;
         Tcl_Panic("Ns_TlsGet: invalid key: %" PRIuPTR
                   ": should be between 1 and %" PRIuPTR,
                   key, nsThreadMaxTls);
+    } else {
+        void  **slots = NsGetTls();
+
+        result = slots[key];
     }
-    return slots[key];
+    return result;
 }
 
 
@@ -164,7 +170,7 @@ Ns_TlsGet(Ns_Tls *keyPtr)
  *	Cleanup thread local storage in LIFO order for an exiting thread.
  *	Note the careful use of the counters to keep iterating over the
  *	list, up to 5 times, until all TLS values are NULL.  This emulates
- *	the Pthread TLS behavior which catches a destructor inadvertantly
+ *	the Pthread TLS behavior which catches a destructor inadvertently
  *	calling a library which resets a TLS value after it's been destroyed.
  *
  * Results:

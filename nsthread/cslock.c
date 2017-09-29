@@ -201,9 +201,10 @@ Ns_CsEnter(Ns_Cs *csPtr)
 void
 Ns_CsLeave(Ns_Cs *csPtr)
 {
-    CsLock *lockPtr = (CsLock *) *csPtr;
+    CsLock *lockPtr;
 
     NS_NONNULL_ASSERT(csPtr != NULL);
+    lockPtr = (CsLock *) *csPtr;
 
     Ns_MutexLock(&lockPtr->mutex);
     if (--lockPtr->count == 0) {

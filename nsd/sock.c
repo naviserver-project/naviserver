@@ -485,6 +485,7 @@ NS_SOCKET
 Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 {
     sock = accept(sock, saPtr, lenPtr);
+    Ns_Log(Debug, "Ns_SockAccept returns sock %d, err %s", sock, (errno == 0) ? "NONE" : strerror(errno));
 
     if (likely(sock != NS_INVALID_SOCKET)) {
         sock = SockSetup(sock);
@@ -507,7 +508,7 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
  *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
- *      Will set SO_REUSEADDR always on the socket, SO_REUSEPORT 
+ *      Will set SO_REUSEADDR always on the socket, SO_REUSEPORT
  *      optionally.
  *
  *----------------------------------------------------------------------
@@ -525,11 +526,12 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
     NS_SOCKET sock;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
+    Ns_LogSockaddr(Debug, "Ns_SockBind called with", (const struct sockaddr *) saPtr);
 
-    sock = socket(saPtr->sa_family, SOCK_STREAM, 0);
+    sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_STREAM, 0);
 
     if (sock != NS_INVALID_SOCKET) {
-        
+
 #if defined(SO_REUSEPORT)
         if (reusePort) {
             int optval = 1;
@@ -538,9 +540,11 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 #endif
         sock = SockSetup(sock);
     }
-    if (sock != NS_INVALID_SOCKET) {
 
-        if (Ns_SockaddrGetPort((const struct sockaddr *)saPtr) != 0u) {
+    if (sock != NS_INVALID_SOCKET) {
+        unsigned short port = Ns_SockaddrGetPort((const struct sockaddr *)saPtr);
+
+        if (port != 0u) {
             int n = 1;
 
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &n, (socklen_t)sizeof(n));
@@ -555,14 +559,26 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
             setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, (socklen_t)sizeof(n));
 #endif
         }
+        Ns_LogSockaddr(Debug, "trying to bind on", (const struct sockaddr *) saPtr);
 
         if (bind(sock, (const struct sockaddr *)saPtr,
                  Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr)) != 0) {
+
             Ns_Log(Notice, "bind operation on sock %d lead to error: %s", sock, ns_sockstrerror(ns_sockerrno));
             Ns_LogSockaddr(Warning, "bind on", (const struct sockaddr *) saPtr);
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
         }
+
+        if (port == 0u) {
+            /*
+             * Refetch the socket structure containing the potentially fresh port
+             */
+            socklen_t socklen = Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr);
+
+            (void) getsockname(sock, (struct sockaddr *)saPtr, &socklen);
+        }
+
     }
 
     return sock;
@@ -678,13 +694,13 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
     sock = SockConnect(host, port, lhost, lport, NS_TRUE);
     if (sock != NS_INVALID_SOCKET) {
         Ns_ReturnCode status;
-        
+
         status = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
         switch (status) {
         case NS_OK:
             {
                 int err;
-            
+
                 len = (socklen_t)sizeof(err);
                 if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (void *)&err, &len) == -1) {
                     status = NS_ERROR;
@@ -694,12 +710,12 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
         case NS_TIMEOUT:
             errno = ETIMEDOUT;
             break;
-            
+
         case NS_ERROR:         /* fall through */
         case NS_FILTER_BREAK:  /* fall through */
         case NS_FILTER_RETURN: /* fall through */
         case NS_FORBIDDEN:     /* fall through */
-        case NS_UNAUTHORIZED:  
+        case NS_UNAUTHORIZED:
             break;
         }
         if (status != NS_OK) {
@@ -732,7 +748,7 @@ Ns_ReturnCode
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
     Ns_ReturnCode status;
-    
+
     if (ns_sock_set_blocking(sock, NS_FALSE) == -1) {
 	status = NS_ERROR;
     } else {
@@ -762,7 +778,7 @@ Ns_ReturnCode
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
     Ns_ReturnCode status;
-    
+
     if (ns_sock_set_blocking(sock, NS_TRUE) == -1) {
 	status = NS_ERROR;
     } else {
@@ -802,7 +818,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 # else
     int qlen = 5;
 # endif
-    
+
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
 		   (const void *)&qlen, (socklen_t)sizeof(qlen)) == -1) {
 	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
@@ -826,8 +842,8 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
     int n;
 
     memset(&afa, 0, sizeof(afa));
-    strcpy(afa.af_name, "httpready");
-    n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa));
+    strncpy(afa.af_name, "httpready", sizeof(afa.af_name));
+    n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, (socklen_t)sizeof(afa));
     if (n < 0) {
 	Ns_Log(Error, "deferaccept setsockopt(SO_ACCEPTFILTER): %s",
 	       ns_sockstrerror(ns_sockerrno));
@@ -863,7 +879,7 @@ Ns_ReturnCode
 Ns_SockPipe(NS_SOCKET socks[2])
 {
     Ns_ReturnCode status;
-    
+
     NS_NONNULL_ASSERT(socks != NULL);
 
     if (ns_sockpair(socks) != 0) {
@@ -1072,7 +1088,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
     if (result != NS_OK) {
         Ns_Log(Debug, "SockConnect %s %d (local %s %d) fails", host, port, lhost, lport);
         sock = NS_INVALID_SOCKET;
-        
+
     } else {
         sock = Ns_SockBind(lsaPtr, NS_FALSE);
         if (sock != NS_INVALID_SOCKET) {
@@ -1084,7 +1100,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
 
             if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                 ns_sockerrno_t err = ns_sockerrno;
-                
+
                 if (!async || (err != NS_EINPROGRESS && err != NS_EWOULDBLOCK)) {
                     ns_sockclose(sock);
                     Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);

@@ -1,7 +1,7 @@
 # -*- Tcl -*-
 namespace eval ::tcltest {
     #
-    # A simple tcl client used for testing and debugging of buffering
+    # A simple Tcl client used for testing and debugging of buffering
     # in persistent HTTP connections. The proc tcltest::client
     # receives a number of HTTP requests followed by a list of chunks
     # which form the HTTP requests. In contrary to the classical test

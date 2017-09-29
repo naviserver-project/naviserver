@@ -785,9 +785,10 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 static void ThreadArgFree(void *arg)
 {
-    TclThreadArg *argPtr = (TclThreadArg *)arg;
+    TclThreadArg *argPtr;
     
     NS_NONNULL_ASSERT(arg != NULL);
+    argPtr = (TclThreadArg *)arg;
     
     if (argPtr->threadName != NULL) {
         ns_free((char *)argPtr->threadName);
@@ -1000,7 +1001,7 @@ CreateSynchObject(const NsInterp *itPtr,
         
             Ns_DStringInit(&ds);
             do {
-                Ns_DStringTrunc(&ds, 0);
+                Ns_DStringSetLength(&ds, 0);
                 Ns_DStringPrintf(&ds, "%s:tcl:%u", type, (*idPtr)++);
                 hPtr = Tcl_CreateHashEntry(typeTable, ds.string, &isNew);
             } while (isNew == 0);

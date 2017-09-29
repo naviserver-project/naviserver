@@ -27,6 +27,8 @@ test http-persist-1 {simple setup} -constraints {serverListen} -body {
     }
     return $result
     
+} -cleanup {
+    unset -nocomplain result d k bytes connection contentLength
 } -result {connection keep-alive content-length 3 connection keep-alive content-length 4}
 
 
@@ -46,7 +48,8 @@ test http-persist-2 {three requests in two chunks} -constraints {serverListen} -
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4 content-length 5}
 
 
@@ -65,7 +68,8 @@ test http-persist-3 {three requests in one chunk} -constraints {serverListen} -b
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4 content-length 5}
 
 
@@ -86,7 +90,8 @@ test http-persist-4 {three requests in three chunks, broken strangely} -constrai
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4 content-length 5}
 
 
@@ -106,7 +111,8 @@ test http-persist-5 {three requests in two chunks, one with content} -constraint
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4 content-length 5}
 
 
@@ -125,7 +131,8 @@ test http-persist-6 {two requests in one chunk, both with content} -constraints 
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4}
 
 
@@ -144,7 +151,8 @@ test http-persist-7 {two requests in one chunk, both with content, trailing junk
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4 content-length {}}
 
 
@@ -168,7 +176,8 @@ test http-persist-8 {one request in six chunks} -constraints {serverListen} -bod
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3}
 
 
@@ -189,5 +198,6 @@ test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -c
     }
     
     return $result
-    
+} -cleanup {
+    unset -nocomplain result d k bytes contentLength
 } -result {content-length 3 content-length 4}

@@ -37,7 +37,7 @@ section at the end of this page.
 Return a complete response to the client consisting of the given [arg body]
 and a set of HTTP headers. [arg status] is an integer HTTP status code such as
 200 (OK) or 404 (Not Found). When the optional flag [option {-binary}] is
-used, the content of the tcl byte-array is transmitted.
+used, the content of the Tcl byte-array is transmitted.
 
 [para]
 [arg mime-type] is the mime-type of the body. If a [term charset] attribute

@@ -387,6 +387,7 @@ Ns_ConfigGetInt(const char *section, const char *key, int *valuePtr)
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
 
     s = ConfigGet(section, key, NS_FALSE, NULL);
     if (s != NULL && Ns_StrToInt(s, valuePtr) == NS_OK) {
@@ -426,6 +427,10 @@ Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
     const char *s;
     bool        success = NS_TRUE;
 
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
+
     s = Ns_ConfigGetValue(section, key);
     if (s == NULL || sscanf(s, "%24" SCNd64, valuePtr) != 1) {
         success = NS_FALSE;
@@ -455,7 +460,7 @@ bool
 Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
 {
     const char *s;
-    bool found = NS_FALSE;
+    bool        found = NS_FALSE;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -792,6 +797,9 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
         
     } else {
         Ns_Set *set = *((Ns_Set **) clientData);
+
+        assert(paramName != NULL);
+        assert(paramValue != NULL);
         
         if (likely(set != NULL)) {
             (void)Ns_SetPut(set, paramName, paramValue);
@@ -903,9 +911,10 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
  *
  * Results:
  *      Pointer to new or existing Ns_Set for given section.
+ *      When "create" is not set, the function might return NULL.
  *
  * Side effects:
- *      Section set created (if necessary).
+ *      Section set created (if necessary and "create" is given as true).
  *
  *----------------------------------------------------------------------
  */

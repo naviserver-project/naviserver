@@ -9,7 +9,7 @@
 
 Cookies are small pieces of data which the server sends to the [term "user agent"]
 and the user agent sends back during subsequent requests. You can use this
-mechanism to save state between otherwise statelss HTTP requests.
+mechanism to save state between otherwise stateless HTTP requests.
 
 [para]
 Cookie size limits are user agent dependent. Practically, as cookies are sent
@@ -54,6 +54,7 @@ The [arg data] will be URL-encoded to escape special characters.
 
 
 [call [cmd ns_getcookie] \
+	[opt [option "-all [arg bool]"]] \
 	[opt [option "-include_set_cookies [arg bool]"]] \
 	[opt [arg --]] \
 	[arg name]	\
@@ -66,13 +67,17 @@ true, then this command will search as well in the cookies being
 currently set in the output headers.
 
 [para]
-Only the first cookie identified by [arg name] is returned. If two cookies
+By default, only the first cookie identified by [arg name] is returned. If two cookies
 with the same name are sent by the user agent, each with a different [arg domain]
-and/or [arg path], which cookie data is returned depends on the user agent.
+and/or [arg path], which cookie data is returned depends on the user
+agent. When the option [opt -all] is set, all cookies with the
+specified name are returned. This can be use to detect such situations
+with multiple cookies. The option [opt -all] cannot be set together
+with the option [opt -include_set_cookies].
 
 [para]
-When using [arg domain] or [arg path] to restrict cookies, use a unique name for
-each restricted cookie.
+When using [arg domain] or [arg path] to restrict cookies, it is
+recommended to use a unique name for each restricted cookie.
 
 
 [call [cmd ns_deletecookie] \
@@ -96,7 +101,7 @@ for the cookie to be deleted. If the provided domain is empty, it is ignored.
 [list_begin options]
 
 [opt_def -discard [arg boolean]]
-If the discard option is true then the cookie will be automaticalled
+If the discard option is true then the cookie will be automatically
 deleted at the end of the current session (when the user agent terminates).
 
 [opt_def -secure [arg boolean]]
@@ -133,7 +138,7 @@ value [emph -1] may be used to indicate that the cookie should never expire.
 [para]
 The expiry time is valid across browser sessions.  If no expiry is
 specified then the cookie will expire when the browser session ends,
-which is ususally when the user closes their browser.
+which is usually when the user closes their browser.
 
 [list_end]
 

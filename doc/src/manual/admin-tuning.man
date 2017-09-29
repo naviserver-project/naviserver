@@ -38,7 +38,7 @@ and "threadcache". NaviServer defaults to a 5-megabyte cache. This cache
 is used to store parsed ADP pages -- this means that ADP scripts are only
 parsed once and every subsequent time they are run directly out of memory.
 This means, though, that you should have a fair amount of core memory on
-your system to accomodate the cache if you decide to make it very large.
+your system to accommodate the cache if you decide to make it very large.
 
 [subsection {Experiment with the FastPath cache}]
 
@@ -93,7 +93,7 @@ together those ns_getrow structures.
 [subsection {Collect metrics and use them}]
 
 NaviServer has a built-in statistics-gathering system that collects data on
-the caches, tcl interps, threads, and other interesting data. We use these
+the caches, Tcl interps, threads, and other interesting data. We use these
 at AOL to gather an immense amount of data on how the systems are working
 and where they need to be improved (more cache, less cache, more memory,
 more threads, etc).  The module "nsstats" can be dropped into any

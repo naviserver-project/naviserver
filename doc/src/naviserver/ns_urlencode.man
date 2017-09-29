@@ -36,16 +36,38 @@ components are concatenated with "/".
 
 [section {EXAMPLES}]
 
+The following example encodes the Tcl dict as
+application/x-www-form-urlencoded POST data
+(https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4)
+
 [example_begin]
-  ns_urlencode http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3
+ set data {
+   first_name  John
+   second_name Doe
+   data        "Hello World"
+ }
+ 
+ set post_data {}
+ foreach {key value} $data {
+     lappend post_data "[lb]ns_urlencode -part query $key[rb]=[lb]ns_urlencode $value[rb]"
+ }
+ set post_data [lb]join $post_data &[rb]
 [example_end]
 
-The example outputs the following line
+The second example shows encodings of path segments based on example 1
+and 2 of https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
+
 [example_begin]
-   http%3a%2f%2fwww%2eaolserver%2ecom%2fredirect%2eadp%3furl%3dhttp%3a%2f%2fwww%2eaol%2ecom%26t%3d1%2c2%2c3
+ % set e1 {albert bertram marie-claude}
+ % ns_urlencode -part path {*}$e1
+ albert/bertram/marie-claude
+
+ % set e2 {albert bertram/marie-claude}
+ % ns_urlencode -part path {*}$e2
+ albert/bertram%2fmarie-claude
 [example_end]
 
-[see_also nsd ns_urldecode ns_charsets ns_urlcharset]
+[see_also nsd ns_urldecode ns_charsets ns_urlcharset ns_http]
 [keywords encoding charset url]
 
 [manpage_end]

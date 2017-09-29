@@ -101,7 +101,7 @@ static int       timeout;   /* Time in seconds to wait for concurrent update.  *
  *      None.
  *
  * Side effects:
- *      Futher DNS lookups will be cached using given ttl.
+ *      Further DNS lookups will be cached using given ttl.
  *
  *----------------------------------------------------------------------
  */
@@ -222,7 +222,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
                     Ns_CacheSetValueExpires(entry, ns_strdup(ds.string),
                                             (size_t)ds.length, &endTime,
                                             (int)(diffTime.sec * 1000000 + diffTime.usec),
-                                            0u);
+                                            0u, 0u);
                 }
                 Ns_CacheBroadcast(cache);
             } else {

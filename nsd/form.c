@@ -39,7 +39,7 @@
  * Local functions defined in this file.
  */
 
-static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
+static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void ParseMultiInput(Conn *connPtr, const char *start, char *end)
@@ -51,7 +51,7 @@ static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Enco
 static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static char *NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
+static char *NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
@@ -82,10 +82,11 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
 Ns_Set  *
 Ns_ConnGetQuery(Ns_Conn *conn)
 {
-    Conn           *connPtr = (Conn *) conn;
+    Conn           *connPtr;
     char           *form;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *) conn;
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -96,7 +97,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
              */
             form = connPtr->request.query;
             if (form != NULL) {
-                ParseQuery(form, connPtr->query, connPtr->urlEncoding);
+                ParseQuery(form, connPtr->query, connPtr->urlEncoding, NS_FALSE);
             }
         } else if (/* 
 		    * It is unsafe to access the content when the
@@ -106,10 +107,11 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 		   (connPtr->flags & NS_CONN_CLOSED ) == 0u
 		   && (form = connPtr->reqPtr->content) != NULL
 		   ) {
-            Tcl_DString   bound;
-            const char   *contentType = Ns_SetIGet(conn->headers, "content-type");
+            const char *contentType = Ns_SetIGet(conn->headers, "content-type");
 
             if (contentType != NULL) {
+                Tcl_DString bound;
+
                 Tcl_DStringInit(&bound);
 
                 /*
@@ -117,7 +119,20 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                  */
                 if (!GetBoundary(&bound, contentType)) {
                     if (Ns_StrCaseFind(contentType, "www-form-urlencoded") != NULL) {
-                        ParseQuery(form, connPtr->query, connPtr->urlEncoding);
+                        bool translate;
+#ifdef _WIN32
+                        /*
+                         * Keep CRLF
+                         */
+                        translate = NS_FALSE;
+#else
+                        /*
+                         * Translate CRLF -> LF, since browsers translate all
+                         * LF to CRLF in the body of POST requests.
+                         */
+                        translate = NS_TRUE;
+#endif
+                        ParseQuery(form, connPtr->query, connPtr->urlEncoding, translate);
                     }
                     /*
                      * Don't do anything for other content-types.
@@ -126,7 +141,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                     const char *formend = form + connPtr->reqPtr->length;
                     char       *s;
                     
-                    s = NextBoundry(&bound, form, formend);
+                    s = NextBoundary(&bound, form, formend);
                     while (s != NULL) {
                         char  *e;
                         
@@ -137,7 +152,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                         if (*s == '\n') {
                             ++s;
                         }
-                        e = NextBoundry(&bound, s, formend);
+                        e = NextBoundary(&bound, s, formend);
                         if (e != NULL) {
                             ParseMultiInput(connPtr, s, e);
                         }
@@ -174,9 +189,10 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 void
 Ns_ConnClearQuery(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    connPtr = (Conn *) conn;
     
     if (connPtr->query != NULL) {
         const Tcl_HashEntry *hPtr;
@@ -230,7 +246,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
     NS_NONNULL_ASSERT(query != NULL);
     NS_NONNULL_ASSERT(set != NULL);
     
-    ParseQuery(query, set, NULL);
+    ParseQuery(query, set, NULL, NS_FALSE);
     return NS_OK;
 }
 
@@ -294,20 +310,21 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 static void
-ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
+ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
 {
-    Tcl_DString  kds, vds;
-    char  *p;
+    Tcl_DString  kds, vds, vds2;
+    char        *p;
 
     NS_NONNULL_ASSERT(form != NULL);
     NS_NONNULL_ASSERT(set != NULL);
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
+    Tcl_DStringInit(&vds2);
     p = form;
 
     while (p != NULL) {
-	char *v;
+	char       *v;
 	const char *k;
 
         k = p;
@@ -326,6 +343,27 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
             (void) Ns_UrlQueryDecode(&vds, v+1, encoding);
             *v = '=';
             v = vds.string;
+            if (translate) {
+                char *q = strchr(v, INTCHAR('\r'));
+
+                if (q != NULL) {
+                    /*
+                     * We have one or more CR in the field content.
+                     * Remove these.
+                     */
+                    Ns_DStringSetLength(&vds2, 0);
+                    do {
+                        Tcl_DStringAppend(&vds2, v, (int)(q - v));
+                        v = q +1;
+                        q = strchr(v, INTCHAR('\r'));
+                    } while (q != NULL);
+                    /*
+                     * Append the remaining string.
+                     */
+                    Tcl_DStringAppend(&vds2, v, -1);
+                    v = vds2.string;
+                }
+            }
         }
         (void) Ns_SetPut(set, k, v);
         if (p != NULL) {
@@ -334,6 +372,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
     }
     Tcl_DStringFree(&kds);
     Tcl_DStringFree(&vds);
+    Tcl_DStringFree(&vds2);
 }
 
 
@@ -477,7 +516,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
  *      1 if boundy copied, 0 otherwise.
  *
  * Side effects:
- *      Copies boundry string to given dstring.
+ *      Copies boundary string to given dstring.
  *
  *----------------------------------------------------------------------
  */
@@ -513,7 +552,7 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  *
  * NextBoundary --
  *
- *      Locate the next form boundry.
+ *      Locate the next form boundary.
  *
  * Results:
  *      Pointer to start of next input field or NULL on end of fields.
@@ -525,7 +564,7 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  */
 
 static char *
-NextBoundry(const Tcl_DString *dsPtr, char *s, const char *e)
+NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
 {
     char c, sc;
     const char *find;

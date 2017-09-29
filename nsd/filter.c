@@ -139,13 +139,12 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
 Ns_ReturnCode
 NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
 {
-    const Conn    *connPtr = (const Conn *) conn;
     NsServer      *servPtr;
     const Filter  *fPtr;
     Ns_ReturnCode  status;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    servPtr = connPtr->poolPtr->servPtr;
+    servPtr = ((const Conn *)conn)->poolPtr->servPtr;
 
     status = NS_OK;
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
@@ -200,7 +199,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
  *	Pointer to trace.
  *
  * Side effects:
- *      Proc will be called in FIFO order at end of successfull
+ *      Proc will be called in FIFO order at end of successful
  *  	connections.
  *
  *----------------------------------------------------------------------
@@ -305,21 +304,17 @@ RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
 void
 NsRunTraces(Ns_Conn *conn)
 {
-    const Conn *connPtr = (const Conn *) conn;
-
     NS_NONNULL_ASSERT(conn != NULL);
 
-    RunTraces(conn, connPtr->poolPtr->servPtr->filter.firstTracePtr);
+    RunTraces(conn, ((const Conn *) conn)->poolPtr->servPtr->filter.firstTracePtr);
 }
 
 void
 NsRunCleanups(Ns_Conn *conn)
 {
-    const Conn *connPtr = (const Conn *) conn;
-
     NS_NONNULL_ASSERT(conn != NULL);
 
-    RunTraces(conn, connPtr->poolPtr->servPtr->filter.firstCleanupPtr);
+    RunTraces(conn, ((const Conn *) conn)->poolPtr->servPtr->filter.firstCleanupPtr);
 }
 
 static void
@@ -382,66 +377,68 @@ NewTrace(Ns_TraceProc *proc, void *arg)
 void
 NsGetFilters(Tcl_DString *dsPtr, const char *server)
 {
-    const Filter   *fPtr;
     const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
 
     servPtr = NsGetServer(server);
-    assert(servPtr != NULL);
-    
-    fPtr = servPtr->filter.firstFilterPtr;
-    while (fPtr != NULL) {
-        Tcl_DStringStartSublist(dsPtr);
-        Tcl_DStringAppendElement(dsPtr, fPtr->method);
-        Tcl_DStringAppendElement(dsPtr, fPtr->url);
-        switch (fPtr->when) {
-        case NS_FILTER_PRE_AUTH:
-            Tcl_DStringAppendElement(dsPtr, "preauth");
-            break;
-        case NS_FILTER_POST_AUTH:
-            Tcl_DStringAppendElement(dsPtr, "postauth");
-            break;
-        case NS_FILTER_VOID_TRACE: 
-        case NS_FILTER_TRACE:
-            Tcl_DStringAppendElement(dsPtr, "trace");
-            break;
+
+    if (servPtr != NULL) {
+        const Filter *fPtr;
+        
+        for (fPtr = servPtr->filter.firstFilterPtr; fPtr != NULL; fPtr = fPtr->nextPtr) {
+            Tcl_DStringStartSublist(dsPtr);
+            Tcl_DStringAppendElement(dsPtr, fPtr->method);
+            Tcl_DStringAppendElement(dsPtr, fPtr->url);
+            
+            switch (fPtr->when) {
+            case NS_FILTER_PRE_AUTH:
+                Tcl_DStringAppendElement(dsPtr, "preauth");
+                break;
+            case NS_FILTER_POST_AUTH:
+                Tcl_DStringAppendElement(dsPtr, "postauth");
+                break;
+            case NS_FILTER_VOID_TRACE: 
+            case NS_FILTER_TRACE:
+                Tcl_DStringAppendElement(dsPtr, "trace");
+                break;
+            }
+            Ns_GetProcInfo(dsPtr, (Ns_Callback *)fPtr->proc, fPtr->arg);
+            Tcl_DStringEndSublist(dsPtr);
         }
-        Ns_GetProcInfo(dsPtr, (Ns_Callback *)fPtr->proc, fPtr->arg);
-        Tcl_DStringEndSublist(dsPtr);
-        fPtr = fPtr->nextPtr;
     }
 }   
 
 void
 NsGetTraces(Tcl_DString *dsPtr, const char *server)
 {
-    const Trace    *tracePtr;
     const NsServer *servPtr;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
     
     servPtr = NsGetServer(server);
-    assert(servPtr != NULL);
+    if (likely(servPtr != NULL)) {
+        const Trace *tracePtr;
 
-    tracePtr = servPtr->filter.firstTracePtr;
-    while (tracePtr != NULL) {
-        Tcl_DStringStartSublist(dsPtr);
-        Tcl_DStringAppendElement(dsPtr, "trace");
-        Ns_GetProcInfo(dsPtr, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
-        Tcl_DStringEndSublist(dsPtr);
-	tracePtr = tracePtr->nextPtr;
-    }
+        tracePtr = servPtr->filter.firstTracePtr;
+        while (tracePtr != NULL) {
+            Tcl_DStringStartSublist(dsPtr);
+            Tcl_DStringAppendElement(dsPtr, "trace");
+            Ns_GetProcInfo(dsPtr, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+            Tcl_DStringEndSublist(dsPtr);
+            tracePtr = tracePtr->nextPtr;
+        }
 
-    tracePtr = servPtr->filter.firstCleanupPtr;
-    while (tracePtr != NULL) {
-        Tcl_DStringStartSublist(dsPtr);
-        Tcl_DStringAppendElement(dsPtr, "cleanup");
-        Ns_GetProcInfo(dsPtr, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
-        Tcl_DStringEndSublist(dsPtr);
-	tracePtr = tracePtr->nextPtr;
+        tracePtr = servPtr->filter.firstCleanupPtr;
+        while (tracePtr != NULL) {
+            Tcl_DStringStartSublist(dsPtr);
+            Tcl_DStringAppendElement(dsPtr, "cleanup");
+            Ns_GetProcInfo(dsPtr, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+            Tcl_DStringEndSublist(dsPtr);
+            tracePtr = tracePtr->nextPtr;
+        }
     }
 }   
 

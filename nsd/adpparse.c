@@ -287,8 +287,8 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
  *      top to bottom pass, looking for the following four types of
  *      embedded script sequences:
  *
- *      1. <% tcl script %>
- *      2. <script runat=server language=tcl> tcl script </script>
+ *      1. <% Tcl script %>
+ *      2. <script runat=server language=tcl> Tcl script </script>
  *      3. <registered-tag arg=val arg=val>
  *      4. <registered-start-tag arg=val arg=val> text </registered-end-tag>
  *
@@ -678,10 +678,9 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
             /*
              * Increment line numbers based on the passed-in segment
              */
-            while (likely(s < e)) {
-                if (unlikely(*s++ == '\n')) {
-                    ++parsePtr->line;
-                }
+            while( ((s = strchr(s, '\n')) != NULL) && (s < e)) {
+                ++parsePtr->line;
+                ++s;
             }
         }
     }
@@ -721,7 +720,7 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     while (s < e  && CHARTYPE(space, *s) == 0) {
         ++s;
     }
-    Tcl_DStringTrunc(dsPtr, 0);
+    Tcl_DStringSetLength(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
 	while (s < e && CHARTYPE(space, *s) != 0) {

@@ -241,9 +241,9 @@ NsConnectService(void)
      * to nul: device forever.
      */
 
-    freopen(DEVNULL, "rt", stdin);
-    freopen(DEVNULL, "wt", stdout);
-    freopen(DEVNULL, "wt", stderr);
+    (void)freopen(DEVNULL, "rt", stdin);
+    (void)freopen(DEVNULL, "wt", stdout);
+    (void)freopen(DEVNULL, "wt", stderr);
 
     /*
      * Ensure that stdio handles are correctly set.
@@ -399,7 +399,7 @@ NsInstallService(char *service)
  *----------------------------------------------------------------------
  * NsRestoreSignals --
  *
- *      Noop to avoid ifdefs and make symetrical to Unix part
+ *      Noop to avoid ifdefs and make symmetrical to Unix part
  *
  * Results:
  *      None.

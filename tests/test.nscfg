@@ -83,12 +83,11 @@ ns_param   deferaccept     0
 #ns_param   writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
 
 ns_section "ns/module/nssock/servers"
+#ns_param   test            test:80
+#ns_param   test            \[::1\]:80
 ns_param   test            test
-ns_param   test            test:[ns_config "test" listenport]
 ns_param   testvhost       testvhost
-ns_param   testvhost       testvhost:[ns_config "test" listenport]
 ns_param   testvhost2      testvhost2
-ns_param   testvhost2      testvhost2:[ns_config "test" listenport]
 
 ns_section	"ns/mimetypes"
 ns_param    .html             "text/html"

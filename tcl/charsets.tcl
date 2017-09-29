@@ -197,7 +197,7 @@ proc ns_encodingfortype {type} {
 
 proc ns_choosecharset {args} {
 
-    set preffered_charsets \
+    set preferred_charsets \
         [ns_config -set ns/parameters PreferredCharsets {utf-8 iso-8859-1}]
     
     set default_charset \
@@ -211,7 +211,7 @@ proc ns_choosecharset {args} {
                 if {$i >= $n} {
                     error "Missing argument for $arg"
                 }
-                set preffered_charsets [lindex $args $i]
+                set preferred_charsets [lindex $args $i]
             }
             default {
                 error "Usage: ns_choosecharset ?-preference charset-list?"

@@ -197,7 +197,7 @@ Ns_ModuleInit(const char *server, const char *module)
         for (n = 0; n < num; n++) {
             Ns_DStringPrintf(&ds, "nsssl:%d", n);
             Ns_MutexSetName(driver_locks + n, ds.string);
-            Ns_DStringTrunc(&ds, 0);
+            Ns_DStringSetLength(&ds, 0);
         }
     }
 #if OPENSSL_VERSION_NUMBER < 0x10100000L        

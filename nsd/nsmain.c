@@ -122,7 +122,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * Before doing anything else, initalize the Tcl API
+     * Before doing anything else, initialize the Tcl API
      * as we rely heavily on it, even for the most basic
      * functions like memory allocation.
      */
@@ -316,10 +316,19 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #else
         int i;
 
-        /*
-         * Setup pipe for realizing non-zero return codes in case setup fails.
-         */
-        ns_pipe(nsconf.state.pipefd);
+        if (mode != 'w') {
+            /*
+             * Unless we are in watchdog mode, setup pipe for realizing
+             * non-zero return codes in case setup fails. 
+             *
+             * Background: The pipe is used for communicating problems during
+             * startup from the child process to return non-zero return codes
+             * in case the server does not start up. However, the watchdog
+             * mode restarts the child if necessary, so the pipe to the child
+             * can't be used.
+             */
+            ns_pipe(nsconf.state.pipefd);
+        }
         
         i = ns_fork();
         if (i == -1) {
@@ -329,42 +338,63 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             /*
              * We are in the parent process.
              */
-            char    buf = '\0';
-            ssize_t nread;
+            int exit_code;
 
             /*
-             * Close the write-end of the pipe, we do not use it
+             * Pipe communication between parent and child communication is
+             * NOT established in watchdog mode.
              */
-            ns_close(nsconf.state.pipefd[1]);
-            nsconf.state.pipefd[1] = 0;
+            if (mode != 'w') {
+                char    buf = '\0';
+                ssize_t nread;
 
-            Ns_Log(Debug, "nsmain: wait for feedback from forked child, read from fd %d",
-                   nsconf.state.pipefd[0]);
-            /*
-             * Read the status from the child process. We expect as result
-             * either 'O' (when initialzation went OK) or 'F' (for Fatal).
-             */
-            nread = ns_read(nsconf.state.pipefd[0], &buf, 1);
-            if (nread < 0) {
                 /*
-                 * Do nothing, even when the read fails
+                 * Close the write-end of the pipe, we do not use it
                  */
-                ;
-                Ns_Log(Warning, "nsmain: received no feedback from child process, error: %s", strerror(errno));
+                ns_close(nsconf.state.pipefd[1]);
+                nsconf.state.pipefd[1] = 0;
+
+                Ns_Log(Debug, "nsmain: wait for feedback from forked child, read from fd %d",
+                       nsconf.state.pipefd[0]);
+                
+                /*
+                 * Read the status from the child process. We expect as result
+                 * either 'O' (when initialzation went OK) or 'F' (for Fatal).
+                 */
+                nread = ns_read(nsconf.state.pipefd[0], &buf, 1);
+                if (nread < 0) {
+                    /*
+                     * Do nothing, even when the read fails
+                     */
+                    ;
+                    Ns_Log(Warning, "nsmain: received no feedback from child process, error: %s", strerror(errno));
+                }
+                Ns_Log(Debug, "nsmain: received from child %ld byte", nread);
+                ns_close(nsconf.state.pipefd[0]);
+                nsconf.state.pipefd[0] = 0;
+                exit_code = (buf == 'O') ? 0 : 1;
+
+            } else {
+                /*
+                 * If we are not in watchdog mode, the parent will return
+                 * after a successful for always with 0.
+                 */
+                exit_code = 0;
             }
-            Ns_Log(Debug, "nsmain: received from child %ld byte", nread);
-            ns_close(nsconf.state.pipefd[0]);
-            nsconf.state.pipefd[0] = 0;
             
-            return (buf == 'O') ? 0 : 1;
+            return exit_code;
         }
         /*
          * We are in the child process.
-         *
-         * Close the read-end of the pipe, we do not use it
          */
-        ns_close(nsconf.state.pipefd[0]);
-        nsconf.state.pipefd[0] = 0;
+        if (mode != 'w') {
+            /*
+             * Unless we are in the watchdog mode, close the read-end of the
+             * pipe, we do not use it.
+             */
+            ns_close(nsconf.state.pipefd[0]);
+            nsconf.state.pipefd[0] = 0;
+        }
         
         forked = NS_TRUE;
         setsid(); /* Detach from the controlling terminal device */
@@ -612,7 +642,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                 nsconf.home =  MakePath("");
             } else {
                 /*
-                 * Desparate fallback. Use the name of the configured install
+                 * Desperate fallback. Use the name of the configured install
                  * directory.
                  */
                 nsconf.home = NS_NAVISERVER;
@@ -749,6 +779,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         for (i = 0u; i < Ns_SetSize(servers); ++i) {
             server = Ns_SetKey(servers, i);
             NsInitServer(server, initProc);
+
         }
     }
     nsconf.defaultServer = server;
@@ -760,10 +791,23 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NsInitStaticModules(NULL);
 
     /*
-     * Run pre-startups and start the servers.
+     * Run pre-startup procs
      */
 
     NsRunPreStartupProcs();
+
+    /*
+     * Map virtual servers. This requires that all servers and all drivers are
+     * initialized (can be found via global data structures). Drivers are
+     * created via NsRunPreStartupProcs().
+     */
+
+    NsDriverMapVirtualServers();
+
+    /*
+     * Start the servers and drivers.
+     */
+
     NsStartServers();
     NsStartDrivers();
 
@@ -778,8 +822,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_CondBroadcast(&nsconf.state.cond);
     Ns_MutexUnlock(&nsconf.state.lock);
 
-    if (nsconf.state.pipefd[1] != 0) {
+    if (mode != 'w' && nsconf.state.pipefd[1] != 0) {
         ssize_t nwrite;
+        
         /*
          * Tell the parent process, that initialization went OK.
          */

@@ -164,7 +164,7 @@ Ns_CreateTaskQueue(const char *name)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_DestoryTaskQueue --
+ * Ns_DestroyTaskQueue --
  *
  *      Stop and join a task queue.
  *
@@ -180,10 +180,12 @@ Ns_CreateTaskQueue(const char *name)
 void
 Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
 {
-    TaskQueue  *queuePtr = (TaskQueue *) queue;
+    TaskQueue  *queuePtr;
     TaskQueue **nextPtrPtr;
 
     NS_NONNULL_ASSERT(queue != NULL);
+
+    queuePtr = (TaskQueue *) queue;
     
     /*
      * Remove queue from list of all queues.
@@ -257,13 +259,14 @@ Ns_ReturnCode
 Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
 {
     Ns_ReturnCode status;
-    Task         *taskPtr = (Task *) task;
-    TaskQueue    *queuePtr = (TaskQueue *) queue;
+    Task         *taskPtr;
 
     NS_NONNULL_ASSERT(task != NULL);
     NS_NONNULL_ASSERT(queue != NULL);
+
+    taskPtr = (Task *) task;
     
-    taskPtr->queuePtr = queuePtr;
+    taskPtr->queuePtr = (TaskQueue *) queue;
     if (unlikely(SignalQueue(taskPtr, TASK_INIT) == NS_FALSE)) {
         status = NS_ERROR;
     } else {
@@ -292,13 +295,14 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
 void
 Ns_TaskRun(Ns_Task *task)
 {
-    Task          *taskPtr = (Task *) task;
+    Task          *taskPtr;
     const Ns_Time *timeoutPtr;
     Ns_Time        now;
     struct pollfd  pfd;
 
     NS_NONNULL_ASSERT(task != NULL);
 
+    taskPtr = (Task *) task;
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
     while ((taskPtr->flags & TASK_DONE) == 0u) {
@@ -341,10 +345,11 @@ Ns_ReturnCode
 Ns_TaskCancel(Ns_Task *task)
 {
     Ns_ReturnCode status = NS_OK;
-    Task         *taskPtr = (Task *) task;
+    Task         *taskPtr;
 
     NS_NONNULL_ASSERT(task != NULL);
-
+    
+    taskPtr = (Task *) task;
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
     } else if (SignalQueue(taskPtr, TASK_CANCEL) == NS_FALSE) {
@@ -375,12 +380,15 @@ Ns_TaskCancel(Ns_Task *task)
 Ns_ReturnCode
 Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 {
-    Task          *taskPtr = (Task *) task;
-    TaskQueue     *queuePtr = taskPtr->queuePtr;
+    Task          *taskPtr;
+    TaskQueue     *queuePtr;
     Ns_ReturnCode  status = NS_OK;
     Ns_Time        atime;
 
     NS_NONNULL_ASSERT(task != NULL);
+
+    taskPtr = (Task *) task;
+    queuePtr = taskPtr->queuePtr;
     
     if (queuePtr == NULL) {
         if ((taskPtr->signalFlags & TASK_DONE) == 0u) {
@@ -423,12 +431,13 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 bool
 Ns_TaskCompleted(const Ns_Task *task)
 {
-    const Task *taskPtr = (const Task *) task;
+    const Task *taskPtr;
     TaskQueue  *queuePtr;
     bool        status;
 
     NS_NONNULL_ASSERT(task != NULL);
-
+    taskPtr = (const Task *) task;
+    
     queuePtr = taskPtr->queuePtr;
     if (queuePtr == NULL) {
         status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
@@ -463,11 +472,12 @@ Ns_TaskCompleted(const Ns_Task *task)
 void
 Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
-    Task *taskPtr = (Task *) task;
+    Task *taskPtr;
     int   i;
 
     NS_NONNULL_ASSERT(task != NULL);
-
+    taskPtr = (Task *) task;
+ 
     /*
      * Map from sock when bits to poll event bits.
      */
@@ -523,11 +533,9 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 void
 Ns_TaskDone(Ns_Task *task)
 {
-    Task *taskPtr = (Task *) task;
-
     NS_NONNULL_ASSERT(task != NULL);
 
-    taskPtr->flags |= TASK_DONE;
+    ((Task *) task)->flags |= TASK_DONE;
 }
 
 
@@ -553,13 +561,12 @@ Ns_TaskDone(Ns_Task *task)
 NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
 {
-    Task      *taskPtr = (Task *) task;
     NS_SOCKET  sock;
 
     NS_NONNULL_ASSERT(task != NULL);
 
-    sock = taskPtr->sock;
-    ns_free(taskPtr);
+    sock = ((Task *) task)->sock;
+    ns_free(task);
     return sock;
 }
 

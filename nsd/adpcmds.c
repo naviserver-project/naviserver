@@ -420,14 +420,14 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 {
     int            result = TCL_OK;
     char          *file;
-    int            tcl = 0, nocache = 0, nargs = 0;
+    int            tclScript = 0, nocache = 0, nargs = 0;
     Ns_Time       *ttlPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-cache",       Ns_ObjvTime,   &ttlPtr,  NULL},
-        {"-nocache",     Ns_ObjvBool,   &nocache, INT2PTR(NS_TRUE)},
-        {"-tcl",         Ns_ObjvBool,   &tcl,     INT2PTR(NS_TRUE)},
-        {"--",           Ns_ObjvBreak,  NULL,     NULL},
+        {"-cache",       Ns_ObjvTime,   &ttlPtr,    NULL},
+        {"-nocache",     Ns_ObjvBool,   &nocache,   INT2PTR(NS_TRUE)},
+        {"-tcl",         Ns_ObjvBool,   &tclScript, INT2PTR(NS_TRUE)},
+        {"--",           Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -449,7 +449,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         if (nocache != 0) {
             itPtr->adp.flags &= ~ADP_CACHE;
         }
-        if (tcl != 0) {
+        if (tclScript != 0) {
             itPtr->adp.flags |= ADP_TCLFILE;
         }
 
@@ -506,15 +506,15 @@ int
 NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         result = TCL_OK, nargs = 0;
-    int         asFile = (int)NS_FALSE, safe = (int)NS_FALSE, asString = (int)NS_FALSE, tcl = (int)NS_FALSE;
+    int         asFile = (int)NS_FALSE, safe = (int)NS_FALSE, asString = (int)NS_FALSE, tclScript = (int)NS_FALSE;
     char       *cwd = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-cwd",         Ns_ObjvString, &cwd,      NULL},
-        {"-file",        Ns_ObjvBool,   &asFile,   INT2PTR(NS_TRUE)},
-        {"-safe",        Ns_ObjvBool,   &safe,     INT2PTR(NS_TRUE)},
-        {"-string",      Ns_ObjvBool,   &asString, INT2PTR(NS_TRUE)},
-        {"-tcl",         Ns_ObjvBool,   &tcl,      INT2PTR(NS_TRUE)},
-        {"--",           Ns_ObjvBreak,  NULL,      NULL},
+        {"-cwd",         Ns_ObjvString, &cwd,       NULL},
+        {"-file",        Ns_ObjvBool,   &asFile,    INT2PTR(NS_TRUE)},
+        {"-safe",        Ns_ObjvBool,   &safe,      INT2PTR(NS_TRUE)},
+        {"-string",      Ns_ObjvBool,   &asString,  INT2PTR(NS_TRUE)},
+        {"-tcl",         Ns_ObjvBool,   &tclScript, INT2PTR(NS_TRUE)},
+        {"--",           Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -551,8 +551,8 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             } else {
                 /* string mode */
             }
-            if (tcl == (int)NS_TRUE) {
-                /* tcl script */
+            if (tclScript == (int)NS_TRUE) {
+                /* Tcl script */
                 itPtr->adp.flags |= ADP_TCLFILE;
             }
             if (safe == (int)NS_TRUE) {
@@ -824,7 +824,7 @@ NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         if (GetOutput(clientData, &dsPtr) != TCL_OK) {
             result = TCL_ERROR;
         } else {
-            Ns_DStringTrunc(dsPtr, length);
+            Ns_DStringSetLength(dsPtr, length);
         }
     }
     return result;
@@ -1346,7 +1346,7 @@ GetOutput(ClientData clientData, Tcl_DString **dsPtrPtr)
  *      Get the NsInterp structure..
  *
  * Results:
- *      TCL_ERROR if not a naviserver interp, TCL_OK otherwise.
+ *      TCL_ERROR if not a NaviServer interp, TCL_OK otherwise.
  *
  * Side effects:
  *      None.

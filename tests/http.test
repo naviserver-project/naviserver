@@ -285,7 +285,7 @@ test http-5.0 {ns_conn content} -constraints {} -setup {
 
 #
 # Test earlier crash condition, where "ns_conn content" caused a crash
-# when it happend after a connection close operation
+# when it happened after a connection close operation
 #
 
 test http-5.1 {HTTP/1.1 GET with "ns_conn content" after return} -constraints {} -setup {

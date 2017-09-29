@@ -102,7 +102,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
 
         /*
          * The format is RFC 1123 "Sun, 06 Nov 1997 09:12:45 GMT"
-         * and is locale independant, so English week and month names
+         * and is locale independent, so English week and month names
          * must always be used.
          */
         
@@ -238,7 +238,7 @@ Ns_ParseHttpTime(char *chars)
         timeInfo.tm_hour = MakeNum(s + 11);
         timeInfo.tm_min  = MakeNum(s + 14);
         timeInfo.tm_sec  = MakeNum(s + 17);
-    }
+    } 
 
     /*
      * If there are any impossible values, then return 0.

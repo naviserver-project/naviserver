@@ -163,7 +163,7 @@ The default is no script.
 
 [opt_def -reinit [arg script]]
 Specifies a script to evaluate after being allocated and before
-being returned to the caller. This can be used to re-initalize
+being returned to the caller. This can be used to re-initialize
 the slave state. The default is no script.
 
 [opt_def -maxslaves [arg n]]
@@ -437,7 +437,7 @@ rename $handle ""
 The following demonstrates using multiple proxies:
 
 [example_begin]
-[cmd ns_proxy] config myproxy -maxslaves 10
+[cmd ns_proxy] configure myproxy -maxslaves 10
 set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
 foreach h $handles {
     $h {puts "alive: [lb]pid[rb]"}

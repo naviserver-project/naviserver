@@ -364,6 +364,8 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         /*
          * Make a copy of the input and point the moving and output ptrs to it.
          */
+        assert(htmlString != NULL);
+        
         inString = ns_strdup(htmlString);
         inPtr    = inString;
         outPtr   = inString;
@@ -499,9 +501,12 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
     } else {
         char       *s, *e;
-        const char *p = htmlString;
+        const char *p;
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
+
+        assert(htmlString != NULL);
         
+        p = htmlString;
         while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
             ++s;
             *e = '\0';
@@ -864,7 +869,7 @@ SHATransform(Ns_CtxSHA1 *sha)
 {
     register uint32_t A, B, C, D, E;
 #if SHA_VERSION
-    register uint32_t t;
+    register uint32_t t = 0u;
 #endif
 
     NS_NONNULL_ASSERT(sha != NULL);

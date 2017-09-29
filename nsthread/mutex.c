@@ -78,7 +78,7 @@ typedef struct Mutex {
 } Mutex;
 
 #define GETMUTEX(mutex) (*(mutex) != NULL ? ((Mutex *)*(mutex)) : GetMutex((mutex)))
-static Mutex *GetMutex(Ns_Mutex *mutex) NS_GNUC_NONNULL(1);
+static Mutex *GetMutex(Ns_Mutex *mutex) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 static Mutex *firstMutexPtr;
 
 
@@ -115,7 +115,9 @@ Ns_MutexInit(Ns_Mutex *mutex)
     firstMutexPtr = mutexPtr;
     mutexPtr->id = nextid++;
 
-    snprintf(mutexPtr->name, sizeof(mutexPtr->name), "mu%" PRIuPTR, mutexPtr->id);
+    mutexPtr->name[0] = 'm';
+    mutexPtr->name[1] = 'u';
+    (void) ns_uint64toa(&mutexPtr->name[2], (uint64_t)mutexPtr->id);
 
     Ns_MasterUnlock();
     //fprintf(stderr, "=== created mutex %ld name %s\n", mutexPtr->id, mutexPtr->name);
@@ -158,7 +160,6 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
     NS_NONNULL_ASSERT(mutex != NULL);
     NS_NONNULL_ASSERT(prefix != NULL);
 
-    mutexPtr = GETMUTEX(mutex);
     prefixLength = strlen(prefix);
     if (prefixLength > NS_THREAD_NAMESIZE - 1) {
 	prefixLength = NS_THREAD_NAMESIZE - 1;
@@ -168,8 +169,13 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
 	if ((nameLength + prefixLength + 1) > NS_THREAD_NAMESIZE) {
 	    nameLength = NS_THREAD_NAMESIZE - prefixLength - 1;
 	}
+    } else {
+        nameLength = 0u;
     }
 
+    mutexPtr = GETMUTEX(mutex);
+    assert(mutexPtr != NULL);
+    
     Ns_MasterLock();
     p = mutexPtr->name;
     memcpy(p, prefix, prefixLength + 1u);
@@ -253,6 +259,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
     NS_NONNULL_ASSERT(mutex != NULL);
 
     mutexPtr = GETMUTEX(mutex);
+    assert(mutexPtr != NULL);
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
@@ -463,6 +470,8 @@ NsGetLock(Ns_Mutex *mutex)
     NS_NONNULL_ASSERT(mutex != NULL);
 
     mutexPtr = GETMUTEX(mutex);
+    assert(mutexPtr != NULL);
+    
     return mutexPtr->lock;
 }
 
@@ -472,7 +481,7 @@ NsGetLock(Ns_Mutex *mutex)
  *
  * GetMutex --
  *
- *	Cast an Ns_Mutex to a Mutex, initializing if needed.
+ *	Cast a Ns_Mutex to a Mutex, initializing if needed.
  *
  * Results:
  *	Pointer to Mutex.

@@ -323,13 +323,13 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
  * NsRegisterServerInit --
  *
  *      Add a libnsd Ns_ServerInitProc to the end of the virtual server
- *      initialisation list.
+ *      initialization list.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Proc will be called when virtual server is initialised.
+ *      Proc will be called when virtual server is initialized.
  *
  *----------------------------------------------------------------------
  */

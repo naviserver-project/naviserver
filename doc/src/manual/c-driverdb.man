@@ -697,7 +697,7 @@ The set of functions that need to be implemented are:
 
 
      Flushes any pending data. Usually this function will call
-             ns_PdDbCancel or something similiar along with any other
+             ns_PdDbCancel or something similar along with any other
              database specific clean-up routines. If the flush
              operation is successful, this function should call
              ns_PdSendString with an OK_STATUS. On failure, the

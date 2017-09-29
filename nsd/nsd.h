@@ -450,6 +450,7 @@ typedef struct Driver {
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
 
+    const char *defserver;              /* default server, might be NULL */
     long closewait;                     /* Graceful close timeout */
     long keepwait;                      /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
@@ -491,6 +492,7 @@ typedef struct Driver {
         Tcl_WideInt errors;             /* Dropped requests due to errors */
     } stats;
     unsigned short port;                /* Port in location */
+    unsigned short defport;             /* Default port */
     bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
 
 } Driver;
@@ -880,19 +882,20 @@ typedef struct NsServer {
      */
 
     struct {
-        const char *library;
-        struct TclTrace *firstTracePtr;
-        struct TclTrace *lastTracePtr;
-        Tcl_Obj *initfile;
-        Ns_RWLock lock;
-        const char *script;
-        int length;
-        int epoch;
-        Tcl_Obj *modules;
-        Tcl_HashTable runTable;
-        const char **errorLogHeaders;
-        Tcl_HashTable caches;
-        Ns_Mutex cachelock;
+        const char       *library;
+        struct TclTrace  *firstTracePtr;
+        struct TclTrace  *lastTracePtr;
+        Tcl_Obj          *initfile;
+        Ns_RWLock         lock;
+        const char       *script;
+        int               length;
+        int               epoch;
+        Tcl_Obj          *modules;
+        Tcl_HashTable     runTable;
+        const char      **errorLogHeaders;
+        Tcl_HashTable     caches;
+        Ns_Mutex          cachelock;
+        uintptr_t         transactionEpoch;
 
         /*
          * The following tracks synchronization
@@ -1059,7 +1062,8 @@ typedef struct NsInterp {
      */
     Tcl_HashTable httpRequests;
 
-    bool        deleteInterp;  /* Interp should be deleted on next deallocation */
+    Ns_CacheTransactionStack cacheTransactionStack;
+    bool          deleteInterp;  /* Interp should be deleted on next deallocation */
 
 } NsInterp;
 
@@ -1118,6 +1122,9 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclCacheLappendObjCmd,
     NsTclCacheNamesObjCmd,
     NsTclCacheStatsObjCmd,
+    NsTclCacheTransactionBeginObjCmd,
+    NsTclCacheTransactionCommitObjCmd,
+    NsTclCacheTransactionRollbackObjCmd,
     NsTclCancelObjCmd,
     NsTclChanObjCmd,
     NsTclCharsetsObjCmd,
@@ -1353,6 +1360,11 @@ NS_EXTERN int NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                                  const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
 
+NS_EXTERN int NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
+                              const char *protocol, const char *driverName, const char *methodName,
+                              Sock **sockPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+
 NS_EXTERN ssize_t NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
                                              const Ns_Time *timeoutPtr, unsigned int flags,
                                              Ns_DriverSendProc *sendProc)
@@ -1476,6 +1488,7 @@ NS_EXTERN void NsRestoreSignals(void);
 NS_EXTERN void NsSendSignal(int sig);
 
 NS_EXTERN Tcl_Obj * NsDriverStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsDriverMapVirtualServers(void);
 
 /*
  * limits.c

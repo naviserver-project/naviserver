@@ -135,7 +135,6 @@ int
 NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     const NsInterp *itPtr = clientData;
-    Ns_ReturnCode   status;
     int             result = TCL_OK;
     char           *method, *url, *authuser, *authpasswd, *ipaddr = NULL;
     Ns_ObjvSpec     args[] = {
@@ -151,6 +150,8 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         result = TCL_ERROR;
 
     } else {
+        Ns_ReturnCode status;
+
         status = Ns_AuthorizeRequest(itPtr->servPtr->server, method, url,
                                      authuser, authpasswd, ipaddr);
         switch (status) {

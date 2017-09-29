@@ -32,8 +32,8 @@
 #include "../nsdb/nsdb.h"
 
 NS_EXPORT const int Ns_ModuleVersion = 1;
-NS_EXPORT Ns_ReturnCode Ns_DbDriverInit(const char *driver, const char *UNUSED(configPath));
 
+NS_EXPORT NsDb_DriverInitProc Ns_DbDriverInit;
 
 /*
  * Local functions defined in this file.

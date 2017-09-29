@@ -54,13 +54,13 @@ if {$on} {
 # ns_tcl_abort --
 #
 #   Work-alike ns_adp_abort. To be called from within Tcl pages
-#   to suspend futher processing without generating error.
+#   to suspend further processing without generating error.
 #
 # Results:
 #   None.
 #
 # Side effects:
-#   Throws Tcl error wich is being caught by [ns_sourcefile]
+#   Throws Tcl error which is being caught by [ns_sourcefile]
 #
 
 proc ns_tcl_abort {} {

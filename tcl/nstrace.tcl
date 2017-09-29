@@ -432,7 +432,7 @@ ns_runonce {
                 # Serialize XOTcl/NX content
                 # 
                 if {[catch {::Serializer all} objects]} {
-                    ns_log notice "NX/XOTcl extension not loaded; will not copy objects\
+                    ns_log warning "NX/XOTcl extension not loaded; classes an objects will not be included in blueprint\
                       (error: $objects; $::errorInfo)."
                     set objects ""
                 } else {

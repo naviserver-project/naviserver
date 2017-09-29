@@ -519,13 +519,17 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         rc = TCL_ERROR;
-    } else if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
-        Ns_TclPrintfResult(interp, "invalid timespec: %s", Tcl_GetString(objv[1]));
-        rc = TCL_ERROR;
     } else {
-        int  ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
-
-        Tcl_Sleep(ms);
+        assert(tPtr != NULL);
+        
+        if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
+            Ns_TclPrintfResult(interp, "invalid timespec: %s", Tcl_GetString(objv[1]));
+            rc = TCL_ERROR;
+        } else {
+            int  ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
+            
+            Tcl_Sleep(ms);
+        }
     }
 
     return rc;
@@ -618,7 +622,7 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
     timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
-        len = snprintf(buf, sizeof(buf), "%ld", timePtr->sec);
+        len = ns_uint64toa(buf, (uint64_t)timePtr->sec);
     } else {
         len = snprintf(buf, sizeof(buf), "%ld:%ld",
                        timePtr->sec, timePtr->usec);

@@ -5,33 +5,40 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+#ns_logctl severity Debug(ns:driver) on
 
 if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-
+set port [ns_config "test" listenport]
 
 test ns_conn_location-1.1 {default location} -constraints serverListen -setup {
-    ns_register_proc GET /location {ns_return 200 text/plain [ns_conn location] ;#}
+    ns_register_proc GET /location {
+	ns_return 200 text/plain [ns_conn location]
+    }
 } -body {
     nstest::http -getbody 1 -- GET /location
 } -cleanup {
     ns_unregister_op GET /location
-} -result {200 http://test}
+} -result [list 200 http://test:$port]
 
 
 
-test ns_conn_location-2.1 {virtual host location} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost} -- GET /location
-} -result {200 http://testvhost}
+test ns_conn_location-2.1 {virtual host location} -constraints serverListen -setup {
+    ns_register_proc GET /location {
+	ns_return 200 text/plain [ns_conn location]
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /location
+} -result [list 200 http://testvhost:$port]
 
 # 2.2: Test bad host headers..?
 
 
 
 test ns_conn_location-3.1 {custom location} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Host testvhost2} -- GET /location
+    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /location
 } -result {200 testlocation.arg}
 
 

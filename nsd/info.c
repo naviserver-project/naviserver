@@ -413,7 +413,7 @@ Ns_InfoStarted(void)
  *
  * Ns_InfoServersStarted --
  *
- *      Compatability function, same as Ns_InfoStarted
+ *      Compatibility function, same as Ns_InfoStarted
  *
  * Results:
  *      See Ns_InfoStarted

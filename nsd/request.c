@@ -575,7 +575,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
 
     /*
      * Header lines are first checked if they continue a previous
-     * header indicated by any preceeding white space.  Otherwise,
+     * header indicated by any preceding white space.  Otherwise,
      * they must be in well form key: value form.
      */
 
@@ -656,7 +656,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
  *      Return the next qvalue string from accept encodings
  *
  * Results:
- *      string, setting lenghtPtr; or NULL, if no or invalie
+ *      string, setting lengthPtr; or NULL, if no or invalie
  *      qvalue provided
  *
  * Side effects:

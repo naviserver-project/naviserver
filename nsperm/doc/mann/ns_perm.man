@@ -13,7 +13,7 @@ and the specified user text (userfield) into the users database.
 
 [list_begin definitions]
 
-[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -deny]] [opt [arg -clear]] [opt [arg {-salt s}]] [arg name] [arg pass] [arg userfield] [opt host...]]
+[call [cmd "ns_perm adduser"] [opt [arg -allow]] [opt [arg -deny]] [opt [arg -clear]] [opt [arg {-salt s}]] [arg name] [arg pass] [arg userfield] [opt host...]]
 
 [arg -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
 
@@ -37,85 +37,89 @@ by the ns_perm command with specified salt.
 [arg -clear]
 Tells that we keep password in clear text
 
-[call [cmd ns_perm] [arg deluser] [arg name]]
+[call [cmd "ns_perm deluser"] [arg name]]
 
 ns_perm deluser deletes user from the memory
 
-[call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
+[call [cmd "ns_perm addgroup"] [arg name] [arg user] [opt [arg user...]]]
 
 ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
 
-[call [cmd ns_perm] [arg delgroup] [arg name]]
+[call [cmd "ns_perm delgroup"] [arg name]]
 
 ns_perm delgroup deletes group from the memory
 
-[call [cmd ns_perm] [arg allowuser] [opt -noinherit]] [arg method] [arg url] [arg user...]]]
+[call [cmd "ns_perm allowuser"] [opt -noinherit]] [arg method] [arg url] [arg user...]]]
 
 ns_perm allowuser allows the specified user access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
-[call [cmd ns_perm] [arg denyuser] [opt [arg -noinherit]] [arg method] [arg url] [arg user...]]
+[call [cmd "ns_perm denyuser"] [opt [arg -noinherit]] [arg method] [arg url] [arg user...]]
 
 ns_perm denyuser denies the specified user access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
 URL are denied as well.
 
-[call [cmd ns_perm] [arg allowgroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
+[call [cmd "ns_perm allowgroup"] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
 
 ns_perm allowgroup allows the specified group access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
-[call [cmd ns_perm] [arg denygroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
+[call [cmd "ns_perm denygroup"] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
 
 ns_perm denygroup denies the specified group access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
 URL are denied as well.
 
-[call [cmd ns_perm] [arg checkpass] [arg user] [arg passwd]]
+[call [cmd "ns_perm checkpass"] [arg user] [arg passwd]]
 
 ns_perm checkpass checks that the specified plain-text password is correct for the specified user.
 A Tcl error is thrown if it does not match.
 
-[call [cmd ns_perm] [arg setpass] [arg user] [arg encpass]]
+[call [cmd "ns_perm setpass"] [arg user] [arg encpass]]
 
 ns_perm setpass updates the specified user's password to the encrypted password encpass. The password
 should be encrypted using ns_encrypt.
 
-[call [cmd ns_perm] [arg listusers]]
+[call [cmd "ns_perm listusers"]]
 
 Produce Tcl list of all current users in the format username password ....
 
-[call [cmd ns_perm] [arg listgroups]]
+[call [cmd "ns_perm listgroups"]]
 
 Produce Tcl list with all registered groups in the format: groupname {user ...} ...
 
-[call [cmd ns_perm] [arg listperms]]
+[call [cmd "ns_perm listperms"]]
 
 Produce Tcl list with all registered allow/deny statements for each url
 
 [call [cmd ns_permreload]]
 
-Reloads all ns_perm files, on very busy sites there could happen authentication denies because
-this command clears the memory first and then loads files from the disk
+Reloads all ns_perm files, on very busy sites there could happen
+authentication denies because this command clears the memory first and
+then loads files from the disk
 
 [list_end]
 
+
 [section CONFIGURATION]
 
-The following configuration options are available to control permission module
+The following configuration options are available to control
+permission module:
 
 [list_begin definitions]
 
 [def htaccess]
 
-This parameter if set to true, enables .htaccess mode, similar to what the Apache web server
-has but very simple and limited in functionality.
+This parameter if set to true, enables .htaccess mode, similar to what
+the Apache web server has but very simple and limited in
+functionality.
 
-[para]
-On every request the server looks for .htaccess file in the current request directory and loads it if
-modified since the last read. The structure of the file is simple:
+[para] On every request the server looks for .htaccess file in the
+current request directory and loads it if modified since the last
+read. The structure of the file is simple:
 
 [example_begin]
 allow user ...
@@ -124,14 +128,16 @@ deny user ...
 
 [def passwdfile]
 
-This parameter determines which file with users and passwords needs to be checked for modification
-and reloaded automatically.
+This parameter determines in .htaccess mode which file with users and
+passwords needs to be checked for modification and reloaded
+automatically. If .htaccess mode is not active, the parameter is
+ignored.
 
 [list_end]
 
 [example_begin]
 ns_section "ns/server/servername/module/nsperm"
-ns_param   htaccess   false
+ns_param   htaccess   true
 ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
 [example_end]
 

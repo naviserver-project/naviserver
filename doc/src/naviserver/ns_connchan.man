@@ -105,7 +105,7 @@ Open a connection channel to the specified [arg url].
 The URL might be an HTTP or an HTTPS URL.
 [option -headers] refers to a [term ns_set] of request header fields,
 [option -method] is the HTTP method (default GET),
-[option -timeout] is the timeout for establising the connection
+[option -timeout] is the timeout for establishing the connection
 (default 1 second), and
 [option -version] specifies the HTTP version (default 1.0)
 

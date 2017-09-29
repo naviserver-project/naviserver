@@ -170,8 +170,8 @@ Set the value for a key in an nsv array. Returns the value the key is set to.
 [call [cmd nsv_unset] [opt [arg -nocomplain]] [opt --] [arg array] [opt [arg key]]]
 
 Unset an array or a single key from an array. If successful returns an
-empty string. If -nocomplain is specified as the first argument, the
-command does not complain when the specified variable does not exist.
+empty string. When [arg -nocomplain] is specified the command does not
+complain when the specified array or key does not exist.
 
 [example_begin]
    % nsv_unset shared_array key1
@@ -390,7 +390,7 @@ potential for lock contention which is to split the locks to achieve
 finer grained locking.  This technique groups arrays randomly into
 buckets and only the arrays within a particular bucket share a lock.
 The number of buckets to be used can be configured by setting the
-[const nsvbuckets] tcl parameters, e.g.:
+[const nsvbuckets] Tcl parameters, e.g.:
 
 [example_begin]
     ns_section      "ns/server/${servername}/tcl"

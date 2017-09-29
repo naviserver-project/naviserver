@@ -924,7 +924,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
 
     if (handle->dsExceptionMsg.length > 0) {
         /*
-         * An exception occured.
+         * An exception occurred.
          */
         if (poolPtr->fVerboseError) {
 	    
@@ -1488,11 +1488,9 @@ FreeTable(void *arg)
 uintptr_t
 NsDbGetSessionId(const Ns_DbHandle *handle)
 {
-    const Handle *handlePtr = (const Handle *)handle;
-
     NS_NONNULL_ASSERT(handle != NULL);
 
-    return handlePtr->sessionId;
+    return ((const Handle *)handle)->sessionId;
 }
 
 

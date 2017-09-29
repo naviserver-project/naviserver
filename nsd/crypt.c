@@ -52,7 +52,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     if (enc == NULL) {
 	*iobuf = '\0';
     } else {
-	strcpy(iobuf, enc);
+	strncpy(iobuf, enc, NS_ENCRYPT_BUFSIZE);
     }
 
     return iobuf;
@@ -80,7 +80,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     if (enc == NULL) {
  	*iobuf = 0;
      } else {
-	strcpy(iobuf, enc);
+	strncpy(iobuf, enc, NS_ENCRYPT_BUFSIZE);
      }
      return iobuf;
  }

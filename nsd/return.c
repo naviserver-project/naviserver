@@ -462,7 +462,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      *
      *       "MIME-Version: 1.0\r\n"
      *
-     * However, MIME_Version is a MIME header, not a HTTP header (allthough
+     * However, MIME_Version is a MIME header, not a HTTP header (although
      * allowed in HTTP/1.1); it's only used when HTTP messages are moved over
      * MIME-based protocols (e.g., SMTP), which is uncommon. The HTTP mime
      * message parsing semantics are defined by this RFC 2616 and not any MIME
@@ -667,7 +667,6 @@ Ns_ReturnCode
 Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     const char *title, const char *notice)
 {
-    const Conn      *connPtr = (const Conn *) conn;
     const NsServer  *servPtr;
     Ns_DString       ds;
     Ns_ReturnCode    result;
@@ -676,7 +675,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     NS_NONNULL_ASSERT(title != NULL);
     NS_NONNULL_ASSERT(notice != NULL);
 
-    servPtr = connPtr->poolPtr->servPtr;
+    servPtr = ((Conn *) conn)->poolPtr->servPtr;
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds,
                      "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 4.01//EN\">\n"
@@ -1009,7 +1008,9 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
             (void) Ns_SetFileVec(bufs, 0, fd, data, 0, len);
             nbufs = 1;
         }
-
+        /*
+         * Flush Headers and send file contents.
+         */
 	result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
         if (result == NS_OK) {
             result = Ns_ConnSendFileVec(conn, bufs, nbufs);

@@ -107,11 +107,11 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         } else if (binary != 0) {
             conn->flags |= NS_CONN_WRITE_ENCODED;
         }
-        
+
         if (length > -1) {
             Ns_ConnSetLengthHeader(conn, (size_t)length, NS_FALSE);
         }
-        
+
         /*
          * Request HTTP headers from ns_write etc.
          */
@@ -167,9 +167,9 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     } else if (charset != NULL && type != NULL) {
         Ns_TclPrintfResult(interp, "only one of -charset or -type may be specified");
         result = TCL_ERROR;
-        
+
     } else {
-        
+
         Ns_LogDeprecated(objv, 1, "ns_headers ...", NULL);
 
         itPtr->nsconn.flags |= CONN_TCLHTTP;
@@ -182,11 +182,11 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
             }
         }
         if (result == TCL_OK) {
-            
+
             if (type != NULL) {
                 encoding = Ns_GetTypeEncoding(type);
             }
-            
+
             if (encoding != NULL) {
                 Ns_ConnSetEncoding(conn, encoding);
             }
@@ -230,10 +230,10 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "data ?data ...?");
         result = TCL_ERROR;
-        
+
     } else if (NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
-        
+
     } else if (Ns_ConnSockPtr(conn) == NULL) {
         Ns_TclPrintfResult(interp, "connection channels is detached");
         result = TCL_ERROR;
@@ -244,7 +244,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
 
         /*
          * On first write, check to see if headers were requested by ns_headers.
-         * Otherwise, supress them -- caller will ns_write the headers
+         * Otherwise, suppress them -- caller will ns_write the headers
          * or this is some other protocol.
          */
 
@@ -357,7 +357,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         || NsConnRequire(interp, &conn) != NS_OK
         ) {
         result = TCL_ERROR;
-        
+
     } else {
         const char *data;
 
@@ -414,7 +414,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {"-binary",   Ns_ObjvByteArray, &binary,    &length},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK
         ) {
@@ -456,26 +456,26 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             } else {
                 status = Ns_ConnReturnOpenChannel(conn, httpStatus, type, chan, (size_t)length);
             }
-            
+
         } else if (filename != NULL) {
             /*
              * We'll be returning a file by name
              */
             status = Ns_ConnReturnFile(conn, httpStatus, type, filename);
-            
+
         } else if (binary != NULL) {
             /*
              * We'll be returning a binary data
              */
             status = Ns_ConnReturnData(conn, httpStatus, binary, length, type);
-            
+
         } else {
             /*
              * We'll be returning chars.
              */
             status = Ns_ConnReturnCharData(conn, httpStatus, chars, length, type);
         }
-        
+
         result = Result(interp, status);
     }
     return result;
@@ -513,7 +513,7 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         {"filename", Ns_ObjvString, &fileName, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK
         ) {
@@ -522,7 +522,7 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     } else {
         result = Result(interp, Ns_ConnReturnFile(conn, httpStatus, mimeType, fileName));
     }
-    
+
     return result;
 }
 
@@ -604,7 +604,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         {"len",     Ns_ObjvInt,     &len,         NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK
         ) {
@@ -614,12 +614,12 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         result = Ns_TclGetOpenChannel(interp, channelName, 0, NS_TRUE, &chan);
         if (likely( result == TCL_OK )) {
             Ns_ReturnCode status;
-            
+
             Ns_LogDeprecated(objv, 3, "ns_writefp fileid ?nbytes?", NULL);
-            
+
             conn->flags |= NS_CONN_SKIPHDRS;
             status = Ns_ConnSendChannel(conn, chan, (size_t)len);
-            
+
             if (status != NS_OK) {
                 Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
                                    len, channelName);
@@ -659,14 +659,14 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "reason");
         result = TCL_ERROR;
-        
+
     } else if (NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         result = Result(interp, Ns_ConnReturnBadRequest(conn, Tcl_GetString(objv[1])));
     }
-    
+
     return result;
 }
 
@@ -690,9 +690,9 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
  */
 
 static int
-ReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
-	     int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv), 
-	     Ns_ReturnCode (*proc) (Ns_Conn *conn))
+ReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+             int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv),
+             Ns_ReturnCode (*proc) (Ns_Conn *conn))
 {
     Ns_Conn *conn = NULL;
     int      result;
@@ -760,14 +760,14 @@ int
 NsTclReturnErrorObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          httpStatus, result;
-    Ns_Conn     *conn = NULL;    
+    Ns_Conn     *conn = NULL;
     char        *message;
     Ns_ObjvSpec  args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},
         {"message",  Ns_ObjvString, &message, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, &conn) != NS_OK
         ) {
@@ -893,7 +893,7 @@ NsTclReturnRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     } else {
         result = Result(interp, Ns_ConnReturnRedirect(conn, location));
     }
-    
+
     return result;
 }
 
@@ -931,7 +931,7 @@ NsTclInternalRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
 
     } else {
         result = Result(interp, Ns_ConnRedirect(conn, location));
-    }    
+    }
 
     return result;
 }
@@ -957,7 +957,7 @@ static int
 Result(Tcl_Interp *interp, Ns_ReturnCode result)
 {
     NS_NONNULL_ASSERT(interp != NULL);
-    
+
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj((result == NS_OK) ? 1 : 0));
     return TCL_OK;
 }

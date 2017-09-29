@@ -60,7 +60,7 @@ typedef struct Event {
  */
 
 typedef struct EventQueue {
-    Event             *firstInitPtr;  /* New events to be initialised. */
+    Event             *firstInitPtr;  /* New events to be initialized. */
     Event             *firstWaitPtr;  /* Sockets waiting for events or timeout. */
     Event             *firstFreePtr;  /* Free, unused Event structs. */
     struct pollfd     *pfds;          /* Array of pollfd structs. */
@@ -145,7 +145,7 @@ Ns_CreateEventQueue(int maxevents)
  *
  * Side effects:
  *      Given Ns_EventProc callback will be run later with any of the
- *      folowing why conditions:
+ *      following why conditions:
  *
  *      NS_SOCK_INIT       Allways called first.
  *      NS_SOCK_READ
@@ -160,13 +160,14 @@ Ns_CreateEventQueue(int maxevents)
 bool
 Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *arg)
 {
-    EventQueue *queuePtr = (EventQueue *) queue;
+    EventQueue *queuePtr;
     Event      *evPtr;
 
     NS_NONNULL_ASSERT(queue != NULL);
     NS_NONNULL_ASSERT(proc != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
-    
+
+    queuePtr = (EventQueue *) queue;
     evPtr = queuePtr->firstFreePtr;
     if (evPtr != NULL) {
         queuePtr->firstFreePtr = evPtr->nextPtr;
@@ -201,11 +202,12 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
 void
 Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
-    Event *evPtr = (Event *) event;
+    Event *evPtr;
     int    i;
 
     NS_NONNULL_ASSERT(event != NULL);
-
+    evPtr = (Event *) event;
+    
     /*
      * Map from sock when bits to poll event bits.
      */
@@ -257,7 +259,7 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 bool
 Ns_RunEventQueue(Ns_EventQueue *queue)
 {
-    EventQueue       *queuePtr = (EventQueue *) queue;
+    EventQueue       *queuePtr;
     Event            *evPtr, *nextPtr;
     Ns_Time           now;
     const Ns_Time    *timeoutPtr;
@@ -266,7 +268,8 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     char              c;
 
     NS_NONNULL_ASSERT(queue != NULL);
-
+    queuePtr = (EventQueue *) queue;
+    
     /*
      * Process any new events.
      */
@@ -390,10 +393,11 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
 void
 Ns_TriggerEventQueue(const Ns_EventQueue *queue)
 {
-    const EventQueue *queuePtr = (const EventQueue *) queue;
+    const EventQueue *queuePtr;
 
     NS_NONNULL_ASSERT(queue != NULL);
-
+    queuePtr = (const EventQueue *) queue;
+ 
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("event queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -420,12 +424,13 @@ Ns_TriggerEventQueue(const Ns_EventQueue *queue)
 void
 Ns_ExitEventQueue(Ns_EventQueue *queue)
 {
-    EventQueue *queuePtr = (EventQueue *) queue;
+    EventQueue *queuePtr;
     Event      *evPtr;
     Ns_Time     now;
 
     NS_NONNULL_ASSERT(queue != NULL);
-
+    queuePtr = (EventQueue *) queue;
+ 
     Ns_GetTime(&now);
     evPtr = queuePtr->firstWaitPtr;
     queuePtr->firstWaitPtr = NULL;

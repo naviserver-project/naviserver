@@ -217,47 +217,57 @@ NsConfigEncodings(void)
 static Ns_ReturnCode
 ConfigServerEncodings(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server);
-    const char *path;
+    NsServer     *servPtr = NsGetServer(server);
+    Ns_ReturnCode result;
 
-    /*
-     * Configure the encoding used in the request URL.
-     */
+    if (unlikely(servPtr == NULL)) {
+        Ns_Log(Warning, "Could not set encoding, server '%s' unknown", server);
+        result = NS_ERROR;
+        
+    } else {
+        const char *path;
 
-    path = Ns_ConfigGetPath(server, NULL, (char *)0);
+        /*
+         * Configure the encoding used in the request URL.
+         */
 
-    servPtr->encoding.urlCharset =
-        Ns_ConfigString(path, "urlCharset", "utf-8");
+        path = Ns_ConfigGetPath(server, NULL, (char *)0);
 
-    servPtr->encoding.urlEncoding =
-        Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
-    if (servPtr->encoding.urlEncoding == NULL) {
-        Ns_Log(Warning, "no encoding found for charset \"%s\" from config",
-               servPtr->encoding.urlCharset);
+        servPtr->encoding.urlCharset =
+            Ns_ConfigString(path, "urlCharset", "utf-8");
+
+        servPtr->encoding.urlEncoding =
+            Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
+        if (servPtr->encoding.urlEncoding == NULL) {
+            Ns_Log(Warning, "no encoding found for charset \"%s\" from config",
+                   servPtr->encoding.urlCharset);
+        }
+
+        /*
+         * Configure the encoding used for Tcl/ADP output.
+         */
+
+        servPtr->encoding.outputCharset =
+            Ns_ConfigString(path, "outputCharset", "utf-8");
+
+        servPtr->encoding.outputEncoding =
+            Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
+        if (servPtr->encoding.outputEncoding == NULL) {
+            Ns_Fatal("could not find encoding for default output charset \"%s\"",
+                     servPtr->encoding.outputCharset);
+        }
+
+        /*
+         * Force charset into content-type header for dynamic responses.
+         */
+
+        servPtr->encoding.hackContentTypeP =
+            Ns_ConfigBool(path, "HackContentType", NS_TRUE);
+
+        result = NS_OK;
+
     }
-
-    /*
-     * Configure the encoding used for Tcl/ADP output.
-     */
-
-    servPtr->encoding.outputCharset =
-        Ns_ConfigString(path, "outputCharset", "utf-8");
-
-    servPtr->encoding.outputEncoding =
-        Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
-    if (servPtr->encoding.outputEncoding == NULL) {
-        Ns_Fatal("could not find encoding for default output charset \"%s\"",
-                 servPtr->encoding.outputCharset);
-    }
-
-    /*
-     * Force charset into content-type header for dynamic responses.
-     */
-
-    servPtr->encoding.hackContentTypeP =
-        Ns_ConfigBool(path, "HackContentType", NS_TRUE);
-
-    return NS_OK;
+    return result;
 }
 
 

@@ -269,7 +269,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
                     status = NS_ERROR;
                     break;
                 }
-                Ns_DStringTrunc(&dsSql, 0);
+                Ns_DStringSetLength(&dsSql, 0);
             } else {
                 Ns_DStringNAppend(&dsSql, &c, 1);
                 if (c == '\'') {

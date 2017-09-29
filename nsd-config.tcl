@@ -8,7 +8,7 @@
 set port 8080
 set address "0.0.0.0"
 
-if {[ns_info ipv6]} {
+if {0 && [ns_info ipv6]} {
     #
     # The version of NaviServer supports IPv6. Probe if we can reverse
     # lookup the loopback interface and bind to the IPv6 loopback
@@ -77,7 +77,7 @@ ns_section     "ns/db/drivers"
 #ns_param       postgres           nsdbpg.so
 
 ns_section     "ns/db/pools"
-#ns_param       postgres           "PostgresSQL Database"
+#ns_param       postgres           "PostgreSQL Database"
 
 ns_section     "ns/db/pool/pgsql"
 ns_param        driver              postgres
