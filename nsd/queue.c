@@ -1017,8 +1017,6 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     char           *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString     ds, *dsPtr = &ds;
 
-    checkforproxy = NS_FALSE;
-
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, 
         SFiltersIdx,
