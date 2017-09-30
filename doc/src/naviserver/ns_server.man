@@ -71,15 +71,21 @@ Returns a list of the mappings from urls to files.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[cmd active]]
+	[cmd active] \
+	[opt [option "-checkforproxy"]] \
+	]
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[cmd all]]
+	[cmd all] \
+	[opt [option "-checkforproxy"]] \
+	]
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[cmd queued]]
+	[cmd queued] \
+	[opt [option "-checkforproxy"]] \
+	]
 
 These three commands return information about queued or running
 requests. For every request the command returns a list containing
@@ -87,6 +93,11 @@ connection id, the peer address, state ("running" or "queued"), the
 request (HTTP method and url), running time, and bytes sent. The
 sub-command [arg all] returns the union of the running and queued
 requests.
+
+[para] When option [option -checkforproxy] is given, it tries to
+return the peer address from "X-Forwarded-For" header field. If this
+fails (not given, or empty, or having the value "unknown") it falls
+back to the physical peer address.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \

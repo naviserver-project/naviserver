@@ -34,6 +34,66 @@ test ns_server-1.5 {provide invalid server argument} -body {
 } -returnCodes error -result {invalid server: 'foo'}
 
 
+#
+# Testing ns_server active|all|queued
+#
+
+test ns_server-2.0.0 {provide valid "ns_server active" argument} -body {
+    ns_server active
+} -match exact -result ""
+
+test ns_server-2.0.1 {provide valid "ns_server active" argument} -body {
+    ns_server active -checkforproxy
+} -match exact -result ""
+
+test ns_server-2.0.1 {provide invalid "ns_server active" argument} -body {
+    ns_server active -dummy
+}  -returnCodes error -result {wrong # args: should be "ns_server active ?-checkforproxy?"}
+
+test ns_server-2.0.3 {get values from an active connection} -setup {
+    ns_register_proc GET /run {
+        ns_return 200 text/plain [ns_server active]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /run
+} -cleanup {
+    ns_unregister_op GET /run
+} -match glob -result "200 *cns*running GET /run *"
+
+test ns_server-2.0.4 {get values from an active connection with -checkforproxy} -setup {
+    ns_register_proc GET /run {
+        ns_return 200 text/plain [ns_server active -checkforproxy]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /run
+} -cleanup {
+    ns_unregister_op GET /run
+} -match glob -result "200 *cns*running GET /run *"
+
+test ns_server-2.0.5 {get queued values from an active connection with -checkforproxy} -setup {
+    ns_register_proc GET /run {
+        ns_return 200 text/plain [ns_server queued]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /run
+} -cleanup {
+    ns_unregister_op GET /run
+} -match glob -result "200"
+
+test ns_server-2.0.6 {get all values from an active connection with -checkforproxy} -setup {
+    ns_register_proc GET /run {
+        ns_return 200 text/plain [ns_server all]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /run
+} -cleanup {
+    ns_unregister_op GET /run
+} -match glob -result "200 *cns*running GET /run *"
+
+#
+# Continue with "basic" tests
+#
+
 test ns_server-2.1 {basic operation} -body {
     string is int -strict [ns_server connections]
 } -match exact -result 1

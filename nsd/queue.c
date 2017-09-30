@@ -83,6 +83,13 @@ static int ServerUnmapObjCmd(const ClientData clientData, Tcl_Interp *interp, in
 static void ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uintptr_t connId)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int ServerListActive(Tcl_DString *dsPtr, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                            ConnPool *poolPtr, int nargs)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+static int ServerListQueued(Tcl_DString *dsPtr, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                            ConnPool *poolPtr, int nargs)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static Ns_ArgProc WalkCallback;
 
@@ -992,6 +999,82 @@ ServerUnmapObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 /*
  *----------------------------------------------------------------------
  *
+ * ServerListActive, ServerListQueued --
+ *
+ *    Implements the "ns_server ... active ..." and
+ *    the "ns_server ... queued ..." command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    Appends list data about active/queued connections to the Tcl_DString
+ *    provided in the first argument.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ServerListActive(Tcl_DString *dsPtr, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                 ConnPool *poolPtr, int nargs)
+{
+    int         result = TCL_OK, checkforproxy = (int)NS_FALSE;
+    Ns_ObjvSpec opts[] = {
+        {"-checkforproxy", Ns_ObjvBool, &checkforproxy, INT2PTR(NS_TRUE)},
+        {NULL, NULL,  NULL, NULL}
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objv != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+
+    if (Ns_ParseObjv(opts, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        int i;
+
+        Ns_MutexLock(&poolPtr->tqueue.lock);
+        for (i = 0; i < poolPtr->threads.max; i++) {
+            const ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
+
+            if (argPtr->connPtr != NULL) {
+                AppendConnList(dsPtr, argPtr->connPtr, "running", (bool)checkforproxy);
+            }
+        }
+        Ns_MutexUnlock(&poolPtr->tqueue.lock);
+    }
+    return result;
+}
+
+static int
+ServerListQueued(Tcl_DString *dsPtr, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,
+                 ConnPool *poolPtr, int nargs)
+{
+    int         result = TCL_OK, checkforproxy = (int)NS_FALSE;
+    Ns_ObjvSpec opts[] = {
+        {"-checkforproxy", Ns_ObjvBool, &checkforproxy, INT2PTR(NS_TRUE)},
+        {NULL, NULL,  NULL, NULL}
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objv != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+
+    if (Ns_ParseObjv(opts, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_MutexLock(&poolPtr->wqueue.lock);
+        AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued", (bool)checkforproxy);
+        Ns_MutexUnlock(&poolPtr->wqueue.lock);
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclServerObjCmd --
  *
  *      Implement the ns_server Tcl command to return simple statistics
@@ -1011,7 +1094,6 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 {
     const NsInterp *itPtr = clientData;
     int             subcmd = 0, result = TCL_OK, nargs = 0;
-    bool            checkforproxy = NS_FALSE;
     NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
     char           *pool = NULL, *optArg = NULL, buf[100];
@@ -1056,7 +1138,6 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         {NULL,           0u}
     };
     Ns_ObjvSpec opts[] = {
-        {"-checkforproxy", Ns_ObjvBool,   &checkforproxy, INT2PTR(NS_TRUE)},
         {"-server", Ns_ObjvServer,  &servPtr, NULL},
         {"-pool",   Ns_ObjvString,  &pool,    NULL},
         {"--",      Ns_ObjvBreak,   NULL,     NULL},
@@ -1087,6 +1168,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         && subcmd != SMapIdx
         && subcmd != SMappedIdx
         && subcmd != SUnmapIdx
+        && subcmd != SActiveIdx
+        && subcmd != SQueuedIdx
+        && subcmd != SAllIdx
         ) {
 	/*
 	 * Just for backwards compatibility
@@ -1117,7 +1201,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     } else {
 	poolPtr = servPtr->pools.defaultPtr;
     }
-    
+
     switch (subcmd) {
 	/* 
 	 * These subcommands are server specific (do not allow -pool option)
@@ -1249,35 +1333,44 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SThreadsIdx:
         Ns_TclPrintfResult(interp,
-            "min %d max %d current %d idle %d stopping 0",
-            poolPtr->threads.min, poolPtr->threads.max,
-            poolPtr->threads.current, poolPtr->threads.idle);
+                           "min %d max %d current %d idle %d stopping 0",
+                           poolPtr->threads.min, poolPtr->threads.max,
+                           poolPtr->threads.current, poolPtr->threads.idle);
         break;
 
     case SActiveIdx:
+        Tcl_DStringInit(dsPtr);
+        result = ServerListActive(dsPtr, interp, objc, objv, poolPtr, nargs);
+        if (likely(result == NS_OK)) {
+            Tcl_DStringResult(interp, dsPtr);
+        } else {
+            Tcl_DStringFree(dsPtr);
+        }
+        break;
+
     case SQueuedIdx:
+        Tcl_DStringInit(dsPtr);
+        result = ServerListQueued(dsPtr, interp, objc, objv, poolPtr, nargs);
+        if (likely(result == NS_OK)) {
+            Tcl_DStringResult(interp, dsPtr);
+        } else {
+            Tcl_DStringFree(dsPtr);
+        }
+        break;
+
     case SAllIdx:
         Tcl_DStringInit(dsPtr);
-        if (subcmd != SQueuedIdx) {
-	    int i;
-            
-	    Ns_MutexLock(&poolPtr->tqueue.lock);
-	    for (i=0; i < poolPtr->threads.max; i++) {
-	        const ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
-                
-		if (argPtr->connPtr != NULL) {
-		    AppendConnList(dsPtr, argPtr->connPtr, "running", checkforproxy);
-		}
-	    }
-	    Ns_MutexUnlock(&poolPtr->tqueue.lock);
+        result = ServerListActive(dsPtr, interp, objc, objv, poolPtr, nargs);
+        if (likely(result == NS_OK)) {
+            ServerListQueued(dsPtr, interp, objc, objv, poolPtr, nargs);
         }
-        if (subcmd != SActiveIdx) {
-	    Ns_MutexLock(&poolPtr->wqueue.lock);
-            AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued", checkforproxy);
-	    Ns_MutexUnlock(&poolPtr->wqueue.lock);
+        if (likely(result == NS_OK)) {
+            Tcl_DStringResult(interp, dsPtr);
+        } else {
+            Tcl_DStringFree(dsPtr);
         }
-        Tcl_DStringResult(interp, dsPtr);
         break;
+
     default:
         /* should never happen */
         assert(subcmd && 0);
@@ -2282,7 +2375,6 @@ static void
 AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool checkforproxy)
 {
     Ns_Time now, diff;
-    const char *p;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(state != NULL);
@@ -2295,17 +2387,21 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
     if (connPtr != NULL) {
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 	if (connPtr->reqPtr != NULL) {
+            const char *p;
+
             if ( checkforproxy ) {
-                p = NULL;
                 p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
-                if (p != NULL && !strcasecmp(p, "unknown")) {
-                    p = NULL;
+                if (p == NULL || (*p != '\0') || strcasecmp(p, "unknown") == 0) {
+                    /*
+                     * Lookup of header field failed, use upstream peer
+                     * address.
+                     */
+                    p = Ns_ConnPeer((const Ns_Conn *) connPtr);
                 }
-                Tcl_DStringAppendElement(dsPtr,
-                     ((p != NULL) && (*p != '\0')) ? p : Ns_ConnPeer((const Ns_Conn *) connPtr));
             } else {
-	        Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((const Ns_Conn *) connPtr));
+                p = Ns_ConnPeer((const Ns_Conn *) connPtr);
             }
+            Tcl_DStringAppendElement(dsPtr, p);
 	} else {
 	    /* Actually, this should not happen, but it does, maybe due
 	     * to the above mentioned race condition; we notice in the
