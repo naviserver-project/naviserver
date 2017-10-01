@@ -84,7 +84,7 @@ static Ns_ReturnCode LogOpen (Log *logPtr);
 static Ns_ReturnCode LogRoll (Log *logPtr);
 static Ns_ReturnCode LogClose(Log *logPtr);
 
-static void AppendEscaped(Ns_DString *dsPtr, const char *chars)
+static void AppendEscaped(Ns_DString *dsPtr, const char *toProcess)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -514,40 +514,58 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
  */
 
 static void
-AppendEscaped(Ns_DString *dsPtr, const char *chars)
+AppendEscaped(Ns_DString *dsPtr, const char *toProcess)
 {
+    const char *breakChar;
+
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    NS_NONNULL_ASSERT(chars != NULL);
-    
-    while (likely(*chars != '\0')) {
-        switch (*chars) {
-        case '\n':
-            Ns_DStringNAppend(dsPtr, "\\n", 2);
-            break;
+    NS_NONNULL_ASSERT(toProcess != NULL);
 
-        case '\r':
-            Ns_DStringNAppend(dsPtr, "\\r", 2);
-            break;
+    do {
+        breakChar = strpbrk(toProcess, "\r\n\t\\\"");
+        if (breakChar == NULL) {
+            /*
+             * No break-char found, append all and stop
+             */
+            Ns_DStringNAppend(dsPtr, toProcess, -1);
+        } else {
+            /*
+             * Append the break-char free prefix
+             */
+            Ns_DStringNAppend(dsPtr, toProcess, (int)(breakChar - toProcess));
 
-        case '\t':
-            Ns_DStringNAppend(dsPtr, "\\t", 2);
-            break;
+            /*
+             * Escape the break-char
+             */
+            switch (*breakChar) {
+            case '\n':
+                Ns_DStringNAppend(dsPtr, "\\n", 2);
+                break;
+            case '\r':
+                Ns_DStringNAppend(dsPtr, "\\r", 2);
+                break;
+            case '\t':
+                Ns_DStringNAppend(dsPtr, "\\t", 2);
+                break;
+            case '"':
+                Ns_DStringNAppend(dsPtr, "\\\"", 2);
+                break;
+            case '\\':
+                Ns_DStringNAppend(dsPtr, "\\\\",2);
+                break;
+            default:
+                /*should not happen */ assert(0);
+                break;
+            }
 
-        case '"':
-            Ns_DStringNAppend(dsPtr, "\\\"", 2);
-            break;
-
-	case '\\':
-            Ns_DStringNAppend(dsPtr, "\\\\",2);
-            break;
-
-	default:
-            Ns_DStringNAppend(dsPtr, chars, 1);
-            break;
+            /*
+             * Check for further protected characters after the break char.
+             */
+            toProcess = breakChar + 1;
         }
-        ++chars;
-    }
+    } while (breakChar != NULL);
 }
+
 
 /*
  *----------------------------------------------------------------------
