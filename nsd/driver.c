@@ -3425,7 +3425,7 @@ EndOfHeader(Sock *sockPtr)
              * Handle too large input requests
              */
             if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
-                Ns_Log(DriverDebug, "SockParse: request too large, length=%"
+                Ns_Log(Notice, "SockParse: request too large, length=%"
                        PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
                        reqPtr->length, sockPtr->drvPtr->maxinput);
                 /*
