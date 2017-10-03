@@ -574,7 +574,7 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
 
     if (!initialized) {
         /*
-         * no need for a fine-grained lock.
+         * No need for a fine-grained lock.
          */
         Ns_MasterLock();
         for (i = 0u; i < 256u; i++) {
@@ -587,6 +587,12 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
          */
         mustBeEncoded[UCHAR('%')] = NS_FALSE;
         mustBeEncoded[UCHAR('=')] = NS_FALSE;
+
+        /*
+         * Don't warn about begin of fragment identifier. We would need
+         * a detailed URL parser to detect its usage).
+         */
+        mustBeEncoded[UCHAR('#')] = NS_FALSE;
 
         for (i = 0u; i < 256u; i++) {
             if (path_enc[i].str == NULL) {
