@@ -2391,7 +2391,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
 
             if ( checkforproxy ) {
                 p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
-                if (p == NULL || (*p != '\0') || strcasecmp(p, "unknown") == 0) {
+                if (p == NULL || (*p == '\0') || strcasecmp(p, "unknown") == 0) {
                     /*
                      * Lookup of header field failed, use upstream peer
                      * address.
