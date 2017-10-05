@@ -361,7 +361,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case LOGMINDURATION: {
         Ns_Time     *minDurationPtr = NULL;
-        char        *poolString;
+        char        *poolString = NULL;
         Ns_ObjvSpec args[] = {
             {"?pool",        Ns_ObjvString, &poolString, NULL},
             {"?minduration", Ns_ObjvTime,   &minDurationPtr,  NULL},
