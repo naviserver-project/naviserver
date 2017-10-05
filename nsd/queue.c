@@ -2390,7 +2390,12 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
             const char *p;
 
             if ( checkforproxy ) {
-                p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
+                if (connPtr->headers != NULL) {
+                    p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
+                } else {
+                    Ns_Log(Notice, "AppendConn falls back to physical peer address, since connection has no header fields");
+                    p = NULL;
+                }
                 if (p == NULL || (*p == '\0') || strcasecmp(p, "unknown") == 0) {
                     /*
                      * Lookup of header field failed, use upstream peer
