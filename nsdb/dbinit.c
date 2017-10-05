@@ -84,7 +84,7 @@ typedef struct Handle {
     void           *connection;
     const char     *poolname;
     bool            connected;
-    bool            verbose;   /* kept just for backwards compatibility, should be replaced by Ns_LogSqlDebug */
+    bool            verbose;
     Ns_Set         *row;
     char            cExceptionCode[6];
     Ns_DString      dsExceptionMsg;
@@ -927,7 +927,6 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
          * An exception occurred.
          */
         if (poolPtr->fVerboseError) {
-	    
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
 		   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
@@ -1310,7 +1309,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->datasource = poolPtr->source;
             handlePtr->user = poolPtr->user;
             handlePtr->password = poolPtr->pass;
-            handlePtr->verbose = NS_FALSE;
+            handlePtr->verbose = poolPtr->fVerboseError;
             handlePtr->poolname = pool;
             ReturnHandle(handlePtr);
         }

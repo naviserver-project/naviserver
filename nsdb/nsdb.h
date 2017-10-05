@@ -103,7 +103,7 @@ typedef struct Ns_DbHandle {
     void       *connection;
     const char *poolname;
     bool        connected;
-    bool        verbose;
+    bool        verbose; /* Was previously used for general verbosity, then unused, now verboseError */
     Ns_Set     *row;
     char        cExceptionCode[6];
     Ns_DString  dsExceptionMsg;
