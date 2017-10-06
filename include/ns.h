@@ -83,6 +83,7 @@
 #define NS_CONN_ENTITYTOOLARGE    0x2000u /* the sent Entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x4000u /* request-URI too long */
 #define NS_CONN_LINETOOLONG       0x8000u /* request Header line too long */
+#define NS_CONN_CONFIGURED      0x100000u /* the connection is fully configured */
 
 /*
  * Coockie creation options.  For NaviServer and the current set of NaviServer

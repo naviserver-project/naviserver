@@ -1835,6 +1835,12 @@ NsConnThread(void *arg)
         Ns_GetTime(&connPtr->requestDequeueTime);
 
         /*
+         * Flag, that the connection is fully configured and we can use its
+         * data.
+         */
+        connPtr->flags |= NS_CONN_CONFIGURED;
+
+        /*
          * Run the connection if possible (requires a valid sockPtr and a
          * successful NsGetRequest() operation).
          */
@@ -1869,7 +1875,15 @@ NsConnThread(void *arg)
         }
 
         /*
-         * push connection to the free list.
+         * Don't use any connection data from other threads, since we are
+         * deallocating its content.
+         */
+        Ns_MutexLock(&connPtr->poolPtr->threads.lock);
+        connPtr->flags &= ~NS_CONN_CONFIGURED;
+        Ns_MutexUnlock(&connPtr->poolPtr->threads.lock);
+
+        /*
+         * Push connection to the free list.
          */
         argPtr->connPtr = NULL;
 
@@ -2386,27 +2400,41 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
      */
     if (connPtr != NULL) {
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
-        if (connPtr->reqPtr != NULL) {
-            const char *p;
 
-            if ( checkforproxy ) {
-                if (connPtr->headers != NULL) {
-                    p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
+        if (connPtr->reqPtr != NULL) {
+            /*
+             * The following mutex protects NS_CONN_CONFIGURED and indirectly
+             * other fields of the connPtr.
+             */
+            Ns_MutexLock(&connPtr->poolPtr->threads.lock);
+
+            if ((connPtr->flags & NS_CONN_CONFIGURED) != 0u) {
+                const char *p;
+
+                if ( checkforproxy ) {
+                    if ((connPtr->flags & NS_CONN_CONFIGURED) != 0u) {
+                        p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
+                    } else {
+                        Ns_Log(Notice, "AppendConn falls back to physical peer address, since connection has no header fields");
+                        p = NULL;
+                    }
+                    if (p == NULL || (*p == '\0') || strcasecmp(p, "unknown") == 0) {
+                        /*
+                         * Lookup of header field failed, use upstream peer
+                         * address.
+                         */
+                        p = Ns_ConnPeer((const Ns_Conn *) connPtr);
+                    }
                 } else {
-                    Ns_Log(Notice, "AppendConn falls back to physical peer address, since connection has no header fields");
-                    p = NULL;
-                }
-                if (p == NULL || (*p == '\0') || strcasecmp(p, "unknown") == 0) {
-                    /*
-                     * Lookup of header field failed, use upstream peer
-                     * address.
-                     */
                     p = Ns_ConnPeer((const Ns_Conn *) connPtr);
                 }
+                Tcl_DStringAppendElement(dsPtr, p);
             } else {
-                p = Ns_ConnPeer((const Ns_Conn *) connPtr);
+                Tcl_DStringAppendElement(dsPtr, "unknown");
             }
-            Tcl_DStringAppendElement(dsPtr, p);
+
+            Ns_MutexUnlock(&connPtr->poolPtr->threads.lock);
+
         } else {
             /* Actually, this should not happen, but it does, maybe due
              * to the above mentioned race condition; we notice in the
@@ -2415,6 +2443,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
             Ns_Log(Notice, "AppendConn: no reqPtr in state %s; ignore conn in output", state);
             Tcl_DStringAppendElement(dsPtr, "unknown");
         }
+
         Tcl_DStringAppendElement(dsPtr, state);
 
         if (connPtr->request.line != NULL) {
