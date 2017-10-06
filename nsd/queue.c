@@ -97,9 +97,9 @@ static Ns_ArgProc WalkCallback;
  * Static variables defined in this file.
  */
 
-static Ns_Tls argtls = NULL;
-static int    poolid = 0;
-
+static Ns_Tls   argtls = NULL;
+static int      poolid = 0;
+static Ns_Mutex connLock = NULL;
 /*
  * Debugging stuff
  */
@@ -141,6 +141,8 @@ NsInitQueue(void)
 {
     Ns_TlsAlloc(&argtls, NULL);
     poolid = Ns_UrlSpecificAlloc();
+    Ns_MutexInit(&connLock);
+    Ns_MutexSetName2(&connLock, "ns:queue", "conn");
 }
 
 
@@ -1878,9 +1880,9 @@ NsConnThread(void *arg)
          * Don't use any connection data from other threads, since we are
          * deallocating its content.
          */
-        Ns_MutexLock(&connPtr->poolPtr->threads.lock);
+        Ns_MutexLock(&connLock);
         connPtr->flags &= ~NS_CONN_CONFIGURED;
-        Ns_MutexUnlock(&connPtr->poolPtr->threads.lock);
+        Ns_MutexUnlock(&connLock);
 
         /*
          * Push connection to the free list.
@@ -2406,7 +2408,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
              * The following mutex protects NS_CONN_CONFIGURED and indirectly
              * other fields of the connPtr.
              */
-            Ns_MutexLock(&connPtr->poolPtr->threads.lock);
+            Ns_MutexLock(&connLock);
 
             if ((connPtr->flags & NS_CONN_CONFIGURED) != 0u) {
                 const char *p;
@@ -2433,7 +2435,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
                 Tcl_DStringAppendElement(dsPtr, "unknown");
             }
 
-            Ns_MutexUnlock(&connPtr->poolPtr->threads.lock);
+            Ns_MutexUnlock(&connLock);
 
         } else {
             /* Actually, this should not happen, but it does, maybe due
