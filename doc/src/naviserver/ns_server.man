@@ -84,7 +84,6 @@ Returns a list of the mappings from urls to files.
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
 	[cmd queued] \
-	[opt [option "-checkforproxy"]] \
 	]
 
 These three commands return information about queued or running
