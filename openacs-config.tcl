@@ -35,7 +35,7 @@ set logroot		$serverroot/log/
 set homedir		/usr/local/ns
 set bindir		$homedir/bin
 
-# Are we runnng behind a proxy?
+# Are we running behind a proxy?
 set proxy_mode		false
 
 #---------------------------------------------------------------------
@@ -62,7 +62,7 @@ set max_file_upload_min        5
 
 #---------------------------------------------------------------------
 # Set environment variables HOME and LANG. HOME is needed since
-# otherwise some programms called via exec might try to write into the
+# otherwise some programs called via exec might try to write into the
 # root home directory.
 #
 set env(HOME) $homedir
@@ -99,7 +99,7 @@ if {[info exists address_v6]} {lappend addresses $address_v6; lappend suffixes v
 
 #---------------------------------------------------------------------
 #
-# NaviServer's directories. Autoconfigurable. 
+# NaviServer's directories. Auto-configurable.
 #
 #---------------------------------------------------------------------
 # Where are your pages going to live ?
@@ -139,12 +139,12 @@ ns_section ns/parameters
 	# Write asynchronously to log files (access log and error log)
 	# ns_param	asynclogwriter	true		;# false
 
-        #ns_param       mutexlocktrace       true   ;# default false; print duractions of long mutex calls to stderr
+        #ns_param       mutexlocktrace       true   ;# default false; print durations of long mutex calls to stderr
 
         # Allow concurrent create operations of Tcl interpreters.
         # Versions up to at least Tcl 8.5 are known that these might
         # crash in case two threads create interpreters at the same
-        # time. These crashes were hard to reproduce, but serializeing
+        # time. These crashes were hard to reproduce, but serializing
         # interpreter creation helped. Probably it is possible to
         # allow concurrent interpreter create operations in Tcl 8.6.
         #ns_param        concurrentinterpcreate true   ;# default: false
@@ -223,12 +223,22 @@ ns_section ns/server/${server}
 	#
 	# Scaling and Tuning Options
 	#
-	# ns_param	maxconnections	100	;# 100; number of allocated connection stuctures
+	# ns_param	maxconnections	100	;# 100; number of allocated connection structures
 	# ns_param	maxthreads	10	;# 10; maximal number of connection threads
-	ns_param	minthreads	2	;# 1; minimal number of connection threads
-	ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
-	# ns_param	threadtimeout	120	;# 120; timeout for idle theads
-	# ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
+        ns_param	minthreads	2	;# 1; minimal number of connection threads
+
+        ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
+                                                ;# Setting connsperthread to > 0 will cause the thread to
+                                                ;# graciously exit, after processing that many
+                                                ;# requests, thus initiating kind-of Tcl-level
+                                                ;# garbage collection.
+
+        # ns_param	threadtimeout	120	;# 120; timeout for idle threads.
+                                                ;# In case, minthreads < maxthreads, threads
+                                                ;# are shutdown after this idle time until
+                                                ;# minthreads are reached.
+
+        # ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
 	ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
                                                 ;# 100 means to disable concurrent creates
 
@@ -244,7 +254,7 @@ ns_section ns/server/${server}
 	#
 	# ns_param	realm     	yourrealm	;# Default realm for Basic authentication
 	# ns_param	noticedetail	false	;# true, return detail information in server reply
-	# ns_param	errorminsize	0	;# 514, fillup reply to at least specified bytes (for ?early? MSIE)
+	# ns_param	errorminsize	0	;# 514, fill-up reply to at least specified bytes (for ?early? MSIE)
 	# ns_param	headercase	preserve;# preserve, might be "tolower" or "toupper"
 	# ns_param	checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
 
@@ -425,7 +435,7 @@ ns_section ns/server/${server}/module/nslog
 	# ns_param	rolllog		true	;# true, should server log files automatically
 	# ns_param	rollhour	0	;# 0, specify at which hour to roll
 	# ns_param	rollonsignal	true	;# false, perform roll on a sighup
-	ns_param	rollfmt		%Y-%m-%d ;# format appendend to log file name
+	ns_param	rollfmt		%Y-%m-%d ;# format appended to log file name
 
 
 #---------------------------------------------------------------------

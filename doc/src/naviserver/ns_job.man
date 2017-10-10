@@ -38,8 +38,10 @@ can not be cancelled.
 Configures jobs system, parameters are:
 
 [arg -jobsperthread] defines how many jobs each thread can process and
-then gracefully exit (unless this parameter is 0). The logic works the
-same way as [term connsperthread] config parameter for connection threads to
+then gracefully exit, performing a tcl-level cleanup. When the
+parameter is 0, which means that the number of jobs has no influence
+on cleaning up a thread). The logic works the same way as
+[term connsperthread] config parameter for connection threads to
 help reduce memory consumption and cleanup Tcl resources.
 
 [para] The parameter [arg -timeout] defines maximum idle time for the
