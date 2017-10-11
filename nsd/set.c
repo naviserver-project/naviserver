@@ -998,6 +998,88 @@ Ns_SetRecreate(Ns_Set *set)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_SetRecreate2 --
+ *
+ *	This is a faster version of Ns_SetRecreate() since it tries to reuse
+ *	pre-allocated, but truncated Ns_Set structures. It saves potentially
+ *	three ns_malloc operatons:
+ *        1) the Ns_Set structure
+ *        2) the set name (it preserves the old name)
+ *        3) the field set
+ *      At the end content is copied and the the from set is truncated.
+ *
+ * Results:
+ *	new set.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Set *
+Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
+{
+    Ns_Set      *newSet;
+    size_t       i;
+
+    NS_NONNULL_ASSERT(toPtr != NULL);
+    NS_NONNULL_ASSERT(from != NULL);
+
+    if (*toPtr == NULL) {
+        /*
+         * Eveything has to e created, essentially the same happens in
+         * Ns_SetRecreate()
+         */
+        newSet = ns_malloc(sizeof(Ns_Set));
+        newSet->name = ns_strcopy(from->name);
+        //Ns_Log(Notice, "Ns_SetRecreate2: create a new set, new %lu/%lu", from->size, from->maxSize);
+        *toPtr = newSet;
+        newSet->size = from->size;
+        newSet->maxSize = from->maxSize;
+        newSet->fields = ns_malloc(sizeof(Ns_SetField) * newSet->maxSize);
+
+    } else {
+        newSet = *toPtr;
+        /*
+         * Keep always the old name.
+         */
+        assert(newSet->size == 0u);
+
+        if (newSet->maxSize >= from->size) {
+            /*
+             * The old Ns_Set has enough space, there is no need to create new
+             * fields.
+             */
+            Ns_Log(Notice, "Ns_SetRecreate2: keep the old set and fields, old %lu/%lu from %lu/%lu",
+                   newSet->size, newSet->maxSize, from->size, from->maxSize);
+
+        } else {
+            /*
+             * We have to grow the old Ns_Set, since it does not fit all the
+             * entries that have to bbe stored.
+             */
+            Ns_Log(Notice, "Ns_SetRecreate2: keep the old set, make new fields old %lu/%lu from %lu/%lu",
+                   newSet->size, newSet->maxSize, from->size, from->maxSize);
+            newSet->maxSize = from->maxSize;
+            ns_free(newSet->fields);
+            newSet->fields = ns_malloc(sizeof(Ns_SetField) * newSet->maxSize);
+        }
+        newSet->size = from->size;
+    }
+
+    for (i = 0u; i < from->size; i++) {
+	newSet->fields[i].name  = from->fields[i].name;
+        newSet->fields[i].value = from->fields[i].value;
+    }
+    from->size = 0u;
+
+    return newSet;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SetPrint --
  *
  *	Dump the contents of a set to stderr.

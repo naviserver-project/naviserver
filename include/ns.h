@@ -2501,6 +2501,11 @@ Ns_SetRecreate(Ns_Set *set)
     NS_GNUC_NONNULL(1)
     NS_GNUC_RETURNS_NONNULL;
 
+NS_EXTERN Ns_Set *
+Ns_SetRecreate2(Ns_Set **to, Ns_Set *from)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL;
+
 NS_EXTERN void
 Ns_SetFree(Ns_Set *set);
 

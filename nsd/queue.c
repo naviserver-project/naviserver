@@ -1936,8 +1936,9 @@ NsConnThread(void *arg)
          */
         Ns_MutexLock(tqueueLockPtr);
         connPtr->flags &= ~NS_CONN_CONFIGURED;
-        Ns_SetFree(connPtr->headers);
-        connPtr->headers = NULL;
+        //Ns_SetFree(connPtr->headers);
+        //connPtr->headers = NULL;
+        Ns_SetTrunc(connPtr->headers, 0);
 
         argPtr->state = connThread_ready;
         Ns_MutexUnlock(tqueueLockPtr);
@@ -2143,7 +2144,8 @@ ConnRun(Conn *connPtr)
     /*{ConnPool *poolPtr = argPtr->poolPtr;
       Ns_Log(Notice, "ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
       } */
-    connPtr->headers = Ns_SetRecreate(connPtr->reqPtr->headers);
+    //connPtr->headers = Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
+    (void) Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
 
     /*
      * Flag, that the connection is fully configured and we can use its
