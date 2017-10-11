@@ -470,8 +470,9 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->tqueue.args = ns_calloc((size_t)maxconns, sizeof(ConnThreadArg));
 
     /*
-     * The Pools are never freed before exit, so there is apparently no
-     * need to free connBufPtr or threadQueue.args explicitely.
+     * The Pools are never freed before exit, so there is apparently no need
+     * to free connBufPtr, threadQueue.args explicitely, or the connPtr in the
+     * pool.
      */
     {
 	char name[128] = "nsd:";
