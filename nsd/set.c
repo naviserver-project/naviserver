@@ -186,11 +186,11 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
     if (set->size >= set->maxSize) {
         set->maxSize = set->size * 2u;
         set->fields = ns_realloc(set->fields,
-				 sizeof(Ns_SetField) * set->maxSize);
+                                 sizeof(Ns_SetField) * set->maxSize);
     }
     set->fields[index].name = ns_strdup(key);
     set->fields[index].value = ns_strncopy(value, size);
-    
+
     return index;
 }
 
@@ -276,23 +276,23 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
-    
-    if (likely(key != NULL)) {
-	for (i = 0u; i < set->size; i++) {
-	    const char *name = set->fields[i].name;
 
-	    if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
+    if (likely(key != NULL)) {
+        for (i = 0u; i < set->size; i++) {
+            const char *name = set->fields[i].name;
+
+            if (likely(name != NULL) && ((*cmp) (key, name)) == 0) {
                 result = (int)i;
                 break;
-	    }
-	}
+            }
+        }
     } else {
-	for (i = 0u; i < set->size; i++) {
-	    if (unlikely(set->fields[i].name == NULL)) {
+        for (i = 0u; i < set->size; i++) {
+            if (unlikely(set->fields[i].name == NULL)) {
                 result = (int)i;
                 break;
-	    }
-	}
+            }
+        }
     }
 
     return result;
@@ -526,7 +526,7 @@ Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
     value = Ns_SetGet(set, key);
 
     if (value == NULL || *value == '\0') {
-	value = def;
+        value = def;
     }
     return value;
 }
@@ -559,7 +559,7 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
     value = Ns_SetIGet(set, key);
 
     if (value == NULL || *value == '\0') {
-	value = def;
+        value = def;
     }
     return value;
 }
@@ -587,7 +587,7 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
     NS_NONNULL_ASSERT(set != NULL);
 
     if (size < set->size) {
-	size_t index;
+        size_t index;
 
         for (index = size; index < set->size; index++) {
             ns_free(set->fields[index].name);
@@ -621,7 +621,7 @@ Ns_SetDelete(Ns_Set *set, int index)
     NS_NONNULL_ASSERT(set != NULL);
 
     if ((index != -1) && (index < (int)set->size)) {
-	size_t i;
+        size_t i;
 
         ns_free(set->fields[index].name);
         ns_free(set->fields[index].value);
@@ -736,7 +736,7 @@ Ns_Set *
 Ns_SetListFind(Ns_Set *const*sets, const char *name)
 {
     Ns_Set *result = NULL;
-    
+
     NS_NONNULL_ASSERT(sets != NULL);
 
     while (*sets != NULL) {
@@ -747,7 +747,7 @@ Ns_SetListFind(Ns_Set *const*sets, const char *name)
             }
         } else {
             if ((*sets)->name != NULL &&
-		STREQ((*sets)->name, name)) {
+                STREQ((*sets)->name, name)) {
                 result = *sets;
                 break;
             }
@@ -949,7 +949,7 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
     NS_NONNULL_ASSERT(to != NULL);
 
     for (i = 0u; i < from->size; i++) {
-	(void)Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
+        (void)Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
     }
     Ns_SetTrunc(from, 0u);
 }
@@ -985,13 +985,13 @@ Ns_SetRecreate(Ns_Set *set)
     newSet->maxSize = set->maxSize;
     newSet->name = ns_strcopy(set->name);
     newSet->fields = ns_malloc(sizeof(Ns_SetField) * newSet->maxSize);
-    
+
     for (i = 0u; i < set->size; i++) {
-	newSet->fields[i].name  = set->fields[i].name;
+        newSet->fields[i].name  = set->fields[i].name;
         newSet->fields[i].value = set->fields[i].value;
     }
     set->size = 0u;
-    
+
     return newSet;
 }
 
@@ -1002,7 +1002,7 @@ Ns_SetRecreate(Ns_Set *set)
  *
  *	This is a faster version of Ns_SetRecreate() since it tries to reuse
  *	pre-allocated, but truncated Ns_Set structures. It saves potentially
- *	three ns_malloc operatons:
+ *	three ns_malloc operations:
  *        1) the Ns_Set structure
  *        2) the set name (it preserves the old name)
  *        3) the field set
@@ -1028,7 +1028,7 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
 
     if (*toPtr == NULL) {
         /*
-         * Eveything has to e created, essentially the same happens in
+         * Everything has to e created, essentially the same happens in
          * Ns_SetRecreate()
          */
         newSet = ns_malloc(sizeof(Ns_Set));
@@ -1057,7 +1057,7 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
         } else {
             /*
              * We have to grow the old Ns_Set, since it does not fit all the
-             * entries that have to bbe stored.
+             * entries that have to be stored.
              */
             Ns_Log(Notice, "Ns_SetRecreate2: keep the old set, make new fields old %lu/%lu from %lu/%lu",
                    newSet->size, newSet->maxSize, from->size, from->maxSize);
@@ -1069,7 +1069,7 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
     }
 
     for (i = 0u; i < from->size; i++) {
-	newSet->fields[i].name  = from->fields[i].name;
+        newSet->fields[i].name  = from->fields[i].name;
         newSet->fields[i].value = from->fields[i].value;
     }
     from->size = 0u;
