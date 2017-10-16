@@ -475,29 +475,33 @@ CreatePool(NsServer *servPtr, const char *pool)
      * pool.
      */
     {
-	char name[128] = "nsd:";
-	int  j;
-	
+        Tcl_DString ds;
+	int         j;
+
 	if (*pool == '\0') {
 	    pool = "default";
 	}
-	strncat(name + 4, pool, 120u);
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, servPtr->server, -1);
+        Tcl_DStringAppend(&ds, ":", 1);
+        Tcl_DStringAppend(&ds, pool, -1);
 	
 	for (j = 0; j < maxconns; j++) {
-	    char buffer[64];
+	    char suffix[64];
 	    
-	    sprintf(buffer, "connthread:%d", j);
+	    sprintf(suffix, "connthread:%d", j);
 	    Ns_MutexInit(&poolPtr->tqueue.args[j].lock);
-	    Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, name, buffer);
+	    Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, ds.string, suffix);
 	}
 	Ns_MutexInit(&poolPtr->tqueue.lock);
-	Ns_MutexSetName2(&poolPtr->tqueue.lock, name, "tqueue");
+	Ns_MutexSetName2(&poolPtr->tqueue.lock, ds.string, "tqueue");
 	
 	Ns_MutexInit(&poolPtr->wqueue.lock);
-	Ns_MutexSetName2(&poolPtr->wqueue.lock, name, "wqueue");
+	Ns_MutexSetName2(&poolPtr->wqueue.lock, ds.string, "wqueue");
 
 	Ns_MutexInit(&poolPtr->threads.lock);
-	Ns_MutexSetName2(&poolPtr->threads.lock, name, "threads");
+	Ns_MutexSetName2(&poolPtr->threads.lock, ds.string, "threads");
+        Tcl_DStringFree(&ds);
     }
 }
 
