@@ -110,7 +110,7 @@ ns_runonce {
     namespace eval nstrace {
 
         variable tvers 0
-        variable elock [ns_mutex create traceepochmutex]
+        variable elock [ns_mutex create traceepochmutex:[ns_info server]]
 
         # Private variables
         variable resolvers ""     ; # List of resolvers
