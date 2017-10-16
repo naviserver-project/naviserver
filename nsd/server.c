@@ -482,6 +482,7 @@ CreatePool(NsServer *servPtr, const char *pool)
             pool = "default";
         }
         Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, "nsd:", 4);
         Tcl_DStringAppend(&ds, servPtr->server, -1);
         Tcl_DStringAppend(&ds, ":", 1);
         Tcl_DStringAppend(&ds, pool, -1);
