@@ -217,11 +217,13 @@ typedef struct Pool {
     int            maxslaves;/* Max number of allowed proxies */
     int            nfree;    /* Current number of available proxy handles */
     int            nused;    /* Current number of used proxy handles */
-    uintptr_t      nextid;   /* Next in proxy unique ids */
+    uintptr_t      nextid;   /* Next in proxy unique ids; corresponds to nr of slaves */
     ProxyConf      conf;     /* Collection of config options to pass to proxy */
     Ns_Set         *env;     /* Set with environment to pass to proxy */
     Ns_Mutex       lock;     /* Lock around the pool */
     Ns_Cond        cond;     /* Cond for use while allocating handles */
+    Ns_Time        runTime;  /* cumulated run times */
+    uintptr_t      nruns;    /* number of runs in this pool */
 } Pool;
 
 #define MIN_IDLE_TIMEOUT 10000 /* == 10 seconds */
@@ -316,6 +318,8 @@ static Err    Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script) NS_G
 static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Err    Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void   GetStats(Proxy *proxyPtr)  NS_GNUC_NONNULL(1);
 
 static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1011,11 +1015,46 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, int ms)
         if (err == ENone) {
             (void) Recv(interp, proxyPtr, &status);
         }
+        /*
+         * Don't count check-proxy calls (script == NULL)
+         */
+        if (script != NULL) {
+            Ns_Log(Notice,"Eval calls GetStats <%s>", script);
+            GetStats(proxyPtr);
+        }
     }
 
     return status;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetStats --
+ *
+ *      Obtain runtime statistics
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Update the pool's runtime
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+GetStats(Proxy *proxyPtr)
+{
+    Ns_Time now, runTimeSpan;
+
+    NS_NONNULL_ASSERT(proxyPtr != NULL);
+
+    Ns_GetTime(&now);
+    Ns_DiffTime(&now, &proxyPtr->when, &runTimeSpan);
+    Ns_IncrTime(&proxyPtr->poolPtr->runTime, runTimeSpan.sec, runTimeSpan.usec);
+    proxyPtr->poolPtr->nruns++;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1050,7 +1089,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
         proxyPtr->numruns++;
         if (proxyPtr->conf.maxruns > 0
             && proxyPtr->numruns > proxyPtr->conf.maxruns) {
-            Ns_Log(Ns_LogNsProxyDebug, "proxy maxrun reached pool %s slave %ld",
+            Ns_Log(Notice, "proxy maxrun reached pool %s slave %ld",
                    proxyPtr->poolPtr->name, (long)proxyPtr->slavePtr->pid);
             CloseProxy(proxyPtr);
             err = CreateSlave(interp, proxyPtr);
@@ -1618,12 +1657,12 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     static const char *opts[] = {
         "get", "put", "release", "eval", "cleanup", "configure",
         "ping", "free", "active", "handles", "clear", "stop",
-        "send", "wait", "recv", "pools", NULL
+        "send", "wait", "recv", "pools", "stats", NULL
     };
     enum {
         PGetIdx, PPutIdx, PReleaseIdx, PEvalIdx, PCleanupIdx, PConfigureIdx,
         PPingIdx, PFreeIdx, PActiveIdx, PHandlesIdx, PClearIdx, PStopIdx,
-        PSendIdx, PWaitIdx, PRecvIdx, PPoolsIdx
+        PSendIdx, PWaitIdx, PRecvIdx, PPoolsIdx, PStatsIdx
     };
 
     if (objc < 2) {
@@ -1725,6 +1764,9 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             } else {
                 err = Recv(interp, proxyPtr, &result);
                 result = (err == ENone) ? result : TCL_ERROR;
+                Ns_Log(Notice,"Receive calls GetStats");
+
+                GetStats(proxyPtr);
             }
         }
         break;
@@ -1867,6 +1909,58 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         }
         Ns_MutexUnlock(&plock);
         Tcl_SetObjResult(interp, listObj);
+        break;
+
+    case PStatsIdx:
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "pool");
+            result = TCL_ERROR;
+        } else {
+            Tcl_DString ds, *dsPtr = &ds;
+            char        buf[100];
+
+            Tcl_DStringInit(dsPtr);
+
+            poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+            Ns_MutexLock(&plock);
+            Ns_MutexLock(&poolPtr->lock);
+
+            Tcl_DStringAppendElement(dsPtr, "proxies");
+            snprintf(buf, sizeof(buf), "%lu", poolPtr->nextid);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Tcl_DStringAppendElement(dsPtr, "waiting");
+            snprintf(buf, sizeof(buf), "%d", poolPtr->waiting);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Tcl_DStringAppendElement(dsPtr, "maxslaves");
+            snprintf(buf, sizeof(buf), "%d", poolPtr->maxslaves);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Tcl_DStringAppendElement(dsPtr, "free");
+            snprintf(buf, sizeof(buf), "%d", poolPtr->nfree);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Tcl_DStringAppendElement(dsPtr, "used");
+            snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Tcl_DStringAppendElement(dsPtr, "used");
+            snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Tcl_DStringAppendElement(dsPtr, "requests");
+            snprintf(buf, sizeof(buf), "%lu", poolPtr->nruns);
+            Tcl_DStringAppendElement(dsPtr, buf);
+
+            Ns_DStringAppend(dsPtr, " runtime ");
+            Ns_DStringAppendTime(dsPtr, &poolPtr->runTime);
+
+            Ns_MutexUnlock(&poolPtr->lock);
+            Ns_MutexUnlock(&plock);
+
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
     }
 
@@ -2336,7 +2430,7 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
     }
 
     Ns_MutexLock(&poolPtr->lock);
-    while (status == NS_OK && poolPtr->waiting) {
+    while (status == NS_OK && poolPtr->waiting > 0) {
         if (ms > 0) {
             status = Ns_CondTimedWait(&poolPtr->cond, &poolPtr->lock, &tout);
         } else {
@@ -2412,7 +2506,7 @@ FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     Tcl_DStringGetResult(interp, &ds);
 
     Tcl_DStringStartSublist(&ds);
-    Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRIu64 ":%ld script",
+    Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRIu64 ".%06ld script",
                      proxyPtr->id,
                      (long) ((proxyPtr->slavePtr != NULL) ? proxyPtr->slavePtr->pid : 0),
                      (int64_t) proxyPtr->when.sec, proxyPtr->when.usec);
