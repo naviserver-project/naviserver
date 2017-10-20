@@ -53,7 +53,7 @@
 
 ssize_t writev(int fildes, const struct iovec *iov, int iovcnt);
 
-/* 
+/*
  * Minimal writev() and readv() emulation for windows. Must be probably
  * extended to be useful.
  */
@@ -61,13 +61,13 @@ ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
 {
     ssize_t result = 0;
     int i;
-    
+
     for (i = 0; i < iovcnt; i++) {
         ssize_t written = ns_write(fildes, iov[i].iov_base, iov[i].iov_len);
-        
+
         if (written != iov[i].iov_len) {
             /*
-             * Give up, since we did not receive the expected data. 
+             * Give up, since we did not receive the expected data.
              * Maybe overly cautious and we have to handle partial
              * writes.
              */
@@ -85,10 +85,10 @@ ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
 {
     ssize_t result = 0;
     int i;
-    
+
     for (i = 0; i < iovcnt; i++) {
         ssize_t read = ns_read(fildes, iov[i].iov_base, iov[i].iov_len);
-        
+
         if (read < 0) {
             result = -1;
             break;
@@ -586,7 +586,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     while (RecvBuf(&proc, -1, &in) == NS_TRUE) {
         Req *reqPtr;
-	uint32_t len;
+        uint32_t len;
 
         if (Tcl_DStringLength(&in) < (int)sizeof(Req)) {
             break;
@@ -1095,7 +1095,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             err = CreateSlave(interp, proxyPtr);
         }
         if (err == ENone) {
-	    size_t len = script == NULL ? 0u : strlen(script);
+            size_t len = script == NULL ? 0u : strlen(script);
 
             req.len   = htonl((uint32_t)len);
             req.major = htons(MAJOR_VERSION);
@@ -2017,7 +2017,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* o
         }
     } else if (objc > 4) {
         int   i;
-	const char *str;
+        const char *str;
 
         for (i = 3; i < (objc - 1); ++i) {
             if (Tcl_GetIndexFromObj(interp, objv[i], flags, "flags", 0,
@@ -2455,7 +2455,7 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
         } else if (poolPtr->maxslaves == 0 || poolPtr->maxslaves < nwant) {
             err = ERange;
         } else {
-  	    int i;
+            int i;
 
             poolPtr->nfree -= nwant;
             poolPtr->nused += nwant;
@@ -2556,7 +2556,7 @@ GetPool(const char *poolName, InterpData *idataPtr)
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
         if (idataPtr && idataPtr->server && idataPtr->module) {
-	  path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0);
+          path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0);
         }
         if (path != NULL && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
             SetOpt(exec, &poolPtr->exec);
@@ -2951,7 +2951,7 @@ ReaperThread(void *UNUSED(arg))
 
     while (1) {
         Tcl_HashEntry *hPtr;
-	Slave          *prevSlavePtr;
+        Slave          *prevSlavePtr;
 
         Ns_GetTime(&now);
 
@@ -3077,11 +3077,11 @@ ReaperThread(void *UNUSED(arg))
                 case SIGKILL: slavePtr->signal = -1;      break;
                 }
             }
-                            
+
             if (slavePtr->signal == -1
                 || slavePtr->rfd == NS_INVALID_FD
                 || WaitFd(slavePtr->rfd, POLLIN, 0)) {
-                
+
                 /*
                  * We either have timeouted eval (rfd==NS_INVALID_FD), a
                  * zombie or the process has exited ok so splice it out the
@@ -3089,7 +3089,7 @@ ReaperThread(void *UNUSED(arg))
                  */
                 if (slavePtr->signal >= 0) {
                     int waitStatus = 0;
-                    
+
                     /*
                      * Pass waitStatus ptr to Ns_WaitForProcessStatus() to
                      * indicate that we want to handle the signal here and to
@@ -3362,7 +3362,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     if (proxyPtr->state == Idle) {
         Tcl_DString ds;
         int         reinit;
-        
+
         Tcl_DStringInit(&ds);
         Ns_MutexLock(&proxyPtr->poolPtr->lock);
         reinit = proxyPtr->poolPtr->reinit != NULL;
