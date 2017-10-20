@@ -131,7 +131,7 @@ ns_param        stripwww            true
 ns_section     "ns/server/default/adp"
 ns_param        map                 "/*.adp"
 ns_param        enableexpire        false    ;# default: false; set "Expires: now" on all ADP's 
-#ns_param        enabledebug         true     ;# default: false
+#ns_param        enabledebug         true    ;# default: false
 ns_param        singlescript        false    ;# default: false; collapse Tcl blocks to a single Tcl script
 ns_param        cache               false    ;# default: false; enable ADP caching
 ns_param        cachesize           [expr 5000*1024]
@@ -143,7 +143,8 @@ ns_param        library             modules/tcl
 ns_section     "ns/server/default/module/nscgi"
 ns_param        map                 "GET  /cgi-bin $home/cgi-bin"
 ns_param        map                 "POST /cgi-bin $home/cgi-bin"
-ns_param        interps             CGIinterps
+ns_param        interps              CGIinterps
+#ns_param        allowstaticresources true    ;# default false; allow to serve static resources from cgi directories
 
 ns_section "ns/interps/CGIinterps"
 ns_param	.pl		    "/opt/local/bin/perl"

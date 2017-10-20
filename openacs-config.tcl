@@ -449,6 +449,7 @@ ns_section ns/server/${server}/module/nslog
 #       ns_param	map	"GET  /cgi-bin ${serverroot}/cgi-bin"
 #       ns_param	map	"POST /cgi-bin ${serverroot}/cgi-bin" 
 #       ns_param	Interps CGIinterps
+#       ns_param        allowstaticresources true    ;# default: false
 
 #ns_section "ns/interps/CGIinterps" 
 #       ns_param .pl "/usr/bin/perl"

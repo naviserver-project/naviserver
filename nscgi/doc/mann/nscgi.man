@@ -48,9 +48,9 @@ be available to them.
 
 With NaviServer, you have the option of using the embedded Tcl and C
 interfaces instead of CGI. Typically, the Tcl and C interfaces provide
-better performance than CGI. (See the NaviServer Tcl Developer's Guide
+better performance than CGI (see the NaviServer Tcl Developer's Guide
 for information on the Tcl interface and the NaviServer C Developer's
-Guide for information on the C interface.)
+Guide for information on the C interface).
 
 
 [para]
@@ -227,13 +227,13 @@ If you want to call a CGI program (script) which requires an interpreter (e.g.,
     [list_begin itemized]
 
     [item] Add a definition for the [const Interps] parameter to your CGI
-        configuration section using e.g. the name [const cgi]. 
+        configuration section using e.g. the name [const CGIinterps].
 
 [example_begin]
    ns_section "ns/server/Server1/module/nscgi"
       ns_param Map    "GET /cgi /usr/local/cgi"
       ns_param Map    "POST /*.cgi"
-      ns_param Interps cgi
+      ns_param Interps CGIinterps
 [example_end]
 
 
@@ -241,14 +241,23 @@ If you want to call a CGI program (script) which requires an interpreter (e.g.,
         name (here [const cgi]) and add there the mappings
 	from file extensions to the
 	script interpreters. When a CGI script with a specified extension
-	is to be executed, NaviServer will call it via the named executables.
+	is to be executed (below .pl and .sh), NaviServer will call
+	the script via the named executables.
 
 [example_begin]
-   ns_section "ns/interps/cgi"
+   ns_section "ns/interps/CGIinterps"
       ns_param .pl  "c:\perl\bin\perl.exe"
       ns_param .sh  "c:\mks\mksnt\sh.exe(MKSenv)"
 [example_end]
 
+       If no mapping of extensions to script interpreters is provided,
+       the called script must have executable permissions.
+
+       [para] Files in the cgi directory without execute
+       permissions are served as plain files when the parameter
+       [const allowstaticresources] is set to true. This way
+       images and such in can be served directly from
+       a cgi bin directory.
 
 
 [list_end]
@@ -316,6 +325,11 @@ Mostly useful to limit the size of POST'ed data. Default: [const 1024000]
       sensitive information from the parent's environment if the CGI
       displays its environment variables which is the behavior of some
       common error-handling code. Default: [const false]
+
+[item] [const allowstaticresources] is a boolean parameter to controls
+      whether static resources (e.g. images) can be served directly
+      from the CGI bin directory.
+      Default: [const false]
 
 [list_end]
 [list_end]

@@ -32,19 +32,19 @@
 #include <ctype.h>
 #include <stdlib.h>	/* environ */
 
-#define BUFSIZE	    4096
-#define NDSTRINGS   5
+#define BUFSIZE	         4096
+#define NDSTRINGS        5
 
-#define CGI_NPH	    	0x01u
-#define CGI_GETHOST	0x02u
-#define CGI_ECONTENT	0x04u
-#define CGI_SYSENV	0x08u
+#define CGI_NPH	    	 0x01u
+#define CGI_GETHOST	 0x02u
+#define CGI_ECONTENT	 0x04u
+#define CGI_SYSENV	 0x08u
+#define CGI_ALLOW_STATIC 0x10u
 
 /*
  * The following structure is allocated for each instance the module is
  * loaded (normally just once).
  */
-
 typedef struct Mod {
     const char	   *server;
     const char	   *module;
@@ -228,6 +228,9 @@ Ns_ModuleInit(const char *server, const char *module)
     if (Ns_ConfigBool(path, "systemenvironment", NS_FALSE)) {
         modPtr->flags |= CGI_SYSENV;
     }
+    if (Ns_ConfigBool(path, "allowstaticresources", NS_FALSE)) {
+        modPtr->flags |= CGI_ALLOW_STATIC;
+    }
 
     /*
      * Register all requested mappings.
@@ -255,7 +258,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *	Process a CGI request.
  *
  * Results:
- *	Standard AOLserver request result.
+ *	Standard NaviServer request result.
  *
  * Side effects:
  *	Program may be executed.
@@ -281,18 +284,21 @@ CgiRequest(const void *arg, Ns_Conn *conn)
     if (modPtr->maxInput > 0 && (int)conn->contentLength > modPtr->maxInput) {
         return Ns_ConnReturnBadRequest(conn, "Exceeded maximum CGI input size");
     }
+
     if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {
 	return Ns_ConnReturnNotFound(conn);
-    } else if (cgi.interp == NULL && access(cgi.exec, X_OK) != 0) {
-        if (STREQ(conn->request.method, "GET") ||
-	    STREQ(conn->request.method, "HEAD")) {
+    } else if ((cgi.interp == NULL)
+               && (access(cgi.exec, X_OK) != 0)) {
+
+        if (((modPtr->flags & CGI_ALLOW_STATIC) != 0u) &&
+            ( STREQ(conn->request.method, "GET") ||
+              STREQ(conn->request.method, "HEAD")) ) {
 
 	    /*
 	     * Evidently people are storing images and such in
 	     * their cgi bin directory and they expect us to
 	     * return these files directly.
 	     */
-
             status = Ns_ConnReturnFile(conn, 200, NULL, cgi.exec);
         } else {
 	    status = Ns_ConnReturnNotFound(conn);
@@ -445,12 +451,12 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
              * Path mapping is a directory:
              *
              * 1. The script file is the first path element in the URL past
-             * the mapping prefix.
+             *    the mapping prefix.
 	     * 2. SCRIPT_NAME is the URL up to and including the
-	     * script file.
+	     *    script file.
 	     * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
 	     * 4. The script pathname is the script prefix plus the
-	     * script file.
+	     *    script file.
              */
 
             if (plen == ulen) {
@@ -556,7 +562,6 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     }
 
     Ns_Log(Ns_LogCGIDebug, "nscgi: interp '%s' exec '%s'", cgiPtr->interp, cgiPtr->exec);
-
     return NS_OK;
 
 err:
@@ -839,7 +844,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     s = Ns_ConnLocationAppend(conn, dsPtr);
     s = strchr(s, INTCHAR(':'));
-    s += 3;                        /* Get past the protocol://  */
+    s += 3;                        /* Get past the protocol "://"  */
     Ns_HttpParseHost(s, NULL, &p); /* Get to the port number    */
 
     if (p != NULL) {
@@ -1090,7 +1095,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
  *	Read and parse headers and then copy output.
  *
  * Results:
- *	AOLserver request result.
+ *	NaviServer request result.
  *
  * Side effects:
  *	None.

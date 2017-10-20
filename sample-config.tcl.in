@@ -506,6 +506,21 @@ ns_section 	"ns/server/${servername}/module/nscgi"
    # CGI script file dir (POST).
    ns_param   	map 			"POST /cgi-bin /usr/local/cgi"
 
+   # Allow to serve static resources from cgi directories
+   #ns_param        allowstaticresources true    ;# default false;
+
+   # Definition of script file interpreters
+   ns_param     interps              CGIinterps
+
+#
+# Define which Perl should be used for files with the ".pl" extension
+# in the cgi-bin directory. Same for shell scripts with extension
+# ".sh".
+#
+ns_section "ns/interps/CGIinterps"
+   ns_param	.pl		    "/opt/local/bin/perl"
+   ns_param	.sh		    "/bin/bash"
+
 
 ########################################################################
 # Example: Control port configuration.
