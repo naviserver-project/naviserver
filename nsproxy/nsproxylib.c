@@ -1945,10 +1945,6 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
             Tcl_DStringAppendElement(dsPtr, buf);
 
-            Tcl_DStringAppendElement(dsPtr, "used");
-            snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
             Tcl_DStringAppendElement(dsPtr, "requests");
             snprintf(buf, sizeof(buf), "%lu", poolPtr->nruns);
             Tcl_DStringAppendElement(dsPtr, buf);
