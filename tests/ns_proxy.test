@@ -11,7 +11,7 @@ test ns_proxy-1.1 {basic syntax} -body {
 
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
-} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, free, active, handles, clear, stop, send, wait, recv, or pools}
+} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, free, active, handles, clear, stop, send, wait, recv, pools, or stats}
 
 test ns_proxy-2.1 {configuration syntax} -body {
     ns_proxy config
