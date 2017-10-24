@@ -561,12 +561,14 @@ void NsDriverMapVirtualServers(void)
          * used. Skip these.
          */
         (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+        Ns_Log(Notice, "create hash entry for moduleName <%s> -> isnew %d", drvPtr->moduleName, isNew);
         if (isNew == 0) {
             continue;
         }
 
         moduleName = drvPtr->moduleName;
         defserver  = drvPtr->defserver;
+
         path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
         lset = Ns_ConfigGetSection(path);
 
@@ -576,6 +578,22 @@ void NsDriverMapVirtualServers(void)
              * section, there are no virtual servers for this driver defined.
              */
             continue;
+        }
+
+        if (defserver == NULL) {
+            /*
+             * The local (server-specific) driver definition has no default
+             * server. Therefore try the global driver definition.
+             */
+            const char *modulePath = Ns_ConfigGetPath(NULL, moduleName, (char *)0);
+
+            defserver = Ns_ConfigGetValue(modulePath, "defaultserver");
+            if (defserver != NULL) {
+                /*
+                 * Keep the global definition in the server settings.
+                 */
+                drvPtr->defserver = defserver;
+            }
         }
 
         if (defserver == NULL) {
@@ -2736,7 +2754,12 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     assert(drvPtr != NULL);
 
     SockError(sockPtr, reason, err);
-    SockClose(sockPtr, (int)NS_FALSE);
+
+    if (sockPtr->sock != NS_INVALID_SOCKET && reason == SOCK_CLOSE) {
+        SockClose(sockPtr, (int)NS_FALSE);
+    } else {
+        Ns_Log(Notice, "SockRelease bypasses SockClose, since we have an invalid socket");
+    }
     NsSlsCleanup(sockPtr);
 
     drvPtr->queuesize--;
