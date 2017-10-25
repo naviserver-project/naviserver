@@ -2755,7 +2755,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
 
     SockError(sockPtr, reason, err);
 
-    if (sockPtr->sock != NS_INVALID_SOCKET && reason == SOCK_CLOSE) {
+    if (sockPtr->sock != NS_INVALID_SOCKET) {
         SockClose(sockPtr, (int)NS_FALSE);
     } else {
         Ns_Log(Notice, "SockRelease bypasses SockClose, since we have an invalid socket");
