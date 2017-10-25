@@ -4975,7 +4975,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
                 wrSockPtr1 = WriterSockRequire(connPtr);
                 if (wrSockPtr1 == NULL) {
                     Ns_Log(Notice,
-                           "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
+                           "NsWriterQueue: writer job was already canceled (fd %d); maybe user dropped connection",
+                           connPtr->fd);
                     status = NS_ERROR;
 
                 } else {
@@ -5469,7 +5470,11 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
 
-            (void) ns_close(fd);
+            if (fd != NS_INVALID_FD) {
+                (void) ns_close(fd);
+            } else {
+                Ns_Log(Warning, "WriterSubmitFileObjCmd called with invalid fd");
+            }
 
         } else if (fd != NS_INVALID_FD) {
             (void) ns_close(fd);
