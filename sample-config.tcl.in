@@ -49,8 +49,13 @@
 set 	homedir			@NAVISERVER@
 
 # Log directories (access log, error log, pidfile)
-#set	logdir 			${homedir}/log
-set	logdir 			${homedir}/../var/log/ns
+set	logdir 			${homedir}/logs
+
+# You might prefer to keep the log-files in /var/log, so you could use
+# a line like the following to place the log-files into a directory
+# named /var/log/ns.  But don't forget to create the directory first.
+
+#set	logdir 			${homedir}/../var/log/ns
 
 # Name/description of the virtual server
 set	servername		"server1"
@@ -587,7 +592,7 @@ ns_section 	"ns/module/nssock"
    ns_param   	defaultserver   	$servername
 
 ns_section 	"ns/module/nssock/servers"
-   ns_param   	$servername         	$hostname:$port
+   ns_param   	$servername         	$hostname
 
 
 ########################################################################
