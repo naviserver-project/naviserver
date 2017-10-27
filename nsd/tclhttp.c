@@ -549,54 +549,90 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 /*
  *----------------------------------------------------------------------
  *
- * HttpParseReplyHeader --
+ * Ns_HttpMessageParse --
  *
- *	Parse header fields of a response into NsSet replyHeaders and
- *      update the status.
+ *	Parse a HTTP message with its headers. The header fields are parsed
+ *      into an Ns_Set (replyHeaders), the other information (major, minor
+ *      version numbers, HTTP status, payload) is returned via output args.
  *
  * Results:
- *	none
+ *	Ns_ReturnCode
  *
  * Side effects:
  *	none.
  *
  *----------------------------------------------------------------------
  */
-static void
-HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-
-static void
-HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
+Ns_ReturnCode
+Ns_HttpMessageParse(char *message, size_t size,
+                    Ns_Set *hdrPtr, int *majorPtr, int *minorPtr, int *statusPtr, char **payloadPtr)
 {
-    char *p, *eol;
-    int firsthdr = 1, major, minor;
+    Ns_ReturnCode status = TCL_OK;
+    int           items, major, minor;
 
     NS_NONNULL_ASSERT(hdrPtr != NULL);
-    NS_NONNULL_ASSERT(response != NULL);
+    NS_NONNULL_ASSERT(message != NULL);
     NS_NONNULL_ASSERT(statusPtr != NULL);
 
-    sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
-    p = response;
-    while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
-        size_t len;
-
-        *eol++ = '\0';
-        len = strlen(p);
-        if (len > 0u && p[len - 1u] == '\r') {
-            p[len - 1u] = '\0';
-        }
-        if (firsthdr != 0) {
-            if (hdrPtr->name != NULL) {
-                ns_free((char *)hdrPtr->name);
-            }
-            hdrPtr->name = ns_strdup(p);
-            firsthdr = 0;
-        } else if (Ns_ParseHeader(hdrPtr, p, ToLower) != NS_OK) {
-            break;
-        }
-        p = eol;
+    if (majorPtr == NULL) {
+        majorPtr = &major;
     }
+    if (minorPtr == NULL) {
+        minorPtr = &minor;
+    }
+    /*
+     * If provided, set *payloadPtr always to a sensible value.
+     */
+    if (payloadPtr != NULL) {
+        *payloadPtr = NULL;
+    }
+
+    items = sscanf(message, "HTTP/%2d.%2d %3d", majorPtr, minorPtr, statusPtr);
+    if (items == 3) {
+        char   *p, *eol;
+        int     firsthdr = 1;
+        size_t  parsed;
+
+        parsed = 0u;
+
+        p = message;
+        while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
+            size_t len;
+
+            *eol++ = '\0';
+            len = (size_t)((eol-p)-1);
+
+            if (len > 0u && p[len - 1u] == '\r') {
+                p[len - 1u] = '\0';
+            }
+            if (firsthdr != 0) {
+                if (hdrPtr->name != NULL) {
+                    ns_free((char *)hdrPtr->name);
+                }
+                hdrPtr->name = ns_strdup(p);
+                firsthdr = 0;
+            } else if (len < 2 || Ns_ParseHeader(hdrPtr, p, ToLower) != NS_OK) {
+                //Ns_Log(Notice, "Ns_ParseHeader of <%s> fails len %lu", p, len);
+                break;
+            }
+            p = eol;
+        }
+        parsed = (size_t)(p - message);
+        // Ns_Log(Notice, "Ns_ParseHeader final p <%s> len %lu parsed %lu", p, size, parsed);
+
+        if (payloadPtr != NULL && (size - parsed) >= 2u) {
+            p += 2;
+            Ns_Log(Notice, "Ns_ParseHeader returns payload <%s>", p);
+            if (payloadPtr != NULL) {
+                *payloadPtr = p;
+            }
+        }
+
+    } else {
+        status = TCL_ERROR;
+    }
+
+    return NS_OK;
 }
 
 
@@ -726,8 +762,14 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
             Tcl_WideInt length;
 
             assert(httpPtr->replyHeaders != NULL);
-            HttpParseHeaders(httpPtr->ds.string, httpPtr->replyHeaders, &httpPtr->status);
-            if (httpPtr->status == 0) {
+
+            if ((Ns_HttpMessageParse(httpPtr->ds.string, (size_t)httpPtr->ds.length,
+                                     httpPtr->replyHeaders,
+                                     NULL, NULL,
+                                     &httpPtr->status,
+                                     NULL) != NS_OK)
+                || (httpPtr->status == 0)
+                ) {
                 Ns_Log(Warning, "ns_http: Parsing reply header failed");
             }
             ProcessReplyHeaderFields(httpPtr);
