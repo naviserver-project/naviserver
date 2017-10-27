@@ -2758,7 +2758,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     if (sockPtr->sock != NS_INVALID_SOCKET) {
         SockClose(sockPtr, (int)NS_FALSE);
     } else {
-        Ns_Log(Notice, "SockRelease bypasses SockClose, since we have an invalid socket");
+        Ns_Log(DriverDebug, "SockRelease bypasses SockClose, since we have an invalid socket");
     }
     NsSlsCleanup(sockPtr);
 
@@ -3448,7 +3448,7 @@ EndOfHeader(Sock *sockPtr)
              * Handle too large input requests
              */
             if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
-                Ns_Log(Notice, "SockParse: request too large, length=%"
+                Ns_Log(Warning, "SockParse: request too large, length=%"
                        PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
                        reqPtr->length, sockPtr->drvPtr->maxinput);
                 /*
