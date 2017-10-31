@@ -1244,13 +1244,13 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
             n = fds[i].fd;
         }
 #endif
-        if ((fds[i].events & POLLIN)) {
+        if ((fds[i].events & POLLIN) == POLLIN) {
             FD_SET(fds[i].fd, &ifds);
         }
-        if ((fds[i].events & POLLOUT)) {
+        if ((fds[i].events & POLLOUT) == POLLOUT) {
             FD_SET(fds[i].fd, &ofds);
         }
-        if ((fds[i].events & POLLPRI)) {
+        if ((fds[i].events & POLLPRI) == POLLPRI) {
             FD_SET(fds[i].fd, &efds);
         }
     }
