@@ -43,7 +43,7 @@ ns_param        serverlog           error.log
 ns_param        pidfile             nsd.pid
 #ns_param       logdebug            true               ;# default: false
 #ns_param       logroll             false              ;# default: true
-#ns_param	logrollfmt	    %Y-%m-%d           ;# format appendend to log file name
+#ns_param	logrollfmt	    %Y-%m-%d           ;# format appended to log file name
 #ns_param       dbcloseonexit       off                ;# default: off; from nsdb
 ns_param        jobsperthread       1000               ;# default: 0
 ns_param        jobtimeout          0                  ;# default: 300
@@ -51,7 +51,7 @@ ns_param        schedsperthread     10                 ;# default: 0
 ns_param        progressminsize     [expr 1024*1024*1] ;# default: 0
 #ns_param       concurrentinterpcreate true            ;# default: false
 #ns_param       listenbacklog        256               ;# default: 32; backlog for ns_socket commands
-#ns_param       mutexlocktrace       true              ;# default false; print duractions of long mutex calls to stderr
+#ns_param       mutexlocktrace       true              ;# default false; print durations of long mutex calls to stderr
 
 # configure SMTP module
 ns_param        smtphost            "localhost"
@@ -99,10 +99,10 @@ ns_param        checkmodifiedsince  false ;# default: true, check modified-since
 ns_param        connsperthread      1000  ;# default: 0; number of connections (requests) handled per thread
 ns_param        minthreads          5     ;# default: 1; minimal number of connection threads
 ns_param        maxthreads          100   ;# default: 10; maximal number of connection threads
-ns_param        maxconnections      100   ;# default: 100; number of allocated connection stuctures
-ns_param        threadtimeout       120   ;# default: 120; timeout for idle theads
-#ns_param concurrentcreatethreshold 100   ;# default: 80; allow concrruent creates when queue is fully beyond this percentage
-                                          ;# 100 is a concervative value, disabling concurrent creates
+ns_param        maxconnections      100   ;# default: 100; number of allocated connection structures
+ns_param        threadtimeout       120   ;# default: 120; timeout for idle threads
+#ns_param concurrentcreatethreshold 100   ;# default: 80; allow concurrent creates when queue is fully beyond this percentage
+                                          ;# 100 is a conservative value, disabling concurrent creates
 
 ns_section     "ns/server/default/db"
 ns_param        pools               *
@@ -156,7 +156,7 @@ ns_param        rolllog             true     ;# default: true; should server log
 ns_param        rollonsignal        false    ;# default: false; perform roll on a sighup
 ns_param        rollhour            0        ;# default: 0; specify at which hour to roll
 ns_param        maxbackup           7        ;# default: 10; max number of backup log files
-#ns_param       rollfmt		    %Y-%m-%d-%H:%M	;# format appendend to log file name
+#ns_param       rollfmt		    %Y-%m-%d-%H:%M	;# format appended to log file name
 #ns_param       logpartialtimes     true     ;# default: false
 #ns_param	logreqtime	    true     ;# default: false; include time to service the request
 
