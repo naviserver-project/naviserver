@@ -599,7 +599,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
         ePtr->uncommittedValue = value;
         ePtr->transactionEpoch = transactionEpoch;
 
-        (void) Tcl_CreateHashEntry(&cachePtr->uncommittedTable, ePtr, &isNew);
+        (void) Tcl_CreateHashEntry(&cachePtr->uncommittedTable, (const char *)ePtr, &isNew);
         if (unlikely(isNew == 0)) {
             Ns_Log(Warning, "cache %s: adding entry %p with value '%s' multiple times to pending table",
                    ePtr->cachePtr->name, (void *)ePtr, (char *)value);
@@ -748,7 +748,7 @@ Ns_CacheDeleteEntry(Ns_Entry *entry)
     Delink(ePtr);
     Tcl_DeleteHashEntry(ePtr->hPtr);
 
-    hPtr = Tcl_FindHashEntry(&ePtr->cachePtr->uncommittedTable, ePtr);
+    hPtr = Tcl_FindHashEntry(&ePtr->cachePtr->uncommittedTable, (const char *)ePtr);
     if (unlikely(hPtr != NULL)) {
         Tcl_DeleteHashEntry(hPtr);
     }
@@ -936,7 +936,7 @@ CacheTransaction(Cache *cachePtr, uintptr_t epoch, bool commit)
 
     hPtr = Tcl_FirstHashEntry(&cachePtr->uncommittedTable, &search.hsearch);
     while (hPtr != NULL) {
-        Ns_Entry  *entry = Tcl_GetHashKey(&cachePtr->uncommittedTable, hPtr);
+        Ns_Entry  *entry = (Ns_Entry *)Tcl_GetHashKey(&cachePtr->uncommittedTable, hPtr);
         Entry     *e = (Entry *) entry;
 
         if (e->value == NULL && e->transactionEpoch == epoch) {
