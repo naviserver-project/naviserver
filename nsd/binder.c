@@ -380,7 +380,7 @@ Ns_SockListenUdp(const char *address, unsigned short port, bool reuseport)
     struct sockaddr *saPtr = (struct sockaddr *)&sa;
 
     if (Ns_GetSockAddr(saPtr, address, port) == NS_OK) {
-        bool           found;
+        bool found;
 
 #ifndef _WIN32
         found = PrebindGet("udp", saPtr, &sock);
