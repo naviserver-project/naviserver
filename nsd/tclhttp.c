@@ -567,7 +567,7 @@ Ns_ReturnCode
 Ns_HttpMessageParse(char *message, size_t size,
                     Ns_Set *hdrPtr, int *majorPtr, int *minorPtr, int *statusPtr, char **payloadPtr)
 {
-    Ns_ReturnCode status = TCL_OK;
+    Ns_ReturnCode status = NS_OK;
     int           items, major, minor;
 
     NS_NONNULL_ASSERT(hdrPtr != NULL);
@@ -588,7 +588,9 @@ Ns_HttpMessageParse(char *message, size_t size,
     }
 
     items = sscanf(message, "HTTP/%2d.%2d %3d", majorPtr, minorPtr, statusPtr);
-    if (items == 3) {
+    if (items != 3) {
+        status = NS_ERROR;
+    } else {
         char   *p, *eol;
         int     firsthdr = 1;
         size_t  parsed;
@@ -627,12 +629,9 @@ Ns_HttpMessageParse(char *message, size_t size,
                 *payloadPtr = p;
             }
         }
-
-    } else {
-        status = TCL_ERROR;
     }
 
-    return NS_OK;
+    return status;
 }
 
 
