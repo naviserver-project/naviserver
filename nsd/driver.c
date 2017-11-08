@@ -434,7 +434,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Ns_SetUpdate(set, "hostname", host);
         }
 
-        nrDrivers = Ns_ConfigIntRange(path, "driverthreads", 1, 1, 32);
+        nrDrivers = Ns_ConfigIntRange(path, "driverthreads", 1, 1, 64);
         if (nrDrivers > 1) {
 #if !defined(SO_REUSEPORT)
             Ns_Log(Warning,
@@ -2203,11 +2203,14 @@ DriverThread(void *arg)
 
                 /*
                  * Purely packet oriented drivers set on close the fd to
-                 * NS_INVALID_SOCKET. Since we cannot "shutdown" an udp-socket
+                 * NS_INVALID_SOCKET. Since we cannot "shutdown" an UDP-socket
                  * for writing, we bypass this call.
                  */
                 if (sockPtr->sock == NS_INVALID_SOCKET) {
                     SockRelease(sockPtr, SOCK_CLOSE, errno);
+
+                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d sockPtr->drvPtr->closewait %ld",
+                           errno, sockPtr->drvPtr->closewait);
 
                 } else if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
