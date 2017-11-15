@@ -634,7 +634,7 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
 test http-7.1a {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
 	set contentType [ns_set iget [ns_conn headers] content-type]
-	ns_log notice "post receives content-type '$contentType'"
+	#ns_log notice "post receives content-type '$contentType'"
         ns_return 200 $contentType "<$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
@@ -660,7 +660,7 @@ test http-7.1b {ns_http with body and text datatype with encoding, no bytearray}
 	# The following command has the sole purpose to conververt
 	# content to a different obj type than bytearray
 	if { $content ne "" } {set x 1}
-	ns_log notice "post receives content-type '$contentType'"
+	#ns_log notice "post receives content-type '$contentType'"
         ns_return 200 $contentType "<$contentType> AÄA${content}ZÜZ"
     }
 } -body {
@@ -744,6 +744,51 @@ test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     ns_unregister_op PUT /put
     unset -nocomplain r
 } -result {200 {utf-8 <text/plain> <123>}}
+
+
+test http-8.1 {ns_return with UTF-8 3 byte char} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	set v "☃"
+	ns_return 200 "text/plain" $v
+    }
+} -body {
+    nstest::http -getbody 1 -getheaders {Content-Length} GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r
+} -result {200 3 ☃}
+
+test http-8.2 {ns_return with UTF-8 3 byte char with fresh bytearray} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	set v "☃"
+	set v [encoding convertfrom utf-8 [binary decode base64 [binary encode base64 [encoding convertto utf-8 $v]]]]
+	ns_return 200 "text/plain" $v
+    }
+} -body {
+    nstest::http -getbody 1 -getheaders {Content-Length} GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r
+} -result {200 3 ☃}
+
+test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	set v "☃"
+	set fn [ns_mktemp]
+	set F [open /tmp/sun w]
+	fconfigure $F -translation binary
+	puts -nonewline $F $v
+	close $F
+	file delete $fn
+	ns_return 200 "text/plain" $v
+    }
+} -body {
+    nstest::http -getbody 1 -getheaders {Content-Length} GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r
+} -result {200 3 ☃}
+
 
 
 test http-9.0 {GET for static compressed file via fastpath} -constraints {serverListen} -body {

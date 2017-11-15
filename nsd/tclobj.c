@@ -87,13 +87,22 @@ NsTclInitAddrType(void)
      * Get the "tclByteArrayType" via name "bytearray".
      */
     byteArrayTypePtr = Tcl_GetObjType("bytearray");
-    newByteObj = Tcl_NewByteArrayObj(NULL,0);
+    newByteObj = Tcl_NewByteArrayObj(NULL, 0);
 
     /*
      * Get the "properByteArrayType" via a TclObj.
      * In versions before Tcl 8.7, both values will be the same.
      */
     properByteArrayTypePtr = newByteObj->typePtr;
+    if (properByteArrayTypePtr == byteArrayTypePtr) {
+        /*
+         * When both values are the same, we are in a Tcl version before 8.7,
+         * where we have no properByteArrayTypePtr. So set it to an invalid
+         * value to avoid potential confusions. Without this stunt, we would
+         * need several ifdefs.
+         */
+        properByteArrayTypePtr = (Tcl_ObjType *)0xffffff;
+    }
     Tcl_DecrRefCount(newByteObj);
 }
 
@@ -416,10 +425,16 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
 
-    return (((objPtr)->bytes == NULL)
-            && ((objPtr->typePtr == properByteArrayTypePtr)
-                || (objPtr->typePtr == byteArrayTypePtr)
-                )) ? NS_TRUE : NS_FALSE;
+    /*
+     * This function resembles the tclInt.h function for testing pure byte
+     * arrays. In versions up to at least on Tcl 8.6, a pure byte array was
+     * defined as a byte array without a string rep.  Starting with Tcl
+     * 8.7a1, Tcl has introduced the properByteArrayTypePtr, which allows as
+     * well a string rep.
+     */
+    return ((objPtr->typePtr == properByteArrayTypePtr) ||
+            ((objPtr->typePtr == byteArrayTypePtr) && ((objPtr)->bytes == NULL))
+            ) ? NS_TRUE : NS_FALSE;
 }
 
 
