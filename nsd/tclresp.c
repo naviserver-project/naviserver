@@ -361,7 +361,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     } else {
         const char *data;
 
-        if (binary || NsTclObjIsByteArray(dataObj)) {
+        if (binary == NS_TRUE || NsTclObjIsByteArray(dataObj)) {
             data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
             result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, type));
         } else {
