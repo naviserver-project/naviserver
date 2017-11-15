@@ -215,7 +215,7 @@ seconds and fractions of seconds) is reached.
    % ns_job queue q1 -detached {ns_log notice "a detached job"}
 [example_end]
 
-[see_also nsd ns_sched]
+[see_also nsd ns_schedule_proc]
 [keywords background]
 
 
