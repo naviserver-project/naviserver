@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.8
+    set version 0.9
     set verbose 0
 
     #
@@ -28,9 +28,13 @@ namespace eval ::revproxy {
         {-validation_callback ""}
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
+        {-url_rewrite_callback "::revproxy::rewrite_url"}
     } {
         #
-        # Assemble URL
+        # Assemble URL in two steps:
+        #   - First, perform regsubs on the URL (if provided)
+        #   - Second, compose the final upstream URL via the default
+        #     handler or a custom callback
         #
         set url [ns_conn url]
         if {[llength $regsubs] > 0} {
@@ -42,13 +46,18 @@ namespace eval ::revproxy {
             #
             foreach regsub $regsubs {
                 lassign $regsub from to
-                log notice "regsub $from $url $to url"
+                #log notice "regsub $from $url $to url"
                 regsub $from $url $to url
             }
         }
-        set url $target$url
-        set query [ns_conn query]
-        if {$query ne ""} {append url ?$query}
+
+        #
+        # Compute the final upstream URL
+        #
+        set url {*}$url_rewrite_callback \
+            -target $target \
+            -url $url \
+            -query [ns_conn query]
 
         #
         # Get header fields from request, add X-Forwarded-For.
@@ -333,7 +342,7 @@ namespace eval ::revproxy {
     }
 
     #
-    # Sample exception handler for reporting error messages to the
+    # Default exception handler for reporting error messages to the
     # browser.
     #
     nsf::proc exception { -error -url } {
@@ -341,6 +350,19 @@ namespace eval ::revproxy {
             "Error during opening connection to backend [ns_quotehtml $url] failed. \
          <br>Error message: [ns_quotehtml $error]"
     }
+
+    #
+    # Default rewrite_url handler for composing upstream target URL
+    # based on the target (containing at typically the protocol and
+    # location), the incoming URL and the actual query parameter form
+    # the incoming URL.
+    #
+    nsf::proc rewrite_url { -target -url {-query ""}} {
+        set url $target$url
+        if {$query ne ""} {append url ?$query}
+        return $url
+    }
+
 
     #
     # Simple logger for error log, evaluating the ::revproxy::verbose
