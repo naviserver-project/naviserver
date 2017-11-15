@@ -1,7 +1,7 @@
 
 Reverse Proxy Module for NaviServer
 ===================================
-Release 0.2
+Release 0.9
 -----------
 
     neumann@wu-wien.ac.at
@@ -20,6 +20,7 @@ proxy server. It is possible to specify for every registered filter
 - a timeout for establishing connections,
 - a validation callback (to validate access of the service), and
 - a exception callback (e.g. for returning tailored error pages).
+- a url_rewrite_callback (e.g. for composing the final upstream URL).
 
 Both the incoming and upstream connections might be based on http or
 https. The implementation works as well with WebSockets (including
