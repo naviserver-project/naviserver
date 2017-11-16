@@ -37,6 +37,9 @@ namespace import -force ::tcltest::*
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
+if {$tcl_version >= 8.6} {
+    testConstraint tcl86 true
+}
 
 set curl ""
 catch {set curl [exec curl -V]}
@@ -758,7 +761,7 @@ test http-8.1 {ns_return with UTF-8 3 byte char} -constraints {serverListen} -se
     unset -nocomplain r
 } -result {200 3 ☃}
 
-test http-8.2 {ns_return with UTF-8 3 byte char with fresh bytearray} -constraints {serverListen} -setup {
+test http-8.2 {ns_return with UTF-8 3 byte char with fresh bytearray} -constraints {serverListen tcl86} -setup {
     ns_register_proc GET /get {
 	set v "☃"
 	set v [encoding convertfrom utf-8 [binary decode base64 [binary encode base64 [encoding convertto utf-8 $v]]]]
