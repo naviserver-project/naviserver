@@ -55,8 +55,8 @@ static Tcl_ObjType addrType = {
     SetAddrFromAny
 };
 
-static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
-static const Tcl_ObjType *properByteArrayTypePtr;  /* For NsTclIsByteArray(). */
+static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclObjIsByteArray(). */
+static const Tcl_ObjType *properByteArrayTypePtr;  /* For NsTclObjIsByteArray(). */
 
 /*
  *----------------------------------------------------------------------
@@ -87,12 +87,12 @@ NsTclInitAddrType(void)
      * Get the "tclByteArrayType" via name "bytearray".
      */
     byteArrayTypePtr = Tcl_GetObjType("bytearray");
-    newByteObj = Tcl_NewByteArrayObj(NULL, 0);
 
     /*
      * Get the "properByteArrayType" via a TclObj.
      * In versions before Tcl 8.7, both values will be the same.
      */
+    newByteObj = Tcl_NewByteArrayObj(NULL, 0);
     properByteArrayTypePtr = newByteObj->typePtr;
     if (properByteArrayTypePtr == byteArrayTypePtr) {
         /*
