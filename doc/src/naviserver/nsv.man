@@ -408,7 +408,7 @@ many lock attempts which did not succeeded immediately, try increasing
 nsvbuckets.
 
 [see_also nsd ns_cache ns_urlspace]
-[keywords nsv shared variables]
+[keywords "server builtin" nsv shared variables]
 
 [manpage_end]
 

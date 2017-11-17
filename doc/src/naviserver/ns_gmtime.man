@@ -38,7 +38,7 @@ Time (GMT).
 [example_end]
 
 
-[keywords time]
+[keywords "global builtin" time]
 [see_also ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
 
 [manpage_end]

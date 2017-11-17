@@ -38,6 +38,7 @@ If VarName is not specified, then ns_filestat behaves similar to file exists, ju
    }
 
 [example_end]
+[keywords "global builtin" ]
 
 
 [manpage_end]

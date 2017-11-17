@@ -58,7 +58,7 @@ proc newconn {sock when} {
 
 
 [see_also ns_chan ns_connchan ns_socklisten ns_sockaccept]
-[keywords NaviServer socket callback]
+[keywords "global builtin" NaviServer socket callback]
 [manpage_end]
 
 

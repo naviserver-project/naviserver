@@ -28,7 +28,7 @@
 
 
 [see_also nsd]
-[keywords encoding charset]
+[keywords "global builtin" encoding charset]
 
 [manpage_end]
 

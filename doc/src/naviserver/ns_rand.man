@@ -42,6 +42,7 @@ ns_rand is called after the server starts.
 
  [lb]ns_rand 1[rb] will always produce the result 0. [lb]ns_rand 2[rb] will produce the desired "coin flip" outcome of 0 or 1. This is standard with 
 
+[keywords "global builtin" random]
 
 [manpage_end]
 

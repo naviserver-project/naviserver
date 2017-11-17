@@ -101,7 +101,7 @@ foreach w [lb]array names w2r[rb] {
 
 
 [see_also nsd]
-[keywords NaviServer socket]
+[keywords "global builtin" NaviServer socket]
 [manpage_end]
 
 

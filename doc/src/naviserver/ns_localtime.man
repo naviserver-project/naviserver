@@ -42,7 +42,7 @@ system's current timezone.  The structure of the list corresponds to the Unix st
 [example_end]
 
 
-[keywords time]
+[keywords "global builtin" time]
 [see_also ns_fmttime ns_gmtime ns_httptime ns_parsehttptime ns_parsetime ns_time]
 
 [manpage_end]

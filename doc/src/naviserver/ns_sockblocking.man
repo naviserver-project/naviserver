@@ -22,7 +22,7 @@ This function sets the socket for the specified sockId to blocking.
 
 
 [see_also nsd ns_socknonblocking]
-[keywords NaviServer socket blocking]
+[keywords "global builtin" NaviServer socket blocking]
 [manpage_end]
 
 

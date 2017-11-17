@@ -37,7 +37,7 @@
 
 
 [see_also nsd]
-[keywords ns_info scheduled]
+[keywords "global builtin" ns_info scheduled]
 
 [manpage_end]
 

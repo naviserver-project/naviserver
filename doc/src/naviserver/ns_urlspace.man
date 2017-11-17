@@ -26,7 +26,7 @@
 
 [list_begin definitions]
 
-[call [cmd  "ns_urlspace set"] \
+[call [cmd "ns_urlspace set"] \
 	[opt [option "-id [arg id]"]] \
 	[opt [option "-key [arg key]"]] \
 	[opt [option "-noinherit"]] \
@@ -38,7 +38,7 @@
  the value is inherited to all sub-nodes, unless the option
  [option "-noinherit"] is specified.
 
-[call [cmd  "ns_urlspace get"] \
+[call [cmd "ns_urlspace get"] \
 	[opt [option "-id [arg id]"]] \
 	[opt [option "-key [arg key]"]] \
 	[opt [option "-exact"]] \
@@ -69,7 +69,7 @@ of lists, containing for every item the 5 elements
  [list_end]
 
 
-[call [cmd  "ns_urlspace unset"] \
+[call [cmd "ns_urlspace unset"] \
 	[opt [option "-id [arg id]"]] \
 	[opt [option "-key [arg key]"]] \
 	[opt [option "-noinherit"]] \
@@ -85,7 +85,7 @@ recursively. Unless [option "-recurse"] is specified, the command
 returns 1 or 0 on success or failure.
 
 
-[call [cmd  "ns_urlspace new"] ]
+[call [cmd "ns_urlspace new"] ]
 
 Allocate a new URL space id. When the number of compile-time configured
 URL spaces runs out, a Tcl exception is raised.
@@ -115,7 +115,7 @@ purposes. If no key is specified, it default to the constant
 
 
 [see_also nsv]
-[keywords trie shared variables]
+[keywords "server builtin" trie urlspace shared variables]
 
 [manpage_end]
 

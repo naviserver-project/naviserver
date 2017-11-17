@@ -28,7 +28,7 @@ section at the end of this page.
 [list_begin definitions]
 
 
-[call [cmd  ns_return] \
+[call [cmd ns_return] \
 	[opt [option {-binary}]] \
 	[arg status] \
 	[arg mime-type] \
@@ -56,7 +56,7 @@ to be closed or monitored for keep-alive and the calling connection thread
 continues to execute code.
 
 
-[call [cmd  ns_returnfile] \
+[call [cmd ns_returnfile] \
      [arg status] \
      [arg mime-type] \
      [arg filepath] ]
@@ -73,7 +73,7 @@ continues to execute code.
 
 
 
-[call [cmd  ns_returnfp] \
+[call [cmd ns_returnfp] \
      [arg status] \
      [arg mime-type] \
      [arg channel] \
@@ -248,7 +248,7 @@ does not actively compress files, which were previously not compressed
 cleanup, etc.).  For refreshing gzip files, the Tcl command
 "::ns_gzipfile source target" is used.  This command can be
 potentially redefined by an application.  When this parameter is not
-defined (or the refresh cmd fails), outdated gzip-ed files are
+defined (or the refresh command fails), outdated gzip-ed files are
 ignored, and a warning is written to the error.log. (boolean, defaults
 to false)
 
@@ -324,6 +324,6 @@ Defines absolute path to server's home directory.
 [see_also returnstatus-cmds ns_write ns_guesstype \
 	ns_register ns_adp_puts ns_conn ns_writer]
 
-[keywords return response status charset encoding configuration \
+[keywords "server builtin" return response status charset encoding configuration \
 	fastpath mmap cache gzip serverdir pagedir writer minify]
 [manpage_end]

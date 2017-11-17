@@ -20,7 +20,7 @@
 [list_end]
 
 [see_also ns_adp]
-[keywords ADP]
+[keywords "server builtin" ADP]
 
 [manpage_end]
 

@@ -27,6 +27,6 @@ test
 [example_end]
 
 [see_also ns_base64encode ns_uuencode ns_uudecode]
-[keywords encoding]
+[keywords "global builtin" encoding]
 
 [manpage_end]

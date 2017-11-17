@@ -57,8 +57,8 @@ on success or 0 on timeout.
 
 [section EXAMPLES]
 
-[see_also nsd]
-[keywords ns_event ns_mutex ns_thread]
+[see_also nsd ns_event ns_mutex ns_thread]
+[keywords "server builtin" mutex thread]
 
 [manpage_end]
 

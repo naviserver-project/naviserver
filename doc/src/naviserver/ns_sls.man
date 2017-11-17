@@ -88,5 +88,5 @@ connection:
 
 
 [see_also Ns_Sls Ns_Cls]
-[keywords sls storage data ns_sls]
+[keywords "global builtin" sls storage data ns_sls]
 [manpage_end]

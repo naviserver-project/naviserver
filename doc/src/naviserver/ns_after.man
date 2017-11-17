@@ -33,7 +33,7 @@
 
 
 [see_also nsd]
-[keywords ns_info scheduled ns_pause ns_resume ns_schedule_daily ns_schedule_proc ns_schedule_weekly ns_unschedule_proc]
+[keywords "global builtin" ns_info scheduled ns_pause ns_resume ns_schedule_daily ns_schedule_proc ns_schedule_weekly ns_unschedule_proc]
 
 [manpage_end]
 

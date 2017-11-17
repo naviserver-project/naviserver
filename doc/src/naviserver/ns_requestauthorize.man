@@ -110,7 +110,7 @@ call cmd  OK - The user has permission to execute this URL and method
 
 
 [see_also nsd]
-[keywords ns_checkurl nsperm]
+[keywords "server builtin" ns_checkurl nsperm]
 
 [manpage_end]
 

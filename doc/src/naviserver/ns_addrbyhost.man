@@ -12,8 +12,7 @@
 
 [list_begin definitions]
 
-[call \
-	[cmd ns_addrbyhost] \
+[call [cmd ns_addrbyhost] \
 	[opt [option -all]] \
 	[arg hostname]]
 
@@ -40,7 +39,7 @@ for this host.
 
 
 [see_also ns_hostbyaddr]
-[keywords dns]
+[keywords "global builtin" dns]
 
 [manpage_end]
 

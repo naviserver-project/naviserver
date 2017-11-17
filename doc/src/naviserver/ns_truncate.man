@@ -24,6 +24,6 @@ If specified, truncate up to this length otherwise make file 0 size
 [list_end]
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords "global builtin" NaviServer]
 [manpage_end]
 

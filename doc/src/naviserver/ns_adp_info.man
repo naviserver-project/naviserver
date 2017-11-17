@@ -29,7 +29,7 @@ ns_adp_info
 [example_end]
 
 [see_also nsd]
-[keywords ADP]
+[keywords "server builtin" ADP]
 
 [manpage_end]
 

@@ -160,6 +160,6 @@ Cleanup(void *arg)
 
 
 [see_also ns_sls Ns_Cls Ns_Tls]
-[keywords sls storage data]
+\[keywords "global command" sls storage data]
 
 [manpage_end]

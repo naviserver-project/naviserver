@@ -198,6 +198,6 @@ nsdb nslog nscp
 
 
 [see_also ns_atclose]
-[keywords interpreter trace module ns_eval ns_reinit ns_cleanup callback]
+[keywords "server builtin" interpreter trace module ns_eval ns_reinit ns_cleanup callback]
 
 [manpage_end]

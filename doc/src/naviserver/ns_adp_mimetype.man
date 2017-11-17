@@ -32,7 +32,7 @@
 
 
 [see_also ns_adp_mime]
-[keywords ADP]
+[keywords "server builtin" ADP]
 
 [manpage_end]
 

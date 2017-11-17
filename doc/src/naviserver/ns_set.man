@@ -384,7 +384,7 @@ Tcl Array or a Tcl dict instead.
 
 
 [see_also ns_findset ns_ictl ns_cleanup]
-[keywords ns_set]
+[keywords "global builtin" ns_set]
 
 [manpage_end]
 

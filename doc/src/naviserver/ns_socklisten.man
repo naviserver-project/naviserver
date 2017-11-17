@@ -24,7 +24,7 @@ address argument to specify all addresses.
 
 
 [see_also nsd ns_sockaccept]
-[keywords NaviServer socket listen]
+[keywords "global builtin" NaviServer socket listen]
 [manpage_end]
 
 

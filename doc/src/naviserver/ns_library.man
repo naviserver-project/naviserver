@@ -50,7 +50,7 @@ The optional module is simply concatenated to the path returned from ns_library.
 
 
 [see_also nsd]
-[keywords ns_info home ns_info tcllib]
+[keywords "server builtin" ns_info home ns_info tcllib]
 
 [manpage_end]
 

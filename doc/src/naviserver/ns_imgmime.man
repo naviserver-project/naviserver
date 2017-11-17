@@ -50,7 +50,7 @@ supported image:  MARADONNA.jpg width:   294 height:   420 MIME:      image/jpeg
 [example_end]
 
 [see_also ns_gifsize ns_pngsize ns_imgsize ns_imgtype ns_guesstype]
-[keywords images]
+[keywords "global builtin" images]
 
 [manpage_end]
 

@@ -315,7 +315,7 @@ if { [lb]string match /page/* [lb]ns_conn url[rb][rb] } {
 [example_end]
 
 [see_also ns_adp ns_getform ns_queryget ns_time]
-[keywords gzip connection]
+[keywords "server builtin" gzip connection]
 
 [manpage_end]
 

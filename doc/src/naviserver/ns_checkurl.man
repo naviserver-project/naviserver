@@ -22,7 +22,7 @@ ns_perm module registers such routine to perform basich HTTP authorization
 
 [list_end]
 
-[keywords ns_requestauthorize ns_perm]
+[keywords "server builtin" ns_requestauthorize ns_perm]
 
 [manpage_end]
 

@@ -30,7 +30,7 @@ Full path to the module binary file
 [list_end]
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords "server builtin" NaviServer]
 [manpage_end]
 
 

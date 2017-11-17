@@ -45,6 +45,7 @@ value is 0 (zero) if the event timed out and 1(one) if the event was woken up.
 
 [example_begin]
 [example_end]
+[keywords "server builtin" thread mutex event]
 
 [manpage_end]
 

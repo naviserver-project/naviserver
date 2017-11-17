@@ -222,6 +222,7 @@ Returns boolean whether running under windows NT.
 
 
 [list_end]
+[keywords "global builtin" introspection]
 
 [manpage_end]
 

@@ -22,7 +22,7 @@ This function rolls the specified file, keeping a number of backup copies up to 
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords "global builtin" NaviServer]
 [manpage_end]
 
 

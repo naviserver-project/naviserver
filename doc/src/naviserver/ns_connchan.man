@@ -28,7 +28,7 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
-[call [cmd  "ns_connchan detach"]]
+[call [cmd "ns_connchan detach"]]
 
  The command [cmd "ns_connchan detach"] unplugs the connection channel from
  the current connection thread and stores it with a fresh handle name
@@ -40,7 +40,7 @@
  access the connection socket directly (e.g. via [cmd ns_write]) will fail.
 
 
-[call [cmd  "ns_connchan close"] [arg channel]]
+[call [cmd "ns_connchan close"] [arg channel]]
 
  Close the named connection channel.
 
@@ -48,7 +48,7 @@
 
  Returns 1 if the named connection channel exists, 0 otherwise.
 
-[call [cmd  "ns_connchan list"] \
+[call [cmd "ns_connchan list"] \
 	[opt [option "-server [arg server]"]] ]
 
   Return a list the currently detached connection channels for the
@@ -67,7 +67,7 @@
 	[item] the client data as provided via [lb]ns_conn clientdata[rb].
  [list_end]
 
-[call [cmd  "ns_connchan callback"] \
+[call [cmd "ns_connchan callback"] \
 	[opt [option "-timeout [arg t]"]] \
 	[opt [option "-receivetimeout [arg r]"]] \
 	[opt [option "-sendtimeout [arg s]"]] \
@@ -93,7 +93,7 @@ as follows:
 [item] t - timeout received
 [list_end]
 
-[call [cmd  "ns_connchan open"] \
+[call [cmd "ns_connchan open"] \
 	[opt [option "-headers [arg h]"]] \
 	[opt [option "-method [arg m]"]] \
 	[opt [option "-timeout [arg t]"]] \
@@ -109,13 +109,13 @@ The URL might be an HTTP or an HTTPS URL.
 (default 1 second), and
 [option -version] specifies the HTTP version (default 1.0)
 
-[call [cmd  "ns_connchan read"] \
+[call [cmd "ns_connchan read"] \
 	[arg channel] \
 ]
 
 Read from the specified connection channel.
 
-[call [cmd  "ns_connchan write"] \
+[call [cmd "ns_connchan write"] \
 	[arg channel] \
 	[arg string] \	
 ]
@@ -125,7 +125,7 @@ Write to the specified connection channel.
 [list_end]
 
 [see_also ns_conn ns_chan ns_sockcallback ns_write]
-[keywords channels socket driver]
+[keywords "server builtin" channels socket driver]
 
 [manpage_end]
 

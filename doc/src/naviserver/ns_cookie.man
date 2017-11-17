@@ -159,6 +159,6 @@ ns_register_filter preauth GET /* browser_tracking_filter
 
 
 [see_also ns_cookiecharset Ns_Cookie(3)]
-[keywords cookie session]
+[keywords "server builtin" cookie session]
 
 [manpage_end]

@@ -204,5 +204,5 @@ the configuration file.
 
 
 [see_also ns_set ns_env ns_info]
-[keywords configuration parameter interp startup]
+[keywords "global builtin" configuration parameter interp startup]
 [manpage_end]

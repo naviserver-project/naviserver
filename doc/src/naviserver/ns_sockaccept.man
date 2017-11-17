@@ -33,7 +33,7 @@ close $sock
 
 
 [see_also nsd]
-[keywords NaviServer socket accept]
+[keywords "global builtin" NaviServer socket accept]
 [manpage_end]
 
 

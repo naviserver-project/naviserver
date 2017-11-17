@@ -73,7 +73,7 @@ be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations
 [example_end]
 
 [see_also ns_adp_argc ns_adp_argv ns_adp_bind_args]
-[keywords ADP]
+[keywords "server builtin" ADP]
 
 [manpage_end]
 

@@ -264,7 +264,7 @@ results to a file, when the result is larger than 100 bytes.
 
 
 [see_also ns_httptime]
-[keywords http-client HTTP HTTPS POST GET nssock spooling] 
+[keywords "global builtin" http-client HTTP HTTPS POST GET nssock spooling] 
 
 [manpage_end]
 

@@ -24,7 +24,7 @@
 
 
 [list_begin definitions]
-[call [cmd  "ns_chan cleanup"] [opt [arg {-shared}]]]
+[call [cmd "ns_chan cleanup"] [opt [arg {-shared}]]]
 
  Closes all shared channels found in the per-virtual-server private table or current Tcl
  interpreter table, depending on the -shared flag.  If the -shared flag is not specified,
@@ -52,7 +52,7 @@
  the channel cannot be plugged in for current interpreter or if the entry name could not
  be found in the per-virtual-server private table.
 
-[call [cmd  "ns_chan list"] [opt [arg -shared]]]
+[call [cmd "ns_chan list"] [opt [arg -shared]]]
 
  Returns a list of all shared channels found in the per-virtual-server private table or
  current Tcl interpreter, depending on the -shared flag.  If the -shared flag is not specified,
@@ -61,7 +61,7 @@
  channels from the per-virtual-server private table, i.e., all those which are currently not
  attached in any Tcl interpreter or thread.
 
-[call [cmd  "ns_chan put"] [arg name]]
+[call [cmd "ns_chan put"] [arg name]]
 
  Unplugs a channel from the current interpreter matching entry name and returns it to the
  per-virtual-server private table.  Any further attempt to use the named channel from the
@@ -102,7 +102,7 @@
 
 
 [see_also ns_conn ns_connchan ns_sockcallback]
-[keywords channels callback]
+[keywords "server builtin" channels callback]
 
 [manpage_end]
 

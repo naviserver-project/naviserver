@@ -486,6 +486,6 @@ currently registered procs.
 
 
 [see_also ns_adp ns_conn ns_info]
-[keywords ADP filter request callback fastpath]
+[keywords "server builtin" ADP filter request callback fastpath]
 [manpage_end]
 

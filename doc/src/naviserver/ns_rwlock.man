@@ -74,7 +74,7 @@ all of the read locks drain. If a subsequent read lock acquisition attempt is
 made while a write lock is waiting to acquire, the write lock has priority.
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords "server builtin" NaviServer]
 [manpage_end]
 
 

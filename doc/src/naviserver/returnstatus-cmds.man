@@ -105,8 +105,6 @@ Return a response with status code [term 403], [term Forbidden].
 Use this response to signal that the authentication information the client
 supplied are insufficient to grant them access to the requested URL.
 
-
-
 [call [cmd ns_returnnotfound] ]
 
 Return a response with status code [term 404], [term "Not Found"].
@@ -160,7 +158,9 @@ variable, but it may not be what you expect.
 [list_end]
 
 
-
+[para] Note: The script does not end at the time this command is
+invoked. [cmd ns_adp_abort] or ]cmd ns_adp_return] should be called to
+end script processing after ns_returnforbidden.
 
 [section CONFIGURATION]
 
@@ -206,6 +206,6 @@ ns_register_proc GET /service {
 
 
 [see_also ns_return ns_internalredirect]
-[keywords return redirect response status configuration]
+[keywords "server builtin" return redirect response status configuration]
 
 [manpage_end]

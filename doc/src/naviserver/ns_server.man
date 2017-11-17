@@ -13,27 +13,27 @@ connection pools and queues.  The legal options (which may be abbreviated) are:
 
 [list_begin definitions]
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd filters]]
 
 Returns a list of the currently defined filters.
 
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd pagedir]]
 
 Returns the path of the virtual server's page directory root.
 
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd pools]]
 
 Returns a list of the pools defined for this server.
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd requestprocs]]
 
@@ -41,46 +41,46 @@ Returns a list of the currently defined requestprocs  (the registered
 procs for certain request patterns).
 
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd serverdir]]
 
 Returns the path of the virtual server's base directory.
 
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd tcllib]]
 
 Returns the path of the virtual server's private Tcl library.
 
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd traces]]
 
 Returns a list of the currently defined traces.
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd url2file]]
 
 Returns a list of the mappings from urls to files.
 
 
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
 	[cmd active] \
 	[opt [option "-checkforproxy"]] \
 	]
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
 	[cmd all] \
 	[opt [option "-checkforproxy"]] \
 	]
-[call [cmd  ns_server] \
+[call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
 	[cmd queued] \
@@ -269,7 +269,7 @@ Query a certain mapping:
 [example_end]
 
 [see_also ns_conn ns_register]
-[keywords configuration pools]
+[keywords "server builtin" configuration pools]
 
 [manpage_end]
 

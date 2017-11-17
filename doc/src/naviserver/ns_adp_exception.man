@@ -40,7 +40,7 @@ Unrecognized exception status.  This should not occur.
 [list_end]
 [list_end]
 
-[keywords ADP]
+[keywords "server builtin" ADP]
 
 [manpage_end]
 

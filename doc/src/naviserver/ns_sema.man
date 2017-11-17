@@ -57,7 +57,7 @@ This is what is commonly referred to as "semaphore down".
 
 
 [see_also nsd]
-[keywords ns_cond ns_critsec ns_event ns_mutex ns_thread]
+[keywords "server builtin" ns_cond ns_critsec ns_event ns_mutex ns_thread]
 
 [manpage_end]
 

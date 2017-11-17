@@ -35,7 +35,7 @@
 
 [see_also nsd]
 
-[keywords ADP]
+[keywords "server builtin" ADP]
 
 
 [manpage_end]

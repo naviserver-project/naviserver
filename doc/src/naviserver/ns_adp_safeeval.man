@@ -10,7 +10,7 @@
 
 [list_begin definitions]
 
-[call [cmd ns_adp_safeeval] [arg page] [arg {?args ...?}]]
+[call [cmd ns_adp_safeeval] [arg page] [opt [arg {args}]]]
 
 [para]
 [arg page]
@@ -21,6 +21,7 @@ Page to be evaluated
 Additional arguments
 
 [list_end]
+[keywords "server builtin" ADP]
 
 [manpage_end]
 

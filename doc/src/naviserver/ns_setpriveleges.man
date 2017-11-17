@@ -28,5 +28,7 @@ of the caller is root, the real UID and saved set-user-ID are also set.
    % ns_setgroup 99
 [example_end]
 
+[keywords "server builtin" UID permissions]
+
 [manpage_end]
 

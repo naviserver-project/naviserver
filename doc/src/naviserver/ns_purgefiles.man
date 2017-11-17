@@ -23,7 +23,7 @@ Specifies how many backup files to keep
 [list_end]
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords "global builtin" NaviServer]
 [manpage_end]
 
 

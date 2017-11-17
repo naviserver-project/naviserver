@@ -38,6 +38,6 @@ oss2:nscp 13> ns_hashpath foo 3
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords "global builtin" NaviServer]
 [manpage_end]
 

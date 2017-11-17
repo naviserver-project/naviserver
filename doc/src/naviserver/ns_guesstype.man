@@ -61,7 +61,7 @@ Return the MIME type for the provided [arg filename] based on its file extension
 [example_end]
 
 
-[keywords return mime configuration ]
+[keywords "global builtin" return mime configuration ]
 
 [manpage_end]
 

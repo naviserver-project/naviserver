@@ -26,7 +26,7 @@ the decode operation. Option [arg part] is used to specify the
 [arg query] (default) or [arg path] encoding.
 
 [see_also nsd ns_urlencode ns_charsets ns_urlcharset]
-[keywords encoding charset url]
+[keywords "global builtin" encoding charset url]
 
 [manpage_end]
 

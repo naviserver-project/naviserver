@@ -50,7 +50,7 @@ like
 [example_end]
 
 
-[keywords tmp tmpfile]
+[keywords "global builtin" tmp tmpfile]
 
 [manpage_end]
 

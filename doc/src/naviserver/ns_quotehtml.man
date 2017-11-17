@@ -52,6 +52,7 @@ NOTES
 
  The set of characters that are substituted and their replacements may be different in previous versions of NaviServer.  For example, NaviServer 2.x does not escape single or double-quotes.
 
+[keywords "global builtin" HTML]
 
 
 [manpage_end]

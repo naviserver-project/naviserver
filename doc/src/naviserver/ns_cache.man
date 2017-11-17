@@ -341,6 +341,6 @@ ns_return 200 text/html [lb]example_personalized_page $user $ad[rb]
 
 
 [see_also ns_memoize nsv ns_time ns_urlspace]
-[keywords cache fastpath]
+[keywords "server builtin" "global builtin" cache fastpath]
 
 [manpage_end]
