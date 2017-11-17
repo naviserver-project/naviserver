@@ -5,24 +5,29 @@
 [titledesc {Cancel scheduled proc}]
 
 [description]
-Cancel previously scheduled Tcl command
+Cancel previously scheduled Tcl proc. This is command is actually the
+same as ns_unschedule_proc and kept for backward compatibility.
+
+[list_begin definitions]
+
+[call [cmd ns_cancel] [arg id]]
+[list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-
-oss2:nscp 18> ns_schedule_proc 3600 TestCmd
-25
-
-oss2:nscp 21> ns_info scheduled
-{26 0 3600 1159374920 -1 -1 -1 ns:tclschedproc TestCmd}
-
-oss2:nscp 20> ns_cancel 25
-1
-
+  oss2:nscp 18> ns_schedule_proc 3600 TestCmd
+  25
+  
+  oss2:nscp 21> ns_info scheduled
+  {26 0 3600 1159374920 -1 -1 -1 ns:tclschedproc TestCmd}
+  
+  oss2:nscp 20> ns_cancel 25
+  1
 [example_end]
 
-[keywords ns_unschedule_proc]
+[see_also ns_unschedule_proc]
+[keywords background schedule]
 
 [manpage_end]
 
