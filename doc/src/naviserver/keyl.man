@@ -94,7 +94,7 @@ the values for that key are returned instead.
 
 
 [see_also nsd ns_set]
-[keywords TclX keylset keyldel keylkeys]
+[keywords TclX keyed-list ]
 
 [manpage_end]
 

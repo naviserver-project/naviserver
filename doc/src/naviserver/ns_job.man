@@ -203,11 +203,11 @@ seconds and fractions of seconds) is reached.
 [example_begin]
    % ns_job create q1
    q1
-   % set j [ns_job queue q1 {
+   % set j [lb]ns_job queue q1 {
       ns_log notice start
       ns_sleep 10
       ns_log notice stop
-      set x "i am done"}]
+      set x "i am done"}[rb]
    job0
    % ns_job wait q1 $j
    i am done

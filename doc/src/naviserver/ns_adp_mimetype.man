@@ -31,9 +31,8 @@
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_adp_mime]
-
+[see_also ns_adp_mime]
+[keywords ADP]
 
 [manpage_end]
 
