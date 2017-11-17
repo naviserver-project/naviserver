@@ -54,10 +54,10 @@ namespace eval ::revproxy {
         #
         # Compute the final upstream URL
         #
-        set url {*}$url_rewrite_callback \
-            -target $target \
-            -url $url \
-            -query [ns_conn query]
+        set url [{*}$url_rewrite_callback \
+                     -target $target \
+                     -url $url \
+                     -query [ns_conn query]]
 
         #
         # Get header fields from request, add X-Forwarded-For.
