@@ -440,6 +440,17 @@ proc ns_puts {args} {
     return [ns_adp_puts {*}$args]
 }
 
+#
+# ns_puts --
+#
+#   deprecated version of ns_returnnotice
+#   use "ns_returnnotice" instead
+#
+proc ns_returnadminnotice {args} {
+    ns_deprecated "ns_returnnotice"
+    return [ns_returnnotice {*}$args]
+}
+
 
 # EOF
 

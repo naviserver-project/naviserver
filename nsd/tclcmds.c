@@ -248,7 +248,6 @@ static const Cmd servCmds[] = {
     {"ns_requestauthorize",      NULL, NsTclRequestAuthorizeObjCmd},
     {"ns_respond",               NULL, NsTclRespondObjCmd},
     {"ns_return",                NULL, NsTclReturnObjCmd},
-    {"ns_returnadminnotice",     NULL, NsTclReturnNoticeObjCmd},
     {"ns_returnbadrequest",      NULL, NsTclReturnBadRequestObjCmd},
     {"ns_returnerror",           NULL, NsTclReturnErrorObjCmd},
     {"ns_returnfile",            NULL, NsTclReturnFileObjCmd},
