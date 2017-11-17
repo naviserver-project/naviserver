@@ -97,7 +97,7 @@ NB: The username and password will be sent in plain text.
 
 
 
-[call [cmd ns_returforbidden] ]
+[call [cmd ns_returnforbidden] ]
 
 Return a response with status code [term 403], [term Forbidden].
 
