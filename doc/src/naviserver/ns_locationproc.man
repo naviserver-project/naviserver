@@ -6,23 +6,33 @@
 
 [description]
 This command installs custom script which will return
-location string for the current connection. Usually it
-looks like http://localhost/url
+location string for the current connection, as returned by
+[cmd "ns_conn location"]. Usually the locations looks like http://localhost/.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_location_proc] [arg script]]
+[call [cmd ns_locationproc] [arg script]]
 
-[para]
-[arg script]
-Tcl script which result will be used as location string
+[para] [arg script] Tcl script which result will be used to return the
+location string.
 
 [list_end]
 
-[see_also nsd]
-[keywords NaviServer]
+[section EXAMPLES]
+
+[example_begin]
+  ns_locationproc   nstest::location arg
+
+  proc nstest::location {args} {
+      return "testlocation.$args"
+  }
+[example_end]
+
+
+[see_also ns_serverrootproc ns_conn]
+[keywords virtual hosting]
 [manpage_end]
 
 
