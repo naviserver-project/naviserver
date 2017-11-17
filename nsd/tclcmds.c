@@ -235,7 +235,6 @@ static const Cmd servCmds[] = {
     {"ns_moduleload",            NULL, NsTclModuleLoadObjCmd},
     {"ns_mutex",                 NULL, NsTclMutexObjCmd},
     {"ns_normalizepath",         NULL, NsTclNormalizePathObjCmd},
-    {"ns_puts",                  NULL, NsTclAdpPutsObjCmd},
     {"ns_register_adp",          NULL, NsTclRegisterAdpObjCmd},
     {"ns_register_adptag",       NULL, NsTclAdpRegisterAdptagObjCmd},
     {"ns_register_fastpath",     NULL, NsTclRegisterFastPathObjCmd},

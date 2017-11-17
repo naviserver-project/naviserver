@@ -429,6 +429,17 @@ proc ns_tmpnam {} {
     return [ns_mktemp]
 }
 
+#
+# ns_puts --
+#
+#   deprecated version of ns_adp_puts
+#   use "::ns_adp_puts" instead
+#
+proc ns_puts {args} {
+    ns_deprecated "ns_adp_puts"
+    return [ns_adp_puts {*}$args]
+}
+
 
 # EOF
 
