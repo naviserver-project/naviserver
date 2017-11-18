@@ -70,7 +70,7 @@ The [term nssock] man page contains the detailed configuration options.
 [section {COMMANDS}]
 
 [list_begin definitions]
-[call [cmd  "ns_driver info"]]
+[call [cmd "ns_driver info"]]
 
  The command [cmd "ns_driver info"] returns a list of lists containing
  driver information. Every outer list element describes a different
@@ -98,15 +98,15 @@ return on every request.
 [list_end]
 
 
-[call [cmd  "ns_driver names"] ]
+[call [cmd "ns_driver names"] ]
 
  Return a list of the names of the loaded driver modules.
 
-[call [cmd  "ns_driver threads"] ]
+[call [cmd "ns_driver threads"] ]
 
 Return a list of the names of the driver threads
 
-[call [cmd  "ns_driver stats"] ]
+[call [cmd "ns_driver stats"] ]
 
 Return for every driver thread the name of the driver module, the
 number of received requests, the number of spooled requests, the
@@ -116,7 +116,7 @@ number of errors.
 [list_end]
 
 [see_also ns_info ns_server nssock]
-[keywords address socket driver configuration SO_REUSEPORT]
+[keywords "server builtin" address socket driver configuration SO_REUSEPORT]
 
 [manpage_end]
 
