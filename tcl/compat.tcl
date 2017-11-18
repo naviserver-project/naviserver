@@ -430,6 +430,17 @@ proc ns_tmpnam {} {
 }
 
 #
+# env --
+#
+#   deprecated version of ns_env
+#   use "::ns_env" instead
+#
+proc env {args} {
+    ns_deprecated "ns_env"
+    return [ns_env {*}$args]
+}
+
+#
 # ns_puts --
 #
 #   deprecated version of ns_adp_puts

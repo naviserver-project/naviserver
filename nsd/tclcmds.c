@@ -52,7 +52,6 @@ typedef struct Cmd {
  */
 
 static const Cmd basicCmds[] = {
-    {"env",                      NULL, NsTclEnvObjCmd},
     {"keyldel",                  NULL, TclX_KeyldelObjCmd},
     {"keylget",                  NULL, TclX_KeylgetObjCmd},
     {"keylkeys",                 NULL, TclX_KeylkeysObjCmd},
