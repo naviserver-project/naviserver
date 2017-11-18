@@ -361,11 +361,13 @@ Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPt
         && objPtr->internalRep.twoPtrValue.ptr1 == (void *) type) {
         *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
     } else {
-	char s[32] = {0};
-	void *t = NULL;
-        if (sscanf(Tcl_GetString((Tcl_Obj *) objPtr), "t%20p-a%20p-%32s", &t, addrPtrPtr, s) != 3 
-            || strcmp(s, type) || t != (void *) type) {
+        char  s[33] = {0};
+        void *t = NULL;
 
+        if ((sscanf(Tcl_GetString((Tcl_Obj *) objPtr), "t%20p-a%20p-%32s", &t, addrPtrPtr, s) != 3)
+            || (strcmp(s, type) != 0)
+            || (t != (void *)type)
+            ) {
             result = TCL_ERROR;
         }
     }
@@ -495,8 +497,10 @@ SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     char *chars;
 
     chars = Tcl_GetString(objPtr);
-    if (sscanf(chars, "t%20p-a%20p", &type, &addr) != 2
-        || type == NULL || addr == NULL) {
+    if ((sscanf(chars, "t%20p-a%20p", &type, &addr) != 2)
+        || (type == NULL)
+        || (addr == NULL)
+        ) {
         Ns_TclPrintfResult(interp, "invalid address \"%s\"", chars);
         result = TCL_ERROR;
     } else {
