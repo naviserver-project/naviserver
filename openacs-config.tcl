@@ -415,7 +415,8 @@ ns_section ns/server/${server}/module/nslog
 	#
 	# ns_param	suppressquery	true	;# false, suppress query portion in log entry
 	# ns_param	logreqtime	true	;# false, include time to service the request
-	ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations (accept, queue, filter, run)
+        ns_param	logpartialtimes	true	;# false, include high-res start time and partial request durations (accept, queue, filter, run)
+        ns_param        logthreadname     true  ;# default: false; include thread name for linking with error.log
 	# ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	# ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
 	ns_param	checkforproxy	$proxy_mode ;# false, check for proxy header (X-Forwarded-For)

@@ -456,41 +456,43 @@ ns_section 	"ns/server/${servername}/module/nssock"
 ########################################################################
 
 ns_section 	"ns/server/${servername}/module/nslog"
-
-   # Name to the log file
+   # Name to the log file (default: access.log)
    ns_param   	file            	${logdir}/access-${servername}.log
 
-   # If true then use common log format
+   # If true then use common log format (default: true)
    ns_param   	formattedtime   	true
 
-   # If true then use NCSA combined format
+   # If true then use NCSA combined format (default: true)
    ns_param   	logcombined     	true
 
-   # Put in the log request elapsed time
+   # Put in the log request elapsed time  (default: false)
    ns_param	logreqtime		false
 
-   # Include high-res start time and partial request durations (accept, queue, filter, run)
+   # Include high-res start time and partial request durations (accept, queue, filter, run; default: false)
    ns_param	logpartialtimes		false
 
-   # Max # of lines in the buffer, 0 ni limit
+   # Include thread name as second token in the log entires (default: false)
+   ns_param	logthreadname		false
+
+   # Max # of lines in the buffer, 0 == no limit (default: 0)
    ns_param   	maxbuffer       	0
 
-   # Max # of files to keep when rolling
+   # Max # of files to keep when rolling (default: 100)
    ns_param   	maxbackup       	100
 
-   # Time to roll log
+   # Time to roll log (default: 0)
    ns_param   	rollhour        	0
 
-   # If true then do the log rolling
+   # If true then do the log rolling (default: true)
    ns_param   	rolllog         	true
 
-   # If true then roll the log on SIGHUP
+   # If true then roll the log on SIGHUP (default: false)
    ns_param	rollonsignal    	false
 
-   # If true then don't show query string in the log
+   # If true then don't show query string in the log (default: false)
    ns_param	suppressquery   	false
 
-   # If true ten check for X-Forwarded-For header
+   # If true ten check for X-Forwarded-For header (default: false)
    ns_param   	checkforproxy   	false
 
    # List of additional headers to put in the log

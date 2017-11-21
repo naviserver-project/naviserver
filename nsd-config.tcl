@@ -151,15 +151,15 @@ ns_param	.pl		    "/opt/local/bin/perl"
 ns_param	.sh		    "/bin/bash"
 
 ns_section     "ns/server/default/module/nslog"
-ns_param        file                access.log
-ns_param        rolllog             true     ;# default: true; should server log files automatically
-ns_param        rollonsignal        false    ;# default: false; perform roll on a sighup
-ns_param        rollhour            0        ;# default: 0; specify at which hour to roll
+#ns_param        file                access.log
+#ns_param        rolllog             true     ;# default: true; should server log files automatically
+#ns_param        rollonsignal        false    ;# default: false; perform roll on a sighup
+#ns_param        rollhour            0        ;# default: 0; specify at which hour to roll
 ns_param        maxbackup           7        ;# default: 10; max number of backup log files
 #ns_param       rollfmt		    %Y-%m-%d-%H:%M	;# format appended to log file name
 #ns_param       logpartialtimes     true     ;# default: false
 #ns_param	logreqtime	    true     ;# default: false; include time to service the request
-
+ns_param        logthreadname       true     ;# default: false; include thread name for linking with error.log
 
 ns_section     "ns/server/default/module/nssock"
 ns_param        port                 $port

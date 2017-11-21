@@ -44,6 +44,7 @@
 #define LOG_PARTIALTIMES  0x08u
 #define LOG_CHECKFORPROXY 0x10u
 #define LOG_SUPPRESSQUERY 0x20u
+#define LOG_THREADNAME    0x40u
 
 #if !defined(PIPE_BUF)
 # define PIPE_BUF 512
@@ -199,6 +200,9 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     if (Ns_ConfigBool(path, "logpartialtimes", NS_FALSE)) {
         logPtr->flags |= LOG_PARTIALTIMES;
+    }
+    if (Ns_ConfigBool(path, "logthreadname", NS_FALSE)) {
+        logPtr->flags |= LOG_THREADNAME;
     }
     if (Ns_ConfigBool(path, "suppressquery", NS_FALSE)) {
         logPtr->flags |= LOG_SUPPRESSQUERY;
@@ -603,16 +607,29 @@ LogTrace(void *arg, Ns_Conn *conn)
      * from proxy servers (if configured).
      */
 
-    p = NULL;
     if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
         p = Ns_SetIGet(conn->headers, "X-Forwarded-For");
         if (p != NULL && !strcasecmp(p, "unknown")) {
             p = NULL;
         }
+    } else {
+        p = NULL;
     }
     Ns_DStringAppend(dsPtr,
                      ((p != NULL) && (*p != '\0')) ?
                      p : Ns_ConnPeer(conn));
+
+    /*
+     * Append the thread name, if requested.
+     * This eases to link access-log with error-log entries
+     */
+    Ns_DStringNAppend(dsPtr, " ", 1);
+    if ((logPtr->flags & LOG_THREADNAME) != 0) {
+        Ns_DStringNAppend(dsPtr, Ns_ThreadGetName(), -1);
+        Ns_DStringNAppend(dsPtr, " ", 1);
+    } else {
+        Ns_DStringNAppend(dsPtr, "- ", 2);
+    }
 
     /*
      * Append the authorized user, if any. Watch usernames
@@ -621,16 +638,16 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     user = Ns_ConnAuthUser(conn);
     if (user == NULL) {
-        Ns_DStringNAppend(dsPtr, " - - ", 5);
+        Ns_DStringNAppend(dsPtr, "- ", 2);
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
 	    quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote != 0) {
-            Ns_DStringVarAppend(dsPtr, " - \"", user, "\" ", (char *)0);
+            Ns_DStringVarAppend(dsPtr, "\"", user, "\" ", (char *)0);
         } else {
-            Ns_DStringVarAppend(dsPtr, " - ", user, " ", (char *)0);
+            Ns_DStringVarAppend(dsPtr, user, " ", (char *)0);
         }
     }
 
