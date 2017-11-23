@@ -6233,7 +6233,12 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
 
     url2 = ns_strdup(url);
 
-    if (unlikely(Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)) {
+    /*
+     * We need here a fully qualified URL, otherwise raise an error
+     */
+    if (unlikely(Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)
+        || protocol == NULL || host == NULL || path == NULL || tail == NULL) {
+        Ns_Log(Notice, "driver: invalid URL '%s' passed to NSDriverClientOpen", url2);
         result = TCL_ERROR;
 
     } else {
