@@ -1089,10 +1089,11 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     /*
      * Make a non-const copy of url, in which Ns_ParseUrl can replace the item
      * separating characters with '\0' characters. Make sure that we always
-     * free urls before leaving this function.
+     * free urls before leaving this function. We execpt a fully qualified URL.
      */
     url2 = ns_strdup(url);
-    if (Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK) {
+    if ((Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)
+        || (protocol == NULL) || (host == NULL) || (path != NULL) || (tail != NULL) ) {
         goto fail;
     }
 
