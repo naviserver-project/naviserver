@@ -444,6 +444,7 @@ List of all currently available NaviServer commands.
 [list_end]
 
 [section {Deprecated}]
+[list_begin definitions]
 [call [cmd "env"]]
 [call [cmd "ns_adp_registertag"]]
 [call [cmd "ns_cancel"]]
@@ -467,7 +468,6 @@ List of all currently available NaviServer commands.
 [call [cmd "ns_thread join"]]
 [call [cmd "ns_returnadminnotice"]]
 [call [cmd "ns_tmpnam"]]
-[list_begin definitions]
 [list_end]
 
 [see_also nsd]
