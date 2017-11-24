@@ -261,6 +261,38 @@ Change the verbose setting (the Verbose parameter in the configuration file) for
 the given pool.
 
 
+[call [cmd "ns_quotelisttolist"] [arg string]]
+
+Transform a string with single quoted elements into a proper Tcl
+list. In this step, remove space, backslash and single quote
+characters in the given string.
+
+[call [cmd "ns_getcsv"] \
+	[opt [option "-delimiter [arg char]"]] \
+	[arg fileid] \
+	[arg varname]]
+
+Read a single line from a CSV file and parse the results into a Tcl
+list variable.
+
+[call [cmd "ns_dberrorcode"] [arg handle]]
+
+Return the database error code for the specified database handle.
+
+[call [cmd "ns_dberrormsg"] [arg handle]]
+
+Return the database error message for the specified database handle.
+
+[call [cmd "ns_dbconfigpath"]]
+
+Return the database section name file for the nsdb module from the
+configuration file.
+
+[call [cmd "ns_pooldescription"] [arg poolname]]
+
+Return the description of the provided database pool name from the
+[lb]ns/db/pools[rb] section in the configuration file.
+
 [list_end]
 
 
@@ -423,7 +455,7 @@ ns_section ns/db/pool/pool2
 
 
 [see_also ns_buildsqldate ns_dbquotevalue]
-[keywords database sql pool]
+[keywords "server builtin" database sql pool]
 
 
 [manpage_end]

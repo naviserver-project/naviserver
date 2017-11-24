@@ -448,6 +448,6 @@ foreach h $handles {
 
 
 [see_also ns_job]
-[keywords proxy exec pool]
+[keywords "server builtin" proxy exec pool]
 
 [manpage_end]

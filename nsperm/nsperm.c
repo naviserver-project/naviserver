@@ -215,9 +215,9 @@ Ns_ModuleInit(const char *server, const char *module)
  *----------------------------------------------------------------------
  */
 
-static int AddCmds(Tcl_Interp * interpermPtr, const void *arg)
+static int AddCmds(Tcl_Interp *interp, const void *arg)
 {
-  Tcl_CreateObjCommand(interpermPtr, "ns_perm", PermObjCmd, (ClientData)arg, NULL);
+  Tcl_CreateObjCommand(interp, "ns_perm", PermObjCmd, (ClientData)arg, NULL);
     return NS_OK;
 }
 

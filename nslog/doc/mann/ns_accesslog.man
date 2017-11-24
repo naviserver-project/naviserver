@@ -205,6 +205,6 @@ Cookie Accept
 
 
 [see_also ns_log ns_rollfile]
-[keywords log path proxy ipaddress]
+[keywords "server builtin" log path proxy ipaddress]
 
 [manpage_end]

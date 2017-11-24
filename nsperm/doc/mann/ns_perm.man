@@ -151,8 +151,8 @@ ns_perm adduser -salt CU test2 test TestUser2
 ns_perm allowuser GET /Documents test test2
 [example_end]
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also nsperm nsd]
+[keywords "server builtin" NaviServer]
 [manpage_end]
 
 
