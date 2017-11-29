@@ -1095,8 +1095,10 @@ IsStale(const Handle *handlePtr, time_t now)
 	    (handlePtr->stale) ||
 	    (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
-            Ns_Log(Ns_LogSqlDebug, "dbinit: closing %s handle in pool '%s'",
-                   handlePtr->atime < minAccess ? "idle" : "old",
+            Ns_Log(Notice, "nsdb: closing %s handle in pool '%s'",
+                   (handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) ? "idle"
+                   : (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen) ? "old"
+                      : "stale"),
                    handlePtr->poolname);
 
 	    result = NS_TRUE;
