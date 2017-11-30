@@ -3417,10 +3417,10 @@ NS_EXTERN long
 Ns_GetGid(const char *group)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SetUser(const char *user);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_SetGroup(const char *group);
 
 /*

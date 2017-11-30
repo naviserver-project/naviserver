@@ -866,36 +866,38 @@ Ns_GetGid(const char *group)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SetGroup(const char *group)
 {
-    int nc;
+    Ns_ReturnCode status = NS_OK;
 
     if (group != NULL) {
         long gidResult = Ns_GetGid(group);
 
         if (gidResult == -1) {
+            int nc;
+
             if (sscanf(group, "%24d%n", (int*)&gidResult, &nc) != 1
                 || nc != (int)strlen(group)
                 || Ns_GetNameForGid(NULL, (gid_t)gidResult) == NS_FALSE) {
                 Ns_Log(Error, "Ns_GetGroup: unknown group '%s'", group);
-                return NS_ERROR;
+                status = NS_ERROR;
             }
         }
-
-        if (setgroups(0, NULL) != 0) {
-            Ns_Log(Error, "Ns_SetGroup: setgroups(0, NULL) failed: %s",
-                     strerror(errno));
-            return NS_ERROR;
+        if (status == NS_OK) {
+            if (setgroups(0, NULL) != 0) {
+                Ns_Log(Error, "Ns_SetGroup: setgroups(0, NULL) failed: %s",
+                       strerror(errno));
+                status = NS_ERROR;
+            } else if (gidResult != getgid() && setgid((gid_t)gidResult) != 0) {
+                Ns_Log(Error, "Ns_SetGroup: setgid(%ld) failed: %s", (long)gidResult, strerror(errno));
+                status = NS_ERROR;
+            } else {
+                Ns_Log(Debug, "Ns_SetGroup: set group id to %ld", (long)gidResult);
+            }
         }
-
-        if (gidResult != getgid() && setgid((gid_t)gidResult) != 0) {
-            Ns_Log(Error, "Ns_SetGroup: setgid(%ld) failed: %s", (long)gidResult, strerror(errno));
-            return NS_ERROR;
-        }
-        Ns_Log(Debug, "Ns_SetGroup: set group id to %ld", (long)gidResult);
     }
-    return NS_OK;
+    return status;
 }
 
 /*
@@ -913,19 +915,19 @@ Ns_SetGroup(const char *group)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_SetUser(const char *user)
 {
-    int nc;
-    long uid;
-    Ns_DString ds;
+    Ns_ReturnCode status = NS_OK;
 
     if (user != NULL) {
-        long gid = -1;
+        long       uid;
+        Ns_DString ds;
 
         Ns_DStringInit(&ds);
         uid = Ns_GetUid(user);
         if (uid == -1) {
+            int nc;
 
             /*
              * Hm, try see if given as numeric uid...
@@ -934,33 +936,33 @@ Ns_SetUser(const char *user)
                 || nc != (int)strlen(user)
                 || Ns_GetNameForUid(&ds, (uid_t)uid) == NS_FALSE) {
                 Ns_Log(Error, "Ns_SetUser: unknown user '%s'", user);
-                Ns_DStringFree(&ds);
-                return NS_ERROR;
+                status = NS_ERROR;
+            } else {
+                user = Ns_DStringValue(&ds);
             }
-            user = Ns_DStringValue(&ds);
         }
 
-        gid = Ns_GetUserGid(user);
+        if (status == NS_OK) {
+            long gid = Ns_GetUserGid(user);
 
-        if (initgroups(user, (NS_INITGROUPS_GID_T)gid) != 0) {
-            Ns_Log(Error, "Ns_SetUser: initgroups(%s, %ld) failed: %s", user,
-                   gid, strerror(errno));
-            Ns_DStringFree(&ds);
-            return NS_ERROR;
+            if (initgroups(user, (NS_INITGROUPS_GID_T)gid) != 0) {
+                Ns_Log(Error, "Ns_SetUser: initgroups(%s, %ld) failed: %s", user,
+                       gid, strerror(errno));
+                Ns_DStringFree(&ds);
+                status = NS_ERROR;
+            } else if (gid > -1 && gid != (int)getgid() && setgid((gid_t)gid) != 0) {
+                Ns_Log(Error, "Ns_SetUser: setgid(%ld) failed: %s", gid, strerror(errno));
+                status = NS_ERROR;
+            } else if (uid != (long)getuid() && setuid((uid_t)uid) != 0) {
+                Ns_Log(Error, "Ns_SetUser: setuid(%ld) failed: %s", uid, strerror(errno));
+                status = NS_ERROR;
+            } else {
+                Ns_Log(Debug, "Ns_SetUser: set user id to %ld", uid);
+            }
         }
         Ns_DStringFree(&ds);
-
-        if (gid > -1 && gid != (int)getgid() && setgid((gid_t)gid) != 0) {
-            Ns_Log(Error, "Ns_SetUser: setgid(%ld) failed: %s", gid, strerror(errno));
-            return NS_ERROR;
-        }
-        if (uid != (int)getuid() && setuid((uid_t)uid) != 0) {
-            Ns_Log(Error, "Ns_SetUser: setuid(%ld) failed: %s", uid, strerror(errno));
-            return NS_ERROR;
-        }
-        Ns_Log(Debug, "Ns_SetUser: set user id to %ld", uid);
     }
-    return NS_OK;
+    return status;
 }
 
 #ifdef HAVE_POLL
