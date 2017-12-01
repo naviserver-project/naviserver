@@ -48,7 +48,7 @@ use the specified HTTP method such as GET or POST or HEAD
 headers is the ns_set ID containing the additional headers to include in the HTTP request.
 
 [para]
-[arg -body]
+[option -body]
 body is the value which will be sent as the HTTP request body.
 This option is mutual exclusive with [arg -body_file].
 

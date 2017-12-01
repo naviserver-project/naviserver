@@ -1093,7 +1093,9 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
      */
     url2 = ns_strdup(url);
     if ((Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)
-        || (protocol == NULL) || (host == NULL) || (path != NULL) || (tail != NULL) ) {
+        || (protocol == NULL) || (host == NULL) || (path == NULL) || (tail == NULL)
+        ) {
+        Ns_TclPrintfResult(interp, "invalid URL \"%s\"", url);
         goto fail;
     }
 
