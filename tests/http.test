@@ -625,9 +625,11 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
     ns_set update $queryHeaders Content-Type text/plain
     if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST \
 			   [ns_config test listenurl]/post]} errorMsg]} {
-	puts stderr ERROR-$errorMsg
+	set S ???
+	set R "ERROR-$errorMsg during POST to [ns_config test listenurl]/post]"
+    } else {
+	set r [ns_http wait -result R -status S $h]
     }
-    set r [ns_http wait -result R -status S $h]
     return [list $S $R]
 } -cleanup {
     ns_unregister_op POST /post
