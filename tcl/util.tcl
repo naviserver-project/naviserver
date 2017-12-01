@@ -545,6 +545,7 @@ proc ns_set_precision {precision} {
 #
 
 proc ns_updateheader {key value} {
+    ns_deprecated {ns_set update [ns_conn outputheaders]}
     ns_set update [ns_conn outputheaders] $key $value
 }
 
