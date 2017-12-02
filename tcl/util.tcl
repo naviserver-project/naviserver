@@ -59,7 +59,7 @@
 #
 
 proc ns_adp_include {args} {
-    eval _ns_adp_include $args
+    _ns_adp_include {*}$args
 }
 
 
