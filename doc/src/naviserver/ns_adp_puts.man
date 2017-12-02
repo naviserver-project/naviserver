@@ -7,7 +7,7 @@
 [description]
 
  This commands appends the string to the output buffer for the current connection.
- If -nonewline is specified, a line terminator is not appended after string.
+ If [option -nonewline] is specified, a line terminator is not appended after string.
 
 
 [section {COMMANDS}]
@@ -15,7 +15,7 @@
 [list_begin definitions]
 
 
-[call [cmd ns_adp_puts] [opt [arg {-nonewline}]] [arg string]]
+[call [cmd ns_adp_puts] [opt [option {-nonewline}]] [arg string]]
 
 
 [list_end]

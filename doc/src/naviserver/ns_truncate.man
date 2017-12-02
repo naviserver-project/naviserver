@@ -11,7 +11,7 @@ This commans will truncate given file to the given length
 
 [list_begin definitions]
 
-[call [cmd ns_truncate] [arg file] [arg ?length?]]
+[call [cmd ns_truncate] [arg file] [opt [arg length]]]
 
 [para]
 [arg file]

@@ -81,7 +81,7 @@ spec.
 [para]
 [arg cache]
 Query or set the cache option. When disabled, all requests
-to cache executed ADP blocks via the ns_adp_include [arg -cache] directive are
+to cache executed ADP blocks via the ns_adp_include [option -cache] directive are
 ignored, resulting in normal execution of all code.
 
 [para]

@@ -13,14 +13,16 @@ separate thread as background procedures. This functionality is similar to Unix 
 
 [list_begin definitions]
 
-[call [cmd ns_schedule_weekly] [opt [arg -once]] [opt [arg -thread]] [arg day] [arg hour] [arg minute] [arg script]]
+[call [cmd ns_schedule_weekly] [opt [option -once]] [opt [option -thread]] [arg day] [arg hour] [arg minute] [arg script]]
 
 
 This command schedules a script to be run on a certain day of the week at a
 certain hour and minute of that day.  Returns the ID of the newly scheduled script.
-The week starts on Sunday as day zero and runs to Saturday as day six.  If -once is
+The week starts on Sunday as day zero and runs to Saturday as day six.
+If [option -once] is
 specified, then the script is run once and then unscheduled, otherwise it will continue
-to run every week on that day at that time.  If -thread is specified, then the script
+to run every week on that day at that time.  If [option -thread]
+is specified, then the script
 will be run in its own thread, otherwise it will run in the scheduler's thread.  If
 the script is long-running, this may interfere with the running of other scheduled
 scripts, so long-running scripts should be run in their own threads.
@@ -38,12 +40,12 @@ shifts affecting the time of day when the script will execute.
 [example_end]
 
 
-[call [cmd ns_schedule_daily] [opt [arg -once]] [opt [arg -thread]] [arg hour] [arg minute] [arg script]]
+[call [cmd ns_schedule_daily] [opt [option -once]] [opt [option -thread]] [arg hour] [arg minute] [arg script]]
 
 This command schedules a script to be run at a certain hour and minute of the day.
-Returns the ID of the newly scheduled script.  If -once is specified, then the script
+Returns the ID of the newly scheduled script.  If [option -once] is specified, then the script
 is run once and then unscheduled, otherwise it will continue to run every day at that
-time.  If -thread is specified, then the script will be run in its own thread,
+time.  If [option -thread] is specified, then the script will be run in its own thread,
 otherwise it will run in the scheduler's thread.  If the script is long-running,
 this may interfere with the running of other scheduled scripts, so long-running scripts should
 be run in their own threads.
@@ -61,12 +63,12 @@ shifts affecting the time of day when the script will execute.
 [example_end]
 
 
-[call [cmd ns_schedule_proc] [opt [arg {-once}]] [opt [arg -thread]] [arg interval] [arg script]]
+[call [cmd ns_schedule_proc] [opt [option {-once}]] [opt [option -thread]] [arg interval] [arg script]]
 
 This command schedules a script to be run after a certain number of seconds.
-Returns the ID of the newly scheduled script.  If -once is specified, then the
+Returns the ID of the newly scheduled script.  If [option -once] is specified, then the
 script is run once and then unscheduled, otherwise it will continue to run every
-interval seconds.  If -thread is specified, then the script will be run in its
+interval seconds.  If [option -thread] is specified, then the script will be run in its
 own thread, otherwise it will run in the scheduler's thread.  If the script is
 long-running, this may interfere with the running of other scheduled scripts,
 so long-running scripts should be run in their own threads.

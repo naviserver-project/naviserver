@@ -24,12 +24,12 @@
 
 
 [list_begin definitions]
-[call [cmd "ns_chan cleanup"] [opt [arg {-shared}]]]
+[call [cmd "ns_chan cleanup"] [opt [option {-shared}]]]
 
  Closes all shared channels found in the per-virtual-server private table or current Tcl
- interpreter table, depending on the -shared flag.  If the -shared flag is not specified,
+ interpreter table, depending on the [option -shared] flag.  If the [option -shared] flag is not specified,
  this command will close all channels from the current interpreter which were attached to
- it by the ns_chan get command.  If the -shared flag is specified, this command will close
+ it by the ns_chan get command.  If the [option -shared] flag is specified, this command will close
  all channels from the per-virtual-server private table, i.e., all those which are currently
  not attached in any Tcl interpreter or thread.
 
@@ -52,12 +52,13 @@
  the channel cannot be plugged in for current interpreter or if the entry name could not
  be found in the per-virtual-server private table.
 
-[call [cmd "ns_chan list"] [opt [arg -shared]]]
+[call [cmd "ns_chan list"] [opt [option -shared]]]
 
  Returns a list of all shared channels found in the per-virtual-server private table or
- current Tcl interpreter, depending on the -shared flag.  If the -shared flag is not specified,
+ current Tcl interpreter, depending on the [option -shared] flag.
+ If the [option -shared] flag is not specified,
  this command will report all channels from the current interpreter which were attached to it
- by the ns_chan get command.  If the -shared flag is specified, this command will report all
+ by the ns_chan get command.  If the [option -shared] flag is specified, this command will report all
  channels from the per-virtual-server private table, i.e., all those which are currently not
  attached in any Tcl interpreter or thread.
 

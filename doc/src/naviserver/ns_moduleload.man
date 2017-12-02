@@ -12,13 +12,13 @@ The usual way to specify them in the config file.
 
 [list_begin definitions]
 
-[call [cmd ns_moduleload] [opt [arg -global]] [opt [arg {-init init}]] [arg module] [arg file]]
+[call [cmd ns_moduleload] [opt [option -global]] [opt [option {-init init}]] [arg module] [arg file]]
 
 [para]
-[arg -global]
+[option -global]
 Load globally, not into virtual server
 
-[arg {-init init}]
+[option {-init init}]
 Specify alternative initialization function, by default it is Ns_ModuleInit
 
 [arg module]

@@ -33,7 +33,7 @@ is widely supported by user agents.
  [opt [option "-replace [arg bool]"]] \
  [opt [option "-scriptable [arg bool]"]] \
  [opt [option "-secure [arg bool]"]] \
- [opt [arg --]] \
+ [opt [option --]] \
  [arg name] \
  [arg data]  ]
 
@@ -56,13 +56,13 @@ The [arg data] will be URL-encoded to escape special characters.
 [call [cmd ns_getcookie] \
 	[opt [option "-all [arg bool]"]] \
 	[opt [option "-include_set_cookies [arg bool]"]] \
-	[opt [arg --]] \
+	[opt [option --]] \
 	[arg name]	\
 	[opt [arg default]]  ]
 
 Get the cookie data identified by [arg name]. If no such cookie exists then
 [arg default] is returned. If [arg default] is not given and no such cookie
-exists, an error is raised. When the option [opt -include_set_cookies] is set
+exists, an error is raised. When the option [opt [option -include_set_cookies]] is set
 true, then this command will search as well in the cookies being
 currently set in the output headers.
 
@@ -70,10 +70,10 @@ currently set in the output headers.
 By default, only the first cookie identified by [arg name] is returned. If two cookies
 with the same name are sent by the user agent, each with a different [arg domain]
 and/or [arg path], which cookie data is returned depends on the user
-agent. When the option [opt -all] is set, all cookies with the
+agent. When the option [opt [option -all]] is set, all cookies with the
 specified name are returned. This can be use to detect such situations
-with multiple cookies. The option [opt -all] cannot be set together
-with the option [opt -include_set_cookies].
+with multiple cookies. The option [opt [option -all]] cannot be set together
+with the option [opt [option -include_set_cookies]].
 
 [para]
 When using [arg domain] or [arg path] to restrict cookies, it is
@@ -85,7 +85,7 @@ recommended to use a unique name for each restricted cookie.
      [opt [option "-path [arg p]"]] \
      [opt [option "-replace [arg bool]"]] \
      [opt [option "-secure [arg bool]"]] \
-     [opt [arg --]] \
+     [opt [option --]] \
      [arg name]  ]
 
 Instruct the client to delete the cookie data identified by [arg name]. The
@@ -116,7 +116,7 @@ The default value is false.
 [opt_def -scriptable [arg boolean]]
 If the scriptable option is false or not given the cookie is unavailable to
 javascript on the client. This can prevent cross site scripting attacks (XSS) on
-clients which support the [term HttpOnly] option. Set [arg -scriptable] to true
+clients which support the [term HttpOnly] option. Set [option -scriptable] to true
 if you need to access the cookie via javascript.
 
 [opt_def -domain [arg domain]]

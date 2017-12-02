@@ -12,10 +12,10 @@ file will be loaded several times
 
 [list_begin definitions]
 
-[call [cmd ns_runonce] [arg ?-global?] [arg ?--?] [arg script]]
+[call [cmd ns_runonce] [opt [option -global]] [opt [option --]] [arg script]]
 
 [para]
-[arg -global]
+[option -global]
 If specified run the command in global context
 otherwise in current virtual server
 

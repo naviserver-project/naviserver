@@ -5,10 +5,11 @@
 [titledesc {Check if a socket is connected}]
 
 [description]
-ns_sockcheck uses recv() or send() calls to check if a socket is
-still connected. The fileid is the read or write file id returned
-by ns_sockopen. This function is useful if you used the -nonblock
-option with ns_sockopen after calling ns_sockselect.
+
+[cmd ns_sockcheck] uses recv() or send() calls to check if a socket is still
+connected. The fileid is the read or write file id returned by
+ns_sockopen. This function is useful if you used the
+[option -nonblock] option with ns_sockopen after calling ns_sockselect.
 
 
 [section {COMMANDS}]

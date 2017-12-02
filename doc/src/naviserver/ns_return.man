@@ -168,7 +168,7 @@ ns_register_proc GET /hello {
 [section CONFIGURATION]
 
 The behavior of the file delivery commands [cmd ns_returnfile] and 
-[cmd "ns_respond -file ..."], as well as the automatic delivery of static
+[cmd "ns_respond [option {-file ...}]"], as well as the automatic delivery of static
 files is influenced by the [const fastpath] settings, which define, how
 files are served. The fastpath section of the configuration file for a
 server [const server1] has a global part (general settings for all
@@ -195,7 +195,7 @@ content:
 [enum] Delivering file via chunk reads from the file, where the
 chunk size is typical the [const writersize] of a writer thread.
 This is the same behavior as in
-[cmd "ns_respond -fileid ..."] or in 
+[cmd "ns_respond [option {-fileid ...}]"] or in 
 [cmd "ns_returnfp"]. This delivery mode is activated, when
 both the global fastpath parameter [const cache] and [const mmap]
 are false.

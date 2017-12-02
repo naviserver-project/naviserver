@@ -32,7 +32,7 @@ List of arguments to be parsed
 
 The first example shows the practical usage of ns_parseargs in a
 proc. The intention is to define a proc "ns_getcontent" which might be
-called with the optional arguments [arg -as_file] or [arg -binary]. The
+called with the optional arguments [option -as_file] or [option -binary]. The
 default value for both of these arguments is [const true]. To achieve this,
 the proc "ns_getcontent" is defined with the argument spec [arg args],
 which allows all kinds of arguments to be passed. As a fist call, it

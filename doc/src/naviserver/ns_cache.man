@@ -67,7 +67,7 @@ form of an attribute value list.
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
      [opt [option "-maxentry [arg s]"]] \
-     [opt [arg --]] \
+     [opt [option --]] \
      [arg name] \
      [arg size]  ]
 
@@ -93,7 +93,7 @@ Return the list of all caches for the current virtual server.
 
 [call [cmd ns_cache_keys] \
         [opt [option "-exact"]] \
-        [opt [arg --]] \
+        [opt [option --]] \
         [arg name] \
         [opt [arg pattern]] ]
 
@@ -108,7 +108,7 @@ literally,  either a key with a literally exact match or empty is returned.
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
      [opt [option "-force [arg bool]"]] \
-     [opt [arg --]] \
+     [opt [option --]] \
      [arg name] \
      [arg key] \
      [arg script] \
@@ -142,7 +142,7 @@ nsv_get).
 [call [cmd ns_cache_incr] \
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
-     [opt [arg --]] \
+     [opt [option --]] \
      [arg name] \
      [arg key] \
      [opt [arg incr]] ]
@@ -155,7 +155,7 @@ and return it.
 [call [cmd ns_cache_append] \
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
-     [opt [arg --]] \
+     [opt [option --]] \
      [arg name] \
      [arg key] \
      [arg args] ]
@@ -171,7 +171,7 @@ If the cache value does not already exist it is created.
 [call [cmd ns_cache_lappend] \
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
-     [opt [arg --]] \
+     [opt [option --]] \
      [arg name] \
      [arg key] \
      [arg args] ]
@@ -187,7 +187,7 @@ If the cache value does not already exist it is created.
 
 [call [cmd ns_cache_flush] \
         [opt [option "-glob"]] \
-        [opt [arg --]] \
+        [opt [option --]] \
         [arg name] \
         [opt [arg args]] ]
 
@@ -200,7 +200,7 @@ matching keys are flushed.
 [call [cmd ns_cache_stats] \
         [opt [option "-contents"]] \
         [opt [option "-reset"]] \
-        [opt [arg --]] \
+        [opt [option --]] \
         [arg name] ]
 
 Return the accumulated statistics for the given cache [arg name] in array-get
@@ -284,7 +284,7 @@ rollback all nested transactions currently open in this thread.
 [call [cmd ns_fastpath_cache_stats] \
         [opt [option "-contents"]] \
         [opt [option "-reset"]] \
-        [opt [arg --]] \
+        [opt [option --]] \
         [arg name] ]
 
 Return the accumulated statistics for fastpath cache in array-get

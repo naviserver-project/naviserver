@@ -14,7 +14,7 @@ POST method.
 
 [list_begin definitions]
 
-[call [cmd ns_httppost] [arg url] [opt [arg ?rqset?]] [opt [arg qsset]] [opt [arg type]] [opt [arg timeout]]]
+[call [cmd ns_httppost] [arg url] [opt [arg rqset]] [opt [arg qsset]] [opt [arg type]] [opt [arg timeout]]]
 
 [para]
 [arg url]

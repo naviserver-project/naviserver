@@ -376,7 +376,7 @@ The interpreter attempted to allocate handles from a pool from which
 it already owns one or more handles.
 
 [def EExec]
-The slave program specified by the [arg {-exec program}] option could
+The slave program specified by the [option {-exec program}] option could
 not be started.
 
 [def EImport]

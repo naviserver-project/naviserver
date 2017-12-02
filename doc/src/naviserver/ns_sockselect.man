@@ -9,7 +9,7 @@ ns_sockselect uses a select() call to determine which file id's re readable, wri
 or have exceptional conditions. ns_sockselect returns a list of three lists of:
 readable file id's, writeable file id's, and file id's with exceptions.
 
-The -timeout option specifies the length of time to wait in seconds for ns_sockselect
+The [option -timeout] option specifies the length of time to wait in seconds for ns_sockselect
 to return before timing out.
 
 The rfds, wfds, and efds arguments are lists of readable file id's, writeable

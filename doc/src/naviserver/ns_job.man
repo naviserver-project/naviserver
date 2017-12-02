@@ -32,21 +32,21 @@ can not be cancelled.
 
 
 [call [cmd "ns_job configure"] \
-	[opt [arg {-jobsperthread N}]] \
-	[opt [arg {-timeout T}]]]
+	[opt [option {-jobsperthread N}]] \
+	[opt [option {-timeout T}]]]
 
 Configures jobs system, parameters are:
 
-[arg -jobsperthread] defines how many jobs each thread can process and
+[option -jobsperthread] defines how many jobs each thread can process and
 then gracefully exit, performing a tcl-level cleanup. When the
 parameter is 0, which means that the number of jobs has no influence
 on cleaning up a thread). The logic works the same way as
 [term connsperthread] config parameter for connection threads to
 help reduce memory consumption and cleanup Tcl resources.
 
-[para] The parameter [arg -timeout] defines maximum idle time for the
+[para] The parameter [option -timeout] defines maximum idle time for the
 job worker thread. When the timeout expires, the thread exits like
-when [arg -jobsperthread] runs out. When the [arg -timeout] is 0, the
+when [option -jobsperthread] runs out. When the [option -timeout] is 0, the
 there will be no timeout.
 
 [para] Without any arguments, the command just returns current
@@ -54,7 +54,7 @@ settings values in form of a dict.
 
 
 [call [cmd "ns_job create"] \
-	[opt [arg {-desc description}]] \
+	[opt [option {-desc description}]] \
 	[arg queueId] [opt [arg maxthreads]]]
 
 Create a new job queue called queueId. If maxthreads is not specified,
@@ -116,24 +116,24 @@ Return a list of the job IDs.
 
 
 [call [cmd  "ns_job queue"] \
-	[opt [arg {-detached}]] \
-	[opt [arg -head]] \
-	[opt [arg {-jobid id}]] \
+	[opt [option {-detached}]] \
+	[opt [option -head]] \
+	[opt [option {-jobid id}]] \
 	[arg queueId] [arg script]]
 
-Add a new job to the queue. When [opt [arg {-head}]] is specified, add
+Add a new job to the queue. When [opt [option {-head}]] is specified, add
 the new jab to the front of the queue. If there are less than
 maxthreads current running then the job will be started. If there are
 maxthreads currently running then this new job will be queued.
 
-[para] If [arg -detached], then the job will be cleaned up when it completes;
+[para] If [option -detached], then the job will be cleaned up when it completes;
 no wait will be necessary.
 
-[para] if [arg -jobid] is specified, it will be used as new job id instead
+[para] if [option -jobid] is specified, it will be used as new job id instead
 of auto-generated one. If such job already exists, erro will be
 fired.
 
-[para] if [arg -head] is specified, then new job will be inserted in the
+[para] if [option -head] is specified, then new job will be inserted in the
 beginning of the joblist, otherwise and by default every new job is
 added to the end of the job list.
 
@@ -177,7 +177,7 @@ means that the server is shutting down.
 
 
 [call [cmd  "ns_job wait"] \
-	[opt [arg {-timeout T}]] \
+	[opt [option {-timeout T}]] \
 	[arg queueId] [arg jobId]]
 
 Wait for the specified queued or running job to finish.  ns_job wait
@@ -188,7 +188,7 @@ seconds and fractions of seconds) is reached.
 
 
 [call [cmd  "ns_job waitany"] \
-	[opt [arg {-timeout T}]] \
+	[opt [option {-timeout T}]] \
 	[arg queueId]]
 
 Wait for any job on the queue complete.

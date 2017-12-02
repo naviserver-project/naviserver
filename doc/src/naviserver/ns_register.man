@@ -138,7 +138,7 @@ may want to have a shared variable set so that you don't do this.
 
 [call [cmd ns_register_proc] \
 	[opt [option -noinherit]] \
-	[opt [arg --]] \
+	[opt [option --]] \
 	[arg method] \
 	[arg URL] \
 	[arg myproc] \
@@ -149,12 +149,12 @@ When the server gets a matching request, it calls procname with the connection i
 any arguments specified here.
 
 [para]
-If [arg -noinherit] is specified, the requested URL must match the specified URL exactly.
+If [option -noinherit] is specified, the requested URL must match the specified URL exactly.
 For example, if the URL specified with [term ns_register_proc] is /foo/bar, procname will
 not be called unless the requested URL is exactly /foo/bar.
 
 [para]
-If -noinherit is not specified, the requested URL can match the specified URL or any
+If [option -noinherit] is not specified, the requested URL can match the specified URL or any
 URL below it.  For example, if the URL specified with [term ns_register_proc] is /foo/bar,
 procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar,
 provided there is not already another procedure registered for that exact URL or for
@@ -167,7 +167,7 @@ for file names.  For example, if you want /foo/bar to match /foo/bar.html, you m
    ns_register_proc /foo/bar*
 [example_end]
 
- You can register two procedures for any given method/URL combination by calling [term ns_register_proc] once with the -noinherit flag set and once without it.  Only one of the procedures will be called for any given request, depending on whether the URL was an exact match or not.  For example:
+ You can register two procedures for any given method/URL combination by calling [term ns_register_proc] once with the [option -noinherit] flag set and once without it.  Only one of the procedures will be called for any given request, depending on whether the URL was an exact match or not.  For example:
 
 [example_begin]
    ns_register_proc -noinherit GET /foo/bar Aproc
@@ -319,12 +319,12 @@ fied method/URL combination.
 
 This command unregisters any Tcl or C functions previously registered 
 for this method/URL combination and with the same inheritance
-setting.  That is, if the [arg -noinherit] flag is specified with 
+setting.  That is, if the [option -noinherit] flag is specified with 
 [term ns_unregister_op], the function previously registered with the
-[arg -noinherit] flag using [term ns_register_proc] (or the NS_OP_NOINHERIT
-flag in ns_RegisterRequest) will be unregistered.  If [arg -noinherit]
+[option -noinherit] flag using [term ns_register_proc] (or the NS_OP_NOINHERIT
+flag in ns_RegisterRequest) will be unregistered.  If [option -noinherit]
 is omitted, the function previously registered without the 
-[arg -noinherit] flag (or the NS_OP_NOINHERIT flag) will be unregistered.
+[option -noinherit] flag (or the NS_OP_NOINHERIT flag) will be unregistered.
 
 [call [cmd ns_unregister_url2file] \
 	[opt [option -noinherit]] \

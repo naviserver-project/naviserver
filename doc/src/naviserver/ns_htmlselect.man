@@ -8,15 +8,15 @@
 
 This command builds an HTML SELECT tag using the passed-in data.
 
-If -multi is specified, the SELECT will be generated with the MULTIPLE attribute to allow multiple 
+If [option -multi] is specified, the SELECT will be generated with the MULTIPLE attribute to allow multiple 
 options to be selected.  This option also affects the SIZE attribute output for the SELECT.  If 
 -multi is specified, the SIZE attribute will be set to 5 or the number of elements in values, 
-whichever is less.  If -multi is not specified, then the SIZE attribute will be set to 5 if 
+whichever is less.  If [option -multi] is not specified, then the SIZE attribute will be set to 5 if 
 there are more than 25 elements in values.  If there are 25 or fewer elements in values, the
 SIZE attribute will be omitted (equivalent to SIZE=1).
 
 [para]
-If -sort is specified, the option list of the SELECT will be sorted according to the elements of
+If [option -sort] is specified, the option list of the SELECT will be sorted according to the elements of
 labels, or the elements of values if labels is not specified.  
 
 [para]
@@ -37,7 +37,7 @@ selectedData is an optional list of the OPTIONs that will be selected by default
 
 [list_begin definitions]
 
-[call [cmd ns_htmlselect] [opt [arg -multi]] [opt [arg {-sort}]] [opt [arg {-labels labels}]] [arg name] [arg values] [opt [arg selectedData]]]
+[call [cmd ns_htmlselect] [opt [option -multi]] [opt [option {-sort}]] [opt [option {-labels labels}]] [arg name] [arg values] [opt [arg selectedData]]]
 
 
 [list_end]

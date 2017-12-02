@@ -24,34 +24,34 @@ enclosing script.
 [list_begin definitions]
 
 [call [cmd ns_adp_parse] \
-	[opt [arg {-cwd path}]] \
-	[opt [arg {-file}]] \
-	[opt [arg {-safe}]] \
-	[opt [arg {-string}]] \
-	[opt [arg {-tcl}]] \
+	[opt [option {-cwd path}]] \
+	[opt [option {-file}]] \
+	[opt [option {-safe}]] \
+	[opt [option {-string}]] \
+	[opt [option {-tcl}]] \
 	[opt {args ...}]]
 
 [list_end]
 
 [para]
-The option [opt  [arg -cwd]] can be used to set the current working directory
+The option [opt  [option -cwd]] can be used to set the current working directory
 for this adp parse operation
 
 [para]
-The option  [opt [arg -file]] can be used to parse ADP contained in
+The option  [opt [option -file]] can be used to parse ADP contained in
 the given file.  This use is similar to that of ns_adp_include
 except the result is returned by the command instead of automatically
 being appended to the output stream.
 
 [para]
-The option [opt [arg -safe]] can be used to set the adp safe flag.
+The option [opt [option -safe]] can be used to set the adp safe flag.
 
 [para]
-The option [opt [arg -string]] is provided for backwards compatibility, but
+The option [opt [option -string]] is provided for backwards compatibility, but
 does nothing since string mode is the default mode.
 
 [para]
-The option [opt [arg -tcl]] can be provided to process a Tcl file.
+The option [opt [option -tcl]] can be provided to process a Tcl file.
 
 [para]
 Additional arguments can be provided, which are passed to the adp evaluation.  The arguments can be accessed within the

@@ -13,7 +13,7 @@
 
 [list_begin definitions]
 
-[call [cmd ns_choosecharset] [opt [arg {-preference charset-list}]]]
+[call [cmd ns_choosecharset] [opt [option {-preference charset-list}]]]
 
 [list_end]
 

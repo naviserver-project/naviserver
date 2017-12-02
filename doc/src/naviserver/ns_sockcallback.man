@@ -17,7 +17,7 @@ The optional argument [arg when] can consist of one or more characters
 of r, w, e, or x, specifying, when the callback should fire.
 
 The optional argument [arg timeout] can be of the form
-secs:?microsecs?.
+[arg secs[opt :microsecs]].
 [para]
 
 When the callback is fired, the specified [arg script] will be called

@@ -18,11 +18,11 @@ variables of the currently running nsd process.
 
 [call [cmd ns_env] [arg exists] [arg name]]
 
-[call [cmd ns_env] [arg get] [opt [arg -nocomplain]] [arg name]]
+[call [cmd ns_env] [arg get] [opt [option -nocomplain]] [arg name]]
 
 [call [cmd ns_env] [arg set] [arg name] [arg value]]
 
-[call [cmd ns_env] [arg unset] [opt [arg -nocomplain]] [arg name]]
+[call [cmd ns_env] [arg unset] [opt [option -nocomplain]] [arg name]]
 
 [list_end]
 

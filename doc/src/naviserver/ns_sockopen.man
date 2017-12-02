@@ -11,19 +11,19 @@ list of two file ids: the first one for reads and the second one for writes.
 
 [para]
 
-The -nonblock option specifies that ns_sockopen will return immediately,
+The [option -nonblock] option specifies that ns_sockopen will return immediately,
 while the connect is still in progress by the operating system. If you
-use -nonblock, you then can call ns_sockcheck with the write file id to
+use [option -nonblock], you then can call ns_sockcheck with the write file id to
 see if the connect was actually completed.
 
 [para]
-The -timeout option specifies how long to wait for the connect to be made in seconds before timing out.
+The [option -timeout] option specifies how long to wait for the connect to be made in seconds before timing out.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_sockopen] [opt [arg -nonblock]] [opt [arg -timeout]] [arg host] [arg port]]
+[call [cmd ns_sockopen] [opt [option -nonblock]] [opt [option -timeout]] [arg host] [arg port]]
 
 [list_end]
 

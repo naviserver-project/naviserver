@@ -8,7 +8,7 @@
 
 This command creates a symbolic link named filename2 that points to the file or
 directory specified by filename1.  If the link fails, a Tcl error is generated,
-unless -nocomplain is specified.
+unless [option -nocomplain] is specified.
 
 This is a legacy command from when Tcl did not have this functionality. 
 It is now recommended you use Tcl's file link command instead.
@@ -17,7 +17,7 @@ It is now recommended you use Tcl's file link command instead.
 
 [list_begin definitions]
 
-[call [cmd ns_symlink] [opt [arg -nocomplain]] [arg filename1] [arg filename2]]
+[call [cmd ns_symlink] [opt [option -nocomplain]] [arg filename1] [arg filename2]]
 
 
 [list_end]
