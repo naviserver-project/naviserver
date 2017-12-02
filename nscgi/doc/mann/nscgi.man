@@ -1599,5 +1599,6 @@ You can download lots of examples and working CGI programs from the Web. Here ar
 
 [list_end]
 
+[keywords module nscgi]
 
 [manpage_end]

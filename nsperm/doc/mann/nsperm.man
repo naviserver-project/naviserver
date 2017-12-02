@@ -127,23 +127,23 @@ explain how to add entries to the file:
 
 
 [example_begin]
-# This is the NaviServer perms file which defines which users
-# and groups may or may not visit certain URLs.
-#
-# The format is:
-# ACTION  INHERITANCE  METHOD  URL  ENTITY
-#
-# ACTION can be: denygroup, allowgroup, denyuser, or allowuser
-# INHERITANCE can be: inherit or noinherit
-# METHOD can be: PUT, GET, POST, or any other supported method.
-# URL is the path relative to pageroot, e.g., /index.html or
-# /images
-# ENTITY is either the name of a user or group, as specified in
-# the passwd and group files.
-#
-# Example:
-# denyuser  inherit GET /NS ""
-# allowuser inherit GET /NS nsadmin
+   # This is the NaviServer perms file which defines which users
+   # and groups may or may not visit certain URLs.
+   #
+   # The format is:
+   # ACTION  INHERITANCE  METHOD  URL  ENTITY
+   #
+   # ACTION can be: denygroup, allowgroup, denyuser, or allowuser
+   # INHERITANCE can be: inherit or noinherit
+   # METHOD can be: PUT, GET, POST, or any other supported method.
+   # URL is the path relative to pageroot, e.g., /index.html or
+   # /images
+   # ENTITY is either the name of a user or group, as specified in
+   # the passwd and group files.
+   #
+   # Example:
+   # denyuser  inherit GET /NS ""
+   # allowuser inherit GET /NS nsadmin
 [example_end]
 
 
@@ -159,14 +159,14 @@ default hosts.allow file contains:
 
 
 [example_begin]
-#
-# This is the NaviServer hosts.allow file. It allows you to specify
-# which hosts may log in as certain users. If you have an entry
-# in this file for a given user, you may not have an entry in
-# hosts.deny for that same user.
-#
-#
-nsadmin: 10.0.0.0/8, ::1/64, .internal.mycompany.com, home.me.com
+   #
+   # This is the NaviServer hosts.allow file. It allows you to specify
+   # which hosts may log in as certain users. If you have an entry
+   # in this file for a given user, you may not have an entry in
+   # hosts.deny for that same user.
+   #
+   #
+   nsadmin: 10.0.0.0/8, ::1/64, .internal.mycompany.com, home.me.com
 [example_end]
 
 
@@ -216,16 +216,16 @@ default hosts.deny file contains:
 
 
 [example_begin]
-#
-# This is the NaviServer hosts.deny file. It allows you to specify
-# which hosts may not log in as certain users. If you have an
-# entry in this file for a given user, you may not have an entry
-# in hosts.allow for that same user.
-#
-# Example:
-#
-# nsadmin: hacker.badguy.com, .aol.com, 10.2.114.0/24
-#
+   #
+   # This is the NaviServer hosts.deny file. It allows you to specify
+   # which hosts may not log in as certain users. If you have an
+   # entry in this file for a given user, you may not have an entry
+   # in hosts.allow for that same user.
+   #
+   # Example:
+   #
+   # nsadmin: hacker.badguy.com, .aol.com, 10.2.114.0/24
+   #
 [example_end]
 
 
@@ -273,9 +273,9 @@ allowing and denying access to a particular directory.
 To enable this
 
 [example_begin]
-ns_section "ns/server/servername/module/nsperm"
-ns_param   htaccess   true
-ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+   ns_section "ns/server/servername/module/nsperm"
+   ns_param   htaccess   true
+   ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
 [example_end]
 
 passwdfile can point to any file, by default it set to default nsperm module password file.
@@ -283,9 +283,11 @@ passwdfile can point to any file, by default it set to default nsperm module pas
 Now, in the directory where access is wanted, create .htaccess file and add lines like these:
 
 [example_begin]
-allow vlad john
-deny steve
+   allow vlad john
+   deny steve
 [example_end]
 
+[see_also ns_perm ns_permreload ns_permpasswd]
+[keywords module nsperm]
 
 [manpage_end]

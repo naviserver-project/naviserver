@@ -1,3 +1,4 @@
+
 [include version_include.man]
 
 [manpage_begin ns_proxy n [vset version]]
@@ -448,6 +449,6 @@ foreach h $handles {
 
 
 [see_also ns_job]
-[keywords "server builtin" proxy exec pool]
+[keywords "server builtin" proxy exec pool module nsproxy]
 
 [manpage_end]

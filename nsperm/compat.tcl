@@ -33,6 +33,7 @@
 #
 
 proc ns_passwordcheck { user password } {
+    ns_deprecated "ns_perm checkpass"
     set ret [catch {ns_perm checkpass $user $password} err]
     if {$ret == 0} {
         return 0

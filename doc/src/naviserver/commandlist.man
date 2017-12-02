@@ -472,6 +472,7 @@ List of all currently available NaviServer commands.
 [call [cmd "ns_thread join"]]
 [call [cmd "ns_tmpnam"]]
 [call [cmd "ns_updateheader"]]
+[call [cmd "ns_passwordcheck"]]
 [list_end]
 
 [see_also nsd]
