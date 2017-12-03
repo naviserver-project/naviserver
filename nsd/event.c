@@ -83,7 +83,7 @@ typedef struct EventQueue {
 
 static const struct {
     Ns_SockState when;  /* Event when bit. */
-    const short  event;        /* Poll event bit. */
+    const short  event; /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
