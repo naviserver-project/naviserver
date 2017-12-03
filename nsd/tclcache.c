@@ -229,7 +229,7 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         }
         Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj( isNew == 1));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj( isNew ));
     }
 
     return result;
