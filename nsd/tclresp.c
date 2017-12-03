@@ -75,7 +75,7 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     NsInterp   *itPtr = clientData;
     Ns_Conn    *conn = NULL;
-    int         httpStatus, length = -1, binary = 0, result;
+    int         httpStatus, length = -1, binary = (int)NS_FALSE, result;
     char       *mimeType = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -361,7 +361,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     } else {
         const char *data;
 
-        if (binary == NS_TRUE || NsTclObjIsByteArray(dataObj)) {
+        if (binary == (int)NS_TRUE || NsTclObjIsByteArray(dataObj)) {
             data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
             result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, type));
         } else {
