@@ -115,7 +115,7 @@ NsInitInfo(void)
 {
     Ns_DString addr;
 
-    if (gethostname(nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
+    if (gethostname((char *)nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
         memcpy(nsconf.hostname, "localhost", 10u);
     }
     Ns_DStringInit(&addr);
