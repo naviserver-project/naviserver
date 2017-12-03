@@ -109,7 +109,7 @@ typedef struct Ns_DbHandle {
     Ns_DString  dsExceptionMsg;
     void       *context;
     void       *statement;
-    int         fetchingRows;
+    bool        fetchingRows;
 } Ns_DbHandle;
 
 /*

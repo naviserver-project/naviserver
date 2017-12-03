@@ -90,7 +90,7 @@ typedef struct Handle {
     Ns_DString      dsExceptionMsg;
     void           *context;
     void           *statement;
-    int             fetchingRows;
+    bool            fetchingRows;
     /* Members above must match Ns_DbHandle */
     struct Handle  *nextPtr;
     struct Pool	   *poolPtr;
@@ -1292,7 +1292,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->poolPtr = poolPtr;
             handlePtr->connection = NULL;
             handlePtr->connected = NS_FALSE;
-            handlePtr->fetchingRows = 0;
+            handlePtr->fetchingRows = NS_FALSE;
             handlePtr->row = Ns_SetCreate(NULL);
             handlePtr->cExceptionCode[0] = '\0';
             handlePtr->otime = handlePtr->atime = 0;
