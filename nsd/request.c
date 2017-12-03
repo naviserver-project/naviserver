@@ -517,7 +517,7 @@ SetUrl(Ns_Request *request, char *url)
         encodedPath++;
         
         while (*encodedPath != '\0') {
-            p = strchr(encodedPath, (int)UCHAR('/'));
+            p = strchr(encodedPath, INTCHAR('/'));
             if (p == NULL) {
                 break;
             }

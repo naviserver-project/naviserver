@@ -150,7 +150,7 @@ NormalizePath(const char **pathPtr) {
     NS_NONNULL_ASSERT(pathPtr != NULL);
     assert(*pathPtr != NULL);
     
-    if (strchr(*pathPtr, '/') != NULL) {
+    if (strchr(*pathPtr, INTCHAR('/')) != NULL) {
         Tcl_Obj *pathObj, *normalizedPathObj;
         /*
          * The path contains a slash, it might be not normalized;

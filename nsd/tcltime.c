@@ -662,7 +662,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(tPtr != NULL);
 
-    sep = strchr(str, (int)UCHAR(separator));
+    sep = strchr(str, INTCHAR(separator));
     if (sep != NULL) {
         int intValue;
 
