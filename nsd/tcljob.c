@@ -86,6 +86,9 @@
 
 #define NS_JOB_DEFAULT_MAXTHREADS 4
 
+/*
+ * Enumeration types for the controlling variables.
+ */
 typedef enum JobStates {
     JOB_SCHEDULED = 0,
     JOB_RUNNING,
@@ -127,7 +130,7 @@ typedef struct Job {
     const char       *server;
     JobStates         state;
     int               code;
-    int               cancel;
+    bool              cancel;
     JobTypes          type;
     JobRequests       req;
     char             *errorCode;
@@ -168,7 +171,7 @@ typedef struct ThreadPool {
     Ns_Mutex           queuelock;
     Tcl_HashTable      queues;
     ThreadPoolRequests req;
-    int                nextThreadId;
+    uintptr_t          nextThreadId;
     unsigned long      nextQueueId;
     int                maxThreads;
     int                nthreads;
@@ -286,7 +289,7 @@ NsTclInitQueueType(void)
 {
     Tcl_InitHashTable(&tp.queues, TCL_STRING_KEYS);
     Ns_MutexSetName(&tp.queuelock, "jobThreadPool");
-    tp.nextThreadId = 0;
+    tp.nextThreadId = 0u;
     tp.nextQueueId = 0u;
     tp.maxThreads = 0;
     tp.nthreads = 0;
@@ -852,7 +855,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         }
         if (result == TCL_OK) {
             assert(jobPtr != NULL);
-            jobPtr->cancel = 1;
+            jobPtr->cancel = NS_TRUE;
             if (jobPtr->async != NULL) {
                 Tcl_AsyncMark(jobPtr->async);
             }
@@ -1430,13 +1433,14 @@ JobThread(void *UNUSED(arg))
     Tcl_AsyncHandler  async;
     const Ns_Time    *timePtr;
     Ns_Time           wait;
-    int               jpt, njobs, tid;
+    int               jpt, njobs;
+    uintptr_t         tid;
 
     (void)Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
     tid = tp.nextThreadId++;
-    Ns_ThreadSetName("-ns_job_%x-", tid);
-    Ns_Log(Notice, "Starting thread: -ns_job_%x-", tid);
+    Ns_ThreadSetName("-ns_job_%lx-", tid);
+    Ns_Log(Notice, "Starting thread: -ns_job_%lx-", tid);
 
     async = Tcl_AsyncCreate(JobAbort, NULL);
 
@@ -1486,22 +1490,28 @@ JobThread(void *UNUSED(arg))
          */
         interp = Ns_TclAllocateInterp(jobPtr->server);
 
+        /*
+         * Initialize times ...
+         */
         Ns_GetTime(&jobPtr->endTime);
         Ns_GetTime(&jobPtr->startTime);
 
+        /*
+         * ... and controlling variables.
+         */
         jobPtr->tid   = Ns_ThreadId();
         jobPtr->code  = TCL_OK;
         jobPtr->state = JOB_RUNNING;
         jobPtr->async = async;
 
-        if (jobPtr->cancel != 0) {
+        if (jobPtr->cancel == NS_TRUE) {
             Tcl_AsyncMark(jobPtr->async);
         }
 
         /*
-         * ... rename the thread to job thread...
+         * ... Rename the thread according to the job ...
          */
-        Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
+        Ns_ThreadSetName("-%s:%lx", jobPtr->queueId, tid);
         ++queue->nRunning;
 
         Ns_MutexUnlock(&queue->lock);
@@ -1516,7 +1526,11 @@ JobThread(void *UNUSED(arg))
         Ns_MutexLock(&queue->lock);
 
         --queue->nRunning;
-        Ns_ThreadSetName("-ns_job_%x-", tid);
+
+        /*
+         * Rename the job again to the generic name
+         */
+        Ns_ThreadSetName("-ns_job_%lx-", tid);
 
         jobPtr->state  = JOB_DONE;
         jobPtr->code   = code;
@@ -1654,7 +1668,7 @@ GetNextJob(void)
         if (queue->nRunning < queue->maxThreads) {
 
             /*
-             * Job can be serviced; remove from the pending list
+             * Job can be serviced; remove it from the pending list.
              */
             if (jobPtr == tp.firstPtr) {
                 tp.firstPtr = jobPtr->nextPtr;
