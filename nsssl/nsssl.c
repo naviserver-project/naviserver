@@ -764,7 +764,7 @@ ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
     SSLContext   *sslPtr;
     int           result;
 
-    result = Ns_TLS_SSLConnect(interp, sockPtr->sock, ctx, &ssl);
+    result = Ns_TLS_SSLConnect(interp, sockPtr->sock, ctx, NULL, &ssl);
 
     if (likely(result == TCL_OK)) {
         sslPtr = ns_calloc(1, sizeof(SSLContext));

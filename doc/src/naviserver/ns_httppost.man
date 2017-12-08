@@ -18,21 +18,21 @@ POST method.
 
 [para]
 [arg url]
-Url where to send data
+Url where to send data.
 
 [para]
 [arg rqset]
 This is ns_set with headers, if none specified, default minimum number of HTTP
-headers will be provided
+headers will be provided.
 
 [para]
 [arg qsset]
 This is ns_set with form data, key values pair which will be formatted into
-query format as if browser sends it
+query format as if browser sends it.
 
 [para]
 [arg type]
-Content type, default is application/x-www-form-urlencoded which submitted form format
+Content type, default is application/x-www-form-urlencoded which submitted form format.
 
 [para]
 [arg timeout]

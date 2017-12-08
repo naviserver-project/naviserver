@@ -51,6 +51,9 @@ adds new ns_ssl command.
 
 * New in Version 2.0:
     - OpenSSL support in core.
+
+* New in Version 2.1:
+    - Support for Server Name Indication (SNI)
 ***
 
 ## Configuration: ##

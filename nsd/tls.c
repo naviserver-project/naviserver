@@ -41,6 +41,16 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+/*
+ * OpenSSL < 0.9.8f does not have SSL_set_tlsext_host_name() In some
+ * versions, this function is defined as a macro, on some versions as
+ * a library call, which complicates detection via m4
+ */
+#if OPENSSL_VERSION_NUMBER > 0x00908070
+# define HAVE_SSL_set_tlsext_host_name 1
+#endif
+
+
 #if OPENSSL_VERSION_NUMBER < 0x010100000
 # define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
 # define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
@@ -258,6 +268,7 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
 
 int
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
+                  const char *sni_hostname,
                   NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;
@@ -274,7 +285,16 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 	result = TCL_ERROR;
         
     } else {
-    
+        if (sni_hostname != NULL) {
+#if HAVE_SSL_set_tlsext_host_name
+            Ns_Log(Debug, "tls: setting SNI hostname '%s'", sni_hostname);
+            if (SSL_set_tlsext_host_name(ssl, sni_hostname) != 1) {
+                Ns_Log(Warning, "tls: setting SNI hostname '%s' failed, value ignored", sni_hostname);
+            }
+#else
+            Ns_Log(Warning, "tls: SNI hostname '%s' is not supported by version of OpenSSL", sni_hostname);
+#endif
+        }
         SSL_set_fd(ssl, sock);
         SSL_set_connect_state(ssl);
     
@@ -1160,6 +1180,7 @@ void NsInitOpenSSL(void)
 
 int
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
+                  const char *UNUSED(sni_hostname),
                   NS_TLS_SSL **UNUSED(sslPtr))
 {
     Ns_TclPrintfResult(interp, "SSLCreate failed: no support for OpenSSL built in");

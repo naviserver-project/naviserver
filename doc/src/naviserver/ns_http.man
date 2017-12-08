@@ -33,9 +33,10 @@ id url done|running ....
 	[opt [option "-body_file [arg fn]"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-keep_host_header"]] \
-	[opt [option "-cert [arg C]"]] \
 	[opt [option "-cafile [arg CA ]"]] \
 	[opt [option "-capath [arg CP ]"]] \
+	[opt [option "-cert [arg C]"]] \
+	[opt [option "-hostname [arg HOSTNAME ]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
@@ -70,12 +71,6 @@ Timeout for how long to wait for finishing the whole request
 allows the Host: header field for the request to be passed in via the [option -headers] arg. 
 Otherwise it is overwritten.
 
-[opt_def "-cert" [arg C]]
-allows for HTTPS URIs to use the specified client certificate. The
-certificates must be in PEM format and must be sorted starting with
-the subject's certificate (actual client or server certificate),
-followed by intermediate CA certificates if applicable, and ending at
-the highest level (root) CA.
 
 [opt_def "-cafile" [arg CA]]
 allows for HTTPS URIs to specify the locations, at which CA
@@ -90,6 +85,19 @@ certificates for verification purposes are located. capath points to a
 directory containing CA certificates in PEM format. The files each
 contain one CA certificate. For more details, see
 https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html
+
+[opt_def "-cert" [arg C]]
+allows for HTTPS URIs to use the specified client certificate. The
+certificates must be in PEM format and must be sorted starting with
+the subject's certificate (actual client or server certificate),
+followed by intermediate CA certificates if applicable, and ending at
+the highest level (root) CA.
+
+[opt_def "-hostname" [arg HOSTNAME]]
+allows for HTTPS URIs to specify the hostname for the server
+certificate. This option has to be used, when the host supports
+virtual hosting, is configured with multiple certificates and supports
+the SNI (Server Name Indication) extension of TLS.
 
 [opt_def -verify]
 allows for HTTPS URIs to specify that the server certificate should be
@@ -108,15 +116,16 @@ anonymous cipher is used, this option is ignored.
 	[opt [option "-body_file [arg fn]"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-keep_host_header"]] \
-	[opt [option "-cert [arg C]"]] \
 	[opt [option "-cafile [arg CA ]"]] \
 	[opt [option "-capath [arg CP ]"]] \
+	[opt [option "-cert [arg C]"]] \
+	[opt [option "-hostname [arg HOSTNAME ]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
 
 [para] 
-Send a HTTP reuqest and wait for the result.  The command 
+Send a HTTP request and wait for the result.  The command
 [cmd "ns_http run"] is similar to [cmd "ns_http queue"] followed by 
 [cmd "ns_http wait"].
 
@@ -190,11 +199,25 @@ First, a minimal example:
    1
 [example_end]
 
-[para] The second example is a code snippet making a POST requests via
+[para] The second example is a code snippet making a requests via
+HTTPS, where the http handle is put into the Tcl variable "h".
+Note that HTTPS only works when NaviServer was compiled with
+OpenSSL support.
+
+[example_begin]
+   % set h [ns_http queue https://www.google.com]
+   % ns_http wait -status S -result R $h
+   1
+[example_end]
+
+If you are connecting to a server with virtual hosting, that provides
+multiple certificates via SNI (Server Name Indication), you have to
+provide the option [option -hostname].
+
+[para] The third example is a code snippet making a POST requests via
 https and provides url-encoded POST data. The examples sets a larger
 timeout on the request, provides query-headers and returns
-reply-headers. This example assumes that NaviServer was compiled with
-OpenSSL support.
+reply-headers.
 
 [example_begin]
  #######################
@@ -232,7 +255,7 @@ OpenSSL support.
 [example_end]
 
 
-The third example is a code snippet that sets a larger timeout on the
+The forth example is a code snippet that sets a larger timeout on the
 request, provides query-headers and returns reply-headers, and spools
 results to a file, when the result is larger than 100 bytes.
 
@@ -254,7 +277,7 @@ results to a file, when the result is larger than 100 bytes.
 
 
 [see_also ns_httptime]
-[keywords "global builtin" http-client HTTP HTTPS POST GET nssock spooling] 
+[keywords "global builtin" http-client HTTP HTTPS POST GET nssock spooling SNI]
 
 [manpage_end]
 

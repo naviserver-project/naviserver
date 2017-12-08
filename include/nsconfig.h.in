@@ -148,6 +148,9 @@
 /* Define to 1 if you have the `random' function. */
 #undef HAVE_RANDOM
 
+/* Define to 1 if you have the `SSL_set_tlsext_host_name' function. */
+#undef HAVE_SSL_SET_TLSEXT_HOST_NAME
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

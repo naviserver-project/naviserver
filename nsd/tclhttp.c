@@ -49,9 +49,10 @@ static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
                        Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-                       const char *cert, const char *caFile, const char *caPath, bool verify,
-                       bool keep_host_header, Ns_HttpTask **httpPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(12);
+                       const char *cert, const char *caFile, const char *caPath,
+                       const char *sni_hostname,
+                       bool verify, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(13);
 
 static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -453,7 +454,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     Tcl_Interp    *interp;
     int            verifyInt = 0, result = TCL_OK;
     Ns_HttpTask   *httpPtr;
-    char          *cert = NULL, *caFile = NULL, *caPath = NULL;
+    char          *cert = NULL, *caFile = NULL, *caPath = NULL, *sni_hostname = NULL;
     char          *method = (char *)"GET", *url = NULL, *bodyFileName = NULL;
     Ns_Set        *hdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
@@ -467,6 +468,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         {"-capath",           Ns_ObjvString, &caPath,       NULL},
         {"-cert",             Ns_ObjvString, &cert,         NULL},
         {"-headers",          Ns_ObjvSet,    &hdrPtr,       NULL},
+        {"-hostname",         Ns_ObjvString, &sni_hostname, NULL},
         {"-keep_host_header", Ns_ObjvBool,   &keepInt,      INT2PTR(NS_TRUE)},
         {"-method",           Ns_ObjvString, &method,       NULL},
         {"-timeout",          Ns_ObjvTime,   &timeoutPtr,   NULL},
@@ -485,9 +487,9 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
         result =  TCL_ERROR;
 
     } else if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, bodyFileName,
-                           cert, caFile, caPath,
-                           verifyInt == 1 ? NS_TRUE : NS_FALSE,
-                           keepInt == 1 ? NS_TRUE : NS_FALSE,
+                           cert, caFile, caPath, sni_hostname,
+                           (verifyInt == 1) ? NS_TRUE : NS_FALSE,
+                           (keepInt == 1)   ? NS_TRUE : NS_FALSE,
                            &httpPtr) != TCL_OK) {
         result = TCL_ERROR;
 
@@ -1059,8 +1061,9 @@ WaitWritable(NS_SOCKET sock) {
 static int
 HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
             Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-            const char *cert, const char *caFile, const char *caPath, bool verify,
-            bool keep_host_header, Ns_HttpTask **httpPtrPtr)
+            const char *cert, const char *caFile, const char *caPath,
+            const char *sni_hostname,
+            bool verify, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
     Ns_HttpTask   *httpPtr;
@@ -1211,7 +1214,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
             /*
              * Establish the SSL/TLS connection.
              */
-            result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx, &ssl);
+            result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx, sni_hostname, &ssl);
             httpPtr->ssl = ssl;
         }
         if (unlikely(result != TCL_OK)) {
