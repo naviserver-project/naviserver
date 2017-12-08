@@ -53,7 +53,7 @@ adds new ns_ssl command.
     - OpenSSL support in core.
 
 * New in Version 2.1:
-    - Support for Server Name Indication (SNI)
+    - Support for client-side Server Name Indication (SNI).
 ***
 
 ## Configuration: ##
