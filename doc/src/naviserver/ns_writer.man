@@ -41,14 +41,16 @@ binary. On success the function returns 1, otherwise 0.
 	[arg file]]
 
 [para]
-Submits file to be returned via writer thread. For parital requests,
+Submits file to be returned via writer thread. For partial requests,
 ns_writer does NOT change status code or sets content-range. On
 success the function returns 1, otherwise 0.
 Optionally the following arguments can be used:
 
 [para]
 [option -headers]
-Tells the writer to provide required HTTP headers, like content size, type and status.
+Tells the writer to provide required HTTP headers, like content size,
+type and status. When this options is not used, make sure that the
+headers are provided (e.g. via [cmd ns_headers]) from your application.
 
 [para]
 [option -offset]
@@ -106,7 +108,7 @@ returned via writer thread and connection thread will be released to handle othe
 via [cmd ns_write]) should be sent via the writer. 
 When sending server responses over slow connections, this
 option reduces the blocking time of the connection threads and can
-therfore reduce the damage of slow-read attacks.
+therefore reduce the damage of slow-read attacks.
 
 [section EXAMPLES]
 
@@ -116,7 +118,7 @@ ns_writer submitfile /tmp/biglist.txt
 
 [example_end]
 
-[see_also ns_returnfile ns_conn ns_write]
+[see_also ns_returnfile ns_conn ns_write ns_headers]
 [keywords "server builtin" writer configuration]
 [manpage_end]
 
