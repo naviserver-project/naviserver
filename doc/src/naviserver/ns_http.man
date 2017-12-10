@@ -205,7 +205,7 @@ Note that HTTPS only works when NaviServer was compiled with
 OpenSSL support.
 
 [example_begin]
-   % set h [ns_http queue https://www.google.com]
+   % set h [lb]ns_http queue https://www.google.com[rb]
    % ns_http wait -status S -result R $h
    1
 [example_end]
