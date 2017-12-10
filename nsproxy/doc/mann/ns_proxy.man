@@ -48,7 +48,7 @@ Proxies are obtained from their corresponding [arg pool] by means of the
 [cmd "ns_proxy get"] command. Only the thread that obtained the proxy can use
 it to communicate with the slave process. In order to allow other threads to
 use the same proxy, the thread must return (via the [cmd "ns_proxy put"] or
-[cmd "ns_proxy cleanup"] commands) the proxy back to it's/theirs correspondig
+[cmd "ns_proxy cleanup"] commands) the proxy back to it's/theirs corresponding
 pool/s. One thread can obtain one or a bunch of proxies from a pool in one step.
 It cannot, however, repeatedly obtain proxy by proxy in a loop, as this may
 lead to difficult-to-trace deadlock situation (see [cmd "ns_proxy get"] command).
@@ -57,32 +57,6 @@ lead to difficult-to-trace deadlock situation (see [cmd "ns_proxy get"] command)
 [section COMMANDS]
 
 [list_begin definitions]
-
-
-[call [cmd "ns_proxy pools"]]
-
-Returns a list of all currently defined proxy pools.
-
-
-
-[call [cmd "ns_proxy handles"]]
-
-Returns list of all proxies allocated for the current interpreter.
-
-
-
-[call [cmd "ns_proxy cleanup"]]
-
-Releases any handles from any pools currently owned by a thread.
-
-[para]
-This command is intended to be used as part of a garbage collection
-step.Calling this command within NaviServer is not necessary as the
-module registers a trace to release all handles via the
-[cmd "ns_ictl trace deallocate"] facility when interpreters are deallocated
-after some transaction, for example, at the end of a connection.
-
-
 
 [call [cmd "ns_proxy active"] [arg pool] [opt [arg handle]]]
 
@@ -116,16 +90,16 @@ argument space with the request script before evaluation and clears it
 after sending the result.
 
 
+[call [cmd "ns_proxy cleanup"]]
 
-[call [cmd "ns_proxy free"] [arg pool]]
+Releases any handles from any pools currently owned by a thread.
 
-Returns a list of all free proxies for the given [arg pool]. Free
-proxies are those which are left in the pool queue waiting to
-be used by the [cmd "ns_proxy get"] command. Some proxies may have
-an active slave process attached, some not. If a slave process is
-not attached to the free proxy, a new one will be created as soon
-as the proxy is requested by some thread.
-
+[para]
+This command is intended to be used as part of a garbage collection
+step.Calling this command within NaviServer is not necessary as the
+module registers a trace to release all handles via the
+[cmd "ns_ictl trace deallocate"] facility when interpreters are deallocated
+after some transaction, for example, at the end of a connection.
 
 
 [call [cmd "ns_proxy clear"] [arg pool] [opt [arg handle]]]
@@ -133,15 +107,6 @@ as the proxy is requested by some thread.
 Stop all slave processes attached to free proxies for the given [arg pool].
 If the optional [arg handle] is given, it stops the process only for
 that handle.
-
-
-
-[call [cmd "ns_proxy stop"] [arg pool] [opt [arg handle]]]
-
-Stop all slave processes attached to running proxies for the given [arg pool].
-If the optional [arg handle] is given, it stops the process only for
-that handle.
-
 
 
 [call [cmd "ns_proxy configure"] [arg pool] [opt {-key val -key val...}]]
@@ -198,7 +163,7 @@ The default is 0 milliseconds i.e. infinite.
 
 [opt_def -sendtimeout [arg ms]]
 [opt_def -recvtimeout [arg ms]]
-Specifies the maximium time to wait to send a script and receive a
+Specifies the maximum time to wait to send a script and receive a
 result from a proxy.  The default is 1000 milliseconds which assumes
 minimal delay sending and receiving reasonably sized scripts and 
 results over the connecting pipe.
@@ -234,6 +199,36 @@ their handles are put back to the pool by the [cmd "ns_proxy put"]
 or [cmd "ns_proxy cleanup"] command.
 
 [list_end]
+
+
+
+[call [cmd "ns_proxy eval"] [arg handle] [arg script] [opt [arg timeout]]]
+
+Evaluates [arg script] in the proxy specified by [arg handle].
+The optional [opt timeout] argument specifies a maximum number of
+milliseconds to wait for the command to complete before raising an
+error (see ERROR HANDLING below for details on handling errors).
+
+[para]
+Alternatively, the [arg handle] itself may be used as Tcl command like
+in the example below:
+
+[example_begin]
+set handle [lb][cmd ns_proxy] get mypool[rb]
+$handle "short_running_proc"
+$handle "long_running_proc" 20000
+[example_end]
+
+
+
+[call [cmd "ns_proxy free"] [arg pool]]
+
+Returns a list of all free proxies for the given [arg pool]. Free
+proxies are those which are left in the pool queue waiting to
+be used by the [cmd "ns_proxy get"] command. Some proxies may have
+an active slave process attached, some not. If a slave process is
+not attached to the free proxy, a new one will be created as soon
+as the proxy is requested by some thread.
 
 
 
@@ -285,6 +280,12 @@ the startup of the proxy under some alternative UID/GID may/will fail.
 
 
 
+
+[call [cmd "ns_proxy handles"]]
+
+Returns list of all proxies allocated for the current interpreter.
+
+
 [call [cmd "ns_proxy ping"] [arg handle]]
 
 This command sends a null request to the proxy specified by the
@@ -294,12 +295,48 @@ if necessary.  This command is not normally required as the
 as needed.
 
 
+[call [cmd "ns_proxy pools"]]
+
+Returns a list of all currently defined proxy pools.
+
+
+[call [cmd "ns_proxy put"] [arg handle]]
+
+This command is alternate name for [cmd "ns_proxy release"].
+
+
+[call [cmd "ns_proxy recv"] [arg handle]]
+
+Reads result from the script from the proxy specified by [arg handle]
+(see ERROR HANDLING below for details on handling errors).
+
+
+[call [cmd "ns_proxy release"] [arg handle]]
+
+Return the proxy [arg handle] to the pool. All handles owned by a
+thread to the corresponding pool must be returned before any handles
+can be allocated again. Within the server, a call to this routine is
+recommended for clarity but not strictly necessary. NaviServer
+installs a trace to release all handles at the end of every connection
+during interpreter deallocation.
+
 
 [call [cmd "ns_proxy send"] [arg handle] [arg script]]
 
 Sends [arg script] to the proxy specified by [arg handle].
 (see ERROR HANDLING below for details on handling errors).
 
+
+[call [cmd "ns_proxy stats"] [arg pool]]
+
+Provide usage statistics in form of a dict from the specified pool.
+
+
+[call [cmd "ns_proxy stop"] [arg pool] [opt [arg handle]]]
+
+Stop all slave processes attached to running proxies for the given [arg pool].
+If the optional [arg handle] is given, it stops the process only for
+that handle.
 
 
 [call [cmd "ns_proxy wait"] [arg handle] [opt [arg timeout]]]
@@ -311,41 +348,7 @@ error (see ERROR HANDLING below for details on handling errors).
 
 
 
-[call [cmd "ns_proxy recv"] [arg handle]]
 
-Reads result from the script from the proxy specified by [arg handle]
-(see ERROR HANDLING below for details on handling errors).
-
-
-
-[call [cmd "ns_proxy eval"] [arg handle] [arg script] [opt [arg timeout]]]
-
-Evalutes [arg script] in the proxy specified by [arg handle].
-The optional [opt timeout] argument specifies a maximum number of
-milliseconds to wait for the command to complete before raising an
-error (see ERROR HANDLING below for details on handling errors).
-
-[para]
-Alternatively, the [arg handle] itself may be used as Tcl command like
-in the example below:
-
-[example_begin]
-set handle [lb][cmd ns_proxy] get mypool[rb]
-$handle "short_running_proc"
-$handle "long_running_proc" 20000
-[example_end]
-
-
-
-[call [cmd "ns_proxy put"] [arg handle]]
-
-This command can be used to release a single proxy specified by the
-[arg handle] argument. All handles owned by a thread to the
-cooresponding pool must be returned before any handles can be
-allocated again. Within the server, a call to this routine is
-recommended for clarity but not strictly necessary. NaviServer installs
-a trace to release all handles at the end of every connection during 
-interpreter deallocation.
 
 [list_end]
 

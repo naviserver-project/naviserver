@@ -294,9 +294,12 @@ Ns_LogSeverity Ns_LogNsProxyDebug = 0;
 
 static Tcl_ObjCmdProc ProxyObjCmd;
 static Tcl_ObjCmdProc ConfigureObjCmd;
-static Tcl_ObjCmdProc RunProxyCmd;
 static Tcl_ObjCmdProc GetObjCmd;
+static Tcl_ObjCmdProc StatsObjCmd;
+static Tcl_ObjCmdProc ClearObjCmd;
+static Tcl_ObjCmdProc StopObjCmd;
 
+static Tcl_ObjCmdProc RunProxyCmd;
 static Tcl_CmdDeleteProc DelProxyCmd;
 static Tcl_InterpDeleteProc DeleteData;
 
@@ -324,6 +327,8 @@ static void   GetStats(Proxy *proxyPtr)  NS_GNUC_NONNULL(1);
 static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   CloseProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
+static int    CloseSlaveOfProxy(Proxy *proxyPtr, const char *proxyId, int ms) NS_GNUC_NONNULL(1);
+
 static void   FreeProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ResetProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ProxyError(Tcl_Interp *interp, Err err) NS_GNUC_NONNULL(1);
@@ -1624,6 +1629,200 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
     return result;
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StatsObjCmd --
+ *
+ *    Implements the "ns_proxy stats" command.
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int         result = TCL_OK;
+    char       *pool;
+    Ns_ObjvSpec args[] = {
+        {"pool",    Ns_ObjvString, &pool, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds, *dsPtr = &ds;
+        char        buf[100];
+        Pool       *poolPtr = GetPool(pool, clientData);
+
+        Tcl_DStringInit(dsPtr);
+        Ns_MutexLock(&plock);
+        Ns_MutexLock(&poolPtr->lock);
+
+        Tcl_DStringAppendElement(dsPtr, "proxies");
+        snprintf(buf, sizeof(buf), "%lu", poolPtr->nextid);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "waiting");
+        snprintf(buf, sizeof(buf), "%d", poolPtr->waiting);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "maxslaves");
+        snprintf(buf, sizeof(buf), "%d", poolPtr->maxslaves);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "free");
+        snprintf(buf, sizeof(buf), "%d", poolPtr->nfree);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "used");
+        snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "requests");
+        snprintf(buf, sizeof(buf), "%lu", poolPtr->nruns);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Ns_DStringAppend(dsPtr, " runtime ");
+        Ns_DStringAppendTime(dsPtr, &poolPtr->runTime);
+
+        Ns_MutexUnlock(&poolPtr->lock);
+        Ns_MutexUnlock(&plock);
+
+        Tcl_DStringResult(interp, dsPtr);
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StopObjCmd --
+ *
+ *    Implements the "ns_proxy stop" command.
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int         result = TCL_OK;
+    char       *pool, *handle = NULL;
+    Ns_ObjvSpec args[] = {
+        {"pool",    Ns_ObjvString, &pool, NULL},
+        {"?handle", Ns_ObjvString, &handle, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
+        Pool          *thePoolPtr = GetPool(pool, clientData);
+        int            reap = 0;
+
+        Ns_MutexLock(&plock);
+        for (hPtr = Tcl_FirstHashEntry(&pools, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+            Pool *poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+
+            if (thePoolPtr == poolPtr) {
+                Proxy *proxyPtr;
+
+                Ns_MutexLock(&poolPtr->lock);
+                for (proxyPtr = poolPtr->runPtr; proxyPtr != NULL; proxyPtr = proxyPtr->runPtr) {
+                    reap += CloseSlaveOfProxy(proxyPtr, handle, proxyPtr->conf.twait);
+                }
+                Ns_MutexUnlock(&poolPtr->lock);
+                break;
+            }
+        }
+        Ns_MutexUnlock(&plock);
+        if (reap != 0) {
+            ReapProxies();
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StopObjCmd --
+ *
+ *    Implements the "ns_proxy clear" command.
+ *
+ * Results:
+ *    Tcl result. 
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+{
+    int         result = TCL_OK;
+    char       *pool, *handle = NULL;
+    Ns_ObjvSpec args[] = {
+        {"pool",    Ns_ObjvString, &pool, NULL},
+        {"?handle", Ns_ObjvString, &handle, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
+        Pool          *thePoolPtr = GetPool(pool, clientData);
+        int            reap = 0;
+
+        Ns_MutexLock(&plock);
+        for (hPtr = Tcl_FirstHashEntry(&pools, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+            Pool *poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+
+            if (thePoolPtr == poolPtr) {
+                Proxy *proxyPtr;
+
+                Ns_MutexLock(&poolPtr->lock);
+                for (proxyPtr = poolPtr->firstPtr; proxyPtr != NULL; proxyPtr = proxyPtr->nextPtr) {
+                    reap += CloseSlaveOfProxy(proxyPtr, handle, proxyPtr->conf.twait);
+                }
+                Ns_MutexUnlock(&poolPtr->lock);
+                break;
+            }
+        }
+        Ns_MutexUnlock(&plock);
+        if (reap != 0) {
+            ReapProxies();
+        }
+    }
+    return result;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -1655,14 +1854,15 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     Tcl_Obj       *listObj;
 
     static const char *opts[] = {
-        "get", "put", "release", "eval", "cleanup", "configure",
-        "ping", "free", "active", "handles", "clear", "stop",
-        "send", "wait", "recv", "pools", "stats", NULL
+        "active", "cleanup", "clear", "configure", "eval",
+        "free", "get", "handles", "ping", "pools", "put",
+        "recv", "release", "send", "stats", "stop", "wait",
+        NULL
     };
     enum {
-        PGetIdx, PPutIdx, PReleaseIdx, PEvalIdx, PCleanupIdx, PConfigureIdx,
-        PPingIdx, PFreeIdx, PActiveIdx, PHandlesIdx, PClearIdx, PStopIdx,
-        PSendIdx, PWaitIdx, PRecvIdx, PPoolsIdx, PStatsIdx
+        PActiveIdx, PCleanupIdx, PClearIdx, PConfigureIdx, PEvalIdx,
+        PFreeIdx, PGetIdx, PHandlesIdx, PPingIdx, PPoolsIdx, PPutIdx,
+        PRecvIdx, PReleaseIdx, PSendIdx, PStatsIdx, PStopIdx, PWaitIdx
     };
 
     if (objc < 2) {
@@ -1850,54 +2050,13 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case PStopIdx:
-    case PClearIdx:
-        if (objc < 3 || objc > 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "pool ?handle?");
-            result = TCL_ERROR;
-        } else {
-            Pool *thePoolPtr;
-            int   reap;
-
-            thePoolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-            proxyId = (objc >= 4) ? Tcl_GetString(objv[3]) : NULL;
-            reap = 0;
-            Ns_MutexLock(&plock);
-            hPtr = Tcl_FirstHashEntry(&pools, &search);
-            while (hPtr != NULL) {
-                poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
-                if (thePoolPtr == poolPtr) {
-                    Ns_MutexLock(&poolPtr->lock);
-                    switch (opt) {
-                    default:
-                    case PStopIdx:  proxyPtr = poolPtr->runPtr;   break;
-                    case PClearIdx: proxyPtr = poolPtr->firstPtr; break;
-                    }
-                    while (proxyPtr != NULL) {
-                        if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
-                            if (proxyPtr->slavePtr != NULL) {
-                                CloseSlave(proxyPtr->slavePtr,proxyPtr->conf.twait);
-                                proxyPtr->slavePtr = NULL;
-                                reap++;
-                            }
-                        }
-                        switch (opt) {
-                        default:
-                        case PStopIdx:  proxyPtr = proxyPtr->runPtr;  break;
-                        case PClearIdx: proxyPtr = proxyPtr->nextPtr; break;
-                        }
-                    }
-                    Ns_MutexUnlock(&poolPtr->lock);
-                }
-                hPtr = Tcl_NextHashEntry(&search);
-            }
-            Ns_MutexUnlock(&plock);
-            if (reap != 0) {
-                ReapProxies();
-            }
-        }
+        result = StopObjCmd(data, interp, objc, objv);
         break;
 
-
+    case PClearIdx:
+        result = ClearObjCmd(data, interp, objc, objv);
+        break;
+        
     case PPoolsIdx:
         listObj = Tcl_NewListObj(0, NULL);
         Ns_MutexLock(&plock);
@@ -1912,51 +2071,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         break;
 
     case PStatsIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "pool");
-            result = TCL_ERROR;
-        } else {
-            Tcl_DString ds, *dsPtr = &ds;
-            char        buf[100];
-
-            Tcl_DStringInit(dsPtr);
-
-            poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-            Ns_MutexLock(&plock);
-            Ns_MutexLock(&poolPtr->lock);
-
-            Tcl_DStringAppendElement(dsPtr, "proxies");
-            snprintf(buf, sizeof(buf), "%lu", poolPtr->nextid);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
-            Tcl_DStringAppendElement(dsPtr, "waiting");
-            snprintf(buf, sizeof(buf), "%d", poolPtr->waiting);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
-            Tcl_DStringAppendElement(dsPtr, "maxslaves");
-            snprintf(buf, sizeof(buf), "%d", poolPtr->maxslaves);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
-            Tcl_DStringAppendElement(dsPtr, "free");
-            snprintf(buf, sizeof(buf), "%d", poolPtr->nfree);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
-            Tcl_DStringAppendElement(dsPtr, "used");
-            snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
-            Tcl_DStringAppendElement(dsPtr, "requests");
-            snprintf(buf, sizeof(buf), "%lu", poolPtr->nruns);
-            Tcl_DStringAppendElement(dsPtr, buf);
-
-            Ns_DStringAppend(dsPtr, " runtime ");
-            Ns_DStringAppendTime(dsPtr, &poolPtr->runTime);
-
-            Ns_MutexUnlock(&poolPtr->lock);
-            Ns_MutexUnlock(&plock);
-
-            Tcl_DStringResult(interp, dsPtr);
-        }
+        result = StatsObjCmd(data, interp, objc, objv);
         break;
     }
 
@@ -2877,6 +2992,25 @@ CloseSlave(Slave *slavePtr, int ms)
 
     Ns_Log(Ns_LogNsProxyDebug, "nsproxy [%s]: slave %ld closed", slavePtr->poolPtr->name, (long) slavePtr->pid);
 }
+
+
+static int
+CloseSlaveOfProxy(Proxy *proxyPtr, const char *proxyId, int ms)
+{
+    int reap = 0;
+
+    NS_NONNULL_ASSERT(proxyPtr != NULL);
+
+    if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
+        if (proxyPtr->slavePtr != NULL) {
+            CloseSlave(proxyPtr->slavePtr, ms);
+            proxyPtr->slavePtr = NULL;
+            reap = 1;
+        }
+    }
+    return reap;
+}
+
 
 /*
  *----------------------------------------------------------------------
