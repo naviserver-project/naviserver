@@ -2289,8 +2289,8 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  * NsConnRequire --
  *
  *      Return the conn for the given interp. In case that interp is not
- *      connected, return NS_ERROR. If connPtr is given, it sets the conn to
- *      that address on success.
+ *      connected, or when the connection is already closed, return NS_ERROR.
+ *      If connPtr is given, it sets the conn to that address on success.
  *
  * Results:
  *      NaviServer result code
@@ -2313,6 +2313,11 @@ NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
     if (conn == NULL) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", -1));
         status = NS_ERROR;
+
+    } else if (conn->flags & NS_CONN_CLOSED) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection closed", -1));
+        status = NS_ERROR;
+
     } else {
         if (connPtr != NULL) {
             *connPtr = conn;
