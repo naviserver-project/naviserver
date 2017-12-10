@@ -634,7 +634,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs);
 
         do {
-            /*Ns_Log(Ns_LogConnchanDebug,"DriverSend %s: try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
+            /*Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
                    connChanPtr->channelName,
                    bufs->iov_len, (ssize_t)Ns_SumVec(bufs, nbufs));*/
 

@@ -1024,7 +1024,7 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, int ms)
          * Don't count check-proxy calls (script == NULL)
          */
         if (script != NULL) {
-            Ns_Log(Debug,"Eval calls GetStats <%s>", script);
+            Ns_Log(Debug, "Eval calls GetStats <%s>", script);
             GetStats(proxyPtr);
         }
     }
@@ -1771,7 +1771,7 @@ StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  *    Implements the "ns_proxy clear" command.
  *
  * Results:
- *    Tcl result. 
+ *    Tcl result.
  *
  * Side effects:
  *    None.
@@ -1964,7 +1964,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
             } else {
                 err = Recv(interp, proxyPtr, &result);
                 result = (err == ENone) ? result : TCL_ERROR;
-                Ns_Log(Debug,"Receive calls GetStats");
+                Ns_Log(Debug, "Receive calls GetStats");
 
                 GetStats(proxyPtr);
             }
@@ -2056,7 +2056,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
     case PClearIdx:
         result = ClearObjCmd(data, interp, objc, objv);
         break;
-        
+
     case PPoolsIdx:
         listObj = Tcl_NewListObj(0, NULL);
         Ns_MutexLock(&plock);
