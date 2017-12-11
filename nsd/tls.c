@@ -48,9 +48,10 @@
  */
 #if OPENSSL_VERSION_NUMBER > 0x00908070
 # define HAVE_SSL_set_tlsext_host_name 1
+# define HAVE_SSL_HMAC_CTX 1
 #endif
 
-
+#ifdef HAVE_SSL_HMAC_CTX
 #if OPENSSL_VERSION_NUMBER < 0x010100000
 # define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
 # define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
@@ -123,6 +124,7 @@ static void HMAC_CTX_free(HMAC_CTX *ctx)
     HMAC_CTX_cleanup(ctx);
     ns_free(ctx);
 }
+#endif
 #endif
 
 
@@ -324,6 +326,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     return result;
 }
 
+#ifdef HAVE_SSL_HMAC_CTX
 #if OPENSSL_VERSION_NUMBER > 0x010000000
 /*
  *----------------------------------------------------------------------
@@ -1022,6 +1025,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1219,7 +1223,9 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 {
     /* dummy stub */
 }
+#endif
 
+#ifndef HAVE_SSL_HMAC_CTX
 int
 NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
@@ -1234,7 +1240,6 @@ NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSE
     return TCL_ERROR;
 }
 #endif
-
  
 /*
  * Local Variables:
