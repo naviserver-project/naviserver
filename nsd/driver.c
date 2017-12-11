@@ -2064,7 +2064,7 @@ DriverThread(void *arg)
                         sockPtr->drvPtr->stats.errors++;
                         Ns_Log(Warning,
                                "sockread returned unexpected result %d (err %s); close socket (%d)",
-                               s, ((err != 0) ? strerror(err) : ""), sockPtr->sock);
+                               s, ((errno != 0) ? strerror(errno) : ""), sockPtr->sock);
                         SockRelease(sockPtr, s, errno);
                         break;
                     }
