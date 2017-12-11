@@ -254,6 +254,7 @@ Ns_ModuleInit(const char *server, const char *module)
         }
     }
 
+#if OPENSSL_VERSION_NUMBER > 0x00908070
     /*
      * Generate key for eliptic curve cryptography (potentially used
      * for Elliptic Curve Digital Signature Algorithm (ECDSA) and
@@ -273,6 +274,7 @@ Ns_ModuleInit(const char *server, const char *module)
 	}
 	EC_KEY_free (ecdh);
     }
+#endif
 
     /*
      * Https cache support
