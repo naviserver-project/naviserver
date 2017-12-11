@@ -173,7 +173,7 @@ proc ns_findset {sets name} {
 proc ns_parsetime {option time} {
 
     set parts {sec min hour mday mon year wday yday isdst}
-    set pos [lsearch $parts $option]
+    set pos [lsearch -exact $parts $option]
 
     if {$pos == -1} {
         error "Incorrect option to ns_parsetime: \"$option\" Should be\

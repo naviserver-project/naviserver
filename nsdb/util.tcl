@@ -112,6 +112,10 @@ proc ns_dbquotevalue {value {type text}} {
 #
 #    Return an SQL string for the current time.
 #
+#    The implementation below is equivalent to
+#        clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"
+#    but surprinsingly, it is neary twice as fast.
+#
 
 proc ns_localsqltimestamp {} {
     set time [ns_localtime]
