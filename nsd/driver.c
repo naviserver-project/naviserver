@@ -2062,7 +2062,9 @@ DriverThread(void *arg)
                     case SOCK_WRITETIMEOUT:
                     default:
                         sockPtr->drvPtr->stats.errors++;
-                        Ns_Log(Warning, "sockread returned unexpected result %d; close socket", s);
+                        Ns_Log(Warning,
+                               "sockread returned unexpected result %d (err %s); close socket (%d)",
+                               s, ((err != 0) ? strerror(err) : ""), sockPtr->sock);
                         SockRelease(sockPtr, s, errno);
                         break;
                     }
