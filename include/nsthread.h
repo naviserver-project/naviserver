@@ -835,53 +835,6 @@ typedef int bool;
 #endif
 
 /*
- * Well behaved compiler with C99 support should define __STDC_VERSION__
- */
-#if defined(__STDC_VERSION__)
-# if __STDC_VERSION__ >= 199901L
-#  define NS_HAVE_C99
-# endif
-#endif
-
-/*
- * Starting with Visual Studio 2013, Microsoft provides C99 library support.
- */
-#if (!defined(NS_HAVE_C99)) && defined(_MSC_VER) && (_MSC_VER >= 1800)
-# define NS_HAVE_C99
-#endif
-
-/*
- * Boolean type "bool" and constants
- */
-#ifdef NS_HAVE_C99
-   /*
-    * C99
-    */
-# include <stdbool.h>
-# define NS_TRUE                    true
-# define NS_FALSE                   false
-#else
-   /*
-    * Not C99
-    */
-# if defined(__cplusplus)
-   /*
-    * C++ is similar to C99, but no include necessary
-    */
-#  define NS_TRUE                    true
-#  define NS_FALSE                   false
-# else
-   /*
-    * If everything fails, use int type and int values for bool
-    */
-typedef int bool;
-#  define NS_TRUE                    1
-#  define NS_FALSE                   0
-# endif
-#endif
-
-
-/*
  * NaviServer return codes. Similar to Tcl return codes, but not compatible,
  * since negative numbers denote different kinds of non-success.
  */
