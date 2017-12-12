@@ -1507,7 +1507,8 @@ NsSockClose(Sock *sockPtr, int keep)
     NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
-    Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", (void *)sockPtr, keep);
+    Ns_Log(DriverDebug, "NsSockClose sockPtr %p (%d) keep %d",
+           (void *)sockPtr, ((Ns_Sock*)sockPtr)->sock, keep);
 
     SockClose(sockPtr, keep);
     /*
