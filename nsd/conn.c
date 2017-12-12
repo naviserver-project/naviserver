@@ -36,6 +36,10 @@
 
 #include "nsd.h"
 
+/*
+ * Static functions defined in this file.
+ */
+
 static int GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -2314,8 +2318,8 @@ NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
         Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", -1));
         status = NS_ERROR;
 
-    } else if (conn->flags & NS_CONN_CLOSED) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection closed", -1));
+    } else if ((conn->flags & NS_CONN_CLOSED) != 0u && nsconf.reject_already_closed_connection) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
         status = NS_ERROR;
 
     } else {

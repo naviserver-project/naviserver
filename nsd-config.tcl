@@ -53,6 +53,9 @@ ns_param        progressminsize     [expr 1024*1024*1] ;# default: 0
 #ns_param       listenbacklog        256               ;# default: 32; backlog for ns_socket commands
 #ns_param       mutexlocktrace       true              ;# default false; print durations of long mutex calls to stderr
 
+# Reject output operations on already closed connections (e.g. subsequent ns_return statements)
+#ns_param       rejectalreadyclosedconn false ;# default: true
+
 # configure SMTP module
 ns_param        smtphost            "localhost"
 ns_param        smtpport            25

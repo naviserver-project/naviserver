@@ -160,6 +160,7 @@ struct nsconf {
     char        address[NS_IPADDR_SIZE];
     long        shutdowntimeout;  /* same type as seconds in Ns_Time */
     int         backlog;
+    bool        reject_already_closed_connection;
 
     /*
      * Slot IDs for socket local storage.

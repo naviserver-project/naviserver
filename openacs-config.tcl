@@ -141,6 +141,9 @@ ns_section ns/parameters
 
         #ns_param       mutexlocktrace       true   ;# default false; print durations of long mutex calls to stderr
 
+        # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
+        #ns_param       rejectalreadyclosedconn false ;# default: true
+
         # Allow concurrent create operations of Tcl interpreters.
         # Versions up to at least Tcl 8.5 are known that these might
         # crash in case two threads create interpreters at the same
