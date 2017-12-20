@@ -597,8 +597,6 @@ Ns_HttpMessageParse(char *message, size_t size,
         int     firsthdr = 1;
         size_t  parsed;
 
-        parsed = 0u;
-
         p = message;
         while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
             size_t len;
