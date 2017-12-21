@@ -1057,7 +1057,7 @@ ServerListQueued(Tcl_DString *dsPtr, ConnPool *poolPtr)
  *
  * ServerListActiveCmd, ServerListAllCmd, ServerListQueuedCmd --
  *
- *    Stubbs for the "ns_server ... active ...", "ns_server ... all ..."
+ *    Stubs for the "ns_server ... active ...", "ns_server ... all ..."
  *    and the "ns_server ... queued ..." commands.
  *
  * Results:
