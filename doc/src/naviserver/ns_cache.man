@@ -294,6 +294,53 @@ format since the cache was created or was last reset. For details, see
 [list_end]
 
 
+[section "Cache Transactions"]
+
+Background: when ns_cache_* commands are used within a database
+transaction (e.g. in OpenACS), it might occur, that partial results of
+the transaction are cached before the transaction is committed.  When
+the transaction is rolled back, invalid values might be kept in the
+stack leading to erroneous and hard to debug behavior.  Furthermore,
+information about changes might leak into other concurrent threads via
+the cache, even before the transaction is committed.
+
+[para] The cache transaction semantics is implemented via the three
+commands:
+
+[list_begin itemized]
+
+[item] [cmd ns_cache_transaction_begin]
+[item] [cmd ns_cache_transaction_commit]
+[item] [cmd ns_cache_transaction_rollback]
+[list_end]
+
+When no ns_cache_transaction* commands are used, the behavior is
+exactly as before, the caches are not transactions aware. When cache
+transactions are used, which are initiated by a
+[cmd ns_cache_transaction_begin] call and ended via
+[cmd ns_cache_transaction_commit] or
+[cmd ns_cache_transaction_rollback],
+the ns_cache commands provide in essence the following
+functionalities:
+
+[list_begin enumerated]
+
+[enum] The ability to rollback of the values since the matching
+ns_cache_transaction_begin
+	
+[enum] Isolation of behavior: cached values from incomplete cache
+transactions are just visible from the current thread, but not from
+other threads.
+	
+[enum] Nesting: transactions can be nested (up to a compile time
+constant, per default: 16)
+	
+[enum]	
+Introspection: the statistics about cache commits and rollbacks are
+included in the cache statistics.
+[list_end]
+Note, that the cache transactions span over all defined caches.
+
 [section EXAMPLES]
 
 In the following example our goal is to serve a web page within 5 seconds. The
