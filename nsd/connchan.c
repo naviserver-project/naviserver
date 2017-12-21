@@ -945,7 +945,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         lcbPtr->driverName = ns_strcopy(driverName);
 
         sock = Ns_SockListenCallback(addr, port, SockListenCallback, doBind, lcbPtr);
-        Ns_Log(Notice, "ns_connchan listen calls  Ns_SockListenCallback, returning %d", sock);
+        /* Ns_Log(Notice, "ns_connchan listen calls  Ns_SockListenCallback, returning %d", sock);*/
         if (sock == NS_INVALID_SOCKET) {
             Ns_TclPrintfResult(interp, "could not register callback");
             ns_free(lcbPtr);
@@ -996,7 +996,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             }
         }
     }
-    Ns_Log(Notice, "ns_connchan listen returns %d", result);
+    /* Ns_Log(Notice, "ns_connchan listen returns %d", result);*/
     return result;
 }
 
