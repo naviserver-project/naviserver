@@ -471,7 +471,7 @@ CreatePool(NsServer *servPtr, const char *pool)
 
     /*
      * The Pools are never freed before exit, so there is apparently no need
-     * to free connBufPtr, threadQueue.args explicitely, or the connPtr in the
+     * to free connBufPtr, threadQueue.args explicitly, or the connPtr in the
      * pool.
      */
     {

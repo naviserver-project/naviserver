@@ -443,7 +443,7 @@ NsThreadExit(void *arg)
 {
    /*
     * Exit the thread really. This will invoke all of the
-    * registerd TLS cleanup callbacks again (no harm).
+    * registered TLS cleanup callbacks again (no harm).
     */
 
     pthread_exit(arg);

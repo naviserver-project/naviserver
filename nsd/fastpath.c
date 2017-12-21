@@ -190,7 +190,7 @@ NormalizePath(const char **pathPtr) {
  *      Return always NS_OK.
  *
  * Side effects:
- *      Updating the fastpath configuration for the specifed server.
+ *      Updating the fastpath configuration for the specified server.
  *
  *----------------------------------------------------------------------
  */
