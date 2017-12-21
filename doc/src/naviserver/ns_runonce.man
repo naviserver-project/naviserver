@@ -12,7 +12,7 @@ file will be loaded several times
 
 [list_begin definitions]
 
-[call [cmd ns_runonce] [opt [option -global]] [opt [option --]] [arg script]]
+[call [cmd ns_runonce] [arg ?-global?] [arg ?--?] [arg script]]
 
 [para]
 [option -global]
