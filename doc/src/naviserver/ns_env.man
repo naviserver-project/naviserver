@@ -7,7 +7,7 @@
 
 [description]
 
-This command provides thread-safe (unlike Tcl env array) access to the environemnt
+This command provides thread-safe (unlike Tcl env array) access to the environment
 variables of the currently running nsd process.
 
 [section {COMMANDS}]

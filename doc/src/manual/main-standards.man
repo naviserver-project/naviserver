@@ -685,7 +685,7 @@ In pointer definitions, be they local variables,
 global variables, parameters, or static functions prototypes,
 the asterisk should always make
 contact with the first character of the symbol. In typecasts, there should
-be one space between the type name and the asterik, and parentheses should
+be one space between the type name and the asterisk, and parentheses should
 make contact with both:
 
 [example_begin]

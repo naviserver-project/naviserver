@@ -126,7 +126,7 @@ Section [emph {ns/server/servername/adp}]:
 
 
 [item] [emph {DebugInit}] - The procedure to run when debugging begins,
-         Deafult: ns_adp_debuginit
+         Default: ns_adp_debuginit
 
 [item] [emph {EnableExpire}] - If set to on, the "Expires: now" header is set on all
          outgoing ADPs, Default: off
@@ -594,7 +594,7 @@ administrator and the user, and displays a confirmation message:
     set sendemail [lb]ns_set get $r sendemail[rb]
     set emailaddr [lb]ns_set get $r emailaddr[rb]
  
-    # Set subscription options explicity to 0 if not checked
+    # Set subscription options explicitly to 0 if not checked
     if {$notify ne 1} {set notify 0}
     if {$sendemail ne 1} {set sendemail 0}
  

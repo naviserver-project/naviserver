@@ -19,13 +19,13 @@ Return the MIME type for the provided [arg filename] based on its file extension
 
 [list_end]
 
- The MIME type returned for a file extension can be overriden in the
+ The MIME type returned for a file extension can be overridden in the
  NaviServer config file, and new mappings can be added, e.g.
 
 [example_begin]
    ns_section "ns/mimetypes"
    ns_param  ".xls"        "application/vnd.ms-excel"     ;# Add a mapping for Excel files
-   ns_param  ".sjis_html"  "text/html; charset=shift_jis" ;# Adding a mapping, specifing charset
+   ns_param  ".sjis_html"  "text/html; charset=shift_jis" ;# Adding a mapping, specifying charset
    ns_param  ".adp"        "text/html; charset=UTF-8"     ;# Overriding an existing mapping
 [example_end]
 

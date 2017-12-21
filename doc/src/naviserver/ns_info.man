@@ -84,7 +84,7 @@ Returns the current mime-type mappings.
 
 [call [cmd  ns_info] [arg name]]
 
-Returns the name of the server implementaiton, i.e. "NaviServer".
+Returns the name of the server implementation, i.e. "NaviServer".
 
 [call [cmd  ns_info] [arg nsd]]
 

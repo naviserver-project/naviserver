@@ -55,7 +55,7 @@ an URL request is mapped to an ADP file in the
 server's page root. (see  ADP CONFIGURATION
 below for details on configuring this mapping). The ADP
 request processing code allocates a Tcl interpreter and
-includes the cooresponding ADP file. Output generated during
+includes the corresponding ADP file. Output generated during
 execution of the ADP is sent as a normal HTTP response,
 using default status code of "200 OK" and the mime
 type which corresponds to the ADP file extensions, normally
@@ -75,7 +75,7 @@ new call frames and then accessed with commands such as
  ns_adp_argv . When necessary, commands such as
  ns_adp_abort  provide limited support to interrupt
 and/or return from within an ADP, unwinding the ADP call
-stack to the underyling C-level request processing code.
+stack to the underlying C-level request processing code.
 
 [para]
 
@@ -218,7 +218,7 @@ enabled to support compression of ADP output.
 [example_end]
 
 The ADP interface uses the server's mimetype configuration
-to map file extensions to charsets and cooresponding encoding. This
+to map file extensions to charsets and corresponding encoding. This
 configuration is necessary to ensure the file text and
 script blocks are properly converted to UTF-8 for use
 internally. This mimetype is also used to set the character

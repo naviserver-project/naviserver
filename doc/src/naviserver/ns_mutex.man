@@ -42,7 +42,7 @@ ns_mutex lock acquires the specified mutual exclusion lock.
 
 [call [cmd  ns_mutex] [cmd eval] [arg mutexid] [arg script]]
 
-A conveniance function to lock the specified mutex, run the 
+A convenience function to lock the specified mutex, run the 
 [arg script] and unlock the mutex finally. The result and error condition of
 the [arg script] are returned by the command.
 
