@@ -94,6 +94,21 @@ as follows:
 [item] t - timeout received
 [list_end]
 
+
+[call [cmd "ns_connchan listen"] \
+	[opt [option "-driver [arg d]"]] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-bind]"]] \
+	[arg address] \
+	[arg port] \
+	[arg script] \
+]
+
+Open listening socket. Call the [arg script] callabck on incoming
+connections. On success, this commands returns a dict containing
+"channel", "port", "sock" and "address".
+
+
 [call [cmd "ns_connchan open"] \
 	[opt [option "-headers [arg h]"]] \
 	[opt [option "-method [arg m]"]] \
