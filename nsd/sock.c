@@ -552,7 +552,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
             /*
              * IPv4 connectivity through AF_INET6 can be disabled by default, for
              * example by /proc/sys/net/ipv6/bindv6only to 1 on Linux. We
-             * explicitely enable IPv4 so we don't need to bind separate sockets
+             * explicitly enable IPv4 so we don't need to bind separate sockets
              * for v4 and v6.
              */
             n = 0;

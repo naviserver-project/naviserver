@@ -1097,7 +1097,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  *----------------------------------------------------------------------
  * FreeSpecs --
  *
- *     Free a contigious array of opt and arg specs.
+ *     Free array of opt and arg specs.
  *
  * Results:
  *      None.

@@ -62,7 +62,7 @@ typedef struct Tag {
 } Tag;
 
 /*
- * The following strucutre maintains state while parsing an ADP block.
+ * The following structure maintains state while parsing an ADP block.
  */
 
 typedef struct Parse {
@@ -359,7 +359,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
              */
             if (s[1] == '%' && s[2] != '>') {   /* NB: Avoid <%>. */
                 /*
-                 * Find the cooresponding %> beyond any additional
+                 * Find the corresponding %> beyond any additional
                  * nested <% ... %> sequences.
                  */
                 e = strstr(e - 1, "%>");
@@ -471,7 +471,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 
         case TagReg:
             /*
-             * Looking for cooresponding closing tag for a registered
+             * Looking for corresponding closing tag for a registered
              * tag, handling possible nesting of the same tag.
              */
             GetTag(&tag, s, e, NULL);
