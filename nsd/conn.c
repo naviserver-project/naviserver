@@ -335,7 +335,7 @@ Ns_ConnServer(const Ns_Conn *conn)
  *      An integer response code (e.g., 200 for OK).
  *
  * Side effects:
- *      NB: Status 200 is the default and can not be set manually.
+ *      NB: Status 200 is the default and can not be set manualy.
  *
  *----------------------------------------------------------------------
  */

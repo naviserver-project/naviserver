@@ -496,7 +496,7 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclSleepObjCmd --
  *
- *      Sleep with millisecond resolution.
+ *      Sleep with milisecond resolution.
  *
  * Results:
  *      Tcl Result.

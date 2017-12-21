@@ -1124,7 +1124,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         /*
          * The provided parameter appear to be valid. Lock the channel
          * table and return the infos for every existing entry in the
-         * connection channel table.
+         * conneciton channel table.
          */
         Tcl_DStringInit(dsPtr);
 

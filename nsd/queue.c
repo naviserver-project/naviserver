@@ -360,7 +360,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
  *      NS_TRUE if queued, NS_FALSE otherwise.
  *
  * Side effects:
- *      Connection will run shortly.
+ *      Conneciton will run shortly.
  *
  *----------------------------------------------------------------------
  */

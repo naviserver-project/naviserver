@@ -34,7 +34,7 @@
  *	Support for critical sections.  Critical sections differ
  *	from mutexes in that a critical section can be repeatedly
  *	locked by the same thread as long as each lock is matched with
- * 	a corresponding unlock.  Critical sections are used in cases
+ * 	a cooresponding unlock.  Critical sections are used in cases
  *	where the lock could be called recursively, e.g., for the
  *	Ns_MasterLock.
  *

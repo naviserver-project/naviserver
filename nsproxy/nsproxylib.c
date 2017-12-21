@@ -3709,7 +3709,7 @@ ReapProxies(void)
  *
  * GetTimeDiff --
  *
- *      Returns time difference in milliseconds between current time
+ *      Returns time difference in miliseconds between current time
  *      and time given in passed structure. If the current time is
  *      later then the passed time, the result is negative.
  *

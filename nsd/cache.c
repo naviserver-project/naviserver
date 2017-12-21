@@ -1235,7 +1235,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
  *
  * Ns_CacheResetStats --
  *
- *      Set all statistics to zero.
+ *      Set all statictics to zero.
  *
  * Results:
  *      None.
