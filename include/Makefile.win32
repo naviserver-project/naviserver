@@ -188,7 +188,7 @@ DLLOPTS	=
 
 
 #
-# Variables for building a program, optionally with cooresponding DLL.
+# Variables for building a program, optionally with corresponding DLL.
 #
 
 !ifdef PGM

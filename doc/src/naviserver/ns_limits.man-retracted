@@ -216,7 +216,7 @@ Reuquests for other URLs will have the [term default] limit applied.
 
 
 The following example proc can be used to log statistics on failed requests
-peridoically:
+periodically:
 
 [example_begin]
 proc log_limits {} {
