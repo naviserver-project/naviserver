@@ -462,11 +462,14 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             HMAC_CTX   *ctx;
             const char *keyString;
             int         keyLength;
+            Tcl_DString keyDs;
 
-            keyString = Ns_GetBinaryString(keyObj, &keyLength);
+            Tcl_DStringInit(&keyDs);
+            keyString = Ns_GetBinaryString(keyObj, &keyLength, &keyDs);
             ctx = HMAC_CTX_new();
             HMAC_Init_ex(ctx, keyString, keyLength, md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
+            Tcl_DStringFree(&keyDs);
         }
     }
     return result;
@@ -513,9 +516,12 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         
     } else {
         const unsigned char *message;
-        
-        message = (const unsigned char *)Ns_GetBinaryString(messageObj, &messageLength);
+        Tcl_DString          messageDs;
+
+        Tcl_DStringInit(&messageDs);
+        message = (const unsigned char *)Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
         HMAC_Update(ctx, message, (size_t)messageLength);
+        Tcl_DStringFree(&messageDs);
     }
     return result;
 }
@@ -666,13 +672,25 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             const char    *keyString, *messageString;
             unsigned int   mdLength;
             int            keyLength, messageLength;
+            Tcl_DString    keyDs, messageDs;
                     
             /*
              * All input parameters are valid, get key and data.
              */
-            keyString = Ns_GetBinaryString(keyObj, &keyLength);
-            messageString = Ns_GetBinaryString(messageObj, &messageLength);
-                    
+            Tcl_DStringInit(&keyDs);
+            Tcl_DStringInit(&messageDs);
+            keyString = Ns_GetBinaryString(keyObj, &keyLength, &keyDs);
+            messageString = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
+#if 0
+            {
+                int i;
+                fprintf(stderr, "messageLength %d:",messageLength);
+                for (i=0; i<messageLength; i++) {
+                    fprintf(stderr, "%.2x ",messageString[i] & 0xff);
+                }
+                fprintf(stderr, "\n");
+            }
+#endif
             /*
              * Call the HMAC computation.
              */
@@ -688,6 +706,8 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              */
             Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, (int)mdLength*2));
+            Tcl_DStringFree(&keyDs);
+            Tcl_DStringFree(&messageDs);
         }
     }
     return result;
@@ -818,9 +838,12 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     } else {
         const char    *message;
         int            messageLength;
+        Tcl_DString    messageDs;
 
-        message = Ns_GetBinaryString(messageObj, &messageLength);
+        Tcl_DStringInit(&messageDs);
+        message = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
         EVP_DigestUpdate(mdctx, message, (size_t)messageLength);
+        Tcl_DStringFree(&messageDs);
     }
 
     return result;
@@ -972,11 +995,13 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             const char    *messageString;
             int            messageLength;
             unsigned int   mdLength;
+            Tcl_DString    messageDs;
 
             /*
              * All input parameters are valid, get key and data.
              */
-            messageString = Ns_GetBinaryString(messageObj, &messageLength);
+            Tcl_DStringInit(&messageDs);
+            messageString = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
         
             /*
              * Call the Digest computation
@@ -992,6 +1017,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
              */
             Ns_HexString( digest, digestChars, (int)mdLength, NS_FALSE);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, (int)mdLength*2));
+            Tcl_DStringFree(&messageDs);
         }
     }
     

@@ -1171,14 +1171,18 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         char           digestChars[41];
         Ns_CtxSHA1     ctx;
         int            length;
-        const char    *str = Ns_GetBinaryString(objv[1], &length);
+        const char    *str;
+        Tcl_DString    ds;
 
+        Tcl_DStringInit(&ds);
+        str = Ns_GetBinaryString(objv[1], &length, &ds);
         Ns_CtxSHAInit(&ctx);
         Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
         Ns_CtxSHAFinal(&ctx, digest);
 
         Ns_HexString(digest, digestChars, 20, NS_TRUE);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, 40));
+        Tcl_DStringFree(&ds);
     }
 
     return result;
@@ -1597,14 +1601,18 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         unsigned char  digest[16];
         char           digestChars[33];
         int            length;
-        const char    *str = Ns_GetBinaryString(objv[1], &length);
+        Tcl_DString    ds;
+        const char    *str;
 
+        Tcl_DStringInit(&ds);
+        str = Ns_GetBinaryString(objv[1], &length, &ds);
         Ns_CtxMD5Init(&ctx);
         Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
         Ns_CtxMD5Final(&ctx, digest);
 
         Ns_HexString(digest, digestChars, 16, NS_TRUE);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, 32));
+        Tcl_DStringFree(&ds);
     }
 
     return result;

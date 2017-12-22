@@ -2957,8 +2957,8 @@ Ns_StrIsHost(const char *chars)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *
-Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * tclcallbacks.c:

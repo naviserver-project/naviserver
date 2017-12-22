@@ -1644,6 +1644,9 @@ NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
     NS_GNUC_NONNULL(1);
 

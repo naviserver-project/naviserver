@@ -434,9 +434,44 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
      * 8.7a1, Tcl has introduced the properByteArrayTypePtr, which allows as
      * well a string rep.
      */
+#if 0
+    fprintf(stderr, "NsTclObjIsByteArray type %p proper %d old %d bytes %p name %s\n",
+            (void*)(objPtr->typePtr), (objPtr->typePtr == properByteArrayTypePtr),
+            (objPtr->typePtr == byteArrayTypePtr),
+            (void*)(objPtr->bytes),
+            objPtr->typePtr == NULL ? "string" : objPtr->typePtr->name);
+#endif
+
     return ((objPtr->typePtr == properByteArrayTypePtr) ||
-            ((objPtr->typePtr == byteArrayTypePtr) && ((objPtr)->bytes == NULL))
+            ((objPtr->typePtr == byteArrayTypePtr) && (objPtr->bytes == NULL))
             ) ? NS_TRUE : NS_FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclObjIsEncodedByteArray --
+ *
+ *      This function is true, when we encounter a bytearray with a string
+ *      rep.  In this cases, it is necessary to use Tcl_UtfToExternalDString()
+ *      to obtain the proper byte array.
+ *
+ * Results:
+ *      Boolean.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+bool
+NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr)
+{
+    NS_NONNULL_ASSERT(objPtr != NULL);
+
+    return ((objPtr->typePtr == byteArrayTypePtr) && (objPtr->bytes != NULL));
 }
 
 

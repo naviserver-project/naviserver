@@ -455,15 +455,35 @@ Ns_StrIsHost(const char *chars)
  *----------------------------------------------------------------------
  */
 const char *
-Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr)
+Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
 {
     const char *result;
 
     NS_NONNULL_ASSERT(obj != NULL);
     NS_NONNULL_ASSERT(lengthPtr != NULL);
     
-    if (NsTclObjIsByteArray(obj) == NS_TRUE) {
+    if (NsTclObjIsByteArray(obj)) {
         result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+
+    } else if (NsTclObjIsEncodedByteArray(obj)) {
+        /*
+         * This branch should be taken seldom, and is the only one, that
+         * requires the dsPtr. The need for dsPtr buffer is due to byte
+         * arrays, which have to be converted into external strings. This
+         * becomes necessary, when some code computes the string
+         * representation of a bytearray, which is then converted into the Tcl
+         * internal UCS-2 notation. In order to get a proper byte array back,
+         * we need the Tcl_DString as a temporary buffer.
+         *
+         * In most cases, the calls to Tcl_DStringInit() and Tcl_DStringFree()
+         * framing Ns_GetBinaryString() are dummy operations.
+         */
+        char *bytes = Tcl_GetStringFromObj(obj, lengthPtr);
+
+        Tcl_UtfToExternalDString(NULL, bytes, *lengthPtr, dsPtr);
+        result = dsPtr->string;
+        *lengthPtr = dsPtr->length;
+
     } else {
         result = Tcl_GetStringFromObj(obj, lengthPtr);
     }
