@@ -138,7 +138,7 @@ ns_strdup(const char *old)
  *	This procedure formats an uint32_t or uint62_t into a sequence of
  *	decimal digits in a buffer. It is the caller's responsibility to
  *	ensure that enough storage is available. This procedure has the effect
- *	of sprintf(buffer, "%...d", n) but is substantially faster
+ *	of snprintf(buffer, size, "%...d", n) but is substantially faster
  *
  * Results:
  *	Length of the written digits, not including the terminating "\0".

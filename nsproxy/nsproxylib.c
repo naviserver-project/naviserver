@@ -473,6 +473,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     const char  *script, *dots, *uarg = NULL, *user = NULL;
     char        *group = NULL, *active;
     uint16       major, minor;
+    size_t       activeSize;
 
     /*
      * The call to Tcl_FindExecutable() must be done before we ever
@@ -488,10 +489,12 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     }
     if (argc < 4) {
         active = NULL;
+        activeSize = 0;
         max = -1;
     } else {
         active = argv[3];
-        max = (int)strlen(active) - 8;
+        activeSize = strlen(active);
+        max = (int)activeSize - 8;
         if (max < 0) {
             active = NULL;
         }
@@ -614,7 +617,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
                     dots = " ...";
                     n = max;
                 }
-                sprintf(active, "{%.*s%s}", n, script, dots);
+                snprintf(active, activeSize, "{%.*s%s}", n, script, dots);
             }
             result = Tcl_EvalEx(interp, script, (int)len, 0);
             Export(interp, result, &out);

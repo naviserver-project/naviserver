@@ -36,6 +36,9 @@
 
 #include "nsd.h"
 
+#define COLOR_BUFFER_SIZE 255u
+#define TIME_BUFFER_SIZE 100u
+
 /*
  * The following define available flags bits.
  */
@@ -86,8 +89,8 @@ typedef struct LogCache {
     int         count;        /* Number of entries held in the cache */
     time_t      gtime;        /* For GMT time calculation */
     time_t      ltime;        /* For local time calculations */
-    char        gbuf[100];    /* Buffer for GMT time string rep */
-    char        lbuf[100];    /* Buffer for local time string rep */
+    char        gbuf[TIME_BUFFER_SIZE];    /* Buffer for GMT time string rep */
+    char        lbuf[TIME_BUFFER_SIZE];    /* Buffer for local time string rep */
     size_t      gbufSize;
     size_t      lbufSize;
     LogEntry   *firstEntry;   /* First in the list of log entries */
@@ -126,7 +129,8 @@ static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
 
 static Tcl_Obj *LogStats(void);
 
-static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity) NS_GNUC_NONNULL(1);
+static char *LogSeverityColor(char *buffer, Ns_LogSeverity severity)
+    NS_GNUC_NONNULL(1);
 
 static int ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
@@ -555,11 +559,11 @@ static char *
 LogSeverityColor(char *buffer, Ns_LogSeverity severity)
 {
     if (severity < severityMaxCount) {
-        sprintf(buffer, "%s%d;%dm", LOG_COLORSTART,
+        snprintf(buffer, COLOR_BUFFER_SIZE, "%s%d;%dm", LOG_COLORSTART,
                 severityConfig[severity].intensity,
                 severityConfig[severity].color);
     } else {
-        sprintf(buffer, "%s0m", LOG_COLORSTART);
+        snprintf(buffer, COLOR_BUFFER_SIZE, "%s0m", LOG_COLORSTART);
     }
     return buffer;
 }
@@ -1048,7 +1052,8 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
             } else {
                 sign = '+';
             }
-            n += (size_t)sprintf(bp + n, " %c%02ld%02ld]", sign, gmtoff/60, gmtoff%60);
+            n += (size_t)snprintf(bp + n, TIME_BUFFER_SIZE - n, " %c%02ld%02ld]",
+                                  sign, gmtoff/60, gmtoff%60);
         }
         *sizePtr = n;
     }
@@ -1688,7 +1693,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     LogCache   *cachePtr = GetCache();
     const char *timeString;
     size_t      timeStringLength;
-    char        buffer[255];
+    char        buffer[COLOR_BUFFER_SIZE];
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);

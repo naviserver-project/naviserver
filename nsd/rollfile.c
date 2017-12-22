@@ -96,11 +96,12 @@ Ns_RollFile(const char *fileName, int max)
         status = NS_ERROR;
 
     } else {
-        char *first;
-        int   err;
+        char  *first;
+        int    err;
+        size_t bufferSize = strlen(fileName) + 5u;
 
-        first = ns_malloc(strlen(fileName) + 5u);
-        sprintf(first, "%s.000", fileName);
+        first = ns_malloc(bufferSize);
+        snprintf(first, bufferSize, "%s.000", fileName);
         err = Exists(first);
 
         if (err > 0) {
@@ -115,7 +116,7 @@ Ns_RollFile(const char *fileName, int max)
 
             do {
                 char *dot = strrchr(next, INTCHAR('.')) + 1;
-                sprintf(dot, "%03d", num++);
+                snprintf(dot, 4u, "%03d", num++);
             } while ((err = Exists(next)) == 1 && num < max);
 
             num--; /* After this, num holds the max version found */
@@ -130,9 +131,9 @@ Ns_RollFile(const char *fileName, int max)
 
             while (err == 0 && num-- > 0) {
                 char *dot = strrchr(first, INTCHAR('.')) + 1;
-                sprintf(dot, "%03d", num);
+                snprintf(dot, 4u, "%03d", num);
                 dot = strrchr(next, INTCHAR('.')) + 1;
-                sprintf(dot, "%03d", num + 1);
+                snprintf(dot, 4u, "%03d", num + 1);
                 err = Rename(first, next);
             }
             ns_free((char *)next);

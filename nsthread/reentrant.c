@@ -134,13 +134,13 @@ ns_inet_ntoa(struct sockaddr *saPtr)
     if (saPtr->sa_family == AF_INET6) {
         struct in6_addr addr = (((struct sockaddr_in6 *)saPtr)->sin6_addr);
 # ifndef _WIN32
-        sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+        snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                 ntohs(S6_ADDR16(addr)[0]), ntohs(S6_ADDR16(addr)[1]),
                 ntohs(S6_ADDR16(addr)[2]), ntohs(S6_ADDR16(addr)[3]),
                 ntohs(S6_ADDR16(addr)[4]), ntohs(S6_ADDR16(addr)[5]),
                 ntohs(S6_ADDR16(addr)[6]), ntohs(S6_ADDR16(addr)[7]));
 # else
-        sprintf(tlsPtr->nabuf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+        snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                 ntohs(addr.u.Word[0]), ntohs(addr.u.Word[1]),
                 ntohs(addr.u.Word[2]), ntohs(addr.u.Word[3]),
                 ntohs(addr.u.Word[4]), ntohs(addr.u.Word[5]),
@@ -148,11 +148,11 @@ ns_inet_ntoa(struct sockaddr *saPtr)
 # endif
     } else {
         addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
-        sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
+        snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
     }
 #else
     addr4.i = (unsigned int) (((struct sockaddr_in *)saPtr)->sin_addr.s_addr);
-    sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
+    snprintf(tlsPtr->nabuf, NS_IPADDR_SIZE, "%u.%u.%u.%u", addr4.b[0], addr4.b[1], addr4.b[2], addr4.b[3]);
 #endif
 
     return tlsPtr->nabuf;

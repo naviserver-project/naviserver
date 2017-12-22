@@ -750,7 +750,7 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 
 #if 0
         {char buffer[100];
-            sprintf(buffer, "%p:", (void*)nodePtr);
+            snprintf(buffer, 100, "%p:", (void*)nodePtr);
             Tcl_DStringAppend(&subDs, buffer, -1);
         }
 #endif

@@ -159,7 +159,7 @@ WorkThread(void *arg)
     Ns_Thread       self;
     char            name[32];
 
-    sprintf(name, "-work:%" PRIdPTR "-", i);
+    snprintf(name, 32u, "-work:%" PRIdPTR "-", i);
     Ns_ThreadSetName(name);
 
     if (i == 2) {

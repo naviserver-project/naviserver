@@ -490,7 +490,7 @@ CreatePool(NsServer *servPtr, const char *pool)
         for (j = 0; j < maxconns; j++) {
             char suffix[64];
 
-            sprintf(suffix, "connthread:%d", j);
+            snprintf(suffix, 64u, "connthread:%d", j);
             Ns_MutexInit(&poolPtr->tqueue.args[j].lock);
             Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, ds.string, suffix);
         }

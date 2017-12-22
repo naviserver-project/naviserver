@@ -782,8 +782,9 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
                      && length >= httpPtr->spoolLimit
                      ) || (int)contentSize >= httpPtr->spoolLimit
                     ) {
-                    int   fd;
-                    char *spoolFileName;
+                    int    fd;
+                    char  *spoolFileName;
+                    size_t fileNameLength;
 
                     /*
                      * We have a valid reply length, which is larger
@@ -793,8 +794,9 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
                      * in httpPtr->spoolFd to flag that later receives
                      * will write there.
                      */
-                    spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13u);
-                    sprintf(spoolFileName, "%s/http.XXXXXX", nsconf.tmpDir);
+                    fileNameLength = strlen(nsconf.tmpDir) + 13u;
+                    spoolFileName = ns_malloc(fileNameLength);
+                    snprintf(spoolFileName, fileNameLength, "%s/http.XXXXXX", nsconf.tmpDir);
                     httpPtr->spoolFileName = spoolFileName;
                     fd = ns_mkstemp(spoolFileName);
 

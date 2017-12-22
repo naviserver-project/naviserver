@@ -342,7 +342,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
                  * trailer.
                  */
 
-                len = (size_t)sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength);
+                len = (size_t)snprintf(hdr, sizeof(hdr), "%lx\r\n", (unsigned long)bodyLength);
                 toWrite += Ns_SetVec(sbufPtr, sbufIdx++, hdr, len);
 
                 (void) memcpy(sbufPtr + sbufIdx, bufs, (size_t)nbufs * sizeof(struct iovec));

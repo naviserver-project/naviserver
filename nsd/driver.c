@@ -918,7 +918,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char          buffer[100];
 
-            sprintf(buffer, "ns:driver:spooler:%d", i);
+            snprintf(buffer, sizeof(buffer), "ns:driver:spooler:%d", i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
@@ -950,7 +950,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char          buffer[100];
 
-            sprintf(buffer, "ns:driver:writer:%d", i);
+            snprintf(buffer, sizeof(buffer), "ns:driver:writer:%d", i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
@@ -3255,8 +3255,10 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         if (drvPtr->maxupload > 0
             && reqPtr->length > (size_t)drvPtr->maxupload
             ) {
-            sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16u);
-            sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
+            size_t tfileLength = strlen(drvPtr->uploadpath) + 16u;
+
+            sockPtr->tfile = ns_malloc(tfileLength);
+            snprintf(sockPtr->tfile, tfileLength, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = ns_mkstemp(sockPtr->tfile);
             if (sockPtr->tfd == NS_INVALID_FD) {
                 Ns_Log(Error, "SockRead: cannot create spool file with template '%s': %s",
