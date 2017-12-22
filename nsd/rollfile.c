@@ -105,8 +105,8 @@ Ns_RollFile(const char *fileName, int max)
         err = Exists(first);
 
         if (err > 0) {
-            const char *next;
-            int         num = 0;
+            const char  *next;
+            unsigned int num = 0;
 
             next = ns_strdup(first);
 
@@ -116,8 +116,9 @@ Ns_RollFile(const char *fileName, int max)
 
             do {
                 char *dot = strrchr(next, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03d", num++);
-            } while ((err = Exists(next)) == 1 && num < max);
+                snprintf(dot, 4u, "%03d", MIN(num, 999) );
+                num ++;
+            } while ((err = Exists(next)) == 1 && num < (unsigned int)max);
 
             num--; /* After this, num holds the max version found */
 
@@ -131,9 +132,9 @@ Ns_RollFile(const char *fileName, int max)
 
             while (err == 0 && num-- > 0) {
                 char *dot = strrchr(first, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03d", num);
+                snprintf(dot, 4u, "%03d", MIN(num, 999));
                 dot = strrchr(next, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03d", num + 1);
+                snprintf(dot, 4u, "%03d", MIN(num + 1, 999));
                 err = Rename(first, next);
             }
             ns_free((char *)next);
