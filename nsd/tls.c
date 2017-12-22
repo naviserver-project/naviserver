@@ -159,7 +159,7 @@ void NsInitOpenSSL(void)
 # endif
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
-# if OPENSSL_VERSION_NUMBER < 0x10100000L
+# if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
     SSL_library_init();
 # else
     OPENSSL_init_ssl(0, NULL);
