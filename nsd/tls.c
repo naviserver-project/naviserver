@@ -51,18 +51,24 @@
 # define HAVE_SSL_HMAC_CTX 1
 #endif
 
+#if defined(LIBRESSL_VERSION_NUMBER)
+# if LIBRESSL_VERSION_NUMBER <= 0x2060300fL
+#  define LIBRESSL_1_0_2
+# endif
+#endif
+
 #ifdef HAVE_SSL_HMAC_CTX
-#if OPENSSL_VERSION_NUMBER < 0x010100000
-# define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
-# define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
+# if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
+#  define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
+#  define NS_EVP_MD_CTX_free EVP_MD_CTX_destroy
 
 static HMAC_CTX *HMAC_CTX_new(void);
 static void HMAC_CTX_free(HMAC_CTX *ctx) NS_GNUC_NONNULL(1);
 
-#else
-# define NS_EVP_MD_CTX_new  EVP_MD_CTX_new
-# define NS_EVP_MD_CTX_free EVP_MD_CTX_free
-#endif
+# else
+#  define NS_EVP_MD_CTX_new  EVP_MD_CTX_new
+#  define NS_EVP_MD_CTX_free EVP_MD_CTX_free
+# endif
 
 /*
  * Static functions defined in this file.
@@ -94,7 +100,7 @@ static Tcl_ObjCmdProc CryptoMdStringObjCmd;
 static const char * const mdCtxType  = "ns:mdctx";
 static const char * const hmacCtxType  = "ns:hmacctx";
 
-#if OPENSSL_VERSION_NUMBER < 0x010100000
+# if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
 /*
  *----------------------------------------------------------------------
  *
@@ -124,7 +130,7 @@ static void HMAC_CTX_free(HMAC_CTX *ctx)
     HMAC_CTX_cleanup(ctx);
     ns_free(ctx);
 }
-#endif
+# endif
 #endif
 
 
