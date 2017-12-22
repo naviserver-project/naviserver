@@ -52,7 +52,7 @@
 #endif
 
 #if defined(LIBRESSL_VERSION_NUMBER)
-# if LIBRESSL_VERSION_NUMBER <= 0x2060300fL
+# if LIBRESSL_VERSION_NUMBER >= 0x2060300fL
 #  define LIBRESSL_1_0_2
 # endif
 #endif
