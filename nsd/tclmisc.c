@@ -129,7 +129,7 @@ NsTclRunOnceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         (void) Tcl_CreateHashEntry((global != (int)NS_FALSE) ? &runTable :
                                    &itPtr->servPtr->tcl.runTable, script, &isNew);
         Ns_MasterUnlock();
-        
+
         if (isNew != 0) {
             result = Tcl_Eval(interp, script);
         }
@@ -172,7 +172,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     }
     if (itPtr != NULL && itPtr->conn != NULL) {
         const Ns_Conn *conn = itPtr->conn;
-        
+
         Ns_DStringInit(&ds);
         if (conn->request.method != NULL) {
             Ns_DStringVarAppend(&ds, conn->request.method, " ", (char *)0);
@@ -184,10 +184,10 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
-	    const char  *const*hdr;
+            const char  *const*hdr;
 
             for (hdr = logHeaders; *hdr != NULL; hdr++) {
-	        const char *value = Ns_SetIGet(conn->headers, *hdr);
+                const char *value = Ns_SetIGet(conn->headers, *hdr);
 
                 if (value != NULL) {
                     Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, (char *)0);
@@ -275,21 +275,21 @@ Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const 
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, "'", 1);
     for (i = 0; i < objc; i++) {
-	const char *s;
-	int len;
+        const char *s;
+        int len;
 
-	s = Tcl_GetStringFromObj(objv[i], &len);
-	Tcl_DStringAppend(&ds, s, len);
-	Tcl_DStringAppend(&ds, " ", 1);
+        s = Tcl_GetStringFromObj(objv[i], &len);
+        Tcl_DStringAppend(&ds, s, len);
+        Tcl_DStringAppend(&ds, " ", 1);
     }
     Tcl_DStringAppend(&ds, "' is deprecated. ", -1);
     if (alternative != NULL) {
-	Tcl_DStringAppend(&ds, "Use '", -1);
-	Tcl_DStringAppend(&ds, alternative, -1);
-	Tcl_DStringAppend(&ds, "' instead. ", -1);
+        Tcl_DStringAppend(&ds, "Use '", -1);
+        Tcl_DStringAppend(&ds, alternative, -1);
+        Tcl_DStringAppend(&ds, "' instead. ", -1);
     }
     if (explanation != NULL) {
-	Tcl_DStringAppend(&ds, explanation, -1);
+        Tcl_DStringAppend(&ds, explanation, -1);
     }
     Ns_Log(Notice, "%s", Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
@@ -353,7 +353,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-        
+
     } else {
         bool        intag;     /* flag to see if are we inside a tag */
         bool        inentity;   /* flag to see if we are inside a special char */
@@ -365,7 +365,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
          * Make a copy of the input and point the moving and output ptrs to it.
          */
         assert(htmlString != NULL);
-        
+
         inString = ns_strdup(htmlString);
         inPtr    = inString;
         outPtr   = inString;
@@ -378,20 +378,20 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 intag = NS_TRUE;
 
             } else if (intag && (*inPtr == '>')) {
-                /* 
-                 * Inside a tag that closes 
+                /*
+                 * Inside a tag that closes
                  */
                 intag = NS_FALSE;
 
             } else if (inentity && (*inPtr == ';')) {
-                /* 
+                /*
                  * Inside an entity that closes.
                  */
                 inentity = NS_FALSE;
 
             } else if ((!intag) && (!inentity)) {
-                /* 
-                 * Regular text 
+                /*
+                 * Regular text
                  */
 
                 if (*inPtr == '&') {
@@ -414,7 +414,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 }
 
                 if (!inentity) {
-                    /* 
+                    /*
                      * incr pointer only if we're not in something htmlish.
                      */
                     *outPtr++ = *inPtr;
@@ -423,7 +423,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             ++inPtr;
         }
 
-        /* 
+        /*
          * Terminate output string.
          */
         *outPtr = '\0';
@@ -505,7 +505,7 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
 
         assert(htmlString != NULL);
-        
+
         p = htmlString;
         while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
             ++s;
@@ -523,7 +523,7 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                         }
                         if (*s == '=') {
                             char save, *he;
-                            
+
                             ++s;
                             while (*s != '\0' && CHARTYPE(space, *s) != 0) {
                                 ++s;
@@ -700,7 +700,7 @@ static bool
 WordEndsInSemi(const char *ip)
 {
     NS_NONNULL_ASSERT(ip != NULL);
-    
+
     /* advance past the first '&' so we can check for a second
        (i.e. to handle "ben&jerry&nbsp;")
     */
@@ -758,7 +758,7 @@ SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
 {
     do {
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
-	         ((unsigned) src[2] << 8 | src[3]);
+                 ((unsigned) src[2] << 8 | src[3]);
        src += 4;
     } while (--words > 0u);
 }
@@ -796,16 +796,16 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 #define f3(x,y,z) ( ((x) & (y)) + ((z) & ((x) ^ (y)) ) )	/* Rounds 40-59 */
 #define f4(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 60-79 */
 
-/* 
- * The SHA Mysterious Constants. 
+/*
+ * The SHA Mysterious Constants.
  */
 #define K2  (0x5A827999u)	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
 #define K3  (0x6ED9EBA1u)	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
 #define K5  (0x8F1BBCDCu)	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
 #define K10 (0xCA62C1D6u)	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
 
-/* 
- * 32-bit rotate left - kludged with shifts 
+/*
+ * 32-bit rotate left - kludged with shifts
  */
 #define ROTL(n,X) ( ((X) << (n)) | ((X) >> (32-(n))) )
 
@@ -826,7 +826,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 #if SHA_VERSION			/* FIPS 180.1 */
 
 #define expandx(W,i) (t = W[(i)&15u] ^ W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u], \
-			ROTL(1, t))
+                        ROTL(1, t))
 #define expand(W,i) (W[(i)&15u] = expandx(W,(i)))
 
 #else /* Old FIPS 180 */
@@ -874,8 +874,8 @@ SHATransform(Ns_CtxSHA1 *sha)
 
     NS_NONNULL_ASSERT(sha != NULL);
 
-    /* 
-     * Set up first buffer 
+    /*
+     * Set up first buffer
      */
     A = sha->iv[0];
     B = sha->iv[1];
@@ -883,8 +883,8 @@ SHATransform(Ns_CtxSHA1 *sha)
     D = sha->iv[3];
     E = sha->iv[4];
 
-    /* 
-     * Heavy mangling, in 4 sub-rounds of 20 interations each. 
+    /*
+     * Heavy mangling, in 4 sub-rounds of 20 interations each.
      */
     subRound (A, B, C, D, E, f1, K2, sha->key[0]);
     subRound (E, A, B, C, D, f1, K2, sha->key[1]);
@@ -970,8 +970,8 @@ SHATransform(Ns_CtxSHA1 *sha)
     subRound (C, D, E, A, B, f4, K10, expandx (sha->key, 78u));
     subRound (B, C, D, E, A, f4, K10, expandx (sha->key, 79u));
 
-    /* 
-     * Build message digest 
+    /*
+     * Build message digest
      */
     sha->iv[0] += A;
     sha->iv[1] += B;
@@ -980,8 +980,8 @@ SHATransform(Ns_CtxSHA1 *sha)
     sha->iv[4] += E;
 }
 
-/* 
- * Update SHA for a block of data. 
+/*
+ * Update SHA for a block of data.
  */
 void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 {
@@ -990,8 +990,8 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
-    /* 
-     * Update bitcount 
+    /*
+     * Update bitcount
      */
 
 #if defined(HAVE_64BIT)
@@ -1008,8 +1008,8 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
     }
 #endif
 
-    /* 
-     * i is always less than SHA_BLOCKBYTES. 
+    /*
+     * i is always less than SHA_BLOCKBYTES.
      */
     if (SHA_BLOCKBYTES - i > len) {
         memcpy(ctx->key + i, buf, len);
@@ -1051,13 +1051,13 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #endif
     uint8_t *p = (uint8_t *) ctx->key + i;	/* First unused byte */
 
-    /* 
-     * Set the first char of padding to 0x80. There is always room. 
+    /*
+     * Set the first char of padding to 0x80. There is always room.
      */
     *p++ = (uint8_t)0x80u;
 
-    /* 
-     * Bytes of padding needed to make 64 bytes (0..63) 
+    /*
+     * Bytes of padding needed to make 64 bytes (0..63)
      */
     i = (SHA_BLOCKBYTES - 1u) - i;
 
@@ -1071,8 +1071,8 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     memset(p, 0, i - 8u);
     SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, 14u);
 
-    /* 
-     * Append length in bits and transform 
+    /*
+     * Append length in bits and transform
      */
 #if defined(HAVE_64BIT)
     ctx->key[14] = (uint32_t) (ctx->bytes >> 29);
@@ -1083,14 +1083,14 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #endif
     SHATransform (ctx);
 
-    /* 
+    /*
      * The following memcpy() does not seem to be correct and is most likely
      * not needed, since the loop sets all elements of "digetst".
      */
     /*memcpy(digest, ctx->iv, sizeof(digest));*/
 
     for (i = 0u; i < SHA_HASHWORDS; i++) {
-	uint32_t t = ctx->iv[i];
+        uint32_t t = ctx->iv[i];
 
         digest[i * 4u     ] = (uint8_t) (t >> 24);
         digest[i * 4u + 1u] = (uint8_t) (t >> 16);
@@ -1098,7 +1098,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
         digest[i * 4u + 3u] = (uint8_t) t;
     }
 
-    memset(ctx, 0, sizeof(Ns_CtxSHA1)); 			/* In case it's sensitive */
+    memset(ctx, 0, sizeof(Ns_CtxSHA1));                         /* In case it's sensitive */
 }
 
 /*
@@ -1122,7 +1122,7 @@ char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUppe
     int i;
     static const char hexCharsUpper[] = "0123456789ABCDEF";
     static const char hexCharsLower[] = "0123456789abcdef";
-    
+
     if (isUpper) {
         for (i = 0; i < size; ++i) {
             buf[i * 2] = hexCharsUpper[digest[i] >> 4];
@@ -1165,7 +1165,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         result = TCL_ERROR;
-        
+
     } else {
         unsigned char  digest[20];
         char           digestChars[41];
@@ -1180,7 +1180,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         Ns_HexString(digest, digestChars, 20, NS_TRUE);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, 40));
     }
-    
+
     return result;
 }
 
@@ -1219,7 +1219,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     } else {
         if (objc > 2) {
             const char *name = Tcl_GetString(objv[2]);
-        
+
             (void)Tcl_SetVar2Ex(interp, name, "dev",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_dev), 0);
             (void)Tcl_SetVar2Ex(interp, name, "ino",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);
             (void)Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewWideIntObj((Tcl_WideInt)st.st_nlink), 0);
@@ -1286,13 +1286,13 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static void byteReverse(unsigned char *buf, unsigned longs)
 {
     do {
-	uint32_t t;
+        uint32_t t;
 
-	t = (uint32_t) 
-	    ((unsigned) buf[3] << 8 | buf[2]) << 16 |
-	    ((unsigned) buf[1] << 8 | buf[0]);
-	*(uint32_t *) buf = t;
-	buf += 4;
+        t = (uint32_t)
+            ((unsigned) buf[3] << 8 | buf[2]) << 16 |
+            ((unsigned) buf[1] << 8 | buf[0]);
+        *(uint32_t *) buf = t;
+        buf += 4;
     } while (--longs);
 }
 #endif
@@ -1328,44 +1328,44 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
     t = ctx->bits[0];
     ctx->bits[0] = t + ((uint32_t) len << 3);
     if (ctx->bits[0] < t) {
-	ctx->bits[1]++;		/* Carry from low to high */
+        ctx->bits[1]++;		/* Carry from low to high */
     }
     ctx->bits[1] += (uint32_t)(len >> 29);
 
     t = (t >> 3) & 0x3Fu;	/* Bytes already in shsInfo->data */
 
-    /* 
-     * Handle any leading odd-sized chunks 
+    /*
+     * Handle any leading odd-sized chunks
      */
 
     if (t != 0u) {
-	unsigned char *p = ctx->in + t;
+        unsigned char *p = ctx->in + t;
 
-	t = 64u - t;
-	if (len < t) {
-	    memcpy(p, buf, len);
-	    return;
-	}
-	memcpy(p, buf, t);
-	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint8_t *) ctx->in);
-	buf += t;
-	len -= t;
+        t = 64u - t;
+        if (len < t) {
+            memcpy(p, buf, len);
+            return;
+        }
+        memcpy(p, buf, t);
+        byteReverse(ctx->in, 16);
+        MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+        buf += t;
+        len -= t;
     }
-    
-    /* 
-     * Process data in 64-byte chunks 
+
+    /*
+     * Process data in 64-byte chunks
      */
     while (len >= 64u) {
-	memcpy(ctx->in, buf, 64u);
-	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint8_t *) ctx->in);
-	buf += 64;
-	len -= 64u;
+        memcpy(ctx->in, buf, 64u);
+        byteReverse(ctx->in, 16);
+        MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+        buf += 64;
+        len -= 64u;
     }
 
-    /* 
-     * Handle any remaining bytes of data. 
+    /*
+     * Handle any remaining bytes of data.
      */
     memcpy(ctx->in, buf, len);
 }
@@ -1384,49 +1384,49 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     NS_NONNULL_ASSERT(digest != NULL);
 
     words = (uint32_t *)ctx->in;
-    
-    /* 
-     * Compute number of bytes mod 64 
+
+    /*
+     * Compute number of bytes mod 64
      */
     count = (ctx->bits[0] >> 3) & 0x3Fu;
 
-    /* 
+    /*
      * Set the first char of padding to 0x80.  This is safe since there is
      * always at least one byte free
      */
     p = ctx->in + count;
     *p++ = (uint8_t)0x80u;
-    
-    /* 
-     * Bytes of padding needed to make 64 bytes 
+
+    /*
+     * Bytes of padding needed to make 64 bytes
      */
     count = (64u - 1u) - count;
 
-    /* 
-     * Pad out to 56 mod 64 
+    /*
+     * Pad out to 56 mod 64
      */
     if (count < 8u) {
-	/* 
-         * Two lots of padding:  Pad the first block to 64 bytes 
+        /*
+         * Two lots of padding:  Pad the first block to 64 bytes
          */
-	memset(p, 0, count);
-	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+        memset(p, 0, count);
+        byteReverse(ctx->in, 16);
+        MD5Transform(ctx->buf, (uint8_t *) ctx->in);
 
-	/* 
-         * Now fill the next block with 56 bytes 
+        /*
+         * Now fill the next block with 56 bytes
          */
-	memset(ctx->in, 0, 56u);
+        memset(ctx->in, 0, 56u);
     } else {
-	/* 
-         * Pad block to 56 bytes 
+        /*
+         * Pad block to 56 bytes
          */
-	memset(p, 0, count - 8u);
+        memset(p, 0, count - 8u);
     }
     byteReverse(ctx->in, 14);
 
-    /* 
-     * Append length in bits and transform 
+    /*
+     * Append length in bits and transform
      */
     words[14] = ctx->bits[0];
     words[15] = ctx->bits[1];
@@ -1443,8 +1443,8 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
      */
 }
 
-/* 
- * The four core functions - F1 is optimized somewhat 
+/*
+ * The four core functions - F1 is optimized somewhat
  */
 
 /* #define F1(x, y, z) (x & y | ~x & z) */
@@ -1453,8 +1453,8 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 #define F3(x, y, z) ((x) ^ (y) ^ (z))
 #define F4(x, y, z) ((y) ^ ((x) | ~(z)))
 
-/* 
- * This is the central step in the MD5 algorithm. 
+/*
+ * This is the central step in the MD5 algorithm.
  */
 #define MD5STEP(f, w, x, y, z, data, s) \
     ( (w) += f((x), (y), (z)) + (data),  (w) = (w)<<(s) | (w)>>(32-(s)),  (w) += (x) )
@@ -1472,7 +1472,7 @@ static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
     const uint32_t *in = (const uint32_t *)block;
 #else
     uint32_t in[16];
-    
+
     memcpy(in, block, sizeof(in));
 
     for (a = 0; a < 16; a++) {
@@ -1486,7 +1486,7 @@ static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
 
     NS_NONNULL_ASSERT(buf != NULL);
     NS_NONNULL_ASSERT(block != NULL);
-    
+
     a = buf[0];
     b = buf[1];
     c = buf[2];
@@ -1598,15 +1598,15 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         char           digestChars[33];
         int            length;
         const char    *str = Ns_GetBinaryString(objv[1], &length);
-        
+
         Ns_CtxMD5Init(&ctx);
         Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
         Ns_CtxMD5Final(&ctx, digest);
-        
+
         Ns_HexString(digest, digestChars, 16, NS_TRUE);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(digestChars, 32));
     }
-    
+
     return result;
 }
 
@@ -1630,15 +1630,15 @@ int
 NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int result = TCL_OK;
-    
+
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "user");
         result = TCL_ERROR;
-        
+
     } else {
         Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetUser(Tcl_GetString(objv[1]))));
     }
-    
+
     return result;
 }
 
@@ -1678,7 +1678,7 @@ static Tcl_Obj *
 GetLimitObj(rlim_t value)
 {
     Tcl_Obj *obj;
-    
+
     if (value == RLIM_INFINITY) {
         obj = Tcl_NewStringObj("unlimited", -1);
     } else {
@@ -1708,6 +1708,10 @@ int
 NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
 #ifndef _WIN32
+# ifndef RLIMIT_AS
+#  define RLIMIT_AS RLIMIT_DATA
+# endif
+
     int            opt, result = TCL_OK, rc;
     struct rlimit  rlimit;
 
@@ -1715,7 +1719,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         "coresize",
         "datasize",
         "files",
-        "filesize",        
+        "filesize",
         "vmsize",
         NULL
     };
@@ -1729,17 +1733,17 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     enum {
         CCoresizeIdx,
         CDatasizeIdx,
-        CFIlesizeIdx,        
+        CFIlesizeIdx,
         CFilesIdx,
         CVmsizeIdx,
-        
+
     };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts,
                             "option", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -1756,7 +1760,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         result = Tcl_GetWideIntFromObj(interp, objv[2], &value);
         if (result != TCL_OK) {
             char *valueString = Tcl_GetString(objv[2]);
-            
+
             if (strcmp(valueString, "unlimited") == 0) {
                 value = (Tcl_WideInt)RLIM_INFINITY;
                 result = TCL_OK;
@@ -1770,23 +1774,23 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
             if (rc == -1) {
                 Ns_TclPrintfResult(interp, "could not set limit");
-                result = TCL_ERROR;                
+                result = TCL_ERROR;
             }
         }
     } else {
         Ns_TclPrintfResult(interp, "wrong # of arguments");
-        result = TCL_ERROR;                
+        result = TCL_ERROR;
     }
 
     if (result == TCL_OK) {
         Tcl_Obj *listPtr = Tcl_NewListObj(0, NULL);
-        
+
         Tcl_ListObjAppendElement(interp, listPtr, GetLimitObj(rlimit.rlim_cur));
         Tcl_ListObjAppendElement(interp, listPtr, GetLimitObj(rlimit.rlim_max));
         Tcl_SetObjResult(interp, listPtr);
         result = TCL_OK;
     }
-    
+
     return result;
 #else
     return TCL_OK;
