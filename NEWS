@@ -87,6 +87,7 @@ New Features:
 
   - https:
     * Support OpenSSL 1.1.0
+    * Support LibreSSL 2.6.3 and 2.6.4
     * Improved support for ancient versions of OpenSSL (e.g. in CentOS 5.0)
     * Added support for for client side Server Name Indication (SNI)
     * Report attempted TLS handshakes on plain connections to error.log
@@ -224,7 +225,6 @@ Bug Fixes:
     global configuration parameter "rejectalreadyclosedconn" can be
     set to "false".
 
-
   - Fix double DriverClose calls in context of UDP drivers
 
   - Undo potential crlf-translations in the body of requests with
@@ -250,9 +250,11 @@ Bug Fixes:
       are defined. Before it was possible that NaviServer boot was
       terminated, when a default server of a driver was not yet defined.
 
-  - NsTclObjIsByteArray() behaves now more like the (Tcl internal)
+  - Improved handling of binary data.
+    NsTclObjIsByteArray() behaves now more like the (Tcl internal)
     TclIsPureByteArray() to figure out, when the bytearray data has
-    to be treated as binary.
+    to be treated as binary. Cases of pure and inpure bytearrays
+    are handled now by NaviServer.
 
   - Fixed old bug, were SSL_shutdown could hang
 
@@ -281,6 +283,9 @@ Bug Fixes:
       Maurizio for the input)
 
     * make nsproxy compile-able under windows
+
+  - Improved Unix Portability
+    Support systems wthout RLIMIT_AS (e.g. OpenBSD 6.2)
 
   - Improved Tcl portability:
 
@@ -480,6 +485,8 @@ Code Changes:
     * Stop using readdir_r() unless it is forced via compile flag
     * Align casts to Tcl 8.6
     * Replaced all occurrences of strcpy() with more safe variants
+    * Replaced all occurrences of sprintf()  by snprintf() 
+      to protect better against buffer overflows
     * Prefer void* over legacy caddr_r
     * Replaced all calls to deprecated function Tcl_DStringTrunc()
       by Tcl_DStringSetLength()
