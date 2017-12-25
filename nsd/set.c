@@ -179,7 +179,8 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
-    NS_NONNULL_ASSERT(set->size <  set->maxSize);
+
+    assert(set->size <=  set->maxSize);
 
     index = set->size;
     set->size++;
