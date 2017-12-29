@@ -1,8 +1,8 @@
 =======================================
-NaviServer 4.99.16rc, released 2017-XX-XX
+NaviServer 4.99.16, released 2017-12-29
 =======================================
 
- 344 files changed, 16011 insertions(+), 10077 deletions(-)
+ 345 files changed, 16488 insertions(+), 10401 deletions(-)
 
 New Features:
 -------------
@@ -14,7 +14,7 @@ New Features:
 
     * Added cache transaction semantics
 
-      Background: when ns_cache_* commands are used within a database
+      Background: When ns_cache_* commands are used within a database
       transaction (e.g. in OpenACS), it might occur, that partial
       results of the transaction are cached before the transaction is
       committed.  When the transaction is rolled back, invalid values
@@ -49,11 +49,11 @@ New Features:
 	 - Introspection: the statistics about cache commits and
 	   rollbacks are included in the cache statistics.
 
-    * Support caches larger than 2GB
+    * Support caches sizes larger than 2GB
 
     * Summary of new ns_cache* commands
       . ns_cache_configure to change cache parameters at runtime
-      .	ns_cache_exists: This is is more than an order of
+      .	ns_cache_exists: This command is is more than an order of
 	magnitude faster than [expr {"foo" in [ns_cache_names]]
       . ns_cache_transaction_begin
       . ns_cache_transaction_commit
@@ -79,14 +79,14 @@ New Features:
 
   - nsdb:
     provide interface for obtaining session_ids. When implementing
-    e.g.  prepared statements over the nsdbpg driver, the prepared
+    e.g. prepared statements over the nsdbpg driver, the prepared
     statement is just valid for one session. by providing the
     session_id on the Tcl layer, prepared statements can be provided
     selectively on the Tcl level.
 
 
   - https:
-    * Support OpenSSL 1.1.0
+    * Support OpenSSL 1.1.0 (configuration and runtime)
     * Support LibreSSL 2.6.3 and 2.6.4
     * Improved support for ancient versions of OpenSSL (e.g. in CentOS 5.0)
     * Added support for for client side Server Name Indication (SNI)
@@ -98,13 +98,13 @@ New Features:
     New parameter "allowstaticresources": provide control on whether
     static resources can be delivered from a cgi-bin directory.
 
-    Background: when cgi scripts are called from a cgi-bin directory
+    Background: When CGI scripts are called from a cgi-bin directory
     without an explicit extension mapping to a script interpreter
     (e.g.  Perl, Bash, ...) the script has to be set executable. If
-    this is not the case, the cgi-script is delivered in source code,
+    this is not the case, the CGI script is delivered in source code,
     which might reveal unwanted information. The reason for this
     behavior was, that one can so deliver also static resources
-    (e.g. images) from a cgi- bin directory. Now this behavior con be
+    (e.g. images) from a cgi-bin directory. Now this behavior con be
     controlled with the configure parameter "allowstaticresources",
     which is by default off.  If an application depends on this
     behavior, please turn it on in the config file (in the nscgi
@@ -135,6 +135,7 @@ New Features:
       the line in the access.log without the need of guessing via
       time-stamps. The thread name contains the the name of the
       connection pool and a connection id.
+
    *  When "mutexlocktrace" is activated, use thread name instead
       of id to ease debugging
 
@@ -160,21 +161,21 @@ Performance Improvements:
 
   * Improved performance of ns_quotehtml:
 
-    This function is in real-world applications (with e.g. OpenACS)
+    In real-world applications (with e.g. OpenACS) this function is
     one the the most frequently used functions of NaviServer. This
-    change improves the performance of ns_quotehtml by about 40-60% by
-    avoiding per-character calls to *DStringAppend; some more
-    improvements added.
+    change improves the performance of "ns_quotehtml" by about 40-60% by
+    avoiding per-character calls to *DStringAppend and some more
+    improvements.
 
-  * Improve performance of server-internal ns_set operations: remove
-    the need of 3 malloc/free pairs per request
+  * Improved performance of server internal "ns_set" operations: remove
+    the need of 3 malloc()/free() pairs per request
 
   * Use Tcl_CreateHashEntry() in frequently called functions instead
     of Tcl_FindHashEntry() since the second one uses the first.
 
   * Avoid strlen() operations on several occasions
-  * Improve speed of line-counting in .adp files by a factor of 2
-  * Reduce scope of lock when registering a filter
+  * Improved speed of line-counting in .adp files by a factor of 2
+  * Reduced scope of mutex lock when registering filters
 
 
 Bug Fixes:
@@ -189,19 +190,21 @@ Bug Fixes:
 
  - urlencode reform:
 
-   * The new code conforms to RFC3986 (2005) rather than
-     RFC1738 (1994) and RFC1808 (1995) vs. RFC2396 (1998).
-   , RFC3986 has a more precise and differently structured
-     definition (e.g. no 'unwise' characters)
-     of characters encoded in URLs. The coding of the query part is
-     actually defined in the HTML 4.01 definitions. Legacy
-     sites can use the old encoding, when compiling NaviServer with RFC1738 defined.
+   * The new code conforms to RFC3986 (2005) rather than RFC1738
+     (1994) and RFC1808 (1995) vs. RFC2396 (1998).  The newer RFC3986
+     has a more precise and differently structured definition (e.g. no
+     'unwise' characters) of characters encoded in URLs. The coding of
+     the query part is actually defined in the HTML 4.01
+     definitions. Legacy sites can use the old encoding, when
+     compiling NaviServer with RFC1738 defined.
 
-   * A warning is produced now, when an URL is passed to the location
-     field (e.g. ns_returnredirect), which is not properly encoded. Only
-     characters, which have to be always coded, are flagged.
+   * Produce a warning, when a not properly encoded URL is passed to
+     the location header field (e.g. ns_returnredirect). Some newer
+     browsers might reject those redirects. Only characters, which
+     have to be always coded, are flagged.
 
-   * make sure, that only valid percent codes are converted
+   * ns_urldecode: Make sure, that only valid percent codes are
+     converted back.
 
    * ns_urledecode: Use URL encoding charset, when no charset is
      specified.  This fixes an old (at least 10 year old) bug which
@@ -225,23 +228,23 @@ Bug Fixes:
     global configuration parameter "rejectalreadyclosedconn" can be
     set to "false".
 
-  - Fix double DriverClose calls in context of UDP drivers
+  - Fix duplicate DriverClose calls in context of UDP drivers
 
-  - Undo potential crlf-translations in the body of requests with
-    Content-Type "www-form-urlencoded"
+  - Undo potential crlf-translations in the body of (e.g. POST)
+    requests with Content-Type "www-form-urlencoded"
 
-    Background: when e.g. hidden form fields contain a line-breaks, these
-    are transformed into CRLF by current browsers in POST requests. In
-    this step the value of a hidden form-field might become larger on
-    every iteration, which might result in a quadratic growth on multiple
-    edits of sich a field. The new behavior undoes this effect.
+    Background: When a hidden form fields contains line-breaks, these
+    are transformed pn transit into CRLF by current browsers in POST
+    requests. In this step the value of a hidden form-field might
+    become larger on every iteration, which might result in a
+    quadratic growth on multiple edits of such a field. The new
+    behavior undoes this effect.
 
-
-  - Improve handling of requests in ancient (pre HTTP/1.0 1996) HTTP
-	requests in combination with writer threads. Previous versions could
-	run into a too restrictive sanity assert, assuming that reply
-	headers must be always present (which is not the case in the rather
-	informal HTTP versions before HTTP/1.0)
+  - Improved handling of requests in ancient (pre HTTP/1.0 1996) HTTP
+    requests in combination with writer threads. Previous versions
+    could run into a too restrictive sanity assert, assuming that
+    reply headers must be always present (which is not the case in the
+    rather informal HTTP versions before HTTP/1.0)
 
   - Virtual server fixes:
     * Avoid potential double-initialization of driver modules when
@@ -250,24 +253,24 @@ Bug Fixes:
       are defined. Before it was possible that NaviServer boot was
       terminated, when a default server of a driver was not yet defined.
 
-  - Improved handling of binary data.
+  - Improved handling of binary data:
     NsTclObjIsByteArray() behaves now more like the (Tcl internal)
     TclIsPureByteArray() to figure out, when the bytearray data has
-    to be treated as binary. Cases of pure and inpure bytearrays
+    to be treated as binary. Cases of pure and impure bytearrays
     are handled now by NaviServer.
 
-  - Fixed old bug, were SSL_shutdown could hang
+  - Fixed old bug, were SSL_shutdown could hang (observed on Linux
+    systems)
 
   - Fixed potential crashes as flagged by fb infer.
 
-  - Improve robustness on invalid URLs:
-    don't Fatal on invalid URLs passed to NSDriverClientOpen(),
-    but spit out a warning.
+  - Improved robustness on invalid URLs: Don't Fatal on invalid URLs
+    passed to NSDriverClientOpen(), but spit out a warning.
 
-  - Improved code safety (guarding "file delete" against names
-    starting with a "-")
+  - Improved Tcl code safety (guarding "file delete" against names
+    starting with a "--")
 
-  - Improve handling of invalid input from config file for rolling
+  - Improved handling of invalid input from config file for rolling
     files
 
   - Make sure "ns_server serverdir" and "ns_server pagedir" return
@@ -277,15 +280,15 @@ Bug Fixes:
     * Cope with changes in Universal CRT in Visual Studio 2015 where e.g.
       vsnprintf() is no longer identical to _vsnprintf().
 
-    * Improve Windows support for recent versions of visual studio
+    * Improved Windows support for recent versions of visual studio
       (versions after visual studio 2010) by introducing NS_EINPROGRESS
       and NS_EINTR for abstracting from the raw constants (many thanks to
       Maurizio for the input)
 
-    * make nsproxy compile-able under windows
+    * Make nsproxy compile-able under windows
 
-  - Improved Unix Portability
-    Support systems wthout RLIMIT_AS (e.g. OpenBSD 6.2)
+  - Improved Unix Portability:
+    Support systems without RLIMIT_AS (e.g. OpenBSD 6.2)
 
   - Improved Tcl portability:
 
@@ -345,7 +348,7 @@ Documentation improvements:
     * make URLs protocol agnostic
     * use new .io domain of sourceforge
 
-  - Fix spelling errors
+  - Fixed spelling errors
 
 
 Tcl API Changes:
@@ -355,14 +358,14 @@ Tcl API Changes:
 
   - Removed useless and undocumented subcommand "ns_set idelete"
 
-   * ns_urlencode: new flag "-uppercase" added for supporting encoding
+   * ns_urlencode: New flag "-uppercase" added for supporting encoding
      for OAuth (RFC 5849); note that the "path" segment encoding has
      to be used to avoid coding space as "+".
 
    * ns_urlencode and ns_urldecode: Additional accepted value "cookies
      "for parameter "-part" to request cookie encoding/decoding.
 
-   * ns_getcookie: new option "-all"
+   * ns_getcookie: New option "-all"
 
      Background: By using a cookie domain, it is possible that a
      cookie with a specified name is given two value, one from
@@ -373,7 +376,7 @@ Tcl API Changes:
      by returning potentially multiple values for the cookie.
 
    * ns_connchan:
-      new (experimental) subcommand
+      New (experimental) subcommand
 	 ns_connchan listen ?-driver d? ?-server s? ?-bind? address port script
       Start a listening connection for the ns_connchan interface;
       Still missing: https variant via specifying "-driver" +
@@ -407,17 +410,18 @@ C API Changes:
     (EPSV, extended passive mode).
 
   - driver.c:
-    * factor out LookupDriver() to improve reusability
-    * new function NSDriverSockNew() to create an initialized driver Sock
+    * Factored out LookupDriver() to improve reusability
+    * New function NSDriverSockNew() to create an initialized driver Sock
       structure,
 
 
 Configuration Changes:
 ----------------------
 
-  - no need to specify port for virtual servers in */servers section
+  - Removed need to specify port for virtual servers in */servers
+    section of the config files
 
-  - Extended sample config files
+  - Extended sample config files:
 
     * nsd-config.tcl
        . Added new nslog parameter "logthreadname"
@@ -427,13 +431,13 @@ Configuration Changes:
        . Added configuration for strict-transport-security (HSTS)
        . Added setting of OpenACS kernel parameter
 	 "NsShutdownWithNonZeroExitCode" in sample config file
-       . Ease configuration for nsssl by simply setting https port
+       . Eased configuration for nsssl by simply setting https port
        . Added new nslog parameter "logthreadname"
        . Added new global parameter "rejectalreadyclosedconn"
 
     * sample-config.tcl:
-       . Include global parameter "shutdowntimeout" in sample config file
-       . Include parameter "allowstaticresources" in nscgi section
+       . Included global parameter "shutdowntimeout" in sample config file
+       . Included parameter "allowstaticresources" in nscgi section
        . Added new nslog parameter "logthreadname"
        . Added new global parameter "rejectalreadyclosedconn"
        . Make it work out-of-the box
@@ -483,17 +487,16 @@ Code Changes:
       error message generation
     * Prefer Tcl_SetObjResult over Tcl_SetResult
     * Stop using readdir_r() unless it is forced via compile flag
-    * Align casts to Tcl 8.6
+    * Aligned casts to Tcl 8.6
     * Replaced all occurrences of strcpy() with more safe variants
-    * Replaced all occurrences of sprintf()  by snprintf() 
+    * Replaced all occurrences of sprintf()  by snprintf()
       to protect better against buffer overflows
     * Prefer void* over legacy caddr_r
     * Replaced all calls to deprecated function Tcl_DStringTrunc()
       by Tcl_DStringSetLength()
 
- - Mark deprecated procs explicitly as deprecated
-   * Implemented deprecated commands as Tcl proc and complain on
-     its usage
+ - Implemented deprecated commands as Tcl proc and complain on
+   its usage
       . ns_puts
       . ns_returnadminnotice
       . env
@@ -504,6 +507,44 @@ Code Changes:
    (CFLAGS_TIDY, CFLAGS_DEFINITION, CFLAGS_CONVERSION)
 
  - Improved error messages
+
+
+Modules:
+--------
+
+ - nsstats:
+    . Format values in human readable form (unless &raw=1 is used in query)
+    . Return proxy stats form all proxy pools
+    . Include expire date of certificate in "process" page
+    . Added "commit" and "rollback" to cache statistics
+
+ - nsdbpg:
+    . Report more detailed version numbers used during built process
+    . Honor "logsqlerrors" settings from config file
+    . Truncate SQL statement in error.log to 10.000 chars if longer
+      (to avoid overlong log file entries)
+    . Improved backwards compatibility with ancient versions of PostgreSQL
+
+ - nsimap:
+    . Added optional flag "-novalidatecert" to "ns_imap open"
+      (name from the flag of the IMAP implementation)
+    . Use NaviServer built-in config check for SSL libraries and use same libraries
+    . Updated to meet engineering standards
+
+ - revproxy:
+    . Added url_rewrite_callback
+    . Added timeout handling
+    . Added support for handling requests with provided content (POST, PUT, ...)
+    . Generalized error handling, reverse callback registration as suggested by David.
+    . Close connection explicitly after every request
+
+ - letsencrypt:
+    . New module for managing server certificates via Let's Encrypt
+
+ - websocket:
+    . Varius small updates (links, spelling errors, ...)
+
+
 
 
 =======================================
