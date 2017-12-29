@@ -183,7 +183,8 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         case TCreateIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread begin ...", NULL);
             /* fall through */
-        case TBeginIdx:         /* fall through */
+        case TBeginIdx:
+            /* fall through */
         case TBeginDetachedIdx:
             {
                 char       *threadName = NULL, *script;
@@ -231,7 +232,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case TGetIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
-            /* FALLTHROUGH */
+            /* fall through */
         case THandleIdx:
             Ns_ThreadSelf(&tid);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
@@ -240,7 +241,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case TGetIdIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
-            /* FALLTHROUGH */
+            /* fall through */
         case TIdIdx:
             Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
             break;
@@ -588,7 +589,8 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         /* Handled above. */
         break;
 
-    case EAbsWaitIdx:   /* fall through */
+    case EAbsWaitIdx:
+        /* fall through */
     case EWaitIdx:
         if (objc != 4 && objc != 5) {
             Tcl_WrongNumArgs(interp, 2, objv, "condId mutexId ?timeout?");
@@ -649,7 +651,8 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         Ns_CondBroadcast(condPtr);
         break;
 
-    case ESetIdx:       /* fall through */
+    case ESetIdx:
+        /* fall through */
     case ESignalIdx:
         Ns_CondSignal(condPtr);
         break;
@@ -726,8 +729,10 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             Ns_RWLockWrLock(rwlockPtr);
             break;
 
-        case RReadUnlockIdx:   /* fall through */
-        case RWriteUnlockIdx:  /* fall through */
+        case RReadUnlockIdx:
+            /* fall through */
+        case RWriteUnlockIdx:
+            /* fall through */
         case RUnlockIdx:
             Ns_RWLockUnlock(rwlockPtr);
             break;
