@@ -51,6 +51,10 @@
 # endif
 #endif
 
+#if defined(__APPLE__) && defined(__MACH__)
+# include <AvailabilityMacros.h>
+#endif
+
 
 /*
  * Local functions defined in this file
@@ -114,7 +118,7 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 
     for (i = 0; i < nbufs && sent > 0u; i++) {
         const char *data = bufs[i].iov_base;
-	size_t      len  = bufs[i].iov_len;
+        size_t      len  = bufs[i].iov_len;
 
         if (len > 0u) {
             if (sent >= len) {
@@ -277,7 +281,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
              */
 
             if (bufIdx < nbufs - 1) {
-		assert(nsbufs > 0);
+                assert(nsbufs > 0);
                 memmove(sbufPtr, sbufPtr + sbufIdx, sizeof(struct iovec) * (size_t)nsbufs);
             } else {
                 sbufPtr = sbufPtr + sbufIdx;
@@ -393,17 +397,17 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     pfd.events = 0;
 
     if ((what & (unsigned int)NS_SOCK_READ) != 0u) {
-	pfd.events |= (short)POLLIN;
+        pfd.events |= (short)POLLIN;
     }
     if ((what & (unsigned int)NS_SOCK_WRITE) != 0u) {
-	pfd.events |= (short)POLLOUT;
+        pfd.events |= (short)POLLOUT;
     }
     if ((what & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
-	pfd.events |= (short)POLLPRI;
+        pfd.events |= (short)POLLPRI;
     }
 
     do {
-	n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
+        n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
     } while (n < 0 && errno == NS_EINTR);
 
     if (likely(n > 0)) {
@@ -750,7 +754,7 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
     Ns_ReturnCode status;
 
     if (ns_sock_set_blocking(sock, NS_FALSE) == -1) {
-	status = NS_ERROR;
+        status = NS_ERROR;
     } else {
         status = NS_OK;
     }
@@ -780,7 +784,7 @@ Ns_SockSetBlocking(NS_SOCKET sock)
     Ns_ReturnCode status;
 
     if (ns_sock_set_blocking(sock, NS_TRUE) == -1) {
-	status = NS_ERROR;
+        status = NS_ERROR;
     } else {
         status = NS_OK;
     }
@@ -820,9 +824,9 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 # endif
 
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
-		   (const void *)&qlen, (socklen_t)sizeof(qlen)) == -1) {
-	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
-	       ns_sockstrerror(ns_sockerrno));
+                   (const void *)&qlen, (socklen_t)sizeof(qlen)) == -1) {
+        Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
+               ns_sockstrerror(ns_sockerrno));
     } else {
         Ns_Log(Notice, "deferaccept: socket option TCP_FASTOPEN activated");
     }
@@ -830,9 +834,9 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 #else
 # ifdef TCP_DEFER_ACCEPT
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
-		   (const void *)&secs, (socklen_t)sizeof(secs)) == -1) {
-	Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
-	       ns_sockstrerror(ns_sockerrno));
+                   (const void *)&secs, (socklen_t)sizeof(secs)) == -1) {
+        Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
+               ns_sockstrerror(ns_sockerrno));
     } else {
         Ns_Log(Notice, "deferaccept: socket option DEFER_ACCEPT activated (timeout %ld)", secs);
     }
@@ -845,8 +849,8 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
     strncpy(afa.af_name, "httpready", sizeof(afa.af_name));
     n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, (socklen_t)sizeof(afa));
     if (n < 0) {
-	Ns_Log(Error, "deferaccept setsockopt(SO_ACCEPTFILTER): %s",
-	       ns_sockstrerror(ns_sockerrno));
+        Ns_Log(Error, "deferaccept setsockopt(SO_ACCEPTFILTER): %s",
+               ns_sockstrerror(ns_sockerrno));
     } else {
         Ns_Log(Notice, "deferaccept: socket option SO_ACCEPTFILTER activated");
 
@@ -1092,6 +1096,24 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
     } else {
         sock = Ns_SockBind(lsaPtr, NS_FALSE);
         if (sock != NS_INVALID_SOCKET) {
+
+#if defined(__APPLE__) && defined(__MACH__)
+# if defined(MAC_OS_X_VERSION_10_13)
+            {
+                /*
+                 * macOS High Sierra raises "Broken pipe: 13" errors for the
+                 * http.test regression test. It seems to ignore the setting
+                 *
+                 *     ns_sigmask(SIG_BLOCK, &set, NULL);
+                 *
+                 * in unix.c where "set" contains SIGPIPE. Therefore, we turn
+                 * off SIGPPIPE direcly on the socket.
+                 */
+                int set = 1;
+                setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+            }
+# endif
+#endif
             if (async) {
                 if (Ns_SockSetNonBlocking(sock) != NS_OK) {
                     Ns_Log(Warning, "attempt to set socket nonblocking failed");
