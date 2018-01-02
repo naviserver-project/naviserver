@@ -172,7 +172,7 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
         }
         passPart = strchr(user, INTCHAR(':'));
         if (passPart == NULL) {
-            Ns_Log(Warning, "nscp: user entry '%s' contains no colon; ignored.", user);
+            Ns_Log(Warning, "nscp[%s]: user entry '%s' contains no colon; ignored.", server,  user);
 	    continue;
         }
 
@@ -189,9 +189,9 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
 
 	hPtr = Tcl_CreateHashEntry(&modPtr->users, p, &isNew);
 	if (isNew != 0) {
-	    Ns_Log(Notice, "nscp: added user: %s", p);
+	    Ns_Log(Notice, "nscp[%s]: added user: \"%s\"", server, p);
 	} else {
-	    Ns_Log(Warning, "nscp: duplicate user: %s", p);
+	    Ns_Log(Warning, "nscp[%s]: duplicate user: \"%s\"", server, p);
 	    ns_free(Tcl_GetHashValue(hPtr));
 	}
         /*
@@ -215,7 +215,7 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
         ns_free(scratch);
     }
     if (modPtr->users.numEntries == 0) {
-	Ns_Log(Warning, "nscp: no authorized users");
+	Ns_Log(Warning, "nscp[%s]: no authorized users", server);
     }
 }
 
@@ -258,13 +258,13 @@ Ns_ModuleInit(const char *server, const char *module)
 
     lsock = Ns_SockListen(addr, port);
     if (lsock == NS_INVALID_SOCKET) {
-	Ns_Log(Error, "nscp: could not listen on [%s]:%hu", addr, port);
+	Ns_Log(Error, "nscp[%s]: could not listen on [%s]:%hu", server, addr, port);
 	result = NS_ERROR;
         
     } else {
         Mod           *modPtr;
         
-        Ns_Log(Notice, "nscp: listening on [%s]:%hu", addr, port);
+        Ns_Log(Notice, "nscp[%s]: listening on [%s]:%hu", server, addr, port);
 
         /*
          * Create a new Mod structure for this instance.

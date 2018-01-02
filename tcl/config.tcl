@@ -108,9 +108,9 @@ proc _ns_config_server_limits {server} {
             if {[catch {
                 ns_limits_register $limit $method $url
             } errmsg]} {
-                ns_log error limits\[$server\]: $errmsg
+                ns_log error "limits\[$server\]: $errmsg"
             } else {
-                ns_log notice limits\[$server\]: $limit -> $method $url
+                ns_log notice "limits\[$server\]: $limit -> $method $url"
             }
         }
     }
