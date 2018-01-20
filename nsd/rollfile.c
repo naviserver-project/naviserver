@@ -260,9 +260,6 @@ Ns_RollFileByDate(const char *fileName, int max)
 Ns_ReturnCode
 Ns_PurgeFiles(const char *fileName, int max)
 {
-    const File   *fiPtr;
-    File         *files = NULL;
-    int           nfiles;
     Tcl_Obj      *pathObj;
     Ns_ReturnCode status = NS_OK;
 
@@ -276,10 +273,12 @@ Ns_PurgeFiles(const char *fileName, int max)
      */
     if (Tcl_FSGetNormalizedPath(NULL, pathObj) == NULL) {
         Ns_Log(Error, "rollfile: invalid path '%s'", fileName);
-        nfiles = -1;
         status = NS_ERROR;
 
     } else {
+        File *files = NULL;
+        int   nfiles;
+
         /*
          * Get all files matching "file*" pattern.
          */
@@ -288,41 +287,34 @@ Ns_PurgeFiles(const char *fileName, int max)
             Ns_Log(Error, "rollfile: failed to match files '%s': %s",
                    fileName, strerror(Tcl_GetErrno()));
             status = NS_ERROR;
-        }
-    }
 
-    if (status == NS_OK) {
-        /*
-         * Purge (any) excessive files after sorting them
-         * on descening file mtime.
-         */
+        } else if (files != NULL) {
+            const File *fiPtr;
+            int         ii;
 
-        if (nfiles >= max) {
-            int ii;
-        
-            assert(files != NULL);
+            /*
+             * Purge (any) excessive files after sorting them
+             * on descening file mtime.
+             */
 
-            qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
-            for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
-                if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
-                    status = NS_ERROR;
-                    break;
+            if (nfiles >= max) {
+                qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
+                for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
+                    if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
+                        status = NS_ERROR;
+                        break;
+                    }
                 }
+            }
+ 
+            if (nfiles > 0) {
+                for (ii = 0, fiPtr = files; ii < nfiles; ii++, fiPtr++) {
+                    Tcl_DecrRefCount(fiPtr->path);
+                }
+                ns_free(files);
             }
         }
     }
-    
-    if (nfiles > 0) {
-        int ii;
-
-        assert(files != NULL);
-
-        for (ii = 0, fiPtr = files; ii < nfiles; ii++, fiPtr++) {
-            Tcl_DecrRefCount(fiPtr->path);
-        }
-        ns_free(files);
-    }
-
     Tcl_DecrRefCount(pathObj);
     return status;
 }
