@@ -334,9 +334,18 @@ ns_section "ns/server/${server}/fastpath"
 #
 ns_section ns/server/${server}/acs
          ns_param NsShutdownWithNonZeroExitCode 1
+#        ns_param WithDeprecatedCode 0
 #        ns_param LogIncludeUserId 1
 #
-# Define/override OpenACS package parameters in section /acs/PACKAGENAME
+# Define/override OpenACS package parameters in section
+# ending with /acs/PACKAGENAME
+#
+# Provide tailored sizes for the site node cache in acs-tcl:
+#
+#ns_section ns/server/${server}/acs/acs-tcl
+#         ns_param SiteNodesCacheSize        2000000
+#         ns_param SiteNodesIdCacheSize       100000
+#         ns_param SiteNodesChildenCacheSize  100000
 #
 # Set for all package instances of acs-mail-lite the EmailDeliveryMode
 #
