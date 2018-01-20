@@ -1482,6 +1482,7 @@ JobThread(void *UNUSED(arg))
 
         if (LookupQueue(NULL, jobPtr->queueId, &queue, NS_TRUE) != TCL_OK) {
             Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
+            break;
         }
         assert(queue != NULL);
 
@@ -1662,11 +1663,11 @@ GetNextJob(void)
 
         if (LookupQueue(NULL, jobPtr->queueId, &queue, NS_TRUE) != TCL_OK) {
             Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
+            break;
         }
         assert(queue != NULL);
 
         if (queue->nRunning < queue->maxThreads) {
-
             /*
              * Job can be serviced; remove it from the pending list.
              */
@@ -1675,11 +1676,9 @@ GetNextJob(void)
             } else {
                 prevPtr->nextPtr = jobPtr->nextPtr;
             }
-
             done = NS_TRUE;
 
         } else {
-
             /*
              * Go to next job.
              */
