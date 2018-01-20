@@ -737,6 +737,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
         if (objc != 5) {
             Tcl_WrongNumArgs(interp, 2, objv, "dbId code message");
             result = TCL_ERROR;
+
+        } else if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, NULL) != TCL_OK) {
+            result = TCL_ERROR;
+
         } else {
             const char *code;
             int codeLen;
@@ -762,8 +766,12 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
             if (!STREQ(arg5, "in") && !STREQ(arg5, "out")) {
                 Ns_TclPrintfResult(interp, "inout parameter of setparam must "
-                              "be \"in\" or \"out\"");
+                                   "be \"in\" or \"out\"");
                 result = TCL_ERROR;
+
+            } else if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, NULL) != TCL_OK) {
+                result = TCL_ERROR;
+
             } else {
                 assert(handlePtr != NULL);
 
