@@ -470,10 +470,11 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, const char *file,
 
     if (itPtr->adp.debugLevel > 0) {
         ++itPtr->adp.debugLevel;
-    } else if (((itPtr->adp.flags & ADP_DEBUG) != 0u)
-                   && itPtr->adp.debugFile != NULL
-                   && (p = strrchr(file, INTCHAR('/'))) != NULL
-                   && Tcl_StringMatch(p+1, itPtr->adp.debugFile) != 0) {
+    } else if ((itPtr->conn != NULL)
+               && ((itPtr->adp.flags & ADP_DEBUG) != 0u)
+               && itPtr->adp.debugFile != NULL
+               && (p = strrchr(file, INTCHAR('/'))) != NULL
+               && Tcl_StringMatch(p+1, itPtr->adp.debugFile) != 0) {
         const Ns_Set *hdrs;
         const char   *host, *port, *procs;
 
