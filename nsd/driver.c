@@ -5684,7 +5684,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         }
 
         if (result == TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->doStream));
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->doStream == NS_WRITER_STREAM_ACTIVE ? 1 : 0));
         }
     }
 

@@ -101,7 +101,7 @@ NsTclInitAddrType(void)
          * value to avoid potential confusions. Without this stunt, we would
          * need several ifdefs.
          */
-        properByteArrayTypePtr = (Tcl_ObjType *)0xffffff;
+        properByteArrayTypePtr = (Tcl_ObjType *)INT2PTR(0xffffff);
     }
     Tcl_DecrRefCount(newByteObj);
 }
