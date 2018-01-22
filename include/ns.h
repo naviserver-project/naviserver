@@ -2348,7 +2348,7 @@ NS_EXTERN void
 Ns_RegisterReturn(int status, const char *url);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnReturnStatus(Ns_Conn *conn, int status)
+Ns_ConnReturnStatus(Ns_Conn *conn, int httpStatus)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode

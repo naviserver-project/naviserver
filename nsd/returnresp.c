@@ -44,7 +44,7 @@
  */
 
 static Ns_ServerInitProc ConfigServerRedirects;
-static bool ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
+static bool ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 
@@ -161,14 +161,14 @@ Ns_RegisterReturn(int status, const char *url)
  */
 
 Ns_ReturnCode
-Ns_ConnReturnStatus(Ns_Conn *conn, int status)
+Ns_ConnReturnStatus(Ns_Conn *conn, int httpStatus)
 {
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     
-    if (!ReturnRedirect(conn, status, &result)) {
-        Ns_ConnSetResponseStatus(conn, status);
+    if (!ReturnRedirect(conn, httpStatus, &result)) {
+        Ns_ConnSetResponseStatus(conn, httpStatus);
         result = Ns_ConnWriteVData(conn, NULL, 0, 0u);
     }
     return result;
@@ -740,29 +740,36 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  */
 
 static bool
-ReturnRedirect(Ns_Conn *conn, int status, Ns_ReturnCode *resultPtr)
+ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
 {
-    const Tcl_HashEntry *hPtr;
-    Conn                *connPtr;
-    NsServer            *servPtr;
-    bool                 result = NS_FALSE;
+    Conn *connPtr;
+    bool  result = NS_FALSE;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
-    connPtr = (Conn *) conn;
- 
-    servPtr = connPtr->poolPtr->servPtr;
-    assert(servPtr != NULL);
 
-    hPtr = Tcl_FindHashEntry(&servPtr->request.redirect, INT2PTR(status));
-    if (hPtr != NULL) {
-        if (++connPtr->recursionCount > MAX_RECURSION) {
-            Ns_Log(Error, "return: failed to redirect '%d': "
-                   "exceeded recursion limit of %d", status, MAX_RECURSION);
-        } else {
-            connPtr->responseStatus = status;
-            *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
-            result = NS_TRUE;
+    connPtr = (Conn *) conn;
+    if ((connPtr->flags & NS_CONN_CLOSED) != 0u) {
+        Ns_Log(Warning, "redirect status %d: connection already closed", httpStatus);
+        *resultPtr = NS_ERROR;
+
+    } else {
+        const Tcl_HashEntry *hPtr;
+        NsServer            *servPtr;
+
+        servPtr = connPtr->poolPtr->servPtr;
+        assert(servPtr != NULL);
+
+        hPtr = Tcl_FindHashEntry(&servPtr->request.redirect, INT2PTR(httpStatus));
+        if (hPtr != NULL) {
+            if (++connPtr->recursionCount > MAX_RECURSION) {
+                Ns_Log(Error, "return: failed to redirect '%d': "
+                       "exceeded recursion limit of %d", httpStatus, MAX_RECURSION);
+            } else {
+                connPtr->responseStatus = httpStatus;
+                *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
+                result = NS_TRUE;
+            }
         }
     }
     return result;
