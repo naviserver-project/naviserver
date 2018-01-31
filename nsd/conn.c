@@ -836,14 +836,16 @@ Ns_ConnSockPtr(const Ns_Conn *conn)
 Ns_DString *
 Ns_ConnSockContent(const Ns_Conn *conn)
 {
-    const Conn *connPtr;
-    Ns_DString *result = NULL;
+    Request    *reqPtr;
+    Ns_DString *result;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    connPtr = ((const Conn *)conn);
-    if (likely(connPtr->reqPtr != NULL)) {
-        result = &connPtr->reqPtr->buffer;
+    reqPtr = ((const Conn *)conn)->reqPtr;
+    if (likely(reqPtr != NULL)) {
+        result = &(reqPtr->buffer);
+    } else {
+        result = NULL;
     }
     return result;
 }
