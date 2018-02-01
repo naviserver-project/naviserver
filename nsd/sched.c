@@ -157,7 +157,7 @@ NsInitSched(void)
  *
  * Ns_After --
  *
- *  Schedule a one-shot event after the speficied delay in seconds.
+ *  Schedule a one-shot event after the specified delay in seconds.
  *
  * Results:
  *  Event id or NS_ERROR if delay is out of range.

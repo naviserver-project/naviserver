@@ -1001,7 +1001,7 @@ NsTclCacheGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclCacheStatsObjCmd --
  *
- *      Returns stats on a cache. The size and expirey time of each
+ *      Returns stats on a cache. The size and expire time of each
  *      entry in the cache is also appended if the -contents switch
  *      is given.
  *

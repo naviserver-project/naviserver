@@ -258,7 +258,7 @@ NsThreadLibName(void)
  *      Allocate and initialize a mutex lock.
  *
  * Results:
- *      Pointer to the initialzed mutex
+ *      Pointer to the initialized mutex
  *
  * Side effects:
  *      None.

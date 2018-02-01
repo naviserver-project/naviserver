@@ -522,7 +522,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             if (result == TCL_OK && key == NULL) {
                 /*
-                 * Free the actual array data strucure and invalidate the
+                 * Free the actual array data structure and invalidate the
                  * Tcl_Obj.
                  */
                 ns_free(arrayPtr);

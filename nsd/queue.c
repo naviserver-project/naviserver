@@ -690,8 +690,8 @@ ServerMinThreadsObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, 
  *
  * MapspecParse --
  *
- *      Check, if the mapspec Tcl_Obj in the first argumet is of the right
- *      syntax and return its componets as strings. Note, that the lifetime of
+ *      Check, if the mapspec Tcl_Obj in the first argument is of the right
+ *      syntax and return its components as strings. Note, that the lifetime of
  *      the returned strings depends on the lifetime of the first argument.
  *
  * Results:
@@ -1931,7 +1931,7 @@ NsConnThread(void *arg)
 
         /*
          * Protect connPtr->headers (and other members) against other threads,
-         * since we are deallocating its content. This is especiall important
+         * since we are deallocating its content. This is especially important
          * for e.g. "ns_server active" since it accesses the header fields.
          */
         Ns_MutexLock(tqueueLockPtr);
@@ -2437,7 +2437,7 @@ CreateConnThread(ConnPool *poolPtr)
  *
  * AppendConn --
  *
- *      Append connection data to a dstring.
+ *      Append connection data to a Tcl_DString.
  *
  * Results:
  *      None.
@@ -2512,7 +2512,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
                      * the peer address, which might be incorrect. So we
                      * append "unknown" as in other semi-processed cases.
                      */
-                    Ns_Log(Notice, "Connection is not configued, we can't check for the proxy yet");
+                    Ns_Log(Notice, "Connection is not configured, we can't check for the proxy yet");
                     Tcl_DStringAppendElement(dsPtr, "unknown");
                 } else {
                     /*

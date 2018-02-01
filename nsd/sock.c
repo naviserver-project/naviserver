@@ -1107,7 +1107,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                  *     ns_sigmask(SIG_BLOCK, &set, NULL);
                  *
                  * in unix.c where "set" contains SIGPIPE. Therefore, we turn
-                 * off SIGPPIPE direcly on the socket.
+                 * off SIGPPIPE directly on the socket.
                  */
                 int set = 1;
                 setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));

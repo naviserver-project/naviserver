@@ -184,7 +184,7 @@ CancelCallback(const NsConnChan *connChanPtr)
  *
  * ConnChanCreate --
  *
- *    Allocate a connecion channel strucuture and initialize its fields.
+ *    Allocate a connection channel structure and initialize its fields.
  *
  * Results:
  *    Initialized connection channel structure.
@@ -494,7 +494,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
  *      Tcl result code.
  *
  * Side effects:
- *      Memory management for the callback strucuture.
+ *      Memory management for the callback structure.
  *
  *----------------------------------------------------------------------
  */

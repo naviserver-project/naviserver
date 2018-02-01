@@ -222,7 +222,7 @@ static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose 
 static Tcl_HashTable    hosts;              /* Host header to server table */
 static const ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
 static Ns_Mutex         reqLock     = NULL; /* Lock for request free list */
-static Ns_Mutex         writerlock  = NULL; /* Lock updating streamin information in the writer */
+static Ns_Mutex         writerlock  = NULL; /* Lock updating streaming information in the writer */
 static Request         *firstReqPtr = NULL; /* Free list of request structures */
 static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
 
@@ -296,7 +296,7 @@ DriverModuleInitialized(const char *module)
 
         if (strcmp(drvPtr->moduleName, module) == 0) {
             found = NS_TRUE;
-            Ns_Log(Notice, "Driver %s is already initialzed", module);
+            Ns_Log(Notice, "Driver %s is already initialized", module);
             break;
         }
     }
@@ -516,7 +516,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
             *defMapPtrPtr = mapPtr;
         }
         /*
-         * Always reset the DString
+         * Always reset the Tcl_DString
          */
         Ns_DStringSetLength(dsPtr, 0);
     } else {
@@ -530,7 +530,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
  *
  * NsDriverMapVirtualServers --
  *
- *      Map "Host:" headers for drivers not bound to phsical servers.  This
+ *      Map "Host:" headers for drivers not bound to physical servers.  This
  *      function has to be called a time, when all servers are already defined
  *      such that NsGetServer(server) can succeed.
  *
@@ -694,7 +694,7 @@ void NsDriverMapVirtualServers(void)
  *
  * DriverInit --
  *
- *      Helper function of Ns_DriverInit. This function actuall allocates and
+ *      Helper function of Ns_DriverInit. This function actually allocates and
  *      initialized the driver structure.
  *
  * Results:
@@ -1439,7 +1439,7 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     if (likely(reqPtr != NULL)) {
 
         if (likely(reqPtr->request.line != NULL)) {
-            Ns_Log(DriverDebug, "NsGetRequest got the preparsed request <%s> from the driver",
+            Ns_Log(DriverDebug, "NsGetRequest got the pre-parsed request <%s> from the driver",
                    reqPtr->request.line);
 
         } else if (sockPtr->drvPtr->requestProc == NULL) {
@@ -1460,7 +1460,7 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 
             /*
              * If anything went wrong, clean the request provided by
-             * SockRead() and flag the error by returing NULL.
+             * SockRead() and flag the error by returning NULL.
              */
             if (status != SOCK_READY) {
                 if (sockPtr->reqPtr != NULL) {
@@ -2940,7 +2940,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
          * no need to print out the received buffer.
          */
         if (requestLine[0] == (char)0x16 && requestLine[1] >= 3 && requestLine[2] == 1) {
-            Ns_Log(Warning, "invalid request %d (%s) from peer %s: recveived TLS handshake on a non-TLS connection",
+            Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake on a non-TLS connection",
                    code, errMsg, reqPtr->peer);
         } else {
             Tcl_DString  dsReqLine;
@@ -3050,7 +3050,7 @@ SockClose(Sock *sockPtr, int keep)
 
 #ifndef _WIN32
     /*
-     * Unmmap temp file used for spooled content.
+     * Un-map temp file used for spooled content.
      */
     if (sockPtr->taddr != NULL) {
         munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
@@ -3307,7 +3307,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         Tcl_DStringSetLength(bufPtr, (int)buflen);
         /*
          * The driver returns -1 when the peer closed the connection, but
-         * clears the errno such we can distinguish form error conditons.
+         * clears the errno such we can distinguish from error conditions.
          */
         if (errno == 0) {
             return SOCK_CLOSE;
@@ -3704,7 +3704,7 @@ SockParse(Sock *sockPtr)
      * Check if all content has arrived.
      */
     Ns_Log(Dev, "=== length < avail (length %lu, avail %lu) tfd %d tfile %p chunkStartOff %lu",
-           reqPtr->length, reqPtr->avail,sockPtr->tfd, (void *)sockPtr->tfile, reqPtr->chunkStartOff);
+           reqPtr->length, reqPtr->avail, sockPtr->tfd, (void *)sockPtr->tfile, reqPtr->chunkStartOff);
 
     if (reqPtr->chunkStartOff != 0u) {
         /*
@@ -3719,7 +3719,7 @@ SockParse(Sock *sockPtr)
         /*
          * A chunk might be complete, but it might not be the last
          * chunk from the client. The best thing would be to be able
-         * to read until eof here. In cases, where the (optional)
+         * to read until EOF here. In cases, where the (optional)
          * expectedLength was provided by the client, we terminate
          * depending on that information
          */
@@ -3813,7 +3813,7 @@ SockParse(Sock *sockPtr)
 
     /*
      * Add a terminating null character. The content might be from the receive
-     * buffer (DString) or from the mmaped file. Non-mmapped files are handled
+     * buffer (DString) or from the mmapped file. Non-mmapped files are handled
      * above.
      */
     if (reqPtr->length > 0u) {
@@ -3884,7 +3884,7 @@ SockSetServer(Sock *sockPtr)
 
             /*
              * Remove trailing dot of host header field, since RFC 2976 allows
-             * fully qualified "abolute" DNS names in host fields (see e.g. §3.2.2).
+             * fully qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
              */
             if (host[hostLength] == '.') {
                 host[hostLength] = '\0';
@@ -4236,7 +4236,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
  *       Provide an API for locking and unlocking context information
  *       for streaming asynchronous writer jobs.  The locks are just
  *       needed for managing linkage between connPtr and a writer
- *       entry. The lock operations are rather infrequent amnd the
+ *       entry. The lock operations are rather infrequent and the
  *       lock duration is very short, such that at a single global
  *       appears sufficient.
  *
@@ -4688,7 +4688,7 @@ WriterThread(void *arg)
         } else {
             pollto = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
-                Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d",
+                Ns_Log(DriverDebug, "### Writer poll collect %p size %" PRIdz " streaming %d",
                        (void *)curPtr, curPtr->size, curPtr->doStream);
                 if (likely(curPtr->size > 0u)) {
                     SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);

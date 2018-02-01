@@ -49,7 +49,7 @@ typedef struct Entry {
     struct Entry   *prevPtr;
     struct Cache   *cachePtr;
     Tcl_HashEntry  *hPtr;
-    Ns_Time         expires;          /* Absolute ttl timeout. */
+    Ns_Time         expires;          /* Absolute TTL timeout. */
     size_t          size;
     int		    cost;             /* cost to compute a single entry */
     int		    count;            /* reuse count of this entry */
@@ -464,7 +464,7 @@ Ns_CacheGetTransactionEpoch(const Ns_Entry *entry)
  * Ns_CacheGetValueT --
  *
  *      Get the value a cache entry, respecting the cache transaction
- *      stack. The functio returns either the bare stack value (if present) or
+ *      stack. The function returns either the bare stack value (if present) or
  *      the uncommitted value, when called from within a cache transaction.
  *
  * Results:
@@ -524,7 +524,7 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
  *      positive integer, type align with Tcl Hash Tables
  *
  * Side effects:
- *      Nonoe.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1184,7 +1184,7 @@ Ns_CacheBroadcast(Ns_Cache *cache)
  *
  * Ns_CacheStats --
  *
- *      Append statistics about cache usage to dstring.
+ *      Append statistics about cache usage to Tcl_DString.
  *
  * Results:
  *      Pointer to current string value.
@@ -1295,7 +1295,7 @@ Ns_CacheGetMaxSize(const Ns_Cache *cache)
  *
  * Expired --
  *
- *      Has the absolute ttl expired?
+ *      Has the absolute TTL expired?
  *
  * Results:
  *      NS_TRUE if entry has expired, NS_FALSE otherwise.
