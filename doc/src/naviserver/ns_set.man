@@ -80,7 +80,7 @@ ns_set find returns -1.
 [call [cmd  "ns_set free"] [arg setId]]
 
 Frees the specified set. Sets are
-automatically freed when the transaction ends, but for loops with many interations
+automatically freed when the transaction ends, but for loops with many iterations
 it might be useful to free sets manually.
 
 [call [cmd  "ns_set get"] [arg setId] [arg key] [opt [arg default]]]
