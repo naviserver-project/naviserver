@@ -230,7 +230,7 @@ test ns_server-2.14.1a {basic operation with invalid pool} -body {
 
 test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
     ns_server -pool emergency map "XXX"
-} -returnCodes error -result {invalid mapspec 'XXX'; must be 2-element list containing http method and URL}
+} -returnCodes error -result {invalid mapspec 'XXX'; must be 2-element list containing HTTP method and URL}
 
 
 #
