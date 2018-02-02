@@ -1032,6 +1032,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
              hPtr = Tcl_NextHashEntry(&search)
              ) {
             const char *jobIdString = Tcl_GetHashKey(&queue->jobs, hPtr);
+
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(jobIdString, -1));
         }
         (void)ReleaseQueue(queue, NS_FALSE);

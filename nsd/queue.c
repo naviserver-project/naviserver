@@ -720,7 +720,7 @@ MapspecParse( Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url
         status = NS_OK;
     } else {
         Ns_TclPrintfResult(interp,
-                           "invalid mapspec '%s'; must be 2-element list containing http method and URL",
+                           "invalid mapspec '%s'; must be 2-element list containing HTTP method and URL",
                            Tcl_GetString(mapspecObj));
         status = NS_ERROR;
     }

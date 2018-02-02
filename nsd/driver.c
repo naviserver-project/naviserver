@@ -3585,10 +3585,10 @@ SockParse(Sock *sockPtr)
          * Check for max single line overflows.
          *
          * Previous versions if the driver returned here directly an
-         * error code, which was handled via http error message
+         * error code, which was handled via HTTP error message
          * provided via SockError(). However, the SockError() handling
          * closes the connection immediately. This has the
-         * consequence, that the http client might never see the error
+         * consequence, that the HTTP client might never see the error
          * message, since the request was not yet fully transmitted,
          * but it will see a "broken pipe: 13" message instead. We
          * read now the full request and return the message via

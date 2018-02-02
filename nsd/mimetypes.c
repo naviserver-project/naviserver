@@ -1373,7 +1373,7 @@ Ns_IsBinaryMimeType(const char *contentType) {
  * NsGetMimeTypes --
  *
  *      Append list of configured extension / mime-type mappings to
- *      given dstring.
+ *      given Ns_DString.
  *
  * Results:
  *      None.
@@ -1452,14 +1452,14 @@ AddType(CONST char *ext, CONST char *type)
  *
  * LowerDString --
  *
- *      Append a string to the dstring, converting all alphabetic
- *      characeters to lowercase.
+ *      Append a string to the Ns_DString, converting all alphabetic
+ *      characters to lowercase.
  *
  * Results:
  *      dsPtr->string
  *
  * Side effects:
- *      Appends to dstring.
+ *      Appends to Ns_DString.
  *
  *----------------------------------------------------------------------
  */

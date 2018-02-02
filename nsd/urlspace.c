@@ -354,7 +354,7 @@ static int CmpKeyWithChannelAsStrings(const char *key, const Channel *const*chan
 
 
 /*
- * Juntion functions
+ * Junction functions
  */
 
 static Junction *JunctionGet(NsServer *servPtr, int id)
@@ -510,7 +510,7 @@ void *
 Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
 {
    /*
-    * Depreacated Function. Use Ns_UrlSpecificGet()
+    * Deprecated Function. Use Ns_UrlSpecificGet()
     */
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -1321,7 +1321,7 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
  *      Delete a url, defined by a sequence, from a trie.
  *
  *      The NS_OP_NOINHERIT bit may be set in flags to use
- *      noninheriting data; NS_OP_NODELETE may be set to
+ *      non-inheriting data; NS_OP_NODELETE may be set to
  *      skip calling the delete function.
  *
  * Results:
@@ -1360,7 +1360,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
 
         /*
          * We've reached the end of the sequence; if a node exists for
-         * this ID then delete the inheriting/noninheriting data (as
+         * this ID then delete the inheriting/non-inheriting data (as
          * specified in flags) and call the delete func if requested.
          * The data will be set to null either way.
          */
@@ -1400,7 +1400,7 @@ TrieDelete(const Trie *triePtr, char *seq, unsigned int flags)
  *
  * Results:
  *      0: Not the case that one contains the other OR they both
- *      contain each other; 1: left contains right; -1: right contans
+ *      contain each other; 1: left contains right; -1: right contains
  *      left.
  *
  * Side effects:
@@ -1648,7 +1648,7 @@ JunctionTruncBranch(const Junction *juncPtr, char *seq)
  *      node, to a junction.
  *
  *      Flags may be a bit-combination of NS_OP_NOINHERIT,
- *      NS_OP_NODELETE.  NOINHERIT sets the data as noninheriting, so
+ *      NS_OP_NODELETE.  NOINHERIT sets the data as non-inheriting, so
  *      only an exact sequence will match in the future; NODELETE
  *      means that if a node already exists with this sequence/ID it
  *      will not be deleted but replaced.
@@ -2258,7 +2258,7 @@ CheckTclUrlSpaceId(Tcl_Interp *interp, NsServer *servPtr, int *idPtr)
  *    None.
  *
  * Side effects:
- *    Appends client data string to provided DString
+ *    Appends client data string to provided NS_DString
  *
  *----------------------------------------------------------------------
  */

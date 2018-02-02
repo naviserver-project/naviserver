@@ -321,7 +321,7 @@ HttpCancelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *	Standard Tcl result.
  *
  * Side effects:
- *	Aborting requests and reinitializiung hash table.
+ *	Aborting requests and reinitializing hash table.
  *
  *----------------------------------------------------------------------
  */
@@ -516,7 +516,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
             }
             if (Ns_TaskEnqueue(httpPtr->task, session_queue) != NS_OK) {
                 HttpClose(httpPtr);
-                Ns_TclPrintfResult(interp, "could not queue http task");
+                Ns_TclPrintfResult(interp, "could not queue HTTP task");
                 result = TCL_ERROR;
             }
         }
@@ -712,7 +712,7 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
             } else {
                 eoh = strstr(httpPtr->ds.string, "\n\n");
                 if (eoh != NULL) {
-                    Ns_Log(Warning, "HttpCheckHeader: http client reply contains no crlf, this should not happen");
+                    Ns_Log(Warning, "HttpCheckHeader: HTTP client reply contains no crlf, this should not happen");
                     httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 2;
                     eoh += 1;
                     *eoh = '\0';
@@ -790,7 +790,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
                      * We have a valid reply length, which is larger
                      * than the spool limit, or the we have an actual
                      * content larger than the limit. Create a
-                     * temporary spool file and rember its fd finally
+                     * temporary spool file and remember its fd finally
                      * in httpPtr->spoolFd to flag that later receives
                      * will write there.
                      */
@@ -884,9 +884,9 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  *
  * Ns_HttpLocationString --
  *
- *	Build a http location string following the IP literation notation in
+ *	Build a HTTP location string following the IP literation notation in
  *	RFC 3986 section 3.2.2 if needed and return in in the provided
- *	DString. In case protoString is non-null, perpend the protocol. In
+ *	Tcl_DString. In case protoString is non-null, perpend the protocol. In
  *	case port != defPort, append the the port.
  *
  * Results:
@@ -897,7 +897,7 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  *
  * Side effects:
  *
- *	Updating DString
+ *	Updating Tcl_DString
  *
  *----------------------------------------------------------------------
  */
@@ -1092,7 +1092,7 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
     /*
      * Make a non-const copy of url, in which Ns_ParseUrl can replace the item
      * separating characters with '\0' characters. Make sure that we always
-     * free urls before leaving this function. We execpt a fully qualified URL.
+     * free urls before leaving this function. We accept a fully qualified URL.
      */
     url2 = ns_strdup(url);
     if ((Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)
@@ -1334,14 +1334,14 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
  *
  *        The HTTP client has received some content. Append this
  *        content either raw or uncompressed to either a file
- *        descriptor or the the DString. HttpAppendRawBuffer appends
+ *        descriptor or the the Tcl_DString. HttpAppendRawBuffer appends
  *        data without any decompression.
  *
  * Results:
  *        Tcl result code
  *
  * Side effects:
- *        Writing to the spool file or appending to the DString
+ *        Writing to the spool file or appending to the Tcl_DString
  *
  *----------------------------------------------------------------------
  */
@@ -1673,7 +1673,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
 
     case NS_SOCK_WRITE:
         /*
-         * Send the request data either from the DString, or from a file. The
+         * Send the request data either from the Tcl_DString, or from a file. The
          * latter case is flagged via member "sendSpoolMode".
          */
         if (httpPtr->sendSpoolMode) {
@@ -1756,7 +1756,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
             taskDone = NS_FALSE;
         }
         if (n < 0) {
-            Ns_Log(Warning, "client http request: receive failed, error: %s\n", strerror(errno));
+            Ns_Log(Warning, "client HTTP request: receive failed, error: %s\n", strerror(errno));
             httpPtr->error = "recv failed";
         }
         break;

@@ -70,7 +70,7 @@ static void SetBottomOfStack(void *ptr)  NS_GNUC_NONNULL(1);
 static Thread *firstThreadPtr;
 
 /*
- * The following maintains the tls key for the thread context.
+ * The following maintains the TLS key for the thread context.
  */
 
 static Ns_Tls key;
@@ -204,7 +204,7 @@ Ns_ThreadStackSize(ssize_t size)
  *      None.
  *
  * Side effects:
- *      Will call Ns_ThreadExit() if not alreday done by the user code.
+ *      Will call Ns_ThreadExit() if not already done by the user code.
  *
  *----------------------------------------------------------------------
  */
@@ -232,7 +232,7 @@ NsThreadMain(void *arg)
     (*thrPtr->proc) (thrPtr->arg);
 
     /*
-     * Controllaby exit this thread, pulling all of the
+     * Controllably exit this thread, pulling all of the
      * cleanup callbacks that need to be run.
      */
     Ns_ThreadExit(NULL);

@@ -161,7 +161,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 {
     const NsInterp *itPtr = NsGetInterpData(interp);
     const char     *errorInfo, *const*logHeaders;
-    Ns_DString      ds;
+    Tcl_DString     ds;
 
     if (extraInfo != NULL) {
         Tcl_AddObjErrorInfo(interp, extraInfo, -1);
@@ -184,7 +184,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
-            const char  *const*hdr;
+            const char *const *hdr;
 
             for (hdr = logHeaders; *hdr != NULL; hdr++) {
                 const char *value = Ns_SetIGet(conn->headers, *hdr);
@@ -255,7 +255,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
  *
  * Ns_LogDeprecated --
  *
- *      Report that a C-implmented Tcl command is deprecated.
+ *      Report that a C-implemented Tcl command is deprecated.
  *
  * Results:
  *      None.
@@ -415,7 +415,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
                 if (!inentity) {
                     /*
-                     * incr pointer only if we're not in something htmlish.
+                     * incr pointer only if we're not in something HTMLish.
                      */
                     *outPtr++ = *inPtr;
                 }
@@ -859,7 +859,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  *  Perform the SHA transformation. Note that this code, like MD5, seems to
  *  break some optimizing compilers due to the complexity of the expressions
  *  and the size of the basic block. It may be necessary to split it into
- *  sections, e.g. based on the four subrounds
+ *  sections, e.g. based on the four sub-rounds
  *
  *  Note that this corrupts the sha->key area.
  */
@@ -884,7 +884,7 @@ SHATransform(Ns_CtxSHA1 *sha)
     E = sha->iv[4];
 
     /*
-     * Heavy mangling, in 4 sub-rounds of 20 interations each.
+     * Heavy mangling, in 4 sub-rounds of 20 interactions each.
      */
     subRound (A, B, C, D, E, f1, K2, sha->key[0]);
     subRound (E, A, B, C, D, f1, K2, sha->key[1]);
@@ -991,7 +991,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
     NS_NONNULL_ASSERT(buf != NULL);
 
     /*
-     * Update bitcount
+     * Update bit count
      */
 
 #if defined(HAVE_64BIT)
@@ -1039,7 +1039,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
 }
 
 /*
- * Final wrapup - pad to 64-byte boundary with the bit pattern
+ * Final wrap-up - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
 void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
@@ -1327,7 +1327,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
-    /* Update bitcount */
+    /* Update bit count */
 
     t = ctx->bits[0];
     ctx->bits[0] = t + ((uint32_t) len << 3);
@@ -1375,7 +1375,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
 }
 
 /*
- * Final wrapup - pad to 64-byte boundary with the bit pattern
+ * Final wrap-up - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
 void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
@@ -1441,7 +1441,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     /*
      * This memset should not be needed, since this is performed at the end of
      * the operation. In case, it would be needed, it should be necessary at
-     * the initilization of the structure.
+     * the initialization of the structure.
      *
      *     memset(ctx, 0, sizeof(Ns_CtxMD5));
      */
@@ -1708,7 +1708,7 @@ GetLimitObj(rlim_t value)
  *	pair of actual value and maximum value
  *
  * Side effects:
- *	Change resource limiat with called with a value.
+ *	Change resource limit with called with a value.
  *
  *----------------------------------------------------------------------
  */
