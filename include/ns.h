@@ -3095,7 +3095,7 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
+Ns_HttpCheckSpool(Ns_HttpTask *httpPtr, const char *spoolFileName)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

@@ -144,7 +144,7 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
                 *elapsedVarPtr = NULL, *resultVarPtr = NULL,
                 *statusVarPtr = NULL, *fileVarPtr = NULL;
     Ns_Time     *timeoutPtr = NULL;
-    char        *id = NULL;
+    char        *id = NULL, *bodyFileName = NULL;
     Ns_Set      *hdrPtr = NULL;
     Ns_HttpTask *httpPtr = NULL;
     Ns_Time      diff;
@@ -157,6 +157,7 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         {"-result",     Ns_ObjvObj,    &resultVarPtr,  NULL},
         {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
         {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
+        {"-body_file",  Ns_ObjvString, &bodyFileName, NULL},
         {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
         {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
@@ -194,7 +195,7 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     httpPtr->spoolLimit = spoolLimit;
     httpPtr->replyHeaders = hdrPtr;
 
-    Ns_HttpCheckSpool(httpPtr);
+    Ns_HttpCheckSpool(httpPtr, bodyFileName);
 
     if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
         HttpCancel(httpPtr);
@@ -219,7 +220,7 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (httpPtr->replyHeaderSize == 0) {
         Ns_HttpCheckHeader(httpPtr);
     }
-    Ns_HttpCheckSpool(httpPtr);
+    Ns_HttpCheckSpool(httpPtr, bodyFileName);
 
     if (statusVarPtr != NULL
         && Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status)) == NS_FALSE) {
@@ -745,9 +746,18 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
  *----------------------------------------------------------------------
  */
 void
-Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
+Ns_HttpCheckSpool(Ns_HttpTask *httpPtr, const char *spoolFileName)
 {
     NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    /*
+     * When the spoolFileName is given and it was not set before for this http
+     * task, store it there. This makes sure that the filename is is always
+     * recorded, even when there is no data yet.
+     */
+    if (spoolFileName != NULL && httpPtr->spoolFileName == NULL) {
+        httpPtr->spoolFileName = ns_strdup(spoolFileName);
+    }
 
     /*
      * There is a header, but it is not parsed yet. We are already waiting for
@@ -782,31 +792,39 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
                      && length >= httpPtr->spoolLimit
                      ) || (int)contentSize >= httpPtr->spoolLimit
                     ) {
-                    int    fd;
-                    char  *spoolFileName;
-                    size_t fileNameLength;
+                    int fd;
 
                     /*
-                     * We have a valid reply length, which is larger
-                     * than the spool limit, or the we have an actual
-                     * content larger than the limit. Create a
-                     * temporary spool file and remember its fd finally
-                     * in httpPtr->spoolFd to flag that later receives
-                     * will write there.
+                     * We have either
+                     * - a valid reply length, which is larger
+                     *   than the spool limit, or
+                     * - the we have an actual content larger
+                     *   than the spool limit.
                      */
-                    fileNameLength = strlen(nsconf.tmpDir) + 13u;
-                    spoolFileName = ns_malloc(fileNameLength);
-                    snprintf(spoolFileName, fileNameLength, "%s/http.XXXXXX", nsconf.tmpDir);
-                    httpPtr->spoolFileName = spoolFileName;
-                    fd = ns_mkstemp(spoolFileName);
+                    if (httpPtr->spoolFileName != NULL) {
+                        fd = ns_open(httpPtr->spoolFileName, O_WRONLY|O_CREAT, 0644);
+                    } else {
+                        /*
+                         * Create a temporary spool file and remember its fd
+                         * finally in httpPtr->spoolFd to flag that later
+                         * receives will write there.
+                         */
+                        char * fileName;
+                        size_t fileNameLength;
+
+                        fileNameLength = strlen(nsconf.tmpDir) + 13u;
+                        fileName = ns_malloc(fileNameLength);
+                        snprintf(fileName, fileNameLength, "%s/http.XXXXXX", nsconf.tmpDir);
+                        fd = ns_mkstemp(fileName);
+                        httpPtr->spoolFileName = fileName;
+                    }
 
                     if (fd == NS_INVALID_FD) {
                       Ns_Log(Error, "ns_http: cannot create spool file with template '%s': %s",
                              httpPtr->spoolFileName, strerror(errno));
-                    }
 
-                    if (fd != 0) {
-                      /*Ns_Log(Ns_LogTaskDebug, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
+                    } else {
+                        /*Ns_Log(Ns_LogTaskDebug, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
                         httpPtr->spoolFd = fd;
                         Ns_HttpAppendBuffer(httpPtr,
                                             httpPtr->ds.string + httpPtr->replyHeaderSize,
@@ -1750,7 +1768,7 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
                 /*
                  * Ns_HttpCheckSpool might set httpPtr->spoolFd
                  */
-                Ns_HttpCheckSpool(httpPtr);
+                Ns_HttpCheckSpool(httpPtr, NULL);
                 /*Ns_Log(Ns_LogTaskDebug, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
             }
             taskDone = NS_FALSE;

@@ -131,6 +131,8 @@ Send a HTTP request and wait for the result.  The command
 
 
 [call [cmd "ns_http wait"] \
+	[opt [option "-body_file [arg fn]"]] \
+	[opt [option "-decompress"]] \
 	[opt [option "-elapsed [arg varName]"]] \
 	[opt [option "-file [arg varName]"]] \
 	[opt [option "-headers [arg ns_set]"]] \
@@ -138,7 +140,6 @@ Send a HTTP request and wait for the result.  The command
 	[opt [option "-spoolsize [arg int]"]] \
 	[opt [option "-status [arg varName]"]] \
 	[opt [option "-timeout [arg t]"]] \
-	[opt [option "-decompress"]] \
 	[arg id]]
 
 [para]
@@ -150,6 +151,16 @@ server, it is recommended to use the [option -spoolsize] option,
 since per default the results are received into memory.
 
 [list_begin options]
+
+[opt_def -decompress]
+In opt_def the response has a content encoding of gzip, automatically
+decompress the result
+
+[opt_def -body_file [arg fn]]
+when the file is spooled (size above [option -spoolsize]) save it
+under the specified file name rather than in some temporary file name.
+This option saves a potential file move operation from a tmp file for a
+download.
 
 [opt_def -elapsed [arg varName]]
 varName is the name of a variable that should be used to store the elapsed
@@ -177,9 +188,7 @@ Optional timeout for the [cmd wait] subcommand. The task
 might wait for input until the specified timeout for input. Might be
 governed by the total timeout specified in the [cmd queue] subcommand.
 
-[opt_def -decompress]
-In opt_def the response has a content encoding of gzip, automatically
-decompress the result
+
 [list_end]
 
 [list_begin arguments]
@@ -223,7 +232,7 @@ reply-headers.
  #######################
  # construct POST data
  #######################
-
+ 
  set post_data {}
  foreach {key value} {
    q NaviServer
@@ -231,22 +240,22 @@ reply-headers.
      lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }
  set post_data [lb]join $post_data &[rb]
-
-
+ 
+ 
  #######################
  # submit POST request
  #######################
  set queryHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $queryHeaders "Content-type" "application/x-www-form-urlencoded"
-
+ 
  set h [lb]ns_http queue -method POST \
      -headers $queryHeaders \
      -timeout 10.0 \
      -body $post_data \
      https://duckduckgo.com/[rb]
  ns_http wait -result R -headers $replyHeaders -status S $h
-
+ 
  #######################
  # output results
  #######################
