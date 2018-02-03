@@ -50,7 +50,7 @@ static int HttpQueueCmd(
     int objc,
     Tcl_Obj *CONST*
     objv,
-    int run
+    bool run
 ) NS_GNUC_NONNULL(1);
 
 static int HttpConnect(
@@ -118,6 +118,14 @@ static void HttpTaskShutdown(
     const Ns_HttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
+
+static int
+CheckReplyHeaders(
+    Tcl_Interp  *interp,
+    Ns_Set     **replyHdrPtrPtr
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
 static Ns_TaskProc HttpProc;
 
 static Tcl_ObjCmdProc HttpCancelObjCmd;
@@ -132,6 +140,44 @@ static Tcl_ObjCmdProc HttpWaitObjCmd;
  * Static variables defined in this file.
  */
 static Ns_TaskQueue *session_queue;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckReplyHeaders --
+ *
+ *	Check, if reply headers are provided. if not, create on the fly
+ *	automatically new reply headers and enter these to the interpreter.
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	May create a dynamic ns_set in the provided interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CheckReplyHeaders(
+    Tcl_Interp  *interp,
+    Ns_Set     **replyHdrPtrPtr
+) {
+    int result;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(replyHdrPtrPtr != NULL);
+
+    if (*replyHdrPtrPtr == NULL) {
+        *replyHdrPtrPtr = Ns_SetCreate("replyHeaders");
+        result = Ns_TclEnterSet(interp, *replyHdrPtrPtr, NS_TCL_SET_DYNAMIC);
+    } else {
+        result = TCL_OK;
+    }
+
+    return result;
+}
 
 
 /*
@@ -157,7 +203,7 @@ HttpRunObjCmd(
     int objc,
     Tcl_Obj *CONST* objv
 ) {
-    return HttpQueueCmd(clientData, objc, objv, 1);
+    return HttpQueueCmd(clientData, objc, objv, NS_TRUE);
 }
 
 static int
@@ -167,7 +213,7 @@ HttpQueueObjCmd(
     int objc,
     Tcl_Obj *CONST* objv
 ) {
-    return HttpQueueCmd(clientData, objc, objv, 0);
+    return HttpQueueCmd(clientData, objc, objv, NS_FALSE);
 }
 
 
@@ -200,20 +246,21 @@ HttpWaitObjCmd(
                 *statusVarPtr = NULL,
                 *fileVarPtr = NULL;
     Ns_Time     *timeoutPtr = NULL;
-    char        *id = NULL, *bodyFileName = NULL;
-    Ns_Set      *hdrPtr = NULL;
+    char        *id = NULL,
+                *outputFileName = NULL;
+    Ns_Set      *replyHdrPtr = NULL;
     Ns_HttpTask *httpPtr = NULL;
     Ns_Time      diff;
     int          result = TCL_ERROR, spoolLimit = -1, decompress = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",    Ns_ObjvTime,   &timeoutPtr,    NULL},
-        {"-headers",    Ns_ObjvSet,    &hdrPtr,        NULL},
+        {"-headers",    Ns_ObjvSet,    &replyHdrPtr,   NULL},
         {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr, NULL},
         {"-result",     Ns_ObjvObj,    &resultVarPtr,  NULL},
         {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
         {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
-        {"-body_file",  Ns_ObjvString, &bodyFileName, NULL},
+        {"-outputfile", Ns_ObjvString, &outputFileName, NULL},
         {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
         {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
@@ -227,31 +274,36 @@ HttpWaitObjCmd(
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
-    }
 
-    if (HttpGet(itPtr, id, &httpPtr, NS_TRUE) == NS_FALSE) {
+    } else if (HttpGet(itPtr, id, &httpPtr, NS_TRUE) == NS_FALSE) {
+        return TCL_ERROR;
+
+    } else if (CheckReplyHeaders(interp, &replyHdrPtr) != NS_OK) {
+        Ns_TclPrintfResult(interp, "ns_http: automatic generation of output headers failed");
         return TCL_ERROR;
     }
+
     if (decompress != 0) {
         httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
     }
 
-    if (hdrPtr == NULL) {
-        /*
-         * If no output headers are provided, we create our
-         * own. The ns_set is needed for checking the content
-         * length of the reply.
-         */
-        hdrPtr = Ns_SetCreate("outputHeaders");
-        if (unlikely(Ns_TclEnterSet(interp, hdrPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-            Ns_SetFree(hdrPtr);
-            return TCL_ERROR;
+    httpPtr->spoolLimit = spoolLimit;
+    httpPtr->replyHeaders = replyHdrPtr;
+
+    /*
+     * When the outputFileName is given store it in the task structure. It
+     * will be used in case output is spooled to a file.
+     */
+    if (outputFileName != NULL) {
+        if (httpPtr->spoolFileName != NULL) {
+            Ns_Log(Warning, "ns_http wait: the -outputfile was already "
+                   "set in the 'queue' subcommand', ignore here");
+        } else {
+            httpPtr->spoolFileName = ns_strdup(outputFileName);
         }
     }
-    httpPtr->spoolLimit = spoolLimit;
-    httpPtr->replyHeaders = hdrPtr;
 
-    Ns_HttpCheckSpool(httpPtr, bodyFileName);
+    Ns_HttpCheckSpool(httpPtr);
 
     if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
         HttpCancel(httpPtr);
@@ -276,7 +328,7 @@ HttpWaitObjCmd(
     if (httpPtr->replyHeaderSize == 0) {
         Ns_HttpCheckHeader(httpPtr);
     }
-    Ns_HttpCheckSpool(httpPtr, bodyFileName);
+    Ns_HttpCheckSpool(httpPtr);
 
     if (statusVarPtr != NULL
         && Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status)) == NS_FALSE) {
@@ -289,8 +341,8 @@ HttpWaitObjCmd(
     } else {
         bool binary = NS_TRUE;
 
-        if (hdrPtr != NULL) {
-            const char *contentEncoding = Ns_SetIGet(hdrPtr, "Content-Encoding");
+        if (replyHdrPtr != NULL) {
+            const char *contentEncoding = Ns_SetIGet(replyHdrPtr, "Content-Encoding");
 
             /*
              * Does the contentEncoding allow text transfers? Not, if the
@@ -298,7 +350,7 @@ HttpWaitObjCmd(
              */
 
             if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
-                const char *contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+                const char *contentType = Ns_SetIGet(replyHdrPtr, "Content-Type");
 
                 if (contentType != NULL) {
                     /*
@@ -526,30 +578,38 @@ HttpQueueCmd(
     NsInterp *itPtr,
     int objc,
     Tcl_Obj *CONST* objv,
-    int run
+    bool run
 ) {
     Tcl_Interp    *interp;
     int            verifyInt = 0, result = TCL_OK;
     Ns_HttpTask   *httpPtr;
-    char          *cert = NULL, *caFile = NULL, *caPath = NULL, *sni_hostname = NULL;
-    char          *method = (char *)"GET", *url = NULL, *bodyFileName = NULL;
-    Ns_Set        *hdrPtr = NULL;
+    char          *cert = NULL,
+                  *caFile = NULL,
+                  *caPath = NULL,
+                  *sni_hostname = NULL,
+                  *outputFileName = NULL,
+                  *method = (char *)"GET",
+                  *url = NULL,
+                  *bodyFileName = NULL;
+    Ns_Set        *requestHdrPtr = NULL,
+                  *replyHdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
     Ns_Time       *timeoutPtr = NULL;
     int            keepInt = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-body",             Ns_ObjvObj,    &bodyPtr,      NULL},
-        {"-body_file",        Ns_ObjvString, &bodyFileName, NULL},
-        {"-cafile",           Ns_ObjvString, &caFile,       NULL},
-        {"-capath",           Ns_ObjvString, &caPath,       NULL},
-        {"-cert",             Ns_ObjvString, &cert,         NULL},
-        {"-headers",          Ns_ObjvSet,    &hdrPtr,       NULL},
-        {"-hostname",         Ns_ObjvString, &sni_hostname, NULL},
-        {"-keep_host_header", Ns_ObjvBool,   &keepInt,      INT2PTR(NS_TRUE)},
-        {"-method",           Ns_ObjvString, &method,       NULL},
-        {"-timeout",          Ns_ObjvTime,   &timeoutPtr,   NULL},
-        {"-verify",           Ns_ObjvBool,   &verifyInt,    NULL},
+        {"-body",             Ns_ObjvObj,    &bodyPtr,        NULL},
+        {"-body_file",        Ns_ObjvString, &bodyFileName,   NULL},
+        {"-cafile",           Ns_ObjvString, &caFile,         NULL},
+        {"-capath",           Ns_ObjvString, &caPath,         NULL},
+        {"-cert",             Ns_ObjvString, &cert,           NULL},
+        {"-headers",          Ns_ObjvSet,    &requestHdrPtr,  NULL},
+        {"-hostname",         Ns_ObjvString, &sni_hostname,   NULL},
+        {"-keep_host_header", Ns_ObjvBool,   &keepInt,        INT2PTR(NS_TRUE)},
+        {"-method",           Ns_ObjvString, &method,         NULL},
+        {"-outputfile",       Ns_ObjvString, &outputFileName, NULL},
+        {"-timeout",          Ns_ObjvTime,   &timeoutPtr,     NULL},
+        {"-verify",           Ns_ObjvBool,   &verifyInt,      NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -563,11 +623,16 @@ HttpQueueCmd(
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result =  TCL_ERROR;
 
-    } else if (HttpConnect(interp, method, url, hdrPtr, bodyPtr, bodyFileName,
+    } else if (run && CheckReplyHeaders(interp, &replyHdrPtr) != NS_OK) {
+        Ns_TclPrintfResult(interp, "ns_http: automatic generation of output headers failed");
+        return TCL_ERROR;
+
+    } else if (HttpConnect(interp, method, url, requestHdrPtr, bodyPtr, bodyFileName,
                            cert, caFile, caPath, sni_hostname,
                            (verifyInt == 1) ? NS_TRUE : NS_FALSE,
                            (keepInt == 1)   ? NS_TRUE : NS_FALSE,
-                           &httpPtr) != TCL_OK) {
+                           &httpPtr
+                          ) != TCL_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -580,8 +645,17 @@ HttpQueueCmd(
             Ns_IncrTime(&httpPtr->timeout, 2, 0);
         }
 
+        /*
+         * When the outputFileName is given store it in the task structure. It
+         * will be used in case output is spooled to a file.
+         */
+        if (outputFileName != NULL) {
+            httpPtr->spoolFileName = ns_strdup(outputFileName);
+        }
+
         httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpProc, httpPtr);
-        if (run != 0) {
+        if (run) {
+            httpPtr->replyHeaders = replyHdrPtr;
             Ns_TaskRun(httpPtr->task);
         } else {
             if (session_queue == NULL) {
@@ -598,7 +672,7 @@ HttpQueueCmd(
             }
         }
 
-        if (result == TCL_OK) {
+        if (result == TCL_OK && !run) {
             Tcl_HashEntry *hPtr;
             uint32_t       i;
             int            len;
@@ -782,7 +856,7 @@ void
 Ns_HttpCheckHeader(
     Ns_HttpTask *httpPtr
 ) {
-    
+
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->replyHeaderSize == 0) {
@@ -832,19 +906,12 @@ Ns_HttpCheckHeader(
  */
 void
 Ns_HttpCheckSpool(
-    Ns_HttpTask *httpPtr,
-    const char *spoolFileName
+    Ns_HttpTask *httpPtr
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    /*
-     * When the spoolFileName is given and it was not set before for this http
-     * task, store it there. This makes sure that the filename is is always
-     * recorded, even when there is no data yet.
-     */
-    if (spoolFileName != NULL && httpPtr->spoolFileName == NULL) {
-        httpPtr->spoolFileName = ns_strdup(spoolFileName);
-    }
+    Ns_Log(Notice, "HttpCheckSpool: is called, spoolFileName %s reply headersize %d status %d replyHeaders %p",
+           httpPtr->spoolFileName, httpPtr->replyHeaderSize,  httpPtr->status, (void*)httpPtr->replyHeaders);
 
     /*
      * There is a header, but it is not parsed yet. We are already waiting for
@@ -870,14 +937,23 @@ Ns_HttpCheckSpool(
             }
             ProcessReplyHeaderFields(httpPtr);
 
-            if (httpPtr->spoolLimit > -1) {
+            Ns_Log(Notice, "HttpCheckSpool: ProcessReplyHeaderFields processed");
+
+            /*
+             * Either we have to spool (due to spool limit) or we want to
+             * spool (a output file name was given).
+             */
+            if ((httpPtr->spoolLimit > -1) || (httpPtr->spoolFileName != NULL)) {
                 const char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
+
+                Ns_Log(Notice, "HttpCheckSpool: check for spoolFileName");
 
                 if ((s != NULL
                      && Ns_StrToWideInt(s, &length) == NS_OK
                      && length > 0
-                     && length >= httpPtr->spoolLimit
-                     ) || (int)contentSize >= httpPtr->spoolLimit
+                     && length >= httpPtr->spoolLimit )
+                    || (int)contentSize >= httpPtr->spoolLimit
+                    || httpPtr->spoolFileName != NULL
                     ) {
                     int fd;
 
@@ -911,7 +987,7 @@ Ns_HttpCheckSpool(
                              httpPtr->spoolFileName, strerror(errno));
 
                     } else {
-                        /*Ns_Log(Ns_LogTaskDebug, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
+                        Ns_Log(Notice, "ns_http: we spool %lu bytes to fd %d", contentSize, fd);
                         httpPtr->spoolFd = fd;
                         Ns_HttpAppendBuffer(httpPtr,
                                             httpPtr->ds.string + httpPtr->replyHeaderSize,
@@ -1897,7 +1973,7 @@ HttpProc(
                 /*
                  * Ns_HttpCheckSpool might set httpPtr->spoolFd
                  */
-                Ns_HttpCheckSpool(httpPtr, NULL);
+                Ns_HttpCheckSpool(httpPtr);
                 /*Ns_Log(Ns_LogTaskDebug, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
             }
             taskDone = NS_FALSE;

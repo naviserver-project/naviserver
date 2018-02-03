@@ -120,6 +120,7 @@ anonymous cipher is used, this option is ignored.
 	[opt [option "-capath [arg CP ]"]] \
 	[opt [option "-cert [arg C]"]] \
 	[opt [option "-hostname [arg HOSTNAME ]"]] \
+	[opt [option "-outputfile [arg fn]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
@@ -127,7 +128,8 @@ anonymous cipher is used, this option is ignored.
 [para] 
 Send a HTTP request and wait for the result.  The command
 [cmd "ns_http run"] is similar to [cmd "ns_http queue"] followed by 
-[cmd "ns_http wait"].
+[cmd "ns_http wait"]. [cmd "ns_http run"] returns on success
+an ns_set containing the reply header fields.
 
 
 [call [cmd "ns_http wait"] \
@@ -136,6 +138,7 @@ Send a HTTP request and wait for the result.  The command
 	[opt [option "-elapsed [arg varName]"]] \
 	[opt [option "-file [arg varName]"]] \
 	[opt [option "-headers [arg ns_set]"]] \
+	[opt [option "-outputfile [arg fn]"]] \
 	[opt [option "-result [arg varName]"]] \
 	[opt [option "-spoolsize [arg int]"]] \
 	[opt [option "-status [arg varName]"]] \
@@ -156,12 +159,6 @@ since per default the results are received into memory.
 In opt_def the response has a content encoding of gzip, automatically
 decompress the result
 
-[opt_def -body_file [arg fn]]
-when the file is spooled (size above [option -spoolsize]) save it
-under the specified file name rather than in some temporary file name.
-This option saves a potential file move operation from a tmp file for a
-download.
-
 [opt_def -elapsed [arg varName]]
 varName is the name of a variable that should be used to store the elapsed
 time for the request from beginning to finish
@@ -172,6 +169,9 @@ temporary file in case the request was larger than [option -spoolsize]
 
 [opt_def -headers [arg ns_set]]
 headers is the ns_set ID which will receive the headers from the HTTP response.
+
+[opt_def -outputfile [arg fn]]
+forces to write the content of the reply into a file with the given name.
 
 [opt_def -result [arg varName]]
 varName is the name of a variable that should be used to store the HTTP response body.
@@ -284,6 +284,11 @@ results to a file, when the result is larger than 100 bytes.
  }
 [example_end]
 
+Example for downloading a file from the web:
+
+[example_begin]
+ ns_http run -outputfile /tmp/reply.html http://www.google.com
+[example_end]
 
 [see_also ns_httptime]
 [keywords "global builtin" http-client HTTP HTTPS POST GET nssock spooling SNI]
