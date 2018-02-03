@@ -45,36 +45,78 @@
  * Local functions defined in this file
  */
 
-static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
-    NS_GNUC_NONNULL(1);
-static int HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
-                       Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-                       const char *cert, const char *caFile, const char *caPath,
-                       const char *sni_hostname,
-                       bool verify, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(13);
+static int HttpQueueCmd(
+    NsInterp *itPtr,
+    int objc,
+    Tcl_Obj *CONST*
+    objv,
+    int run
+) NS_GNUC_NONNULL(1);
 
-static bool HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int HttpConnect(
+    Tcl_Interp *interp,
+    const char *method,
+    const char *url,
+    Ns_Set *hdrPtr,
+    Tcl_Obj *bodyPtr,
+    const char *bodyFileName,
+    const char *cert,
+    const char *caFile,
+    const char *caPath,
+    const char *sni_hostname,
+    bool verify,
+    bool keep_host_header,
+    Ns_HttpTask **httpPtrPtr
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(13);
 
-static void HttpClose(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
-static void HttpCancel(const Ns_HttpTask *httpPtr) NS_GNUC_NONNULL(1);
-static void HttpAbort(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
+static bool HttpGet(
+    NsInterp *itPtr,
+    const char *id,
+    Ns_HttpTask **httpPtrPtr,
+    bool removeRequest
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int HttpAppendRawBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t outSize)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void HttpClose(
+    Ns_HttpTask *httpPtr
+)  NS_GNUC_NONNULL(1);
 
-static void ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
-    NS_GNUC_NONNULL(1);
+static void HttpCancel(
+    const Ns_HttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
 
-static NS_SOCKET WaitWritable(NS_SOCKET sock);
+static void HttpAbort(
+    Ns_HttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
 
-static ssize_t HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static ssize_t HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void HttpTaskShutdown(const Ns_HttpTask *httpPtr)
-    NS_GNUC_NONNULL(1);
+static int HttpAppendRawBuffer(
+    Ns_HttpTask *httpPtr,
+    const char *buffer,
+    size_t outSize
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void ProcessReplyHeaderFields(
+    Ns_HttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
+
+static NS_SOCKET WaitWritable(
+    NS_SOCKET sock
+);
+
+static ssize_t HttpTaskSend(
+    const Ns_HttpTask *httpPtr,
+    const void *buffer,
+    size_t length
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static ssize_t HttpTaskRecv(
+    const Ns_HttpTask *httpPtr,
+    char *buffer,
+    size_t length
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void HttpTaskShutdown(
+    const Ns_HttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
 
 static Ns_TaskProc HttpProc;
 
@@ -109,14 +151,22 @@ static Ns_TaskQueue *session_queue;
  */
 
 static int
-HttpRunObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST* objv)
-{
+HttpRunObjCmd(
+    ClientData clientData,
+    Tcl_Interp *UNUSED(interp),
+    int objc,
+    Tcl_Obj *CONST* objv
+) {
     return HttpQueueCmd(clientData, objc, objv, 1);
 }
 
 static int
-HttpQueueObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST* objv)
-{
+HttpQueueObjCmd(
+    ClientData clientData,
+    Tcl_Interp *UNUSED(interp),
+    int objc,
+    Tcl_Obj *CONST* objv
+) {
     return HttpQueueCmd(clientData, objc, objv, 0);
 }
 
@@ -137,12 +187,18 @@ HttpQueueObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-{
+HttpWaitObjCmd(
+    ClientData  clientData,
+    Tcl_Interp *interp,
+    int         objc,
+    Tcl_Obj    *CONST* objv
+) {
     NsInterp    *itPtr = clientData;
     Tcl_Obj     *valPtr,
-                *elapsedVarPtr = NULL, *resultVarPtr = NULL,
-                *statusVarPtr = NULL, *fileVarPtr = NULL;
+                *elapsedVarPtr = NULL,
+                *resultVarPtr = NULL,
+                *statusVarPtr = NULL,
+                *fileVarPtr = NULL;
     Ns_Time     *timeoutPtr = NULL;
     char        *id = NULL, *bodyFileName = NULL;
     Ns_Set      *hdrPtr = NULL;
@@ -177,20 +233,20 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     if (decompress != 0) {
-      httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+        httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
     }
 
     if (hdrPtr == NULL) {
-      /*
-       * If no output headers are provided, we create our
-       * own. The ns_set is needed for checking the content
-       * length of the reply.
-       */
-      hdrPtr = Ns_SetCreate("outputHeaders");
-      if (unlikely(Ns_TclEnterSet(interp, hdrPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-          Ns_SetFree(hdrPtr);
-          return TCL_ERROR;
-      }
+        /*
+         * If no output headers are provided, we create our
+         * own. The ns_set is needed for checking the content
+         * length of the reply.
+         */
+        hdrPtr = Ns_SetCreate("outputHeaders");
+        if (unlikely(Ns_TclEnterSet(interp, hdrPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+            Ns_SetFree(hdrPtr);
+            return TCL_ERROR;
+        }
     }
     httpPtr->spoolLimit = spoolLimit;
     httpPtr->replyHeaders = hdrPtr;
@@ -279,15 +335,19 @@ HttpWaitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
     result = TCL_OK;
 
-err:
+  err:
     HttpClose(httpPtr);
     return result;
 }
 
 
 static int
-HttpCancelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-{
+HttpCancelObjCmd(
+    ClientData  clientData,
+    Tcl_Interp *interp,
+    int         objc,
+    Tcl_Obj    *CONST* objv
+) {
     NsInterp    *itPtr = clientData;
     char        *idString;
     int          result = TCL_OK;
@@ -327,8 +387,12 @@ HttpCancelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *----------------------------------------------------------------------
  */
 static int
-HttpCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-{
+HttpCleanupObjCmd(
+    ClientData  clientData,
+    Tcl_Interp *interp,
+    int         objc,
+    Tcl_Obj    *CONST* objv
+) {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
 
@@ -368,8 +432,12 @@ HttpCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *----------------------------------------------------------------------
  */
 static int
-HttpListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-{
+HttpListObjCmd(
+    ClientData  clientData,
+    Tcl_Interp *interp,
+    int         objc,
+    Tcl_Obj    *CONST* objv
+) {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
 
@@ -416,8 +484,12 @@ HttpListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 int
-NsTclHttpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
-{
+NsTclHttpObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *CONST* objv
+) {
     const Ns_SubCmdSpec subcmds[] = {
         {"cancel",   HttpCancelObjCmd},
         {"cleanup",  HttpCleanupObjCmd},
@@ -450,8 +522,12 @@ NsTclHttpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 static int
-HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
-{
+HttpQueueCmd(
+    NsInterp *itPtr,
+    int objc,
+    Tcl_Obj *CONST* objv,
+    int run
+) {
     Tcl_Interp    *interp;
     int            verifyInt = 0, result = TCL_OK;
     Ns_HttpTask   *httpPtr;
@@ -567,9 +643,15 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-Ns_HttpMessageParse(char *message, size_t size,
-                    Ns_Set *hdrPtr, int *majorPtr, int *minorPtr, int *statusPtr, char **payloadPtr)
-{
+Ns_HttpMessageParse(
+    char *message,
+    size_t size,
+    Ns_Set *hdrPtr,
+    int *majorPtr,
+    int *minorPtr,
+    int *statusPtr,
+    char **payloadPtr
+) {
     Ns_ReturnCode status = NS_OK;
     int           items, major, minor;
 
@@ -653,8 +735,9 @@ Ns_HttpMessageParse(char *message, size_t size,
  *----------------------------------------------------------------------
  */
 static void
-ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
-{
+ProcessReplyHeaderFields(
+    Ns_HttpTask *httpPtr
+) {
     const char *encString;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -696,8 +779,10 @@ ProcessReplyHeaderFields(Ns_HttpTask *httpPtr)
  */
 
 void
-Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
-{
+Ns_HttpCheckHeader(
+    Ns_HttpTask *httpPtr
+) {
+    
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->replyHeaderSize == 0) {
@@ -746,8 +831,10 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
  *----------------------------------------------------------------------
  */
 void
-Ns_HttpCheckSpool(Ns_HttpTask *httpPtr, const char *spoolFileName)
-{
+Ns_HttpCheckSpool(
+    Ns_HttpTask *httpPtr,
+    const char *spoolFileName
+) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     /*
@@ -875,8 +962,12 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr, const char *spoolFileName)
  */
 
 static bool
-HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRequest)
-{
+HttpGet(
+    NsInterp *itPtr,
+    const char *id,
+    Ns_HttpTask **httpPtrPtr,
+    bool removeRequest
+) {
     Tcl_HashEntry *hPtr;
     bool           success = NS_TRUE;
 
@@ -920,9 +1011,13 @@ HttpGet(NsInterp *itPtr, const char *id, Ns_HttpTask **httpPtrPtr, bool removeRe
  *----------------------------------------------------------------------
  */
 char *
-Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString,
-                      unsigned short port, unsigned short defPort)
-{
+Ns_HttpLocationString(
+    Tcl_DString *dsPtr,
+    const char *protoString,
+    const char *hostString,
+    unsigned short port,
+    unsigned short defPort
+) {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(hostString != NULL);
 
@@ -977,8 +1072,11 @@ Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *h
  *----------------------------------------------------------------------
  */
 void
-Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
-{
+Ns_HttpParseHost(
+    char *hostString,
+    char **hostStart,
+    char **portStart
+) {
     bool ip_literal = NS_FALSE;
 
     NS_NONNULL_ASSERT(hostString != NULL);
@@ -1034,7 +1132,9 @@ Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
  *----------------------------------------------------------------------
  */
 static NS_SOCKET
-WaitWritable(NS_SOCKET sock) {
+WaitWritable(
+    NS_SOCKET sock
+) {
     if (sock != NS_INVALID_SOCKET) {
           struct pollfd  pollfd;
           int retval;
@@ -1077,12 +1177,21 @@ WaitWritable(NS_SOCKET sock) {
  *----------------------------------------------------------------------
  */
 static int
-HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
-            Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, const char *bodyFileName,
-            const char *cert, const char *caFile, const char *caPath,
-            const char *sni_hostname,
-            bool verify, bool keep_host_header, Ns_HttpTask **httpPtrPtr)
-{
+HttpConnect(
+    Tcl_Interp *interp,
+    const char *method,
+    const char *url,
+    Ns_Set *hdrPtr,
+    Tcl_Obj *bodyPtr,
+    const char *bodyFileName,
+    const char *cert,
+    const char *caFile,
+    const char *caPath,
+    const char *sni_hostname,
+    bool verify,
+    bool keep_host_header,
+    Ns_HttpTask **httpPtrPtr
+) {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
     Ns_HttpTask   *httpPtr;
     int            result, uaFlag = -1, bodyFileFd = 0;
@@ -1365,8 +1474,11 @@ HttpConnect(Tcl_Interp *interp, const char *method, const char *url,
  */
 
 static int
-HttpAppendRawBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t outSize)
-{
+HttpAppendRawBuffer(
+    Ns_HttpTask *httpPtr,
+    const char *buffer,
+    size_t outSize
+) {
     int status = TCL_OK;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -1387,8 +1499,11 @@ HttpAppendRawBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t outSize)
 }
 
 int
-Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
-{
+Ns_HttpAppendBuffer(
+    Ns_HttpTask *httpPtr,
+    const char *buffer,
+    size_t inSize
+) {
     int result = TCL_OK;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -1443,8 +1558,9 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
  */
 
 static void
-HttpClose(Ns_HttpTask *httpPtr)
-{
+HttpClose(
+    Ns_HttpTask *httpPtr
+) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->task != NULL)          {(void) Ns_TaskFree(httpPtr->task);}
@@ -1471,8 +1587,9 @@ HttpClose(Ns_HttpTask *httpPtr)
 
 
 static void
-HttpCancel(const Ns_HttpTask *httpPtr)
-{
+HttpCancel(
+    const Ns_HttpTask *httpPtr
+) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     (void) Ns_TaskCancel(httpPtr->task);
@@ -1481,8 +1598,9 @@ HttpCancel(const Ns_HttpTask *httpPtr)
 
 
 static void
-HttpAbort(Ns_HttpTask *httpPtr)
-{
+HttpAbort(
+    Ns_HttpTask *httpPtr
+) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     HttpCancel(httpPtr);
@@ -1512,8 +1630,11 @@ HttpAbort(Ns_HttpTask *httpPtr)
  */
 
 static ssize_t
-HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
-{
+HttpTaskSend(
+    const Ns_HttpTask *httpPtr,
+    const void *buffer,
+    size_t length
+) {
     ssize_t       sent;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -1577,8 +1698,11 @@ HttpTaskSend(const Ns_HttpTask *httpPtr, const void *buffer, size_t length)
  */
 
 static ssize_t
-HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
-{
+HttpTaskRecv(
+    const Ns_HttpTask *httpPtr,
+    char *buffer,
+    size_t length
+) {
     ssize_t       received;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -1641,8 +1765,9 @@ HttpTaskRecv(const Ns_HttpTask *httpPtr, char *buffer, size_t length)
  */
 
 static void
-HttpTaskShutdown(const Ns_HttpTask *httpPtr)
-{
+HttpTaskShutdown(
+    const Ns_HttpTask *httpPtr
+) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
 #ifdef HAVE_OPENSSL_EVP_H
@@ -1671,8 +1796,12 @@ HttpTaskShutdown(const Ns_HttpTask *httpPtr)
  */
 
 static void
-HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
-{
+HttpProc(
+    Ns_Task *task,
+    NS_SOCKET UNUSED(sock),
+    void *arg,
+    Ns_SockState why
+) {
     Ns_HttpTask *httpPtr;
     char         buf[CHUNK_SIZE];
     ssize_t      n;
@@ -1816,5 +1945,6 @@ HttpProc(Ns_Task *task, NS_SOCKET UNUSED(sock), void *arg, Ns_SockState why)
  * c-basic-offset: 4
  * fill-column: 78
  * indent-tabs-mode: nil
+ * eval: (c-guess)
  * End:
  */
