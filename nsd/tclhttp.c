@@ -908,10 +908,8 @@ void
 Ns_HttpCheckSpool(
     Ns_HttpTask *httpPtr
 ) {
-    NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Notice, "HttpCheckSpool: is called, spoolFileName %s reply headersize %d status %d replyHeaders %p",
-           httpPtr->spoolFileName, httpPtr->replyHeaderSize,  httpPtr->status, (void*)httpPtr->replyHeaders);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     /*
      * There is a header, but it is not parsed yet. We are already waiting for
