@@ -935,16 +935,12 @@ Ns_HttpCheckSpool(
             }
             ProcessReplyHeaderFields(httpPtr);
 
-            Ns_Log(Notice, "HttpCheckSpool: ProcessReplyHeaderFields processed");
-
             /*
              * Either we have to spool (due to spool limit) or we want to
              * spool (a output file name was given).
              */
             if ((httpPtr->spoolLimit > -1) || (httpPtr->spoolFileName != NULL)) {
                 const char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
-
-                Ns_Log(Notice, "HttpCheckSpool: check for spoolFileName");
 
                 if ((s != NULL
                      && Ns_StrToWideInt(s, &length) == NS_OK
@@ -985,7 +981,7 @@ Ns_HttpCheckSpool(
                              httpPtr->spoolFileName, strerror(errno));
 
                     } else {
-                        Ns_Log(Notice, "ns_http: we spool %lu bytes to fd %d", contentSize, fd);
+                        Ns_Log(Ns_LogTaskDebug, "ns_http: we spool %lu bytes to fd %d", contentSize, fd);
                         httpPtr->spoolFd = fd;
                         Ns_HttpAppendBuffer(httpPtr,
                                             httpPtr->ds.string + httpPtr->replyHeaderSize,
