@@ -150,7 +150,8 @@ static Sock *SockNew(Driver *drvPtr)
 static void  SockRelease(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
 
-static void  SockError(Sock *sockPtr, SockState reason, int err);
+static void  SockError(Sock *sockPtr, SockState reason, int err)
+    NS_GNUC_NONNULL(1);
 static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
@@ -2804,6 +2805,8 @@ SockError(Sock *sockPtr, SockState reason, int err)
 {
     const char *errMsg = NULL;
 
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
     switch (reason) {
     case SOCK_READY:
     case SOCK_SPOOL:
@@ -4906,7 +4909,7 @@ NsWriterFinish(WriterSock *wrSockPtr) {
 
 Ns_ReturnCode
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
-              struct iovec *bufs, int nbufs, int everysize)
+              struct iovec *bufs, int nbufs, bool everysize)
 {
     Conn          *connPtr;
     WriterSock    *wrSockPtr;
@@ -4939,7 +4942,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
             Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
             status = NS_ERROR;
 
-        } else if (nsend < (size_t)wrPtr->maxsize && everysize == 0 && connPtr->fd == 0) {
+        } else if (nsend < (size_t)wrPtr->maxsize && !everysize && connPtr->fd == 0) {
             Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %" PRIdz ")",
                    nsend, wrPtr->maxsize);
             status = NS_ERROR;
@@ -5368,7 +5371,7 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             vbuf.iov_base = (void *)data;
             vbuf.iov_len = (size_t)size;
 
-            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
+            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, NS_TRUE);
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
         }
     }
@@ -5475,7 +5478,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             if (headers != 0) {
                 Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(fileNameString));
             }
-            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
+            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, NS_TRUE);
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
 
             if (fd != NS_INVALID_FD) {
