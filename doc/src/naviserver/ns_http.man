@@ -15,7 +15,7 @@ This command provides a simple HTTP and HTTPS client functionality.
 [call [cmd "ns_http cancel"] \
 	[arg id]]
 
-Cancel queued HTTP/HTTPS request by id (ns_set id of request).
+Cancel queued HTTP/HTTPS request by id (id of request).
 
 [call [cmd "ns_http cleanup"]]
 
@@ -23,7 +23,7 @@ Cancel all pending HTTP/HTTPS requests
 
 [call [cmd "ns_http list"]]
 
-Return the list of currently running or pending requests in format:
+Returns the list of currently running or pending requests in format:
 id url done|running ....
 
 [call [cmd "ns_http queue"] \
@@ -128,8 +128,8 @@ anonymous cipher is used, this option is ignored.
 [para] 
 Send a HTTP request and wait for the result.  The command
 [cmd "ns_http run"] is similar to [cmd "ns_http queue"] followed by 
-[cmd "ns_http wait"]. [cmd "ns_http run"] returns on success
-an ns_set containing the reply header fields.
+[cmd "ns_http wait"]. This command returns the same values as
+[cmd "ns_http wait"].
 
 
 [call [cmd "ns_http wait"] \
@@ -146,12 +146,20 @@ an ns_set containing the reply header fields.
 	[arg id]]
 
 [para]
+Run the queued command specified by the [term id] returned from
+[cmd "ns_http queue"].
 The command [cmd "ns_http wait"] specifies, how the results of request
 should be delivered and what information should be obtained from the
 request in which form. The command waits until the request is
 finished. For retrieving large content (e.g. .mp4 files) from a
 server, it is recommended to use the [option -spoolsize] option,
 since per default the results are received into memory.
+
+[para]
+[cmd "ns_http run"] returns on success
+a dict containing the HTTP [term status], the elapsed [term time],
+the [cmd ns_set] of the reply [term headers] and either the reply
+[term body] or the name of the spooled [term file].
 
 [list_begin options]
 
@@ -204,19 +212,23 @@ First, a minimal example:
 [example_begin]
    % ns_http queue http://www.google.com
    http0
-   % ns_http wait -status S -result R http0
-   1
+   
+   % ns_http wait http0
+   status 302 time 0:97095 headers d0 body { ... }
 [example_end]
 
 [para] The second example is a code snippet making a requests via
 HTTPS, where the http handle is put into the Tcl variable "h".
 Note that HTTPS only works when NaviServer was compiled with
-OpenSSL support.
+OpenSSL support. The result of [cmd "ns_http wait"] is saved
+in the variable [variable result], from which finally the
+HTTP status is extracted.
 
 [example_begin]
    % set h [lb]ns_http queue https://www.google.com[rb]
-   % ns_http wait -status S -result R $h
-   1
+   % set result [lb]ns_http wait -status S -result R $h[rb]
+   % dict get $result status
+   302
 [example_end]
 
 If you are connecting to a server with virtual hosting, that provides
@@ -225,7 +237,7 @@ provide the option [option -hostname].
 
 [para] The third example is a code snippet making a POST requests via
 https and provides url-encoded POST data. The examples sets a larger
-timeout on the request, provides query-headers and returns
+timeout on the request, provides requests headers and returns
 reply-headers.
 
 [example_begin]
@@ -245,12 +257,12 @@ reply-headers.
  #######################
  # submit POST request
  #######################
- set queryHeaders [lb]ns_set create[rb]
+ set requestHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
- ns_set update $queryHeaders "Content-type" "application/x-www-form-urlencoded"
+ ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
  
  set h [lb]ns_http queue -method POST \
-     -headers $queryHeaders \
+     -headers $requestHeaders \
      -timeout 10.0 \
      -body $post_data \
      https://duckduckgo.com/[rb]
@@ -265,15 +277,14 @@ reply-headers.
 
 
 The forth example is a code snippet that sets a larger timeout on the
-request, provides query-headers and returns reply-headers, and spools
+request, provides a ns_set for the reply headers, and spools
 results to a file, when the result is larger than 100 bytes.
 
 [example_begin]
- set queryHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
- ns_set update $queryHeaders Host localhost
+ ns_set update $requestHeaders Host localhost
  
- set h [lb]ns_http queue -headers $queryHeaders -timeout 10.0 http://www.google.com[rb]
+ set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
  ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1000 -file F $h
  
  if {[lb]info exists F[rb]} {
@@ -287,10 +298,11 @@ results to a file, when the result is larger than 100 bytes.
 Example for downloading a file from the web:
 
 [example_begin]
- ns_http run -outputfile /tmp/reply.html http://www.google.com
+ % ns_http run -outputfile /tmp/reply.html http://www.google.com
+ status 302 time 0:132577 headers d2 file /tmp/reply.html
 [example_end]
 
-[see_also ns_httptime]
+[see_also ns_httptime ns_set ns_urlencode]
 [keywords "global builtin" http-client HTTP HTTPS POST GET nssock spooling SNI]
 
 [manpage_end]

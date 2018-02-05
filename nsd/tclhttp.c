@@ -125,6 +125,16 @@ CheckReplyHeaders(
     Ns_Set     **replyHdrPtrPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int
+SetResult(
+    Tcl_Interp  *interp,
+    Ns_HttpTask *httpPtr,
+    Tcl_Obj     *replyHeadersObj,
+    Tcl_Obj     *elapsedVarPtr,
+    Tcl_Obj     *resultVarPtr,
+    Tcl_Obj     *statusVarPtr,
+    Tcl_Obj     *fileVarPtr
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
 
 static Ns_TaskProc HttpProc;
 
@@ -178,6 +188,161 @@ CheckReplyHeaders(
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetResult --
+ *
+ *	Get the result of the Task and set it as the interpreted result in
+ *	form of a dict (attribute / value pairs). The *VarPtr arguments are
+ *	optional and can point to variable names, which can be set by this
+ *	function.
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	Potentially setting Tcl variables provided via *VarPtr arguments.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetResult(
+    Tcl_Interp  *interp,
+    Ns_HttpTask *httpPtr,
+    Tcl_Obj     *replyHeadersObj,
+    Tcl_Obj     *elapsedVarPtr,
+    Tcl_Obj     *resultVarPtr,
+    Tcl_Obj     *statusVarPtr,
+    Tcl_Obj     *fileVarPtr
+) {
+    int      result;
+    Ns_Time  diff;
+    Tcl_Obj *statusObj    = NULL,
+            *replyBodyObj = NULL,
+            *fileNameObj  = NULL,
+            *elapsedTimeObj,
+            *resultObj;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(replyHeadersObj != NULL);
+
+    Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
+    elapsedTimeObj = Tcl_NewObj();
+    Ns_TclSetTimeObj(elapsedTimeObj, &diff);
+
+    if (elapsedVarPtr != NULL) {
+        if (Ns_SetNamedVar(interp, elapsedVarPtr, elapsedTimeObj) == NS_FALSE) {
+            result = TCL_ERROR;
+            goto err;
+        }
+    }
+
+    if (httpPtr->spoolFd > 0)  {
+        (void) ns_close(httpPtr->spoolFd);
+    } else {
+        bool binary = NS_TRUE;
+
+        if (httpPtr->replyHeaders != NULL) {
+            const char *contentEncoding = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
+
+            /*
+             * Is the content gzipped encoded? If so, it is binary. If not
+             * determine binary requirements from the content type.
+             */
+
+            if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
+                const char *contentType = Ns_SetIGet(httpPtr->replyHeaders, "Content-Type");
+
+                if (contentType != NULL) {
+                    /*
+                     * Determine binary via content type
+                     */
+                    binary = Ns_IsBinaryMimeType(contentType);
+                }
+            }
+        }
+
+        if (binary)  {
+            replyBodyObj = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize,
+                                               (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        } else {
+            replyBodyObj = Tcl_NewStringObj(httpPtr->ds.string + httpPtr->replyHeaderSize,
+                                            (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        }
+    }
+
+    /*
+     * Set Tcl_Objs for result elements and set optionally variables, if such
+     * names were provided.
+     */
+    statusObj = Tcl_NewIntObj(httpPtr->status);
+    if (statusVarPtr != NULL
+        && Ns_SetNamedVar(interp, statusVarPtr, statusObj) == NS_FALSE) {
+        result = TCL_ERROR;
+        goto err;
+    }
+
+    if (httpPtr->spoolFd > 0) {
+        fileNameObj = Tcl_NewStringObj(httpPtr->spoolFileName, -1);
+        if (fileVarPtr != NULL
+            && Ns_SetNamedVar(interp, fileVarPtr, fileNameObj) == NS_FALSE) {
+            result = TCL_ERROR;
+            goto err;
+        }
+    }
+
+    if (replyBodyObj != NULL && resultVarPtr != NULL) {
+        if (Ns_SetNamedVar(interp, resultVarPtr, replyBodyObj) == NS_FALSE) {
+            result = TCL_ERROR;
+            goto err;
+        }
+    }
+
+    /*
+     * Assemble the resulting list of attribute value pairs
+     */
+    resultObj = Tcl_NewListObj(0, NULL);
+    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("status", 6));
+    Tcl_ListObjAppendElement(interp, resultObj, statusObj);
+    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("time", 4));
+    Tcl_ListObjAppendElement(interp, resultObj, elapsedTimeObj);
+    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("headers", 7));
+    Tcl_ListObjAppendElement(interp, resultObj, replyHeadersObj);
+    if (fileNameObj != NULL) {
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("file", 4));
+        Tcl_ListObjAppendElement(interp, resultObj, fileNameObj);
+    }
+    if (replyBodyObj != NULL) {
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("body", 4));
+        Tcl_ListObjAppendElement(interp, resultObj, replyBodyObj);
+    }
+    /*
+     * Return this list as result.
+     */
+    Tcl_SetObjResult(interp, resultObj);
+    result = TCL_OK;
+
+ err:
+    if (result != TCL_OK) {
+        if (statusObj != NULL) {
+            Tcl_DecrRefCount(statusObj);
+        }
+        if (fileNameObj != NULL) {
+            Tcl_DecrRefCount(fileNameObj);
+        }
+        if (elapsedTimeObj != NULL) {
+            Tcl_DecrRefCount(elapsedTimeObj);
+        }
+        if (replyBodyObj != NULL) {
+            Tcl_DecrRefCount(replyBodyObj);
+        }
+    }
+    return result;
+}
 
 
 /*
@@ -216,6 +381,7 @@ HttpQueueObjCmd(
     return HttpQueueCmd(clientData, objc, objv, NS_FALSE);
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -240,29 +406,29 @@ HttpWaitObjCmd(
     Tcl_Obj    *CONST* objv
 ) {
     NsInterp    *itPtr = clientData;
-    Tcl_Obj     *valPtr,
-                *elapsedVarPtr = NULL,
+    Tcl_Obj     *elapsedVarPtr = NULL,
                 *resultVarPtr = NULL,
                 *statusVarPtr = NULL,
-                *fileVarPtr = NULL;
+        *fileVarPtr = NULL,
+        *replyHeadersObj = NULL;
+
     Ns_Time     *timeoutPtr = NULL;
     char        *id = NULL,
                 *outputFileName = NULL;
     Ns_Set      *replyHdrPtr = NULL;
     Ns_HttpTask *httpPtr = NULL;
-    Ns_Time      diff;
     int          result = TCL_ERROR, spoolLimit = -1, decompress = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout",    Ns_ObjvTime,   &timeoutPtr,    NULL},
-        {"-headers",    Ns_ObjvSet,    &replyHdrPtr,   NULL},
-        {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr, NULL},
-        {"-result",     Ns_ObjvObj,    &resultVarPtr,  NULL},
-        {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
-        {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
-        {"-outputfile", Ns_ObjvString, &outputFileName, NULL},
-        {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
-        {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
+        {"-timeout",    Ns_ObjvTime,   &timeoutPtr,      NULL},
+        {"-headers",    Ns_ObjvObj,    &replyHeadersObj, NULL},
+        {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr,   NULL},
+        {"-result",     Ns_ObjvObj,    &resultVarPtr,    NULL},
+        {"-status",     Ns_ObjvObj,    &statusVarPtr,    NULL},
+        {"-file",       Ns_ObjvObj,    &fileVarPtr,      NULL},
+        {"-outputfile", Ns_ObjvString, &outputFileName,  NULL},
+        {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,      NULL},
+        {"-decompress", Ns_ObjvBool,   &decompress,      INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -273,122 +439,91 @@ HttpWaitObjCmd(
     NS_NONNULL_ASSERT(itPtr != NULL);
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
 
     } else if (HttpGet(itPtr, id, &httpPtr, NS_TRUE) == NS_FALSE) {
-        return TCL_ERROR;
+        result = TCL_ERROR;
+
+    } else if (replyHeadersObj != NULL
+               && Ns_TclGetSet2(interp, Tcl_GetString(replyHeadersObj), &replyHdrPtr) != TCL_OK
+              ) {
+        result = TCL_ERROR;
 
     } else if (CheckReplyHeaders(interp, &replyHdrPtr) != NS_OK) {
         Ns_TclPrintfResult(interp, "ns_http: automatic generation of output headers failed");
-        return TCL_ERROR;
-    }
+        result = TCL_ERROR;
 
-    if (decompress != 0) {
-        httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
-    }
-
-    httpPtr->spoolLimit = spoolLimit;
-    httpPtr->replyHeaders = replyHdrPtr;
-
-    /*
-     * When the outputFileName is given store it in the task structure. It
-     * will be used in case output is spooled to a file.
-     */
-    if (outputFileName != NULL) {
-        if (httpPtr->spoolFileName != NULL) {
-            Ns_Log(Warning, "ns_http wait: the -outputfile was already "
-                   "set in the 'queue' subcommand', ignore here");
-        } else {
-            httpPtr->spoolFileName = ns_strdup(outputFileName);
-        }
-    }
-
-    Ns_HttpCheckSpool(httpPtr);
-
-    if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
-        HttpCancel(httpPtr);
-        Ns_TclPrintfResult(interp, "timeout waiting for task");
-        return TCL_ERROR;
-    }
-
-    if (elapsedVarPtr != NULL) {
-        Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
-        valPtr = Tcl_NewObj();
-        Ns_TclSetTimeObj(valPtr, &diff);
-        if (Ns_SetNamedVar(interp, elapsedVarPtr, valPtr) == NS_FALSE) {
-            goto err;
-        }
-    }
-
-    if (httpPtr->error != NULL) {
-        Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
-        goto err;
-    }
-
-    if (httpPtr->replyHeaderSize == 0) {
-        Ns_HttpCheckHeader(httpPtr);
-    }
-    Ns_HttpCheckSpool(httpPtr);
-
-    if (statusVarPtr != NULL
-        && Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status)) == NS_FALSE) {
-        goto err;
-    }
-
-    if (httpPtr->spoolFd > 0)  {
-        (void) ns_close(httpPtr->spoolFd);
-        valPtr = Tcl_NewObj();
     } else {
-        bool binary = NS_TRUE;
 
-        if (replyHdrPtr != NULL) {
-            const char *contentEncoding = Ns_SetIGet(replyHdrPtr, "Content-Encoding");
-
+        if (replyHeadersObj == NULL) {
             /*
-             * Does the contentEncoding allow text transfers? Not, if the
-             * content is compressed.
+             * When no replyHeadersObj was specified, we got the automatically
+             * generated headers ns_set from CheckReplyHeaders(), which enters
+             * it to the interp and returns it as result.
              */
+            replyHeadersObj = Tcl_GetObjResult(interp);
+        }
+        Tcl_IncrRefCount(replyHeadersObj);
 
-            if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
-                const char *contentType = Ns_SetIGet(replyHdrPtr, "Content-Type");
+        if (decompress != 0) {
+            httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+        }
 
-                if (contentType != NULL) {
-                    /*
-                     * Determine binary via contentType
-                     */
-                    binary = Ns_IsBinaryMimeType(contentType);
-                }
+        assert(replyHdrPtr != NULL);
+        httpPtr->replyHeaders = replyHdrPtr;
+
+        httpPtr->spoolLimit = spoolLimit;
+
+        /*
+         * When the outputFileName is given store it in the task structure. It
+         * will be used in case output is spooled to a file.
+         */
+        if (outputFileName != NULL) {
+            if (httpPtr->spoolFileName != NULL) {
+                Ns_Log(Warning, "ns_http wait: the -outputfile was already "
+                       "set in the 'queue' subcommand', ignore here");
+            } else {
+                httpPtr->spoolFileName = ns_strdup(outputFileName);
             }
         }
 
-        if (binary)  {
-            valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize,
-                                         (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+        Ns_HttpCheckSpool(httpPtr);
+
+        /*
+         * Do the task wait operation
+         */
+        if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
+            /*
+             * Task wait failed.
+             */
+            HttpCancel(httpPtr);
+            Ns_TclPrintfResult(interp, "timeout waiting for task");
+            result = TCL_ERROR;
+
         } else {
-            valPtr = Tcl_NewStringObj(httpPtr->ds.string + httpPtr->replyHeaderSize,
-                                      (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+
+            /*
+             * Make sure that all task elements are updated.
+             */
+            if (httpPtr->replyHeaderSize == 0) {
+                Ns_HttpCheckHeader(httpPtr);
+            }
+            Ns_HttpCheckSpool(httpPtr);
+
+            if (httpPtr->error != NULL) {
+                Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
+                result = TCL_ERROR;
+            } else {
+                result = SetResult(interp, httpPtr, replyHeadersObj, elapsedVarPtr,
+                                   resultVarPtr, statusVarPtr, fileVarPtr);
+            }
         }
+
+        Tcl_DecrRefCount(replyHeadersObj);
     }
 
-    if (fileVarPtr != NULL
-        && httpPtr->spoolFd > 0
-        && Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1)) == NS_FALSE) {
-        goto err;
-    }
-
-    if (resultVarPtr == NULL) {
-        Tcl_SetObjResult(interp, valPtr);
-    } else {
-        if (Ns_SetNamedVar(interp, resultVarPtr, valPtr) == NS_FALSE) {
-            goto err;
-        }
-        Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
-    }
-
-    result = TCL_OK;
-
-  err:
     HttpClose(httpPtr);
+
     return result;
 }
 
@@ -655,9 +790,37 @@ HttpQueueCmd(
 
         httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpProc, httpPtr);
         if (run) {
+            /*
+             * Run the task and set the result dict.
+             */
+            Tcl_Obj *replyHeadersObj;
+
+            /*
+             * Get the replyHeadersObj, which was returned as Tcl result
+             * from CheckReplyHeaders()
+             */
+            replyHeadersObj = Tcl_GetObjResult(interp);
+            Tcl_IncrRefCount(replyHeadersObj);
+
+            assert(replyHdrPtr != NULL);
+
             httpPtr->replyHeaders = replyHdrPtr;
             Ns_TaskRun(httpPtr->task);
+
+            if (httpPtr->error != NULL) {
+                Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
+                result = TCL_ERROR;
+            } else {
+                result = SetResult(interp, httpPtr, replyHeadersObj, NULL,
+                                   NULL, NULL, NULL);
+            }
+            Tcl_DecrRefCount(replyHeadersObj);
+
         } else {
+
+            /*
+             * Enqueue the task and return the id of the queued item.
+             */
             if (session_queue == NULL) {
                 Ns_MasterLock();
                 if (session_queue == NULL) {
@@ -665,34 +828,35 @@ HttpQueueCmd(
                 }
                 Ns_MasterUnlock();
             }
+
             if (Ns_TaskEnqueue(httpPtr->task, session_queue) != NS_OK) {
                 HttpClose(httpPtr);
                 Ns_TclPrintfResult(interp, "could not queue HTTP task");
                 result = TCL_ERROR;
-            }
-        }
 
-        if (result == TCL_OK && !run) {
-            Tcl_HashEntry *hPtr;
-            uint32_t       i;
-            int            len;
-            char           buf[TCL_INTEGER_SPACE + 4];
-            /*
-             * Create a unique ID for this interp
-             */
-            memcpy(buf, "http", 4u);
-            for( i = (uint32_t)itPtr->httpRequests.numEntries; ; i++) {
-                int isNew;
+            } else {
+                Tcl_HashEntry *hPtr;
+                uint32_t       i;
+                int            len;
+                char           buf[TCL_INTEGER_SPACE + 4];
+                /*
+                 * Create a unique ID for this interp
+                 */
+                memcpy(buf, "http", 4u);
+                for( i = (uint32_t)itPtr->httpRequests.numEntries; ; i++) {
+                    int isNew;
 
-                len = ns_uint32toa(&buf[4], (uint32_t)i);
-                hPtr = Tcl_CreateHashEntry(&itPtr->httpRequests, buf, &isNew);
-                if (isNew != 0) {
-                    break;
+                    len = ns_uint32toa(&buf[4], (uint32_t)i);
+                    hPtr = Tcl_CreateHashEntry(&itPtr->httpRequests, buf, &isNew);
+                    if (isNew != 0) {
+                        break;
+                    }
                 }
+                Tcl_SetHashValue(hPtr, httpPtr);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, len+4));
             }
-            Tcl_SetHashValue(hPtr, httpPtr);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, len+4));
         }
+
     }
     return result;
 }
@@ -846,7 +1010,7 @@ ProcessReplyHeaderFields(
  *	none
  *
  * Side effects:
- *	Update potentially a lf the ds.string terminating the header
+ *	Replace potentially a LF the ds.string terminating the header
  *	by a '\0'
  *
  *----------------------------------------------------------------------
@@ -872,7 +1036,7 @@ Ns_HttpCheckHeader(
             } else {
                 eoh = strstr(httpPtr->ds.string, "\n\n");
                 if (eoh != NULL) {
-                    Ns_Log(Warning, "HttpCheckHeader: HTTP client reply contains no crlf, this should not happen");
+                    Ns_Log(Warning, "HttpCheckHeader: HTTP client reply contains no CRLF, this should not happen");
                     httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 2;
                     eoh += 1;
                     *eoh = '\0';
@@ -899,7 +1063,7 @@ Ns_HttpCheckHeader(
  *	none
  *
  * Side effects:
- *	Update potentially a lf the ds.string terminating the header
+ *	Replace potentially a LF the ds.string terminating the header
  *	by a '\0'
  *
  *----------------------------------------------------------------------
