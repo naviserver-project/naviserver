@@ -115,7 +115,14 @@ static Tcl_ObjCmdProc SetPassObjCmd;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
-static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user);
+static int AllowDenyObjCmd(
+    ClientData data,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *CONST *objv,
+    bool allow,
+    bool user
+);
 
 static bool ValidateUserAddr(User * userPtr, const char *peer);
 static Ns_RequestAuthorizeProc AuthProc;
@@ -303,19 +310,19 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *C
         break;
 
     case cmdAllowUser:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, 1, 1);
+        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_TRUE, NS_TRUE);
         break;
 
     case cmdDenyUser:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, 0, 1);
+        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_FALSE, NS_TRUE);
         break;
 
     case cmdAllowGroup:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, 1, 0);
+        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_TRUE, NS_FALSE);
         break;
 
     case cmdDenyGroup:
-        status = AllowDenyObjCmd(servPtr, interp, objc, objv, 0, 0);
+        status = AllowDenyObjCmd(servPtr, interp, objc, objv, NS_FALSE, NS_FALSE);
         break;
 
     case cmdCheckPass:
@@ -1284,8 +1291,14 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(obj
  *----------------------------------------------------------------------
  */
 
-static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user)
-{
+static int AllowDenyObjCmd(
+    ClientData data,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *CONST* objv,
+    bool allow,
+    bool user
+) {
     Server      *servPtr = data;
     Perm        *permPtr;
     Ns_DString   base;
@@ -1337,21 +1350,21 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
         Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
         Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
     }
-    if (allow == 0) {
+    if (!allow) {
         permPtr->flags |= PERM_IMPLICIT_ALLOW;
     }
 
     for (i = objc - nargs; i < objc; i++) {
         char *key = Tcl_GetString(objv[i]);
 
-        if (user != 0) {
-            if (allow != 0) {
+        if (user) {
+            if (allow) {
                 (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &isNew);
             } else {
                 (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &isNew);
             }
         } else {
-            if (allow != 0) {
+            if (allow) {
                 (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &isNew);
             } else {
                 (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &isNew);
