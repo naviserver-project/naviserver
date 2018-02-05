@@ -892,7 +892,7 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
     Ns_ConnSetResponseStatus(conn, status);
 
     if ((chan != NULL || fp != NULL) 
-        && (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, 0) == NS_OK)) {
+        && (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, NS_FALSE) == NS_OK)) {
         result = NS_OK;
     } else {
 
@@ -978,7 +978,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
 		}
 	    }
 
-	    if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, 0) == NS_OK) {
+	    if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, NS_FALSE) == NS_OK) {
 		Ns_DStringFree(&ds);
 		return NS_OK;
 	    }
@@ -990,7 +990,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
                 }
 		len = bufs[0].length;
 	    }
-	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {
+	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, NS_FALSE) == NS_OK) {
 		Ns_DStringFree(&ds);
 		return NS_OK;
 	    }

@@ -1394,10 +1394,16 @@ NS_EXTERN void NsWriterUnlock(void);
 NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN Ns_ReturnCode NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
-                                      FILE *fp, int fd, struct iovec *bufs, int nbufs,
-                                      int everysize)
-    NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode NsWriterQueue(
+    Ns_Conn *conn,
+    size_t nsend,
+    Tcl_Channel chan,
+    FILE *fp,
+    int fd,
+    struct iovec *bufs,
+    int nbufs,
+    bool everysize
+) NS_GNUC_NONNULL(1);
 
 /*
  * External callback functions.
