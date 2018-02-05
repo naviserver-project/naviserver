@@ -689,7 +689,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
             /*
              * We have here no port and no default port
              */
-            location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0, 0);
+            location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
         }
 
     }
