@@ -203,7 +203,7 @@ static const int e[] = {
 static void setkey_private(struct sched *sp, const unsigned char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
+static void encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -330,7 +330,7 @@ static const int P[] = {
  */
 
 static void
-encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
+encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
 {
     /*
      * The current block, divided into 2 halves.
@@ -365,7 +365,7 @@ encrypt_private(const struct sched *sp, unsigned char *block, int edflag)
         /*
          * Set direction
          */
-	if (edflag != 0) {
+	if (backwards) {
             i = 15 - ii;
 	} else {
             i = ii;
@@ -497,7 +497,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     }
 
     for (i = 0u; i < 25u; i++) {
-        encrypt_private(&s, block, 0);
+        encrypt_private(&s, block, NS_FALSE);
     }
 
     for (i = 0u; i < 11u; i++) {
