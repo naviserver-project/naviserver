@@ -305,6 +305,7 @@ Ns_TaskRun(Ns_Task *task)
     taskPtr = (Task *) task;
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
+
     while ((taskPtr->flags & TASK_DONE) == 0u) {
         if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
             timeoutPtr = &taskPtr->timeout;

@@ -141,6 +141,7 @@ static Ns_TaskProc HttpProc;
 static Tcl_ObjCmdProc HttpCancelObjCmd;
 static Tcl_ObjCmdProc HttpCleanupObjCmd;
 static Tcl_ObjCmdProc HttpListObjCmd;
+static Tcl_ObjCmdProc HttpStatsObjCmd;
 static Tcl_ObjCmdProc HttpQueueObjCmd;
 static Tcl_ObjCmdProc HttpRunObjCmd;
 static Tcl_ObjCmdProc HttpWaitObjCmd;
@@ -527,7 +528,22 @@ HttpWaitObjCmd(
     return result;
 }
 
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpCancelObjCmd --
+ *
+ *	Implements "ns_http cancel" subcommand.
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	Typically aborting and closing request.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 HttpCancelObjCmd(
     ClientData  clientData,
@@ -657,6 +673,68 @@ HttpListObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * HttpListObjCmd - subcommand of "ns_http"
+ *
+ *	Implements the "ns_http list"
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+HttpStatsObjCmd(
+    ClientData  clientData,
+    Tcl_Interp *interp,
+    int         objc,
+    Tcl_Obj    *CONST* objv
+) {
+    NsInterp    *itPtr = clientData;
+    int          result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
+        Tcl_Obj             *resultList = Tcl_NewListObj(0, NULL);
+
+        for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search) ) {
+            const Ns_HttpTask *httpPtr = Tcl_GetHashValue(hPtr);
+            const char        *key = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
+            Tcl_Obj           *entryObj = Tcl_NewListObj(0, NULL);
+
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj("task", 4));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj(key, -1));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj("url", 3));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj(httpPtr->url, -1));
+
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj("requestlength", 13));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewLongObj((long)httpPtr->requestLength));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj("sent", 4));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewLongObj((long)httpPtr->sent));
+
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj("replylength", 11));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewLongObj((long)httpPtr->replyLength));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewStringObj("received", 8));
+            Tcl_ListObjAppendElement(interp, entryObj, Tcl_NewLongObj((long)httpPtr->received));
+
+            Tcl_ListObjAppendElement(interp, resultList, entryObj);
+        }
+        Tcl_SetObjResult(interp,resultList);
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclHttpObjCmd --
  *
  *	Implements the new ns_http to handle HTTP requests.
@@ -683,6 +761,7 @@ NsTclHttpObjCmd(
         {"list",     HttpListObjCmd},
         {"queue",    HttpQueueObjCmd},
         {"run",      HttpRunObjCmd},
+        {"stats",    HttpStatsObjCmd},
         {"wait",     HttpWaitObjCmd},
         {NULL, NULL}
     };
@@ -1084,7 +1163,8 @@ Ns_HttpCheckSpool(
 
         Ns_MutexLock(&httpPtr->lock);
         if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
-            Tcl_WideInt length;
+            Tcl_WideInt  replyLength = 0;
+            const char  *headerField;
 
             assert(httpPtr->replyHeaders != NULL);
 
@@ -1099,17 +1179,28 @@ Ns_HttpCheckSpool(
             }
             ProcessReplyHeaderFields(httpPtr);
 
+            headerField = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
+            if (headerField != NULL) {
+                (void)Ns_StrToWideInt(headerField, &replyLength);
+                /*
+                 * Don't get fooled by an invalid content-length recieved from
+                 * the server.
+                 */
+                if (replyLength < 0) {
+                    replyLength = 0;
+                }
+            }
+
             /*
              * Either we have to spool (due to spool limit) or we want to
              * spool (a output file name was given).
              */
-            if ((httpPtr->spoolLimit > -1) || (httpPtr->spoolFileName != NULL)) {
-                const char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
+            httpPtr->replyLength = replyLength;
+            httpPtr->received = 0u;
 
-                if ((s != NULL
-                     && Ns_StrToWideInt(s, &length) == NS_OK
-                     && length > 0
-                     && length >= httpPtr->spoolLimit )
+            if ((httpPtr->spoolLimit > -1) || (httpPtr->spoolFileName != NULL)) {
+
+                if ((replyLength > 0 && replyLength >= httpPtr->spoolLimit )
                     || (int)contentSize >= httpPtr->spoolLimit
                     || httpPtr->spoolFileName != NULL
                     ) {
@@ -1645,9 +1736,9 @@ HttpConnect(
     if ((bodyPtr != NULL) || (bodyFileName != NULL)) {
 
         if (bodyFileName == NULL) {
-            int length = 0;
+            int         length = 0;
             const char *bodyString;
-            bool binary = NsTclObjIsByteArray(bodyPtr);
+            bool        binary = NsTclObjIsByteArray(bodyPtr);
 
             if (contentType != NULL && !binary) {
                 binary = Ns_IsBinaryMimeType(contentType);
@@ -1670,7 +1761,8 @@ HttpConnect(
     }
 
     httpPtr->next = dsPtr->string;
-    httpPtr->len = (size_t)dsPtr->length;
+    httpPtr->requestLength = (size_t)dsPtr->length;
+    httpPtr->sent = 0u;
 
     Ns_Log(Ns_LogTaskDebug, "full request <%s>", dsPtr->string);
 
@@ -2078,22 +2170,24 @@ HttpProc(
                 }
             }
         } else {
-            n = HttpTaskSend(httpPtr, httpPtr->next, httpPtr->len);
+            n = HttpTaskSend(httpPtr, httpPtr->next, httpPtr->requestLength - httpPtr->sent);
             if (n < 0) {
                 httpPtr->error = "send failed";
             } else {
                 httpPtr->next += n;
-                httpPtr->len -= (size_t)n;
-                Ns_Log(Ns_LogTaskDebug, "HttpProc sent %ld bytes from memory, remaining %lu", n, httpPtr->len);
+                httpPtr->sent += (size_t)n;
+                Ns_Log(Ns_LogTaskDebug, "HttpProc sent %ld bytes from memory, remaining %lu",
+                       n, httpPtr->requestLength - httpPtr->sent);
 
-                if (httpPtr->len == 0u) {
+                if ((httpPtr->requestLength - httpPtr->sent) == 0u) {
                     /*
                      * All data from ds has been sent. Check, if there is a file to
                      * append, and if yes, switch to sendSpoolMode.
                      */
                     if (httpPtr->bodyFileFd > 0) {
                         httpPtr->sendSpoolMode = NS_TRUE;
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d", httpPtr->bodyFileFd);
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d",
+                               httpPtr->bodyFileFd);
                         Tcl_DStringSetLength(&httpPtr->ds, CHUNK_SIZE);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
@@ -2118,6 +2212,8 @@ HttpProc(
              * required to spool. Once we know spoolFd, there is no
              * need to HttpCheckHeader() again.
              */
+            httpPtr->received += n;
+
             if (httpPtr->spoolFd > 0) {
                 (void) Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
             } else {

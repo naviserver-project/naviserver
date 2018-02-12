@@ -940,7 +940,10 @@ typedef struct {
     const char        *url;
     const char        *error;
     char              *next;             /* write to client */
-    size_t             len;              /* size of request */
+    size_t             requestLength;    /* size of request */
+    size_t             sent;             /* amount of data sent */
+    size_t             replyLength;      /* size of the reply */
+    size_t             received;         /* amount data in the body received */
     int                replyHeaderSize;
     Ns_Set            *replyHeaders;     /* ns_set for header fields of the reply */
     int                spoolLimit;       /* spool to file, when this body > this size */
