@@ -38,13 +38,13 @@ interpreted as literal characters to be displayed.  Specifically:
 [example_end]
 
 [example_begin]
-   % ns_quotehtml "The &lt;STRONG&gt; tag is used to indicate strongly emphasized text."
-   The &amp;lt;STRONG&amp;gt; tag is used to indicate strongly emphasized text.
+   % ns_quotehtml "The <STRONG> tag is used to indicate strongly emphasized text."
+   The &lt;STRONG&gt; tag is used to indicate strongly emphasized text.
 [example_end]
 
 [example_begin]
-   % ns_quotehtml {&lt;span class="foo"&gt;}
-   &amp;lt;span class=&amp;#34;foo&amp;#34;&amp;gt;
+   % ns_quotehtml {<span class="foo">}
+   &lt;span class=&#34;foo&#34;&gt;
 [example_end]
 
 [para]
@@ -52,7 +52,7 @@ NOTES
 
  The set of characters that are substituted and their replacements may be different in previous versions of NaviServer.  For example, NaviServer 2.x does not escape single or double-quotes.
 
-[keywords "global builtin" HTML]
+[keywords "global builtin" HTML encoding]
 
 
 [manpage_end]
