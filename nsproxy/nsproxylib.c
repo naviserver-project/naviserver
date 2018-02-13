@@ -1650,7 +1650,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
  *----------------------------------------------------------------------
  */
 static int
-StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool;
@@ -1724,7 +1724,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  *----------------------------------------------------------------------
  */
 static int
-StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool, *handle = NULL;
@@ -1783,7 +1783,7 @@ StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 static int
-ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool, *handle = NULL;
@@ -1844,7 +1844,7 @@ ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 static int
-ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     InterpData    *idataPtr = data;
     Pool          *poolPtr;
@@ -2099,7 +2099,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
  */
 
 static int
-ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     InterpData *idataPtr = data;
     Pool       *poolPtr;
@@ -2391,7 +2391,7 @@ AppendStr(Tcl_Obj *listObj, const char *flag, const char *val)
  */
 
 static int
-GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
@@ -3556,7 +3556,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static int
-RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *scriptString;
     int         ms = -1, result = TCL_OK;

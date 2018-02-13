@@ -389,7 +389,7 @@ NsWaitJobsShutdown(const Ns_Time *toPtr)
  *----------------------------------------------------------------------
  */
 static int
-JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     int            jpt = -1;
@@ -438,7 +438,7 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  */
 static int
-JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, max = NS_JOB_DEFAULT_MAXTHREADS;
     Tcl_Obj     *queueIdObj;
@@ -498,7 +498,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-JobDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Queue  *queue = NULL;
     int     result = TCL_OK;
@@ -539,7 +539,7 @@ JobDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, head = 0, detached = 0;
     bool        create = NS_FALSE;
@@ -686,7 +686,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *----------------------------------------------------------------------
  */
 static int
-JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     Ns_Time       *deltaTimeoutPtr = NULL;
@@ -819,7 +819,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
  *----------------------------------------------------------------------
  */
 static int
-JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Queue        *queue = NULL;
     int          result = TCL_OK;
@@ -888,7 +888,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-JobExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Queue       *queue = NULL;
     int          result = TCL_OK;
@@ -931,7 +931,7 @@ JobExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Queue         *queue;
     int            result = TCL_OK;
@@ -1006,7 +1006,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Queue         *queue = NULL;
     int            result = TCL_OK;
@@ -1059,7 +1059,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
  *----------------------------------------------------------------------
  */
 static int
-JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1113,7 +1113,7 @@ JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Queue        *queue;
     int           result = TCL_OK;
@@ -1214,7 +1214,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-JobQueueListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobQueueListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1292,7 +1292,7 @@ JobQueueListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  */
 static int
-JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int  result = TCL_OK;
 
@@ -1332,7 +1332,7 @@ JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  *----------------------------------------------------------------------
  */
 static int
-JobThreadListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+JobThreadListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1384,7 +1384,7 @@ JobThreadListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */
 int
-NsTclJobObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclJobObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"cancel",     JobCancelObjCmd},
@@ -1919,7 +1919,7 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
  */
 static int
 ObjvQueue(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
-          Tcl_Obj *CONST* objv)
+          Tcl_Obj *const* objv)
 {
     int result;
 

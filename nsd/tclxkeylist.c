@@ -821,7 +821,7 @@ DupKeyedListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
         Tcl_IncrRefCount(copyIntPtr->entries[idx].valuePtr);
     }
 
-    copyPtr->internalRep.otherValuePtr = (VOID *) copyIntPtr;
+    copyPtr->internalRep.otherValuePtr = (void *) copyIntPtr;
     copyPtr->typePtr = &keyedListType;
 
     KEYL_REP_ASSERT(copyIntPtr);
@@ -866,7 +866,7 @@ SetKeyedListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
                 (objPtr->typePtr->freeIntRepProc != NULL)) {
                 (*objPtr->typePtr->freeIntRepProc)(objPtr);
             }
-            objPtr->internalRep.otherValuePtr = (VOID *) keylIntPtr;
+            objPtr->internalRep.otherValuePtr = (void *) keylIntPtr;
             objPtr->typePtr = &keyedListType;
 
             KEYL_REP_ASSERT(keylIntPtr);
@@ -945,7 +945,7 @@ TclX_NewKeyedListObj(void)
     Tcl_Obj *keylPtr = Tcl_NewObj();
     keylIntObj_t *keylIntPtr = AllocKeyedListIntRep();
 
-    keylPtr->internalRep.otherValuePtr = (VOID *) keylIntPtr;
+    keylPtr->internalRep.otherValuePtr = (void *) keylIntPtr;
     keylPtr->typePtr = &keyedListType;
     return keylPtr;
 }
@@ -1261,7 +1261,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *keylPtr, *valuePtr;
     int         keyLen, status = TCL_OK;
@@ -1340,7 +1340,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1400,7 +1400,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------------
  */
 int
-TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1465,7 +1465,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result;
 

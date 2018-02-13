@@ -155,7 +155,7 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
  */
 
 int
-NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     void           *tidArg;
@@ -292,7 +292,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 
 int
-NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int opt, result = TCL_OK;
 
@@ -385,7 +385,7 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  */
 
 int
-NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int opt, result = TCL_OK;
     static const char *const opts[] = {
@@ -468,7 +468,7 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 
 int
-NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                      opt = 0, cnt = 0, result = TCL_OK;
     static const char *const opts[] = {
@@ -554,7 +554,7 @@ NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr   = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -688,7 +688,7 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int             opt, result = TCL_OK;
 

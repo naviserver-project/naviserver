@@ -155,7 +155,7 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
  */
 
 int
-NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     Tcl_Obj     *htmlObj;

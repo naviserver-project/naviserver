@@ -690,7 +690,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 

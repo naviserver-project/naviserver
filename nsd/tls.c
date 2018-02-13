@@ -437,7 +437,7 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     const char    *digestName = "sha256";
@@ -494,7 +494,7 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     HMAC_CTX      *ctx;
@@ -544,7 +544,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */    
 static int
-CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     HMAC_CTX      *ctx;
@@ -595,7 +595,7 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */    
 static int
-CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     HMAC_CTX      *ctx;
@@ -641,7 +641,7 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     Tcl_Obj       *keyObj, *messageObj;
@@ -731,7 +731,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  */
 
 int
-NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"string",  CryptoHmacStringObjCmd},
@@ -767,7 +767,7 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     const char    *digestName = "sha256";
@@ -816,7 +816,7 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     EVP_MD_CTX    *mdctx;
@@ -867,7 +867,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     EVP_MD_CTX    *mdctx;
@@ -919,7 +919,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     EVP_MD_CTX    *mdctx;
@@ -965,7 +965,7 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     Tcl_Obj       *messageObj;
@@ -1044,7 +1044,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"string",  CryptoMdStringObjCmd},
@@ -1259,14 +1259,14 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 
 #ifndef HAVE_SSL_HMAC_CTX
 int
-NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;

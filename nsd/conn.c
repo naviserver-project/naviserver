@@ -44,7 +44,7 @@ static int GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static int GetIndices(Tcl_Interp *interp, const Conn *connPtr,
-                      Tcl_Obj *CONST* objv, int *offPtr, int *lenPtr)
+                      Tcl_Obj *const* objv, int *offPtr, int *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
@@ -1336,7 +1336,7 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  */
 
 int
-NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp            *itPtr = clientData;
     Ns_Conn             *conn = itPtr->conn;
@@ -1996,7 +1996,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsServer *servPtr = NsGetInitServer();
     int             result = TCL_OK;
@@ -2037,7 +2037,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  */
 
 int
-NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     int             toCopy = 0, result = TCL_OK;
@@ -2179,7 +2179,7 @@ GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
  */
 
 static int
-GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
+GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *const* objv, int *offPtr,
            int *lenPtr)
 {
     int off, len, result = TCL_OK;

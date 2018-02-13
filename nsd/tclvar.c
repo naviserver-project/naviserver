@@ -148,7 +148,7 @@ NsTclCreateBuckets(const char *server, int nbuckets)
 
 int
 NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                  int objc, Tcl_Obj *CONST* objv)
+                  int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -209,7 +209,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     int objc, Tcl_Obj *CONST* objv)
+                     int objc, Tcl_Obj *const* objv)
 {
     int result;
 
@@ -253,7 +253,7 @@ NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                  int objc, Tcl_Obj *CONST* objv)
+                  int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -316,7 +316,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                   int objc, Tcl_Obj *CONST* objv)
+                   int objc, Tcl_Obj *const* objv)
 {
     int  result, count = 1;
 
@@ -363,7 +363,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                      int objc, Tcl_Obj *CONST* objv)
+                      int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -419,7 +419,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     int objc, Tcl_Obj *CONST* objv)
+                     int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -472,7 +472,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    int objc, Tcl_Obj *CONST* objv)
+                    int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *arrayObj;
     char       *key = NULL;
@@ -557,7 +557,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 
 int
-NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -627,7 +627,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 int
 NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    int objc, Tcl_Obj *CONST* objv)
+                    int objc, Tcl_Obj *const* objv)
 {
     int                      opt, result = TCL_OK;
     static const char *const opts[] = {
@@ -1405,7 +1405,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
  */
 
 int
-NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;

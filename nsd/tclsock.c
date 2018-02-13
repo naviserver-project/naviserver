@@ -76,7 +76,7 @@ static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
 static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1);
 
-static int SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+static int SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_SockProc SockListenCallback;
@@ -124,7 +124,7 @@ NsTclSockArgProc(Tcl_DString *dsPtr, const void *arg)
  *----------------------------------------------------------------------
  */
 int
-NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *addr;
     int         result = TCL_OK;
@@ -173,7 +173,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  */
 int
-NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *host;
     int         all = 0, result = TCL_OK;
@@ -229,7 +229,7 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  */
 
 int
-NsTclSockSetBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockSetBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     return SockSetBlocking("1", interp, objc, objv);
 }
@@ -252,7 +252,7 @@ NsTclSockSetBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, in
  */
 
 int
-NsTclSockSetNonBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockSetNonBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     return SockSetBlocking("0", interp, objc, objv);
 }
@@ -275,7 +275,7 @@ NsTclSockSetNonBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 
 int
-NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
 
     int result = TCL_OK;
@@ -329,7 +329,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char          *addr;
     int            result = TCL_OK;
@@ -386,7 +386,7 @@ NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 int
-NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NS_SOCKET sock;
     int       result;
@@ -437,7 +437,7 @@ NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 int
-NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int        result = TCL_OK;
     Tcl_Obj   *objPtr;
@@ -483,7 +483,7 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char          *lhost = NULL, *host;
     unsigned short lport = 0u, port;
@@ -586,7 +586,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     fd_set                rset, wset, eset, *rPtr, *wPtr, *ePtr;
     int                   i, fobjc, status, arg, maxfd;
@@ -740,7 +740,7 @@ done:
 
 int
 NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc),
-                      Tcl_Obj *CONST* UNUSED(objv))
+                      Tcl_Obj *const* UNUSED(objv))
 {
     NS_SOCKET socks[2];
     int       result;
@@ -787,7 +787,7 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
  */
 
 int
-NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char           *script, *sockId, *whenString;
     NS_SOCKET       sock;
@@ -899,7 +899,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  */
 
 int
-NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char           *addr, *script;
     unsigned short  port;
@@ -957,7 +957,7 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  */
 
 static int
-SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result;
 

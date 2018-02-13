@@ -43,8 +43,8 @@
  * Local functions defined in this file.
  */
 
-static void AddType(CONST char *ext, CONST char *type);
-static char *LowerDString(Ns_DString *dsPtr, CONST char *ext);
+static void AddType(const char *ext, const char *type);
+static char *LowerDString(Ns_DString *dsPtr, const char *ext);
 
 /*
  * Static variables defined in this file.
@@ -1327,7 +1327,7 @@ Ns_GetMimeType(const char *file)
  */
 
 int
-NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1418,7 +1418,7 @@ NsGetMimeTypes(Ns_DString *dsPtr)
  */
 
 static void
-AddType(CONST char *ext, CONST char *type)
+AddType(const char *ext, const char *type)
 {
     Ns_DString      ds;
     Tcl_HashEntry  *he;
@@ -1465,7 +1465,7 @@ AddType(CONST char *ext, CONST char *type)
  */
 
 static char *
-LowerDString(Ns_DString *dsPtr, CONST char *ext)
+LowerDString(Ns_DString *dsPtr, const char *ext)
 {
     char *p;
 

@@ -242,7 +242,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
  */
 
 int
-NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char          *method, *url, *file = NULL;
     int            noinherit = 0, result;
@@ -277,7 +277,7 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 }
 
 int
-NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         noinherit = 0, result;
     char       *method, *url, *file = NULL;

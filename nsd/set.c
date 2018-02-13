@@ -224,7 +224,7 @@ Ns_SetPut(Ns_Set *set, const char *key, const char *value)
 
 bool
 Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
-                int (*cmp) (CONST char *s1, CONST char *s2))
+                int (*cmp) (const char *s1, const char *s2))
 {
     size_t i;
     bool   found, result = NS_TRUE;

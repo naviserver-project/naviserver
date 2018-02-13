@@ -54,7 +54,7 @@
  */
 
 int
-NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *section, *key;
     Tcl_Obj    *defObj = NULL;
@@ -197,7 +197,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  */
 
 int
-NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int     result;
 
@@ -234,7 +234,7 @@ NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  */
 
 int
-NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result;
 

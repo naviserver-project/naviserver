@@ -141,7 +141,7 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
  */
 
 int
-NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                      result, opt;
     static const char *const opts[] = {

@@ -272,7 +272,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
  */
 
 int
-NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int             code;
 

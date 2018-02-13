@@ -525,7 +525,7 @@ Ns_InfoSSL(void)
  */
 
 int
-NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int             opt, result = TCL_OK;
     bool            done = NS_TRUE; 
@@ -805,7 +805,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *kindString, *moduleString = NULL;

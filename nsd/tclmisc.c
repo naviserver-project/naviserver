@@ -98,7 +98,7 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
  */
 
 int
-NsTclRunOnceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRunOnceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *script = NULL;
     int         global = (int)NS_FALSE, result = TCL_OK;
@@ -267,7 +267,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
  */
 
 void
-Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, const char *alternative, const char *explanation)
+Ns_LogDeprecated(Tcl_Obj *const* objv, int objc, const char *alternative, const char *explanation)
 {
     Tcl_DString ds;
     int i;
@@ -342,7 +342,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
  */
 
 int
-NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *htmlString = NULL;
@@ -452,7 +452,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int  result = TCL_OK;
 
@@ -487,7 +487,7 @@ NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 int
-NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *htmlString = NULL;
@@ -586,7 +586,7 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 int
-NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
 
     int result = TCL_OK;
@@ -626,7 +626,7 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 int
-NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -669,7 +669,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
 int
 NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
-                 int UNUSED(argc), Tcl_Obj *CONST* UNUSED(objv))
+                 int UNUSED(argc), Tcl_Obj *const* UNUSED(objv))
 {
     char *death;
 
@@ -1158,7 +1158,7 @@ char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUppe
  */
 
 int
-NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1209,7 +1209,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  */
 
 int
-NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     struct stat st;
@@ -1588,7 +1588,7 @@ static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
  */
 
 int
-NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
 
@@ -1635,7 +1635,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  */
 
 int
-NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1651,7 +1651,7 @@ NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 }
 
 int
-NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1713,7 +1713,7 @@ GetLimitObj(rlim_t value)
  *----------------------------------------------------------------------
  */
 int
-NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
 #ifndef _WIN32
 # ifndef RLIMIT_AS

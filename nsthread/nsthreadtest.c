@@ -314,7 +314,7 @@ DumpString(Tcl_DString *dsPtr)
     char **largv;
     int largc;
 
-    if (Tcl_SplitList(NULL, dsPtr->string, &largc, (CONST char***)&largv) == TCL_OK) {
+    if (Tcl_SplitList(NULL, dsPtr->string, &largc, (const char***)&largv) == TCL_OK) {
         int i;
 
 	for (i = 0; i < largc; ++i) {

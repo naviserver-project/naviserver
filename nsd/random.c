@@ -94,7 +94,7 @@ static void GenSeeds(unsigned long seeds[], int nseeds);
  */
 
 int
-NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 

@@ -48,7 +48,7 @@
 static int HttpQueueCmd(
     NsInterp *itPtr,
     int objc,
-    Tcl_Obj *CONST*
+    Tcl_Obj *const*
     objv,
     bool run
 ) NS_GNUC_NONNULL(1);
@@ -367,7 +367,7 @@ HttpRunObjCmd(
     ClientData clientData,
     Tcl_Interp *UNUSED(interp),
     int objc,
-    Tcl_Obj *CONST* objv
+    Tcl_Obj *const* objv
 ) {
     return HttpQueueCmd(clientData, objc, objv, NS_TRUE);
 }
@@ -377,7 +377,7 @@ HttpQueueObjCmd(
     ClientData clientData,
     Tcl_Interp *UNUSED(interp),
     int objc,
-    Tcl_Obj *CONST* objv
+    Tcl_Obj *const* objv
 ) {
     return HttpQueueCmd(clientData, objc, objv, NS_FALSE);
 }
@@ -404,7 +404,7 @@ HttpWaitObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
     int         objc,
-    Tcl_Obj    *CONST* objv
+    Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
     Tcl_Obj     *elapsedVarPtr = NULL,
@@ -549,7 +549,7 @@ HttpCancelObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
     int         objc,
-    Tcl_Obj    *CONST* objv
+    Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
     char        *idString;
@@ -594,7 +594,7 @@ HttpCleanupObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
     int         objc,
-    Tcl_Obj    *CONST* objv
+    Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
@@ -639,7 +639,7 @@ HttpListObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
     int         objc,
-    Tcl_Obj    *CONST* objv
+    Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
@@ -690,7 +690,7 @@ HttpStatsObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
     int         objc,
-    Tcl_Obj    *CONST* objv
+    Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
@@ -753,7 +753,7 @@ NsTclHttpObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST* objv
+    Tcl_Obj *const* objv
 ) {
     const Ns_SubCmdSpec subcmds[] = {
         {"cancel",   HttpCancelObjCmd},
@@ -791,7 +791,7 @@ static int
 HttpQueueCmd(
     NsInterp *itPtr,
     int objc,
-    Tcl_Obj *CONST* objv,
+    Tcl_Obj *const* objv,
     bool run
 ) {
     Tcl_Interp    *interp;

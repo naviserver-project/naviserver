@@ -293,7 +293,7 @@ Ns_ParseHttpTime(char *chars)
  */
 
 int
-NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *timeString;
@@ -338,7 +338,7 @@ NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  */
 
 int
-NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, itime;
     Ns_ObjvSpec args[] = {

@@ -1099,7 +1099,7 @@ NsStopSpoolers(void)
  *----------------------------------------------------------------------
  */
 static int
-DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1179,7 +1179,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1241,7 +1241,7 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 static int
-DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1280,7 +1280,7 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */
 static int
-DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1328,7 +1328,7 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 int
-NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"info",       DriverInfoObjCmd},
@@ -5346,7 +5346,7 @@ DriverWriterFromObj(Tcl_Obj *driverObj) {
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK;
     Ns_Conn          *conn;
@@ -5395,7 +5395,7 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     Ns_Conn    *conn;
@@ -5512,7 +5512,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *----------------------------------------------------------------------
  */
 static int
-WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     NsServer    *servPtr = NULL;
@@ -5594,7 +5594,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          intValue = -1, result = TCL_OK;
     Tcl_Obj     *driverObj;
@@ -5658,7 +5658,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 static int
 WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                      int objc, Tcl_Obj *CONST* objv)
+                      int objc, Tcl_Obj *const* objv)
 {
     int          boolValue, result = TCL_OK;
     Tcl_Obj     *driverObj;
@@ -5714,7 +5714,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 int
 NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
-                  int objc, Tcl_Obj *CONST* objv)
+                  int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"list",       WriterListObjCmd},

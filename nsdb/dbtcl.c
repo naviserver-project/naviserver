@@ -64,7 +64,7 @@ static Tcl_ObjCmdProc
     GetCsvObjCmd,
     PoolDescriptionObjCmd,
     QuoteListToListObjCmd;
-static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd);
+static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
 
 /*
@@ -205,7 +205,7 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *UNUSED(arg))
  */
 
 static int
-DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     InterpData     *idataPtr = clientData;
     char            tmpbuf[32] = "";
@@ -814,7 +814,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
  */
 
 static int
-ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char cmd)
+ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
 {
     InterpData  *idataPtr = clientData;
     Ns_DbHandle *handle;
@@ -838,13 +838,13 @@ ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
 }
 
 static int
-DbErrorCodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbErrorCodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     return ErrorObjCmd(clientData, interp, objc, objv, 'c');
 }
 
 static int
-DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     return ErrorObjCmd(clientData, interp, objc, objv, 'm');
 }
@@ -867,7 +867,7 @@ DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  */
 
 static int
-DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK;
 
@@ -901,7 +901,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 
 static int
-PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -933,7 +933,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 static int
-QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1006,7 +1006,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 static int
-GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int           result = TCL_OK;
     char         *delimiter = (char *)",", *fileId, *varName;

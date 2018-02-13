@@ -920,7 +920,7 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
 
 int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     int objc, Tcl_Obj *CONST* objv)
+                     int objc, Tcl_Obj *const* objv)
 {
     int          nargs, upperCase = 0, result = TCL_OK;
     char        *charset = NULL;
@@ -991,7 +991,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     int objc, Tcl_Obj *CONST* objv)
+                     int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *charset = NULL, *chars = NULL;

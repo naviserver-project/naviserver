@@ -714,7 +714,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
  *----------------------------------------------------------------------
  */
 static int
-ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     Conn           *connPtr = (Conn *)itPtr->conn;
@@ -767,7 +767,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *----------------------------------------------------------------------
  */
 static int
-ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int           result = TCL_OK;
     Sock         *sockPtr = NULL;
@@ -900,7 +900,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 
 static int
-ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     unsigned short port;
@@ -1094,7 +1094,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *----------------------------------------------------------------------
  */
 static int
-ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -1171,7 +1171,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *----------------------------------------------------------------------
  */
 static int
-ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char        *name;
     int          result = TCL_OK;
@@ -1215,7 +1215,7 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
  */
 static int
-ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK;
     char    *name, *script, *whenString;
@@ -1316,7 +1316,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *----------------------------------------------------------------------
  */
 static int
-ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char         *name;
     int           result = TCL_OK;
@@ -1355,7 +1355,7 @@ ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *----------------------------------------------------------------------
  */
 static int
-ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char        *name;
     int          result = TCL_OK;
@@ -1427,7 +1427,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *----------------------------------------------------------------------
  */
 static int
-ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *name;
     int         result = TCL_OK;
@@ -1498,7 +1498,7 @@ ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  */
 
 int
-NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"callback", ConnChanCallbackObjCmd},

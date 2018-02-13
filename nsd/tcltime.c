@@ -50,7 +50,7 @@ static int SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void UpdateStringOfTime(Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1);
 
-static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(2);
 
 static int GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *tPtr)
@@ -271,7 +271,7 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
  */
 
 int
-NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int     opt, rc = TCL_OK;
     Ns_Time resultTime;
@@ -443,7 +443,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  */
 
 static int
-TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int              rc = TCL_OK;
 
@@ -479,13 +479,13 @@ TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 }
 
 int
-NsTclGmTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclGmTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     return TmObjCmd(INT2PTR(1), interp, objc, objv);
 }
 
 int
-NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     return TmObjCmd(NULL, interp, objc, objv);
 }
@@ -508,7 +508,7 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          rc = TCL_OK;
     Ns_Time     *tPtr = NULL;
@@ -553,7 +553,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 int
-NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     long        sec;
     int         rc = TCL_OK;

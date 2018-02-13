@@ -782,7 +782,7 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optionIndex)
  */
 
 static int
-ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *paramName = NULL, *paramValue = NULL;
@@ -832,7 +832,7 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
  */
 
 static int
-SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *sectionName = NULL;

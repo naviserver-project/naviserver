@@ -120,7 +120,7 @@ static Tcl_InterpDeleteProc FreeInterpData;
 static Ns_TlsCleanup DeleteInterps;
 static Ns_ServerInitProc ConfigServerTcl;
 
-static int ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,  Ns_TclTraceType when);
+static int ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,  Ns_TclTraceType when);
 
 static Tcl_ObjCmdProc ICtlAddModuleObjCmd;
 static Tcl_ObjCmdProc ICtlCleanupObjCmd;
@@ -1000,7 +1000,7 @@ Ns_TclInitModule(const char *server, const char *module)
  */
 
 static int
-ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv,  Ns_TclTraceType when)
+ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,  Ns_TclTraceType when)
 {
     unsigned int    flags = 0u;
     Tcl_Obj        *scriptObj;
@@ -1071,7 +1071,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *----------------------------------------------------------------------
  */
 static int
-ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;
@@ -1117,7 +1117,7 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  */
 
 static int
-ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -1153,7 +1153,7 @@ ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  */
 
 static int
-ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;
@@ -1187,7 +1187,7 @@ ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *----------------------------------------------------------------------
  */
 static int
-ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -1223,7 +1223,7 @@ ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 static int
-ICtlMarkForDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlMarkForDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp  *itPtr = clientData;
     int        result = TCL_OK;
@@ -1254,7 +1254,7 @@ ICtlMarkForDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  */
 static int
-ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     Tcl_Obj     *scriptObj;
@@ -1303,7 +1303,7 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 static int
-ICtlUpdateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlUpdateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
@@ -1336,7 +1336,7 @@ ICtlUpdateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *C
  */
 
 static int
-ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;
@@ -1386,25 +1386,25 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 
 static int
-ICtlOnCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlOnCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 2, "ns_ictl trace create ...", NULL);
     return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_CREATE);
 }
 static int
-ICtlOnCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlOnCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 2, "ns_ictl trace deallocate ...", NULL);
     return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_DEALLOCATE);
 }
 static int
-ICtlOnDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlOnDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 2, "ns_ictl trace delete ...", NULL);
     return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_DELETE);
 }
 static int
-ICtlTraceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlTraceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     /*
      * Passing NS_TCL_TRACE_NONE as last argument means to get the trace type
@@ -1431,7 +1431,7 @@ ICtlTraceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *----------------------------------------------------------------------
  */
 static int
-ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int             result = TCL_OK;
     unsigned int    flags = 0u;
@@ -1480,7 +1480,7 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
  */
 static int
-ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int             result = TCL_OK;
     unsigned int    flags = 0u;
@@ -1527,7 +1527,7 @@ ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  */
 
 int
-NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"addmodule",     ICtlAddModuleObjCmd},
@@ -1571,7 +1571,7 @@ NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp  *itPtr = clientData;
     AtClose   *atPtr;

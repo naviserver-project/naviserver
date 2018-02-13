@@ -1079,7 +1079,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
  */
 
 int
-NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     void *addrPtr;
     int   result = TCL_OK;
@@ -1128,7 +1128,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  */
 
 static int
-NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_LogSeverity    severity = 0; /* default value for the error cases */
     void             *addrPtr = NULL;
@@ -1227,7 +1227,7 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  */
 
 int
-NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int             result = TCL_OK, count, opt, i;
     Ns_DString      ds;
@@ -1391,7 +1391,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
 int
 NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-		   int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
+		   int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
         Ns_TclPrintfResult(interp, "could not roll server log");

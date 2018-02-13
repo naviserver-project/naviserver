@@ -1011,7 +1011,7 @@ Ns_StopServer(char *server)
  */
 
 int
-NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         sig = NS_SIGTERM, result = TCL_OK;
     long        timeout = 0;
