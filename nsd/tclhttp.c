@@ -1195,7 +1195,7 @@ Ns_HttpCheckSpool(
              * Either we have to spool (due to spool limit) or we want to
              * spool (a output file name was given).
              */
-            httpPtr->replyLength = replyLength;
+            httpPtr->replyLength = (size_t)replyLength;
             httpPtr->received = 0u;
 
             if ((httpPtr->spoolLimit > -1) || (httpPtr->spoolFileName != NULL)) {
@@ -2212,7 +2212,7 @@ HttpProc(
              * required to spool. Once we know spoolFd, there is no
              * need to HttpCheckHeader() again.
              */
-            httpPtr->received += n;
+            httpPtr->received += (size_t)n;
 
             if (httpPtr->spoolFd > 0) {
                 (void) Ns_HttpAppendBuffer(httpPtr, buf, (size_t)n);
