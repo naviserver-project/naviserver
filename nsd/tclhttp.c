@@ -523,7 +523,9 @@ HttpWaitObjCmd(
         Tcl_DecrRefCount(replyHeadersObj);
     }
 
-    HttpClose(httpPtr);
+    if (httpPtr != NULL) {
+        HttpClose(httpPtr);
+    }
 
     return result;
 }
