@@ -719,6 +719,9 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
 
+            } else if (DbGetHandle(idataPtr, interp, idString, &handlePtr, NULL) != TCL_OK) {
+                result = TCL_ERROR;
+
             } else {
                 assert(handlePtr != NULL);
                 Ns_LogDeprecated(objv, 2, "ns_logctl debug(sql) ...", NULL);
