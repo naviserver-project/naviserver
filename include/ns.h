@@ -740,23 +740,23 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
 
 NS_EXTERN const char *
 Ns_CacheKey(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void *
 Ns_CacheGetValue(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN size_t
 Ns_CacheGetSize(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN const Ns_Time *
 Ns_CacheGetExpirey(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN uintptr_t
 Ns_CacheGetTransactionEpoch(const Ns_Entry *entry)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN unsigned long
 Ns_CacheCommitEntries(Ns_Cache *cache, uintptr_t epoch)
@@ -772,7 +772,7 @@ Ns_CacheSetValue(Ns_Entry *entry, void *value)
 
 NS_EXTERN void *
 Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transactionStackPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
@@ -854,7 +854,7 @@ Ns_CacheResetStats(Ns_Cache *cache)
 
 NS_EXTERN size_t
 Ns_CacheGetMaxSize(const Ns_Cache *cache)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_CacheSetMaxSize(Ns_Cache *cache, size_t maxSize)
@@ -862,7 +862,7 @@ Ns_CacheSetMaxSize(Ns_Cache *cache, size_t maxSize)
 
 NS_EXTERN int
 Ns_CacheGetNrUncommittedEntries(const Ns_Cache *cache)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 /*
  * callbacks.c:

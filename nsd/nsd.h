@@ -1552,7 +1552,8 @@ NS_EXTERN bool NsParseAcceptEncoding(double version, const char *hdr)
 NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN bool NsEncodingIsUtf8(const Tcl_Encoding encoding);
+NS_EXTERN bool NsEncodingIsUtf8(const Tcl_Encoding encoding)
+    NS_GNUC_PURE;
 
 
 /*
