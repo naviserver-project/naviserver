@@ -265,10 +265,10 @@ ns_section ns/server/${server}
 # Special HTTP pages
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/redirects
-	ns_param	404	"/global/file-not-found.html"
-	ns_param	403	"/global/forbidden.html"
-	ns_param	503	"/global/busy.html"
-	ns_param	500	"/global/error.html"
+	ns_param   404 /shared/404
+	ns_param   403 /shared/403
+	ns_param   503 /shared/503
+	ns_param   500 /shared/500
 
 #---------------------------------------------------------------------
 # ADP (AOLserver Dynamic Page) configuration 
