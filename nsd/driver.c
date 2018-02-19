@@ -3238,7 +3238,8 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         ) {
         const DrvSpooler *spPtr = &drvPtr->spooler;
 
-        Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %lu > readahead %lu)",
+        Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %lu > readahead "
+               "%" TCL_LL_MODIFIER "d)",
                reqPtr->length, drvPtr->readahead);
 
         /*
@@ -3748,7 +3749,7 @@ SockParse(Sock *sockPtr)
     }
 
     Ns_Log(Dev, "=== all required data is available (avail %lu, length %lu, "
-           "readahead %lu maxupload %lu) tfd %d",
+           "readahead %" TCL_LL_MODIFIER "d maxupload %" TCL_LL_MODIFIER "d) tfd %d",
            reqPtr->avail, reqPtr->length, drvPtr->readahead, drvPtr->maxupload,
            sockPtr->tfd);
 
