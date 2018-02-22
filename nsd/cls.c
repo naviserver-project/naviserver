@@ -41,7 +41,7 @@
  */
 
 static Ns_Callback *cleanupProcs[NS_CONN_MAXCLS];
-static void **GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn);
+static void **GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn) NS_GNUC_PURE;
 
 
 /*

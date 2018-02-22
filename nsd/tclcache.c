@@ -63,7 +63,7 @@ static void SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static bool noGlobChars(const char *pattern)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 static TclCache *TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeoutPtr, Ns_Time *expPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;

@@ -40,11 +40,14 @@
  * Local functions defined in this file
  */
 
-static bool WordEndsInSemi(const char *ip) NS_GNUC_NONNULL(1);
+static bool WordEndsInSemi(const char *ip)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
-static void MD5Transform(uint32_t buf[4], const uint8_t block[64]) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void SHATransform(Ns_CtxSHA1 *sha)
+    NS_GNUC_NONNULL(1);
+static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 

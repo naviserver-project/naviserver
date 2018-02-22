@@ -43,7 +43,7 @@
  * Static functions defined in this file.
  */
 
-static void **GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock);
+static void **GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock) NS_GNUC_PURE;
 static Ns_Callback CleanupKeyed;
 
 /* 

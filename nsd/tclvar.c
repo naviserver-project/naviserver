@@ -90,7 +90,7 @@ static Array *GetArray(Bucket *bucketPtr, const char *arrayName, bool create)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static unsigned int BucketIndex(const char *arrayName)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 /*
  *-----------------------------------------------------------------------------

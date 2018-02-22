@@ -1528,7 +1528,7 @@ NS_EXTERN int NsConnParseRange(Ns_Conn *conn, const char *type,
  * conn.c
  */
 NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
@@ -1649,10 +1649,10 @@ NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
     NS_GNUC_NONNULL(1);

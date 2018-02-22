@@ -880,7 +880,7 @@ NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg)         NS_GNUC_
  */
 
 NS_EXTERN void Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc);
-NS_EXTERN void *Ns_ClsGet(const Ns_Cls *clsPtr, Ns_Conn *conn);
+NS_EXTERN void *Ns_ClsGet(const Ns_Cls *clsPtr, Ns_Conn *conn) NS_GNUC_PURE;
 NS_EXTERN void Ns_ClsSet(const Ns_Cls *clsPtr, Ns_Conn *conn, void *value);
 
 /*
@@ -1045,143 +1045,54 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
  * conn.c:
  */
 
-NS_EXTERN uintptr_t
-Ns_ConnId(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
-Ns_ConnContentFd(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN size_t
-Ns_ConnContentSize(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnContentFile(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Tcl_Encoding
-Ns_ConnGetEncoding(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN void
-Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Tcl_Encoding
-Ns_ConnGetUrlEncoding(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN void
-Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
-Ns_ConnGetCompression(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN void
-Ns_ConnSetCompression(Ns_Conn *conn, int level) NS_GNUC_NONNULL(1);
-
-NS_EXTERN bool
-Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
-
-NS_EXTERN bool
-Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Ns_Set *
-Ns_ConnHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Ns_Set *
-Ns_ConnOutputHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Ns_Set *
-Ns_ConnAuth(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnAuthUser(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnAuthPasswd(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN size_t
-Ns_ConnContentLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnServer(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
-Ns_ConnResponseStatus(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN void
-Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus) NS_GNUC_NONNULL(1);
-
-NS_EXTERN size_t
-Ns_ConnContentSent(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN void
-Ns_ConnSetContentSent(Ns_Conn *conn, size_t length) NS_GNUC_NONNULL(1);
-
-NS_EXTERN ssize_t
-Ns_ConnResponseLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnPeer(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN char *
-Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN unsigned short
-Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnLocation(Ns_Conn *conn)
-    NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
-
-NS_EXTERN char *
-Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN const char *
-Ns_ConnHost(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN unsigned short
-Ns_ConnPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN NS_SOCKET
-Ns_ConnSock(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Ns_Sock *
-Ns_ConnSockPtr(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Ns_DString *
-Ns_ConnSockContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN const char *
-Ns_ConnDriverName(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
-
-NS_EXTERN Ns_ReturnCode
-Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN void
-Ns_SetLocationProc(const char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
-
-NS_EXTERN Ns_Time *
-Ns_ConnStartTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN Ns_Time *
-Ns_ConnAcceptTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN Ns_Time *
-Ns_ConnQueueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN Ns_Time *
-Ns_ConnDequeueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN Ns_Time *
-Ns_ConnFilterTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-
-NS_EXTERN void
-Ns_ConnTimeSpans(const Ns_Conn *conn, Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr,
-                 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
-
-NS_EXTERN Ns_Time *
-Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_Time *      Ns_ConnAcceptTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN Ns_Set *       Ns_ConnAuth(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnAuthPasswd(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
+NS_EXTERN const char *   Ns_ConnAuthUser(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
+NS_EXTERN const char *   Ns_ConnContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN int            Ns_ConnContentFd(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnContentFile(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN size_t         Ns_ConnContentLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN size_t         Ns_ConnContentSent(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN size_t         Ns_ConnContentSize(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Ns_Time *      Ns_ConnDequeueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN const char *   Ns_ConnDriverName(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN Ns_Time *      Ns_ConnFilterTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN int            Ns_ConnGetCompression(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Tcl_Encoding   Ns_ConnGetEncoding(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Tcl_Encoding   Ns_ConnGetUrlEncoding(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Ns_Set *       Ns_ConnHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnHost(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN uintptr_t      Ns_ConnId(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
+NS_EXTERN char *         Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN bool           Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_Set *       Ns_ConnOutputHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnPeer(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN unsigned short Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN unsigned short Ns_ConnPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Ns_Time *      Ns_ConnQueueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN ssize_t        Ns_ConnResponseLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN int            Ns_ConnResponseStatus(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnServer(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN void           Ns_ConnSetCompression(Ns_Conn *conn, int level) NS_GNUC_NONNULL(1);
+NS_EXTERN void           Ns_ConnSetContentSent(Ns_Conn *conn, size_t length) NS_GNUC_NONNULL(1);
+NS_EXTERN void           Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
+NS_EXTERN char *         Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void           Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus) NS_GNUC_NONNULL(1);
+NS_EXTERN void           Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
+NS_EXTERN NS_SOCKET      Ns_ConnSock(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Ns_DString*    Ns_ConnSockContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Ns_Sock *      Ns_ConnSockPtr(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN Ns_Time *      Ns_ConnStartTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+NS_EXTERN void           Ns_ConnTimeSpans(
+    const Ns_Conn *conn, Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr,
+    Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr
+)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+NS_EXTERN Ns_Time *      Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN bool           Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode  Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void           Ns_SetLocationProc(const char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
 
 
 /*
@@ -1602,7 +1513,8 @@ NS_EXTERN Ns_List *
 Ns_ListNreverse(Ns_List *lPtr);
 
 NS_EXTERN Ns_List *
-Ns_ListLast(Ns_List *lPtr);
+Ns_ListLast(Ns_List *lPtr)
+    NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc);
@@ -1611,7 +1523,8 @@ NS_EXTERN void
 Ns_IntPrint(int d);
 
 NS_EXTERN void
-Ns_StringPrint(const char *s) NS_GNUC_NONNULL(1);
+Ns_StringPrint(const char *s)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc);
@@ -1620,7 +1533,8 @@ NS_EXTERN Ns_List *
 Ns_ListCopy(const Ns_List *lPtr);
 
 NS_EXTERN int
-Ns_ListLength(const Ns_List *lPtr);
+Ns_ListLength(const Ns_List *lPtr)
+    NS_GNUC_PURE;
 
 NS_EXTERN Ns_List *
 Ns_ListWeightSort(Ns_List *wPtr);
@@ -1633,7 +1547,7 @@ Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight);
 
 NS_EXTERN Ns_List *
 Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr,
-                                      Ns_EqualProc *equalProc);
+                      Ns_EqualProc *equalProc);
 
 NS_EXTERN Ns_List *
 Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc);
@@ -1646,6 +1560,7 @@ Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 
 NS_EXTERN Ns_List *
 Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc);
+
 /*
  * see macros above for:
  *
@@ -1762,7 +1677,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
 
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
-NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
+NS_EXTERN Ns_ObjvProc Ns_ObjvBreak NS_GNUC_CONST;
 NS_EXTERN Ns_ObjvProc Ns_ObjvByteArray;
 NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
 NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
@@ -1859,7 +1774,8 @@ Ns_SockPortBound(unsigned short port);
  */
 
 NS_EXTERN const char *
-Ns_InfoErrorLog(void);
+Ns_InfoErrorLog(void)
+    NS_GNUC_PURE;
 
 NS_EXTERN Ns_ReturnCode
 Ns_LogRoll(void);
@@ -1908,13 +1824,15 @@ Ns_CreateLogSeverity(const char *name)
 
 NS_EXTERN const char *
 Ns_LogSeverityName(Ns_LogSeverity severity)
-    NS_GNUC_RETURNS_NONNULL;
+    NS_GNUC_RETURNS_NONNULL NS_GNUC_PURE;
 
 NS_EXTERN bool
-Ns_LogSeverityEnabled(Ns_LogSeverity severity);
+Ns_LogSeverityEnabled(Ns_LogSeverity severity)
+    NS_GNUC_PURE;
 
 NS_EXTERN bool
-Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled);
+Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
+    NS_GNUC_PURE;
 
 
 /*
@@ -2022,7 +1940,7 @@ Ns_GetMimeType(const char *file)
 
 NS_EXTERN bool
 Ns_IsBinaryMimeType(const char *contentType)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 /*
  * encoding.c:
@@ -2527,7 +2445,7 @@ Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 
 NS_EXTERN bool
 Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
-                              int (*cmp) (const char *s1, const char *s2))
+                int (*cmp) (const char *s1, const char *s2))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
@@ -2542,7 +2460,7 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key,
 
 NS_EXTERN bool
 Ns_SetUnique(const Ns_Set *set, const char *key)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN bool
 Ns_SetIUnique(const Ns_Set *set, const char *key)
@@ -2550,7 +2468,7 @@ Ns_SetIUnique(const Ns_Set *set, const char *key)
 
 NS_EXTERN int
 Ns_SetFind(const Ns_Set *set, const char *key)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN int
 Ns_SetIFind(const Ns_Set *set, const char *key)
@@ -2558,7 +2476,7 @@ Ns_SetIFind(const Ns_Set *set, const char *key)
 
 NS_EXTERN char *
 Ns_SetGet(const Ns_Set *set, const char *key)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN char *
 Ns_SetIGet(const Ns_Set *set, const char *key)
@@ -2586,7 +2504,7 @@ Ns_SetIDeleteKey(Ns_Set *set, const char *key)
 
 NS_EXTERN Ns_Set *
 Ns_SetListFind(Ns_Set *const*sets, const char *name)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN Ns_Set **
 Ns_SetSplit(const Ns_Set *set, char sep)
@@ -2613,7 +2531,7 @@ Ns_SetPrint(const Ns_Set *set)
 
 NS_EXTERN const char *
 Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN const char *
 Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
@@ -2681,7 +2599,7 @@ Ns_SlsSet(const Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
 
 NS_EXTERN void *
 Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
@@ -2735,7 +2653,7 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 
 NS_EXTERN size_t
 Ns_SumVec(const struct iovec *bufs, int nbufs)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN Ns_ReturnCode
 Ns_SockPipe(NS_SOCKET socks[2])
@@ -2858,7 +2776,7 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
 
 NS_EXTERN bool
 Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN int
 ns_inet_pton(struct sockaddr *saPtr, const char *addr)
@@ -2874,7 +2792,7 @@ Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 
 NS_EXTERN unsigned short
 Ns_SockaddrGetPort(const struct sockaddr *saPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
@@ -2882,7 +2800,7 @@ Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
 
 socklen_t
 Ns_SockaddrGetSockLen(const struct sockaddr *saPtr)
-        NS_GNUC_NONNULL(1);
+        NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN void
 Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockaddr *saPtr)
