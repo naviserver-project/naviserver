@@ -1208,6 +1208,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclQuoteHtmlObjCmd,
     NsTclRWLockObjCmd,
     NsTclRandObjCmd,
+    NsTclReflowTextObjCmd,
     NsTclRegisterAdpObjCmd,
     NsTclRegisterFastPathObjCmd,
     NsTclRegisterFastUrl2FileObjCmd,

@@ -331,6 +331,130 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclReflowTextObjCmd --
+ *
+ *      Reflow a text to the specified length.
+ *      Implementation of ns_reflow_text.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK, lineWidth = 80;
+    char        *textString = NULL, *prefixString = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-width",  Ns_ObjvInt,     &lineWidth,    NULL},
+        {"-prefix", Ns_ObjvString,  &prefixString, NULL},
+        {"--",      Ns_ObjvBreak,    NULL,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    Ns_ObjvSpec  args[] = {
+        {"text", Ns_ObjvString,  &textString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds, *dsPtr = &ds;
+        int         nrNewLines = 1;
+        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth;
+        bool        done = NS_FALSE;
+
+        textLength   = strlen(textString);
+        prefixLength = (prefixString == NULL ? 0u : strlen(prefixString));
+        Tcl_DStringInit(dsPtr);
+
+        for (k = 0u; k < textLength; k++) {
+            if (textString[k] == '\n') {
+                nrNewLines++;
+            }
+        }
+
+        /*
+         * Set the length of the Tcl_DString to the same size as the input
+         * string plus for every linebreak+1 the prefixString.
+         */
+        Tcl_DStringSetLength(dsPtr, textLength + nrNewLines*prefixLength);
+
+        inputPos = 0u;
+        memcpy(dsPtr->string, prefixString, prefixLength);
+        outputPos = prefixLength;
+
+        while (inputPos < textLength && !done) {
+            /*
+             * Copy the input string until lineWidth is reached
+             */
+            for (currentWidth = 1u; currentWidth <= lineWidth; currentWidth++)  {
+
+                if ( inputPos < textLength) {
+                    dsPtr->string[outputPos] = textString[inputPos];
+
+                    /*
+                     * In case there are newlines in the text, insert it with
+                     * the prefix and reset the currentWidth.
+                     */
+                    outputPos++;
+                    if ( textString[inputPos] == '\n' ) {
+                        memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
+                        outputPos += prefixLength;
+                        currentWidth = 1;
+                    }
+                    inputPos++;
+                } else {
+                    /*
+                     * We reached the end of the inputString and we are done.
+                     */
+                    done = NS_TRUE;
+                    break;
+                }
+            }
+
+            if (!done) {
+                /*
+                 * Search for the last whitespace from the end
+                 */
+                for ( k = inputPos; k > 0u; k--, outputPos--) {
+                    if ( CHARTYPE(space, textString[k]) != 0) {
+                        /*
+                         * Replace the whitespace by a "\n" followed by the
+                         * prefix string; we have to make sure that the dsPtr
+                         * can held the additional prefix as well.
+                         */
+                        Tcl_DStringSetLength(dsPtr, dsPtr->length + prefixLength);
+                        dsPtr->string[outputPos] = '\n';
+                        outputPos++;
+                        memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
+                        outputPos += prefixLength;
+                        /*
+                         * Reset the inputPositon
+                         */
+                        inputPos = k + 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        Tcl_DStringResult(interp, &ds);
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclStripHtmlObjCmd --
  *
  *      Implements ns_striphtml.
@@ -437,40 +561,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCryptObjCmd --
- *
- *      Implements ns_crypt as ObjCommand.
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
 
-int
-NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
-{
-    int  result = TCL_OK;
-
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "key salt");
-        result = TCL_ERROR;
-    } else {
-        char buf[NS_ENCRYPT_BUFSIZE];
-
-        Tcl_SetResult(interp,
-                      Ns_Encrypt(Tcl_GetString(objv[1]),
-                                 Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
-    }
-    return result;
-}
 
 
 /*
@@ -716,6 +807,40 @@ WordEndsInSemi(const char *ip)
     return (*ip == ';');
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptObjCmd --
+ *
+ *      Implements ns_crypt as ObjCommand.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int  result = TCL_OK;
+
+    if (objc != 3) {
+        Tcl_WrongNumArgs(interp, 1, objv, "key salt");
+        result = TCL_ERROR;
+    } else {
+        char buf[NS_ENCRYPT_BUFSIZE];
+
+        Tcl_SetResult(interp,
+                      Ns_Encrypt(Tcl_GetString(objv[1]),
+                                 Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
+    }
+    return result;
+}
 /*
  *  The SHA1 routines are borrowed from libmd:
  *
