@@ -747,6 +747,10 @@ Ns_CacheGetValue(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN size_t
+Ns_CacheGetReuse(const Ns_Entry *entry)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+NS_EXTERN size_t
 Ns_CacheGetSize(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 

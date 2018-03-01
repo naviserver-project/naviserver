@@ -1048,22 +1048,30 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
             Ns_CacheSearch  search;
             const Ns_Entry *entry;
 
-            Tcl_DStringStartSublist(&ds);
             entry = Ns_CacheFirstEntry(cache, &search);
             while (entry != NULL) {
+                Tcl_DString    entryDs;
+                const char    *key     = Ns_CacheKey(entry);
                 size_t         size    = Ns_CacheGetSize(entry);
+                size_t         reuse   = Ns_CacheGetReuse(entry);
                 const Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
 
+                Ns_DStringInit(&entryDs);
+
+                Tcl_DStringAppendElement(&entryDs, key);
                 if (timePtr->usec == 0) {
-                    Ns_DStringPrintf(&ds, "%" PRIdz " %" PRIu64 " ",
-                                     size, (int64_t) timePtr->sec);
+                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRIu64,
+                                     size, reuse, (int64_t) timePtr->sec);
                 } else {
-                    Ns_DStringPrintf(&ds, "%" PRIdz " %" PRIu64 ":%ld ",
-                                     size, (int64_t) timePtr->sec, timePtr->usec);
+                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRIu64 ":%ld",
+                                     size, reuse, (int64_t) timePtr->sec, timePtr->usec);
                 }
+                Tcl_DStringAppendElement(&ds, entryDs.string);
+                Ns_DStringFree(&entryDs);
+
                 entry = Ns_CacheNextEntry(&search);
             }
-            Tcl_DStringEndSublist(&ds);
+
         } else {
             (void) Ns_CacheStats(cache, &ds);
         }

@@ -52,7 +52,7 @@ typedef struct Entry {
     Ns_Time         expires;          /* Absolute TTL timeout. */
     size_t          size;
     int		    cost;             /* cost to compute a single entry */
-    int		    count;            /* reuse count of this entry */
+    size_t	    count;            /* reuse count of this entry */
     void           *value;            /* Will appear NULL for concurrent updates. */
     void           *uncommittedValue; /* Used for transactional mode */
     uintptr_t       transactionEpoch; /* Used for identifying transaction */
@@ -416,7 +416,7 @@ Ns_CacheKey(const Ns_Entry *entry)
  *----------------------------------------------------------------------
  *
  * Ns_CacheGetValue, Ns_CacheGetSize, Ns_CacheGetExpirey,
- * Ns_CacheGetTransactionEpoch --
+ * Ns_CacheGetTransactionEpoch, Ns_CacheGetReuse --
  *
  *      Get the bare components of a cache entry via API.
  *
@@ -429,11 +429,18 @@ Ns_CacheKey(const Ns_Entry *entry)
  *----------------------------------------------------------------------
  */
 
-void *
-Ns_CacheGetValue(const Ns_Entry *entry)
+const Ns_Time *
+Ns_CacheGetExpirey(const Ns_Entry *entry)
 {
     NS_NONNULL_ASSERT(entry != NULL);
-    return ((const Entry *) entry)->value;
+    return &((const Entry *) entry)->expires;
+}
+
+size_t
+Ns_CacheGetReuse(const Ns_Entry *entry)
+{
+    NS_NONNULL_ASSERT(entry != NULL);
+    return ((const Entry *) entry)->count;
 }
 
 size_t
@@ -443,18 +450,18 @@ Ns_CacheGetSize(const Ns_Entry *entry)
     return ((const Entry *) entry)->size;
 }
 
-const Ns_Time *
-Ns_CacheGetExpirey(const Ns_Entry *entry)
-{
-    NS_NONNULL_ASSERT(entry != NULL);
-    return &((const Entry *) entry)->expires;
-}
-
 uintptr_t
 Ns_CacheGetTransactionEpoch(const Ns_Entry *entry)
 {
     NS_NONNULL_ASSERT(entry != NULL);
     return ((const Entry *) entry)->transactionEpoch;
+}
+
+void *
+Ns_CacheGetValue(const Ns_Entry *entry)
+{
+    NS_NONNULL_ASSERT(entry != NULL);
+    return ((const Entry *) entry)->value;
 }
 
 
