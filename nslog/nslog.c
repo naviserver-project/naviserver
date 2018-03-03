@@ -64,7 +64,7 @@ typedef struct {
     int          maxbackup;
     int          maxlines;
     int          curlines;
-    Ns_DString   buffer;
+    Tcl_DString   buffer;
 } Log;
 
 /*
@@ -80,12 +80,12 @@ static Tcl_ObjCmdProc  LogObjCmd;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
-static Ns_ReturnCode LogFlush(Log *logPtr, Ns_DString *dsPtr);
+static Ns_ReturnCode LogFlush(Log *logPtr, Tcl_DString *dsPtr);
 static Ns_ReturnCode LogOpen (Log *logPtr);
 static Ns_ReturnCode LogRoll (Log *logPtr);
 static Ns_ReturnCode LogClose(Log *logPtr);
 
-static void AppendEscaped(Ns_DString *dsPtr, const char *toProcess)
+static void AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -114,7 +114,7 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     const char   *path, *file;
     Log          *logPtr;
-    Ns_DString    ds;
+    Tcl_DString    ds;
     static bool   first = NS_TRUE;
     Ns_ReturnCode result;
 
@@ -133,14 +133,14 @@ Ns_ModuleInit(const char *server, const char *module)
         Ns_RegisterProcInfo((Ns_Callback *)AddCmds, "nslog:initinterp", LogArg);
     }
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     logPtr = ns_calloc(1u, sizeof(Log));
     logPtr->module = module;
     logPtr->fd = NS_INVALID_FD;
     Ns_MutexInit(&logPtr->lock);
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
-    Ns_DStringInit(&logPtr->buffer);
+    Tcl_DStringInit(&logPtr->buffer);
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
 
@@ -164,7 +164,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Tcl_Obj *dirpath;
 	    int rc;
 
-            Ns_DStringSetLength(&ds, 0);
+            Tcl_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
@@ -173,10 +173,10 @@ Ns_ModuleInit(const char *server, const char *module)
             if (rc != TCL_OK && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
                 Ns_Log(Error, "nslog: create directory (%s) failed: '%s'",
                        ds.string, strerror(Tcl_GetErrno()));
-                Ns_DStringFree(&ds);
+                Tcl_DStringFree(&ds);
                 return NS_ERROR;
             }
-            Ns_DStringSetLength(&ds, 0);
+            Tcl_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, file, (char *)0);
         }
         logPtr->file = Ns_DStringExport(&ds);
@@ -228,14 +228,14 @@ Ns_ModuleInit(const char *server, const char *module)
      * Parse extended headers; it is just a list of names
      */
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), (char *)0);
     if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders,
                       &logPtr->extheaders) != TCL_OK) {
         Ns_Log(Error, "nslog: invalid %s/extendedHeaders parameter: '%s'",
                path, ds.string);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     /*
      *  Open the log and register the trace
@@ -283,7 +283,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
 {
     const char    *strarg, **hdrs;
     int            rc, intarg, cmd;
-    Ns_DString     ds;
+    Tcl_DString     ds;
     Log           *logPtr = clientData;
 
     enum {
@@ -386,10 +386,10 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
         {
             unsigned int flags;
             
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             if (objc > 2) {
                 flags = 0u;
-                Ns_DStringAppend(&ds, Tcl_GetString(objv[2]));
+                Tcl_DStringAppend(&ds, Tcl_GetString(objv[2]), -1);
                 Ns_StrToLower(ds.string);
                 if (strstr(ds.string, "logcombined")) {
                     flags |= LOG_COMBINED;
@@ -409,7 +409,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 if (strstr(ds.string, "suppressquery")) {
                     flags |= LOG_SUPPRESSQUERY;
                 }
-                Ns_DStringSetLength(&ds, 0);
+                Tcl_DStringSetLength(&ds, 0);
                 Ns_MutexLock(&logPtr->lock);
                 logPtr->flags = flags;
                 Ns_MutexUnlock(&logPtr->lock);
@@ -419,22 +419,22 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 Ns_MutexUnlock(&logPtr->lock);
             }
             if ((flags & LOG_COMBINED)) {
-                Ns_DStringAppend(&ds, "logcombined ");
+                Tcl_DStringAppend(&ds, "logcombined ", -1);
             }
             if ((flags & LOG_FMTTIME)) {
-                Ns_DStringAppend(&ds, "formattedtime ");
+                Tcl_DStringAppend(&ds, "formattedtime ", -1);
             }
             if ((flags & LOG_REQTIME)) {
-                Ns_DStringAppend(&ds, "logreqtime ");
+                Tcl_DStringAppend(&ds, "logreqtime ", -1);
             }
             if ((flags & LOG_PARTIALTIMES)) {
-                Ns_DStringAppend(&ds, "logpartialtimes ");
+                Tcl_DStringAppend(&ds, "logpartialtimes ", -1);
             }
             if ((flags & LOG_CHECKFORPROXY)) {
-                Ns_DStringAppend(&ds, "checkforproxy ");
+                Tcl_DStringAppend(&ds, "checkforproxy ", -1);
             }
             if ((flags & LOG_SUPPRESSQUERY)) {
-                Ns_DStringAppend(&ds, "suppressquery ");
+                Tcl_DStringAppend(&ds, "suppressquery ", -1);
             }
             Tcl_DStringResult(interp, &ds);
         }
@@ -442,7 +442,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
 
     case FILE:
         if (objc > 2) {
-            Ns_DStringInit(&ds);
+            Tcl_DStringInit(&ds);
             strarg = Tcl_GetString(objv[2]);
             if (Ns_PathIsAbsolute(strarg) == NS_FALSE) {
                 Ns_HomePath(&ds, strarg, (char *)0);
@@ -452,7 +452,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             LogClose(logPtr);
             ns_free((char *)logPtr->file);
             logPtr->file = ns_strdup(strarg);
-            Ns_DStringFree(&ds);
+            Tcl_DStringFree(&ds);
             LogOpen(logPtr);
         } else {
             Ns_MutexLock(&logPtr->lock);
@@ -518,7 +518,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
  */
 
 static void
-AppendEscaped(Ns_DString *dsPtr, const char *toProcess)
+AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
 {
     const char *breakChar;
 
@@ -531,31 +531,31 @@ AppendEscaped(Ns_DString *dsPtr, const char *toProcess)
             /*
              * No break-char found, append all and stop
              */
-            Ns_DStringNAppend(dsPtr, toProcess, -1);
+            Tcl_DStringAppend(dsPtr, toProcess, -1);
         } else {
             /*
              * Append the break-char free prefix
              */
-            Ns_DStringNAppend(dsPtr, toProcess, (int)(breakChar - toProcess));
+            Tcl_DStringAppend(dsPtr, toProcess, (int)(breakChar - toProcess));
 
             /*
              * Escape the break-char
              */
             switch (*breakChar) {
             case '\n':
-                Ns_DStringNAppend(dsPtr, "\\n", 2);
+                Tcl_DStringAppend(dsPtr, "\\n", 2);
                 break;
             case '\r':
-                Ns_DStringNAppend(dsPtr, "\\r", 2);
+                Tcl_DStringAppend(dsPtr, "\\r", 2);
                 break;
             case '\t':
-                Ns_DStringNAppend(dsPtr, "\\t", 2);
+                Tcl_DStringAppend(dsPtr, "\\t", 2);
                 break;
             case '"':
-                Ns_DStringNAppend(dsPtr, "\\\"", 2);
+                Tcl_DStringAppend(dsPtr, "\\\"", 2);
                 break;
             case '\\':
-                Ns_DStringNAppend(dsPtr, "\\\\",2);
+                Tcl_DStringAppend(dsPtr, "\\\\",2);
                 break;
             default:
                 /*should not happen */ assert(0);
@@ -597,9 +597,9 @@ LogTrace(void *arg, Ns_Conn *conn)
     int           n, i;
     Ns_ReturnCode status;
     size_t	  bufferSize = 0u;
-    Ns_DString    ds, *dsPtr = &ds;
+    Tcl_DString    ds, *dsPtr = &ds;
 
-    Ns_DStringInit(dsPtr);
+    Tcl_DStringInit(dsPtr);
     Ns_MutexLock(&logPtr->lock);
 
     /*
@@ -615,20 +615,19 @@ LogTrace(void *arg, Ns_Conn *conn)
     } else {
         p = NULL;
     }
-    Ns_DStringAppend(dsPtr,
-                     ((p != NULL) && (*p != '\0')) ?
-                     p : Ns_ConnPeer(conn));
+    Tcl_DStringAppend(dsPtr,
+                      ((p != NULL) && (*p != '\0')) ? p : Ns_ConnPeer(conn), -1);
 
     /*
      * Append the thread name, if requested.
      * This eases to link access-log with error-log entries
      */
-    Ns_DStringNAppend(dsPtr, " ", 1);
+    Tcl_DStringAppend(dsPtr, " ", 1);
     if ((logPtr->flags & LOG_THREADNAME) != 0) {
-        Ns_DStringNAppend(dsPtr, Ns_ThreadGetName(), -1);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, Ns_ThreadGetName(), -1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
     } else {
-        Ns_DStringNAppend(dsPtr, "- ", 2);
+        Tcl_DStringAppend(dsPtr, "- ", 2);
     }
 
     /*
@@ -638,16 +637,19 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     user = Ns_ConnAuthUser(conn);
     if (user == NULL) {
-        Ns_DStringNAppend(dsPtr, "- ", 2);
+        Tcl_DStringAppend(dsPtr, "- ", 2);
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
 	    quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote != 0) {
-            Ns_DStringVarAppend(dsPtr, "\"", user, "\" ", (char *)0);
+            Tcl_DStringAppend(dsPtr, "\"", 1);
+            Tcl_DStringAppend(dsPtr, user, -1);
+            Tcl_DStringAppend(dsPtr, "\" ", 2);
         } else {
-            Ns_DStringVarAppend(dsPtr, user, " ", (char *)0);
+            Tcl_DStringAppend(dsPtr, user, -1);
+            Tcl_DStringAppend(dsPtr, " ", 1);
         }
     }
 
@@ -659,8 +661,9 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringPrintf(dsPtr, "[%" PRIu64 "]", (int64_t) time(NULL));
     } else {
         char buf[41]; /* Big enough for Ns_LogTime(). */
+
         Ns_LogTime(buf);
-        Ns_DStringAppend(dsPtr, buf);
+        Tcl_DStringAppend(dsPtr, buf, -1);
     }
 
     /*
@@ -672,14 +675,14 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    conn->request.url : 
 	    conn->request.line;
 
-	Ns_DStringNAppend(dsPtr, " \"", 2);
+	Tcl_DStringAppend(dsPtr, " \"", 2);
         if (likely(string != NULL)) {
             AppendEscaped(dsPtr, string);
         }
-        Ns_DStringNAppend(dsPtr, "\" ", 2);
+        Tcl_DStringAppend(dsPtr, "\" ", 2);
 
     } else {
-        Ns_DStringNAppend(dsPtr, " \"\" ", 4);
+        Tcl_DStringAppend(dsPtr, " \"\" ", 4);
     }
 
     /*
@@ -695,17 +698,17 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if ((logPtr->flags & LOG_COMBINED)) {
         
-        Ns_DStringNAppend(dsPtr, " \"", 2);
+        Tcl_DStringAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, "referer");
         if (p != NULL) {
             AppendEscaped(dsPtr, p);
         }
-        Ns_DStringNAppend(dsPtr, "\" \"", 3);
+        Tcl_DStringAppend(dsPtr, "\" \"", 3);
         p = Ns_SetIGet(conn->headers, "user-agent");
         if (p != NULL) {
             AppendEscaped(dsPtr, p);
         }
-        Ns_DStringNAppend(dsPtr, "\"", 1);
+        Tcl_DStringAppend(dsPtr, "\"", 1);
     }
 
     /*
@@ -716,7 +719,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 	Ns_Time reqTime, now;
 	Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
 	Ns_DStringAppendTime(dsPtr, &reqTime);
 
     }
@@ -727,17 +730,17 @@ LogTrace(void *arg, Ns_Conn *conn)
 
 	Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
 
-        Ns_DStringNAppend(dsPtr, " \"", 2);
+        Tcl_DStringAppend(dsPtr, " \"", 2);
         Ns_DStringAppendTime(dsPtr, startTimePtr);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
         Ns_DStringAppendTime(dsPtr, &acceptTime);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
         Ns_DStringAppendTime(dsPtr, &queueTime);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
         Ns_DStringAppendTime(dsPtr, &filterTime);
-        Ns_DStringNAppend(dsPtr, " ", 1);
+        Tcl_DStringAppend(dsPtr, " ", 1);
         Ns_DStringAppendTime(dsPtr, &runTime);
-        Ns_DStringNAppend(dsPtr, "\"", 1);
+        Tcl_DStringAppend(dsPtr, "\"", 1);
     }
 
     /*
@@ -745,12 +748,12 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     for (h = logPtr->extheaders; *h != NULL; h++) {
-        Ns_DStringNAppend(dsPtr, " \"", 2);
+        Tcl_DStringAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, *h);
         if (p != NULL) {
             AppendEscaped(dsPtr, p);
         }
-        Ns_DStringNAppend(dsPtr, "\"", 1);
+        Tcl_DStringAppend(dsPtr, "\"", 1);
     }
     
     for (i = 0; i < ds.length; i++) {
@@ -768,7 +771,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * flush the buffer
      */
 
-    Ns_DStringNAppend(dsPtr, "\n", 1);
+    Tcl_DStringAppend(dsPtr, "\n", 1);
 
     if (logPtr->maxlines == 0) {
         bufferSize = (size_t)ds.length;
@@ -782,7 +785,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    status = LogFlush(logPtr, dsPtr);
 	}
     } else {
-        Ns_DStringNAppend(&logPtr->buffer, ds.string, ds.length);
+        Tcl_DStringAppend(&logPtr->buffer, ds.string, ds.length);
         if (++logPtr->curlines > logPtr->maxlines) {
 	    bufferSize = (size_t)logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {
@@ -792,7 +795,7 @@ LogTrace(void *arg, Ns_Conn *conn)
                  */
 	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
 	      bufferPtr = buffer;
-	      Ns_DStringSetLength(&logPtr->buffer, 0);
+	      Tcl_DStringSetLength(&logPtr->buffer, 0);
               status = NS_OK;
 	    } else {
 	      status = LogFlush(logPtr, &logPtr->buffer);
@@ -810,7 +813,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         (void)NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
     }
 
-    Ns_DStringFree(dsPtr);
+    Tcl_DStringFree(dsPtr);
 }
 
 
@@ -879,7 +882,7 @@ LogClose(Log *logPtr)
         status = LogFlush(logPtr, &logPtr->buffer);
         ns_close(logPtr->fd);
         logPtr->fd = NS_INVALID_FD;
-        Ns_DStringFree(&logPtr->buffer);
+        Tcl_DStringFree(&logPtr->buffer);
         Ns_Log(Notice, "nslog: closed '%s'", logPtr->file);
     }
 
@@ -905,7 +908,7 @@ LogClose(Log *logPtr)
  */
 
 static Ns_ReturnCode
-LogFlush(Log *logPtr, Ns_DString *dsPtr)
+LogFlush(Log *logPtr, Tcl_DString *dsPtr)
 {
     int   len = dsPtr->length;
     char *buf = dsPtr->string;
@@ -917,7 +920,7 @@ LogFlush(Log *logPtr, Ns_DString *dsPtr)
             ns_close(logPtr->fd);
             logPtr->fd = NS_INVALID_FD;
         }
-        Ns_DStringSetLength(dsPtr, 0);
+        Tcl_DStringSetLength(dsPtr, 0);
     }
 
     return (logPtr->fd == NS_INVALID_FD) ? NS_ERROR : NS_OK;
