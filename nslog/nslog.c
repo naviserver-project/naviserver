@@ -162,7 +162,7 @@ Ns_ModuleInit(const char *server, const char *module)
             (void) Ns_HomePath(&ds, "logs", "/", file, (char *)0);
         } else {
             Tcl_Obj *dirpath;
-	    int rc;
+            int rc;
 
             Tcl_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0);
@@ -385,7 +385,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
     case FLAGS:
         {
             unsigned int flags;
-            
+
             Tcl_DStringInit(&ds);
             if (objc > 2) {
                 flags = 0u;
@@ -464,7 +464,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
     case ROLL:
         {
             Ns_ReturnCode status = NS_ERROR;
-            
+
             Ns_MutexLock(&logPtr->lock);
             if (objc == 2) {
                 status = LogRoll(logPtr);
@@ -474,7 +474,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                     status = Ns_RollFile(strarg, logPtr->maxbackup);
                 } else {
                     Tcl_Obj *path = Tcl_NewStringObj(logPtr->file, -1);
-                    
+
                     Tcl_IncrRefCount(path);
                     rc = Tcl_FSRenameFile(path, objv[2]);
                     Tcl_DecrRefCount(path);
@@ -596,7 +596,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     char          buffer[PIPE_BUF], *bufferPtr = NULL;
     int           n, i;
     Ns_ReturnCode status;
-    size_t	  bufferSize = 0u;
+    size_t        bufferSize = 0u;
     Tcl_DString    ds, *dsPtr = &ds;
 
     Tcl_DStringInit(dsPtr);
@@ -641,7 +641,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     } else {
         int quote = 0;
         for (p = user; *p && !quote; p++) {
-	    quote = (CHARTYPE(space, *p) != 0);
+            quote = (CHARTYPE(space, *p) != 0);
         }
         if (quote != 0) {
             Tcl_DStringAppend(dsPtr, "\"", 1);
@@ -671,11 +671,11 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (likely(conn->request.line != NULL)) {
-	const char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ? 
-	    conn->request.url : 
-	    conn->request.line;
+        const char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ?
+            conn->request.url :
+            conn->request.line;
 
-	Tcl_DStringAppend(dsPtr, " \"", 2);
+        Tcl_DStringAppend(dsPtr, " \"", 2);
         if (likely(string != NULL)) {
             AppendEscaped(dsPtr, string);
         }
@@ -697,7 +697,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_COMBINED)) {
-        
+
         Tcl_DStringAppend(dsPtr, " \"", 2);
         p = Ns_SetIGet(conn->headers, "referer");
         if (p != NULL) {
@@ -716,19 +716,19 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_REQTIME) != 0u) {
-	Ns_Time reqTime, now;
-	Ns_GetTime(&now);
+        Ns_Time reqTime, now;
+        Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
         Tcl_DStringAppend(dsPtr, " ", 1);
-	Ns_DStringAppendTime(dsPtr, &reqTime);
+        Ns_DStringAppendTime(dsPtr, &reqTime);
 
     }
 
     if ((logPtr->flags & LOG_PARTIALTIMES) != 0u) {
-	Ns_Time  acceptTime, queueTime, filterTime, runTime;
+        Ns_Time  acceptTime, queueTime, filterTime, runTime;
         Ns_Time *startTimePtr =  Ns_ConnStartTime(conn);
 
-	Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
+        Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
 
         Tcl_DStringAppend(dsPtr, " \"", 2);
         Ns_DStringAppendTime(dsPtr, startTimePtr);
@@ -755,9 +755,9 @@ LogTrace(void *arg, Ns_Conn *conn)
         }
         Tcl_DStringAppend(dsPtr, "\"", 1);
     }
-    
+
     for (i = 0; i < ds.length; i++) {
-        /* 
+        /*
          * Quick fix to disallow terminal escape characters in the log
          * file. See e.g. http://www.securityfocus.com/bid/37712/info
          */
@@ -775,31 +775,31 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if (logPtr->maxlines == 0) {
         bufferSize = (size_t)ds.length;
-	if (bufferSize < PIPE_BUF) {
-	  /* 
+        if (bufferSize < PIPE_BUF) {
+          /*
            * Only ns_write() operations < PIPE_BUF are guaranteed to be atomic
            */
-	    bufferPtr = ds.string;
+            bufferPtr = ds.string;
             status = NS_OK;
-	} else {
-	    status = LogFlush(logPtr, dsPtr);
-	}
+        } else {
+            status = LogFlush(logPtr, dsPtr);
+        }
     } else {
         Tcl_DStringAppend(&logPtr->buffer, ds.string, ds.length);
         if (++logPtr->curlines > logPtr->maxlines) {
-	    bufferSize = (size_t)logPtr->buffer.length;
+            bufferSize = (size_t)logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {
-                /* 
+                /*
                  * Only ns_write() operations < PIPE_BUF are guaranteed to be
                  * atomic.  In most cases, the other branch is used.
                  */
-	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
-	      bufferPtr = buffer;
-	      Tcl_DStringSetLength(&logPtr->buffer, 0);
+              memcpy(buffer, logPtr->buffer.string, bufferSize);
+              bufferPtr = buffer;
+              Tcl_DStringSetLength(&logPtr->buffer, 0);
               status = NS_OK;
-	    } else {
-	      status = LogFlush(logPtr, &logPtr->buffer);
-	    }
+            } else {
+              status = LogFlush(logPtr, &logPtr->buffer);
+            }
             logPtr->curlines = 0;
         } else {
             status = NS_OK;
@@ -969,9 +969,9 @@ LogRoll(Log *logPtr)
     }
 
     Tcl_DecrRefCount(pathObj);
-    
+
     if (status == NS_OK) {
-	status = LogOpen(logPtr);
+        status = LogOpen(logPtr);
     }
     NsAsyncWriterQueueEnable();
 
