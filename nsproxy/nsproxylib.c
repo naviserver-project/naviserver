@@ -370,7 +370,7 @@ static Ns_Cond  pcond = NULL;          /* Those are used to control access to */
 static Ns_Mutex plock = NULL;          /* the list of Slave structures of slave */
 static Slave    *firstClosePtr = NULL; /* processes which are being closed. */
 
-static Ns_DString defexec;             /* Stores full path of the proxy executable */
+static Tcl_DString defexec;             /* Stores full path of the proxy executable */
 
 
 /*
@@ -402,7 +402,7 @@ Nsproxy_LibInit(void)
 
         Nsd_LibInit();
 
-        Ns_DStringInit(&defexec);
+        Tcl_DStringInit(&defexec);
         Ns_BinPath(&defexec, "nsproxy", NULL);
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
 
@@ -1695,7 +1695,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
         snprintf(buf, sizeof(buf), "%lu", poolPtr->nruns);
         Tcl_DStringAppendElement(dsPtr, buf);
 
-        Ns_DStringAppend(dsPtr, " runtime ");
+        Tcl_DStringAppend(dsPtr, " runtime ", 9);
         Ns_DStringAppendTime(dsPtr, &poolPtr->runTime);
 
         Ns_MutexUnlock(&poolPtr->lock);
@@ -2675,7 +2675,7 @@ GetPool(const char *poolName, InterpData *idataPtr)
         if (path != NULL && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
             SetOpt(exec, &poolPtr->exec);
         } else {
-            SetOpt(Ns_DStringValue(&defexec), &poolPtr->exec);
+            SetOpt(Tcl_DStringValue(&defexec), &poolPtr->exec);
         }
         if (path == NULL) {
             poolPtr->conf.tget  = 0;
@@ -3342,8 +3342,8 @@ FreeProxy(Proxy *proxyPtr)
 {
     NS_NONNULL_ASSERT(proxyPtr);
 
-    Ns_DStringFree(&proxyPtr->in);
-    Ns_DStringFree(&proxyPtr->out);
+    Tcl_DStringFree(&proxyPtr->in);
+    Tcl_DStringFree(&proxyPtr->out);
     ns_free(proxyPtr->id);
     ns_free(proxyPtr);
 }

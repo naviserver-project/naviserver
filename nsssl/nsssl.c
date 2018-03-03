@@ -153,14 +153,14 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
-    Ns_DString         ds;
+    Tcl_DString         ds;
     int                num;
     const char        *path, *value;
     SSLDriver         *drvPtr;
     Ns_DriverInitData  init;
 
     memset(&init, 0, sizeof(init));
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
 
     path = Ns_ConfigGetPath(server, module, (char *)0);
 
@@ -197,7 +197,7 @@ Ns_ModuleInit(const char *server, const char *module)
         for (n = 0; n < num; n++) {
             Ns_DStringPrintf(&ds, "nsssl:%d", n);
             Ns_MutexSetName(driver_locks + n, ds.string);
-            Ns_DStringSetLength(&ds, 0);
+            Tcl_DStringSetLength(&ds, 0);
         }
     }
 #if OPENSSL_VERSION_NUMBER < 0x10100000L        
@@ -358,7 +358,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Seed the OpenSSL Pseudo-Random Number Generator.
      */
-    Ns_DStringSetLength(&ds, 1024);
+    Tcl_DStringSetLength(&ds, 1024);
     for (num = 0; !RAND_status() && num < 3; num++) {
         int n;
 
@@ -372,7 +372,7 @@ Ns_ModuleInit(const char *server, const char *module)
         Ns_Log(Warning, "nsssl: PRNG fails to have enough entropy");
     }
 
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
     Ns_Log(Notice, "nsssl: version %s loaded, based on %s", NSSSL_VERSION, SSLeay_version(SSLEAY_VERSION));
     return NS_OK;
 }
