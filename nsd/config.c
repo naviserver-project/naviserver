@@ -499,33 +499,35 @@ Ns_ConfigGetPath(const char *server, const char *module, ...)
 {
     va_list         ap;
     const char     *s;
-    Ns_DString      ds;
+    Tcl_DString     ds;
     const Ns_Set   *set;
 
-    Ns_DStringInit(&ds);
-    Ns_DStringAppend(&ds, "ns");
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, "ns", 2);
     if (server != NULL) {
-        Ns_DStringVarAppend(&ds, "/server/", server, (char *)0);
+        Tcl_DStringAppend(&ds, "/server/", 8);
+        Tcl_DStringAppend(&ds, server, -1);
     }
     if (module != NULL) {
-        Ns_DStringVarAppend(&ds, "/module/", module, (char *)0);
+        Tcl_DStringAppend(&ds, "/module/", 8);
+        Tcl_DStringAppend(&ds, module, -1);
     }
     va_start(ap, module);
     for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {
-        Ns_DStringAppend(&ds, "/");
+        Tcl_DStringAppend(&ds, "/", 1);
         while (*s != '\0' && ISSLASH(*s)) {
             ++s;
         }
-        Ns_DStringAppend(&ds, s);
+        Tcl_DStringAppend(&ds, s, -1);
         while (ISSLASH(ds.string[ds.length - 1])) {
             ds.string[--ds.length] = '\0';
         }
     }
     va_end(ap);
-    Ns_Log(Dev, "config section: %s", Ns_DStringValue(&ds));
+    Ns_Log(Dev, "config section: %s", ds.string);
 
     set = Ns_ConfigCreateSection(ds.string);
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return (set != NULL) ? Ns_SetName(set) : NULL;
 }
@@ -924,7 +926,7 @@ GetSection(const char *section, bool create)
 {
     Ns_Set        *set;
     Tcl_HashEntry *hPtr;
-    Ns_DString     ds;
+    Tcl_DString    ds;
     int            isNew;
     const char    *p;
     char          *s;
@@ -936,12 +938,12 @@ GetSection(const char *section, bool create)
      * and swapping silly backslashes.
      */
 
-    Ns_DStringInit(&ds);
+    Tcl_DStringInit(&ds);
     p = section;
     while (CHARTYPE(space, *p) != 0) {
         ++p;
     }
-    Ns_DStringAppend(&ds, p);
+    Tcl_DStringAppend(&ds, p, -1);
     s = ds.string;
     while (likely(*s != '\0')) {
 	if (unlikely(*s == '\\')) {
@@ -973,7 +975,7 @@ GetSection(const char *section, bool create)
     if (hPtr != NULL) {
         set = Tcl_GetHashValue(hPtr);
     }
-    Ns_DStringFree(&ds);
+    Tcl_DStringFree(&ds);
 
     return set;
 }
