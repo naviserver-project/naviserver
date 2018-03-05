@@ -345,6 +345,22 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
  *----------------------------------------------------------------------
  */
 
+static void
+InsertFreshNewline(Tcl_DString *dsPtr, const char *prefixString, size_t prefixLength, size_t *outputPosPtr)
+{
+    if (prefixLength == 0) {
+        dsPtr->string[*outputPosPtr] = '\n';
+        (*outputPosPtr)++;
+    } else {
+        Tcl_DStringSetLength(dsPtr, dsPtr->length + prefixLength);
+        dsPtr->string[*outputPosPtr] = '\n';
+        (*outputPosPtr)++;
+        memcpy(&dsPtr->string[*outputPosPtr], prefixString, prefixLength);
+        (*outputPosPtr) += prefixLength;
+    }
+}
+
+
 int
 NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
@@ -392,9 +408,12 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         outputPos = prefixLength;
 
         while (inputPos < textLength && !done) {
+            size_t processedPos;
+
             /*
              * Copy the input string until lineWidth is reached
              */
+            processedPos = inputPos;
             for (currentWidth = 1u; currentWidth <= lineWidth; currentWidth++)  {
 
                 if ( inputPos < textLength) {
@@ -402,13 +421,16 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
                     /*
                      * In case there are newlines in the text, insert it with
-                     * the prefix and reset the currentWidth.
+                     * the prefix and reset the currentWidth. The size for of
+                     * the prefix is already included in the alocated space of
+                     * the string.
                      */
                     outputPos++;
                     if ( textString[inputPos] == '\n' ) {
                         memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
                         outputPos += prefixLength;
                         currentWidth = 1;
+                        processedPos = inputPos;
                     }
                     inputPos++;
                 } else {
@@ -421,26 +443,45 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             }
 
             if (!done) {
+                bool   whitesspaceFound = NS_FALSE;
+                size_t origOutputPos = outputPos;
                 /*
-                 * Search for the last whitespace from the end
+                 * Search for the last whitespace in the input from the end
                  */
-                for ( k = inputPos; k > 0u; k--, outputPos--) {
+                for ( k = inputPos; k > processedPos; k--, outputPos--) {
                     if ( CHARTYPE(space, textString[k]) != 0) {
+                        whitesspaceFound = NS_TRUE;
                         /*
                          * Replace the whitespace by a "\n" followed by the
                          * prefix string; we have to make sure that the dsPtr
                          * can held the additional prefix as well.
                          */
-                        Tcl_DStringSetLength(dsPtr, dsPtr->length + prefixLength);
-                        dsPtr->string[outputPos] = '\n';
-                        outputPos++;
-                        memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
-                        outputPos += prefixLength;
+                        InsertFreshNewline(dsPtr, prefixString, prefixLength, &outputPos);
                         /*
                          * Reset the inputPositon
                          */
                         inputPos = k + 1;
                         break;
+                    }
+                }
+                if (!whitesspaceFound) {
+                    /*
+                     * The last chunk did not include a whitespace. This
+                     * happens when we find overflowing elements. In this
+                     * case, let the line overflow (read forward until we
+                     * find a space, and continue as usual.
+                     */
+                    outputPos = origOutputPos;
+                    for (k = inputPos; k < textLength; k++) {
+                        if ( CHARTYPE(space, textString[k]) != 0) {
+                            InsertFreshNewline(dsPtr, prefixString, prefixLength, &outputPos);
+                            inputPos++;
+                            break;
+                        } else {
+                            dsPtr->string[outputPos] = textString[inputPos];
+                            outputPos++;
+                            inputPos++;
+                        }
                     }
                 }
             }

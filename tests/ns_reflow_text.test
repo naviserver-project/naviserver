@@ -42,22 +42,22 @@ test ns_reflow_text-1.2 {syntax} -body {
 } -result {}
 
 
-test ns_reflow_text-2.1 {parse with result} -body {
+test ns_reflow_text-2.1 {reflow noop} -body {
     ns_reflow_text "hello this is a test"
 } -result {hello this is a test}
 
-test ns_reflow_text-2.2 {parse with result} -body {
+test ns_reflow_text-2.2 {reflow simple} -body {
     ns_reflow_text -width 10 "hello this is a test"
 } -result {hello this
 is a test}
 
-test ns_reflow_text-2.3 {parse with result} -body {
+test ns_reflow_text-2.3 {reflow simple with prefix} -body {
     ns_reflow_text  -width 10 -prefix "   " "hello this is a test"
 } -result {   hello this
    is a test}
 
 
-test ns_reflow_text-2.4 {parse with result} -body {
+test ns_reflow_text-2.4 {reflow simple with prefix and hard newlines} -body {
     ns_reflow_text  -width 20 -prefix "..." "Hello!\n\nthis is a slighly longer Test!\n-gn"
 } -result {...Hello!
 ...
@@ -65,5 +65,26 @@ test ns_reflow_text-2.4 {parse with result} -body {
 ...longer Test!
 ...-gn}
 
+test ns_reflow_text-3.0 {reflow with overflow no prefix} -body {
+    ns_reflow_text -width 10 -- {aaa bb dd ee 01234567890 iii jj kk ll mm}
+} -result {aaa bb dd
+ee
+01234567890
+iii jj kk
+ll mm}
+
+test ns_reflow_text-3.1 {reflow with overflow and prefix} -body {
+    ns_reflow_text -width 10 -prefix XX -- {aaa bb dd ee 01234567890 iii jj kk ll mm}
+} -result {XXaaa bb dd
+XXee
+XX01234567890
+XXiii jj kk
+XXll mm}
+
+test ns_reflow_text-3.2 {reflow with overflow and prefix overflow elements at end} -body {
+    ns_reflow_text -width 10 -prefix XX -- {aaa bb dd 01234567890 01234567890}
+} -result {XXaaa bb dd
+XX01234567890
+XX01234567890}
 
 cleanupTests
