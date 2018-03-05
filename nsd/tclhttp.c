@@ -1185,7 +1185,7 @@ Ns_HttpCheckSpool(
             if (headerField != NULL) {
                 (void)Ns_StrToWideInt(headerField, &replyLength);
                 /*
-                 * Don't get fooled by an invalid content-length recieved from
+                 * Don't get fooled by an invalid content-length received from
                  * the server.
                  */
                 if (replyLength < 0) {

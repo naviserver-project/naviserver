@@ -38,9 +38,8 @@
 
 /*
  * The following is used to allocate a buffer on the stack for
- * encoding character data and stransfering data from disk to
- * the network, and so defines the chunk size of writes to the
- * network.
+ * encoding character data and for transferring data from disk to the
+ * network, and so defines the chunk size of writes to the network.
  */
 
 #define IOBUFSZ 8192
