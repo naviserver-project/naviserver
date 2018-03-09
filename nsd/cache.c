@@ -608,8 +608,8 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
 
         (void) Tcl_CreateHashEntry(&cachePtr->uncommittedTable, (const char *)ePtr, &isNew);
         if (unlikely(isNew == 0)) {
-            Ns_Log(Warning, "cache %s: adding entry %p with value '%s' multiple times to pending table",
-                   ePtr->cachePtr->name, (void *)ePtr, (char *)value);
+            Ns_Log(Warning, "cache %s: adding entry %p with key '%s' multiple times to pending table",
+                   ePtr->cachePtr->name, (void *)ePtr, Ns_CacheKey(entry));
         }
 
         result = 1;
