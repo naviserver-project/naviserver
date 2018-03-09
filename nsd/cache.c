@@ -51,8 +51,8 @@ typedef struct Entry {
     Tcl_HashEntry  *hPtr;
     Ns_Time         expires;          /* Absolute TTL timeout. */
     size_t          size;
-    int		    cost;             /* cost to compute a single entry */
-    size_t	    count;            /* reuse count of this entry */
+    int             cost;             /* cost to compute a single entry */
+    size_t          count;            /* reuse count of this entry */
     void           *value;            /* Will appear NULL for concurrent updates. */
     void           *uncommittedValue; /* Used for transactional mode */
     uintptr_t       transactionEpoch; /* Used for identifying transaction */
@@ -135,7 +135,7 @@ Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freePr
 
     cachePtr = ns_calloc(1u, sizeof(Cache) + nameLength);
     memcpy(cachePtr->name, name, nameLength + 1u);
-    
+
     cachePtr->freeProc        = freeProc;
     cachePtr->maxSize         = maxSize;
     cachePtr->currentSize     = 0u;
@@ -179,7 +179,7 @@ Ns_CacheDestroy(Ns_Cache *cache)
     Cache      *cachePtr = (Cache *) cache;
 
     NS_NONNULL_ASSERT(cache != NULL);
-    
+
     (void) Ns_CacheFlush(cache);
     Ns_MutexDestroy(&cachePtr->lock);
     Ns_CondDestroy(&cachePtr->cond);
@@ -321,7 +321,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
             Ns_CacheUnsetValue((Ns_Entry *) ePtr);
             isNew = 1;
         } else {
-	    ePtr->count ++;
+            ePtr->count ++;
             ++cachePtr->stats.nhit;
         }
         Delink(ePtr);
@@ -601,7 +601,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
         ePtr->value = value;
         result = 0;
     } else {
-        int            isNew;
+        int isNew;
 
         ePtr->uncommittedValue = value;
         ePtr->transactionEpoch = transactionEpoch;
@@ -637,12 +637,12 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
 
     if (maxSize > 0u) {
         /*
-	 * Make space for the new entry, but don't delete the current
-	 * entry, and don't delete other newborn entries (with a value
-	 * of NULL) of some other threads which are concurrently
-	 * created.  There might be concurrent updates, since
-	 * e.g. nscache_eval releases its mutex.
-	 */
+         * Make space for the new entry, but don't delete the current
+         * entry, and don't delete other newborn entries (with a value
+         * of NULL) of some other threads which are concurrently
+         * created.  There might be concurrent updates, since
+         * e.g. nscache_eval releases its mutex.
+         */
         while (cachePtr->currentSize > maxSize &&
                cachePtr->lastEntryPtr != ePtr &&
                cachePtr->lastEntryPtr->value != NULL) {
@@ -684,14 +684,14 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
         Cache *cachePtr;
         void  *value;
 
-	/*
-	 * In case, the freeProc() wants to allocate itself
-	 * (indirectly) a cache entry, we have to make sure, that
-	 * ePtr->value is not freed twice. Therefore, we keep the
-	 * affected member "value" in a local variable and set
-	 * ePtr->value to NULL before it is actually deallocated and
-	 * call the freeProc after updating all entry members.
-	 */
+        /*
+         * In case, the freeProc() wants to allocate itself
+         * (indirectly) a cache entry, we have to make sure, that
+         * ePtr->value is not freed twice. Therefore, we keep the
+         * affected member "value" in a local variable and set
+         * ePtr->value to NULL before it is actually deallocated and
+         * call the freeProc after updating all entry members.
+         */
         if (likely(ePtr->value != NULL)) {
             value = ePtr->value;
             ePtr->value = NULL;
@@ -702,7 +702,7 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 
         cachePtr = ePtr->cachePtr;
         cachePtr->currentSize -= ePtr->size;
-	ePtr->size = 0u;
+        ePtr->size = 0u;
         ePtr->expires.sec = ePtr->expires.usec = 0;
 
         if (cachePtr->freeProc != NULL) {
@@ -1231,9 +1231,9 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
                (unsigned long) cachePtr->currentSize,
                cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,
                cachePtr->stats.nhit, cachePtr->stats.nmiss, hitrate,
-			    cachePtr->stats.nexpired, cachePtr->stats.npruned,
+                            cachePtr->stats.nexpired, cachePtr->stats.npruned,
                             cachePtr->stats.ncommit, cachePtr->stats.nrollback,
-			    savedCost);
+                            savedCost);
 }
 
 
@@ -1413,4 +1413,3 @@ Push(Entry *ePtr)
  * indent-tabs-mode: nil
  * End:
  */
-
