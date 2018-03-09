@@ -2230,6 +2230,9 @@ ConnRun(Conn *connPtr)
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
                 Ns_GetTime(&connPtr->filterDoneTime);
                 if (status == NS_OK) {
+                    /*
+                     * Run the actual request
+                     */
                     status = Ns_ConnRunRequest(conn);
                 }
                 break;
