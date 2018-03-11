@@ -58,10 +58,10 @@ test ns_reflow_text-2.3 {reflow simple with prefix} -body {
 
 
 test ns_reflow_text-2.4 {reflow simple with prefix and hard newlines} -body {
-    ns_reflow_text  -width 20 -prefix "..." "Hello!\n\nthis is a slighly longer Test!\n-gn"
+    ns_reflow_text  -width 20 -prefix "..." "Hello!\n\nthis is a slightly longer Test!\n-gn"
 } -result {...Hello!
 ...
-...this is a slighly
+...this is a slightly
 ...longer Test!
 ...-gn}
 
