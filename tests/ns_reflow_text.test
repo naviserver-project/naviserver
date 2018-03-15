@@ -35,7 +35,7 @@ namespace import -force ::tcltest::*
 
 test ns_reflow_text-1.1 {syntax} -body {
     ns_reflow_text
-} -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width width? ?-prefix prefix? ?--? text"}
+} -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width width? ?-offset offset? ?-prefix prefix? ?--? text"}
 
 test ns_reflow_text-1.2 {syntax} -body {
     ns_reflow_text {}
@@ -86,5 +86,13 @@ test ns_reflow_text-3.2 {reflow with overflow and prefix overflow elements at en
 } -result {XXaaa bb dd
 XX01234567890
 XX01234567890}
+
+test ns_reflow_text-3.3 {reflow with overflow, offset and prefix overflow elements at end} -body {
+    ns_reflow_text -width 10 -prefix XX -offset 5 -- {aaa bb dd 01234567890 01234567890}
+} -result {XXaaa bb
+XXdd
+XX01234567890
+XX01234567890}
+
 
 cleanupTests

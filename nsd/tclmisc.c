@@ -364,10 +364,11 @@ InsertFreshNewline(Tcl_DString *dsPtr, const char *prefixString, size_t prefixLe
 int
 NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK, lineWidth = 80;
+    int          result = TCL_OK, lineWidth = 80, offset = 0;
     char        *textString = NULL, *prefixString = NULL;
     Ns_ObjvSpec opts[] = {
         {"-width",  Ns_ObjvInt,     &lineWidth,    NULL},
+        {"-offset", Ns_ObjvInt,     &offset,       NULL},
         {"-prefix", Ns_ObjvString,  &prefixString, NULL},
         {"--",      Ns_ObjvBreak,    NULL,         NULL},
         {NULL, NULL, NULL, NULL}
@@ -414,7 +415,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * Copy the input string until lineWidth is reached
              */
             processedPos = inputPos;
-            for (currentWidth = 1u; currentWidth <= lineWidth; currentWidth++)  {
+            for (currentWidth = (size_t)offset; currentWidth <= lineWidth; currentWidth++)  {
 
                 if ( inputPos < textLength) {
                     dsPtr->string[outputPos] = textString[inputPos];
@@ -429,7 +430,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                     if ( textString[inputPos] == '\n' ) {
                         memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
                         outputPos += prefixLength;
-                        currentWidth = 1;
+                        currentWidth = 0u;
                         processedPos = inputPos;
                     }
                     inputPos++;
@@ -441,6 +442,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                     break;
                 }
             }
+            offset = 0;
 
             if (!done) {
                 bool   whitesspaceFound = NS_FALSE;
@@ -486,7 +488,6 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                 }
             }
         }
-
         Tcl_DStringResult(interp, &ds);
     }
     return result;
