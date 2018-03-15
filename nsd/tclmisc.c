@@ -385,7 +385,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     } else {
         Tcl_DString ds, *dsPtr = &ds;
         int         nrNewLines = 1;
-        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth;
+        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes;
         bool        done = NS_FALSE;
 
         textLength   = strlen(textString);
@@ -398,15 +398,26 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             }
         }
 
+        inputPos = 0u;
+        if (offset == 0) {
+            /*
+             * When we have an offset (in an incremental operation) adding a
+             * prefix automatically makes little sense. When needed, the
+             * prefix could be easily done on the client side.
+             */
+            memcpy(dsPtr->string, prefixString, prefixLength);
+            outputPos = prefixLength;
+            nrPrefixes = nrNewLines;
+        } else {
+            outputPos = 0u;
+            nrPrefixes = (nrNewLines > 0 ? (nrNewLines - 1) : 0);
+        }
+
         /*
          * Set the length of the Tcl_DString to the same size as the input
          * string plus for every linebreak+1 the prefixString.
          */
-        Tcl_DStringSetLength(dsPtr, textLength + nrNewLines*prefixLength);
-
-        inputPos = 0u;
-        memcpy(dsPtr->string, prefixString, prefixLength);
-        outputPos = prefixLength;
+        Tcl_DStringSetLength(dsPtr, textLength + nrPrefixes*prefixLength);
 
         while (inputPos < textLength && !done) {
             size_t processedPos;
@@ -415,7 +426,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * Copy the input string until lineWidth is reached
              */
             processedPos = inputPos;
-            for (currentWidth = (size_t)offset; currentWidth <= lineWidth; currentWidth++)  {
+            for (currentWidth = (size_t)offset; currentWidth < lineWidth; currentWidth++)  {
 
                 if ( inputPos < textLength) {
                     dsPtr->string[outputPos] = textString[inputPos];
