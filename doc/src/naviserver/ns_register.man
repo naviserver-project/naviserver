@@ -438,7 +438,7 @@ requested using [cmd ns_pagepath], so [cmd ns_serverroot] and
 
 [para]
 In the third example, a specific [term ADP] file in the server's file system
-is registered for a simillarly named URL (and all URLs bellow
+is registered for a simillarly named URL (and all URLs below
 it). There are no calls to [cmd ns_pagepath] or [cmd ns_url2file]
 during the request.
 

@@ -465,7 +465,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     }
 
     /*
-     * Check for a vaild user address.
+     * Check for a valid user address.
      */
 
     if (ValidateUserAddr(userPtr, peer) == NS_FALSE) {

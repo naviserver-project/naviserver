@@ -506,7 +506,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
  *
  * AppendEscaped --
  *
- *	Append a string with escaped charaters
+ *	Append a string with escaped characters
  *
  * Results:
  *	None.
