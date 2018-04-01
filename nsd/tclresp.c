@@ -942,7 +942,7 @@ NsTclInternalRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
  *
  * Result --
  *
- *      Set interp result based on NaviSever result. When the result is NS_OK
+ *      Set interp result based on NaviServer result. When the result is NS_OK
  *      set result to as 1, otherwise to 0.
  *
  * Results:

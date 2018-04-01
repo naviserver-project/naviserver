@@ -342,7 +342,7 @@ NsRemoveService(char *service)
  *      Install as an NT service.
  *
  * Results:
- *      NaviSever status code.
+ *      NaviServer status code.
  *
  * Side effects:
  *      Service should appear in the list in the services control panel.
