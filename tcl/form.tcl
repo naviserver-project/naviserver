@@ -477,7 +477,7 @@ proc ns_parseformfile { file form contentType } {
             }
             seek $fp $start
             
-            if {$content_type eq "" || [string match text/* $content_type]} {
+            if {$content_type eq "" || [string match "text/*" $content_type]} {
                 set value [encoding convertfrom utf-8 $value]
             }
             ns_set put $form $name $value

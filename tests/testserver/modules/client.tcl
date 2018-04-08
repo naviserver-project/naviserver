@@ -54,7 +54,7 @@ namespace eval ::tcltest {
 	    incr received
 	    set ::tcltest::received $toparse
 	}
-	set more [expr {[string length $toparse] > 0}]
+	set more [expr {$toparse ne ""}]
 	if {$::tcltest::verbose} {puts stderr "### received $received bytes [string length $bytes] more $more"}
 	return [list bytes $bytes more $more received $received]
     }

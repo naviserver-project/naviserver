@@ -2,7 +2,7 @@ set pageName [ns_queryget file ""]
 switch -exact $pageName {
   nsconf.tcl -
   nsstats.tcl {
-    set source https://bitbucket.org/naviserver/[file root $pageName]/get/tip.tar.gz
+    set source https://bitbucket.org/naviserver/[file rootname $pageName]/get/tip.tar.gz
     set page [ns_server pagedir]/$pageName
     if {![file readable $page]} {
       exec wget --quiet --no-check-certificate -O /tmp/nsstats.tar.gz $source

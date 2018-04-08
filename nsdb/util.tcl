@@ -139,7 +139,7 @@ proc ns_parsesqldate {opt sqldate} {
     scan $sqldate "%04d-%02d-%02d" year month day
 
     switch -- $opt {
-        month {return [lindex [nsv_get _nsdb months] [expr {$month - 1}]]}
+        month {return [lindex [nsv_get _nsdb months] $month-1]}
         day {return $day}
         year {return $year}
         default {error "Unknown option \"$opt\": should be year, month or day"}

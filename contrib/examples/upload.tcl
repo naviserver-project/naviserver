@@ -15,7 +15,7 @@ set file [ns_conn contentfile]
 
 # No query and not empty file means we need to deal with situation when
 # all content is in the temp file
-if { $cmd == "" && $file != "" } {
+if { $cmd eq "" && $file ne "" } {
   ns_log notice uploaded into $file, content type = [ns_set iget [ns_conn headers] content-type]
   file rename -force -- $file /tmp/test
   set cmd upload
@@ -29,9 +29,9 @@ switch -- $cmd {
      set stats [ns_upload_stats $url]
      ns_log Notice upload.tcl: $url: $stats
      # Calculate percentage
-     if { $stats != "" } {
+     if { $stats ne "" } {
        foreach { len size } $stats {}
-       set stats [expr round($len.0*100/$size.0)]
+       set stats [expr {round($len.0*100/$size.0)}]
      } else {
        set stats -1
      }
@@ -93,7 +93,7 @@ switch -- $cmd {
      configuration file (<code>[ns_info config]</code>) like the following if necessary:
      <pre>
      ns_section ns/parameters
-     ns_param progressminsize   [expr 1024*1024]     ;# configured value: [ns_config ns/parameters progressminsize]; show progress for files larger than this value
+     ns_param progressminsize   [expr {1024*1024}]     ;# configured value: [ns_config ns/parameters progressminsize]; show progress for files larger than this value
 
      ns_section ns/server/$server/adp
      ns_param enabletclpages  true          ;# configured value: [ns_config ns/server/$server/adp enabletclpages]

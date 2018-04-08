@@ -48,7 +48,7 @@ ns_param        pidfile             nsd.pid
 ns_param        jobsperthread       1000               ;# default: 0
 ns_param        jobtimeout          0                  ;# default: 300
 ns_param        schedsperthread     10                 ;# default: 0
-ns_param        progressminsize     [expr 1024*1024*1] ;# default: 0
+ns_param        progressminsize     [expr {1024*1024*1}] ;# default: 0
 #ns_param       concurrentinterpcreate true            ;# default: false
 #ns_param       listenbacklog        256               ;# default: 32; backlog for ns_socket commands
 #ns_param       mutexlocktrace       true              ;# default false; print durations of long mutex calls to stderr
@@ -138,7 +138,7 @@ ns_param        enableexpire        false    ;# default: false; set "Expires: no
 #ns_param        enabletclpages      true     ;# default: false
 ns_param        singlescript        false    ;# default: false; collapse Tcl blocks to a single Tcl script
 ns_param        cache               false    ;# default: false; enable ADP caching
-ns_param        cachesize           [expr 5000*1024]
+ns_param        cachesize           [expr {5000*1024}]
 
 ns_section     "ns/server/default/tcl"
 ns_param        nsvbuckets          16       ;# default: 8
@@ -171,8 +171,8 @@ ns_param        port                 $port
 #ns_param        address             ::0   ;# ::1 corresponds to 127.0.0.1, ::0 is the "unspecified address"
 ns_param        address             $address
 ns_param        hostname            [ns_info hostname]
-ns_param        maxinput            [expr 1024*1024*10] ;# default: 1024*1024, maximum size for inputs (uploads)
-#ns_param        readahead           [expr 1024*1024*1]  ;# default: 16384; size of readahead for requests
+ns_param        maxinput            [expr {1024*1024*10}] ;# default: 1024*1024, maximum size for inputs (uploads)
+#ns_param        readahead           [expr {1024*1024*1}]  ;# default: 16384; size of readahead for requests
 ns_param        backlog             1024         ;# default: 256; backlog for listen operations
 ns_param        acceptsize          10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
 ns_param        closewait           0            ;# default: 2; timeout in seconds for close on socket
