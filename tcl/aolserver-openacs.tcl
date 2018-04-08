@@ -44,6 +44,7 @@ if {1} {
             ns_ictl trace delete {if {[info commands ::nsf::finalize] ne ""} {::nsf::finalize}}
             package require XOTcl 2
             package require nx::serializer
+            ns_log notice "nx::serializer version [package require nx::serializer]"
             namespace import -force ::xotcl::*
             ns_log notice "XOTcl [package require XOTcl 2] loaded featuring: [array get ::nsf::config]"
         }]} {
