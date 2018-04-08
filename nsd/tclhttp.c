@@ -841,7 +841,7 @@ HttpQueueCmd(
 
     } else if (run && CheckReplyHeaders(interp, &replyHdrPtr) != NS_OK) {
         Ns_TclPrintfResult(interp, "ns_http: automatic generation of output headers failed");
-        return TCL_ERROR;
+        result = TCL_ERROR;
 
     } else if (HttpConnect(interp, method, url, requestHdrPtr, bodyPtr, bodyFileName,
                            cert, caFile, caPath, sni_hostname,
