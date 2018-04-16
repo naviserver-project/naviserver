@@ -29,11 +29,11 @@
 [example_begin]
    # In b.adp:
    <%
-     ns_adp_argc      &nbsp;;# => 5
+     ns_adp_argc      ;# => 5
    %>
 [example_end]
 
-[see_also nsd]
+[see_also ns_adp_include ns_adp_parse ns_adp_argv ns_adp_bind_args nsd]
 
 [keywords "server builtin" ADP]
 

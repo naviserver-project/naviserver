@@ -39,7 +39,7 @@
 [example_end]
 
 
-[see_also nsd]
+[see_also ns_adp_include ns_adp_parse ns_adp_argc ns_adp_argv nsd]
 [keywords "server builtin" ADP]
 
 [manpage_end]

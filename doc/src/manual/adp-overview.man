@@ -161,8 +161,9 @@ with the extensions .adp or .asp will be parsed, and all files in the
 [item] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
      It can be used to perform routine initialization. It would then
      usually include the requested ADP by calling:
+[example_begin]
      ns_adp_include [lb]ns_adp_argv 0[rb]
-
+[example_end]
 [list_end]
 
 [section {Building ADPs}]
@@ -260,7 +261,7 @@ Insert Tcl commands between any of the following sets of HTML tags:
 
 The contents of the script are interpreted using the Tcl
 interpreter. The result is not inserted into the page, however. You
-can use the ns_puts Tcl function to put content into the page.
+can use the [cmd ns_adp_puts] Tcl function to put content into the page.
 
 
 [para]
@@ -313,7 +314,7 @@ inside HTML tags.
 
 
 The Tcl commands within these tags are evaluated as the argument to an
-ns_puts command, which inserts the results into the page. This syntax
+[cmd ns_adp_puts] command, which inserts the results into the page. This syntax
 can be used inside HTML tags.
 
 
@@ -355,16 +356,16 @@ This ADP example tests for various browsers and returns a different message in e
 
 [example_begin]
     <%
-    ns_puts "Hello"
+    ns_adp_puts "Hello"
     set ua [lb]ns_set get [lb]ns_conn headers[rb] "user-agent"[rb]
-    ns_puts "$ua "
+    ns_adp_puts "$ua "
     
     if [lb]string match "*MSIE*" $ua[rb] {
-       ns_puts "This is MS Internet Explorer"
+       ns_adp_puts "This is MS Internet Explorer"
     } elseif [lb]string match "*Mozilla*" $ua[rb] {
-       ns_puts "This is Netscape or a Netscape compatible browser"
+       ns_adp_puts "This is Netscape or a Netscape compatible browser"
     } else {
-       ns_puts "Couldn't determine the browser"
+       ns_adp_puts "Couldn't determine the browser"
     }
     %>
 [example_end]
@@ -472,7 +473,7 @@ of database tables:
     
     while {[lb]ns_db getrow $db $row[rb]} {
         set table [lb]ns_set get $row name[rb]
-        ns_puts "<option value=\"$table\">$table"
+        ns_adp_puts "<option value=\"$table\">$table"
     }
     %>
     </select>
@@ -505,11 +506,11 @@ The second ADP, db2.adp, is used as the POST from the first ADP:
      set row [lb]ns_db select $db "select * from $table"[rb]
      set size [lb]ns_set size $row[rb]
      while {[lb]ns_db getrow $db $row[rb]} {
-         ns_puts "<tr>"
+         ns_adp_puts "<tr>"
          for {set i 0} {$i < $size} {incr i} {
-	     ns_puts "<td>[lb]ns_set value $row $i[rb]</td>"
+	     ns_adp_puts "<td>[lb]ns_set value $row $i[rb]</td>"
          }
-         ns_puts "</tr>"
+         ns_adp_puts "</tr>"
      }
     %>
     </table>
@@ -616,10 +617,10 @@ administrator and the user, and displays a confirmation message:
  
     # Show type of subscription to user
     if {$notify eq 1} {
-       ns_puts "You will be notified via email when the online newsletter changes."
+       ns_adp_puts "You will be notified via email when the online newsletter changes."
     }
     if {$sendemail eq 1} {
-       ns_puts "Future issues of the newsletter will be sent to you via email."
+       ns_adp_puts "Future issues of the newsletter will be sent to you via email."
     }
     %>
     </body>
@@ -669,11 +670,11 @@ includes a file, executes another ADP, and uses streaming.
  
     <p>Here's an example of streaming:
     <script language="tcl" stream="on" runat="server">
-    ns_puts "<br>1...<br>"
+    ns_adp_puts "<br>1...<br>"
     ns_sleep 2
-    ns_puts "2...<br>"
+    ns_adp_puts "2...<br>"
     ns_sleep 2
-    ns_puts "3!<br>"
+    ns_adp_puts "3!<br>"
     </script>
     <p>
     <b>End</b>
@@ -703,5 +704,5 @@ Because of the streaming used in the last script, the "1...", "2...",
 "3!" and "End" part of the page will be displayed gradually.
 
 
-
+[see_also ns_adp ns_adp_puts ns_adp_eval ns_adp_argv ns_adp_include ns_sleep ns_adp_register]
 [manpage_end]

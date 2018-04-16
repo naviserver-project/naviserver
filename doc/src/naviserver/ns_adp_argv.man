@@ -25,20 +25,20 @@
 
 [example_begin]
    # In a.adp:
-   &lt;% ns_adp_include b.adp example a b c %&gt;
+   <% ns_adp_include b.adp example a b c %>
 [example_end]
 
 [example_begin]
    # In b.adp:
-   &lt;%
-     ns_adp_argv      &nbsp;;# =&gt; b.adp example a b c
-     ns_adp_argv 0    &nbsp;;# =&gt; b.adp
-     ns_adp_argv 4    &nbsp;;# =&gt; c
-   %&gt;
+   <%
+     ns_adp_argv      ;# => b.adp example a b c
+     ns_adp_argv 0    ;# => b.adp
+     ns_adp_argv 4    ;# => c
+   %>
 [example_end]
 
 
-[see_also nsd]
+[see_also ns_adp_include ns_adp_parse ns_adp_argc ns_adp_bind_args nsd]
 [keywords "server builtin" ADP]
 
 
