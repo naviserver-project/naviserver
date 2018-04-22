@@ -59,7 +59,7 @@ if { $file eq "" } {
     }
 
     append data \
-        "When downloading huge files via writer threads, the size of the NaviSever thread<br>" \
+        "When downloading huge files via writer threads, the size of the NaviServer thread<br>" \
         "will stay small.<p>Back to <a href='.'>example page</a>.<br>"
     
     ns_return 200 text/html $data
