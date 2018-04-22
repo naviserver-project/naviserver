@@ -673,7 +673,7 @@ ns_section 	"ns/server/server1/pool/fast"
 # Below is the list of all supported configuration options
 # for the nsproxy module filled in with their default values.
 # This list of default values is also compiled in the code
-# in case you ommit the ns_param lines.
+# in case you omit the ns_param lines.
 ########################################################################
 
 ns_section  "ns/server/${servername}/module/nsproxy"
