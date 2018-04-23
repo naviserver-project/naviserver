@@ -138,7 +138,7 @@
 
 /*
  * In earlier version of GCC6, it complained when there was a nonnull
- * declaration on the argument followed by a assert checking the
+ * declaration on the argument followed by an assert checking the
  * argument for NULL that this is a redundant check. This note is left
  * here as a reference in case other compilers take similar roads.
  *

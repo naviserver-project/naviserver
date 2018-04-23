@@ -2165,9 +2165,8 @@ DriverThread(void *arg)
                 accepted++;
 #ifdef __APPLE__
                 /*
-                 * On Darwin, the first accept() succeeds typically,
-                 * but it is useless to try a attempt, since this
-                 * leads always to an EAGAIN
+                 * On Darwin, the first accept() succeeds typically, but it is
+                 * useless to try, since this leads always to an EAGAIN
                  */
                 break;
 #endif

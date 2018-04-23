@@ -81,7 +81,7 @@ static void GenSeeds(unsigned long seeds[], int nseeds);
  *
  * Results:
  *	The Tcl result string contains a random number, either a
- *	double >= 0.0 and < 1.0 or a integer >= 0 and < max.
+ *	double >= 0.0 and < 1.0 or an integer >= 0 and < max.
  *
  * Side effects:
  *	None external.

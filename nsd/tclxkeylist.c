@@ -152,7 +152,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key,
  * -
  *
  * Tcl_GetKeyedListKeys -- Retrieve a list of keys from a keyed list.  The list
- * is walked rather than converted to a argv for increased performance.
+ * is walked rather than converted to an argv for increased performance.
  *
  * Parameters: o interp (I/O) - Error message will be return in result if there
  * is an error. o subFieldName (I) - If "" or NULL, then the keys are
@@ -233,7 +233,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
  * -
  *
  * Tcl_GetKeyedListField -- Retrieve a field value from a keyed list.  The list
- * is walked rather than converted to a argv for increased performance.  This
+ * is walked rather than converted to an argv for increased performance.  This
  * if the name contains sub-fields, this function recursive.
  *
  * Parameters: o interp (I/O) - Error message will be return in result if there
