@@ -296,7 +296,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         } else if (ns_sockioctl(sock, FIONREAD, &nread) != 0) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                    "ns_sockioctl failed: ", 
-                                   Tcl_PosixError(interp), NULL);
+                                   Tcl_PosixError(interp), (char *)0L);
             result = TCL_ERROR;
 
         } else {
@@ -685,7 +685,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         } while (sock == NS_INVALID_SOCKET && errno == NS_EINTR);
         if (sock == NS_INVALID_SOCKET) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
-                                   Tcl_PosixError(interp), NULL);
+                                   Tcl_PosixError(interp), (char *)0L);
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
             
@@ -750,7 +750,7 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
     if (ns_sockpair(socks) != 0) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "ns_sockpair failed:  ", 
-                               Tcl_PosixError(interp), NULL);
+                               Tcl_PosixError(interp), (char *)0L);
         result = TCL_ERROR;
         
     } else if (EnterSock(interp, socks[0], listObj) != TCL_OK) {

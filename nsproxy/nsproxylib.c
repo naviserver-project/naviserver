@@ -403,7 +403,7 @@ Nsproxy_LibInit(void)
         Nsd_LibInit();
 
         Tcl_DStringInit(&defexec);
-        Ns_BinPath(&defexec, "nsproxy", NULL);
+        Ns_BinPath(&defexec, "nsproxy", (char *)0L);
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
 
         Ns_RegisterAtShutdown(Shutdown, NULL);
@@ -2670,7 +2670,7 @@ GetPool(const char *poolName, InterpData *idataPtr)
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
         if (idataPtr && idataPtr->server && idataPtr->module) {
-          path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0);
+          path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0L);
         }
         if (path != NULL && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
             SetOpt(exec, &poolPtr->exec);

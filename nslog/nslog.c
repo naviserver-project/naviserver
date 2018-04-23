@@ -142,7 +142,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Tcl_DStringInit(&logPtr->buffer);
 
-    path = Ns_ConfigGetPath(server, module, (char *)0);
+    path = Ns_ConfigGetPath(server, module, (char *)0L);
 
     /*
      * Determine the name of the log file
@@ -158,14 +158,14 @@ Ns_ModuleInit(const char *server, const char *module)
          * specific directory, which is created if necessary.
          */
 
-        if (Ns_HomePathExists("logs", (char *)0)) {
-            (void) Ns_HomePath(&ds, "logs", "/", file, (char *)0);
+        if (Ns_HomePathExists("logs", (char *)0L)) {
+            (void) Ns_HomePath(&ds, "logs", "/", file, (char *)0L);
         } else {
             Tcl_Obj *dirpath;
             int rc;
 
             Tcl_DStringSetLength(&ds, 0);
-            (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0);
+            (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0L);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
             rc = Tcl_FSCreateDirectory(dirpath);
@@ -177,7 +177,7 @@ Ns_ModuleInit(const char *server, const char *module)
                 return NS_ERROR;
             }
             Tcl_DStringSetLength(&ds, 0);
-            (void) Ns_ModulePath(&ds, server, module, file, (char *)0);
+            (void) Ns_ModulePath(&ds, server, module, file, (char *)0L);
         }
         logPtr->file = Ns_DStringExport(&ds);
     }
@@ -229,7 +229,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     Tcl_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), (char *)0);
+    Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), (char *)0L);
     if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders,
                       &logPtr->extheaders) != TCL_OK) {
         Ns_Log(Error, "nslog: invalid %s/extendedHeaders parameter: '%s'",
@@ -445,7 +445,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             Tcl_DStringInit(&ds);
             strarg = Tcl_GetString(objv[2]);
             if (Ns_PathIsAbsolute(strarg) == NS_FALSE) {
-                Ns_HomePath(&ds, strarg, (char *)0);
+                Ns_HomePath(&ds, strarg, (char *)0L);
                 strarg = ds.string;
             }
             Ns_MutexLock(&logPtr->lock);

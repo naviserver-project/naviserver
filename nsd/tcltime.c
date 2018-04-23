@@ -579,7 +579,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         bufLength = strftime(buf, sizeof(buf), fmt, ns_localtime(&t));
         if (unlikely(bufLength == 0u)) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
-                                   Tcl_GetString(objv[1]), NULL);
+                                   Tcl_GetString(objv[1]), (char *)0L);
             rc = TCL_ERROR;
         } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, (int)bufLength));
