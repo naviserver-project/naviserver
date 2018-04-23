@@ -398,14 +398,16 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     size_t          ulen, plen;
     struct stat     st;
     char           *e, *s;
-    const char     *url = conn->request.url;
-    const char	   *server = Ns_ConnServer(conn);
+    const char     *url, *server;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(mapPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
 
+    url = conn->request.url;
+    server = Ns_ConnServer(conn);
     modPtr = mapPtr->modPtr;
+
     memset(cgiPtr, 0, (size_t)((char *)&cgiPtr->ds[0] - (char *)cgiPtr));
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
