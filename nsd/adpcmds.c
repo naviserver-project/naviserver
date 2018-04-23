@@ -41,7 +41,6 @@
 
 static int ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *const* objv,
                            AdpResult exception) NS_GNUC_NONNULL(1);
-static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *const* objv) NS_GNUC_NONNULL(1);
 static int GetFrame(const ClientData clientData, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int GetOutput(ClientData clientData, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -346,55 +345,6 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         }
     }
     return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclAdpEvalObjCmd, NsTclAdpSafeEvalObjCmd --
- *
- *      (Safe) Evaluate an ADP string.
- *
- * Results:
- *      A standard Tcl result.
- *
- * Side effects:
- *      Page string is parsed and evaluated at current Tcl level in a
- *      new ADP call frame.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclAdpEvalObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *const* objv)
-{
-    return EvalObjCmd(clientData, objc, objv);
-}
-
-int
-NsTclAdpSafeEvalObjCmd(ClientData clientData, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *const* objv)
-{
-    NsInterp *itPtr = clientData;
-
-    itPtr->adp.flags |= ADP_SAFE;
-    return EvalObjCmd(clientData, objc, objv);
-}
-
-static int
-EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *const* objv)
-{
-    int status;
-
-    NS_NONNULL_ASSERT(itPtr != NULL);
-
-    if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(itPtr->interp, 1, objv, "page ?args ...?");
-        status = TCL_ERROR;
-    } else {
-        status = NsAdpEval(itPtr, objc-1, objv+1, NULL);
-    }
-    return status;
 }
 
 

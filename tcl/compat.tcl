@@ -462,6 +462,20 @@ proc ns_returnadminnotice {args} {
     return [ns_returnnotice {*}$args]
 }
 
+#
+# ns_adp_eval, ns_adp_safeeval --
+#
+#   deprecated versions of ns_adp_parse
+#   use "ns_adp_parse ..." instead
+#
+proc ns_adp_eval {args} {
+    ns_deprecated "ns_adp_parse"
+    return [ns_adp_parse -- {*}$args]
+}
+proc ns_adp_safeeval {args} {
+    ns_deprecated "ns_adp_parse -safe"
+    return [ns_adp_parse -safe -- {*}$args]
+}
 
 # EOF
 
