@@ -199,8 +199,9 @@ ns_param        address             $address
 ns_section     "ns/server/default/module/nscp/users"
 ns_param        user                "::"
 
-set ::env(RANDFILE) [ns_info home]/.rnd
-
+set ::env(RANDFILE) $home/.rnd
+set ::env(HOME) $home
+set ::env(LANG) en_US.UTF-8
 #
 # For debugging, you might activate one of the following flags
 #
