@@ -199,6 +199,8 @@ ns_param        address             $address
 ns_section     "ns/server/default/module/nscp/users"
 ns_param        user                "::"
 
+set ::env(RANDFILE) [ns_info home]/.rnd
+
 #
 # For debugging, you might activate one of the following flags
 #
