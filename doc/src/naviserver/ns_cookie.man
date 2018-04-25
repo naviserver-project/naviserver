@@ -105,7 +105,7 @@ If the discard option is true then the cookie will be automatically
 deleted at the end of the current session (when the user agent terminates).
 
 [opt_def -secure [arg boolean]]
-If the secure option is true then the the cookie will only be sent back to the
+If the secure option is true then the cookie will only be sent back to the
 server when the client uses a secure ([term TLS]/[term SSL]) connection.
 
 [opt_def -replace [arg boolean]]

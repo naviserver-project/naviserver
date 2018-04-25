@@ -115,7 +115,7 @@ Replace the interpreter initialization script for the current virtual
 server.
 
 The newly saved script will be used to initialise newly created
-interpreters. Existing interpreters will be be reinitialized when
+interpreters. Existing interpreters will be reinitialized when
 [cmd "ns_ictl update"] is called.
 
 

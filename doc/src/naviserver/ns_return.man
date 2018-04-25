@@ -200,7 +200,7 @@ This is the same behavior as in
 both the global fastpath parameter [const cache] and [const mmap]
 are false.
 
-[enum] Delivering from mapped memory, when when [const mmap] is defined
+[enum] Delivering from mapped memory, when [const mmap] is defined
 and the operating supports it. In this case the file to be delivered
 is mapped into memory and served from there. The buffer size etc. is
 determined from the operating system. This option is activated, when

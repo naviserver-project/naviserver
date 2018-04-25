@@ -6,7 +6,7 @@
 
 [description]
 
-Set the current connections Expires header to the current time plus seconds seconds
+Set the current connections Expires header to the current time plus seconds
 
 [section {COMMANDS}]
 

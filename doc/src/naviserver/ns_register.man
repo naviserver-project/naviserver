@@ -374,7 +374,7 @@ exactly /b. The request /b/c will result in a 404 Page Not Found error.
 [example_end]
 
 In this example, a request for the exact URL /a will run the y.adp page, while
-/a/b and /a/b/c will will run the x.adp page.  The y.adp page is more specific
+/a/b and /a/b/c will run the x.adp page.  The y.adp page is more specific
 than the x.adp page, and hides it for the /a request, which matched it exactly.
 
 [opt_def -options [arg options]]

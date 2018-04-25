@@ -596,7 +596,7 @@ $hrformdata
 
 The following example script implements the same story generating
 function of genstory (the previous example) but is implemented as a
-Tcl page instead of a library Tcl function. Save the the following
+Tcl page instead of a library Tcl function. Save the following
 snippet as [term genstory.tcl] as well as the associated HTML file
 [term genstory.html] under the pages directory.
 

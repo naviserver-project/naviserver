@@ -18,7 +18,7 @@ RFC-6238 defines TOTP as:
      T: time slice (moving factor for one time passwd)
 [example_end]     
 
-The implemented function ns_totp is a generalization by allowing to to
+The implemented function ns_totp is a generalization by allowing to
 specify the message digest algorithm, the number of characters of
 the returned truncated value, a used_id and a time.
 

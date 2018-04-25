@@ -64,7 +64,7 @@ example the command might return "max 2048000 free 2024408"
 [call [cmd  "ns_thread wait"] \
 	[arg handle]]
 
-Attempts to wait for the the thread with the specified [arg handle].  If the thread is still executing,
+Attempts to wait for the thread with the specified [arg handle].  If the thread is still executing,
 the caller will block until the thread being joined completes.  Returns the return value of
 the script that the thread being joined was executing.
 

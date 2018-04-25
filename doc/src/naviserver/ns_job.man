@@ -69,7 +69,7 @@ deleted when all jobs are removed.
 
 [call [cmd  "ns_job exists"] [arg queueId] [arg jobId]]
 
-Returns 1 if such job is running the the given queue, otherwise
+Returns 1 if such job is running the given queue, otherwise
 returns 0.
 
 

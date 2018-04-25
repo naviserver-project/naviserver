@@ -114,7 +114,7 @@ subdirectory.
 By default, errors within an ADP script block are reported in the server log
 and interrupt execution of the current block only;
 subsequent text and script blocks continue to be processed
-and and no error message is included in the output. This
+and no error message is included in the output. This
 approach is highly defensive and has the benefit of
 generating a valid, if partial, responses after minor
 errors. A negative aspect of this approach is that, without
@@ -193,7 +193,7 @@ content length. The content may optionally be gzip
 compressed first.
 
 [para]
-Alternatively, an incremental response can be be generated either
+Alternatively, an incremental response can be generated either
 in response to calling the  ns_adp_stream  or  ns_adp_flush
 commands or automatically due to buffer overflow. In this
 case, an HTTP response will be generated on the first flush

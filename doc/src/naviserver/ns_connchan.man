@@ -83,7 +83,7 @@ All timeouts are specified in the form [arg secs[opt :microsecs]] or
 [arg secs.fraction].
 
 When the callback is fired, the specified Tcl command will be called
-with two additional arguments, namely the [arg handle] and and
+with two additional arguments, namely the [arg handle] and
 indicator for the reson of the call [arg when]. The value of [arg when]  will be
 as follows:
 [list_begin itemized]
