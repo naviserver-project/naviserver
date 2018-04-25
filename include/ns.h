@@ -431,7 +431,7 @@ typedef struct Ns_ObjvTable {
 } Ns_ObjvTable;
 
 /*
- * The following struct is used to to define a command with subcmds.
+ * The following struct is used to define a command with subcmds.
  */
 typedef struct Ns_SubCmdSpec {
     const char      *key;

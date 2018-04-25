@@ -605,7 +605,7 @@ typedef int bool;
 
 #ifdef _WIN32
 /*
- * Starting with VS2010 constants like EWOULDBLOCK are defined defined in
+ * Starting with VS2010 constants like EWOULDBLOCK are defined in
  * errno.h differently to the WSA* counterparts.  Relevant to NaviServer are
  *
  *     EWOULDBLOCK != WSAEWOULDBLOCK
