@@ -128,7 +128,7 @@ CopyCookieValue(Tcl_DString *dest, char *valueStart)
  *      semicolons.
  *
  * Results:
- *      On success a non-null value pointing the the begin of the found
+ *      On success a non-null value pointing the begin of the found
  *      cookie such we can iterate to search for more cookies with the same
  *      name
  *
@@ -213,7 +213,7 @@ GetFromCookieHeader(Ns_DString *dest, char *chars, const char *name,
  *      name/value pair.
  *
  * Results:
- *      On success a non-null value pointing the the begin of the found
+ *      On success a non-null value pointing the begin of the found
  *      cookie
  *
  * Side effects:

@@ -197,7 +197,7 @@ static int NS_strcmp(const char *a, const char *b) {
 
 /*
  * This structure defines a Node. It is the lowest-level structure in
- * urlspace and contains the data the the user puts in. It holds data
+ * urlspace and contains the data the user puts in. It holds data
  * whose scope is a set of URLs, such as /foo/bar/ *.html.
  * Data/cleanup functions are kept separately for inheriting and non-
  * inheriting URLs, as there could be overlap.

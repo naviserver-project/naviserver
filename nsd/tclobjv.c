@@ -109,7 +109,7 @@ NsTclInitSpecType(void)
  *      only reliably with *static* string tables. Since NaviServer
  *      can't use static string tables, these tables are allocated on
  *      the stack. This can lead to mix-ups for shared objects with
- *      the consequence the the resulting indices might be incorrect,
+ *      the consequence the resulting indices might be incorrect,
  *      leading to potential crashes. In order to allow caching, it
  *      should be possible to validate the entries based on other
  *      means, but this requires a different interface.

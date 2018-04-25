@@ -1321,9 +1321,9 @@ HttpGet(
  * Ns_HttpLocationString --
  *
  *	Build a HTTP location string following the IP literation notation in
- *	RFC 3986 section 3.2.2 if needed and return in in the provided
+ *	RFC 3986 section 3.2.2 if needed and return in the provided
  *	Tcl_DString. In case protoString is non-null, perpend the protocol. In
- *	case port != defPort, append the the port.
+ *	case port != defPort, append the port.
  *
  * Results:
  *
@@ -1789,7 +1789,7 @@ HttpConnect(
  *
  *        The HTTP client has received some content. Append this
  *        content either raw or uncompressed to either a file
- *        descriptor or the the Tcl_DString. HttpAppendRawBuffer appends
+ *        descriptor or the Tcl_DString. HttpAppendRawBuffer appends
  *        data without any decompression.
  *
  * Results:

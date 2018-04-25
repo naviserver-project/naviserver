@@ -357,7 +357,7 @@ Ns_TclInit(Tcl_Interp *interp)
     NS_NONNULL_ASSERT(interp != NULL);
 
     /*
-     * Associate the the interp data with the current interpreter.
+     * Associate the interp data with the current interpreter.
      */
     (void)NewInterpData(interp, servPtr);
 

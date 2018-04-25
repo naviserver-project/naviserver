@@ -846,7 +846,7 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         }
 
         /*
-         * Cleanup every entry found in the the hash table.
+         * Cleanup every entry found in the hash table.
          */
         for (hPtr = Tcl_FirstHashEntry(tabPtr, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
             NsRegChan *regChan;

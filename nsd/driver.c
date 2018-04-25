@@ -4268,7 +4268,7 @@ void NsWriterUnlock(void) {
  *      Management functions for WriterSocks. WriterSockRequire() and
  *      WriterSockRelease() are responsible for obtaining and
  *      freeing WriterSock structures. When a SockStructure is finally
- *      released, it is removed from the queue, the the socket is
+ *      released, it is removed from the queue, the socket is
  *      closed and the memory is freed.
  *
  * Results:
@@ -6101,7 +6101,7 @@ AsyncWriterThread(void *arg)
                 /*
                  * The write operation was successful. Check if there
                  * is some remaining data to write. If not we are done
-                 * with this request can can release the write buffer.
+                 * with this request can release the write buffer.
                  */
                 if (curPtr->size > 0u) {
                     Push(curPtr, writePtr);

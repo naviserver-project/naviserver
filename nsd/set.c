@@ -1007,7 +1007,7 @@ Ns_SetRecreate(Ns_Set *set)
  *        1) the Ns_Set structure
  *        2) the set name (it preserves the old name)
  *        3) the field set
- *      At the end content is copied and the the from set is truncated.
+ *      At the end content is copied and the from set is truncated.
  *
  * Results:
  *	new set.

@@ -65,7 +65,7 @@ static Tcl_Obj *EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
  * Ns_TclEnterSet --
  *
  *      Let this Tcl interpreter manage lifecycle of an existing Ns_Set.  The
- *      last argument determines the the lifespan of the Ns_Set. When the type
+ *      last argument determines the lifespan of the Ns_Set. When the type
  *      is NS_TCL_SET_STATIC, the Ns_Set is deleted, when the interp is
  *      freed. When the value is NS_TCL_SET_DYNAMIC, it is deleted via "ns_set
  *      free|cleanup". Effectively, this means that a "dynamic" ns_set is

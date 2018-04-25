@@ -41,7 +41,7 @@
  *      queue, so use queue's lock is used to control access to the
  *      jobs.
  *   o. to avoid deadlock, when locking both the queuelock and queue's
- *      lock lock the queuelock first
+ *      lock, lock the queuelock first
  *   o. to avoid deadlock, the tp queuelock should be locked before
  *      the queue's lock.
  *
