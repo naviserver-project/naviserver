@@ -31,7 +31,7 @@
  * test.c -
  *
  *	Collection of thread interface tests.  This code is somewhat sloppy
- *	but contains several examples of of using conditions, mutexes,
+ *	but contains several examples of using conditions, mutexes,
  *	thread local storage, and creating/joining threads.
  */
 

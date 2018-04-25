@@ -393,7 +393,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         } else {
             pool = (const char *)poolString;
             /*
-             * Set the minduration the the specified value.
+             * Set the minduration the specified value.
              */
             if (Ns_DbSetMinDuration(interp, pool, minDurationPtr) != TCL_OK) {
                 result = TCL_ERROR;

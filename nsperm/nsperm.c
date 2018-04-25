@@ -532,7 +532,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     /*
      * Checks above failed.  If implicit allow is not set,
      * change the status back to unauthorized. This flag will be set only when
-     * at least one deny user was added to the the permission record, otherwise
+     * at least one deny user was added to the permission record, otherwise
      * it will allow user with name "" to pass. What a nonsense!
      */
 
