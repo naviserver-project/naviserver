@@ -533,7 +533,7 @@ ns_section "ns/db/drivers"
 # password for it, if needed.  
 #
 # NaviServer can have different pools connecting to different databases 
-# and even different different database servers.  See
+# and even different database servers.  See
 # http://openacs.org/doc/tutorial-second-database
 # An example 'other db' configuration is included (and commented out) using other1_db_name
 # set other1_db_name "yourDBname"
