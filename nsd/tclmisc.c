@@ -352,7 +352,7 @@ InsertFreshNewline(Tcl_DString *dsPtr, const char *prefixString, size_t prefixLe
         dsPtr->string[*outputPosPtr] = '\n';
         (*outputPosPtr)++;
     } else {
-        Tcl_DStringSetLength(dsPtr, dsPtr->length + prefixLength);
+        Tcl_DStringSetLength(dsPtr, dsPtr->length + (int)prefixLength);
         dsPtr->string[*outputPosPtr] = '\n';
         (*outputPosPtr)++;
         memcpy(&dsPtr->string[*outputPosPtr], prefixString, prefixLength);
@@ -384,8 +384,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
         Tcl_DString ds, *dsPtr = &ds;
-        int         nrNewLines = 1;
-        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes;
+        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes, nrNewLines = 1;
         bool        done = NS_FALSE;
 
         textLength   = strlen(textString);
@@ -417,7 +416,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
          * Set the length of the Tcl_DString to the same size as the input
          * string plus for every linebreak+1 the prefixString.
          */
-        Tcl_DStringSetLength(dsPtr, textLength + nrPrefixes*prefixLength);
+        Tcl_DStringSetLength(dsPtr, (int)(textLength + nrPrefixes * prefixLength));
 
         while (inputPos < textLength && !done) {
             size_t processedPos;
@@ -426,7 +425,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * Copy the input string until lineWidth is reached
              */
             processedPos = inputPos;
-            for (currentWidth = (size_t)offset; currentWidth < lineWidth; currentWidth++)  {
+            for (currentWidth = (size_t)offset; (int)currentWidth < lineWidth; currentWidth++)  {
 
                 if ( inputPos < textLength) {
                     dsPtr->string[outputPos] = textString[inputPos];
