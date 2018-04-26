@@ -1441,6 +1441,14 @@ NS_EXTERN size_t
 Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN size_t
+Ns_HtuuEncode2(const unsigned char *input, size_t inputSize, char *buf, int encoding)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+NS_EXTERN size_t
+Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encoding)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * index.c:
  */

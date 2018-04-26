@@ -74,8 +74,41 @@ static const int pr2six[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
-#define Encode(c) (UCHAR(six2pr[(c)]))
-#define Decode(c) (UCHAR(pr2six[(int)(c)]))
+#define Encode(table,c) (UCHAR((table)[(c)]))
+#define Decode(table,c) (UCHAR((table)[(int)(c)]))
+
+
+/*
+ * Tables for base64url encoding
+ * return [string map {+ - / _ = {} \n {}} [ns_base64encode $string]]
+ */
+static const char six2pr_url[64] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '='
+};
+
+static const int pr2six_url[256] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
+    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
+    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
+    -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
 
 
 /*
@@ -97,15 +130,22 @@ static const int pr2six[256] = {
  */
 
 size_t
-Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
+Ns_HtuuEncode2(const unsigned char *input, size_t inputSize, char *buf, int encoding)
 {
     register const unsigned char *p;
     register unsigned char       *q;
     register int                  line = 0;
     register size_t               n;
+    static const char            *encode_table;
 
     NS_NONNULL_ASSERT(input != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
+
+    if (encoding == 0) {
+        encode_table = six2pr;
+    } else {
+        encode_table = six2pr_url;
+    }
 
     /*
      * Convert every three input bytes into four output
@@ -120,14 +160,14 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
          * if line length exceeds max line length - without adding
          * extra newline character
          */
-        if (line >= 60) {
+        if (line >= 60 && encoding == 0) {
             *q++ = UCHAR('\n');
             line = 0;
         }
-        *q++ = Encode(p[0] >> 2);
-        *q++ = Encode((UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
-        *q++ = Encode((UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03u));
-        *q++ = Encode(p[2] & 0x3Fu);
+        *q++ = Encode(encode_table,p[0] >> 2);
+        *q++ = Encode(encode_table,(UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
+        *q++ = Encode(encode_table,(UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03u));
+        *q++ = Encode(encode_table,p[2] & 0x3Fu);
         p += 3;
         line += 4;
     }
@@ -138,20 +178,30 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
 
     n = inputSize % 3u;
     if (n > 0u) {
-        *q++ = Encode(p[0] >> 2);
+        *q++ = Encode(encode_table,p[0] >> 2);
         if (n == 1u) {
-            *q++ = Encode(UCHAR(p[0] << 4) & 0x30u);
-            *q++ = UCHAR('=');
+            *q++ = Encode(encode_table,UCHAR(p[0] << 4) & 0x30u);
+            if (encoding == 0) {
+                *q++ = UCHAR('=');
+            }
         } else {
-            *q++ = Encode((UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
-            *q++ = Encode(UCHAR( p[1] << 2) & 0x3CU);
+            *q++ = Encode(encode_table,(UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
+            *q++ = Encode(encode_table,UCHAR( p[1] << 2) & 0x3CU);
         }
-        *q++ = UCHAR('=');
+        if (encoding == 0) {
+            *q++ = UCHAR('=');
+        }
     }
     *q = UCHAR('\0');
     return (size_t)((char *)q - buf);
 }
 
+
+size_t
+Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
+{
+    return Ns_HtuuEncode2(input, inputSize, buf, 0);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -172,15 +222,24 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
  */
 
 size_t
-Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
+Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encoding)
 {
     register int                  n;
     unsigned char                 chars[4] = {0u, 0u, 0u, 0u};
     register const unsigned char *p;
     register unsigned char       *q;
+    static const int             *decode_table;
+
 
     NS_NONNULL_ASSERT(input != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
+
+    if (encoding == 0) {
+        decode_table = pr2six;
+    } else {
+        decode_table = pr2six_url;
+    }
+
 
     /*
      * Skip leading space, if any.
@@ -201,9 +260,9 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
         if (pr2six[(int)(*p)] >= 0) {
             chars[n++] = *p;
             if (n == 4) {
-                *q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
-                *q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
-                *q++ = UCHAR(Decode(chars[2]) << 6) | Decode(chars[3]);
+                *q++ = UCHAR(Decode(decode_table,chars[0]) << 2) | Decode(decode_table,chars[1]) >> 4;
+                *q++ = UCHAR(Decode(decode_table,chars[1]) << 4) | Decode(decode_table,chars[2]) >> 2;
+                *q++ = UCHAR(Decode(decode_table,chars[2]) << 6) | Decode(decode_table,chars[3]);
                 n = 0;
             }
         }
@@ -215,10 +274,10 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
      */
 
     if (n > 1) {
-        *q++ = UCHAR(Decode(chars[0]) << 2) | Decode(chars[1]) >> 4;
+        *q++ = UCHAR(Decode(decode_table,chars[0]) << 2) | Decode(decode_table,chars[1]) >> 4;
     }
     if (n > 2) {
-        *q++ = UCHAR(Decode(chars[1]) << 4) | Decode(chars[2]) >> 2;
+        *q++ = UCHAR(Decode(decode_table,chars[1]) << 4) | Decode(decode_table,chars[2]) >> 2;
     }
     if ((size_t)(q - buf) < bufSize) {
         *q = UCHAR('\0');
@@ -226,6 +285,11 @@ Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
     return (size_t)(q - buf);
 }
 
+size_t
+Ns_HtuuDecode(const char *input, unsigned char *buf, size_t bufSize)
+{
+    return Ns_HtuuDecode2(input, buf, bufSize, 0);
+}
 /*
  * Local Variables:
  * mode: c
