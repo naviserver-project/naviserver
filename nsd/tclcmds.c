@@ -64,8 +64,10 @@ static const Cmd basicCmds[] = {
     {"ns_atshutdown",            NULL, NsTclAtShutdownObjCmd},
     {"ns_atsignal",              NULL, NsTclAtSignalObjCmd},
     {"ns_atstartup",             NULL, NsTclAtStartupObjCmd},
-    {"ns_base64decode",          NULL, NsTclHTUUDecodeObjCmd},
-    {"ns_base64encode",          NULL, NsTclHTUUEncodeObjCmd},
+    {"ns_base64decode",          NULL, NsTclBase64DecodeObjCmd},
+    {"ns_base64encode",          NULL, NsTclBase64EncodeObjCmd},
+    {"ns_base64urldecode",       NULL, NsTclBase64UrlDecodeObjCmd},
+    {"ns_base64urlencode",       NULL, NsTclBase64UrlEncodeObjCmd},
     {"ns_cancel",                NULL, NsTclCancelObjCmd},
     {"ns_charsets",              NULL, NsTclCharsetsObjCmd},
     {"ns_config",                NULL, NsTclConfigObjCmd},
@@ -149,8 +151,8 @@ static const Cmd basicCmds[] = {
     {"ns_unschedule_proc",       NULL, NsTclUnscheduleObjCmd},
     {"ns_urldecode",             NULL, NsTclUrlDecodeObjCmd},
     {"ns_urlencode",             NULL, NsTclUrlEncodeObjCmd},
-    {"ns_uudecode",              NULL, NsTclHTUUDecodeObjCmd},
-    {"ns_uuencode",              NULL, NsTclHTUUEncodeObjCmd},
+    {"ns_uudecode",              NULL, NsTclBase64DecodeObjCmd},
+    {"ns_uuencode",              NULL, NsTclBase64EncodeObjCmd},
     {"ns_writefp",               NULL, NsTclWriteFpObjCmd},
 
     /*

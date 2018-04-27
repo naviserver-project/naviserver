@@ -49,6 +49,9 @@ static void SHATransform(Ns_CtxSHA1 *sha)
 static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int Base64EncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding);
+static int Base64DecodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding);
+
 
 
 /*
@@ -718,9 +721,10 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 /*
  *----------------------------------------------------------------------
  *
- * NsTclHTUUEncodeObjCmd --
+ * Base64EncodeObjCmd --
  *
- *      Implements ns_uuencode as obj command.
+ *      Worker for ns_uuencode, ns_base64encode, and ns_base64urlencode obj
+ *      commands.
  *
  * Results:
  *      Tcl result.
@@ -731,8 +735,8 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 
-int
-NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+static int
+Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding)
 {
 
     int result = TCL_OK;
@@ -744,23 +748,39 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         char                *buffer;
         size_t               size;
         int                  nbytes = 0;
-        const unsigned char *bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
+        Tcl_DString          ds;
+        const unsigned char *bytes;
 
+        Tcl_DStringInit(&ds);
+        bytes = (const unsigned char*)Ns_GetBinaryString(objv[1], &nbytes, &ds);
         size = (size_t)nbytes;
         buffer = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
-        (void)Ns_HtuuEncode(bytes, size, buffer);
+        (void)Ns_HtuuEncode2(bytes, size, buffer, encoding);
         Tcl_SetResult(interp, buffer, (Tcl_FreeProc *) ns_free);
+        Tcl_DStringFree(&ds);
     }
     return result;
+}
+
+int
+NsTclBase64EncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    return Base64EncodeObjCmd(clientData, interp, objc, objv, 0);
+}
+int
+NsTclBase64UrlEncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    return Base64EncodeObjCmd(clientData, interp, objc, objv, 1);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * HTUUDecodeObjcmd --
+ * Base64DecodeObjCmd --
  *
- *      Implements ns_uudecode as obj command.
+ *      Worker for ns_uudecode, ns_base64decode, and ns_base64urldecode obj
+ *      command.
  *
  * Results:
  *      Tcl result.
@@ -771,8 +791,8 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *----------------------------------------------------------------------
  */
 
-int
-NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+static int
+Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding)
 {
     int result = TCL_OK;
 
@@ -787,7 +807,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
-        size = Ns_HtuuDecode(chars, decoded, size);
+        size = Ns_HtuuDecode2(chars, decoded, size, encoding);
         decoded[size] = UCHAR('\0');
         Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
         ns_free(decoded);
@@ -795,6 +815,17 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     return result;
 }
+int
+NsTclBase64DecodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    return Base64DecodeObjCmd(clientData, interp, objc, objv, 0);
+}
+int
+NsTclBase64UrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    return Base64DecodeObjCmd(clientData, interp, objc, objv, 1);
+}
+
 
 
 /*

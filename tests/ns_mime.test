@@ -51,6 +51,47 @@ test ns_uuencode-4.1 {test crash bug...} -body {
 } -result "QA=="
 
 
+test ns_uuencode-4.2 {small round trip decodes} -body {
+    set result {}
+    foreach l {0 1 2 3 4 5 6 7 8 9} {
+	set string [string range "Lorem?ipsum" 0 $l]
+	set encoded [ns_base64encode $string]
+	set decoded [ns_base64decode $encoded]
+	lappend result [expr {$string eq $decoded}]
+    }
+    set result
+} -result {1 1 1 1 1 1 1 1 1 1}
+
+test ns_uuencode-4.2url {small round trip decodes} -body {
+    set result {}
+    foreach l {0 1 2 3 4 5 6 7 8 9} {
+	set string [string range "Lorem?ipsum" 0 $l]
+
+	set encoded [ns_base64urlencode $string]
+	set decoded [ns_base64urldecode $encoded]
+	lappend result [expr {$string eq $decoded}]
+    }
+    set result
+} -result {1 1 1 1 1 1 1 1 1 1}
+
+test ns_uuencode-4.3 {binary encodings} -body {
+    set result {}
+    foreach string {abcd ++++ ---- //// ____} {
+	set decoded [ns_base64decode $string]
+	lappend result [ns_base64encode $decoded]
+    }
+    set result
+} -result {abcd ++++ {} //// {}}
+
+test ns_uuencode-4.3url {binary encodings} -body {
+    set result {}
+    foreach string {abcd ++++ ---- //// ____} {
+	set decoded [ns_base64urldecode $string]
+	lappend result [ns_base64urlencode $decoded]
+    }
+    set result
+} -result {abcd {} ---- {} ____}
+
 
 test ns_guesstype-5.1 {basic syntax: ns_guesstype} -body {
      ns_guesstype
