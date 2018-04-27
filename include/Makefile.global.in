@@ -76,7 +76,9 @@ CFLAGS_DEFINITION = -Wwrite-strings -Wextra -Wdeclaration-after-statement -Wendi
 CFLAGS_TIDY      = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security 
 CFLAGS_DEFAULT   = @CFLAGS_DEFAULT@
 #CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED  
-#CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY) 
+#CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)
+#CFLAGS_DEFAULT   = -pedantic -g -O3 -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)  -fipa-pure-const -Wsuggest-attribute=pure  -Wsuggest-attribute=const
+
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
 LIBS		 = @LIBS@
 DL_LIBS		 = 

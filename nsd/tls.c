@@ -161,6 +161,19 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
 #endif
 
 
+#if 0
+static void hexPrint(const char *msg, unsigned char *octects, size_t octectLength)
+{
+    size_t i;
+    fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
+    for (i=0; i<octectLength; i++) {
+        fprintf(stderr, "%.2x ",octects[i] & 0xff);
+    }
+    fprintf(stderr, "\n");
+}
+#endif
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -474,13 +487,16 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
                     char *outputBuffer, Ns_ResultEncoding encoding) {
     switch (encoding) {
     case RESULT_ENCODING_BASE64URL:
+        //hexPrint("result", octects, octectLength);
         (void)Ns_HtuuEncode2(octects, octectLength, outputBuffer, 1);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer)));
         break;
-   case RESULT_ENCODING_BASE64:
+
+    case RESULT_ENCODING_BASE64:
         (void)Ns_HtuuEncode2(octects, octectLength, outputBuffer, 0);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer)));
         break;
+
     case RESULT_ENCODING_HEX: /* fall through */
     default:
         Ns_HexString(octects, outputBuffer, (int)octectLength, NS_FALSE);
@@ -782,16 +798,8 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             Tcl_DStringInit(&messageDs);
             keyString = Ns_GetBinaryString(keyObj, &keyLength, &keyDs);
             messageString = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
-#if 0
-            {
-                int i;
-                fprintf(stderr, "messageLength %d:",messageLength);
-                for (i=0; i<messageLength; i++) {
-                    fprintf(stderr, "%.2x ",messageString[i] & 0xff);
-                }
-                fprintf(stderr, "\n");
-            }
-#endif
+            //hexPrint("hmac message", messageString, messageLength);
+
             /*
              * Call the HMAC computation.
              */
@@ -1333,7 +1341,6 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             const BIGNUM  *r, *s;
             uint8_t       *rawSig = NULL;
 
-
             /*
              * All input parameters are valid, get key and data.
              */
@@ -1354,17 +1361,19 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             rLen = (unsigned int) BN_num_bytes(r);
             sLen = (unsigned int) BN_num_bytes(s);
             sigLen = rLen + sLen;
+            //fprintf(stderr, "siglen r %u + s%u -> %u\n", rLen, sLen, sigLen);
             rawSig = ns_calloc(sigLen, sizeof(uint8_t));
             if (rawSig != NULL) {
                 BN_bn2bin(r, rawSig);
+                //hexPrint("r", rawSig, rLen);
                 BN_bn2bin(s, &rawSig[rLen]);
+                //hexPrint("s", &rawSig[rLen], sLen);
             }
             /*
              * Allocate output chars: maximum is hex representation
              */
             outputChars = ns_malloc(sigLen * 2u +1u);
-
-            //fprintf(stderr, "final signature length %u EVP_MAX_MD_SIZE %u\n", sigLen, EVP_MAX_MD_SIZE);
+            //fprintf(stderr, "allocate output chars %u\n", sigLen * 2u +1u);
             EVP_PKEY_free(pkey);
 
             NS_EVP_MD_CTX_free(mdctx);
@@ -1373,8 +1382,9 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * Convert the result to the output format and set the interp
              * result.
              */
-            SetEncodedResultObj(interp, digest, sigLen, outputChars, encoding);
+            SetEncodedResultObj(interp, rawSig, sigLen, outputChars, encoding);
             ns_free(outputChars);
+            ns_free(rawSig);
             Tcl_DStringFree(&messageDs);
         }
     }

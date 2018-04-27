@@ -249,6 +249,10 @@ cppcheck:
 	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
 		-I./include -I/usr/include -D__x86_64__ -DNDEBUG $(DEFS)
 
+clang-tidy:
+	clang-tidy-mp-devel nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c -- \
+		-I./include -I/usr/include $(DEFS)
+
 checkexports: all
 	@for i in $(dirs); do \
 		nm -p $$i/*${LIBEXT} | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | uniq | grep -v '^[Nn]s\|^TclX\|^_'; \
