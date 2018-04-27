@@ -57,6 +57,10 @@
 # endif
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_1_0_2)
+# define HAVE_OPENSSL_PRE_1_1
+#endif
+
 #ifdef HAVE_SSL_HMAC_CTX
 # if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
 #  define NS_EVP_MD_CTX_new  EVP_MD_CTX_create
@@ -77,7 +81,8 @@ static void HMAC_CTX_free(HMAC_CTX *ctx) NS_GNUC_NONNULL(1);
 typedef enum {
     RESULT_ENCODING_HEX       = 1,
     RESULT_ENCODING_BASE64URL = 2,
-    RESULT_ENCODING_BASE64    = 3
+    RESULT_ENCODING_BASE64    = 3,
+    RESULT_ENCODING_BINARY    = 4
 } Ns_ResultEncoding;
 
 
@@ -144,7 +149,7 @@ static void HMAC_CTX_free(HMAC_CTX *ctx)
 # endif
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_1_0_2)
+#ifdef HAVE_OPENSSL_PRE_1_1
 /*
  * The function ECDSA_SIG_get0 is new in OpenSSL 1.1.0 (and not
  * available in LIBRESSL)
@@ -474,8 +479,10 @@ GetResultEncoding(Tcl_Interp *interp, const char *name, Ns_ResultEncoding *encod
         *encodingPtr = RESULT_ENCODING_BASE64URL;
     } else if (strcmp(name, "base64") == 0) {
         *encodingPtr = RESULT_ENCODING_BASE64;
+    } else if (strcmp(name, "binary") == 0) {
+        *encodingPtr = RESULT_ENCODING_BINARY;
     } else {
-        Ns_TclPrintfResult(interp, "Unknown value for output encoding \"%s\", valid: hex, base64url, base64",
+        Ns_TclPrintfResult(interp, "Unknown value for output encoding \"%s\", valid: hex, base64url, base64, binary",
                            name);
         result = TCL_ERROR;
     }
@@ -485,7 +492,21 @@ GetResultEncoding(Tcl_Interp *interp, const char *name, Ns_ResultEncoding *encod
 static void
 SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLength,
                     char *outputBuffer, Ns_ResultEncoding encoding) {
+    char *origOutputBuffer = outputBuffer;
+
+    if (outputBuffer == NULL && encoding != RESULT_ENCODING_BINARY) {
+        /*
+         * It is a safe assumption to double the size, since the hex
+         * encoding needs to most space.
+         */
+        outputBuffer = ns_malloc(octectLength * 2u + 1u);
+    }
+
     switch (encoding) {
+    case RESULT_ENCODING_BINARY:
+        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)outputBuffer, (int)octectLength));
+        break;
+
     case RESULT_ENCODING_BASE64URL:
         //hexPrint("result", octects, octectLength);
         (void)Ns_HtuuEncode2(octects, octectLength, outputBuffer, 1);
@@ -503,6 +524,11 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
         Tcl_SetObjResult(interp, Tcl_NewStringObj(outputBuffer, (int)octectLength*2));
         break;
     }
+
+    if (outputBuffer != origOutputBuffer) {
+        ns_free(outputBuffer);
+    }
+
 }
 
 
@@ -1217,7 +1243,6 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 EVP_DigestFinal_ex(mdctx, digest, &mdLength);
             }
 
-
             NS_EVP_MD_CTX_free(mdctx);
 
             /*
@@ -1262,17 +1287,11 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
       ::ns_crypto::md vapidsign -digest sha256 -pem $::pemFile -encoding hex "hello"
       ::ns_crypto::md vapidsign -digest sha256 -pem $::pemFile -encoding base64url "hello"
 
-      proc vapidToken1 {string} {
-          set hexSignature [::ns_crypto::md vapidsign -digest sha256 -pem $::pemFile $string]
-          return $string.[ns_base64url_encode [binary format H* $hexSignature]]
-      }
-
-      proc vapidToken2 {string} {
+      proc vapidToken {string} {
           return $string.[::ns_crypto::md vapidsign -digest sha256 -pem $::pemFile -encoding base64url $string]
       }
 
-      vapidToken1 "hello"
-      vapidToken2 "hello"
+      vapidToken "hello"
 
     */
 
@@ -1330,7 +1349,6 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         }
         if (result != TCL_ERROR) {
             unsigned char  digest[EVP_MAX_MD_SIZE];
-            char          *outputChars;
             EVP_MD_CTX    *mdctx;
             const char    *messageString;
             int            messageLength;
@@ -1369,21 +1387,18 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                 BN_bn2bin(s, &rawSig[rLen]);
                 //hexPrint("s", &rawSig[rLen], sLen);
             }
-            /*
-             * Allocate output chars: maximum is hex representation
-             */
-            outputChars = ns_malloc(sigLen * 2u +1u);
-            //fprintf(stderr, "allocate output chars %u\n", sigLen * 2u +1u);
-            EVP_PKEY_free(pkey);
-
-            NS_EVP_MD_CTX_free(mdctx);
 
             /*
              * Convert the result to the output format and set the interp
              * result.
              */
-            SetEncodedResultObj(interp, rawSig, sigLen, outputChars, encoding);
-            ns_free(outputChars);
+            SetEncodedResultObj(interp, rawSig, sigLen, NULL, encoding);
+
+            /*
+             * Clean up.
+             */
+            EVP_PKEY_free(pkey);
+            NS_EVP_MD_CTX_free(mdctx);
             ns_free(rawSig);
             Tcl_DStringFree(&messageDs);
         }
@@ -1392,6 +1407,169 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     return result;
 }
 
+#ifndef HAVE_OPENSSL_PRE_1_1
+#include <openssl/kdf.h>
+
+/*
+ * HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
+ * RFC 5869 https://tools.ietf.org/html/rfc5869
+ */
+static int
+CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result = TCL_OK, outLength;
+    Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
+    char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
+    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+
+    Ns_ObjvSpec lopts[] = {
+        {"-digest",   Ns_ObjvString, &digestName, NULL},
+        {"-salt",     Ns_ObjvObj,    &saltObj, NULL},
+        {"-secret",   Ns_ObjvObj,    &secretObj, NULL},
+        {"-info",     Ns_ObjvObj,    &infoObj, NULL},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"length", Ns_ObjvInt, &outLength, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ::ns_crypto::md hkdf -digest sha256 -salt foo -secret var -info "Content-Encoding: auth" 10
+
+      # test case 1 from RFC 5869
+      ::ns_crypto::md hkdf -digest sha256 \
+             -salt   [binary format H* 000102030405060708090a0b0c] \
+             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
+             -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
+              42
+      3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865
+
+      # test case 3 from  RFC 5869
+      ::ns_crypto::md hkdf -digest sha256 \
+             -salt   "" \
+             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
+             -info   "" \
+              42
+      8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8
+
+      # test case 4 from  RFC 5869
+      ::ns_crypto::md hkdf -digest sha1 \
+             -salt   [binary format H* 000102030405060708090a0b0c] \
+             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b] \
+             -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
+              42
+      085a01ea1b10f36933068b56efa5ad81a4f14b822f5b091568a9cdd4f155fda2c22e422478d305f3f896
+
+     */
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (saltObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -salt specified");
+        result = TCL_ERROR;
+
+    } else if (secretObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -secret specified");
+        result = TCL_ERROR;
+
+    } else if (infoObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -info specified");
+        result = TCL_ERROR;
+
+    } else if (outLength < 1) {
+        Ns_TclPrintfResult(interp, "the specified length must be a positive value");
+        result = TCL_ERROR;
+
+    } else if (outputEncodingString != NULL
+               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else {
+        const EVP_MD *md;
+        EVP_PKEY_CTX *pctx = NULL;
+
+        /*
+         * Look up the Message Digest from OpenSSL
+         */
+        result = GetDigest(interp, digestName, &md);
+
+        if (result != TCL_ERROR) {
+            pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
+            if (pctx == NULL) {
+                Ns_TclPrintfResult(interp, "could not obtain context HKDF");
+                result = TCL_ERROR;
+            }
+        }
+        if (result != TCL_ERROR && (EVP_PKEY_derive_init(pctx) <= 0)) {
+            Ns_TclPrintfResult(interp, "could not initialize for derivation");
+            result = TCL_ERROR;
+        }
+        if (result != TCL_ERROR && (EVP_PKEY_CTX_set_hkdf_md(pctx, md) <= 0)) {
+            Ns_TclPrintfResult(interp, "could not set digest algorithm");
+            result = TCL_ERROR;
+        }
+        if (result != TCL_ERROR) {
+            const char    *infoString, *saltString, *secretString;
+            unsigned char *keyString;
+            Tcl_DString    infoDs, saltDs, secretDs;
+            int            infoLength, saltLength, secretLength;
+
+            /*
+             * All input parameters are valid, get key and data.
+             */
+            Tcl_DStringInit(&saltDs);
+            Tcl_DStringInit(&secretDs);
+            Tcl_DStringInit(&infoDs);
+            keyString = ns_malloc((size_t)outLength);
+
+            saltString   = Ns_GetBinaryString(saltObj,   &saltLength,   &saltDs);
+            secretString = Ns_GetBinaryString(secretObj, &secretLength, &secretDs);
+            infoString   = Ns_GetBinaryString(infoObj,   &infoLength,   &infoDs);
+
+            //hexPrint("salt  ", saltString, saltLength);
+            //hexPrint("secret", secretString, secretLength);
+            //hexPrint("info  ", infoString, infoLength);
+
+            if (EVP_PKEY_CTX_set1_hkdf_salt(pctx, saltString, saltLength) <= 0) {
+                Ns_TclPrintfResult(interp, "could not set salt");
+                result = TCL_ERROR;
+            } else if (EVP_PKEY_CTX_set1_hkdf_key(pctx, secretString, secretLength) <= 0) {
+                Ns_TclPrintfResult(interp, "could not set secret");
+                result = TCL_ERROR;
+            } else if (EVP_PKEY_CTX_add1_hkdf_info(pctx, infoString, infoLength) <= 0) {
+                Ns_TclPrintfResult(interp, "could not set info");
+                result = TCL_ERROR;
+            } else if (EVP_PKEY_derive(pctx, keyString, (size_t *)&outLength) <= 0) {
+                Ns_TclPrintfResult(interp, "could not obtain dereived key");
+                result = TCL_ERROR;
+            }
+
+            if (result == TCL_OK) {
+                /*
+                 * Convert the result to the output format and set the interp
+                 * result.
+                 */
+                SetEncodedResultObj(interp, keyString, (size_t)outLength, NULL, encoding);
+            }
+
+            /*
+             * Clean up.
+             */
+            ns_free((char*)keyString);
+            Tcl_DStringFree(&saltDs);
+            Tcl_DStringFree(&secretDs);
+            Tcl_DStringFree(&infoDs);
+        }
+
+        EVP_PKEY_CTX_free(pctx);
+    }
+    return result;
+}
+#endif
 
 
 /*
@@ -1413,12 +1591,15 @@ int
 NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"string",  CryptoMdStringObjCmd},
-        {"new",     CryptoMdNewObjCmd},
-        {"add",     CryptoMdAddObjCmd},
-        {"get",     CryptoMdGetObjCmd},
-        {"free",    CryptoMdFreeObjCmd},
+        {"string",    CryptoMdStringObjCmd},
+        {"new",       CryptoMdNewObjCmd},
+        {"add",       CryptoMdAddObjCmd},
+        {"get",       CryptoMdGetObjCmd},
+        {"free",      CryptoMdFreeObjCmd},
         {"vapidsign", CryptoVapidSignObjCmd},
+#ifndef HAVE_OPENSSL_PRE_1_1
+        {"hkdf",      CryptoMdHkdfObjCmd},
+#endif
         {NULL, NULL}
     };
 
@@ -1467,8 +1648,9 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, const EVP_CIPHER **cipherP
  *
  * CryptoEncStringObjCmd -- Subcommand of NsTclCryptoEncObjCmd
  *
- *        Single command to encode/decode string data.
- *        The command returns the MD in form of a hex string.
+ *        Single command to encrypt/decrypt string data.  The command
+ *        returns the encrypted string in the specified encoding.
+ *        Currently, only encryption is supported.
  *
  * Results:
  *	Tcl Result Code.
@@ -1620,15 +1802,12 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         }
 
         if (result == TCL_OK) {
-            char *outputBuffer;
-
             /*
              * Convert the result to the output format and set the interp
              * result.
              */
-            outputBuffer = ns_malloc((size_t)cipherDs.length * 2u + 1u);
-            SetEncodedResultObj(interp, (unsigned char *)cipherDs.string, (size_t)cipherDs.length, outputBuffer, encoding);
-            ns_free(outputBuffer);
+            SetEncodedResultObj(interp, (unsigned char *)cipherDs.string, (size_t)cipherDs.length,
+                                NULL, encoding);
         }
     }
     if (keyString != NULL) {
