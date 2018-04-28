@@ -187,7 +187,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Config basic options.
      */
 
-    path = Ns_ConfigGetPath(server, module, (char *)0);
+    path = Ns_ConfigGetPath(server, module, (char *)0L);
     modPtr = ns_calloc(1u, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
@@ -207,7 +207,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_DStringInit(&ds);
     section = Ns_ConfigGetValue(path, "interps");
     if (section != NULL) {
-        Ns_DStringVarAppend(&ds, "ns/interps/", section, (char *)0);
+        Ns_DStringVarAppend(&ds, "ns/interps/", section, (char *)0L);
         modPtr->interps = Ns_ConfigGetSection(ds.string);
         if (modPtr->interps == NULL) {
             Ns_Log(Warning, "nscgi: no such interps section: %s",
@@ -217,7 +217,7 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     section = Ns_ConfigGetValue(path, "environment");
     if (section != NULL) {
-        Ns_DStringVarAppend(&ds, "ns/environment/", section, (char *)0);
+        Ns_DStringVarAppend(&ds, "ns/environment/", section, (char *)0L);
         modPtr->mergeEnv = Ns_ConfigGetSection(ds.string);
         if (modPtr->mergeEnv == NULL) {
             Ns_Log(Warning, "nscgi: no such environment section: %s",

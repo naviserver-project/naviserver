@@ -371,7 +371,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         int         nrDrivers;
         Ns_Set     *set;
 
-        path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
+        path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0L));
 
         set = Ns_ConfigCreateSection(path);
 
@@ -504,7 +504,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
     if (isNew != 0) {
         ServerMap *mapPtr;
 
-        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0);
+        (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
         mapPtr->servPtr  = servPtr;
         memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
@@ -570,7 +570,7 @@ void NsDriverMapVirtualServers(void)
         moduleName = drvPtr->moduleName;
         defserver  = drvPtr->defserver;
 
-        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0);
+        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0L);
         lset = Ns_ConfigGetSection(path);
 
         if (lset == NULL || Ns_SetSize(lset) == 0u) {
@@ -586,7 +586,7 @@ void NsDriverMapVirtualServers(void)
              * The local (server-specific) driver definition has no default
              * server. Therefore try the global driver definition.
              */
-            const char *modulePath = Ns_ConfigGetPath(NULL, moduleName, (char *)0);
+            const char *modulePath = Ns_ConfigGetPath(NULL, moduleName, (char *)0L);
 
             defserver = Ns_ConfigGetValue(modulePath, "defaultserver");
             if (defserver != NULL) {
@@ -896,7 +896,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                     (void) Ns_DStringVarAppend(dsPtr,
                                                Tcl_GetString(objv[i]), ": ",
                                                Tcl_GetString(objv[i+1]), "\r\n",
-                                               (char *)0);
+                                               (char *)0L);
                 }
                 drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
             }

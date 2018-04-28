@@ -363,7 +363,7 @@ Ns_GetTemp(void)
 
             Ns_GetTime(&now);
             snprintf(buf, sizeof(buf), "nstmp.%" PRId64 ".%06ld", (int64_t)now.sec, now.usec);
-            path = Ns_MakePath(&ds, P_tmpdir, buf, (char *)0);
+            path = Ns_MakePath(&ds, P_tmpdir, buf, (char *)0L);
 #ifdef _WIN32
             fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
 #else

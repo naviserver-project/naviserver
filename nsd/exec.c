@@ -329,7 +329,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
     Ns_DStringInit(&eds);
     if (args == NULL) {
         /* NB: exec specifies a complete cmd.exe command string. */
-        Ns_DStringVarAppend(&cds, cmd, " /c ", exec, (char *)0);
+        Ns_DStringVarAppend(&cds, cmd, " /c ", exec, (char *)0L);
         exec = NULL;
     } else {
         char *s;
@@ -444,7 +444,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
 
 	for (i = 0u; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
-				Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0);
+				Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
             Ns_DStringNAppend(&eds, "", 1);
 	}
 	Ns_DStringNAppend(&eds, "", 1);
@@ -626,7 +626,7 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
 
     for (i = 0u; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
-                            Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0);
+                            Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
         Ns_DStringNAppend(dsPtr, "", 1);
     }
     Ns_DStringNAppend(dsPtr, "", 1);

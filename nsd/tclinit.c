@@ -247,21 +247,21 @@ ConfigServerTcl(const char *server)
         int         n;
         Ns_Set     *set;
 
-        path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0);
+        path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0L);
         set = Ns_ConfigCreateSection(path);
 
         Ns_DStringInit(&ds);
 
         servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
         if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
-            Ns_HomePath(&ds, servPtr->tcl.library, (char *)0);
+            Ns_HomePath(&ds, servPtr->tcl.library, (char *)0L);
             servPtr->tcl.library = Ns_DStringExport(&ds);
             Ns_SetUpdate(set, "library", servPtr->tcl.library);
         }
 
         initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
         if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
-            Ns_HomePath(&ds, initFileString, (char *)0);
+            Ns_HomePath(&ds, initFileString, (char *)0L);
             initFileString = Ns_DStringExport(&ds);
             Ns_SetUpdate(set, "initfile", initFileString);
         }
@@ -1792,7 +1792,7 @@ NsTclTraceProc(Tcl_Interp *interp, const void *arg)
     const Ns_TclCallback *cbPtr = arg;
     int                   result;
 
-    result = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0);
+    result = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0L);
     if (unlikely(result != TCL_OK)) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: trace proc)");
     }

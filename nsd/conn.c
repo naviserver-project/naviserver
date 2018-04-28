@@ -2108,7 +2108,7 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const void *arg)
     Tcl_Interp           *interp = Ns_GetConnInterp(conn);
     char                 *result;
 
-    if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != TCL_OK) {
+    if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0L) != TCL_OK) {
         (void) Ns_TclLogErrorInfo(interp, "\n(context: location callback)");
         result =  NULL;
     } else {

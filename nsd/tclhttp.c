@@ -1349,7 +1349,7 @@ Ns_HttpLocationString(
     NS_NONNULL_ASSERT(hostString != NULL);
 
     if (protoString != NULL) {
-        Ns_DStringVarAppend(dsPtr, protoString, "://", (char *)0);
+        Ns_DStringVarAppend(dsPtr, protoString, "://", (char *)0L);
     }
     if (port == 0 && defPort == 0) {
         /*
@@ -1357,12 +1357,12 @@ Ns_HttpLocationString(
          * the host header field), and all we have to do is to prepend the
          * protocol prefix.
          */
-        Ns_DStringVarAppend(dsPtr, hostString, (char *)0);
+        Ns_DStringVarAppend(dsPtr, hostString, (char *)0L);
     } else {
         if (strchr(hostString, INTCHAR(':')) != NULL) {
-            Ns_DStringVarAppend(dsPtr, "[", hostString, "]", (char *)0);
+            Ns_DStringVarAppend(dsPtr, "[", hostString, "]", (char *)0L);
         } else {
-            Ns_DStringVarAppend(dsPtr, hostString, (char *)0);
+            Ns_DStringVarAppend(dsPtr, hostString, (char *)0L);
         }
         if (port != defPort) {
             (void) Ns_DStringPrintf(dsPtr, ":%d", port);

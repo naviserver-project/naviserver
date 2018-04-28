@@ -1486,25 +1486,25 @@ static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
 
     hPtr = Tcl_FirstHashEntry(&permPtr->allowuser, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -allowuser {", Tcl_GetHashKey(&permPtr->allowuser, hPtr), "}", (char *)0);
+        Ns_DStringVarAppend(dsPtr, " -allowuser {", Tcl_GetHashKey(&permPtr->allowuser, hPtr), "}", (char *)0L);
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->denyuser, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -denyuser {", Tcl_GetHashKey(&permPtr->denyuser, hPtr), "}", (char *)0);
+        Ns_DStringVarAppend(dsPtr, " -denyuser {", Tcl_GetHashKey(&permPtr->denyuser, hPtr), "}", (char *)0L);
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->allowgroup, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -allowgroup {", Tcl_GetHashKey(&permPtr->allowgroup, hPtr), "}", (char *)0);
+        Ns_DStringVarAppend(dsPtr, " -allowgroup {", Tcl_GetHashKey(&permPtr->allowgroup, hPtr), "}", (char *)0L);
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->denygroup, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -denygroup {", Tcl_GetHashKey(&permPtr->denygroup, hPtr), "}", (char *)0);
+        Ns_DStringVarAppend(dsPtr, " -denygroup {", Tcl_GetHashKey(&permPtr->denygroup, hPtr), "}", (char *)0L);
         hPtr = Tcl_NextHashEntry(&search);
     }
 }
@@ -1727,7 +1727,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
     Ns_CtxMD5Init(&md5);
 
     Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, ntime, ":", uri, ":", privatekey, (char *)0);
+    Ns_DStringVarAppend(&ds, ntime, ":", uri, ":", privatekey, (char *)0L);
 
     Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
     Ns_CtxMD5Final(&md5, sig);
@@ -1783,7 +1783,7 @@ static int CreateHeader(Server *servPtr, Ns_Conn *conn, bool stale)
     Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"", servPtr->server, nonce);
 
     if (stale) {
-        Ns_DStringVarAppend(&ds, ", stale=\"true\"", (char *)0);
+        Ns_DStringVarAppend(&ds, ", stale=\"true\"", (char *)0L);
     }
     Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
     return NS_OK;

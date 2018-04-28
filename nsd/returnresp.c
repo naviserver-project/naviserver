@@ -82,7 +82,7 @@ ConfigServerRedirects(const char *server)
 
     Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
 
-    path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0);
+    path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0L);
     set = Ns_ConfigGetSection(path);
 
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
@@ -362,7 +362,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
         Ns_DStringAppend(&ds,
                          "<p>The HTTP request presented by your browser is invalid.");
         if (reason != NULL) {
-            Ns_DStringVarAppend(&ds, "<p>\n", reason, (char *)0);
+            Ns_DStringVarAppend(&ds, "<p>\n", reason, (char *)0L);
         }
         result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
         Ns_DStringFree(&ds);
@@ -401,7 +401,7 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, "Basic realm=\"",
-                            connPtr->poolPtr->servPtr->opts.realm, "\"", (char *)0);
+                            connPtr->poolPtr->servPtr->opts.realm, "\"", (char *)0L);
         Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
         Ns_DStringFree(&ds);
     }

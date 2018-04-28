@@ -402,7 +402,7 @@ NsTclSchedProc(void *arg, int UNUSED(id))
 {
     const Ns_TclCallback *cbPtr = arg;
 
-    (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, (char *)0);
+    (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, (char *)0L);
 }
 
 

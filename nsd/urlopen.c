@@ -150,7 +150,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      * Parse the URL and open a connection.
      */
 
-    Ns_DStringVarAppend(&ds, "GET ", url, " HTTP/1.0", (char *)0);
+    Ns_DStringVarAppend(&ds, "GET ", url, " HTTP/1.0", (char *)0L);
     status = Ns_ParseRequest(&request, ds.string);
     if (status == NS_ERROR ||
         request.protocol == NULL ||
@@ -174,9 +174,9 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      */
      
     Ns_DStringSetLength(&ds, 0);
-    Ns_DStringVarAppend(&ds, "GET ", request.url, (char *)0);
+    Ns_DStringVarAppend(&ds, "GET ", request.url, (char *)0L);
     if (request.query != NULL) {
-        Ns_DStringVarAppend(&ds, "?", request.query, (char *)0);
+        Ns_DStringVarAppend(&ds, "?", request.query, (char *)0L);
     }
     Ns_DStringAppend(&ds, " HTTP/1.0\r\nAccept: */*\r\n\r\n");
     p = ds.string;

@@ -109,7 +109,7 @@ NsConfigFastpath(void)
 {
     const char *path;
 
-    path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", (char *)0);
+    path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", (char *)0L);
     useMmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
     useGzip = Ns_ConfigBool(path, "gzip_static", NS_FALSE);
     useGzipRefresh = Ns_ConfigBool(path, "gzip_refresh", NS_FALSE);
@@ -208,7 +208,7 @@ ConfigServerFastpath(const char *server)
         Ns_DString  ds;
         const char *path, *p;
 
-        path = Ns_ConfigGetPath(server, NULL, "fastpath", (char *)0);
+        path = Ns_ConfigGetPath(server, NULL, "fastpath", (char *)0L);
         Ns_DStringInit(&ds);
 
         p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
@@ -219,7 +219,7 @@ ConfigServerFastpath(const char *server)
 
         servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
         if (Ns_PathIsAbsolute(servPtr->fastpath.serverdir) == NS_FALSE) {
-            (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0);
+            (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0L);
             servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
         }  else {
             NormalizePath(&servPtr->fastpath.serverdir);
@@ -236,7 +236,7 @@ ConfigServerFastpath(const char *server)
             NormalizePath(&servPtr->fastpath.pageroot);
         } else {
             (void)Ns_MakePath(&ds, servPtr->fastpath.serverdir,
-                              servPtr->fastpath.pagedir, (char *)0);
+                              servPtr->fastpath.pagedir, (char *)0L);
             servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
         }
     
@@ -346,7 +346,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
             if (NsUrlToFile(&ds, servPtr, url) != NS_OK) {
                 goto notfound;
             }
-            Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], (char *)0);
+            Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], (char *)0L);
             if ((stat(ds.string, &connPtr->fileInfo) == 0)
                 && S_ISREG(connPtr->fileInfo.st_mode)
                 ) {
@@ -354,9 +354,9 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
                     const char* query = conn->request.query;
 
                     Ns_DStringSetLength(&ds, 0);
-                    Ns_DStringVarAppend(&ds, url, "/", (char *)0);
+                    Ns_DStringVarAppend(&ds, url, "/", (char *)0L);
                     if (query != NULL) {
-                        Ns_DStringVarAppend(&ds, "?", query, (char *)0);
+                        Ns_DStringVarAppend(&ds, "?", query, (char *)0L);
                     }
                     result = Ns_ConnReturnRedirect(conn, ds.string);
                 } else {
@@ -857,7 +857,7 @@ FastGetRestart(Ns_Conn *conn, const char *page)
     NS_NONNULL_ASSERT(page != NULL);
 
     Ns_DStringInit(&ds);
-    status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request.url, page, (char *)0));
+    status = Ns_ConnRedirect(conn, Ns_MakePath(&ds, conn->request.url, page, (char *)0L));
     Ns_DStringFree(&ds);
 
     return status;

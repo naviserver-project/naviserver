@@ -162,7 +162,7 @@ Ns_ModuleInit(const char *server, const char *module)
     memset(&init, 0, sizeof(init));
     Tcl_DStringInit(&ds);
 
-    path = Ns_ConfigGetPath(server, module, (char *)0);
+    path = Ns_ConfigGetPath(server, module, (char *)0L);
 
     drvPtr = ns_calloc(1, sizeof(SSLDriver));
     drvPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);

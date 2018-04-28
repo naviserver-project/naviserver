@@ -453,7 +453,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
     }
 
     Ns_DStringInit(&cookie);
-    Ns_DStringVarAppend(&cookie, name, "=\"", (char *)0);
+    Ns_DStringVarAppend(&cookie, name, "=\"", (char *)0L);
     if (value != NULL) {
         Ns_CookieEncode(&cookie, value, NULL);
     }
@@ -471,10 +471,10 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
     }
     /* ignore empty domain, since IE rejects it */
     if (domain != NULL && *domain != '\0') {
-        Ns_DStringVarAppend(&cookie, "; Domain=", domain, (char *)0);
+        Ns_DStringVarAppend(&cookie, "; Domain=", domain, (char *)0L);
     }
     if (path != NULL) {
-        Ns_DStringVarAppend(&cookie, "; Path=", path, (char *)0);
+        Ns_DStringVarAppend(&cookie, "; Path=", path, (char *)0L);
     }
     if ((flags & NS_COOKIE_SECURE) != 0u) {
         Ns_DStringAppend(&cookie, "; Secure");

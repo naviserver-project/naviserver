@@ -700,7 +700,7 @@ NsDbLoadDriver(const char *driver)
         if (module == NULL) {
 	    Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
 	} else {
-	    const char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, (char *)0);
+	    const char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, (char *)0L);
 
 	    /*
 	     * For unknown reasons, Ns_ModuleLoad is called with a
@@ -895,7 +895,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
 
 	Ns_DStringInit(&args);
 	Ns_DStringVarAppend(&args, paramname, " ", paramtype, " ", inout, " ",
-			    value, (char *)0);
+			    value, (char *)0L);
 	status = (*driverPtr->spsetparamProc)(handle, args.string);
 	Ns_DStringFree(&args);
     }

@@ -312,7 +312,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     } else {
         encoding = Ns_ConnGetEncoding(conn);
         charset = Ns_GetEncodingCharset(encoding);
-        Ns_DStringVarAppend(&ds, mimeType, "; charset=", charset, (char *)0);
+        Ns_DStringVarAppend(&ds, mimeType, "; charset=", charset, (char *)0L);
         mimeType = ds.string;
     }
 
@@ -474,7 +474,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
     Ns_DStringVarAppend(dsPtr,
 			"Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
-			"Date: ", (char *)0);
+			"Date: ", (char *)0L);
     (void)Ns_HttpTime(dsPtr, NULL);
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 
@@ -503,7 +503,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 		const char *lineBreak = strchr(value, INTCHAR('\n'));
 
 		if (lineBreak == NULL) {
-		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0);
+		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0L);
 		} else {
 		    Ns_DString sanitize, *sanitizePtr = &sanitize;
 		    /*
@@ -531,7 +531,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
 		    Tcl_DStringAppend(sanitizePtr, value, -1);
 
-		    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0);
+		    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
 		    Ns_DStringFree(sanitizePtr);
 		}
             }
@@ -687,7 +687,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                      "</head>\n<body>\n"
                      "<h2>");
     Ns_QuoteHtml(&ds, title);
-    Ns_DStringVarAppend(&ds, "</h2>\n", notice, "\n", (char *)0);
+    Ns_DStringVarAppend(&ds, "</h2>\n", notice, "\n", (char *)0L);
 
     /*
      * Detailed server information at the bottom of the page.
@@ -697,7 +697,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
         Ns_DStringVarAppend(&ds, "<p align='right'><small><i>",
                             Ns_InfoServerName(), "/",
                             Ns_InfoServerVersion(), " on ",
-                            (char *)0);
+                            (char *)0L);
         (void) Ns_ConnLocationAppend(conn, &ds);
         Ns_DStringAppend(&ds, "</i></small></p>\n");
     }
@@ -713,7 +713,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
         }
     }
 
-    Ns_DStringVarAppend(&ds, "\n</body></html>\n", (char *)0);
+    Ns_DStringVarAppend(&ds, "\n</body></html>\n", (char *)0L);
 
     result = Ns_ConnReturnCharData(conn, status, ds.string, ds.length, "text/html");
     Ns_DStringFree(&ds);

@@ -138,7 +138,7 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
     NS_NONNULL_ASSERT(module != NULL);
 
     Tcl_InitHashTable(&modPtr->users, TCL_STRING_KEYS);
-    path = Ns_ConfigGetPath(server, module, "users", (char *)0);
+    path = Ns_ConfigGetPath(server, module, "users", (char *)0L);
     set = Ns_ConfigGetSection(path);
 
     /*
@@ -149,7 +149,7 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
-        path = Ns_ModulePath(&ds, server, module, "users", (char *)0);
+        path = Ns_ModulePath(&ds, server, module, "users", (char *)0L);
         set = Ns_ConfigCreateSection(path);
         Ns_SetUpdate(set, "user", "::");
         Ns_DStringFree(&ds);
@@ -252,7 +252,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Create the listening socket and callback.
      */
 
-    path = Ns_ConfigGetPath(server, module, (char *)0);
+    path = Ns_ConfigGetPath(server, module, (char *)0L);
     addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
     port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
 
@@ -464,7 +464,7 @@ retry:
 	if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
 	    (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
 	}
-	Tcl_AppendResult(interp, "\r\n", (char *)0);
+	Tcl_AppendResult(interp, "\r\n", (char *)0L);
 	res = Tcl_GetStringResult(interp);
 	len = strlen(res);
 	while (len > 0u) {

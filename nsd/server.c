@@ -251,7 +251,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     }
 
     Ns_DStringInit(&ds);
-    path = Ns_ConfigGetPath(server, NULL, (char *)0);
+    path = Ns_ConfigGetPath(server, NULL, (char *)0L);
 
     /*
      * Set some server options.
@@ -306,7 +306,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      */
 
     CreatePool(servPtr, "");
-    path = Ns_ConfigGetPath(server, NULL, "pools", (char *)0);
+    path = Ns_ConfigGetPath(server, NULL, "pools", (char *)0L);
     set = Ns_ConfigGetSection(path);
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
@@ -386,7 +386,7 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-        path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
+        path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0L);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
         const Ns_Set *set;
@@ -395,7 +395,7 @@ CreatePool(NsServer *servPtr, const char *pool)
          * Map requested method/URL's to this pool.
          */
 
-        path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, (char *)0);
+        path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, (char *)0L);
         set = Ns_ConfigGetSection(path);
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {

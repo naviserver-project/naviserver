@@ -1571,27 +1571,27 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
          * Produce a fancy error message.
          */
         resultPtr = Tcl_NewObj();
-        Tcl_AppendStringsToObj(resultPtr, "bad ", msg, " \"", key, (char *)0);
+        Tcl_AppendStringsToObj(resultPtr, "bad ", msg, " \"", key, (char *)0L);
 
         entryPtr = tablePtr;
         if (entryPtr->key == NULL) {
             /*
              * The table is empty
              */
-            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)0);
+            Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)0L);
         } else {
             int count = 0;
             /*
              * The table has keys
              */
-            Tcl_AppendStringsToObj(resultPtr, "\": must be ", entryPtr->key, (char *)0);
+            Tcl_AppendStringsToObj(resultPtr, "\": must be ", entryPtr->key, (char *)0L);
             entryPtr++;
             while (entryPtr->key != NULL) {
                 if ((entryPtr+1)->key == NULL) {
                     Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
-                                           " or ", entryPtr->key, (char *)0);
+                                           " or ", entryPtr->key, (char *)0L);
                 } else if (entryPtr->key != NULL) {
-                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0);
+                    Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0L);
                     count++;
                 }
                 entryPtr++;

@@ -366,7 +366,7 @@ NsInstallService(char *service)
         Ns_DStringInit(&name);
         Ns_DStringInit(&cmd);
         Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
-                            " -S -s ", service, " -t \"", config, "\"", (char *)0);
+                            " -S -s ", service, " -t \"", config, "\"", (char *)0L);
         (void) GetServiceName(&name, service);
         hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
         if (hmgr != NULL) {
@@ -1007,7 +1007,7 @@ ConsoleHandler(DWORD UNUSED(code))
 static char *
 GetServiceName(Ns_DString *dsPtr, char *service)
 {
-    Ns_DStringVarAppend(dsPtr, PACKAGE_NAME, "-", service, (char *)0);
+    Ns_DStringVarAppend(dsPtr, PACKAGE_NAME, "-", service, (char *)0L);
     return dsPtr->string;
 }
 
