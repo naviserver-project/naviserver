@@ -59,9 +59,9 @@ listed below are well-suited to the Tcl libraries approach.
 
 [list_begin definitions]
 
-[def Inheritance:] If you want one Tcl script to handle an URL and all
+[def Inheritance:] If you want one Tcl script to handle a URL and all
  of its sub-URLs, it's better to store the script in a Tcl library
- and register it using ns_register_proc to handle an URL hierarchy.
+ and register it using ns_register_proc to handle a URL hierarchy.
  For example, you may want to manage a server domain name change by
  redirecting every response to the corresponding domain name on
  another server.

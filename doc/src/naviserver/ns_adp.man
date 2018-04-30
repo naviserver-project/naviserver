@@ -51,7 +51,7 @@ Four links: <a href=/link/0.htm>Link 0</a><br>
 [example_end]
 
 ADP processing normally occurs in the context of an HTTP transaction when
-an URL request is mapped to an ADP file in the
+a URL request is mapped to an ADP file in the
 server's page root. (see  ADP CONFIGURATION
 below for details on configuring this mapping). The ADP
 request processing code allocates a Tcl interpreter and

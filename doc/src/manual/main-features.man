@@ -485,7 +485,7 @@ The NaviServer includes a complete C API. Using the C API you can write:
 
 [list_begin itemized]
 
-[item]Custom request functions to handle HTTP request to an URL or a
+[item]Custom request functions to handle HTTP request to a URL or a
     complete hierarchy of URLs.
 
 

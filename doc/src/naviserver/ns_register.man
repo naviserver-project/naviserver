@@ -158,7 +158,7 @@ If [option -noinherit] is not specified, the requested URL can match the specifi
 URL below it.  For example, if the URL specified with [term ns_register_proc] is /foo/bar,
 procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar,
 provided there is not already another procedure registered for that exact URL or for
-an URL with a closer match.
+a URL with a closer match.
 
 Note that you must use a glob-style matching character if you want inheritance
 for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use:
@@ -177,7 +177,7 @@ for file names.  For example, if you want /foo/bar to match /foo/bar.html, you m
 
  Aproc will be called when the requested URL is exactly /foo/bar.  Bproc will be called when
  the requested URL is below /foo/bar, provided there is not already another procedure registered
- to be called for that exact URL or for an URL with a closer match.  Cproc (not Bproc) will be
+ to be called for that exact URL or for a URL with a closer match.  Cproc (not Bproc) will be
  called when the requested URL is equal to or below /foo/bar/hmm.
 
 [para] The following example shows how arguments can be passed at

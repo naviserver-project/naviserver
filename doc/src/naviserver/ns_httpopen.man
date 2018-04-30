@@ -36,7 +36,7 @@ Note: This command is currently implemented in Tcl, in the source file tcl/http.
 
 [example_begin]
 
-    # A proc to post some data to a url and return the result
+    # A proc to post some data to a URL and return the result
     proc postit {url data} {
         set rqset [lb]ns_set new rqset[rb]
         ns_set put $rqset "Accept" "*/*"

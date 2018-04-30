@@ -105,7 +105,7 @@ NaviServer allocates automatically a default ID on first usage.
 [opt_def -key [arg key]]
 Every URL has a key assigned, which is logically part of the URL
 space. Using this key, one could for example use the HTTP methods
-[term GET] or [term POST] to assign different values to an URL
+[term GET] or [term POST] to assign different values to a URL
 for GET or POST requests. The key can be used as well for other
 purposes. If no key is specified, it default to the constant
 "[const .]" (dot character).
