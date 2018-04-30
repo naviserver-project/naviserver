@@ -683,7 +683,7 @@ Ns_GetUrlEncoding(const char *charset)
                Unfortunately, the general default for encoding opens a
                door for a path traversal attack with (invalid)
                UTF-8 characters.  For example, ".." can be encoded via
-               UTF-8 in an URL as "%c0%ae%c0%ae" or
+               UTF-8 in a URL as "%c0%ae%c0%ae" or
                "%e0%80%ae%e0%80%ae" and many more forms, so the
                literal checks against path traversal based on
                character data (here in Ns_NormalizePath()) fail. As a

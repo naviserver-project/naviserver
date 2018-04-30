@@ -288,7 +288,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
  *
  * Ns_AbsoluteUrl --
  *
- *      Construct an URL based on baseurl but with as many parts of
+ *      Construct a URL based on baseurl but with as many parts of
  *      the incomplete url as possible.
  *
  * Results:

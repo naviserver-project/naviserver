@@ -1318,7 +1318,7 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
  *
  * TrieDelete --
  *
- *      Delete a url, defined by a sequence, from a trie.
+ *      Delete a URL, defined by a sequence, from a trie.
  *
  *      The NS_OP_NOINHERIT bit may be set in flags to use
  *      non-inheriting data; NS_OP_NODELETE may be set to

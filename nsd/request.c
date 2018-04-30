@@ -435,7 +435,7 @@ FreeUrl(Ns_Request *request)
  *
  * SetUrl --
  *
- *    Break up an URL and put it in the request.
+ *    Break up a URL and put it in the request.
  *
  * Results:
  *    None.
