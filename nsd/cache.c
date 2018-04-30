@@ -233,7 +233,7 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
         Entry *ePtr = Tcl_GetHashValue(hPtr);
 
         if (unlikely(ePtr->value == NULL
-                     && (transactionStackPtr == NULL || transactionStackPtr->depth == 0)
+                     && (transactionStackPtr == NULL || transactionStackPtr->depth == 0u)
                      )) {
             /*
              * Entry is being updated by some other thread.
@@ -597,7 +597,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
 
     Ns_CacheUnsetValue(entry);
 
-    if (transactionEpoch == 0) {
+    if (transactionEpoch == 0u) {
         ePtr->value = value;
         result = 0;
     } else {
