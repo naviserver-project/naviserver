@@ -94,7 +94,7 @@ users, all, and public, with the listed users in each.
 
 [para]
 Permission records indicate the allowed access for a particular URL
-and method (GET, and PUT). GET access to an URL allows the user to
+and method (GET, and PUT). GET access to a URL allows the user to
 display the page, or submit information in a form. PUT access allows
 the user to write to the page or delete the page.
 
