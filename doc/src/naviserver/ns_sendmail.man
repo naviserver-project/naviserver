@@ -32,7 +32,7 @@ In case of an error the error code and message are returned.
 [section COMMANDS]
 [list_begin definitions]
 [call [cmd ns_sendmail] \
-	[option "-to to"] \
+	[option "-to"] \
 	[option "-from from"] \
 	[option "-subject subject"] \
 	[option "-body body"] \
