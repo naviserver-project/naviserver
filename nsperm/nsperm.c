@@ -1656,7 +1656,7 @@ static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
     now = time(NULL);
 
     Ns_DStringInit(&ds);
-    Ns_DStringPrintf(&ds, "%" PRIu64 ":%s:%s", (int64_t) now, uri, privatekey);
+    Ns_DStringPrintf(&ds, "%" PRId64 ":%s:%s", (int64_t) now, uri, privatekey);
 
     Ns_CtxMD5Init(&md5);
     Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
@@ -1665,7 +1665,7 @@ static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
 
     /* encode the current time and MD5 string into the nonce */
     Ns_DStringSetLength(&ds, 0);
-    Ns_DStringPrintf(&ds, "%" PRIu64 " %s", (int64_t) now, buf);
+    Ns_DStringPrintf(&ds, "%" PRId64 " %s", (int64_t) now, buf);
     Ns_HtuuEncode((unsigned char *) ds.string, (unsigned int) ds.length, bufcoded);
 
     *nonce = ns_strdup(bufcoded);

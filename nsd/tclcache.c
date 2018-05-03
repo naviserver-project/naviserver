@@ -1060,10 +1060,10 @@ NsTclCacheStatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 
                 Tcl_DStringAppendElement(&entryDs, key);
                 if (timePtr->usec == 0) {
-                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRIu64,
+                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRId64,
                                      size, reuse, (int64_t) timePtr->sec);
                 } else {
-                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRIu64 ":%ld",
+                    Ns_DStringPrintf(&entryDs, " %" PRIdz " %" PRIdz " %" PRId64 ":%ld",
                                      size, reuse, (int64_t) timePtr->sec, timePtr->usec);
                 }
                 Tcl_DStringAppendElement(&ds, entryDs.string);
@@ -1405,7 +1405,7 @@ CacheTransactionFinishObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
             Ns_GetTime(&endTime);
             Ns_DiffTime(&endTime, &startTime, &diffTime);
 
-            Ns_Log(Notice, "CacheTransactionFinish: %s %lu elements in (%" PRIu64 ".%06ld secs)",
+            Ns_Log(Notice, "CacheTransactionFinish: %s %lu elements in (%" PRId64 ".%06ld secs)",
                    commit ? "committed" : "rolled back",
                    count, (int64_t)diffTime.sec, diffTime.usec);
         }

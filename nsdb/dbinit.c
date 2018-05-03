@@ -945,7 +945,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
             long delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
 
             if (delta < 1) {
-                Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRIu64 ".%06ld secs: '%s'",
+                Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRId64 ".%06ld secs: '%s'",
                        handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
             }
         }
@@ -1274,7 +1274,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
             if (Ns_GetTimeFromString(NULL, minDurationString, &poolPtr->minDuration) != TCL_OK) {
                 Ns_Log(Error, "dbinit: invalid LogMinDuration '%s' specified", minDurationString);
             } else {
-                Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s over %s to %" PRIu64 ".%06ld",
+                Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s over %s to %" PRId64 ".%06ld",
                        pool, minDurationString,
                        (int64_t)poolPtr->minDuration.sec,
                        poolPtr->minDuration.usec);

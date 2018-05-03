@@ -273,7 +273,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
 	Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
 
 	if (NS_mutexlocktrace && (diff.sec > 1 || diff.usec > 100000)) {
-	    fprintf(stderr, "[%s] Mutex lock %s: wait duration %" PRIu64 ".%06ld\n",
+	    fprintf(stderr, "[%s] Mutex lock %s: wait duration %" PRId64 ".%06ld\n",
                     Ns_ThreadGetName(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
 	}
 
@@ -285,7 +285,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
          */
         if (Ns_DiffTime(&mutexPtr->max_waiting_time, &diff, NULL) < 0) {
             mutexPtr->max_waiting_time = diff;
-            /*fprintf(stderr, "Mutex %s max time %" PRIu64 ".%06ld\n",
+            /*fprintf(stderr, "Mutex %s max time %" PRId64 ".%06ld\n",
 	      mutexPtr->name, (int64_t)diff.sec, diff.usec);*/
         }
 #endif
@@ -362,7 +362,7 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
     NsLockUnset(mutexPtr->lock);
 
     if (NS_mutexlocktrace && (diff.sec > 1 || diff.usec > 100000)) {
-        fprintf(stderr, "[%s] Mutex unlock %s: lock duration %" PRIu64 ".%06ld\n",
+        fprintf(stderr, "[%s] Mutex unlock %s: lock duration %" PRId64 ".%06ld\n",
                 Ns_ThreadGetName(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
     }
 
@@ -397,7 +397,7 @@ Ns_MutexList(Tcl_DString *dsPtr)
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
         snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu %" PRIu64 ".%06ld %" PRIu64 ".%06ld %" PRIu64 ".%06ld",
+                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld",
                  mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy,
                  (int64_t)mutexPtr->total_waiting_time.sec, mutexPtr->total_waiting_time.usec,
                  (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec,

@@ -432,7 +432,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, const void *arg)
     const AdpRequest *adp = arg;
     unsigned int  i;
 
-    Ns_DStringPrintf(dsPtr, " %" PRIu64 ":%ld",
+    Ns_DStringPrintf(dsPtr, " %" PRId64 ":%ld",
                      (int64_t) adp->expires.sec,
                      adp->expires.usec);
 

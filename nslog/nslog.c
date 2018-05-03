@@ -165,7 +165,7 @@ Ns_ModuleInit(const char *server, const char *module)
             int rc;
 
             Tcl_DStringSetLength(&ds, 0);
-            (void) Ns_ModulePath(&ds, server, module, NULL, (char *)0L);
+            (void) Ns_ModulePath(&ds, server, module, (char *)0L);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
             rc = Tcl_FSCreateDirectory(dirpath);
@@ -658,7 +658,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (!(logPtr->flags & LOG_FMTTIME)) {
-        Ns_DStringPrintf(dsPtr, "[%" PRIu64 "]", (int64_t) time(NULL));
+        Ns_DStringPrintf(dsPtr, "[%" PRId64 "]", (int64_t) time(NULL));
     } else {
         char buf[41]; /* Big enough for Ns_LogTime(). */
 

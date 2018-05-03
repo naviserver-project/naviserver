@@ -408,7 +408,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 Tcl_DString ds, *dsPtr = &ds;
 
                 Tcl_DStringInit(dsPtr);
-                Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld",
+                Ns_DStringPrintf(dsPtr, " %" PRId64 ".%06ld",
                                  (int64_t)tPtr->sec, tPtr->usec);
                 Tcl_DStringResult(interp, dsPtr);
             }

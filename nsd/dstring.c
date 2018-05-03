@@ -422,7 +422,7 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    return Ns_DStringPrintf(dsPtr, "%" PRIu64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
+    return Ns_DStringPrintf(dsPtr, "%" PRId64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
 }
  
 

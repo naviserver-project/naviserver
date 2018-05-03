@@ -1734,7 +1734,7 @@ NsConnThread(void *arg)
         interp = NsTclAllocateInterp(servPtr);
         Ns_GetTime(&end);
         Ns_DiffTime(&end, &start, &diff);
-        Ns_Log(Notice, "thread initialized (%" PRIu64 ".%06ld secs)",
+        Ns_Log(Notice, "thread initialized (%" PRId64 ".%06ld secs)",
                (int64_t)diff.sec, diff.usec);
         Ns_TclDeAllocateInterp(interp);
         argPtr->state = connThread_ready;
@@ -1991,14 +1991,14 @@ NsConnThread(void *arg)
                 Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
 
                 Ns_Log(Debug, "[%ld] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
-                       " start %" PRIu64 ".%06ld"
-                       " %" PRIu64 ".%06ld"
-                       " accept %" PRIu64 ".%06ld"
-                       " queue %" PRIu64 ".%06ld"
-                       " filter %" PRIu64 ".%06ld"
-                       " run %" PRIu64 ".%06ld"
-                       " netrun %" PRIu64 ".%06ld"
-                       " total %" PRIu64 ".%06ld",
+                       " start %" PRId64 ".%06ld"
+                       " %" PRId64 ".%06ld"
+                       " accept %" PRId64 ".%06ld"
+                       " queue %" PRId64 ".%06ld"
+                       " filter %" PRId64 ".%06ld"
+                       " run %" PRId64 ".%06ld"
+                       " netrun %" PRId64 ".%06ld"
+                       " total %" PRId64 ".%06ld",
                        ThreadNr(poolPtr, argPtr),
                        waiting, poolPtr->threads.current, idle, ncons, fromQueue ? 1 : 0,
                        (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,

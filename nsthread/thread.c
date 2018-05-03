@@ -354,7 +354,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
             Tcl_DStringStartSublist(dsPtr);
             Tcl_DStringAppendElement(dsPtr, thrPtr->name);
             Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
-            written = snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRIu64,
+            written = snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRId64,
                                thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
             Tcl_DStringAppend(dsPtr, buf, written);
             if (proc != NULL) {

@@ -387,7 +387,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
         Tcl_DString ds, *dsPtr = &ds;
-        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes, nrNewLines = 1;
+        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes, nrNewLines = 1u;
         bool        done = NS_FALSE;
 
         textLength   = strlen(textString);
@@ -412,7 +412,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             nrPrefixes = nrNewLines;
         } else {
             outputPos = 0u;
-            nrPrefixes = (nrNewLines > 0 ? (nrNewLines - 1) : 0);
+            nrPrefixes = ((nrNewLines > 0u) ? (nrNewLines - 1) : 0u);
         }
 
         /*
@@ -475,7 +475,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                         /*
                          * Reset the inputPositon
                          */
-                        inputPos = k + 1;
+                        inputPos = k + 1u;
                         break;
                     }
                 }

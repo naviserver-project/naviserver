@@ -2620,10 +2620,11 @@ FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     Tcl_DStringGetResult(interp, &ds);
 
     Tcl_DStringStartSublist(&ds);
-    Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRIu64 ".%06ld script",
+    Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRId64 ".%06ld script",
                      proxyPtr->id,
                      (long) ((proxyPtr->slavePtr != NULL) ? proxyPtr->slavePtr->pid : 0),
-                     (int64_t) proxyPtr->when.sec, proxyPtr->when.usec);
+                     (int64_t) proxyPtr->when.sec,
+                     proxyPtr->when.usec);
 
     Tcl_DStringAppendElement(&ds, Tcl_DStringValue(&proxyPtr->in) + sizeof(Req));
     Tcl_DStringEndSublist(&ds);
