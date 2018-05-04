@@ -66,8 +66,9 @@ static int HttpConnect(
     const char *sni_hostname,
     bool verify,
     bool keep_host_header,
+    Ns_Time *timeoutPtr,
     Ns_HttpTask **httpPtrPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(13);
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(14);
 
 static bool HttpGet(
     NsInterp *itPtr,
@@ -98,8 +99,9 @@ static void ProcessReplyHeaderFields(
     Ns_HttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
-static NS_SOCKET WaitWritable(
-    NS_SOCKET sock
+static Ns_ReturnCode WaitWritable(
+    NS_SOCKET sock,
+    Ns_Time *timeout
 );
 
 static ssize_t HttpTaskSend(
@@ -512,6 +514,9 @@ HttpWaitObjCmd(
             Ns_HttpCheckSpool(httpPtr);
 
             if (httpPtr->error != NULL) {
+                if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                }
                 Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 result = TCL_ERROR;
             } else {
@@ -847,20 +852,12 @@ HttpQueueCmd(
                            cert, caFile, caPath, sni_hostname,
                            (verifyInt == 1) ? NS_TRUE : NS_FALSE,
                            (keepInt == 1)   ? NS_TRUE : NS_FALSE,
+                           timeoutPtr,
                            &httpPtr
                           ) != TCL_OK) {
         result = TCL_ERROR;
 
     } else {
-        Ns_GetTime(&httpPtr->stime);
-        httpPtr->timeout = httpPtr->stime;
-
-        if (timeoutPtr != NULL) {
-            Ns_IncrTime(&httpPtr->timeout, timeoutPtr->sec, timeoutPtr->usec);
-        } else {
-            Ns_IncrTime(&httpPtr->timeout, 2, 0);
-        }
-
         /*
          * When the outputFileName is given store it in the task structure. It
          * will be used in case output is spooled to a file.
@@ -1458,33 +1455,104 @@ Ns_HttpParseHost(
  *
  *----------------------------------------------------------------------
  */
-static NS_SOCKET
+static Ns_ReturnCode
 WaitWritable(
-    NS_SOCKET sock
+    NS_SOCKET sock,
+    Ns_Time *timeout
+
 ) {
+    Ns_ReturnCode result = NS_ERROR;
+
     if (sock != NS_INVALID_SOCKET) {
           struct pollfd  pollfd;
-          int retval;
+          int            retval;
 
           pollfd.events = POLLOUT;
           pollfd.fd = sock;
 
           for (;;) {
-              /*fprintf(stderr, "# call poll on %d\n", sock);*/
-              retval = ns_poll(&pollfd, 1, 1000);
-              /*fprintf(stderr, "# call poll on %d => %d\n", sock, retval);*/
-              if (retval != 0) {
-                  break;
+              int pollto = 1000;
+
+              if (timeout != NULL) {
+                  Ns_Time diff, now;
+
+                  /*
+                   * A timeout is specified with an already set due time.
+                   * Return NS_TIMEOUT, when we run into this timeout.
+                   */
+                  Ns_GetTime(&now);
+
+                  if (Ns_DiffTime(timeout, &now, &diff) > 0) {
+                      pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
+
+                      //fprintf(stderr, "# call poll on %d %" PRId64 ".%06ld pollto %d\n",
+                      //        sock, (int64_t) timeout->sec, timeout->usec, pollto);
+                  }
+                  retval = ns_poll(&pollfd, 1, pollto);
+                  if (retval < 1) {
+                      result = NS_TIMEOUT;
+                      break;
+                  }
+              } else {
+                  /*
+                   * No timeout is specified. retry, until we run into an
+                   * error or success.
+                   */
+                  retval = ns_poll(&pollfd, 1, pollto);
+                  if (retval != 0) {
+                      break;
+                  }
               }
           }
-          if (retval != 1) {
-              /*fprintf(stderr, "# ... make sock %d invalid \n", sock);*/
-              sock = NS_INVALID_SOCKET;
+          if (retval == 1) {
+              result = NS_OK;
           }
     }
-    return sock;
+    return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EnsureWritable --
+ *
+ *        Call WaitWritable() and perform Tcl error handling
+ *
+ * Results:
+ *        Standard Tcl result code
+ *
+ * Side effects:
+ *        Might set interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+EnsureWritable(
+    Tcl_Interp  *interp,
+    Ns_HttpTask *httpPtr,
+    const char *url
+) {
+    Ns_ReturnCode rc;
+    int result = TCL_OK;
+
+    /*
+     * Make sure, the socket is in a writable state.
+     */
+    rc = WaitWritable(httpPtr->sock, &httpPtr->timeout);
+    if (rc != NS_OK) {
+        if (rc == NS_TIMEOUT) {
+            Ns_TclPrintfResult(interp, "ns_http failed: timeout");
+            Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+        } else {
+            Ns_TclPrintfResult(interp, "connect to \"%s\" failed: %s",
+                               url, ns_sockstrerror(ns_sockerrno));
+        }
+        httpPtr->sock = NS_INVALID_SOCKET;
+        result = TCL_ERROR;
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1517,6 +1585,7 @@ HttpConnect(
     const char *sni_hostname,
     bool verify,
     bool keep_host_header,
+    Ns_Time *timeoutPtr,
     Ns_HttpTask **httpPtrPtr
 ) {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
@@ -1594,8 +1663,7 @@ HttpConnect(
 
     sock = Ns_SockAsyncConnect(host, portNr);
     if (sock == NS_INVALID_SOCKET) {
-        Ns_TclPrintfResult(interp, "connect to \"%s\" failed: %s",
-                           url, ns_sockstrerror(ns_sockerrno));
+        Ns_TclPrintfResult(interp, "could not connect to \"%s\"", url);
         goto fail;
     }
 
@@ -1641,6 +1709,19 @@ HttpConnect(
     httpPtr->sendSpoolMode  = NS_FALSE;
 
     /*
+     * Handling timeouts
+     */
+    Ns_GetTime(&httpPtr->stime);
+    httpPtr->timeout = httpPtr->stime;
+
+    if (timeoutPtr != NULL) {
+        Ns_IncrTime(&httpPtr->timeout, timeoutPtr->sec, timeoutPtr->usec);
+    } else {
+        Ns_IncrTime(&httpPtr->timeout, 2, 0);
+    }
+
+
+    /*
      * Prevent sockclose in fail cases.
      */
     sock = NS_INVALID_SOCKET;
@@ -1664,17 +1745,25 @@ HttpConnect(
             /*
              * Make sure, the socket is in a writable state.
              */
-            httpPtr->sock = WaitWritable(httpPtr->sock);
+            result = EnsureWritable(interp, httpPtr, url);
+        }
+        if (likely(result == TCL_OK)) {
             /*
              * Establish the SSL/TLS connection.
              */
             result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx, sni_hostname, &ssl);
             httpPtr->ssl = ssl;
         }
-        if (unlikely(result != TCL_OK)) {
-            HttpClose(httpPtr);
-            goto fail;
-        }
+    } else {
+        result = EnsureWritable(interp, httpPtr, url);
+    }
+
+    if (unlikely(result != TCL_OK)) {
+        /*
+         * Finish everything up. HttpClose() frees httpPtr.
+         */
+        HttpClose(httpPtr);
+        goto fail;
     }
 
     Ns_DStringAppend(dsPtr, method);
@@ -2260,6 +2349,7 @@ HttpProc(
         httpPtr->error = "exception";
         break;
     }
+    httpPtr->finalSockState = why;
 
     if (taskDone) {
         /*
