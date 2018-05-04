@@ -91,7 +91,7 @@
  * Ns_ConnSetCookieEx() in the public interface, we these flags here as well.
  */
 #define NS_COOKIE_SECURE           0x01u  /* The cookie should only be sent using HTTPS */
-#define NS_COOKIE_SCRIPTABLE       0x02u  /* Available to javascript on the client. */
+#define NS_COOKIE_SCRIPTABLE       0x02u  /* Available to JavaScript on the client. */
 #define NS_COOKIE_DISCARD          0x04u  /* Discard the cookie at the end of the current session. */
 #define NS_COOKIE_REPLACE          0x08u  /* Replace the cookie in the output headers. */
 #define NS_COOKIE_EXPIRENOW        0x10u  /* Replace the cookie in the output headers. */
