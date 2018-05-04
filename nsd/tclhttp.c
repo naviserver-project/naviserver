@@ -103,6 +103,11 @@ static Ns_ReturnCode WaitWritable(
     NS_SOCKET sock,
     Ns_Time *timeout
 );
+static int EnsureWritable(
+    Tcl_Interp  *interp,
+    Ns_HttpTask *httpPtr,
+    const char *url
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2);
 
 static ssize_t HttpTaskSend(
     const Ns_HttpTask *httpPtr,
@@ -1535,6 +1540,10 @@ EnsureWritable(
 ) {
     Ns_ReturnCode rc;
     int result = TCL_OK;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(url != NULL);    
 
     /*
      * Make sure, the socket is in a writable state.
