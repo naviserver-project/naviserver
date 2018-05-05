@@ -292,7 +292,6 @@ when looping through all the key-value pairs in the set.
 
 [example_begin]
    % ns_set print $anotherSet
-   &lt;Unamed set&gt;:
            dog.food = Yummy dog food!
            cat.food = Yummy cat food!
 [example_end]
@@ -357,7 +356,7 @@ when looping through all the key-value pairs in the set.
 
 [example_begin]
    to run through an ns_set
-   for {set i 0} {$i &lt; [lb]ns_set size $myset[rb]} {incr i} {
+   for {set i 0} {$i < [lb]ns_set size $myset[rb]} {incr i} {
        set key [lb]ns_set key $myset $i[rb]
        set value [lb]ns_set value $myset $i[rb]
    }
