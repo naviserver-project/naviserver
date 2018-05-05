@@ -1,0 +1,86 @@
+[include version_include.man]
+[manpage_begin ns_base64 n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Binary-to-text and text-to-binary encoding}]
+
+[description]
+
+ These commands perform a binary-to-text encoding and vice versa.  The
+ encoded text string will be approximately 33% longer than the
+ potentially (binary) original.
+
+ These commands use either the classical alphabet (see e.g. RFC 2045)
+ referred to as "base64" or the newer URL and filename safe alphabet,
+ referred to as "base64url" (see RFC 4648). The latter does not use
+ padding and inserts no linebreaks.
+
+[list_begin definitions]
+
+[call [cmd ns_base64encode] [arg string]]
+
+[para] Encode the potentially binary argument to classical base64 encoding.
+
+[call [cmd ns_base64decode] [arg string]]
+
+[para] Decode the argument containing only characters of the classical
+base64 alphabet to a potentially binary result.
+
+
+[call [cmd ns_base64urlencode] [arg string]]
+
+[para] Encode the potentially binary argument to the
+URL and filename safe alphabet. No padding with "=" signs is
+performed, no line breaks are inserted in the text.
+
+[call [cmd ns_base64urldecode] [arg string]]
+
+[para] Decode the argument containing only characters of the URL and
+filename safe alphabet to a potentially binary result.
+
+[list_end]
+
+Classical base64 alphabet:
+[example_begin]
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+[example_end]
+
+URL and filname safe alphabet:
+[example_begin]
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+[example_end]
+
+
+[section EXAMPLES]
+
+Encoding and decoding with classical base64 alphabet:
+[example_begin]
+ % ns_base64encode Lorem?ipsum=1
+ TG9yZW0/aXBzdW09MQ==
+ 
+ % ns_base64decode TG9yZW0/aXBzdW09MQ==
+ Lorem?ipsum=1
+[example_end]
+
+Encoding and decoding with URL and filename safe alphabet:
+[example_begin]
+ % ns_base64urlencode Lorem?ipsum=1
+ TG9yZW0_aXBzdW09MQ
+ 
+ % ns_base64urldecode TG9yZW0_aXBzdW09MQ
+ Lorem?ipsum=1
+[example_end]
+ 
+[see_also ns_uuencode ns_uudecode]
+[keywords "global builtin" encoding]
+[manpage_end]
+
+
