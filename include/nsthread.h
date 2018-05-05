@@ -774,7 +774,7 @@ typedef int bool;
  * of pointer formatting macros.
  */
 #if !defined(__PRIPTR_PREFIX)
-# if defined(_LP64) || defined(_I32LPx) || defined(HAVE_64BIT)
+# if defined(_LP64) || defined(_I32LPx) || defined(HAVE_64BIT) || defined(_WIN64) || defined(_WIN32)
 #  if defined(_WIN32)
 #   define __PRIPTR_PREFIX "ll"
 #  else
