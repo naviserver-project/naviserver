@@ -136,8 +136,10 @@ namespace eval ::revproxy {
             set frontendChan [ns_connchan detach]
             log notice "back $backendChan front $frontendChan method [ns_conn method] version 1.0 $url"
 
-            ns_connchan callback -timeout $timeout $frontendChan [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
-            ns_connchan callback -timeout $timeout $backendChan  [list ::revproxy::backendReply $backendChan $frontendChan $url $timeout 0] rex
+            ns_connchan callback -timeout $timeout $frontendChan \
+                [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
+            ns_connchan callback -timeout $timeout $backendChan  \
+                [list ::revproxy::backendReply $backendChan $frontendChan $url $timeout 0] rex
 
         } errorMsg]} {
             ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"

@@ -12,7 +12,7 @@ NaviServer filter procs, which can be registered for all or selected
 urls via wildcards, that will redirect the incoming requests to some
 backend service.
 
-When the filter procs are registed as "postauth" filters, it is
+When the filter procs are registered as "postauth" filters, it is
 possible to use NaviServer (or e.g. OpenACS) as authenticating reverse
 proxy server. It is possible to specify for every registered filter
 - a target url,
