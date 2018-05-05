@@ -24,9 +24,8 @@ Note that despite it's name, ns_querygetall works on POST form data as well as q
 [list_end]
 
 
-
-[see_also nsd]
-[keywords ns_queryexists ns_queryget]
+[keywords  form query]
+[see_also  ns_query ns_queryexists ns_getform]
 
 [manpage_end]
 

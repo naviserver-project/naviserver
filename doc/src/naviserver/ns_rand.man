@@ -8,7 +8,7 @@
 
 This command generates a cryptographically secure random number. 
 If maximum is not specified, the random number returned is a 
-floating-point value n such that 0.0 &lt;= n &lt; 1.0.  If maximum
+floating-point value n such that 0.0 <= n < 1.0.  If maximum
 is specified, it must be a positive integer between 1 and 2147483647,
 in which case ns_rand will return an integer value n such that 0 <= n <= max - 1.
 

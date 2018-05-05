@@ -35,5 +35,8 @@ proc queryexiststest { } {
 
 [example_end]
 
+[keywords  form query]
+[see_also  ns_query ns_querygetall ns_getform]
+
 [manpage_end]
 

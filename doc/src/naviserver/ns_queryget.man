@@ -54,12 +54,12 @@ entry in the query data. See Example 3, below.
  Example 3: Given this HTML form: 
 
 [example_begin]
-   &lt;form enctype=multipart/form-data method=POST
-      action=/formtest&gt;
-   Local file: &lt;input name=clientfile type=file&gt;
-   To remote file: &lt;INPUT TYPE=text NAME=path VALUE="" SIZE=80&gt;
-   &lt;input name=submit type=submit value=Upload&gt;
-   &lt;/form&gt;
+   <form enctype=multipart/form-data method=POST
+      action=/formtest>
+   Local file: <input name=clientfile type=file>
+   To remote file: <INPUT TYPE=text NAME=path VALUE="" SIZE=80>
+   <input name=submit type=submit value=Upload>
+   </form>
    
 [example_end]
 
@@ -70,7 +70,7 @@ entry in the query data. See Example 3, below.
        set remotefile [lb]ns_queryget path[rb]
        set localfile [lb]ns_queryget clientfile[rb]
        set where_the_data_is [lb]ns_queryget clientfile.tmpfile[rb]
-   }&nbsp;;# formtest
+   } ;# formtest
    
 [example_end]
 
@@ -96,8 +96,8 @@ entry in the query data. See Example 3, below.
  Note that despite it's name, ns_queryget works on POST form data as well as query string data.
 
 
-[see_also nsd]
-[keywords  ns_queryexists ns_querygetall]
+[keywords  form query encoding]
+[see_also  ns_queryexists ns_querygetall ns_getform]
 
 
 [manpage_end]
