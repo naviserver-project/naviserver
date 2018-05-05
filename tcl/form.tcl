@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -95,7 +95,7 @@ proc ns_queryget {key {value ""}}  {
 proc ns_querygetall {key {def_result ""}} {
 
     set form [ns_getform]
-    
+
     if {$form eq {}} {
         set result $def_result
     } else {
@@ -105,7 +105,7 @@ proc ns_querygetall {key {def_result ""}} {
 
         #
         # Loop over all keys in the formdata, find all that
-        # case-insensitively match the passed-in key and 
+        # case-insensitively match the passed-in key and
         # append the values to the return list.
         #
 
@@ -181,7 +181,7 @@ proc ns_getform {{charset ""}}  {
     if {$charset ne {}} {
         ns_urlcharset $charset
     }
-    
+
     #
     # This depends on the fact that global variables
     # in the interpreter are cleaned up on connection
@@ -211,7 +211,7 @@ proc ns_getform {{charset ""}}  {
                         set fp [ns_openexcl $tmpfile]
                     }
                     ns_atclose [list file delete -- $tmpfile]
-                    fconfigure $fp -translation binary 
+                    fconfigure $fp -translation binary
                     ns_conn copy $off $len $fp
                     close $fp
 
@@ -261,7 +261,7 @@ proc ns_getformfile {name} {
 #
 # ns_openexcl --
 #
-#   Open a file with exclusive rights. This call will fail if 
+#   Open a file with exclusive rights. This call will fail if
 #   the file already exists in which case "" is returned.
 #
 # Results:
@@ -280,7 +280,7 @@ proc ns_openexcl {file} {
         }
         return
     }
-    
+
     return $fp
 }
 
@@ -336,29 +336,56 @@ proc ns_isformcached {} {
 # ns_parseformfile --
 #
 #   Parse a multi-part form data file, this proc does the same
-#   thing what internal server does for request content. Primary 
+#   thing what internal server does for request content. Primary
 #   purpose of this proc to be used with spooled content, when
-#   server puts the whole request into temporary file, if request
-#   was in format multipart/form-data, this proc can be used to split
-#   multiple parts
+#   server puts the whole request into temporary file. The proc handles
+#   just multipart/form-data and *www-form-urlencoded.
 #
-# Result: 
+# Result:
 #   Parses query parameters and uploaded files, puts name/value
-#   pairs into provided ns_set, all files are copied into separate temp 
+#   pairs into provided ns_set, all files are copied into separate temp
 #   files and stored as name.tmpfile in the ns_set
 #
 
 proc ns_parseformfile { file form contentType } {
 
     if { [catch { set fp [open $file r] } errmsg] } {
+        ns_log warning "ns_parseformfile could not open $file for reading"
+        return
+    }
+
+    if {[string match "*www-form-urlencoded" $contentType]} {
+        #
+        # Handle content type application/x-www-form-urlencoded (and
+        # similar for strange browsers). We revert here to in-memory
+        # parsing for content that is probably not really huge. Also
+        # writing a file-based decoder for www-form-urlencoded that
+        # sets the contents to the form would require the held the
+        # final result in memory.
+        #
+        try {
+            set content [read $fp]
+            #ns_log warning "===== ns_parseformfile reads $file $form $contentType -> [string length $content] bytes"
+            set s [ns_parsequery $content]
+            for {set i 0} {$i < [ns_set size $s]} {incr i} {
+                ns_set put $form [ns_set key $s $i] [ns_set value $s $i]
+            }
+        } on error {errorMsg} {
+            ns_log error "ns_parseformfile: could not parse form content for $contentType: $errorMsg"
+        } finally {
+            close $fp
+        }
         return
     }
 
     #
     # Note: Currently there is no parsing performed, when the content
-    # type is *www-form-urlencoded.
+    # type is neither *www-form-urlencoded nor it has boundaries
+    # defined (multipart/form-data).
     #
     if { ![regexp -nocase {boundary=(.*)$} $contentType 1 b] } {
+        ns_log warning "ns_parseformfile skips form processing: content-type $contentType"
+        close $fp
         return
     }
 
@@ -387,7 +414,7 @@ proc ns_parseformfile { file form contentType } {
         # for files).
         #
         set content_type ""
-        
+
         while { ![eof $fp] } {
             set line [string trim [gets $fp]]
             if { $line eq "" } {
@@ -420,7 +447,7 @@ proc ns_parseformfile { file form contentType } {
             #
             set start [tell $fp]
             set end $start
-            
+
             while { ![eof $fp] } {
                 if { [string match $boundary* [string trim [gets $fp]]] } {
                     break
@@ -430,7 +457,7 @@ proc ns_parseformfile { file form contentType } {
             set length [expr {$end - $start - 2}]
 
             # Create a temp file for the content, which will be deleted
-            # when the connection close.  ns_openexcl can fail, hence why 
+            # when the connection close.  ns_openexcl can fail, hence why
             # we keep spinning.
 
             set tmp ""
@@ -476,7 +503,7 @@ proc ns_parseformfile { file form contentType } {
                 set start [tell $fp]
             }
             seek $fp $start
-            
+
             if {$content_type eq "" || [string match "text/*" $content_type]} {
                 set value [encoding convertfrom utf-8 $value]
             }
@@ -593,4 +620,3 @@ proc ns_getcontent {args} {
 #    tcl-indent-level: 4
 #    indent-tabs-mode: nil
 # End:
-
