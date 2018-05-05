@@ -1119,7 +1119,7 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    connPtr = (Conn *) conn;
+    connPtr = (const Conn *) conn;
     reqPtr = connPtr->reqPtr;
     assert(reqPtr != NULL);
 

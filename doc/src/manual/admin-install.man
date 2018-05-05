@@ -28,7 +28,7 @@ NaviServer is reasonably portable and known to compile and run on the following 
 
 [item]HP/UX 10 and 11 (hppa)
 
-[item]DEC Tru64 &amp;OSF/1 4.0 and better (alpha)
+[item]DEC Tru64 & OSF/1 4.0 and better (alpha)
 
 [item]UnixWare 7.x and better (x86)
 
