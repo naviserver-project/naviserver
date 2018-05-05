@@ -152,6 +152,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_connchan]]
 [call [cmd ns_conncptofp]]
 [call [cmd ns_formvalueput]]
+[call [cmd ns_getcontent]]
 [call [cmd ns_getform]]
 [call [cmd ns_getformfile]]
 [call [cmd ns_htmlselect]]

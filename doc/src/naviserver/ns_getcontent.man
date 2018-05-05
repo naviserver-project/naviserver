@@ -1,0 +1,39 @@
+[include version_include.man]
+[manpage_begin ns_getcontent n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return the message body of a received request}]
+
+[description]
+
+This command returns the content of a request as file or as string, no matter,
+whether it was spooled during upload into a file or not. The user
+can specify, whether the result should treated as binary or not.
+the default is "-as_file true", since this will not run into
+memory problems on huge files.
+
+
+[section COMMANDs]
+
+[list_begin definitions]
+
+[call [cmd ns_getcontent] \
+     [opt [option -as_file] [arg bool]] \
+     [opt [option -binary] [arg bool]]]
+
+Returns as result the file name of the tmp file (when spooled to a file, default) or the
+content of the file (when as_file is false).
+
+When [option -binary] is true (default) the result is returned
+literally, otherwise the content is translated to the active charset.
+
+[para]
+Typically this command is used on POST, PUT, PROPFIND or similar requests.
+
+[list_end]
+
+[keywords form]
+[see_also ns_getform ns_conn]
+
+[manpage_end]
+
