@@ -1743,7 +1743,7 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             result = TCL_ERROR;
 
         } else if (ctx == NULL) {
-            Ns_TclPrintfResult(interp, "could not create encryptiion context", NULL);
+            Ns_TclPrintfResult(interp, "could not create encryption context", NULL);
             result = TCL_ERROR;
 
         } else if ((EVP_EncryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1)
