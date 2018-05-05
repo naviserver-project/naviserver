@@ -1100,7 +1100,9 @@ Ns_SetPrint(const Ns_Set *set)
     size_t  i;
 
     NS_NONNULL_ASSERT(set != NULL);
-
+    if (set->name != NULL) {
+        fprintf(stderr, "%s:\n", set->name);
+    }
     for (i = 0u; i < set->size; ++i) {
         if (set->fields[i].name == NULL) {
             fprintf(stderr, "\t(null) = ");
