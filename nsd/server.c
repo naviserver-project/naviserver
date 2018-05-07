@@ -301,6 +301,9 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     Ns_MutexInit(&servPtr->tcl.synch.lock);
     Ns_MutexSetName2(&servPtr->tcl.synch.lock, "nsd:tcl:synch", server);
 
+    Ns_MutexInit(&servPtr->urlspace.lock);
+    Ns_MutexSetName2(&servPtr->urlspace.lock, "nsd:urlspace", server);
+
     /*
      * Load modules and initialize Tcl.  The order is significant.
      */
