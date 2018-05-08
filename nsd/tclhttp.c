@@ -1477,6 +1477,7 @@ WaitWritable(
 
           for (;;) {
               int pollto = 1000;
+              //fprintf(stderr, "WaitWritable: timeout %p\n", timeout);
 
               if (timeout != NULL) {
                   Ns_Time diff, now;
@@ -1489,15 +1490,18 @@ WaitWritable(
 
                   if (Ns_DiffTime(timeout, &now, &diff) > 0) {
                       pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
-
-                      //fprintf(stderr, "# call poll on %d %" PRId64 ".%06ld pollto %d\n",
-                      //        sock, (int64_t) timeout->sec, timeout->usec, pollto);
                   }
                   retval = ns_poll(&pollfd, 1, pollto);
+                  //fprintf(stderr, "# call poll on %d %" PRId64 ".%06ld pollto %d => %d\n",
+                  //        sock, (int64_t) timeout->sec, timeout->usec, pollto, retval);
+                  // ns_http run http://naviserver.sourceforge.net/n/naviserver/files/commandlist.htmlx
+                  // ns_http run https://naviserver.sourceforge.net/n/naviserver/files/commandlist.html
+                  // ns_http run https://naviserver.sourceforge.io/n/naviserver/files/commandlist.html
+                  // ns_http run https://google.com/
                   if (retval < 1) {
                       result = NS_TIMEOUT;
-                      break;
                   }
+                  break;
               } else {
                   /*
                    * No timeout is specified. retry, until we run into an
@@ -1543,7 +1547,7 @@ EnsureWritable(
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(httpPtr != NULL);
-    NS_NONNULL_ASSERT(url != NULL);    
+    NS_NONNULL_ASSERT(url != NULL);
 
     /*
      * Make sure, the socket is in a writable state.
