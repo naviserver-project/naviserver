@@ -88,7 +88,6 @@ XX01234567890
 XX01234567890}
 
 test ns_reflow_text-3.3 {reflow with overflow, offset and prefix overflow elements at end} -body {
-    ns_log notice NOW
     ns_reflow_text -width 10 -prefix XX -offset 5 -- {aaa bb dd 01234567890 01234567890}
 } -result {aaa
 XXbb dd
