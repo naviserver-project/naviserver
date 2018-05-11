@@ -1226,13 +1226,14 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 int r = EVP_DigestSignInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
 
                 if (r == 0) {
-                    fprintf(stderr, "could not initialize signature context\n");
+                    Ns_TclPrintfResult(interp, "could not initialize signature context");
+                    result = TCL_ERROR;
                     pctx = NULL;
                     mdLength = 0u;
                 } else {
-                    (void)EVP_DigestSignUpdate(mdctx, messageString, messageLength);
+                    (void)EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
                     (void)EVP_DigestSignFinal(mdctx, digest, (size_t*)&mdLength);
-                    fprintf(stderr, "final signature length %u\n",mdLength);
+                    //fprintf(stderr, "final signature length %u\n",mdLength);
                     outputBuffer = ns_malloc(mdLength * 2u + 1u);
                 }
                 EVP_PKEY_free(pkey);
@@ -1245,11 +1246,13 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
             NS_EVP_MD_CTX_free(mdctx);
 
-            /*
-             * Convert the result to the output format and set the interp
-             * result.
-             */
-            SetEncodedResultObj(interp, digest, mdLength, outputBuffer, encoding);
+            if (result == TCL_OK) {
+                /*
+                 * Convert the result to the output format and set the interp
+                 * result.
+                 */
+                SetEncodedResultObj(interp, digest, mdLength, outputBuffer, encoding);
+            }
             if (outputBuffer != digestChars) {
                 ns_free(outputBuffer);
             }
@@ -1739,18 +1742,18 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             || (ivLength == 0 && EVP_CIPHER_iv_length(cipher) > 0)
             ) {
             Ns_TclPrintfResult(interp, "initialization vector is invalid (default length for %s: %d bytes)",
-                               cipherName, EVP_CIPHER_iv_length(cipher), NULL);
+                               cipherName, EVP_CIPHER_iv_length(cipher));
             result = TCL_ERROR;
 
         } else if (ctx == NULL) {
-            Ns_TclPrintfResult(interp, "could not create encryption context", NULL);
+            Ns_TclPrintfResult(interp, "could not create encryption context");
             result = TCL_ERROR;
 
         } else if ((EVP_EncryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1)
                    || (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, ivLength, NULL) != 1)
                    || (EVP_EncryptInit_ex(ctx, NULL, NULL, keyString, (const unsigned char *)ivString) != 1)
                    ) {
-            Ns_TclPrintfResult(interp, "could not initialize encryption context", NULL);
+            Ns_TclPrintfResult(interp, "could not initialize encryption context");
             result = TCL_ERROR;
 
         } else if (EVP_EncryptUpdate(ctx, NULL, &length, (const unsigned char *)aadString, aadLength) != 1) {
@@ -1760,7 +1763,7 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * EVP_DecryptUpdate() should be made with the output
              * parameter out set to NULL.
              */
-            Ns_TclPrintfResult(interp, "could not set additional authenticated data (AAD)", NULL);
+            Ns_TclPrintfResult(interp, "could not set additional authenticated data (AAD)");
             result = TCL_ERROR;
 
         } else {
