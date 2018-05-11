@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
   <link rel="stylesheet" href="doc/naviserver/man.css" type="text/css">
@@ -30,9 +31,9 @@
   <hr>
   <p>
   <ul>
-  <li>The NaviServer <a href="doc/toc.html">Documentation<a> has been included with this distribution.<p>
+  <li>The NaviServer <a href="doc/toc.html">Documentation</a> has been included with this distribution.<p>
 
-  <li>The NaviServer <a href="examples/">Examples<a> include a few useful scripts and tricks.<p>
+  <li>The NaviServer <a href="examples/">Examples</a> include a few useful scripts and tricks.<p>
 
   <%
    ns_adp_puts {<li>The NaviServer <a href="nsstats.tcl">Statistics page</a> can be
