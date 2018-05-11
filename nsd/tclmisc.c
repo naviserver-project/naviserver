@@ -735,6 +735,18 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 
+#if 0
+static void hexPrint(const char *msg, unsigned char *octects, size_t octectLength)
+{
+    size_t i;
+    fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
+    for (i=0; i<octectLength; i++) {
+        fprintf(stderr, "%.2x ",octects[i] & 0xff);
+    }
+    fprintf(stderr, "\n");
+}
+#endif
+
 static int
 Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding)
 {
@@ -753,6 +765,8 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
         Tcl_DStringInit(&ds);
         bytes = (const unsigned char*)Ns_GetBinaryString(objv[1], &nbytes, &ds);
+        //hexPrint("source ", bytes, nbytes);
+
         size = (size_t)nbytes;
         buffer = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
         (void)Ns_HtuuEncode2(bytes, size, buffer, encoding);
@@ -808,6 +822,7 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
         size = Ns_HtuuDecode2(chars, decoded, size, encoding);
+        //hexPrint("decoded", decoded, size);
         decoded[size] = UCHAR('\0');
         Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
         ns_free(decoded);

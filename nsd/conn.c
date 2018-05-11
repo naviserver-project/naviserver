@@ -1350,7 +1350,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     const char          *setName;
 
     static const char *const opts[] = {
-        "auth", "authpassword", "authuser",
+        "acceptedcompression", "auth", "authpassword", "authuser",
         "channel", "clientdata", "close", "compress", "content",
         "contentfile", "contentlength", "contentsentlength", "copy",
         "driver",
@@ -1373,7 +1373,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         NULL
     };
     enum ISubCmdIdx {
-        CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
+        CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
         CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
         CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
         CDriverIdx,
@@ -1966,6 +1966,21 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CZipacceptedIdx:
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u));
+        break;
+
+    case CAacceptedcompressionIdx:
+        {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+            
+            if ((connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("brotli", 6));
+            }
+            if ((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("gzip", 4));
+            }
+
+            Tcl_SetObjResult(interp, listObj);
+        }
         break;
 
     default:

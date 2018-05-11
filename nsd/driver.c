@@ -3404,7 +3404,6 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
 static size_t
 EndOfHeader(Sock *sockPtr)
 {
-    bool        gzip;
     Request    *reqPtr;
     const char *s;
 
@@ -3489,25 +3488,34 @@ EndOfHeader(Sock *sockPtr)
     }
 
     /*
-     * Clear NS_CONN_ZIPACCEPTED flag
+     * Compression format handling: parse information from request headers
+     * indicating allowed compression formats for quick access.
+     *
+     * Clear compression accepted flag
      */
-    sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED);
+    sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED|NS_CONN_BROTLIACCEPTED);
 
     s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
     if (s != NULL) {
-        /* get gzip from accept-encoding header */
-        gzip = NsParseAcceptEncoding(reqPtr->request.version, s);
-    } else {
-        /* no accept-encoding header; don't allow gzip */
-        gzip = NS_FALSE;
-    }
-    if (gzip) {
+        bool gzipAccept, brotliAccept;
+
         /*
-         * Don't allow gzip results for Range requests.
+         * Get allowed compression formats from "accept-encoding" headers.
          */
-        s = Ns_SetIGet(reqPtr->headers, "Range");
-        if (s == NULL) {
-            sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+        NsParseAcceptEncoding(reqPtr->request.version, s, &gzipAccept, &brotliAccept);
+        if (gzipAccept || brotliAccept) {
+            /*
+             * Don't allow compression formats for Range requests.
+             */
+            s = Ns_SetIGet(reqPtr->headers, "Range");
+            if (s == NULL) {
+                if (gzipAccept) {
+                    sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+                }
+                if (brotliAccept) {
+                    sockPtr->flags |= NS_CONN_BROTLIACCEPTED;
+                }
+            }
         }
     }
 

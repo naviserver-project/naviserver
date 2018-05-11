@@ -20,6 +20,10 @@ The subcommands of ns_conn are (in alphabetical order):
 
 [list_begin definitions]
 
+[call [cmd  "ns_conn acceptedcompression"]]
+
+Returns the compression formats accepted by the client.
+
 [call [cmd  "ns_conn auth"]]
 
 Returns all authorization headers as a ns_set. For Basic authentication

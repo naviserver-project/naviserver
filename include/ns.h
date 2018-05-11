@@ -67,23 +67,24 @@
  * public interface in e.g. Ns_ConnWriteVChars() or Ns_ConnWriteData()
  */
 
-#define NS_CONN_CLOSED             0x001u /* The underlying socket is closed */
-#define NS_CONN_SKIPHDRS           0x002u /* Client is HTTP/0.9, do not send HTTP headers  */
-#define NS_CONN_SKIPBODY           0x004u /* HTTP HEAD request, do not send body */
-#define NS_CONN_READHDRS           0x008u /* Unused */
-#define NS_CONN_SENTHDRS           0x010u /* Response headers have been sent to client */
-#define NS_CONN_WRITE_ENCODED      0x020u /* Character data mode requested mime-type header. */
-#define NS_CONN_STREAM             0x040u /* Data is to be streamed when ready.  */
-#define NS_CONN_STREAM_CLOSE       0x080u /* Writer Stream should be closed.  */
-#define NS_CONN_CHUNK              0x100u /* Streamed data is to be chunked. */
-#define NS_CONN_SENT_LAST_CHUNK    0x200u /* Marks that the last chunk was sent in chunked mode */
-#define NS_CONN_SENT_VIA_WRITER    0x400u /* Response data has been sent via writer thread */
-#define NS_CONN_SOCK_CORKED        0x800u /* underlying socket is corked */
-#define NS_CONN_ZIPACCEPTED       0x1000u /* the request accepts zip encoding */
-#define NS_CONN_ENTITYTOOLARGE    0x2000u /* the sent Entity was too large */
-#define NS_CONN_REQUESTURITOOLONG 0x4000u /* request-URI too long */
-#define NS_CONN_LINETOOLONG       0x8000u /* request Header line too long */
-#define NS_CONN_CONFIGURED      0x100000u /* the connection is fully configured */
+#define NS_CONN_CLOSED               0x001u /* The underlying socket is closed */
+#define NS_CONN_SKIPHDRS             0x002u /* Client is HTTP/0.9, do not send HTTP headers  */
+#define NS_CONN_SKIPBODY             0x004u /* HTTP HEAD request, do not send body */
+#define NS_CONN_READHDRS             0x008u /* Unused */
+#define NS_CONN_SENTHDRS             0x010u /* Response headers have been sent to client */
+#define NS_CONN_WRITE_ENCODED        0x020u /* Character data mode requested mime-type header. */
+#define NS_CONN_STREAM               0x040u /* Data is to be streamed when ready.  */
+#define NS_CONN_STREAM_CLOSE         0x080u /* Writer Stream should be closed.  */
+#define NS_CONN_CHUNK                0x100u /* Streamed data is to be chunked. */
+#define NS_CONN_SENT_LAST_CHUNK      0x200u /* Marks that the last chunk was sent in chunked mode */
+#define NS_CONN_SENT_VIA_WRITER      0x400u /* Response data has been sent via writer thread */
+#define NS_CONN_SOCK_CORKED          0x800u /* underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED         0x1000u /* the request accepts zip compression */
+#define NS_CONN_BROTLIACCEPTED      0x2000u /* the request accept brotli compression */
+#define NS_CONN_ENTITYTOOLARGE    0x010000u /* the sent Entity was too large */
+#define NS_CONN_REQUESTURITOOLONG 0x020000u /* request-URI too long */
+#define NS_CONN_LINETOOLONG       0x040000u /* request Header line too long */
+#define NS_CONN_CONFIGURED        0x100000u /* the connection is fully configured */
 
 /*
  * Coockie creation options.  For NaviServer and the current set of NaviServer

@@ -1546,8 +1546,8 @@ NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
 /*
  * request parsing
  */
-NS_EXTERN bool NsParseAcceptEncoding(double version, const char *hdr)
-    NS_GNUC_NONNULL(2);
+NS_EXTERN void NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool *brotliAcceptPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 /*
  * encoding.c

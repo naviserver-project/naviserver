@@ -348,7 +348,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
     int          length;
 
     NS_NONNULL_ASSERT(request != NULL);
-    
+
     Tcl_SplitList(NULL, request->urlv, &length, &elements);
 
     if (n <= request->urlc) {
@@ -504,7 +504,7 @@ SetUrl(Ns_Request *request, char *url)
     Tcl_DStringFree(&ds2);
 
     /*
-     * Build the urlv and set urlc. 
+     * Build the urlv and set urlc.
      */
     {
         Tcl_Obj *listPtr, *segmentObj;
@@ -515,7 +515,7 @@ SetUrl(Ns_Request *request, char *url)
          * Skip the leading slash.
          */
         encodedPath++;
-        
+
         while (*encodedPath != '\0') {
             p = strchr(encodedPath, INTCHAR('/'));
             if (p == NULL) {
@@ -526,8 +526,8 @@ SetUrl(Ns_Request *request, char *url)
             segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
             Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
             Tcl_DStringSetLength(&ds1, 0);
-	    encodedPath = p + 1;
-	}
+            encodedPath = p + 1;
+        }
         /*
          * Append last segment if not empty (for compatibility with previous
          * versions).
@@ -736,7 +736,8 @@ GetQvalue(const char *str, int *lenPtr) {
  *      encodingFormat (e.g. "gzip", "identy") and return its q value.
  *
  * Results:
- *      On success non-NULL value and he parsed qValue;
+ *      On success non-NULL value and the parsed qValue
+ *      (when no qvalue is provided then assume qvalue as 1.0);
  *      On failure NULL value qValue set to -1;
  *
  * Side effects:
@@ -770,7 +771,66 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
     return encodingStr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompressAllow --
+ *
+ *      Handle quality values expressed expicitly (for gzip or brotli) in the
+ *      header fields. Respect cases, where compression is forbidden via
+ *      identy or default rules.
+ *
+ * Results:
+ *      boolen
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+CompressAllow(double compressQvalue, double identityQvalue, double starQvalue)
+{
+    bool result;
 
+    if (compressQvalue > 0.999) {
+        /*
+         * Compress qvalue 1, use it, nothing else can be higher, so it is
+         * allowed.
+         */
+        result = NS_TRUE;
+    } else if (compressQvalue < 0.0009) {
+        /*
+         * Compress qvalue 0, forbid this kind of compressions
+         */
+        result = NS_FALSE;
+    } else {
+        /*
+         * A middle compress qvalue was specified, compare it with identity
+         * and default.
+         */
+        if (identityQvalue >=- 1.0) {
+            /*
+             * The compression format is allowed, when the compression qvalue
+             * is larger than identity.
+             */
+            result = (compressQvalue >= identityQvalue);
+        } else if (starQvalue >= -1.0) {
+            /*
+             * gzip is used, when gzip qvalue is larger than default
+             */
+            result = (compressQvalue >= starQvalue);
+        } else {
+            /*
+             * Accept the low qvalue due to lack of alternatives
+             */
+            result = NS_TRUE;
+        }
+        fprintf(stderr, "CompressAllow middle compressQvalue %f identity %f result %d\n", compressQvalue, identityQvalue,result);
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -781,81 +841,66 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
  *      encoding is accepted or not.
  *
  * Results:
- *      0 or 1
+ *      The result is passed back in the last two arguments.
  *
  * Side effects:
  *      None.
  *
  *----------------------------------------------------------------------
  */
-bool
-NsParseAcceptEncoding(double version, const char *hdr)
+void
+NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool *brotliAcceptPtr)
 {
-    double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
-    bool   gzipAccept;
+    double      gzipQvalue = -1.0, brotliQvalue = -1, starQvalue = -1.0, identityQvalue = -1.0;
+    bool        gzipAccept, brotliAccept;
+    const char *gzipFormat, *brotliFormat, *starFormat, *identiyFormat;
 
     NS_NONNULL_ASSERT(hdr != NULL);
+    NS_NONNULL_ASSERT(gzipAcceptPtr != NULL);
+    NS_NONNULL_ASSERT(brotliAcceptPtr != NULL);
 
-    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue) != NULL) {
+    gzipFormat    = GetEncodingFormat(hdr, "gzip", &gzipQvalue);
+    brotliFormat  = GetEncodingFormat(hdr, "br", &brotliQvalue);
+    starFormat    = GetEncodingFormat(hdr, "*", &starQvalue);
+    identiyFormat = GetEncodingFormat(hdr, "identity", &identityQvalue);
+
+    //fprintf(stderr, "hdr line <%s> gzipFormat <%s> brotliFormat <%s>\n", hdr, gzipFormat, brotliFormat);
+    if ((gzipFormat != NULL) || (brotliFormat != NULL)) {
+        gzipAccept   = CompressAllow(gzipQvalue, identityQvalue, starQvalue);
+        brotliAccept = CompressAllow(brotliQvalue, identityQvalue, starQvalue);
+    } else if (starFormat != NULL) {
         /*
-         * we have gzip specified in accept-encoding
-         */
-        if (gzipQvalue > 0.999) {
-            /*
-             * gzip qvalue 1, use it, nothing else can be higher
-             */
-            gzipAccept = NS_TRUE;
-        } else if (gzipQvalue < 0.0009) {
-            /*
-             * gzip qvalue 0, forbid gzip
-             */
-            gzipAccept = NS_FALSE;
-        } else {
-            /*
-             * a middle gzip qvalue, compare it with identity and default
-             */
-            if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
-                /*
-                 * gzip qvalue larger than identity
-                 */
-                gzipAccept = (gzipQvalue >= identityQvalue);
-            } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
-                /*
-                 * gzip qvalue larger than default
-                 */
-                gzipAccept = (gzipQvalue >= starQvalue);
-            } else {
-                /*
-                 * just the low qvalue was specified
-                 */
-                gzipAccept = NS_TRUE;
-            }
-        }
-    } else if (GetEncodingFormat(hdr, "*", &starQvalue) != NULL) {
-        /*
-         * star matches everything, so as well gzip
+         * No compress format was specified, star matches everything, so as
+         * well the compression formats.
          */
         if (starQvalue < 0.0009) {
             /*
-             * star qvalue forbids gzip
+             * The low "*" qvalue forbids the compression formats.
              */
             gzipAccept = NS_FALSE;
-        } else if (GetEncodingFormat(hdr, "identity", &identityQvalue) != NULL) {
+        } else if (identityQvalue >= -1) {
             /*
-             * star qvalue allows gzip in HTTP/1.1
+             * Star qvalue allows gzip in HTTP/1.1, when it is larger
+             * than identity.
              */
             gzipAccept = (starQvalue >= identityQvalue) && (version >= 1.1);
         } else {
             /*
-             * no identity specified, assume gzip is matched with * in HTTP/1.1
+             * No identity was specified, assume compression format is matched
+             * with "*" in HTTP/1.1
              */
             gzipAccept = (version >= 1.1);
         }
+        /*
+         * The implicit rules are the same for gzip and brotli.
+         */
+        brotliAccept = gzipAccept;
     } else {
-        gzipAccept = NS_FALSE;
+        gzipAccept   = NS_FALSE;
+        brotliAccept = NS_FALSE;
     }
-
-    return gzipAccept;
+    *gzipAcceptPtr   = gzipAccept;
+    *brotliAcceptPtr = brotliAccept;
 }
 
 /*
