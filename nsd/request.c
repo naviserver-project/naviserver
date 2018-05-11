@@ -827,7 +827,7 @@ CompressAllow(double compressQvalue, double identityQvalue, double starQvalue)
              */
             result = NS_TRUE;
         }
-        fprintf(stderr, "CompressAllow middle compressQvalue %f identity %f result %d\n", compressQvalue, identityQvalue,result);
+        //fprintf(stderr, "CompressAllow middle compressQvalue %f identity %f result %d\n", compressQvalue, identityQvalue,result);
     }
     return result;
 }
