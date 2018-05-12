@@ -108,7 +108,7 @@ Two options to configure.sh script worth noting:
 
 [list_begin enum]
 
-[enum] --enable-symbols to enable debugging information to be compied in for
+[enum] --enable-symbols to enable debugging information to be compiled in for
        easy debugging, otherwise it will be compiled with optimization enabled and
        that will prevent from effective troubleshooting in case of server crash
 
@@ -133,22 +133,35 @@ can be overridden by typing "[emph {gmake install PREFIX=/your/directory/}]".
 To download and install additional modules:
 
 [example_begin]
-hg clone http://bitbucket.org/naviserver/modulename
-cd modulename
-make install
+  hg clone http://bitbucket.org/naviserver/modulename
+  cd modulename
+  make install
 [example_end]
+
+[para]
+The steps above assume, that NaviServer is installed at the standard
+place at [term /usr/local/ns/]. If this is not the case in your
+installation, please provide the location to make via parameter
+[term NAVISERVER].
+
+[example_begin]
+  make NAVISERVER=PATH_TO_LOCATION install
+[example_end]
+
 
 At this moment the following modules are available:
 [para]
 
-[emph {nsaccess nsclamav nsdbi nsdbmysql nsdhcpd nsicmp nsmemcache nssip nsstats nsvfs nsaspell nsconf nsdbilite nsdbpg nsdns nsimap nsphp nssmtpd nssyslogd nszlib nsauthpam nsconfigrw nsdbimy nsdbsqlite nsexpat nsldapd nsradiusd nssnmp nstftpd nschartdir nsdbbdb nsdbipg nsdbtds nsgdchart nsloopctl nsrtsp nsssl nsudp}]
+[emph {nsaccess nsclamav nsdbi nsdbmysql nsdhcpd nsicmp nsmemcache nssip nsstats nsvfs nsaspell nsconf nsdbilite nsdbpg nsdns nsimap nsphp nssmtpd nssyslogd nszlib nsauthpam nsconfigrw nsdbimy nsdbsqlite nsexpat nsldapd nsradiusd nssnmp nstftpd nschartdir nsdbbdb nsdbipg nsdbtds nsgdchart nsloopctl nsrtsp nsssl nsoracle nsudp}]
 
-To check what modules ara available go to http://bitbucket.org/naviserver/.
+[para]
+To check what modules are available go to http://bitbucket.org/naviserver/.
 
 [para]
 
-Not all modules will be compiled by default due to external dependencies, so
-please look into module's README file for any additional information.
+Some of the modules have external dependencies such as include
+directories or paths to libraries, so please look into module's README
+file for any additional information.
 
 [section {Configuring}]
 
@@ -161,7 +174,7 @@ This configuration will:
   [enum]Listen for HTTP connections on your computer's  primary interface at port 8080.  To use another port  and/or
         select interfaces, you can set the "post" and "address" parameters.
 
-  [enum]Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
+  [enum]Check security settings for [term nscp] (Control Port module) and listen on localhost:2080 if they are set.
 
 
 [list_end]
@@ -183,18 +196,24 @@ Although  you must be root to start NaviServer on port 80,  the server itself mu
 change to a  regular user shortly after initialization.   You either
 need to start the  server as a non-root user (in which case you  will
 not be able to listen  for connections on privileged ports such as port
-80)  or you must include  a -u user command line flag to which the
+80)  or you must include  a [emph -u user] command line flag to which the
 server will  setuid(2) after startup.
 
 [para]
 
-If NaviServer was installed with default nsd.tcl config file, just type /usr/local/ns/bin/nsd
+If NaviServer was installed with default nsd.tcl config file, just
+type
+[example_begin]
+  /usr/local/ns/bin/nsd
+[example_end]
 and it will be started in the background listening on port 8080.
 
 [para]
 
-You may either specify a Unix username or numeric uid, e.g.: 
-[emph {bin/nsd -t conf/nsd-config.tcl -u user}]
+You may either specify a Unix username or numeric uid, e.g.:
+[example_begin]
+  bin/nsd -t conf/nsd-config.tcl -u user
+[example_end]
 
 [para]
 
@@ -204,8 +223,9 @@ For the mode  of operation, there are four choices:
 [list_begin itemized]
 
 [item] Foreground mode:
-[para]
-[emph {bin/nsd  -f -t conf/nsd-config.tcl -u user -g group}]
+[example_begin]
+  bin/nsd  -f -t conf/nsd-config.tcl -u user -g group
+[example_end]
 
 [para]
 In [emph {Foreground }]mode , the server starts  and emits diagnostic log messages
@@ -220,8 +240,9 @@ initiate shutdown.
 
 [item] Background mode:
 
-[para]
-[emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
+[example_begin]
+  bin/nsd -t conf/nsd-config.tcl -u user -g group
+[example_end]
 
 [para]
 In [emph {Background }]mode, the server  forks and disassociates from the terminal.
@@ -237,26 +258,32 @@ file, send the signal and wait for shutdown, e.g.:
 
 [item] Background mode with built-in watchdog:
 
-[para]
-
-[emph {/usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u user -g group}]
+[example_begin]
+ /usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u user -g group
+[example_end]
 
 [para]
 In [emph {Watchdog}] mode, the server is restarted automatically when
 it crashes independent from the respawn support from the operating system.
 
 
-[item] Inittab mode:
+[item] Inittab mode (non-forking mode):
 
 [para]
 
-[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -i -t /usr/local/ns/nsd-config.tcl -u user -g group}]
+[example_begin]
+  w1:23:respawn:/usr/local/ns/bin/nsd  -i -t /usr/local/ns/nsd-config.tcl -u user -g group
+[example_end]
 
 [para]
 In [emph {Inittab}] mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
-is that init will restart the server if it  happens to crash. 
+is that init will restart the server automatically.
+
+[para]
+Furthermore, the inittab mode is needed as well on MacOS when
+NaviServer is started via launchd (controlled via launchctl).
 
 
 [list_end]
