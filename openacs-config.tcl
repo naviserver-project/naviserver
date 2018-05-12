@@ -207,7 +207,7 @@ ns_section      "ns/fastpath"
     #ns_param        minify_js_cmd       "/usr/bin/yui-compressor --type js"
     #ns_param        brotli_static       true       ;# check for static brotli files; default: false
     #ns_param        brotli_refresh      true       ;# refresh stale .br files on the fly using ::ns_brotlifile
-    #ns_param        brotli_cmd          "/usr/bin/brotli -f -q 11"  ;# use for re-compressing
+    #ns_param        brotli_cmd          "/usr/bin/brotli -f -Z"  ;# use for re-compressing
 
 
 #---------------------------------------------------------------------
