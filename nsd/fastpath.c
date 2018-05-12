@@ -63,7 +63,7 @@ static bool UrlIs(const char *server, const char *url, bool isDir)
 static Ns_ReturnCode FastGetRestart(Ns_Conn *conn, const char *page)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Ns_ReturnCode FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file)
+static Ns_ReturnCode FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *fileName)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static int  CompressExternalFile(Tcl_Interp *interp, const char *cmdName, const char *fileName, const char *gzFileName)
@@ -286,18 +286,18 @@ ConfigServerFastpath(const char *server)
  */
 
 Ns_ReturnCode
-Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file)
+Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const char *fileName)
 {
     Conn         *connPtr = (Conn *) conn;
     Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    NS_NONNULL_ASSERT(file != NULL);
+    NS_NONNULL_ASSERT(fileName != NULL);
 
-    if (Ns_Stat(file, &connPtr->fileInfo) == NS_FALSE) {
+    if (Ns_Stat(fileName, &connPtr->fileInfo) == NS_FALSE) {
         status = Ns_ConnReturnNotFound(conn);
     } else {
-        status = FastReturn(conn, statusCode, mimeType, file);
+        status = FastReturn(conn, statusCode, mimeType, fileName);
     }
 
     return status;
