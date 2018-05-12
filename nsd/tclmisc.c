@@ -750,7 +750,6 @@ static void hexPrint(const char *msg, unsigned char *octects, size_t octectLengt
 static int
 Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding)
 {
-
     int result = TCL_OK;
 
     if (objc != 2) {
@@ -760,18 +759,19 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         char                *buffer;
         size_t               size;
         int                  nbytes = 0;
-        Tcl_DString          ds;
-        const unsigned char *bytes;
+        //Tcl_DString          ds;
+        //const unsigned char *bytes;
+        const unsigned char *bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
 
-        Tcl_DStringInit(&ds);
-        bytes = (const unsigned char*)Ns_GetBinaryString(objv[1], &nbytes, &ds);
+        //Tcl_DStringInit(&ds);
+        //bytes = (const unsigned char*)Ns_GetBinaryString(objv[1], &nbytes, &ds);
         //hexPrint("source ", bytes, nbytes);
 
         size = (size_t)nbytes;
         buffer = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
         (void)Ns_HtuuEncode2(bytes, size, buffer, encoding);
         Tcl_SetResult(interp, buffer, (Tcl_FreeProc *) ns_free);
-        Tcl_DStringFree(&ds);
+        //Tcl_DStringFree(&ds);
     }
     return result;
 }

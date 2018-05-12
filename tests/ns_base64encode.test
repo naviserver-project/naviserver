@@ -55,24 +55,24 @@ test ns_base64encoding-2.6 {ns_base64decode space} -body {
 test ns_base64encoding-3.1 {ns_base64decode identity test} -body {
     ns_base64decode [ns_base64encode "this is a test"]
 } -result "this is a test"
-# test ns_base64encoding-3.1r {ns_base64encode embedded nulls round-trip} -body {
-#     set string "a\0b"
-#     set encoding [ns_base64encode $string]
-#     set decoding [ns_base64decode $encoding]
-#     set result [string equal $string $decoding]-$string-$decoding
-# } -result  1
+ test ns_base64encoding-3.1r {ns_base64encode embedded nulls round-trip} -body {
+     set string "a\0b"
+     set encoding [ns_base64encode $string]
+     set decoding [ns_base64decode $encoding]
+     set result [string equal $string $decoding]
+ } -result 1
 
 
 test ns_base64encoding-4.1 {ns_base64encode embedded nulls} -body {
     ns_base64encode "test\0test\0testpass"
 } -result  "dGVzdAB0ZXN0AHRlc3RwYXNz"
 
-# test ns_base64encoding-4.1r {ns_base64encode embedded nulls round-trip} -body {
-#     set string "test\0test\0testpass"
-#     set encoding [ns_base64encode $string]
-#     set decoding [ns_base64decode $encoding]
-#     set result [string equal $string $decoding]-$string-$decoding
-# } -result  1
+ test ns_base64encoding-4.1r {ns_base64encode embedded nulls round-trip} -body {
+     set string "test\0test\0testpass"
+     set encoding [ns_base64encode $string]
+     set decoding [ns_base64decode $encoding]
+     set result [string equal $string $decoding]
+ } -result  1
 
 
 test ns_base64encoding-4.2 {ns_base64encode embedded nulls with range} -body {
