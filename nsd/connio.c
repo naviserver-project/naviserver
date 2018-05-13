@@ -1182,7 +1182,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
                    unsigned int flags, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
-    bool        success = NS_TRUE;
+    bool        success;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);

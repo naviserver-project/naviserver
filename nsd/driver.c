@@ -2903,7 +2903,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     struct iovec iov[3];
     char         header[32];
     ssize_t      sent;
-    const char  *response = NULL;
+    const char  *response;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -6379,7 +6379,6 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
 {
     int     result = TCL_OK;
     Driver *drvPtr;
-    Sock   *sockPtr = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(protocol != NULL);
@@ -6390,8 +6389,9 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
     if (drvPtr == NULL) {
         result = TCL_ERROR;
     } else {
-        Tcl_DString    ds, *dsPtr = &ds;
-        Request       *reqPtr;
+        Sock        *sockPtr;
+        Tcl_DString  ds, *dsPtr = &ds;
+        Request     *reqPtr;
 
         sockPtr = SockNew(drvPtr);
         sockPtr->servPtr = drvPtr->servPtr;

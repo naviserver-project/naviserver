@@ -136,7 +136,6 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
     Ns_Log(Debug, "SSL_dhCB: isExport %d keyLength %d", isExport, keyLength);
     drvPtr = (SSLDriver *) SSL_get_app_data(ssl);
 
-    key = 0;
     switch (keyLength) {
     case 512:
         key = drvPtr->dhKey512;

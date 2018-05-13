@@ -1076,7 +1076,7 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     const NsInterp *itPtr = clientData;
     const NsServer *servPtr = itPtr->servPtr;
     Tcl_Obj        *moduleObj;
-    int             result = TCL_OK;
+    int             result;
     Ns_ObjvSpec     args[] = {
         {"module",     Ns_ObjvObj,  &moduleObj, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1306,7 +1306,7 @@ static int
 ICtlUpdateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
-    int          result = TCL_OK;
+    int          result;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;

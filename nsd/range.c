@@ -264,8 +264,8 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
 {
     char   *rangestr;
     off_t   start, end;
-    Range  *thisPtr = NULL, *prevPtr = NULL;
     int     rangeCount = 0;
+    Range  *prevPtr = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(ranges != NULL);
@@ -291,6 +291,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     rangestr += 6; /* Skip "bytes=" */
 
     while (*rangestr != '\0' && rangeCount < maxRanges) {
+        Range *thisPtr;
 
         thisPtr = &ranges[rangeCount];
         if (CHARTYPE(digit, *rangestr) != 0) {

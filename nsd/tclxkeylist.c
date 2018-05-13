@@ -1264,7 +1264,7 @@ int
 TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *keylPtr, *valuePtr;
-    int         keyLen, status = TCL_OK;
+    int         keyLen, status;
 
     if ((objc < 2) || (objc > 4)) {
         status = TclX_WrongArgs(interp, objv[0], "listvar ?key? ?retvar | {}?");

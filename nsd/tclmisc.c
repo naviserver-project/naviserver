@@ -1095,7 +1095,7 @@ SHATransform(Ns_CtxSHA1 *sha)
 {
     register uint32_t A, B, C, D, E;
 #if SHA_VERSION
-    register uint32_t t = 0u;
+    register uint32_t t;
 #endif
 
     NS_NONNULL_ASSERT(sha != NULL);

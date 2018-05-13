@@ -1015,7 +1015,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
     } else {
         Ns_DString    ds;
-        Tcl_Encoding  encoding = NULL;
+        Tcl_Encoding  encoding;
 
         assert(chars != NULL);
 

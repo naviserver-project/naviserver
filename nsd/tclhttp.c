@@ -425,7 +425,7 @@ HttpWaitObjCmd(
                 *outputFileName = NULL;
     Ns_Set      *replyHdrPtr = NULL;
     Ns_HttpTask *httpPtr = NULL;
-    int          result = TCL_ERROR, spoolLimit = -1, decompress = 0;
+    int          result, spoolLimit = -1, decompress = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",    Ns_ObjvTime,   &timeoutPtr,      NULL},
@@ -1605,7 +1605,7 @@ HttpConnect(
     Ns_HttpTask   *httpPtr;
     int            result, uaFlag = -1, bodyFileFd = 0;
     off_t          bodyFileSize = 0;
-    unsigned short defaultPort = 0u, portNr;
+    unsigned short defaultPort, portNr;
     char          *url2, *protocol, *host, *portString, *path, *tail;
     const char    *contentType = NULL;
     Tcl_DString   *dsPtr;
@@ -1934,7 +1934,7 @@ Ns_HttpAppendBuffer(
     const char *buffer,
     size_t inSize
 ) {
-    int result = TCL_OK;
+    int result;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);

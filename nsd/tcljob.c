@@ -562,7 +562,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
     } else {
         const NsInterp *itPtr = clientData;
         Queue          *queue = NULL;
-        Job            *jobPtr = NULL;
+        Job            *jobPtr;
         JobTypes        jobType = JOB_NON_DETACHED;
         Tcl_HashEntry  *hPtr;
         int             isNew;
@@ -706,7 +706,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
         result =  TCL_ERROR;
     } else {
         Ns_Time        timeout = {0,0};
-        Job           *jobPtr = NULL;
+        Job           *jobPtr;
         Tcl_HashEntry *hPtr;
 
         if (deltaTimeoutPtr != NULL) {

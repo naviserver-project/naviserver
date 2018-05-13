@@ -340,7 +340,7 @@ int
 NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *file1, *file2;
-    int         nocomplain = (int)NS_FALSE, result = TCL_OK;
+    int         nocomplain = (int)NS_FALSE, result;
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
         {"--",          Ns_ObjvBreak, NULL, NULL},

@@ -376,7 +376,7 @@ NsAdpPageProc(const void *arg, Ns_Conn *conn)
     const AdpRequest *adp = arg;
     const Ns_Time    *expiresPtr;
     Ns_DString        ds;
-    const char       *file = NULL, *server;
+    const char       *file, *server;
     Ns_ReturnCode     status;
 
     NS_NONNULL_ASSERT(conn != NULL);

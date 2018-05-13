@@ -630,7 +630,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
     }
 
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
-        bool    haveTimeout = NS_FALSE, partial = NS_FALSE;
+        bool    haveTimeout = NS_FALSE, partial;
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs);
 
         do {
@@ -769,7 +769,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 static int
 ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int           result = TCL_OK;
+    int           result;
     Sock         *sockPtr = NULL;
     Ns_Set       *hdrPtr = NULL;
     char         *url, *method = (char *)"GET", *version = (char *)"1.0", *driverName = NULL;
@@ -902,7 +902,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK, doBind = (int)NS_FALSE;
+    int            result, doBind = (int)NS_FALSE;
     unsigned short port;
     char          *driverName = NULL, *serverName = NULL, *addr, *script;
     Ns_ObjvSpec    lopts[] = {

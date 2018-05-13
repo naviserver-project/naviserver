@@ -192,7 +192,7 @@ int
 NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj        *scriptObj;
-    int             hour, minute, result = TCL_OK;
+    int             hour, minute, result;
     int             remain = 0, once = 0, thread = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -262,8 +262,7 @@ int
 NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj        *scriptObj;
-    int             day, hour, minute, result = TCL_OK;
-    int             remain = 0, once = 0, thread = 0;
+    int             day, hour, minute, result, remain = 0, once = 0, thread = 0;
 
     Ns_ObjvSpec opts[] = {
 	{"-once",   Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
@@ -337,7 +336,7 @@ int
 NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj        *scriptObj;
-    int             interval, remain = 0, once = 0, thread = 0, result = TCL_OK;
+    int             interval, remain = 0, once = 0, thread = 0, result;
     Ns_ObjvSpec opts[] = {
         {"-once",    Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
         {"-thread",  Ns_ObjvBool,  &thread, INT2PTR(NS_TRUE)},

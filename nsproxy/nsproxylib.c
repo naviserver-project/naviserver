@@ -470,7 +470,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Slave        proc;
     int          result, max;
     Tcl_DString  in, out;
-    const char  *script, *dots, *uarg = NULL, *user = NULL;
+    const char  *script, *dots, *uarg = NULL, *user;
     char        *group = NULL, *active;
     uint16       major, minor;
     size_t       activeSize;
@@ -2664,7 +2664,7 @@ GetPool(const char *poolName, InterpData *idataPtr)
     if (isNew == 0) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
-        const char *path = NULL, *exec = NULL;
+        const char *path = NULL, *exec;
         int i;
 
         poolPtr = ns_calloc(1u, sizeof(Pool));
@@ -2844,7 +2844,7 @@ static Err
 CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
 {
     Pool        *poolPtr;
-    Err          err = ENone;
+    Err          err;
     int          init;
     Tcl_DString  ds;
 
@@ -3560,7 +3560,7 @@ static int
 RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *scriptString;
-    int         ms = -1, result = TCL_OK;
+    int         ms = -1, result;
     Ns_ObjvSpec args[] = {
         {"script",    Ns_ObjvString, &scriptString, NULL},
         {"?timeout",  Ns_ObjvInt,    &ms,           NULL},

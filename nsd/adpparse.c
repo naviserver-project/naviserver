@@ -753,8 +753,7 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
 static void
 ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
 {
-    char *as = NULL, *vs = NULL, *ve = NULL;
-    char end = '\0', vsave = '\0';
+    char  *ve = NULL, vsave = '\0';
 
     NS_NONNULL_ASSERT(s != NULL);
     NS_NONNULL_ASSERT(e != NULL);
@@ -763,12 +762,11 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
         *flagsPtr = 0u;
     }
     while (s < e) {
-	char asave, *ae;
+	char asave, *ae, *as, *vs;
 
         /*
          * Trim attribute name.
          */
-
         while (s < e && CHARTYPE(space, *s) != 0) {
             ++s;
         }
@@ -800,6 +798,8 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
 
             vs = as;
         } else {
+            char end;
+
             /*
              * Trim spaces and/or quotes from value.
              */

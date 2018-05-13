@@ -542,7 +542,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
 	    /* NB: Not reached on successful execve(). */
 	    result = ERR_EXEC;
 	}
-	errnum = errno;
+	//errnum = errno;
 	{ 
 	    ssize_t written = writev(errpipe[1], iov, 2);
 	    if (written != 2) {

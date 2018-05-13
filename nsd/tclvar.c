@@ -1351,7 +1351,7 @@ Flush(Array *arrayPtr)
 static Array *
 LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
 {
-    Array              *arrayPtr = NULL;
+    Array              *arrayPtr;
     Bucket             *bucketPtr;
     static const char  *const arrayType = "nsv:array";
     const char         *arrayName;

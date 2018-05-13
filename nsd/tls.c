@@ -97,6 +97,15 @@ static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
 
+static void
+SetEncodedResultObj(
+    Tcl_Interp *interp,
+    unsigned char *octects,
+    size_t octectLength,
+    char *outputBuffer,
+    Ns_ResultEncoding encoding
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static Tcl_ObjCmdProc CryptoHmacAddObjCmd;
 static Tcl_ObjCmdProc CryptoHmacFreeObjCmd;
 static Tcl_ObjCmdProc CryptoHmacGetObjCmd;
@@ -494,6 +503,9 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
                     char *outputBuffer, Ns_ResultEncoding encoding) {
     char *origOutputBuffer = outputBuffer;
 
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(octects != NULL);
+
     if (outputBuffer == NULL && encoding != RESULT_ENCODING_BINARY) {
         /*
          * It is a safe assumption to double the size, since the hex
@@ -553,7 +565,7 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
 static int
 CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
+    int            result;
     const char    *digestName = "sha256";
     Tcl_Obj       *keyObj;
     Ns_ObjvSpec    args[] = {
@@ -774,7 +786,7 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static int
 CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result = TCL_OK;
+    int                result;
     Tcl_Obj           *keyObj, *messageObj;
     const char        *digestName = "sha256";
     char              *outputEncodingString = NULL;
@@ -905,7 +917,7 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 static int
 CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
+    int            result;
     const char    *digestName = "sha256";
     Ns_ObjvSpec    args[] = {
         {"digest",  Ns_ObjvString, &digestName, NULL},
@@ -1135,7 +1147,7 @@ password_callback(char *UNUSED(buf), int bufsiz, int UNUSED(verify), PW_CB_DATA 
 static int
 CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result = TCL_OK;
+    int                result;
     Tcl_Obj           *messageObj;
     char              *digestName = (char *)"sha256", *keyFile = NULL, *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
@@ -1172,7 +1184,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR && keyFile != NULL) {
             PW_CB_DATA  cb_data;
-            BIO        *bio = NULL;
+            BIO        *bio;
 
             cb_data.password = "";
 #if 0
@@ -1206,7 +1218,6 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             unsigned char  digest[EVP_MAX_MD_SIZE];
             char           digestChars[EVP_MAX_MD_SIZE*2 + 1], *outputBuffer = digestChars;
             EVP_MD_CTX    *mdctx;
-            EVP_PKEY_CTX  *pctx;
             const char    *messageString;
             int            messageLength;
             unsigned int   mdLength;
@@ -1223,7 +1234,8 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
              */
             mdctx = NS_EVP_MD_CTX_new();
             if (pkey != NULL) {
-                int r = EVP_DigestSignInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
+                EVP_PKEY_CTX  *pctx;
+                int            r = EVP_DigestSignInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
 
                 if (r == 0) {
                     Ns_TclPrintfResult(interp, "could not initialize signature context");
@@ -1235,6 +1247,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     (void)EVP_DigestSignFinal(mdctx, digest, (size_t*)&mdLength);
                     //fprintf(stderr, "final signature length %u\n",mdLength);
                     outputBuffer = ns_malloc(mdLength * 2u + 1u);
+                }
+                if (pctx != NULL) {
+                    EVP_PKEY_CTX_free(pctx);
                 }
                 EVP_PKEY_free(pkey);
 
@@ -1268,7 +1283,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static int
 CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result = TCL_OK;
+    int                result;
     Tcl_Obj           *messageObj;
     char              *digestName = (char *)"sha256", *pemFile = NULL, *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
@@ -1323,7 +1338,7 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
             PW_CB_DATA  cb_data;
-            BIO        *bio = NULL;
+            BIO        *bio;
 
             cb_data.password = "";
 
@@ -1355,12 +1370,11 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             EVP_MD_CTX    *mdctx;
             const char    *messageString;
             int            messageLength;
-            unsigned int   sigLen = 0u;
-            unsigned int   mdLength, rLen, sLen;
+            unsigned int   sigLen, mdLength, rLen, sLen;
             Tcl_DString    messageDs;
-            ECDSA_SIG     *sig = NULL;
+            ECDSA_SIG     *sig;
             const BIGNUM  *r, *s;
-            uint8_t       *rawSig = NULL;
+            uint8_t       *rawSig;
 
             /*
              * All input parameters are valid, get key and data.
@@ -1383,13 +1397,14 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             sLen = (unsigned int) BN_num_bytes(s);
             sigLen = rLen + sLen;
             //fprintf(stderr, "siglen r %u + s%u -> %u\n", rLen, sLen, sigLen);
+
             rawSig = ns_calloc(sigLen, sizeof(uint8_t));
-            if (rawSig != NULL) {
-                BN_bn2bin(r, rawSig);
-                //hexPrint("r", rawSig, rLen);
-                BN_bn2bin(s, &rawSig[rLen]);
-                //hexPrint("s", &rawSig[rLen], sLen);
-            }
+            assert(rawSig != NULL);
+
+            BN_bn2bin(r, rawSig);
+            //hexPrint("r", rawSig, rLen);
+            BN_bn2bin(s, &rawSig[rLen]);
+            //hexPrint("s", &rawSig[rLen], sLen);
 
             /*
              * Convert the result to the output format and set the interp
@@ -1420,7 +1435,7 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 static int
 CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result = TCL_OK, outLength;
+    int                result, outLength;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
     char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
@@ -1666,7 +1681,7 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, const EVP_CIPHER **cipherP
 static int
 CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                  result = TCL_OK, encryptInt = 1;
+    int                  result, encryptInt = 1;
     Tcl_Obj             *messageObj, *ivObj = NULL, *keyObj = NULL, *aadObj = NULL;
     char                *cipherName = (char *)"aes-128-gcm";
     const EVP_CIPHER    *cipher;
@@ -1768,7 +1783,7 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
         } else {
             Tcl_DString  messageDs;
-            int          cipherBlockSize = EVP_CIPHER_block_size(cipher), cipherLength = 0;
+            int          cipherBlockSize = EVP_CIPHER_block_size(cipher), cipherLength;
 
             /*
              * Everything is set successfully, now do the "real" encryption work.

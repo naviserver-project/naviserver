@@ -332,7 +332,7 @@ int
 NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char          *addr;
-    int            result = TCL_OK;
+    int            result;
     unsigned short port;
     Ns_ObjvSpec    args[] = {
         {"address", Ns_ObjvString, &addr, NULL},
@@ -679,7 +679,6 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
          */
 	NS_SOCKET sock;
 
-        
         do {
             sock = (NS_SOCKET)select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
         } while (sock == NS_INVALID_SOCKET && errno == NS_EINTR);
@@ -707,7 +706,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             AppendReadyFiles(interp, listObj, rPtr, 0, dsRfd.string, &dsNbuf);
             arg -= 2;
             AppendReadyFiles(interp, listObj, wPtr, 1, Tcl_GetString(objv[arg++]), NULL);
-            AppendReadyFiles(interp, listObj, ePtr, 0, Tcl_GetString(objv[arg++]), NULL);
+            AppendReadyFiles(interp, listObj, ePtr, 0, Tcl_GetString(objv[arg]), NULL);
 
             Tcl_SetObjResult(interp, listObj);
             status = TCL_OK;

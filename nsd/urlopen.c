@@ -82,7 +82,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
 {
     Ns_DString    ds;
     Tcl_Channel   chan;
-    Ns_ReturnCode result = NS_OK;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(url != NULL);

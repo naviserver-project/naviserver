@@ -260,7 +260,7 @@ Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
 Ns_ReturnCode
 NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
 {
-    Ns_ReturnCode status = NS_ERROR;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);

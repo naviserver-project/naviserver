@@ -368,9 +368,8 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 int
 NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
     char          *file;
-    int            tclScript = 0, nocache = 0, nargs = 0;
+    int            result, tclScript = 0, nocache = 0, nargs = 0;
     Ns_Time       *ttlPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -455,7 +454,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 int
 NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK, nargs = 0;
+    int         result, nargs = 0;
     int         asFile = (int)NS_FALSE, safe = (int)NS_FALSE, asString = (int)NS_FALSE, tclScript = (int)NS_FALSE;
     char       *cwd = NULL;
     Ns_ObjvSpec opts[] = {

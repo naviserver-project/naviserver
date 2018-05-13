@@ -1585,12 +1585,12 @@ static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
 
 static int SetPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* objv)
 {
-    Server *servPtr = data;
-    int rc = 0;
-    User *userPtr;
+    Server        *servPtr = data;
+    int            rc = 0;
+    User          *userPtr;
     Tcl_HashEntry *hPtr;
-    char *user, *pwd, *salt = NULL;
-    char buf[NS_ENCRYPT_BUFSIZE];
+    char          *user, *pwd, *salt;
+    char           buf[NS_ENCRYPT_BUFSIZE];
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 2, objv, "user pwd ?salt?");

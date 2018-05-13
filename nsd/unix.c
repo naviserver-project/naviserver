@@ -673,9 +673,9 @@ Ns_GetNameForGid(Ns_DString *dsPtr, gid_t gid)
     struct group *grPtr;
 #if defined(HAVE_GETGRGID_R)
     struct group gr;
-    size_t bufSize = 4096u;
-    char *buffer;
-    int errorCode = 0;
+    size_t       bufSize = 4096u;
+    char        *buffer;
+    int          errorCode;
 
     grPtr = NULL;
     buffer = ns_malloc(bufSize);
@@ -820,7 +820,7 @@ Ns_GetGid(const char *group)
     struct group  gr;
     size_t        bufSize = 4096u;
     char         *buffer;
-    int           errorCode = 0;
+    int           errorCode;
 
     NS_NONNULL_ASSERT(group != NULL);
 
