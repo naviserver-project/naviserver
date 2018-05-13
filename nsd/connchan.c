@@ -902,10 +902,9 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
+    int            result = TCL_OK, doBind = (int)NS_FALSE;
     unsigned short port;
     char          *driverName = NULL, *serverName = NULL, *addr, *script;
-    bool           doBind = NS_FALSE;
     Ns_ObjvSpec    lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
         {"-server",  Ns_ObjvString, &serverName, NULL},
