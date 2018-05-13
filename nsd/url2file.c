@@ -482,8 +482,12 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
         unsigned int    flags = 0u;
         const NsInterp *itPtr = clientData;
 
-        if (noinherit != 0) { flags |= NS_OP_NOINHERIT;}
-        if (recurse != 0)   { flags |= NS_OP_RECURSE;}
+        if (noinherit != 0) {
+            flags |= NS_OP_NOINHERIT;
+        }
+        if (recurse != 0)   {
+            flags |= NS_OP_RECURSE;
+        }
 
         Ns_UnRegisterUrl2FileProc(itPtr->servPtr->server, url, flags);
     }
@@ -530,8 +534,9 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int o
         const NsInterp *itPtr = clientData;
         unsigned int    flags = 0u;
 
-
-        if (noinherit != 0) { flags |= NS_OP_NOINHERIT;}
+        if (noinherit != 0) {
+            flags |= NS_OP_NOINHERIT;
+        }
 
         if (basepath == NULL) {
             Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
