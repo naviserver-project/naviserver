@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.9
+    set version 0.10
     set verbose 0
 
     #
@@ -29,6 +29,7 @@ namespace eval ::revproxy {
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
         {-url_rewrite_callback "::revproxy::rewrite_url"}
+        {-backend_reply_callback ""}
     } {
         #
         # Assemble URL in two steps:
@@ -139,7 +140,7 @@ namespace eval ::revproxy {
             ns_connchan callback -timeout $timeout $frontendChan \
                 [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
             ns_connchan callback -timeout $timeout $backendChan  \
-                [list ::revproxy::backendReply $backendChan $frontendChan $url $timeout 0] rex
+                [list ::revproxy::backendReply -callback $backend_reply_callback $backendChan $frontendChan $url $timeout 0] rex
 
         } errorMsg]} {
             ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
@@ -237,7 +238,7 @@ namespace eval ::revproxy {
     # reply header fields. This is e.g. necessary to downgrade to
     # HTTP/1.0 requests.
     #
-    nsf::proc backendReply { from to url timeout arg condition } {
+    nsf::proc backendReply { {-callback ""} from to url timeout arg condition } {
 
         if { $condition eq "r" } {
             #
@@ -300,6 +301,16 @@ namespace eval ::revproxy {
                         set line [string trimright $line \r]
                         #log notice "backendReply: [list ns_parseheader $replyHeaders $line]"
                         ns_parseheader $replyHeaders $line preserve
+                    }
+
+                    #
+                    # In case, a backendReplyCallback is set, call it
+                    # with "-status" and "-replyHeaders". The callback
+                    # can modify the ns_set with the reply headers,
+                    # maybe, stripping upstream headers etc.
+                    #
+                    if {$callback ne ""} {
+                        {*}$callback -url $url -replyHeaders $replyHeaders -status $status
                     }
 
                     #
