@@ -816,7 +816,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
         }
         (void)Ns_SetPut(next, key, set->fields[i].value);
         if (name != NULL) {
-            *--key = sep;
+            *(key-1) = sep;
         }
     }
     return (Ns_Set **) Ns_DStringExport(&ds);

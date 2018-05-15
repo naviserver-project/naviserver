@@ -183,7 +183,7 @@ Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              int offset, int objc, Tcl_Obj *const* objv)
 {
-    Ns_ObjvSpec  *specPtr = NULL;
+    Ns_ObjvSpec  *specPtr;
     int           optIndex, remain = (objc - offset);
 
     NS_NONNULL_ASSERT(interp != NULL);

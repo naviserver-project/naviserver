@@ -111,7 +111,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             result = TCL_ERROR;
 
         } else {
-            const char  *type = "unknown";
+            const char  *type;
 
             switch (GetImageType(chan)) {
             case jpeg:    type = "jpeg";    break;
@@ -162,7 +162,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         if (chan == NULL) {
             result = TCL_ERROR;
         } else {
-            const char  *mime = "image/unknown";
+            const char  *mime;
 
             switch (GetImageType(chan)) {
             case jpeg:    mime = "image/jpeg";    break;

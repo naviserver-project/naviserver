@@ -485,7 +485,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     if (argc > 4 || argc < 3) {
         char *pgm = strrchr(argv[0], INTCHAR('/'));
-        Ns_Fatal("usage: %s pool id ?command?", (pgm != NULL) ? ++pgm : argv[0]);
+        Ns_Fatal("usage: %s pool id ?command?", (pgm != NULL) ? (pgm+1) : argv[0]);
     }
     if (argc < 4) {
         active = NULL;
@@ -572,7 +572,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     user = strchr(argv[1], INTCHAR(':'));
     if (user != NULL) {
-        uarg = ns_strdup(++user);
+        uarg = ns_strdup(user + 1);
         user = uarg;
         group = strchr(user, INTCHAR(':'));
         if (group != NULL) {

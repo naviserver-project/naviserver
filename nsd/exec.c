@@ -565,7 +565,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
 	} while (nread < 0 && errno == NS_EINTR);
         ns_close(errpipe[0]);
         if (nread == 0) {
-	    errnum = 0;
+	    //errnum = 0;
 	    result = pid;
 	} else {
             if (nread != (sizeof(int) * 2)) {
