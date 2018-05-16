@@ -117,6 +117,7 @@ static Tcl_ObjCmdProc CryptoMdFreeObjCmd;
 static Tcl_ObjCmdProc CryptoMdGetObjCmd;
 static Tcl_ObjCmdProc CryptoMdNewObjCmd;
 static Tcl_ObjCmdProc CryptoMdStringObjCmd;
+static Tcl_ObjCmdProc CryptoEckeyPrivObjCmd;
 
 /*
  * Local variables defined in this file.
@@ -176,7 +177,7 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
 
 
 #if 0
-static void hexPrint(const char *msg, unsigned char *octects, size_t octectLength)
+static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
 {
     size_t i;
     fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
@@ -1278,6 +1279,67 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
+static EVP_PKEY *
+GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
+{
+    BIO        *bio;
+    EVP_PKEY   *result;
+    PW_CB_DATA  cb_data;
+
+    cb_data.password = "";
+    bio = BIO_new_file(pemFileName, "r");
+    if (bio == NULL) {
+        Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
+        result = NULL;
+    } else {
+        if (private) {
+            result = PEM_read_bio_PrivateKey(bio, NULL,
+                                             (pem_password_cb *)password_callback,
+                                             &cb_data);
+        } else {
+            result = PEM_read_bio_PUBKEY(bio, NULL,
+                                         (pem_password_cb *)password_callback,
+                                         &cb_data);
+        }
+        BIO_free(bio);
+        if (result == NULL) {
+            Ns_TclPrintfResult(interp, "pem file contains no %s key", (private ? "private" : "public"));
+        }
+    }
+    return result;
+}
+
+static EC_KEY *
+GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
+{
+    BIO        *bio;
+    EC_KEY     *result;
+    PW_CB_DATA  cb_data;
+
+    cb_data.password = "";
+    bio = BIO_new_file(pemFileName, "r");
+    if (bio == NULL) {
+        Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
+        result = NULL;
+    } else {
+        if (private) {
+            result = PEM_read_bio_ECPrivateKey(bio, NULL,
+                                           (pem_password_cb *)password_callback,
+                                           &cb_data);
+        } else {
+            result = PEM_read_bio_EC_PUBKEY(bio, NULL,
+                                         (pem_password_cb *)password_callback,
+                                         &cb_data);
+        }
+        BIO_free(bio);
+        if (result == NULL) {
+            Ns_TclPrintfResult(interp, "eckey_from_pem: pem file contains no %s key", (private ? "private" : "public"));
+        }
+    }
+    return result;
+}
+
+
 /*
  */
 static int
@@ -1337,31 +1399,18 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
-            PW_CB_DATA  cb_data;
-            BIO        *bio;
 
-            cb_data.password = "";
-
-            bio = BIO_new_file(pemFile, "r");
-            if (bio == NULL) {
-                Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFile);
+            pkey = GetPkeyFromPem(interp, pemFile, NS_TRUE);
+            if (pkey == NULL) {
+                /*
+                 * GetPkeyFromPem handles error message
+                 */
                 result = TCL_ERROR;
             } else {
-
-                pkey = PEM_read_bio_PrivateKey(bio, NULL,
-                                               (pem_password_cb *)password_callback,
-                                               &cb_data);
-                BIO_free(bio);
-                if (pkey == NULL) {
-                    Ns_TclPrintfResult(interp, "pem file contains no private key");
+                eckey = EVP_PKEY_get1_EC_KEY(pkey);
+                if (eckey == NULL) {
+                    Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
                     result = TCL_ERROR;
-
-                } else {
-                    eckey = EVP_PKEY_get1_EC_KEY(pkey);
-                    if (eckey == NULL) {
-                        Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
-                        result = TCL_ERROR;
-                    }
                 }
             }
         }
@@ -1624,6 +1673,268 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
+
+
+static int
+CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result;
+    char              *pemFile = NULL, *outputEncodingString = NULL;
+    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+
+    Ns_ObjvSpec lopts[] = {
+        {"-pem",      Ns_ObjvString, &pemFile, NULL},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::eckey priv -pem /usr/local/ns/modules/vapid/prime256v1_key.pem -encoding base64url
+      pwLi7T1QqrgTiNBFBLUcndjNxzx_vZiKuCcvapwjQlM
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (pemFile == NULL) {
+        Ns_TclPrintfResult(interp, "no pem file specified");
+        result = TCL_ERROR;
+
+    } else if (outputEncodingString != NULL
+               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else {
+        EVP_PKEY *pkey = NULL;
+        EC_KEY   *eckey = NULL;
+
+        pkey = GetPkeyFromPem(interp, pemFile, NS_TRUE);
+        if (pkey == NULL) {
+            /*
+             * GetPkeyFromPem handles error message
+             */
+            result = TCL_ERROR;
+        } else {
+            eckey = EVP_PKEY_get1_EC_KEY(pkey);
+            if (eckey == NULL) {
+                EVP_PKEY_free(pkey);
+                Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
+                result = TCL_ERROR;
+            } else {
+                result = TCL_OK;
+            }
+        }
+        if (result != TCL_ERROR) {
+            Tcl_DString ds;
+            size_t      octLength = EC_KEY_priv2oct(eckey, NULL, 0);
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringSetLength(&ds, (int)octLength);
+            octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
+            SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+
+            /*
+             * Clean up.
+             */
+            EVP_PKEY_free(pkey);
+            Tcl_DStringFree(&ds);
+        }
+    }
+
+    return result;
+}
+
+static int
+CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result;
+    char              *pemFile = NULL, *outputEncodingString = NULL;
+    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+
+    Ns_ObjvSpec lopts[] = {
+        {"-pem",      Ns_ObjvString, &pemFile, NULL},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::eckey pub -pem /usr/local/ns/modules/vapid/prime256v1_key.pem -encoding base64url
+      BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (pemFile == NULL) {
+        Ns_TclPrintfResult(interp, "no pem file specified");
+        result = TCL_ERROR;
+
+    } else if (outputEncodingString != NULL
+               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else {
+        EC_KEY         *eckey = NULL;
+        const EC_POINT *ecpoint = NULL;
+
+        /*
+         * The .pem file does not have a separate pub-key included,
+         * but we get the pub-key grom the priv-key in form of an
+         * EC_POINT.
+         */
+        eckey = GetEckeyFromPem(interp, pemFile, NS_TRUE);
+        if (eckey != NULL) {
+            ecpoint = EC_KEY_get0_public_key(eckey);
+            if (ecpoint == NULL) {
+                Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
+                result = TCL_ERROR;
+            } else {
+                result = TCL_OK;
+            }
+        } else {
+            result = TCL_ERROR;
+        }
+        if (result != TCL_ERROR) {
+            Tcl_DString  ds;
+            BN_CTX      *bn_ctx = BN_CTX_new();
+            size_t       octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringSetLength(&ds, (int)octLength);
+            octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
+                                           (unsigned char *)ds.string, octLength, bn_ctx);
+            SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+            /*
+             * Clean up.
+             */
+            BN_CTX_free(bn_ctx);
+            Tcl_DStringFree(&ds);
+        }
+        if (eckey != NULL) {
+            EC_KEY_free(eckey);
+        }
+    }
+
+    return result;
+}
+
+static int
+CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result;
+    char              *outputEncodingString = NULL;
+    Tcl_Obj           *importObj = NULL;
+    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+
+    Ns_ObjvSpec lopts[] = {
+        {"-string",   Ns_ObjvObj,    &importObj, NULL},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::eckey import -encoding base64url \
+          -string [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
+
+      ns_crypto::eckey import -encoding base64url \
+          -string [ns_base64urldecode BDwwYm4O5dZG9SO6Vaz168iDLGWMmitkj5LFvunvMfgmI2fZdAEaiHTDfKR0fvr0D3V56cSGSeUwP0xNdrXho5k]
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (importObj == NULL) {
+        Ns_TclPrintfResult(interp, "no import string specified");
+        result = TCL_ERROR;
+
+    } else if (outputEncodingString != NULL
+               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else {
+        int                  rawKeyLength;
+        const unsigned char *rawKeyString;
+        EC_KEY              *eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        Tcl_DString          keyDs;
+
+        Tcl_DStringInit(&keyDs);
+        rawKeyString = (const unsigned char *)Ns_GetBinaryString(importObj, &rawKeyLength, &keyDs);
+
+        Ns_Log(Notice, "import: raw key length %d", rawKeyLength);
+        //hexPrint("key", rawKeyString, (size_t)rawKeyLength);
+
+        if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
+            Ns_TclPrintfResult(interp, "could not import string to ec key");
+            result = TCL_ERROR;
+        } else {
+            Tcl_DString  ds;
+#if 1
+            const EC_POINT *ecpoint = EC_KEY_get0_public_key(eckey);
+
+            Tcl_DStringInit(&ds);
+            if (ecpoint == NULL) {
+                Ns_TclPrintfResult(interp, "no valid public key");
+                result = TCL_ERROR;
+            } else {
+                BN_CTX  *bn_ctx = BN_CTX_new();
+                size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
+                                                        POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
+                Ns_Log(Notice, "import: octet length %lu", octLength);
+
+                Tcl_DStringSetLength(&ds, (int)octLength);
+                octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
+                                           (unsigned char *)ds.string, octLength, bn_ctx);
+                SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+                /*
+                 * Clean up.
+                 */
+                BN_CTX_free(bn_ctx);
+                result = TCL_OK;
+            }
+            Tcl_DStringFree(&ds);
+#else
+            size_t      octLength = EC_KEY_priv2oct(eckey, NULL, 0);
+
+            Tcl_DStringInit(&ds);
+            Tcl_DStringSetLength(&ds, (int)octLength);
+            octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
+            Ns_Log(Notice, "import: import ok, output length %lu", octLength);
+            result = TCL_OK;
+            SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+#endif
+            Tcl_DStringFree(&ds);
+        }
+
+        /*
+         * Clean up.
+         */
+        if (eckey != NULL) {
+            EC_KEY_free(eckey);
+        }
+        Tcl_DStringFree(&keyDs);
+    }
+
+    return result;
+}
+
+int
+NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"pub",    CryptoEckeyPubObjCmd},
+        {"priv",   CryptoEckeyPrivObjCmd},
+        {"import", CryptoEckeyImportObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
 
 /*
  *----------------------------------------------------------------------

@@ -1143,6 +1143,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclCrashObjCmd,
     NsTclCritSecObjCmd,
     NsTclCryptObjCmd,
+    NsTclCryptoEckeyObjCmd,
     NsTclCryptoEncObjCmd,
     NsTclCryptoHmacObjCmd,
     NsTclCryptoMdObjCmd,
