@@ -516,7 +516,7 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
 
     switch (encoding) {
     case RESULT_ENCODING_BINARY:
-        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)outputBuffer, (int)octectLength));
+        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)octects, (int)octectLength));
         break;
 
     case RESULT_ENCODING_BASE64URL:
@@ -1562,7 +1562,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                 Ns_TclPrintfResult(interp, "could not set info");
                 result = TCL_ERROR;
             } else if (EVP_PKEY_derive(pctx, keyString, (size_t *)&outLength) <= 0) {
-                Ns_TclPrintfResult(interp, "could not obtain dereived key");
+                Ns_TclPrintfResult(interp, "could not obtain derived key");
                 result = TCL_ERROR;
             }
 
