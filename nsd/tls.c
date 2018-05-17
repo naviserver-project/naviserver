@@ -1333,7 +1333,8 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
         }
         BIO_free(bio);
         if (result == NULL) {
-            Ns_TclPrintfResult(interp, "eckey_from_pem: pem file contains no %s key", (private ? "private" : "public"));
+            Ns_TclPrintfResult(interp, "eckey_from_pem: pem file contains no %s EC key",
+                               (private ? "private" : "public"));
         }
     }
     return result;
@@ -1371,8 +1372,17 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
           return $string.[::ns_crypto::md vapidsign -digest sha256 -pem $::pemFile -encoding base64url $string]
       }
 
-      vapidToken "hello"
+      regsub -all {[\s]} [subst {{
+       "sub" : "mailto:h0325904foo@bar.com",
+       "aud" : "https://updates.push.services.mozilla.com",
+       "exp" : "[expr [clock seconds] + 60*120]"
+      }}] "" claim
+      set JWTHeader [ns_base64urlencode {{"typ":"JWT","alg":"ES256"}}]
+      set JWTbody   [ns_base64urlencode $claim]
 
+      vapidToken $JWTHeader.$JWTbody
+
+      # check result: https://jwt.io/
     */
 
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
@@ -1391,7 +1401,6 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
         const EVP_MD *md;
-        EVP_PKEY     *pkey = NULL;
         EC_KEY       *eckey = NULL;
 
         /*
@@ -1400,18 +1409,12 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
 
-            pkey = GetPkeyFromPem(interp, pemFile, NS_TRUE);
-            if (pkey == NULL) {
+            eckey = GetEckeyFromPem(interp, pemFile, NS_TRUE);
+            if (eckey == NULL) {
                 /*
-                 * GetPkeyFromPem handles error message
+                 * GetEckeyFromPem handles error message
                  */
                 result = TCL_ERROR;
-            } else {
-                eckey = EVP_PKEY_get1_EC_KEY(pkey);
-                if (eckey == NULL) {
-                    Ns_TclPrintfResult(interp, "no valid EC key in specified pem file");
-                    result = TCL_ERROR;
-                }
             }
         }
         if (result != TCL_ERROR) {
@@ -1464,7 +1467,7 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             /*
              * Clean up.
              */
-            EVP_PKEY_free(pkey);
+            EC_KEY_free(eckey);
             NS_EVP_MD_CTX_free(mdctx);
             ns_free(rawSig);
             Tcl_DStringFree(&messageDs);
