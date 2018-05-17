@@ -93,6 +93,9 @@ typedef enum {
 static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 # if OPENSSL_VERSION_NUMBER > 0x010000000
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
@@ -454,7 +457,9 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
     if (*mdPtr == NULL) {
 #if OPENSSL_VERSION_NUMBER > 0x010000000
         /*
-         * EVP_MD_do_all_sorted was added in OpenSSL 1.0.0
+         * EVP_MD_do_all_sorted was added in OpenSSL 1.0.0. The
+         * function is an iterator, which we provide with a tailored
+         * callback.
          */
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
@@ -473,6 +478,166 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetCurve --
+ *
+ *      Helper function to lookup a nid from a curve name.
+ *      The logic is from apps/ecparam.c
+ *
+ * Results:
+ *	Tcl result code, value in third argument.
+ *
+ * Side effects:
+ *	Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
+{
+    int result, nid;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(curveName != NULL);
+    NS_NONNULL_ASSERT(nidPtr != NULL);
+
+    /*
+     * workaround for the SECG curve names secp192r1 and secp256r1 (which
+     * are the same as the curves prime192v1 and prime256v1 defined in
+     * X9.62)
+     */
+    if (strcmp(curveName, "secp192r1") == 0) {
+        Ns_Log(Warning, "using curve name prime192v1 instead of secp192r1");
+        nid = NID_X9_62_prime192v1;
+    } else if (strcmp(curveName, "secp256r1") == 0) {
+        Ns_Log(Warning, "using curve name prime256v1 instead of secp256r1");
+        nid = NID_X9_62_prime256v1;
+    } else {
+        nid = OBJ_sn2nid(curveName);
+    }
+    if (nid == 0) {
+        nid = EC_curve_nist2nid(curveName);
+    }
+    if (nid == 0) {
+        Ns_TclPrintfResult(interp, "Unknown curve name \"%s\"", curveName);
+        result = TCL_ERROR;
+    } else {
+        *nidPtr = nid;
+        result = TCL_OK;
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetPkeyFromPem, GetEckeyFromPem, password_callback --
+ *
+ *      Helper function for reading .pem-files
+ *
+ * Results:
+ *	Tcl result code
+ *
+ * Side effects:
+ *	Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
+typedef struct PW_CB_DATA {
+    const void *password;
+} PW_CB_DATA;
+
+static int
+password_callback(char *UNUSED(buf), int bufsiz, int UNUSED(verify), PW_CB_DATA *UNUSED(cb_tmp))
+{
+    int result = 0;
+    //PW_CB_DATA *cb_data = (PW_CB_DATA *)cb_tmp;
+
+    fprintf(stderr, "password_callback called with bufsize %d\n", bufsiz);
+
+    return result;
+}
+
+
+static EVP_PKEY *
+GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
+{
+    BIO        *bio;
+    EVP_PKEY   *result;
+    PW_CB_DATA  cb_data;
+
+    cb_data.password = "";
+    bio = BIO_new_file(pemFileName, "r");
+    if (bio == NULL) {
+        Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
+        result = NULL;
+    } else {
+        if (private) {
+            result = PEM_read_bio_PrivateKey(bio, NULL,
+                                             (pem_password_cb *)password_callback,
+                                             &cb_data);
+        } else {
+            result = PEM_read_bio_PUBKEY(bio, NULL,
+                                         (pem_password_cb *)password_callback,
+                                         &cb_data);
+        }
+        BIO_free(bio);
+        if (result == NULL) {
+            Ns_TclPrintfResult(interp, "pem file contains no %s key", (private ? "private" : "public"));
+        }
+    }
+    return result;
+}
+
+static EC_KEY *
+GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
+{
+    BIO        *bio;
+    EC_KEY     *result;
+    PW_CB_DATA  cb_data;
+
+    cb_data.password = "";
+    bio = BIO_new_file(pemFileName, "r");
+    if (bio == NULL) {
+        Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
+        result = NULL;
+    } else {
+        if (private) {
+            result = PEM_read_bio_ECPrivateKey(bio, NULL,
+                                           (pem_password_cb *)password_callback,
+                                           &cb_data);
+        } else {
+            result = PEM_read_bio_EC_PUBKEY(bio, NULL,
+                                         (pem_password_cb *)password_callback,
+                                         &cb_data);
+        }
+        BIO_free(bio);
+        if (result == NULL) {
+            Ns_TclPrintfResult(interp, "eckey_from_pem: pem file contains no %s EC key",
+                               (private ? "private" : "public"));
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetResultEncoding, SetEncodedResultObj --
+ *
+ *      Helper function result encodings
+ *
+ * Results:
+ *	Tcl result code
+ *
+ * Side effects:
+ *	Interp result Obj is updated in case of error.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 GetResultEncoding(Tcl_Interp *interp, const char *name, Ns_ResultEncoding *encodingPtr)
@@ -1110,21 +1275,6 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 }
 
 
-typedef struct PW_CB_DATA {
-    const void *password;
-} PW_CB_DATA;
-
-static int
-password_callback(char *UNUSED(buf), int bufsiz, int UNUSED(verify), PW_CB_DATA *UNUSED(cb_tmp))
-{
-    int result = 0;
-    //PW_CB_DATA *cb_data = (PW_CB_DATA *)cb_tmp;
-
-    fprintf(stderr, "password_callback called with bufsize %d\n", bufsiz);
-
-    return result;
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -1181,13 +1331,12 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
         /*
          * Look up the Message Digest from OpenSSL
+         *
+         * ::ns_crypto::md string -digest sha256 -sign /usr/local/src/naviserver/private.pem "hello\n"
+         *
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR && keyFile != NULL) {
-            PW_CB_DATA  cb_data;
-            BIO        *bio;
-
-            cb_data.password = "";
 #if 0
             sigkey  = load_key(keyFile, OPT_FMT_ANY, 0,
                                NULL /*pass phrase*/,
@@ -1195,24 +1344,10 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                "key file");
             key = bio_open_default(file, 'r', format);
 
-            ::ns_crypto::md string -digest sha256 -sign /usr/local/src/naviserver/private.pem "hello\n"
 #endif
-
-            bio = BIO_new_file(keyFile, "r");
-            if (bio == NULL) {
-                Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", keyFile);
+            pkey = GetPkeyFromPem(interp, keyFile, NS_TRUE);
+            if (pkey == NULL) {
                 result = TCL_ERROR;
-            } else {
-
-                pkey = PEM_read_bio_PrivateKey(bio, NULL,
-                                               (pem_password_cb *)password_callback,
-                                               &cb_data);
-                BIO_free(bio);
-
-                if (pkey == NULL) {
-                    fprintf(stderr, "got no pkey\n");
-                    result = TCL_ERROR;
-                }
             }
         }
         if (result != TCL_ERROR) {
@@ -1279,66 +1414,6 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
-static EVP_PKEY *
-GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
-{
-    BIO        *bio;
-    EVP_PKEY   *result;
-    PW_CB_DATA  cb_data;
-
-    cb_data.password = "";
-    bio = BIO_new_file(pemFileName, "r");
-    if (bio == NULL) {
-        Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
-        result = NULL;
-    } else {
-        if (private) {
-            result = PEM_read_bio_PrivateKey(bio, NULL,
-                                             (pem_password_cb *)password_callback,
-                                             &cb_data);
-        } else {
-            result = PEM_read_bio_PUBKEY(bio, NULL,
-                                         (pem_password_cb *)password_callback,
-                                         &cb_data);
-        }
-        BIO_free(bio);
-        if (result == NULL) {
-            Ns_TclPrintfResult(interp, "pem file contains no %s key", (private ? "private" : "public"));
-        }
-    }
-    return result;
-}
-
-static EC_KEY *
-GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
-{
-    BIO        *bio;
-    EC_KEY     *result;
-    PW_CB_DATA  cb_data;
-
-    cb_data.password = "";
-    bio = BIO_new_file(pemFileName, "r");
-    if (bio == NULL) {
-        Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
-        result = NULL;
-    } else {
-        if (private) {
-            result = PEM_read_bio_ECPrivateKey(bio, NULL,
-                                           (pem_password_cb *)password_callback,
-                                           &cb_data);
-        } else {
-            result = PEM_read_bio_EC_PUBKEY(bio, NULL,
-                                         (pem_password_cb *)password_callback,
-                                         &cb_data);
-        }
-        BIO_free(bio);
-        if (result == NULL) {
-            Ns_TclPrintfResult(interp, "eckey_from_pem: pem file contains no %s EC key",
-                               (private ? "private" : "public"));
-        }
-    }
-    return result;
-}
 
 
 /*
@@ -1926,13 +2001,77 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     return result;
 }
 
+
+static int
+CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result, nid;
+    char              *curvenameString = (char *)"prime256v1", *pemFileName = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"-name",     Ns_ObjvString, &curvenameString, NULL},
+        {"-pem",      Ns_ObjvString, &pemFileName, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ns_crypto::eckey generate -name prime256v1 -pem /tmp/foo.pem
+    */
+
+    if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (GetCurve(interp, curvenameString, &nid) == TCL_ERROR) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else if (pemFileName == NULL) {
+        Ns_TclPrintfResult(interp, "no pem file name provied");
+        result = TCL_ERROR;
+
+    } else {
+        EC_KEY       *eckey;
+
+        eckey = EC_KEY_new_by_curve_name(nid);
+        if (eckey == NULL) {
+            Ns_TclPrintfResult(interp, "could not create ec key");
+            result = TCL_ERROR;
+
+        } else if (EC_KEY_generate_key(eckey) == 0) {
+            Ns_TclPrintfResult(interp, "could not generate ec key");
+            result = TCL_ERROR;
+
+        } else {
+            BIO        *bio;
+
+            bio = BIO_new_file(pemFileName, "w");
+            if (bio == NULL) {
+                Ns_TclPrintfResult(interp, "could not open pem-file '%s' for writing", pemFileName);
+                result = TCL_ERROR;
+            } else {
+                (void) PEM_write_bio_ECPrivateKey(bio, eckey, NULL,
+                                                  NULL, 0, NULL, NULL);
+                BIO_free(bio);
+                result = TCL_OK;
+            }
+            EC_KEY_free(eckey);
+        }
+    }
+
+    return result;
+}
+
+
+
+
 int
 NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"pub",    CryptoEckeyPubObjCmd},
-        {"priv",   CryptoEckeyPrivObjCmd},
-        {"import", CryptoEckeyImportObjCmd},
+        {"generate", CryptoEckeyGenerateObjCmd},
+        {"import",   CryptoEckeyImportObjCmd},
+        {"priv",     CryptoEckeyPrivObjCmd},
+        {"pub",      CryptoEckeyPubObjCmd},
         {NULL, NULL}
     };
 
