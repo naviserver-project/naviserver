@@ -4,7 +4,7 @@
 
 [titledesc {Assign Application Data to URLs.}]
 
-[description] The command [cmd ns_urlspace] allows to
+[description] The command [cmd ns_urlspace] allows one to
  assign/query/list/delete data to the trie representing the URL
  space. The command supports filters and inheritance such one can
  e.g. assign data to certain patterns of pages (e.g. to .adp-pages) or

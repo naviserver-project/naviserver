@@ -4,7 +4,7 @@
 
 [titledesc {Obtain Network Driver Information.}]
 
-[description] The command [cmd ns_driver] allows to obtain information
+[description] The command [cmd ns_driver] allows one to obtain information
  about the loaded drivers, their configuration and their usage.
 
 [para] In general, one NaviServer process might have multiple driver

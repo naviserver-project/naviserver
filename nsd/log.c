@@ -1180,7 +1180,7 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         assert(severity < severityMaxCount);
 
         /*
-         * Don't allow to deactivate Fatal.
+         * Don't allow one to deactivate Fatal.
          */
         if (givenEnabled != -1 && severity != Fatal) {
             enabled = severityConfig[severity].enabled;

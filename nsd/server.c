@@ -466,7 +466,7 @@ CreatePool(NsServer *servPtr, const char *pool)
            poolPtr->wqueue.highwatermark);
 
     /*
-     * To allow to vary maxthreads at runtime, allow potentially
+     * To allow one to vary maxthreads at runtime, allow potentially
      * maxconns threads to be created. Otherwise, maxthreads would be
      * sufficient.
      */

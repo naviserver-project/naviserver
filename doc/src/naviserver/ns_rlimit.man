@@ -6,7 +6,7 @@
 
 [description]
 
-This command allows to query or set the resource limits specified in
+This command allows one to query or set the resource limits specified in
 the operating system for the current process. The command is named
 after the getrlimit/setrlimit call available on most unix-like
 systems. The commands returns on success a pair of values, which are

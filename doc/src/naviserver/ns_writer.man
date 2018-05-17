@@ -5,7 +5,7 @@
 [titledesc {Manage files with writer thread}]
 
 [description]
-This command allows to submit data or file to be returned to the client connection using writer
+This command allows one to submit data or file to be returned to the client connection using writer
 thread instead of current connection thread. Writer thread processes multiple sockets using async socket
 operations which consumes less resources than returning multiple files to the slow clients in separate thread.
 

@@ -4,9 +4,9 @@
 
 [titledesc {Manage connection channels.}]
 
-[description] The command [cmd ns_connchan] allows to detach the
+[description] The command [cmd ns_connchan] allows one to detach the
  current channel from a connection thread and manage the connection
- outside the initiating connection thread. It allows to write or read
+ outside the initiating connection thread. It allows one to write or read
  to the channel, to define callbacks and to list open connections and
  to close the connection. The read and write operations on this
  channel will use directly the driver infrastructure which was in use
