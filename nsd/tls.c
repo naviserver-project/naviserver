@@ -42,6 +42,13 @@
 #include <openssl/evp.h>
 
 /*
+ * Some OPENSSL_VERSION_NUMBER:
+ *    0x10101005L OpenSSL 1.1.1-pre5 (beta)
+ *    0x1010007fL OpenSSL 1.1.0g
+ *    0x1000200fL OpenSSL 1.0.2-fips
+ */
+
+/*
  * OpenSSL < 0.9.8f does not have SSL_set_tlsext_host_name() In some
  * versions, this function is defined as a macro, on some versions as
  * a library call, which complicates detection via m4
@@ -59,6 +66,10 @@
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_1_0_2)
 # define HAVE_OPENSSL_PRE_1_1
+#endif
+
+#if OPENSSL_VERSION_NUMBER < 0x10000000L
+# define HAVE_OPENSSL_PRE_1_0
 #endif
 
 #ifdef HAVE_SSL_HMAC_CTX
@@ -120,7 +131,11 @@ static Tcl_ObjCmdProc CryptoMdFreeObjCmd;
 static Tcl_ObjCmdProc CryptoMdGetObjCmd;
 static Tcl_ObjCmdProc CryptoMdNewObjCmd;
 static Tcl_ObjCmdProc CryptoMdStringObjCmd;
+
+#ifndef HAVE_OPENSSL_PRE_1_1
 static Tcl_ObjCmdProc CryptoEckeyPrivObjCmd;
+static Tcl_ObjCmdProc CryptoEckeyImportObjCmd;
+#endif
 
 /*
  * Local variables defined in this file.
@@ -1751,8 +1766,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-
-
+#ifndef HAVE_OPENSSL_PRE_1_1
 static int
 CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
@@ -1823,6 +1837,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     return result;
 }
+#endif
 
 static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
@@ -1900,6 +1915,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
+#ifndef HAVE_OPENSSL_PRE_1_1
 static int
 CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
@@ -2000,7 +2016,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     return result;
 }
-
+#endif
 
 static int
 CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
@@ -2069,8 +2085,10 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"generate", CryptoEckeyGenerateObjCmd},
+#ifndef HAVE_OPENSSL_PRE_1_1
         {"import",   CryptoEckeyImportObjCmd},
         {"priv",     CryptoEckeyPrivObjCmd},
+#endif
         {"pub",      CryptoEckeyPubObjCmd},
         {NULL, NULL}
     };
