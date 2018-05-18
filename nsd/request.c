@@ -853,7 +853,7 @@ NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool
 {
     double      gzipQvalue = -1.0, brotliQvalue = -1, starQvalue = -1.0, identityQvalue = -1.0;
     bool        gzipAccept, brotliAccept;
-    const char *gzipFormat, *brotliFormat, *starFormat, *identiyFormat;
+    const char *gzipFormat, *brotliFormat, *starFormat;
 
     NS_NONNULL_ASSERT(hdr != NULL);
     NS_NONNULL_ASSERT(gzipAcceptPtr != NULL);
@@ -862,7 +862,7 @@ NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool
     gzipFormat    = GetEncodingFormat(hdr, "gzip", &gzipQvalue);
     brotliFormat  = GetEncodingFormat(hdr, "br", &brotliQvalue);
     starFormat    = GetEncodingFormat(hdr, "*", &starQvalue);
-    identiyFormat = GetEncodingFormat(hdr, "identity", &identityQvalue);
+    (void)GetEncodingFormat(hdr, "identity", &identityQvalue);
 
     //fprintf(stderr, "hdr line <%s> gzipFormat <%s> brotliFormat <%s>\n", hdr, gzipFormat, brotliFormat);
     if ((gzipFormat != NULL) || (brotliFormat != NULL)) {
