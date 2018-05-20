@@ -350,6 +350,7 @@ ns_section ns/server/${server}/acs
 #         ns_param SiteNodesCacheSize        2000000
 #         ns_param SiteNodesIdCacheSize       100000
 #         ns_param SiteNodesChildenCacheSize  100000
+#         ns_param SiteNodesPrefetch  {/file /changelogs /munin}
 #
 # Set for all package instances of acs-mail-lite the EmailDeliveryMode
 #
