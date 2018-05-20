@@ -773,6 +773,7 @@ Ns_ConnClose(Ns_Conn *conn)
 
         connPtr->sockPtr = NULL;
         connPtr->flags |= NS_CONN_CLOSED;
+        Ns_Log(Ns_LogRequestDebug, "connection closed");
 
         if (connPtr->itPtr != NULL) {
             NsTclRunAtClose(connPtr->itPtr);
