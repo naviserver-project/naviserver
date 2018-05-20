@@ -180,8 +180,8 @@ means that the server is shutting down.
 	[opt [option {-timeout T}]] \
 	[arg queueId] [arg jobId]]
 
-Wait for the specified queued or running job to finish.  ns_job wait
-returns the results of the script.
+Wait for the specified queued or running job to finish.
+[cmd "ns_job wait"] returns the results of the script.
 
 [para] An error is thrown if the specified timeout period (given in
 seconds and fractions of seconds) is reached.

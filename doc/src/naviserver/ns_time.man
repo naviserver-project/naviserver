@@ -54,9 +54,9 @@ Returns a string in "sec:usec" format.
 
 [call [cmd  {ns_time make}] [arg sec] [opt [arg usec]]]
 
-Returns a string in the form "sec:usec".  usec defaults to zero. 
-If usec is zero, the colon and usec are not returned.  If sec is zero,
-however, it is returned as part of the time string.
+Returns a string in the form "sec:usec".  [term usec] defaults to zero.
+If [term usec] is zero, the colon and usec are not returned.
+If [term sec] is zero, however, it is returned as part of the time string.
 
 
 [call [cmd  {ns_time seconds}] [arg time]]

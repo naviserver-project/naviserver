@@ -5,13 +5,13 @@
 [titledesc {Connect to a remote host on the specified port}]
 
 [description]
-ns_sockopen uses socket(), bind(), and connect() calls to connect to the
-remote host (host) on the specified port (port). ns_sockopen returns a
+[cmd ns_sockopen] uses socket(), bind(), and connect() calls to connect to the
+remote host (host) on the specified port (port). [cmd  ns_sockopen] returns a
 list of two file ids: the first one for reads and the second one for writes.
 
 [para]
 
-The [option -nonblock] option specifies that ns_sockopen will return immediately,
+The [option -nonblock] option specifies that [cmd ns_] will return immediately,
 while the connect is still in progress by the operating system. If you
 use [option -nonblock], you then can call ns_sockcheck with the write file id to
 see if the connect was actually completed.

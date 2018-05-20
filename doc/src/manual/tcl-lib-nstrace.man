@@ -16,13 +16,13 @@ There are basically two strategies:
 
 [list_begin itemized]
 
-[item] A. Run an introspective script against an initialized startup interpreter
+[item] A Run an introspective script against an initialized startup interpreter
          and collect definitions of some "known" things: loaded packages, created 
          Tcl procs, namespaces and namespaced variables. Then stuff all this data
          in a (potentially large) script and run this script against virgin Tcl
          interp. This script is obtained by the [lb]nstrace::statescript[rb] command (see below).
 
-[item] B. Register traces on selected Tcl commands and get state they create in a set of
+[item] B Register traces on selected Tcl commands and get state they create in a set of
          shared variables (the epoch). Then start bootstraping the interp. This will
          trigger trace callbacks and they will start filling the epoch. After the
          bootstrapping is done, synthetize a script containing minimal fixed state
@@ -33,7 +33,7 @@ There are basically two strategies:
 
 Which one of the above 2 strategies is currently used by the server, is controlled by
 the [emph lazyloader] parameter of the Tcl library, as defined in the server configuration
-file. The A. strategy is selected by setting the parameter to false. The B. strategy is
+file. The A Strategy is selected by setting the parameter to false. The B Strategy is
 selected by setting the parameter to true.
 
 [para]

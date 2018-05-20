@@ -9,9 +9,10 @@
 This command produces a string representation of time in seconds since 00:00:00 UTC Jan 1, 1970.
 
 [para]
-ns_fmttime uses the strftime() system call, so valid fmt strings will vary from platform 
-to platform.  Consult your operating system's documentation for strftime() to see what 
-valid fmt strings can contain.  fmt defaults to "%c" which is supposed to be the preferred
+[cmd ns_fmttime] uses the [term strftime()] system call, so valid
+format strings will vary from platform 
+to platform.  Consult your operating system's documentation for [term strftime()] to see what 
+valid fmt strings can contain.  [term fmt] defaults to "%c" which is supposed to be the preferred
 date and time representation for the current locale, which on some platforms should be 
 "%a %b %e %H:%M:%S %Z %Y".
 

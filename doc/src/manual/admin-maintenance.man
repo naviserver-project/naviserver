@@ -174,8 +174,8 @@ requirements the watchdog may not be the right thing for you. Common approaches 
 
 [para]
 
-Very easy to setup but with it's own limitations. init is the parent of all processes.
-It creates processes from the script /etc/inittab. Add a line like
+Very easy to setup but with it's own limitations. [term init] is the parent of all processes.
+It creates processes from the script [term /etc/inittab]. Add a line like
 
 [example_begin]
    ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl

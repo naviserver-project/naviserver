@@ -159,7 +159,7 @@ Timeout in seconds for send operations. (integer, default: 30)
 
 [def spoolerthreads]
 Number of spooler threads used when content larger than
-[term maxupload] is received. when spoolerthreads are set to 0, the driver
+[term maxupload] is received. When spoolerthreads are set to 0, the driver
 threads handles upload-spooling as wellto memory; (integer, default: 0)
 
 [def uploadpath]

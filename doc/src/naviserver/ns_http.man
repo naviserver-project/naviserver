@@ -64,7 +64,7 @@ transmit the file specified via filename as the HTTP request body.
 This option is mutual exclusive with [option -body].
 
 [opt_def -timeout [arg T]]
-Timeout for how long to wait for finishing the whole request 
+Timeout for how long to wait for finishing the whole request
 (default 2:0, secs:microsesc)
 
 [opt_def -keep_host_header]
@@ -75,13 +75,13 @@ Otherwise it is overwritten.
 [opt_def "-cafile" [arg CA]]
 allows for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. The certificates
-available via cafile and capath are trusted. The cafile points to a
-file of CA certificates in PEM format. The file can contain several CA
-certificates.
+available via [term cafile] and [term capath] are trusted.
+The [term cafile] points to a file of CA certificates in PEM format.
+The file can contain several CA certificates.
 
 [opt_def "-capath" [arg CP]]
 allows for HTTPS URIs to specify the locations, at which CA
-certificates for verification purposes are located. capath points to a
+certificates for verification purposes are located. [term capath] points to a
 directory containing CA certificates in PEM format. The files each
 contain one CA certificate. For more details, see
 https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html

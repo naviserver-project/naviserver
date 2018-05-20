@@ -5,8 +5,8 @@
 [titledesc {Determine readable file id's}]
 
 [description]
-ns_sockselect uses a select() call to determine which file id's re readable, writeable,
-or have exceptional conditions. ns_sockselect returns a list of three lists of:
+[cmd ns_sockselect] uses a select() call to determine which file id's re readable, writeable,
+or have exceptional conditions. [cmd ns_sockselect] returns a list of three lists of:
 readable file id's, writeable file id's, and file id's with exceptions.
 
 The [option -timeout] option specifies the length of time to wait in seconds for ns_sockselect

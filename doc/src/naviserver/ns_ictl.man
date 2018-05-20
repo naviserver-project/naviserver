@@ -20,7 +20,7 @@ cleanup, lifetime, synchronization etc.
 Cleanup the interpreter. This function is used to close all currently
 open files, to destroy the global variables, destroy the (volatile)
 ns_sets, to abort all running requests and to call other cleanup callbacks.
-The function is called typically internally, eg. at the end of a
+The function is called typically internally, e.g. at the end of a
 connection thread.
 
 

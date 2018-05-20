@@ -106,13 +106,14 @@ Case-insensitive counterpart of ns_set get.
 
 [call [cmd  "ns_set isnull"] [arg setId] [arg fieldNumber]]
 
-Returns 1 if the value of the field specified by fieldNumber is null and 0 if it is not. 
-Note that an empty string is not the same as a null.  ns_set isnull will return 0 if the
-value is an empty string.
+Returns 1 if the value of the field specified by fieldNumber is null
+and 0 if it is not.  Note that an empty string is not the same as a
+null.  [cmd "ns_set isnull"] will return 0 if the value is an empty
+string.
 
 [call [cmd  "ns_set iunique"] [arg setId] [arg key]]
 
-Case-insensitive counterpart of ns_set unique.
+Case-insensitive counterpart of [cmd " ns_set unique"].
 
 [call [cmd  "ns_set key"] [arg setId] [arg fieldNumber]]
 
@@ -165,10 +166,12 @@ Removes any fields with index fieldNumber or greater and frees any memory alloca
 
 [call [cmd  "ns_set unique"] [arg setId] [arg key]]
 
-Returns 1 if the specified key is unique in the specified set and 0 if it is not. 
-For example, a web browser could send multiple "Accept:" headers which would end up
-in the header set for the connection.  ns_set unique would return 0 for the "Accept:"
-key, because there are multiple fields with the key "Accept:".  The test for uniqueness
+Returns 1 if the specified key is unique in the specified set and 0 if
+it is not.  For example, a web browser could send multiple "Accept:"
+headers which would end up in the header set for the connection.
+
+[cmd "ns_set unique"] would return 0 for the "Accept:" key, because there
+are multiple fields with the key "Accept:".  The test for uniqueness
 is performed case-sensitively.
 
 [call [cmd  "ns_set update"] [arg setId] [arg key] [arg value]]
