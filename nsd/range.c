@@ -409,8 +409,8 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
          * The standard does not cleary specify how to
          * check those. Therefore, here is what we do:
          *
-         *  a. for non-overlapping ranges: keep both
-         *  b. for overlapping ranges: collapse into one
+         *  a. For non-overlapping ranges: keep both
+         *  b. For overlapping ranges: collapse into one
          */
 
         if ((prevPtr == NULL)

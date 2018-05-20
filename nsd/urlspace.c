@@ -151,7 +151,7 @@
  */
 
 /*
- * There is still room for improvements. a simple lookup for
+ * There is still room for improvements. A simple lookup for
  * "/a/c/a.html" takes 10 strlen operations and 14 strcmp
  * operations. One could alter the static function MkSeq() to produce
  * a more intelligent structure, to calculate strlen operations once,

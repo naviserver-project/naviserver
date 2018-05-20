@@ -30,7 +30,7 @@
 /*
  * tls.c --
  *
- *      Support for openssl support (ssl and tls), mostly for https
+ *      Support for OpenSSL support (SSL and TLS), mostly for HTTPS
  */
 
 #include "nsd.h"
@@ -2491,7 +2491,7 @@ void NsInitOpenSSL(void)
 
 /*
  * Dummy stub functions, for the case, when NaviServer is built without
- * openssl support, e.g. when built for the option --without-openssl.
+ * OpenSSL support, e.g. when built for the option --without-openssl.
  */
 
 int

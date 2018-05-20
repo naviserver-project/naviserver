@@ -165,7 +165,7 @@ static Ns_TaskQueue *session_queue;
  *
  * CheckReplyHeaders --
  *
- *	Check, if reply headers are provided. if not, create on the fly
+ *	Check, if reply headers are provided. If not, create on the fly
  *	automatically new reply headers and enter these to the interpreter.
  *
  * Results:
@@ -1504,7 +1504,7 @@ WaitWritable(
                   break;
               } else {
                   /*
-                   * No timeout is specified. retry, until we run into an
+                   * No timeout is specified. Retry, until we run into an
                    * error or success.
                    */
                   retval = ns_poll(&pollfd, 1, pollto);

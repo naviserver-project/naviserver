@@ -135,7 +135,7 @@ Ns_StrTrimRight(char *chars)
  *
  * Ns_StrToLower --
  *
- *      All alph. chars in a string will be made to be lowercase.
+ *      All alphabetic characters in "chars" are changed to lowercase.
  *
  * Results:
  *      Same string as passed in.
@@ -169,7 +169,7 @@ Ns_StrToLower(char *chars)
  *
  * Ns_StrToUpper --
  *
- *      All alph. chars in a string will be made to be uppercase.
+ *      All alphabetic Ccars in "chars" are changed to uppercase.
  *
  * Results:
  *      Same string as passed in.

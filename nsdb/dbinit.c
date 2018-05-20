@@ -701,7 +701,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             /*
              * Iterate over the handles of this pool, which are currently
              * unused. Some of the currently unused handles might have been never
-             * used. by subtracting the never used handles from the total handles,
+             * used. By subtracting the never used handles from the total handles,
              * we determine the used handles.
              */
             Ns_MutexLock(&poolPtr->lock);

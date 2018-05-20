@@ -332,7 +332,7 @@ Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key)
  *
  * Results:
  *	The position where an element should be inserted even if it
- *	does not already exist. bsearch will just return NULL.
+ *	does not already exist. "bsearch" will just return NULL.
  *
  * Side effects:
  *	None.

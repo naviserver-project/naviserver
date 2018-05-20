@@ -35,15 +35,15 @@
  *
  * Lock rules:
  *
- *   o. lock the queuelock when modifying tp structure elements.
- *   o. lock the queue's lock when modifying queue structure elements.
- *   o. jobs are shared between tp and the queue but are owned by the
- *      queue, so use queue's lock is used to control access to the
- *      jobs.
- *   o. to avoid deadlock, when locking both the queuelock and queue's
- *      lock, lock the queuelock first
- *   o. to avoid deadlock, the tp queuelock should be locked before
- *      the queue's lock.
+ *   - Lock the queuelock when modifying tp structure elements.
+ *   - Lock the queue's lock when modifying queue structure elements.
+ *   - Jobs are shared between tp and the queue but are owned by the
+ *     queue, so use queue's lock is used to control access to the
+ *     jobs.
+ *   - To avoid deadlock, when locking both the queuelock and queue's
+ *     lock, lock the queuelock first
+ *   - To avoid deadlock, the tp queuelock should be locked before
+ *     the queue's lock.
  *
  *
  * Notes:
@@ -1008,7 +1008,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    Queue         *queue = NULL;
+    Queue         *queue;
     int            result = TCL_OK;
     Ns_ObjvSpec    args[] = {
         {"queueId",  ObjvQueue,    &queue,   NULL},

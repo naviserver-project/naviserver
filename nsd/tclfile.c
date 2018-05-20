@@ -233,9 +233,9 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  *      In general, the function mktemp() is not recommended, since
  *      there is a time gap between the generation of a file name and
- *      the generation of a file or directory with the * name. This
- *      can result in race conditions or * attacks. however, using the
- *      finction is still better than * home-brewed solutions for the
+ *      the generation of a file or directory with the name. This can
+ *      result in race conditions or attacks. However, using this
+ *      function is still better than home-brewed solutions for the
  *      same task.
  *
  * Results:

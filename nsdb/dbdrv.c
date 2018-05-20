@@ -867,10 +867,9 @@ Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
  *
  * Ns_DbSpSetParam --
  *
- *	Set a parameter in a store procedure; must have executed 
- *	Ns_DbSpStart first. paramname looks like "@x", paramtype is 
- *	like "int" or "varchar", inout is "in" or "out", value is 
- *	like "123". 
+ *	Set a parameter in a store procedure; must have executed Ns_DbSpStart
+ *	first. "paramname" looks like "@x", paramtype is like "int" or
+ *	"varchar", inout is "in" or "out", value is like "123".
  *
  * Results:
  *	NS_OK/NS_ERROR 

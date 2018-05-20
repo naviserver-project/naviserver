@@ -1431,9 +1431,9 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     /*
-     * The underlying Request structure is allocated by RequestNew(), which
-     * must be called for the sockPtr prior to calling this function. reqPtr
-     * should be NULL just in error cases.
+     * The underlying "Request" structure is allocated by RequestNew(), which
+     * must be called for the "sockPtr" prior to calling this
+     * function. "reqPtr" should be NULL just in error cases.
      */
     reqPtr = sockPtr->reqPtr;
 
@@ -1893,7 +1893,7 @@ DriverThread(void *arg)
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
                 /*
                  * The resolution of pollto is ms, therefore, we round
-                 * up. If we would round down (eg. found 500
+                 * up. If we would round down (e.g. found 500
                  * microseconds to 0 ms), the time comparison later
                  * would determine that it is to early.
                  */
@@ -4879,7 +4879,7 @@ WriterThread(void *arg)
  *      None.
  *
  * Side effects:
- *      Change the state of the writer job. and trigger the queue.
+ *      Change the state of the writer job and trigger the queue.
  *
  *----------------------------------------------------------------------
  */

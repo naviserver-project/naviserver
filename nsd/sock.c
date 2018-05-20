@@ -1050,8 +1050,9 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
  *
  * SockConnect --
  *
- *      Open a TCP connection to a host/port sync or async.  host/port refers
- *      to the remote, lhost/lport to the local communication endpoint.
+ *      Open a TCP connection to a host/port sync or async.  "host" and "port"
+ *      refer to the remote, "lhost" and "lport" to the local communication
+ *      endpoint.
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.

@@ -1044,14 +1044,13 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
  * GetSet --
  *
  *      Take a Tcl list of files and set bits for each in the list in 
- *      an fd_set. 
+ *      the fd_set. 
  *
  * Results:
  *      Tcl result. 
  *
  * Side effects:
- *      Will set bits in fd_set. ppset may be NULL on error, or
- *      a valid fd_set on success. Max fd will be returned in *maxPtr.
+ *      set bits in fd_set. Max fd will be returned in "*maxPtr".
  *
  *----------------------------------------------------------------------
  */

@@ -65,8 +65,8 @@ void NsTclInitKeylistType(void)
  *   Easily create "wrong # args" error messages.
  *
  * Parameters:
- *   o commandNameObj - Object containing name of command (objv[0])
- *   o msg - Text message to append.
+ *   - commandNameObj - Object containing name of command (objv[0])
+ *   - msg - Text message to append.
  * Returns:
  *   TCL_ERROR
  *-----------------------------------------------------------------------------
@@ -89,7 +89,7 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg)
  * out forcing a conversion.
  *
  * Parameters:
- *   o objPtr - Object to check.
+ *   - objPtr - Object to check.
  * Returns:
  *   NS_TRUE if NULL, NS_FALSE if not.
  *-----------------------------------------------------------------------------
@@ -154,16 +154,22 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key,
  * Tcl_GetKeyedListKeys -- Retrieve a list of keys from a keyed list.  The list
  * is walked rather than converted to an argv for increased performance.
  *
- * Parameters: o interp (I/O) - Error message will be return in result if there
- * is an error. o subFieldName (I) - If "" or NULL, then the keys are
- * retreved for the top level of the list.  If specified, it is name of the
- * field who's subfield keys are to be retrieve. o keyedList (I) - The list
- * to search for the field. o keysArgcPtr (O) - The number of keys in the
- * keyed list is returned here. o keysArgvPtr (O) - An argv containing the
- * key names.  It is dynamically allocated, containing both the array and the
- * strings. A single call to ckfree will release it. Returns: TCL_OK - If the
- * field was found. TCL_BREAK - If the field was not found. TCL_ERROR - If an
- * error occurred.
+ * Parameters: 
+
+ *  - interp (I/O) - Error message will be return in result if there
+ *    is an error. 
+ *  - subFieldName (I) - If "" or NULL, then the keys are
+ *    retreved for the top level of the list.  If specified, it is name of the
+ *    field who's subfield keys are to be retrieve. 
+ *  - keyedList (I) - The list to search for the field. 
+ *  - keysArgcPtr (O) - The number of keys in the keyed list is returned here. 
+ *  - keysArgvPtr (O) - An argv containing the key names.  It is dynamically 
+ *    allocated, containing both the array and the strings. A single call 
+ *    to ckfree will release it. 
+ *  Returns: 
+ *    TCL_OK - If the field was found. 
+ *    TCL_BREAK - If the field was not found. 
+ *    TCL_ERROR - If an error occurred.
  * ---------------------------------------------------------------------------
  */
 
@@ -236,15 +242,20 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
  * is walked rather than converted to an argv for increased performance.  This
  * if the name contains sub-fields, this function recursive.
  *
- * Parameters: o interp (I/O) - Error message will be return in result if there
- * is an error. o fieldName (I) - The name of the field to extract.  Will
- * recusively process sub-field names separated by `.'. o keyedList (I) - The
- * list to search for the field. o fieldValuePtr (O) - If the field is found,
- * a pointer to a dynamicly allocated string containing the value is returned
- * here.  If NULL is specified, then only the presence of the field is
- * validated, the value is not returned. Returns: TCL_OK - If the field was
- * found. TCL_BREAK - If the field was not found. TCL_ERROR - If an error
- * occurred.
+ * Parameters: 
+ *  - interp (I/O) - Error message will be return in result if there
+ *    is an error. 
+ *  - fieldName (I) - The name of the field to extract.  Will recusively 
+ *    process sub-field names separated by `.'. 
+ *  - keyedList (I) - The list to search for the field. 
+ *  - fieldValuePtr (O) - If the field is found, a pointer to a dynamically 
+ *    allocated string containing the value is returned here.  
+ *    If NULL is specified, then only the presence of the field is
+ *    validated, the value is not returned. 
+ * Returns: 
+ *    TCL_OK - If the field was found. 
+ *    TCL_BREAK - If the field was not found. 
+ *    TCL_ERROR - If an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
@@ -287,13 +298,17 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *
  * Tcl_SetKeyedListField -- Set a field value in keyed list.
  *
- * Parameters: o interp (I/O) - Error message will be return in result if there
- * is an error. o fieldName (I) - The name of the field to extract.  Will
- * recusively process sub-field names separated by `.'. o fieldValue (I) -
- * The value to set for the field. o keyedList (I) - The keyed list to set a
- * field value in, may be an NULL or an empty list to create a new keyed
- * list. Returns: A pointer to a dynamically allocated string, or NULL if an
- * error occurred.
+ * Parameters: 
+ *  - interp (I/O) - Error message will be return in result if there
+ *    is an error. 
+ *  - fieldName (I) - The name of the field to extract.  Will
+ *    recusively process sub-field names separated by `.'. 
+ *  - fieldValue (I) - The value to set for the field. 
+ *  - keyedList (I) - The keyed list to set a field value in, may be 
+ *    an NULL or an empty list to create a new keyed list. 
+ * Returns: 
+ *   A pointer to a dynamically allocated string, or 
+ *   NULL if an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
@@ -331,12 +346,16 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *
  * Tcl_DeleteKeyedListField -- Delete a field value in keyed list.
  *
- * Parameters: o interp (I/O) - Error message will be return in result if there
- * is an error. o fieldName (I) - The name of the field to extract.  Will
- * recusively process sub-field names separated by `.'. o fieldValue (I) -
- * The value to set for the field. o keyedList (I) - The keyed list to delete
- * the field from. Returns: A pointer to a dynamically allocated string
- * containing the new list, or NULL if an error occurred.
+ * Parameters: 
+ *   - interp (I/O) - Error message will be return in result if there
+ *     is an error. 
+ *   - fieldName (I) - The name of the field to extract.  Will recusively 
+ *     process sub-field names separated by `.'. 
+ *   - fieldValue (I) - The value to set for the field. 
+ *   - keyedList (I) - The keyed list to delete the field from. 
+ * Returns: 
+ *   A pointer to a dynamically allocated string containing the new list, or 
+ *   NULL if an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
