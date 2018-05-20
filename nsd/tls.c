@@ -1894,8 +1894,9 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         if (result != TCL_ERROR) {
             Tcl_DString  ds;
             BN_CTX      *bn_ctx = BN_CTX_new();
-            size_t       octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
-
+            size_t       octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey),
+                                                        ecpoint, POINT_CONVERSION_UNCOMPRESSED,
+                                                        NULL, 0, NULL);
             Tcl_DStringInit(&ds);
             Tcl_DStringSetLength(&ds, (int)octLength);
             octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
@@ -2077,19 +2078,134 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     return result;
 }
 
+#ifndef HAVE_OPENSSL_PRE_1_1
+static int
+CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result;
+    char              *outputEncodingString = NULL, *pemFileName = NULL;
+    Tcl_Obj           *pubkeyObj = NULL;
+    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    EC_KEY            *eckey = NULL;
 
+    Ns_ObjvSpec lopts[] = {
+        {"-pem",      Ns_ObjvString, &pemFileName, NULL},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"pubkey", Ns_ObjvObj, &pubkeyObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    
+    /*
+      ns_crypto::eckey sharedsecret -pem /usr/local/ns/modules/vapid/prime256v1_key.pem \
+        [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
+    */
+
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (pemFileName == NULL) {
+        Ns_TclPrintfResult(interp, "no pem file specified");
+        result = TCL_ERROR;
+
+    } else if (outputEncodingString != NULL
+               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else {
+        
+        eckey = GetEckeyFromPem(interp, pemFileName, NS_TRUE);
+        if (eckey == NULL) {
+            /*
+             * GetEckeyFromPem handles error message
+             */
+            result = TCL_ERROR;
+        } else {
+            result = TCL_OK;
+        }
+    }
+
+    if (result == TCL_OK) {
+        int                  pubkeyLength;
+        const unsigned char *pubkeyString;
+        Tcl_DString          importDs;
+        const EC_GROUP      *group;
+        EC_POINT            *pubKeyPt;
+        BN_CTX              *bn_ctx = BN_CTX_new();
+        
+        Tcl_DStringInit(&importDs);
+        pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, &pubkeyLength, &importDs);
+
+        Ns_Log(Notice, "pub key length %d", pubkeyLength);
+
+        // Computes the ECDH shared secret, used as the input key material (IKM) for
+        // HKDF.
+
+        group = EC_KEY_get0_group(eckey);
+        pubKeyPt = EC_POINT_new(group);
+        
+        if (EC_POINT_oct2point(group, pubKeyPt, pubkeyString, (size_t)pubkeyLength, bn_ctx) != 1) {
+            Ns_TclPrintfResult(interp, "could not derive EC point from provided key");
+            result = TCL_ERROR;
+
+        } else {
+            size_t      sharedSecretLength;
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            sharedSecretLength = (size_t)((EC_GROUP_get_degree(group) + 7) / 8);
+            Tcl_DStringSetLength(&ds, (int)sharedSecretLength);
+
+            Ns_Log(Notice, "shared secrect length %lu", sharedSecretLength);
+
+            if (ECDH_compute_key(ds.string, sharedSecretLength, pubKeyPt, eckey, NULL) <= 0) {
+                Ns_TclPrintfResult(interp, "could not derive shared secret");
+                result = TCL_ERROR;
+
+            } else {
+                /*
+                 * success
+                 */
+                SetEncodedResultObj(interp, (unsigned char *)ds.string, sharedSecretLength, NULL, encoding);
+            }
+            Tcl_DStringFree(&ds);
+        }
+        /*
+         * Clean up.
+         */
+        BN_CTX_free(bn_ctx);
+        EC_POINT_free(pubKeyPt);
+        Tcl_DStringFree(&importDs);
+
+        /*
+         * Clean up.
+         */
+        if (eckey != NULL) {
+            EC_KEY_free(eckey);
+        }
+    }
+
+    return result;
+}
+#endif
 
 
 int
 NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"generate", CryptoEckeyGenerateObjCmd},
+        {"generate",     CryptoEckeyGenerateObjCmd},
 #ifndef HAVE_OPENSSL_PRE_1_1
-        {"import",   CryptoEckeyImportObjCmd},
-        {"priv",     CryptoEckeyPrivObjCmd},
+        {"import",       CryptoEckeyImportObjCmd},
+        {"priv",         CryptoEckeyPrivObjCmd},
+        {"sharedsecret", CryptoEckeySharedsecretObjCmd},
 #endif
-        {"pub",      CryptoEckeyPubObjCmd},
+        {"pub",          CryptoEckeyPubObjCmd},
         {NULL, NULL}
     };
 
