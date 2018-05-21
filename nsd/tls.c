@@ -194,11 +194,11 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
 #endif
 
 
-#if 0
+#if 1
 static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
 {
     size_t i;
-    fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
+    fprintf(stderr, "%s (len %zu): ", msg, octectLength);
     for (i=0; i<octectLength; i++) {
         fprintf(stderr, "%.2x ",octects[i] & 0xff);
     }
@@ -2097,7 +2097,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {"pubkey", Ns_ObjvObj, &pubkeyObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     /*
       ns_crypto::eckey sharedsecret -pem /usr/local/ns/modules/vapid/prime256v1_key.pem \
         [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
@@ -2118,7 +2118,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        
+
         eckey = GetEckeyFromPem(interp, pemFileName, NS_TRUE);
         if (eckey == NULL) {
             /*
@@ -2137,18 +2137,95 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         const EC_GROUP      *group;
         EC_POINT            *pubKeyPt;
         BN_CTX              *bn_ctx = BN_CTX_new();
-        
+
+        EVP_PKEY_CTX        *pctx, *ctx = NULL, *kctx = NULL;
+        EC_KEY              *peerKeyEC;
+        EVP_PKEY            *pkey, *peerKey, *params = NULL;
+
         Tcl_DStringInit(&importDs);
         pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, &pubkeyLength, &importDs);
 
         Ns_Log(Notice, "pub key length %d", pubkeyLength);
 
+        /*
+         * Ingredients:
+         *  pkey        : private key, from PEM, EVP_PKEY
+         *  eckey       : private key, from PEM, EC_KEY (currently redundant)
+         *  pubkeyString: public key of peer as octet string
+         *  peerKeyEC   : peer key locally regnerated, same curve as pkey, get filled with octets
+         *  peerKey     : peer key as EVP_PKEY, filled with peerKeyEC
+         *  pctx        : parameter generation contenxt
+         *  params      : parameter object
+         *  kctx        : key generation context, uses params, used for EVP_PKEY_keygen_init and EVP_PKEY_keygen
+         *  ctx         : shared secret generation context, uses pkey
+         */
+        pkey = GetPkeyFromPem(interp, pemFileName, NS_TRUE);
+
+        group = EC_KEY_get0_group(eckey);
+
+        peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
+        peerKey = EVP_PKEY_new();
+
+        pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+        EVP_PKEY_paramgen_init(pctx);
+        EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, EC_GROUP_get_curve_name(group));
+        Ns_Log(Notice, "NID X9_62_prime256v1 %d, privKey curve %d ", NID_X9_62_prime256v1, EC_GROUP_get_curve_name(group));
+
+        result = TCL_ERROR;
+        if (EC_KEY_oct2key(peerKeyEC, pubkeyString, (size_t)pubkeyLength, NULL) != 1) {
+            Ns_Log(Notice, "could not import peer key");
+            Ns_TclPrintfResult(interp, "could not import peer key");
+        } else if (EVP_PKEY_set1_EC_KEY(peerKey, peerKeyEC) != 1) {
+            Ns_Log(Notice, "could not convert EC key to EVP key");
+            Ns_TclPrintfResult(interp, "could not convert EC key to EVP key");
+        } else if (EVP_PKEY_paramgen(pctx, &params) != 1) {
+            Ns_Log(Notice, "could not generate parameters");
+            Ns_TclPrintfResult(interp, "could not generate parameters");
+        } else if ((kctx = EVP_PKEY_CTX_new(params, NULL)) == NULL) {
+            Ns_Log(Notice, "could not generate kctx");
+            Ns_TclPrintfResult(interp, "could not generate kctx");
+        } else if (EVP_PKEY_keygen_init(kctx) != 1) {
+            Ns_Log(Notice, "could not init kctx");
+            Ns_TclPrintfResult(interp, "could not init kctx");
+        } else if (EVP_PKEY_keygen(kctx, &pkey) != 1) {
+            Ns_Log(Notice, "could not generate key for kctx");
+            Ns_TclPrintfResult(interp, "could not generate key for ctx");
+        } else if ((ctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
+            Ns_TclPrintfResult(interp, "could not create ctx");
+        } else if (EVP_PKEY_derive_init(ctx) != 1) {
+            Ns_Log(Notice, "could not derive init ctx");
+            Ns_TclPrintfResult(interp, "could not derive init ctx");
+        } else if (EVP_PKEY_derive_set_peer(ctx, peerKey) != 1) {
+            Ns_Log(Notice, "could set peer key");
+            Ns_TclPrintfResult(interp, "could not set peer key");
+            result = TCL_ERROR;
+        } else {
+            Tcl_DString  ds;
+            size_t       sharedKeySize = 0u;
+
+            Tcl_DStringInit(&ds);
+            (void)EVP_PKEY_derive(ctx, NULL, &sharedKeySize);
+            if (sharedKeySize > 0) {
+                Tcl_DStringSetLength(&ds, (int)sharedKeySize);
+                (void)EVP_PKEY_derive(ctx, (unsigned char *)ds.string, &sharedKeySize);
+                hexPrint("recommended", (unsigned char *)ds.string, sharedKeySize);
+                result = TCL_OK;
+            }
+            Tcl_DStringFree(&ds);
+        }
+        EC_KEY_free(peerKeyEC);
+        EVP_PKEY_free(peerKey);
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_CTX_free(pctx);
+        EVP_PKEY_CTX_free(kctx);
+        EVP_PKEY_free(params);
+
         // Computes the ECDH shared secret, used as the input key material (IKM) for
         // HKDF.
 
-        group = EC_KEY_get0_group(eckey);
         pubKeyPt = EC_POINT_new(group);
-        
+
         if (EC_POINT_oct2point(group, pubKeyPt, pubkeyString, (size_t)pubkeyLength, bn_ctx) != 1) {
             Ns_TclPrintfResult(interp, "could not derive EC point from provided key");
             result = TCL_ERROR;
@@ -2161,8 +2238,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             sharedSecretLength = (size_t)((EC_GROUP_get_degree(group) + 7) / 8);
             Tcl_DStringSetLength(&ds, (int)sharedSecretLength);
 
-            Ns_Log(Notice, "shared secrect length %lu", sharedSecretLength);
-
             if (ECDH_compute_key(ds.string, sharedSecretLength, pubKeyPt, eckey, NULL) <= 0) {
                 Ns_TclPrintfResult(interp, "could not derive shared secret");
                 result = TCL_ERROR;
@@ -2171,6 +2246,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 /*
                  * success
                  */
+                hexPrint("ecec       ", (unsigned char *)ds.string, sharedSecretLength);
                 SetEncodedResultObj(interp, (unsigned char *)ds.string, sharedSecretLength, NULL, encoding);
             }
             Tcl_DStringFree(&ds);
@@ -2182,9 +2258,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         EC_POINT_free(pubKeyPt);
         Tcl_DStringFree(&importDs);
 
-        /*
-         * Clean up.
-         */
         if (eckey != NULL) {
             EC_KEY_free(eckey);
         }
