@@ -1799,7 +1799,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         result = TCL_ERROR;
 
     } else {
-        EVP_PKEY *pkey = NULL;
+        EVP_PKEY *pkey;
         EC_KEY   *eckey = NULL;
 
         pkey = GetPkeyFromPem(interp, pemFile, NS_TRUE);
@@ -1871,7 +1871,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
 
     } else {
-        EC_KEY         *eckey = NULL;
+        EC_KEY         *eckey;
         const EC_POINT *ecpoint = NULL;
 
         /*
