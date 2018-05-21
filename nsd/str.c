@@ -478,11 +478,15 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
          * In most cases, the calls to Tcl_DStringInit() and Tcl_DStringFree()
          * framing Ns_GetBinaryString() are dummy operations.
          */
+#if (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 7)
+        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+#else
         char *bytes = Tcl_GetStringFromObj(obj, lengthPtr);
 
         Tcl_UtfToExternalDString(NULL, bytes, *lengthPtr, dsPtr);
         result = dsPtr->string;
         *lengthPtr = dsPtr->length;
+#endif
 
     } else {
         result = Tcl_GetStringFromObj(obj, lengthPtr);

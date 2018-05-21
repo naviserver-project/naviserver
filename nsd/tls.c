@@ -2144,8 +2144,14 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         Tcl_DStringInit(&importDs);
         pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, &pubkeyLength, &importDs);
+        //pubkeyString = Tcl_GetByteArrayFromObj(pubkeyObj, &pubkeyLength);
 
         Ns_Log(Notice, "pub key length %d", pubkeyLength);
+
+        /*
+          ns_crypto::eckey generate -name prime256v1 -pem /tmp/prime256v1_key.pem
+          ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
+        */
 
         /*
          * Ingredients:
