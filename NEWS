@@ -208,7 +208,7 @@ Bug Fixes:
 
    * ns_urledecode: Use URL encoding charset, when no charset is
      specified.  This fixes an old (at least 10 year old) bug which
-     can allow to sneak in binary nulls into query variables, which
+     can allow one to sneak in binary nulls into query variables, which
      provide a potential injection attack vector
 
 
@@ -332,7 +332,7 @@ Documentation improvements:
     * ns_write.man
     * nssock.man
     * nsssl.man
-    * ns_setpriveleges.man
+    * ns_setprivileges.man
     * returnstatus-cmds.man
     * tcl-overview.man
 
@@ -1466,7 +1466,7 @@ Changes relative to 4.99.8
 
 New Features:
 
-  * New command "ns_urlspace": this command allows to attach and
+  * New command "ns_urlspace": this command allows one to attach and
     retrieve arbitrary data to URLs in a hierarchical manner form the
     Tcl level. The command allows e.g.  to write ns-perm like access
     control in Tcl without much hassle.
@@ -1576,7 +1576,7 @@ C API Changes:
 
 Incompatible API Changes:
   * Potential incompatibility: "ns_eval" behaves now closer to
-    Tcl "eval" (e.g. allows to define procs with comments)
+    Tcl "eval" (e.g. allows one to define procs with comments)
 
 
 Configuration Changes:
@@ -1701,7 +1701,7 @@ New Features:
     via driver routines. The new command "ns_connchan"
     provides a higher level alternative to the idiom
     "ns_conn channel" + Tcl-commands. The new command
-    uses the internal socketcallback infrastructure and allows to
+    uses the internal socketcallback infrastructure and allows one to
 
       - detach the currently open connection channel from a
 	connection thread, to
@@ -2872,7 +2872,7 @@ Configuration Changes:
       content. Use separate request instead of waiting until the large
       content transfer has finished.
 
-    * Fastpath static page configuration is now a global setting rather then
+    * Fastpath static page configuration is now a global setting rather than
       per-server:
 
       ns_section "ns/fastpath"
