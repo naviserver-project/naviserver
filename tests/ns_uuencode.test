@@ -31,6 +31,14 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
+test ns_uuencode-0.1 {basic syntax: plain call} -body {
+     ns_uuencode
+} -returnCodes error -result {wrong # args: should be "ns_uuencode string"}
+
+test ns_uudecode-0.2 {basic syntax: plain call} -body {
+     ns_uudecode
+} -returnCodes error -result {wrong # args: should be "ns_uudecode string"}
+
 test ns_uuencode-1.1 {long string} -body {
     ns_uuencode 1234567890
 } -result MTIzNDU2Nzg5MA==
@@ -39,8 +47,18 @@ test ns_uuencode-1.2 {short string} -body {
     ns_uuencode @
 } -result QA==
 
-test ns_uudecode-2.1 {encoded string} -body {
+test ns_uudecode-1.3 {encoded string} -body {
     ns_uudecode MTIzNDU2Nzg5MA==
 } -result 1234567890
+
+test ns_uuencode-2.1 {basic operation ns_uuencode} -body {
+     ns_uuencode "true friends stab you in the front"
+} -result "dHJ1ZSBmcmllbmRzIHN0YWIgeW91IGluIHRoZSBmcm9udA=="
+
+test ns_uudecode-2.2 {basic operation ns_uudecode} -body {
+     ns_uudecode "dHJ1ZSBmcmllbmRzIHN0YWIgeW91IGluIHRoZSBmcm9udA=="
+} -result "true friends stab you in the front"
+
+
 
 cleanupTests
