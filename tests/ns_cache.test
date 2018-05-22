@@ -547,35 +547,35 @@ test ns_cache-12.1 {transaction rollback} -body {
 	#
 	# get some old value in the transaction
 	#
-	lappend result [ns_cache_get trans_c1 k1]
+	set result [list a: [ns_cache_get trans_c1 k1]]
 
 	#
 	# set three values in the transaction via ns_cache_eval
 	#
 	ns_cache_eval trans_c1 k2 {return 2}
 	ns_cache_eval trans_c1 k3 {return 3}
-	lappend result [ns_cache_incr trans_c1 k4]
+	lappend result b: [ns_cache_incr trans_c1 k4]
 
 	#
 	# check, if we can obtain the just fresh value inside the transaction
 
 	# ... via _eval
-	lappend result [ns_cache_eval trans_c1 k2 {return 2}]
+	lappend result c: [ns_cache_eval trans_c1 k2 {return 2}]
 
 	# ... via _get
-	lappend result [ns_cache_get trans_c1 k2]
-	lappend result [ns_cache_get trans_c1 k3]
+	lappend result d: [ns_cache_get trans_c1 k2]
+	lappend result e: [ns_cache_get trans_c1 k3]
 
 	# get keys inside transaction
-	lappend result [ns_cache_keys trans_c1 k2]
-	lappend result [ns_cache_keys trans_c1]
+	lappend result f: [ns_cache_keys trans_c1 k2]
+	lappend result g: [ns_cache_keys trans_c1]
 
 	# flush the value added by this transaction inside the transaction
-	lappend result [ns_cache_flush trans_c1 k3]
+	lappend result h: [ns_cache_flush trans_c1 k3]
 
 	# increment k4 once again, get the value via ns_cache_get
-	lappend result [ns_cache_incr trans_c1 k4]
-	lappend result [ns_cache_get trans_c1 k4]
+	lappend result i: [ns_cache_incr trans_c1 k4]
+	lappend result j: [ns_cache_get trans_c1 k4]
 
 	#
 	# rollback the transaction
@@ -585,16 +585,16 @@ test ns_cache-12.1 {transaction rollback} -body {
     #
     # get the all the entries from the cache
     #
-    lappend result [ns_cache_keys trans_c1]
+    lappend result y: [ns_cache_keys trans_c1]
 
     #
     # k2 should not be obtainable  (catch -> 1)
-    lappend result [catch {ns_cache_get trans_c1 k2}]
+    lappend result z: [catch {ns_cache_get trans_c1 k2}]
 
 } -cleanup {
     unset -nocomplain result
     ns_cache_flush trans_c1
-} -result {1 1 2 2 3 k2 {k1 k2 k3 k4} 1 2 2 k1 1}
+} -result {a: 1 b: 1 c: 2 d: 2 e: 3 f: k2 g: {k1 k2 k3 k4} h: 1 i: 2 j: 2 y: k1 z: 1}
 
 
 test ns_cache-12.2 {transaction commit} -body {
