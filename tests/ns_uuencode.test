@@ -59,6 +59,11 @@ test ns_uudecode-2.2 {basic operation ns_uudecode} -body {
      ns_uudecode "dHJ1ZSBmcmllbmRzIHN0YWIgeW91IGluIHRoZSBmcm9udA=="
 } -result "true friends stab you in the front"
 
-
-
 cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

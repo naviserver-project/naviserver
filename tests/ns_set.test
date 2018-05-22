@@ -374,3 +374,9 @@ test ns_set-2.29 {basic operation ns_set} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

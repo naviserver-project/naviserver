@@ -96,3 +96,9 @@ test ns_hrefs-3.4 {parse without result} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

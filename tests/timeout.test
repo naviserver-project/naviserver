@@ -47,3 +47,9 @@ test timeout-1.6 {ADP page w/include} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

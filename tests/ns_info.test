@@ -91,7 +91,7 @@ test ns_info-2.17.1 {basic operation} -body {
 
 test ns_info-2.19.1 {basic operation} -body {
     expr {[llength [ns_info pools]] == 0
-	  || [string match thread* [lindex [ns_info pools] 0 0]]}
+          || [string match thread* [lindex [ns_info pools] 0 0]]}
 } -result 1
 
 test ns_info-2.20.1 {basic operation} -body {
@@ -121,12 +121,12 @@ test ns_info-2.26.1 {basic operation} -body {
 test ns_info-2.27.1 {basic operation} -body {
     set expected_threads 0
     foreach _thread [ns_info threads] {
-	switch -- [lindex $_thread 0] {
-	    "-driver-" -
-	    "-sched-" -
-	    "-main-" { set expected_threads 1 }
-	    "default" {}
-	}
+        switch -- [lindex $_thread 0] {
+            "-driver-" -
+            "-sched-" -
+            "-main-" { set expected_threads 1 }
+            "default" {}
+        }
     }
     set expected_threads
 } -result 1
@@ -148,3 +148,9 @@ test ns_info-2.29.1 {basic operation} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -12,7 +12,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -26,7 +26,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
@@ -40,9 +40,9 @@ namespace import -force ::tcltest::*
 set ::notRecentDarwin 0
 if {$::tcl_platform(os) eq "Darwin"} {
     if {[lindex [split $::tcl_platform(os) .] 0] < 12} {
-	set ::notRecentDarwin 1
+        set ::notRecentDarwin 1
     }
-} 
+}
 
 tcltest::testConstraint notDarwin $::notRecentDarwin
 
@@ -56,3 +56,9 @@ test ns_hostbyaddr-1.2 {bad address} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

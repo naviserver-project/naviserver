@@ -58,3 +58,9 @@ test ns_hashpath-3.1 {short paths} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

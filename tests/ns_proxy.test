@@ -195,14 +195,14 @@ test ns_proxy-5.2 {eval with pool timeout} -body {
 } -match glob -result {1 {could not wait for proxy "testpool-*": timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.3 {eval with proxy timeout} -body {
-    set code [catch {ns_proxy eval [ns_proxy get testpool] "after 2000" 1000} result]   
+    set code [catch {ns_proxy eval [ns_proxy get testpool] "after 2000" 1000} result]
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
 } -match glob -result {1 {could not wait for proxy "testpool-*": timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.4 {eval with command timeout} -body {
-    set code [catch {[ns_proxy get testpool] "after 2000" 1000} result] 
+    set code [catch {[ns_proxy get testpool] "after 2000" 1000} result]
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
@@ -316,7 +316,7 @@ test ns_proxy-5.12 {check maxruns == 0} -body {
 
 test ns_proxy-6.0 {eval with errors} -body {
     catch {ns_proxy eval [ns_proxy get testpool] "error a 1 {a b c}"} result options
-	dict get $options -errorcode
+        dict get $options -errorcode
 } -cleanup {
     ns_proxy cleanup
 } -result {a b c}
@@ -327,3 +327,9 @@ foreach pool [ns_proxy pools] {
 }
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -21,15 +21,15 @@ test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
     set fds [ns_sockopen $localhost 7227]
     lassign $fds rfd wfd
     set size 0
-    
+
     if {[gets $rfd line] == -1} {
-	ns_log error "got no data"
+        ns_log error "got no data"
     } else {
-	incr size [string length $line]
-	puts $wfd "How are you?"
-	flush $wfd
-	gets $rfd line
-	incr size [string length $line]
+        incr size [string length $line]
+        puts $wfd "How are you?"
+        flush $wfd
+        gets $rfd line
+        incr size [string length $line]
     }
     return [list size $size]
 } -cleanup {
@@ -43,11 +43,17 @@ test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
 #
 if {0} {
     proc ns_listencallback::conn_handler {rfd wfd} {
-	puts  $wfd "Welcome to the test server"
-	flush $wfd
-	gets  $rfd line
-	puts  $wfd "Well isn't that nice"
-	flush $wfd
+        puts  $wfd "Welcome to the test server"
+        flush $wfd
+        gets  $rfd line
+        puts  $wfd "Well isn't that nice"
+        flush $wfd
     }
 }
 
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

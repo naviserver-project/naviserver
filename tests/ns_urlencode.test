@@ -280,8 +280,8 @@ test ns_urlencode-4.1 {test request with encoded path segments} -constraints {se
 
 test ns_urlencode-5.0 {encode and unencode character sequence with percent codes - path segment} -constraints {serverListen} -setup {
     ns_register_proc GET /encode-decode {
-	set s "/%20,'\".=+"
-	set sEnc [ns_urlencode -part path $s]
+        set s "/%20,'\".=+"
+        set sEnc [ns_urlencode -part path $s]
         ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part path $sEnc] eq $s}]]
     }
 } -body {
@@ -292,8 +292,8 @@ test ns_urlencode-5.0 {encode and unencode character sequence with percent codes
 
 test ns_urlencode-5.1 {encode and unencode character sequence with percent codes - query segment} -constraints {serverListen} -setup {
     ns_register_proc GET /encode-decode {
-	set s "/%20,'\".=+"
-	set sEnc [ns_urlencode -part query $s]
+        set s "/%20,'\".=+"
+        set sEnc [ns_urlencode -part query $s]
         ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part query $sEnc] eq $s}]]
     }
 } -body {
@@ -304,8 +304,8 @@ test ns_urlencode-5.1 {encode and unencode character sequence with percent codes
 
 test ns_urlencode-5.2 {encode and unencode character sequence with percent codes - cookie} -constraints {serverListen} -setup {
     ns_register_proc GET /encode-decode {
-	set s "/%20,'\".=+"
-	set sEnc [ns_urlencode -part cookie $s]
+        set s "/%20,'\".=+"
+        set sEnc [ns_urlencode -part cookie $s]
         ns_return 200 text/plain [list $s $sEnc [expr {[ns_urldecode -part cookie $sEnc] eq $s}]]
     }
 } -body {
@@ -317,8 +317,8 @@ test ns_urlencode-5.2 {encode and unencode character sequence with percent codes
 
 test ns_urlencode-6.0 {security check: see, if we can sneek in a binary 0 to trick "string is integer"} -constraints {serverListen} -setup {
     ns_register_proc GET /encode-decode {
-	set s "1%00%27"
-	set decoded [ns_urldecode -part query $s]
+        set s "1%00%27"
+        set decoded [ns_urldecode -part query $s]
         ns_return 200 text/plain [list $s [string is integer -strict $decoded]]
     }
 } -body {
@@ -333,3 +333,9 @@ unset unreservedChars
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

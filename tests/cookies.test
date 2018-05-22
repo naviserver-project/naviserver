@@ -249,7 +249,7 @@ test cookie-4.5 {get missing cookie} -setup {
 
 test cookie-4.6 {get cookie with cookie-set values} -setup {
     ns_register_proc GET /cookie-4.6 {
-	ns_setcookie foo foovalue
+        ns_setcookie foo foovalue
         catch {ns_getcookie -include_set_cookies t foo} err
         ns_return 200 text/plain $err
     }
@@ -261,7 +261,7 @@ test cookie-4.6 {get cookie with cookie-set values} -setup {
 
 test cookie-4.7 {get missing cookie} -setup {
     ns_register_proc GET /cookie-4.7 {
-	ns_setcookie foo foovalue
+        ns_setcookie foo foovalue
         catch {ns_getcookie -include_set_cookies t oo} err
         ns_return 200 text/plain $err
     }
@@ -331,3 +331,9 @@ test cookie-4.9d {get all named cookies, multiple cookies, no spaces, terminator
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

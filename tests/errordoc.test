@@ -18,3 +18,9 @@ test errordoc-1.1 {adp template} -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

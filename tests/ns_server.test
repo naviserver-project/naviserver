@@ -175,7 +175,7 @@ test ns_server-2.7 {basic operation} -body {
 
 test ns_server-2.8 {register filter and query} -setup {
     proc _filter_do_nothing {args} {
-	return filter_ok
+        return filter_ok
     }
     ns_register_filter preauth GET /ns_server-2.8 _filter_do_nothing
 } -body {
@@ -221,11 +221,11 @@ test ns_server-2.13.4 {basic operation} -body {
 # Initially, the mapping of the "emergency" pool should be empty.
 
 test ns_server-2.14.1 {basic operation} -body {
-    ns_server -pool emergency map 
+    ns_server -pool emergency map
 } -result {}
 
 test ns_server-2.14.1a {basic operation with invalid pool} -body {
-    ns_server -pool emergencyx map 
+    ns_server -pool emergencyx map
 } -returnCodes error -result {no such pool 'emergencyx' for server 'test'}
 
 test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
@@ -239,7 +239,7 @@ test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
 test ns_server-2.14.2 {mapping and unmapping of requsts} -setup {
     ns_server -pool emergency map "GET /foo"
 } -body {
-    ns_server -pool emergency map 
+    ns_server -pool emergency map
 } -cleanup {
     ns_server -pool emergency unmap "GET /foo"
 } -result {{GET /foo * inherit}}
@@ -248,7 +248,7 @@ test ns_server-2.14.2 {mapping and unmapping of requsts} -setup {
 # After cleanup, the map should be empty again.
 #
 test ns_server-2.14.3 {check, if cleanup of last test was successful} -body {
-    ns_server -pool emergency map 
+    ns_server -pool emergency map
 } -result {}
 
 #
@@ -274,3 +274,9 @@ test ns_server-2.14.5 {mapping and unmapping of requsts, return mapping with inh
 } -result {{} emergency emergency}
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -114,3 +114,9 @@ test proc-5.1 {fastpath} -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

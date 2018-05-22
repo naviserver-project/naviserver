@@ -12,7 +12,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -26,7 +26,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
@@ -44,8 +44,8 @@ test keep-1 {keep-alive: 1.0} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
     nstest::http -http 1.0 -setheaders {connection ""} \
-		-getbody 1 -getheaders {connection} \
-		GET /keep
+                -getbody 1 -getheaders {connection} \
+                GET /keep
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 close x}
@@ -54,8 +54,8 @@ test keep-2 {keep-alive: 1.0} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
     nstest::http -http 1.0 -setheaders {connection close} \
-		-getbody 1 -getheaders {connection} \
-		GET /keep
+                -getbody 1 -getheaders {connection} \
+                GET /keep
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 close x}
@@ -64,32 +64,32 @@ test keep-3 {keep-alive: 1.0} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
     nstest::http -http 1.0 -setheaders {connection keep-alive} \
-		-getbody 1 -getheaders {connection} \
-		GET /keep
+                -getbody 1 -getheaders {connection} \
+                GET /keep
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 keep-alive x}
 
 test keep-4 {keep-alive: 1.0: POST} -constraints serverListen -setup {
     ns_register_proc POST /keep {
-		ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
-	}
+                ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
+        }
 } -body {
     nstest::http -http 1.0 -setheaders {connection keep-alive} \
-		-getbody 1 -getheaders {connection} \
-		POST /keep body
+                -getbody 1 -getheaders {connection} \
+                POST /keep body
 } -cleanup {
     ns_unregister_op POST /keep
 } -result {200 keep-alive {body 4}}
 
 test keep-5 {keep-alive: 1.0: POST} -constraints {serverListen knownBug} -setup {
     ns_register_proc POST /keep {
-		ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
-	}
+                ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
+        }
 } -body {
     nstest::http -http 1.0 -setheaders {connection keep-alive content-length -1} \
-		-getbody 1 -getheaders {connection} \
-		POST /keep body
+                -getbody 1 -getheaders {connection} \
+                POST /keep body
 } -cleanup {
     ns_unregister_op POST /keep
 } -result {200 close {body 4}}
@@ -100,8 +100,8 @@ test keep-6 {keep-alive: 1.1} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
     nstest::http -http 1.1 -setheaders {connection ""} \
-		-getbody 1 -getheaders {connection} \
-		GET /keep
+                -getbody 1 -getheaders {connection} \
+                GET /keep
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 keep-alive x}
@@ -110,8 +110,8 @@ test keep-7 {keep-alive: 1.1} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
     nstest::http -http 1.1 -setheaders {connection keep-alive} \
-		-getbody 1 -getheaders {connection} \
-		GET /keep
+                -getbody 1 -getheaders {connection} \
+                GET /keep
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 keep-alive x}
@@ -120,20 +120,20 @@ test keep-8 {keep-alive: 1.1} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
     nstest::http -http 1.1 -setheaders {connection close} \
-		-getbody 1 -getheaders {connection} \
-		GET /keep
+                -getbody 1 -getheaders {connection} \
+                GET /keep
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 close x}
 
 test keep-9 {keep-alive: 1.1: POST} -constraints serverListen -setup {
     ns_register_proc POST /keep {
-		ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
-	}
+                ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
+        }
 } -body {
     nstest::http -http 1.1 -setheaders {connection ""} \
-		-getbody 1 -getheaders {connection} \
-		POST /keep body
+                -getbody 1 -getheaders {connection} \
+                POST /keep body
 } -cleanup {
     ns_unregister_op GET /keep
 } -result {200 keep-alive {body 4}}
@@ -142,3 +142,9 @@ test keep-9 {keep-alive: 1.1: POST} -constraints serverListen -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

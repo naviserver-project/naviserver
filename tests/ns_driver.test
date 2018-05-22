@@ -47,3 +47,9 @@ test ns_driver-1.4d {result of ns_driver stats} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

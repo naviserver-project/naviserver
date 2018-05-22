@@ -12,7 +12,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -26,7 +26,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 
 #
 # HTTP 1.1 Byte Ranges: RFC 2616 14.35.1, 14.6, 19.3
@@ -235,8 +235,8 @@ test byteranges-2.8.3 {No range, beginning} \
 
 test byteranges-2.8.4 {No range large headers} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-	ns_set put [ns_conn outputheaders] x [string repeat x 1050]
-	ns_returnfile 200 text/plain [ns_pagepath 16480bytes]
+        ns_set put [ns_conn outputheaders] x [string repeat x 1050]
+        ns_returnfile 200 text/plain [ns_pagepath 16480bytes]
     }
 } -body {
     nstest::http -getheaders {content-type content-length} GET /tclresp
@@ -322,88 +322,88 @@ test byteranges-4.3 {unsatisfiable} -constraints serverListen -body {
 #
 test byteranges-5.1.1 {ns_writer reply} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	ns_writer submitfile [ns_server pagedir]/10bytes
+        ns_writer submitfile [ns_server pagedir]/10bytes
     }} -body {
-	nstest::http -getbody 1 -getheaders {Content-length Content-range} \
-	    GET /tclresp
+        nstest::http -getbody 1 -getheaders {Content-length Content-range} \
+            GET /tclresp
     } -result {200 10 {} 0123456789}
 
 test byteranges-5.1.2 {ns_writer range reply} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	ns_writer submitfile -offset 6 [ns_server pagedir]/10bytes
+        ns_writer submitfile -offset 6 [ns_server pagedir]/10bytes
     }} -body {
-	nstest::http -getbody 1 -getheaders {Content-length Content-range} \
-	    GET /tclresp
+        nstest::http -getbody 1 -getheaders {Content-length Content-range} \
+            GET /tclresp
     } -result {200 4 {} 6789}
 
 test byteranges-5.1.3 {ns_writer range reply} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	ns_writer submitfile -offset 0 -size 2 [ns_server pagedir]/10bytes
+        ns_writer submitfile -offset 0 -size 2 [ns_server pagedir]/10bytes
     }} -body {
-	nstest::http -getbody 1 -getheaders {Content-length Content-range} \
-	    GET /tclresp
+        nstest::http -getbody 1 -getheaders {Content-length Content-range} \
+            GET /tclresp
     } -result {200 2 {} 01}
 
 test byteranges-5.1.4 {ns_writer range reply} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	ns_writer submitfile -size 3 [ns_server pagedir]/10bytes
+        ns_writer submitfile -size 3 [ns_server pagedir]/10bytes
     }} -body {
-	nstest::http -getbody 1 -getheaders {Content-length Content-range} \
-	    GET /tclresp
+        nstest::http -getbody 1 -getheaders {Content-length Content-range} \
+            GET /tclresp
     } -result {200 3 {} 012}
 
 test byteranges-5.2.1 {ns_writer range reply - wrong offset} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	catch {ns_writer submitfile -offset -1 -size 2 [ns_server pagedir]/10bytes} errmsg
-	ns_return 200 text/plain $errmsg
+        catch {ns_writer submitfile -offset -1 -size 2 [ns_server pagedir]/10bytes} errmsg
+        ns_return 200 text/plain $errmsg
     }} -body {
-	nstest::http -getbody 1 \
-	    GET /tclresp
+        nstest::http -getbody 1 \
+            GET /tclresp
     } -result {200 {offset must be a positive value less or equal filesize}}
 
 test byteranges-5.2.2 {ns_writer range reply - wrong offset} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	catch {ns_writer submitfile -offset 11 -size 2 [ns_server pagedir]/10bytes} errmsg
-	ns_return 200 text/plain $errmsg
+        catch {ns_writer submitfile -offset 11 -size 2 [ns_server pagedir]/10bytes} errmsg
+        ns_return 200 text/plain $errmsg
     }} -body {
-	nstest::http -getbody 1 \
-	    GET /tclresp
+        nstest::http -getbody 1 \
+            GET /tclresp
     } -result {200 {offset must be a positive value less or equal filesize}}
 
 test byteranges-5.2.3 {ns_writer range reply - wrong size} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	catch {ns_writer submitfile -size 11 [ns_server pagedir]/10bytes} errmsg
-	ns_return 200 text/plain $errmsg
+        catch {ns_writer submitfile -size 11 [ns_server pagedir]/10bytes} errmsg
+        ns_return 200 text/plain $errmsg
     }} -body {
-	nstest::http -getbody 1 \
-	    GET /tclresp
+        nstest::http -getbody 1 \
+            GET /tclresp
     } -result {200 {size must be a positive value less or equal filesize}}
 
 test byteranges-5.2.4 {ns_writer range reply - wrong size} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	catch {ns_writer submitfile -size -1 [ns_server pagedir]/10bytes} errmsg
-	ns_return 200 text/plain $errmsg
+        catch {ns_writer submitfile -size -1 [ns_server pagedir]/10bytes} errmsg
+        ns_return 200 text/plain $errmsg
     }} -body {
-	nstest::http -getbody 1 \
-	    GET /tclresp
+        nstest::http -getbody 1 \
+            GET /tclresp
     } -result {200 {size must be a positive value less or equal filesize}}
 
 test byteranges-5.2.5 {ns_writer range reply - wrong offset + size} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	catch {ns_writer submitfile -offset 4 -size 7 [ns_server pagedir]/10bytes} errmsg
-	ns_return 200 text/plain $errmsg
+        catch {ns_writer submitfile -offset 4 -size 7 [ns_server pagedir]/10bytes} errmsg
+        ns_return 200 text/plain $errmsg
     }} -body {
-	nstest::http -getbody 1 \
-	    GET /tclresp
+        nstest::http -getbody 1 \
+            GET /tclresp
     } -result {200 {offset + size must be less or equal filesize}}
 
 test byteranges-5.2.6 {ns_writer range reply - wrong file} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
-	catch {ns_writer submitfile -offset 4 -size 7 [ns_server pagedir]/11bytes} errmsg
-	ns_return 200 text/plain $errmsg
+        catch {ns_writer submitfile -offset 4 -size 7 [ns_server pagedir]/11bytes} errmsg
+        ns_return 200 text/plain $errmsg
     }} -body {
-	nstest::http -getbody 1 \
-	    GET /tclresp
+        nstest::http -getbody 1 \
+            GET /tclresp
     } -match glob -result {200 {file does not exist*}}
 
 
@@ -411,12 +411,18 @@ test byteranges-5.2.6 {ns_writer range reply - wrong file} \
 # Range requests on adp files are currently ignored
 #
 test byteranges-6.0 {ADP + byte range} \
-    -constraints serverListen -setup { 
-	ns_register_adp GET /dejavu helloworld.adp
+    -constraints serverListen -setup {
+        ns_register_adp GET /dejavu helloworld.adp
     } -body {
-	nstest::http -getbody 1 -setheaders {Range bytes 2-3} \
-	    GET /dejavu
+        nstest::http -getbody 1 -setheaders {Range bytes 2-3} \
+            GET /dejavu
     } -result {200 {Hello World!}}
-    
-    
+
+
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

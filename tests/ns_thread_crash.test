@@ -22,8 +22,8 @@ test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
     ns_register_proc GET /tclconnio {
         package require Thread
         set tid [thread::create]
-	thread::release $tid
-	ns_return 200 text/plain 1
+        thread::release $tid
+        ns_return 200 text/plain 1
     }
 } -body {
     nstest::http -getbody 1 -getheaders {Content-Length Connection} GET /tclconnio
@@ -34,3 +34,9 @@ test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
 #ns_log notice "====================cleanupTests"
 cleanupTests
 #ns_log notice "====================cleanupTests DONE"
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

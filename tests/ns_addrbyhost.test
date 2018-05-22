@@ -44,3 +44,9 @@ test ns_addrbyhost-1.2 {bad host} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

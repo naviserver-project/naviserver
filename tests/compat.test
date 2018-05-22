@@ -20,3 +20,9 @@ test ns_cp-1.1 {basic copy} -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

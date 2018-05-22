@@ -120,3 +120,9 @@ test url2file-6.1 {url2file info} -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

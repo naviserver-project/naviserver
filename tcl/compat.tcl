@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -87,7 +87,7 @@ proc ns_cpfp {chanin chanout {ncopy -1}} {
 #
 # Side effects:
 #   Assures that the dstfile has the same modification,
-#   access time and attributes as the srcfile if the 
+#   access time and attributes as the srcfile if the
 #   optional "-preserve" argument is given.
 #
 
@@ -236,8 +236,8 @@ proc ns_link {args} {
 #
 #   This is what "man 2 rename" says (among other things):
 #
-#     The rename() causes the link named "from" to be renamed as "to".  
-#     If "to" exists, it is first removed. 
+#     The rename() causes the link named "from" to be renamed as "to".
+#     If "to" exists, it is first removed.
 #     Both "from" and "to" must be of the same type (that is, both dirs
 #     or both non-dirs), and must reside on the same file system.
 #
@@ -260,7 +260,7 @@ proc ns_rename {from to} {
     ns_deprecated "file rename"
     if {[file exists $to]} {
         if {[file type $from] != [file type $to]} {
-            error "rename (\"$from\", \"$to\"): not of the same type" 
+            error "rename (\"$from\", \"$to\"): not of the same type"
         } elseif {$from == $to} {
             error "error renaming \"$from\": file already exists"
         }
@@ -320,7 +320,7 @@ proc ns_chmod {file mode} {
 # ns_symlink --
 #
 #   This is still implement in the server code. The reason is that
-#   the Tcl [file link] command always creates link target with 
+#   the Tcl [file link] command always creates link target with
 #   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
 #
 
@@ -389,13 +389,13 @@ proc ns_var {cmd {key ""} {value ""}} {
 #
 proc ns_hmac_sha2 args {
     set length 256
-    
+
     ns_parseargs {
-	{-length 256}
-	key
-	message
+        {-length 256}
+        key
+        message
     } $args
-    
+
     ns_deprecated "::ns_crypto::hmac string -digest sha$length ..."
     uplevel [list ::ns_crypto::hmac string -digest sha$length $key $message]
 }
@@ -408,12 +408,12 @@ proc ns_hmac_sha2 args {
 #
 proc ns_sha2 args {
     set length 256
-    
+
     ns_parseargs {
-	{-length 256}
-	message
+        {-length 256}
+        message
     } $args
-    
+
     ns_deprecated "ns_crypto::md string -digest sha$length ..."
     uplevel [list ns_crypto::md string -digest sha$length $message]
 }
@@ -477,5 +477,8 @@ proc ns_adp_safeeval {args} {
     return [ns_adp_parse -safe -- {*}$args]
 }
 
-# EOF
-
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -15,7 +15,7 @@ set port [ns_config "test" listenport]
 
 test ns_conn_location-1.1 {default location} -constraints serverListen -setup {
     ns_register_proc GET /location {
-	ns_return 200 text/plain [ns_conn location]
+        ns_return 200 text/plain [ns_conn location]
     }
 } -body {
     nstest::http -getbody 1 -- GET /location
@@ -27,7 +27,7 @@ test ns_conn_location-1.1 {default location} -constraints serverListen -setup {
 
 test ns_conn_location-2.1 {virtual host location} -constraints serverListen -setup {
     ns_register_proc GET /location {
-	ns_return 200 text/plain [ns_conn location]
+        ns_return 200 text/plain [ns_conn location]
     }
 } -body {
     nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /location
@@ -44,3 +44,9 @@ test ns_conn_location-3.1 {custom location} -constraints serverListen -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

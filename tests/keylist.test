@@ -276,7 +276,7 @@ test keylist-3.8.3 {keylset tests} -body {
 } -result {}
 
 test keylist-3.9 {keylset tests} -body {
-    set keyedlist {}    
+    set keyedlist {}
     keylset keyedlist C.CC.CCC ccc
     set keyedlist
 } -result {{C {{CC {{CCC ccc}}}}}}
@@ -426,7 +426,7 @@ test keylist-5.3 {empty keyed list tests} -body {
     keylget keyedlist A
 } -returnCodes error -result {key "A" not found in keyed list}
 
-set keyedlist { 	 }
+set keyedlist {          }
 
 test keylist-5.4 {empty keyed list tests} -body {
     keylget keyedlist
@@ -443,3 +443,9 @@ test keylist-5.6 {empty keyed list tests} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

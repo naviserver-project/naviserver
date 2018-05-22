@@ -165,3 +165,9 @@ test ns_config-8.4 {missing -set} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

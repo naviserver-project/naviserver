@@ -162,3 +162,9 @@ test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -52,3 +52,9 @@ test ns_sha1-2.6 {checksum from binary file} -body {
 } -result "1BFB30C1892435CA0AD6042FA80CE6B222E5121A"
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

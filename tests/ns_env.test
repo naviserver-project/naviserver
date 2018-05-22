@@ -75,3 +75,9 @@ test ns_env-2.7 {get non existing variable without complaint} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

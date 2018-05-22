@@ -106,3 +106,9 @@ test ns_img-4.6 {basic syntax: plain call} -body {
 } -returnCodes error -match glob -result {couldn't open *}
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

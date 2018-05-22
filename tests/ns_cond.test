@@ -17,3 +17,9 @@ test ns_cond-1.1 {
 } -result 5
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -105,7 +105,7 @@ test hotp-1 {
 } -constraints {crypto nsf} -body {
     set result ""
     foreach C {0 1 2 3 4 5 6 7 8 9} {
-	lappend result [ns_hotp -digest sha1 -key 12345678901234567890 [binary format W $C]]
+        lappend result [ns_hotp -digest sha1 -key 12345678901234567890 [binary format W $C]]
     }
     return $result
 } -result "755224 287082 359152 969429 338314 254676 287922 162583 399871 520489"
@@ -124,17 +124,17 @@ test totp-1 {
 } -constraints {crypto nsf} -body {
     set result {}
     foreach time {59 1111111109 1111111111 1234567890 2000000000 20000000000} {
-	foreach digest {
-	    sha1
-	    sha256
-	    sha512
-	} key {
-	    12345678901234567890
-	    12345678901234567890123456789012
-	    1234567890123456789012345678901234567890123456789012345678901234
-	} {
-	    lappend result [ns_totp -digest $digest -key $key -time $time]
-	}
+        foreach digest {
+            sha1
+            sha256
+            sha512
+        } key {
+            12345678901234567890
+            12345678901234567890123456789012
+            1234567890123456789012345678901234567890123456789012345678901234
+        } {
+            lappend result [ns_totp -digest $digest -key $key -time $time]
+        }
     }
     return $result
 } -result "94287082 46119246 90693936 07081804 68084774 25091201 14050471 67062674 99943326 89005924 91819424 93441116 69279037 90698825 38618901 65353130 77737706 47863826"
@@ -148,27 +148,27 @@ catch {ns_crypto::md x} errorMsg
 if {[string match "*hkdf*" $errorMsg]} {
 
     test hkdf-1.0 {test HKDF based on sha256, test case 1 from RFC 5869} -constraints {crypto} -body {
-	::ns_crypto::md hkdf -digest sha256 \
-	    -salt   [binary format H* 000102030405060708090a0b0c] \
-	    -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
-	    -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
-	    42
+        ::ns_crypto::md hkdf -digest sha256 \
+            -salt   [binary format H* 000102030405060708090a0b0c] \
+            -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
+            -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
+            42
     } -result "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
 
     test hkdf-1.1 {test HKDF based on sha256, test case 3 from RFC 5869} -constraints {crypto} -body {
-	::ns_crypto::md hkdf -digest sha256 \
-	    -salt   "" \
-	    -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
-	    -info   "" \
-	    42
+        ::ns_crypto::md hkdf -digest sha256 \
+            -salt   "" \
+            -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
+            -info   "" \
+            42
     } -result "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"
 
     test hkdf-1.2 {test HKDF based on sha1, test case 4 from RFC 5869} -constraints {crypto} -body {
-	::ns_crypto::md hkdf -digest sha1 \
-	    -salt   [binary format H* 000102030405060708090a0b0c] \
-	    -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b] \
-	    -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
-	    42
+        ::ns_crypto::md hkdf -digest sha1 \
+            -salt   [binary format H* 000102030405060708090a0b0c] \
+            -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b] \
+            -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
+            42
     } -result "085a01ea1b10f36933068b56efa5ad81a4f14b822f5b091568a9cdd4f155fda2c22e422478d305f3f896"
 
 }

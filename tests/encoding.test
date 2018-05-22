@@ -72,7 +72,7 @@ test encoding-2.2 {
     ns_headers: encoding from mime-type: utf-8
 } -setup {
     ns_register_proc GET /encoding {
-	ns_headers 200 "text/html; charset=utf-8"
+        ns_headers 200 "text/html; charset=utf-8"
         ns_write "äöü"
     }
 } -body {
@@ -86,7 +86,7 @@ test encoding-2.3 {
     ns_headers: encoding from charset: iso-8859-1
 } -setup {
     ns_register_proc GET /encoding {
-	ns_headers 200 "text/plain; charset=iso-8859-1"
+        ns_headers 200 "text/plain; charset=iso-8859-1"
         ns_write "äöü"
     }
 } -body {
@@ -193,7 +193,7 @@ test encoding-3.4 {
 
 
 test encoding-3.5 {
-    File in iso-8859-1 encoding should produce output with default OutputCharset; 
+    File in iso-8859-1 encoding should produce output with default OutputCharset;
     Content-Type-Header will be changed
 } -body {
     nstest::http -getbody 1 \
@@ -205,7 +205,7 @@ test encoding-3.5 {
 
 
 test encoding-3.6 {
-    File in utf-8 encoding should produce output with default OutputCharset; 
+    File in utf-8 encoding should produce output with default OutputCharset;
     Content-Type-Header will be changed
 } -body {
     nstest::http -getbody 1 \
@@ -290,9 +290,9 @@ test encoding-6.1 {
     }
 } -body {
     set result [nstest::http -getbody 1 -getheaders content-type GET /encoding]
-	list [lindex $result 0] [lindex $result 1] [string length [lindex $result 2]]
+        list [lindex $result 0] [lindex $result 1] [string length [lindex $result 2]]
 } -cleanup {
-	unset -nocomplain result
+        unset -nocomplain result
     ns_unregister_op GET /encoding
 } -result {200 {text/plain; charset=utf-8} 8193}
 
@@ -318,3 +318,9 @@ test encoding-7.2 {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

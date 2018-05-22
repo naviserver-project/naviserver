@@ -139,3 +139,9 @@ test ns_parseargs-7.4 {Bad Args} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

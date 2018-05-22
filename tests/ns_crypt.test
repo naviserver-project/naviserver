@@ -63,3 +63,9 @@ test ns_crypt-3.1 {usability for *nix like passwords: salt} -body {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

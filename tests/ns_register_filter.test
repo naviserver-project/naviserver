@@ -51,8 +51,8 @@ test filter-2.1 {correct order} -setup {
 
 test filter-2.1a {filter -first} -setup {
     ns_register_proc GET /filter-2.1a {
-	set fields 0
-	foreach f [ns_server filters] {incr fields [llength $f]}
+        set fields 0
+        foreach f [ns_server filters] {incr fields [llength $f]}
         ns_return 200 text/plain "[llength [ns_server filters]] $fields"
     }
 } -body {
@@ -73,7 +73,7 @@ test filter-2.2 {stacked filters} -setup {
         return filter_ok
     }
     ns_register_proc GET /filter-2.2 {
-	ns_return 200 text/plain ok
+        ns_return 200 text/plain ok
     }
 } -body {
     list [nstest::http -getbody 1 GET /filter-2.2] [nsv_get . .]
@@ -83,14 +83,14 @@ test filter-2.2 {stacked filters} -setup {
 
 test filter-2.3 {void trace always runs} -setup {
     ns_register_filter preauth  GET /filter-2.3 {
-	error filter-2.3
+        error filter-2.3
     }
     ns_register_trace GET /filter-2.3 {
         nsv_lappend . . voidtrace-2.3
         return filter_ok
     }
     ns_register_proc GET /filter-2.3 {
-	error filter-2.3
+        error filter-2.3
     }
 } -body {
     ns_logctl severity Error off
@@ -185,10 +185,10 @@ test filter-5.1 {filter -first} -setup {
 
 test filter-5.2 {filter -first} -setup {
     ns_register_proc GET /filter-5.2 {
-	# Since filters are not unregistered, we have all filters from
-	# before included.
-	set fields 0
-	foreach f [ns_server filters] {incr fields [llength $f]}
+        # Since filters are not unregistered, we have all filters from
+        # before included.
+        set fields 0
+        foreach f [ns_server filters] {incr fields [llength $f]}
         ns_return 200 text/plain "[llength [ns_server filters]] $fields"
     }
 } -body {
@@ -252,3 +252,9 @@ test filter-6.4 {trace scriptargs} -setup {
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

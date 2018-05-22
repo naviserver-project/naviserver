@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -45,7 +45,7 @@ set on [ns_config -set -bool $path enabletclpages off]
 if {$on} {
     nsv_set ns:tclfile errorpage [ns_config -set "${path}/tcl" errorpage]
     foreach {method} {GET HEAD POST} {
-	ns_register_tcl $method /*.tcl
+        ns_register_tcl $method /*.tcl
     }
     ns_log notice "tcl\[[ns_info server]\]: enabletclpages for {GET HEAD POST} requests"
 }
@@ -122,4 +122,8 @@ proc ns_sourceproc {args} {
     }
 }
 
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

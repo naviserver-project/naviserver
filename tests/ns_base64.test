@@ -104,10 +104,10 @@ test ns_base64encode-1.7 {ns_base64decode space} -body {
 test ns_base64encode-2.1 {small round trip decodes} -body {
     set result {}
     foreach l {0 1 2 3 4 5 6 7 8 9} {
-	set string [string range "Lorem?ipsum" 0 $l]
-	set encoded [ns_base64encode $string]
-	set decoded [ns_base64decode $encoded]
-	lappend result [expr {$string eq $decoded}]
+        set string [string range "Lorem?ipsum" 0 $l]
+        set encoded [ns_base64encode $string]
+        set decoded [ns_base64decode $encoded]
+        lappend result [expr {$string eq $decoded}]
     }
     set result
 } -result {1 1 1 1 1 1 1 1 1 1}
@@ -115,10 +115,10 @@ test ns_base64encode-2.1 {small round trip decodes} -body {
 test ns_base64urlencode-2.1 {small round trip decodes} -body {
     set result {}
     foreach l {0 1 2 3 4 5 6 7 8 9} {
-	set string [string range "Lorem?ipsum" 0 $l]
-	set encoded [ns_base64urlencode $string]
-	set decoded [ns_base64urldecode $encoded]
-	lappend result [expr {$string eq $decoded}]
+        set string [string range "Lorem?ipsum" 0 $l]
+        set encoded [ns_base64urlencode $string]
+        set decoded [ns_base64urldecode $encoded]
+        lappend result [expr {$string eq $decoded}]
     }
     set result
 } -result {1 1 1 1 1 1 1 1 1 1}
@@ -127,8 +127,8 @@ test ns_base64urlencode-2.1 {small round trip decodes} -body {
 test ns_base64encode-2.2 {binary encodings} -body {
     set result {}
     foreach string {abcd ++++ ---- //// ____} {
-	set decoded [ns_base64decode $string]
-	lappend result [ns_base64encode $decoded]
+        set decoded [ns_base64decode $string]
+        lappend result [ns_base64encode $decoded]
     }
     set result
 } -result {abcd ++++ {} //// {}}
@@ -136,8 +136,8 @@ test ns_base64encode-2.2 {binary encodings} -body {
 test ns_base64urlencode-2.2 {binary encodings} -body {
     set result {}
     foreach string {abcd ++++ ---- //// ____} {
-	set decoded [ns_base64urldecode $string]
-	lappend result [ns_base64urlencode $decoded]
+        set decoded [ns_base64urldecode $string]
+        lappend result [ns_base64urlencode $decoded]
     }
     set result
 } -result {abcd {} ---- {} ____}
@@ -179,31 +179,31 @@ if {$tcl_version > 8.5} {
     # Show equivalence of the above cases with Tcl built-in behavior in Tcl 8.6 or newer
     #
     test tcl_base64encode-2.3 {tcl base64 encode embedded nulls round-trip} -body {
-	set string "a\0b"
-	set encoded [binary encode base64 $string]
-	set decoded [binary decode base64 $encoded]
-	list [string length $string] [string equal $string $decoded] [string length $decoded]
+        set string "a\0b"
+        set encoded [binary encode base64 $string]
+        set decoded [binary decode base64 $encoded]
+        list [string length $string] [string equal $string $decoded] [string length $decoded]
     } -result {3 1 3}
 
     test tcl_base64encode-2.3a {tcl base64 encode embedded nulls round-trip} -body {
-	set string [binary format H* 610062]
-	set encoded [binary encode base64 $string]
-	set decoded [binary decode base64 $encoded]
-	list [string length $string] [string equal $string $decoded] [string length $decoded]
+        set string [binary format H* 610062]
+        set encoded [binary encode base64 $string]
+        set decoded [binary decode base64 $encoded]
+        list [string length $string] [string equal $string $decoded] [string length $decoded]
     } -result {3 1 3}
 
     test tcl_base64encode-2.3b {tcl base64 encode and decode with 3 byte UTF-8 character} -body {
-	set string "☀"
-	set encoded [binary encode base64 $string]
-	set decoded [binary decode base64 $encoded]
-	list [string length $string] [string equal $string $decoded] [string length $decoded]
+        set string "☀"
+        set encoded [binary encode base64 $string]
+        set decoded [binary decode base64 $encoded]
+        list [string length $string] [string equal $string $decoded] [string length $decoded]
     } -result {1 0 1}
 
     test tcl_base64encode-2.3c {tcl base64 encode with binary string representing 3-byte UTF-8 char} -body {
-	set string [binary format H* E29880]  ;# "☀" in UTF-8 is: 0xE2 0x98 0x80
-	set encoded [binary encode base64 $string]
-	set decoded [binary decode base64 $encoded]
-	list [string length $string] [string equal $string $decoded] [string length $decoded]
+        set string [binary format H* E29880]  ;# "☀" in UTF-8 is: 0xE2 0x98 0x80
+        set encoded [binary encode base64 $string]
+        set decoded [binary decode base64 $encoded]
+        list [string length $string] [string equal $string $decoded] [string length $decoded]
     } -result {3 1 3}
 }
 
@@ -226,7 +226,7 @@ test ns_base64encode-2.4r {ns_base64encode embedded nulls round-trip} -body {
 test ns_base64encode-2.5 {ns_base64encode embedded nulls and varying strings} -body {
     set l [list]
     for { set i -1 } { $i < 33 } { incr i +1 } {
-	lappend l [ns_base64encode "$i\0$i\0"]
+        lappend l [ns_base64encode "$i\0$i\0"]
     }
     set l
 } -result [list "LTEALTEA" "MAAwAA==" "MQAxAA==" "MgAyAA==" "MwAzAA==" "NAA0AA==" "NQA1AA==" "NgA2AA==" "NwA3AA==" "OAA4AA==" "OQA5AA==" "MTAAMTAA" "MTEAMTEA" "MTIAMTIA" "MTMAMTMA" "MTQAMTQA" "MTUAMTUA" "MTYAMTYA" "MTcAMTcA" "MTgAMTgA" "MTkAMTkA" "MjAAMjAA" "MjEAMjEA" "MjIAMjIA" "MjMAMjMA" "MjQAMjQA" "MjUAMjUA" "MjYAMjYA" "MjcAMjcA" "MjgAMjgA" "MjkAMjkA" "MzAAMzAA" "MzEAMzEA" "MzIAMzIA"]
