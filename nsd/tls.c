@@ -1394,10 +1394,13 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     pctx = NULL;
                     mdLength = 0u;
                 } else {
+                    size_t mdSize;
+
                     (void)EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
-                    (void)EVP_DigestSignFinal(mdctx, digest, (size_t*)&mdLength);
+                    (void)EVP_DigestSignFinal(mdctx, digest, &mdSize);
                     //fprintf(stderr, "final signature length %u\n",mdLength);
-                    outputBuffer = ns_malloc(mdLength * 2u + 1u);
+                    outputBuffer = ns_malloc(mdSize * 2u + 1u);
+                    mdLength = (unsigned int)mdSize;
                 }
                 if (pctx != NULL) {
                     EVP_PKEY_CTX_free(pctx);
