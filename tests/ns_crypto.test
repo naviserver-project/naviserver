@@ -6,10 +6,14 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 #
-# most fo these tests require the OpenSSL API, some require nsf
+# Most fo these tests require the OpenSSL API, some require nsf
 #
 tcltest::testConstraint crypto [ns_info ssl]
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+
+#######################################################################################
+#  Message digests: sha1, sha224, sha256, sha512
+#######################################################################################
 
 test ns_crypto_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
      ns_crypto::md
@@ -38,6 +42,11 @@ test ns_crypto_sha2-2.4 {basic operation} -constraints crypto -body {
     ns_crypto::md string -digest sha512 foo
 } -result "f7fbba6e0636f890e56fbbf3283e524c6fa3204ae298382d624741d0dc6638326e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7"
 
+#######################################################################################
+#  HMAC: Keyed-Hashing for Message Authentication
+#  based on sha1, sha224, sha256, sha512
+#  RFC 2104 https://tools.ietf.org/html/rfc2104
+#######################################################################################
 
 test ns_hmac_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac
@@ -83,6 +92,11 @@ test ns_hmac_sha1-1.3 {binary operation (example from RFC 4226, appendix D)} -co
 } -result "75a48a19d4cbe100644e8ac1397eea747a2d33ab"
 
 
+#######################################################################################
+#  HOTP: An HMAC-Based One-Time Password Algorithm
+#  RFC 4426 https://tools.ietf.org/html/rfc4226
+#######################################################################################
+
 test hotp-1 {
 
     Test for HOTP based on testvector in Appendix D from RFC 4226
@@ -95,6 +109,12 @@ test hotp-1 {
     }
     return $result
 } -result "755224 287082 359152 969429 338314 254676 287922 162583 399871 520489"
+
+
+#######################################################################################
+#  TOTP: Time-Based One-Time Password Algorithm
+#  RFC 6238 https://tools.ietf.org/html/rfc6238
+#######################################################################################
 
 test totp-1 {
 
