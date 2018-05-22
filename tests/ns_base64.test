@@ -242,3 +242,10 @@ test ns_base64encode-2.6r {ns_base64encode identity mass encoding} -body {
 
 
 cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
