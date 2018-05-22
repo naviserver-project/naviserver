@@ -226,8 +226,8 @@ test cache-5.7 {flush expired key w/glob (Ns_CacheFirstEntry, Ns_CacheNextEntry)
 test cache-5.8 {cache flush concurrent} -body {
     ns_cache_eval -expires [ns_time incr [ns_time get] 1] c1 k1 {return a}
     ns_thread begindetached {
-        after 1200
-        ns_cache_eval c1 k1 {after 1000; return b}
+	after 1200
+	ns_cache_eval c1 k1 {after 1000; return b}
     }
     ns_thread yield
     after 1500
@@ -285,7 +285,7 @@ test cache-6.4.1 {eval maxentry size} -body {
 
 test cache-6.5 {eval: wait timeout absolute} -body {
     ns_thread begindetached {
-        ns_cache_eval -- c1 k1 {after 3000; return a}
+	ns_cache_eval -- c1 k1 {after 3000; return a}
     }
     after 1000
     ns_cache_eval -timeout [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
@@ -296,7 +296,7 @@ test cache-6.5 {eval: wait timeout absolute} -body {
 
 test cache-6.5.1 {eval: wait timeout relative} -body {
     ns_thread begindetached {
-        ns_cache_eval -- c1 k1 {after 3000; return a}
+	ns_cache_eval -- c1 k1 {after 3000; return a}
     }
     after 1000
     ns_cache_eval -timeout 1 -- c1 k1 {return a}
@@ -315,9 +315,9 @@ test cache-6.6 {eval expires} -body {
 
 test cache-6.7 {nested eval} -body {
     ns_cache_eval c1 k1 {
-        ns_cache_eval c1 k2 {
-            ns_cache_eval c1 k3 return a
-        }
+	ns_cache_eval c1 k2 {
+	    ns_cache_eval c1 k3 return a
+	}
     }
 } -cleanup {
     ns_cache_flush c1
@@ -326,7 +326,7 @@ test cache-6.7 {nested eval} -body {
 test cache-6.8 {pruning} -body {
     ns_cache_stats -reset -- c1
     for {set i 0} {$i < 1030} {incr i} {
-        ns_cache_eval c1 $i {return a}
+	ns_cache_eval c1 $i {return a}
     }
     array set s [ns_cache_stats c1]
     set s(pruned)
@@ -502,25 +502,25 @@ test ns_cache-11.1 {stability} -constraints stress -body {
     set nt   64
 
     for {set i 0} {$i < $nt} {incr i} {
-        lappend threads [ns_thread begin {  
-            for {set j 0} {$j < 10000} {incr j} {
-                ns_cache_eval -force -- c1 k1 {
-                    ns_cache_eval -- c1 $j return 01234567890123456789
-                    return 01234567890123456789
-                }
-                #ns_thread yield
-            }
-        }]
+	lappend threads [ns_thread begin {
+	    for {set j 0} {$j < 10000} {incr j} {
+		ns_cache_eval -force -- c1 k1 {
+		    ns_cache_eval -- c1 $j return 01234567890123456789
+		    return 01234567890123456789
+		}
+		#ns_thread yield
+	    }
+	}]
     }
     lappend threads [ns_thread begin {
-        for {set j 0} {$j < 10000} {incr j} {
-            ns_cache_flush c1 $j
-            #ns_thread yield
-        }
+	for {set j 0} {$j < 10000} {incr j} {
+	    ns_cache_flush c1 $j
+	    #ns_thread yield
+	}
     }]
 
     foreach t $threads {
-        ns_thread wait $t
+	ns_thread wait $t
     }
 
     ns_log Notice [ns_cache_stats c1]
@@ -544,42 +544,42 @@ test ns_cache-12.1 {transaction rollback} -body {
     # start the transaction
     #
     ns_cache_transaction_begin
-        #
-        # get some old value in the transaction
-        #
-        lappend result [ns_cache_get trans_c1 k1]
+	#
+	# get some old value in the transaction
+	#
+	lappend result [ns_cache_get trans_c1 k1]
 
-        #
-        # set three values in the transaction via ns_cache_eval
-        #
-        ns_cache_eval trans_c1 k2 {return 2}
-        ns_cache_eval trans_c1 k3 {return 3}
-        lappend result [ns_cache_incr trans_c1 k4]
+	#
+	# set three values in the transaction via ns_cache_eval
+	#
+	ns_cache_eval trans_c1 k2 {return 2}
+	ns_cache_eval trans_c1 k3 {return 3}
+	lappend result [ns_cache_incr trans_c1 k4]
 
-        #
-        # check, if we can obtain the just fresh value inside the transaction
+	#
+	# check, if we can obtain the just fresh value inside the transaction
 
-        # ... via _eval
-        lappend result [ns_cache_eval trans_c1 k2 {return 2}]
+	# ... via _eval
+	lappend result [ns_cache_eval trans_c1 k2 {return 2}]
 
-        # ... via _get
-        lappend result [ns_cache_get trans_c1 k2]
-        lappend result [ns_cache_get trans_c1 k3]
+	# ... via _get
+	lappend result [ns_cache_get trans_c1 k2]
+	lappend result [ns_cache_get trans_c1 k3]
 
-        # get keys inside transaction
-        lappend result [ns_cache_keys trans_c1 k2]
-        lappend result [ns_cache_keys trans_c1]
+	# get keys inside transaction
+	lappend result [ns_cache_keys trans_c1 k2]
+	lappend result [ns_cache_keys trans_c1]
 
-        # flush the value added by this transaction inside the transaction
-        lappend result [ns_cache_flush trans_c1 k3]
+	# flush the value added by this transaction inside the transaction
+	lappend result [ns_cache_flush trans_c1 k3]
 
-        # increment k4 once again, get the value via ns_cache_get
-        lappend result [ns_cache_incr trans_c1 k4]
-        lappend result [ns_cache_get trans_c1 k4]
+	# increment k4 once again, get the value via ns_cache_get
+	lappend result [ns_cache_incr trans_c1 k4]
+	lappend result [ns_cache_get trans_c1 k4]
 
-        #
-        # rollback the transaction
-        #
+	#
+	# rollback the transaction
+	#
     ns_cache_transaction_rollback
 
     #
@@ -610,57 +610,57 @@ test ns_cache-12.2 {transaction commit} -body {
     # start the transaction
     #
     ns_cache_transaction_begin
-        #
-        # get some old value in the transaction
-        #
-        lappend result [ns_cache_get trans_c1 k1]
+	#
+	# get some old value in the transaction
+	#
+	set result [list a: [ns_cache_get trans_c1 k1]]
 
-        #
-        # set three values in the transaction via ns_cache_eval
-        #
-        ns_cache_eval trans_c1 k2 {return 2}
-        ns_cache_eval trans_c1 k3 {return 3}
-        lappend result [ns_cache_incr trans_c1 k4]
+	#
+	# set three values in the transaction via ns_cache_eval
+	#
+	ns_cache_eval trans_c1 k2 {return 2}
+	ns_cache_eval trans_c1 k3 {return 3}
+	lappend result b: [ns_cache_incr trans_c1 k4]
 
-        #
-        # check, if we can obtain the just fresh value inside the transaction
+	#
+	# check, if we can obtain the just fresh value inside the transaction
 
-        # ... via _eval
-        lappend result [ns_cache_eval trans_c1 k2 {return 2}]
+	# ... via _eval
+	lappend result c: [ns_cache_eval trans_c1 k2 {return 2}]
 
-        # ... via _get
-        lappend result [ns_cache_get trans_c1 k2]
-        lappend result [ns_cache_get trans_c1 k3]
+	# ... via _get
+	lappend result d: [ns_cache_get trans_c1 k2]
+	lappend result e: [ns_cache_get trans_c1 k3]
 
-        # get keys inside transaction
-        lappend result [ns_cache_keys trans_c1 k2]
-        lappend result [ns_cache_keys trans_c1]
+	# get keys inside transaction
+	lappend result f: [ns_cache_keys trans_c1 k2]
+	lappend result g: [ns_cache_keys trans_c1]
 
-        # flush the value added by this transaction inside the transaction
-        lappend result [ns_cache_flush trans_c1 k3]
+	# flush the value added by this transaction inside the transaction
+	lappend result h: [ns_cache_flush trans_c1 k3]
 
-        # increment k4 once again, get the value via ns_cache_get
-        lappend result [ns_cache_incr trans_c1 k4]
-        lappend result [ns_cache_get trans_c1 k4]
+	# increment k4 once again, get the value via ns_cache_get
+	lappend result i: [ns_cache_incr trans_c1 k4]
+	lappend result j: [ns_cache_get trans_c1 k4]
 
-        #
-        # commit the transaction
-        #
+	#
+	# commit the transaction
+	#
     ns_cache_transaction_commit
 
     #
     # get the all the entries from the cache
     #
-    lappend result [ns_cache_keys trans_c1]
+    lappend result y: [ns_cache_keys trans_c1]
 
     #
     # k2 should be obtainable (catch -> 0)
-    lappend result [catch {ns_cache_get trans_c1 k2}]
+    lappend result z: [catch {ns_cache_get trans_c1 k2}]
 
 } -cleanup {
     unset -nocomplain result
     ns_cache_flush trans_c1
-} -result {1 1 2 2 3 k2 {k1 k2 k3 k4} 1 2 2 {k1 k2 k4} 0}
+} -result {a: 1 b: 1 c: 2 d: 2 e: 3 f: k2 g: {k1 k2 k3 k4} h: 1 i: 2 j: 2 y: {k1 k2 k4} z: 0}
 
 
 
