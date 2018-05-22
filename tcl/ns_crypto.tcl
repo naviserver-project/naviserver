@@ -21,24 +21,24 @@ nx::Class create ::ns_crypto::HashFunctions {
     :variable ctx
 
     :public method readfile {filename} {
-	#
-	# Read a file blockwisw and call the incremental crypo
-	# function on every block.
-	#
-	set F [open $filename]
-	fconfigure $F -encoding binary -translation binary
-	while (1) {
-	    set block [read $F 32768]
-	    :add $block
-	    if {[string length $block] < 32768} {
-		break
-	    }
-	}
-	close $F
-	#
-	# Return the hash sum
-	#
-	return [:get]
+        #
+        # Read a file blockwisw and call the incremental crypo
+        # function on every block.
+        #
+        set F [open $filename]
+        fconfigure $F -encoding binary -translation binary
+        while (1) {
+            set block [read $F 32768]
+            :add $block
+            if {[string length $block] < 32768} {
+                break
+            }
+        }
+        close $F
+        #
+        # Return the hash sum
+        #
+        return [:get]
     }
 }
 
@@ -49,34 +49,34 @@ nx::Class create ::ns_crypto::HashFunctions {
 #     functionality.
 #
 nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
-   
+
     :public object method string {-digest message} {
-	::ns_crypto::md string -digest $digest $message
+        ::ns_crypto::md string -digest $digest $message
     }
-    
+
     :public object method file {-digest filename} {
-	if {![file readable $filename]} {
-	    return -code error "file $filename is not readable"
-	}
-	set m [:new -digest $digest]
-	set r [$m readfile $filename]
-	$m destroy
-	return $r
+        if {![file readable $filename]} {
+            return -code error "file $filename is not readable"
+        }
+        set m [:new -digest $digest]
+        set r [$m readfile $filename]
+        $m destroy
+        return $r
     }
-    
+
     :method init {} {
-	set :ctx [::ns_crypto::md new ${:digest}]
+        set :ctx [::ns_crypto::md new ${:digest}]
     }
     :public method destroy {} {
-	::ns_crypto::md free ${:ctx}
-	next
+        ::ns_crypto::md free ${:ctx}
+        next
     }
-   
+
     :public method add {message} {
-	::ns_crypto::md add ${:ctx} $message
+        ::ns_crypto::md add ${:ctx} $message
     }
     :public method get {} {
-	::ns_crypto::md get ${:ctx}
+        ::ns_crypto::md get ${:ctx}
     }
 }
 
@@ -91,34 +91,34 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
 
 nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
     :property key:required
-   
+
     :public object method string {-digest key message} {
-	::ns_crypto::hmac string -digest $digest $key $message
+        ::ns_crypto::hmac string -digest $digest $key $message
     }
 
     :public object method file {-digest key filename} {
-	if {![file readable $filename]} {
-	    return -code error "file $filename is not readable"
-	}
-	set m [:new -digest $digest -key $key]r
-	set r [$m readfile $filename]
-	$m destroy
-	return $r
+        if {![file readable $filename]} {
+            return -code error "file $filename is not readable"
+        }
+        set m [:new -digest $digest -key $key]r
+        set r [$m readfile $filename]
+        $m destroy
+        return $r
     }
-    
+
     :method init {} {
-	set :ctx [::ns_crypto::hmac new ${:digest} ${:key}]
+        set :ctx [::ns_crypto::hmac new ${:digest} ${:key}]
     }
     :public method destroy {} {
-	::ns_crypto::hmac free ${:ctx}
-	next
+        ::ns_crypto::hmac free ${:ctx}
+        next
     }
-   
+
     :public method add {message} {
-	::ns_crypto::hmac add ${:ctx} $message
+        ::ns_crypto::hmac add ${:ctx} $message
     }
     :public method get {} {
-	::ns_crypto::hmac get ${:ctx}
+        ::ns_crypto::hmac get ${:ctx}
     }
 }
 
@@ -130,9 +130,9 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
 #
 #    K: key
 #    C: counter (moving factor for one time passwd)
-#    
+#
 # The function below allows to choose the digest algorithm, the number
-# of digits. C is provided as data. 
+# of digits. C is provided as data.
 
 nsf::proc ns_hotp {
     {-digest sha256}
@@ -199,8 +199,8 @@ nsf::proc ns_totp {
     # this for the given user_id
     #
     if {![info exists key]} {
-	set secret [ns_config "ns/server/[ns_info server]" serversecret ""]; 
-	set key [binary format H* [::ns_crypto::md string -digest sha224 $secret-$user_id]]
+        set secret [ns_config "ns/server/[ns_info server]" serversecret ""];
+        set key [binary format H* [::ns_crypto::md string -digest sha224 $secret-$user_id]]
     }
     #
     # If no time is provided, take the current time
@@ -211,12 +211,16 @@ nsf::proc ns_totp {
     # value for interval seconds)
     #
     set totp [ns_hotp \
-		  -digest $digest \
-		  -digits $digits \
-		  -key $key \
-		  [binary format W [expr {$time / $interval}]]]
+                  -digest $digest \
+                  -digits $digits \
+                  -key $key \
+                  [binary format W [expr {$time / $interval}]]]
     return $totp
 }
 
-
-
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
