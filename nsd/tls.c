@@ -1677,6 +1677,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             unsigned char *keyString;
             Tcl_DString    infoDs, saltDs, secretDs;
             int            infoLength, saltLength, secretLength;
+            size_t         outSize = (size_t)outLength;
 
             /*
              * All input parameters are valid, get key and data.
@@ -1690,9 +1691,9 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             secretString = Ns_GetBinaryString(secretObj, &secretLength, &secretDs);
             infoString   = Ns_GetBinaryString(infoObj,   &infoLength,   &infoDs);
 
-            //hexPrint("salt  ", saltString, saltLength);
-            //hexPrint("secret", secretString, secretLength);
-            //hexPrint("info  ", infoString, infoLength);
+            // hexPrint("salt  ", (const unsigned char *)saltString,   (size_t)saltLength);
+            // hexPrint("secret", (const unsigned char *)secretString, (size_t)secretLength);
+            // hexPrint("info  ", (const unsigned char *)infoString,   (size_t)infoLength);
 
             if (EVP_PKEY_CTX_set1_hkdf_salt(pctx, saltString, saltLength) <= 0) {
                 Ns_TclPrintfResult(interp, "could not set salt");
@@ -1703,7 +1704,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             } else if (EVP_PKEY_CTX_add1_hkdf_info(pctx, infoString, infoLength) <= 0) {
                 Ns_TclPrintfResult(interp, "could not set info");
                 result = TCL_ERROR;
-            } else if (EVP_PKEY_derive(pctx, keyString, (size_t *)&outLength) <= 0) {
+            } else if (EVP_PKEY_derive(pctx, keyString, &outSize) <= 0) {
                 Ns_TclPrintfResult(interp, "could not obtain derived key");
                 result = TCL_ERROR;
             }
@@ -1713,7 +1714,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                  * Convert the result to the output format and set the interp
                  * result.
                  */
-                SetEncodedResultObj(interp, keyString, (size_t)outLength, NULL, encoding);
+                SetEncodedResultObj(interp, keyString, outSize, NULL, encoding);
             }
 
             /*
