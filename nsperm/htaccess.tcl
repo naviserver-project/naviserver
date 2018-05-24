@@ -37,7 +37,7 @@ proc ns_perm_filter { args } {
 
     set url [ns_conn url]
 
-    # Do not allow to server special files
+    # Do not serve special files
     switch -- [file tail $url] {
         .htaccess -
         .htpasswd {

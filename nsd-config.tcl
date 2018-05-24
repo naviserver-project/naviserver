@@ -97,14 +97,14 @@ ns_section     "ns/servers"
 ns_param        default             "NaviServer"
 
 ns_section     "ns/server/default"
-ns_param        enabletclpages      true     ;# default: false
+ns_param        enabletclpages      true  ;# default: false
 ns_param        checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup
 ns_param        connsperthread      1000  ;# default: 0; number of connections (requests) handled per thread
 ns_param        minthreads          5     ;# default: 1; minimal number of connection threads
 ns_param        maxthreads          100   ;# default: 10; maximal number of connection threads
 ns_param        maxconnections      100   ;# default: 100; number of allocated connection structures
 ns_param        threadtimeout       120   ;# default: 120; timeout for idle threads
-#ns_param concurrentcreatethreshold 100   ;# default: 80; allow concurrent creates when queue is fully beyond this percentage
+#ns_param concurrentcreatethreshold 100   ;# default: 80; perform concurrent creates when queue is fully beyond this percentage
                                           ;# 100 is a conservative value, disabling concurrent creates
 
 ns_section     "ns/server/default/db"
@@ -156,7 +156,7 @@ ns_section     "ns/server/default/module/nscgi"
 ns_param        map                 "GET  /cgi-bin $home/cgi-bin"
 ns_param        map                 "POST /cgi-bin $home/cgi-bin"
 ns_param        interps              CGIinterps
-#ns_param        allowstaticresources true    ;# default false; allow to serve static resources from cgi directories
+#ns_param        allowstaticresources true    ;# default false; serve static resources from cgi directories
 
 ns_section "ns/interps/CGIinterps"
 ns_param	.pl		    "/opt/local/bin/perl"

@@ -131,8 +131,9 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
 #    K: key
 #    C: counter (moving factor for one time passwd)
 #
-# The function below allows to choose the digest algorithm, the number
-# of digits. C is provided as data.
+# The function "ns_hotp" receives as input the digest algorithm, the
+# number of digits of the resulting password, a key and data used for
+# the HMAC (C in above formula).
 
 nsf::proc ns_hotp {
     {-digest sha256}
@@ -174,7 +175,7 @@ nsf::proc ::ns_crypto::hotp_truncate {
 
 ###########################################################################
 # TOTP: Implementation of a Time-Based One-Time Password Algorithm as
-# defined in RFC 6238 based on HOTP. TOTP is defined as
+# specified in RFC 6238 based on HOTP. TOTP is defined as
 #
 #     TOTP = HOTP(K, T), where T is an integer
 #
@@ -196,7 +197,7 @@ nsf::proc ns_totp {
 } {
     #
     # If no key is provided, get configured secret and personalize
-    # this for the given user_id
+    # this for the given user_id.
     #
     if {![info exists key]} {
         set secret [ns_config "ns/server/[ns_info server]" serversecret ""];
