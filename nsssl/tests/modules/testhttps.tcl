@@ -12,7 +12,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -36,89 +36,89 @@
 namespace eval ::nstest {
 
     proc https {args} {
-	ns_parseargs {
-	    {-http 1.0} 
-	    -setheaders 
-	    -getheaders 
-	    -getmultiheaders 
-	    {-getbody 0} 
-	    {-getbinary 0}
-	    {-verbose 0}
-	    --
-	    method {url ""} {body ""}
-	} $args
+        ns_parseargs {
+            {-http 1.0}
+            -setheaders
+            -getheaders
+            -getmultiheaders
+            {-getbody 0}
+            {-getbinary 0}
+            {-verbose 0}
+            --
+            method {url ""} {body ""}
+        } $args
 
-	set host localhost
-	set port [ns_config "ns/server/test/module/nsssl" port]
-	set timeout 3
-	set ::nstest::verbose $verbose
+        set host localhost
+        set port [ns_config "ns/server/test/module/nsssl" port]
+        set timeout 3
+        set ::nstest::verbose $verbose
 
-	set hdrs [ns_set create]
-	if {[info exists setheaders]} {
-	    foreach {k v} $setheaders {
-		ns_set put $hdrs $k $v
-	    }
-	}
+        set hdrs [ns_set create]
+        if {[info exists setheaders]} {
+            foreach {k v} $setheaders {
+                ns_set put $hdrs $k $v
+            }
+        }
 
-	#
-	# Default Headers.
-	#
+        #
+        # Default Headers.
+        #
 
-	ns_set icput $hdrs Accept */*
-	ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+        ns_set icput $hdrs Accept */*
+        ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
 
-	if {$http eq "1.0"} {
-	    ns_set icput $hdrs Connection close
-	}
+        if {$http eq "1.0"} {
+            ns_set icput $hdrs Connection close
+        }
 
-	if {$port eq "80"} {
-	    ns_set icput $hdrs Host $host
-	} else {
-	    ns_set icput $hdrs Host $host:$port
-	}
-	if {[string is true $getbinary]} {
-	    set binaryFlag "-binary"
-	} else {
-	    set binaryFlag ""
-	}
-	
-	log url https://$host:$port/$url
-	set r [ns_http queue -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
-	
-	ns_set cleanup $hdrs 
-	set hdrs [ns_set create]
-	
-	ns_http wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
-	log status $status
+        if {$port eq "80"} {
+            ns_set icput $hdrs Host $host
+        } else {
+            ns_set icput $hdrs Host $host:$port
+        }
+        if {[string is true $getbinary]} {
+            set binaryFlag "-binary"
+        } else {
+            set binaryFlag ""
+        }
 
-	set response [list $status]
+        log url https://$host:$port/$url
+        set r [ns_http queue -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
 
-	if {[info exists getheaders]} {
-	    foreach h $getheaders {
-		lappend response [ns_set iget $hdrs $h]
-	    }
-	}
-	if {[info exists getmultiheaders]} {
-	    foreach h $getmultiheaders {
-		for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
-		    set key [ns_set key $hdrs $i]
-		    if {[string tolower $h] eq [string tolower $key]} {
-			lappend response [ns_set value $hdrs $i]
-		    }
-		}
-	    }
-	}
-	
-	if {[string is true $getbody] && $body ne {}} {
-	    lappend response $body
-	}
-	
-	if {[string is true $getbinary] && $body ne {}} {
-	    binary scan $body "H*" binary
-	    lappend response [regexp -all -inline {..} $binary]
-	}
+        ns_set cleanup $hdrs
+        set hdrs [ns_set create]
 
-	return $response
+        ns_http wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
+        log status $status
+
+        set response [list $status]
+
+        if {[info exists getheaders]} {
+            foreach h $getheaders {
+                lappend response [ns_set iget $hdrs $h]
+            }
+        }
+        if {[info exists getmultiheaders]} {
+            foreach h $getmultiheaders {
+                for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
+                    set key [ns_set key $hdrs $i]
+                    if {[string tolower $h] eq [string tolower $key]} {
+                        lappend response [ns_set value $hdrs $i]
+                    }
+                }
+            }
+        }
+
+        if {[string is true $getbody] && $body ne {}} {
+            lappend response $body
+        }
+
+        if {[string is true $getbinary] && $body ne {}} {
+            binary scan $body "H*" binary
+            lappend response [regexp -all -inline {..} $binary]
+        }
+
+        return $response
     }
 
     proc log {what {msg ""}} {
@@ -132,3 +132,9 @@ namespace eval ::nstest {
         }
     }
 }
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
