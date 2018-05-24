@@ -111,14 +111,13 @@ static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
 
-static void
-SetEncodedResultObj(
-    Tcl_Interp *interp,
+static Tcl_Obj *
+EncodedObj(
     unsigned char *octects,
     size_t octectLength,
     char *outputBuffer,
     Ns_ResultEncoding encoding
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(1);
 
 static Tcl_ObjCmdProc CryptoHmacAddObjCmd;
 static Tcl_ObjCmdProc CryptoHmacFreeObjCmd;
@@ -641,7 +640,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
 /*
  *----------------------------------------------------------------------
  *
- * GetResultEncoding, SetEncodedResultObj --
+ * GetResultEncoding, EncodedObj --
  *
  *      Helper function result encodings
  *
@@ -679,12 +678,12 @@ GetResultEncoding(Tcl_Interp *interp, const char *name, Ns_ResultEncoding *encod
     return result;
 }
 
-static void
-SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLength,
-                    char *outputBuffer, Ns_ResultEncoding encoding) {
-    char *origOutputBuffer = outputBuffer;
+static Tcl_Obj*
+EncodedObj(unsigned char *octects, size_t octectLength,
+              char *outputBuffer, Ns_ResultEncoding encoding) {
+    char    *origOutputBuffer = outputBuffer;
+    Tcl_Obj *resultObj;
 
-    NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(octects != NULL);
 
     if (outputBuffer == NULL && encoding != RESULT_ENCODING_BINARY) {
@@ -697,24 +696,24 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
 
     switch (encoding) {
     case RESULT_ENCODING_BINARY:
-        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)octects, (int)octectLength));
+        resultObj = Tcl_NewByteArrayObj((const unsigned char *)octects, (int)octectLength);
         break;
 
     case RESULT_ENCODING_BASE64URL:
         //hexPrint("result", octects, octectLength);
         (void)Ns_HtuuEncode2(octects, octectLength, outputBuffer, 1);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer)));
+        resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
         break;
 
     case RESULT_ENCODING_BASE64:
         (void)Ns_HtuuEncode2(octects, octectLength, outputBuffer, 0);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer)));
+        resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
         break;
 
     case RESULT_ENCODING_HEX: /* fall through */
     default:
         Ns_HexString(octects, outputBuffer, (int)octectLength, NS_FALSE);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(outputBuffer, (int)octectLength*2));
+        resultObj = Tcl_NewStringObj(outputBuffer, (int)octectLength*2);
         break;
     }
 
@@ -722,6 +721,7 @@ SetEncodedResultObj(Tcl_Interp *interp, unsigned char *octects, size_t octectLen
         ns_free(outputBuffer);
     }
 
+    return resultObj;
 }
 
 
@@ -897,7 +897,7 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
          * Convert the result to the output format and set the interp
          * result.
          */
-        SetEncodedResultObj(interp, digest, mdLength, digestChars, encoding);
+        Tcl_SetObjResult(interp, EncodedObj(digest, mdLength, digestChars, encoding));
     }
     return result;
 }
@@ -1033,7 +1033,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              * Convert the result to the output format and set the interp
              * result.
              */
-            SetEncodedResultObj(interp, digest, mdLength, digestChars, encoding);
+            Tcl_SetObjResult(interp, EncodedObj(digest, mdLength, digestChars, encoding));
 
             Tcl_DStringFree(&keyDs);
             Tcl_DStringFree(&messageDs);
@@ -1242,7 +1242,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
          * Convert the result to the output format and set the interp
          * result.
          */
-        SetEncodedResultObj(interp, digest, mdLength, digestChars, encoding);
+        Tcl_SetObjResult(interp, EncodedObj(digest, mdLength, digestChars, encoding));
     }
     return result;
 }
@@ -1420,7 +1420,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                  * Convert the result to the output format and set the interp
                  * result.
                  */
-                SetEncodedResultObj(interp, digest, mdLength, outputBuffer, encoding);
+                Tcl_SetObjResult(interp, EncodedObj(digest, mdLength, outputBuffer, encoding));
             }
             if (outputBuffer != digestChars) {
                 ns_free(outputBuffer);
@@ -1555,7 +1555,7 @@ CryptoVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
              * Convert the result to the output format and set the interp
              * result.
              */
-            SetEncodedResultObj(interp, rawSig, sigLen, NULL, encoding);
+            Tcl_SetObjResult(interp, EncodedObj(rawSig, sigLen, NULL, encoding));
 
             /*
              * Clean up.
@@ -1717,7 +1717,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                  * Convert the result to the output format and set the interp
                  * result.
                  */
-                SetEncodedResultObj(interp, keyString, outSize, NULL, encoding);
+                Tcl_SetObjResult(interp, EncodedObj(keyString, outSize, NULL, encoding));
             }
 
             /*
@@ -1829,7 +1829,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             Tcl_DStringInit(&ds);
             Tcl_DStringSetLength(&ds, (int)octLength);
             octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
-            SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
 
             /*
              * Clean up.
@@ -1905,7 +1905,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             Tcl_DStringSetLength(&ds, (int)octLength);
             octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
                                            (unsigned char *)ds.string, octLength, bn_ctx);
-            SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
             /*
              * Clean up.
              */
@@ -1989,7 +1989,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
                 Tcl_DStringSetLength(&ds, (int)octLength);
                 octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
                                            (unsigned char *)ds.string, octLength, bn_ctx);
-                SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+                Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
                 /*
                  * Clean up.
                  */
@@ -2005,7 +2005,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
             Ns_Log(Notice, "import: import ok, output length %lu", octLength);
             result = TCL_OK;
-            SetEncodedResultObj(interp, (unsigned char *)ds.string, octLength, NULL, encoding);
+            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
 #endif
             Tcl_DStringFree(&ds);
         }
@@ -2257,7 +2257,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                  * success
                  */
                 hexPrint("ecec       ", (unsigned char *)ds.string, sharedSecretLength);
-                SetEncodedResultObj(interp, (unsigned char *)ds.string, sharedSecretLength, NULL, encoding);
+                Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, sharedSecretLength, NULL, encoding));
             }
             Tcl_DStringFree(&ds);
         }
@@ -2356,7 +2356,7 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     char                *cipherName = (char *)"aes-128-gcm";
     const EVP_CIPHER    *cipher;
     const unsigned char *keyString = NULL;
-    Tcl_DString          ivDs, cipherDs, keyDs, aadDs;
+    Tcl_DString          ivDs, keyDs, aadDs, cipherDs, tagDs;
     char                *outputEncodingString = NULL;
     Ns_ResultEncoding    encoding = RESULT_ENCODING_HEX;
 
@@ -2365,7 +2365,7 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         {"-iv",       Ns_ObjvObj,     &ivObj,      NULL},
         {"-aad",      Ns_ObjvObj,     &aadObj,     NULL},
         {"-key",      Ns_ObjvObj,     &keyObj,     NULL},
-        {"-enccrypt", Ns_ObjvBool,    &encryptInt,  NULL},
+        {"-enccrypt", Ns_ObjvBool,    &encryptInt, NULL},
         {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -2397,10 +2397,13 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
         /*
               ::ns_crypto::enc string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
+              bytes 8c3e3bea2bf68b1833b573 tag a1d8981b21916739ca0ff84044026858
         */
-        Tcl_DStringInit(&cipherDs);
         Tcl_DStringInit(&keyDs);
         Tcl_DStringInit(&aadDs);
+        Tcl_DStringInit(&cipherDs);
+        Tcl_DStringInit(&tagDs);
+
         keyString = (const unsigned char*)Ns_GetBinaryString(keyObj, &keyLength, &keyDs);
 
         /*
@@ -2481,8 +2484,11 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             //fprintf(stderr, "allocated size %d, final size %d\n", (messageLength + cipherBlockSize), cipherLength);
             Tcl_DStringSetLength(&cipherDs, cipherLength);
 
-            /* Get the tag */
-            //EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag)
+            /*
+             * Get the tag
+             */
+            Tcl_DStringSetLength(&tagDs, 16);
+            EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, tagDs.length, tagDs.string);
 
             /* Clean up */
             Tcl_DStringFree(&messageDs);
@@ -2490,18 +2496,27 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         }
 
         if (result == TCL_OK) {
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
             /*
-             * Convert the result to the output format and set the interp
-             * result.
+             * Convert the result to the output format and return a
+             * dict containing "bytes" and "tag" as the interp result.
              */
-            SetEncodedResultObj(interp, (unsigned char *)cipherDs.string, (size_t)cipherDs.length,
-                                NULL, encoding);
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("bytes", 5));
+            Tcl_ListObjAppendElement(interp, listObj, EncodedObj((unsigned char *)cipherDs.string,
+                                                                 (size_t)cipherDs.length,
+                                                                 NULL, encoding));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("tag", 3));
+            Tcl_ListObjAppendElement(interp, listObj, EncodedObj((unsigned char *)tagDs.string,
+                                                                 (size_t)tagDs.length,
+                                                                 NULL, encoding));
+            Tcl_SetObjResult(interp, listObj);
         }
+        Tcl_DStringInit(&cipherDs);
+        Tcl_DStringInit(&tagDs);
     }
     if (keyString != NULL) {
         Tcl_DStringInit(&aadDs);
         Tcl_DStringInit(&keyDs);
-        Tcl_DStringInit(&cipherDs);
     }
     Tcl_DStringFree(&ivDs);
 
