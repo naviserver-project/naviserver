@@ -3422,7 +3422,7 @@ EndOfHeader(Sock *sockPtr)
         s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
 
         if (s != NULL) {
-            /* Lower case is in the standard, capitalized by Mac OS X */
+            /* Lower case is in the standard, capitalized by macOS */
             if (STREQ(s, "chunked") || STREQ(s, "Chunked")) {
                 Tcl_WideInt expected;
 

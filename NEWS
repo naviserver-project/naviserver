@@ -904,7 +904,7 @@ Tcl API Changes:
 Configuration Changes:
   * Improved output of "make help"
 
-  * Don't throw error message, when doing an install from a bitbucket
+  * Don't throw error message, when doing an install from a Bitbucket
     checkout and no documentation was generated locally.
 
 Command Line Changes:
@@ -1515,7 +1515,7 @@ New Features:
       an error (this allows better distinction from where the
       exception was raised)
 
-    - Added TCP_FASTOPEN support for Mac OS X 10.11
+    - Added TCP_FASTOPEN support for macOS 10.11
 
 Bug Fixes:
   * the urlspace code now can be compiled with and without
@@ -2644,7 +2644,7 @@ New Features:
       if present (as used in nginx, lighttpd and by apache (mod_passenger)).
 
     * Added support for chunked encoding for uploads (as used e.g. in WEBDAV
-      PUT requests from Mac OS X Finder).
+      PUT requests from macOS Finder).
 
     * Added small compatibility layer for providing Aolserver compatibility
       (e.g. support "ns_cache eval" as well as "ns_cache_eval"); the layer
@@ -2930,8 +2930,7 @@ Configuration Changes:
 
 Code Changes:
 
-   * Fixed test to use preferred getaddrinfo()/getnameinfo() for Mac
-     OS X instead of gethostbyaddr()/gethostbyname() when working
+   * Fixed test to use preferred getaddrinfo()/getnameinfo() for macOS instead of gethostbyaddr()/gethostbyname() when working
      under the OS release.
 
    * Make compilation clean under clang.

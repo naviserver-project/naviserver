@@ -121,7 +121,7 @@ ns_param        gzip_cmd            "/usr/bin/gzip -9"  ;# use for re-compressin
 ns_param        brotli_static       true       ;# check for static brotli files; default: false
 ns_param        brotli_refresh      true       ;# refresh stale .br files on the fly using ::ns_brotlifile
 ns_param        brotli_cmd          "/usr/bin/brotli -f -Z"  ;# use for re-compressing
-#ns_param        brotli_cmd          "/opt/local/bin/brotli -f -Z"  ;# use for re-compressing (MacOS + ports)
+#ns_param        brotli_cmd          "/opt/local/bin/brotli -f -Z"  ;# use for re-compressing (macOS + ports)
 
 
 ns_section     "ns/server/default/fastpath"

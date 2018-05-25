@@ -332,7 +332,7 @@ typedef struct DIR_ *DIR;
  *
  * Not windows
  *
- * mostly Unix style OSes, including Mac OS X
+ * mostly Unix style OSes, including macOS
  *
  ***************************************************************/
 #include <sys/types.h>

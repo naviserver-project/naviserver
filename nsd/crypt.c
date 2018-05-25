@@ -61,7 +61,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 #elif defined(__linux)
 /*
  * It seems that not every version of crypt() is compatible. We see different
- * results e.g. when we use crypt under Mac OS X for the crypted strings in
+ * results e.g. when we use crypt under macOS for the crypted strings in
  * the regression test.
  */
 char *

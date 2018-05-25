@@ -282,7 +282,7 @@ started from an entry in the /etc/inittab file.   The benefit of this mode
 is that init will restart the server automatically.
 
 [para]
-Furthermore, the inittab mode is needed as well on MacOS when
+Furthermore, the inittab mode is needed as well on macOS when
 NaviServer is started via launchd (controlled via launchctl).
 
 

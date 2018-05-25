@@ -462,7 +462,7 @@ Ns_InfoErrorLog(void)
  *      The severity.
  *
  * Side effects:
- *      Sever will exit if max severities exceeded.
+ *      Server will exit if max severities exceeded.
  *
  *----------------------------------------------------------------------
  */
@@ -1343,7 +1343,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case CSeveritiesIdx:
             /*
-             * Return all registered severites in a list
+             * Return all registered severities in a list
              */
             objPtr = Tcl_GetObjResult(interp);
             for (i = 0; i < severityIdx; i++) {

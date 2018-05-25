@@ -132,13 +132,13 @@ Mac OS/X 10.2+ and Windows. To compile and install:
  
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 
-    Alternatively, NaviServer can be installed directly from bitbucket
+    Alternatively, NaviServer can be installed directly from Bitbucket
     via the mercurial version control system installed.  Mercurial is
     included in most Linux distributions: e.g. yum install
-    mercurial. For Windows and Mac OSX see:
+    mercurial. For Windows and macOS see:
     http://www.selenic.com/mercurial
 
-    If you checked out the source directly from bitbucket, replace
+    If you checked out the source directly from Bitbucket, replace
     "./configure" in the example above with "./autogen.sh" to get the
     initial makefiles created.
 
@@ -189,7 +189,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         $ make install NAVISERVER=/usr/local/ns
 
     Alternatively, modules can be obtained from the code repository at
-    bitbucket via mercurial.
+    Bitbucket via mercurial.
 
     To get a module "nsfoo" via mercurial
 
