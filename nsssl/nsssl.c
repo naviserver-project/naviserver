@@ -194,7 +194,7 @@ Ns_ModuleInit(const char *server, const char *module)
     driver_locks = ns_calloc((size_t)num, sizeof(*driver_locks));
     {   int n;
         for (n = 0; n < num; n++) {
-            Ns_DStringPrintf(&ds, "nsssl:%d", n);
+            Ns_DStringPrintf(&ds, "nsssl:%s:%d", module, n);
             Ns_MutexSetName(driver_locks + n, ds.string);
             Tcl_DStringSetLength(&ds, 0);
         }
