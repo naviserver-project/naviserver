@@ -375,7 +375,7 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
                                  conn->request.url,
                                  Ns_ConnAuthUser(conn),
                                  Ns_ConnAuthPasswd(conn),
-                                 Ns_ConnPeer(conn));
+                                 Ns_ConnPeerAddr(conn));
     switch (status) {
     case NS_OK:
         status = Ns_ConnRunRequest(conn);

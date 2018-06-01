@@ -484,7 +484,14 @@ Ns_ConnAddr(const Ns_Conn *conn)
 
     connPtr = (Conn *)conn;
     if (connPtr->sockPtr != NULL) {
-        result = ns_inet_ntoa((struct sockaddr *)&(connPtr->sockPtr->sa));
+        struct NS_SOCKADDR_STORAGE sa;
+        socklen_t len = (socklen_t)sizeof(sa);
+        int retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
+        if (retVal == -1) {
+            result = NULL;
+        } else {
+            result = ns_inet_ntoa((struct sockaddr *)&sa);
+        }
     } else {
         result = NULL;
     }
@@ -1500,7 +1507,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CIsConnectedIdx:
         /*
          * This case is handled above. We keep this entry to keep static
-         * checkers happy about case enumeration.
+         * checkers happy about completeness of case enumeration.
          */
         break;
 
