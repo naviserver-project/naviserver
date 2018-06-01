@@ -2224,7 +2224,7 @@ ConnRun(Conn *connPtr)
                                          connPtr->request.url,
                                          Ns_ConnAuthUser(conn),
                                          Ns_ConnAuthPasswd(conn),
-                                         Ns_ConnPeer(conn));
+                                         Ns_ConnPeerAddr(conn));
             switch (status) {
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
@@ -2495,10 +2495,10 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
                          * Lookup of header field failed, use upstream peer
                          * address.
                          */
-                        p = Ns_ConnPeer((const Ns_Conn *) connPtr);
+                        p = Ns_ConnPeerAddr((const Ns_Conn *) connPtr);
                     }
                 } else {
-                    p = Ns_ConnPeer((const Ns_Conn *) connPtr);
+                    p = Ns_ConnPeerAddr((const Ns_Conn *) connPtr);
                 }
                 Tcl_DStringAppendElement(dsPtr, p);
             } else {
@@ -2522,7 +2522,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
                      * Append the peer address, which is part of the reqPtr
                      * and unrelated with the configured state.
                      */
-                    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((const Ns_Conn *) connPtr));
+                    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeerAddr((const Ns_Conn *) connPtr));
                 }
             }
         } else {

@@ -875,7 +875,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_SetUpdate(cgiPtr->env, "REMOTE_USER", Ns_ConnAuthUser(conn));
 
     {
-        const char *peer = Ns_ConnPeer(conn);
+        const char *peer = Ns_ConnPeerAddr(conn);
         
         if (peer != NULL) {
             Ns_SetUpdate(cgiPtr->env, "REMOTE_ADDR", peer);

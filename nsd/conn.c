@@ -437,9 +437,71 @@ Ns_ConnResponseLength(const Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnPeer --
+ * Ns_ConnPeerAddr --
  *
  *      Get the peer's internet address
+ *
+ * Results:
+ *      A string IP address
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+const char *
+Ns_ConnPeerAddr(const Ns_Conn *conn)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    return ((const Conn *)conn)->reqPtr->peer;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnAddr --
+ *
+ *      Get the local IP address of the current connection
+ *
+ * Results:
+ *      A string IP address or NULL
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_ConnAddr(const Ns_Conn *conn)
+{
+    const char *result;
+    const Conn *connPtr;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    connPtr = (Conn *)conn;
+    if (connPtr->sockPtr != NULL) {
+        result = ns_inet_ntoa((struct sockaddr *)&(connPtr->sockPtr->sa));
+    } else {
+        result = NULL;
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnPeer --
+ *
+ *      Get the peer's internet address, deprecated version of
+ *      Ns_ConnPeerAddr().
+ *
+ *      Deprecated: Use Ns_ConnPeerAddr() for naming symmetry with
+ *      the variants without "Peer" in the name.
  *
  * Results:
  *      A string IP address
@@ -455,7 +517,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
 
-    return ((const Conn *)conn)->reqPtr->peer;
+    return Ns_ConnPeerAddr(conn);
 }
 
 /*
@@ -1350,7 +1412,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     const char          *setName;
 
     static const char *const opts[] = {
-        "acceptedcompression", "auth", "authpassword", "authuser",
+        "acceptedcompression", "addr", "auth", "authpassword", "authuser",
         "channel", "clientdata", "close", "compress", "content",
         "contentfile", "contentlength", "contentsentlength", "copy",
         "driver",
@@ -1373,7 +1435,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         NULL
     };
     enum ISubCmdIdx {
-        CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
+        CAacceptedcompressionIdx, CAddrIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
         CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
         CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
         CDriverIdx,
@@ -1440,6 +1502,14 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
          * This case is handled above. We keep this entry to keep static
          * checkers happy about case enumeration.
          */
+        break;
+
+    case CAddrIdx:
+        {
+            const char *addr = Ns_ConnAddr(conn);
+
+            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : ""), -1));
+        }
         break;
 
     case CKeepAliveIdx:
@@ -1683,7 +1753,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case CPeerAddrIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeer(conn), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeerAddr(conn), -1));
         break;
 
     case CPeerPortIdx:

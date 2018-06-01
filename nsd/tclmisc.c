@@ -186,7 +186,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
         if (conn->request.url != NULL) {
             Ns_DStringVarAppend(&ds, conn->request.url, ", ", (char *)0L);
         }
-        Ns_DStringVarAppend(&ds, "PeerAddress: ", Ns_ConnPeer(conn), (char *)0L);
+        Ns_DStringVarAppend(&ds, "PeerAddress: ", Ns_ConnPeerAddr(conn), (char *)0L);
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {

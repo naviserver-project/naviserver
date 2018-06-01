@@ -616,7 +616,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         p = NULL;
     }
     Tcl_DStringAppend(dsPtr,
-                      ((p != NULL) && (*p != '\0')) ? p : Ns_ConnPeer(conn), -1);
+                      ((p != NULL) && (*p != '\0')) ? p : Ns_ConnPeerAddr(conn), -1);
 
     /*
      * Append the thread name, if requested.
@@ -640,6 +640,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Tcl_DStringAppend(dsPtr, "- ", 2);
     } else {
         int quote = 0;
+
         for (p = user; *p && !quote; p++) {
             quote = (CHARTYPE(space, *p) != 0);
         }
