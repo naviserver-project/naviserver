@@ -1147,6 +1147,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclCryptoEncObjCmd,
     NsTclCryptoHmacObjCmd,
     NsTclCryptoMdObjCmd,
+    NsTclCryptoRandomBytesObjCmd,
     NsTclDeleteCookieObjCmd,
     NsTclDriverObjCmd,
     NsTclEncodingForCharsetObjCmd,
