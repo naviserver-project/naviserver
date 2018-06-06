@@ -264,7 +264,6 @@ static void HMAC_CTX_free(HMAC_CTX *ctx)
 
 # ifdef HAVE_OPENSSL_PRE_1_1
 /*
-/*
  *----------------------------------------------------------------------
  *
  * ECDSA_SIG_get0 --
