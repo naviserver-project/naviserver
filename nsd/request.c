@@ -666,61 +666,64 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
  */
 static const char *
 GetQvalue(const char *str, int *lenPtr) {
-    const char *resultString;
+    const char *resultString = NULL;
 
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(lenPtr != NULL);
 
-    for (; *str == ' '; str++) {
-        ;
-    }
-    if (*str != ';') {
-        return NULL;
-    }
-    for (str ++; *str == ' '; str++) {
-        ;
-    }
-    if (*str != 'q') {
-        return NULL;
-    }
-    for (str ++; *str == ' '; str++) {
-        ;
-    }
-    if (*str != '=') {
-        return NULL;
-    }
-    for (str ++; *str == ' '; str++) {
-        ;
-    }
-    if (CHARTYPE(digit,*str) == 0) {
-        return NULL;
-    }
+    for (;;) {
+        for (; *str == ' '; str++) {
+            ;
+        }
+        if (*str != ';') {
+            break;
+        }
+        for (str ++; *str == ' '; str++) {
+            ;
+        }
+        if (*str != 'q') {
+            break;
+        }
+        for (str ++; *str == ' '; str++) {
+            ;
+        }
+        if (*str != '=') {
+            break;
+        }
+        for (str ++; *str == ' '; str++) {
+            ;
+        }
+        if (CHARTYPE(digit,*str) == 0) {
+            break;
+        }
 
-    resultString = str;
-    str++;
-    if (*str == '.') {
-        /*
-         * Looks like a floating point number; RFC2612 allows up to
-         * three digits after the comma.
-         */
-        str ++;
-        if (CHARTYPE(digit, *str) != 0) {
-            str++;
+        resultString = str;
+        str++;
+        if (*str == '.') {
+            /*
+             * Looks like a floating point number; RFC2612 allows up to
+             * three digits after the comma.
+             */
+            str ++;
             if (CHARTYPE(digit, *str) != 0) {
                 str++;
                 if (CHARTYPE(digit, *str) != 0) {
                     str++;
+                    if (CHARTYPE(digit, *str) != 0) {
+                        str++;
+                    }
                 }
             }
         }
-    }
-    /*
-     * str should point to a valid terminator of the number
-     */
-    if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
-        *lenPtr = (int)(str - resultString);
-    } else {
-        resultString = NULL;
+        /*
+         * "str" should point to a valid terminator of the number.
+         */
+        if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
+            *lenPtr = (int)(str - resultString);
+        } else {
+            resultString = NULL;
+        }
+        break;
     }
     return resultString;
 }
