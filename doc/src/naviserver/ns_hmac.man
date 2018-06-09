@@ -78,11 +78,13 @@ Method to delete the HMAC object (used for incremental operations).
 [list_begin options]
 
 [opt_def -digest [arg digest]]
-Digest algorithm for the checksum computation. The available algorithms
-are implemented in OpenSSL. The current versions of OpenSSL supports
-the following message digest algorithms: "dsa dsa-sha ecdsa-with-sha1
-md4 md5 mdc2 ripemd160 sha sha1 sha224 sha256 sha384 sha512
-whirlpool".  The default value is "sha256"
+
+Digest algorithm for the checksum computation. The available
+algorithms are implemented in OpenSSL. The current versions of OpenSSL
+supports the following message digest algorithms: "blake2b512
+blake2s256 md4 md5 md5-sha1 mdc2 ripemd160 sha1 sha224 sha256 sha3-224
+sha3-256 sha3-384 sha3-512 sha384 sha512 sha512-224 sha512-256
+shake128 shake256 sm3 whirlpool". The default value is "sha256"
 
 [list_end]
 
