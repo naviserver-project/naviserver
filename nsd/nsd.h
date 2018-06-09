@@ -425,7 +425,7 @@ typedef struct Driver {
     void        *arg;                   /* Driver callback data */
     const char  *server;                /* Virtual server name */
     const char  *type;                  /* Type of driver, e.g. "nssock" */
-    const char  *moduleName;            /* Module name, e.g. "nssock1" */    
+    const char  *moduleName;            /* Module name, e.g. "nssock1" */
     const char  *threadName;            /* Thread name, e.g. "nssock1:1" */
     const char  *location;              /* Location, e.g, "http://foo:9090" */
     const char  *address;               /* Address in location, e.g. "foo" */
@@ -510,11 +510,11 @@ typedef struct Sock {
     /*
      * Visible in Ns_Sock.
      */
-    NS_SOCKET                  sock;    
+    NS_SOCKET                  sock;
     struct Driver             *drvPtr;
     void                      *arg;        /* Driver context. */
     struct NS_SOCKADDR_STORAGE sa;         /* Actual peer address */
-    
+
     /*
      * Private to Sock.
      */
@@ -535,7 +535,7 @@ typedef struct Sock {
     char               *tfile;           /* name of regular temporary file */
     int                 tfd;             /* file descriptor with request contents */
     bool                keep;
-    
+
     void               *sls[1];          /* Slots for sls storage */
 
 } Sock;
@@ -708,7 +708,7 @@ typedef struct ConnPool {
         struct {
             Conn *firstPtr;
             Conn *lastPtr;
-            int   num;            
+            int   num;
         } wait;
 
         Ns_Cond  cond;
@@ -988,7 +988,7 @@ typedef struct NsInterp {
     NsServer   *servPtr;
     int         epoch;         /* Run the update script if != to server epoch */
     int         refcnt;        /* Counts recursive allocations of cached interp */
-    
+
     /*
      * The following pointer maintains the first in
      * a FIFO list of callbacks to invoke at interp
@@ -1143,8 +1143,9 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclCrashObjCmd,
     NsTclCritSecObjCmd,
     NsTclCryptObjCmd,
+    NsTclCryptoAeadDecryptObjCmd,
+    NsTclCryptoAeadEncryptObjCmd,
     NsTclCryptoEckeyObjCmd,
-    NsTclCryptoEncObjCmd,
     NsTclCryptoHmacObjCmd,
     NsTclCryptoMdObjCmd,
     NsTclCryptoRandomBytesObjCmd,
@@ -1294,7 +1295,7 @@ NS_EXTERN Tcl_ObjCmdProc
     TclX_KeylkeysObjCmd,
     TclX_KeylsetObjCmd;
 
-NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug; 
+NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
 
 /*
