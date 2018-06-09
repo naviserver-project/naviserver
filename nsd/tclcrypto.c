@@ -79,6 +79,11 @@ static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **
 static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static int GetCipher(
+  Tcl_Interp *interp, const char *cipherName, unsigned long flags,
+  const char *modeMsg, const EVP_CIPHER **cipherPtr
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
 # ifndef HAVE_OPENSSL_PRE_1_0
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
@@ -376,20 +381,25 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
  *----------------------------------------------------------------------
  */
 static int
-GetCipher(Tcl_Interp *interp, const char *cipherName, const EVP_CIPHER **cipherPtr)
+GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const char *modeMsg, const EVP_CIPHER **cipherPtr)
 {
-    int result;
+    int result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cipherName != NULL);
+    NS_NONNULL_ASSERT(modeMsg != NULL);
     NS_NONNULL_ASSERT(cipherPtr != NULL);
 
     *cipherPtr = EVP_get_cipherbyname(cipherName);
     if (*cipherPtr == NULL) {
         Ns_TclPrintfResult(interp, "Unknown cipher \"%s\"", cipherName);
         result = TCL_ERROR;
-    } else {
-        result = TCL_OK;
+    } else if (flags != 0u) {
+        unsigned long mode = EVP_CIPHER_mode(*cipherPtr);
+        if ((mode && flags) == 0u) {
+            Ns_TclPrintfResult(interp, "cipher \"%s\" does not support require mode: %s", cipherName, modeMsg);
+            result = TCL_ERROR;
+        }
     }
     return result;
 }
@@ -2302,11 +2312,11 @@ CryptoEncStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     } else if (outputEncodingString != NULL
                && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
         /*
-         * Function cares about error message
+         * Function cares about error message.
          */
         result = TCL_ERROR;
 
-    } else if ((result = GetCipher(interp, cipherName, &cipher)) == TCL_OK) {
+    } else if ((result = GetCipher(interp, cipherName, EVP_CIPH_GCM_MODE, "gcm", &cipher)) == TCL_OK) {
         EVP_CIPHER_CTX      *ctx = EVP_CIPHER_CTX_new();
         const unsigned char *inputString, *ivString, *aadString;
         int                  inputLength, ivLength, aadLength, keyLength, length;

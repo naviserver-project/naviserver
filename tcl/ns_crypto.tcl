@@ -45,7 +45,7 @@ nx::Class create ::ns_crypto::HashFunctions {
 ###########################################################################
 # class ns_md
 #
-#     Provide an oo interface to the OpenSSL Message Digest
+#     Provide an OO interface to the OpenSSL Message Digest
 #     functionality.
 #
 nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
@@ -84,7 +84,7 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
 ###########################################################################
 # class ns_hmac
 #
-#     Provide an oo interface to the OpenSSL Hash Based Message
+#     Provide an OO interface to the OpenSSL Hash Based Message
 #     authentication Code (HMAC). In essence, this is a password
 #     secured hash code.
 #
