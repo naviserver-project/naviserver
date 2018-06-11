@@ -1678,9 +1678,9 @@ ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uint
 void
 NsConnThread(void *arg)
 {
-    ConnThreadArg *argPtr = arg;
-    ConnPool      *poolPtr = argPtr->poolPtr;
-    NsServer      *servPtr = poolPtr->servPtr;
+    ConnThreadArg *argPtr;
+    ConnPool      *poolPtr;
+    NsServer      *servPtr;
     Conn          *connPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
     uintptr_t      threadId;
@@ -1689,10 +1689,8 @@ NsConnThread(void *arg)
     Ns_ReturnCode  status = NS_OK;
     long           timeout;
     const char    *exitMsg;
-    Ns_Mutex      *threadsLockPtr = &poolPtr->threads.lock;
-    Ns_Mutex      *tqueueLockPtr  = &poolPtr->tqueue.lock;
-    Ns_Mutex      *wqueueLockPtr  = &poolPtr->wqueue.lock;
     Ns_Thread      joinThread;
+    Ns_Mutex      *threadsLockPtr, *tqueueLockPtr, *wqueueLockPtr;
 
     NS_NONNULL_ASSERT(arg != NULL);
 
@@ -1700,11 +1698,18 @@ NsConnThread(void *arg)
      * Set the ConnThreadArg into thread local storage and get the id
      * of the thread.
      */
+    argPtr = arg;
+    poolPtr = argPtr->poolPtr;
+    assert(poolPtr != NULL);
 
+    tqueueLockPtr  = &poolPtr->tqueue.lock;
     Ns_TlsSet(&argtls, argPtr);
+
     Ns_MutexLock(tqueueLockPtr);
     argPtr->state = connThread_warmup;
     Ns_MutexUnlock(tqueueLockPtr);
+
+    threadsLockPtr = &poolPtr->threads.lock;
 
     Ns_MutexLock(threadsLockPtr);
     threadId = poolPtr->threads.nextid++;
@@ -1713,6 +1718,7 @@ NsConnThread(void *arg)
     }
     Ns_MutexUnlock(threadsLockPtr);
 
+    servPtr = poolPtr->servPtr;
     ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, 0);
 
     Ns_ThreadSelf(&joinThread);
@@ -1739,6 +1745,8 @@ NsConnThread(void *arg)
         Ns_TclDeAllocateInterp(interp);
         argPtr->state = connThread_ready;
     }
+
+    wqueueLockPtr  = &poolPtr->wqueue.lock;
 
     /*
      * Start handling connections.
