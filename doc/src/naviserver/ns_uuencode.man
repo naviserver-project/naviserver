@@ -36,5 +36,5 @@ test
 [example_end]
 
 [see_also ns_uudecode ns_base64]
-[keywords "global builtin" encoding]
+[keywords "global built-in" encoding]
 [manpage_end]

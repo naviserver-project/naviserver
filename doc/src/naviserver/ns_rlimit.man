@@ -57,7 +57,7 @@ running processes, which were started with a core dump limit of 0.
  % ns_crash
 [example_end]
 
-[keywords "global builtin" system limits]
+[keywords "global built-in" system limits]
 
 [manpage_end]
 

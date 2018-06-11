@@ -27,7 +27,7 @@ ns_sockopen. This function is useful if you used the
 
 
 [see_also ns_sockselect]
-[keywords "global builtin" NaviServer socket connected]
+[keywords "global built-in" NaviServer socket connected]
 [manpage_end]
 
 

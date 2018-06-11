@@ -71,7 +71,7 @@ arguments with and without defaults.
 
 
 [see_also nsd]
-[keywords "global builtin" NaviServer]
+[keywords "global built-in" NaviServer]
 [manpage_end]
 
 

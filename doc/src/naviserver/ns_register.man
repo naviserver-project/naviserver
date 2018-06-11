@@ -272,10 +272,11 @@ Use [cmd ns_unregister_op] to unregister a Tcl request handler.
 	[arg script] \
 	[opt [arg args]]]
 
-[term ns_register_trace] registers a Tcl script as a trace for the specified method/URL
-combination. After the server handles the request for the specified method on an
-URL that matches the URL, it calls the trace script with the connection id
-and any arguments (args) specified.
+[term ns_register_trace] registers a Tcl script as a trace for the
+specified method/URL combination. After the server handles the request
+for the specified method on a URL that matches the URL, it calls the
+trace script with the connection id and any arguments (args)
+specified.
 
 [para]
 
@@ -451,7 +452,7 @@ requested using [cmd ns_pagepath], so [cmd ns_serverroot] and
 
 [para]
 In the third example, a specific [term ADP] file in the server's file system
-is registered for a simillarly named URL (and all URLs below
+is registered for a similarly named URL (and all URLs below
 it). There are no calls to [cmd ns_pagepath] or [cmd ns_url2file]
 during the request.
 
@@ -499,6 +500,6 @@ currently registered procs.
 
 
 [see_also ns_adp ns_conn ns_info]
-[keywords "server builtin" ADP filter request callback fastpath]
+[keywords "server built-in" ADP filter request callback fastpath]
 [manpage_end]
 

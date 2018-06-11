@@ -28,7 +28,7 @@ An error is generated if the file does not exist or if it is not a JPEG file.
    invalid JPEG file: "test.html"
 [example_end]
 
-[keywords "global builtin" images]
+[keywords "global built-in" images]
 [see_also ns_gifsize ns_pngsize ns_imgsize ns_imgmime ns_imgtype]
 
 [manpage_end]

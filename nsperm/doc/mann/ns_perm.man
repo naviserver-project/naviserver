@@ -198,7 +198,7 @@ ignored.
 [example_end]
 
 [see_also nsd ns_crypt]
-[keywords "server builtin" NaviServer nsperm]
+[keywords "server built-in" NaviServer nsperm]
 [manpage_end]
 
 

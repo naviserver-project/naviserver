@@ -183,6 +183,6 @@ if {[lb]llength $rows[rb]  >  0}  {
 [list_end]
 
 [see_also ns_adp ns_adp_eval ns_adp_safeeval ns_adp_include]
-[keywords "server builtin" ADP]
+[keywords "server built-in" ADP]
 
 [manpage_end]

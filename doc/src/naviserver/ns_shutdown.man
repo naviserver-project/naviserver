@@ -41,7 +41,7 @@ send an interrupt signal to the server, leading to a non-zero exit code.
 
 
 [see_also ns_kill]
-[keywords "server builtin" restart]
+[keywords "server built-in" restart]
 
 
 [manpage_end]

@@ -13,7 +13,7 @@ altered) by computing a cryptographic checksum.
 incremental interface, where the latter one can be used to
 e.g. incrementally compute a message digest reading data from a
 file. This is especially important for computing message digest on
-content which is to large to be kept in memory.
+content which is too large to be kept in memory.
 
 [para] The listed commands are available in installations when
 NaviServer is compiled with OpenSSL support and where the nsf package
@@ -31,7 +31,7 @@ set of cryptogrphic algorithms and provides the incremental interface.
 
 [para]
 [arg message]
-is the text from which the message digest is to be computed.
+is the text from which the message digest is computed.
 
 
 [call [cmd "ns_md file"] \
@@ -51,7 +51,7 @@ Create and return a new MD object for incremental operations.
 [call [arg \$md_object] [cmd "add"] [arg data]]
 
 Method to add [arg data] incrementally to the MD object, which was created
-previously  with [cmd "ns_md new"].
+previously with [cmd "ns_md new"].
 
 
 [call [arg \$md_object] [cmd "get"]]

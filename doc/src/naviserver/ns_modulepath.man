@@ -34,7 +34,7 @@ The server directory is a subdirectory of "servers" under the path returned from
    % file join 
 [example_end]
 
-[keywords "global builtin" module]
+[keywords "global built-in" module]
 
 [manpage_end]
 

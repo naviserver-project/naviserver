@@ -31,7 +31,7 @@ immediately), or the form sec:usec or sec.fraction.
 
 
 [see_also nsd]
-[keywords "global builtin" time]
+[keywords "global built-in" time]
 
 [manpage_end]
 

@@ -39,7 +39,7 @@ appended as the last arg before it is executed
 
 
 [see_also ns_locationproc]
-[keywords "global builtin" callback virtual hosting]
+[keywords "global built-in" callback virtual hosting]
 [manpage_end]
 
 

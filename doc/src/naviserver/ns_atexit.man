@@ -20,7 +20,7 @@ The scripts are executed in the global scope in LIFO (last in, first out) order.
 
 [see_also ns_atexit ns_atclose ns_atshutdown ns_atsignal]
 
-[keywords "global builtin" callback] 
+[keywords "global built-in" callback] 
 
 [manpage_end]
 

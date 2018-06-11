@@ -54,7 +54,7 @@ NOTES
  be different in previous versions of NaviServer.  For example,
  NaviServer 2.x did not escape single or double-quotes.
 
-[keywords "global builtin" HTML encoding]
+[keywords "global built-in" HTML encoding]
 
 
 [manpage_end]

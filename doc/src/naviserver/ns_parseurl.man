@@ -42,7 +42,7 @@ following elements: [term proto], [term host], [term port],
 [example_end]
 
 [see_also ns_absoluteurl]
-[keywords "global builtin" url]
+[keywords "global built-in" url]
 [manpage_end]
 
 

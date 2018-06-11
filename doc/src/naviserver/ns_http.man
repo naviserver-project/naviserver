@@ -303,7 +303,7 @@ Example for downloading a file from the web:
 [example_end]
 
 [see_also ns_httptime ns_set ns_urlencode]
-[keywords "global builtin" http-client HTTP HTTPS POST GET nssock spooling SNI]
+[keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
 
 [manpage_end]
 

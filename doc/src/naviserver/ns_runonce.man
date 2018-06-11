@@ -37,7 +37,7 @@ ns_runonce {
 
 
 [see_also nsd]
-[keywords "server builtin" NaviServer]
+[keywords "server built-in" NaviServer]
 [manpage_end]
 
 

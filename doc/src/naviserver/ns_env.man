@@ -47,6 +47,6 @@ variables of the currently running nsd process.
 
 
 [see_also nsd]
-[keywords "global builtin" ]
+[keywords "global built-in" ]
 [manpage_end]
 

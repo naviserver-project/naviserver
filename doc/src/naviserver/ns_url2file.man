@@ -37,7 +37,7 @@ This is especially useful when using the ns_adp_include command.
 
 
 [see_also nsd]
-[keywords "server builtin" url]
+[keywords "server built-in" url]
 
 [manpage_end]
 

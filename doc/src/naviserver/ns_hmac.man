@@ -15,7 +15,7 @@ details of HMAC, consult RFC 4231.
 [para] The provided commands provide a one-step interface and an
 incremental interface, where the latter one can be used to
 e.g. incrementally compute a HMAC by reading data from a file. This is
-especially important for computing HMAC on content which is to large
+especially important for computing a HMAC on content which is too large
 to be kept in memory.
 
 [para] The listed commands are available in installations when
@@ -58,7 +58,7 @@ Create and return a new HMAC object for incremental operations.
 [call [arg \$hmac_object] [cmd "add"] [arg data]]
 
 Method to add [arg data] incrementally to the HMAC object, which was created
-previously  with [cmd "ns_hmac new"].
+previously with [cmd "ns_hmac new"].
 
 
 [call [arg \$hmac_object] [cmd "get"]]

@@ -19,7 +19,7 @@ If length is not specified then it is assumed to be zero.  This command is simil
 
 
 [see_also nsd]
-[keywords "global builtin" TclX ftruncate]
+[keywords "global built-in" TclX ftruncate]
 
 [manpage_end]
 

@@ -28,7 +28,7 @@
 
 
 [see_also nsd]
-[keywords "global builtin"  ns_charsets]
+[keywords "global built-in"  ns_charsets]
 
 
 

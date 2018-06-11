@@ -36,7 +36,7 @@ IP Address to be resolved into hostname
 
 
 [see_also ns_addrbyhost]
-[keywords "global builtin" dns]
+[keywords "global built-in" dns]
 
 [manpage_end]
 

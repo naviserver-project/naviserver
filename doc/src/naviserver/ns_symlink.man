@@ -39,7 +39,7 @@ It is now recommended you use Tcl's file link command instead.
    % ns_symlink 
 [example_end]
 
-[keywords "global builtin" filesystem]
+[keywords "global built-in" filesystem]
 
 [manpage_end]
 

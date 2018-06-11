@@ -39,7 +39,7 @@ for this host.
 
 
 [see_also ns_hostbyaddr]
-[keywords "global builtin" dns]
+[keywords "global built-in" dns]
 
 [manpage_end]
 

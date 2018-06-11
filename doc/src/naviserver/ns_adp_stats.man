@@ -61,7 +61,7 @@ NOTES
  On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino,
  so dev and ino will always be reported as 0 when running NaviServer on Windows.
 
-[keywords "server builtin" ADP]
+[keywords "server built-in" ADP]
 
 
 [manpage_end]

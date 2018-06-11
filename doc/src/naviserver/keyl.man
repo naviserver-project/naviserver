@@ -94,7 +94,7 @@ the values for that key are returned instead.
 
 
 [see_also nsd ns_set]
-[keywords "global builtin" TclX keyed-list ]
+[keywords "global built-in" TclX keyed-list ]
 
 [manpage_end]
 

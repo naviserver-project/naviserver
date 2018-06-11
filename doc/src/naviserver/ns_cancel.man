@@ -27,7 +27,7 @@ same as ns_unschedule_proc and kept for backward compatibility.
 [example_end]
 
 [see_also ns_unschedule_proc]
-[keywords "global builtin" background schedule]
+[keywords "global built-in" background schedule]
 
 [manpage_end]
 

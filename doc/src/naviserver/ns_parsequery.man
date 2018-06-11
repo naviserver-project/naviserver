@@ -36,7 +36,7 @@ The keys and values will be decoded.
 [para]
 
 [see_also ns_set ns_getform]
-[keywords "global builtin" URL query]
+[keywords "global built-in" URL query]
 
 [manpage_end]
 

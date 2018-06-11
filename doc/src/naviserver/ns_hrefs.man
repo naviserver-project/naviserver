@@ -29,7 +29,7 @@ returns a list of the URLs in those elements' href attributes.
    % ns_hrefs $html
    http://google.com/ http://www.yahoo.com
 [example_end]
-[keywords "global builtin" HTML]
+[keywords "global built-in" HTML]
 
 [manpage_end]
 

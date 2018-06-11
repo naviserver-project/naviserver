@@ -115,7 +115,7 @@ purposes. If no key is specified, it default to the constant
 
 
 [see_also nsv]
-[keywords "server builtin" trie urlspace shared variables]
+[keywords "server built-in" trie urlspace shared variables]
 
 [manpage_end]
 

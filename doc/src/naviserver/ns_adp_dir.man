@@ -23,7 +23,7 @@ page. If this command is not called from inside an ADP page, "/" is returned ins
    ns_adp_dir
 [example_end]
 
-[keywords "server builtin" ADP]
+[keywords "server built-in" ADP]
 
 [manpage_end]
 

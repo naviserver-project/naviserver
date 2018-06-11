@@ -216,7 +216,7 @@ seconds and fractions of seconds) is reached.
 [example_end]
 
 [see_also nsd ns_schedule_proc]
-[keywords "global builtin" background]
+[keywords "global built-in" background]
 
 
 [manpage_end]

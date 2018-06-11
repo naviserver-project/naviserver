@@ -137,7 +137,7 @@ the end of a <% ns_adp_include myfile.adp %> ending up in the output stream.
 	ns_adp ns_adp_mimetype  ns_adp_abort ns_adp_break ns_adp_close \
 	ns_adp_ctl ns_adp_dump \
 	ns_adp_flush ns_adp_return ns_adp_stream]
-[keywords "server builtin" ADP]
+[keywords "server built-in" ADP]
 [manpage_end]
 
 

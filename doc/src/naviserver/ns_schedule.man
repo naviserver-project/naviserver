@@ -95,7 +95,7 @@ doesn't represent a currently scheduled ID.
 [list_end]
 
 [see_also nsd ns_job  ns_after ns_pause ns_resume ns_schedule_proc ns_schedule_daily ns_unschedule_proc]
-[keywords "global builtin" background schedule]
+[keywords "global built-in" background schedule]
 
 [manpage_end]
 

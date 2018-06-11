@@ -455,7 +455,7 @@ ns_section ns/db/pool/pool2
 
 
 [see_also ns_buildsqldate ns_dbquotevalue]
-[keywords "server builtin" module nsdb database sql pool]
+[keywords "server built-in" module nsdb database sql pool]
 
 
 [manpage_end]

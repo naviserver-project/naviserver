@@ -119,7 +119,7 @@ ns_writer submitfile /tmp/biglist.txt
 [example_end]
 
 [see_also ns_returnfile ns_conn ns_write ns_headers]
-[keywords "server builtin" writer configuration]
+[keywords "server built-in" writer configuration]
 [manpage_end]
 
 

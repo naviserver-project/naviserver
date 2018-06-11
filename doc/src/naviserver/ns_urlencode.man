@@ -68,7 +68,7 @@ and 2 of https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
 [example_end]
 
 [see_also nsd ns_urldecode ns_charsets ns_urlcharset ns_http]
-[keywords "global builtin" encoding charset url]
+[keywords "global built-in" encoding charset url]
 
 [manpage_end]
 

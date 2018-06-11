@@ -80,7 +80,7 @@ Encoding and decoding with URL and filename safe alphabet:
 [example_end]
  
 [see_also ns_uuencode ns_uudecode]
-[keywords "global builtin" encoding]
+[keywords "global built-in" encoding]
 [manpage_end]
 
 

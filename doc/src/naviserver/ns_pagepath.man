@@ -27,7 +27,7 @@ oss2:nscp 8> ns_pagepath
 
 
 [see_also nsd]
-[keywords "global builtin" NaviServer]
+[keywords "global built-in" NaviServer]
 [manpage_end]
 
 

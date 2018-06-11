@@ -46,7 +46,7 @@ close $wid
 
 
 [see_also nsd]
-[keywords "global builtin" NaviServer socket]
+[keywords "global built-in" NaviServer socket]
 [manpage_end]
 
 

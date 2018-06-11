@@ -103,7 +103,7 @@
 
 
 [see_also ns_conn ns_connchan ns_sockcallback]
-[keywords "server builtin" channels callback]
+[keywords "server built-in" channels callback]
 
 [manpage_end]
 

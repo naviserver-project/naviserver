@@ -43,7 +43,7 @@ Returns 1 on success, 0 on failure.
 
 
 [see_also nsd]
-[keywords "global builtin" ns_info scheduled ns_pause ns_unschedule_proc]
+[keywords "global built-in" ns_info scheduled ns_pause ns_unschedule_proc]
 
 [manpage_end]
 

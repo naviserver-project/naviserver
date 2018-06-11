@@ -23,7 +23,7 @@ no error will be returned on failure.  [term signal] should be an integer, i.e.,
 
 
 [see_also ns_shutdown ns_job]
-[keywords "global builtin" restart]
+[keywords "global built-in" restart]
 
 [manpage_end]
 

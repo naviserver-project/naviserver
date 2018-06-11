@@ -206,6 +206,6 @@ ns_register_proc GET /service {
 
 
 [see_also ns_return ns_internalredirect]
-[keywords "server builtin" return redirect response status configuration]
+[keywords "server built-in" return redirect response status configuration]
 
 [manpage_end]

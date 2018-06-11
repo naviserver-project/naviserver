@@ -126,6 +126,6 @@ Sending data to the connection from a file:
 
 
 [see_also ns_return ns_conn ns_register]
-[keywords "server builtin" "global builtin" return response status charset encoding writer]
+[keywords "server built-in" "global built-in" return response status charset encoding writer]
 
 [manpage_end]

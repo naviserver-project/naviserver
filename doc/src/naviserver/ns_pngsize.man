@@ -28,7 +28,7 @@
 [example_end]
 
 
-[keywords "global builtin" images]
+[keywords "global built-in" images]
 [see_also ns_gifsize ns_jpegsize ns_imgsize ns_imgtype ns_imgmime]
 
 

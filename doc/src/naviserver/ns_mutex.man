@@ -107,7 +107,7 @@ one can destroy the mutex (not strictly necessary).
 
 [example_end]
 
-[keywords "server builtin" mutex thread]
+[keywords "server built-in" mutex thread]
 
 [manpage_end]
 

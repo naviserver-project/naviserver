@@ -28,6 +28,6 @@ Port TcPro is listening
 [list_end]
 
 [see_also nsd]
-[keywords "server builtin" NaviServer]
+[keywords "server built-in" NaviServer]
 [manpage_end]
 
