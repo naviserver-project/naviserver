@@ -196,7 +196,7 @@ Although  you must be root to start NaviServer on port 80,  the server itself mu
 change to a  regular user shortly after initialization.   You either
 need to start the  server as a non-root user (in which case you  will
 not be able to listen  for connections on privileged ports such as port
-80)  or you must include  a [emph -u user] command line flag to which the
+80)  or you must include a [emph {-u user}] command line flag to which the
 server will  setuid(2) after startup.
 
 [para]
