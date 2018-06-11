@@ -47,16 +47,28 @@ can be used when there is no global fast path handler installed.
 [para]
 The argument [arg method] is restricted to GET, POST or HEAD
 
-[call [cmd ns_register_filter] [arg when] [arg method] [arg URL] [arg script] [opt [arg args]]]
+[call [cmd ns_register_filter] \
+	[opt [option -first]] \
+	[opt --] \
+	[arg when] \
+	[arg method] \
+	[arg URL] \
+	[arg script] \
+	[opt [arg args]]]
 
 [term ns_register_filter] registers a Tcl filter script for the specified method/URL combination
-on a virtual server. The script can be called at one or more of three given times:
-pre-authorization, post-authorization before page data has been returned to the user,
-and after the connection has been processed and closed.
+on a virtual server. When [option -first] ist used, it is added to the
+front of the filter list, otherwise to the end.
 
-[para]
-This function will be called at the specified stage of a connection, if the method/URL
-combination for the filter matches the method/URL combination for the connection using glob style matching.
+[para] The [term when] argument specifies, when the filter script is
+called. [term preauth] means pre-authorization, [term postauth] means
+post-authorization, and [term trace] means at the end of the request,
+after the page data has been returned to the user, and the connection
+has been processed and closed.
+
+[para] The filter will be called at the specified stage of a
+connection, if the method/URL combination for the filter matches the
+method/URL combination for the connection using glob style matching.
 
 [para]
 The URL can contain standard string-matching characters. For example, these are valid URLs:
@@ -66,8 +78,6 @@ The URL can contain standard string-matching characters. For example, these are 
    /accounts/*/out
 [example_end]
 
-[para]
-Valid values for the when argument are: preauth, postauth, and trace.
 
 [para]
 Using pre-authorization, the procedure will be called (assuming that the method/URL
@@ -138,7 +148,7 @@ may want to have a shared variable set so that you don't do this.
 
 [call [cmd ns_register_proc] \
 	[opt [option -noinherit]] \
-	[opt [option --]] \
+	[opt --] \
 	[arg method] \
 	[arg URL] \
 	[arg myproc] \
@@ -167,7 +177,11 @@ for file names.  For example, if you want /foo/bar to match /foo/bar.html, you m
    ns_register_proc /foo/bar*
 [example_end]
 
- You can register two procedures for any given method/URL combination by calling [term ns_register_proc] once with the [option -noinherit] flag set and once without it.  Only one of the procedures will be called for any given request, depending on whether the URL was an exact match or not.  For example:
+ You can register two procedures for any given method/URL combination
+ by calling [term ns_register_proc] once with the [option -noinherit]
+ flag set and once without it.  Only one of the procedures will be
+ called for any given request, depending on whether the URL was an
+ exact match or not.  For example:
 
 [example_begin]
    ns_register_proc -noinherit GET /foo/bar Aproc
@@ -245,7 +259,7 @@ should be a Tcl file which might use [cmd ns_return], [cmd ns_write]
 etc. to respond to the request.
 
 [para]
-If this argument [arg file] is omitted, the command  will register standard C-based
+If this argument [arg file] is omitted, the command will register standard C-based
 callback which will resolve URLs into absolute Tcl file and execute it.
 
 [para]
@@ -299,9 +313,9 @@ can be matched and will be called.
 	[opt [arg basepath]]]
 
 These commands are used to perform runtime resolving of the requested
-urls into corresponding files that will be served to the client. They
+URLs into corresponding files that will be served to the client. They
 use [cmd ns_url2file] interface which resolves file for current
-url. [cmd ns_register_fasturl2file] register the default fast url2file
+URL. [cmd ns_register_fasturl2file] register the default fast url2file
 proc for the given [arg URL]. The Tcl [arg script] 
 provided to [cmd ns_register_url2file] 
 is used to return full path to the requested URL.
@@ -314,8 +328,7 @@ is used to return full path to the requested URL.
      [arg method] \
      [arg URL]]
 
-Unregister a Tcl or ADP request handler for the speci-
-fied method/URL combination.
+Unregister a Tcl or ADP request handler for the specified method/URL combination.
 
 This command unregisters any Tcl or C functions previously registered 
 for this method/URL combination and with the same inheritance
@@ -332,7 +345,7 @@ is omitted, the function previously registered without the
 	[opt --] \
 	[arg URL]]
 
-The command is the inverse command to  [cmd ns_register_url2file].
+The command is the inverse command to [cmd ns_register_url2file].
 
 [list_end]
 
@@ -422,7 +435,7 @@ try using [cmd ns_register_filter].
 
 
 [arg_def string [opt file]]
-The optional  argument [arg file] is either an absolute path to a file in the file system,
+The optional argument [arg file] is either an absolute path to a file in the file system,
 or a path relative to the page root directory of the virtual server.
 
 [example_begin]
