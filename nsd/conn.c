@@ -1482,8 +1482,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             /*
              * Handle "isconnected" subcommand here.
              */
-            Tcl_SetObjResult(interp,
-                             Tcl_NewBooleanObj((connPtr != NULL) ? 1 : 0));
+            bool connected = ((connPtr != NULL) ? ((connPtr->flags & NS_CONN_CLOSED) == 0u) : NS_FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connected));
         } else if (unlikely(connPtr == NULL)) {
             /*
              * Other subcommands require connPtr
@@ -2047,7 +2047,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CAacceptedcompressionIdx:
         {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
-            
+
             if ((connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("brotli", 6));
             }
