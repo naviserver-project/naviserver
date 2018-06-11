@@ -55,13 +55,13 @@ static bool ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultP
  *
  *      Associate a URL with a status. Rather than return the
  *      default error page for this status, an internal redirect
- *      will be issued to the url.
+ *      will be issued to the URL.
  *
  * Results:
  *      Status code (always NS_OK).
  *
  * Side effects:
- *      Previous registration is deleted if url is NULL.
+ *      Previous registration is deleted if the URL is NULL.
  *
  *----------------------------------------------------------------------
  */
@@ -111,7 +111,7 @@ ConfigServerRedirects(const char *server)
  *
  *      Associate a URL with a status. Rather than return the
  *      default error page for this status, an internal redirect
- *      will be issued to the url.
+ *      will be issued to the URL.
  *
  * Results:
  *      None.
@@ -205,8 +205,8 @@ Ns_ConnReturnOk(Ns_Conn *conn)
  *
  * Ns_ConnReturnMoved --
  *
- *      Return a 301 Redirection to the client, or 204 No Content if
- *      url is null.
+ *      Return a 301 "Redirection" to the client, or 204 "No Content" if
+ *      URL is null.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -281,8 +281,8 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  *
  * Ns_ConnReturnRedirect --
  *
- *      Return a 302 Redirection to the client, or 204 No Content if
- *      url is null.
+ *      Return a 302 Redirection to the client, or 204 "No Content" if
+ *      URL is null.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -336,7 +336,7 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
  *
  * Ns_ConnReturnBadRequest --
  *
- *      Return an 'invalid request' HTTP status line with an error
+ *      Return an "invalid request" HTTP status line with an error
  *      message.
  *
  * Results:
@@ -377,7 +377,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
  *
  * Ns_ConnReturnUnauthorized --
  *
- *      Return a 401 Unauthorized response, which will prompt the
+ *      Return a 401 "Unauthorized" response, which will prompt the
  *      user for a Basic authentication username/password.
  *
  * Results:
@@ -419,7 +419,7 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
  *
  * Ns_ConnReturnForbidden --
  *
- *      Return a 403 Forbidden response.
+ *      Return a 403 "Forbidden" response.
  *
  * Results:
  *      NS_OK/NS_ERROR.
@@ -452,7 +452,7 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
  *
  * Ns_ConnReturnNotFound --
  *
- *      Return a 404 Not Found response.
+ *      Return a 404 "Not Found" response.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -515,7 +515,7 @@ Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
  *
  * Ns_ConnReturnNotModified --
  *
- *      Return a 304 Not Modified response.
+ *      Return a 304 "Not Modified" response.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -538,7 +538,7 @@ Ns_ConnReturnNotModified(Ns_Conn *conn)
  *
  * Ns_ConnReturnEntityTooLarge --
  *
- *      Return a 413 Request Entity to large response.
+ *      Return a 413 "Request Entity too large" response.
  *
  * Results:
  *      NS_OK/NS_ERROR 
@@ -567,7 +567,7 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
  *
  * Ns_ConnReturnRequestURITooLong --
  *
- *      Return a 414 Request URI to long.
+ *      Return a 414 "Request URI too long".
  *
  * Results:
  *      NS_OK/NS_ERROR 
@@ -598,7 +598,7 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
  *
  * Ns_ConnReturnHeaderLineTooLong --
  *
- *      Return a 431 Request Header Line to long.
+ *      Return a 431 "Request Header Fields Too Large".
  *
  * Results:
  *      NS_OK/NS_ERROR 
@@ -629,7 +629,7 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
  *
  * Ns_ConnReturnNotImplemented --
  *
- *      Return a 501 Not Implemented response.
+ *      Return a 501 "Not Implemented" response.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -661,7 +661,7 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
  *
  * Ns_ConnReturnInternalError --
  *
- *      Return a 500 Internal Error response.
+ *      Return a 500 "Internal Error" response.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -694,7 +694,7 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
  *
  * Ns_ConnReturnUnavailable --
  *
- *      Return a 503 busy/unavailable response.
+ *      Return a 503 "Service Unavailable" response.
  *
  * Results:
  *      NS_OK/NS_ERROR
