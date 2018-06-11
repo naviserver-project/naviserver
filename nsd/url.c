@@ -149,7 +149,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
     if (url[0] == '/' && url[1] == '/') {
 
         /*
-         * There are two slashes, which means a host is specified.
+         * The URL starts witn two slashes, which means a host is specified.
          * Advance url past that and set *phost.
          *
          * http\0//www.foo.com:8000/baz/blah/spoo.html
@@ -245,39 +245,35 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
                 *ptail = end + 1;
             }
         }
-    } else {
-
+    } else if (*url == '/') {
         /*
-         * This URL does not have a protocol or host. If it begins with a
-         * slash, then separate the tail from the path, otherwise it's all
-         * tail.
+         * The URL begins with a single slash. Separate the tail from the
+         * path, otherwise it's all "tail".
          */
 
-        if (*url == '/') {
-            url++;
-            *ppath = url;
+        url++;
+        *ppath = url;
 
-            /*
-             * Find the last slash on the right and everything after that
-             * becomes tail; if there are no slashes then it's all tail
-             * and path is an empty string.
-             */
+        /*
+         * Find the last slash on the right and everything after that
+         * becomes tail; if there are no slashes then it's all tail
+         * and path is an empty string.
+         */
 
-            end = strrchr(url, INTCHAR('/'));
-            if (end == NULL) {
-                *ptail = *ppath;
-                *ppath = (char *)"";
+        end = strrchr(url, INTCHAR('/'));
+        if (end == NULL) {
+            *ptail = *ppath;
+            *ppath = (char *)"";
             } else {
-                *end = '\0';
-                *ptail = end + 1;
-            }
-        } else {
-            /*
-             * Just set the tail, there are no slashes.
-             */
-
-            *ptail = url;
+            *end = '\0';
+            *ptail = end + 1;
         }
+    } else {
+        /*
+         * The URL starts with no slash, just set the "tail".
+         */
+
+        *ptail = url;
     }
     return NS_OK;
 }
