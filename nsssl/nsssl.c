@@ -253,7 +253,7 @@ Ns_ModuleInit(const char *server, const char *module)
         }
     }
 
-#if OPENSSL_VERSION_NUMBER > 0x00908070
+#if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(OPENSSL_NO_EC)
     /*
      * Generate key for eliptic curve cryptography (potentially used
      * for Elliptic Curve Digital Signature Algorithm (ECDSA) and

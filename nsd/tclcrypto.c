@@ -100,10 +100,12 @@ static Tcl_ObjCmdProc CryptoMdGetObjCmd;
 static Tcl_ObjCmdProc CryptoMdNewObjCmd;
 static Tcl_ObjCmdProc CryptoMdStringObjCmd;
 
-# ifndef HAVE_OPENSSL_PRE_1_1
+# ifndef OPENSSL_NO_EC
+#  ifndef HAVE_OPENSSL_PRE_1_1
 static Tcl_ObjCmdProc CryptoEckeyPrivObjCmd;
 static Tcl_ObjCmdProc CryptoEckeyImportObjCmd;
-# endif
+#  endif
+#endif
 
 /*
  * Local variables defined in this file.
@@ -444,9 +446,11 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     } else {
         nid = OBJ_sn2nid(curveName);
     }
+# ifndef OPENSSL_NO_EC
     if (nid == 0) {
         nid = EC_curve_nist2nid(curveName);
     }
+# endif
     if (nid == 0) {
         Ns_TclPrintfResult(interp, "Unknown curve name \"%s\"", curveName);
         result = TCL_ERROR;
@@ -518,6 +522,7 @@ GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
     return result;
 }
 
+# ifndef OPENSSL_NO_EC
 static EC_KEY *
 GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
 {
@@ -548,6 +553,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
     }
     return result;
 }
+# endif
 
 
 
@@ -1262,6 +1268,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
+# ifndef OPENSSL_NO_EC
 /*
  *----------------------------------------------------------------------
  *
@@ -1418,6 +1425,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     return result;
 }
+# endif
 
 # ifndef HAVE_OPENSSL_PRE_1_1
 /*
@@ -1621,7 +1629,9 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         {"add",       CryptoMdAddObjCmd},
         {"get",       CryptoMdGetObjCmd},
         {"free",      CryptoMdFreeObjCmd},
+# ifndef OPENSSL_NO_EC
         {"vapidsign", CryptoMdVapidSignObjCmd},
+# endif
 # ifndef HAVE_OPENSSL_PRE_1_1
         {"hkdf",      CryptoMdHkdfObjCmd},
 # endif
@@ -1636,8 +1646,8 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 
 
-
-# ifndef HAVE_OPENSSL_PRE_1_1
+# ifndef OPENSSL_NO_EC
+#  ifndef HAVE_OPENSSL_PRE_1_1
 /*
  *----------------------------------------------------------------------
  *
@@ -1724,7 +1734,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     return result;
 }
-# endif
+#  endif
 
 
 /*
@@ -1821,7 +1831,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 }
 
 
-# ifndef HAVE_OPENSSL_PRE_1_1
+#  ifndef HAVE_OPENSSL_PRE_1_1
 /*
  *----------------------------------------------------------------------
  *
@@ -1927,7 +1937,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     return result;
 }
-# endif
+#  endif
 
 
 /*
@@ -2005,7 +2015,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     return result;
 }
 
-#ifndef HAVE_OPENSSL_PRE_1_1
+#  ifndef HAVE_OPENSSL_PRE_1_1
 /*
  *----------------------------------------------------------------------
  *
@@ -2215,7 +2225,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     return result;
 }
-#endif
+#  endif
 
 
 /*
@@ -2250,7 +2260,7 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
-
+#endif /* OPENSSL_NO_EC */
 
 
 
@@ -2707,7 +2717,14 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     return result;
 }
 
-
+# ifdef OPENSSL_NO_EC
+int
+NsTclCryptoEckeyObjCmd (ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "OpenSSL version was built without EC support");
+    return TCL_ERROR;
+}
+# endif
 
 #else
 /*
@@ -2748,6 +2765,12 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     return TCL_ERROR;
 }
 
+int
+NsTclCryptoEckeyObjCmd (ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
 #endif
 
 /*
