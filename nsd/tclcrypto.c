@@ -1622,9 +1622,9 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         {"get",       CryptoMdGetObjCmd},
         {"free",      CryptoMdFreeObjCmd},
         {"vapidsign", CryptoMdVapidSignObjCmd},
-#ifndef HAVE_OPENSSL_PRE_1_1
+# ifndef HAVE_OPENSSL_PRE_1_1
         {"hkdf",      CryptoMdHkdfObjCmd},
-#endif
+# endif
         {NULL, NULL}
     };
 
@@ -2409,7 +2409,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Tcl_DString          ivDs, keyDs, aadDs, inputDs;
     Ns_ResultEncoding    encoding = RESULT_ENCODING_HEX;
     EVP_CIPHER_CTX      *ctx;
-    const char          *inputString, *ivString, *aadString, *keyString = NULL;
+    const char          *inputString = NULL, *ivString, *aadString, *keyString = NULL;
     int                  inputLength, keyLength, ivLength, aadLength;
 
     /*
