@@ -1699,8 +1699,24 @@ HttpConnect(
             contentType = Ns_SetIGet(hdrPtr, "Content-Type");
         }
         if (contentType == NULL) {
-            Ns_TclPrintfResult(interp, "header field Content-Type is required when body is provided");
-            goto fail;
+            /*
+             * Previously, we required a content-type when a body is provided,
+             * which was too strong due to the following paragraph in RFC 7231:
+             *
+             *    A sender that generates a message containing a payload body
+             *    SHOULD generate a Content-Type header field in that message
+             *    unless the intended media type of the enclosed
+             *    representation is unknown to the sender.  If a Content-Type
+             *    header field is not present, the recipient MAY either assume
+             *    a media type of "application/octet-stream" ([RFC2046],
+             *    Section 4.5.1) or examine the data to determine its type.
+             */
+
+            if (bodyFileName != NULL) {
+                contentType = Ns_GetMimeType(bodyFileName);
+            } else {
+                contentType = "application/octet-stream";
+            }
         }
         if (bodyFileName != NULL) {
             struct stat bodyStat;
