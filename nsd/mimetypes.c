@@ -91,7 +91,7 @@ static const struct exttype {
     { ".a",       "text/vnd-a"},
     { ".a2l",     "application/a2l"},
     { ".aab",     "application/x-authorware-bin" },
-    { ".aac",     "audio/x-aac"},                            /* wikipedia: aac */
+    { ".aac",     "audio/aac"},                              /* ISO-IEC_JTC1 */
     { ".aal",     "audio/atrac-advanced-lossless"},          /* http://www.iana.org/go/rfc5584 */
     { ".aam",     "application/x-authorware-map" },
     { ".aas",     "application/x-authorware-seg" },
@@ -125,7 +125,7 @@ static const struct exttype {
     { ".arc",     "application/octet-stream" },
     { ".arj",     "application/arj" },
     { ".art",     "image/x-art" },
-    { ".asc",     "application/pgp-signature"},              /* http://www.iana.org/go/rfc3156 */
+    { ".asc",     "audio/asc"},                              /* RFC6295 */
     { ".asf",     "application/vnd.ms-asf"},
     { ".asice",   "application/vnd.etsi.asic-e+zip"},
     { ".asics",   "application/vnd.etsi.asic-s+zip"},
@@ -327,7 +327,7 @@ static const struct exttype {
     { ".fe",      "application/vnd.denovo.fcselayout-link"},
     { ".fg5",     "application/vnd.fujitsu.oasysgp"},
     { ".fif",     "application/fractals" },
-    { ".fits",    "application/fits"},                       /* http://www.iana.org/go/rfc4047 */
+    { ".fits",    "image/fits"},                             /* [RFC4047] */
     { ".fla",     "application/vnd.dtg.local.flash"},
     { ".flac",    "audio/flac" },
     { ".fli",     "video/x-fli" },
@@ -518,14 +518,15 @@ static const struct exttype {
     { ".m4a",     "audio/mp4" },
     { ".m4p",     "audio/mp4" },
     { ".m4s",     "video/iso.segment"},
-    { ".m4v",     "video/x-m4v"},                          /* wikipedia: m4v */
-    { ".ma",      "application/mathematica"},              /* iana - mathematica */
+    { ".m4v",     "video/x-m4v"},                            /* wikipedia: m4v */
+    { ".ma",      "application/mathematica"},                /* iana - mathematica */
     { ".mads",    "application/mads+xml"},                   /* http://www.iana.org/go/rfc6207 */
     { ".mag",     "application/vnd.ecowin.chart"},
     { ".man",     "application/x-troff-man" },
     { ".map",     "application/x-navimap" },
     { ".mar",     "text/plain" },
-    { ".mathml",  "application/mathml+xml"},               /* w3c math home */
+    { ".markdown", "text/markdown"},                         /* [RFC7763] */
+    { ".mathml",  "application/mathml+xml"},                 /* w3c math home */
     { ".mbd",     "application/mbedlet" },
     { ".mbk",     "application/vnd.mobius.mbk"},
     { ".mbox",    "application/mbox"},                       /* http://www.iana.org/go/rfc4155 */
@@ -648,7 +649,7 @@ static const struct exttype {
     { ".oas",     "application/vnd.fujitsu.oasys"},
     { ".obg",     "application/vnd.openblox.game-binary"},
     { ".obgx",    "application/vnd.openblox.game+xml"},
-    { ".oda",     "application/oda" },
+    { ".oda",     "application/ODA" },                      /* RFC2045, RFC2046 */
     { ".odb",     "application/vnd.oasis.opendocument.database"},
     { ".odc",     "application/vnd.oasis.opendocument.chart"},
     { ".odf",     "application/vnd.oasis.opendocument.formula"},
@@ -674,7 +675,7 @@ static const struct exttype {
     { ".ors",     "application/ocsp-response"},              /* http://www.iana.org/go/rfc6960 */
     { ".osf",     "application/vnd.yamaha.openscoreformat"},
     { ".otc",     "application/vnd.oasis.opendocument.chart-template"},
-    { ".otf",     "application/vnd.oasis.opendocument.formula-template"},
+    { ".otf",     "font/otf"},                                 /* RFC8081 */
     { ".otg",     "application/vnd.oasis.opendocument.graphics-template"},
     { ".oth",     "application/vnd.oasis.opendocument.text-web"},
     { ".oti",     "application/vnd.oasis.opendocument.image-template"},
@@ -832,7 +833,6 @@ static const struct exttype {
     { ".rss",     "application/rss+xml" },
     { ".rt",      "text/richtext" },
     { ".rtf",     "application/rtf"},
-    { ".rtx",     "text/richtext" },
     { ".rv",      "video/vnd.rn-realvideo" },
     { ".s",       "application/vnd.sealed.3df"},
     { ".s3m",     "audio/s3m" },
@@ -868,7 +868,7 @@ static const struct exttype {
     { ".sfs",     "application/vnd.spotfire.sfs"},
     { ".sgif",    "image/vnd.sealedmedia.softseal-gif"},
     { ".sgm",     "text/sgml" },
-    { ".sgml",    "text/sgml" },
+    { ".sgml",    "text/SGML" },                           /* [RFC1874] */
     { ".sh",      "application/x-sh" },
     { ".shar",    "application/x-shar" },
     { ".shf",     "application/shf+xml"},                  /* rfc 4194 */
@@ -954,7 +954,6 @@ static const struct exttype {
     { ".sxm",     "application/vnd.sun.xml.math" },
     { ".sxw",     "application/vnd.sun.xml.writer" },
     { ".t",       "application/x-troff" },
-    { ".t38",     "image/t38"},                              /* http://www.iana.org/go/rfc3362 */
     { ".taglet",  "application/vnd.mynfc"},
     { ".talk",    "text/x-speech" },
     { ".tao",     "application/vnd.tao.intent-module-archive"},
@@ -1091,15 +1090,15 @@ static const struct exttype {
     { ".wiz",     "application/msword" },
     { ".wk1",     "application/x-123" },
     { ".wks",     "application/vnd.ms-works" },
-    { ".wlnk",    "application/link-format"},                /* http://www.iana.org/go/rfc6690 */
+    { ".wlnk",    "application/link-format"},              /* http://www.iana.org/go/rfc6690 */
     { ".wma",     "audio/x-ms-wma" },
     { ".wmc",     "application/vnd.wmc"},
-    { ".wmf",     "application/x-msmetafile" },
+    { ".wmf",     "image/wmf"},                            /* [RFC7903] */
     { ".wml",     "text/vnd.wap-wml"},
     { ".wmlc",    "application/vnd-wap-wmlc"},
     { ".wmls",    "text/vnd.wap.wmlscript"},
     { ".wmlsc",   "application/vnd.wap.wmlscript" },
-    { ".woff",    "application/x-font-woff"},              /* wikipedia: web open font format */
+    { ".woff",    "font/woff"},                            /* [RFC8081] */
     { ".word",    "application/msword" },
     { ".wp",      "application/wordperfect" },
     { ".wp5",     "application/wordperfect" },
