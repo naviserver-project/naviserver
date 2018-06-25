@@ -110,7 +110,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
             set ts0 [clock clicks -milliseconds]
             set r [ns_cache_keys $cache_name {*}$args]
             set span [expr {[clock clicks -milliseconds] - $ts0}]
-            if {$span > 200} {
+            if {$span > 100} {
                 ad_log notice "!!!! long ns_cache_names $span ms, ns_cache names $cache_name $args"
             }
             return $r
@@ -134,7 +134,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
             #ns_log notice "ns_cache $subcmd $cache_name"
             set rc [catch {uplevel ns_cache_$subcmd $cache_name $args} result]
             set span [expr {[clock clicks -milliseconds] - $ts0}]
-            if {$span > 200} {
+            if {$span > 100} {
                 ad_log notice "!!!! long ns_cache $subcmd $span ms, ns_cache $subcmd $cache_name $args"
             }
             #if {$rc != 0} {ns_log notice "EVAL returned code=$rc result='$result'"}
@@ -176,7 +176,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
                 set ts0 [clock clicks -milliseconds]
                 set r [ns_cache_keys $cache_name {*}$args]
                 set span [expr {[clock clicks -milliseconds] - $ts0}]
-                if {$span > 200} {
+                if {$span > 100} {
                     ns_log notice "!!!! long ns_cache $cmd $span ms, ns_cache $cmd $cache_name $args"
                 }
                 return $r
@@ -213,7 +213,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
                 #ns_log notice "ns_cache $cmd $cache_name"
                 set rc [catch {uplevel ns_cache_$cmd $cache_name $args} result]
                 set span [expr {[clock clicks -milliseconds] - $ts0}]
-                if {$span > 200} {
+                if {$span > 100} {
                     ns_log notice "!!!! long ns_cache $cmd $span ms, ns_cache $cmd $cache_name $args"
                 }
                 #if {$rc != 0} {ns_log notice "EVAL returned code=$rc result='$result'"}
