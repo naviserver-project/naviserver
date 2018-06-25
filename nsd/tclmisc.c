@@ -2031,6 +2031,71 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 #endif
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclHashObjCmd --
+ *
+ *      Produce a numeric hash value from a given string.  This function uses
+ *      the Tcl built-in hash function which is commented in Tcl as follows:
+ *
+ *          I tried a zillion different hash functions and asked many other
+ *          people for advice. Many people had their own favorite functions,
+ *          all different, but no-one had much idea why they were good ones. I
+ *          chose the one below (multiply by 9 and add new character) because
+ *          of the following reasons:
+ *
+ *          1. Multiplying by 10 is perfect for keys that are decimal strings, and
+ *             multiplying by 9 is just about as good.
+ *          2. Times-9 is (shift-left-3) plus (old). This means that each
+ *             character's bits hang around in the low-order bits of the hash value
+ *             for ever, plus they spread fairly rapidly up to the high-order bits
+ *             to fill out the hash value. This seems works well both for decimal
+ *             and non-decimal strings, but isn't strong against maliciously-chosen
+ *             keys.
+ *
+ *          Note that this function is very weak against malicious strings;
+ *          it's very easy to generate multiple keys that have the same
+ *          hashcode. On the other hand, that hardly ever actually occurs and
+ *          this function *is* very cheap, even by comparison with
+ *          industry-standard hashes like FNV.
+ *
+ * Results:
+ *	Numeric hash value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    unsigned int hashValue;
+    char        *inputString;
+
+    Ns_ObjvSpec  args[] = {
+        {"string", Ns_ObjvString,  &inputString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        char c;
+
+        if ((hashValue = UCHAR(*inputString)) != 0) {
+            while ((c = *++inputString) != 0) {
+                hashValue += (hashValue << 3) + UCHAR(c);
+            }
+        }
+        Tcl_SetObjResult(interp, Tcl_NewLongObj(hashValue));
+    }
+    return result;
+
+}
 
 
 /*

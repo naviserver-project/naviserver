@@ -1164,6 +1164,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclGifSizeObjCmd,
     NsTclGmTimeObjCmd,
     NsTclGuessTypeObjCmd,
+    NsTclHashObjCmd,
     NsTclHashPathObjCmd,
     NsTclHeadersObjCmd,
     NsTclHrefsObjCmd,
