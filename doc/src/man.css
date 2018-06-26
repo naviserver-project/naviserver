@@ -150,3 +150,9 @@ span.logo {
     background-repeat: no-repeat;
     padding-left: 17px;  /* width of the image plus a little extra padding */
 }
+
+pre.doctools_example {
+    background-color: #eeeeee;
+    padding: 10px;
+    width: 100%;
+}

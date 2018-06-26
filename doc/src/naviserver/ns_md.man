@@ -88,7 +88,7 @@ shake128 shake256 sm3 whirlpool".  The default value is "sha256"
 
 [example_end]
 
-[see_also nsd ns_hmac ns_crypt ns_md5 ns_rand ns_sha1 ns_sha]
+[see_also nsd ns_hmac ns_crypt ns_crypto ns_md5 ns_rand ns_sha1 ns_sha]
 [keywords encoding crypt MD nsf]
 
 [manpage_end]
