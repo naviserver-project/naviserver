@@ -33,7 +33,7 @@ doesn't represent a currently scheduled ID.
 [section EXAMPLES]
 
 [example_begin]
-   % set id [lb][lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb][rb]
+   % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
    123
 [example_end]
 
