@@ -18,17 +18,17 @@ facility.
 [list_begin definitions]
 
 
-[call [cmd nsv_array] [arg get] [arg array] [opt [arg pattern]]]
+[call [cmd "nsv_array get"] [arg array] [opt [arg pattern]]]
 
-[call [cmd nsv_array] [arg set] [arg array] [arg value-list]]
+[call [cmd "nsv_array set"] [arg array] [arg value-list]]
 
-[call [cmd nsv_array] [arg reset] [arg array] [arg value-list]]
+[call [cmd "nsv_array reset"] [arg array] [arg value-list]]
 
-[call [cmd nsv_array] [arg exists] [arg array]]
+[call [cmd "nsv_array exists"] [arg array]]
 
-[call [cmd nsv_array] [arg size] [arg array]]
+[call [cmd "nsv_array size"] [arg array]]
 
-[call [cmd nsv_array] [arg names] [arg array] [opt [arg pattern]]]
+[call [cmd "nsv_array names"] [arg array] [opt [arg pattern]]]
 
 Commands for the most part mirror the corresponding Tcl command for
 ordinary variables.
@@ -384,6 +384,10 @@ eliminating the need for the explicit lock.
 
 [section {Configuration}]
 
+All accesses to shared variables are protected by a mutex. Attention
+should be taken for array operations which have to iterate over
+many shared variables to return the result, since this will lead
+to reduced scalability due too long lasting locks.
 
 The nsv system uses a common multithreading technique to reduce the
 potential for lock contention which is to split the locks to achieve
@@ -408,7 +412,7 @@ many lock attempts which did not succeeded immediately, try increasing
 nsvbuckets.
 
 [see_also nsd ns_cache ns_urlspace]
-[keywords "server built-in" nsv shared variables]
+[keywords "server built-in" nsv shared variables mutex]
 
 [manpage_end]
 
