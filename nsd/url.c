@@ -264,7 +264,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
         if (end == NULL) {
             *ptail = *ppath;
             *ppath = (char *)"";
-            } else {
+        } else {
             *end = '\0';
             *ptail = end + 1;
         }
