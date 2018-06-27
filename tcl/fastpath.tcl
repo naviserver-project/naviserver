@@ -199,7 +199,7 @@ proc ns_gzipfile {source target} {
     }
 }
 
-proc ns_brotilifile {source target} {
+proc ns_brotlifile {source target} {
     set brotliCmd [ns_config ns/fastpath brotli_cmd]
     if {$brotliCmd eq ""} {error "no ns/fastpath brotli_cmd configured"}
     exec {*}$brotliCmd < $source > $target
