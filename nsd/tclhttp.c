@@ -1439,7 +1439,7 @@ Ns_HttpParseHost(
     if (!ip_literal) {
         char *slash = strchr(hostString, INTCHAR('/')),
                 *colon = strchr(hostString, INTCHAR(':'));
-        if (slash != NULL && colon != NULL && (slash < colon)) {
+        if ((slash != NULL) && (colon != NULL) && (slash < colon)) {
             /*
              * Found a colon after the first slash, ignore this colon.
              */
