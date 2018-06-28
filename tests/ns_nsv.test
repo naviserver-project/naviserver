@@ -5,7 +5,7 @@ namespace import -force ::tcltest::*
 
 test ns_nsv-1.1 {basic syntax nsv_set} -body {
     nsv_set 
-} -returnCodes error -result {wrong # args: should be "nsv_set array key ?value?"}
+} -returnCodes error -result {wrong # args: should be "nsv_set ?-reset? ?--? array key ?value?"}
 
 test ns_nsv-1.2 {basic syntax nsv_get} -body {
     nsv_get
@@ -76,6 +76,41 @@ test ns_nsv-2.5 {nsv_set big value} -body {
 } -cleanup {
     nsv_unset -nocomplain a
 } -result [string repeat "x" [expr {1024*1024}]]
+
+
+test ns_nsv-2.6 {"nsv_set -reset" pre-existing value} -body {
+    nsv_set a k 123                ;# create the array with a value
+    set r [nsv_set -reset a k 456] ;# reset a(k) to value 456
+    list $r [nsv_exists a k]       ;# check if a(k) exists
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {123 1}
+
+test ns_nsv-2.7 {"nsv_set -reset" no pre-existing value} -body {
+    nsv_set -reset a k 123       ;# create the array with a value but reset it
+    list $r [nsv_exists a k]     ;# check if a(k) exists    
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {{} 1}
+
+test ns_nsv-2.9 {"nsv_set -reset" pre-existing value, no new value} -body {
+    nsv_set a k 123             ;# create the array with a value
+    set r [nsv_set -reset a k]  ;# reset a(k) and unset a(k)
+    list $r [nsv_exists a k]    ;# check if a(k) exists
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {123 0}
+
+test ns_nsv-2.10 {"nsv_set -reset" no pre-existing value} -body {
+    nsv_set a k0 a              ;# create the array with a value
+    set r [nsv_set -reset a k]  ;# reset a(k) and unset a(k)
+    list $r [nsv_exists a k]    ;# check if a(k) exists
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {{} 0}
+
+
+
 
 
 test ns_nsv-3.1 {nsv_unset too many args} -body {

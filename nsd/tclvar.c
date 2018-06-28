@@ -234,6 +234,21 @@ NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+static void
+SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
+{
+    const Tcl_HashEntry *hPtr;
+    /*
+     * get old value
+     */
+    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
+    if (likely(hPtr != NULL)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("", 0));
+    }
+}
+
 
 /*
  *-----------------------------------------------------------------------------
@@ -255,45 +270,80 @@ int
 NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                   int objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int      result = TCL_OK, doReset = 0;
+    Array   *arrayPtr;
+    Tcl_Obj *arrayObj, *valueObj = NULL;
+    char    *key;
 
-    if (unlikely(objc != 3 && objc != 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key ?value?");
+    Ns_ObjvSpec lopts[] = {
+        {"-reset",  Ns_ObjvBool,   &doReset, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak,  NULL,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"array",  Ns_ObjvObj,    &arrayObj, NULL},
+        {"key",    Ns_ObjvString, &key,      NULL},
+        {"?value",  Ns_ObjvObj,   &valueObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
-        Array      *arrayPtr;
-        const char *key = Tcl_GetString(objv[2]);
+    } else if (valueObj != NULL) {
+        int         len;
+        const char *value = Tcl_GetStringFromObj(valueObj, &len);
 
-        if (likely(objc == 4)) {
-            int         len;
-            const char *value = Tcl_GetStringFromObj(objv[3], &len);
+        arrayPtr = LockArrayObj(interp, arrayObj, NS_TRUE);
+        assert(arrayPtr != NULL);
 
-            arrayPtr = LockArrayObj(interp, objv[1], NS_TRUE);
-            assert(arrayPtr != NULL);
-            SetVar(arrayPtr, key, value, (size_t)len);
-            UnlockArray(arrayPtr);
-
+        /*
+         * When "doReset" is true, return the old value.
+         */
+        SetResultToOldValue(interp, arrayPtr, key);
+        SetVar(arrayPtr, key, value, (size_t)len);
+        UnlockArray(arrayPtr);
+        /*
+         * On "doReset", we have set the result already.
+         */
+        if (doReset != (int)NS_TRUE) {
             Tcl_SetObjResult(interp, objv[3]);
-        } else {
-
-            arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE);
-            if (unlikely(arrayPtr == NULL)) {
-                result = TCL_ERROR;
-            } else {
-                const Tcl_HashEntry *hPtr;
-
-                hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
-                if (likely(hPtr != NULL)) {
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
-                } else {
-                    Ns_TclPrintfResult(interp, "no such key: %s", key);
-                    result = TCL_ERROR;
-                }
-                UnlockArray(arrayPtr);
-            }
         }
+
+    } else if (doReset == (int)NS_TRUE) {
+
+        /*
+         * Get the old value and unset.
+         */
+
+        arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE);
+        if (unlikely(arrayPtr == NULL)) {
+            result = TCL_ERROR;
+
+        } else {
+            SetResultToOldValue(interp, arrayPtr, key);
+            (void) Unset(arrayPtr, key);
+            UnlockArray(arrayPtr);
+        }
+
+    } else {
+        const Tcl_HashEntry *hPtr;
+
+        /*
+         * This is the undocumented but used (e.g. in nstrace.tcl) variant of
+         * "ns_set" behaving like "nsv_get".
+         */
+        arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE);
+        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
+        if (likely(hPtr != NULL)) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+        } else {
+            Ns_TclPrintfResult(interp, "no such key: %s", key);
+            result = TCL_ERROR;
+        }
+        UnlockArray(arrayPtr);
     }
+
     return result;
 }
 
