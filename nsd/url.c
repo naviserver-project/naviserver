@@ -421,7 +421,7 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             Tcl_SetObjResult(interp, resultObj);
 
         } else {
-            Ns_TclPrintfResult(interp, "Could not parse url \"%s\"", url);
+            Ns_TclPrintfResult(interp, "Could not parse URL \"%s\"", url);
             result = TCL_ERROR;
         }
         ns_free(url);
@@ -467,7 +467,7 @@ NsTclAbsoluteUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         if (Ns_AbsoluteUrl(&ds, urlString, baseString) == NS_OK) {
             Tcl_DStringResult(interp, &ds);
         } else {
-            Ns_TclPrintfResult(interp, "Could not parse base url into protocol, host and path");
+            Ns_TclPrintfResult(interp, "Could not parse base URL into protocol, host and path");
             Tcl_DStringFree(&ds);
             result = TCL_ERROR;
         }

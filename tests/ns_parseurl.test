@@ -104,7 +104,7 @@ test ns_absoluteurl-2.3c {replace the protocol} -body {
 
 test ns_absoluteurl-3.0 {incomplete base URL} -body {
     ns_absoluteurl //google.com/test.html //openacs.org/www/t.html
-} -returnCodes error -result {Could not parse base url into protocol, host and path}
+} -returnCodes error -result {Could not parse base URL into protocol, host and path}
 
 test ns_absoluteurl-3.1a {base URL containing just protocol and host} -body {
     ns_absoluteurl //google.com/test.html http://openacs.org/
