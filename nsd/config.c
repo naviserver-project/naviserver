@@ -838,8 +838,10 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
 {
     int         result = TCL_OK;
     char       *sectionName = NULL;
+    Tcl_Obj    *blockObj = NULL;
     Ns_ObjvSpec args[] = {
-        {"sectionname", Ns_ObjvString,  &sectionName, NULL},
+        {"sectionname", Ns_ObjvString, &sectionName, NULL},
+        {"?block",      Ns_ObjvObj,    &blockObj, NULL},        
         {NULL, NULL, NULL, NULL}
     };
 
@@ -850,6 +852,10 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
         Ns_Set  **set = (Ns_Set **) clientData;
         
         *set = GetSection(sectionName, NS_TRUE);
+        
+        if (blockObj != NULL) {
+            Tcl_GlobalEvalObj(interp, blockObj);
+        }
     }
 
     return result;
