@@ -66,7 +66,7 @@ static int HttpConnect(
     const char *sni_hostname,
     bool verify,
     bool keep_host_header,
-    Ns_Time *timeoutPtr,
+    const Ns_Time *timeoutPtr,
     Ns_HttpTask **httpPtrPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(14);
 
@@ -1607,7 +1607,7 @@ HttpConnect(
     const char *sni_hostname,
     bool verify,
     bool keep_host_header,
-    Ns_Time *timeoutPtr,
+    const Ns_Time *timeoutPtr,
     Ns_HttpTask **httpPtrPtr
 ) {
     NS_SOCKET      sock = NS_INVALID_SOCKET;
