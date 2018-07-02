@@ -194,6 +194,11 @@ MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 #  define getpid()                    (pid_t)GetCurrentProcessId()
 #  define ftruncate(f,s)              _chsize((f),(s))
 
+#  if _MSC_VER > 1600
+#   define HAVE_INTPTR_T
+#   define HAVE_UINTPTR_T
+#  endif
+
 # else
 /*
  * MinGW
