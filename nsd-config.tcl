@@ -1,33 +1,15 @@
+########################################################################
+# Sample config file for NaviServer
+########################################################################
+
 #
-# -- Sample config file for NaviServer --
-#
-# Set the IP-address and port, on which the server listens. Since we
-# want this script to run in IPv4 and IPv6 environments (and in IPv6
-# environments, where IPv6 is deactivated) independent of the OS, we
-# probe the interfaces here before we set the final IP address.
+# Set the IP-address and port, on which the server listens:
 #
 set port 8080
-set address "0.0.0.0"
-
-if {0 && [ns_info ipv6]} {
-    #
-    # The version of NaviServer supports IPv6. Probe if we can reverse
-    # lookup the loopback interface and bind to the IPv6 loopback
-    # address with the port specified above.
-    #
-    if {
-	![catch {ns_hostbyaddr ::1}]
-	&& ![catch {close [ns_socklisten ::1 $port]}]
-    } {
-	#
-	# Yes we can. So use the IPv6 any address
-	#
-	set address ::
-    }
-}
+set address "0.0.0.0"  ;# one might use as well for IPv6: set address ::
 
 #
-# Get "home" directory from the currently executing binary.
+# Get the "home" directory from the currently executing binary.
 # We could do alternatively:
 #    set home /usr/local/ns
 #
