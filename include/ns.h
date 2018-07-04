@@ -1052,7 +1052,6 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
  */
 
 NS_EXTERN Ns_Time *      Ns_ConnAcceptTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
-NS_EXTERN const char *   Ns_ConnAddr(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN Ns_Set *       Ns_ConnAuth(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN const char *   Ns_ConnAuthPasswd(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *   Ns_ConnAuthUser(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
@@ -1062,6 +1061,8 @@ NS_EXTERN const char *   Ns_ConnContentFile(const Ns_Conn *conn) NS_GNUC_NONNULL
 NS_EXTERN size_t         Ns_ConnContentLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN size_t         Ns_ConnContentSent(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN size_t         Ns_ConnContentSize(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnCurrentAddr(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN unsigned short Ns_ConnCurrentPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN Ns_Time *      Ns_ConnDequeueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *   Ns_ConnDriverName(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN Ns_Time *      Ns_ConnFilterTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;

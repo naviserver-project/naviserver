@@ -462,7 +462,7 @@ Ns_ConnPeerAddr(const Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnAddr --
+ * Ns_ConnCurrentAddr --
  *
  *      Get the local IP address of the current connection
  *
@@ -475,7 +475,7 @@ Ns_ConnPeerAddr(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 const char *
-Ns_ConnAddr(const Ns_Conn *conn)
+Ns_ConnCurrentAddr(const Ns_Conn *conn)
 {
     const char *result;
     const Conn *connPtr;
@@ -487,6 +487,7 @@ Ns_ConnAddr(const Ns_Conn *conn)
         struct NS_SOCKADDR_STORAGE sa;
         socklen_t len = (socklen_t)sizeof(sa);
         int retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
+
         if (retVal == -1) {
             result = NULL;
         } else {
@@ -498,6 +499,46 @@ Ns_ConnAddr(const Ns_Conn *conn)
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnCurrentPort --
+ *
+ *      Get the local port of the current connection
+ *
+ * Results:
+ *      port or 0 when operation fails
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned short
+Ns_ConnCurrentPort(const Ns_Conn *conn)
+{
+    unsigned short result;
+    const Conn    *connPtr;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    connPtr = (Conn *)conn;
+    if (connPtr->sockPtr != NULL) {
+        struct NS_SOCKADDR_STORAGE sa;
+        socklen_t len = (socklen_t)sizeof(sa);
+        int retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
+
+        if (retVal == -1) {
+            result = 0u;
+        } else {
+            result = Ns_SockaddrGetPort((struct sockaddr *)&sa);
+        }
+    } else {
+        result = 0u;
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1419,9 +1460,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     const char          *setName;
 
     static const char *const opts[] = {
-        "acceptedcompression", "addr", "auth", "authpassword", "authuser",
+        "acceptedcompression", "auth", "authpassword", "authuser",
         "channel", "clientdata", "close", "compress", "content",
         "contentfile", "contentlength", "contentsentlength", "copy",
+        "currentaddr", "currentport",
         "driver",
         "encoding",
         "fileheaders", "filelength", "fileoffset", "files", "flags", "form",
@@ -1442,9 +1484,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         NULL
     };
     enum ISubCmdIdx {
-        CAacceptedcompressionIdx, CAddrIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
+        CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
         CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
         CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
+        CCurrentAddrIdx, CCurrentPortIdx,
         CDriverIdx,
         CEncodingIdx,
         CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx,
@@ -1511,14 +1554,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
          */
         break;
 
-    case CAddrIdx:
-        {
-            const char *addr = Ns_ConnAddr(conn);
-
-            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : ""), -1));
-        }
-        break;
-
     case CKeepAliveIdx:
         if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2],
                                           &connPtr->keep) != TCL_OK) {
@@ -1568,6 +1603,23 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_Free((char *) elements);
         }
         break;
+
+    case CCurrentAddrIdx:
+        {
+            const char *addr = Ns_ConnCurrentAddr(conn);
+
+            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : ""), -1));
+        }
+        break;
+
+    case CCurrentPortIdx:
+        {
+            unsigned short port = Ns_ConnCurrentPort(conn);
+
+            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)port));
+        }
+        break;
+
 
     case CAuthIdx:
         if ((itPtr->nsconn.flags & CONN_TCLAUTH) != 0u) {
