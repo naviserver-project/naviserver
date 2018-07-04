@@ -545,21 +545,21 @@ ns_section "ns/db/drivers" {
     } else {
 	ns_section "ns/db/driver/postgres"
 	# Set this parameter, when "psql" is not on your path (OpenACS specific)
-	# ns_param	pgbin	"/usr/local/pg950/bin/"
+	# ns_param	pgbin	"/usr/local/pg960/bin/"
     }
 }
 
-# Database Pools: This is how NaviServer  ``talks'' to the RDBMS. You need
-# three for OpenACS: main, log, subquery. Make sure to replace ``yourdb''
-# and ``yourpassword'' with the actual values for your db name and the
-# password for it, if needed.
+# Database Pools: This is how NaviServer "talks" to the RDBMS. You
+# need three for OpenACS, named here pool1, pool2 and pool3. Most
+# queries use to first pool, nested queries (i.e. in a db_foreach,
+# which is actually not recommended) use pool2 and so on. Make sure to
+# set the "db_*" the variables with actual values on top of this file.
 #
 # NaviServer can have different pools connecting to different databases
 # and even different database servers.  See
-# http://openacs.org/doc/tutorial-second-database
-# An example 'other db' configuration is included (and commented out) using other1_db_name
-# set other1_db_name "yourDBname"
-
+#
+#     http://openacs.org/doc/tutorial-second-database
+#
 ns_section ns/server/${server}/db {
     ns_param	pools              pool1,pool2,pool3
     ns_param	defaultpool        pool1
@@ -574,7 +574,7 @@ ns_section ns/db/pool/pool1 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
     ns_param	connections        15
-    ns_param    LogMinDuration     0.01   ;# when sql logging is on, log only statements above this duration
+    ns_param    LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -593,7 +593,7 @@ ns_section ns/db/pool/pool2 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
     ns_param	connections        5
-    ns_param    LogMinDuration     0.01   ;# when sql logging is on, log only statements above this duration
+    ns_param    LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -612,7 +612,7 @@ ns_section ns/db/pool/pool3 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
     ns_param	connections        5
-    # ns_param  LogMinDuration     0.00   ;# when sql logging is on, log only statements above this duration
+    # ns_param  LogMinDuration     0.00   ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
