@@ -234,20 +234,26 @@ NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
-static void
+static bool
 SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
 {
     const Tcl_HashEntry *hPtr;
+    bool                 result;
+
     /*
-     * get old value
+     * Get old value
      */
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
     if (likely(hPtr != NULL)) {
+        result = NS_TRUE;
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
     } else {
+        result = NS_FALSE;
         Tcl_SetObjResult(interp, Tcl_NewStringObj("", 0));
     }
+    return result;
 }
+
 
 
 /*
@@ -270,14 +276,15 @@ int
 NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                   int objc, Tcl_Obj *const* objv)
 {
-    int      result = TCL_OK, doReset = 0;
+    int      result = TCL_OK, doReset = 0, doDefault = 0;
     Array   *arrayPtr;
     Tcl_Obj *arrayObj, *valueObj = NULL;
     char    *key;
 
     Ns_ObjvSpec lopts[] = {
-        {"-reset",  Ns_ObjvBool,   &doReset, INT2PTR(NS_TRUE)},
-        {"--",      Ns_ObjvBreak,  NULL,     NULL},
+        {"-default", Ns_ObjvBool,   &doDefault, INT2PTR(NS_TRUE)},
+        {"-reset",   Ns_ObjvBool,   &doReset,   INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -290,24 +297,56 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
+    } else if ((doDefault != 0) && (doReset != 0)) {
+        Ns_TclPrintfResult(interp, "only '-default' or '-reset' can be used");
+        result = TCL_ERROR;
+
     } else if (valueObj != NULL) {
         int         len;
+        bool        setArrayValue = NS_TRUE, returnNewValue = NS_TRUE;
         const char *value = Tcl_GetStringFromObj(valueObj, &len);
 
         arrayPtr = LockArrayObj(interp, arrayObj, NS_TRUE);
         assert(arrayPtr != NULL);
 
         /*
-         * When "doReset" is true, return the old value.
+         * Handle special flags.
          */
-        SetResultToOldValue(interp, arrayPtr, key);
-        SetVar(arrayPtr, key, value, (size_t)len);
-        UnlockArray(arrayPtr);
+        if (unlikely(doReset || doDefault)) {
+            bool didExist = SetResultToOldValue(interp, arrayPtr, key);
+
+            if (doReset) {
+                /*
+                 * When "-reset" was given, we return always the old value.
+                 */
+                returnNewValue = NS_FALSE;
+            }
+            if (doDefault) {
+                /*
+                 * When "-default" was given, we return the old value, when
+                 * the array element existed already.
+                 */
+                if (didExist) {
+                    returnNewValue = NS_FALSE;
+                } else {
+                    /*
+                     * It is a new array element, so set it.
+                     */
+                    setArrayValue = NS_TRUE;
+                }
+            }
+        }
         /*
-         * On "doReset", we have set the result already.
+         * Set the array to the provided value.
          */
-        if (doReset != (int)NS_TRUE) {
-            Tcl_SetObjResult(interp, objv[3]);
+        if (setArrayValue) {
+            SetVar(arrayPtr, key, value, (size_t)len);
+        }
+        UnlockArray(arrayPtr);
+
+        if (returnNewValue) {
+            //fprintf(stderr, "Setting new value <%s>\n", Tcl_GetString(valueObj));
+            Tcl_SetObjResult(interp, valueObj);
         }
 
     } else if (doReset == (int)NS_TRUE) {
@@ -325,6 +364,10 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             (void) Unset(arrayPtr, key);
             UnlockArray(arrayPtr);
         }
+
+    } else if (doDefault == (int)NS_TRUE) {
+        Ns_TclPrintfResult(interp, "can't use '-default' without providing a value for key %s", key);
+        result = TCL_ERROR;
 
     } else {
         const Tcl_HashEntry *hPtr;
