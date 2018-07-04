@@ -495,7 +495,7 @@ HttpWaitObjCmd(
             }
         }
 
-        Ns_HttpCheckSpool(httpPtr);
+        //Ns_HttpCheckSpool(httpPtr);
 
         /*
          * Do the task wait operation
@@ -911,7 +911,6 @@ HttpQueueCmd(
                 }
                 Ns_MasterUnlock();
             }
-
             if (Ns_TaskEnqueue(httpPtr->task, session_queue) != NS_OK) {
                 HttpClose(httpPtr);
                 Ns_TclPrintfResult(interp, "could not queue HTTP task");
@@ -922,6 +921,7 @@ HttpQueueCmd(
                 uint32_t       i;
                 int            len;
                 char           buf[TCL_INTEGER_SPACE + 4];
+
                 /*
                  * Create a unique ID for this interp
                  */
@@ -1734,6 +1734,7 @@ HttpConnect(
             }
         }
     }
+
     /*
      * All error checking from parameter processing is done, allocate the
      * Ns_HttpTask structure.
@@ -1793,6 +1794,7 @@ HttpConnect(
             httpPtr->ssl = ssl;
         }
     } else {
+
         result = EnsureWritable(interp, httpPtr, url);
     }
 
@@ -2266,6 +2268,7 @@ HttpProc(
     NS_NONNULL_ASSERT(arg != NULL);
 
     httpPtr = arg;
+    Ns_Log(Ns_LogTaskDebug, "HttpProc operation %.2x", why);
 
     switch (why) {
     case NS_SOCK_INIT:
@@ -2331,8 +2334,12 @@ HttpProc(
         break;
 
     case NS_SOCK_READ:
-        n = HttpTaskRecv(httpPtr, buf, sizeof(buf));
+        if (httpPtr->sent == 0) {
+            n = -1;
+        } else {
 
+            n = HttpTaskRecv(httpPtr, buf, sizeof(buf));
+        }
         if (likely(n > 0)) {
 
             /*
@@ -2362,7 +2369,7 @@ HttpProc(
             taskDone = NS_FALSE;
         }
         if (n < 0) {
-            Ns_Log(Warning, "client HTTP request: receive failed, error: %s\n", strerror(errno));
+            Ns_Log(Warning, "client HTTP request: receive failed, error: %s", strerror(errno));
             httpPtr->error = "recv failed";
         }
         break;
