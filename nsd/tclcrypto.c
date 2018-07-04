@@ -76,8 +76,10 @@ static Tcl_Obj *EncodedObj(
 static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+# ifndef OPENSSL_NO_EC
 static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+#endif
 
 static int GetCipher(
   Tcl_Interp *interp, const char *cipherName, unsigned long flags,
@@ -407,6 +409,7 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const
     return result;
 }
 
+# ifndef OPENSSL_NO_EC
 /*
  *----------------------------------------------------------------------
  *
@@ -460,6 +463,7 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     }
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
