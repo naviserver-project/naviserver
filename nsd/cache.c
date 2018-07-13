@@ -1206,17 +1206,17 @@ char *
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 {
     const Cache    *cachePtr;
-    unsigned long   count, hitrate;
+    unsigned long   count;
     const Entry    *ePtr;
     Ns_CacheSearch  search;
-    double          savedCost = 0.0;
+    double          savedCost = 0.0, hitrate;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(dest != NULL);
 
     cachePtr = (Cache *)cache;
     count = cachePtr->stats.nhit + cachePtr->stats.nmiss;
-    hitrate = ((count != 0u) ? (cachePtr->stats.nhit * 100u) / count : 0u);
+    hitrate = ((count != 0u) ? (cachePtr->stats.nhit * 100.0) / count : 0.0);
 
     ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
     while (ePtr != NULL) {
@@ -1225,7 +1225,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     }
 
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
-               "flushed %lu hits %lu missed %lu hitrate %lu "
+               "flushed %lu hits %lu missed %lu hitrate %.2f "
                "expired %lu pruned %lu commit %lu rollback %lu saved %.6f",
                (unsigned long) cachePtr->maxSize,
                (unsigned long) cachePtr->currentSize,
