@@ -1064,7 +1064,9 @@ typedef struct NsInterp {
     Tcl_HashTable httpRequests;
 
     Ns_CacheTransactionStack cacheTransactionStack;
-    bool          deleteInterp;  /* Interp should be deleted on next deallocation */
+
+    unsigned int currentTrace;
+    bool deleteInterp;  /* Interp should be deleted on next deallocation */
 
 } NsInterp;
 

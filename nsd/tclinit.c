@@ -107,14 +107,19 @@ static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 static int UpdateInterp(NsInterp *itPtr)
     NS_GNUC_NONNULL(1);
 
-static void RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
+static void RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
 static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void LogErrorInTrace(const NsInterp *itPtr, const char *context, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
 static Ns_ReturnCode RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
     NS_GNUC_NONNULL(1);
+
+static const char *GetTraceLabel(unsigned int traceWhy);
 
 static Tcl_InterpDeleteProc FreeInterpData;
 static Ns_TlsCleanup DeleteInterps;
@@ -144,6 +149,21 @@ static Tcl_ObjCmdProc ICtlUpdateObjCmd;
 static Ns_Tls tls;  /* Slot for per-thread Tcl interp cache. */
 static Ns_Mutex interpLock = NULL;
 static bool concurrent_interp_create = NS_FALSE;
+
+static const char *
+GetTraceLabel(unsigned int traceWhy) {
+    unsigned int i = 0u;
+    const char *result = "none";
+
+    while (traceWhen[i].key != NULL) {
+        if (traceWhen[i].value == traceWhy) {
+            result = traceWhen[i].key;
+            break;
+        }
+        i++;
+    }
+    return result;
+}
 
 
 /*
@@ -604,7 +624,7 @@ Ns_TclGetConn(Tcl_Interp *interp)
 void
 Ns_TclDestroyInterp(Tcl_Interp *interp)
 {
-    const NsInterp *itPtr;
+    NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -1277,7 +1297,9 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         servPtr->tcl.script = script;
         servPtr->tcl.length = length;
         if (++servPtr->tcl.epoch == 0) {
-            /* NB: Epoch zero reserved for new interps. */
+            /*
+             * Epoch zero is reserved for new interps.
+             */
             ++itPtr->servPtr->tcl.epoch;
         }
         Ns_RWLockUnlock(&servPtr->tcl.lock);
@@ -1352,7 +1374,6 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             ns_free(deferPtr);
         }
         itPtr->firstDeferPtr = NULL;
-
         result = UpdateInterp(itPtr);
     }
     return result;
@@ -1493,7 +1514,7 @@ ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else {
-        const NsInterp *itPtr = clientData;
+        NsInterp *itPtr = clientData;
 
         RunTraces(itPtr, (Ns_TclTraceType)flags);
     }
@@ -1859,6 +1880,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
         Tcl_SetHashValue(hPtr, itPtr);
     }
 
+
     /*
      * Run allocation traces once.
      */
@@ -2039,6 +2061,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      */
 
     itPtr = NewInterpData(interp, servPtr);
+    itPtr->currentTrace = 0u;
     *itPtrPtr = itPtr;
 
     return interp;
@@ -2141,8 +2164,9 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 static int
 UpdateInterp(NsInterp *itPtr)
 {
-    NsServer *servPtr;
-    int       result = TCL_OK;
+    NsServer   *servPtr;
+    int         result = TCL_OK, epoch, scriptLength = 0;
+    const char *script = NULL;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     servPtr = itPtr->servPtr;
@@ -2151,15 +2175,36 @@ UpdateInterp(NsInterp *itPtr)
      * A reader-writer lock is used on the assumption updates are
      * rare and likley expensive to evaluate if the virtual server
      * contains significant state.
+     *
+     * In the codeblock blelow, we want to avoid running the blueprint update
+     * under the lock. Therefore we copy the blueprint script with ns_strdup.
      */
-
     Ns_RWLockRdLock(&servPtr->tcl.lock);
     if (itPtr->epoch != servPtr->tcl.epoch) {
-        result = Tcl_EvalEx(itPtr->interp, servPtr->tcl.script,
-                            servPtr->tcl.length, TCL_EVAL_GLOBAL);
-        itPtr->epoch = servPtr->tcl.epoch;
+        epoch        = servPtr->tcl.epoch;
+        script       = ns_strdup(servPtr->tcl.script);
+        scriptLength = servPtr->tcl.length;
+    } else {
+        epoch = itPtr->epoch;
     }
     Ns_RWLockUnlock(&servPtr->tcl.lock);
+
+    if (itPtr->epoch != epoch) {
+        Ns_Time startTime, now, diffTime;
+
+        Ns_GetTime(&startTime);
+        result = Tcl_EvalEx(itPtr->interp, script,
+                            scriptLength, TCL_EVAL_GLOBAL);
+        Ns_GetTime(&now);
+        Ns_DiffTime(&now, &startTime, &diffTime);
+        Ns_Log(Notice, "update interpreter to epoch %d, trace %s, time %" PRId64 ".%06ld secs",
+               epoch,
+               GetTraceLabel(itPtr->currentTrace),
+               (int64_t) diffTime.sec, diffTime.usec );
+
+        ns_free((char *)script);
+        itPtr->epoch = epoch;
+    }
 
     return result;
 }
@@ -2182,7 +2227,7 @@ UpdateInterp(NsInterp *itPtr)
  */
 
 static void
-RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
+RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
 {
     const TclTrace *tracePtr;
     const NsServer *servPtr;
@@ -2192,18 +2237,22 @@ RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
     servPtr = itPtr->servPtr;
     if (servPtr != NULL) {
 
+        //Ns_Log(Notice, "RunTraces %d",(int)why);
+        itPtr->currentTrace = why;
+
         switch (why) {
         case NS_TCL_TRACE_FREECONN:
         case NS_TCL_TRACE_DEALLOCATE:
         case NS_TCL_TRACE_DELETE:
-            /* Run finalization traces in LIFO order. */
-
+            /*
+             * Run finalization traces in LIFO order.
+             */
             tracePtr = servPtr->tcl.lastTracePtr;
             while (tracePtr != NULL) {
                 if (tracePtr->when == why) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
-                        (void) Ns_TclLogErrorInfo(itPtr->interp, "\n(context: run trace)");
+                        LogErrorInTrace(itPtr, "trace", why);
                     }
                 }
                 tracePtr = tracePtr->prevPtr;
@@ -2213,14 +2262,15 @@ RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
         case NS_TCL_TRACE_ALLOCATE:
         case NS_TCL_TRACE_CREATE:
         case NS_TCL_TRACE_GETCONN:
-            /* Run initialization traces in FIFO order. */
-
+            /*
+             * Run initialization traces in FIFO order.
+             */
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
                 if (tracePtr->when == why) {
                     LogTrace(itPtr, tracePtr, why);
                     if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {
-                        (void) Ns_TclLogErrorInfo(itPtr->interp, "\n(context: run trace)");
+                        LogErrorInTrace(itPtr, "trace", why);
                     }
                 }
                 tracePtr = tracePtr->nextPtr;
@@ -2231,6 +2281,7 @@ RunTraces(const NsInterp *itPtr, Ns_TclTraceType why)
             break;
         }
     }
+    itPtr->currentTrace = 0u;
 }
 
 static void
@@ -2239,39 +2290,29 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
     Ns_DString  ds;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(tracePtr != NULL);
 
     if (Ns_LogSeverityEnabled(Debug)) {
         Ns_DStringInit(&ds);
-        switch (why) {
-        case NS_TCL_TRACE_CREATE:
-            Tcl_DStringAppendElement(&ds, "create");
-            break;
-        case NS_TCL_TRACE_DELETE:
-            Tcl_DStringAppendElement(&ds, "delete");
-            break;
-        case NS_TCL_TRACE_ALLOCATE:
-            Tcl_DStringAppendElement(&ds, "allocate");
-            break;
-        case NS_TCL_TRACE_DEALLOCATE:
-            Tcl_DStringAppendElement(&ds, "deallocate");
-            break;
-        case NS_TCL_TRACE_GETCONN:
-            Tcl_DStringAppendElement(&ds, "getconn");
-            break;
-        case NS_TCL_TRACE_FREECONN:
-            Tcl_DStringAppendElement(&ds, "freeconn");
-            break;
-        case NS_TCL_TRACE_NONE:
-        default:
-            /* unexpected value */
-            assert(why && 0);
-            break;
-        }
+        Ns_DStringNAppend(&ds, GetTraceLabel(why), -1);
+        Ns_DStringNAppend(&ds, " ", 1);
         Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
         Ns_Log(Debug, "ns:interptrace[%s]: %s",
                itPtr->servPtr->server, Ns_DStringValue(&ds));
         Ns_DStringFree(&ds);
     }
+}
+
+static void
+LogErrorInTrace(const NsInterp *itPtr, const char *context, Ns_TclTraceType why) {
+    Tcl_DString ds;
+
+    NS_NONNULL_ASSERT(itPtr != NULL);
+
+    Tcl_DStringInit(&ds);
+    Ns_DStringPrintf(&ds, "\n(context: %s %s)", context, GetTraceLabel(why));
+    (void) Ns_TclLogErrorInfo(itPtr->interp, ds.string);
+    Tcl_DStringFree(&ds);
 }
 
 

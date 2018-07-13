@@ -2725,7 +2725,7 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 int
 NsTclCryptoEckeyObjCmd (ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
-    Ns_TclPrintfResult(interp, "OpenSSL version was built without EC support");
+    Ns_TclPrintfResult(interp, "The used version of OpenSSL was built without EC support");
     return TCL_ERROR;
 }
 # endif
