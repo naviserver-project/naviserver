@@ -429,11 +429,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 int
 NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp   *itPtr = clientData;
     TclCache   *cPtr = NULL;
     char       *key;
     Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
-    int         nargs = 0, isNew, force = (int)NS_FALSE, status;
+    int         nargs = 0, force = (int)NS_FALSE, status;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
@@ -453,11 +452,17 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         status = TCL_ERROR;
 
     } else {
-        Ns_Entry        *entry;
-        Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
+        Ns_Entry                 *entry;
+        NsInterp                 *itPtr;
+        Ns_CacheTransactionStack *transactionStackPtr;
+        int                       isNew;
 
+        assert(clientData != NULL);
         assert(cPtr != NULL);
         assert(key != NULL);
+
+        itPtr = clientData;
+        transactionStackPtr = &itPtr->cacheTransactionStack;
 
         /*
          * CreateEntry waits for ongoing transactions. If it succeeds, it
