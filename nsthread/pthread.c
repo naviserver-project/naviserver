@@ -485,7 +485,7 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
  *
  * Ns_ThreadYield --
  *
- *      Yield the cpu to another thread.
+ *      Yield the CPU to another thread.
  *
  * Results:
  *      None.
@@ -558,7 +558,7 @@ Ns_ThreadSelf(Ns_Thread *threadPtr)
  *
  *      Pthread condition variable initialization.  Note this routine
  *      isn't used directly very often as static condition variables
- *      are now self initialized when first used.
+ *      are now self-initialized when first used.
  *
  * Results:
  *      None.
@@ -671,7 +671,7 @@ Ns_CondSignal(Ns_Cond *cond)
 void
 Ns_CondBroadcast(Ns_Cond *cond)
 {
-    int             err;
+    int err;
 
     NS_NONNULL_ASSERT(cond != NULL);
 
@@ -838,7 +838,7 @@ ThreadMain(void *arg)
  *
  *      Pthread TLS cleanup.  This routine is called during thread
  *      exit.  This routine could be called more than once if some
- *      other pthread cleanup requires nsthreads TLS.
+ *      other pthread cleanup requires nsthread's TLS.
  *
  * Results:
  *      None.
