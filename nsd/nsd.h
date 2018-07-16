@@ -1065,7 +1065,7 @@ typedef struct NsInterp {
 
     Ns_CacheTransactionStack cacheTransactionStack;
 
-    unsigned int currentTrace;
+    Ns_TclTraceType currentTrace;
     bool deleteInterp;  /* Interp should be deleted on next deallocation */
 
 } NsInterp;

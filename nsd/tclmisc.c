@@ -880,7 +880,7 @@ NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
  *      Does this word end in a semicolon or a space?
  *
  * Results:
- *      1 if semi, 0 if space.
+ *      Returns true if the word endes with a semicolon.
  *
  * Side effects:
  *      Undefined behavior if string does not end in null
@@ -893,9 +893,10 @@ WordEndsInSemi(const char *ip)
 {
     NS_NONNULL_ASSERT(ip != NULL);
 
-    /* advance past the first '&' so we can check for a second
-       (i.e. to handle "ben&jerry&nbsp;")
-    */
+    /*
+     * Advance past the first '&' so we can check for a second
+     *  (i.e. to handle "ben&jerry&nbsp;")
+     */
     if (*ip == '&') {
         ip++;
     }
@@ -2073,9 +2074,7 @@ int
 NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    unsigned int hashValue;
     char        *inputString;
-
     Ns_ObjvSpec  args[] = {
         {"string", Ns_ObjvString,  &inputString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -2084,9 +2083,11 @@ NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char c;
+        unsigned int hashValue;
 
         if ((hashValue = UCHAR(*inputString)) != 0) {
+            char c;
+
             while ((c = *++inputString) != 0) {
                 hashValue += (hashValue << 3) + UCHAR(c);
             }

@@ -312,16 +312,16 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         /*
          * Handle special flags.
          */
-        if (unlikely(doReset || doDefault)) {
+        if (unlikely((doReset != 0) || (doDefault != 0))) {
             bool didExist = SetResultToOldValue(interp, arrayPtr, key);
 
-            if (doReset) {
+            if (doReset != 0) {
                 /*
                  * When "-reset" was given, we return always the old value.
                  */
                 returnNewValue = NS_FALSE;
             }
-            if (doDefault) {
+            if (doDefault != 0) {
                 /*
                  * When "-default" was given, we return the old value, when
                  * the array element existed already.

@@ -2334,7 +2334,7 @@ HttpProc(
         break;
 
     case NS_SOCK_READ:
-        if (httpPtr->sent == 0) {
+        if (httpPtr->sent == 0u) {
             n = -1;
         } else {
 

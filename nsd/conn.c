@@ -523,11 +523,11 @@ Ns_ConnCurrentPort(const Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    connPtr = (Conn *)conn;
+    connPtr = (const Conn *)conn;
     if (connPtr->sockPtr != NULL) {
         struct NS_SOCKADDR_STORAGE sa;
         socklen_t len = (socklen_t)sizeof(sa);
-        int retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
+        int       retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
 
         if (retVal == -1) {
             result = 0u;

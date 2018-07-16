@@ -2336,7 +2336,7 @@ LogErrorInTrace(const NsInterp *itPtr, const char *context, Ns_TclTraceType why)
 static void
 FreeInterpData(ClientData clientData, Tcl_Interp *UNUSED(interp))
 {
-    NsInterp *itPtr = clientData;
+    NsInterp *itPtr = (NsInterp *)clientData;
 
     NsAdpFree(itPtr);
     Tcl_DeleteHashTable(&itPtr->sets);
