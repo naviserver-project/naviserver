@@ -204,7 +204,7 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
  *
  * NsTclSetObjCmd --
  *
- *      Implelments ns_set.
+ *      Implements ns_set.
  *
  * Results:
  *      Tcl result.

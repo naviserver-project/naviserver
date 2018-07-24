@@ -261,7 +261,7 @@ SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
  *
  * NsTclNsvSetObjCmd --
  *
- *      Implelments nsv_set.
+ *      Implements nsv_set.
  *
  * Results:
  *      Tcl result.
