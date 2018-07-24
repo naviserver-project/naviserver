@@ -1360,10 +1360,11 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 bool
 Ns_IsBinaryMimeType(const char *contentType) {
+    size_t length;
 
     NS_NONNULL_ASSERT(contentType != NULL);
 
-    return (strncmp("text/", contentType, 5u) != 0);
+    return ((strncmp("text/", contentType, 5u) != 0) && (NsFindCharset(contentType, &length) == NULL)) ;
 }
 
 /*
