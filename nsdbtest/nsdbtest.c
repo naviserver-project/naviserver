@@ -245,7 +245,7 @@ GetRow(Ns_DbHandle *UNUSED(handle), const Ns_Set *row)
 {
     Ns_SetPutValue(row, 0u, "ok");
 
-    return NS_END_DATA;
+    return (int)NS_END_DATA;
 }
 
 
