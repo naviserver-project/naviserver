@@ -60,7 +60,7 @@ approach.
  another server.
 
 
-[item] Special Extenstions: If you want one Tcl script to handle all
+[item] Special Extensions: If you want one Tcl script to handle all
  files with a specific extension, like /*.csv, you would register
  the script with ns_register_proc to handle those files.
 

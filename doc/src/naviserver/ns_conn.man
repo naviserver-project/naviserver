@@ -263,7 +263,7 @@ Returns the socket id (integer fd) of current connection.
 
 [call [cmd  "ns_conn start"]]
 
-Returns the time the connection request started in "sec:usec" (aka
+Returns the time the connection request started in "sec:usec" (a.k.a.
 ns_time) format.
 
 

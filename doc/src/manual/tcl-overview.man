@@ -167,7 +167,7 @@ the following advantages:
 
 
 The C interface for NaviServer is described in the NaviServer C
-Developer's Guide, and the CGI interface is desribed in the NaviServer
+Developer's Guide, and the CGI interface is described in the NaviServer
 Administrator's Guide.
 
 

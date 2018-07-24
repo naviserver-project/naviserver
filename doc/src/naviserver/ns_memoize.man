@@ -54,7 +54,7 @@ results are discarded. If a [arg pattern] is given it is treated as a
 a cached result in turn, and those that match are discarded.
 
 [para]
-Note: this may be an expensive operation. First the cache lock is accquired,
+Note: this may be an expensive operation. First the cache lock is acquired,
 then all entries in the cache are iterated over in turn matching the script
 against the globbing pattern.  During this period all access to the memoize
 cache will be blocked.

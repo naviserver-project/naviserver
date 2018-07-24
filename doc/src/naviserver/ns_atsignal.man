@@ -36,7 +36,7 @@ processing connections.
  [opt [arg args]]  ]
 
 Startup procs are called in FIFO order just after the server is fully
-initialised and is listening for and processing connections.
+initialized and is listening for and processing connections.
 
 
 

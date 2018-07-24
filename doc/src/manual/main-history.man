@@ -16,7 +16,7 @@ management, and was integrated with a suite of document-management
 client tools.  The document manager and editor was called "NaviPress,"
 and the document browser was "NaviGo."  NaviPress was groundbreaking
 in its implementation of the HTTP PUT and BROWSE methods for remote
-editting of web content.  In these ways it was many years ahead of
+editing of web content.  In these ways it was many years ahead of
 Microsoft Frontpage and Netscape Navigator Gold.
 
 

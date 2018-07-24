@@ -68,7 +68,7 @@ Parses a time in "sec:usec" format and returns the seconds portion.
 
 Parses a time in "sec:usec" format and returns the microseconds portion.
 It assumes zero microseconds if time only contains seconds.
-All times are relative to 00:00:00 UTC, January 1, 1970 aka the Unix epoch. 
+All times are relative to 00:00:00 UTC, January 1, 1970 a.k.a. the Unix epoch.
 
 [list_end]
 

@@ -23,7 +23,8 @@ Flushed content is returned in "chunked-encoding" format if
 the HTTP protocol version is at least 1.1 (normally the case for all
 modern browsers). A call to ns_adp_flush is not normally needed except
 for specialized applications as all content is automatically flushed
-at the end of a connection or on buffer overflow. See [cmd ns_adp_ctl] bufsize for details on buffer mangement. 
+at the end of a connection or on buffer overflow. See [cmd ns_adp_ctl]
+bufsize for details on buffer management.
 
 [list_end ]
 
