@@ -125,7 +125,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * InitInterp --
  *
- *      Initialze interpreter
+ *      Initialize interpreter
  *
  * Results:
  *      Tcl result code

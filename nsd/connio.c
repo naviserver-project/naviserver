@@ -193,7 +193,7 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
     servPtr = connPtr->poolPtr->servPtr;
 
     /*
-     * Check the default setting and explicit overide.
+     * Check the default setting and explicit override.
      */
     level = Ns_ConnGetCompression(conn);
 

@@ -381,7 +381,7 @@ ns_section ns/db/pool/pool1
     ns_param	...
 [example_end]
 
-For every pool the following configuation options might be used:
+For every pool the following configuration options might be used:
 
 [list_begin definitions]
 

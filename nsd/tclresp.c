@@ -56,7 +56,7 @@ static int ReturnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  * NsTclHeadersObjCmd --
  *
  *      Implements ns_headers. Set the response status code, mime-type
- *      header and optionaly the content-length. The headers will be
+ *      header and optionally the content-length. The headers will be
  *      be written on the first write to the connection (if not suppressed).
  *
  * Results:

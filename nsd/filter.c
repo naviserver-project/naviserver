@@ -36,7 +36,7 @@
 #include "nsd.h"
 
 /*
- * The following stuctures maintain connection filters
+ * The following structures maintain connection filters
  * and traces.       
  */
 

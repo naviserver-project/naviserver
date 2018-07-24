@@ -218,7 +218,7 @@ Ns_IndexFind(const Ns_Index *indexPtr, const void *key)
  *
  * Ns_IndexFindInf --
  *
- *	Find the elment with the key, or if none exists, the element
+ *	Find the element with the key, or if none exists, the element
  *	before which the key would appear.
  *
  * Results:

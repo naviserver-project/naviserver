@@ -241,7 +241,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
  *
  * NsAdpParse --
  *
- *      Parse a string containing Tcl statements. When evalutating a Tcl file,
+ *      Parse a string containing Tcl statements. When evaluating a Tcl file,
  *      we just wrap it as Tcl proc and save in ADP block with cache enabled
  *      or just execute the Tcl code in case of cache disabled
  *
@@ -566,7 +566,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
     codePtr->nscripts = codePtr->nblocks = 0;
 
     /*
-     * Special case when we evalutating Tcl file, we just wrap it as
+     * Special case when we evaluating Tcl file, we just wrap it as
      * Tcl proc and save in ADP block with cache enabled or
      * just execute the Tcl code in case of cache disabled
      */

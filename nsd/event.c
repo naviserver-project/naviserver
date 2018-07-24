@@ -147,7 +147,7 @@ Ns_CreateEventQueue(int maxevents)
  *      Given Ns_EventProc callback will be run later with any of the
  *      following why conditions:
  *
- *      NS_SOCK_INIT       Allways called first.
+ *      NS_SOCK_INIT       Always called first.
  *      NS_SOCK_READ
  *      NS_SOCK_WRITE
  *      NS_SOCK_EXCEPTION

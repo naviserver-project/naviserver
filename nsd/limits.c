@@ -273,7 +273,7 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *      Standard Tcl result.
  *
  * Side effects:
- *      May overide already registred limits.
+ *      May override already registered limits.
  *
  *----------------------------------------------------------------------
  */

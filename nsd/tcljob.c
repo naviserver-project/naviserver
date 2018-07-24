@@ -52,7 +52,7 @@
  *   current queue's max threads.
  *
  *   The number of threads in the thread pool can be greater than the
- *   current max number of threads. This situtation can occur when a
+ *   current max number of threads. This situation can occur when a
  *   queue is deleted. Later on if a new queue is created it will
  *   simply use one of the previously created threads. Basically the
  *   number of threads is a "high water mark".
@@ -1140,7 +1140,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             const char *jobId1, *jobState, *jobCode, *jobType, *jobReq, *jobResults, *jobScript;
             Tcl_Obj    *jobFieldList;
             double      delta;
-            char        thrId[32];
+            char        threadId[32];
             Job        *jobPtr = (Job *)Tcl_GetHashValue(hPtr);
 
             jobId1     = Tcl_GetHashKey(&queue->jobs, hPtr);
@@ -1155,7 +1155,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Ns_GetTime(&jobPtr->endTime);
             }
             delta = ComputeDelta(&jobPtr->startTime, &jobPtr->endTime);
-            snprintf(thrId, sizeof(thrId), "%" PRIxPTR, jobPtr->tid);
+            snprintf(threadId, sizeof(threadId), "%" PRIxPTR, jobPtr->tid);
 
             /*
              * Create a Tcl List to hold the list of job fields.
@@ -1168,7 +1168,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 || AppendField(interp, jobFieldList, "code",   jobCode) != TCL_OK
                 || AppendField(interp, jobFieldList, "type",   jobType) != TCL_OK
                 || AppendField(interp, jobFieldList, "req",    jobReq) != TCL_OK
-                || AppendField(interp, jobFieldList, "thread", thrId) != TCL_OK
+                || AppendField(interp, jobFieldList, "thread", threadId) != TCL_OK
                 || AppendFieldDouble(interp, jobFieldList, "time", delta) != TCL_OK
                 || AppendFieldLong(interp, jobFieldList, "starttime", (long)jobPtr->startTime.sec) != TCL_OK
                 || AppendFieldLong(interp, jobFieldList, "endtime", (long)jobPtr->endTime.sec) != TCL_OK

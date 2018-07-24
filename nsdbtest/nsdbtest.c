@@ -235,7 +235,7 @@ Exec(const Ns_DbHandle *handle, char *sql)
  *      NS_OK, NS_END_DATA or NS_ERROR.
  *
  * Side effects:
- *      Current tupple updated.
+ *      Current tuple updated.
  *
  *----------------------------------------------------------------------
  */

@@ -149,7 +149,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
     if (url[0] == '/' && url[1] == '/') {
 
         /*
-         * The URL starts witn two slashes, which means a host is specified.
+         * The URL starts with two slashes, which means a host is specified.
          * Advance url past that and set *phost.
          *
          * http\0//www.foo.com:8000/baz/blah/spoo.html

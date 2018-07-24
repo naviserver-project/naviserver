@@ -995,7 +995,7 @@ MakePath(Ns_DString *dest, va_list *pap)
  *
  *      Return the path to the server root directory.  If virtual
  *      hosting is enabled then the host header is used to construct the
- *      path.  If host is given it overides the Host header of the
+ *      path.  If host is given it overrides the Host header of the
  *      current connection.
  *
  * Results:

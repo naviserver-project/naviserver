@@ -1399,7 +1399,7 @@ program.
 If you send a Location header, you do not need to send a Content-type
 header. However, you may want to send HTML-tagged text including a
 link to the location for browsers that do not support this type of
-redirection. You can specfy any type of URL as the output location.
+redirection. You can specify any type of URL as the output location.
 For example, you can send an FTP, Gopher, or News URL.
 
 

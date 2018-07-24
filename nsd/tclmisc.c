@@ -436,7 +436,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                     /*
                      * In case there are newlines in the text, insert it with
                      * the prefix and reset the currentWidth. The size for of
-                     * the prefix is already included in the alocated space of
+                     * the prefix is already included in the allocated space of
                      * the string.
                      */
                     outputPos++;

@@ -534,7 +534,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     /*
      * Make sure possible child processes do not inherit this one.
-     * As, when the user evalutes the "exec" command, the child
+     * As, when the user evaluates the "exec" command, the child
      * process(es) will otherwise inherit the descriptor and keep
      * it open even if the proxy process is killed in the meantime.
      * This will of course block the caller, possibly forever.

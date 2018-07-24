@@ -203,7 +203,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  *
  * NsTclModuleLoadObjCmd --
  *
- *      Implements ns_moduleload.  Load and initilize a binary module.
+ *      Implements ns_moduleload.  Load and initialize a binary module.
  *
  * Results:
  *      Tcl result.

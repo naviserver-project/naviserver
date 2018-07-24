@@ -77,7 +77,7 @@ static bool MatchRange(const Ns_Conn *conn, time_t mtime)
  *      NS_TRUE if partial content may be returned, NS_FALSE otherwise.
  *
  * Side effects:
- *      Only HTTP date is supportd in the If-Range: header
+ *      Only HTTP date is supported in the If-Range: header
  *
  *----------------------------------------------------------------------
  */

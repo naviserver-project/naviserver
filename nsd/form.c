@@ -138,10 +138,10 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                      * Don't do anything for other content-types.
                      */
                 } else {
-                    const char *formend = form + connPtr->reqPtr->length;
+                    const char *formEnd = form + connPtr->reqPtr->length;
                     char       *s;
                     
-                    s = NextBoundary(&bound, form, formend);
+                    s = NextBoundary(&bound, form, formEnd);
                     while (s != NULL) {
                         char  *e;
                         
@@ -152,7 +152,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                         if (*s == '\n') {
                             ++s;
                         }
-                        e = NextBoundary(&bound, s, formend);
+                        e = NextBoundary(&bound, s, formEnd);
                         if (e != NULL) {
                             ParseMultiInput(connPtr, s, e);
                         }
