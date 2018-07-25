@@ -1045,7 +1045,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
     if (status != NS_OK) {
         result = TCL_ERROR;
     } else {
-        const NsInterp  *itPtr = clientData;
+        const NsInterp  *itPtr = (const NsInterp *)clientData;
         const NsServer  *servPtr = itPtr->servPtr;
 
         if (servPtr != NsGetInitServer()) {
@@ -1093,7 +1093,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
 static int
 ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr = (const NsInterp *)clientData;
     const NsServer *servPtr = itPtr->servPtr;
     Tcl_Obj        *moduleObj;
     int             result;
@@ -1139,7 +1139,7 @@ ICtlAddModuleObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr = (const NsInterp *)clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
 
@@ -1175,7 +1175,7 @@ ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
 static int
 ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr = (const NsInterp *)clientData;
     const NsServer *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
 
@@ -1209,7 +1209,7 @@ ICtlGetModulesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 static int
 ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr = (const NsInterp *)clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
 
@@ -1245,7 +1245,7 @@ ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 static int
 ICtlMarkForDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp  *itPtr = clientData;
+    NsInterp  *itPtr = (NsInterp *)clientData;
     int        result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
@@ -1287,7 +1287,7 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         result = TCL_ERROR;
 
     } else {
-        const NsInterp *itPtr = clientData;
+        const NsInterp *itPtr = (const NsInterp *)clientData;
         NsServer       *servPtr = itPtr->servPtr;
         int             length;
         const char     *script = ns_strdup(Tcl_GetStringFromObj(scriptObj, &length));
@@ -1327,7 +1327,7 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 static int
 ICtlUpdateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp    *itPtr = clientData;
+    NsInterp    *itPtr = (NsInterp *)clientData;
     int          result;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
@@ -1360,7 +1360,7 @@ ICtlUpdateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
 static int
 ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp    *itPtr = clientData;
+    NsInterp    *itPtr = (NsInterp *)clientData;
     int          result = TCL_OK;
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
@@ -1465,7 +1465,7 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else {
-        const NsInterp  *itPtr = clientData;
+        const NsInterp  *itPtr = (const NsInterp *)clientData;
         const NsServer  *servPtr = itPtr->servPtr;
         Ns_DString       ds;
         const TclTrace  *tracePtr;
@@ -1514,7 +1514,7 @@ ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else {
-        NsInterp *itPtr = clientData;
+        NsInterp *itPtr = (NsInterp *)clientData;
 
         RunTraces(itPtr, (Ns_TclTraceType)flags);
     }
@@ -1594,7 +1594,7 @@ NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 int
 NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp  *itPtr = clientData;
+    NsInterp  *itPtr = (NsInterp *)clientData;
     AtClose   *atPtr;
     int        result = TCL_OK;
 
