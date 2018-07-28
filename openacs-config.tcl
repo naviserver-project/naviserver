@@ -364,12 +364,23 @@ ns_section ns/server/${server}/acs/acs-tcl {
     # ns_param SiteNodesPrefetch  {/file /changelogs /munin}
     # ns_param UserInfoCacheSize          2000000
 }
-# Set for all package instances of acs-mail-lite the EmailDeliveryMode
+
+#
+# Set for all package instances of acs-mail-lite the
+# EmailDeliveryMode. Setting this to "log" is useful for developer
+# instances.
 #
 ns_section ns/server/${server}/acs/acs-mail-lite {
     # ns_param EmailDeliveryMode log
 }
 
+#
+# API browser configuration: setting IncludeCallingInfo to "true" is
+# useful mostly for developer instances.
+#
+ns_section ns/server/${server}/acs/acs-api-browser {
+    # ns_param IncludeCallingInfo true
+}
 
 #---------------------------------------------------------------------
 # WebDAV Support (optional, requires oacs-dav package to be installed
