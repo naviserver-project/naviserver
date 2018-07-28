@@ -1216,7 +1216,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 
     cachePtr = (Cache *)cache;
     count = cachePtr->stats.nhit + cachePtr->stats.nmiss;
-    hitrate = ((count != 0u) ? (cachePtr->stats.nhit * 100.0) / count : 0.0);
+    hitrate = ((count != 0u) ? ((double)cachePtr->stats.nhit * 100.0) / (double)count : 0.0);
 
     ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
     while (ePtr != NULL) {
