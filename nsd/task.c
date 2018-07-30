@@ -142,11 +142,11 @@ Ns_CreateTaskQueue(const char *name)
     size_t nameLength;
 
     NS_NONNULL_ASSERT(name != NULL);
-    
+
     nameLength = strlen(name);
     queuePtr = ns_calloc(1u, sizeof(TaskQueue) + nameLength);
     memcpy(queuePtr->name, name, nameLength + 1u);
-    
+
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -186,7 +186,7 @@ Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
     NS_NONNULL_ASSERT(queue != NULL);
 
     queuePtr = (TaskQueue *) queue;
-    
+
     /*
      * Remove queue from list of all queues.
      */
@@ -265,7 +265,7 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     NS_NONNULL_ASSERT(queue != NULL);
 
     taskPtr = (Task *) task;
-    
+
     taskPtr->queuePtr = (TaskQueue *) queue;
     if (unlikely(SignalQueue(taskPtr, TASK_INIT) == NS_FALSE)) {
         status = NS_ERROR;
@@ -305,6 +305,7 @@ Ns_TaskRun(Ns_Task *task)
     taskPtr = (Task *) task;
     pfd.fd = taskPtr->sock;
     Call(taskPtr, NS_SOCK_INIT);
+    Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: NS_SOCK_INIT done", taskPtr->sock);
 
     while ((taskPtr->flags & TASK_DONE) == 0u) {
         if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
@@ -314,12 +315,16 @@ Ns_TaskRun(Ns_Task *task)
         }
         pfd.revents = 0;
         pfd.events = taskPtr->events;
+        Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: setup for poll events %.2x", taskPtr->sock, pfd.events);
         if (NsPoll(&pfd, 1, timeoutPtr) != 1) {
+            Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: timeout", taskPtr->sock);
             break;
         }
         Ns_GetTime(&now);
+        Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: run task with revents %.2x", taskPtr->sock, pfd.revents);
         RunTask(taskPtr, pfd.revents, &now);
     }
+    Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: NS_SOCK_DONE done", taskPtr->sock);
     Call(taskPtr, NS_SOCK_DONE);
     taskPtr->signalFlags |= TASK_DONE;
 }
@@ -349,7 +354,7 @@ Ns_TaskCancel(Ns_Task *task)
     Task         *taskPtr;
 
     NS_NONNULL_ASSERT(task != NULL);
-    
+
     taskPtr = (Task *) task;
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
@@ -390,7 +395,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 
     taskPtr = (Task *) task;
     queuePtr = taskPtr->queuePtr;
-    
+
     if (queuePtr == NULL) {
         if ((taskPtr->signalFlags & TASK_DONE) == 0u) {
             status = NS_TIMEOUT;
@@ -438,7 +443,7 @@ Ns_TaskCompleted(const Ns_Task *task)
 
     NS_NONNULL_ASSERT(task != NULL);
     taskPtr = (const Task *) task;
-    
+
     queuePtr = taskPtr->queuePtr;
     if (queuePtr == NULL) {
         status = ((taskPtr->signalFlags & TASK_DONE) != 0u) ? NS_TRUE : NS_FALSE;
@@ -478,7 +483,7 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 
     NS_NONNULL_ASSERT(task != NULL);
     taskPtr = (Task *) task;
- 
+
     /*
      * Map from sock when bits to poll event bits.
      */
@@ -691,17 +696,17 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
         revents |= (short)POLLIN;
     }
     if (revents != 0) {
-	int i;
+        int i;
 
-	for (i = 0; i < Ns_NrElements(map); ++i) {
-	    if ((revents & map[i].event) != 0) {
-		Call(taskPtr, map[i].when);
-	    }
-	}
+        for (i = 0; i < Ns_NrElements(map); ++i) {
+            if ((revents & map[i].event) != 0) {
+                Call(taskPtr, map[i].when);
+            }
+        }
     } else if ((taskPtr->flags & TASK_TIMEOUT) != 0u
-	       && Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0) {
-	taskPtr->flags &= ~ TASK_WAIT;
-	Call(taskPtr, NS_SOCK_TIMEOUT);
+               && Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0) {
+        taskPtr->flags &= ~ TASK_WAIT;
+        Call(taskPtr, NS_SOCK_TIMEOUT);
     }
 }
 
@@ -731,7 +736,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
     NS_NONNULL_ASSERT(taskPtr != NULL);
 
     queuePtr = taskPtr->queuePtr;
-    
+
     Ns_MutexLock(&queuePtr->lock);
     shutdown = queuePtr->shutdown;
     if (!shutdown) {
@@ -779,7 +784,7 @@ static void
 TriggerQueue(const TaskQueue *queuePtr)
 {
     NS_NONNULL_ASSERT(queuePtr != NULL);
-    
+
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("task queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -808,7 +813,7 @@ static void
 StopQueue(TaskQueue *queuePtr)
 {
     NS_NONNULL_ASSERT(queuePtr != NULL);
-    
+
     Ns_MutexLock(&queuePtr->lock);
     queuePtr->shutdown = NS_TRUE;
     Ns_MutexUnlock(&queuePtr->lock);
@@ -881,7 +886,7 @@ TaskThread(void *arg)
         int               n, broadcast;
         NS_POLL_NFDS_TYPE nfds;
         bool              shutdown;
-	Ns_Time           now;
+        Ns_Time           now;
         const Ns_Time    *timeoutPtr;
 
         /*
@@ -951,7 +956,7 @@ TaskThread(void *arg)
                 broadcast = 1;
             }
             if ((taskPtr->flags & TASK_WAIT) != 0u) {
-		if (max <= (size_t)nfds) {
+                if (max <= (size_t)nfds) {
                     max  = (size_t)nfds + 100u;
                     pfds = ns_realloc(pfds, max);
                 }
@@ -993,14 +998,16 @@ TaskThread(void *arg)
          */
 
         n = NsPoll(pfds, nfds, timeoutPtr);
-	/* 
-	 * n is currently not used; n is either number of ready
-	 * descriptors, or 0 on timeout, or -1 on error
-	 */
-	((void)(n)); /* ignore n */
+        Ns_Log(Ns_LogTaskDebug, "runtask poll returned %d", n);
+
+        /*
+         * n is currently not used; n is either number of ready
+         * descriptors, or 0 on timeout, or -1 on error
+         */
+        /* ((void)(n)); /* ignore n */
 
         if ((pfds[0].revents & POLLIN) != 0
-	    && recv(pfds[0].fd, &c, 1, 0) != 1) {
+            && recv(pfds[0].fd, &c, 1, 0) != 1) {
             Ns_Fatal("queue: trigger ns_read() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -1012,6 +1019,7 @@ TaskThread(void *arg)
         Ns_GetTime(&now);
         taskPtr = firstWaitPtr;
         while (taskPtr != NULL) {
+            Ns_Log(Ns_LogTaskDebug, "runtask %d: revents %.2x done", taskPtr->idx, pfds[taskPtr->idx].revents);
             RunTask(taskPtr, pfds[taskPtr->idx].revents, &now);
             taskPtr = taskPtr->nextWaitPtr;
         }

@@ -963,6 +963,7 @@ typedef struct {
     bool               sendSpoolMode;    /* flag, whether a file is to be transmitted via bodyFileFd */
     int                bodyFileFd;       /* fd of a file which is sent as body */
     Ns_SockState       finalSockState;
+    Tcl_Obj           *infoObj;
     NS_TLS_SSL_CTX    *ctx;
     NS_TLS_SSL        *ssl;
     Tcl_DString        ds;

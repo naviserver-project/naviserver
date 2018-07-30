@@ -34,7 +34,9 @@
  */
 
 #include "nsd.h"
-
+#ifdef HAVE_OPENSSL_EVP_H
+# include <openssl/err.h>
+#endif
 /*
  * The maximum chunk size from TLS is 2^14 => 16384 (see RFC 5246). OpenSSL
  * can't send more than this number of bytes in one attempt.
@@ -99,8 +101,9 @@ static void ProcessReplyHeaderFields(
     Ns_HttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode WaitWritable(
+static Ns_ReturnCode WaitState(
     NS_SOCKET sock,
+    short events,
     Ns_Time *timeout
 );
 static int EnsureWritable(
@@ -108,6 +111,14 @@ static int EnsureWritable(
     Ns_HttpTask *httpPtr,
     const char *url
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2);
+
+static void
+HttpTaskAddInfo(
+    Ns_HttpTask *httpPtr,
+    const char *attribute,
+    const char *value
+)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2);
+
 
 static ssize_t HttpTaskSend(
     const Ns_HttpTask *httpPtr,
@@ -122,7 +133,8 @@ static ssize_t HttpTaskRecv(
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void HttpTaskShutdown(
-    const Ns_HttpTask *httpPtr
+    const Ns_HttpTask *httpPtr,
+    int mode
 ) NS_GNUC_NONNULL(1);
 
 
@@ -327,6 +339,10 @@ SetResult(
     if (replyBodyObj != NULL) {
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("body", 4));
         Tcl_ListObjAppendElement(interp, resultObj, replyBodyObj);
+    }
+    if (httpPtr->infoObj != NULL) {
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("https", 5));
+        Tcl_ListObjAppendElement(interp, resultObj, httpPtr->infoObj);
     }
     /*
      * Return this list as result.
@@ -1457,7 +1473,7 @@ Ns_HttpParseHost(
 /*
  *----------------------------------------------------------------------
  *
- * WaitWritable --
+ * WaitState --
  *
  *        Wait until the specified socket is writable.
  *
@@ -1470,8 +1486,9 @@ Ns_HttpParseHost(
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-WaitWritable(
+WaitState(
     NS_SOCKET sock,
+    short events,
     Ns_Time *timeout
 
 ) {
@@ -1481,12 +1498,13 @@ WaitWritable(
           struct pollfd  pollfd;
           int            retval;
 
-          pollfd.events = POLLOUT;
+          pollfd.revents = 0u;
+          pollfd.events = events;
           pollfd.fd = sock;
 
           for (;;) {
               int pollto = 1000;
-              //fprintf(stderr, "WaitWritable: timeout %p\n", timeout);
+              //fprintf(stderr, "##### WaitState: timeout %p events %.4x\n", (void*)timeout, pollfd.events);
 
               if (timeout != NULL) {
                   Ns_Time diff, now;
@@ -1500,9 +1518,10 @@ WaitWritable(
                   if (Ns_DiffTime(timeout, &now, &diff) > 0) {
                       pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
                   }
+                  //fprintf(stderr, "##### WaitState: pollto %d events %.4x\n", pollto, pollfd.events);
                   retval = ns_poll(&pollfd, 1, pollto);
-                  //fprintf(stderr, "# call poll on %d %" PRId64 ".%06ld pollto %d => %d\n",
-                  //        sock, (int64_t) timeout->sec, timeout->usec, pollto, retval);
+                  /*fprintf(stderr, "##### call poll on %d %" PRId64 ".%06ld events %.4x pollto %d => %d revents %.4x\n",
+                    sock, (int64_t) timeout->sec, timeout->usec, pollfd.events, pollto, retval, pollfd.revents);*/
                   // ns_http run http://naviserver.sourceforge.net/n/naviserver/files/commandlist.htmlx
                   // ns_http run https://naviserver.sourceforge.net/n/naviserver/files/commandlist.html
                   // ns_http run https://naviserver.sourceforge.io/n/naviserver/files/commandlist.html
@@ -1535,7 +1554,7 @@ WaitWritable(
  *
  * EnsureWritable --
  *
- *        Call WaitWritable() and perform Tcl error handling
+ *        Call WaitState() and perform Tcl error handling
  *
  * Results:
  *        Standard Tcl result code
@@ -1561,7 +1580,7 @@ EnsureWritable(
     /*
      * Make sure, the socket is in a writable state.
      */
-    rc = WaitWritable(httpPtr->sock, &httpPtr->timeout);
+    rc = WaitState(httpPtr->sock, POLLOUT, &httpPtr->timeout);
     if (rc != NS_OK) {
         if (rc == NS_TIMEOUT) {
             Ns_TclPrintfResult(interp, "ns_http failed: timeout");
@@ -1618,6 +1637,8 @@ HttpConnect(
     char          *url2, *protocol, *host, *portString, *path, *tail;
     const char    *contentType = NULL;
     Tcl_DString   *dsPtr;
+    Ns_Time        timeoutConnect = { 2, 0000000 }; /* 2.0s */
+    Ns_Time       *timeoutPtrConnect = &timeoutConnect;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -1683,7 +1704,15 @@ HttpConnect(
 
     Ns_Log(Ns_LogTaskDebug, "connect to [%s]:%hu", host, portNr);
 
+#if 0
     sock = Ns_SockAsyncConnect(host, portNr);
+#else
+    if (timeoutPtr != NULL) {
+        timeoutPtrConnect = (Ns_Time *)timeoutPtr;
+    }
+    sock = Ns_SockTimedConnect(host, portNr, timeoutPtrConnect);
+#endif
+
     if (sock == NS_INVALID_SOCKET) {
         Ns_TclPrintfResult(interp, "could not connect to \"%s\"", url);
         goto fail;
@@ -1746,6 +1775,7 @@ HttpConnect(
     httpPtr->url            = ns_strdup(url);
     httpPtr->bodyFileFd     = bodyFileFd;
     httpPtr->sendSpoolMode  = NS_FALSE;
+    httpPtr->infoObj        = NULL;
 
     /*
      * Handling timeouts
@@ -1761,22 +1791,25 @@ HttpConnect(
 
 
     /*
-     * Prevent sockclose in fail cases.
+     * Prevent sockclose attempts in fail cases.
      */
     sock = NS_INVALID_SOCKET;
+
     Ns_MutexInit(&httpPtr->lock);
     /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
-
     dsPtr = &httpPtr->ds;
     Tcl_DStringInit(dsPtr);
 
     /*
-     * Initialize OpenSSL context and establish SSL/TLS connection for https.
+     * Determine if connection is HTTP or HTTPS via default port.
      */
     if (defaultPort == 443u) {
         NS_TLS_SSL_CTX *ctx;
         NS_TLS_SSL     *ssl;
 
+        /*
+         * We have a HTTPS URL; initialize OpenSSL context and establish SSL/TLS connection
+         */
         result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath, verify, &ctx);
         httpPtr->ctx = ctx;
 
@@ -1785,6 +1818,7 @@ HttpConnect(
              * Make sure, the socket is in a writable state.
              */
             result = EnsureWritable(interp, httpPtr, url);
+            /*fprintf(stderr, "### Ns_TLS_CtxClientCreate ok and writable\n");*/
         }
         if (likely(result == TCL_OK)) {
             /*
@@ -1792,8 +1826,14 @@ HttpConnect(
              */
             result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx, sni_hostname, &ssl);
             httpPtr->ssl = ssl;
+            /*fprintf(stderr, "### Ns_TLS_CtxClientCreate connection established => %s\n",  result == TCL_OK ? "OK" : "ERROR");*/
+            HttpTaskAddInfo(httpPtr, "sslversion", SSL_get_version(ssl));
+            HttpTaskAddInfo(httpPtr, "cipher", SSL_get_cipher(ssl));
         }
     } else {
+        /*
+         * We have a HTTP URL.
+         */
 
         result = EnsureWritable(interp, httpPtr, url);
     }
@@ -1856,7 +1896,7 @@ HttpConnect(
 
     if (!keep_host_header) {
         Ns_DStringNAppend(dsPtr, "Host: ", 6);
-        (void)Ns_HttpLocationString(dsPtr, NULL, host, portNr, 80u);
+        (void)Ns_HttpLocationString(dsPtr, NULL, host, portNr, defaultPort);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
     }
 
@@ -1891,10 +1931,25 @@ HttpConnect(
         Tcl_DStringAppend(dsPtr, "\r\n", 2);
     }
 
-    httpPtr->next = dsPtr->string;
-    httpPtr->requestLength = (size_t)dsPtr->length;
-    httpPtr->sent = 0u;
+    {
+#if 0
+        char *reqString =
+                "GET /HandInservice/HandInService.asmx HTTP/1.1\r\n"
+                "Host: services.ephorus.com\r\n"
+                "User-Agent: curl/7.61.0\r\n"
+                "Accept: */*\r\n"
+                "\r\n";
+        dsPtr->string = ns_strdup(reqString);
+#endif
 
+        httpPtr->next = dsPtr->string;
+        httpPtr->requestLength = (size_t)dsPtr->length;
+
+        //httpPtr->requestLength = strlen(reqString);
+
+        httpPtr->sent = 0u;
+
+    }
     Ns_Log(Ns_LogTaskDebug, "full request <%s>", dsPtr->string);
 
     *httpPtrPtr = httpPtr;
@@ -2020,21 +2075,37 @@ HttpClose(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    if (httpPtr->task != NULL)          {(void) Ns_TaskFree(httpPtr->task);}
+    if (httpPtr->task != NULL) {
+        (void) Ns_TaskFree(httpPtr->task);
+    }
 #ifdef HAVE_OPENSSL_EVP_H
     if (httpPtr->ssl != NULL) {
         SSL_shutdown(httpPtr->ssl);
         SSL_free(httpPtr->ssl);
     }
-    if (httpPtr->ctx != NULL)           {SSL_CTX_free(httpPtr->ctx);}
+    if (httpPtr->ctx != NULL) {
+        SSL_CTX_free(httpPtr->ctx);
+    }
 #endif
-    if (httpPtr->sock > 0)              {ns_sockclose(httpPtr->sock);}
-    if (httpPtr->spoolFileName != NULL) {ns_free((char*)httpPtr->spoolFileName);}
-    if (httpPtr->spoolFd > 0)           {(void) ns_close(httpPtr->spoolFd);}
-    if (httpPtr->bodyFileFd > 0)        {(void) ns_close(httpPtr->bodyFileFd);}
+    if (httpPtr->sock > 0) {
+        ns_sockclose(httpPtr->sock);
+    }
+    if (httpPtr->spoolFileName != NULL) {
+        ns_free((char*)httpPtr->spoolFileName);
+    }
+    if (httpPtr->spoolFd > 0) {
+        (void) ns_close(httpPtr->spoolFd);
+    }
+    if (httpPtr->bodyFileFd > 0) {
+        (void) ns_close(httpPtr->bodyFileFd);
+    }
     if (httpPtr->compress != NULL)      {
         (void) Ns_InflateEnd(httpPtr->compress);
         ns_free(httpPtr->compress);
+    }
+    if (httpPtr->infoObj != NULL) {
+        Tcl_DecrRefCount(httpPtr->infoObj);
+        httpPtr->infoObj = NULL;
     }
     Ns_MutexDestroy(&httpPtr->lock);
     Tcl_DStringFree(&httpPtr->ds);
@@ -2062,6 +2133,20 @@ HttpAbort(
 
     HttpCancel(httpPtr);
     HttpClose(httpPtr);
+}
+
+
+static void
+HttpTaskAddInfo(
+    Ns_HttpTask *httpPtr,
+    const char *attribute,
+    const char *value
+) {
+    if (httpPtr->infoObj == NULL) {
+        httpPtr->infoObj = Tcl_NewListObj(0, NULL);
+    }
+    Tcl_ListObjAppendElement(NULL, httpPtr->infoObj, Tcl_NewStringObj(attribute, -1));
+    Tcl_ListObjAppendElement(NULL, httpPtr->infoObj, Tcl_NewStringObj(value, -1));
 }
 
 
@@ -2109,13 +2194,18 @@ HttpTaskSend(
             int     err;
             ssize_t n;
 
+            /*fprintf(stderr, "### HttpTaskSend wants to send %ld\n", iov.iov_len);*/
             n = SSL_write(httpPtr->ssl, iov.iov_base, (int)iov.iov_len);
             err = SSL_get_error(httpPtr->ssl, (int)n);
+            /*fprintf(stderr, "### HttpTaskSend n %ld err %d\n", n, err);*/
             if (err == SSL_ERROR_WANT_WRITE) {
                 Ns_Time timeout = { 0, 10000 }; /* 10ms */
 
                 (void) Ns_SockTimedWait(httpPtr->sock, NS_SOCK_WRITE, &timeout);
                 continue;
+            } else if (err != 0) {
+                Ns_Log(Ns_LogTaskDebug, "HttpTaskSend %d: got unexpected reply %d", httpPtr->sock, err);
+                fprintf(stderr, "### HttpTaskSend got unexpected reply %d\n", err);
             }
             if (likely(n > -1)) {
                 sent += n;
@@ -2169,7 +2259,7 @@ HttpTaskRecv(
         received = ns_recv(httpPtr->sock, buffer, length, 0);
     } else {
 #ifdef HAVE_OPENSSL_EVP_H
-        /*fprintf(stderr, "### SSL_read want %lu\n", length);*/
+        //fprintf(stderr, "### HttpTaskRecv SSL_read want %lu\n", length);
 
         received = 0;
         for (;;) {
@@ -2177,20 +2267,31 @@ HttpTaskRecv(
 
             n = SSL_read(httpPtr->ssl, buffer+received, (int)(length - (size_t)received));
             err = SSL_get_error(httpPtr->ssl, n);
-            /*fprintf(stderr, "### SSL_read n %ld got %lu err %d\n", n, received, err);*/
+            //fprintf(stderr, "### HttpTaskRecv SSL_read n %d err %d (pending %d)\n", n, err, SSL_pending(httpPtr->ssl));
             switch (err) {
             case SSL_ERROR_NONE:
                 if (n < 0) {
-                    Ns_Log(Error, "SSL_read failed but no error, should not happen");
+                    Ns_Log(Error, "HttpTaskRecv SSL_read failed but no error, should not happen");
                     break;
                 }
                 received += n;
                 break;
-
             case SSL_ERROR_WANT_READ:
-                /*fprintf(stderr, "### partial read, n %d\n", (int)n); */
+                //fprintf(stderr, "### HttpTaskRecv partial read, n %d\n", (int)n);
                 received += n;
                 continue;
+            case SSL_ERROR_ZERO_RETURN:
+                /*
+                 * The TLS/SSL connection has been closed.
+                 */
+                break;
+            default: {
+                char errorBuffer[256];
+
+                Ns_Log(Warning, "HttpTaskRecv got unexpected error code %d message %s", err,
+                       ERR_error_string(err, errorBuffer));
+                break;
+            }
             }
             break;
         }
@@ -2223,13 +2324,14 @@ HttpTaskRecv(
 
 static void
 HttpTaskShutdown(
-    const Ns_HttpTask *httpPtr
+    const Ns_HttpTask *httpPtr,
+    int mode
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
 #ifdef HAVE_OPENSSL_EVP_H
     if (httpPtr->ssl != NULL) {
-        SSL_set_shutdown(httpPtr->ssl, SSL_SENT_SHUTDOWN);
+        SSL_set_shutdown(httpPtr->ssl, mode);
     }
 #endif
 }
@@ -2294,7 +2396,7 @@ HttpProc(
                 } else {
                     if (n < CHUNK_SIZE) {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data spooled, switch to read reply");
-                        HttpTaskShutdown(httpPtr);
+                        //HttpTaskShutdown(httpPtr, SSL_SENT_SHUTDOWN);  /* should actually work */
                         Tcl_DStringSetLength(&httpPtr->ds, 0);
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
@@ -2306,12 +2408,14 @@ HttpProc(
             if (n < 0) {
                 httpPtr->error = "send failed";
             } else {
+                ssize_t remaining;
+
                 httpPtr->next += n;
                 httpPtr->sent += (size_t)n;
-                Ns_Log(Ns_LogTaskDebug, "HttpProc sent %ld bytes from memory, remaining %lu",
-                       n, httpPtr->requestLength - httpPtr->sent);
 
-                if ((httpPtr->requestLength - httpPtr->sent) == 0u) {
+                remaining = (ssize_t)(httpPtr->requestLength - httpPtr->sent);
+
+                if (remaining == 0) {
                     /*
                      * All data from ds has been sent. Check, if there is a file to
                      * append, and if yes, switch to sendSpoolMode.
@@ -2323,10 +2427,13 @@ HttpProc(
                         Tcl_DStringSetLength(&httpPtr->ds, CHUNK_SIZE);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
-                        HttpTaskShutdown(httpPtr);
+                        //HttpTaskShutdown(httpPtr, SSL_SENT_SHUTDOWN);  /* should actually work */
                         Tcl_DStringSetLength(&httpPtr->ds, 0);
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
+                } else {
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc sent %ld bytes from memory, remaining %ld",
+                           n, remaining);
                 }
                 taskDone = NS_FALSE;
             }
@@ -2368,6 +2475,7 @@ HttpProc(
             }
             taskDone = NS_FALSE;
         }
+
         if (n < 0) {
             Ns_Log(Warning, "client HTTP request: receive failed, error: %s", strerror(errno));
             httpPtr->error = "recv failed";

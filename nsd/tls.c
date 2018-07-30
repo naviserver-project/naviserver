@@ -121,7 +121,9 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     }
 
     SSL_CTX_set_default_verify_paths(ctx);
-    SSL_CTX_load_verify_locations(ctx, caFile, caPath);
+    if (caFile != NULL || caPath != NULL) {
+        SSL_CTX_load_verify_locations(ctx, caFile, caPath);
+    }
     SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
@@ -226,15 +228,16 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         for (;;) {
             int sslRc, err;
 
-            Ns_Log(Debug, "ssl connect");
+            Ns_Log(Debug, "ssl connect on sock %d", sock);
             sslRc = SSL_connect(ssl);
             err   = SSL_get_error(ssl, sslRc);
-
+            //fprintf(stderr, "### ssl connect sock %d returned err %d\n", sock, err);
             if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
                 Ns_Time timeout = { 0, 10000 }; /* 10ms */
                 (void) Ns_SockTimedWait(sock,
                                         ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ),
                                         &timeout);
+                //fprintf(stderr, "### ssl connect retry on %d\n", sock);
                 continue;
             }
             break;
@@ -243,6 +246,9 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         if (!SSL_is_init_finished(ssl)) {
             Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
             result = TCL_ERROR;
+        } else {
+            //const char *verifyString = X509_verify_cert_error_string(SSL_get_verify_result(ssl));
+            //fprintf(stderr, "### SSL certificate verify: %s\n", verifyString);
         }
     }
 
