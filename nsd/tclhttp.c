@@ -1637,8 +1637,7 @@ HttpConnect(
     char          *url2, *protocol, *host, *portString, *path, *tail;
     const char    *contentType = NULL;
     Tcl_DString   *dsPtr;
-    Ns_Time        timeoutConnect = { 2, 0000000 }; /* 2.0s */
-    Ns_Time       *timeoutPtrConnect = &timeoutConnect;
+    Ns_Time        timeoutConnect, *timeoutConnectPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -1704,18 +1703,26 @@ HttpConnect(
 
     Ns_Log(Ns_LogTaskDebug, "connect to [%s]:%hu", host, portNr);
 
-#if 0
-    sock = Ns_SockAsyncConnect(host, portNr);
-#else
-    if (timeoutPtr != NULL) {
-        timeoutPtrConnect = (Ns_Time *)timeoutPtr;
-    }
-    sock = Ns_SockTimedConnect(host, portNr, timeoutPtrConnect);
-#endif
+    {
+        Ns_ReturnCode status;
 
-    if (sock == NS_INVALID_SOCKET) {
-        Ns_TclPrintfResult(interp, "could not connect to \"%s\"", url);
-        goto fail;
+        if (timeoutPtr != NULL) {
+            timeoutConnectPtr = (Ns_Time *)timeoutPtr;
+        } else {
+            timeoutConnectPtr = &timeoutConnect;
+            timeoutConnect.sec = 2;
+            timeoutConnect.usec = 0;
+        }
+        sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, timeoutPtr, &status);
+
+        if (sock == NS_INVALID_SOCKET) {
+            Ns_SockConnectError(interp, host, portNr, status);
+            goto fail;
+        }
+
+        if (Ns_SockSetNonBlocking(sock) != NS_OK) {
+            Ns_Log(Warning, "attempt to set socket nonblocking failed");
+        }
     }
 
     if ((bodyPtr != NULL) || (bodyFileName != NULL)) {
@@ -2276,10 +2283,18 @@ HttpTaskRecv(
                 }
                 received += n;
                 break;
-            case SSL_ERROR_WANT_READ:
+
+            case SSL_ERROR_WANT_READ: {
+                Ns_Time timeout = { 0, 10000 }; /* 10ms */
+
                 //fprintf(stderr, "### HttpTaskRecv partial read, n %d\n", (int)n);
-                received += n;
+                if (n > 0) {
+                    received += n;
+                }
+                (void) Ns_SockTimedWait(httpPtr->sock, NS_SOCK_READ, &timeout);
                 continue;
+            }
+
             case SSL_ERROR_ZERO_RETURN:
                 /*
                  * The TLS/SSL connection has been closed.

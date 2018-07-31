@@ -517,6 +517,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
     } else {
         NS_SOCKET      sock;
+        Ns_ReturnCode  status = NS_OK;
 
         /*
          * Provide error messages for invalid argument combinations.  Note that either
@@ -546,14 +547,13 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         } else if (msec < 0) {
             sock = Ns_SockConnect2(host, port, lhost, lport);
         } else {
-            sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeoutPtr);
+            sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeoutPtr, &status);
         }
 
         if (sock == NS_INVALID_SOCKET) {
-            Ns_TclPrintfResult(interp, "can't connect to [\"%s]:%hu\"; %s",
-                               host, port,
-                               (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
+            Ns_SockConnectError(interp, host, port, status);
             result = TCL_ERROR;
+
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 

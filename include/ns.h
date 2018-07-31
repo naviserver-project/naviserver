@@ -2740,8 +2740,15 @@ Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeou
 NS_EXTERN NS_SOCKET
 Ns_SockTimedConnect2(const char *host, unsigned short port,
                      const char *lhost, unsigned short lport,
-                     const Ns_Time *timeoutPtr)
+                     const Ns_Time *timeoutPtr,
+                     Ns_ReturnCode *statusPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
+
+NS_EXTERN void
+Ns_SockConnectError(Tcl_Interp *interp,
+                    const char *host, unsigned short portNr,
+                    Ns_ReturnCode status)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
 Ns_SockSetNonBlocking(NS_SOCKET sock);

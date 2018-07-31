@@ -6289,13 +6289,13 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
         }
 
         if (result == TCL_OK) {
-            NS_SOCKET      sock;
+            NS_SOCKET     sock;
+            Ns_ReturnCode status;
 
-            sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr);
+            sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
 
             if (sock == NS_INVALID_SOCKET) {
-                Ns_TclPrintfResult(interp, "connect to '%s' failed: %s", url,
-                                   ns_sockstrerror(ns_sockerrno));
+                Ns_SockConnectError(interp, host, portNr, status);
                 result = TCL_ERROR;
 
             } else {

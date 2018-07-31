@@ -677,15 +677,16 @@ Ns_SockTimedConnect(const char *host, unsigned short port, const Ns_Time *timeou
     NS_NONNULL_ASSERT(host != NULL);
     NS_NONNULL_ASSERT(timeoutPtr != NULL);
 
-    return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr);
+    return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr, NULL);
 }
 
 NS_SOCKET
 Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, unsigned short lport,
-                     const Ns_Time *timeoutPtr)
+                     const Ns_Time *timeoutPtr, Ns_ReturnCode *statusPtr)
 {
-    NS_SOCKET sock;
-    socklen_t len;
+    NS_SOCKET     sock;
+    socklen_t     len;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(host != NULL);
     NS_NONNULL_ASSERT(timeoutPtr != NULL);
@@ -696,8 +697,9 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
      */
 
     sock = SockConnect(host, port, lhost, lport, NS_TRUE);
-    if (sock != NS_INVALID_SOCKET) {
-        Ns_ReturnCode status;
+    if (unlikely(sock == NS_INVALID_SOCKET)) {
+        status = NS_ERROR;
+    } else {
 
         status = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
         switch (status) {
@@ -728,7 +730,52 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
         }
     }
 
+    /*
+     * When a statusPtr is provided, return the status code. The client can
+     * determine, if e.g. a timeout occured.
+     */
+    if (statusPtr != NULL) {
+        *statusPtr = status;
+    }
+
     return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockConnectError --
+ *
+ *      Leave a consistent error message in in the interpreter result in case
+ *      a connect attempt failed. For timeout cases, set the Tcl error code to
+ *      "NS_TIMEOUT".
+ *
+ * Results:
+ *      NONE
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr, Ns_ReturnCode status)
+{
+    NS_NONNULL_ASSERT(host != NULL);
+
+    if (status == NS_TIMEOUT) {
+        Ns_TclPrintfResult(interp, "timeout while connecting to %s port %hu", host, portNr);
+        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+    } else {
+        /*
+         * Tcl_PosixError() sets as well the Tcl error code.
+         */
+        Ns_TclPrintfResult(interp, "can't connect to %s port %hu: %s",
+                           host, portNr,
+                           (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
+    }
 }
 
 
