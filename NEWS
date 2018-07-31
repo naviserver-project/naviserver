@@ -53,7 +53,7 @@ New Features:
 
     * Summary of new ns_cache* commands
       . ns_cache_configure to change cache parameters at runtime
-      .	ns_cache_exists: This command is is more than an order of
+      .	ns_cache_exists: This command is more than an order of
 	magnitude faster than [expr {"foo" in [ns_cache_names]]
       . ns_cache_transaction_begin
       . ns_cache_transaction_commit
@@ -89,7 +89,7 @@ New Features:
     * Support OpenSSL 1.1.0 (configuration and runtime)
     * Support LibreSSL 2.6.3 and 2.6.4
     * Improved support for ancient versions of OpenSSL (e.g. in CentOS 5.0)
-    * Added support for for client side Server Name Indication (SNI)
+    * Added support for client side Server Name Indication (SNI)
     * Report attempted TLS handshakes on plain connections to error.log
 
 
@@ -133,7 +133,7 @@ New Features:
       second field in the access.log. This eases debugging, since one
       can now link the lines in error.log caused by an request with
       the line in the access.log without the need of guessing via
-      time-stamps. The thread name contains the the name of the
+      time-stamps. The thread name contains the name of the
       connection pool and a connection id.
 
    *  When "mutexlocktrace" is activated, use thread name instead
@@ -162,7 +162,7 @@ Performance Improvements:
   * Improved performance of ns_quotehtml:
 
     In real-world applications (with e.g. OpenACS) this function is
-    one the the most frequently used functions of NaviServer. This
+    one the most frequently used functions of NaviServer. This
     change improves the performance of "ns_quotehtml" by about 40-60% by
     avoiding per-character calls to *DStringAppend and some more
     improvements.
@@ -541,7 +541,7 @@ Modules:
  - letsencrypt:
     . New module for managing server certificates via Let's Encrypt
 
- - websocket:
+ - WebSocket:
     . Varius small updates (links, spelling errors, ...)
 
 
@@ -654,7 +654,7 @@ Bug Fixes:
  - Make startup more robust, when called with invalid arguments.
 
  - nsproxy:
-     * Don't reset timeout for for reaper when slaves already expired
+     * Don't reset timeout for reaper when slaves already expired
      * Improve debug messages
 
  - Improve forward compatibility to forthcoming Tcl 8.7 (fixed bug in
@@ -1002,7 +1002,7 @@ Bug Fixes:
    only one section (bug introduced in 4.99.12).
 
  - Fix URL parser in Ns_ParseUrl(), could return incorrect results
-   when it received an URL in IP-literal notation (bug introduced in
+   when it received a URL in IP-literal notation (bug introduced in
    4.99.11).
 
  - Fix for potentially incorrect mime-types in fastpath, when static
@@ -1133,7 +1133,7 @@ Bug Fixes:
   * Fix potential memory leak for "ns_mutex eval"
 
   * Long standing bug when exiting "make test" should be fixed by now.
-    The problem was that the the Tcl exit handler was kicking in when
+    The problem was that the Tcl exit handler was kicking in when
     the end-of file was reached, interfering with the NaviServer
     shutdown steps.
 
@@ -1917,7 +1917,7 @@ Code Changes:
   * Make mutex timings configurable via #define NS_NO_MUTEX_TIMING
 
   * Improved code formatting
-    - add emacs editor hints to to keep formatting conventions
+    - add emacs editor hints to keep formatting conventions
     - prefer spaces over tabs
 
   * Extended regression test
@@ -1925,7 +1925,7 @@ Code Changes:
 
 Changes in Modules worth to be noted:
 
-  * websocket:
+  * WebSocket:
     New module implementing a WebSocket interface.  This is a Tcl-only
     module defined with two sample applications (chat and a file
     watcher for e.g error.log and access.log).  It support ws://
@@ -2262,7 +2262,7 @@ Performance Improvements:
     * Allow delivery of mmapped files via writer without the need of copying content.
     * Introduce separate locks for waiting queue (wqueue) and thread queue
       (tqueue) per pool. In classical naviserver there is was a single poll lock
-      (covering all pools) used. The change leads to much finer lock
+      (covering all pools) used. The change leads to a much finer lock
       granularity in improves scalability.
     * Added async disk writer to reduce request latencies due to file system latencies.
       Now used optionally for access log and error-log.
@@ -2789,7 +2789,7 @@ Bug Fixes:
     * Improved test environment:
       - placed nstest into a namespace
       - added parameter "-verbose" to nstest::http to trace communication
-      - added parameter -omitcontentlength to to nstest::http to test
+      - added parameter -omitcontentlength to nstest::http to test
 	requests without content length
 
     * Fixed early closes from the server on too-large content (looked like

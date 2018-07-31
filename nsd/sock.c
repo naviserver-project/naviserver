@@ -732,7 +732,7 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
 
     /*
      * When a statusPtr is provided, return the status code. The client can
-     * determine, if e.g. a timeout occured.
+     * determine, if e.g. a timeout occurred.
      */
     if (statusPtr != NULL) {
         *statusPtr = status;

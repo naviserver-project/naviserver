@@ -486,7 +486,7 @@ typedef struct Ns_Sock {
 
 /*
  * The following structure defines a range of bytes to send from a
- * file or memory location. The descriptior fd must be a normal file
+ * file or memory location. The descriptor fd must be a normal file
  * in the filesystem, not a socket.
  */
 

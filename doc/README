@@ -49,7 +49,7 @@ For subcommands use:
     [call [cmd  "ns_conn encoding"] [opt [arg encoding]]]
 instead of 
     [call [cmd  ns_conn] [cmd encoding]] [opt [arg encoding]]]
-since we might get a wrong (higlighted) rendering of "encoding".
+since we might get a wrong (highlighted) rendering of "encoding".
 
 References in the text:
 =======================
