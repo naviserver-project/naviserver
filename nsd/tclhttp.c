@@ -132,11 +132,12 @@ static ssize_t HttpTaskRecv(
     size_t length
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+#if 0
 static void HttpTaskShutdown(
     const Ns_HttpTask *httpPtr,
     int mode
 ) NS_GNUC_NONNULL(1);
-
+#endif
 
 static int
 CheckReplyHeaders(
@@ -1713,7 +1714,7 @@ HttpConnect(
             timeoutConnect.sec = 2;
             timeoutConnect.usec = 0;
         }
-        sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, timeoutPtr, &status);
+        sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, timeoutConnectPtr, &status);
 
         if (sock == NS_INVALID_SOCKET) {
             Ns_SockConnectError(interp, host, portNr, status);
@@ -2319,7 +2320,7 @@ HttpTaskRecv(
     return received;
 }
 
-
+#if 0
 
 /*
  *----------------------------------------------------------------------
@@ -2350,6 +2351,7 @@ HttpTaskShutdown(
     }
 #endif
 }
+#endif
 
 
 /*
