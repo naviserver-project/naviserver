@@ -2152,6 +2152,7 @@ HttpTaskAddInfo(
 ) {
     if (httpPtr->infoObj == NULL) {
         httpPtr->infoObj = Tcl_NewListObj(0, NULL);
+        Tcl_IncrRefCount(httpPtr->infoObj);
     }
     Tcl_ListObjAppendElement(NULL, httpPtr->infoObj, Tcl_NewStringObj(attribute, -1));
     Tcl_ListObjAppendElement(NULL, httpPtr->infoObj, Tcl_NewStringObj(value, -1));
