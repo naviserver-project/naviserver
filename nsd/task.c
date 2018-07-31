@@ -1004,7 +1004,7 @@ TaskThread(void *arg)
          * n is currently not used; n is either number of ready
          * descriptors, or 0 on timeout, or -1 on error
          */
-        /* ((void)(n)); /* ignore n */
+        /* ((void)(n)); ... ignore n */
 
         if ((pfds[0].revents & POLLIN) != 0
             && recv(pfds[0].fd, &c, 1, 0) != 1) {
