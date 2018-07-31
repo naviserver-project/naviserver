@@ -1083,8 +1083,8 @@ StatusMsg(runState state)
         what = "unknown";
         break;
     }
-    Ns_Log(Notice, "nsmain: %s/%s %s",
-           Ns_InfoServerName(), Ns_InfoServerVersion(), what);
+    Ns_Log(Notice, "nsmain: %s/%s (%s) %s",
+           Ns_InfoServerName(), Ns_InfoServerVersion(), Ns_InfoTag(), what);
 #ifndef _WIN32
     if (state == starting || state == running) {
         Ns_Log(Notice, "nsmain: security info: uid=%d, euid=%d, gid=%d, egid=%d",
