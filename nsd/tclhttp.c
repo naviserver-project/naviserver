@@ -2213,8 +2213,8 @@ HttpTaskSend(
                 (void) Ns_SockTimedWait(httpPtr->sock, NS_SOCK_WRITE, &timeout);
                 continue;
             } else if (err != 0) {
-                Ns_Log(Ns_LogTaskDebug, "HttpTaskSend %d: got unexpected reply %d", httpPtr->sock, err);
-                fprintf(stderr, "### HttpTaskSend got unexpected reply %d\n", err);
+                Ns_Log(Ns_LogTaskDebug, "HttpTaskSend %d: got unexpected reply %d (url %s)",
+                       httpPtr->sock, err, httpPtr->url);
             }
             if (likely(n > -1)) {
                 sent += n;
@@ -2305,8 +2305,8 @@ HttpTaskRecv(
             default: {
                 char errorBuffer[256];
 
-                Ns_Log(Warning, "HttpTaskRecv got unexpected error code %d message %s", err,
-                       ERR_error_string(err, errorBuffer));
+                Ns_Log(Warning, "HttpTaskRecv got unexpected error code %d message %s (url %s)", err,
+                       ERR_error_string(err, errorBuffer), httpPtr->url);
                 break;
             }
             }
