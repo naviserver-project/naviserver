@@ -42,7 +42,7 @@
  *
  * Ns_SockaddrMask --
  *
- *	Compute from and address and a mask a masked address in a generic way
+ *	Compute from  "addr" and "mask" a "maskedAddr" in a generic way
  *	(for IPv4 and IPv6 addresses).
  *
  * Results:
