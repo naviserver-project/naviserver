@@ -1499,7 +1499,7 @@ WaitState(
           struct pollfd  pollfd;
           int            retval;
 
-          pollfd.revents = 0u;
+          pollfd.revents = 0;
           pollfd.events = events;
           pollfd.fd = sock;
 
@@ -1658,7 +1658,7 @@ HttpConnect(
     /*
      * Make a non-const copy of url, in which Ns_ParseUrl can replace the item
      * separating characters with '\0' characters. Make sure that we always
-     * free urls before leaving this function. We accept a fully qualified URL.
+     * free URLs before leaving this function. We accept a fully qualified URL.
      */
     url2 = ns_strdup(url);
     if ((Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)
@@ -1678,7 +1678,7 @@ HttpConnect(
      */
     if (STREQ("http", protocol)) {
         if ( (cert != NULL) || (caFile != NULL) || (caPath != NULL) || verify ) {
-            Ns_TclPrintfResult(interp, "https-specific parameters are only allowed for https urls");
+            Ns_TclPrintfResult(interp, "https-specific parameters are only allowed for https URLs");
             goto fail;
         }
         defaultPort = 80u;
