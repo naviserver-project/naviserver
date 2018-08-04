@@ -156,6 +156,10 @@ ns_section "ns/server/default/module/nslog" {
     #ns_param   logpartialtimes     true     ;# default: false
     #ns_param   logreqtime	    true     ;# default: false; include time to service the request
     ns_param    logthreadname       true     ;# default: false; include thread name for linking with error.log
+
+    ns_param	masklogaddr         true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
+    ns_param	maskipv4            255.255.255.0  ;# mask for IPv4 addresses
+    ns_param	maskipv6            ff:ff:ff:ff::  ;# mask for IPv6 addresses
 }
 
 ns_section "ns/server/default/module/nssock" {
