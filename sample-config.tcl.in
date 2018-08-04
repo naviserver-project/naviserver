@@ -284,7 +284,7 @@ ns_section 	"ns/server/${servername}"
                                         ;# 100 means to disable concurrent creates
 
    # Compress response character data: ns_return, ADP etc.
-   ns_param	compressenable		off     ;# Default; use ns_conn compress to overide
+   ns_param	compressenable		off     ;# Default; use ns_conn compress to override
    ns_param	compresslevel		4       ;# 1-9 where 9 is high compression, high overhead
    ns_param	compressminsize		512     ;# Compress responses larger than this
    # ns_param  	compresspreinit  	true	;# false; if true then initialize and allocate buffers at startup
@@ -501,6 +501,10 @@ ns_section 	"ns/server/${servername}/module/nslog"
    # List of additional headers to put in the log
    #ns_param   	extendedheaders 	"Referer X-Forwarded-For"
 
+   # Mask IP address in log file for GDPR (like anonip IP anonymizer; default: false)
+   ns_param	masklogaddr         true
+   ns_param	maskipv4            255.255.255.0  ;# mask for IPv4 addresses
+   ns_param	maskipv6            ff:ff:ff:ff::  ;# mask for IPv6 addresses
 
 ########################################################################
 # CGI interface -- nscgi
