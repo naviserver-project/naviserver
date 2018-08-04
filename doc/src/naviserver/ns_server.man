@@ -65,7 +65,7 @@ Returns a list of the currently defined traces.
 	[opt [option "-server [arg s]"]] \
 	[cmd url2file]]
 
-Returns a list of the mappings from urls to files.
+Returns a list of the mappings from URLs to files.
 
 
 [call [cmd ns_server] \
