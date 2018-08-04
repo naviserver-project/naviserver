@@ -280,7 +280,7 @@ else
    ns_package_tag="tar-$PACKAGE_VERSION"
 fi
 AC_DEFINE_UNQUOTED([PACKAGE_TAG], "$ns_package_tag", 
-       	     [Revision number form souce code management system, or a constant from tar distribution])
+       	     [Revision number form source code management system, or a constant from tar distribution])
 
 
 #

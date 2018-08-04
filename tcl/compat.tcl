@@ -158,7 +158,7 @@ proc ns_rmdir {dir} {
 #
 # ns_unlink --
 #
-#   Deletes a file, optionaly complaining if the file is missing.
+#   Deletes a file, optionally complaining if the file is missing.
 #   It always complains if the passed path points to a directory.
 #
 #   Syntax: ns_unlink ?-nocomplain? file

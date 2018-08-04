@@ -520,7 +520,7 @@ AC_DEFUN([TEA_LOAD_TKCONFIG], [
     if test "${TEA_PLATFORM}" = "unix" ; then
 	case ${TK_DEFS} in
 	    *MAC_OSX_TK*)
-		AC_DEFINE(MAC_OSX_TK, 1, [Are we building against Mac OS X TkAqua?])
+		AC_DEFINE(MAC_OSX_TK, 1, [Are we building against macOS TkAqua?])
 		TEA_WINDOWINGSYSTEM="aqua"
 		;;
 	    *)
@@ -1723,7 +1723,7 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    vers=`echo ${PACKAGE_VERSION} | sed -e 's/^\([[0-9]]\{1,5\}\)\(\(\.[[0-9]]\{1,3\}\)\{0,2\}\).*$/\1\2/p' -e d`
 	    SHLIB_LD="${SHLIB_LD} -current_version ${vers:-0} -compatibility_version ${vers:-0}"
 	    SHLIB_SUFFIX=".dylib"
-	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
+	    # Don't use -prebind when building for macOS 10.4 or later only:
 	    AS_IF([test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F '10\\.' '{print int([$]2)}'`" -lt 4 -a \
 		"`echo "${CPPFLAGS}" | awk -F '-mmacosx-version-min=10\\.' '{print int([$]2)}'`" -lt 4], [
 		LDFLAGS="$LDFLAGS -prebind"])

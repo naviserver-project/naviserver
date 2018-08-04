@@ -164,7 +164,7 @@ nsf::proc ::ns_crypto::hotp_truncate {
     set dbc1 [expr {"0x[string range $input $offset $offset+7]" & 0x7fffffff}]
     #
     # DBC1 (stands for "dynamic binary code" in RFC 4226) is assumed to
-    # be equal to DBC2. The same is done in the refence implementation
+    # be equal to DBC2. The same is done in the reference implementation
     # RFC 4226.
     #
     # Finally return last $digits digits of $dbc1

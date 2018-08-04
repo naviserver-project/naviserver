@@ -532,7 +532,7 @@ ns_runonce {
         }
 
         #
-        # Registes resolver callback. Such callbacks are
+        # Registers resolver callback. Such callbacks are
         # called by the [nstrace::unknown] procedure to
         # locate requested item in one of the trace stores.
         #
@@ -607,7 +607,7 @@ ns_runonce {
         # This command overlays the standard Tcl [unknown] 
         # command. It is used to locate and re-generate
         # the item definition out of the state captured in
-        # thred shared variables. It invokes registered 
+        # thread shared variables. It invokes registered 
         # resolver procedures one by one until the item
         # is located. If unable to locate the item, the
         # control is passed to the underlying Tcl [unknown].
@@ -691,7 +691,7 @@ ns_runonce {
         }
 
         #
-        # Generates scipts to re-generate namespace definition.
+        # Generates scripts to re-generate namespace definition.
         # Returns two scripts: first is used to re-generate 
         # namespace with all its procedures and variables
         # and second is used to import commands/procedures
@@ -1202,7 +1202,7 @@ ns_runonce {
     #  --- key ----              --- value ---
     #  ::fully::qualified::proc  [list <epoch> <ns> <arglist> <body>]
     #
-    # The <epoch> chages anytime one (re)defines a proc. 
+    # The <epoch> changes anytime one (re)defines a proc. 
     # The <ns> is the namespace where the command was imported 
     # from. If empty, the <arglist> and <body> will hold the 
     # actual procedure definition. See the "namespace" tracer

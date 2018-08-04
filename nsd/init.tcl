@@ -225,7 +225,7 @@ proc ns_cleanup {} {
     ns_cleanupvars       ;# Destroy global variables
     ns_set  cleanup      ;# Destroy non-shared sets
     ns_http cleanup      ;# Abort any http requests
-    ns_ictl cleanup      ;# Run depreciated 1-shot Ns_TclRegisterDefer's.
+    ns_ictl cleanup      ;# Run deprecated 1-shot Ns_TclRegisterDefer's.
     ns_ictl update
 }
 

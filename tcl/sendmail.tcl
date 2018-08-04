@@ -349,7 +349,7 @@ proc ns_sendmail args {
         }
 
         #
-        # Optionaly authorize (PLAIN or LOGIN)
+        # Optionally authorize (PLAIN or LOGIN)
         #
 
         if {$user ne "" && $pass ne ""} {

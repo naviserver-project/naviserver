@@ -789,7 +789,7 @@ Modules:
 
  - nsstats:
     * Added statistics for driver usage
-    * Added Page for showing urls mapped to connection threads pools
+    * Added Page for showing URLs mapped to connection threads pools
     * Added information about driver threads
 
 
@@ -848,7 +848,7 @@ Bug Fixes:
     access.log is written); this fixes a bug reported by
     David Osborne.
 
-  * In HTTP client requests, don't start urls with "//" under certain
+  * In HTTP client requests, don't start URLs with "//" under certain
     conditions
 
   * Keep internally convention, that stored request lines do not end
@@ -1066,7 +1066,7 @@ NaviServer 4.99.12, released 2016-08-21
 
 New Features:
   * OpenSSL support integrated with NaviServer core
-    - ns_http can handle now http and https urls
+    - ns_http can handle now http and https URLs
     - Added backward_compatibility stub for ns_ssl
     - Added configure switch --with-openssl?=path?
 
@@ -1777,7 +1777,7 @@ Bug Fixes:
   * Moved network module filtering to the front to avoid double loading
     of Tcl modules (many thanks to William Scott Jordan for the fix)
   * ns_http:
-    - Fixed trailing slashes in some urls
+    - Fixed trailing slashes in some URLs
     - Fixed possible race condition when time gap between "ns_http queue"
       and "ns_http wait" is larger
   * Minor fixes in nscgi
