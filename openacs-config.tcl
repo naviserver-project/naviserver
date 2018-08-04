@@ -463,6 +463,10 @@ ns_section ns/server/${server}/module/nslog {
     # ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
     # ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
     ns_param	checkforproxy	$proxy_mode ;# false, check for proxy header (X-Forwarded-For)
+    ns_param	masklogaddr     true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
+    ns_param	maskipv4        255.255.255.0  ;# mask for IPv4 addresses
+    ns_param	maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
+
     #
     # Add extra entries to the access log via specifying a comma delimited
     # list of request header fields in "extendedheaders"
@@ -650,7 +654,7 @@ ns_section ns/server/${server}/modules {
     ns_param	nsproxy		${bindir}/nsproxy.so
 
     #
-    # Load networking modules depending on existance of Tcl variables
+    # Load networking modules depending on existence of Tcl variables
     # address_v* and httpsport
     #
     if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock.so }

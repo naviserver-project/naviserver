@@ -159,6 +159,22 @@ milliseconds.  Default: false.
 A space separated list of additional HTTP headers whos value should be logged.
 Default: no extra headers are logged.
 
+[def masklogaddr]
+Mask IP address in log file for GDPR (similar to the "anonip" IP anonymizer of the
+Swiss privacy foundation). When this parameter is set, all IP
+addresses are masked in the log file, such that the host-specific (=
+person-specific) information is masked out and the IP-address does not
+match a particular individual anymore.  Still, with the masking turned
+on, reverse DNS lookup and/or geolocation is possible. Default: false.
+
+[def maskipv4]
+Mask to be used for IPv4 addresses, when [term masklogaddr] is true.
+Default: 255.255.255.0
+
+[def maskipv6]
+Mask to be used for IPv6 addresses, when [term masklogaddr] is true.
+Default: ff:ff:ff:ff::
+
 [list_end]
 
 
@@ -171,7 +187,7 @@ The path of the active access log.
 [example_begin]
 nscp:1> [cmd ns_accesslog] file
 /home/ns/servers/server1/modules/nslog/access.log
-
+ 
 nscp:2> [cmd ns_modulepath] server1 nslog access.log
 /home/ns/servers/server1/modules/nslog/access.log
 [example_end]
@@ -191,12 +207,12 @@ Extended logging options can be configured at run-time.
 [example_begin]
 nscp:1> [cmd ns_accesslog] flags
 logCombined formattedTime
-
+ 
 nscp:2> [cmd ns_accesslog] flags {logcombined formattedtime checkforproxy}
 logcombined formattedtime checkforproxy
-
+ 
 nscp:3> [cmd ns_accesslog] extendedheaders
-
+ 
 nscp:4> [cmd ns_accesslog] extendedheaders {Cookie Accept}
 Cookie Accept
 [example_end]

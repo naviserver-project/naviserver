@@ -45,6 +45,7 @@
 #define LOG_CHECKFORPROXY 0x10u
 #define LOG_SUPPRESSQUERY 0x20u
 #define LOG_THREADNAME    0x40u
+#define LOG_MASKIP        0x80u
 
 #if !defined(PIPE_BUF)
 # define PIPE_BUF 512
@@ -64,6 +65,12 @@ typedef struct {
     int          maxbackup;
     int          maxlines;
     int          curlines;
+    struct NS_SOCKADDR_STORAGE  ipv4maskStruct;
+    struct sockaddr            *ipv4maskPtr;
+#ifdef HAVE_IPV6
+    struct NS_SOCKADDR_STORAGE  ipv6maskStruct;
+    struct sockaddr            *ipv6maskPtr;
+#endif
     Tcl_DString   buffer;
 } Log;
 
@@ -209,6 +216,36 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     if (Ns_ConfigBool(path, "checkforproxy", NS_FALSE)) {
         logPtr->flags |= LOG_CHECKFORPROXY;
+    }
+
+    logPtr->ipv4maskPtr = NULL;
+#ifdef HAVE_IPV6
+    logPtr->ipv6maskPtr = NULL;
+#endif
+    if (Ns_ConfigBool(path, "masklogaddr", NS_FALSE)) {
+        const char *default_ipv4MaskString = "255.255.255.0";
+        const char *default_ipv6MaskString = "ff:ff:ff:ff::";
+        const char* maskString;
+
+        logPtr->flags |= LOG_MASKIP;
+
+#ifdef HAVE_IPV6
+        maskString = Ns_ConfigGetValue(path, "maskipv6");
+        if (maskString == NULL) {
+            maskString = default_ipv6MaskString;
+        }
+
+        if (ns_inet_pton((struct sockaddr *)&logPtr->ipv6maskStruct, maskString) == 1) {
+            logPtr->ipv6maskPtr = (struct sockaddr *)&logPtr->ipv6maskStruct;
+        }
+#endif
+        maskString = Ns_ConfigGetValue(path, "maskipv4");
+        if (maskString == NULL) {
+            maskString = default_ipv4MaskString;
+        }
+        if (ns_inet_pton((struct sockaddr *)&logPtr->ipv4maskStruct, maskString) == 1) {
+            logPtr->ipv4maskPtr = (struct sockaddr *)&logPtr->ipv4maskStruct;
+        }
     }
 
     /*
@@ -597,7 +634,13 @@ LogTrace(void *arg, Ns_Conn *conn)
     int           n, i;
     Ns_ReturnCode status;
     size_t        bufferSize = 0u;
-    Tcl_DString    ds, *dsPtr = &ds;
+    Tcl_DString   ds, *dsPtr = &ds;
+    char          ipString[NS_IPADDR_SIZE];
+    struct NS_SOCKADDR_STORAGE  ipStruct, maskedStruct;
+    struct sockaddr            *maskPtr = NULL,
+        *ipPtr     = (struct sockaddr *)&ipStruct,
+        *maskedPtr = (struct sockaddr *)&maskedStruct;
+
 
     Tcl_DStringInit(dsPtr);
     Ns_MutexLock(&logPtr->lock);
@@ -610,13 +653,42 @@ LogTrace(void *arg, Ns_Conn *conn)
     if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
         p = Ns_SetIGet(conn->headers, "X-Forwarded-For");
         if (p != NULL && !strcasecmp(p, "unknown")) {
-            p = NULL;
+            p = Ns_ConnPeerAddr(conn);
         }
     } else {
-        p = NULL;
+        p = Ns_ConnPeerAddr(conn);
     }
-    Tcl_DStringAppend(dsPtr,
-                      ((p != NULL) && (*p != '\0')) ? p : Ns_ConnPeerAddr(conn), -1);
+
+    /*
+     * Check if the actual IP address can be converted to internal format (this
+     * should be always possible).
+     */
+    if ((logPtr->flags |= LOG_MASKIP)
+        && (ns_inet_pton(ipPtr, p) == 1)
+        ) {
+
+        /*
+         * Depending on the class of the IP address, use the appropriate mask.
+         */
+        if (ipPtr->sa_family == AF_INET) {
+            maskPtr = logPtr->ipv4maskPtr;
+        }
+#ifdef HAVE_IPV6
+        if (ipPtr->sa_family == AF_INET6) {
+            maskPtr = logPtr->ipv6maskPtr;
+        }
+#endif
+        /*
+         * If the mask is non-null, the IP "anonymizing" was configured.
+         */
+        if (maskPtr != NULL) {
+            Ns_SockaddrMask(ipPtr, maskPtr, maskedPtr);
+            ns_inet_ntop(maskedPtr, ipString, NS_IPADDR_SIZE);
+            p = ipString;
+        }
+    }
+
+    Tcl_DStringAppend(dsPtr, p, -1);
 
     /*
      * Append the thread name, if requested.
