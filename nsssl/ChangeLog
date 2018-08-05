@@ -80,7 +80,7 @@
 	* README: deleted file.
 	* README, README.md:
 	- use .md as extension for README to provide a nicer start page on
-	bitbucket
+	Bitbucket
 
 2015-03-15 05:28 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6b68731c136e)
 
@@ -110,7 +110,7 @@
 2015-03-13 13:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (57f71eb17508)
 
 	* nsssl.c:
-	- fix off by 1 bug leading to incorrect urls when https client was
+	- fix off by 1 bug leading to incorrect URLs when https client was
 	used with url path
 	- align logic more closer with tclhhtp.c
 	- bump version number to identify fixed versions
@@ -202,7 +202,7 @@
 2015-01-05 14:25 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (475429fa2f7f)
 
 	* README:
-	- improve markup on bitbucket via markdown
+	- improve markup on Bitbucket via markdown
 
 2015-01-05 14:25 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8f1726375239)
 
@@ -288,7 +288,7 @@
 	* Makefile, README, dhparams.h, nsssl.c:
 	- added support for Eliptic Curve Cryptograpy (such as Elliptic
 	Curve Diffie-Hellman (ECDH))
-	- provide compiled-in defaults for DH parmeters
+	- provide compiled-in defaults for DH parameters
 	- add flags for handling several SSL and TLS bugs.
 	- deactivate SSLv2
 	- bumped version number to 0.5
@@ -421,7 +421,7 @@
 	Ns_SockTimedWait() since this might interact badly with the toplevel
 	event loop in driver.c. Various small cleanups. Tagged old version
 	as 0.1 and incremented version number to 0.2. Tested on Linux and
-	Mac OS X.
+	macOS.
 
 2012-12-03 10:40 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a59265f1f10e)
 

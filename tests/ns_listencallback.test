@@ -34,7 +34,7 @@ test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
     return [list size $size]
 } -cleanup {
     #
-    # Currently, theres seems to way to stop listening on that port.
+    # Currently, there seems to way to stop listening on that port.
     #
 } -result {size 46}
 

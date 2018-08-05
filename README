@@ -54,7 +54,7 @@ The latest development version is available online:
 ---------------------------
 
 The server is known to compile and run on FreeBSD, Linux, Solaris, 
-Mac OS/X 10.2+ and Windows. To compile and install:
+macOS 10.2+ and Windows. To compile and install:
 
 
 3a. Download, configure, build and install Tcl 8.5 or better

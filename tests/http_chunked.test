@@ -135,7 +135,7 @@ test http_chunked-3-1 {
 
     PUT with Transfer-Encoding Chunked and unknown Content-Length (but
     provided X-Expected-Entity-Length). This is the format that WebDAV
-    client of Mac OS X uses (via Finder).
+    client of macOS uses (via Finder).
 
 } -constraints serverListen -setup {
     ns_register_proc PUT /tclchunked {

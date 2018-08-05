@@ -127,7 +127,7 @@ ns_section	"ns/parameters"
    # Min size of the uploaded file to enable progress tracking
    ns_param	progressminsize		0
 
-   # How many Tcl jobs to run in any job thread before thread exit, this will alow
+   # How many Tcl jobs to run in any job thread before thread exit, this will allow
    # to reclaim thread memory back to the system if memory allocator supports it
    ns_param	jobsperthread		0
 

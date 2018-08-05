@@ -558,7 +558,7 @@ New Features:
  - Multiple driver threads for listening on the same port:
 
    When OS kernels support SO_REUSEPORT (which is the case on Linux
-   since Kernel 3.9, Mac OS 10.3, Solaris 11, *BSD), one can specify
+   since Kernel 3.9, macOS 10.3, Solaris 11, *BSD), one can specify
    now multiple driver threads for exactly the same listening address
    (protocol/IP-address/port) via the new config option
    "driverthreads" with a value larger than 1. With this new feature,

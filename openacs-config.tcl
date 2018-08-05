@@ -39,7 +39,7 @@ set bindir		$homedir/bin
 set proxy_mode		false
 
 #---------------------------------------------------------------------
-# Which database do you want? postgres or oracle
+# Which database do you want? PostgreSQL or Oracle?
 set database              postgres
 set db_name               $server
 
@@ -52,7 +52,7 @@ if { $database eq "oracle" } {
 }
 
 #---------------------------------------------------------------------
-# if debug is false, all debugging will be turned off
+# If debug is false, all debugging will be turned off.
 set debug false
 set dev   false
 set verboseSQL false
