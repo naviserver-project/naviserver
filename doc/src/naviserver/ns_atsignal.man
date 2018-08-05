@@ -59,7 +59,7 @@ shutdown after all other subsystem have been stopped.
 [para]
 Orderly shutdown is attempted within [term shutdowntimeout] seconds, as
 specified in the configuration file. Tcl shutdown procs are called before C
-shutdown tasks are waited on, so should be well behaved.
+shutdown tasks are waited on, so should be well-behaved.
 
 [para]
 Do not attempt to use other sub-systems, such as the [cmd ns_job] command.
@@ -79,7 +79,6 @@ basically the last code to run.
 [list_end]
 
 
-
 [section EXAMPLES]
 
 Log the accumulated cache statistics and reset whenever the server is signalled:
@@ -93,7 +92,7 @@ Log the accumulated cache statistics and reset whenever the server is signalled:
 [example_end]
 
 
-[see_also ns_info ns_atclose ns_atexit ns_atshutdown]
-[keywords "global built-in" signal callback]
+[see_also ns_info ns_atclose]
+[keywords "global built-in" signal startup shutdown exit callback]
 
 [manpage_end]
