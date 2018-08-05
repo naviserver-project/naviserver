@@ -1019,7 +1019,7 @@ TaskThread(void *arg)
         Ns_GetTime(&now);
         taskPtr = firstWaitPtr;
         while (taskPtr != NULL) {
-            Ns_Log(Ns_LogTaskDebug, "runtask %d: revents %.2x done", taskPtr->idx, (int)pfds[taskPtr->idx].revents);
+            Ns_Log(Ns_LogTaskDebug, "runtask %u: revents %.2x done", (unsigned)taskPtr->idx, (int)pfds[taskPtr->idx].revents);
             RunTask(taskPtr, pfds[taskPtr->idx].revents, &now);
             taskPtr = taskPtr->nextWaitPtr;
         }
