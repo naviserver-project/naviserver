@@ -17,9 +17,9 @@ set httpport		8000
 # setting the address to 0.0.0.0 means AOLserver listens on all interfaces
 set hostname		localhost
 set address_v4		127.0.0.1  ;# listen on loopback via IPv4
-#set address_v4		0.0.0.0    ;# listen on all IPv4-Adresses
+#set address_v4		0.0.0.0    ;# listen on all IPv4 addresses
 #set address_v6		::1        ;# listen on loopback via IPv6
-#set address_v6		::0        ;# listen on all IPv6-Adresses
+#set address_v6		::0        ;# listen on all IPv6 addresses
 
 # Note: If port is privileged (usually < 1024), OpenACS must be
 # started by root, and the run script must contain the flag
