@@ -2095,98 +2095,114 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         const EC_GROUP      *group;
         EC_POINT            *pubKeyPt;
         BN_CTX              *bn_ctx = BN_CTX_new();
-
-        EVP_PKEY_CTX        *pctx, *ctx = NULL, *kctx = NULL;
-        EC_KEY              *peerKeyEC;
-        EVP_PKEY            *pkey, *peerKey, *params = NULL;
-
-        Tcl_DStringInit(&importDs);
-        pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, &pubkeyLength, &importDs);
-        //pubkeyString = Tcl_GetByteArrayFromObj(pubkeyObj, &pubkeyLength);
-
-        Ns_Log(Notice, "pub key length %d", pubkeyLength);
-
-        /*
-          ns_crypto::eckey generate -name prime256v1 -pem /tmp/prime256v1_key.pem
-          ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
-        */
+        EVP_PKEY            *pkey;
 
         /*
          * Ingredients:
          *  pkey        : private key, from PEM, EVP_PKEY
          *  eckey       : private key, from PEM, EC_KEY (currently redundant)
          *  pubkeyString: public key of peer as octet string
-         *  peerKeyEC   : peer key locally regnerated, same curve as pkey, get filled with octets
-         *  peerKey     : peer key as EVP_PKEY, filled with peerKeyEC
-         *  pctx        : parameter generation contenxt
-         *  params      : parameter object
-         *  kctx        : key generation context, uses params, used for EVP_PKEY_keygen_init and EVP_PKEY_keygen
-         *  ctx         : shared secret generation context, uses pkey
          */
-        pkey = GetPkeyFromPem(interp, pemFileName, NS_TRUE);
 
+        Tcl_DStringInit(&importDs);
+        pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, &pubkeyLength, &importDs);
+        //pubkeyString = Tcl_GetByteArrayFromObj(pubkeyObj, &pubkeyLength);
+        //Ns_Log(Notice, "pub key length %d", pubkeyLength);
+
+        /*
+          ns_crypto::eckey generate -name prime256v1 -pem /tmp/prime256v1_key.pem
+          ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
+        */
+
+        pkey = GetPkeyFromPem(interp, pemFileName, NS_TRUE);
         group = EC_KEY_get0_group(eckey);
 
-        peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
-        peerKey = EVP_PKEY_new();
+#if 0
+        {
+            /*
+             * Steps as recommended from OpenSSL wiki page. However,
+             * the code based on the low level EC_POINT_oct2point()
+             * appears to be correct.
+             */
 
-        pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
-        EVP_PKEY_paramgen_init(pctx);
-        EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, EC_GROUP_get_curve_name(group));
-        Ns_Log(Notice, "NID X9_62_prime256v1 %d, privKey curve %d ", NID_X9_62_prime256v1, EC_GROUP_get_curve_name(group));
+            /*
+             * Further ingredients:
+             *
+             *  peerKeyEC   : peer key locally regnerated, same curve as pkey, get filled with octets
+             *  peerKey     : peer key as EVP_PKEY, filled with peerKeyEC
+             *  pctx        : parameter generation contenxt
+             *  params      : parameter object
+             *  kctx        : key generation context, uses params, used for EVP_PKEY_keygen_init and EVP_PKEY_keygen
+             *  ctx         : shared secret generation context, uses pkey
+             */
+            EVP_PKEY_CTX        *pctx, *ctx = NULL, *kctx = NULL;
+            EC_KEY              *peerKeyEC;
+            EVP_PKEY            *peerKey, *params = NULL;
 
-        result = TCL_ERROR;
-        if (EC_KEY_oct2key(peerKeyEC, pubkeyString, (size_t)pubkeyLength, NULL) != 1) {
-            Ns_Log(Notice, "could not import peer key");
-            Ns_TclPrintfResult(interp, "could not import peer key");
-        } else if (EVP_PKEY_set1_EC_KEY(peerKey, peerKeyEC) != 1) {
-            Ns_Log(Notice, "could not convert EC key to EVP key");
-            Ns_TclPrintfResult(interp, "could not convert EC key to EVP key");
-        } else if (EVP_PKEY_paramgen(pctx, &params) != 1) {
-            Ns_Log(Notice, "could not generate parameters");
-            Ns_TclPrintfResult(interp, "could not generate parameters");
-        } else if ((kctx = EVP_PKEY_CTX_new(params, NULL)) == NULL) {
-            Ns_Log(Notice, "could not generate kctx");
-            Ns_TclPrintfResult(interp, "could not generate kctx");
-        } else if (EVP_PKEY_keygen_init(kctx) != 1) {
-            Ns_Log(Notice, "could not init kctx");
-            Ns_TclPrintfResult(interp, "could not init kctx");
-        } else if (EVP_PKEY_keygen(kctx, &pkey) != 1) {
-            Ns_Log(Notice, "could not generate key for kctx");
-            Ns_TclPrintfResult(interp, "could not generate key for ctx");
-        } else if ((ctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
-            Ns_TclPrintfResult(interp, "could not create ctx");
-        } else if (EVP_PKEY_derive_init(ctx) != 1) {
-            Ns_Log(Notice, "could not derive init ctx");
-            Ns_TclPrintfResult(interp, "could not derive init ctx");
-        } else if (EVP_PKEY_derive_set_peer(ctx, peerKey) != 1) {
-            Ns_Log(Notice, "could set peer key");
-            Ns_TclPrintfResult(interp, "could not set peer key");
+            peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
+            peerKey = EVP_PKEY_new();
+
+            pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+            EVP_PKEY_paramgen_init(pctx);
+            EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, EC_GROUP_get_curve_name(group));
+            Ns_Log(Notice, "NID X9_62_prime256v1 %d, privKey curve %d ", NID_X9_62_prime256v1, EC_GROUP_get_curve_name(group));
+
             result = TCL_ERROR;
-        } else {
-            Tcl_DString  ds;
-            size_t       sharedKeySize = 0u;
-
-            Tcl_DStringInit(&ds);
-            (void)EVP_PKEY_derive(ctx, NULL, &sharedKeySize);
-            if (sharedKeySize > 0) {
-                Tcl_DStringSetLength(&ds, (int)sharedKeySize);
-                (void)EVP_PKEY_derive(ctx, (unsigned char *)ds.string, &sharedKeySize);
-                hexPrint("recommended", (unsigned char *)ds.string, sharedKeySize);
+            if (EC_KEY_oct2key(peerKeyEC, pubkeyString, (size_t)pubkeyLength, NULL) != 1) {
+                Ns_Log(Notice, "could not import peer key");
+                Ns_TclPrintfResult(interp, "could not import peer key");
+            } else if (EVP_PKEY_set1_EC_KEY(peerKey, peerKeyEC) != 1) {
+                Ns_Log(Notice, "could not convert EC key to EVP key");
+                Ns_TclPrintfResult(interp, "could not convert EC key to EVP key");
+            } else if (EVP_PKEY_paramgen(pctx, &params) != 1) {
+                Ns_Log(Notice, "could not generate parameters");
+                Ns_TclPrintfResult(interp, "could not generate parameters");
+            } else if ((kctx = EVP_PKEY_CTX_new(params, NULL)) == NULL) {
+                Ns_Log(Notice, "could not generate kctx");
+                Ns_TclPrintfResult(interp, "could not generate kctx");
+            } else if (EVP_PKEY_keygen_init(kctx) != 1) {
+                Ns_Log(Notice, "could not init kctx");
+                Ns_TclPrintfResult(interp, "could not init kctx");
+            } else if (EVP_PKEY_keygen(kctx, &pkey) != 1) {
+                Ns_Log(Notice, "could not generate key for kctx");
+                Ns_TclPrintfResult(interp, "could not generate key for ctx");
+            } else if ((ctx = EVP_PKEY_CTX_new(pkey, NULL)) == NULL) {
+                Ns_TclPrintfResult(interp, "could not create ctx");
+            } else if (EVP_PKEY_derive_init(ctx) != 1) {
+                Ns_Log(Notice, "could not derive init ctx");
+                Ns_TclPrintfResult(interp, "could not derive init ctx");
+            } else if (EVP_PKEY_derive_set_peer(ctx, peerKey) != 1) {
+                Ns_Log(Notice, "could set peer key");
+                Ns_TclPrintfResult(interp, "could not set peer key");
                 result = TCL_OK;
-            }
-            Tcl_DStringFree(&ds);
-        }
-        EC_KEY_free(peerKeyEC);
-        EVP_PKEY_free(peerKey);
-        EVP_PKEY_free(pkey);
-        EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_CTX_free(pctx);
-        EVP_PKEY_CTX_free(kctx);
-        EVP_PKEY_free(params);
+            } else {
+                Tcl_DString  ds;
+                size_t       sharedKeySize = 0u;
 
-        // Computes the ECDH shared secret, used as the input key material (IKM) for
-        // HKDF.
+                Tcl_DStringInit(&ds);
+                (void)EVP_PKEY_derive(ctx, NULL, &sharedKeySize);
+                if (sharedKeySize > 0) {
+                    Tcl_DStringSetLength(&ds, (int)sharedKeySize);
+                    (void)EVP_PKEY_derive(ctx, (unsigned char *)ds.string, &sharedKeySize);
+                    hexPrint("recommended", (unsigned char *)ds.string, sharedKeySize);
+                    result = TCL_OK;
+                }
+                Tcl_DStringFree(&ds);
+            }
+
+            EC_KEY_free(peerKeyEC);
+            EVP_PKEY_free(peerKey);
+            EVP_PKEY_free(pkey);
+            EVP_PKEY_CTX_free(ctx);
+            EVP_PKEY_CTX_free(pctx);
+            EVP_PKEY_CTX_free(kctx);
+            EVP_PKEY_free(params);
+        }
+#endif
+        /*
+         * Computes the ECDH shared secret, used as the input key material (IKM) for
+         * HKDF.
+         */
 
         pubKeyPt = EC_POINT_new(group);
 
