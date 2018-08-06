@@ -653,6 +653,9 @@ LogTrace(void *arg, Ns_Conn *conn)
     if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
         p = Ns_SetIGet(conn->headers, "X-Forwarded-For");
         if (p != NULL && !strcasecmp(p, "unknown")) {
+            p = NULL;
+        }
+        if (p == NULL) {
             p = Ns_ConnPeerAddr(conn);
         }
     } else {
