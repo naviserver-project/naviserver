@@ -144,6 +144,7 @@ NsInitTask(void)
     if (!initialized) {
         Ns_MutexInit(&lock);
         Ns_MutexSetName(&lock, "ns:task");
+        initialized = NS_TRUE;
     }
 }
 

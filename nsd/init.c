@@ -87,6 +87,7 @@ Nsd_LibInit(void)
     	NsInitDrivers();
     	NsInitQueue();
     	NsInitSched();
+	NsInitTclEnv();
     	NsInitTcl();
     	NsInitRequests();
         NsInitUrl2File();

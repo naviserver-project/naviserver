@@ -1323,6 +1323,7 @@ NS_EXTERN void NsInitSls(void);
 NS_EXTERN void NsInitSockCallback(void);
 NS_EXTERN void NsInitTask(void);
 NS_EXTERN void NsInitTcl(void);
+NS_EXTERN void NsInitTclEnv(void);
 NS_EXTERN void NsInitUrl2File(void);
 
 NS_EXTERN void NsConfigAdp(void);

@@ -58,6 +58,34 @@ static Ns_Mutex lock = NULL;
 /*
  *----------------------------------------------------------------------
  *
+ * NsInitTclEnv --
+ *
+ *	Global initialization for tasks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_EXTERN void
+NsInitTclEnv(void)
+{
+    static bool initialized = NS_FALSE;
+
+    if (!initialized) {
+        Ns_MutexInit(&lock);
+        Ns_MutexSetName(&lock, "ns:env");
+        initialized = NS_TRUE;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_GetEnviron --
  *
  *      Return the environment vector.
@@ -110,14 +138,6 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    /*
-     * Provide a name for the lock when it is not yet initialized.
-     */
-    if (lock == NULL) {
-        Ns_MutexInit(&lock);
-        Ns_MutexSetName(&lock, "ns:env");
-    }
-    
     Ns_MutexLock(&lock);
     envp = Ns_GetEnviron();
     for (i = 0;  envp[i] != NULL; ++i) {
@@ -172,7 +192,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         char        *const *envp;
         Tcl_Obj     *resultObj;
         int          i;
-        
+
         result = TCL_OK;
         Ns_MutexLock(&lock);
 
@@ -191,7 +211,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
             resultObj = Tcl_GetObjResult(interp);
             for (i = 0; envp[i] != NULL; ++i) {
                 Tcl_Obj *obj;
-            
+
                 name = envp[i];
                 value = strchr(name, INTCHAR('='));
                 obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : -1);
@@ -220,7 +240,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
             } else if (objc == 4) {
                 const char *arg = Tcl_GetString(objv[2]);
-                
+
                 if (!STREQ(arg, "-nocomplain")) {
                     Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
                     result = TCL_ERROR;
@@ -293,9 +313,9 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
         len += 1u;
         valueLength = 0u;
     }
-    /* 
+    /*
      * Use malloc() directly (and not ns_malloc())
-     * as putenv() expects. 
+     * as putenv() expects.
      */
     s = malloc(len + 1u);
     if (s == NULL) {
@@ -304,7 +324,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
     } else {
 
         /*
-         * This complication for value == NULL below is needed on 
+         * This complication for value == NULL below is needed on
          * some platforms (Solaris) which do not have unsetenv()
          * and are picky if we try to pass a value to putenv not
          * conforming to the "name=value" format.
@@ -312,7 +332,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
          * This trick will of course work only for platforms which
          * conform to Single Unix Spec and actually uses the storage
          * passed to putenv() to hold the environ entry.
-         * However, there are some libc implementations (notably 
+         * However, there are some libc implementations (notably
          * recent BSDs) that do not obey SUS but copy the presented
          * string. This method fails on such platforms.
          */
@@ -332,7 +352,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
             result = TCL_ERROR;
         }
     }
-    
+
     return result;
 }
 
