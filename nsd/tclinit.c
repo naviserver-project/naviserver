@@ -320,9 +320,11 @@ ConfigServerTcl(const char *server)
          */
 
         Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
+        Ns_MutexInit(&servPtr->chans.lock);
         Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
 
         Tcl_InitHashTable(&servPtr->connchans.table, TCL_STRING_KEYS);
+        Ns_MutexInit(&servPtr->connchans.lock);
         Ns_MutexSetName2(&servPtr->connchans.lock, "nstcl:connchans", server);
         result = NS_OK;
     }
