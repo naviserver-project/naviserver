@@ -1630,15 +1630,16 @@ HttpConnect(
     const Ns_Time *timeoutPtr,
     Ns_HttpTask **httpPtrPtr
 ) {
-    NS_SOCKET      sock = NS_INVALID_SOCKET;
-    Ns_HttpTask   *httpPtr;
-    int            result, uaFlag = -1, bodyFileFd = 0;
-    off_t          bodyFileSize = 0;
-    unsigned short defaultPort, portNr;
-    char          *url2, *protocol, *host, *portString, *path, *tail;
-    const char    *contentType = NULL;
-    Tcl_DString   *dsPtr;
-    Ns_Time        timeoutConnect, *timeoutConnectPtr;
+    NS_SOCKET        sock = NS_INVALID_SOCKET;
+    Ns_HttpTask     *httpPtr;
+    int              result, uaFlag = -1, bodyFileFd = 0;
+    off_t            bodyFileSize = 0;
+    unsigned short   defaultPort, portNr;
+    char            *url2, *protocol, *host, *portString, *path, *tail;
+    const char      *contentType = NULL;
+    Tcl_DString     *dsPtr;
+    Ns_Time          timeoutConnect, *timeoutConnectPtr;
+    static uint64_t  httpClientRequestCount = 0u;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -1797,17 +1798,27 @@ HttpConnect(
         Ns_IncrTime(&httpPtr->timeout, 2, 0);
     }
 
-
     /*
      * Prevent sockclose attempts in fail cases.
      */
     sock = NS_INVALID_SOCKET;
 
-    Ns_MutexInit(&httpPtr->lock);
-    /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
+
     dsPtr = &httpPtr->ds;
     Tcl_DStringInit(dsPtr);
 
+    /*
+     * Initialize the mutex. Provide a name for the task and use the static
+     * part of the dsPtr as temporary storage.
+     */
+    Ns_MutexInit(&httpPtr->lock);
+
+    Ns_MasterLock();
+    httpClientRequestCount++;
+    Ns_MasterUnlock();
+    (void)ns_uint64toa(dsPtr->string, httpClientRequestCount);
+    Ns_MutexSetName2(&httpPtr->lock, "ns:httptask", dsPtr->string);
+    
     /*
      * Determine if connection is HTTP or HTTPS via default port.
      */
@@ -2302,11 +2313,20 @@ HttpTaskRecv(
                  * The TLS/SSL connection has been closed.
                  */
                 break;
+                
+            case SSL_ERROR_SYSCALL:
+                /*
+                 * The TLS/SSL connection has been closed.
+                 */
+                Ns_Log(Notice, "HttpTaskRecv: connection probably closed by server (url %s)",
+                       httpPtr->url);
+                break;
+                
             default: {
                 char errorBuffer[256];
 
                 Ns_Log(Warning, "HttpTaskRecv got unexpected error code %d message %s (url %s)", err,
-                       ERR_error_string(err, errorBuffer), httpPtr->url);
+                       ERR_error_string((unsigned long)err, errorBuffer), httpPtr->url);
                 break;
             }
             }
