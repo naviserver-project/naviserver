@@ -118,6 +118,34 @@ static const struct {
     {NS_SOCK_READ,      POLLIN}
 };
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitTask --
+ *
+ *	Global initialization for tasks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_EXTERN void
+NsInitTask(void)
+{
+    static bool initialized = NS_FALSE;
+
+    if (!initialized) {
+        Ns_MutexInit(&lock);
+        Ns_MutexSetName(&lock, "ns:task");
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -146,6 +174,8 @@ Ns_CreateTaskQueue(const char *name)
     nameLength = strlen(name);
     queuePtr = ns_calloc(1u, sizeof(TaskQueue) + nameLength);
     memcpy(queuePtr->name, name, nameLength + 1u);
+    Ns_MutexInit(&queuePtr->lock);
+    Ns_MutexSetName2(&queuePtr->lock, "ns:taskqueue", name);
 
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",
