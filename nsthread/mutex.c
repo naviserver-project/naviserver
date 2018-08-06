@@ -130,7 +130,9 @@ Ns_MutexInit(Ns_Mutex *mutex)
  *
  * Ns_MutexSetName, Ns_MutexSetName2 --
  *
- *	Update the string name of a mutex.
+ *	Update the string name of a mutex.  Ns_MutexSetName2 produces a name
+ *      based on the two string components and concatenates these with a colon
+ *      (":").
  *
  * Results:
  *	None.
