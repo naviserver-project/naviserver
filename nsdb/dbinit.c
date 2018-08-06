@@ -629,6 +629,14 @@ NsDbInitPools(void)
     Ns_TlsAlloc(&tls, FreeTable);
 
     /*
+     * Provide a name for the lock when it is not yet initialized.
+     */
+    if (sessionMutex == NULL) {
+        Ns_MutexInit(&sessionMutex);
+        Ns_MutexSetName(&sessionMutex, "nsdb:session");
+    }
+
+    /*
      * Attempt to create each database pool.
      */
 
@@ -837,6 +845,7 @@ NsDbInitServer(const char *server)
 	    }
 	} else {
 	    char *p, *toDelete, *pool2;
+
 	    toDelete = p = pool2 = ns_strdup(pool);
 	    while (p != NULL && *p != '\0') {
 		p = strchr(pool2, INTCHAR(','));
