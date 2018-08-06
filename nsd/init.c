@@ -81,6 +81,7 @@ Nsd_LibInit(void)
     	NsInitListen();
         NsInitLimits();
     	NsInitInfo();
+	NsInitSockCallback();
     	NsInitProcInfo();
     	NsInitDrivers();
     	NsInitQueue();

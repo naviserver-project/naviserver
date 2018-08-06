@@ -93,6 +93,9 @@ NsInitFd(void)
 #endif
     int fd;
 
+    Ns_MutexInit(&lock);
+    Ns_MutexSetName(&lock, "ns:fd");
+
     /*
      * Ensure fd 0, 1, and 2 are open on at least /dev/null.
      */
