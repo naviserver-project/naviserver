@@ -109,6 +109,14 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
     int i;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    /*
+     * Provide a name for the lock when it is not yet initialized.
+     */
+    if (lock == NULL) {
+        Ns_MutexInit(&lock);
+        Ns_MutexSetName(&lock, "ns:env");
+    }
     
     Ns_MutexLock(&lock);
     envp = Ns_GetEnviron();
