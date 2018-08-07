@@ -2390,7 +2390,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
  */
 
 NS_EXTERN int
-Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
+Ns_After(int delay, Ns_SchedProc *proc, void *arg, Ns_SchedProc *deleteProc)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
@@ -2403,7 +2403,7 @@ NS_EXTERN bool
 Ns_Resume(int id);
 
 NS_EXTERN int
-Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
+Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

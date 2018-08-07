@@ -169,7 +169,7 @@ NsInitSched(void)
  */
 
 int
-Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
+Ns_After(int delay, Ns_SchedProc *proc, void *arg, Ns_SchedProc *deleteProc)
 {
     int result;
     
@@ -178,7 +178,7 @@ Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
     if (delay < 0) {
         result = (int)NS_ERROR;
     } else {
-        result = Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, NS_SCHED_ONCE, delay, (Ns_SchedProc *) deleteProc);
+        result = Ns_ScheduleProcEx(proc, arg, NS_SCHED_ONCE, delay, deleteProc);
     }
     return result;
 }
@@ -201,7 +201,7 @@ Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
  */
 
 int
-Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
+Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
 {
     int result;
     
@@ -210,7 +210,7 @@ Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
     if (interval < 0) {
         result = (int)NS_ERROR;
     } else {
-        result = Ns_ScheduleProcEx((Ns_SchedProc *) proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, interval, NULL);
+        result = Ns_ScheduleProcEx(proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, interval, NULL);
     }
     return result;
 }
