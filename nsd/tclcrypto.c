@@ -123,7 +123,7 @@ static const char * const hmacCtxType  = "ns:hmacctx";
  *
  *----------------------------------------------------------------------
  */
-# if 1
+# if 0
 static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
 {
     size_t i;
@@ -2095,17 +2095,16 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         const EC_GROUP      *group;
         EC_POINT            *pubKeyPt;
         BN_CTX              *bn_ctx = BN_CTX_new();
-        EVP_PKEY            *pkey;
 
         /*
          * Ingredients:
-         *  pkey        : private key, from PEM, EVP_PKEY
          *  eckey       : private key, from PEM, EC_KEY (currently redundant)
          *  pubkeyString: public key of peer as octet string
          */
 
         Tcl_DStringInit(&importDs);
         pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, &pubkeyLength, &importDs);
+
         //pubkeyString = Tcl_GetByteArrayFromObj(pubkeyObj, &pubkeyLength);
         //Ns_Log(Notice, "pub key length %d", pubkeyLength);
 
@@ -2114,7 +2113,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
           ns_crypto::eckey sharedsecret -pem /tmp/prime256v1_key.pem [ns_base64urldecode BBGNrqwUWW4dedpYHZnoS8hzZZNMmO-i3nYButngeZ5KtJ73ZaGa00BZxke2h2RCRGm-6Rroni8tDPR_RMgNib0]
         */
 
-        pkey = GetPkeyFromPem(interp, pemFileName, NS_TRUE);
         group = EC_KEY_get0_group(eckey);
 
 #if 0
@@ -2128,6 +2126,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             /*
              * Further ingredients:
              *
+             *  pkey        : private key, from PEM, EVP_PKEY
              *  peerKeyEC   : peer key locally regnerated, same curve as pkey, get filled with octets
              *  peerKey     : peer key as EVP_PKEY, filled with peerKeyEC
              *  pctx        : parameter generation contenxt
@@ -2138,7 +2137,9 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             EVP_PKEY_CTX        *pctx, *ctx = NULL, *kctx = NULL;
             EC_KEY              *peerKeyEC;
             EVP_PKEY            *peerKey, *params = NULL;
+            EVP_PKEY            *pkey;
 
+            pkey = GetPkeyFromPem(interp, pemFileName, NS_TRUE);
             peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
             peerKey = EVP_PKEY_new();
 
@@ -2224,9 +2225,12 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             } else {
                 /*
-                 * success
+                 * Success: we were able to convert the octets to EC
+                 * points and to compute a shared secret from this. So
+                 * we can return the shared secret in the requested
+                 * encoding.
                  */
-                hexPrint("ecec       ", (unsigned char *)ds.string, sharedSecretLength);
+                /* hexPrint("ecec       ", (unsigned char *)ds.string, sharedSecretLength);*/
                 Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, sharedSecretLength, NULL, encoding));
             }
             Tcl_DStringFree(&ds);
