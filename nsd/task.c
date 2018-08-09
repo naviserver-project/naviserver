@@ -1028,6 +1028,7 @@ TaskThread(void *arg)
          * Poll sockets and drain the trigger pipe if necessary.
          */
 
+        Ns_Log(Ns_LogTaskDebug, "runtask poll");
         n = NsPoll(pfds, nfds, timeoutPtr);
         Ns_Log(Ns_LogTaskDebug, "runtask poll returned %d", n);
 
