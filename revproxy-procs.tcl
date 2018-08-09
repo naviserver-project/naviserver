@@ -211,18 +211,31 @@ namespace eval ::revproxy {
             } else {
                 log notice "spool: send [string length $msg] bytes from $from to $to ($url)"
 
-                if {[catch {ns_connchan write $to $msg} errorMsg]} {
+                try {
+                    ns_connchan write $to $msg
+
+                } trap {NS_TIMEOUT} {errorMsg} {
+                    set result 0
+
+                } trap {NS_WOULDBLOCK} {errorMsg} {
+                    ns_connchan callback -timeout $timeout $frontendChan \
+                        [list ::revproxy::write_once $from $to $msg $timeout 0] wex
+                    set result 1
+
+                } on error {errorMsg} {
                     #
-                    # A "broken pipe" erro might happen easily, when
+                    # A "broken pipe" error might happen easily, when
                     # the transfer is aborted by the client. Do't
                     # complain about it.
                     #
                     if {![string match "*Broken pipe*" $errorMsg]} {
                         ns_log error $errorMsg
                     }
+                    set result 0
+                } on ok {r} {
+                    # record $to $msg
+                    set result 1
                 }
-                # record $to $msg
-                set result 1
             }
         } else {
             log notice "... called on closed channel $from reason $condition"
@@ -231,6 +244,32 @@ namespace eval ::revproxy {
 
         # log notice "... return $result"
         return $result
+    }
+
+    #
+    # revproxy::write_once
+    #
+    nsf::proc write_once { from to url data timeout condition } {
+        #
+        # Helper for cases, where the -sendtimeout is 0 and a "ns_conn
+        # write" operation ended with a NS_WOULDBLOCK.
+        #
+        log notice "write_once: send [string length $data] bytes from $from to $to"
+        try {
+            ns_connchan write $to $msg
+        } on error {errorMsg} {
+            #
+            # A "broken pipe" error might happen easily, when
+            # the transfer is aborted by the client. Do't
+            # complain about it.
+            #
+            if {![string match "*Broken pipe*" $errorMsg]} {
+                ns_log error "write_once: $errorMsg"
+            }
+        } on ok {r} {
+            log notice "write_once: write on $to succeeded"
+        }
+        return 0
     }
 
     #
