@@ -1041,7 +1041,7 @@ Ns_HttpMessageParse(
             p = eol;
         }
         parsed = (size_t)(p - message);
-        // Ns_Log(Notice, "Ns_ParseHeader final p <%s> len %lu parsed %lu", p, size, parsed);
+        Ns_Log(Ns_LogRequestDebug, "Ns_ParseHeader <%s> len %lu parsed %lu", p, size, parsed);
 
         if (payloadPtr != NULL && (size - parsed) >= 2u) {
             p += 2;
