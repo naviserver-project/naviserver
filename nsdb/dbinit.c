@@ -1324,7 +1324,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->poolname = pool;
             ReturnHandle(handlePtr);
         }
-        (void) Ns_ScheduleProc(CheckPool, poolPtr, 0,
+        (void) Ns_ScheduleProc((Ns_SchedProc*)CheckPool, poolPtr, 0,
                                Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
     }
     return poolPtr;

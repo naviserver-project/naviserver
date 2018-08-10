@@ -316,12 +316,13 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     char                *s, *e, *n, *a, *text, null = '\0', *as = &null;
     Tcl_DString          tag;
     bool                 scriptStreamDone;
+    Parse                parse;
     enum {
         TagNext,
         TagScript,
         TagReg
     } state;
-    Parse parse;
+
 
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
