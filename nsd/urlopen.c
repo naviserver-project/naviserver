@@ -115,7 +115,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
  *
  *      Open up an HTTP connection to an arbitrary URL.  
  *
- *      This function is deprecated, one should use the nmuch more general
+ *      This function is deprecated, one should use the much more general
  *      "ns_http" machinery instead.
  *
  * Results:
@@ -287,7 +287,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         const char     *url;
         Ns_DString      ds;
         
-        Ns_LogDeprecated(objv, 2, "ns_http queue ...; ns_http wait ...", NULL);
+        Ns_LogDeprecated(objv, 2, "ns_http run ...", NULL);
     
         code = TCL_ERROR;
         if (objc == 2) {
