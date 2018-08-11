@@ -7,7 +7,7 @@ package require nsf
 
 namespace eval ::revproxy {
 
-    set version 0.10
+    set version 0.11
     set verbose 0
 
     #
