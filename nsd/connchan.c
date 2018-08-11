@@ -639,14 +639,13 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                  * The error is recoverable, we can retry, when the
                  * socket is writeable.
                  *
-                 *
-                 * If there is not timeout provided, return
-                 * NS_WOULDBLOCK as error code.
+                 * If there is no timeout provided, return POSIX
+                 * EWOULDBLOCK as error code (along with other POSIX
+                 * errors).
                  */
                 if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-                    Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: would block, not timeout configured",
+                    Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: would block, no timeout configured",
                        connChanPtr->channelName);
-                    Tcl_SetErrorCode(interp, "NS_WOULDBLOCK", (char *)0L);
                     result = -1;
 
                 } else {
@@ -691,12 +690,15 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                     partial = NS_TRUE;
                 }
             } else if (!haveTimeout) {
+                const char *errorMsg = Tcl_ErrnoMsg(errno);
                 /*
                  * Timeout is handled above, all other errors ar
-                 * handled here.
+                 * handled here. Return these as posix errors.
                  */
                 Ns_TclPrintfResult(interp, "channel %s: send operation failed: %s",
-                                   connChanPtr->channelName, strerror(errno));
+                                   connChanPtr->channelName, errorMsg);
+                Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, (char *)0L);
+
             }
 
             /*Ns_Log(Notice, "### check result %ld == -1 || %ld == %ld (%d && %d) == %d",
