@@ -236,14 +236,15 @@ SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  *
  * SockSend --
  *
- *      Send data from given buffers.
+ *      Send data from given buffers. There is no timeout handling in this
+ *      function, the timoutvalue is ignored. In case of a EWOULDBOCK the
+ *      error is passed to the caller, who has to handle this.
  *
  * Results:
- *      Total number of bytes sent or -1 on error or timeout.
+ *      Total number of bytes sent or -1 on error.
  *
  * Side effects:
- *      May block once for driver sendwait timeout seconds if first
- *      attempt would block.
+ *      Never blocks.
  *
  *----------------------------------------------------------------------
  */

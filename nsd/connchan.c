@@ -660,7 +660,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                         result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                                               timeoutPtr, flags);
                     } else {
-                        Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: timeout occured",
+                        Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: timeout occurred",
                                connChanPtr->channelName);
                         haveTimeout = NS_TRUE;
                         Ns_TclPrintfResult(interp, "channel %s: timeout on send operation (%ld:%ld)",
