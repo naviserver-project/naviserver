@@ -2209,7 +2209,10 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
 
     } else if (Tcl_Flush(chan) != TCL_OK) {
-        Ns_TclPrintfResult(interp, "flush returned error: %s", strerror(Tcl_GetErrno()));
+        const char *errorMsg = Tcl_ErrnoMsg(Tcl_GetErrno());
+
+        Ns_TclPrintfResult(interp, "flush returned error: %s", errorMsg);
+        Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, (char *)0L);
         result = TCL_ERROR;
 
     } else {
