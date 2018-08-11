@@ -9,7 +9,7 @@ Release 0.10
 This is a NaviServer module that implements a reverse proxy for
 NaviServer based on the ns_connchan command. The revproxy module
 provides filter procs, which can be registered for all or for a view
-selected urls via wildcards, that will redirect the incoming requests
+selected URLs via wildcards, that will redirect the incoming requests
 to some backend service. It is also possible to call the
 revproxy::upstream directly from a server page (e.g. .vuh page),
 allowing so e.g. in OpenACS only authenticated users or certain user
@@ -54,7 +54,7 @@ POST requests  with /shiny/ are tunneled to some back end service
 
 The registration of the folter might me happening e.g.
 - in any kind of initialization script of the server (in an OpenACS context in a *-init.tcl file), or
-- via the the config file of the server, like in:
+- via the config file of the server, like in:
 
     ns_section "ns/server/${server}/module/revproxy"
        ns_param filters {

@@ -25,6 +25,8 @@ namespace eval ::revproxy {
         what
         -target
         {-timeout 10.0}
+        {-sendtimeout 0.0}
+        {-receivetimeout 0.5}
         {-validation_callback ""}
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
@@ -137,10 +139,14 @@ namespace eval ::revproxy {
             set frontendChan [ns_connchan detach]
             log notice "back $backendChan front $frontendChan method [ns_conn method] version 1.0 $url"
 
-            ns_connchan callback -timeout $timeout $frontendChan \
-                [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
-            ns_connchan callback -timeout $timeout $backendChan  \
-                [list ::revproxy::backendReply -callback $backend_reply_callback $backendChan $frontendChan $url $timeout 0] rex
+            ns_connchan callback \
+                -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
+                $frontendChan [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
+            ns_connchan callback \
+                -timeout $timeout $backendChan -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
+                [list ::revproxy::backendReply \
+                     -sendtimeout $sendtimeout -receivetimeout $receivetimeout -callback $backend_reply_callback \
+                     $backendChan $frontendChan $url $timeout 0] rex
 
         } errorMsg]} {
             ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
@@ -215,23 +221,33 @@ namespace eval ::revproxy {
                     ns_connchan write $to $msg
 
                 } trap {NS_TIMEOUT} {errorMsg} {
+                    log notice "spool: TIMEOUT during send to $to ($url) "
                     set result 0
 
-                } trap {NS_WOULDBLOCK} {errorMsg} {
-                    ns_connchan callback -timeout $timeout $frontendChan \
+                } trap {POSIX EWOULDBLOCK} {} {
+                    log notice "spool: EWOULDBLOCK during send to $to ($url) "
+                    #
+                    # We should see this case just when "-sendtimeout" is set to 0
+                    #
+                    ns_connchan callback -timeout $timeout $to \
                         [list ::revproxy::write_once $from $to $msg $timeout 0] wex
                     set result 1
 
-                } on error {errorMsg} {
+                } trap {POSIX EPIPE} {} {
                     #
                     # A "broken pipe" error might happen easily, when
-                    # the transfer is aborted by the client. Do't
+                    # the transfer is aborted by the client. Don't
                     # complain about it.
                     #
-                    if {![string match "*Broken pipe*" $errorMsg]} {
-                        ns_log error $errorMsg
-                    }
                     set result 0
+
+                } on error {errorMsg} {
+                    #
+                    # all other errors
+                    #
+                    ns_log error $errorMsg
+                    set result 0
+
                 } on ok {r} {
                     # record $to $msg
                     set result 1
@@ -277,7 +293,7 @@ namespace eval ::revproxy {
     # reply header fields. This is e.g. necessary to downgrade to
     # HTTP/1.0 requests.
     #
-    nsf::proc backendReply { {-callback ""} from to url timeout arg condition } {
+    nsf::proc backendReply { {-callback ""} -sendtimeout -receivetimeout from to url timeout arg condition } {
 
         if { $condition eq "r" } {
             #
@@ -381,7 +397,9 @@ namespace eval ::revproxy {
                 # Change the callback to regular spooling for the
                 # future requests.
                 #
-                ns_connchan callback -timeout $timeout $from [list ::revproxy::spool $from $to $url $timeout 0] rex
+                ns_connchan callback \
+                    -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
+                    $from [list ::revproxy::spool $from $to $url $timeout 0] rex
                 set result 1
             } else {
                 log notice "backendReply: could not parse header <$msg>"
@@ -441,7 +459,7 @@ namespace eval ::revproxy {
     }
 
     #
-    # Get configured urls
+    # Get configured URLs
     #
     set filters [ns_config ns/server/[ns_info server]/module/revproxy filters]
     if {$filters ne ""} {
