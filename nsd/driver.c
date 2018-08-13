@@ -222,9 +222,9 @@ Ns_LogSeverity Ns_LogConnchanDebug;
 static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
 static Tcl_HashTable    hosts;              /* Host header to server table */
 static const ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
-static Ns_Mutex         reqLock     = NULL; /* Lock for request free list */
+static Ns_Mutex         reqLock     = NULL; /* Lock for allocated Request structure pool */
 static Ns_Mutex         writerlock  = NULL; /* Lock updating streaming information in the writer */
-static Request         *firstReqPtr = NULL; /* Free list of request structures */
+static Request         *firstReqPtr = NULL; /* Allocated request structures kept in a pool */
 static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
 
 #define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
@@ -265,7 +265,8 @@ NsInitDrivers(void)
     Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
     Ns_LogConnchanDebug = Ns_CreateLogSeverity("Debug(connchan)");
     Ns_MutexInit(&reqLock);
-    Ns_MutexSetName2(&reqLock, "ns:driver", "freelist");
+    Ns_MutexInit(&writerlock);
+    Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
     Ns_MutexSetName2(&writerlock, "ns:writer", "stream");
 }
 
@@ -2351,7 +2352,7 @@ RequestNew(Sock *sockPtr)
      */
     Ns_MutexLock(&reqLock);
     reqPtr = firstReqPtr;
-    if (reqPtr != NULL) {
+    if (likely(reqPtr != NULL)) {
         Ns_Log(DriverDebug, "RequestNew reuses a Request");
         firstReqPtr = reqPtr->nextPtr;
     }
