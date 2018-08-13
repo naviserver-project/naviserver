@@ -143,10 +143,10 @@ namespace eval ::revproxy {
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
                 $frontendChan [list ::revproxy::spool $frontendChan $backendChan client  $timeout 0] rex
             ns_connchan callback \
-                -timeout $timeout $backendChan -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
-                [list ::revproxy::backendReply \
-                     -sendtimeout $sendtimeout -receivetimeout $receivetimeout -callback $backend_reply_callback \
-                     $backendChan $frontendChan $url $timeout 0] rex
+                -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
+                $backendChan [list ::revproxy::backendReply \
+                                  -sendtimeout $sendtimeout -receivetimeout $receivetimeout -callback $backend_reply_callback \
+                                  $backendChan $frontendChan $url $timeout 0] rex
 
         } errorMsg]} {
             ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
@@ -224,15 +224,6 @@ namespace eval ::revproxy {
                     log notice "spool: TIMEOUT during send to $to ($url) "
                     set result 0
 
-                } trap {POSIX EWOULDBLOCK} {} {
-                    log notice "spool: EWOULDBLOCK during send to $to ($url) "
-                    #
-                    # We should see this case just when "-sendtimeout" is set to 0
-                    #
-                    ns_connchan callback -timeout $timeout $to \
-                        [list ::revproxy::write_once $from $to $msg $timeout 0] wex
-                    set result 1
-
                 } trap {POSIX EPIPE} {} {
                     #
                     # A "broken pipe" error might happen easily, when
@@ -245,10 +236,18 @@ namespace eval ::revproxy {
                     #
                     # all other errors
                     #
-                    ns_log error $errorMsg
+                    ns_log error "spool: $::errorCode, $errorMsg"
                     set result 0
 
-                } on ok {r} {
+                } on ok {nrBytesSent} {
+                    set toSend [string length $msg]
+                    log notice "spool: 'ns_connchan write' wanted to write $toSend bytes, wrote $nrBytesSent"
+                    if {$toSend > $nrBytesSent} {
+                        set remaining [string range $nrBytesSent end]
+                        log notice "spool: register write callback for the remaining [string length $remaining] bytes"
+                        ns_connchan callback -timeout $timeout $to \
+                            [list ::revproxy::write_once $from $to $remaining $timeout 0] wex
+                    }
                     # record $to $msg
                     set result 1
                 }
