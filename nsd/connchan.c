@@ -93,8 +93,10 @@ static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *s
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static ssize_t DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr, struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
+static ssize_t DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
+                          struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr,
+                          struct iovec **remainingBufsPtr, int *nrRemainingBufsPtr
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 static bool SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why));
 
@@ -610,7 +612,8 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 static ssize_t
 DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
            struct iovec *bufs, int nbufs, unsigned int flags,
-           const Ns_Time *timeoutPtr)
+           const Ns_Time *timeoutPtr,
+           struct iovec **remainingBufsPtr, int *nrRemainingBufsPtr)
 {
     ssize_t  result;
     Sock    *sockPtr;
@@ -625,7 +628,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
 
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
         bool    haveTimeout = NS_FALSE, partial;
-        ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs);
+        ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs), origLength = toSend;
 
         do {
             /*Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
@@ -644,9 +647,14 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                  * errors).
                  */
                 if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-                    Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: would block, no timeout configured",
-                       connChanPtr->channelName);
-                    result = -1;
+                    Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: would block, no timeout configured, "
+                           "origLength %" PRIdz" still to send %" PRIdz " already sent %" PRIdz,
+                           connChanPtr->channelName, origLength, toSend, nSent);
+                    /*
+                     * The result might be between 0 and toSend.
+                     */
+                    result = nSent;
+                    break;
 
                 } else {
                     /*
@@ -848,9 +856,10 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             }
 
             if (likely(result == TCL_OK)) {
-                struct iovec buf[4];
+                struct iovec buf[4], *remainingBufs;
                 Ns_Time      now;
                 ssize_t      nSent;
+                int          nrRemainingBufs;
 
                 Ns_GetTime(&now);
                 connChanPtr = ConnChanCreate(servPtr,
@@ -884,7 +893,8 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                 buf[3].iov_base = (void *)"\r\n";
                 buf[3].iov_len  = 2u;
 
-                nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
+                nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout,
+                                   &remainingBufs, &nrRemainingBufs);
                 Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
 
                 if (nSent > -1) {
@@ -1478,9 +1488,9 @@ ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             /*
              * The provided channel name exists.
              */
-            struct iovec buf;
+            struct iovec buf, *remainingBufs;
             ssize_t      nSent;
-            int          msgLen;
+            int          msgLen, nrRemainingBufs;
             const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
 
             if (!connChanPtr->binary) {
@@ -1493,8 +1503,8 @@ ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              */
             buf.iov_base = (void *)msgString;
             buf.iov_len = (size_t)msgLen;
-            nSent = DriverSend(interp, connChanPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
-
+            nSent = DriverSend(interp, connChanPtr, &buf, 1, 0u, &connChanPtr->sendTimeout,
+                               &remainingBufs, &nrRemainingBufs);
             if (nSent > -1) {
                 connChanPtr->wBytes += (size_t)nSent;
                 Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
