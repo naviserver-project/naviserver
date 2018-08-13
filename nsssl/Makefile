@@ -46,5 +46,5 @@ $(PEM_FILE):
 clean-cert:
 	rm -f $(PEM_FILE)
 
-test: certificate all 
+test: certificate all
 	export $(LD_LIBRARY_PATH); $(NSD) $(NS_TEST_CFG) $(NS_TEST_ALL)
