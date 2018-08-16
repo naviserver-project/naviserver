@@ -524,6 +524,13 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                     } else if (ok == 2) {
                         Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: client requested to CANCEL callback %p channel %s",
                                (void*)cbPtr, cbPtr->connChanPtr->channelName);
+                        /*
+                         * We use here the "raw"
+                         * Ns_SockCancelCallbackEx to just stop socket
+                         * handling, while keeping the connchan
+                         * specific structures alive (postponing
+                         * cleanup to a "close" operation).
+                         */
                         (void) Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
                         //cbPtr->when = 0;
                     }

@@ -514,7 +514,8 @@ static const struct exttype {
     { ".m21",     "application/mp21"},
     { ".m2a",     "audio/mpeg" },
     { ".m2v",     "video/mpeg" },
-    { ".m3u",     "application/vnd.apple.mpegurl"},
+    { ".m3u",     "application/vnd.apple.mpegurl"},          /* RFC 8216 https://tools.ietf.org/html/rfc8216#section-4 */
+    { ".m3u8",    "application/vnd.apple.mpegurl"},          /* RFC 8216 https://tools.ietf.org/html/rfc8216#section-4 */
     { ".m4a",     "audio/mp4" },
     { ".m4p",     "audio/mp4" },
     { ".m4s",     "video/iso.segment"},
@@ -987,7 +988,7 @@ static const struct exttype {
     { ".tr",      "application/x-troff" },
     { ".tra",     "application/vnd.trueapp"},
     { ".tree",    "application/vnd.rainstor.data"},
-    { ".ts",      "text/vnd.trolltech.linguist"},
+    { ".ts",      "video/MP2T"},                             /* https://en.wikipedia.org/wiki/MPEG_transport_stream */
     { ".tsa",     "application/tamp-sequence-adjust"},       /* http://www.iana.org/go/rfc5934 */
     { ".tsd",     "application/timestamped-data"},           /* http://www.iana.org/go/rfc5955 */
     { ".tsi",     "audio/tsp-audio" },
