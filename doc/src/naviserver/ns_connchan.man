@@ -44,7 +44,7 @@
 
  Close the named connection channel.
 
-[call [cmd  "ns_connchan exists"] [arg channel]]
+[call [cmd "ns_connchan exists"] [arg channel]]
 
  Returns 1 if the named connection channel exists, 0 otherwise.
 
@@ -63,8 +63,11 @@
 	[item] driver, 
 	[item] the ip-address of the requestor, 
 	[item] sent bytes,
-	[item] received bytes, and
-	[item] the client data as provided via [lb]ns_conn clientdata[rb].
+	[item] received bytes,
+	[item] the client data as provided via [lb]ns_conn
+               clientdata[rb],
+	[item] the cmd name of the callback, or "" when no callback is registered,
+	[item] the callback condition flags, or "" when no callback is registered.
  [list_end]
 
 [call [cmd "ns_connchan callback"] \
@@ -82,16 +85,28 @@ of r, w, e, or x, specifying, when the callback should fire.
 All timeouts are specified in the form [arg secs[opt :microsecs]] or
 [arg secs.fraction].
 
-When the callback is fired, the specified Tcl command will be called
-with two additional arguments, namely the [arg handle] and
-indicator for the reson of the call [arg when]. The value of [arg when]  will be
-as follows:
+[para] When the callback is fired, the specified Tcl command will be
+called with an additional argument, which is an indicator for the
+reason of the call [arg when]. The value of [arg when] will be as
+follows:
+
 [list_begin itemized]
 [item] r - the socket is readable
 [item] w - the socket is writeable
 [item] e - the socket has an exceptional condition
 [item] x - the server is shutting down
 [item] t - timeout received
+[list_end]
+
+[para] When the callback exists, its return value determines, whether
+the callback should be canceled or not. The return value is
+interpreted as follows:
+[list_begin itemized]
+[item] 0 - the callback is canceled, and the channel is deleted
+           automatically (typically, when errors occur)
+[item] 1 - the callback will be used as well fro further events
+[item] 2 - the callback will be suspended. No further events will
+           be fired, but the channel is not deleted.
 [list_end]
 
 
