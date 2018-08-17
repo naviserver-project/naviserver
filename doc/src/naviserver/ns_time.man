@@ -7,7 +7,7 @@
 [description]
 
 This command provides various time-related functions.
-Tiems might be of the form "sec" (integer value),
+Times might be of the form "sec" (integer value),
 "sec:usec" (NaviServer internal format) or "sec.fraction"
 (such as the result of [const "ns_time format"]).
 
