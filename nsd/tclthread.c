@@ -852,7 +852,9 @@ NsTclThread(void *arg)
     
     if (argPtr->threadName != NULL) {
         static uintptr_t id = 0u;
-        Ns_ThreadSetName("-tcl-%s:%" PRIuPTR "-", argPtr->threadName, id++);
+
+        Ns_ThreadSetName("-tcl-%s:%" PRIuPTR "-",
+                         argPtr->threadName, id++);
     }
 
     detached = argPtr->detached;
@@ -942,7 +944,7 @@ CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
     scriptLength = strlen(script);
     argPtr = ns_malloc(sizeof(TclThreadArg) + scriptLength);
     argPtr->detached = detached;
-    argPtr->threadName = threadName;
+    argPtr->threadName = ns_strdup(threadName);
     memcpy(argPtr->script, script, scriptLength + 1u);
     
     if (itPtr->servPtr != NULL) {
