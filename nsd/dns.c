@@ -237,6 +237,10 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
 
     if (success) {
         if (getProc == GetAddr && !all) {
+            /*
+             * When "all" is not specified for an GetAddr, return just
+             * the first address.
+             */
             const char *p = ds.string;
 
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
@@ -299,6 +303,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
             success = NS_TRUE;
         }
     }
+
     return success;
 }
 
