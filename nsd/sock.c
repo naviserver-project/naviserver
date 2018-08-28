@@ -1308,10 +1308,12 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                     if (async && err == NS_EINPROGRESS) {
                         /*
                          * The code below is implemented also in later
-                         * calls. Howevr in the async case, it is hard to
+                         * calls. However in the async case, it is hard to
                          * recover and retry in these cases. Therefore, if we
                          * have multiple IP addresses, and async handling, we
-                         * wait for the writable state here.
+                         * wait for the writable state here. We might loose
+                         * some concurreny, but the handling is this way much
+                         * easier.
                          */
                         if (multipleIPs) {
                             struct pollfd sockfd;
