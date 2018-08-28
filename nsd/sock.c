@@ -65,6 +65,9 @@ static NS_SOCKET SockConnect(const char *host, unsigned short port, const char *
 
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
+static NS_SOCKET BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
+                                  const char *lhost, unsigned short lport)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_SockProc CloseLater;
 
@@ -374,7 +377,7 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
  *      Wait for I/O.
  *
  * Results:
- *      NS_OK, NS_TIMEOUT.
+ *      NS_OK, NS_ERROR, or NS_TIMEOUT.
  *
  * Side effects:
  *      None.
@@ -388,12 +391,12 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     int           n, msec = -1;
     struct pollfd pfd;
     Ns_ReturnCode result;
+    short         requestedEvents, count = 0;
 
     if (timeoutPtr != NULL) {
         msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
     }
     pfd.fd = sock;
-    pfd.revents = 0;
     pfd.events = 0;
 
     if ((what & (unsigned int)NS_SOCK_READ) != 0u) {
@@ -405,15 +408,44 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     if ((what & (unsigned int)NS_SOCK_EXCEPTION) != 0u) {
         pfd.events |= (short)POLLPRI;
     }
+    requestedEvents = pfd.events;
 
-    do {
+    for (;;) {
+
+        errno = 0;
+        pfd.revents = 0;
         n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
-    } while (n < 0 && errno == NS_EINTR);
+        /* Ns_Log(Notice, "Ns_SockTimedWait events %.4x revents %.4x n %d", pfd.events, pfd.revents, n);*/
+        if (n < 0 && (errno == NS_EINTR || errno == EAGAIN)) {
+            count ++;
+            continue;
+        }
+
+        break;
+    };
+
+    if (count > 1) {
+        Ns_Log(Warning, "Ns_SockTimedWait on sock %d tried %d times, returns n %d",
+               sock, count, n);
+    }
 
     if (likely(n > 0)) {
-        result = NS_OK;
-    } else {
+        if ((pfd.revents & requestedEvents) == 0) {
+            socklen_t len = sizeof(errno);
+
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
+            /*Ns_Log(Warning, "Ns_SockTimedWait on sock %d returns events %.4x (errno %d <%s>)",
+              sock, pfd.revents, errno, strerror(errno));*/
+
+            result = NS_ERROR;
+        } else {
+            result = NS_OK;
+        }
+    } else if (n == 0) {
         result = NS_TIMEOUT;
+    } else {
+        /*Ns_Log(Warning, "Ns_SockTimedWait on sock %d returns error", sock);*/
+        result = NS_ERROR;
     }
 
     return result;
@@ -698,17 +730,27 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
 
     sock = SockConnect(host, port, lhost, lport, NS_TRUE);
     if (unlikely(sock == NS_INVALID_SOCKET)) {
+        /*Ns_Log(Warning, "SockConnect returned invalid socket");*/
         status = NS_ERROR;
+
     } else {
+        /*Ns_Log(Notice, "SockConnect returned socket %d, wait for write (errno %d <%s>)",
+          sock, errno, ns_sockstrerror(errno));*/
 
         status = Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr);
+        /*Ns_Log(Notice, "Ns_SockTimedWait on %d returned status %d error %d <%s>",
+          sock, status, errno, ns_sockstrerror(errno));*/
         switch (status) {
         case NS_OK:
             {
                 int err;
-
+                /*
+                 * Try to reset error status
+                 */
                 len = (socklen_t)sizeof(err);
                 if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (void *)&err, &len) == -1) {
+                    Ns_Log(Warning, "getsockopt %d returned error %d <%s>",
+                           sock, errno, ns_sockstrerror(errno));
                     status = NS_ERROR;
                 }
                 break;
@@ -724,6 +766,9 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
         case NS_UNAUTHORIZED:
             break;
         }
+        /*
+         * Return in all error cases an invalid socket.
+         */
         if (status != NS_OK) {
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;
@@ -1095,6 +1140,80 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * BindToSameFamily --
+ *
+ *       We have to make sure that the local address (where the local bind
+ *       happens) is of the same address family, which is especially important
+ *       for (lhost == NULL), where the caller has no chance to influence the
+ *       behavior, and we assume per default AF_INET6.
+ *
+ * Results:
+ *      A socket or NS_INVALID_SOCKET on error.
+ *
+ * Side effects:
+ *
+ *      Pententially updating sockat address info pointed by lsaPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static NS_SOCKET
+BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr, const char *lhost, unsigned short lport)
+{
+    NS_SOCKET     sock;
+    Ns_ReturnCode result;
+
+    NS_NONNULL_ASSERT(saPtr != NULL);
+    NS_NONNULL_ASSERT(lsaPtr != NULL);
+
+    /*
+     * The resolving of the host was successful.
+     */
+    result = Ns_GetSockAddr(lsaPtr,
+#ifdef HAVE_IPV6
+                            ((saPtr->sa_family == AF_INET) && (lhost == NULL)) ? "0.0.0.0" : lhost,
+#else
+                            lhost,
+#endif
+                            lport);
+    if (result != NS_OK) {
+        Ns_Log(Notice, "SockConnect: cannot resolve to local address %s %d", lhost, lport);
+        sock = NS_INVALID_SOCKET;
+    } else {
+        /*
+         *
+         */
+        sock = Ns_SockBind(lsaPtr, NS_TRUE);
+        if (sock != NS_INVALID_SOCKET) {
+
+#if defined(__APPLE__) && defined(__MACH__)
+# if defined(MAC_OS_X_VERSION_10_13)
+            {
+                /*
+                 * macOS High Sierra raises "Broken pipe: 13" errors
+                 * for the http.test regression test. It seems to
+                 * ignore the setting
+                 *
+                 *     ns_sigmask(SIG_BLOCK, &set, NULL);
+                 *
+                 * in unix.c where "set" contains SIGPIPE. Therefore,
+                 * we turn off SIGPPIPE directly on the socket.
+                 */
+                int set = 1;
+                setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+            }
+# endif
+#endif
+        }
+    }
+
+    return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockConnect --
  *
  *      Open a TCP connection to a host/port sync or async.  "host" and "port"
@@ -1111,6 +1230,7 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
  *----------------------------------------------------------------------
  */
 
+
 static NS_SOCKET
 SockConnect(const char *host, unsigned short port, const char *lhost, unsigned short lport, bool async)
 {
@@ -1118,72 +1238,126 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
     struct NS_SOCKADDR_STORAGE sa, lsa;
     struct sockaddr      *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
     Ns_ReturnCode         result;
+    bool                  success;
+    Tcl_DString           ds;
 
-    result = Ns_GetSockAddr(saPtr, host, port);
+    // Ns_Log(Notice, "SockConnect calls Ns_GetSockAddr %s %hu", host, port);
 
-    if (result == NS_OK) {
+    Tcl_DStringInit(&ds);
+    success = Ns_GetAllAddrByHost(&ds, host);
+
+    if (!success) {
+        result = NS_ERROR;
+        Ns_Log(Warning, "SockConnect could not resolve host %s", host);
+        sock = NS_INVALID_SOCKET;
+    } else {
+
         /*
-         * The conversion of host to sockaddr was ok. We have to make sure
-         * that the local address (where the local bind happens) is of the
-         * same address family, which is especially important for (lhost ==
-         * NULL), where the caller has no chance to influence the behavior,
-         * and we assume per default AF_INET6.
+         * We could resolve the name. Potentially, the resolving of the name
+         * led to multiple IP addresses. We have to try all of these, until a
+         * connection succeeds.
          */
-        result = Ns_GetSockAddr(lsaPtr,
-#ifdef HAVE_IPV6
-                                ((saPtr->sa_family == AF_INET) && (lhost == NULL)) ? "0.0.0.0" : lhost,
-#else
-                                lhost,
-#endif
-                                lport);
-    }
-    if (result != NS_OK) {
-        Ns_Log(Debug, "SockConnect %s %d (local %s %d) fails", host, port, lhost, lport);
+        char *addresses = ds.string;
+        bool multipleIPs = (strchr(addresses, INTCHAR(' ')) != NULL);
+
+        if (multipleIPs) {
+            Ns_Log(Notice, "SockConnect: target host <%s> has associated multiple IP addresses <%s>",
+                   host, addresses);
+        }
         sock = NS_INVALID_SOCKET;
 
-    } else {
-        sock = Ns_SockBind(lsaPtr, NS_FALSE);
-        if (sock != NS_INVALID_SOCKET) {
+        for (;;) {
+            const char *address = ns_strtok(addresses, " ");
 
-#if defined(__APPLE__) && defined(__MACH__)
-# if defined(MAC_OS_X_VERSION_10_13)
-            {
-                /*
-                 * macOS High Sierra raises "Broken pipe: 13" errors for the
-                 * http.test regression test. It seems to ignore the setting
-                 *
-                 *     ns_sigmask(SIG_BLOCK, &set, NULL);
-                 *
-                 * in unix.c where "set" contains SIGPIPE. Therefore, we turn
-                 * off SIGPPIPE directly on the socket.
-                 */
-                int set = 1;
-                setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
-            }
-# endif
-#endif
-            if (async) {
-                if (Ns_SockSetNonBlocking(sock) != NS_OK) {
-                    Ns_Log(Warning, "attempt to set socket nonblocking failed");
-                }
+            /*
+             * In the next iteration, process the next address.
+             */
+            addresses = NULL;
+            if (address == NULL) {
+                break;
             }
 
-            if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
-                ns_sockerrno_t err = ns_sockerrno;
+            Ns_Log(Notice, "SockConnect to %s: try address <%s>", host, address);
 
-                if (!async || (err != NS_EINPROGRESS && err != NS_EWOULDBLOCK)) {
-                    ns_sockclose(sock);
-                    Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
-                    sock = NS_INVALID_SOCKET;
+            result = Ns_GetSockAddr(saPtr, address, port);
+            if (result == NS_OK) {
+
+                sock = BindToSameFamily(saPtr, lsaPtr, lhost, lport);
+                if (sock == NS_INVALID_SOCKET) {
+                    /*
+                     * Maybe there is another address of some other family
+                     * available for the bind.
+                     */
+                    continue;
+                }
+
+                if (async) {
+                    if (Ns_SockSetNonBlocking(sock) != NS_OK) {
+                        Ns_Log(Warning, "attempt to set socket nonblocking failed");
+                    }
+                }
+
+                if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
+                    ns_sockerrno_t err = ns_sockerrno;
+
+                    Ns_Log(Notice, "connect on sock %d async %d err %d <%s>",
+                           sock, async, err, ns_sockstrerror(err));
+
+                    if (async && err == NS_EINPROGRESS) {
+                        /*
+                         * The code below is implemented also in later
+                         * calls. Howevr in the async case, it is hard to
+                         * recover and retry in these cases. Therefore, if we
+                         * have multiple IP addresses, and async handling, we
+                         * wait for the writable state here.
+                         */
+                        if (multipleIPs) {
+                            struct pollfd sockfd;
+                            //int n;
+                            socklen_t len;
+
+                            Ns_Log(Notice, "async connect to %s on sock %d returned EINPROGRESS",
+                                   address, sock);
+                            sockfd.events = POLLOUT;
+                            sockfd.events = 0;
+                            sockfd.fd = sock;
+                            (void) poll(&sockfd, 1, 100);
+
+                            len = sizeof(errno);
+                            getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
+
+                            /*Ns_Log(Notice, "async connect on sock %d, poll returned %d revents %.4x, extraerr %d <%s>",
+                              sock, n, sockfd.revents, errno, ns_sockstrerror(errno));*/
+                            if (errno != 0) {
+                                Ns_Log(Notice, "multiple & async on connect to %s fails on sock %d err %d <%s>",
+                                       address, sock, errno, ns_sockstrerror(errno));
+                                ns_sockclose(sock);
+                                sock = NS_INVALID_SOCKET;
+                                continue;
+                            }
+
+                        }
+                    } else if (err != 0) {
+                        Ns_Log(Notice, "close sock %d due to error err %d <%s>",
+                               sock, err, ns_sockstrerror(err));
+                        ns_sockclose(sock);
+                        Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
+                        sock = NS_INVALID_SOCKET;
+                        continue;
+                    }
+                } else {
+                    Ns_Log(Notice, "connect on sock %d async %d succeeded", sock, async);
+                    break;
                 }
             }
-            if (async && (sock != NS_INVALID_SOCKET)) {
-                if (Ns_SockSetBlocking(sock) != NS_OK) {
-                    Ns_Log(Warning, "attempt to set socket blocking failed");
-                }
-            }
+            //if (async && (sock != NS_INVALID_SOCKET)) {
+            //if (Ns_SockSetBlocking(sock) != NS_OK) {
+            //    Ns_Log(Warning, "attempt to set socket blocking failed");
+            //}
+            //}
         }
     }
+    Tcl_DStringFree(&ds);
     return sock;
 }
 
