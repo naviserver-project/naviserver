@@ -386,6 +386,8 @@ Ns_TaskCancel(Ns_Task *task)
 
     NS_NONNULL_ASSERT(task != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "task cancel");
+
     taskPtr = (Task *) task;
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
@@ -766,6 +768,8 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 
     NS_NONNULL_ASSERT(taskPtr != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "signal queue");
+
     queuePtr = taskPtr->queuePtr;
 
     Ns_MutexLock(&queuePtr->lock);
@@ -816,6 +820,8 @@ TriggerQueue(const TaskQueue *queuePtr)
 {
     NS_NONNULL_ASSERT(queuePtr != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "trigger queue");
+
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("task queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -845,6 +851,8 @@ StopQueue(TaskQueue *queuePtr)
 {
     NS_NONNULL_ASSERT(queuePtr != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "stop queue");
+
     Ns_MutexLock(&queuePtr->lock);
     queuePtr->shutdown = NS_TRUE;
     Ns_MutexUnlock(&queuePtr->lock);
@@ -872,6 +880,8 @@ static void
 JoinQueue(TaskQueue *queuePtr)
 {
     NS_NONNULL_ASSERT(queuePtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "join queue");
 
     Ns_ThreadJoin(&queuePtr->tid, NULL);
     ns_sockclose(queuePtr->trigger[0]);
@@ -1028,9 +1038,8 @@ TaskThread(void *arg)
          * Poll sockets and drain the trigger pipe if necessary.
          */
 
-        Ns_Log(Ns_LogTaskDebug, "runtask poll");
         n = NsPoll(pfds, nfds, timeoutPtr);
-        Ns_Log(Ns_LogTaskDebug, "runtask poll returned %d", n);
+        Ns_Log(Ns_LogTaskDebug, "runtask poll for %d fds returned %d", nfds, n);
 
         /*
          * n is currently not used; n is either number of ready
@@ -1038,20 +1047,32 @@ TaskThread(void *arg)
          */
         /* ((void)(n)); ... ignore n */
 
-        if ((pfds[0].revents & POLLIN) != 0
-            && recv(pfds[0].fd, &c, 1, 0) != 1) {
-            Ns_Fatal("queue: trigger ns_read() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
+        if ((pfds[0].revents & POLLIN) != 0) {
+            Ns_Log(Ns_LogTaskDebug, "runtask: read from trigger pipe ");
+            if (recv(pfds[0].fd, &c, 1, 0) != 1) {
+                Ns_Fatal("queue: trigger ns_read() failed: %s",
+                         ns_sockstrerror(ns_sockerrno));
+            }
         }
-
+#if 0
+        {
+            int i;
+            for (i=0; i<nfds; i++) {
+                fprintf(stderr, "... poll pfds[%d] has fd %d events %.4x revents %.4x\n",
+                        i, pfds[i].fd, pfds[i].events, pfds[i].revents);
+            }
+        }
+#endif
         /*
          * Execute any ready events or timeouts for waiting tasks.
          */
-
         Ns_GetTime(&now);
         taskPtr = firstWaitPtr;
         while (taskPtr != NULL) {
-            Ns_Log(Ns_LogTaskDebug, "runtask %u: revents %.2x done", (unsigned)taskPtr->idx, (int)pfds[taskPtr->idx].revents);
+            Ns_Log(Ns_LogTaskDebug, "runtask %p idx %u: revents %.2x",
+                   (void*)taskPtr,
+                   (unsigned)taskPtr->idx,
+                   (int)pfds[taskPtr->idx].revents);
             RunTask(taskPtr, pfds[taskPtr->idx].revents, &now);
             taskPtr = taskPtr->nextWaitPtr;
         }
