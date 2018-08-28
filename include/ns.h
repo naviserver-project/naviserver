@@ -964,6 +964,7 @@ typedef struct {
     int                bodyFileFd;       /* fd of a file which is sent as body */
     Ns_SockState       finalSockState;
     Tcl_Obj           *infoObj;
+    const char        *doneCallback;
     NS_TLS_SSL_CTX    *ctx;
     NS_TLS_SSL        *ssl;
     Tcl_DString        ds;

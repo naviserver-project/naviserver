@@ -27,33 +27,30 @@ Returns the list of currently running or pending requests in format:
 id url done|running ....
 
 [call [cmd "ns_http queue"] \
-	[opt [option "-method [arg M]"]] \
-	[opt [option "-headers [arg ns_set]"]] \
 	[opt [option "-body [arg B]"]] \
 	[opt [option "-body_file [arg fn]"]] \
-	[opt [option "-timeout [arg T]"]] \
-	[opt [option "-keep_host_header"]] \
 	[opt [option "-cafile [arg CA ]"]] \
 	[opt [option "-capath [arg CP ]"]] \
 	[opt [option "-cert [arg C]"]] \
+	[opt [option "-decompress"]] \
+	[opt [option "-donecallback [arg call]"]] \
+	[opt [option "-headers [arg ns_set]"]] \
 	[opt [option "-hostname [arg HOSTNAME ]"]] \
+	[opt [option "-keep_host_header"]] \
+	[opt [option "-method [arg M]"]] \
+	[opt [option "-spoolsize [arg int]"]] \
+	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
 [para]
 The command [cmd "ns_http queue"] opens a connection to the web server
-denoted in the [arg url] and returns on success the [arg id] of the HTTP
-request, which might be used later in a [cmd "ns_http wait"] 
-or [cmd "ns_http cancel"] command to refer to this request. The
+denoted in the [arg url] and returns (unless a [option donecallback] is
+used) on success an [arg id], which might be used later in [cmd "ns_http wait"]
+or [cmd "ns_http cancel"] to refer to this request. The
 command supports HTTP and HTTPS URIs.
 
 [list_begin options]
-
-[opt_def -method [arg M]]
-use the specified HTTP method such as GET or POST or HEAD
-
-[opt_def -headers [arg ns_set]]
-headers is the ns_set ID containing the additional headers to include in the HTTP request.
 
 [opt_def -body [arg B]]
 body is the value which will be sent as the HTTP request body.
@@ -63,17 +60,8 @@ This option is mutual exclusive with [option -body_file].
 transmit the file specified via filename as the HTTP request body.
 This option is mutual exclusive with [option -body].
 
-[opt_def -timeout [arg T]]
-Timeout for how long to wait for finishing the whole request
-(default 2:0, secs:microsesc)
-
-[opt_def -keep_host_header]
-allows the Host: header field for the request to be passed in via the [option -headers] arg. 
-Otherwise it is overwritten.
-
-
 [opt_def "-cafile" [arg CA]]
-allows for HTTPS URIs to specify the locations, at which CA
+used for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. The certificates
 available via [term cafile] and [term capath] are trusted.
 The [term cafile] points to a file of CA certificates in PEM format.
@@ -87,20 +75,53 @@ contain one CA certificate. For more details, see
 https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html
 
 [opt_def "-cert" [arg C]]
-allows for HTTPS URIs to use the specified client certificate. The
+used for HTTPS URIs to use the specified client certificate. The
 certificates must be in PEM format and must be sorted starting with
 the subject's certificate (actual client or server certificate),
 followed by intermediate CA certificates if applicable, and ending at
 the highest level (root) CA.
 
+[opt_def -decompress]
+In opt_def the response has a content encoding of gzip, automatically
+decompress the result.
+
+[opt_def -donecallback [arg call]]
+when a [option donecallback] is specified, this callback will be
+executed, when the requests is finished (successfully or running into
+an error). The provided [arg call] is appended with two arguments, a
+flag indicating an Tcl error or not (integer value 1 or 0), and the
+result as retuned by [call "ns_http run"]. When this option is used,
+the request ist executed in the background and finishes typically in a
+different thread. In these cases, [call "ns_http run"] returns empty,
+the request is not automatically canceled at the end of e.g. a
+connection request (as in other cases)
+
+[opt_def -headers [arg ns_set]]
+headers is the ns_set ID containing the additional headers to include in the HTTP request.
+
 [opt_def "-hostname" [arg HOSTNAME]]
-allows for HTTPS URIs to specify the hostname for the server
+used for HTTPS URIs to specify the hostname for the server
 certificate. This option has to be used, when the host supports
 virtual hosting, is configured with multiple certificates and supports
 the SNI (Server Name Indication) extension of TLS.
 
+[opt_def -keep_host_header]
+allows the Host: header field for the request to be passed in via the [option -headers] arg.
+Otherwise it is overwritten.
+
+[opt_def -method [arg M]]
+use the specified HTTP method such as GET or POST or HEAD
+
+[opt_def -spoolsize [arg int]]
+In case the result is larger than spoolsize, it will be spooled to a
+temporary file returned in the variable denoted by [option -file].
+
+[opt_def -timeout [arg T]]
+Timeout for how long to wait for finishing the whole request
+(default 2:0, secs:microsesc)
+
 [opt_def -verify]
-allows for HTTPS URIs to specify that the server certificate should be
+used for HTTPS URIs to specify that the server certificate should be
 verified. If the verification process fails, the TLS/SSL handshake is
 immediately terminated with an alert message containing the reason for
 the verification failure. If no server certificate is sent, because an
@@ -125,9 +146,9 @@ anonymous cipher is used, this option is ignored.
 	[arg url] \
 	]
 
-[para] 
+[para]
 Send a HTTP request and wait for the result.  The command
-[cmd "ns_http run"] is similar to [cmd "ns_http queue"] followed by 
+[cmd "ns_http run"] is similar to [cmd "ns_http queue"] followed by
 [cmd "ns_http wait"]. This command returns the same values as
 [cmd "ns_http wait"].
 
@@ -165,14 +186,14 @@ the [cmd ns_set] of the reply [term headers] and either the reply
 
 [opt_def -decompress]
 In opt_def the response has a content encoding of gzip, automatically
-decompress the result
+decompress the result.
 
 [opt_def -elapsed [arg varName]]
 varName is the name of a variable that should be used to store the elapsed
 time for the request from beginning to finish
 
 [opt_def -file [arg varName]]
-varName is the name of a variable that will contain the name of the 
+varName is the name of a variable that will contain the name of the
 temporary file in case the request was larger than [option -spoolsize]
 
 [opt_def -headers [arg ns_set]]
@@ -191,7 +212,7 @@ temporary file returned in the variable denoted by [option -file].
 [opt_def -status [arg varName]]
 varName is the name of a variable that should be used to store the HTTP response status
 
-[opt_def -timeout [arg t]] 
+[opt_def -timeout [arg t]]
 Optional timeout for the [cmd wait] subcommand. The task
 might wait for input until the specified timeout for input. Might be
 governed by the total timeout specified in the [cmd queue] subcommand.
@@ -212,7 +233,7 @@ First, a minimal example:
 [example_begin]
    % ns_http queue http://www.google.com
    http0
-   
+ 
    % ns_http wait http0
    status 302 time 0:97095 headers d0 body { ... }
 [example_end]
@@ -252,22 +273,22 @@ reply-headers.
      lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }
  set post_data [lb]join $post_data &[rb]
- 
- 
+
+
  #######################
  # submit POST request
  #######################
  set requestHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
- 
+
  set h [lb]ns_http queue -method POST \
      -headers $requestHeaders \
      -timeout 10.0 \
      -body $post_data \
      https://duckduckgo.com/[rb]
  ns_http wait -result R -headers $replyHeaders -status S $h
- 
+
  #######################
  # output results
  #######################
@@ -286,7 +307,7 @@ results to a file, when the result is larger than 100 bytes.
  
  set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
  ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1000 -file F $h
- 
+
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
    file delete -- $F
@@ -306,4 +327,3 @@ Example for downloading a file from the web:
 [keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
 
 [manpage_end]
-
