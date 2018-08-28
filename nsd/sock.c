@@ -1277,7 +1277,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                 break;
             }
 
-            Ns_Log(Notice, "SockConnect to %s: try address <%s>", host, address);
+            Ns_Log(Debug, "SockConnect to %s: try address <%s>", host, address);
 
             result = Ns_GetSockAddr(saPtr, address, port);
             if (result == NS_OK) {
@@ -1300,8 +1300,10 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                 if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                     ns_sockerrno_t err = ns_sockerrno;
 
-                    Ns_Log(Notice, "connect on sock %d async %d err %d <%s>",
-                           sock, async, err, ns_sockstrerror(err));
+                    if (err != NS_EINPROGRESS) {
+                        Ns_Log(Notice, "connect on sock %d async %d err %d <%s>",
+                               sock, async, err, ns_sockstrerror(err));
+                    }
 
                     if (async && err == NS_EINPROGRESS) {
                         /*
@@ -1346,7 +1348,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                         continue;
                     }
                 } else {
-                    Ns_Log(Notice, "connect on sock %d async %d succeeded", sock, async);
+                    Ns_Log(Debug, "connect on sock %d async %d succeeded", sock, async);
                     break;
                 }
             }
