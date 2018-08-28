@@ -603,6 +603,13 @@ ns_section ns/db/pool/pool1 {
 	ns_param	password           ""
     }
 }
+#
+# In case, you want to activate (more intense) SQL logging at runtime,
+# consider the two commands (e.g. entered over ds/shell)
+#
+#    ns_logctl severity "Debug(sql)" on
+#    ns_db logminduration pool1  0.01
+#
 
 ns_section ns/db/pool/pool2 {
     # ns_param	maxidle            0
