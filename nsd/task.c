@@ -1039,7 +1039,7 @@ TaskThread(void *arg)
          */
 
         n = NsPoll(pfds, nfds, timeoutPtr);
-        Ns_Log(Ns_LogTaskDebug, "runtask poll for %d fds returned %d", nfds, n);
+        Ns_Log(Ns_LogTaskDebug, "runtask poll for %u fds returned %d", (unsigned)nfds, n);
 
         /*
          * n is currently not used; n is either number of ready
