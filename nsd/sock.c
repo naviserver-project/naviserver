@@ -1325,7 +1325,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                             sockfd.events = POLLOUT;
                             sockfd.events = 0;
                             sockfd.fd = sock;
-                            (void) poll(&sockfd, 1, 100);
+                            (void) ns_poll(&sockfd, 1, 100);
 
                             len = sizeof(errno);
                             getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
