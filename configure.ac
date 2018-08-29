@@ -35,7 +35,7 @@
 
 AC_PREREQ([2.68])
 
-AC_INIT([NaviServer],[4.99.17d4],[naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer],[4.99.17d5],[naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 #AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
@@ -243,7 +243,7 @@ AC_CHECK_LIB([$TCL_LIB], [Tcl_GetMemoryInfo],
 AC_CHECK_FUNCS([poll gettimeofday])
 
 #
-# Detemine the maximum value of time_t depending on the size of the
+# Determine the maximum value of time_t depending on the size of the
 # time_t structure.
 #
 
