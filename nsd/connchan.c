@@ -666,6 +666,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
          * Use configured receivewait as timeout.
          */
         timeout.sec = sockPtr->drvPtr->recvwait;
+        timeout.usec = 0;
         timeoutPtr = &timeout;
     }
     if (likely(sockPtr->drvPtr->recvProc != NULL)) {
@@ -742,26 +743,25 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                     result = nSent;
                     break;
 
+                }
+                /*
+                 * A timeout was provided. Be aware that the timeout
+                 * will suspend all sock-callback handlings for this
+                 * time period.
+                 */
+                Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: recoverable error before timeout (%ld:%ld)",
+                       connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
+                if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                    result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                                          timeoutPtr, flags);
                 } else {
-                    /*
-                     * We have a timeout. Be aware that the timeout
-                     * will suspend all sock-callback handlings for
-                     * this time period.
-                     */
-                    Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: recoverable error before timeout (%ld:%ld)",
-                           connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
-                    if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                        result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                                              timeoutPtr, flags);
-                    } else {
-                        Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: timeout occurred",
-                               connChanPtr->channelName);
-                        haveTimeout = NS_TRUE;
-                        Ns_TclPrintfResult(interp, "channel %s: timeout on send operation (%ld:%ld)",
-                                           connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
-                        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
-                        result = -1;
-                    }
+                    Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: timeout occurred",
+                           connChanPtr->channelName);
+                    haveTimeout = NS_TRUE;
+                    Ns_TclPrintfResult(interp, "channel %s: timeout on send operation (%ld:%ld)",
+                                       connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    result = -1;
                 }
             }
 
