@@ -626,10 +626,11 @@ ValidateUserAddr(User *userPtr, const char *peer)
 
             if (STREQ((char *)Tcl_GetHashValue(entryPtr), maskString)) {
                 if (userPtr->flags & USER_FILTER_ALLOW) {
-                    return NS_TRUE;
+                    success = NS_TRUE;
                 } else {
-                    return NS_FALSE;
+                    success = NS_FALSE;
                 }
+                return success;
             }
         }
         hPtr = Tcl_NextHashEntry(&search);
