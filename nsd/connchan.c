@@ -72,6 +72,7 @@ typedef struct ListenCallback {
 /*
  * Local functions defined in this file
  */
+static Ns_ArgProc ArgProc;
 
 static void CancelCallback(const NsConnChan *connChanPtr)
     NS_GNUC_NONNULL(1);
@@ -554,6 +555,36 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
     return success;
 }
 
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArgProc --
+ *
+ *	Append info for socket callback.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ArgProc(Tcl_DString *dsPtr, const void *arg)
+{
+    const Callback *cbPtr = arg;
+
+    Tcl_DStringStartSublist(dsPtr);
+    Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, -1);
+    Ns_DStringNAppend(dsPtr, " ", 1),
+    Ns_DStringNAppend(dsPtr, cbPtr->script, (int)cbPtr->scriptCmdNameLength);
+    Tcl_DStringEndSublist(dsPtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -624,6 +655,8 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
                                timeoutPtr, &cbPtr->threadName);
     if (result == NS_OK) {
         connChanPtr->cbPtr = cbPtr;
+
+        Ns_RegisterProcInfo((Ns_Callback *)NsTclConnChanProc, "ns_connchan", ArgProc);
     } else {
         /*
          * The callback could not be registered, maybe the socket is
