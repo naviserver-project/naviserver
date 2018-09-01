@@ -1323,7 +1323,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                             Ns_Log(Notice, "async connect to %s on sock %d returned EINPROGRESS",
                                    address, sock);
                             sockfd.events = POLLOUT;
-                            sockfd.events = 0;
+                            sockfd.revents = 0;
                             sockfd.fd = sock;
                             (void) ns_poll(&sockfd, 1, 100);
 
