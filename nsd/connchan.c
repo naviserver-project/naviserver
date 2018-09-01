@@ -1246,7 +1246,6 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         hPtr = Tcl_FirstHashEntry(&servPtr->connchans.table, &search);
         while (hPtr != NULL) {
             NsConnChan *connChanPtr;
-            char        whenBuffer[6];
 
             connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
             Ns_DStringPrintf(dsPtr, "{%s %s %" PRId64 ".%06ld %s %s %" PRIdz " %" PRIdz,
@@ -1267,6 +1266,8 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
              * characters.
              */
             if (connChanPtr->cbPtr != NULL) {
+                char whenBuffer[6];
+
                 Ns_DStringNAppend(dsPtr, " ", 1);
                 Ns_DStringNAppend(dsPtr, connChanPtr->cbPtr->script, (int)connChanPtr->cbPtr->scriptCmdNameLength);
                 Ns_DStringAppendElement(dsPtr, WhenToString(whenBuffer, connChanPtr->cbPtr->when));
