@@ -2663,9 +2663,7 @@ HttpProc(
 
             Ns_TclDeAllocateInterp(interp);
 
-            if (httpPtr != NULL) {
-                HttpClose(httpPtr);
-            }
+            HttpClose(httpPtr);
         }
         //taskDone = NS_FALSE;
         break;
