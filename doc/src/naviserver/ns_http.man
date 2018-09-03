@@ -24,7 +24,7 @@ Cancel all pending HTTP/HTTPS requests
 [call [cmd "ns_http list"]]
 
 Returns the list of currently running or pending requests in format:
-id url done|running ....
+id url done|running.
 
 [call [cmd "ns_http queue"] \
 	[opt [option "-body [arg B]"]] \
@@ -151,6 +151,14 @@ Send a HTTP request and wait for the result.  The command
 [cmd "ns_http run"] is similar to [cmd "ns_http queue"] followed by
 [cmd "ns_http wait"]. This command returns the same values as
 [cmd "ns_http wait"].
+
+
+[call [cmd "ns_http stats"]]
+
+Returns statistics from the currently running requests in the form of
+a dict (flat list of attributes and values). The list contains [term
+task], [term url], [term requestlength], [term sent], [term
+replylength], [term received].
 
 
 [call [cmd "ns_http wait"] \
