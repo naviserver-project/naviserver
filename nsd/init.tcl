@@ -46,7 +46,7 @@
 #
 
 ns_log notice "nsd/init.tcl\[[ns_info server]\]: booting virtual server: " \
-    "tcl system encoding: \"[encoding system]\""
+    "Tcl system encoding: \"[encoding system]\""
 
 
 package require Tcl 8.4
