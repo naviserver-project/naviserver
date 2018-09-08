@@ -66,8 +66,8 @@ help:
 	@echo 'Example for a system-wide installation under /usr/local/ns:'
 	@echo '  make all && su -c "make install"'
 	@echo
-	@echo 'Example for running a single test in the test suite, under the debugger:'
-	@echo '  make gdbtest TESTFLAGS="-file tclconnio.test -match tclconnio-1.1"'
+	@echo 'Example for running selected test in the test suite, under the debugger:'
+	@echo '  make gdbtest TESTFLAGS="-verbose start -file cookies.test -match cookie-2.*"'
 	@echo
 
 install: install-dirs install-include install-tcl install-modules \
