@@ -439,8 +439,18 @@ foreach address $addresses suffix $suffixes {
     ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
     # ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
     # ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
-    # ns_param	driverthreads	2	;# 1; use multiple driver threads  (requires support of SO_REUSEPORT)
-    ns_param        extraheaders    $nssock_extraheaders
+
+    #
+    # Options for port reuse (see https://lwn.net/Articles/542629/)
+    # These options require proper OS support.
+    #
+    # ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
+    # ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
+
+    #
+    # Extra request headers fields to be added for every request.
+    #
+    ns_param    extraheaders    $nssock_extraheaders
 }
 
 
