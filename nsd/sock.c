@@ -1183,7 +1183,7 @@ BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr, const char *lh
         /*
          *
          */
-        sock = Ns_SockBind(lsaPtr, NS_TRUE);
+        sock = Ns_SockBind(lsaPtr, NS_FALSE);
         if (sock != NS_INVALID_SOCKET) {
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -1241,7 +1241,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
     bool                  success;
     Tcl_DString           ds;
 
-    // Ns_Log(Notice, "SockConnect calls Ns_GetSockAddr %s %hu", host, port);
+    /*Ns_Log(Notice, "SockConnect calls Ns_GetSockAddr %s %hu", host, port);*/
 
     Tcl_DStringInit(&ds);
     success = Ns_GetAllAddrByHost(&ds, host);
