@@ -563,7 +563,7 @@ void NsDriverMapVirtualServers(void)
          * used. Skip these.
          */
         (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
-        Ns_Log(Notice, "create hash entry for moduleName <%s> -> isnew %d", drvPtr->moduleName, isNew);
+        Ns_Log(Debug, "create hash entry for moduleName <%s> -> isnew %d", drvPtr->moduleName, isNew);
         if (isNew == 0) {
             continue;
         }
