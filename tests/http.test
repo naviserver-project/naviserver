@@ -220,7 +220,7 @@ test http-4.5 {HTTP/1.1 PUT file == uploadsize} -setup {
 
 test http-4.6 {HTTP/1.1 PUT very large file} -setup {
     ns_register_proc PUT /put {
-        ns_return -binary 200 text/plain [ns_conn content]
+        ns_return -binary 200 text/plain [ns_getcontent -as_file 0]
     }
 } -body {
     set l [nstest::http -http 1.1 -getbody 1 -getheaders content-length \
@@ -233,7 +233,7 @@ test http-4.6 {HTTP/1.1 PUT very large file} -setup {
 
 test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
     ns_register_proc PUT /put {
-        ns_return -binary 200 text/plain [ns_conn content]
+        ns_return -binary 200 text/plain [ns_getcontent -as_file 0]
     }
 } -body {
     set l [nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]]
@@ -612,6 +612,45 @@ content of file
     ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {3 file error file.content-type text/plain}}
+
+
+test http-6.5.1 {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        ns_return 200 text/plain "[lindex $contentType 0] contentFile $haveContentFile needSpool $needSpool file $haveFile"
+    }
+} -body {
+    set file [ns_server pagedir]/2048bytes
+    exec curl -g -s -F file=@$file [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {multipart/form-data; contentFile 0 needSpool 0 file 1}
+
+test http-6.5.2 {ns_getform and ns_getformfile + 16KB file} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        ns_return 200 text/plain "[lindex $contentType 0] contentFile $haveContentFile needSpool $needSpool file $haveFile"
+    }
+} -body {
+    set file [ns_server pagedir]/16480bytes
+    exec curl -g -s -F file=@$file [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {multipart/form-data; contentFile 1 needSpool 1 file 1}
 
 
 test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
