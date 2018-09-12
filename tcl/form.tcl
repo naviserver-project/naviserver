@@ -250,10 +250,9 @@ proc ns_getform {{charset ""}}  {
 
 proc ns_getformfile {name} {
 
-    ns_getform
-
-    if {[info exists ::_ns_formfiles($name)]} {
-        return $::_ns_formfiles($name)
+    set form [ns_getform]
+    if {[ns_set find $form $name.tmpfile] > -1} {
+        return [ns_set get $form $name.tmpfile]
     }
 }
 
