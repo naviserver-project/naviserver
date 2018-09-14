@@ -346,7 +346,7 @@ Ns_TaskRun(Ns_Task *task)
         }
         pfd.revents = 0;
         pfd.events = taskPtr->events;
-        Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: setup for poll events %.2x", taskPtr->sock, pfd.events);
+        //Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: setup for poll events %.2x", taskPtr->sock, pfd.events);
         if (NsPoll(&pfd, 1, timeoutPtr) != 1) {
             Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: timeout", taskPtr->sock);
             break;
