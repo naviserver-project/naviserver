@@ -151,9 +151,11 @@ the flags might change over versions.
 
 [call [cmd  "ns_conn form"]]
 
-Returns any submitted form data as an ns_set. This form data may have been submitted
-with a POST or appended to the URL in a GET request. Note: ns_conn form is not suitable
-for multipart formdata file upload widgets.
+Returns any submitted form data as an [term ns_set]. This form data may have been submitted
+with a POST or appended to the URL in a GET request.
+
+[para] Note: ns_conn form is not suitable for multipart formdata file
+upload widgets. Use [cmd ns_getform] instead.
 
 
 [call [cmd  "ns_conn headers"]]
@@ -322,7 +324,7 @@ if { [lb]string match /page/* [lb]ns_conn url[rb][rb] } {
 
 [example_end]
 
-[see_also ns_adp ns_getform ns_queryget ns_time]
+[see_also ns_adp ns_getform ns_set ns_queryget ns_time]
 [keywords "server built-in" gzip connection]
 
 [manpage_end]
