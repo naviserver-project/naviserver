@@ -145,8 +145,7 @@ to be called, and are always called for every interpreter.
 
 [opt_def deallocate]
 Deallocate interpreter traces fire at the end of a transaction, after any
-[term getconn] traces if running in a connection thread.[opt_def deallocate]
-[para]
+[term getconn] traces if running in a connection thread.
 A deallocate trace is a good place for general resource cleanup.
 
 [opt_def delete]
