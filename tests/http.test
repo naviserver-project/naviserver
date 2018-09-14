@@ -32,6 +32,8 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
+#ns_logctl severity Debug(task) on
+#ns_logctl severity Debug(request) on
 
 
 if {[ns_config test listenport] ne ""} {
@@ -623,7 +625,8 @@ test http-6.5.1 {ns_getform and ns_getformfile + 2KB file} -constraints {curl se
         set haveContentFile [expr {[ns_conn contentfile] ne ""}]
         set maxUpload       [ns_config [ns_driversection nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
-        ns_return 200 text/plain "[lindex $contentType 0] contentFile $haveContentFile needSpool $needSpool file $haveFile"
+        set ct              [lindex $contentType 0]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile"
     }
 } -body {
     set file [ns_server pagedir]/2048bytes
@@ -642,7 +645,8 @@ test http-6.5.2 {ns_getform and ns_getformfile + 16KB file} -constraints {curl s
         set haveContentFile [expr {[ns_conn contentfile] ne ""}]
         set maxUpload       [ns_config [ns_driversection nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
-        ns_return 200 text/plain "[lindex $contentType 0] contentFile $haveContentFile needSpool $needSpool file $haveFile"
+        set ct              [lindex $contentType 0]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile"
     }
 } -body {
     set file [ns_server pagedir]/16480bytes
@@ -769,7 +773,43 @@ test http-7.2b {ns_http with body and binary datataype, no bytearray} -constrain
 } -result {200 {0000 0001 0002 000D}}
 
 
-test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
+#
+# ns_http tests with queue and run cmds.
+#
+# GET request
+#
+test http-8.0.1q {ns_http no body_file queue} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+        ns_return 200 text/plain "hello world"
+    }
+} -body {
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    set h [ns_http queue -headers $queryHeaders -method GET [ns_config test listenurl]/get]
+    set r [ns_http wait -result R -status S $h]
+    return [list $S $R]
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {200 {hello world}}
+
+test http-8.0.1r {ns_http no body_file run} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+        ns_return 200 text/plain "hello world"
+    }
+} -body {
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    set d [ns_http run -headers $queryHeaders -method GET \
+               [ns_config test listenurl]/get]
+    return [list [dict get $d status] [dict get $d body]]
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {200 {hello world}}
+
+#
+# PUT request
+#
+test http-8.0.2q {ns_http with body_file queue} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
         set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
@@ -777,7 +817,6 @@ test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
 } -body {
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
-    ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
     if {[catch {set h [ns_http queue -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
                            [ns_config test listenurl]/put]} errorMsg]} {
         puts stderr ERROR-$errorMsg
@@ -789,6 +828,26 @@ test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     unset -nocomplain r
 } -result {200 {utf-8 <text/plain> <123>}}
 
+
+test http-8.0.2r {ns_http with body_file run} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+    }
+} -body {
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    set d [ns_http run -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
+               [ns_config test listenurl]/put]
+    return [list [dict get $d status] [dict get $d body]]
+} -cleanup {
+    ns_unregister_op PUT /put
+} -result {200 {utf-8 <text/plain> <123>}}
+
+
+#
+# Tests with funny chars
+#
 
 test http-8.1 {ns_return with UTF-8 3 byte char} -constraints {serverListen} -setup {
     ns_register_proc GET /get {

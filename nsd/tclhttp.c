@@ -966,6 +966,13 @@ HttpQueueCmd(
             }
             Tcl_DecrRefCount(replyHeadersObj);
 
+            /*
+             * In the "run" case, this is the last place, where we can close
+             * httpPtr. httpPtr exsits always, all results are already
+             * retrieved.
+             */
+            HttpClose(httpPtr);
+
         } else {
 
             /*
@@ -2169,6 +2176,8 @@ HttpClose(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "HttpClose %p", (void*)httpPtr);
+
     if (httpPtr->task != NULL) {
         (void) Ns_TaskFree(httpPtr->task);
     }
@@ -2664,8 +2673,10 @@ HttpProc(
             Ns_TclDeAllocateInterp(interp);
 
             HttpClose(httpPtr);
+        } else {
+            Ns_Log(Ns_LogTaskDebug, "NS_SOCK_DONE no sock callback");
         }
-        //taskDone = NS_FALSE;
+
         break;
 
     case NS_SOCK_TIMEOUT:
