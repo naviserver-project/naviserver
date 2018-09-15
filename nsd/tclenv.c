@@ -307,7 +307,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     len = nameLength = strlen(name);
     if (value != NULL) {
-        valueLength = strlen(value);
+        valueLength = strlen(value) + 1;
         len += valueLength + 1u;
     } else {
         len += 1u;
@@ -342,7 +342,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
         *(s + nameLength + 1u) = '\0';
 
         if (value != NULL) {
-            strncat(s + nameLength + 1, value, valueLength - 1);
+            strncat(s + nameLength + 1, value, valueLength);
         }
 
         if (putenv(s) != 0) {
