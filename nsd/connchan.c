@@ -287,7 +287,7 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     connChanPtr->sendTimeout.usec = 0;
     connChanPtr->clientData = clientData != NULL ? ns_strdup(clientData) : NULL;
 
-    strncpy(connChanPtr->peer, peer, NS_IPADDR_SIZE);
+    strncpy(connChanPtr->peer, peer, NS_IPADDR_SIZE - 1);
     connChanPtr->sockPtr = sockPtr;
     connChanPtr->binary = binary;
 
