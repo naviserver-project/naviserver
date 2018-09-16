@@ -623,7 +623,7 @@ test http-6.5.1 {ns_getform and ns_getformfile + 2KB file} -constraints {curl se
         set contentLength   [ns_set iget [ns_conn headers] content-length]
         set haveFile        [expr {[ns_getformfile file] ne ""}]
         set haveContentFile [expr {[ns_conn contentfile] ne ""}]
-        set maxUpload       [ns_config [ns_driversection nssock] maxupload]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
         set ct              [lindex $contentType 0]
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile"
@@ -643,7 +643,7 @@ test http-6.5.2 {ns_getform and ns_getformfile + 16KB file} -constraints {curl s
         set contentLength   [ns_set iget [ns_conn headers] content-length]
         set haveFile        [expr {[ns_getformfile file] ne ""}]
         set haveContentFile [expr {[ns_conn contentfile] ne ""}]
-        set maxUpload       [ns_config [ns_driversection nssock] maxupload]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
         set ct              [lindex $contentType 0]
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile"
