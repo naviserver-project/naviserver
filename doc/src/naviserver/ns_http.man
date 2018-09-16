@@ -90,9 +90,9 @@ when a [option donecallback] is specified, this callback will be
 executed, when the requests is finished (successfully or running into
 an error). The provided [arg call] is appended with two arguments, a
 flag indicating an Tcl error or not (integer value 1 or 0), and the
-result as retuned by [call "ns_http run"]. When this option is used,
+result as retuned by [cmd "ns_http run"]. When this option is used,
 the request ist executed in the background and finishes typically in a
-different thread. In these cases, [call "ns_http run"] returns empty,
+different thread. In these cases, [cmd "ns_http run"] returns empty,
 the request is not automatically canceled at the end of e.g. a
 connection request (as in other cases)
 
@@ -156,10 +156,9 @@ Send a HTTP request and wait for the result.  The command
 [call [cmd "ns_http stats"]]
 
 Returns statistics from the currently running requests in the form of
-a dict (flat list of attributes and values). The list contains [term
-task], [term url], [term requestlength], [term sent], [term
-replylength], [term received].
-
+a dict (flat list of attributes and values). The list contains
+[term task], [term url], [term requestlength], [term sent],
+[term replylength], [term received].
 
 [call [cmd "ns_http wait"] \
 	[opt [option "-body_file [arg fn]"]] \
@@ -281,22 +280,22 @@ reply-headers.
      lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }
  set post_data [lb]join $post_data &[rb]
-
-
+ 
+ 
  #######################
  # submit POST request
  #######################
  set requestHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
-
+ 
  set h [lb]ns_http queue -method POST \
      -headers $requestHeaders \
      -timeout 10.0 \
      -body $post_data \
      https://duckduckgo.com/[rb]
  ns_http wait -result R -headers $replyHeaders -status S $h
-
+ 
  #######################
  # output results
  #######################
@@ -315,7 +314,7 @@ results to a file, when the result is larger than 100 bytes.
  
  set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
  ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1000 -file F $h
-
+ 
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
    file delete -- $F
