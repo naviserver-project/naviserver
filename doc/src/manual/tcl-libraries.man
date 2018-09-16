@@ -104,32 +104,39 @@ parameter [term tcllibrary] in the [term ns/parameters] section and it
 defaults to [term tcl] under NaviServer [term home] directory.
 
 [example_begin]
- ns_section  ns/parameters
+ #
+ # Global parameters
+ #
+ ns_section  ns/parameters {
      ns_param home        /usr/local/ns   ;# usual place
      ns_param tcllibrary  tcl             ;# default, full path: /usr/local/ns/tcl
- 
+ }
 [example_end]
 
 [item ]The [emph "per-server (private)"] Tcl library directory is
 specified by the parameter [term library] in the
-[term ns/server/servername/tcl] section.  It defaults to
+[term ns/server/\$servername/tcl] section.  It defaults to
 [term modules/tcl]
 under NaviServer [term home].  One can specify a
 different Tcl library directory for each server.
 
 [example_begin]
- ns_section  ns/parameters
+ #
+ # Global parameters
+ #
+ ns_section  ns/parameters {
      ns_param home        /usr/local/ns   ;# usual place
+ }
  
- ns_section ns/server/myserver/tcl
+ #
+ # Parameters of the "tcl" section of the server "myserver"
+ #
+ ns_section ns/server/myserver/tcl {
      ns_param library     modules/tcl     ;# default, full path: /usr/local/ns/modules/tcl
- 
+ }
 [example_end]
 
-
-
 [list_end]
-
 
 Note that the specified directories need not reside under [term home]
 (the NaviServer installation directory). Using a different directory
@@ -138,7 +145,13 @@ the system-specific scripts supplied by NaviServer. For example,
 OpenACS uses the per-server library directory to start the server with
 the OpenACS specific packages and request/templating processing.
 
+
 [section {Tcl Script Order of Evaluation}]
+
+In general, the global (shared) Tcl libraries are loaded before the
+per-server (private) libraries. This is true for the Tcl files placed
+directly in the library directories as for the Tcl modules (more
+details follow).
 
 The Tcl library directories are a flat structure, from which all
 contained Tcl files are loaded. Sometimes several Tcl files should be
@@ -163,6 +176,23 @@ directories and then the specified Tcl-only modules:
 
 [list_end]
 
+If the [term tcl] section of the server configuration contains the
+parameter [term initcmds] then thest commands are executed after the
+initialization of the Tcl-only modules. This feature is useful e.g.
+for simple server configurations, where the full code of the
+server-initialization can be put into the config file. So only one
+file has to be maintained
+
+[example_begin]
+ #
+ # Parameters of the "tcl" section of the server "myserver"
+ #
+ ns_section ns/server/myserver/tcl {
+     ns_param initcmds {
+         ns_log notice "=== Hello World === server: [lb]ns_info server[rb]"
+     }
+ }
+[example_end]
 
 [section {Tcl-only Modules}]
 
@@ -179,8 +209,12 @@ To load a Tcl-only module named [term mymodule], add the following
 line to the per-server modules section in the configuration file:
 
 [example_begin]
- ns_section ns/server/servername/modules
-      ns_param mymodule Tcl
+ #
+ # Parameters of the "modules" section of the server "myserver"
+ #
+ ns_section ns/server/myserver/modules {
+     ns_param mymodule Tcl
+ }
 [example_end]
 
 Note that when Tcl modules are specified, only the named
@@ -191,12 +225,20 @@ library directory defined as [term /home/mydir/tcl/myserver-lib], and
 the modules [term foo] and [term bar] are loaded,
 
 [example_begin]
- ns_section ns/server/myserver/tcl
-      ns_param library /home/mydir/tcl/myserver-lib
+ #
+ # Parameters of the "tcl" section of the server "myserver"
+ #
+ ns_section ns/server/myserver/tcl {
+     ns_param library /home/mydir/tcl/myserver-lib
+ }
  
- ns_section ns/server/myserver/modules
-      ns_param foo tcl
-      ns_param bar tcl
+ #
+ # Parameters of the "modules" section of the server "myserver"
+ #
+ ns_section ns/server/myserver/modules {
+     ns_param foo tcl
+     ns_param bar tcl
+ }
 [example_end]
 
 ... then the following
