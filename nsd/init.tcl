@@ -81,7 +81,6 @@ proc __ns_sourcefile {file} {
 #
 
 proc __ns_sourcelibs {{modname ""}} {
-
     set sharedlib  [ns_library shared  $modname]
     set privatelib [ns_library private $modname]
     
@@ -377,27 +376,14 @@ ns_runonce -global {ns_atprestartup _ns_load_global_modules 1}
 # defined. A driver might be installed globally (for all servers) or
 # for a single server. If the driver is not installed, return empty
 #
+
 proc ns_driversection {args} {
-    set driver ""
     set server [ns_info server]
-    set l [llength $args]
-    if {$l > 1} {
-        array set vars {-driver driver -server server}
-        for {set i 0} {$i < $l} {incr i} {
-            set opt [lindex $args $i]
-            switch -exact -- $opt {
-                -driver -
-                -server {
-                    incr i
-                    if {$i < $l} {
-                        set $vars($opt) [lindex $args $i]
-                        continue
-                    }
-                }
-            }
-            error "usage: ns_driversection ?-driver drv? ?-server s?"
-        }
-    }
+    ns_parseargs {
+        {-server}
+        {-driver ""}
+    } $args
+
     if {$driver eq ""} {
         if {[ns_conn isconnected]} {
             set driver [ns_conn driver]
@@ -657,6 +643,7 @@ if {$use_trace_inits} {
     foreach module [ns_ictl getmodules] {
         __ns_sourcemodule $module
     }
+
 
     #
     # Do local cleanup before starting
