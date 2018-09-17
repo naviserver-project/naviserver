@@ -76,9 +76,9 @@ static const struct {
     const char  *name;
 } builtinExt[] = {
     {".txt",    "ascii"},
-    {".htm",    "iso8859-1"},
-    {".html",   "iso8859-1"},
-    {".adp",    "iso8859-1"},
+    {".htm",    "utf-8"},
+    {".html",   "utf-8"},
+    {".adp",    "utf-8"},
     {NULL, NULL}
 };
 
