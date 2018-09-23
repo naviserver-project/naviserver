@@ -253,10 +253,19 @@ in the variable [variable result], from which finally the
 HTTP status is extracted.
 
 [example_begin]
-   % set h [lb]ns_http queue https://www.google.com[rb]
-   % set result [lb]ns_http wait -status S -result R $h[rb]
+   % set result [lb]ns_http run https://www.google.com[rb]
    % dict get $result status
    302
+[example_end]
+
+When the result should be spooled to file if it is larger than some
+quantity, use the option [option -spoolsize]. The spooled file
+is contained in the resulting dict under the key [term file].
+
+[example_begin]
+   % set result [lb]ns_http run -spoolsize 1000 https://www.google.com[rb]
+   % dict get $result file
+   /tmp/http.83Rfc5
 [example_end]
 
 If you are connecting to a server with virtual hosting, that provides
@@ -306,7 +315,7 @@ reply-headers.
 
 The forth example is a code snippet that sets a larger timeout on the
 request, provides a ns_set for the reply headers, and spools
-results to a file, when the result is larger than 100 bytes.
+results to a file, when the result is larger than 1000 bytes.
 
 [example_begin]
  set replyHeaders [lb]ns_set create[rb]
