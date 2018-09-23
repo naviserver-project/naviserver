@@ -401,7 +401,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         }
 
         inputPos = 0u;
-        if (offset == 0) {
+        if (offset == 0 && prefixLength > 0u) {
             /*
              * When we have an offset (in an incremental operation) adding a
              * prefix automatically makes little sense. When needed, the
