@@ -397,10 +397,11 @@ The number of buckets to be used can be configured by setting the
 [const nsvbuckets] Tcl parameters, e.g.:
 
 [example_begin]
-    ns_section      "ns/server/${servername}/tcl"
+    ns_section  ns/server/${servername}/tcl {
  
        # Number of buckets in Tcl hash table for nsv vars
        ns_param        nsvbuckets              16
+    }
 [example_end]
 
 
