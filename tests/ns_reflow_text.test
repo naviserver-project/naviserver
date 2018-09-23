@@ -37,7 +37,7 @@ test ns_reflow_text-1.1 {syntax} -body {
     ns_reflow_text
 } -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width width? ?-offset offset? ?-prefix prefix? ?--? text"}
 
-test ns_reflow_text-1.2 {syntax} -body {
+test ns_reflow_text-1.2 {empty content} -body {
     ns_reflow_text {}
 } -result {}
 
