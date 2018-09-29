@@ -2622,7 +2622,7 @@ HttpProc(
         Ns_Log(Ns_LogTaskDebug, "NS_SOCK_DONE doneCallback <%s>", httpPtr->doneCallback);
 
         if (httpPtr->doneCallback != NULL) {
-            int          result = TCL_OK;
+            int          result;
             Tcl_Interp  *interp;
             Tcl_DString  script;
             Tcl_Obj     *resultObj,
@@ -2648,9 +2648,10 @@ HttpProc(
 
             resultObj = GetResultObj(interp, httpPtr, replyHeadersObj,
                                      NULL, NULL, NULL, NULL);
-            if (resultObj != NULL) {
+            if (likely(resultObj != NULL)) {
                 result = TCL_OK;
             } else {
+                result = TCL_ERROR;
                 resultObj = Tcl_GetObjResult(interp);
                 Tcl_IncrRefCount(resultObj);
             }
@@ -2668,11 +2669,9 @@ HttpProc(
             }
 
             Tcl_DStringFree(&script);
-            result = TCL_OK;
-
             Ns_TclDeAllocateInterp(interp);
-
             HttpClose(httpPtr);
+
         } else {
             Ns_Log(Ns_LogTaskDebug, "NS_SOCK_DONE no sock callback");
         }
