@@ -1020,7 +1020,7 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) == TCL_OK) {
         while (fargc-- > 0) {
             (void) Ns_TclGetOpenFd(interp, fargv[fargc], write, (int *) &sock);
-            if (FD_ISSET(sock, setPtr)) {
+            if ((setPtr != NULL) && FD_ISSET(sock, setPtr)) {
                 Tcl_DStringAppendElement(dsPtr, fargv[fargc]);
             }
         }
