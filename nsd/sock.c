@@ -1235,9 +1235,6 @@ static NS_SOCKET
 SockConnect(const char *host, unsigned short port, const char *lhost, unsigned short lport, bool async)
 {
     NS_SOCKET             sock;
-    struct NS_SOCKADDR_STORAGE sa, lsa;
-    struct sockaddr      *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
-    Ns_ReturnCode         result;
     bool                  success;
     Tcl_DString           ds;
 
@@ -1247,7 +1244,6 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
     success = Ns_GetAllAddrByHost(&ds, host);
 
     if (!success) {
-        result = NS_ERROR;
         Ns_Log(Warning, "SockConnect could not resolve host %s", host);
         sock = NS_INVALID_SOCKET;
     } else {
@@ -1257,8 +1253,10 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
          * led to multiple IP addresses. We have to try all of these, until a
          * connection succeeds.
          */
-        char *addresses = ds.string;
-        bool multipleIPs = (strchr(addresses, INTCHAR(' ')) != NULL);
+        struct NS_SOCKADDR_STORAGE sa, lsa;
+        char            *addresses = ds.string;
+        bool             multipleIPs = (strchr(addresses, INTCHAR(' ')) != NULL);
+        struct sockaddr *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
 
         if (multipleIPs) {
             Ns_Log(Notice, "SockConnect: target host <%s> has associated multiple IP addresses <%s>",
@@ -1267,7 +1265,8 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
         sock = NS_INVALID_SOCKET;
 
         for (;;) {
-            const char *address = ns_strtok(addresses, " ");
+            Ns_ReturnCode  result;
+            const char    *address = ns_strtok(addresses, " ");
 
             /*
              * In the next iteration, process the next address.
