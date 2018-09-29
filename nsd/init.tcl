@@ -206,7 +206,7 @@ if {$use_trace_inits} {
 #
 
 proc ns_init {} {
-    ns_ictl update       ;# Run the initialisation script
+    ns_ictl update       ;# Run the initialization script
 }
 
 ns_ictl trace allocate ns_init

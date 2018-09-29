@@ -26,7 +26,7 @@ connection thread.
 
 [call [cmd ns_reinit] ]
 
-Cleanup and initialise the interpreter. This is used for long running detached
+Cleanup and initialize the interpreter. This is used for long running detached
 threads to avoid resource leaks and/or missed state changes.
 
 [example_begin]
@@ -114,7 +114,7 @@ Run the scripts of the specified trace.
 Replace the interpreter initialization script for the current virtual
 server.
 
-The newly saved script will be used to initialise newly created
+The newly saved script will be used to initialize newly created
 interpreters. Existing interpreters will be reinitialized when
 [cmd "ns_ictl update"] is called.
 

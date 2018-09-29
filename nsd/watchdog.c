@@ -45,7 +45,7 @@
 
 
 /*
- * The following values define the restart behaviour.
+ * The following values define the restart behavior.
  */
 
 #define MAX_RESTART_SECONDS  64 /* Max time in sec to wait between restarts */

@@ -792,7 +792,7 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost, u
  *
  * Ns_SockConnectError --
  *
- *      Leave a consistent error message in in the interpreter result in case
+ *      Leave a consistent error message in the interpreter result in case
  *      a connect attempt failed. For timeout cases, set the Tcl error code to
  *      "NS_TIMEOUT".
  *

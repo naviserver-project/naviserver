@@ -83,7 +83,7 @@ proc ns_dbquotename {name} {
 #        "" is translated into NULL.
 #        All values of any numeric type are left alone.
 #        All other values are surrounded by single quotes and any
-#        single quotes included in the value are escaped (ie. translated
+#        single quotes included in the value are escaped (i.e. translated
 #        into 2 single quotes). 
 
 proc ns_dbquotevalue {value {type text}} {
