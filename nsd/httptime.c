@@ -287,7 +287,7 @@ Ns_ParseHttpTime(char *chars)
  *      Tcl result.
  *
  * Side effects:
- *      Day and month names may have capitalisation bashed.
+ *      Day and month names may have capitalization bashed.
  *
  *----------------------------------------------------------------------
  */
