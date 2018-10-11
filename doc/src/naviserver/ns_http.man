@@ -94,7 +94,7 @@ result as retuned by [cmd "ns_http run"]. When this option is used,
 the request ist executed in the background and finishes typically in a
 different thread. In these cases, [cmd "ns_http run"] returns empty,
 the request is not automatically canceled at the end of e.g. a
-connection request (as in other cases)
+connection request (as in other cases).
 
 [opt_def -headers [arg ns_set]]
 headers is the ns_set ID containing the additional headers to include in the HTTP request.
@@ -110,15 +110,16 @@ allows the Host: header field for the request to be passed in via the [option -h
 Otherwise it is overwritten.
 
 [opt_def -method [arg M]]
-use the specified HTTP method such as GET or POST or HEAD
+use the specified HTTP method such as GET or POST or HEAD.
 
 [opt_def -spoolsize [arg int]]
 In case the result is larger than spoolsize, it will be spooled to a
 temporary file returned in the variable denoted by [option -file].
 
 [opt_def -timeout [arg T]]
-Timeout for how long to wait for finishing the whole request
-(default 2:0, secs:microsesc)
+Timeout for how long to wait for finishing the whole request. The
+timeout can be specified as floating point number or in the
+sec:microsec notation (default 2.0).
 
 [opt_def -verify]
 used for HTTPS URIs to specify that the server certificate should be
