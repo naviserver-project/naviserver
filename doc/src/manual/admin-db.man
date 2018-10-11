@@ -147,32 +147,36 @@ Postgres or Solid driver.
 [example_end]
 
 
- [enum] Add a configuration file section to define the database pool you
+[enum] Add a configuration file section to define the database pool you
       have named. For example:
 
-
-[para]
-
-
-
 [example_begin]
-
       ns_section "ns/db/pool/mypool"
       ns_param Driver solid
       ns_param Datasource "TCP/IP hostname 1313"
       ns_param Connection 1
-
 [example_end]
 
+  [para] Note that the syntax provided to the datasource and the
+  available options depends on the actual driver and might have
+  therefore different options. For example, with the
+  [term nsdbpg] driver, the database driver section might look like:
 
- [enum] Choose which server or servers is to have access to the database
+[example_begin]
+   ns_section ns/db/pool/mypool {
+       ns_param	  connections        15
+       ns_param   LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+       ns_param	  logsqlerrors       true
+       ns_param	  driver             postgres
+       ns_param	  datasource         "${db_host}:${db_port}:dbname=${db_name}  sslmode=require"
+       ns_param	  user               $db_user
+       ns_param	  password           ""
+    }
+[example_end]
+
+[enum] Choose which server or servers is to have access to the database
       pools you have defined. For each server, add a configuration file
       section to define which database pools it can access. For example:
-
-
-[para]
-
-
 
 [example_begin]
 
