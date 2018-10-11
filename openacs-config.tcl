@@ -608,7 +608,7 @@ ns_section ns/db/pool/pool1 {
 	ns_param	password           $db_password
     } else {
 	ns_param	driver             postgres
-	ns_param	datasource         ${db_host}:${db_port}:${db_name}
+	ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
 	ns_param	user               $db_user
 	ns_param	password           ""
     }
@@ -634,7 +634,7 @@ ns_section ns/db/pool/pool2 {
 	ns_param	password           $db_password
     } else {
 	ns_param	driver             postgres
-	ns_param	datasource         ${db_host}:${db_port}:${db_name}
+	ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
 	ns_param	user               $db_user
 	ns_param	password           ""
     }
@@ -653,7 +653,7 @@ ns_section ns/db/pool/pool3 {
 	ns_param	password           $db_password
     } else {
 	ns_param	driver             postgres
-	ns_param	datasource         ${db_host}:${db_port}:${db_name}
+	ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
 	ns_param	user               $db_user
 	ns_param	password           ""
     }
