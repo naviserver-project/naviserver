@@ -1,0 +1,52 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_striphtml-1.0 {basic test} -body {
+    ns_striphtml {hello <b>world</b>}
+} -result "hello world"
+
+test ns_striphtml-2.0.1 {nbsp entity} -body {
+    ns_striphtml {hello&nbsp;world}
+} -result "hello world"
+test ns_striphtml-2.0.2 {nbsp entity} -body {
+    ns_striphtml {hello&lt;world}
+} -result "hello<world"
+test ns_striphtml-2.0.3 {nbsp entity} -body {
+    ns_striphtml {hello&gt;world}
+} -result "hello>world"
+
+test ns_striphtml-2.1 {euro entity} -body {
+    ns_striphtml {hello&euro;world}
+} -result "hello€world"
+
+test ns_striphtml-2.2 {cent entity} -body {
+    ns_striphtml {hello&cent;world}
+} -result "hello¢world"
+test ns_striphtml-2.2b {cent entity} -body {
+    ns_striphtml {hello&162;world}
+} -result "hello¢world"
+
+test ns_striphtml-2.3 {pound entity} -body {
+    ns_striphtml {hello&pound;world}
+} -result "hello£world"
+test ns_striphtml-2.3b {pound numeric entity} -body {
+    ns_striphtml {hello&163;world}
+} -result "hello£world"
+
+test ns_striphtml-2.4 {yen entity} -body {
+    ns_striphtml {hello&yen;world}
+} -result "hello¥world"
+test ns_striphtml-2.4b {yen numeric entity} -body {
+    ns_striphtml {'hello&165;world'}
+} -result "'hello¥world'"
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

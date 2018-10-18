@@ -40,7 +40,7 @@
  * Local functions defined in this file
  */
 
-static bool WordEndsInSemi(const char *ip)
+static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -542,17 +542,19 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         char       *inString;  /* copy of input string */
         char       *outPtr;    /* moving pointer to output string */
         const char *inPtr;     /* moving pointer to input string */
+        bool        needEncode;
 
         /*
          * Make a copy of the input and point the moving and output ptrs to it.
          */
         assert(htmlString != NULL);
 
-        inString = ns_strdup(htmlString);
-        inPtr    = inString;
-        outPtr   = inString;
-        intag    = NS_FALSE;
-        inentity = NS_FALSE;
+        inString   = ns_strdup(htmlString);
+        inPtr      = inString;
+        outPtr     = inString;
+        intag      = NS_FALSE;
+        inentity   = NS_FALSE;
+        needEncode = NS_FALSE;
 
         while (*inPtr != '\0') {
 
@@ -577,20 +579,75 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                  */
 
                 if (*inPtr == '&') {
+                    size_t length;
+
                     /*
                      * Starting an entity.
                      */
-                    inentity = WordEndsInSemi(inPtr);
+                    inentity = WordEndsInSemi(inPtr, &length);
                     /*
                      * Interprete numeric entities between 33 and 255.
                      */
-                    if (inentity && CHARTYPE(digit, *(inPtr + 1u)) != 0) {
-                        long value = strtol(inPtr + 1u, NULL, 10);
+                    if (inentity) {
+                        if (CHARTYPE(digit, *(inPtr + 1u)) != 0) {
+                            long value = strtol(inPtr + 1u, NULL, 10);
 
-                        if (value > 32 && value < 256) {
-                            *outPtr++ = (char) value;
+                            if (value > 32 && value < 256) {
+                                *outPtr++ = (char) value;
+                                if (value > 127) {
+                                    needEncode = NS_TRUE;
+                                }
+                            } else {
+                                Ns_Log(Notice, "ns_striphtml: ignore numeric entity with value %ld", value);
+                            }
                         } else {
-                            Ns_Log(Notice, "ns_striphtml: ignore numeric entity with value %ld", value);
+                            size_t i;
+                            typedef struct entity {
+                                const char *name;
+                                size_t length;
+                                const char *value;
+                                size_t outputLength;
+                            } entity;
+
+                            entity entities[] = {
+                                {"apos",  4, "'", 1},
+                                {"cent",  4, "¢", 2},
+                                {"copy",  4, "©", 1},
+                                {"euro",  4, "€", 3},
+                                {"gt",    2, ">", 1},
+                                {"lt",    2, "<", 1},
+                                {"nbsp",  4, " ", 1},
+                                {"pound", 5, "£", 2},
+                                {"quot",  4, "\"", 1},
+                                {"reg",   3, "®", 1},
+                                {"yen",   3, "¥", 2},
+                                {NULL,    0, "", 0}
+                            };
+
+                            inPtr ++;
+                            for (i = 0; entities[i].name != NULL; i++) {
+                                char firstChar = *entities[i].name;
+
+                                if (firstChar == *inPtr && length == entities[i].length) {
+
+                                    /*if (strlen(entities[i].value) != entities[i].outputLength) {
+                                        fprintf(stderr, "-->found l = %lu\n", strlen(entities[i].value));
+                                        }*/
+                                    if (entities[i].outputLength > 1) {
+
+                                        memcpy(outPtr, entities[i].value, entities[i].outputLength);
+                                        outPtr += entities[i].outputLength;
+                                        needEncode = NS_TRUE;
+                                    } else {
+                                        *outPtr++ = *entities[i].value;
+                                    }
+                                    break;
+                                }
+
+                                if (firstChar >  *inPtr) {
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
@@ -610,7 +667,14 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
          */
         *outPtr = '\0';
 
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
+        if (needEncode) {
+            Tcl_DString ds;
+            (void)Tcl_ExternalToUtfDString(Ns_GetCharsetEncoding("utf-8"), inString, (int)strlen(inString),
+                                           &ds);
+            Tcl_DStringResult(interp, &ds);
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
+        }
         ns_free(inString);
     }
     return result;
@@ -889,21 +953,24 @@ NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
  */
 
 static bool
-WordEndsInSemi(const char *ip)
+WordEndsInSemi(const char *word, size_t *lengthPtr)
 {
-    NS_NONNULL_ASSERT(ip != NULL);
+    const char *start;
+    NS_NONNULL_ASSERT(word != NULL);
 
     /*
      * Advance past the first '&' so we can check for a second
      *  (i.e. to handle "ben&jerry&nbsp;")
      */
-    if (*ip == '&') {
-        ip++;
+    if (*word == '&') {
+        word++;
     }
-    while((*ip != '\0') && (*ip != ' ') && (*ip != ';') && (*ip != '&')) {
-        ip++;
+    start = word;
+    while((*word != '\0') && (*word != ' ') && (*word != ';') && (*word != '&')) {
+        word++;
     }
-    return (*ip == ';');
+    *lengthPtr = (size_t)(word - start);
+    return (*word == ';');
 }
 
 
