@@ -845,10 +845,10 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                     && length == entities[i].length
                                     && strncmp(inPtr, entities[i].name, length) == 0) {
 
-                                    if (strlen(entities[i].value) != entities[i].outputLength) {
+                                    /*if (strlen(entities[i].value) != entities[i].outputLength) {
                                         fprintf(stderr, "--> name %s found l = %lu\n",
                                                 entities[i].name, strlen(entities[i].value));
-                                    }
+                                                }*/
                                     if (entities[i].outputLength > 1) {
 
                                         memcpy(outPtr, entities[i].value, entities[i].outputLength);
