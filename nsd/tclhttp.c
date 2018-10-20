@@ -902,6 +902,7 @@ HttpQueueCmd(
 
 
     } else {
+        assert(httpPtr != NULL);
         /*
          * When the outputFileName is given store it in the task structure. It
          * will be used in case output is spooled to a file.

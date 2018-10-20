@@ -525,8 +525,8 @@ PngSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         result = TCL_ERROR;
 
     } else {
-        *wPtr = htonl(w);
-        *hPtr = htonl(h);
+        *wPtr = (uint32_t)htonl(w);
+        *hPtr = (uint32_t)htonl(h);
     }
 
     return result;

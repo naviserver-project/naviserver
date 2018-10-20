@@ -400,7 +400,7 @@ NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
 
-        sock = Ns_SockAccept(sock, NULL, 0);
+        sock = Ns_SockAccept(sock, NULL, NULL);
         if (sock == NS_INVALID_SOCKET) {
             Ns_TclPrintfResult(interp, "accept failed: %s",
                                Tcl_PosixError(interp));

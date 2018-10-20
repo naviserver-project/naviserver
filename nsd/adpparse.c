@@ -495,7 +495,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 
 	default:
             /* should not happen */
-            assert(state && 0);
+            assert(0);
         }
 
         /*

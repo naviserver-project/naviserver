@@ -223,10 +223,11 @@ Ns_ModuleInit(const char *server, const char *module)
     logPtr->ipv6maskPtr = NULL;
 #endif
     if (Ns_ConfigBool(path, "masklogaddr", NS_FALSE)) {
-        const char *default_ipv4MaskString = "255.255.255.0";
-        const char *default_ipv6MaskString = "ff:ff:ff:ff::";
         const char* maskString;
-
+        const char *default_ipv4MaskString = "255.255.255.0";
+#ifdef HAVE_IPV6
+        const char *default_ipv6MaskString = "ff:ff:ff:ff::";
+#endif
         logPtr->flags |= LOG_MASKIP;
 
 #ifdef HAVE_IPV6
