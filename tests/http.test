@@ -217,7 +217,7 @@ test http-4.5 {HTTP/1.1 PUT file == uploadsize} -setup {
 } -result [list 200 [string repeat x 1027]]
 
 # NB: use -binary here to force no-charset conversion and hence chunking due
-#     too large size of buffer. This is correct behaviour, but the result is
+#     too large size of buffer. This is correct behavior, but the result is
 #     tricky to match for these tests.
 
 test http-4.6 {HTTP/1.1 PUT very large file} -setup {

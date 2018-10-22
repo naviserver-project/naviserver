@@ -110,7 +110,7 @@ test ns_server-2.3.1 {set minthreads} -body {
     ns_server minthreads 1
 } -match exact -result 1
 
-test ns_server-2.3.2 {query modfied minthreads} -body {
+test ns_server-2.3.2 {query modified minthreads} -body {
     ns_server minthreads
 } -match exact -result 1
 
@@ -236,7 +236,7 @@ test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
 #
 # Map some GET request, query the mapping, and unmap the GET requests
 #
-test ns_server-2.14.2 {mapping and unmapping of requsts} -setup {
+test ns_server-2.14.2 {mapping and unmapping of requests} -setup {
     ns_server -pool emergency map "GET /foo"
 } -body {
     ns_server -pool emergency map
@@ -254,7 +254,7 @@ test ns_server-2.14.3 {check, if cleanup of last test was successful} -body {
 #
 # Map some GET request, query the mapping, and unmap the GET requests
 #
-test ns_server-2.14.4 {mapping and unmapping of requsts, return mapping} -setup {
+test ns_server-2.14.4 {mapping and unmapping of requests, return mapping} -setup {
     ns_server -pool emergency map "GET /foo"
 } -body {
     ns_server mapped "GET /foo"
@@ -265,7 +265,7 @@ test ns_server-2.14.4 {mapping and unmapping of requsts, return mapping} -setup 
 #
 # Map some GET request, query the mapping, and unmap the GET requests
 #
-test ns_server-2.14.5 {mapping and unmapping of requsts, return mapping with inheritance} -setup {
+test ns_server-2.14.5 {mapping and unmapping of requests, return mapping with inheritance} -setup {
     ns_server -pool emergency map "GET /foo/*.png"
 } -body {
     return [list [ns_server mapped "GET /foo"] [ns_server mapped "GET /foo/1.png"] [ns_server mapped "GET /foo/bar/2.png"]]
