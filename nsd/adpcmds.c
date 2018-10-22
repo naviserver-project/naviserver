@@ -928,9 +928,9 @@ NsTclAdpArgvObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     AdpFrame    *framePtr = NULL;
     Tcl_Obj     *defaultObj = NULL;
-    int          index = 0, result = TCL_OK;
+    int          idx = 0, result = TCL_OK;
     Ns_ObjvSpec  args[] = {
-        {"?index",   Ns_ObjvInt, &index,      NULL},
+        {"?index",   Ns_ObjvInt, &idx,        NULL},
         {"?default", Ns_ObjvObj, &defaultObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -945,8 +945,8 @@ NsTclAdpArgvObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         if (objc == 1) {
             Tcl_SetListObj(Tcl_GetObjResult(interp), (int)framePtr->objc, framePtr->objv);
         } else {
-            if ((index + 1) <= (int)framePtr->objc) {
-                Tcl_SetObjResult(interp, framePtr->objv[index]);
+            if ((idx + 1) <= (int)framePtr->objc) {
+                Tcl_SetObjResult(interp, framePtr->objv[idx]);
             } else if (defaultObj != NULL) {
                 Tcl_SetObjResult(interp, defaultObj);
             }

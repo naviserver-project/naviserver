@@ -921,7 +921,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     Ns_DStringAppend(dsPtr, "HTTP_");
     for (i = 0; (size_t)i < Ns_SetSize(conn->headers); ++i) {
-	int index;
+	int idx;
 
         s = Ns_SetKey(conn->headers, i);
         e = Ns_SetValue(conn->headers, i);
@@ -935,11 +935,11 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
             }
             ++s;
         }
-        index = Ns_SetFind(cgiPtr->env, dsPtr->string);
-        if (index < 0) {
+        idx = Ns_SetFind(cgiPtr->env, dsPtr->string);
+        if (idx < 0) {
             (void)Ns_SetPut(cgiPtr->env, dsPtr->string, e);
         } else {
-	    SetAppend(cgiPtr->env, index, ", ", e);
+	    SetAppend(cgiPtr->env, idx, ", ", e);
         }
         Ns_DStringSetLength(dsPtr, 5);
     }
