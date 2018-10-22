@@ -538,7 +538,8 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     } else {
         bool        intag;     /* flag to see if are we inside a tag */
-        bool        inentity;   /* flag to see if we are inside a special char */
+        bool        inentity;  /* flag to see if we are inside a special char */
+        bool        incomment; /* flag to see if we are inside a comment */
         char       *inString;  /* copy of input string */
         char       *outPtr;    /* moving pointer to output string */
         const char *inPtr;     /* moving pointer to input string */
@@ -554,13 +555,24 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         outPtr     = inString;
         intag      = NS_FALSE;
         inentity   = NS_FALSE;
+        incomment  = NS_FALSE;
         needEncode = NS_FALSE;
 
         while (*inPtr != '\0') {
 
             if (*inPtr == '<') {
                 intag = NS_TRUE;
-
+                if ((*(inPtr + 1) == '!')
+                    && (*(inPtr + 2) == '-')
+                    && (*(inPtr + 3) == '-')) {
+                    incomment = NS_TRUE;
+                }
+            } else if (incomment) {
+                if ((*(inPtr) == '-')
+                    && (*(inPtr + 1) == '-')
+                    && (*(inPtr + 2) == '>')) {
+                    incomment  = NS_FALSE;
+                }
             } else if (intag && (*inPtr == '>')) {
                 /*
                  * Inside a tag that closes

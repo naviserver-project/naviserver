@@ -296,6 +296,10 @@ test ns_striphtml-3.0 {table} -body {
     return $result
 } -result "1"
 
+test ns_striphtml-4.0 {strip HTML comment} -body {
+    ns_striphtml {hello<!-- SOME COMMENT -->World}
+} -result "helloWorld"
+
 
 #
 # Local variables:
