@@ -1006,9 +1006,11 @@ NsTclCacheGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclCacheStatsObjCmd --
  *
- *      Returns stats on a cache. The size and expire time of each
- *      entry in the cache is also appended if the -contents switch
- *      is given.
+ *      Implementation of "ns_ cache stats".  Returns statistics in form of a
+ *      dict from the specified cache. When the switch "-contents" is
+ *      provided, entries for all cache entries are returned, containing the
+ *      key, size, hits and expire time for each entry in the cache. The
+ *      switch "-reset" can be used to reset the cache statistics.
  *
  * Results:
  *      Tcl result.
