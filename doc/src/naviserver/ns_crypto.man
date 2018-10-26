@@ -1,0 +1,236 @@
+[include version_include.man]
+[manpage_begin ns_crypto n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Low level cryptographic functions based on the OpenSSL crypto library}]
+
+[description]
+
+These functions perform low-level cryptographic functions based on the
+OpenSSL crypto library. These commands are only implemented when
+NaviServer was compiled with OpenSSL support. The level of support
+depends on the version of OpenSSL. Versions earlier than OpenSSL 1.0
+are not supported.
+
+[para]
+For some higher level
+functions (e.g. performing e.g digest or HMAC operations of huge
+amounts of data) see e.g.[cmd ns_md] and [cmd ns_hmac].
+
+[para]
+Note: some common options are described in a separate section below.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd "ns_crypto::aead::encrypt string"] \
+     [opt [option "-aad [arg aad]"]] \
+     [opt [option "-cipher [arg cipher]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [opt [option "-iv [arg iv]"]] \
+     [opt [option "-key [arg key]"]] \
+     [arg input]]
+
+[para] encrypt data following the Authenticated Encryption with
+Associated Data (AEAD) scheme, which provides confidentiality,
+integrity, and authenticity. Currently, only GCM mode (Galois/Counter
+Mode) is supported. For details about AEAD in GCM mode, see
+e.g. https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+
+[para] The function returns a dict consisting of [term bytes] and the
+authentication [term tag] used for decryption.
+
+[para] The option [option "-aad"] can be used to specify
+Additional Authenticated Data (AAD),which is data handled by
+encryption, which is sent in clear text. The encryption still provides
+authenticity for AAD. AAD can be used e.g. for addresses, ports,
+sequence numbers, protocol version numbers.
+The function uses the raw bytes of the provided value.
+
+[para] The option [option "-cipher"] can be used to
+specify the used cipher such as e.g. [term aes-128-gcm] (default) or
+[term aes-256-gcm]. Possible values are defined by OpenSSL.
+
+[para] The option [option "-iv"] specifies the
+initialization vector (IV) for encryption. IV is essentially a nonce
+value, a value that is unique within the specified context (see the
+NIST publication for details).
+
+[para] The option [option "-key"] specifies the key for the
+encryption. The function uses the raw bytes of the provided value.
+
+[para] The argument [arg input] is the data to be encrypted.
+The function uses the raw bytes of this argument.
+
+[example_begin]
+% ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
+bytes fa260f97eae35e3e3df0b7 tag 93654f78fd189b559c091acb410a0040
+[example_end]
+
+[call [cmd "ns_crypto::aead::decrypt string"] \
+     [opt [option "-aad [arg aad]"]] \
+     [opt [option "-cipher [arg cipher]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [opt [option "-iv [arg iv]"]] \
+     [opt [option "-key [arg key]"]] \
+     [opt [option "-tag [arg tag]"]] \
+     [arg input]]
+
+This function implements the inverse function of
+[cmd "ns_crypto::aead::encrypt string"]. Note that the resulting
+[term tag] of the encryption result is used as an input for decryption.
+The result is a byte string of the decrypted input (no dict).
+
+
+[example_begin]
+% set d [lb]ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 \
+    -key secret -encoding binary \
+    "hello world"[rb]
+% ns_crypto::aead::decrypt string -cipher aes-128-gcm -iv 123456789 \
+    -key secret -tag [lb]dict get $d tag[rb] \
+    -encoding binary [lb]dict get $d bytes[rb]
+[example_end]
+
+[call [cmd "ns_crypto::eckey generate"] \
+     [opt [option "-name [arg name]"]] \
+     [opt [option "-pem [arg pem]"]] \
+     ]
+
+This function requires OpenSSL compiled with EC support enabled.
+
+[call [cmd "ns_crypto::eckey import"] \
+     [opt [option "-string [arg string]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     ]
+
+This function requires OpenSSL compiled with EC support enabled.
+
+[call [cmd "ns_crypto::eckey priv"] \
+     [opt [option "-pem [arg pem]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     ]
+
+This function requires OpenSSL compiled with EC support enabled.
+
+[call [cmd "ns_crypto::eckey sharedsecret"] \
+     [opt [option "-pem [arg pem]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg pubkey]]
+
+This function requires OpenSSL compiled with EC support enabled.
+
+[call [cmd "ns_crypto::eckey pub"] \
+     [opt [option "-pem [arg pem]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+    ]
+
+This function requires OpenSSL compiled with EC support enabled.
+
+
+[call [cmd "ns_crypto::hmac string"] \
+     [opt [option "-digest [arg digest]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg key] \
+     [arg message]]
+
+Return a keyed-hash message authentication code (HMAC) for the
+specified [arg key] and [arg message] using the specified message
+digest algorithm and return it in the specified encoding. An HMAC is
+a message authentication code of a key (secret) with a message. It may
+be used to simultaneously verify both the data integrity and the
+authentication of a message. For details of HMAC, consult RFC 4231.
+
+[example_begin]
+% ns_hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
+5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843
+[example_end]
+
+[para] This low level function operates just on an input string (which has to
+be in memory). In order to compute HMACs on large data, use
+[cmd ns_hmac].
+
+
+[call [cmd "ns_crypto::md string"] \
+     [opt [option "-digest [arg digest]"]] \
+     [opt [option "-sign [arg pemfile]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg message]]
+
+[para] Return a message digest for the provided [arg message] and
+return it in the specified encoding. Optionally, this function can
+encrypt the message digest with the privated key form the
+provided .pem file to obtain a digital signature based on
+https://www.openssl.org/docs/man1.1.0/crypto/EVP_DigestSignInit.html).
+
+[example_begin]
+% ns_crypto::md string -digest sha256 "what do ya want for nothing?"
+b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
+[example_end]
+
+[para] This low level function operates just on an input string (which has to
+be in memory). In order to compute digests on large data, use
+[cmd ns_md].
+
+[call [cmd "ns_crypto::md hkdf"] \
+     [opt [option "-digest [arg digest]"]] \
+     [opt [option "-salt [arg salt]"]] \
+     [opt [option "-secret [arg secret]"]] \
+     [opt [option "-info [arg info]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg length]]
+
+This function requires OpenSSL 1.1.0.
+
+
+[call [cmd "ns_crypto::md vapidsign"] \
+     [opt [option "-digest [arg digest]"]] \
+     [opt [option "-pem [arg pem]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg message]]
+
+This function requires OpenSSL compiled with EC support enabled.
+
+
+[call [cmd "ns_crypto::randombytes"] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg nrbytes]]
+
+Return the specified number of random bytes in the specified encoding
+(default hex).
+
+[example_begin]
+% ns_crypto::randombytes 20
+3191eb4360a3dc9b5ef667641b264d43aa1019aa
+[example_end]
+
+
+[list_end]
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -digest [arg digest]]
+
+[para] Digest algorithm for the checksum computation. The available
+algorithms are implemented in OpenSSL. The current versions of OpenSSL
+supports the following message digest algorithms: "blake2b512
+blake2s256 md4 md5 md5-sha1 mdc2 ripemd160 sha1 sha224 sha256 sha3-224
+sha3-256 sha3-384 sha3-512 sha384 sha512 sha512-224 sha512-256
+shake128 shake256 sm3 whirlpool".  The default value is "sha256"
+
+[opt_def -encoding [arg encoding]]
+
+[para] The option [option "-encoding [arg encoding]"] specifies the
+output encoding used for the resulting values of the dict.
+Possible encodings are [term hex], [term base64url],
+[term base64], or [term binary]. Default is [term hex].
+
+
+[list_end]
+
+[see_also nsd ns_md ns_hmac]
+[keywords crypto HMAC HKDF AEAD]
+
+[manpage_end]
+
