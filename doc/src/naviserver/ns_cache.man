@@ -203,17 +203,16 @@ matching keys are flushed.
         [opt [option --]] \
         [arg name] ]
 
-Return the accumulated statistics for the given cache [arg name] in array-get
+Return the accumulated statistics for the given cache [arg name] in dict
 format since the cache was created or was last reset.
 
 [para]
 If the [option -reset] option is given then the statistics will be reset
 to zero after the command returns.
 
-[para]
-If the [option -contents] option is given then the first element of the
-returned list contains the size and expire time for each entry in the
-cache. The time is in [cmd ns_time] timespec format.
+[para] If the [option -contents] option is given then a list of all
+entries is returned containing the key, size, hits and expire time for
+each entry in the cache. The time is in [cmd ns_time] timespec format.
 
 The cache statistics track the following items:
 
