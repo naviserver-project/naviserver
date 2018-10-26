@@ -754,7 +754,7 @@ Code Changes:
   - Improve compilation under windows:
      * don't pass "const char*" as member dest of Ns_ObjvSpec
      * add compatibility type "suseconds_t" for windows
-     * define NS_NAVISERVER fro windows (no configure script)
+     * define NS_NAVISERVER for windows (no configure script)
      * move conditional definition of P_tmpdir after the .h files are
        loaded
      * fix type in macro PTR2UINT in windows code
@@ -2710,7 +2710,7 @@ New Features:
 
     * A new ns_cache_stats -contents switch dumps the expire and size of each
       entry in the cache cache. Useful when developing / testing to check
-      utilisation.
+      utilization.
 
     * The new [ns_conn keepalive ?bool?] sub-command disables or requests
       keepalive behavior for the current connection.
