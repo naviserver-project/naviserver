@@ -40,7 +40,7 @@
 #endif
 
 /*
- * We need OpenSSL least in version 1.0 or newer for the crypo
+ * We need OpenSSL least in version 1.0 or newer for the crypto
  * functions.
  */
 #if defined(HAVE_OPENSSL_EVP_H) && !defined(HAVE_OPENSSL_PRE_1_0)
