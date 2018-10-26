@@ -222,8 +222,8 @@ nsf::proc ns_totp {
 #
 # ns_uuid: Generate a Version 4 UUID according to RFC 4122
 #
-# Uses the OpenSSL RAND_bytes function to generate a
-# Version 4 UUID, which is meant for generating UUIDs from truly-random or
+# Uses the OpenSSL RAND_bytes function to generate a Version 4 UUID,
+# which is meant for generating UUIDs from truly-random or
 # pseudo-random numbers.
 #
 #   The algorithm is as follows:
