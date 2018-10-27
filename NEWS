@@ -1,4 +1,542 @@
 =======================================
+NaviServer 4.99.17, released 2018-XX-XX
+=======================================
+
+ 396 files changed, 13231 insertions(+), 6692 deletions(-)
+
+New Features:
+-------------
+
+  - Added brotli support for delivering static content
+    ---------------------------------------------------
+    The brotli compression format (RFC 7932) achieves better results for
+    compression for typical web content compared to e.g. gzip and is
+    supported by most current browsers. The definition of static
+    content delivery is exactly the same for "brotli" as for static
+    "gzip" content.
+
+    New configuration options for ns/fastpath:
+    * "brotli_static": should static brotli delivery be checked?
+    * "brotli_refresh": should outdated brotli compressed files be refreshed?
+    * "brotli_cmd": OS-level command with options used for brotli compression
+
+  - "ns_conn" additions:
+    * new subcommand "ns_conn acceptedcompression" to return accepted
+      compressions for the current connection (gzip or brotli)
+
+    * new subcommands "ns_conn currentaddr" and "ns_conn currentport"
+      to refer to the address and port of the currently open server side
+      of the socket.
+
+
+  - New feature for GDPR: add mask IP addresses optionally in access log
+    --------------------------------------------------------------------
+    This function is similar to "anonip" IP anonymizer of the Swiss
+    privacy foundation).  When this parameter is set, all IP addresses
+    are masked in the log file, such that the host-specific (= person-
+    specific) information is masked out and the IP-address does not
+    match a particular individual anymore. Still, with the masking
+    turned on, reverse DNS lookup and/or geolocation is possible.
+
+    The option can be configured via the following parameters in the
+    ".../module/nslog" section of the config file of NaviServer:
+     * "masklogaddr": boolean value to turn feature on/off (default off)
+     * "maskipv4": mask for IPv4 addresses (default 255.255.255.0)
+     * "maskipv6": mask for IPv6 addresses (default ff:ff:ff:ff::)
+
+
+  - New atomic "nsv_set" commands/options
+    -------------------------------------
+
+    * Obtain (old) value from nsv ARRAY and set it to a new value set foo
+
+	set foo [nsv_set -reset ARRAY KEY NEWVALUE]
+
+      After the operation, ARRAY(KEY) has a new value.
+      The operation is similar to "nsv_set ARRAY KEY NEWVALUE",
+      but the variant with "-reset" returns the old value.
+      Similar to GETSET in REDIS.
+
+   * Obtain a value from nsv ARRAY and unset it (no new value is provided).
+
+	set foo [nsv_set -reset ARRAY KEY]
+
+     The operations returns the old value of ARRAY(KEY) or empty, if
+     it does not exist.  After the operation, the ARRAY(KEY) is unset.
+
+   * Set a default value for a nsv ARRAY
+
+	nsv_set -default ARRAY KEY DEFAULTVALUE
+
+      Do nothing when ARRAY(KEY) has already a value.
+      Return an error, when DEFAULTVALUE is not provided.
+      Similar to SETNX in REDIS.
+
+
+  - Extended functionality of "ns_http"
+    -----------------------------------
+
+    * Changed return value for "ns_http run" and "ns_http wait".
+      Now the commands return attribute value pairs (Tcl dict).
+      Previously, the commands returned different results,
+      depending on the options
+
+      - "ns_http run" returned the name of the queued command (which
+	was completely useless, this the queued command was already
+	terminated)
+      - "ns_http wait" returned sometimes the body of the reply (when
+	the reply was not spooled) or empty (spooled) or "1", when the
+	option "-R" was specified
+
+      Now the result is always a dict containing "status" (HTTP status
+      code), "time" (elapsed time), "headers" (ns_set of the reply
+      header fields, and either the "body" (reply body) or "file" (the
+      name of the spooled file). The values in the dict might mirror
+      the result of other (optional) output variables, which continue
+      to work.
+
+      Since the results were irregular and not documented in the man
+      pages, the backward compatibility should be high. Also the
+      regression test of NaviServer was not effected by this change.
+
+
+    * Support for asynchronous “ns_http” tasks:
+
+      When the new flag "-donecallback” is provided, then a “ns_http”
+      task is started in the background and does not require an
+      “ns_http wait” anymore. Instead, when it finishes it executes
+      the provided donecallback which receives as additional arguments
+      the Tcl result (in form of an integer) and the result dict,
+      returned otherwise from e.g. “ns_http run”.
+
+      As a consequence, requests of the form
+	 ns_http queue … -donecallback …
+      differ from client requests without the callback
+      in the following points:
+
+      a) the command does not return a handle for “ns_http wait”
+      b) The command is not automatically cleaned up (canceled)
+	 at the end of a connection requests
+      c) Typically, donecallbacks are executed in a different
+	 thread than it was started.
+
+      Some more options, which were previously only valid on
+      “ns_http wait” (such as e.g. spoolsize) are now valid
+      for “ns_http queue” as well.
+
+      The new flag allows a developer to start many requests in
+      parallel without having to start many threads or complex
+      synchronization tasks.
+
+    * New option "-body_file" for "ns_http wait" (similar to "ns_http
+      queue" which can be used to specify a filename for the
+      downloaded content)
+
+    * New option "-outputfile" to "ns_http run" and "ns_http wait":
+      by specifying the option "-outputfile" the received file will be
+      always written to the disk, no matter how large it is.
+
+    * New subcommand "ns_http stats": returns a dict (flat list of
+      attributes and values). The list contains "task", "url",
+      "requestlength", "sent", "replylength" and "received".
+
+
+  - Support resolving a hostname against multiple IP addresses
+    ----------------------------------------------------------
+
+    * In case, one domain name has multiple IP addresses registered,
+      previous versions of NaviServer tried only the first returned
+      address and returned an error, when this failed. This happened
+      when using client functions (e.g. ns_http).
+
+    * host names with multiple IP addresses are nowadays quite common,
+      e.g. "localhost" having an IPv4 and an IPv6 address registered. In
+      previous versions, when e.g. localhost has as first address the IPv6
+      address, but IPv6 was not active, it returned an error.
+
+    * resolving against IP addresses continues to work as always.
+
+
+  - Extended crypto functionality
+    -----------------------------
+
+     * Added HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
+	  ::ns_crypto::md hkdf -digest sha256 ....
+       (requires OpenSSL 1.1.0 or newer)
+
+     * Added support for elliptic curve cryptography
+	. ns_crypto::eckey import ?-string string? ?-encoding encoding?
+	. ns_crypto::eckey priv ?-pem pem? ?-encoding encoding?
+	. ns_crypto::eckey pub ?-pem pem? ?-encoding encoding?
+	. ns_crypto::eckey sharedsecret ?-pem pem? ?-encoding encoding? pubkey
+	. ns_crypto::eckey generate ?-name name? ?-pem pem?
+
+     * Added support for getting an arbitrary number of random bytes
+       based on crypto support on OpenSSL:
+	. ns_crypto::randombytes ?-encoding encoding? bytes
+
+     * Added support for Authenticated Encryption with Associated Data
+       (AEAD) scheme, which provides confidentiality, integrity, and authenticity.
+
+	. ns_crypto::aead::encrypt string ?-aad aad? ?-cipher cipher? ?-encoding encoding? ?-iv iv? ?-key key? input"
+	. ns_crypto::aead::decrypt string ?-aad aad? ?-cipher cipher? ?-encoding encoding? ?-iv iv? ?-key key? ?-tag tag? input"
+
+     * Added "-encoding hex|base64url|base64" option for output encoding
+	for the crypto function. Previously, all these functions returned the
+	result in "hex" format. If the option is not specified, the result
+	is the same as before (hex). The encoding option was added to the
+	following functions:
+	- ns_crypto::hmac string
+	- ns_crypto::hmac get
+	- ns_crypto::md string
+	- ns_crypto::md get
+	- ns_crypto::md vapidsign
+	- ns_crypto::enc
+
+
+  - "ns_connchan" improvements
+    --------------------------
+
+    * Callback suspension: a Tcl socket callback function might now
+      return the value "2" to flag that the callback will be
+      suspended, but it keeps the socket open. Previously, the Tcl
+      callback could return just "0" (callback is cancelled, socket is
+      closed) or "1" (continue callback handling, keep socket open).
+      This can be used to suspend callback handling on bottlenecks and
+      continue later, when situation improves.
+
+    * "ns_connchan write": The function returns now the number of
+      bytes sent, which might be less than the length of the data to
+      be sent.
+
+    * "ns_connchan list": the function returns now two more fields per
+      entry: a) cmd name of the callback (eases debugging, when
+      callbacks are changed dynamically) b) conditions used for
+      registering the callback.
+
+    * The "ns_connchan" callbacks are now listed via the nsstats
+      interface as well (with proper callback info).
+
+
+  - Added Possibility to add per-server "initcmds" to config file
+    -------------------------------------------------------------
+
+    This new features provides an easy means to add command which
+    should be executed after server initialization into a configuration
+    files. By using the "initcmds" one can start multiple instances
+    of NaviServer differing just in the initialization command
+    by providing different config files. The "initcmds" approach
+    has the advantage over e.g. "ns_atserverstart" that it is
+    executed in a state when the server is full initiated.
+
+
+
+  - Improved readability for config files
+    -------------------------------------
+
+    The "ns_section" command has new an optional last argument for the
+    parameters of its configuration section. Instead of writing e.g.
+
+       ns_section ns/parameters
+       ns_param serverlog    $logroot/error.log
+       ns_param pidfile      $logroot/nsd.pid
+       ns_param home         $homedir
+       #...
+
+    one can write now
+
+       ns_section ns/parameters {
+	   ns_param serverlog   $logroot/error.log
+	   ns_param pidfile     $logroot/nsd.pid
+	   ns_param home        $homedir
+	   #...
+       }
+
+    This has two advantages: a) it shows clearly, where the section
+    ends and b) when using an editor with automatic indentation, the
+    log file looks nicer without manual indentation work. This change
+    is fully backward compatible, old style config files continue to
+    work.
+
+
+  - Further new commands and features
+    ---------------------------------
+
+    * "ns_hash": provide a interface for the HashStringKey() function
+      (very useful for e.g. cache partitioning)
+
+    * "ns_reflow_text".
+	  ns_reflow_text ?-width width? ?-offset offset? ?-prefix prefix? ?--? text
+      Tcl-based solutions are surprisingly slow on largish input.
+
+    * "ns_base64urlendcode", "ns_base64urldedcode": URL-save variants of base64,
+      used in various new RFCs for passing base64 values in HTTP requests.
+
+   * "ns_uuid": runtime efficient version of a version 4 UUID
+      according to RFC 4122: A Universally Unique IDentifier (UUID)
+      URN Namespace
+
+   * Improved results of [ns_cache_stats -contents ...]. The command
+     returns now a tcl list instead of a string, including reuse count.
+
+  - Improved results of "ns_striphtml":
+     * Added resolving of all HTML4 entities (including &nbsp; etc.)
+     * Stripped as well HTML comments.
+
+
+Performance Improvements:
+-------------------------
+
+  - Check for epoch updates on blue-prints as well in cleanup phase
+    (deallocate trace) to reduce latency for client requests.
+
+
+Bug Fixes:
+----------
+
+  - Don't try to serve redirected files in case the connection is
+    already closed (will lead only to confusing messages)
+
+  - Ns_IsBinaryMimeType(): When a chartype is specified, never assume
+    the mimetype is binary.
+
+  - ns_getformfile: Don't rely on global variables
+    (see https://sourceforge.net/p/naviserver/bugs/80/)
+    Before this change, Depending on configured values,
+    ns_getformfile could have missed uploaded files.
+
+  - Added missing fetch commands for obtaining handles (on obviously
+    seldom used subcommands "ns_db setexception|sp_setparam")
+
+  - ns_http: timeout and connection behavior show works now consistent
+    for HTTP and HTTPS URLs.
+
+  - "ns_set print": align with documented behavior
+
+  - "ns_parseurl": make results more robust, when a URL with a colon
+    in the path was given, but no port provided (detected a port
+    incorrectly)
+
+  - "ns_parseformfile": handle also www-form-urlencoded (in
+     addition to multipart/form-data as before)
+
+  - Windows:
+    * Make sure to create temporary files correctly under windows (many
+      thanks to Oleg Oleinik)
+    * Incorrect handle was used to perform operations on the
+      process in Ns_WaitForProcess (many thanks to Oleg Oleinik)
+
+
+Documentation improvements:
+---------------------------
+
+  - Updated several man pages
+    * admin-db.man:
+    * admin-install.man
+    * admin-maintenance.man
+    * adp-overview.man
+    * commandlist.man
+    * main-features.man
+    * main-history.man
+    * ns_accesslog.man
+    * ns_adp.man
+    * ns_adp_argc.man
+    * ns_adp_argv.man
+    * ns_adp_bind_args.man
+    * ns_adp_eval.man
+    * ns_adp_flush.man
+    * ns_adp_info.man
+    * ns_adp_safeeval.man
+    * ns_atexit.man
+    * ns_atexit.man
+    * ns_atshutdown.man
+    * ns_atsignal.man
+    * ns_base64.man
+    * ns_base64encode.man
+    * ns_conn.man
+    * ns_connchan.man
+    * ns_cookie.man
+    * ns_db.man
+    * ns_driver.man
+    * ns_fmttime.man
+    * ns_getcontent.man
+    * ns_getform.man
+    * ns_hmac.man
+    * ns_hotp.man
+    * ns_http.man
+    * ns_httpget.man
+    * ns_httpopen.man
+    * ns_ictl.man
+    * ns_job.man
+    * ns_kill.man
+    * ns_md.man
+    * ns_memoize.man
+    * ns_mutex.man
+    * ns_parsequery.man
+    * ns_perm.man
+    * ns_proxy.man
+    * ns_queryexists.man
+    * ns_queryget.man
+    * ns_querygetall.man
+    * ns_quotehtml.man
+    * ns_rand.man
+    * ns_register.man
+    * ns_return.man
+    * ns_rlimit.man
+    * ns_schedule_proc.man
+    * ns_sendmail.man
+    * ns_server.man
+    * ns_set.man
+    * ns_set.man:
+    * ns_setexpires.man
+    * ns_sockopen.man
+    * ns_sockselect.man
+    * ns_striphtml.man
+    * ns_thread.man
+    * ns_time.man
+    * ns_tmpnam.man
+    * ns_totp.man
+    * ns_urlspace.man
+    * ns_uuencode.man
+    * ns_writer.man
+    * nscgi.man
+    * nsperm.man
+    * nssock.man
+    * nsv.man
+    * returnstatus-cmds.man
+    * tcl-lib-file.man
+    * tcl-lib-nstrace.man
+    * tcl-libraries.man
+    * tcl-overview.man
+
+
+Tcl API Changes:
+----------------
+
+  - "ns_conn isconnected": returns now false, when the connection is
+     already closed. Otherwise we have to add a new subcommand
+     "ns_conn closed", which seems somewhat odd (isconnected true and
+     closed true?)
+
+  - "ns_cache_stats" returns now hitrate in form of a float instead of
+    an integer.
+
+
+C API Changes:
+--------------
+
+   - Ns_SockTimedConnect2() returns now Ns_ReturnCode to be able to
+     distinguish between timeouts and errors
+
+   - Ns_SockConnectError(): new call to provide consistent error messages
+     and to set Tcl error info consistently
+
+
+Configuration Changes:
+----------------------
+
+  - use same initialization for enablelclpages when configured over
+    "ns/server/$server" or over "ns/server/$server/adp" to avoid subtle
+    differences on global variables
+
+  - Extended sample config files:
+
+    * nsd-config.tcl
+
+    * openacs-config.tcl
+       . Added OpenACS specific comments for configuring caches
+       . Added subsite based error pages
+       . Added section indicating how to configure for nsstats module
+       . Added comments how to configure EmailDeliveryMode via config file
+       . Use PostgreSQL's conninfo notation in the datasource to hint, that
+	 more parameters are possible as well (e.g. connections via SSL)
+
+    * sample-config.tcl:
+
+    * nsd-config.tcl:
+	Added commen environment variables HOME, LANG and RANDFILE.
+	RANDFILE is sometimes needed to avoid surprises with permissions,
+	when OpenSSL crypto functions are called from the server
+
+  - Improved handling of configuration errors:
+    * Provide better log message, when configured value is out of range
+    * Update config values when range check corrects the value to get the
+      finally configured value via introspection.
+
+
+Code Changes:
+-------------
+
+  - Extended regression test:
+	* tests/adp.test
+	* tests/compat.test
+	* tests/http.test
+	* tests/ns_base64.test
+	* tests/ns_base64encode.test
+	* tests/ns_cache.test
+	* tests/ns_conn.test
+	* tests/ns_crypto.test
+	* tests/ns_nsv.test
+	* tests/ns_parseurl.test
+	* tests/ns_reflow_text.test
+	* tests/ns_server.test
+	* tests/ns_striphtml.test
+
+
+ - Added version tag of NaviServer to "starting" message in log file
+   to ease analysis in case of problems.
+
+ - Implemented deprecated commands as Tcl proc and complain on
+   its usage
+      . ns_adp_eval
+      . ns_adp_safeeval
+
+  - Improved Platform support:
+    * Extend list of platforms for manual provisioning of __PRIPTR_PREFIX
+      in case it is not defined
+    * Windows:
+      . improve type-cleanness (many thanks to Oleg Oleinik)
+      . when compiling with VS 2012, use built-in support for
+	intptr_t and uintptr_t.
+
+  - Changed preset encodings (when not specified in config file) for
+    files with extensions .htm, .html, and .adp from iso8859-1 to
+    utf-8.
+
+  - Improved Debugging support:
+
+    * Added compiler-flag NS_MUTEX_NAME_DEBUG for ease locating
+      anonymous mutexes.
+    * Provided names for all remaining mutexes to make it easier
+      to pinpoint bottlenecks due to mutexes
+    * Improve debugging output in various messages, when debugging
+      options are activated.
+
+
+
+  - Minor update of mime types based on actual IANA media types.
+
+  - Provide compatibility with Tcl 8.7.2 (removed CONST and VOID macros)
+  - further improved robustness by avoiding potential NULL dereferences
+    found be static code analyzers (mostly error cases)
+  - improved configure scripts
+  - make sure, we have enough space for the terminating null character
+  - prefer boolean type over int
+  - added "pure" specifier for improved code generation
+  - improved type cleanness, reduce implicit conversions
+  - reduced number of return statements before end of function
+  - Don't pass implementation-defined NULL after the last typed argument
+    to a variadic function
+  - Remove dead assignments
+  - Added const declarations
+  - Fixed typos, improved comments
+
+
+Modules:
+--------
+
+
+=======================================
 NaviServer 4.99.16, released 2017-12-29
 =======================================
 
