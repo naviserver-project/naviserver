@@ -19,12 +19,12 @@ Doc Howto
 In this directory you will find a file called "template.man".
 Copy this file to the name of command you are documenting:
 
-   cp template.man ns_info.man
+    cp template.man ns_info.man
 
 and start adding content in doctool format. The reference documentation
 about doctools can be found on:
 
-   http://aspn.activestate.com/ASPN/docs/ActiveTcl/8.4/tcllib/doctools/doctools_fmt.html
+    http://aspn.activestate.com/ASPN/docs/ActiveTcl/8.4/tcllib/doctools/doctools_fmt.html
 
 (Interestingly, the above documentation is also written in doctools format
 and converted to HTML by the doctools converters)
@@ -32,7 +32,7 @@ and converted to HTML by the doctools converters)
 You can always peek at the existing doctools man files as distributed by the
 NaviServer or any other module documentation found in the tcllib package.
 
-When you're done, be sure to "cvs add" and "cvs commit" the file.
+When you're done, be sure to add the edited file to the code repository.
 
 The resulting documentation is automatically generated in nroff and html
 format when you invoke "make build-doc" in the top-level distribution directory.
@@ -43,11 +43,11 @@ During the writing you may want to check how the output of your file will
 look like when converted to html and/or nroff. This can be easily achieved
 with the "dtplite" utility:
 
-   % dtplite -o - html  ns_sendmail.man >ns_sendmail.html
-   % dtplite -o - nroff ns_sendmail.man >ns_sendmail.n
-   % nroff -man ns_sendmail.n
+    % dtplite -o - html  ns_sendmail.man >ns_sendmail.html
+    % dtplite -o - nroff ns_sendmail.man >ns_sendmail.n
+    % nroff -man ns_sendmail.n
 
 On Linux, "man" supports also compressed pages:
 
-   % dtplite -o - nroff ns_sendmail.man | gzip >ns_sendmail.n.gz
-   % man -l ns_sendmail.n.gz
+    % dtplite -o - nroff ns_sendmail.man | gzip >ns_sendmail.n.gz
+    % man -l ns_sendmail.n.gz
