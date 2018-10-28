@@ -483,6 +483,7 @@ HttpWaitObjCmd(
         result = TCL_ERROR;
 
     } else {
+        Ns_ReturnCode status;
 
         if (replyHeadersObj == NULL) {
             /*
@@ -519,12 +520,20 @@ HttpWaitObjCmd(
         /*
          * Do the task wait operation
          */
-        if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
+        status = Ns_TaskWait(httpPtr->task, timeoutPtr);
+
+        if (status != NS_OK) {
             /*
              * Task wait failed.
              */
+            if (status == NS_TIMEOUT) {
+                Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                Ns_TclPrintfResult(interp, "timeout waiting for task");
+            } else {
+                Ns_TclPrintfResult(interp, "error during task: %s", httpPtr->error);
+            }
+            Ns_Log(Ns_LogTaskDebug, "calling HttpCancel, since Ns_TaskWait returned an timeout");
             HttpCancel(httpPtr);
-            Ns_TclPrintfResult(interp, "timeout waiting for task");
             result = TCL_ERROR;
 
         } else {
@@ -931,7 +940,6 @@ HttpQueueCmd(
     }
 
     if (result == TCL_OK) {
-
         httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpProc, httpPtr);
         if (run) {
             /*
@@ -950,6 +958,9 @@ HttpQueueCmd(
             Ns_TaskRun(httpPtr->task);
 
             if (httpPtr->error != NULL) {
+                if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
+                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                }
                 Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 result = TCL_ERROR;
             } else {
@@ -2177,7 +2188,7 @@ HttpClose(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose %p", (void*)httpPtr);
+    Ns_Log(Ns_LogTaskDebug, "HttpClose %p FREE TASK %p", (void*)httpPtr, (void*)httpPtr->task);
 
     if (httpPtr->task != NULL) {
         (void) Ns_TaskFree(httpPtr->task);
@@ -2227,9 +2238,14 @@ HttpCancel(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    fprintf(stderr, "=== HttpCancel\n");
+    Ns_Log(Ns_LogTaskDebug, "=== HttpCancel");
     (void) Ns_TaskCancel(httpPtr->task);
+    /*
+     * Wait potentially infinitely on task to finish to make sure that the
+     * task cannot be referenced later.
+     */
     (void) Ns_TaskWait(httpPtr->task, NULL);
+    Ns_Log(Ns_LogTaskDebug, "=== HttpCancel DONE");
 }
 
 
@@ -2239,7 +2255,7 @@ HttpAbort(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    fprintf(stderr, "=== HttpAbort\n");
+    Ns_Log(Ns_LogTaskDebug, "=== HttpAbort");
 
     HttpCancel(httpPtr);
     HttpClose(httpPtr);
@@ -2465,6 +2481,86 @@ HttpTaskShutdown(
 }
 #endif
 
+
+void
+CallDoneCallback(
+    Ns_HttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
+
+
+void
+CallDoneCallback(
+    Ns_HttpTask *httpPtr
+) {
+    int          result;
+    Tcl_Interp  *interp;
+    Tcl_DString  script;
+    Tcl_Obj     *resultObj, *replyHeadersObj = NULL;
+    NsServer    *servPtr = NsGetServer(nsconf.defaultServer);
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "CallDoneCallback %p final sock state %.4x",
+           (void*)httpPtr, httpPtr->finalSockState);
+
+    interp = NsTclAllocateInterp(servPtr);  // maybe get the "server" from somewhere?
+
+    /*
+     * Get reply headers obj. Since it is not unlikely, that the task
+     * ends in the asynchronous case in a different thread. Therefore,
+     * we have to enter the set explicitly here.
+     */
+    assert(httpPtr->replyHeaders != NULL);
+
+    if (Ns_TclEnterSet(interp, httpPtr->replyHeaders, NS_TCL_SET_DYNAMIC) == TCL_OK) {
+        replyHeadersObj = Tcl_GetObjResult(interp);
+    } else {
+        replyHeadersObj = Tcl_NewStringObj("", 0);
+    }
+    Tcl_IncrRefCount(replyHeadersObj);
+
+    //httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+
+    if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
+        Ns_Log(Ns_LogTaskDebug, "CallDoneCallback -> NS_SOCK_TIMEOUT (error <%s>)", httpPtr->error);
+        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+        resultObj = Tcl_NewStringObj(httpPtr->error, -1);
+        result = TCL_ERROR;
+    } else {
+        Ns_Log(Ns_LogTaskDebug, "CallDoneCallback -> final sockstate %.4x vs. %.4x (error <%s>)",
+               httpPtr->finalSockState, NS_SOCK_TIMEOUT,
+               httpPtr->error);
+
+        resultObj = GetResultObj(interp, httpPtr, replyHeadersObj,
+                                 NULL, NULL, NULL, NULL);
+        if (likely(resultObj != NULL)) {
+            result = TCL_OK;
+        } else {
+            result = TCL_ERROR;
+            resultObj = Tcl_GetObjResult(interp);
+            Tcl_IncrRefCount(resultObj);
+        }
+    }
+
+    Tcl_DStringInit(&script);
+    Tcl_DStringAppend(&script, httpPtr->doneCallback, -1);
+    Ns_DStringPrintf(&script, " %d ", result);
+    Tcl_DStringAppendElement(&script, Tcl_GetString(resultObj));
+
+    Tcl_DecrRefCount(resultObj);
+
+    result = Tcl_EvalEx(interp, script.string, script.length, 0);
+    if (result != TCL_OK) {
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: httptask)");
+    }
+
+    Tcl_DStringFree(&script);
+    Ns_TclDeAllocateInterp(interp);
+
+    HttpClose(httpPtr);
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -2574,13 +2670,14 @@ HttpProc(
 
     case NS_SOCK_READ:
         Ns_Log(Ns_LogTaskDebug, "NS_SOCK_READ");
+
         if (httpPtr->sent == 0u) {
             n = -1;
         } else {
-
             n = HttpTaskRecv(httpPtr, buf, sizeof(buf));
         }
         Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv got %d bytes", (int)n);
+
         if (likely(n > 0)) {
 
             /*
@@ -2620,59 +2717,11 @@ HttpProc(
         break;
 
     case NS_SOCK_DONE:
+
         Ns_Log(Ns_LogTaskDebug, "NS_SOCK_DONE doneCallback <%s>", httpPtr->doneCallback);
 
         if (httpPtr->doneCallback != NULL) {
-            int          result;
-            Tcl_Interp  *interp;
-            Tcl_DString  script;
-            Tcl_Obj     *resultObj,
-                        *replyHeadersObj = NULL;
-            NsServer    *servPtr = NsGetServer(nsconf.defaultServer);
-
-            interp = NsTclAllocateInterp(servPtr);  // maybe get the "server" from somewhere?
-
-            /*
-             * Get reply headers obj. Since it is not unlikely, that the taks
-             * ends in the asynchronous case in a different thread. Therefore,
-             * we have to enter the set end the end of the task.
-             */
-            assert(httpPtr->replyHeaders != NULL);
-            if (Ns_TclEnterSet(interp, httpPtr->replyHeaders, NS_TCL_SET_DYNAMIC) == TCL_OK) {
-                replyHeadersObj = Tcl_GetObjResult(interp);
-            } else {
-                replyHeadersObj = Tcl_NewStringObj("", 0);
-            }
-            Tcl_IncrRefCount(replyHeadersObj);
-
-            //httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
-
-            resultObj = GetResultObj(interp, httpPtr, replyHeadersObj,
-                                     NULL, NULL, NULL, NULL);
-            if (likely(resultObj != NULL)) {
-                result = TCL_OK;
-            } else {
-                result = TCL_ERROR;
-                resultObj = Tcl_GetObjResult(interp);
-                Tcl_IncrRefCount(resultObj);
-            }
-
-            Tcl_DStringInit(&script);
-            Tcl_DStringAppend(&script, httpPtr->doneCallback, -1);
-            Ns_DStringPrintf(&script, " %d ", result);
-            Tcl_DStringAppendElement(&script, Tcl_GetString(resultObj));
-
-            Tcl_DecrRefCount(resultObj);
-
-            result = Tcl_EvalEx(interp, script.string, script.length, 0);
-            if (result != TCL_OK) {
-                (void) Ns_TclLogErrorInfo(interp, "\n(context: httptask)");
-            }
-
-            Tcl_DStringFree(&script);
-            Ns_TclDeAllocateInterp(interp);
-            HttpClose(httpPtr);
-
+            CallDoneCallback(httpPtr);
         } else {
             Ns_Log(Ns_LogTaskDebug, "NS_SOCK_DONE no sock callback");
         }
@@ -2680,6 +2729,13 @@ HttpProc(
         break;
 
     case NS_SOCK_TIMEOUT:
+        /*
+         * When we have a doneCallback, we still need to call NS_SOCK_DONE,
+         * since this cares about executing the final callback and cleanup.
+         */
+        if (httpPtr->doneCallback == NULL) {
+            taskDone = NS_FALSE;
+        }
         httpPtr->error = "timeout";
         break;
 
@@ -2697,7 +2753,8 @@ HttpProc(
     }
     httpPtr->finalSockState = why;
 
-    Ns_Log(Ns_LogTaskDebug, "taskDone %d", taskDone);
+    Ns_Log(Ns_LogTaskDebug, "taskDone %d httpPtr->finalSockState %d error %s",
+           taskDone, httpPtr->finalSockState, httpPtr->error);
     if (taskDone) {
         /*
          * Get completion time and mark task as done.
