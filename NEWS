@@ -2,8 +2,7 @@
 NaviServer 4.99.17, released 2018-XX-XX
 =======================================
 
- 396 files changed, 13775 insertions(+), 6698 deletions(-)
-
+ 398 files changed, 14060 insertions(+), 6760 deletions(-)
 
 New Features:
 -------------
@@ -309,8 +308,11 @@ Bug Fixes:
   - Added missing fetch commands for obtaining handles (on obviously
     seldom used subcommands "ns_db setexception|sp_setparam")
 
-  - ns_http: timeout and connection behavior show works now consistent
-    for HTTP and HTTPS URLs.
+  - ns_http:
+    * Timeout and connection behavior show works now consistent
+      for HTTP and HTTPS URLs.
+    * Fixed a potential bug (infinite loop) when requests
+      run into timeouts.
 
   - "ns_set print": align with documented behavior
 
