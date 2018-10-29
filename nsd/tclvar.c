@@ -1127,16 +1127,16 @@ Ns_VarUnset(const char *server, const char *array, const char *key)
 
 static unsigned int
 BucketIndex(const char *arrayName) {
-    unsigned int index = 0u;
+    unsigned int idx = 0u;
 
     for (;;) {
         register unsigned int i = UCHAR(*(arrayName++));
         if (unlikely(i == 0u)) {
             break;
         }
-        index += (index << 3u) + i;
+        idx += (idx << 3u) + i;
     }
-    return index;
+    return idx;
 }
 
 
@@ -1214,13 +1214,13 @@ static Array *
 LockArray(const NsServer *servPtr, const char *arrayName, bool create)
 {
     Bucket        *bucketPtr;
-    unsigned int   index;
+    unsigned int   idx;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(arrayName != NULL);
 
-    index = BucketIndex(arrayName);
-    bucketPtr = &servPtr->nsv.buckets[index % (unsigned int)servPtr->nsv.nbuckets];
+    idx = BucketIndex(arrayName);
+    bucketPtr = &servPtr->nsv.buckets[idx % (unsigned int)servPtr->nsv.nbuckets];
     Ns_MutexLock(&bucketPtr->lock);
 
     return GetArray(bucketPtr, arrayName, create);
