@@ -175,24 +175,24 @@ Ns_SetFree(Ns_Set *set)
 size_t
 Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
 {
-    size_t index;
+    size_t idx;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
     assert(set->size <=  set->maxSize);
 
-    index = set->size;
+    idx = set->size;
     set->size++;
     if (set->size >= set->maxSize) {
         set->maxSize = set->size * 2u;
         set->fields = ns_realloc(set->fields,
                                  sizeof(Ns_SetField) * set->maxSize);
     }
-    set->fields[index].name = ns_strdup(key);
-    set->fields[index].value = ns_strncopy(value, size);
+    set->fields[idx].name = ns_strdup(key);
+    set->fields[idx].value = ns_strncopy(value, size);
 
-    return index;
+    return idx;
 }
 
 size_t
@@ -588,11 +588,11 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
     NS_NONNULL_ASSERT(set != NULL);
 
     if (size < set->size) {
-        size_t index;
+        size_t idx;
 
-        for (index = size; index < set->size; index++) {
-            ns_free(set->fields[index].name);
-            ns_free(set->fields[index].value);
+        for (idx = size; idx < set->size; idx++) {
+            ns_free(set->fields[idx].name);
+            ns_free(set->fields[idx].value);
         }
         set->size = size;
     }
