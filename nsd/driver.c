@@ -5884,7 +5884,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
      * If the async writer has not started or is deactivated, behave
      * like a ns_write() command. If the ns_write() fails, we can't do much,
      * since writing of an error message to the log might bring us
-     * into an infinte loop.
+     * into an infinite loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
         ssize_t written = ns_write(fd, buffer, nbyte);

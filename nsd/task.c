@@ -364,7 +364,7 @@ Ns_TaskRun(Ns_Task *task)
     }
     if (status == NS_OK) {
         /*
-         * If everything went well above, tell the tast that we are done.
+         * If everything went well above, tell the task that we are done.
          */
         Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun %d: NS_SOCK_DONE done", taskPtr->sock);
         Call(taskPtr, NS_SOCK_DONE);
@@ -967,8 +967,8 @@ TaskThread(void *arg)
                 taskPtr->flags |= TASK_WAIT;
                 /*
                  * Only enqueue the taskPtr as nextWaitPtr, when this differs
-                 * from the current task. otherwise, we can get an infinte
-                 * loop (can happen e.g. when timeouts fire.
+                 * from the current task. Otherwise, we can get an infinite
+                 * loop (can happen e.g. when timeouts fire).
                  */
                 if (taskPtr != firstWaitPtr) {
                     taskPtr->nextWaitPtr = firstWaitPtr;
