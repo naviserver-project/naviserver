@@ -278,6 +278,7 @@ dist: clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module,stamp-h1}
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*-{debug,gn}
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*~
+	$(RM) naviserver-$(NS_PATCH_LEVEL)/tests/testserver/access.log
 	hg log --style=changelog > naviserver-$(NS_PATCH_LEVEL)/ChangeLog
 	find naviserver-$(NS_PATCH_LEVEL) -name '.[a-zA-Z_]*' -exec rm \{} \;
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
