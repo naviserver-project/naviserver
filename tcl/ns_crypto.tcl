@@ -22,7 +22,7 @@ nx::Class create ::ns_crypto::HashFunctions {
 
     :public method readfile {filename} {
         #
-        # Read a file blockwisw and call the incremental crypo
+        # Read a file blockwise and call the incremental crypto
         # function on every block.
         #
         set F [open $filename]
