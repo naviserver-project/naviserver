@@ -1299,12 +1299,12 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                 if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                     ns_sockerrno_t err = ns_sockerrno;
 
-                    if (err != NS_EINPROGRESS) {
+                    if (err != NS_EINPROGRESS && err != NS_EWOULDBLOCK) {
                         Ns_Log(Notice, "connect on sock %d async %d err %d <%s>",
                                sock, async, err, ns_sockstrerror(err));
                     }
 
-                    if (async && err == NS_EINPROGRESS) {
+                    if (async && (err == NS_EINPROGRESS || err == NS_EWOULDBLOCK)) {
                         /*
                          * The code below is implemented also in later
                          * calls. However in the async case, it is hard to
@@ -1316,11 +1316,15 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                          */
                         if (multipleIPs) {
                             struct pollfd sockfd;
-                            //int n;
                             socklen_t len;
 
-                            Ns_Log(Notice, "async connect to %s on sock %d returned EINPROGRESS",
-                                   address, sock);
+                            if (err == NS_EWOULDBLOCK) {
+                                Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
+                                       address, sock);
+                            } else {
+                                Ns_Log(Notice, "async connect to %s on sock %d returned EINPROGRESS",
+                                       address, sock);
+                            }
                             sockfd.events = POLLOUT;
                             sockfd.revents = 0;
                             sockfd.fd = sock;

@@ -59,7 +59,20 @@ namespace eval ::tcltest {
         return [list bytes $bytes more $more received $received]
     }
 
+    proc client_readable {t s} {
+        set n [ns_socknread $s]
+        if {$n == 0} {
+            set ready [ns_sockselect -timeout $t $s {} {}]
+            if {[lindex $ready 0] eq {}} {
+                error "client_readable: read timed out"
+            }
+            set n [ns_socknread $s]
+        }
+        return $n
+    }
+
     proc client_receive {s} {
+        client_readable 1000 $s
         set input [read $s]
         if {$input eq ""} {
             set ::tcltest::forever 0

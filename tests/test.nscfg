@@ -41,6 +41,18 @@ if {[ns_info ipv6]} {
 
 ns_log notice "configure LOOPBACK  $loopback"
 ns_log notice "configure LISTENURL [ns_config test listenurl]"
+
+#
+# Small helper to allow to share config file with windows
+#
+proc sharedlib_ext {} {
+    switch -- $::tcl_platform(os) {
+	Darwin {return .so}
+	default {return [info sharedlib]}
+    }
+}
+
+
 #
 # The following are for the tests in tests/ns_config.test.
 #
@@ -60,7 +72,7 @@ ns_param   isTestServer true
 
 ns_section "ns/modules"
 if {[ns_config "test" listenport]} {
-    ns_param   nssock      [ns_config "test" home]/../nssock/nssock.so
+    ns_param   nssock      [ns_config "test" home]/../nssock/nssock[sharedlib_ext]
 }
 
 ns_section "ns/module/nssock"
@@ -231,9 +243,9 @@ ns_section "ns/server/test/module/nsproxy"
 ns_param   exec            [ns_config "test" home]/../nsproxy/test-nsproxy.sh
 
 ns_section "ns/server/test/modules"
-ns_param   nslog           [ns_config "test" home]/../nslog/nslog.so
-ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb.so
-ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy.so
+ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlib_ext]
+ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb[sharedlib_ext]
+ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy[sharedlib_ext]
 
 #
 # Virtual host test server config.
@@ -285,7 +297,7 @@ ns_param   library         [ns_config "test" home]/testserver/modules
 #
 
 ns_section "ns/db/drivers"
-ns_param   nsdbtest        [ns_config "test" home]/../nsdbtest/nsdbtest.so
+ns_param   nsdbtest        [ns_config "test" home]/../nsdbtest/nsdbtest[sharedlib_ext]
 
 ns_section "ns/db/pools"
 ns_param   a               A

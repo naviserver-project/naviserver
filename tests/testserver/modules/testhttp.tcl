@@ -284,6 +284,7 @@ namespace eval ::nstest {
     }
 
     proc http_gets {timeout sock} {
+        http_readable $timeout $sock
         while {[gets $sock line] == -1} {
             if {[eof $sock]} {
                 return -code error "http_gets: premature end of data"

@@ -104,6 +104,11 @@ LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
 !if ("$(PGM)" != "nsd" && "$(DLL)" != "nsd" && "$(DLL)" != "libnsd")
 LIBS = $(LIBS) /LIBPATH:"..\nsd" libnsd.lib
 !endif
+
+# nsdbtest needs nsdb.lib
+!if "$(DLL)" == "nsdbtest"
+LIBS = $(LIBS) /LIBPATH:"..\nsdb" nsdb.lib
+!endif
 !endif
 !endif
 

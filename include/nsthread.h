@@ -118,6 +118,10 @@
 /*
  * Visual Studio defines
  */
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#else
 typedef          __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 
@@ -132,6 +136,7 @@ typedef unsigned __int64 uint64_t;
 
 typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
+#endif
 
 typedef          DWORD pid_t;
 typedef          DWORD ns_sockerrno_t;
@@ -276,7 +281,9 @@ MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 #  define HAVE_IPV6                   1
 #  define HAVE_INET_NTOP              1
 #  define HAVE_INET_PTON              1
+#  ifndef NS_NAVISERVER
 #  define NS_NAVISERVER               "c:/ns"
+#  endif
 # endif
 
 /*
