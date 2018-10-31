@@ -527,8 +527,8 @@ HttpWaitObjCmd(
              * Task wait failed.
              */
             if (status == NS_TIMEOUT) {
-                Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
                 Ns_TclPrintfResult(interp, "timeout waiting for task");
+                Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
             } else {
                 Ns_TclPrintfResult(interp, "error during task: %s", httpPtr->error);
             }
@@ -547,10 +547,10 @@ HttpWaitObjCmd(
             Ns_HttpCheckSpool(httpPtr);
 
             if (httpPtr->error != NULL) {
+                Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
                 }
-                Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 result = TCL_ERROR;
             } else {
                 Tcl_Obj *resultObj;
@@ -958,10 +958,10 @@ HttpQueueCmd(
             Ns_TaskRun(httpPtr->task);
 
             if (httpPtr->error != NULL) {
+                Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
                 }
-                Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 result = TCL_ERROR;
             } else {
                 Tcl_Obj *resultObj;
