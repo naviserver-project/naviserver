@@ -132,7 +132,7 @@ proc ns_localsqltimestamp {} {
 #
 # ns_parsesqldate -
 #
-#    Parse and SQL date string fro month, day, or year.
+#    Parse an SQL date string for month, day, or year.
 #
 
 proc ns_parsesqldate {opt sqldate} {
