@@ -2506,9 +2506,9 @@ CallDoneCallback(
     interp = NsTclAllocateInterp(servPtr);  // maybe get the "server" from somewhere?
 
     /*
-     * Get reply headers obj. Since it is not unlikely, that the task
-     * ends in the asynchronous case in a different thread. Therefore,
-     * we have to enter the set explicitly here.
+     * Get reply headers obj. Since it is not unlikely, that the task ends in
+     * the asynchronous case in a different thread we have to enter the set
+     * explicitly here to the interpreter.
      */
     assert(httpPtr->replyHeaders != NULL);
 
