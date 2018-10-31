@@ -361,14 +361,16 @@ Ns_TclGetOpaqueFromObj(const Tcl_Obj *objPtr, const char *type, void **addrPtrPt
         && objPtr->internalRep.twoPtrValue.ptr1 == (void *) type) {
         *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
     } else {
-        char  s[33] = {0};
-        void *t = NULL;
+        char      s[33] = {0};
+        uintptr_t t = 0u, a = 0u;
 
-        if ((sscanf(Tcl_GetString((Tcl_Obj *) objPtr), "t%20p-a%20p-%32s", &t, addrPtrPtr, s) != 3)
+        if ((sscanf(Tcl_GetString((Tcl_Obj *) objPtr), "t%20" SCNxPTR "-a%20" SCNxPTR "-%32s", &t, &a, s) != 3)
             || (strcmp(s, type) != 0)
-            || (t != (void *)type)
+            || (t != (uintptr_t)type)
             ) {
             result = TCL_ERROR;
+        } else {
+            *addrPtrPtr = (void *)a;
         }
     }
 
@@ -501,7 +503,7 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
     char        buf[128];
     int         len;
 
-    len = snprintf(buf, sizeof(buf), "t%p-a%p-%s", (const void *)type, (const void *)addr, type);
+    len = snprintf(buf, sizeof(buf), "t%" PRIxPTR "-a%" PRIxPTR "-%s", (uintptr_t)type, (uintptr_t)addr, type);
     Ns_TclSetStringRep(objPtr, buf, len);
 }
 

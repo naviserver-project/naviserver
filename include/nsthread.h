@@ -736,6 +736,20 @@ typedef int bool;
 # endif
 # define SCNd64      __PRI64_PREFIX "d"
 #endif
+
+/* We assume, HAVE_64BIT implies __WORDSIZE == 64 */
+#if defined(SCNxPTR)
+# if !defined __PRIPTR_PREFIX
+#  if defined(HAVE_64BIT)
+#   define __PRIPTR_PREFIX  "l"
+#  else
+#   define __PRIPTR_PREFIX  "ll"
+#  endif
+# endif
+# define SCNxPTR      __PRIPTR_PREFIX "x"
+#endif
+
+
 /*
  * There is apparently no platform independent print format for items
  * of size_t. Therefore, we invent here our own variant, trying to
