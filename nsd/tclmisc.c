@@ -591,7 +591,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                  */
 
                 if (*inPtr == '&') {
-                    size_t length;
+                    size_t length = 0u;
 
                     /*
                      * Starting an entity.
