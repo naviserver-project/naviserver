@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * time.c --
  *
  *      Ns_Time support routines.
@@ -82,14 +82,14 @@ Ns_GetTime(Ns_Time *timePtr)
      *
      */
 
-    /* 
-     * Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: 
+    /*
+     * Number of 100 nanosecond units from 1601-01-01 to 1970-01-01:
      */
     static const __int64 EPOCH_BIAS = 116444736000000000i64;
 
     union {
-	unsigned __int64    i;
-	FILETIME	    s;
+        unsigned __int64    i;
+        FILETIME            s;
     } ft;
 
     GetSystemTimeAsFileTime(&ft.s);
@@ -97,12 +97,12 @@ Ns_GetTime(Ns_Time *timePtr)
     timePtr->usec = (long)((ft.i / 10i64     ) %  1000000i64);
 }
 
-#else 
+#else
 
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-    /* 
+    /*
      *  Platform-independent approach to get the current time value
      *  using Tcl_GetTime().
      *
@@ -177,7 +177,7 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
 
     NS_NONNULL_ASSERT(t0 != NULL);
     NS_NONNULL_ASSERT(t1 != NULL);
-    
+
     if (diffPtr == NULL) {
         diffPtr = &diff;
     }
@@ -261,3 +261,12 @@ Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
 
     return adjPtr;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

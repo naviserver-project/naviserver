@@ -30,7 +30,7 @@
 /*
  * tclhttp.c --
  *
- *	Support for the ns_http command.
+ *      Support for the ns_http command.
  */
 
 #include "nsd.h"
@@ -179,14 +179,14 @@ static Ns_TaskQueue *session_queue;
  *
  * CheckReplyHeaders --
  *
- *	Check, if reply headers are provided. If not, create on the fly
- *	automatically new reply headers and "enter" these to the interpreter.
+ *      Check, if reply headers are provided. If not, create on the fly
+ *      automatically new reply headers and "enter" these to the interpreter.
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	May create a dynamic ns_set in the provided interpreter.
+ *      May create a dynamic ns_set in the provided interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -218,18 +218,18 @@ CheckReplyHeaders(
  *
  * GetResultObj --
  *
- *	Get the result of the Task and set it as the interpreted result in
- *	form of a dict (attribute / value list). All the *VarPtr arguments
- *	are optional and can point to variable names, which can be set by this
- *	function.
+ *      Get the result of the Task and set it as the interpreted result in
+ *      form of a dict (attribute / value list). All the *VarPtr arguments
+ *      are optional and can point to variable names, which can be set by this
+ *      function.
  *
  * Results:
- *	Tcl_Obj or NULL on error. Ob success the refcount of the resultObj has
- *	to be decremented, if NULL is returned, an error message is already
- *	set.
+ *      Tcl_Obj or NULL on error. Ob success the refcount of the resultObj has
+ *      to be decremented, if NULL is returned, an error message is already
+ *      set.
  *
  * Side effects:
- *	Potentially setting Tcl variables provided via *VarPtr arguments.
+ *      Potentially setting Tcl variables provided via *VarPtr arguments.
  *
  *----------------------------------------------------------------------
  */
@@ -379,13 +379,13 @@ GetResultObj(
  *
  * HttpRunObjCmd, HttpQueueObjCmd - subcommands of "ns_http"
  *
- *	Implements the "ns_http run|queue"
+ *      Implements the "ns_http run|queue"
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	May queue an HTTP request.
+ *      May queue an HTTP request.
  *
  *----------------------------------------------------------------------
  */
@@ -417,13 +417,13 @@ HttpQueueObjCmd(
  *
  * HttpWaitObjCmd --
  *
- *	Implements "ns_http wait" subcommand.
+ *      Implements "ns_http wait" subcommand.
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	Typically closing request.
+ *      Typically closing request.
  *
  *----------------------------------------------------------------------
  */
@@ -583,13 +583,13 @@ HttpWaitObjCmd(
  *
  * HttpCancelObjCmd --
  *
- *	Implements "ns_http cancel" subcommand.
+ *      Implements "ns_http cancel" subcommand.
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	Typically aborting and closing request.
+ *      Typically aborting and closing request.
  *
  *----------------------------------------------------------------------
  */
@@ -628,13 +628,13 @@ HttpCancelObjCmd(
  *
  * HttpCleanupObjCmd - subcommand of "ns_http"
  *
- *	Implements the "ns_http cleanup"
+ *      Implements the "ns_http cleanup"
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	Aborting requests and reinitializing hash table.
+ *      Aborting requests and reinitializing hash table.
  *
  *----------------------------------------------------------------------
  */
@@ -680,13 +680,13 @@ HttpCleanupObjCmd(
  *
  * HttpListObjCmd - subcommand of "ns_http"
  *
- *	Implements the "ns_http list"
+ *      Implements the "ns_http list"
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -731,13 +731,13 @@ HttpListObjCmd(
  *
  * HttpListObjCmd - subcommand of "ns_http"
  *
- *	Implements the "ns_http list"
+ *      Implements the "ns_http list"
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -793,13 +793,13 @@ HttpStatsObjCmd(
  *
  * NsTclHttpObjCmd --
  *
- *	Implements the new ns_http to handle HTTP requests.
+ *      Implements the new ns_http to handle HTTP requests.
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	May queue an HTTP request.
+ *      May queue an HTTP request.
  *
  *----------------------------------------------------------------------
  */
@@ -832,13 +832,13 @@ NsTclHttpObjCmd(
  *
  * HttpQueueCmd --
  *
- *	Implements "ns_http queue" subcommand.
+ *      Implements "ns_http queue" subcommand.
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	May queue an HTTP request.
+ *      May queue an HTTP request.
  *
  *----------------------------------------------------------------------
  */
@@ -1044,15 +1044,15 @@ HttpQueueCmd(
  *
  * Ns_HttpMessageParse --
  *
- *	Parse a HTTP message with its headers. The header fields are parsed
+ *      Parse a HTTP message with its headers. The header fields are parsed
  *      into an Ns_Set (replyHeaders), the other information (major, minor
  *      version numbers, HTTP status, payload) is returned via output args.
  *
  * Results:
- *	Ns_ReturnCode
+ *      Ns_ReturnCode
  *
  * Side effects:
- *	none.
+ *      none.
  *
  *----------------------------------------------------------------------
  */
@@ -1137,14 +1137,14 @@ Ns_HttpMessageParse(
  *
  * ProcessReplyHeaderFields --
  *
- *	Extract information from the reply header field for efficient
- *	processing.
+ *      Extract information from the reply header field for efficient
+ *      processing.
  *
  * Results:
- *	none
+ *      none
  *
  * Side effects:
- *	mit setting flags, might allocate Ns_CompressStream
+ *      mit setting flags, might allocate Ns_CompressStream
  *
  *----------------------------------------------------------------------
  */
@@ -1177,17 +1177,17 @@ ProcessReplyHeaderFields(
  *
  * Ns_HttpCheckHeader --
  *
- *	Check, whether we have received a response containing the full
- *	HTTP header yet. If we have so, set the replyHeaderSize in the
- *	Ns_HttpTask structure (to avoid later checking) and terminate
- *	the header string by a '\0'.
+ *      Check, whether we have received a response containing the full
+ *      HTTP header yet. If we have so, set the replyHeaderSize in the
+ *      Ns_HttpTask structure (to avoid later checking) and terminate
+ *      the header string by a '\0'.
  *
  * Results:
- *	none
+ *      none
  *
  * Side effects:
- *	Replace potentially a LF the ds.string terminating the header
- *	by a '\0'
+ *      Replace potentially a LF the ds.string terminating the header
+ *      by a '\0'
  *
  *----------------------------------------------------------------------
  */
@@ -1236,17 +1236,17 @@ Ns_HttpCheckHeader(
  *
  * Ns_HttpCheckSpool --
  *
- *	Determine, whether the input processing should result in a
- *	memory string or whether it should spool to a file depending
- *	on the size of the content and the configuration setting
- *	passed in spoolLimit.
+ *      Determine, whether the input processing should result in a
+ *      memory string or whether it should spool to a file depending
+ *      on the size of the content and the configuration setting
+ *      passed in spoolLimit.
  *
  * Results:
- *	none
+ *      none
  *
  * Side effects:
- *	Replace potentially a LF the ds.string terminating the header
- *	by a '\0'
+ *      Replace potentially a LF the ds.string terminating the header
+ *      by a '\0'
  *
  *----------------------------------------------------------------------
  */
@@ -1391,13 +1391,13 @@ Ns_HttpCheckSpool(
  *
  * HttpGet --
  *
- *	Locate and optionally remove the Http struct for a given id.
+ *      Locate and optionally remove the Http struct for a given id.
  *
  * Results:
- *	NS_TRUE on success, NS_FALSE otherwise.
+ *      NS_TRUE on success, NS_FALSE otherwise.
  *
  * Side effects:
- *	Will update given httpPtrPtr with pointer to Http struct.
+ *      Will update given httpPtrPtr with pointer to Http struct.
  *
  *----------------------------------------------------------------------
  */
@@ -1434,20 +1434,20 @@ HttpGet(
  *
  * Ns_HttpLocationString --
  *
- *	Build a HTTP location string following the IP literation notation in
- *	RFC 3986 section 3.2.2 if needed and return in the provided
- *	Tcl_DString. In case protoString is non-null, perpend the protocol. In
- *	case port != defPort, append the port.
+ *      Build a HTTP location string following the IP literation notation in
+ *      RFC 3986 section 3.2.2 if needed and return in the provided
+ *      Tcl_DString. In case protoString is non-null, perpend the protocol. In
+ *      case port != defPort, append the port.
  *
  * Results:
  *
- *	location strings such as e.g.
+ *      location strings such as e.g.
  *          [2001:db8:1f70::999:de8:7648:6e8]:8000    (IP-literal notation)
  *          https://openacs.org                       (reg-name notation)
  *
  * Side effects:
  *
- *	Updating Tcl_DString
+ *      Updating Tcl_DString
  *
  *----------------------------------------------------------------------
  */
@@ -1490,25 +1490,25 @@ Ns_HttpLocationString(
  *
  * Ns_HttpParseHost --
  *
- *	Obtain the host name from a writable string from a syntax as specified
- *	in RFC 3986 section 3.2.2.
+ *      Obtain the host name from a writable string from a syntax as specified
+ *      in RFC 3986 section 3.2.2.
  *      Examples:
  *          [2001:db8:1f70::999:de8:7648:6e8]:8000    (IP-literal notation)
  *          openacs.org:80                            (reg-name notation)
  *
  * Results:
  *
- *	As a result, "portStart" will point to the terminating
+ *      As a result, "portStart" will point to the terminating
  *      char (e.g. ':') if the host name. If a port is indicated after the host
- *	name, the variable "portStart" will return a string starting with ":",
- *	otherwise NULL. If "hostStart" is non-null, a pointer will point to the
- *	host name, which will be terminated by char 0 in case of a IPv6 address
+ *      name, the variable "portStart" will return a string starting with ":",
+ *      otherwise NULL. If "hostStart" is non-null, a pointer will point to the
+ *      host name, which will be terminated by char 0 in case of a IPv6 address
  *      in IP-literal notation.
  *
  * Side effects:
  *
- *	Will potentially write a null character into the string passed in
- *	"hostString".
+ *      Will potentially write a null character into the string passed in
+ *      "hostString".
  *
  *----------------------------------------------------------------------
  */

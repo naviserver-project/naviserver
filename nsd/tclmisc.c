@@ -31,7 +31,7 @@
 /*
  * tclmisc.c --
  *
- *	Implements a lot of Tcl API commands.
+ *      Implements a lot of Tcl API commands.
  */
 
 #include "nsd.h"
@@ -307,14 +307,14 @@ Ns_LogDeprecated(Tcl_Obj *const* objv, int objc, const char *alternative, const 
  *
  * Ns_SetNamedVar --
  *
- *	Set a variable by denoted by a name.  Convenience routine for
- *	tcl-commands, when var names are passed in (e.g ns_http).
+ *      Set a variable by denoted by a name.  Convenience routine for
+ *      tcl-commands, when var names are passed in (e.g ns_http).
  *
  * Results:
- *	NS_TRUE on success, NS_FALSE otherwise.
+ *      NS_TRUE on success, NS_FALSE otherwise.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1671,10 +1671,10 @@ char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUppe
  *      hash of the first argument.
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Tcl result is set to a string value.
+ *      Tcl result is set to a string value.
  *
  *----------------------------------------------------------------------
  */
@@ -1722,10 +1722,10 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *      and file stat is the most used command
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Tcl result is set to a string value.
+ *      Tcl result is set to a string value.
  *
  *----------------------------------------------------------------------
  */
@@ -2101,10 +2101,10 @@ static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
  *      hash of the first argument.
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Tcl result is set to a string value.
+ *      Tcl result is set to a string value.
  *
  *----------------------------------------------------------------------
  */
@@ -2197,10 +2197,10 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *      Get single resource limit in form of a Tcl_Obj
  *
  * Results:
- *	Tcl_Obj
+ *      Tcl_Obj
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -2227,10 +2227,10 @@ GetLimitObj(rlim_t value)
  *      Get or Set resource limit in the operating system.
  *
  * Results:
- *	pair of actual value and maximum value
+ *      pair of actual value and maximum value
  *
  * Side effects:
- *	Change resource limit with called with a value.
+ *      Change resource limit with called with a value.
  *
  *----------------------------------------------------------------------
  */
@@ -2358,10 +2358,10 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *          industry-standard hashes like FNV.
  *
  * Results:
- *	Numeric hash value.
+ *      Numeric hash value.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

@@ -31,7 +31,7 @@
 /*
  * tcljob.c --
  *
- *	Tcl job queueing routines.
+ *      Tcl job queueing routines.
  *
  * Lock rules:
  *
@@ -1913,7 +1913,7 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

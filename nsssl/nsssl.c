@@ -10,7 +10,7 @@
  * under the License.
  *
  * Copyright (C) 2001-2012 Vlad Seryakov
- * Copyright (C) 2012-2016 Gustaf Neumann
+ * Copyright (C) 2012-2018 Gustaf Neumann
  * All rights reserved.
  *
  * Alternatively, the contents of this file may be used under the terms
@@ -85,7 +85,7 @@ static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 
 static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L        
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void SSLLock(int mode, int n, const char *file, int line);
 static unsigned long SSLThreadId(void);
 #endif
@@ -199,7 +199,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Tcl_DStringSetLength(&ds, 0);
         }
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L        
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
 #endif
@@ -260,18 +260,18 @@ Ns_ModuleInit(const char *server, const char *module)
      * Elliptic Curve Diffie-Hellman (ECDH).
      */
     {
-	EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 
-	if (ecdh == NULL) {
-	    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
-	    return NS_ERROR;
-	}
-	SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
-	if (SSL_CTX_set_tmp_ecdh(drvPtr->ctx, ecdh) != 1) {
-	    Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
-	    return NS_ERROR;
-	}
-	EC_KEY_free (ecdh);
+        if (ecdh == NULL) {
+            Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
+            return NS_ERROR;
+        }
+        SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
+        if (SSL_CTX_set_tmp_ecdh(drvPtr->ctx, ecdh) != 1) {
+            Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
+            return NS_ERROR;
+        }
+        EC_KEY_free (ecdh);
     }
 #endif
 
@@ -318,7 +318,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
     SSL_CTX_set_info_callback(drvPtr->ctx, SSL_infoCB);
 #endif
-    
+
     /*
      * Parse SSL ciphers
      */
@@ -399,12 +399,12 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 
     sock = Ns_SockListenEx((char*)address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
-	SSLDriver *cfg = driver->arg;
+        SSLDriver *cfg = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
-	if (cfg->deferaccept) {
-	  Ns_SockSetDeferAccept(sock, driver->recvwait);
-	}
+        if (cfg->deferaccept) {
+          Ns_SockSetDeferAccept(sock, driver->recvwait);
+        }
     }
     return sock;
 }
@@ -441,7 +441,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
        * the send low watermark to 1 fixes this problem.
        */
         int value = 1;
-	setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
+        setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
 #endif
         (void)Ns_SockSetNonBlocking(sock->sock);
 
@@ -451,15 +451,15 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
             if (sslPtr->ssl == NULL) {
                 char ipString[NS_IPADDR_SIZE];
                 Ns_Log(Error, "%d: SSL session init error for %s: [%s]",
-		       sock->sock,
-		       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)),
-		       strerror(errno));
+                       sock->sock,
+                       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)),
+                       strerror(errno));
                 ns_free(sslPtr);
                 return NS_DRIVER_ACCEPT_ERROR;
             }
             sock->arg = sslPtr;
             SSL_set_fd(sslPtr->ssl, sock->sock);
-	    SSL_set_mode(sslPtr->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
+            SSL_set_mode(sslPtr->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
             SSL_set_accept_state(sslPtr->ssl);
             SSL_set_app_data(sslPtr->ssl, drvPtr);
             SSL_set_tmp_dh_callback(sslPtr->ssl, SSL_dhCB);
@@ -499,7 +499,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeo
      */
 
     if (drvPtr->verify && sslPtr->verified == 0) {
-	X509 *peer;
+        X509 *peer;
         if ((peer = SSL_get_peer_certificate(sslPtr->ssl))) {
              X509_free(peer);
              if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
@@ -518,7 +518,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeo
     }
 
     while (1) {
-	int err, n;
+        int err, n;
 
         ERR_clear_error();
         n = SSL_read(sslPtr->ssl, p + got, (int)bufs->iov_len - got);
@@ -527,17 +527,17 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeo
         switch (err) {
         case SSL_ERROR_NONE:
             if (n < 0) {
-		fprintf(stderr, "### SSL_read should not happen\n");
-		return n;
-	    }
+                fprintf(stderr, "### SSL_read should not happen\n");
+                return n;
+            }
             /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
-	    got += n;
+            got += n;
             if (n == 1 && got < (int)bufs->iov_len) {
                 /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
                 continue;
             }
             /*Ns_Log(Notice, "### SSL_read %d got <%s>", got, p);*/
-	    return got;
+            return got;
 
         case SSL_ERROR_WANT_READ:
             /*fprintf(stderr, "### SSL_read WANT_READ returns %d\n", got);*/
@@ -581,31 +581,31 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     size = 0;
     decork = Ns_SockCork(sock, NS_TRUE);
     while (nbufs > 0) {
-	if (bufs->iov_len > 0) {
-	    ERR_clear_error();
-	    rc = SSL_write(sslPtr->ssl, bufs->iov_base, (int)bufs->iov_len);
+        if (bufs->iov_len > 0) {
+            ERR_clear_error();
+            rc = SSL_write(sslPtr->ssl, bufs->iov_base, (int)bufs->iov_len);
 
-	    if (rc < 0) {
-		if (SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_WRITE) {
-		    Ns_Time timeout = { sock->driver->sendwait, 0 };
-		    if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
-			continue;
-		    }
-		}
-		if (decork) {
+            if (rc < 0) {
+                if (SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_WRITE) {
+                    Ns_Time timeout = { sock->driver->sendwait, 0 };
+                    if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
+                        continue;
+                    }
+                }
+                if (decork) {
                     Ns_SockCork(sock, NS_FALSE);
                 }
-		SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-		return -1;
-	    }
-	    size += rc;
-	    if (rc < (int)bufs->iov_len) {
-		Ns_Log(Debug, "SSL: partial write, wanted %ld wrote %d", bufs->iov_len, rc);
-		break;
-	    }
-	}
-	nbufs--;
-	bufs++;
+                SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
+                return -1;
+            }
+            size += rc;
+            if (rc < (int)bufs->iov_len) {
+                Ns_Log(Debug, "SSL: partial write, wanted %ld wrote %d", bufs->iov_len, rc);
+                break;
+            }
+        }
+        nbufs--;
+        bufs++;
     }
 
     if (decork) {
@@ -669,7 +669,7 @@ Close(Ns_Sock *sock)
 
     if (sslPtr != NULL) {
         int r;
-                
+
         r = SSL_shutdown(sslPtr->ssl);
         if (r == 0) {
             /*
@@ -682,7 +682,7 @@ Close(Ns_Sock *sock)
         }
         if (r == -1) {
             unsigned long err = ERR_get_error();
-            
+
             if (err != 0) {
                 Ns_Log(Notice, "SSL_shutdown has failed: %s", ERR_error_string(err, NULL));
             }
@@ -724,7 +724,7 @@ SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
     return (pwd != NULL ? (int)strlen(buf) : 0);
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L        
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void
 SSLLock(int mode, int n, const char *UNUSED(file), int UNUSED(line))
 {

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -207,7 +207,7 @@ Ns_EventCallback(Ns_Event *event, Ns_SockState when, const Ns_Time *timeoutPtr)
 
     NS_NONNULL_ASSERT(event != NULL);
     evPtr = (Event *) event;
-    
+
     /*
      * Map from sock when bits to poll event bits.
      */
@@ -269,12 +269,12 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
 
     NS_NONNULL_ASSERT(queue != NULL);
     queuePtr = (EventQueue *) queue;
-    
+
     /*
      * Process any new events.
      */
     Ns_GetTime(&now);
-    
+
     while ((evPtr = queuePtr->firstInitPtr) != NULL) {
         queuePtr->firstInitPtr = evPtr->nextPtr;
         Call(evPtr, &now, NS_SOCK_INIT);
@@ -317,17 +317,17 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      */
 
     n = NsPoll(queuePtr->pfds, nfds, timeoutPtr);
-    /* 
+    /*
      * n is currently not used; n is either number of ready descriptors, or 0
-     * on timeout, or -1 on error 
+     * on timeout, or -1 on error
      */
     ((void)(n)); /* ignore n */
 
     if (((queuePtr->pfds[0].revents & POLLIN) != 0)
         && (recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1)
-	) {
-	Ns_Fatal("event queue: trigger ns_read() failed: %s",
-		 ns_sockstrerror(ns_sockerrno));
+        ) {
+        Ns_Fatal("event queue: trigger ns_read() failed: %s",
+                 ns_sockstrerror(ns_sockerrno));
     }
 
     /*
@@ -339,7 +339,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     queuePtr->firstWaitPtr = NULL;
 
     while (evPtr != NULL) {
-	short revents;
+        short revents;
 
         nextPtr = evPtr->nextPtr;
 
@@ -397,7 +397,7 @@ Ns_TriggerEventQueue(const Ns_EventQueue *queue)
 
     NS_NONNULL_ASSERT(queue != NULL);
     queuePtr = (const EventQueue *) queue;
- 
+
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("event queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
@@ -430,7 +430,7 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
 
     NS_NONNULL_ASSERT(queue != NULL);
     queuePtr = (EventQueue *) queue;
- 
+
     Ns_GetTime(&now);
     evPtr = queuePtr->firstWaitPtr;
     queuePtr->firstWaitPtr = NULL;

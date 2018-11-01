@@ -30,7 +30,7 @@
 /*
  * master.c --
  *
- *	Master lock critical section.
+ *      Master lock critical section.
  */
 
 #include "thread.h"
@@ -44,13 +44,13 @@ static bool initialized = NS_FALSE;
  *
  * Ns_MasterLock, Ns_MasterUnlock --
  *
- *	Enter the single master critical section lock.
+ *      Enter the single master critical section lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -77,3 +77,13 @@ Ns_MasterUnlock(void)
         Ns_CsLeave(&master);
     }
 }
+
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

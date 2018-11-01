@@ -154,7 +154,7 @@ NsConfigAdp(void)
 static Ns_ReturnCode
 ConfigServerAdp(const char *server)
 {
-    NsServer   *servPtr = NsGetServer(server); 
+    NsServer   *servPtr = NsGetServer(server);
     const char *path;
 
     path = Ns_ConfigGetPath(server, NULL, "adp", (char *)0L);
@@ -268,7 +268,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *resvar)
      */
 
     if (result == TCL_OK) {
-	Tcl_Obj *objPtr;
+        Tcl_Obj *objPtr;
 
         if (resvar != NULL) {
             objPtr = Tcl_GetObjResult(interp);
@@ -357,7 +357,7 @@ NsAdpFree(NsInterp *itPtr)
 
     if (itPtr->adp.cache != NULL) {
         Ns_CacheDestroy(itPtr->adp.cache);
-	itPtr->adp.cache = NULL;
+        itPtr->adp.cache = NULL;
     }
     Tcl_DStringFree(&itPtr->adp.output);
 }
@@ -491,7 +491,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
     }
 
     if (itPtr->adp.cache == NULL) {
-	Ns_DStringPrintf(&tmp, "nsadp:%p", (void *)itPtr);
+        Ns_DStringPrintf(&tmp, "nsadp:%p", (void *)itPtr);
         itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
                                itPtr->servPtr->adp.cachesize, FreeInterpPage);
         Ns_DStringSetLength(&tmp, 0);
@@ -507,7 +507,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
     } else if (!S_ISREG(st.st_mode)) {
         Ns_TclPrintfResult(interp, "not an ordinary file: %s", file);
     } else {
-	Ns_Entry *ePtr;
+        Ns_Entry *ePtr;
 
         /*
          * Check for valid code in interp page cache.
@@ -585,9 +585,9 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
      */
 
     if (ipagePtr != NULL) {
-	const AdpCode *codePtr;
+        const AdpCode *codePtr;
         Objs          *objsPtr;
-	int            cacheGen = 0;
+        int            cacheGen = 0;
 
         pagePtr = ipagePtr->pagePtr;
         if (expiresPtr == NULL || (itPtr->adp.flags & ADP_CACHE) == 0u) {
@@ -749,7 +749,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
         if (result != TCL_OK) {
             NsAdpLogError(itPtr);
             result = TCL_ERROR;
-            
+
         } else {
             /*
              * Link the ADP output buffer result to a global variable
@@ -788,7 +788,7 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
  */
 
 int
-NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp, 
+NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp,
                     int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     const NsInterp *itPtr = clientData;
@@ -802,7 +802,7 @@ NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp,
     Ns_MutexLock(&servPtr->adp.pagelock);
     hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
     while (hPtr != NULL) {
-	const Page *pagePtr = Tcl_GetHashValue(hPtr);
+        const Page *pagePtr = Tcl_GetHashValue(hPtr);
         char       *file    = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
 
         Ns_DStringPrintf(&ds, "{%s} "
@@ -1007,7 +1007,7 @@ NsAdpLogError(NsInterp *itPtr)
         inc = "\n    included from ";
     }
     if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL) != 0u) {
-	size_t i;
+        size_t i;
 
         Ns_DStringPrintf(&ds, "\n    while processing connection %s:\n%8s%s",
                          NsConnIdStr(conn), "",
@@ -1029,7 +1029,7 @@ NsAdpLogError(NsInterp *itPtr)
     Ns_DStringFree(&ds);
     adp = itPtr->servPtr->adp.errorpage;
     if (adp != NULL && itPtr->adp.errorLevel == 0) {
-	Tcl_Obj *objv[2];
+        Tcl_Obj *objv[2];
 
         ++itPtr->adp.errorLevel;
         objv[0] = Tcl_NewStringObj(adp, -1);
@@ -1119,7 +1119,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
     nscript = 0;
     result = TCL_OK;
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
-	int len; 
+        int len;
 
         frame.line = (unsigned short)AdpCodeLine(codePtr, i);
         len = AdpCodeLen(codePtr, i);
@@ -1266,13 +1266,13 @@ AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
             Ns_TclPrintfResult(interp, "write to \"%s\" failed: %s",
                                debugfile, Tcl_PosixError(interp));
             result = TCL_ERROR;
-	} else {
-	    Ns_DStringSetLength(&ds, 0);
-	    Ns_DStringVarAppend(&ds, "source ", debugfile, (char *)0L);
-	    result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
-	}
-	(void) ns_close(fd);
-	unlink(debugfile);
+        } else {
+            Ns_DStringSetLength(&ds, 0);
+            Ns_DStringVarAppend(&ds, "source ", debugfile, (char *)0L);
+            result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+        }
+        (void) ns_close(fd);
+        unlink(debugfile);
     }
     Ns_DStringFree(&ds);
 
@@ -1430,7 +1430,7 @@ static void
 AdpTrace(const NsInterp *itPtr, const char *ptr, int len)
 {
     char type;
-    
+
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(ptr != NULL);
 

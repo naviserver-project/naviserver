@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * lisp.c --
  *
- *	Commands for manipulating lists. 
+ *      Commands for manipulating lists.
  */
 
 #include "nsd.h"
@@ -42,13 +42,13 @@
  *
  * Ns_ListNconc --
  *
- *	Append l2 to l1 
+ *      Append l2 to l1
  *
  * Results:
- *	A pointer to the head of the new list. 
+ *      A pointer to the head of the new list.
  *
  * Side effects:
- *	May modify l1.
+ *      May modify l1.
  *
  *----------------------------------------------------------------------
  */
@@ -76,13 +76,13 @@ Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr)
  *
  * Ns_ListCons --
  *
- *	Prepend element to list. 
+ *      Prepend element to list.
  *
  * Results:
- *	A new list. 
+ *      A new list.
  *
  * Side effects:
- *	A new node will be allocated for the new element. 
+ *      A new node will be allocated for the new element.
  *
  *----------------------------------------------------------------------
  */
@@ -104,13 +104,13 @@ Ns_ListCons(void *elem, Ns_List *lPtr)
  *
  * Ns_ListNreverse --
  *
- *	Reverse the order of a list. 
+ *      Reverse the order of a list.
  *
  * Results:
- *	A pointer to the new head. 
+ *      A pointer to the new head.
  *
  * Side effects:
- *	Changes all the links in the list.
+ *      Changes all the links in the list.
  *
  *----------------------------------------------------------------------
  */
@@ -130,7 +130,7 @@ Ns_ListNreverse(Ns_List *lPtr)
             nextPtr = nextRestPtr;
         }
     }
-    
+
     return lPtr;
 }
 
@@ -140,13 +140,13 @@ Ns_ListNreverse(Ns_List *lPtr)
  *
  * Ns_ListLast --
  *
- *	Find the last element in a list. 
+ *      Find the last element in a list.
  *
  * Results:
- *	Returns a pointer to the last element. 
+ *      Returns a pointer to the last element.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -156,7 +156,7 @@ Ns_ListLast(Ns_List *lPtr)
 {
     if (lPtr != NULL) {
         for (; lPtr->rest != NULL; lPtr = lPtr->rest) {
-	    ;
+            ;
         }
     }
     return lPtr;
@@ -168,14 +168,14 @@ Ns_ListLast(Ns_List *lPtr)
  *
  * Ns_ListFree --
  *
- *	Frees the elements of the list with the freeing function that 
- *	is passed in. 
+ *      Frees the elements of the list with the freeing function that
+ *      is passed in.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -200,13 +200,13 @@ Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc)
  *
  * Ns_IntPrint --
  *
- *	Print an integer to stdout. 
+ *      Print an integer to stdout.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -223,13 +223,13 @@ Ns_IntPrint(int d)
  *
  * Ns_StringPrint --
  *
- *	Print a string to stdout. 
+ *      Print a string to stdout.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -238,7 +238,7 @@ void
 Ns_StringPrint(const char *s)
 {
     NS_NONNULL_ASSERT(s != NULL);
-    
+
     fputs(s, stdout);
 }
 
@@ -248,13 +248,13 @@ Ns_StringPrint(const char *s)
  *
  * Ns_ListPrint --
  *
- *	Print a list to standard out. 
+ *      Print a list to standard out.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -267,7 +267,7 @@ Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
         (*printProc) (lPtr->first);
         if (lPtr->rest != NULL) {
             Ns_StringPrint(" ");
-	}
+        }
     }
     Ns_StringPrint(")\n");
 }
@@ -278,13 +278,13 @@ Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
  *
  * Ns_ListCopy --
  *
- *	Make a copy of a list. 
+ *      Make a copy of a list.
  *
  * Results:
- *	A ponter to the head of the new list. 
+ *      A ponter to the head of the new list.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -307,7 +307,7 @@ Ns_ListCopy(const Ns_List *lPtr)
             newPtr->rest = NULL;
         }
     }
-    
+
     return headPtr;
 }
 
@@ -317,13 +317,13 @@ Ns_ListCopy(const Ns_List *lPtr)
  *
  * Ns_ListLength --
  *
- *	Find the number of elements in a list. 
+ *      Find the number of elements in a list.
  *
  * Results:
- *	Number of elements. 
+ *      Number of elements.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -336,7 +336,7 @@ Ns_ListLength(const Ns_List *lPtr)
     for (i = 0; lPtr != NULL; lPtr = lPtr->rest, i++) {
         ;
     }
-    
+
     return i;
 }
 
@@ -346,13 +346,13 @@ Ns_ListLength(const Ns_List *lPtr)
  *
  * Ns_ListWeightSort --
  *
- *	Quicksort a list by the weight element of each node. 
+ *      Quicksort a list by the weight element of each node.
  *
  * Results:
- *	A pointer to the new list head. 
+ *      A pointer to the new list head.
  *
  * Side effects:
- *	Rearranges pointers in the list.
+ *      Rearranges pointers in the list.
  *
  *----------------------------------------------------------------------
  */
@@ -380,7 +380,7 @@ Ns_ListWeightSort(Ns_List *wPtr)
          * Loop over the whole list and build two sublists, one with
          * elements < axis, the other with elements >= axis.
          */
-    
+
         lastmPtrPtr = &mPtr;
         lastnPtrPtr = &nPtr;
         while (curPtr != NULL) {
@@ -399,16 +399,16 @@ Ns_ListWeightSort(Ns_List *wPtr)
         /*
          * Sort the list of larger elements and append it to axis
          */
-    
+
         (void) Ns_ListNconc(axisnodePtr, Ns_ListWeightSort(nPtr));
 
         /*
          * Sort the list of smaller elements and append axis to it.
          */
-    
+
         result = Ns_ListNconc(Ns_ListWeightSort(mPtr), axisnodePtr);
     }
-    
+
     return result;
 }
 
@@ -418,13 +418,13 @@ Ns_ListWeightSort(Ns_List *wPtr)
  *
  * Ns_ListSort --
  *
- *	Quicksort a list using a comparison callback. 
+ *      Quicksort a list using a comparison callback.
  *
  * Results:
- *	Pointer to the new list head. 
+ *      Pointer to the new list head.
  *
  * Side effects:
- *	Will rearrange links. 
+ *      Will rearrange links.
  *
  *----------------------------------------------------------------------
  */
@@ -442,7 +442,7 @@ Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
         Ns_List  *axisnodePtr = wPtr;
         void     *axisPtr;
         Ns_List **lastmPtrPtr, **lastnPtrPtr;
-    
+
         axisnodePtr->rest = NULL;
         axisPtr = wPtr->first;
 
@@ -467,7 +467,7 @@ Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
         (void) Ns_ListNconc(axisnodePtr, Ns_ListSort(nPtr, sortProc));
         result = Ns_ListNconc(Ns_ListSort(mPtr, sortProc), axisnodePtr);
     }
-    
+
     return result;
 }
 
@@ -477,13 +477,13 @@ Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc)
  *
  * Ns_ListDeleteLowElements --
  *
- *	Delete elements in a list with a lower-than-specified weight. 
+ *      Delete elements in a list with a lower-than-specified weight.
  *
  * Results:
- *	Pointer to a new list head. 
+ *      Pointer to a new list head.
  *
  * Side effects:
- *	May free elements. 
+ *      May free elements.
  *
  *----------------------------------------------------------------------
  */
@@ -505,7 +505,7 @@ Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight)
         }
         curPtr = nextPtr;
     }
-    
+
     return mPtr;
 }
 
@@ -515,14 +515,14 @@ Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight)
  *
  * Ns_ListDeleteWithTest --
  *
- *	Delete elements that pass an equivalency test run by a 
- *	callback, between each node and 'elem'. 
+ *      Delete elements that pass an equivalency test run by a
+ *      callback, between each node and 'elem'.
  *
  * Results:
- *	New list head. 
+ *      New list head.
  *
  * Side effects:
- *	May free nodes. 
+ *      May free nodes.
  *
  *----------------------------------------------------------------------
  */
@@ -543,7 +543,7 @@ Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr, Ns_EqualProc *equalProc)
             mPtr = mPtr->rest;
         }
     }
-    
+
     return lPtr;
 }
 
@@ -553,13 +553,13 @@ Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr, Ns_EqualProc *equalProc)
  *
  * Ns_ListDeleteIf --
  *
- *	Delete elements from a list if a callback says to. 
+ *      Delete elements from a list if a callback says to.
  *
  * Results:
- *	A new list head. 
+ *      A new list head.
  *
  * Side effects:
- *	May free nodes. 
+ *      May free nodes.
  *
  *----------------------------------------------------------------------
  */
@@ -589,14 +589,14 @@ Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc)
  *
  * Ns_ListDeleteDuplicates --
  *
- *	Delete duplicate items from a list, using an equivalency test 
- *	callback. 
+ *      Delete duplicate items from a list, using an equivalency test
+ *      callback.
  *
  * Results:
- *	A new list head. 
+ *      A new list head.
  *
  * Side effects:
- *	May free nodes. 
+ *      May free nodes.
  *
  *----------------------------------------------------------------------
  */
@@ -609,7 +609,7 @@ Ns_ListDeleteDuplicates(Ns_List *lPtr, Ns_EqualProc *equalProc)
     for (; lPtr != NULL; lPtr = lPtr->rest) {
         lPtr->rest = Ns_ListDeleteWithTest(lPtr->first, lPtr->rest, equalProc);
     }
-    
+
     return mPtr;
 }
 
@@ -619,13 +619,13 @@ Ns_ListDeleteDuplicates(Ns_List *lPtr, Ns_EqualProc *equalProc)
  *
  * Ns_ListNmapcar --
  *
- *	Apply a procedure to every member of a list. 
+ *      Apply a procedure to every member of a list.
  *
  * Results:
- *	A pointer to the list head. 
+ *      A pointer to the list head.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -638,7 +638,7 @@ Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc)
     for (; lPtr != NULL; lPtr = lPtr->rest) {
         lPtr->first = (*valProc) (lPtr->first);
     }
-    
+
     return mPtr;
 }
 
@@ -648,13 +648,13 @@ Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc)
  *
  * Ns_ListMapcar --
  *
- *	Apply a procedure to every member of a list. 
+ *      Apply a procedure to every member of a list.
  *
  * Results:
- *	A pointer to the new list head. 
+ *      A pointer to the new list head.
  *
  * Side effects:
- *	Generates a new list from the results of the procedure. 
+ *      Generates a new list from the results of the procedure.
  *
  *----------------------------------------------------------------------
  */
@@ -667,7 +667,7 @@ Ns_ListMapcar(const Ns_List *lPtr, Ns_ElemValProc *valProc)
     for (; lPtr != NULL; lPtr = lPtr->rest) {
         Ns_ListPush((*valProc) (lPtr->first), mPtr);
     }
-    
+
     return Ns_ListNreverse(mPtr);
 }
 

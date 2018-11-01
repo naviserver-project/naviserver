@@ -41,14 +41,14 @@
  *
  * Nsd_LibInit --
  *
- *	    Library entry point for libnsd. This routine calls various
- *	    data structure initialization functions throughout the core.
+ *          Library entry point for libnsd. This routine calls various
+ *          data structure initialization functions throughout the core.
  *
  * Results:
- *	    None.
+ *          None.
  *
  * Side effects:
- *	    Numerous.
+ *          Numerous.
  *      Also, note that this one is called prior getting the Tcl library
  *      initialized by calling Tcl_FindExecutable() in nsmain().
  *      Therefore, no Tcl VFS calls to the filesystem should be done in
@@ -65,31 +65,40 @@ Nsd_LibInit(void)
     if (!initialized) {
         initialized = NS_TRUE;
 
-	nsconf.state.lock = NULL;
-	
+        nsconf.state.lock = NULL;
+
         Nsthreads_LibInit();
-	
-	Ns_MutexInit(&nsconf.state.lock);
-	Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
+
+        Ns_MutexInit(&nsconf.state.lock);
+        Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
 
         NsInitSls();
-    	NsInitConf(); /* <- Server marked 'started' during library load. */
-    	NsInitLog();
-	NsInitOpenSSL();
+        NsInitConf(); /* <- Server marked 'started' during library load. */
+        NsInitLog();
+        NsInitOpenSSL();
         NsInitFd();
-    	NsInitBinder();
-    	NsInitListen();
+        NsInitBinder();
+        NsInitListen();
         NsInitLimits();
-    	NsInitInfo();
-	NsInitSockCallback();
-	NsInitTask();
-    	NsInitProcInfo();
-    	NsInitDrivers();
-    	NsInitQueue();
-    	NsInitSched();
-	NsInitTclEnv();
-    	NsInitTcl();
-    	NsInitRequests();
+        NsInitInfo();
+        NsInitSockCallback();
+        NsInitTask();
+        NsInitProcInfo();
+        NsInitDrivers();
+        NsInitQueue();
+        NsInitSched();
+        NsInitTclEnv();
+        NsInitTcl();
+        NsInitRequests();
         NsInitUrl2File();
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

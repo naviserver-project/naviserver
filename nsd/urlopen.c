@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * urlopen.c --
  *
  *  Make outgoing HTTP requests.
@@ -62,8 +62,8 @@ static bool FillBuf(Stream *sPtr)
  *
  * Ns_FetchPage --
  *
- *      Fetch a page off of this very server. Url must reference a 
- *      file in the filesystem. 
+ *      Fetch a page off of this very server. Url must reference a
+ *      file in the filesystem.
  *
  *      This function is deprecated, one should use the nmuch more general
  *      "ns_http" machinery instead.
@@ -113,7 +113,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
  *
  * Ns_FetchURL --
  *
- *      Open up an HTTP connection to an arbitrary URL.  
+ *      Open up an HTTP connection to an arbitrary URL.
  *
  *      This function is deprecated, one should use the much more general
  *      "ns_http" machinery instead.
@@ -172,7 +172,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     /*
      * Send a simple HTTP GET request.
      */
-     
+
     Ns_DStringSetLength(&ds, 0);
     Ns_DStringVarAppend(&ds, "GET ", request.url, (char *)0L);
     if (request.query != NULL) {
@@ -210,11 +210,11 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     }
     if (headers != NULL && strncmp(ds.string, "HTTP", 4u) == 0) {
         if (headers->name != NULL) {
-	    ns_free((char *)headers->name);
+            ns_free((char *)headers->name);
         }
         headers->name = Ns_DStringExport(&ds);
     }
-    
+
     /*
      * Parse header lines
      */
@@ -228,12 +228,12 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
             goto done;
         }
     } while (ds.length > 0);
-    
+
     /*
      * Without any check on limit or total size, foolishly read
      * the remaining content into the dstring.
      */
-    
+
     do {
       Ns_DStringNAppend(dsPtr, s.ptr, (int)s.cnt);
     } while (FillBuf(&s));
@@ -259,14 +259,14 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
  *
  * NsTclGetUrlObjCmd --
  *
- *      Implements ns_geturl. 
+ *      Implements ns_geturl.
  *      This function is deprecated, use ns_http instead.
  *
  * Results:
  *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -286,9 +286,9 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Ns_ReturnCode   status;
         const char     *url;
         Ns_DString      ds;
-        
+
         Ns_LogDeprecated(objv, 2, "ns_http run ...", NULL);
-    
+
         code = TCL_ERROR;
         if (objc == 2) {
             headers = NULL;
@@ -348,13 +348,13 @@ FillBuf(Stream *sPtr)
 {
     ssize_t n;
     bool    result = NS_TRUE;
-    
+
     NS_NONNULL_ASSERT(sPtr != NULL);
 
     n = ns_recv(sPtr->sock, sPtr->buf, BUFSIZE, 0);
     if (n <= 0) {
         if (n < 0) {
-            Ns_Log(Error, "urlopen: failed to fill socket stream buffer: '%s'", 
+            Ns_Log(Error, "urlopen: failed to fill socket stream buffer: '%s'",
                    strerror(errno));
             sPtr->error = 1;
         }
@@ -366,12 +366,12 @@ FillBuf(Stream *sPtr)
          * The recv() operation was sucessuful, fill values into result fields and
          * return NS_TRUE.
          */
-        
+
         sPtr->buf[n] = '\0';
         sPtr->ptr = sPtr->buf;
         sPtr->cnt = (size_t)n;
     }
-    
+
     return result;
 }
 

@@ -92,7 +92,7 @@ static void GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static char *GetScript(const char *tag, char *a, char *e, unsigned int *flagPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4); 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -177,7 +177,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         int             isNew, slen, elen, tlen;
         Tcl_DString     tbuf;
         Tag            *tagPtr;
-        
+
         /*
          * Get the content
          */
@@ -198,8 +198,8 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         }
 
         /*
-         * Allocate piggypacked memory chunk containing 
-         *   - tag structure, 
+         * Allocate piggypacked memory chunk containing
+         *   - tag structure,
          *   - tag begin string,
          *   - tag end string
          */
@@ -261,7 +261,7 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
 
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(adp != NULL);
-    
+
     if ((flags & ADP_CACHE) == 0u) {
         Tcl_DStringAppend(&codePtr->text, adp, -1);
     } else {
@@ -349,7 +349,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     Ns_RWLockRdLock(&servPtr->adp.taglock);
 
     while ((s = strchr(adp, INTCHAR('<'))) && (e = strchr(s, INTCHAR('>')))) {
-        
+
         /*
          * Process the tag depending on the current state.
          */
@@ -382,9 +382,9 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
                      * in safe mode which suppresses in-line scripts and
                      * continue looking for next ADP tag.
                      */
-		    if (s > text) {
-			AppendBlock(&parse, text, s, 't', flags);
-		    }
+                    if (s > text) {
+                        AppendBlock(&parse, text, s, 't', flags);
+                    }
                     if ((flags & ADP_SAFE) == 0u) {
                         if (s[2] != '=') {
                             AppendBlock(&parse, s + 2, e, 's', flags);
@@ -419,8 +419,8 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
                          * and begin looking for required closing tag.
                          */
                         if (s > text) {
-			    AppendBlock(&parse, text, s, 't', flags);
-			}
+                            AppendBlock(&parse, text, s, 't', flags);
+                        }
                         tagPtr = Tcl_GetHashValue(hPtr);
                         if (tagPtr->endtag == NULL) {
                             AppendTag(&parse, tagPtr, a, e, NULL, flags);
@@ -456,8 +456,8 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 
                     if ((flags & ADP_SAFE) == 0u) {
                         if (((scriptFlags & SERV_STREAM) != 0u) && (! scriptStreamDone)) {
-			    static char *const buffer = (char *)"ns_adp_ctl stream on";
-			    char *end = buffer + strlen(buffer);
+                            static char *const buffer = (char *)"ns_adp_ctl stream on";
+                            char *end = buffer + strlen(buffer);
 
                             AppendBlock(&parse, buffer, end, 's', flags);
                             scriptStreamDone = NS_TRUE;
@@ -493,7 +493,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
             }
             break;
 
-	default:
+        default:
             /* should not happen */
             assert(0);
         }
@@ -509,11 +509,11 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
      * Append the remaining text block
      */
     assert(text != NULL);
-    { 
-	size_t len = strlen(text);
-	if (len > 0u) {
-	    AppendBlock(&parse, text, text + len, 't', flags);
-	}
+    {
+        size_t len = strlen(text);
+        if (len > 0u) {
+            AppendBlock(&parse, text, text + len, 't', flags);
+        }
     }
     /*
      * If requested, collapse blocks to a single Tcl script and
@@ -553,8 +553,8 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
  */
 
 void
-NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
-	   unsigned int flags, const char* file)
+NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
+           unsigned int flags, const char* file)
 {
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
@@ -724,10 +724,10 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
     Tcl_DStringSetLength(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
-	while (s < e && CHARTYPE(space, *s) != 0) {
-	    ++s;
-	}
-	*aPtr = s;
+        while (s < e && CHARTYPE(space, *s) != 0) {
+            ++s;
+        }
+        *aPtr = s;
     }
     dsPtr->length = Tcl_UtfToLower(dsPtr->string);
 }
@@ -763,7 +763,7 @@ ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, 
         *flagsPtr = 0u;
     }
     while (s < e) {
-	char asave, *ae, *as, *vs;
+        char asave, *ae, *as, *vs;
 
         /*
          * Trim attribute name.
@@ -936,21 +936,21 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
     Tcl_DStringInit(&script);
     Tcl_DStringAppend(&script, "ns_adp_append [", -1);
     if (tagPtr->type == TAG_ADP) {
-        /* 
-         * String will be an ADP fragment to evaluate. 
+        /*
+         * String will be an ADP fragment to evaluate.
          */
         Tcl_DStringAppend(&script, "ns_adp_eval ", -1);
     }
     Tcl_DStringAppendElement(&script, tagPtr->content);
     if (tagPtr->type == TAG_PROC) {
-        /* 
-         * String was a procedure, append tag attributes. 
+        /*
+         * String was a procedure, append tag attributes.
          */
         ParseAtts(as, ae, NULL, &script, 0);
     }
     if (se != NULL && se > ae) {
-        /* 
-         * Append enclosing text as argument to eval or proc. 
+        /*
+         * Append enclosing text as argument to eval or proc.
          */
         char save = *se;
         *se = '\0';
@@ -958,16 +958,16 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         *se = save;
     }
     if (tagPtr->type == TAG_SCRIPT || tagPtr->type == TAG_ADP) {
-        /* 
-         * Append code to create set with tag attributes. 
+        /*
+         * Append code to create set with tag attributes.
          */
         Tcl_DStringAppend(&script, " [ns_set create", -1);
         Tcl_DStringAppendElement(&script, tagPtr->tag);
         ParseAtts(as, ae, NULL, &script, 1);
         Tcl_DStringAppend(&script, "]", 1);
     }
-    /* 
-     * Close ns_adp_append subcommand. 
+    /*
+     * Close ns_adp_append subcommand.
      */
     Tcl_DStringAppend(&script, "]", 1);
     AppendBlock(parsePtr, script.string, script.string+script.length, 's', flags);
@@ -1003,8 +1003,8 @@ AppendLengths(AdpCode *codePtr, const int *length, const int *line)
     NS_NONNULL_ASSERT(line != NULL);
 
     textPtr = &codePtr->text;
-    /* 
-     * Need to round up start of lengths array to next word. 
+    /*
+     * Need to round up start of lengths array to next word.
      */
     start = ((textPtr->length / LENSZ) + 1) * LENSZ;
     ncopy = codePtr->nblocks * LENSZ;

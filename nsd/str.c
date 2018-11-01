@@ -447,10 +447,10 @@ Ns_StrIsHost(const char *chars)
  *      available) or from the string representation.
  *
  * Results:
- *	Content of the Tcl_Obj.
+ *      Content of the Tcl_Obj.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

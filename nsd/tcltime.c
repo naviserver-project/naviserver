@@ -277,8 +277,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     Ns_Time resultTime;
 
     static const char *const opts[] = {
-	"adjust", "diff", "format", "get", "incr", "make",
-	"seconds", "microseconds", NULL
+        "adjust", "diff", "format", "get", "incr", "make",
+        "seconds", "microseconds", NULL
     };
     enum {
         TAdjustIdx, TDiffIdx, TFormatIdx, TGetIdx, TIncrIdx, TMakeIdx,
@@ -521,13 +521,13 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         rc = TCL_ERROR;
     } else {
         assert(tPtr != NULL);
-        
+
         if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
             Ns_TclPrintfResult(interp, "invalid timespec: %s", Tcl_GetString(objv[1]));
             rc = TCL_ERROR;
         } else {
             int  ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
-            
+
             Tcl_Sleep(ms);
         }
     }

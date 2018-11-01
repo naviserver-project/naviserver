@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,10 +28,10 @@
  */
 
 
-/* 
+/*
  * random.c --
  *
- *	This file implements the "ns_rand" command.
+ *      This file implements the "ns_rand" command.
  */
 
 #include "nsd.h"
@@ -50,9 +50,9 @@ static unsigned long Roulette(void);
  */
 
 static volatile unsigned long counter = 0u;  /* Counter in counting thread */
-static volatile bool fRun = NS_FALSE; 	     /* Flag for counting thread outer loop. */
+static volatile bool fRun = NS_FALSE;        /* Flag for counting thread outer loop. */
 static volatile bool fCount = NS_FALSE;      /* Flag for counting thread inner loop. */
-static Ns_Sema       sema = NULL;	     /* Semaphore that controls counting threads. */
+static Ns_Sema       sema = NULL;            /* Semaphore that controls counting threads. */
 
 /*
  * Critical section around initial and subsequent seed generation.
@@ -73,22 +73,22 @@ static void GenSeeds(unsigned long seeds[], int nseeds);
  *
  * NsTclRandObjCmd --
  *
- *	This procedure implements the AOLserver Tcl 
+ *      This procedure implements the AOLserver Tcl
  *
- *	    ns_rand ?maximum?
+ *          ns_rand ?maximum?
  *
- *	command.  
+ *      command.
  *
  * Results:
- *	The Tcl result string contains a random number, either a
- *	double >= 0.0 and < 1.0 or an integer >= 0 and < max.
+ *      The Tcl result string contains a random number, either a
+ *      double >= 0.0 and < 1.0 or an integer >= 0 and < max.
  *
  * Side effects:
- *	None external.
+ *      None external.
  *
  * Note:
- *	Interpreters share the static variables which randomizes the
- *	the random numbers even more.
+ *      Interpreters share the static variables which randomizes the
+ *      the random numbers even more.
  *
  *----------------------------------------------------------------------
  */
@@ -100,7 +100,7 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     if (objc > 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?maximum?");
-	result = TCL_ERROR;
+        result = TCL_ERROR;
 
     } else {
         double d = Ns_DRand();
@@ -110,12 +110,12 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
             if (Tcl_GetIntFromObj(interp, objv[1], &maxValue) != TCL_OK) {
                 result = TCL_ERROR;
-                
+
             } else if (maxValue <= 0) {
                 Ns_TclPrintfResult(interp, "invalid max \"%s\": "
                                    "must be > 0", Tcl_GetString(objv[1]));
                 result = TCL_ERROR;
-                
+
             } else {
                 Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * (double)maxValue)));
             }
@@ -132,14 +132,14 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *----------------------------------------------------------------------
  *
  * Ns_DRand --
- * 
- *	Return a random double value between 0 and 1.0.
- * 	
+ *
+ *      Return a random double value between 0 and 1.0.
+ *
  * Results:
- *  	Random double.
+ *      Random double.
  *
  * Side effects:
- * 	Will generate random seed on first call.
+ *      Will generate random seed on first call.
  *
  *----------------------------------------------------------------------
  */
@@ -148,21 +148,21 @@ double
 Ns_DRand(void)
 {
     if (!initialized) {
-	Ns_CsEnter(&lock);
-	if (!initialized) {
-	    unsigned long seed[1];
-            
-	    GenSeeds(seed, 1);
+        Ns_CsEnter(&lock);
+        if (!initialized) {
+            unsigned long seed[1];
+
+            GenSeeds(seed, 1);
 #if defined(HAVE_DRAND48)
-    	    srand48((long) seed[0]);
+            srand48((long) seed[0]);
 #elif defined(HAVE_RANDOM)
-    	    srandom((unsigned int) seed[0]);
+            srandom((unsigned int) seed[0]);
 #else
-    	    srand((unsigned int) seed[0]);
+            srand((unsigned int) seed[0]);
 #endif
-	    initialized = NS_TRUE;
-	}
-	Ns_CsLeave(&lock);
+            initialized = NS_TRUE;
+        }
+        Ns_CsLeave(&lock);
     }
 #if defined(HAVE_ARC4RANDOM)
     return ((double)(arc4random() % (unsigned)RAND_MAX) / ((double)RAND_MAX + 1.0));
@@ -180,14 +180,14 @@ Ns_DRand(void)
  *----------------------------------------------------------------------
  *
  * GenSeeds --
- * 
- *	Calculate an array of random seeds.
- * 	
+ *
+ *      Calculate an array of random seeds.
+ *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- * 	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -196,15 +196,15 @@ static void
 GenSeeds(unsigned long seeds[], int nseeds)
 {
     Ns_Thread thr;
-    
+
     Ns_Log(Notice, "random: generating %d seed%s", nseeds,
-	nseeds == 1 ? "" : "s");
+        nseeds == 1 ? "" : "s");
     Ns_CsEnter(&lock);
     Ns_SemaInit(&sema, 0);
     fRun = NS_TRUE;
     Ns_ThreadCreate(CounterThread, NULL, 0, &thr);
     while (nseeds-- > 0) {
-    	seeds[nseeds] = TrueRand();
+        seeds[nseeds] = TrueRand();
     }
     fRun = NS_FALSE;
     Ns_SemaPost(&sema, 1);
@@ -218,17 +218,17 @@ GenSeeds(unsigned long seeds[], int nseeds)
  *
  * CounterThread --
  *
- *	Generate a random seed.  This routine runs as a separate thread 
- *	where it imcrements a counter some indeterminate number of times. 
- *	The assumption is that this thread runs for a sufficiently long time
- * 	to be preempted an arbitrary number of times by the kernel threads 
- *	scheduler.
+ *      Generate a random seed.  This routine runs as a separate thread where
+ *      it imcrements a counter some indeterminate number of times.  The
+ *      assumption is that this thread runs for a sufficiently long time to be
+ *      preempted an arbitrary number of times by the kernel threads
+ *      scheduler.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -239,8 +239,8 @@ CounterThread(void *UNUSED(arg))
     while (fRun) {
         Ns_SemaWait(&sema);
         if (fRun) {
-	    while (fCount) {
-		counter++;
+            while (fCount) {
+                counter++;
             }
         }
     }

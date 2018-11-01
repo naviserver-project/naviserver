@@ -75,7 +75,7 @@ static const struct {
     {303, "See Other"},
     {304, "Not Modified"},
     {305, "Use Proxy"},
-    {306, "SwitchProxy"},    
+    {306, "SwitchProxy"},
     {307, "Temporary Redirect"},
     {308, "Permanent Redirect"},
     {400, "Bad Request"},
@@ -307,7 +307,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     charset = NsFindCharset(mimeType, &len);
 
     if (charset != NULL) {
-	encoding = Ns_GetCharsetEncodingEx(charset, (int)len);
+        encoding = Ns_GetCharsetEncodingEx(charset, (int)len);
         Ns_ConnSetEncoding(conn, encoding);
     } else {
         encoding = Ns_ConnGetEncoding(conn);
@@ -345,17 +345,17 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, bool doStream)
     Conn *connPtr = (Conn *) conn;
 
     if (!doStream) {
-	char buffer[TCL_INTEGER_SPACE];
+        char buffer[TCL_INTEGER_SPACE];
 
-	snprintf(buffer, sizeof(buffer), "%" PRIuz, length);
-	Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
-	connPtr->responseLength = (ssize_t)length;
+        snprintf(buffer, sizeof(buffer), "%" PRIuz, length);
+        Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
+        connPtr->responseLength = (ssize_t)length;
     } else {
-	/*
-	 * In the streaming case, make sure no Content-Length is set.
-	 */
+        /*
+         * In the streaming case, make sure no Content-Length is set.
+         */
         Ns_SetIDeleteKey(conn->outputheaders, "Content-Length");
-	connPtr->responseLength = -1;
+        connPtr->responseLength = -1;
     }
 }
 
@@ -458,7 +458,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
     /*
      * Add the basic required headers if they.
      *
-     * Earlier versions included 
+     * Earlier versions included
      *
      *       "MIME-Version: 1.0\r\n"
      *
@@ -466,15 +466,15 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      * allowed in HTTP/1.1); it's only used when HTTP messages are moved over
      * MIME-based protocols (e.g., SMTP), which is uncommon. The HTTP mime
      * message parsing semantics are defined by this RFC 2616 and not any MIME
-     * specification.  
+     * specification.
      *
      * For full backwards compatibility, a MIME-Version header could be added
      * for a site via nssocket/nsssl driver parameter "extraheaders".
      */
 
     Ns_DStringVarAppend(dsPtr,
-			"Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
-			"Date: ", (char *)0L);
+                        "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
+                        "Date: ", (char *)0L);
     (void)Ns_HttpTime(dsPtr, NULL);
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 
@@ -495,45 +495,45 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
     if (conn->outputheaders != NULL) {
         for (i = 0u; i < Ns_SetSize(conn->outputheaders); i++) {
-	    const char *key;
+            const char *key;
 
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-		const char *lineBreak = strchr(value, INTCHAR('\n'));
+                const char *lineBreak = strchr(value, INTCHAR('\n'));
 
-		if (lineBreak == NULL) {
-		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0L);
-		} else {
-		    Ns_DString sanitize, *sanitizePtr = &sanitize;
-		    /*
-		     * We have to sanititize the header field to avoid
-		     * a HTTP response splitting attack. After each
-		     * newline in the value, we insert a TAB character
-		     * (see Section 4.2 in RFC 2616)
-		     */
+                if (lineBreak == NULL) {
+                    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0L);
+                } else {
+                    Ns_DString sanitize, *sanitizePtr = &sanitize;
+                    /*
+                     * We have to sanititize the header field to avoid
+                     * a HTTP response splitting attack. After each
+                     * newline in the value, we insert a TAB character
+                     * (see Section 4.2 in RFC 2616)
+                     */
 
-		    Ns_DStringInit(&sanitize);
+                    Ns_DStringInit(&sanitize);
 
-		    do {
-			size_t offset = (size_t)(lineBreak - value);
-			
-			if (offset > 0u) {
-			    Tcl_DStringAppend(sanitizePtr, value, (int)offset);
-			}
-			Tcl_DStringAppend(sanitizePtr, "\n\t", 2);
+                    do {
+                        size_t offset = (size_t)(lineBreak - value);
 
-			offset ++;
-			value += offset;
-			lineBreak = strchr(value, INTCHAR('\n'));
+                        if (offset > 0u) {
+                            Tcl_DStringAppend(sanitizePtr, value, (int)offset);
+                        }
+                        Tcl_DStringAppend(sanitizePtr, "\n\t", 2);
 
-		    } while (lineBreak != NULL);
+                        offset ++;
+                        value += offset;
+                        lineBreak = strchr(value, INTCHAR('\n'));
 
-		    Tcl_DStringAppend(sanitizePtr, value, -1);
+                    } while (lineBreak != NULL);
 
-		    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
-		    Ns_DStringFree(sanitizePtr);
-		}
+                    Tcl_DStringAppend(sanitizePtr, value, -1);
+
+                    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
+                    Ns_DStringFree(sanitizePtr);
+                }
             }
         }
     }
@@ -566,7 +566,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 void
 Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
 {
-    /* 
+    /*
      * Deprecated
      */
     Ns_ConnSetResponseStatus(conn, status);
@@ -576,7 +576,7 @@ size_t
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
     const Conn *connPtr = (const Conn *) conn;
-    /* 
+    /*
      * Deprecated
      */
     Ns_ConnSetResponseStatus(conn, status);
@@ -588,7 +588,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 void
 Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *mimeType, size_t length)
 {
-    /* 
+    /*
      * Deprecated
      */
     Ns_ConnSetTypeHeader(conn, mimeType);
@@ -739,8 +739,8 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
  */
 
 Ns_ReturnCode
-Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data, 
-		  ssize_t len, const char *mimeType)
+Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
+                  ssize_t len, const char *mimeType)
 {
     Ns_ReturnCode result;
     size_t        length;
@@ -778,15 +778,15 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, const char *data,
  */
 
 Ns_ReturnCode
-Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data, 
-		      ssize_t len, const char *mimeType)
+Ns_ConnReturnCharData(Ns_Conn *conn, int status, const char *data,
+                      ssize_t len, const char *mimeType)
 {
     struct iovec  sbuf;
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(data != NULL);
-    
+
     if (mimeType != NULL) {
         Ns_ConnSetEncodedTypeHeader(conn, mimeType);
     }
@@ -855,7 +855,7 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, const char *mimeType,
 {
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
-    
+
     return ReturnOpen(conn, status, mimeType, chan, NULL, NS_INVALID_FD, len);
 }
 
@@ -865,7 +865,7 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, const char *mimeType,
 {
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
-    
+
     return ReturnOpen(conn, status, mimeType, NULL, fp, NS_INVALID_FD, len);
 }
 
@@ -875,7 +875,7 @@ Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, const char *mimeType,
 {
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
-    
+
     return ReturnOpen(conn, status, mimeType, NULL, NULL, fd, len);
 }
 
@@ -887,11 +887,11 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
-        
+
     Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetResponseStatus(conn, status);
 
-    if ((chan != NULL || fp != NULL) 
+    if ((chan != NULL || fp != NULL)
         && (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, NS_FALSE) == NS_OK)) {
         result = NS_OK;
     } else {
@@ -953,57 +953,57 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
      */
     if ((conn->flags & NS_CONN_SKIPBODY) == 0u) {
 
-	/*
-	 * We are able to handle the following cases via writer:
-	 * - iovec based requests: all range request up to 32 ranges.
-	 * - fd based requests: 0 or 1 range requests
-	 */
-	if (fd == NS_INVALID_FD) {
-	    int nvbufs;
-	    struct iovec vbuf[32];
+        /*
+         * We are able to handle the following cases via writer:
+         * - iovec based requests: all range request up to 32 ranges.
+         * - fd based requests: 0 or 1 range requests
+         */
+        if (fd == NS_INVALID_FD) {
+            int nvbufs;
+            struct iovec vbuf[32];
 
-	    if (rangeCount == 0) {
-		nvbufs = 1;
-		vbuf[0].iov_base = (void *)data;
-		vbuf[0].iov_len  = len;
-	    } else {
-		int i;
+            if (rangeCount == 0) {
+                nvbufs = 1;
+                vbuf[0].iov_base = (void *)data;
+                vbuf[0].iov_len  = len;
+            } else {
+                int i;
 
-		nvbufs = rangeCount;
-		len = 0u;
-		for (i = 0; i < rangeCount; i++) {
-		    vbuf[i].iov_base = INT2PTR(bufs[i].offset);
-		    vbuf[i].iov_len  = bufs[i].length;
-		    len += bufs[i].length;
-		}
-	    }
+                nvbufs = rangeCount;
+                len = 0u;
+                for (i = 0; i < rangeCount; i++) {
+                    vbuf[i].iov_base = INT2PTR(bufs[i].offset);
+                    vbuf[i].iov_len  = bufs[i].length;
+                    len += bufs[i].length;
+                }
+            }
 
-	    if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, NS_FALSE) == NS_OK) {
-		Ns_DStringFree(&ds);
-		return NS_OK;
-	    }
-	} else if (rangeCount < 2) {
-	    if (rangeCount == 1) {
-		if (ns_lseek(fd, bufs[0].offset, SEEK_SET) == -1) {
+            if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, NS_FALSE) == NS_OK) {
+                Ns_DStringFree(&ds);
+                return NS_OK;
+            }
+        } else if (rangeCount < 2) {
+            if (rangeCount == 1) {
+                if (ns_lseek(fd, bufs[0].offset, SEEK_SET) == -1) {
                     Ns_Log(Warning, "seek operation with offset %" PROTd " failed: %s",
                            bufs[0].offset, strerror(errno));
                 }
-		len = bufs[0].length;
-	    }
-	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, NS_FALSE) == NS_OK) {
-		Ns_DStringFree(&ds);
-		return NS_OK;
-	    }
-	}
+                len = bufs[0].length;
+            }
+            if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, NS_FALSE) == NS_OK) {
+                Ns_DStringFree(&ds);
+                return NS_OK;
+            }
+        }
     }
-    
+
     if (rangeCount >= 0) {
-	if (rangeCount == 0) {
+        if (rangeCount == 0) {
             Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
 
-	    if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
-	      len = 0u;
-	    }
+            if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
+              len = 0u;
+            }
 
             (void) Ns_SetFileVec(bufs, 0, fd, data, 0, len);
             nbufs = 1;
@@ -1011,7 +1011,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
         /*
          * Flush Headers and send file contents.
          */
-	result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
+        result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
         if (result == NS_OK) {
             result = Ns_ConnSendFileVec(conn, bufs, nbufs);
         }

@@ -75,7 +75,7 @@ static const Cmd basicCmds[] = {
     {"ns_configsections",        NULL, NsTclConfigSectionsObjCmd},
     {"ns_crash",                 NULL, NsTclCrashObjCmd},
     {"ns_crypt",                 NULL, NsTclCryptObjCmd},
-    {"ns_crypto::aead::decrypt", NULL, NsTclCryptoAeadDecryptObjCmd},    
+    {"ns_crypto::aead::decrypt", NULL, NsTclCryptoAeadDecryptObjCmd},
     {"ns_crypto::aead::encrypt", NULL, NsTclCryptoAeadEncryptObjCmd},
     {"ns_crypto::eckey",         NULL, NsTclCryptoEckeyObjCmd},
     {"ns_crypto::hmac",          NULL, NsTclCryptoHmacObjCmd},
@@ -298,7 +298,7 @@ static const Cmd servCmds[] = {
     {NULL, NULL, NULL}
 };
 
-/* 
+/*
  * Locally defined functions.
  */
 static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
@@ -311,7 +311,7 @@ static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
  * AddCmds --
  *
  *      Add an array of commands or objCommands to the passed
- *      interpreter.  The array is terminated by an entry with 
+ *      interpreter.  The array is terminated by an entry with
  *      name == NULL.
  *
  * Results:
@@ -330,13 +330,13 @@ AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
     NS_NONNULL_ASSERT(itPtr != NULL);
 
     while (cmdPtr->name != NULL) {
-	/*
-	 * One has to provide wither an objProc or a proc.
-	 */
+        /*
+         * One has to provide wither an objProc or a proc.
+         */
         if (cmdPtr->objProc != NULL) {
-	    (void)Tcl_CreateObjCommand(itPtr->interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
+            (void)Tcl_CreateObjCommand(itPtr->interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
         } else {
-	    assert(cmdPtr->proc != NULL);
+            assert(cmdPtr->proc != NULL);
             (void)Tcl_CreateCommand(itPtr->interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);
         }
         ++cmdPtr;
@@ -363,7 +363,7 @@ void
 NsTclAddBasicCmds(NsInterp *itPtr)
 {
     NS_NONNULL_ASSERT(itPtr != NULL);
-    
+
     AddCmds(basicCmds, itPtr);
 }
 
@@ -371,7 +371,7 @@ void
 NsTclAddServerCmds(NsInterp *itPtr)
 {
     NS_NONNULL_ASSERT(itPtr != NULL);
-    
+
     AddCmds(servCmds, itPtr);
 }
 

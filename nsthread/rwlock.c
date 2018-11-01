@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,22 +27,22 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * rwlock.c --
  *
- *	Routines for read/write locks.  Read/write locks differ from a mutex
- *	in that multiple threads can acquire the read lock until a single
- *	thread acquires a write lock.  This code is adapted from that in 
- *	Steven's Unix Network Programming, Volume 3. 
+ *      Routines for read/write locks.  Read/write locks differ from a mutex
+ *      in that multiple threads can acquire the read lock until a single
+ *      thread acquires a write lock.  This code is adapted from that in
+ *      Steven's Unix Network Programming, Volume 3.
  *
- *	Note:  Read/write locks are not often a good idea.  The reason
- *	is, like critical sections, the number of actual lock operations
- *	is doubled which makes them more expensive to use.  Cases where the
- *	overhead are justified are then often subject to read locks being 
- *	held longer than writer threads can wait and/or writer threads holding
- *	the lock so long that many reader threads back up.  In these cases,
- *	specific reference counting techniques (e.g., the management of
- *	the Req structures in op.c) normally work better.
+ *      Note:  Read/write locks are not often a good idea.  The reason
+ *      is, like critical sections, the number of actual lock operations
+ *      is doubled which makes them more expensive to use.  Cases where the
+ *      overhead are justified are then often subject to read locks being
+ *      held longer than writer threads can wait and/or writer threads holding
+ *      the lock so long that many reader threads back up.  In these cases,
+ *      specific reference counting techniques (e.g., the management of
+ *      the Req structures in op.c) normally work better.
  */
 
 #include "thread.h"
@@ -60,7 +60,7 @@ typedef struct RwLock {
     int       nreaders; /* Number of readers waiting for lock. */
     int       nwriters; /* Number of writers waiting for lock. */
     int       lockcnt;  /* Lock count, > 0 indicates # of shared
-			 * readers, -1 indicates exclusive writer. */
+                         * readers, -1 indicates exclusive writer. */
 } RwLock;
 
 static RwLock *GetRwLock(Ns_RWLock *rwPtr)
@@ -72,17 +72,17 @@ static RwLock *GetRwLock(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockInit --
  *
- *	Initialize a read/write lock.
+ *      Initialize a read/write lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Lock memory is allocated from the heap and initialized.
+ *      Lock memory is allocated from the heap and initialized.
  *
  *----------------------------------------------------------------------
  */
-	
+
 void
 Ns_RWLockInit(Ns_RWLock *rwPtr)
 {
@@ -90,7 +90,7 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
     static uintptr_t nextid = 0;
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
-    
+
     lockPtr = ns_calloc(1u, sizeof(RwLock));
     NsMutexInitNext(&lockPtr->mutex, "rw", &nextid);
     Ns_CondInit(&lockPtr->rcond);
@@ -107,14 +107,14 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockDestroy --
  *
- *	Destroy a read/write lock if it was previously initialized.
+ *      Destroy a read/write lock if it was previously initialized.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Read/write lock objects are destroy and the lock memory is
- *	returned to the heap.
+ *      Read/write lock objects are destroy and the lock memory is
+ *      returned to the heap.
  *
  *----------------------------------------------------------------------
  */
@@ -125,11 +125,11 @@ Ns_RWLockDestroy(Ns_RWLock *rwPtr)
     RwLock *lockPtr = (RwLock *) *rwPtr;
 
     if (lockPtr != NULL) {
-    	Ns_MutexDestroy(&lockPtr->mutex);
-    	Ns_CondDestroy(&lockPtr->rcond);
-    	Ns_CondDestroy(&lockPtr->wcond);
-    	ns_free(lockPtr);
-    	*rwPtr = NULL;
+        Ns_MutexDestroy(&lockPtr->mutex);
+        Ns_CondDestroy(&lockPtr->rcond);
+        Ns_CondDestroy(&lockPtr->wcond);
+        ns_free(lockPtr);
+        *rwPtr = NULL;
     }
 }
 
@@ -139,14 +139,14 @@ Ns_RWLockDestroy(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockRdLock --
  *
- *	Acquire a read lock.
+ *      Acquire a read lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread may wait on a condition variable if the read/write lock
- *	currently has a write lock.
+ *      Thread may wait on a condition variable if the read/write lock
+ *      currently has a write lock.
  *
  *----------------------------------------------------------------------
  */
@@ -167,9 +167,9 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
      */
 
     while (lockPtr->lockcnt < 0 || lockPtr->nwriters > 0) {
-	lockPtr->nreaders++;
-	Ns_CondWait(&lockPtr->rcond, &lockPtr->mutex);
-	lockPtr->nreaders--;
+        lockPtr->nreaders++;
+        Ns_CondWait(&lockPtr->rcond, &lockPtr->mutex);
+        lockPtr->nreaders--;
     }
 
     lockPtr->lockcnt++;
@@ -182,14 +182,14 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockWrLock --
  *
- *	Acquire a write lock.
+ *      Acquire a write lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread may wait on the write condition if other threads either
- *	have the lock read or write locked.
+ *      Thread may wait on the write condition if other threads either
+ *      have the lock read or write locked.
  *
  *----------------------------------------------------------------------
  */
@@ -202,12 +202,12 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
     lockPtr = GetRwLock(rwPtr);
-    
+
     Ns_MutexLock(&lockPtr->mutex);
     while (lockPtr->lockcnt != 0) {
-	lockPtr->nwriters++;
-	Ns_CondWait(&lockPtr->wcond, &lockPtr->mutex);
-	lockPtr->nwriters--;
+        lockPtr->nwriters++;
+        Ns_CondWait(&lockPtr->wcond, &lockPtr->mutex);
+        lockPtr->nwriters--;
     }
     lockPtr->lockcnt = -1;
     Ns_MutexUnlock(&lockPtr->mutex);
@@ -219,13 +219,13 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
  *
  * Ns_RWLockUnlock --
  *
- *	Unlock a read/write lock.
+ *      Unlock a read/write lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Read or write condition may be signaled.
+ *      Read or write condition may be signaled.
  *
  *----------------------------------------------------------------------
  */
@@ -237,15 +237,15 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
     lockPtr = (RwLock *) *rwPtr;
-    
+
     Ns_MutexLock(&lockPtr->mutex);
     if (--lockPtr->lockcnt < 0) {
-	lockPtr->lockcnt = 0;
+        lockPtr->lockcnt = 0;
     }
     if (lockPtr->nwriters != 0) {
-	Ns_CondSignal(&lockPtr->wcond);
+        Ns_CondSignal(&lockPtr->wcond);
     } else if (lockPtr->nreaders != 0) {
-	Ns_CondBroadcast(&lockPtr->rcond);
+        Ns_CondBroadcast(&lockPtr->rcond);
     }
     Ns_MutexUnlock (&lockPtr->mutex);
 }
@@ -256,13 +256,13 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
  *
  * GetRwLock --
  *
- *	Return the read/write lock structure, initializing it if needed.
+ *      Return the read/write lock structure, initializing it if needed.
  *
  * Results:
- *	Pointer to lock.
+ *      Pointer to lock.
  *
  * Side effects:
- *	Lock may be initialized.
+ *      Lock may be initialized.
  *
  *----------------------------------------------------------------------
  */
@@ -271,13 +271,13 @@ static RwLock *
 GetRwLock(Ns_RWLock *rwPtr)
 {
     NS_NONNULL_ASSERT(rwPtr != NULL);
-    
+
     if (*rwPtr == NULL) {
-	Ns_MasterLock();
-	if (*rwPtr == NULL) {
-	    Ns_RWLockInit(rwPtr);
-	}
-	Ns_MasterUnlock();
+        Ns_MasterLock();
+        if (*rwPtr == NULL) {
+            Ns_RWLockInit(rwPtr);
+        }
+        Ns_MasterUnlock();
     }
     return (RwLock *) *rwPtr;
 }

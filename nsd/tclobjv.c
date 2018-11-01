@@ -191,17 +191,17 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
         while (remain > 0) {
-	    Tcl_Obj *obj = objv[objc - remain];
+            Tcl_Obj *obj = objv[objc - remain];
             int      result;
 
-	    result = Tcl_IsShared(obj) ?
-		GetOptIndexObjvSpec(obj, optSpec, &optIndex) :
-		Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
-					  sizeof(Ns_ObjvSpec), "option",
-					  TCL_EXACT, &optIndex);
-	    if (result != TCL_OK) {
-		break;
-	    }
+            result = Tcl_IsShared(obj) ?
+                GetOptIndexObjvSpec(obj, optSpec, &optIndex) :
+                Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
+                                          sizeof(Ns_ObjvSpec), "option",
+                                          TCL_EXACT, &optIndex);
+            if (result != TCL_OK) {
+                break;
+            }
 
             --remain;
             specPtr = optSpec + optIndex;
@@ -223,7 +223,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         return NS_OK;
     }
     for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
-	if (unlikely(remain == 0)) {
+        if (unlikely(remain == 0)) {
             if (unlikely(specPtr->key[0] != '?')) {
                 goto badargs; /* Too few args. */
             }
@@ -402,7 +402,7 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    Next Tcl object maybe converted to boolean type.
+ *          Next Tcl object maybe converted to boolean type.
  *
  *----------------------------------------------------------------------
  */
@@ -417,7 +417,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
     dest = spec->dest;
 
     if (spec->arg != NULL) {
-	*dest = PTR2INT(spec->arg);
+        *dest = PTR2INT(spec->arg);
         result = TCL_OK;
     } else {
         if (likely(*objcPtr > 0)) {
@@ -448,7 +448,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -462,7 +462,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
     NS_NONNULL_ASSERT(spec != NULL);
 
     if (likely(*objcPtr > 0)) {
-	const char **dest = spec->dest;
+        const char **dest = spec->dest;
 
         *dest = Tcl_GetStringFromObj(objv[0], (int *) spec->arg);
         *objcPtr -= 1;
@@ -489,7 +489,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -532,7 +532,7 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -570,7 +570,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -584,7 +584,7 @@ Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
     NS_NONNULL_ASSERT(spec != NULL);
 
     if (likely(*objcPtr > 0)) {
-	Tcl_Obj **dest = spec->dest;
+        Tcl_Obj **dest = spec->dest;
 
         *dest = objv[0];
         *objcPtr -= 1;
@@ -609,7 +609,7 @@ Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -649,7 +649,7 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -780,7 +780,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
                 Ns_TclPrintfResult(interp, "blank flag specification");
                 result = TCL_ERROR;
             }
-    	}
+        }
     }
 
     if (likely(result == TCL_OK)) {
@@ -797,7 +797,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *
  * Ns_ObjvBreak --
  *
- *	    Handle '--' option/argument separator.
+ *          Handle '--' option/argument separator.
  *
  * Results:
  *      Always TCL_BREAK.
@@ -811,7 +811,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
 int
 Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
-	     int *UNUSED(objcPtr), Tcl_Obj *const* UNUSED(objv))
+             int *UNUSED(objcPtr), Tcl_Obj *const* UNUSED(objv))
 {
     return TCL_BREAK;
 }
@@ -822,14 +822,14 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
  *
  * Ns_ObjvArgs --
  *
- *	    Count all remaining arguments, leaving zero left
- *	    unprocessed.
+ *          Count all remaining arguments, leaving zero left
+ *          unprocessed.
  *
  * Results:
- *	    Always TCL_OK.
+ *          Always TCL_OK.
  *
  * Side effects:
- *	    Argument processing will end successfully.
+ *          Argument processing will end successfully.
  *
  *----------------------------------------------------------------------
  */
@@ -858,7 +858,7 @@ Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -897,13 +897,13 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *cons
  *
  * NsTclParseArgsObjCmd --
  *
- *	    Implements the ns_parseargs command.
+ *          Implements the ns_parseargs command.
  *
  * Results:
- *	    Tcl result.
+ *          Tcl result.
  *
  * Side effects:
- *	    Specification may be converted to ns:spec obj type.
+ *          Specification may be converted to ns:spec obj type.
  *
  *----------------------------------------------------------------------
  */
@@ -1006,7 +1006,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     specPtr = optSpec;
 
     for (i = 0; i < numSpecs; ++i) {
-	const char *key;
+        const char *key;
 
         /*
          * Check for a default and extract the key.
@@ -1284,7 +1284,7 @@ DupSpec(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -1320,7 +1320,7 @@ ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* obj
  *      TCL_OK and objcPtr set to 0, or TCL_ERROR.
  *
  * Side effects:
- *	    Value of existing Tcl variable "args" overwritten.
+ *          Value of existing Tcl variable "args" overwritten.
  *
  *----------------------------------------------------------------------
  */
@@ -1363,7 +1363,7 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
  *      Tcl result code.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -1413,13 +1413,13 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
  *
  * WrongNumArgs --
  *
- *	    Leave a usage message in the interpreters result.
+ *          Leave a usage message in the interpreters result.
  *
  * Results:
- *	    None.
+ *          None.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -1438,7 +1438,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
             } else if (specPtr->proc == Ns_ObjvBool && specPtr->arg != NULL) {
                 Ns_DStringPrintf(&ds, "?%s? ", specPtr->key);
             } else {
-	        const char *p = specPtr->key;
+                const char *p = specPtr->key;
                 if (*specPtr->key == '-') {
                     ++p;
                 }
@@ -1544,15 +1544,15 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
     key = Tcl_GetString(obj);
 
     for (entryPtr = tablePtr, idx = 0; entryPtr->key != NULL;  entryPtr++, idx++) {
-	const char *p1, *p2;
+        const char *p1, *p2;
 
         for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
             if (*p1 == '\0') {
-		/*
-		 * Both words are at their ends. Match is successful.
-		 */
+                /*
+                 * Both words are at their ends. Match is successful.
+                 */
                 *idxPtr = idx;
-		result = TCL_OK;
+                result = TCL_OK;
                 break;
             }
         }

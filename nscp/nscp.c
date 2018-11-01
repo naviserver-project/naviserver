@@ -118,10 +118,10 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
  *     (i.e., username followed by password separated by colons).
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Initialize and populate user hash table.
+ *      Initialize and populate user hash table.
  *
  *----------------------------------------------------------------------
  */
@@ -159,21 +159,21 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
      * Process the setup ns_set
      */
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
-	const char    *key  = Ns_SetKey(set, i);
-	const char    *user = Ns_SetValue(set, i);
+        const char    *key  = Ns_SetKey(set, i);
+        const char    *user = Ns_SetValue(set, i);
         const char    *passPart;
         char          *scratch, *p, *end;
         size_t         userLength;
         Tcl_HashEntry *hPtr;
         int            isNew;
- 
+
         if (!STRIEQ(key, "user")) {
             continue;
         }
         passPart = strchr(user, INTCHAR(':'));
         if (passPart == NULL) {
             Ns_Log(Warning, "nscp[%s]: user entry '%s' contains no colon; ignored.", server,  user);
-	    continue;
+            continue;
         }
 
         /*
@@ -185,37 +185,37 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
          * Terminate user part.
          */
         userLength = (size_t)(passPart - user);
-	*(p + userLength) = '\0';
+        *(p + userLength) = '\0';
 
-	hPtr = Tcl_CreateHashEntry(&modPtr->users, p, &isNew);
-	if (isNew != 0) {
-	    Ns_Log(Notice, "nscp[%s]: added user: \"%s\"", server, p);
-	} else {
-	    Ns_Log(Warning, "nscp[%s]: duplicate user: \"%s\"", server, p);
-	    ns_free(Tcl_GetHashValue(hPtr));
-	}
+        hPtr = Tcl_CreateHashEntry(&modPtr->users, p, &isNew);
+        if (isNew != 0) {
+            Ns_Log(Notice, "nscp[%s]: added user: \"%s\"", server, p);
+        } else {
+            Ns_Log(Warning, "nscp[%s]: duplicate user: \"%s\"", server, p);
+            ns_free(Tcl_GetHashValue(hPtr));
+        }
         /*
          * Advance to password part in scratch copy.
          */
-	p += userLength + 1u;
+        p += userLength + 1u;
 
-        /* 
+        /*
          * look for end of password.
          */
-	end = strchr(p, INTCHAR(':'));
-	if (end != NULL) {
-	    *end = '\0';
-	}
+        end = strchr(p, INTCHAR(':'));
+        if (end != NULL) {
+            *end = '\0';
+        }
 
         /*
          * Save the password.
          */
-	Tcl_SetHashValue(hPtr, ns_strdup(p));
+        Tcl_SetHashValue(hPtr, ns_strdup(p));
 
         ns_free(scratch);
     }
     if (modPtr->users.numEntries == 0) {
-	Ns_Log(Warning, "nscp[%s]: no authorized users", server);
+        Ns_Log(Warning, "nscp[%s]: no authorized users", server);
     }
 }
 
@@ -225,15 +225,15 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
  *
  * Ns_ModuleInit --
  *
- *	Load the config parameters, setup the structures, and
- *	listen on the control port.
+ *      Load the config parameters, setup the structures, and
+ *      listen on the control port.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Server will listen for control connections on specified
- *  	address and port.
+ *      Server will listen for control connections on specified
+ *      address and port.
  *
  *----------------------------------------------------------------------
  */
@@ -258,12 +258,12 @@ Ns_ModuleInit(const char *server, const char *module)
 
     lsock = Ns_SockListen(addr, port);
     if (lsock == NS_INVALID_SOCKET) {
-	Ns_Log(Error, "nscp[%s]: could not listen on [%s]:%hu", server, addr, port);
-	result = NS_ERROR;
-        
+        Ns_Log(Error, "nscp[%s]: could not listen on [%s]:%hu", server, addr, port);
+        result = NS_ERROR;
+
     } else {
         Mod           *modPtr;
-        
+
         Ns_Log(Notice, "nscp[%s]: listening on [%s]:%hu", server, addr, port);
 
         /*
@@ -277,8 +277,8 @@ Ns_ModuleInit(const char *server, const char *module)
         modPtr->commandLogging = Ns_ConfigBool(path, "cpcmdlogging", NS_FALSE);
 
         LoadUsers(modPtr, server, module);
-    
-        result = Ns_SockCallback(lsock, AcceptProc, modPtr, 
+
+        result = Ns_SockCallback(lsock, AcceptProc, modPtr,
                                  ((unsigned int)NS_SOCK_READ | (unsigned int)NS_SOCK_EXIT));
 
 #ifndef PCLINT_BUG
@@ -289,7 +289,7 @@ Ns_ModuleInit(const char *server, const char *module)
         if (result == NS_OK) Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
 #endif
     }
-    
+
     return result;
 }
 
@@ -299,13 +299,13 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * ArgProc --
  *
- *	Append listen port info for query callback.
+ *      Append listen port info for query callback.
  *
  * Results:
- *	None
+ *      None
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -326,13 +326,13 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  * AcceptProc --
  *
- *	Socket callback to accept a new connection.
+ *      Socket callback to accept a new connection.
  *
  * Results:
- *	NS_TRUE to keep listening unless shutdown is in progress.
+ *      NS_TRUE to keep listening unless shutdown is in progress.
  *
  * Side effects:
- *  	New EvalThread will be created.
+ *      New EvalThread will be created.
  *
  *----------------------------------------------------------------------
  */
@@ -343,9 +343,9 @@ AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
     bool success = NS_TRUE;
 
     if (why == (unsigned int)NS_SOCK_EXIT) {
-	Ns_Log(Notice, "nscp: shutdown");
-	(void )ns_sockclose(sock);
-	success = NS_FALSE;
+        Ns_Log(Notice, "nscp: shutdown");
+        (void )ns_sockclose(sock);
+        success = NS_FALSE;
 
     } else {
         Mod       *modPtr = arg;
@@ -364,7 +364,7 @@ AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
 
         } else {
             static int next = 0;
-            
+
             sessPtr->id = ++next;
             Ns_ThreadCreate(EvalThread, sessPtr, 0, NULL);
         }
@@ -378,13 +378,13 @@ AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
  *
  * EvalThread --
  *
- *	Thread to read and evaluate commands from remote.
+ *      Thread to read and evaluate commands from remote.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Depends on commands.
+ *      Depends on commands.
  *
  *----------------------------------------------------------------------
  */
@@ -414,7 +414,7 @@ EvalThread(void *arg)
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
 
     if (!Login(sessPtr, &unameDS)) {
-	goto done;
+        goto done;
     }
 
     sessPtr->user = Tcl_DStringValue(&unameDS);
@@ -436,45 +436,45 @@ EvalThread(void *arg)
     ncmd = 0;
     while (stop == 0) {
         char buf[64];
-            
-	Tcl_DStringSetLength(&ds, 0);
-	++ncmd;
+
+        Tcl_DStringSetLength(&ds, 0);
+        ++ncmd;
 retry:
-	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
-	for (;;) {
-	    if (!GetLine(sessPtr->sock, buf, &ds, NS_TRUE)) {
-		goto done;
-	    }
-	    if (Tcl_CommandComplete(ds.string) != 0) {
-		break;
-	    }
-	    snprintf(buf, sizeof(buf), "%s:nscp %d>>> ", server, ncmd);
-	}
-	while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
-	    Tcl_DStringSetLength(&ds, ds.length-1);
-	}
-	if (STREQ(ds.string, "")) {
-	    goto retry; /* Empty command - try again. */
-	}
+        snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
+        for (;;) {
+            if (!GetLine(sessPtr->sock, buf, &ds, NS_TRUE)) {
+                goto done;
+            }
+            if (Tcl_CommandComplete(ds.string) != 0) {
+                break;
+            }
+            snprintf(buf, sizeof(buf), "%s:nscp %d>>> ", server, ncmd);
+        }
+        while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
+            Tcl_DStringSetLength(&ds, ds.length-1);
+        }
+        if (STREQ(ds.string, "")) {
+            goto retry; /* Empty command - try again. */
+        }
 
         if (sessPtr->modPtr->commandLogging) {
             Ns_Log(Notice, "nscp: %s %d: %s", sessPtr->user, ncmd, ds.string);
         }
 
-	if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
-	    (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
-	}
-	Tcl_AppendResult(interp, "\r\n", (char *)0L);
-	res = Tcl_GetStringResult(interp);
-	len = strlen(res);
-	while (len > 0u) {
-	    ssize_t sent = ns_send(sessPtr->sock, res, len, 0);
-	    if (sent <= 0) {
-		goto done;
-	    }
-	    len -= (size_t)sent;
-	    res += sent;
-	}
+        if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
+        }
+        Tcl_AppendResult(interp, "\r\n", (char *)0L);
+        res = Tcl_GetStringResult(interp);
+        len = strlen(res);
+        while (len > 0u) {
+            ssize_t sent = ns_send(sessPtr->sock, res, len, 0);
+            if (sent <= 0) {
+                goto done;
+            }
+            len -= (size_t)sent;
+            res += sent;
+        }
 
         if (sessPtr->modPtr->commandLogging) {
             Ns_Log(Notice, "nscp: %s %d: done", sessPtr->user, ncmd);
@@ -484,7 +484,7 @@ done:
     Tcl_DStringFree(&ds);
     Tcl_DStringFree(&unameDS);
     if (interp != NULL) {
-    	Ns_TclDeAllocateInterp(interp);
+        Ns_TclDeAllocateInterp(interp);
     }
     Ns_Log(Notice, "nscp: %s disconnected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
@@ -498,14 +498,14 @@ done:
  *
  * GetLine --
  *
- *	Prompt for a line of input from the remote.  \r\n sequences
- *  	are translated to \n.
+ *      Prompt for a line of input from the remote.  \r\n sequences
+ *      are translated to \n.
  *
  * Results:
- *  	NS_TRUE if line received, NS_FALSE if remote dropped.
+ *      NS_TRUE if line received, NS_FALSE if remote dropped.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -527,46 +527,46 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
      */
 
     if (!echo) {
-	(void)ns_send(sock, (const void*)will_echo, 3u, 0);
-	(void)ns_send(sock, (const void*)dont_echo, 3u, 0);
-	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+        (void)ns_send(sock, (const void*)will_echo, 3u, 0);
+        (void)ns_send(sock, (const void*)dont_echo, 3u, 0);
+        (void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     promptLength = strlen(prompt);
     if (ns_send(sock, prompt, promptLength, 0) != (ssize_t)promptLength) {
-	goto bail;
+        goto bail;
     }
 
     do {
-	n = ns_recv(sock, buf, sizeof(buf), 0);
-	if (n <= 0) {
-	    result = NS_FALSE;
-	    goto bail;
-	}
+        n = ns_recv(sock, buf, sizeof(buf), 0);
+        if (n <= 0) {
+            result = NS_FALSE;
+            goto bail;
+        }
 
-	if (n > 1 && buf[n-1] == '\n' && buf[n-2] == '\r') {
-	    buf[n-2] = '\n';
-	    --n;
-	}
+        if (n > 1 && buf[n-1] == '\n' && buf[n-2] == '\r') {
+            buf[n-2] = '\n';
+            --n;
+        }
 
-	/*
-	 * This EOT checker cannot happen in the context of telnet.
-	 */
-	if (n == 1 && buf[0] == '\4') {
-	    result = NS_FALSE;
-	    goto bail;
-	}
+        /*
+         * This EOT checker cannot happen in the context of telnet.
+         */
+        if (n == 1 && buf[0] == '\4') {
+            result = NS_FALSE;
+            goto bail;
+        }
 
-	/*
-	 * Deal with telnet IAC commands in some sane way.
-	 */
+        /*
+         * Deal with telnet IAC commands in some sane way.
+         */
 
-	if (n > 1 && UCHAR(buf[0]) == TN_IAC) {
-	    if ( UCHAR(buf[1]) == TN_EOF) {
-		result = NS_FALSE;
-		goto bail;
-	    } else if (UCHAR(buf[1]) == TN_IP) {
-		result = NS_FALSE;
-		goto bail;
+        if (n > 1 && UCHAR(buf[0]) == TN_IAC) {
+            if ( UCHAR(buf[1]) == TN_EOF) {
+                result = NS_FALSE;
+                goto bail;
+            } else if (UCHAR(buf[1]) == TN_IP) {
+                result = NS_FALSE;
+                goto bail;
             } else if ((UCHAR(buf[1]) == TN_WONT) && (retry < 2)) {
                 /*
                  * It seems like the flush at the bottom of this func
@@ -577,24 +577,24 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
                  */
                 retry++;
                 continue;
-	    } else {
-		Ns_Log(Warning, "nscp: "
-		       "unsupported telnet IAC code received from client");
-		result = NS_FALSE;
-		goto bail;
-	    }
-	}
+            } else {
+                Ns_Log(Warning, "nscp: "
+                       "unsupported telnet IAC code received from client");
+                result = NS_FALSE;
+                goto bail;
+            }
+        }
 
-	Tcl_DStringAppend(dsPtr, buf, (int)n);
-	result = NS_TRUE;
+        Tcl_DStringAppend(dsPtr, buf, (int)n);
+        result = NS_TRUE;
 
     } while (buf[n-1] != '\n');
 
  bail:
     if (!echo) {
-	(void)ns_send(sock, (const void*)wont_echo, 3u, 0);
-	(void)ns_send(sock, (const void*)do_echo, 3u, 0);
-	(void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+        (void)ns_send(sock, (const void*)wont_echo, 3u, 0);
+        (void)ns_send(sock, (const void*)do_echo, 3u, 0);
+        (void)ns_recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     return result;
 }
@@ -605,13 +605,13 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
  *
  * Login --
  *
- *	Attempt to login the user.
+ *      Attempt to login the user.
  *
  * Results:
- *  	NS_TRUE if login ok, NS_FALSE otherwise.
+ *      NS_TRUE if login ok, NS_FALSE otherwise.
  *
  * Side effects:
- *  	Stores user's login name into unameDSPtr.
+ *      Stores user's login name into unameDSPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -626,22 +626,22 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
     Tcl_DStringInit(&uds);
     Tcl_DStringInit(&pds);
     if (GetLine(sessPtr->sock, "login: ", &uds, NS_TRUE) &&
-	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
+        GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
         const Tcl_HashEntry *hPtr;
-	const char          *pass;
+        const char          *pass;
 
-	user = Ns_StrTrim(uds.string);
-	pass = Ns_StrTrim(pds.string);
-    	hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
-	if (hPtr != NULL) {
-	    const char *encpass = Tcl_GetHashValue(hPtr);
-	    char  buf[NS_ENCRYPT_BUFSIZE];
+        user = Ns_StrTrim(uds.string);
+        pass = Ns_StrTrim(pds.string);
+        hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
+        if (hPtr != NULL) {
+            const char *encpass = Tcl_GetHashValue(hPtr);
+            char  buf[NS_ENCRYPT_BUFSIZE];
 
-	    (void) Ns_Encrypt(pass, encpass, buf);
-    	    if (STREQ(buf, encpass)) {
-		ok = NS_TRUE;
-	    }
-	}
+            (void) Ns_Encrypt(pass, encpass, buf);
+            if (STREQ(buf, encpass)) {
+                ok = NS_TRUE;
+            }
+        }
     }
 
     /*
@@ -660,7 +660,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
             Ns_InfoServerName(), Ns_InfoServerVersion(),
             Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
     } else {
-	Ns_Log(Warning, "nscp: login failed: '%s'", (user != NULL) ? user : "?");
+        Ns_Log(Warning, "nscp: login failed: '%s'", (user != NULL) ? user : "?");
         Ns_DStringAppend(&msgDs, "Access denied!\n");
     }
     (void) ns_send(sessPtr->sock, msgDs.string, (size_t)msgDs.length, 0);
@@ -678,13 +678,13 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  *
  * ExitObjCmd --
  *
- *	Special exit command for nscp.
+ *      Special exit command for nscp.
  *
  * Results:
- *  	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -696,10 +696,10 @@ ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
 
     if (unlikely(Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
-        
+
     } else {
         int *stopPtr = (int *) clientData;
-        
+
         *stopPtr = 1;
         Ns_TclPrintfResult(interp, "\nGoodbye!");
     }

@@ -31,17 +31,17 @@
 /*
  * cslock.c --
  *
- *	Support for critical sections.  Critical sections differ
- *	from mutexes in that a critical section can be repeatedly
- *	locked by the same thread as long as each lock is matched with
- * 	a corresponding unlock.  Critical sections are used in cases
- *	where the lock could be called recursively, e.g., for the
- *	Ns_MasterLock.
+ *      Support for critical sections.  Critical sections differ
+ *      from mutexes in that a critical section can be repeatedly
+ *      locked by the same thread as long as each lock is matched with
+ *      a corresponding unlock.  Critical sections are used in cases
+ *      where the lock could be called recursively, e.g., for the
+ *      Ns_MasterLock.
  *
- *	Note:  Critical sections are almost always a bad idea.  You'll
- *	see below that the number of actual lock and unlock operations are
- *	doubled and threads can end up in condition waits instead of spin
- *	locks.
+ *      Note:  Critical sections are almost always a bad idea.  You'll
+ *      see below that the number of actual lock and unlock operations are
+ *      doubled and threads can end up in condition waits instead of spin
+ *      locks.
  */
 
 #include "thread.h"
@@ -64,13 +64,13 @@ typedef struct CsLock {
  *
  * Ns_CsInit --
  *
- *	Initialize a critical section object.
+ *      Initialize a critical section object.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	A critical section object is allocated from the heap.
+ *      A critical section object is allocated from the heap.
  *
  *----------------------------------------------------------------------
  */
@@ -97,16 +97,16 @@ Ns_CsInit(Ns_Cs *csPtr)
  *
  * Ns_CsDestroy --
  *
- *	Destroy a critical section object.  Note that you would almost
- *	never need to call this function as synchronization objects are
- *	typically created at startup and exist until the server exits.
+ *      Destroy a critical section object.  Note that you would almost
+ *      never need to call this function as synchronization objects are
+ *      typically created at startup and exist until the server exits.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	The underly objects in the critical section are destroy and
- *	the critical section memory returned to the heap.
+ *      The underly objects in the critical section are destroy and
+ *      the critical section memory returned to the heap.
  *
  *----------------------------------------------------------------------
  */
@@ -122,11 +122,11 @@ Ns_CsDestroy(Ns_Cs *csPtr)
      */
 
     if (lockPtr != NULL) {
-    	Ns_MutexDestroy(&lockPtr->mutex);
-    	Ns_CondDestroy(&lockPtr->cond);
-    	lockPtr->count = 0;
-    	ns_free(lockPtr);
-    	*csPtr = NULL;
+        Ns_MutexDestroy(&lockPtr->mutex);
+        Ns_CondDestroy(&lockPtr->cond);
+        lockPtr->count = 0;
+        ns_free(lockPtr);
+        *csPtr = NULL;
     }
 }
 
@@ -136,14 +136,14 @@ Ns_CsDestroy(Ns_Cs *csPtr)
  *
  * Ns_CsEnter --
  *
- *	Lock a critical section object, initializing it first if needed.
+ *      Lock a critical section object, initializing it first if needed.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread may wait on the critical section condition variable if
- *	the critical section is already owned by another thread.
+ *      Thread may wait on the critical section condition variable if
+ *      the critical section is already owned by another thread.
  *
  *----------------------------------------------------------------------
  */
@@ -151,7 +151,7 @@ Ns_CsDestroy(Ns_Cs *csPtr)
 void
 Ns_CsEnter(Ns_Cs *csPtr)
 {
-    CsLock	  *lockPtr;
+    CsLock        *lockPtr;
     uintptr_t  tid = Ns_ThreadId();
 
     /*
@@ -159,11 +159,11 @@ Ns_CsEnter(Ns_Cs *csPtr)
      */
 
     if (*csPtr == NULL) {
-    	Ns_MasterLock();
-	if (*csPtr == NULL) {
-	    Ns_CsInit(csPtr);
-	}
-	Ns_MasterUnlock();
+        Ns_MasterLock();
+        if (*csPtr == NULL) {
+            Ns_CsInit(csPtr);
+        }
+        Ns_MasterUnlock();
     }
     lockPtr = (CsLock *) *csPtr;
 
@@ -186,14 +186,14 @@ Ns_CsEnter(Ns_Cs *csPtr)
  *
  * Ns_CsLeave --
  *
- *	Unlock a critical section once.
+ *      Unlock a critical section once.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Condition is signaled if this is the final unlock of the critical
- *	section.
+ *      Condition is signaled if this is the final unlock of the critical
+ *      section.
  *
  *----------------------------------------------------------------------
  */

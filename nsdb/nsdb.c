@@ -30,7 +30,7 @@
 /*
  * nsdb.c --
  *
- *	Database module entry point.
+ *      Database module entry point.
  */
 
 #include "db.h"
@@ -44,13 +44,13 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
  *
  * Ns_ModuleInit --
  *
- *	Module initialization point.
+ *      Module initialization point.
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	May load database drivers and configure pools.
+ *      May load database drivers and configure pools.
  *
  *----------------------------------------------------------------------
  */
@@ -63,8 +63,8 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
 
     if (!initialized) {
         Ns_LogSqlDebug = Ns_CreateLogSeverity("Debug(sql)");
-	NsDbInitPools();
-	initialized = NS_TRUE;
+        NsDbInitPools();
+        initialized = NS_TRUE;
     }
     NsDbInitServer(server);
     if (Ns_TclRegisterTrace(server, NsDbAddCmds, server,

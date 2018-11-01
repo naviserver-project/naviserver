@@ -30,9 +30,9 @@
 /*
  * test.c -
  *
- *	Collection of thread interface tests.  This code is somewhat sloppy
- *	but contains several examples of using conditions, mutexes,
- *	thread local storage, and creating/joining threads.
+ *      Collection of thread interface tests.  This code is somewhat sloppy
+ *      but contains several examples of using conditions, mutexes,
+ *      thread local storage, and creating/joining threads.
  */
 
 #include "nsthread.h"
@@ -76,7 +76,7 @@ static void Msg(const char *fmt,...)
 /*
  * Msg -
  *
- *	Simple message logger with thread id and name.
+ *      Simple message logger with thread id and name.
  */
 
 static void
@@ -90,7 +90,7 @@ Msg(const char *fmt,...)
     s = ns_ctime(&now);
     r = strchr(s, INTCHAR('\n'));
     if (r != NULL) {
-	*r = '\0';
+        *r = '\0';
     }
     va_start(ap, fmt);
     Ns_MutexLock(&slock);
@@ -104,7 +104,7 @@ Msg(const char *fmt,...)
 /*
  * TlsLogArg -
  *
- *	Log and then free TLS slot data at thread exit.
+ *      Log and then free TLS slot data at thread exit.
  */
 
 static void
@@ -119,7 +119,7 @@ TlsLogArg(void *arg)
 /*
  * RecursiveStackCheck, CheckStackThread -
  *
- *	Thread which recursively probes stack for max depth.
+ *      Thread which recursively probes stack for max depth.
  */
 
 static uintptr_t
@@ -147,7 +147,7 @@ CheckStackThread(void *UNUSED(arg))
 /*
  * WorkThread -
  *
- *	Thread which exercise a variety of sync objects and TLS.
+ *      Thread which exercise a variety of sync objects and TLS.
  */
 
 static void
@@ -219,7 +219,7 @@ WorkThread(void *arg)
 /*
  * AtExit -
  *
- *	Test of atexit() handler.
+ *      Test of atexit() handler.
  */
 
 static void
@@ -231,7 +231,7 @@ AtExit(void)
 /*
  * MemThread, MemTime -
  *
- *	Time allocations of malloc and MT-optmized ns_malloc
+ *      Time allocations of malloc and MT-optmized ns_malloc
  */
 
 #define NA 10000
@@ -251,24 +251,24 @@ MemThread(void *arg)
     ++nrunning;
     Ns_CondBroadcast(&cond);
     while (memstart == 0) {
-	Ns_CondWait(&cond, &lock);
+        Ns_CondWait(&cond, &lock);
     }
     Ns_MutexUnlock(&lock);
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
-	size_t n = (size_t)rand() % BS;
-	if (arg != NULL) {
-	    if (ptr != NULL) {
-		ns_free(ptr);
+        size_t n = (size_t)rand() % BS;
+        if (arg != NULL) {
+            if (ptr != NULL) {
+                ns_free(ptr);
             }
-	    ptr = ns_malloc(n);
-	} else {
-	    if (ptr != NULL) {
-		free(ptr);
+            ptr = ns_malloc(n);
+        } else {
+            if (ptr != NULL) {
+                free(ptr);
             }
-	    ptr = malloc(n);
-	}
+            ptr = malloc(n);
+        }
     }
 }
 
@@ -291,7 +291,7 @@ MemTime(int ns)
     }
     Ns_MutexLock(&lock);
     while (nrunning < nthreads) {
-	Ns_CondWait(&cond, &lock);
+        Ns_CondWait(&cond, &lock);
     }
     printf("waiting....");
     fflush(stdout);
@@ -300,7 +300,7 @@ MemTime(int ns)
     Ns_GetTime(&start);
     Ns_MutexUnlock(&lock);
     for (i = 0; i < nthreads; ++i) {
-	Ns_ThreadJoin(&tids[i], NULL);
+        Ns_ThreadJoin(&tids[i], NULL);
     }
     Ns_GetTime(&end);
     Ns_DiffTime(&end, &start, &diff);
@@ -317,10 +317,10 @@ DumpString(Tcl_DString *dsPtr)
     if (Tcl_SplitList(NULL, dsPtr->string, &largc, (const char***)&largv) == TCL_OK) {
         int i;
 
-	for (i = 0; i < largc; ++i) {
-	    printf("\t%s\n", largv[i]);
-	}
-	Tcl_Free((char *) largv);
+        for (i = 0; i < largc; ++i) {
+            printf("\t%s\n", largv[i]);
+        }
+        Tcl_Free((char *) largv);
     }
     Tcl_DStringSetLength(dsPtr, 0);
 }
@@ -337,19 +337,19 @@ DumperThread(void *UNUSED(arg))
     Ns_MutexLock(&block);
     Ns_MutexLock(&dlock);
     while (dstop == 0) {
-	Ns_GetTime(&to);
-	Ns_IncrTime(&to, 1, 0);
-	(void)Ns_CondTimedWait(&dcond, &dlock, &to);
-	Ns_MutexLock(&slock);
-	Ns_ThreadList(&ds, NULL);
-	DumpString(&ds);
-	Ns_MutexList(&ds);
-	DumpString(&ds);
+        Ns_GetTime(&to);
+        Ns_IncrTime(&to, 1, 0);
+        (void)Ns_CondTimedWait(&dcond, &dlock, &to);
+        Ns_MutexLock(&slock);
+        Ns_ThreadList(&ds, NULL);
+        DumpString(&ds);
+        Ns_MutexList(&ds);
+        DumpString(&ds);
 #ifdef HAVE_TCL_GETMEMORYINFO
-	Tcl_GetMemoryInfo(&ds);
+        Tcl_GetMemoryInfo(&ds);
 #endif
-	DumpString(&ds);
-	Ns_MutexUnlock(&slock);
+        DumpString(&ds);
+        Ns_MutexUnlock(&slock);
     }
     Ns_MutexUnlock(&dlock);
     Ns_MutexUnlock(&block);
@@ -385,11 +385,11 @@ Pthread(void *arg)
      */
 
     if (tls == NULL) {
-	Ns_MasterLock();
-	if (tls == NULL) {
-	     Ns_TlsAlloc(&tls, PthreadTlsCleanup);
-	}
-	Ns_MasterUnlock();
+        Ns_MasterLock();
+        if (tls == NULL) {
+             Ns_TlsAlloc(&tls, PthreadTlsCleanup);
+        }
+        Ns_MasterUnlock();
     }
 
     Ns_TlsSet(&tls, arg);
@@ -400,7 +400,7 @@ Pthread(void *arg)
 
     Ns_MutexLock(&plock);
     while (pgo == 0) {
-	Ns_CondWait(&pcond, &plock);
+        Ns_CondWait(&pcond, &plock);
     }
     Ns_MutexUnlock(&plock);
     return arg;
@@ -411,8 +411,8 @@ Pthread(void *arg)
 /*
  * main -
  *
- *	Fire off a bunch of weird threads to exercise the thread
- *	interface.
+ *      Fire off a bunch of weird threads to exercise the thread
+ *      interface.
  */
 
 int main(int argc, char *argv[])
@@ -436,15 +436,15 @@ int main(int argc, char *argv[])
      */
 
     for (i = 1; i < argc; ++i) {
-	p = argv[i];
-	switch (*p) {
-	    case 'n':
-		break;
-	    case 'm':
-	    	nthreads = (int)strtol(p + 1, NULL, 10);
-		goto mem;
-		break;
-	}
+        p = argv[i];
+        switch (*p) {
+            case 'n':
+                break;
+            case 'm':
+                nthreads = (int)strtol(p + 1, NULL, 10);
+                goto mem;
+                break;
+        }
     }
 
     Ns_ThreadCreate(DumperThread, NULL, 0, &dumper);

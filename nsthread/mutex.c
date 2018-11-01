@@ -30,7 +30,7 @@
 /*
  * mutex.c --
  *
- *	Mutex locks with metering.
+ *      Mutex locks with metering.
  */
 
 #include "thread.h"
@@ -88,14 +88,14 @@ static Mutex *firstMutexPtr;
 
  * Ns_MutexInit --
  *
- *	Mutex initialization, often called the first time a mutex
- *	is locked.
+ *      Mutex initialization, often called the first time a mutex
+ *      is locked.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -130,15 +130,15 @@ Ns_MutexInit(Ns_Mutex *mutex)
  *
  * Ns_MutexSetName, Ns_MutexSetName2 --
  *
- *	Update the string name of a mutex.  Ns_MutexSetName2 produces a name
+ *      Update the string name of a mutex.  Ns_MutexSetName2 produces a name
  *      based on the two string components and concatenates these with a colon
  *      (":").
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -197,14 +197,14 @@ Ns_MutexSetName2(Ns_Mutex *mutex, const char *prefix, const char *name)
  *
  * Ns_MutexDestroy --
  *
- *	Mutex destroy.  Note this routine is not used very often
- *	as mutexes normally exists in memory until the process exits.
+ *      Mutex destroy.  Note this routine is not used very often
+ *      as mutexes normally exists in memory until the process exits.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -236,14 +236,14 @@ Ns_MutexDestroy(Ns_Mutex *mutex)
  *
  * Ns_MutexLock --
  *
- *	Lock a mutex, tracking the number of locks and the number of
- *	which were not acquired immediately.
+ *      Lock a mutex, tracking the number of locks and the number of
+ *      which were not acquired immediately.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread may be suspended if the lock is held.
+ *      Thread may be suspended if the lock is held.
  *
  *----------------------------------------------------------------------
  */
@@ -305,10 +305,10 @@ Ns_MutexLock(Ns_Mutex *mutex)
  *
  * Ns_MutexTryLock --
  *
- *	Attempt to lock a mutex.
+ *      Attempt to lock a mutex.
  *
  * Results:
- *	NS_OK if locked, NS_TIMEOUT if lock already held.
+ *      NS_OK if locked, NS_TIMEOUT if lock already held.
  *
  * Side effects:
  *      None.
@@ -337,13 +337,13 @@ Ns_MutexTryLock(Ns_Mutex *mutex)
  *
  * Ns_MutexUnlock --
  *
- *	Unlock a mutex.
+ *      Unlock a mutex.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Other waiting thread, if any, is resumed.
+ *      Other waiting thread, if any, is resumed.
  *
  *----------------------------------------------------------------------
  */
@@ -394,13 +394,13 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
  *
  * Ns_MutexList --
  *
- *	Append info on each lock.
+ *      Append info on each lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -435,13 +435,13 @@ Ns_MutexList(Tcl_DString *dsPtr)
  *
  * NsMutexInitNext --
  *
- *	Initialize and name the next internal mutex.
+ *      Initialize and name the next internal mutex.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Given counter is updated.
+ *      Given counter is updated.
  *
  *----------------------------------------------------------------------
  */
@@ -471,13 +471,13 @@ NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
  *
  * NsGetLock --
  *
- *	Return the private lock pointer for a Ns_Mutex.
+ *      Return the private lock pointer for a Ns_Mutex.
  *
  * Results:
- *	Pointer to lock.
+ *      Pointer to lock.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -501,13 +501,13 @@ NsGetLock(Ns_Mutex *mutex)
  *
  * GetMutex --
  *
- *	Cast a Ns_Mutex to a Mutex, initializing if needed.
+ *      Cast a Ns_Mutex to a Mutex, initializing if needed.
  *
  * Results:
- *	Pointer to Mutex.
+ *      Pointer to Mutex.
  *
  * Side effects:
- *	Mutex is initialized the first time.
+ *      Mutex is initialized the first time.
  *
  *----------------------------------------------------------------------
  */
@@ -530,13 +530,13 @@ GetMutex(Ns_Mutex *mutex)
  *
  * Ns_MutexGetName --
  *
- *	Obtain the name of a mutex.
+ *      Obtain the name of a mutex.
  *
  * Results:
- *	String name of the mutex.
+ *      String name of the mutex.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

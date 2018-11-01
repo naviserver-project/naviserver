@@ -152,7 +152,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #ifdef _WIN32
     if (mode == 'S') {
-	Ns_ThreadSetName("-service-");
+        Ns_ThreadSetName("-service-");
         goto contservice;
     }
 #endif
@@ -220,21 +220,21 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #ifndef _WIN32
         case 'b':
             if (optionIndex + 1 < argc) {
-            	bindargs = argv[++optionIndex];
+                bindargs = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -b option");
             }
             break;
         case 'B':
             if (optionIndex + 1 < argc) {
-            	bindfile = argv[++optionIndex];
+                bindfile = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -B option");
             }
             break;
         case 'r':
             if (optionIndex + 1 < argc) {
-            	root = argv[++optionIndex];
+                root = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -r option");
             }
@@ -272,7 +272,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
 
     if (mode == 'c') {
-	int i;
+        int i;
 
         cmd.argv = ns_calloc(((size_t)argc - (size_t)optionIndex) + 2u, sizeof(char *));
         cmd.argc = 0;
@@ -319,7 +319,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (mode != 'w') {
             /*
              * Unless we are in watchdog mode, setup pipe for realizing
-             * non-zero return codes in case setup fails. 
+             * non-zero return codes in case setup fails.
              *
              * Background: The pipe is used for communicating problems during
              * startup from the child process to return non-zero return codes
@@ -329,7 +329,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
              */
             ns_pipe(nsconf.state.pipefd);
         }
-        
+
         i = ns_fork();
         if (i == -1) {
             Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
@@ -356,7 +356,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
                 Ns_Log(Debug, "nsmain: wait for feedback from forked child, read from fd %d",
                        nsconf.state.pipefd[0]);
-                
+
                 /*
                  * Read the status from the child process. We expect as result
                  * either 'O' (when initialzation went OK) or 'F' (for Fatal).
@@ -381,7 +381,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                  */
                 exit_code = 0;
             }
-            
+
             return exit_code;
         }
         /*
@@ -395,7 +395,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             ns_close(nsconf.state.pipefd[0]);
             nsconf.state.pipefd[0] = 0;
         }
-        
+
         forked = NS_TRUE;
         setsid(); /* Detach from the controlling terminal device */
 #endif
@@ -432,7 +432,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (forked) {
         int major, minor;
-        
+
         Tcl_GetVersion(&major, &minor, NULL, NULL);
         if (major == 8 && minor <= 4) {
 
@@ -478,7 +478,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
 
     if (nsconf.config != NULL) {
-	config = NsConfigRead(nsconf.config);
+        config = NsConfigRead(nsconf.config);
     }
 
 #ifndef _WIN32
@@ -551,12 +551,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (config != NULL) {
 
-	/*
-	 * Evaluate the config file.
-	 */
-	
-	NsConfigEval(config, argc, argv, optionIndex);
-	ns_free((char *)config);
+        /*
+         * Evaluate the config file.
+         */
+
+        NsConfigEval(config, argc, argv, optionIndex);
+        ns_free((char *)config);
     }
 
     /*
@@ -569,7 +569,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #ifndef _WIN32
     NS_mutexlocktrace = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
-    
+
     /*
      * If no servers were defained, autocreate server "default"
      * so all default config values will be used for that server
@@ -621,14 +621,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
         }
     } else if (mode == 'c' && nsconf.config == NULL) {
-	/*
-	 * Try to get HOME from environment variable NAVISERVER. If
-	 * this is not defined, take the value from the path. Using
-	 * NAVISERVER makes especially sense when testing or running
-	 * nsd from the source directory.
-	 */
-	nsconf.home = getenv("NAVISERVER");
-	if (nsconf.home == NULL) {
+        /*
+         * Try to get HOME from environment variable NAVISERVER. If
+         * this is not defined, take the value from the path. Using
+         * NAVISERVER makes especially sense when testing or running
+         * nsd from the source directory.
+         */
+        nsconf.home = getenv("NAVISERVER");
+        if (nsconf.home == NULL) {
             /*
              * There is no such environment variable. Try, if we can get the
              * home from the binary. In such cases, we expect to find
@@ -647,14 +647,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                  */
                 nsconf.home = NS_NAVISERVER;
             }
-	}
+        }
         assert(nsconf.home != NULL);
     }
     nsconf.home = SetCwd(nsconf.home);
     nsconf.reject_already_closed_connection =
         Ns_ConfigBool(NS_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
-    
-    /* 
+
+    /*
      * Make the result queryable.
      */
 
@@ -669,11 +669,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     nsconf.tmpDir = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "tmpdir");
     if (nsconf.tmpDir == NULL) {
-	nsconf.tmpDir = getenv("TMPDIR");
-	if (nsconf.tmpDir == NULL) {
-	    nsconf.tmpDir = P_tmpdir;
-	}
-	Ns_SetUpdate(set, "tmpdir", nsconf.tmpDir);
+        nsconf.tmpDir = getenv("TMPDIR");
+        if (nsconf.tmpDir == NULL) {
+            nsconf.tmpDir = P_tmpdir;
+        }
+        Ns_SetUpdate(set, "tmpdir", nsconf.tmpDir);
     }
 
 #ifdef _WIN32
@@ -690,7 +690,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 'I' || mode == 'R' || mode == 'S') {
-	Ns_ReturnCode status = NS_OK;
+        Ns_ReturnCode status = NS_OK;
 
         Ns_ThreadSetName("-service-");
 
@@ -704,10 +704,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         case 'S':
             status = NsConnectService();
             break;
-	default:
-	    /* cannot happen */
-	    assert(0);
-	    break;
+        default:
+            /* cannot happen */
+            assert(0);
+            break;
         }
         return (status == NS_OK ? 0 : 1);
     }
@@ -775,7 +775,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     if (server != NULL) {
         NsInitServer(server, initProc);
     } else {
-	size_t i;
+        size_t i;
 
         for (i = 0u; i < Ns_SetSize(servers); ++i) {
             server = Ns_SetKey(servers, i);
@@ -825,7 +825,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     if (mode != 'w' && nsconf.state.pipefd[1] != 0) {
         ssize_t nwrite;
-        
+
         /*
          * Tell the parent process, that initialization went OK.
          */
@@ -1142,7 +1142,7 @@ static void
 UsageError(const char *msg, ...)
 {
     va_list ap;
-    
+
     va_start(ap, msg);
     fprintf(stderr, "\nError: ");
     vfprintf(stderr, msg, ap);
@@ -1213,21 +1213,21 @@ MakePath(const char *file)
     NS_NONNULL_ASSERT(file != NULL);
 
     if (Ns_PathIsAbsolute(nsconf.nsd) == NS_TRUE) {
-	const char *str = strstr(nsconf.nsd, "/bin/");
-        
+        const char *str = strstr(nsconf.nsd, "/bin/");
+
         if (str == NULL) {
             str = strrchr(nsconf.nsd, INTCHAR('/'));
         }
         if (str != NULL) {
             const char *path = NULL;
             Tcl_Obj    *obj;
-        
+
             /*
              * Make sure we have valid path on all platforms
              */
             obj = Tcl_NewStringObj(nsconf.nsd, (int)(str - nsconf.nsd));
             Tcl_AppendStringsToObj(obj, "/", file, (char *)0L);
-        
+
             Tcl_IncrRefCount(obj);
             if (Tcl_FSGetNormalizedPath(NULL, obj) != NULL) {
                 path = Tcl_FSGetTranslatedStringPath(NULL, obj);
@@ -1273,7 +1273,7 @@ SetCwd(const char *path)
     Tcl_Obj *pathObj;
 
     NS_NONNULL_ASSERT(path != NULL);
-    
+
     pathObj = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSChdir(pathObj) == -1) {

@@ -30,7 +30,7 @@
 /*
  * auth.c --
  *
- *	URL level HTTP authorization support.
+ *      URL level HTTP authorization support.
  */
 
 #include "nsd.h"
@@ -48,16 +48,16 @@ static Ns_UserAuthorizeProc    *userProcPtr = NULL;
  *
  * Ns_AuthorizeRequest --
  *
- *	Check for proper HTTP authorization of a request.
+ *      Check for proper HTTP authorization of a request.
  *
  * Results:
- *	User supplied routine is expected to return NS_OK if authorization
- *	is allowed, NS_UNAUTHORIZED if a correct username/passwd could
- *	allow authorization, NS_FORBIDDEN if no username/passwd would ever
- *	allow access, or NS_ERROR on error.
+ *      User supplied routine is expected to return NS_OK if authorization
+ *      is allowed, NS_UNAUTHORIZED if a correct username/passwd could
+ *      allow authorization, NS_FORBIDDEN if no username/passwd would ever
+ *      allow access, or NS_ERROR on error.
  *
  * Side effects:
- *	Depends on user supplied routine. "method" and "url" could be NULL in
+ *      Depends on user supplied routine. "method" and "url" could be NULL in
  *      case of non-HTTP requests.
  *
  *----------------------------------------------------------------------
@@ -65,7 +65,7 @@ static Ns_UserAuthorizeProc    *userProcPtr = NULL;
 
 Ns_ReturnCode
 Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
-	            const char *user, const char *passwd, const char *peer)
+                    const char *user, const char *passwd, const char *peer)
 {
     Ns_ReturnCode   status;
     const NsServer *servPtr;
@@ -76,7 +76,7 @@ Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
 
     servPtr = NsGetServer(server);
     if (unlikely(servPtr == NULL) || servPtr->request.authProc == NULL) {
-    	status = NS_OK;
+        status = NS_OK;
     } else {
         status = (*servPtr->request.authProc)(server, method, url, user, passwd, peer);
     }
@@ -89,13 +89,13 @@ Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
  *
  * Ns_SetRequestAuthorizeProc --
  *
- *	Set the proc to call when authorizing requests.
+ *      Set the proc to call when authorizing requests.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -110,7 +110,7 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
-	servPtr->request.authProc = procPtr;
+        servPtr->request.authProc = procPtr;
     }
 }
 
@@ -120,13 +120,13 @@ Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
  *
  * NsTclRequestAuthorizeObjCmd --
  *
- *	Implements ns_requestauthorize as obj command.
+ *      Implements ns_requestauthorize as obj command.
  *
  * Results:
- *	Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *	See docs.
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -145,7 +145,7 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         {"?ipaddr",    Ns_ObjvString, &ipaddr,     NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -188,14 +188,14 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
  *
  * Ns_AuthorizeUser --
  *
- *	Verify that a user's password matches his name.
- *	passwd is the unencrypted password.
+ *      Verify that a user's password matches his name.
+ *      passwd is the unencrypted password.
  *
  * Results:
- *	NS_OK or NS_ERROR; if none registered, NS_ERROR.
+ *      NS_OK or NS_ERROR; if none registered, NS_ERROR.
  *
  * Side effects:
- *	Depends on the supplied routine.
+ *      Depends on the supplied routine.
  *
  *----------------------------------------------------------------------
  */
@@ -209,7 +209,7 @@ Ns_AuthorizeUser(const char *user, const char *passwd)
     NS_NONNULL_ASSERT(passwd != NULL);
 
     if (userProcPtr == NULL) {
-	status = NS_ERROR;
+        status = NS_ERROR;
     } else {
         status = (*userProcPtr)(user, passwd);
     }
@@ -222,13 +222,13 @@ Ns_AuthorizeUser(const char *user, const char *passwd)
  *
  * Ns_SetUserAuthorizeProc --
  *
- *	Set the proc to call when authorizing users.
+ *      Set the proc to call when authorizing users.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -274,14 +274,14 @@ NsParseAuth(Conn *connPtr, char *auth)
         ++p;
     }
     if (*p != '\0') {
-	register char *q, *v;
-	char           save;
+        register char *q, *v;
+        char           save;
 
         save = *p;
         *p = '\0';
 
         if (STRIEQ(auth, "Basic")) {
-	    size_t size;
+            size_t size;
 
             (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
 
@@ -305,7 +305,7 @@ NsParseAuth(Conn *connPtr, char *auth)
         } else
 
         if (STRIEQ(auth, "Digest")) {
-	    (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
+            (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
 
             /* Skip spaces */
             q = p + 1;
@@ -314,8 +314,8 @@ NsParseAuth(Conn *connPtr, char *auth)
             }
 
             while (q != NULL && *q != '\0') {
-		size_t idx;
-		char   save2;
+                size_t idx;
+                char   save2;
 
                 p = strchr(q, INTCHAR('='));
                 if (p == NULL) {
@@ -363,8 +363,8 @@ NsParseAuth(Conn *connPtr, char *auth)
 
         }
         if (p != NULL) {
-	    *p = save;
-	}
+            *p = save;
+        }
     }
 }
 

@@ -160,13 +160,13 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
     if (interp != NULL) {
         const char *arg;
         int         ii;
-	va_list     ap;
+        va_list     ap;
 
         Ns_DStringInit(&ds);
         Ns_DStringAppend(&ds, cbPtr->script);
         va_start(ap, result);
 
-	for (arg = va_arg(ap, char *); arg != NULL; arg = va_arg(ap, char *)) {
+        for (arg = va_arg(ap, char *); arg != NULL; arg = va_arg(ap, char *)) {
             Ns_DStringAppendElement(&ds, arg);
         }
         va_end(ap);
@@ -181,7 +181,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
             Ns_GetProcInfo(&ds, (Ns_Callback *)cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
             if (deallocInterp) {
-		(void) Ns_TclLogErrorInfo(interp, NULL);
+                (void) Ns_TclLogErrorInfo(interp, NULL);
             }
         } else if (result != NULL) {
             Ns_DStringAppend(result, Tcl_GetStringResult(interp));
@@ -276,10 +276,10 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         result = TCL_ERROR;
-	
+
     } else {
       Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1],
-						objc - 2, objv + 2);
+                                                objc - 2, objv + 2);
       (void) (*atProc)(Ns_TclCallbackProc, cbPtr);
     }
 

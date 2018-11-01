@@ -32,13 +32,13 @@
 #include <ctype.h>
 #include <stdlib.h>	/* environ */
 
-#define BUFSIZE	         4096
+#define BUFSIZE          4096
 #define NDSTRINGS        5
 
-#define CGI_NPH	    	 0x01u
-#define CGI_GETHOST	 0x02u
-#define CGI_ECONTENT	 0x04u
-#define CGI_SYSENV	 0x08u
+#define CGI_NPH          0x01u
+#define CGI_GETHOST      0x02u
+#define CGI_ECONTENT     0x04u
+#define CGI_SYSENV       0x08u
 #define CGI_ALLOW_STATIC 0x10u
 
 /*
@@ -46,17 +46,17 @@
  * loaded (normally just once).
  */
 typedef struct Mod {
-    const char	   *server;
-    const char	   *module;
+    const char     *server;
+    const char     *module;
     Ns_Set         *interps;
     Ns_Set         *mergeEnv;
     unsigned int    flags;
     int             maxInput;
     int             maxCgi;
-    int     	    maxWait;
+    int             maxWait;
     int             activeCgi;
-    Ns_Mutex 	    lock;
-    Ns_Cond 	    cond;
+    Ns_Mutex        lock;
+    Ns_Cond         cond;
 } Mod;
 
 /*
@@ -68,24 +68,24 @@ typedef struct Mod {
  */
 
 typedef struct Cgi {
-    Mod     	   *modPtr;
+    Mod            *modPtr;
     unsigned int    flags;
-    pid_t     	    pid;
-    Ns_Set	   *env;
-    const char 	   *name;
-    char    	   *path;
+    pid_t           pid;
+    Ns_Set         *env;
+    const char     *name;
+    char           *path;
     const char     *pathinfo;
-    char    	   *dir;
+    char           *dir;
     char           *exec;
     char           *interp;
     Ns_Set         *interpEnv;
-    int		    ifd;
-    int		    ofd;
-    ssize_t	    cnt;
-    char	   *ptr;
-    int		    nextds;
-    Tcl_DString	    ds[NDSTRINGS];
-    char	    buf[BUFSIZE];
+    int             ifd;
+    int             ofd;
+    ssize_t         cnt;
+    char           *ptr;
+    int             nextds;
+    Tcl_DString     ds[NDSTRINGS];
+    char            buf[BUFSIZE];
 } Cgi;
 
 /*
@@ -94,7 +94,7 @@ typedef struct Cgi {
  */
 
 typedef struct Map {
-    Mod	     *modPtr;
+    Mod      *modPtr;
     char     *url;
     char     *path;
 } Map;
@@ -122,14 +122,14 @@ static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn
 
 static void          CgiRegister(Mod *modPtr, const char *map)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_DString   *CgiDs(Cgi *cgiPtr)                      NS_GNUC_NONNULL(1);
-static void	     CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
+static void          CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
 static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static ssize_t	     CgiRead(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
-static ssize_t	     CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static ssize_t       CgiRead(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
+static ssize_t       CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static char         *NextWord(char *s)                          NS_GNUC_NONNULL(1);
-static void	     SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
+static void          SetAppend(const Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
@@ -138,14 +138,14 @@ static void	     SetAppend(const Ns_Set *set, int index, const char *sep, char *
  *
  * Ns_ModuleInit --
  *
- *	Create a new CGI module instance.  Note: This module can
- *	be loaded multiple times.
+ *      Create a new CGI module instance.  Note: This module can
+ *      be loaded multiple times.
  *
  * Results:
- *	NS_OK/NS_ERROR.
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *	URL's may be registered for CGI.
+ *      URL's may be registered for CGI.
  *
  *----------------------------------------------------------------------
  */
@@ -157,8 +157,8 @@ Ns_ModuleInit(const char *server, const char *module)
     size_t          i;
     const Ns_Set   *set;
     Ns_DString      ds;
-    Mod		   *modPtr;
-    static bool	    initialized = NS_FALSE;
+    Mod            *modPtr;
+    static bool     initialized = NS_FALSE;
 
     NS_NONNULL_ASSERT(module != NULL);
 
@@ -169,18 +169,18 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     if (!initialized) {
-	devNull = ns_open(DEVNULL, O_RDONLY, 0);
-	if (devNull < 0) {
-	    Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
-		   DEVNULL, strerror(errno));
-	    return NS_ERROR;
-	}
-	(void)Ns_DupHigh(&devNull);
-	(void) Ns_CloseOnExec(devNull);
+        devNull = ns_open(DEVNULL, O_RDONLY, 0);
+        if (devNull < 0) {
+            Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
+                   DEVNULL, strerror(errno));
+            return NS_ERROR;
+        }
+        (void)Ns_DupHigh(&devNull);
+        (void) Ns_CloseOnExec(devNull);
 
         Ns_LogCGIDebug = Ns_CreateLogSeverity("Debug(cgi)");
 
-	initialized = NS_TRUE;
+        initialized = NS_TRUE;
     }
 
     /*
@@ -213,7 +213,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Ns_Log(Warning, "nscgi: no such interps section: %s",
                    ds.string);
         }
-    	Ns_DStringSetLength(&ds, 0);
+        Ns_DStringSetLength(&ds, 0);
     }
     section = Ns_ConfigGetValue(path, "environment");
     if (section != NULL) {
@@ -223,7 +223,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Ns_Log(Warning, "nscgi: no such environment section: %s",
                    ds.string);
         }
-    	Ns_DStringSetLength(&ds, 0);
+        Ns_DStringSetLength(&ds, 0);
     }
     if (Ns_ConfigBool(path, "systemenvironment", NS_FALSE)) {
         modPtr->flags |= CGI_SYSENV;
@@ -255,13 +255,13 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * CgiRequest -
  *
- *	Process a CGI request.
+ *      Process a CGI request.
  *
  * Results:
- *	Standard NaviServer request result.
+ *      Standard NaviServer request result.
  *
  * Side effects:
- *	Program may be executed.
+ *      Program may be executed.
  *
  *----------------------------------------------------------------------
  */
@@ -269,9 +269,9 @@ Ns_ModuleInit(const char *server, const char *module)
 static Ns_ReturnCode
 CgiRequest(const void *arg, Ns_Conn *conn)
 {
-    const Map	   *mapPtr;
-    Mod		   *modPtr;
-    Cgi		    cgi;
+    const Map      *mapPtr;
+    Mod            *modPtr;
+    Cgi             cgi;
     Ns_ReturnCode   status;
 
     mapPtr = arg;
@@ -286,7 +286,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
     }
 
     if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {
-	return Ns_ConnReturnNotFound(conn);
+        return Ns_ConnReturnNotFound(conn);
     } else if ((cgi.interp == NULL)
                && (access(cgi.exec, X_OK) != 0)) {
 
@@ -294,16 +294,16 @@ CgiRequest(const void *arg, Ns_Conn *conn)
             ( STREQ(conn->request.method, "GET") ||
               STREQ(conn->request.method, "HEAD")) ) {
 
-	    /*
-	     * Evidently people are storing images and such in
-	     * their cgi bin directory and they expect us to
-	     * return these files directly.
-	     */
+            /*
+             * Evidently people are storing images and such in
+             * their cgi bin directory and they expect us to
+             * return these files directly.
+             */
             status = Ns_ConnReturnFile(conn, 200, NULL, cgi.exec);
         } else {
-	    status = Ns_ConnReturnNotFound(conn);
-	}
-	goto done;
+            status = Ns_ConnReturnNotFound(conn);
+        }
+        goto done;
     }
 
     /*
@@ -311,12 +311,12 @@ CgiRequest(const void *arg, Ns_Conn *conn)
      */
 
     if (conn->contentLength > 0u && CgiSpool(&cgi, conn) != NS_OK) {
-	if ((cgi.flags & CGI_ECONTENT) != 0u) {
-	    status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
-	} else {
-	    status = Ns_ConnReturnInternalError(conn);
-	}
-	goto done;
+        if ((cgi.flags & CGI_ECONTENT) != 0u) {
+            status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
+        } else {
+            status = Ns_ConnReturnInternalError(conn);
+        }
+        goto done;
     }
 
     /*
@@ -324,23 +324,23 @@ CgiRequest(const void *arg, Ns_Conn *conn)
      */
 
     if (modPtr->maxCgi > 0) {
-	Ns_Time timeout;
-	Ns_ReturnCode wait = NS_OK;
+        Ns_Time timeout;
+        Ns_ReturnCode wait = NS_OK;
 
-	Ns_GetTime(&timeout);
-	Ns_IncrTime(&timeout, modPtr->maxWait, 0);
+        Ns_GetTime(&timeout);
+        Ns_IncrTime(&timeout, modPtr->maxWait, 0);
         Ns_MutexLock(&modPtr->lock);
-	while (wait == NS_OK && modPtr->activeCgi >= modPtr->maxCgi) {
-	    wait = Ns_CondTimedWait(&modPtr->cond, &modPtr->lock, &timeout);
-	}
-	if (wait == NS_OK) {
-	    ++modPtr->activeCgi;
-	}
-	Ns_MutexUnlock(&modPtr->lock);
-	if (wait != NS_OK) {
-	    status = Ns_ConnReturnStatus(conn, 503);
-	    goto done;
-	}
+        while (wait == NS_OK && modPtr->activeCgi >= modPtr->maxCgi) {
+            wait = Ns_CondTimedWait(&modPtr->cond, &modPtr->lock, &timeout);
+        }
+        if (wait == NS_OK) {
+            ++modPtr->activeCgi;
+        }
+        Ns_MutexUnlock(&modPtr->lock);
+        if (wait != NS_OK) {
+            status = Ns_ConnReturnStatus(conn, 503);
+            goto done;
+        }
     }
 
     /*
@@ -348,9 +348,9 @@ CgiRequest(const void *arg, Ns_Conn *conn)
      */
 
     if (CgiExec(&cgi, conn) != NS_OK) {
-	status = Ns_ConnReturnInternalError(conn);
+        status = Ns_ConnReturnInternalError(conn);
     } else {
-	status = CgiCopy(&cgi, conn);
+        status = CgiCopy(&cgi, conn);
     }
 
     Ns_Log(Ns_LogCGIDebug, "nscgi: cgi returned status %d", status);
@@ -360,10 +360,10 @@ CgiRequest(const void *arg, Ns_Conn *conn)
      */
 
     if (modPtr->maxCgi > 0) {
-	Ns_MutexLock(&modPtr->lock);
-	--modPtr->activeCgi;
-	Ns_CondSignal(&modPtr->cond);
-	Ns_MutexUnlock(&modPtr->lock);
+        Ns_MutexLock(&modPtr->lock);
+        --modPtr->activeCgi;
+        Ns_CondSignal(&modPtr->cond);
+        Ns_MutexUnlock(&modPtr->lock);
     }
 
 done:
@@ -377,14 +377,14 @@ done:
  *
  * CgiInit -
  *
- *	Setup a CGI context structure.  This function
- *	encapsulates the majority of the CGI semantics.
+ *      Setup a CGI context structure.  This function
+ *      encapsulates the majority of the CGI semantics.
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -392,7 +392,7 @@ done:
 static Ns_ReturnCode
 CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 {
-    Mod		   *modPtr;
+    Mod            *modPtr;
     Ns_DString     *dsPtr;
     int             i;
     size_t          ulen, plen;
@@ -415,7 +415,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     cgiPtr->ofd = cgiPtr->ifd = NS_INVALID_FD;
     cgiPtr->ptr = cgiPtr->buf;
     for (i = 0; i < NDSTRINGS; ++i) {
-	Ns_DStringInit(&cgiPtr->ds[i]);
+        Ns_DStringInit(&cgiPtr->ds[i]);
     }
 
     /*
@@ -425,7 +425,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     ulen = strlen(url);
     plen = strlen(mapPtr->url);
     if ((strncmp(mapPtr->url, url, (size_t)plen) == 0) &&
-    	(ulen == plen || url[plen] == '/')) {
+        (ulen == plen || url[plen] == '/')) {
 
         if (mapPtr->path == NULL) {
 
@@ -433,52 +433,52 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
              * No path mapping, script in pages directory:
              *
              * 1. Path is Url2File up to the URL prefix.
-	     * 2. SCRIPT_NAME is the URL prefix.
-	     * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
+             * 2. SCRIPT_NAME is the URL prefix.
+             * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
              */
 
-	    cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
-	    dsPtr = CgiDs(cgiPtr);
+            cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
+            dsPtr = CgiDs(cgiPtr);
             (void) Ns_UrlToFile(dsPtr, server, cgiPtr->name);
-	    cgiPtr->path =  dsPtr->string;
+            cgiPtr->path =  dsPtr->string;
             cgiPtr->pathinfo = url + plen;
             Ns_Log(Ns_LogCGIDebug, "nscgi: no path mapping exist, path: '%s'", cgiPtr->path);
 
         } else if (stat(mapPtr->path, &st) != 0) {
-	    goto err;
+            goto err;
 
-    	} else if (S_ISDIR(st.st_mode)) {
+        } else if (S_ISDIR(st.st_mode)) {
 
             /*
              * Path mapping is a directory:
              *
              * 1. The script file is the first path element in the URL past
              *    the mapping prefix.
-	     * 2. SCRIPT_NAME is the URL up to and including the
-	     *    script file.
-	     * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
-	     * 4. The script pathname is the script prefix plus the
-	     *    script file.
+             * 2. SCRIPT_NAME is the URL up to and including the
+             *    script file.
+             * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
+             * 4. The script pathname is the script prefix plus the
+             *    script file.
              */
 
             if (plen == ulen) {
-		goto err;
+                goto err;
             }
 
             s = (char *)url + plen + 1;
             e = strchr(s, INTCHAR('/'));
-	    if (e != NULL) {
-		*e = '\0';
-	    }
-	    cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), url);
+            if (e != NULL) {
+                *e = '\0';
+            }
+            cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), url);
             cgiPtr->path = Ns_DStringVarAppend(CgiDs(cgiPtr),
-	    	    	    	    	      mapPtr->path, "/", s, (char *)0L);
-    	    if (e == NULL) {
-		cgiPtr->pathinfo = "";
-	    } else {
-		*e = '/';
-		cgiPtr->pathinfo = e;
-	    }
+                                              mapPtr->path, "/", s, (char *)0L);
+            if (e == NULL) {
+                cgiPtr->pathinfo = "";
+            } else {
+                *e = '/';
+                cgiPtr->pathinfo = e;
+            }
 
             Ns_Log(Ns_LogCGIDebug, "nscgi: path mapping to a directory, path: '%s'", cgiPtr->path);
 
@@ -488,18 +488,18 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
              * When the path mapping is (or at least could be) a file:
              *
              * 1. The script pathname is the mapping.
-	     * 2. SCRIPT_NAME is the url prefix.
-	     * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
+             * 2. SCRIPT_NAME is the url prefix.
+             * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
              */
 
-	    cgiPtr->path = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->path);
-	    cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->url);
+            cgiPtr->path = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->path);
+            cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->url);
             cgiPtr->pathinfo = url + plen;
 
             Ns_Log(Ns_LogCGIDebug, "nscgi: path mapping to a file, path: '%s'", cgiPtr->path);
 
-    	} else {
-	    goto err;
+        } else {
+            goto err;
         }
 
     } else {
@@ -510,14 +510,14 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
          * skipped by strncmp() above. In this case:
          *
          * 1. The script pathname is the URL file in the pages directory.
-	 * 2. SCRIPT_NAME is the URL.
-	 * 3. PATH_INFO is "".
+         * 2. SCRIPT_NAME is the URL.
+         * 3. PATH_INFO is "".
          */
 
-	dsPtr = CgiDs(cgiPtr);
+        dsPtr = CgiDs(cgiPtr);
         (void) Ns_UrlToFile(dsPtr, server, url);
-	cgiPtr->path = dsPtr->string;
-	cgiPtr->name = url;
+        cgiPtr->path = dsPtr->string;
+        cgiPtr->name = url;
         cgiPtr->pathinfo = url + ulen;
 
         Ns_Log(Ns_LogCGIDebug, "nscgi: prefix did not match, path: '%s'", cgiPtr->path);
@@ -530,7 +530,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     s = strrchr(cgiPtr->path, INTCHAR('/'));
     if (s == NULL || access(cgiPtr->path, R_OK) != 0) {
         Ns_Log(Ns_LogCGIDebug, "nscgi: no such file: '%s'", cgiPtr->path);
-	goto err;
+        goto err;
     }
     *s = '\0';
     cgiPtr->dir = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->path);
@@ -544,9 +544,9 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
      */
 
     if (modPtr->interps != NULL
-    	&& (s = strrchr(cgiPtr->path, INTCHAR('.'))) != NULL
+        && (s = strrchr(cgiPtr->path, INTCHAR('.'))) != NULL
         && (cgiPtr->interp = Ns_SetIGet(modPtr->interps, s)) != NULL) {
-    	cgiPtr->interp = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->interp);
+        cgiPtr->interp = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->interp);
         s = strchr(cgiPtr->interp, INTCHAR('('));
         if (s != NULL) {
             *s++ = '\0';
@@ -577,13 +577,13 @@ err:
  *
  * CgiSpool --
  *
- *	Spool content to a temp file.
+ *      Spool content to a temp file.
  *
  * Results:
- *	File descriptor of temp file or NS_INVALID_FD on error.
+ *      File descriptor of temp file or NS_INVALID_FD on error.
  *
  * Side effects:
- *	May open a new temp file.
+ *      May open a new temp file.
  *
  *----------------------------------------------------------------------
  */
@@ -604,20 +604,20 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     content = Ns_ConnContent(conn);
     fd = Ns_GetTemp();
     if (fd == NS_INVALID_FD) {
-	Ns_Log(Error, "nscgi: could not allocate temp file.");
+        Ns_Log(Error, "nscgi: could not allocate temp file.");
     } else if (ns_write(fd, content, len) != (ssize_t)len) {
-	err = "write";
+        err = "write";
     } else if (ns_lseek(fd, 0, SEEK_SET) != 0) {
-	err = "lseek";
+        err = "lseek";
     }
     if (err != NULL) {
-	Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
-	(void) ns_close(fd);
-	fd = NS_INVALID_FD;
+        Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
+        (void) ns_close(fd);
+        fd = NS_INVALID_FD;
     }
 
     if (fd == NS_INVALID_FD) {
-	status = NS_ERROR;
+        status = NS_ERROR;
     } else {
         cgiPtr->ifd = fd;
         status = NS_OK;
@@ -631,13 +631,13 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
  *
  * CgiDs -
  *
- *	Return the next available dstring in the CGI context.
+ *      Return the next available dstring in the CGI context.
  *
  * Results:
- *	Pointer to DString.
+ *      Pointer to DString.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -646,7 +646,7 @@ static Ns_DString *
 CgiDs(Cgi *cgiPtr)
 {
     Ns_DString *result;
-    
+
     NS_NONNULL_ASSERT(cgiPtr != NULL);
 
     if (cgiPtr->nextds < NDSTRINGS) {
@@ -655,7 +655,7 @@ CgiDs(Cgi *cgiPtr)
         Ns_Fatal("nscgi: running out of configured dstrings");
         result = NULL;
     }
-    
+
     return result;
 }
 
@@ -665,13 +665,13 @@ CgiDs(Cgi *cgiPtr)
  *
  * CgiFree -
  *
- *	Free temp buffers used in CGI context.
+ *      Free temp buffers used in CGI context.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -686,7 +686,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->ofd >= 0) {
-    	(void) ns_close(cgiPtr->ofd);
+        (void) ns_close(cgiPtr->ofd);
     }
 
     /*
@@ -694,7 +694,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->ifd >= 0) {
-	Ns_ReleaseTemp(cgiPtr->ifd);
+        Ns_ReleaseTemp(cgiPtr->ifd);
     }
 
     /*
@@ -702,7 +702,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->env != NULL) {
-	Ns_SetFree(cgiPtr->env);
+        Ns_SetFree(cgiPtr->env);
     }
 
     /*
@@ -710,8 +710,8 @@ CgiFree(Cgi *cgiPtr)
      */
 
     if (cgiPtr->pid != NS_INVALID_PID && Ns_WaitForProcessStatus(cgiPtr->pid, NULL, NULL) != NS_OK) {
-	Ns_Log(Error, "nscgi: wait for %s failed: %s",
-	       cgiPtr->exec, strerror(errno));
+        Ns_Log(Error, "nscgi: wait for %s failed: %s",
+               cgiPtr->exec, strerror(errno));
     }
 
     /*
@@ -719,7 +719,7 @@ CgiFree(Cgi *cgiPtr)
      */
 
     while (cgiPtr->nextds-- > 0) {
-	Ns_DStringFree(&cgiPtr->ds[cgiPtr->nextds]);
+        Ns_DStringFree(&cgiPtr->ds[cgiPtr->nextds]);
     }
 }
 
@@ -729,14 +729,14 @@ CgiFree(Cgi *cgiPtr)
  *
  * CgiExec -
  *
- *	Construct the command args and environment and execute
- *  	the CGI.
+ *      Construct the command args and environment and execute
+ *      the CGI.
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -776,22 +776,22 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
     if ((modPtr->flags & CGI_SYSENV) != 0u) {
-	char *const*envp = Ns_CopyEnviron(dsPtr);
-        
-	while (*envp != NULL) {
-	    s = *envp;
-	    e = strchr(s, INTCHAR('='));
-	    if (e != NULL) {
-		*e = '\0';
-        	i = Ns_SetFind(cgiPtr->env, s);
-		if (i < 0) {
-        	    (void)Ns_SetPut(cgiPtr->env, s, e+1);
-		}
-		*e = '=';
-	    }
-	    ++envp;
-	}
-	Ns_DStringSetLength(dsPtr, 0);
+        char *const*envp = Ns_CopyEnviron(dsPtr);
+
+        while (*envp != NULL) {
+            s = *envp;
+            e = strchr(s, INTCHAR('='));
+            if (e != NULL) {
+                *e = '\0';
+                i = Ns_SetFind(cgiPtr->env, s);
+                if (i < 0) {
+                    (void)Ns_SetPut(cgiPtr->env, s, e+1);
+                }
+                *e = '=';
+            }
+            ++envp;
+        }
+        Ns_DStringSetLength(dsPtr, 0);
     }
 
     /*
@@ -812,23 +812,23 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     Ns_SetUpdate(cgiPtr->env, "SCRIPT_NAME", cgiPtr->name);
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
-    	Ns_DString tmp;
+        Ns_DString tmp;
 
         if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
             Ns_SetUpdate(cgiPtr->env, "PATH_INFO", dsPtr->string);
         } else {
             Ns_SetUpdate(cgiPtr->env, "PATH_INFO", cgiPtr->pathinfo);
         }
-	Ns_DStringSetLength(dsPtr, 0);
-	Ns_DStringInit(&tmp);
+        Ns_DStringSetLength(dsPtr, 0);
+        Ns_DStringInit(&tmp);
         (void)Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
         if (Ns_UrlPathDecode(&tmp, dsPtr->string, NULL) != NULL) {
              Ns_SetUpdate(cgiPtr->env, "PATH_TRANSLATED", tmp.string);
         } else {
              Ns_SetUpdate(cgiPtr->env, "PATH_TRANSLATED", dsPtr->string);
         }
-	Ns_DStringFree(&tmp);
-	Ns_DStringSetLength(dsPtr, 0);
+        Ns_DStringFree(&tmp);
+        Ns_DStringSetLength(dsPtr, 0);
     } else {
          Ns_SetUpdate(cgiPtr->env, "PATH_INFO", "");
     }
@@ -850,7 +850,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_HttpParseHost(s, NULL, &p); /* Get to the port number    */
 
     if (p != NULL) {
-	int j;
+        int j;
 
         p++;
         Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", p);
@@ -876,7 +876,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     {
         const char *peer = Ns_ConnPeerAddr(conn);
-        
+
         if (peer != NULL) {
             Ns_SetUpdate(cgiPtr->env, "REMOTE_ADDR", peer);
             if ((modPtr->flags & CGI_GETHOST) != 0u) {
@@ -921,7 +921,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     Ns_DStringAppend(dsPtr, "HTTP_");
     for (i = 0; (size_t)i < Ns_SetSize(conn->headers); ++i) {
-	int idx;
+        int idx;
 
         s = Ns_SetKey(conn->headers, i);
         e = Ns_SetValue(conn->headers, i);
@@ -939,7 +939,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         if (idx < 0) {
             (void)Ns_SetPut(cgiPtr->env, dsPtr->string, e);
         } else {
-	    SetAppend(cgiPtr->env, idx, ", ", e);
+            SetAppend(cgiPtr->env, idx, ", ", e);
         }
         Ns_DStringSetLength(dsPtr, 5);
     }
@@ -957,21 +957,21 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
     s = conn->request.query;
     if (s != NULL) {
-	if (strchr(s, INTCHAR('=')) == NULL) {
-    	    do {
-	    	e = strchr(s, INTCHAR('+'));
-		if (e != NULL) {
-		    *e = '\0';
-		}
-		(void) Ns_UrlQueryDecode(dsPtr, s, NULL);
-		Ns_DStringNAppend(dsPtr, "", 1);
-		if (e != NULL) {
-		    *e++ = '+';
-		}
-		s = e;
-	    } while (s != NULL);
-	}
-	Ns_DStringNAppend(dsPtr, "", 1);
+        if (strchr(s, INTCHAR('=')) == NULL) {
+            do {
+                e = strchr(s, INTCHAR('+'));
+                if (e != NULL) {
+                    *e = '\0';
+                }
+                (void) Ns_UrlQueryDecode(dsPtr, s, NULL);
+                Ns_DStringNAppend(dsPtr, "", 1);
+                if (e != NULL) {
+                    *e++ = '+';
+                }
+                s = e;
+            } while (s != NULL);
+        }
+        Ns_DStringNAppend(dsPtr, "", 1);
     }
 
     /*
@@ -979,8 +979,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     if (unlikely(ns_pipe(opipe) != 0)) {
-	Ns_Log(Error, "nscgi: pipe() failed: %s", strerror(errno));
-	status = NS_ERROR;
+        Ns_Log(Error, "nscgi: pipe() failed: %s", strerror(errno));
+        status = NS_ERROR;
     } else {
 
         /*
@@ -1013,13 +1013,13 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
  *
  * CgiRead -
  *
- *	Read content from pipe into the CGI buffer.
+ *      Read content from pipe into the CGI buffer.
  *
  * Results:
- *	Number of bytes read or -1 on error.
+ *      Number of bytes read or -1 on error.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1033,13 +1033,13 @@ CgiRead(Cgi *cgiPtr)
 
     cgiPtr->ptr = cgiPtr->buf;
     do {
-    	n = ns_read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
+        n = ns_read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
     } while (n < 0 && errno == NS_EINTR);
     if (n > 0) {
-	cgiPtr->cnt = n;
+        cgiPtr->cnt = n;
     } else if (n < 0) {
-	Ns_Log(Error, "nscgi: pipe ns_read() from %s failed: %s",
-	       cgiPtr->exec, strerror(errno));
+        Ns_Log(Error, "nscgi: pipe ns_read() from %s failed: %s",
+               cgiPtr->exec, strerror(errno));
     }
     return n;
 }
@@ -1050,13 +1050,13 @@ CgiRead(Cgi *cgiPtr)
  *
  * CgiReadLine -
  *
- *	Read and right trim a line from the pipe.
+ *      Read and right trim a line from the pipe.
  *
  * Results:
- *	Length of header read or -1 on error.
+ *      Length of header read or -1 on error.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1071,19 +1071,19 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     do {
-	while (cgiPtr->cnt > 0) {
-	    c = *cgiPtr->ptr;
-	    ++cgiPtr->ptr;
-	    --cgiPtr->cnt;
-	    if (c == '\n') {
-		while (dsPtr->length > 0
-		    && CHARTYPE(space, dsPtr->string[dsPtr->length - 1]) != 0) {
-		    Ns_DStringSetLength(dsPtr, dsPtr->length-1);
-		}
-		return (ssize_t)dsPtr->length;
-	    }
-	    Ns_DStringNAppend(dsPtr, &c, 1);
-	}
+        while (cgiPtr->cnt > 0) {
+            c = *cgiPtr->ptr;
+            ++cgiPtr->ptr;
+            --cgiPtr->cnt;
+            if (c == '\n') {
+                while (dsPtr->length > 0
+                    && CHARTYPE(space, dsPtr->string[dsPtr->length - 1]) != 0) {
+                    Ns_DStringSetLength(dsPtr, dsPtr->length-1);
+                }
+                return (ssize_t)dsPtr->length;
+            }
+            Ns_DStringNAppend(dsPtr, &c, 1);
+        }
     } while ((n = CgiRead(cgiPtr)) > 0);
     return n;
 }
@@ -1094,13 +1094,13 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
  *
  * CgiCopy
  *
- *	Read and parse headers and then copy output.
+ *      Read and parse headers and then copy output.
  *
  * Results:
- *	NaviServer request result.
+ *      NaviServer request result.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1123,7 +1123,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     if ((cgiPtr->flags & CGI_NPH) != 0u) {
-    	goto copy;
+        goto copy;
     }
 
     /*
@@ -1138,13 +1138,13 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 
         if (CHARTYPE(space, *ds.string) != 0) {   /* NB: Continued header. */
             if (last == -1) {
-		continue;	/* NB: Silently ignore bad header. */
+                continue;	/* NB: Silently ignore bad header. */
             }
-	    SetAppend(hdrs, last, "\n", ds.string);
+            SetAppend(hdrs, last, "\n", ds.string);
         } else {
             value = strchr(ds.string, INTCHAR(':'));
             if (value == NULL) {
-		continue;	/* NB: Silently ignore bad header. */
+                continue;	/* NB: Silently ignore bad header. */
             }
             *value++ = '\0';
             while (CHARTYPE(space, *value) != 0) {
@@ -1171,7 +1171,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     }
     Ns_DStringFree(&ds);
     if (n < 0) {
-	status = Ns_ConnReturnInternalError(conn);
+        status = Ns_ConnReturnInternalError(conn);
     } else {
 
         /*
@@ -1206,13 +1206,13 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
  *
  * NextWord -
  *
- *	Locate next word in CGI mapping.
+ *      Locate next word in CGI mapping.
  *
  * Results:
- *	Pointer to next word.
+ *      Pointer to next word.
  *
  * Side effects:
- *	String is modified in place.
+ *      String is modified in place.
  *
  *----------------------------------------------------------------------
  */
@@ -1240,13 +1240,13 @@ NextWord(char *s)
  *
  * CgiRegister -
  *
- *	Register a CGI request mapping.
+ *      Register a CGI request mapping.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May register or re-register a mapping.
+ *      May register or re-register a mapping.
  *
  *----------------------------------------------------------------------
  */
@@ -1258,7 +1258,7 @@ CgiRegister(Mod *modPtr, const char *map)
     char           *url;
     char           *path;
     Ns_DString      ds1, ds2;
-    Map     	   *mapPtr;
+    Map            *mapPtr;
 
     NS_NONNULL_ASSERT(modPtr != NULL);
     NS_NONNULL_ASSERT(map != NULL);
@@ -1271,18 +1271,18 @@ CgiRegister(Mod *modPtr, const char *map)
     url = NextWord(method);
     if (*method == '\0' || *url == '\0') {
         Ns_Log(Error, "nscgi: invalid mapping: %s", map);
-	goto done;
+        goto done;
     }
 
     path = NextWord(url);
     if (*path == '\0') {
         path = NULL;
     } else {
-    	path = Ns_NormalizePath(&ds2, path);
-    	if (Ns_PathIsAbsolute(path) == NS_FALSE || access(path, R_OK) != 0) {
+        path = Ns_NormalizePath(&ds2, path);
+        if (Ns_PathIsAbsolute(path) == NS_FALSE || access(path, R_OK) != 0) {
             Ns_Log(Error, "nscgi: invalid directory: %s", path);
-	    goto done;
-	}
+            goto done;
+        }
     }
 
     mapPtr = ns_malloc(sizeof(Map));
@@ -1290,10 +1290,10 @@ CgiRegister(Mod *modPtr, const char *map)
     mapPtr->url = ns_strdup(url);
     mapPtr->path = ns_strcopy(path);
     Ns_Log(Notice, "nscgi: %s %s%s%s", method, url,
-	   (path != NULL) ? " -> " : "",
-	   (path != NULL) ? path : "");
+           (path != NULL) ? " -> " : "",
+           (path != NULL) ? path : "");
     Ns_RegisterRequest(modPtr->server, method, url,
-		       CgiRequest, CgiFreeMap, mapPtr, 0u);
+                       CgiRequest, CgiFreeMap, mapPtr, 0u);
 
 done:
     Ns_DStringFree(&ds1);
@@ -1306,13 +1306,13 @@ done:
  *
  * CgiFreeMap -
  *
- *	Free a request mapping context.
+ *      Free a request mapping context.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1333,13 +1333,13 @@ CgiFreeMap(void *arg)
  *
  * SetAppend -
  *
- *	Append data to an existing Ns_Set value.
+ *      Append data to an existing Ns_Set value.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

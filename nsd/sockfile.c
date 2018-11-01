@@ -111,16 +111,16 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
     int          i;
 
     for (i = 0; i < nbufs && sent > 0u; i++) {
-	int    fd     = bufs[i].fd;
-	size_t length = bufs[i].length;
-	off_t  offset = bufs[i].offset;
+        int    fd     = bufs[i].fd;
+        size_t length = bufs[i].length;
+        off_t  offset = bufs[i].offset;
 
         if (length > 0u) {
             if (sent >= length) {
                 sent -= length;
                 (void) Ns_SetFileVec(bufs, i, fd, NULL, 0, 0u);
             } else {
-	        (void) Ns_SetFileVec(bufs, i, fd, NULL,
+                (void) Ns_SetFileVec(bufs, i, fd, NULL,
                                      offset + (off_t)sent, length - sent);
                 break;
             }
@@ -171,8 +171,8 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
     sent = -1;
 
     for (i = 0; i < nbufs; i++) {
-	size_t   length = bufs[i].length;
-	off_t    offset = bufs[i].offset;
+        size_t   length = bufs[i].length;
+        off_t    offset = bufs[i].offset;
         int      fd     = bufs[i].fd;
 
         if (length < 1) {
@@ -185,7 +185,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
             /*
              * Coalesce runs of memory bufs into fixed-sized iovec.
              */
-	    (void) Ns_SetVec(sbufs, nsbufs++, INT2PTR(offset), length);
+            (void) Ns_SetVec(sbufs, nsbufs++, INT2PTR(offset), length);
         }
 
         /* Flush pending memory bufs. */
@@ -195,7 +195,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-	    sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0u);
+            sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0u);
 
             nsbufs = 0;
             if (sent > 0) {
@@ -236,8 +236,8 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *time
                 sent = sendfile(sock->sock, fd, &offset, toSend);
             }
         } else if ((errno == EINVAL) || (errno == ENOSYS)) {
-            /* 
-             * File system does not support sendfile? 
+            /*
+             * File system does not support sendfile?
              */
             sent = SendFd(sock, fd, offset, toSend, timeoutPtr, 0, SendBufs);
         }
@@ -292,9 +292,9 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
     sent = -1;
 
     for (i = 0; i < nbufs; i++) {
-	size_t  toSend = bufs[i].length;
+        size_t  toSend = bufs[i].length;
         int     fd     = bufs[i].fd;
-	off_t   offset = bufs[i].offset;
+        off_t   offset = bufs[i].offset;
 
         if (toSend > 0u) {
             if (fd < 0) {
@@ -324,7 +324,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
  *
  *      The pread() function is used in SendFd to read N bytes from a
  *      stream/file from a given offset point. It is natively present
- *      on linux/unix but not on windows. 
+ *      on linux/unix but not on windows.
  *
  * Results:
  *      On success, number of bytes read, -1 on error
@@ -344,7 +344,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
 
     if (fh == INVALID_HANDLE_VALUE) {
         errno = EBADF;
-	result = -1;
+        result = -1;
     } else {
         DWORD      ret, c = (DWORD)count;
         OVERLAPPED overlapped = { 0u };
@@ -391,25 +391,25 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
     int corkInt = (int)cork;
 
     assert(sock != NULL);
-    
+
     /* fprintf(stderr, "### Ns_SockCork sock %d %d\n", sockPtr->sock, cork); */
 
     if (cork && (sockPtr->flags & NS_CONN_SOCK_CORKED) != 0u) {
-	/*
-	 * Don't cork an already corked connection.
-	 */
+        /*
+         * Don't cork an already corked connection.
+         */
     } else if (!cork && (sockPtr->flags & NS_CONN_SOCK_CORKED) == 0u) {
-	/*
-	 * Don't uncork an already uncorked connection.
-	 */
-	Ns_Log(Error, "socket: trying to uncork an uncorked socket %d",
-	       sockPtr->sock);
+        /*
+         * Don't uncork an already uncorked connection.
+         */
+        Ns_Log(Error, "socket: trying to uncork an uncorked socket %d",
+               sockPtr->sock);
     } else {
-	/*
-	 * The cork state changes, try to alter the socket options, unless the
-	 * socket is already closed (don't complain in such cases to the
-	 * error.log).
-	 */
+        /*
+         * The cork state changes, try to alter the socket options, unless the
+         * socket is already closed (don't complain in such cases to the
+         * error.log).
+         */
 # if defined(TCP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) == 0) {
             if ((sockPtr->sock != NS_INVALID_SOCKET)
@@ -438,12 +438,12 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
             /*
              * On success, update the corked flag.
              */
-	    if (cork) {
-		sockPtr->flags |= NS_CONN_SOCK_CORKED;
-	    } else {
-		sockPtr->flags &= ~NS_CONN_SOCK_CORKED;
-	    }
-	}
+            if (cork) {
+                sockPtr->flags |= NS_CONN_SOCK_CORKED;
+            } else {
+                sockPtr->flags &= ~NS_CONN_SOCK_CORKED;
+            }
+        }
     }
 #else
     (void)cork;
@@ -483,14 +483,14 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     ssize_t       nwrote = 0, toRead = (ssize_t)length, result;
     bool          decork;
 
-    // Ns_Log(Notice, "SendFd offset %ld length %lu", offset, length); 
+    // Ns_Log(Notice, "SendFd offset %ld length %lu", offset, length);
 
     decork = Ns_SockCork(sock, NS_TRUE);
     while (toRead > 0) {
-	ssize_t sent, nread;
+        ssize_t sent, nread;
 
         nread = pread(fd, buf, MIN((size_t)toRead, sizeof(buf)), offset);
-        
+
         // Ns_Log(Notice, "... pread toread %lu offset %ld => read %ld", MIN((size_t)toRead, sizeof(buf)), offset, nread);
         if (nread <= 0) {
             break;
@@ -510,7 +510,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     }
 
     if (decork) {
-	(void) Ns_SockCork(sock, NS_FALSE);
+        (void) Ns_SockCork(sock, NS_FALSE);
     }
 
     if (nwrote > 0) {
@@ -518,7 +518,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     } else {
         result = -1;
     }
-    
+
     return result;
 }
 

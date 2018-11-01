@@ -195,9 +195,9 @@ NsWin32ErrMsg(ns_sockerrno_t err)
     }
     snprintf(msg, 1000u, "win32 error code: %lu: ", err);
     len = strlen(msg);
-    
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 
-		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   msg+len, (DWORD)(1000u - len), NULL);
 
     return msg;
@@ -371,22 +371,22 @@ NsInstallService(char *service)
         hmgr = OpenSCManager(NULL, NULL, (DWORD)SC_MANAGER_ALL_ACCESS);
         if (hmgr != NULL) {
             hsrv = CreateService(hmgr, name.string, name.string,
-				 (DWORD)SERVICE_ALL_ACCESS,  
-				 (DWORD)SERVICE_WIN32_OWN_PROCESS,
-				 (DWORD)SERVICE_AUTO_START, 
-				 (DWORD)SERVICE_ERROR_NORMAL,
+                                 (DWORD)SERVICE_ALL_ACCESS,
+                                 (DWORD)SERVICE_WIN32_OWN_PROCESS,
+                                 (DWORD)SERVICE_AUTO_START,
+                                 (DWORD)SERVICE_ERROR_NORMAL,
                                  cmd.string, NULL, NULL, "TcpIp\0", NULL, NULL);
             if (hsrv != NULL) {
                 CloseServiceHandle(hsrv);
                 ok = TRUE;
             } else {
-		Ns_Log(Error, "nswin32: failed to install service '%s': '%s'",
-		       name.string, SysErrMsg());
-	    }
+                Ns_Log(Error, "nswin32: failed to install service '%s': '%s'",
+                       name.string, SysErrMsg());
+            }
             CloseServiceHandle(hmgr);
         } else {
             Ns_Log(Error, "nswin32: failed to connect to service manager: %s", SysErrMsg());
-	}
+        }
         Ns_DStringFree(&name);
         Ns_DStringFree(&cmd);
     }
@@ -470,7 +470,7 @@ NsHandleSignals(void)
         }
         Ns_MutexUnlock(&lock);
         if ((sig & (unsigned int)(1u << NS_SIGHUP)) != 0u) {
-	    NsRunSignalProcs();
+            NsRunSignalProcs();
         }
     } while ((sig & (unsigned int)(1u << NS_SIGHUP)) != 0u);
 
@@ -601,7 +601,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
             CloseHandle(mobj);
             CloseHandle(hndl);
             status = NS_ERROR;
-            
+
         } else {
             mapPtr->mapobj = (void *) mobj;
             mapPtr->handle = (int) hndl;
@@ -609,7 +609,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
             mapPtr->size   = size;
         }
     }
-    
+
     return status;
 }
 
@@ -661,7 +661,7 @@ int
 ns_socknbclose(NS_SOCKET sock)
 {
     int result;
-    
+
     if (Ns_SockCloseLater(sock) != NS_OK) {
         result = SOCKET_ERROR;
     } else {
@@ -722,7 +722,7 @@ ns_sockdup(NS_SOCKET sock)
  */
 
 int
-ns_sock_set_blocking(NS_SOCKET sock, bool blocking) 
+ns_sock_set_blocking(NS_SOCKET sock, bool blocking)
 {
     u_long state = (!blocking) ? 1u : 0u;
 
@@ -772,28 +772,28 @@ ns_pipe(int *fds)
  */
 
 int
-ns_mkstemp(char *charTemplate) 
+ns_mkstemp(char *charTemplate)
 {
     int err, fd = NS_INVALID_FD;
 
     err = _mktemp_s(charTemplate, strlen(charTemplate));
 
     if (err == 0) {
-        /* 
+        /*
          * We had for a while _O_TEMPORARY here as well, which deletes the
          * file, when he file when the last file descriptor is
          * closed. It is removed here for compatibility reasons.
          *
          * note, that O_TMPFILE (since Linux 3.11) has different semantics.
          */
-	err = _sopen_s(&fd, charTemplate, 
-		       O_RDWR | O_CREAT | O_EXCL, 
-		       _SH_DENYRW,
-		       _S_IREAD | _S_IWRITE);
+        err = _sopen_s(&fd, charTemplate,
+                       O_RDWR | O_CREAT | O_EXCL,
+                       _SH_DENYRW,
+                       _S_IREAD | _S_IWRITE);
     }
 
     if (err != 0) {
-	fd = NS_INVALID_FD;
+        fd = NS_INVALID_FD;
     }
 
     return fd;
@@ -822,7 +822,7 @@ static bool
 SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *saPtr2)
 {
     bool equal = NS_TRUE;
-    
+
 #ifdef HAVE_IPV6
     if (saPtr1->sa_family != saPtr2->sa_family) {
         /*
@@ -841,7 +841,7 @@ SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *saPtr2)
         const struct in6_addr *sa1Bits = &(((struct sockaddr_in6 *)saPtr1)->sin6_addr);
         const struct in6_addr *sa2Bits = &(((struct sockaddr_in6 *)saPtr2)->sin6_addr);
         int i;
-        
+
         /*
          * Compare the eight words
          */
@@ -910,7 +910,7 @@ ns_sockpair(NS_SOCKET socks[2])
             if (socks[0] == NS_INVALID_SOCKET) {
                 ns_sockclose(socks[1]);
                 result = -1;
-            
+
             } else if ((!(SockAddrEqual((struct sockaddr *)&ia[0],
                                         (struct sockaddr *)&ia[1]))) ||
                        (Ns_SockaddrGetPort((struct sockaddr *)&ia[0]) != Ns_SockaddrGetPort((struct sockaddr *)&ia[1]))
@@ -1077,7 +1077,7 @@ ServiceTicker(void *arg)
     Ns_ThreadSetName("-ticker-");
 
     Ns_Log(Notice, "starting, SERVICE_START_PENDING %d", pending);
-    
+
     Ns_MutexLock(&lock);
     do {
         ReportStatus(pending, NO_ERROR, 2000u);
@@ -1239,7 +1239,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
             continue;
         }
 #ifndef _MSC_VER
-	/* winsock ignores the first argument of select() */
+        /* winsock ignores the first argument of select() */
         if (fds[i].fd > n) {
             n = fds[i].fd;
         }
@@ -1306,13 +1306,13 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
  */
 
 int
-ns_open(const char *path, int oflag, int mode) 
+ns_open(const char *path, int oflag, int mode)
 {
     return _open(path, oflag, mode);
 }
 
 int
-ns_close(int fildes) 
+ns_close(int fildes)
 {
     return _close(fildes);
 }
@@ -1324,7 +1324,7 @@ ns_write(int fildes, const void *buf, size_t nbyte)
 }
 
 ssize_t
-ns_read(int fildes, void *buf, size_t nbyte) 
+ns_read(int fildes, void *buf, size_t nbyte)
 {
     return _read(fildes, buf, (unsigned int)nbyte);
 }
@@ -1335,13 +1335,13 @@ ns_lseek(int fildes, off_t offset, int whence)
     return (off_t)_lseek(fildes, (long)offset, whence);
 }
 
-int 
-ns_dup(int fildes) 
+int
+ns_dup(int fildes)
 {
     return _dup(fildes);
 }
 
-int     
+int
 ns_dup2(int fildes, int fildes2)
 {
     return _dup2(fildes, fildes2);
@@ -1380,7 +1380,7 @@ ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags)
 
 #else
 /* avoid empty translation unit */
-   typedef void empty; 
+   typedef void empty;
 #endif
 
 /*

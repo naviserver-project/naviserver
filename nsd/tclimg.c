@@ -560,15 +560,15 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         for (;;) {
-	    int          i;
-	    uint32_t     numBytes = 0u;
+            int          i;
+            uint32_t     numBytes = 0u;
 
             i = JpegNextMarker(chan);
             if (i == EOF || i == M_SOS || i == M_EOI) {
                 break;
             }
             if (0xC0 <= i && i <= 0xC3) {
-	        uint32_t first;
+                uint32_t first;
 
                 if (JpegRead2Bytes(chan, &first) && ChanGetc(chan) != EOF
                     && JpegRead2Bytes(chan, hPtr)
@@ -715,7 +715,7 @@ GetImageType(Tcl_Channel chan)
 
     } else if (memcmp(buf, jpeg_magic, sizeof(jpeg_magic)) == 0) {
         unsigned char trail[] = {0x00u, 0x00u};
-	static const unsigned char jpeg_trail  [] = {0xffu, 0xd9u};
+        static const unsigned char jpeg_trail  [] = {0xffu, 0xd9u};
 
         (void)Tcl_Seek(chan,  0LL, SEEK_END);
         (void)Tcl_Seek(chan, -2LL, SEEK_CUR);

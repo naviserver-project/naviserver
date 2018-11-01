@@ -33,7 +33,7 @@
 /*
  * signal.c --
  *
- *	Routines for signal handling.
+ *      Routines for signal handling.
  */
 
 #include "thread.h"
@@ -47,13 +47,13 @@ int NS_finalshutdown = 0;
  *
  * ns_sigmask --
  *
- *	Set the thread's signal mask.
+ *      Set the thread's signal mask.
  *
  * Results:
- *	0 on success, otherwise an error code.
+ *      0 on success, otherwise an error code.
  *
  * Side effects:
- *	See pthread_sigmask.
+ *      See pthread_sigmask.
  *
  *----------------------------------------------------------------------
  */
@@ -72,15 +72,15 @@ ns_sigmask(int how, sigset_t *set, sigset_t *oset)
  *
  * ns_signal --
  *
- *	Install a process-wide signal handler.  Note that the handler
- *	is shared among all threads (although the signal mask is
- *	per-thread).
+ *      Install a process-wide signal handler.  Note that the handler
+ *      is shared among all threads (although the signal mask is
+ *      per-thread).
  *
  * Results:
- *	0 on success, -1 on error with specific error code set in errno.
+ *      0 on success, -1 on error with specific error code set in errno.
  *
  * Side effects:
- *	Handler will be called when signal is received in this thread.
+ *      Handler will be called when signal is received in this thread.
  *
  *----------------------------------------------------------------------
  */
@@ -103,13 +103,13 @@ ns_signal(int sig, void (*proc) (int))
  *
  * ns_sigwait --
  *
- *	Posix style sigwait().
+ *      Posix style sigwait().
  *
  * Results:
- *	0 on success, otherwise an error code.
+ *      0 on success, otherwise an error code.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -124,7 +124,7 @@ ns_sigwait(sigset_t *set, int *sig)
 }
 #else
 /*
- * _WIN32 
+ * _WIN32
  *
  * We need just the definition of NS_EXTERN
  */

@@ -172,9 +172,9 @@ int
 Ns_After(int delay, Ns_SchedProc *proc, void *arg, Ns_SchedProc *deleteProc)
 {
     int result;
-    
+
     NS_NONNULL_ASSERT(proc != NULL);
-    
+
     if (delay < 0) {
         result = (int)NS_ERROR;
     } else {
@@ -204,9 +204,9 @@ int
 Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
 {
     int result;
-    
+
     NS_NONNULL_ASSERT(proc != NULL);
-    
+
     if (interval < 0) {
         result = (int)NS_ERROR;
     } else {
@@ -309,10 +309,10 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     int id;
 
     NS_NONNULL_ASSERT(proc != NULL);
-    
+
     if (unlikely(interval < 0)) {
         id = (int)NS_ERROR;
-        
+
     } else {
         Event    *ePtr;
         int       isNew;
@@ -348,7 +348,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
         }
         Ns_MutexUnlock(&lock);
     }
-    
+
     return id;
 }
 
@@ -384,7 +384,7 @@ Ns_Cancel(int id)
 
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
@@ -431,7 +431,7 @@ Ns_Pause(int id)
 
         if (hPtr != NULL) {
             Event *ePtr;
-            
+
             ePtr = Tcl_GetHashValue(hPtr);
             if ((ePtr->flags & NS_SCHED_PAUSED) == 0u) {
                 ePtr->flags |= NS_SCHED_PAUSED;
@@ -474,11 +474,11 @@ Ns_Resume(int id)
 
         if (hPtr != NULL) {
             Event *ePtr;
-            
+
             ePtr = Tcl_GetHashValue(hPtr);
             if ((ePtr->flags & NS_SCHED_PAUSED) != 0u) {
                 time_t now;
-                
+
                 ePtr->flags &= ~NS_SCHED_PAUSED;
                 time(&now);
                 QueueEvent(ePtr, &now);
@@ -487,7 +487,7 @@ Ns_Resume(int id)
         }
     }
     Ns_MutexUnlock(&lock);
-    
+
     return resumed;
 }
 
@@ -566,7 +566,7 @@ QueueEvent(Event *ePtr, const time_t *nowPtr)
 
         if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0u) {
             struct tm  *tp;
-            
+
             tp = ns_localtime(nowPtr);
             tp->tm_sec = ePtr->interval;
             tp->tm_hour = 0;
@@ -831,7 +831,7 @@ SchedThread(void *UNUSED(arg))
 
         if (firstEventPtr != NULL) {
             if (nIdleThreads == 0) {
-		Ns_ThreadCreate(EventThread, INT2PTR(nThreads), 0, NULL);
+                Ns_ThreadCreate(EventThread, INT2PTR(nThreads), 0, NULL);
                 ++nIdleThreads;
                 ++nThreads;
             }
@@ -874,7 +874,7 @@ SchedThread(void *UNUSED(arg))
         if (nqueue == 0) {
             Ns_CondWait(&schedcond, &lock);
         } else if (!shutdownPending) {
-	    timeout.sec  = (long)queue[1]->nextqueue;
+            timeout.sec  = (long)queue[1]->nextqueue;
             timeout.usec = 0;
             (void) Ns_CondTimedWait(&schedcond, &lock, &timeout);
         }
@@ -918,7 +918,7 @@ NsGetScheduled(Tcl_DString *dsPtr)
     Tcl_HashSearch       search;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&eventsTable, &search);
     while (hPtr != NULL) {

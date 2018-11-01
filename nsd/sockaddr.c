@@ -42,14 +42,14 @@
  *
  * Ns_SockaddrMask --
  *
- *	Compute from  "addr" and "mask" a "maskedAddr" in a generic way
- *	(for IPv4 and IPv6 addresses).
+ *      Compute from  "addr" and "mask" a "maskedAddr" in a generic way
+ *      (for IPv4 and IPv6 addresses).
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	The last argument (maskedAddr) is updated.
+ *      The last argument (maskedAddr) is updated.
  *
  *----------------------------------------------------------------------
  */
@@ -81,11 +81,11 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
         for (i = 0; i < 4; i++) {
             maskedBits->s6_addr32[i] = addrBits->s6_addr32[i] & maskBits->s6_addr32[i];
         }
-#else        
+#else
         for (i = 0; i < 8; i++) {
             maskedBits->u.Word[i] = addrBits->u.Word[i] & maskBits->u.Word[i];
         }
-#endif        
+#endif
         /*
           fprintf(stderr, "#### addr   %s\n",ns_inet_ntoa(addr));
           fprintf(stderr, "#### mask   %s\n",ns_inet_ntoa(mask));
@@ -107,14 +107,14 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
  *
  * Ns_SockaddrSameIP --
  *
- *	Check, if to sockaddrs refer to the same IP address
- *	(for IPv4 and IPv6 addresses).
+ *      Check, if to sockaddrs refer to the same IP address
+ *      (for IPv4 and IPv6 addresses).
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -122,7 +122,7 @@ bool
 Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
 {
     bool success;
-    
+
     NS_NONNULL_ASSERT(addr1 != NULL);
     NS_NONNULL_ASSERT(addr2 != NULL);
 
@@ -146,7 +146,7 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
                 break;
             }
         }
-#else        
+#else
         for (i = 0; i < 8; i++) {
             if (addr1Bits->u.Word[i] != addr2Bits->u.Word[i]) {
                 success = NS_FALSE;
@@ -163,7 +163,7 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
          */
         success = NS_FALSE;
     }
-    
+
     return success;
 }
 
@@ -172,13 +172,13 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
  *
  * Ns_SockaddrMaskBits --
  *
- *	Build a mask with the given bits in a IPv4 or IPv6 sockaddr
+ *      Build a mask with the given bits in a IPv4 or IPv6 sockaddr
  *
  * Results:
- *	Mask computed in 1 arg.
+ *      Mask computed in 1 arg.
  *
  * Side effects:
- *	The first argument is updated.
+ *      The first argument is updated.
  *
  *----------------------------------------------------------------------
  */
@@ -195,7 +195,7 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
             Ns_Log(Warning, "Invalid bitmask /%d: can be most 128 bits", nrBits);
             nrBits = 128u;
         }
-#ifndef _WIN32        
+#ifndef _WIN32
         /*
          * Set the mask bits in the leading 32 bit ints to 1.
          */
@@ -235,8 +235,8 @@ Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
          */
         for (; i < 8; i++) {
             addr->u.Word[i] = 0u;
-        }        
-#endif        
+        }
+#endif
         /*fprintf(stderr, "#### FINAL mask %s\n",ns_inet_ntoa(mask));*/
     } else if (mask->sa_family == AF_INET) {
         if (nrBits > 32u) {
@@ -305,7 +305,7 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
     } else {
         result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr, buffer, (socklen_t)size);
     }
-    
+
     return result;
 }
 
@@ -379,14 +379,14 @@ Ns_ReturnCode
 Ns_GetSockAddr(struct sockaddr *saPtr, const char *host, unsigned short port)
 {
     Ns_ReturnCode status = NS_OK;
-    
+
     NS_NONNULL_ASSERT(saPtr != NULL);
 
     /*
      * We return always a fresh sockaddr, so clear content first.
      */
     memset(saPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
-    
+
 #ifdef HAVE_IPV6
     if (host == NULL) {
         saPtr->sa_family = AF_INET6;
@@ -457,9 +457,9 @@ unsigned short
 Ns_SockaddrGetPort(const struct sockaddr *saPtr)
 {
     unsigned short port;
-    
+
     NS_NONNULL_ASSERT(saPtr != NULL);
-    
+
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
         port = ((const struct sockaddr_in6 *)saPtr)->sin6_port;
@@ -469,7 +469,7 @@ Ns_SockaddrGetPort(const struct sockaddr *saPtr)
 #else
     port = ((const struct sockaddr_in *)saPtr)->sin_port;
 #endif
-    
+
     return (unsigned short)htons(port);
 }
 
@@ -492,7 +492,7 @@ void
 Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
 {
     NS_NONNULL_ASSERT(saPtr != NULL);
-    
+
 #ifdef HAVE_IPV6
     if (saPtr->sa_family == AF_INET6) {
         ((struct sockaddr_in6 *)saPtr)->sin6_port = ntohs(port);
@@ -525,15 +525,15 @@ socklen_t
 Ns_SockaddrGetSockLen(const struct sockaddr *saPtr)
 {
     size_t socklen;
-    
+
     NS_NONNULL_ASSERT(saPtr != NULL);
-    
+
 #ifdef HAVE_IPV6
     socklen = (saPtr->sa_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in);
 #else
     socklen = sizeof(struct sockaddr_in);
 #endif
-    
+
     return (socklen_t)socklen;
 }
 
@@ -558,7 +558,7 @@ Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockadd
 {
     const char *family;
     char        ipString[NS_IPADDR_SIZE], *ipStrPtr = ipString;
-    
+
     NS_NONNULL_ASSERT(prefix != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
 
@@ -566,7 +566,7 @@ Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockadd
         (saPtr->sa_family == AF_INET) ? "AF_INET" : "UNKNOWN";
 
     (void)ns_inet_ntop(saPtr, ipString, NS_IPADDR_SIZE);
-    
+
     Ns_Log(severity, "%s: SockAddr family %s, ip %s, port %d",
            prefix, family, ipStrPtr, Ns_SockaddrGetPort(saPtr));
 }

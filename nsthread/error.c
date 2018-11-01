@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,10 +28,10 @@
  */
 
 
-/* 
+/*
  * error.c --
  *
- *	Routines for dealing with fatal errors.
+ *      Routines for dealing with fatal errors.
  */
 
 #include "thread.h"
@@ -42,13 +42,13 @@
  *
  * NsThreadFatal --
  *
- *	Call NsThreadAbort when an operating system function fails.
+ *      Call NsThreadAbort when an operating system function fails.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Process is aborted through NsThreadAbort.
+ *      Process is aborted through NsThreadAbort.
  *
  *----------------------------------------------------------------------
  */
@@ -91,7 +91,7 @@ ns_snprintf(char *buf, size_t len, const char *fmt, ...)
     va_start(ap, fmt);
     chars = vsnprintf(buf, len, fmt, ap);
     va_end(ap);
-    
+
     return chars;
 }
 #endif

@@ -99,7 +99,7 @@ Ns_CompressInit(Ns_CompressStream *cStream)
       if (rc == Z_STREAM_ERROR) {
         Ns_Log(Notice, "Ns_CompressInit: zlib error: %d (%s): %s",
                  rc, zError(rc), (z->msg != NULL) ? z->msg : "(none)");
-	status = NS_ERROR;
+        status = NS_ERROR;
       } else {
         Ns_Fatal("Ns_CompressInit: zlib error: %d (%s): %s",
                  rc, zError(rc), (z->msg != NULL) ? z->msg : "(none)");
@@ -115,11 +115,11 @@ Ns_CompressFree(Ns_CompressStream *cStream)
     z_stream *z = &cStream->z;
 
     if (z->zalloc != NULL) {
-	int status = deflateEnd(z);
-	if (status != Z_OK && status != Z_DATA_ERROR) {
-	    Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",
-		   status, zError(status), (z->msg != NULL) ? z->msg : "(unknown)");
-	}
+        int status = deflateEnd(z);
+        if (status != Z_OK && status != Z_DATA_ERROR) {
+            Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",
+                   status, zError(status), (z->msg != NULL) ? z->msg : "(unknown)");
+        }
     }
 }
 
@@ -154,9 +154,9 @@ Ns_InflateInit(Ns_CompressStream *cStream)
     zPtr->next_in  = Z_NULL;
     rc = inflateInit2(zPtr, 15 + 16); /* windowBits: 15 (max), +16 (Gzip header/footer). */
     if (rc != Z_OK) {
-	Ns_Log(Bug, "Ns_Compress: inflateInit: %d (%s): %s",
-	       rc, zError(rc), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
-	status = NS_ERROR;
+        Ns_Log(Bug, "Ns_Compress: inflateInit: %d (%s): %s",
+               rc, zError(rc), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
+        status = NS_ERROR;
     }
     return status;
 }
@@ -185,11 +185,11 @@ Ns_InflateBuffer(Ns_CompressStream *cStream, const char *buffer, size_t outSize,
     rc = inflate(zPtr, Z_NO_FLUSH);
 
     if (rc != Z_OK && rc != Z_PARTIAL_FLUSH) {
-	Ns_Log(Bug, "Ns_Compress: inflateBuffer: %d (%s); %s",
-	       rc, zError(rc), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
-	tclStatus = TCL_ERROR;
+        Ns_Log(Bug, "Ns_Compress: inflateBuffer: %d (%s); %s",
+               rc, zError(rc), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
+        tclStatus = TCL_ERROR;
     } else if (zPtr->avail_out == 0) {
-	tclStatus = TCL_CONTINUE;
+        tclStatus = TCL_CONTINUE;
     }
 
     *nrBytes = outSize - (size_t)zPtr->avail_out;
@@ -206,9 +206,9 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
 
     rc = inflateEnd(zPtr);
     if (rc != Z_OK) {
-	Ns_Log(Bug, "Ns_Compress: inflateEnd: %d (%s); %s",
-	       rc, zError(rc), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
-	status = NS_ERROR;
+        Ns_Log(Bug, "Ns_Compress: inflateEnd: %d (%s); %s",
+               rc, zError(rc), (zPtr->msg != NULL) ? zPtr->msg : "(unknown)");
+        status = NS_ERROR;
     }
     return status;
 
@@ -247,7 +247,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     if (z->zalloc == NULL) {
-	(void) Ns_CompressInit(cStream);
+        (void) Ns_CompressInit(cStream);
     }
 
     offset = (ptrdiff_t) Ns_DStringLength(dsPtr);
@@ -276,27 +276,27 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     nCompressed = 0u;
 
     if (nbufs == 0) {
-	flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
+        flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
         DeflateOrAbort(z, flushFlags);
     } else {
-	int i;
-	for (i = 0; i < nbufs; i++) {
+        int i;
+        for (i = 0; i < nbufs; i++) {
 
-	    z->next_in  = (void *)bufs[i].iov_base;
-	    z->avail_in = (uInt)bufs[i].iov_len;
-	    nCompressed += (size_t)z->avail_in;;
-	
-	    if (z->avail_in == 0 && i < nbufs -1) {
-		continue;
-	    }
-	    if (nCompressed == toCompress) {
-		flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
-	    } else {
-		flushFlags = Z_NO_FLUSH;
-	    }
-	
-	    DeflateOrAbort(z, flushFlags);
-	}
+            z->next_in  = (void *)bufs[i].iov_base;
+            z->avail_in = (uInt)bufs[i].iov_len;
+            nCompressed += (size_t)z->avail_in;;
+
+            if (z->avail_in == 0 && i < nbufs -1) {
+                continue;
+            }
+            if (nCompressed == toCompress) {
+                flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
+            } else {
+                flushFlags = Z_NO_FLUSH;
+            }
+
+            DeflateOrAbort(z, flushFlags);
+        }
     }
     Ns_DStringSetLength(dsPtr, (dsPtr->length - (int)z->avail_out));
 
@@ -450,7 +450,7 @@ Ns_InflateBufferInit(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buff
 }
 int
 Ns_InflateBuffer(Ns_CompressStream *UNUSED(cStream), const char *UNUSED(buffer),
-		 size_t UNUSED(outSize), size_t *UNUSED(nrBytes))
+                 size_t UNUSED(outSize), size_t *UNUSED(nrBytes))
 {
     return TCL_ERROR;
 }

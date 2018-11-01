@@ -125,13 +125,13 @@ static const struct {
  *
  * NsInitTask --
  *
- *	Global initialization for tasks.
+ *      Global initialization for tasks.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

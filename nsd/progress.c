@@ -120,7 +120,7 @@ int
 NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
-    
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
         result = TCL_ERROR;
@@ -132,8 +132,8 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&urlTable, url);
         if (hPtr != NULL) {
-	    Tcl_Obj        *resObj;
-	    const Progress *pPtr;
+            Tcl_Obj        *resObj;
+            const Progress *pPtr;
 
             pPtr = Tcl_GetHashValue(hPtr);
             resObj = Tcl_GetObjResult(interp);
@@ -152,7 +152,7 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
               CONST char *key = Tcl_GetHashKey(&urlTable, hPtr);
               hPtr = Tcl_NextHashEntry(&search);
               */
-	}
+        }
         Ns_MutexUnlock(&lock);
     }
     return result;
@@ -204,32 +204,32 @@ NsUpdateProgress(Ns_Sock *sock)
         }
 
         if (pPtr->hPtr == NULL) {
-	    const char *key = NULL;
-	    Ns_Set *set = NULL;
-	    Ns_DString *dsPtr = NULL;
+            const char *key = NULL;
+            Ns_Set *set = NULL;
+            Ns_DString *dsPtr = NULL;
 
             pPtr->size = reqPtr->length;
             pPtr->current = reqPtr->avail;
 
-	    if (request->query != NULL) {
-	      set = Ns_SetCreate(NULL);
-	      if (Ns_QueryToSet(request->query, set) == NS_OK) {
-		key = Ns_SetGet(set, "X-Progress-ID");
-		Ns_Log(Notice, "progress start url %s key '%s'", request->url, key);
-	      }
-	    }
+            if (request->query != NULL) {
+              set = Ns_SetCreate(NULL);
+              if (Ns_QueryToSet(request->query, set) == NS_OK) {
+                key = Ns_SetGet(set, "X-Progress-ID");
+                Ns_Log(Notice, "progress start url %s key '%s'", request->url, key);
+              }
+            }
 
-	    if (key == NULL) {
-	      dsPtr = &ds;
-	      Ns_DStringInit(dsPtr);
-	      Ns_DStringAppend(dsPtr, request->url);
-	      if (request->query != NULL) {
+            if (key == NULL) {
+              dsPtr = &ds;
+              Ns_DStringInit(dsPtr);
+              Ns_DStringAppend(dsPtr, request->url);
+              if (request->query != NULL) {
                 Ns_DStringAppend(dsPtr, "?");
                 Ns_DStringAppend(dsPtr, request->query);
-	      }
-	      key = Ns_DStringValue(dsPtr);
-	      Ns_Log(Notice, "progress start url '%s'", key);
-	    }
+              }
+              key = Ns_DStringValue(dsPtr);
+              Ns_Log(Notice, "progress start url '%s'", key);
+            }
 
             /*
              * Guard against concurrent requests to identical URLs tracking
@@ -249,7 +249,7 @@ NsUpdateProgress(Ns_Sock *sock)
                 Ns_Log(Warning, "ns:progress(%" PRIdz "/%" PRIdz "): ignoring duplicate URL: %s",
                        reqPtr->avail, reqPtr->length, key);
             }
-	    if (set != NULL)   {Ns_SetFree(set);}
+            if (set != NULL)   {Ns_SetFree(set);}
             if (dsPtr != NULL) {Ns_DStringFree(dsPtr);}
 
         } else {
@@ -263,7 +263,7 @@ NsUpdateProgress(Ns_Sock *sock)
                 pPtr->current = reqPtr->avail;
                 Ns_MutexUnlock(&lock);
             } else {
-	        Ns_Log(Notice, "progress end url '%s'", request->url);
+                Ns_Log(Notice, "progress end url '%s'", request->url);
                 ResetProgress(pPtr);
             }
         }

@@ -30,7 +30,7 @@
 /*
  * memory.c --
  *
- *	Memory allocation routines.
+ *      Memory allocation routines.
  */
 
 #include "thread.h"
@@ -41,14 +41,14 @@
  *
  * ns_realloc, ns_malloc, ns_calloc, ns_free, ns_strdup, ns_strcopy --
  *
- *	Memory allocation wrappers which either call the platform
- *	versions or the fast pool allocator for a per-thread pool.
+ *      Memory allocation wrappers which either call the platform
+ *      versions or the fast pool allocator for a per-thread pool.
  *
  * Results:
- *	As with system functions.
+ *      As with system functions.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -76,7 +76,7 @@ void
 ns_free(void *ptr)
 {
     if (likely(ptr != NULL)) {
-	ckfree(ptr);
+        ckfree(ptr);
     }
 }
 
@@ -121,11 +121,11 @@ ns_strdup(const char *old)
     char *p;
 
     NS_NONNULL_ASSERT(old != NULL);
-    
+
     length = strlen(old) + 1u;
     p = ns_malloc(length);
     memcpy(p, old, length);
-    
+
     return p;
 }
 
@@ -135,17 +135,17 @@ ns_strdup(const char *old)
  *
  * ns_uint32toa, ns_uint64toa --
  *
- *	This procedure formats an uint32_t or uint62_t into a sequence of
- *	decimal digits in a buffer. It is the caller's responsibility to
- *	ensure that enough storage is available. This procedure has the effect
- *	of snprintf(buffer, size, "%...d", n) but is substantially faster
+ *      This procedure formats an uint32_t or uint62_t into a sequence of
+ *      decimal digits in a buffer. It is the caller's responsibility to
+ *      ensure that enough storage is available. This procedure has the effect
+ *      of snprintf(buffer, size, "%...d", n) but is substantially faster
  *
  * Results:
- *	Length of the written digits, not including the terminating "\0".
+ *      Length of the written digits, not including the terminating "\0".
  *
  * Side effects:
- *	The formatted characters are written into the storage pointer to by
- *	the "buffer" argument.
+ *      The formatted characters are written into the storage pointer to by
+ *      the "buffer" argument.
  *
  *----------------------------------------------------------------------
  */
@@ -153,7 +153,7 @@ ns_strdup(const char *old)
 int
 ns_uint32toa(
     char *buffer,		/* Points to the storage into which the
-				 * formatted characters are written. */
+                                 * formatted characters are written. */
     uint32_t n)			/* The value to be converted. */
 {
     char            temp[TCL_INTEGER_SPACE];
@@ -187,7 +187,7 @@ ns_uint32toa(
 int
 ns_uint64toa(
     char *buffer,		/* Points to the storage into which the
-				 * formatted characters are written. */
+                                 * formatted characters are written. */
     uint64_t n)			/* The value to be converted. */
 {
     char            temp[TCL_INTEGER_SPACE];

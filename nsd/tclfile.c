@@ -264,7 +264,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
         snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
-        
+
     } else /*if (objc == 2)*/ {
         char *buffer;
 
@@ -394,7 +394,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         {"nbytes", Ns_ObjvInt,    &nbytes, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
         || NsConnRequire(interp, NULL) != NS_OK) {
         result = TCL_ERROR;
@@ -442,13 +442,13 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     int      result = TCL_OK;
 
     Ns_ObjvSpec args[] = {
-	{"file",      Ns_ObjvString, &fileString, NULL},
-	{"?length",   Ns_ObjvInt,    &length,  NULL},
-	{NULL, NULL, NULL, NULL}
+        {"file",      Ns_ObjvString, &fileString, NULL},
+        {"?length",   Ns_ObjvInt,    &length,  NULL},
+        {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-	result = TCL_ERROR;
+        result = TCL_ERROR;
 
     } else if (truncate(fileString, length) != 0) {
         Ns_TclPrintfResult(interp, "truncate (\"%s\", %s) failed: %s",
@@ -484,13 +484,13 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     off_t       length = 0;
     char       *fileIdString;
     Ns_ObjvSpec args[] = {
-	{"fileId",    Ns_ObjvString, &fileIdString, NULL},
-	{"?length",   Ns_ObjvInt,    &length,  NULL},
-	{NULL, NULL, NULL, NULL}
+        {"fileId",    Ns_ObjvString, &fileIdString, NULL},
+        {"?length",   Ns_ObjvInt,    &length,  NULL},
+        {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-	result = TCL_ERROR;
+        result = TCL_ERROR;
 
     } else if (Ns_TclGetOpenFd(interp, fileIdString, 1, &fd) != TCL_OK) {
         result = TCL_ERROR;
@@ -511,13 +511,13 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclNormalizePathObjCmd --
  *
- *	    Implements ns_normalizepath as obj command.
+ *          Implements ns_normalizepath as obj command.
  *
  * Results:
- *	    Tcl result.
+ *          Tcl result.
  *
  * Side effects:
- *	    See docs.
+ *          See docs.
  *
  *----------------------------------------------------------------------
  */

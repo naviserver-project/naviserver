@@ -321,7 +321,7 @@ ShutdownThread(void *arg)
      */
 
     for (cbPtr = arg; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
-	Ns_ShutdownProc  *proc = (Ns_ShutdownProc *)cbPtr->proc;
+        Ns_ShutdownProc  *proc = (Ns_ShutdownProc *)cbPtr->proc;
 
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DString ds;
@@ -525,8 +525,8 @@ RunCallbacks(const char *list, const Callback *cbPtr)
     NS_NONNULL_ASSERT(list != NULL);
 
     while (cbPtr != NULL) {
-	Ns_Callback *proc;
-	Ns_DString   ds;
+        Ns_Callback *proc;
+        Ns_DString   ds;
 
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DStringInit(&ds);
@@ -549,4 +549,3 @@ RunCallbacks(const char *list, const Callback *cbPtr)
  * indent-tabs-mode: nil
  * End:
  */
-

@@ -31,7 +31,7 @@
 /*
  * quotehtml.c --
  *
- *	Take text and make it safe for HTML.
+ *      Take text and make it safe for HTML.
  */
 
 #include "nsd.h"
@@ -49,13 +49,13 @@ QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
  *
  * Ns_QuoteHtml --
  *
- *	Quote an HTML string.
+ *      Quote an HTML string.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Copies quoted HTML to given dstring.
+ *      Copies quoted HTML to given dstring.
  *
  *----------------------------------------------------------------------
  */
@@ -143,13 +143,13 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
  *
  * NsTclQuoteHtmlObjCmd --
  *
- *	Implements ns_quotehtml.
+ *      Implements ns_quotehtml.
  *
  * Results:
- *	Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *	See docs.
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */

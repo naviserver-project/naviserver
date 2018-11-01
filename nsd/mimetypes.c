@@ -1429,17 +1429,17 @@ AddType(const char *ext, const char *type)
     ext = LowerDString(&ds, ext);
     he = Tcl_CreateHashEntry(&types, ext, &isNew);
     if (isNew == 0) {
-	char *oldType = Tcl_GetHashValue(he);
+        char *oldType = Tcl_GetHashValue(he);
 
-	if (STREQ(oldType, type)) {
-	    Ns_Log(Warning,
-		   "config mimtypes: redefine mime type for %s with identical value (%s); statement useless",
-		   ext, oldType);
-	} else {
-	    Ns_Log(Warning,
-		   "config mimtypes: redefine predefined mime type for %s value '%s' with different value: %s",
-		   ext, oldType, type);
-	}
+        if (STREQ(oldType, type)) {
+            Ns_Log(Warning,
+                   "config mimtypes: redefine mime type for %s with identical value (%s); statement useless",
+                   ext, oldType);
+        } else {
+            Ns_Log(Warning,
+                   "config mimtypes: redefine predefined mime type for %s value '%s' with different value: %s",
+                   ext, oldType, type);
+        }
 
         ns_free(oldType);
     }

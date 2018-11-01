@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -71,7 +71,7 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  *      set, it is treated as cached result and is returned untouched.
  *
  * Results:
- *      Query data or NULL if error 
+ *      Query data or NULL if error
  *
  * Side effects:
  *      None.
@@ -87,7 +87,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (Conn *) conn;
-    
+
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
         if (connPtr->request.method != NULL && !STREQ(connPtr->request.method, "POST")) {
@@ -99,14 +99,14 @@ Ns_ConnGetQuery(Ns_Conn *conn)
             if (form != NULL) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding, NS_FALSE);
             }
-        } else if (/* 
-		    * It is unsafe to access the content when the
-		    * connection is already closed due to potentially
-		    * unmmapped memory.
-		    */
-		   (connPtr->flags & NS_CONN_CLOSED ) == 0u
-		   && (form = connPtr->reqPtr->content) != NULL
-		   ) {
+        } else if (/*
+                    * It is unsafe to access the content when the
+                    * connection is already closed due to potentially
+                    * unmmapped memory.
+                    */
+                   (connPtr->flags & NS_CONN_CLOSED ) == 0u
+                   && (form = connPtr->reqPtr->content) != NULL
+                   ) {
             const char *contentType = Ns_SetIGet(conn->headers, "content-type");
 
             if (contentType != NULL) {
@@ -140,11 +140,11 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                 } else {
                     const char *formEnd = form + connPtr->reqPtr->length;
                     char       *s;
-                    
+
                     s = NextBoundary(&bound, form, formEnd);
                     while (s != NULL) {
                         char  *e;
-                        
+
                         s += bound.length;
                         if (*s == '\r') {
                             ++s;
@@ -193,7 +193,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (Conn *) conn;
-    
+
     if (connPtr->query != NULL) {
         const Tcl_HashEntry *hPtr;
         Tcl_HashSearch       search;
@@ -215,7 +215,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
                 Tcl_DecrRefCount(filePtr->sizeObj);
             }
             ns_free(filePtr);
-        
+
             hPtr = Tcl_NextHashEntry(&search);
         }
         Tcl_DeleteHashTable(&connPtr->files);
@@ -229,10 +229,10 @@ Ns_ConnClearQuery(Ns_Conn *conn)
  *
  * Ns_QueryToSet --
  *
- *      Parse query data into an Ns_Set 
+ *      Parse query data into an Ns_Set
  *
  * Results:
- *      NS_OK. 
+ *      NS_OK.
  *
  * Side effects:
  *      Will add data to set without any UTF conversion.
@@ -245,7 +245,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
 {
     NS_NONNULL_ASSERT(query != NULL);
     NS_NONNULL_ASSERT(set != NULL);
-    
+
     ParseQuery(query, set, NULL, NS_FALSE);
     return NS_OK;
 }
@@ -279,7 +279,7 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
         Ns_Set *set = Ns_SetCreate(NULL);
-        
+
         if (Ns_QueryToSet(Tcl_GetString(objv[1]), set) != NS_OK) {
             Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", Tcl_GetString(objv[1]));
             Ns_SetFree(set);
@@ -304,7 +304,7 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -324,8 +324,8 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     p = form;
 
     while (p != NULL) {
-	char       *v;
-	const char *k;
+        char       *v;
+        const char *k;
 
         k = p;
         p = strchr(p, INTCHAR('&'));
@@ -407,7 +407,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
     NS_NONNULL_ASSERT(end != NULL);
 
     encoding = connPtr->urlEncoding;
-    
+
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
     set = Ns_SetCreate(NULL);
@@ -427,8 +427,8 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 
     ks = NULL;
     while ((e = strchr(start, INTCHAR('\n'))) != NULL) {
-	const char *s = start;
-	char save;
+        const char *s = start;
+        char save;
 
         start = e + 1;
         if (e > s && *(e-1) == '\r') {
@@ -449,27 +449,27 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 
     disp = Ns_SetGet(set, "content-disposition");
     if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == NS_TRUE) {
-	const char *key = Ext2utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
-	const char *value, *fs = NULL, *fe = NULL;
+        const char *key = Ext2utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
+        const char *value, *fs = NULL, *fe = NULL;
 
         if (GetValue(disp, "filename=", &fs, &fe, &unescape) == NS_FALSE) {
-	    value = Ext2utf(&vds, start, (size_t)(end - start), encoding, unescape);
+            value = Ext2utf(&vds, start, (size_t)(end - start), encoding, unescape);
         } else {
-	    Tcl_HashEntry *hPtr;
+            Tcl_HashEntry *hPtr;
             FormFile      *filePtr;
             Tcl_Interp    *interp = connPtr->itPtr->interp;
 
             value = Ext2utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew != 0) {
-                
+
                 filePtr = ns_malloc(sizeof(FormFile));
                 Tcl_SetHashValue(hPtr, filePtr);
-                
+
                 filePtr->hdrObj = Tcl_NewListObj(0, NULL);
                 filePtr->offObj = Tcl_NewListObj(0, NULL);
                 filePtr->sizeObj = Tcl_NewListObj(0, NULL);
-                
+
                 Tcl_IncrRefCount(filePtr->hdrObj);
                 Tcl_IncrRefCount(filePtr->offObj);
                 Tcl_IncrRefCount(filePtr->sizeObj);
@@ -481,10 +481,10 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
             (void) Tcl_ListObjAppendElement(interp, filePtr->hdrObj,
                                             Tcl_GetObjResult(interp));
             Tcl_ResetResult(connPtr->itPtr->interp);
-                
+
             (void) Tcl_ListObjAppendElement(interp, filePtr->offObj,
                                             Tcl_NewIntObj((int)(start - connPtr->reqPtr->content)));
-            
+
             (void) Tcl_ListObjAppendElement(interp, filePtr->sizeObj,
                                             Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
             set = NULL;
@@ -603,7 +603,7 @@ NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
  *      NS_TRUE if attribute found and value parsed, NS_FALSE otherwise.
  *
  * Side effects:
- *      Start and end are stored in given pointers, quoted character, 
+ *      Start and end are stored in given pointers, quoted character,
  *      when it was preceded by a backslash.
  *
  *----------------------------------------------------------------------
@@ -630,8 +630,8 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
         s += strlen(att);
         e = s;
         if (*s != '"' && *s != '\'') {
-            /* 
-             * End of unquoted att=value is next space. 
+            /*
+             * End of unquoted att=value is next space.
              */
             while (*e != '\0' && CHARTYPE(space, *e) == 0) {
                 ++e;
@@ -641,7 +641,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
             bool escaped = NS_FALSE;
 
             *uPtr = '\0';
-            /* 
+            /*
              * End of quoted att="value" is next quote.  A quote within
              * the quoted string could be escaped with a backslash. In
              * case, an escaped quote was detected, report the quote
@@ -694,8 +694,8 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
         Tcl_DStringSetLength(dsPtr, 0);
         Tcl_DStringAppend(dsPtr, start, (int)len);
     } else {
-        /* 
-         * ExternalToUtfDString will re-init dstring. 
+        /*
+         * ExternalToUtfDString will re-init dstring.
          */
         Tcl_DStringFree(dsPtr);
         (void) Tcl_ExternalToUtfDString(encoding, start, (int)len, dsPtr);
@@ -711,12 +711,12 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
       char *buffer = dsPtr->string;
 
       for (i = 0; i<l; i++) {
-	if (buffer[i] == '\\' && buffer[i+1] == unescape) {
-	  for (j = i; j < l; j++) {
-	    buffer[j] = buffer[j+1];
-	  }
-	  l --;
-	}
+        if (buffer[i] == '\\' && buffer[i+1] == unescape) {
+          for (j = i; j < l; j++) {
+            buffer[j] = buffer[j+1];
+          }
+          l --;
+        }
       }
       Tcl_DStringSetLength(dsPtr, l);
     }

@@ -563,10 +563,10 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
  *
  * ArgProc --
  *
- *	Append info for socket callback.
+ *      Append info for socket callback.
  *
  * Results:
- *	None
+ *      None
  *
  * Side effects:
  *      None.

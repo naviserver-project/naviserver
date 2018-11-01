@@ -52,12 +52,12 @@ typedef struct AdpRequest {
  * Static functions defined in this file.
  */
 
-static int RegisterPage(const ClientData clientData, const char *method, 
-			const char *url, const char *file, const Ns_Time *expiresPtr, 
-			unsigned int rflags, unsigned int aflags)
+static int RegisterPage(const ClientData clientData, const char *method,
+                        const char *url, const char *file, const Ns_Time *expiresPtr,
+                        unsigned int rflags, unsigned int aflags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static Ns_ReturnCode PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, 
+static Ns_ReturnCode PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr,
                                  unsigned int aflags)
     NS_GNUC_NONNULL(1);
 
@@ -129,25 +129,25 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     NS_NONNULL_ASSERT(connPtr != NULL);
 
     servPtr = connPtr->poolPtr->servPtr;
-    
+
     /*
      * Verify the file exists.
      */
 
     if (file == NULL) {
         fileNotFound = NS_TRUE;
-        
+
     } else if (access(file, R_OK) == 0) {
         fileNotFound = NS_FALSE;
-        
+
     } else if (servPtr->adp.defaultExtension != NULL) {
-        
+
         Tcl_DStringInit(&ds);
         dsPtr = &ds;
-        
+
         Tcl_DStringAppend(dsPtr, file, -1);
         Tcl_DStringAppend(dsPtr, servPtr->adp.defaultExtension, -1);
-        
+
         if (access(dsPtr->string, R_OK) == 0) {
             file = dsPtr->string;
             fileNotFound = NS_FALSE;
@@ -157,17 +157,17 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
     } else {
         fileNotFound = NS_TRUE;
     }
-    
+
     if (fileNotFound) {
         status = Ns_ConnReturnNotFound(conn);
-        
+
     } else {
         Tcl_Interp     *interp = Ns_GetConnInterp(conn);
         NsInterp       *itPtr = NsGetInterpData(interp);
         const char     *type, *start;
         Tcl_Obj        *objv[2];
         int             result;
-        
+
         /*
          * Set the output type based on the file type.
          */
@@ -187,7 +187,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
             conn->request.method != NULL &&
             STREQ(conn->request.method, "GET")) {
             const Ns_Set *query = Ns_ConnGetQuery(conn);
-        
+
             if (query != NULL) {
                 itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
             }
@@ -210,7 +210,7 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
 
         if (itPtr->adp.exception == ADP_TIMEOUT) {
             status = Ns_ConnReturnUnavailable(conn);
-        
+
         } else if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK || result != TCL_OK) {
             status = NS_ERROR;
         } else {
@@ -249,7 +249,7 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
     unsigned int   aflags = 0u;
     Ns_Time       *expiresPtr = NULL;
     Ns_ObjvSpec    opts[] = {
-	{"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
+        {"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
         {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
         {"-options",   Ns_ObjvFlags, &aflags,     adpOpts},
         {"--",         Ns_ObjvBreak, NULL,        NULL},
@@ -267,7 +267,7 @@ NsTclRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     } else {
         unsigned int rflags = 0u;
-        
+
         if (noinherit != 0) {
             rflags |= NS_OP_NOINHERIT;
         }
@@ -292,7 +292,7 @@ NsTclRegisterTclObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         {"?file",    Ns_ObjvString, &file,     NULL},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
@@ -443,7 +443,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, const void *arg)
         Tcl_DStringAppendElement(dsPtr, "tcl");
     }
     for (i = 0u; i < (sizeof(adpOpts) / sizeof(adpOpts[0])); i++) {
-	if ((adp->flags & adpOpts[i].value) != 0u) {
+        if ((adp->flags & adpOpts[i].value) != 0u) {
             Tcl_DStringAppendElement(dsPtr, adpOpts[i].key);
         }
     }
@@ -572,7 +572,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
                 result = TCL_OK;
                 Ns_TclPrintfResult(interp, "adp flush failed: connection closed");
             } else {
-		struct iovec sbuf;
+                struct iovec sbuf;
 
                 if ((flags & ADP_FLUSHED) == 0u && (flags & ADP_EXPIRE) != 0u) {
                     Ns_ConnCondSetHeaders(conn, "Expires", "now");
@@ -582,10 +582,10 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
                     buf = NULL;
                     len = 0;
                 }
-		
-		sbuf.iov_base = buf;
-		sbuf.iov_len  = (size_t)len;
-                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1, 
+
+                sbuf.iov_base = buf;
+                sbuf.iov_len  = (size_t)len;
+                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1,
                                        (doStream ? NS_CONN_STREAM : 0u)) == NS_OK) {
                     result = TCL_OK;
                 }

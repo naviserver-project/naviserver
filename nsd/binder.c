@@ -269,7 +269,7 @@ PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *p
 
     for (i = 0u; i < pPtr->count; i++) {
         NS_SOCKET sock = pPtr->sockets[i];
-        
+
         if (sock != NS_INVALID_SOCKET) {
             count ++;
             Ns_Log(Debug, "prebind closing %s socket %d\n", proto, sock);
@@ -435,7 +435,7 @@ Ns_SockListenRaw(int proto)
     hPtr = Tcl_FirstHashEntry(&preboundRaw, &search);
     while (hPtr != NULL) {
         if (proto == PTR2INT(Tcl_GetHashValue(hPtr))) {
-	    sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
+            sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
             Tcl_DeleteHashEntry(hPtr);
             break;
         }
@@ -495,7 +495,7 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
-	const char *value = (char*) Tcl_GetHashValue(hPtr);
+        const char *value = (char*) Tcl_GetHashValue(hPtr);
 
         if (STREQ(path, value)) {
             sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
@@ -842,7 +842,7 @@ NsClosePreBound(void)
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
         const char *addr = (char *) Tcl_GetHashKey(&preboundUnix, hPtr);
- 
+
         sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused Unix-domain socket: [%s] %d",
                addr, sock);
@@ -920,8 +920,8 @@ PrebindSockets(const char *spec)
         reuses = 1;
 
         /*
-	 * Parse reuses count
-	 */
+         * Parse reuses count
+         */
         p = strrchr(line, INTCHAR('#'));
         if (p != NULL) {
             *p++ = '\0';
@@ -933,8 +933,8 @@ PrebindSockets(const char *spec)
         }
 
         /*
-	 * Parse port
-	 */
+         * Parse port
+         */
         Ns_HttpParseHost(line, &addr, &str);
         if (str != NULL) {
             *str++ = '\0';
@@ -947,17 +947,17 @@ PrebindSockets(const char *spec)
         port = (l >= 0) ? (unsigned short)l : 0u;
 
         /*
-	 * Parse protocol; a line starting with a '/' means: path, which
-	 * implies a unix-domain socket.
-	 */
+         * Parse protocol; a line starting with a '/' means: path, which
+         * implies a unix-domain socket.
+         */
         if (*line != '/' && (str = strchr(line, INTCHAR('/')))) {
             *str++ = '\0';
             proto = str;
         }
 
-	/*
-	 * TCP
-	 */
+        /*
+         * TCP
+         */
         Ns_Log(Notice, "prebind: proto %s addr %s port %d reuses %ld", proto, addr, port, reuses);
 
         if (STREQ(proto, "tcp") && port > 0) {
@@ -984,9 +984,9 @@ PrebindSockets(const char *spec)
             Ns_Log(Notice, "prebind: tcp: [%s]:%d", addr, port);
         }
 
-	/*
-	 * UDP
-	 */
+        /*
+         * UDP
+         */
         if (STREQ(proto, "udp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: udp: invalid address: [%s]:%d",
@@ -1009,9 +1009,9 @@ PrebindSockets(const char *spec)
             Ns_Log(Notice, "prebind: udp: [%s]:%d", addr, port);
         }
 
-	/*
-	 * ICMP
-	 */
+        /*
+         * ICMP
+         */
         if (strncmp(proto, "icmp", 4u) == 0) {
             long count = 1;
             /* Parse count */
@@ -1038,9 +1038,9 @@ PrebindSockets(const char *spec)
             }
         }
 
-	/*
-	 * Unix-domain socket
-	 */
+        /*
+         * Unix-domain socket
+         */
         if (Ns_PathIsAbsolute(line) == NS_TRUE) {
             unsigned short mode = 0u;
             /* Parse mode */
@@ -1162,7 +1162,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     {
       struct cmsghdr *c = CMSG_FIRSTHDR(&msg);
       if ((c != NULL) && c->cmsg_type == SCM_RIGHTS) {
-	  int *ptr = (int*)CMSG_DATA(c);
+          int *ptr = (int*)CMSG_DATA(c);
           sock = *ptr;
       }
     }
@@ -1393,7 +1393,7 @@ Binder(void)
 
         if (sock != -1) {
 #ifdef HAVE_CMMSG
-	    int *pfd;
+            int *pfd;
 
             msg.msg_control = address;
             msg.msg_controllen = sizeof(address);

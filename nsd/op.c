@@ -124,8 +124,8 @@ ConfigServerProxy(const char *server)
 
 void
 Ns_RegisterRequest(const char *server, const char *method, const char *url,
-                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, 
-		   unsigned int flags)
+                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
+                   unsigned int flags)
 {
     Req *reqPtr;
 
@@ -165,8 +165,8 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
 
 void
 Ns_GetRequest(const char *server, const char *method, const char *url,
-              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr, 
-	      unsigned int *flagsPtr)
+              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
+              unsigned int *flagsPtr)
 {
     const Req *reqPtr;
 
@@ -248,7 +248,7 @@ Ns_UnRegisterRequestEx(const char *server, const char *method, const char *url,
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
-    
+
     Ns_MutexLock(&ulock);
     (void)Ns_UrlSpecificDestroy(server, method, url, uid, flags);
     Ns_MutexUnlock(&ulock);
@@ -283,17 +283,17 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     connPtr = (Conn *) conn;
 
     /*
-     * Return error messages for invalid headers and 
+     * Return error messages for invalid headers and
      * the entity too large.
      */
     if ((connPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u) {
         connPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
         status = Ns_ConnReturnEntityTooLarge(conn);
-        
+
     } else if ((connPtr->flags & NS_CONN_REQUESTURITOOLONG) != 0u) {
         connPtr->flags &= ~NS_CONN_REQUESTURITOOLONG;
         status = Ns_ConnReturnRequestURITooLong(conn);
-        
+
     } else if ((connPtr->flags & NS_CONN_LINETOOLONG) != 0u) {
         connPtr->flags &= ~NS_CONN_LINETOOLONG;
         status = Ns_ConnReturnHeaderLineTooLong(conn);
@@ -302,7 +302,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
         /*
          * True requests.
          */
-    
+
         if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
             Req        *reqPtr;
 
@@ -321,7 +321,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
                 ++reqPtr->refcnt;
                 Ns_MutexUnlock(&ulock);
                 status = (*reqPtr->proc) (reqPtr->arg, conn);
-            
+
                 Ns_MutexLock(&ulock);
                 FreeReq(reqPtr);
                 Ns_MutexUnlock(&ulock);
@@ -478,11 +478,11 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
                           const char *protocol)
 {
     NsServer      *servPtr;
-    
+
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(protocol != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr;
@@ -529,7 +529,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     const Tcl_HashEntry *hPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    
+
     servPtr = ((Conn *) conn)->poolPtr->servPtr;
 
     Ns_DStringInit(&ds);
@@ -578,7 +578,7 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         Ns_MutexLock(&ulock);
@@ -591,11 +591,11 @@ static void
 WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
      const Req *reqPtr;
-     
+
      NS_NONNULL_ASSERT(dsPtr != NULL);
      NS_NONNULL_ASSERT(arg != NULL);
      reqPtr = arg;
-     
+
      Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
 }
 

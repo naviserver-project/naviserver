@@ -50,9 +50,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     enc = crypt_r(pw, salt, &data);
 
     if (enc == NULL) {
-	*iobuf = '\0';
+        *iobuf = '\0';
     } else {
-	strncpy(iobuf, enc, NS_ENCRYPT_BUFSIZE);
+        strncpy(iobuf, enc, NS_ENCRYPT_BUFSIZE);
     }
 
     return iobuf;
@@ -78,9 +78,9 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     Ns_MutexUnlock(&lock);
 
     if (enc == NULL) {
- 	*iobuf = 0;
+        *iobuf = 0;
      } else {
-	strncpy(iobuf, enc, NS_ENCRYPT_BUFSIZE);
+        strncpy(iobuf, enc, NS_ENCRYPT_BUFSIZE);
      }
      return iobuf;
  }
@@ -242,12 +242,12 @@ setkey_private(struct sched *sp, const unsigned char *key)
             unsigned char t = sp->C[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];
-	    }
+            }
             sp->C[27] = t;
             t = sp->D[0];
             for (j = 0; j < 28 - 1; j++) {
                 sp->D[j] = sp->D[j + 1];
-	    }
+            }
             sp->D[27] = t;
         }
 
@@ -365,18 +365,18 @@ encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
         /*
          * Set direction
          */
-	if (backwards) {
+        if (backwards) {
             i = 15 - ii;
-	} else {
+        } else {
             i = ii;
-	}
+        }
 
         /*
          * Save the R array, which will be the new L.
          */
         for (j = 0; j < 32; j++) {
             tempL[j] = R[j];
-	}
+        }
 
         /*
          * Expand R to 48 bits using the E selector; exclusive-or with the
@@ -384,7 +384,7 @@ encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
          */
         for (j = 0; j < 48; j++) {
             preS[j] = R[sp->E[j] - 1u] ^ sp->KS[i][j];
-	}
+        }
 
         /*
          * The pre-select bits are now considered in 8 groups of 6 bits each.
@@ -420,14 +420,14 @@ encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
          */
         for (j = 0; j < 32; j++) {
             R[j] = L[j] ^ f[P[j] - 1];
-	}
+        }
 
         /*
          * Finally, the new L (the original R) is copied back.
          */
         for (j = 0; j < 32; j++) {
             L[j] = tempL[j];
-	}
+        }
     }
 
     /*
@@ -464,10 +464,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         block[i] = UCHAR('\0');
     }
     for (i = 0u, c = UCHAR(*pw); c != UCHAR('\0') && i < 64u; pw++, c = UCHAR(*pw)) {
-	for (j = 0u; j < 7u; j++, i++) {
+        for (j = 0u; j < 7u; j++, i++) {
             assert(i < sizeof(block));
             block[i] = (unsigned char)(((unsigned)c >> (6u - j)) & 1u);
-	}
+        }
         i++;
     }
 
@@ -482,10 +482,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         iobuf[i] = (char)c;
         if (c > UCHAR('Z')) {
             c = (unsigned char)((unsigned)c - 6u);
-	}
+        }
         if (c > UCHAR('9')) {
             c = (unsigned char)((unsigned)c - 7u);
-	}
+        }
         c = (unsigned char)((unsigned)c - UCHAR('.'));
         for (j = 0u; j < 6u; j++) {
             if (((unsigned)(c >> j) & 1u) != 0u) {
@@ -509,10 +509,10 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
         c = (unsigned char)(c + UCHAR('.'));
         if (c > UCHAR('9')) {
             c = UCHAR(c + 7u);
-	}
+        }
         if (c > UCHAR('Z')) {
             c = UCHAR(c + 6u);
-	}
+        }
         iobuf[i + 2u] = (char)c;
     }
     iobuf[i + 2u] = '\0';

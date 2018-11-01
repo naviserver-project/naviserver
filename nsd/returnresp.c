@@ -87,7 +87,7 @@ ConfigServerRedirects(const char *server)
 
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key, *map;
-	int statusCode;
+        int statusCode;
 
         key = Ns_SetKey(set, i);
         map = Ns_SetValue(set, i);
@@ -131,7 +131,7 @@ Ns_RegisterReturn(int status, const char *url)
     servPtr = NsGetInitServer();
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
-						  INT2PTR(status), &isNew);
+                                                  INT2PTR(status), &isNew);
         if (isNew == 0) {
             ns_free(Tcl_GetHashValue(hPtr));
         }
@@ -166,7 +166,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int httpStatus)
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    
+
     if (!ReturnRedirect(conn, httpStatus, &result)) {
         Ns_ConnSetResponseStatus(conn, httpStatus);
         result = Ns_ConnWriteVData(conn, NULL, 0, 0u);
@@ -195,7 +195,7 @@ Ns_ReturnCode
 Ns_ConnReturnOk(Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
-    
+
     return Ns_ConnReturnStatus(conn, 200);
 }
 
@@ -226,7 +226,7 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
 
     if (url != NULL) {
         Ns_DString urlDs, msgDs;
-        
+
         Ns_DStringInit(&urlDs);
         Ns_DStringInit(&msgDs);
 
@@ -235,13 +235,13 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
         }
         Ns_DStringAppend(&urlDs, url);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
-        
+
         Ns_DStringAppend(&msgDs, "<a href=\"");
         Ns_QuoteHtml(&msgDs, urlDs.string);
         Ns_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>");
-                            
+
         result = Ns_ConnReturnNotice(conn, 301, "Redirection", msgDs.string);
-        
+
         Ns_DStringFree(&msgDs);
         Ns_DStringFree(&urlDs);
     } else {
@@ -271,7 +271,7 @@ Ns_ReturnCode
 Ns_ConnReturnNoResponse(Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
-    
+
     return Ns_ConnReturnStatus(conn, 204);
 }
 
@@ -302,7 +302,7 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
 
     if (url != NULL) {
         Ns_DString urlDs, msgDs;
-        
+
         Ns_DStringInit(&urlDs);
         Ns_DStringInit(&msgDs);
 
@@ -310,16 +310,16 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
         Ns_DStringAppend(&urlDs, url);
-        
+
         Ns_UrlEncodingWarnUnencoded("header field location", urlDs.string);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
-        
+
         Ns_DStringAppend(&msgDs, "<a href=\"");
         Ns_QuoteHtml(&msgDs, urlDs.string);
         Ns_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>");
-                            
+
         result = Ns_ConnReturnNotice(conn, 302, "Redirection", msgDs.string);
-        
+
         Ns_DStringFree(&msgDs);
         Ns_DStringFree(&urlDs);
 
@@ -469,7 +469,7 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    
+
     if (!ReturnRedirect(conn, 404, &result)) {
         result = Ns_ConnReturnNotice(conn, 404, "Not Found",
                                      "The requested URL was not found on this server.");
@@ -501,7 +501,7 @@ Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    
+
     if (!ReturnRedirect(conn, 405, &result)) {
         result = Ns_ConnReturnNotice(conn, 405, "Method Not Allowed",
                                      "The requested method is not allowed on this server.");
@@ -541,10 +541,10 @@ Ns_ConnReturnNotModified(Ns_Conn *conn)
  *      Return a 413 "Request Entity too large" response.
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      Will close the connection. 
+ *      Will close the connection.
  *
  *----------------------------------------------------------------------
  */
@@ -570,10 +570,10 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
  *      Return a 414 "Request URI too long".
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      Will close the connection. 
+ *      Will close the connection.
  *
  *----------------------------------------------------------------------
  */
@@ -601,10 +601,10 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
  *      Return a 431 "Request Header Fields Too Large".
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      Will close the connection. 
+ *      Will close the connection.
  *
  *----------------------------------------------------------------------
  */

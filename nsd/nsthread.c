@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * nsthread.c --
  *
- *	Compatibility wrappers for thread calls. 
+ *      Compatibility wrappers for thread calls.
  */
 
 #include "nsd.h"
@@ -42,13 +42,13 @@
  *
  * Ns_SetThreadServer --
  *
- *	Sets the thread name to the name of the server. 
+ *      Sets the thread name to the name of the server.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -65,13 +65,13 @@ Ns_SetThreadServer(const char *server)
  *
  * Ns_GetThreadServer --
  *
- *	Get the name of this server/thread. 
+ *      Get the name of this server/thread.
  *
  * Results:
- *	A thread/server name 
+ *      A thread/server name
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */

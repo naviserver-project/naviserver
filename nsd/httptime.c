@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * httptime.c --
  *
  *      Manipulate times and dates; this is strongly influenced
@@ -92,7 +92,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
     char            *result = NULL;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     if (when == NULL) {
         now = time(NULL);
         when = &now;
@@ -105,7 +105,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
          * and is locale independent, so English week and month names
          * must always be used.
          */
-        
+
         Ns_DStringPrintf(dsPtr, "%s, %02d %s %d %02d:%02d:%02d GMT",
                          week_names[tmPtr->tm_wday], tmPtr->tm_mday,
                          month_names[tmPtr->tm_mon], tmPtr->tm_year + 1900,
@@ -122,8 +122,8 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
  *
  * Ns_ParseHttpTime --
  *
- *      Take a time in one of three formats and convert it to a time_t. 
- *      Formats are: "Thursday, 10-Jun-93 01:29:59 GMT", "Thu, 10 
+ *      Take a time in one of three formats and convert it to a time_t.
+ *      Formats are: "Thursday, 10-Jun-93 01:29:59 GMT", "Thu, 10
  *      Jan 1993 01:29:59 GMT", or "Wed Jun  9 01:29:59 1993 GMT"
  *
  * Results:
@@ -143,7 +143,7 @@ Ns_ParseHttpTime(char *chars)
     time_t     t = 0;
 
     NS_NONNULL_ASSERT(chars != NULL);
-    
+
     /*
      * Find the comma after day-of-week
      *
@@ -238,7 +238,7 @@ Ns_ParseHttpTime(char *chars)
         timeInfo.tm_hour = MakeNum(s + 11);
         timeInfo.tm_min  = MakeNum(s + 14);
         timeInfo.tm_sec  = MakeNum(s + 17);
-    } 
+    }
 
     /*
      * If there are any impossible values, then return 0.
@@ -307,7 +307,7 @@ NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 
     } else {
         time_t t = Ns_ParseHttpTime(timeString);
-        
+
         if (likely(t != 0)) {
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj(t));
         } else {
@@ -326,13 +326,13 @@ NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  *
  * NsTclHttpTimeObjCmd --
  *
- *      Implements ns_httptime as obj command. 
+ *      Implements ns_httptime as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -352,7 +352,7 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     } else {
         Ns_DString ds;
         time_t     t = (time_t) itime;
-        
+
         Ns_DStringInit(&ds);
         (void) Ns_HttpTime(&ds, &t);
         Tcl_DStringResult(interp, &ds);
@@ -383,13 +383,13 @@ static int
 MakeNum(const char *s)
 {
     int result;
-    
+
     NS_NONNULL_ASSERT(s != NULL);
-    
+
     if (CHARTYPE(digit, *s) != 0) {
         result = (10 * ((int)UCHAR(*s) - (int)UCHAR('0'))) + ((int)UCHAR(*(s + 1)) - (int)UCHAR('0'));
     } else {
-	result = (int)UCHAR(*(s + 1)) - (int)UCHAR('0');
+        result = (int)UCHAR(*(s + 1)) - (int)UCHAR('0');
     }
     return result;
 }

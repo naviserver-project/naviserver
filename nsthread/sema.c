@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,14 +27,14 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * sema.c --
  *
- *	Couting semaphore routines.  Semaphores differ from ordinary mutex 
- *	locks in that they maintain a count instead of a simple locked/unlocked
- *	state.  Threads block if the semaphore count is less than one.
+ *      Couting semaphore routines.  Semaphores differ from ordinary mutex
+ *      locks in that they maintain a count instead of a simple locked/unlocked
+ *      state.  Threads block if the semaphore count is less than one.
  *
- *	Note:  In general, cleaner code can be implemented with condition variables.
+ *      Note:  In general, cleaner code can be implemented with condition variables.
  */
 
 #include "thread.h"
@@ -56,15 +56,15 @@ typedef struct {
  *
  * Ns_SemaInit --
  *
- *	Initialize a semaphore.   Note that because semaphores are
- *	initialized with a starting count they cannot be automatically
- *	created on first use as with other synchronization objects.
+ *      Initialize a semaphore.   Note that because semaphores are
+ *      initialized with a starting count they cannot be automatically
+ *      created on first use as with other synchronization objects.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -76,7 +76,7 @@ Ns_SemaInit(Ns_Sema *semaPtr, int count)
     Sema *sPtr;
 
     NS_NONNULL_ASSERT(semaPtr != NULL);
-    
+
     sPtr = ns_malloc(sizeof(Sema));
     sPtr->count = count;
     NsMutexInitNext(&sPtr->lock, "sm", &nextid);
@@ -90,15 +90,15 @@ Ns_SemaInit(Ns_Sema *semaPtr, int count)
  *
  * Ns_SemaDestroy --
  *
- *	Destroy a semaphore.  This routine is almost never used as
- *	synchronization objects are normally created at process startup
- *	and exist until the process exits.
+ *      Destroy a semaphore.  This routine is almost never used as
+ *      synchronization objects are normally created at process startup
+ *      and exist until the process exits.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -109,12 +109,12 @@ Ns_SemaDestroy(Ns_Sema *semaPtr)
     NS_NONNULL_ASSERT(semaPtr != NULL);
 
     if (*semaPtr != NULL) {
-    	Sema *sPtr = (Sema *) *semaPtr;
+        Sema *sPtr = (Sema *) *semaPtr;
 
-    	Ns_MutexDestroy(&sPtr->lock);
-    	Ns_CondDestroy(&sPtr->cond);
-    	ns_free(sPtr);
-    	*semaPtr = NULL;
+        Ns_MutexDestroy(&sPtr->lock);
+        Ns_CondDestroy(&sPtr->cond);
+        ns_free(sPtr);
+        *semaPtr = NULL;
     }
 }
 
@@ -124,13 +124,13 @@ Ns_SemaDestroy(Ns_Sema *semaPtr)
  *
  * Ns_SemaWait --
  *
- *	Wait for a semaphore count to be greater than zero.
+ *      Wait for a semaphore count to be greater than zero.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Calling thread may wait on the condition.
+ *      Calling thread may wait on the condition.
  *
  *----------------------------------------------------------------------
  */
@@ -141,11 +141,11 @@ Ns_SemaWait(Ns_Sema *semaPtr)
     Sema *sPtr;
 
     NS_NONNULL_ASSERT(semaPtr != NULL);
-    
+
     sPtr = (Sema *) *semaPtr;
     Ns_MutexLock(&sPtr->lock);
     while (sPtr->count == 0) {
-	Ns_CondWait(&sPtr->cond, &sPtr->lock);
+        Ns_CondWait(&sPtr->cond, &sPtr->lock);
     }
     sPtr->count--;
     Ns_MutexUnlock(&sPtr->lock);
@@ -157,13 +157,13 @@ Ns_SemaWait(Ns_Sema *semaPtr)
  *
  * Ns_SemaPost --
  *
- *	Increment a semaphore count, releasing waiting threads if needed.
+ *      Increment a semaphore count, releasing waiting threads if needed.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Threads waiting on the condition, if any, may be resumed.
+ *      Threads waiting on the condition, if any, may be resumed.
  *
  *----------------------------------------------------------------------
  */
@@ -179,9 +179,9 @@ Ns_SemaPost(Ns_Sema *semaPtr, int count)
     Ns_MutexLock(&sPtr->lock);
     sPtr->count += count;
     if (count == 1) {
-	Ns_CondSignal(&sPtr->cond);
+        Ns_CondSignal(&sPtr->cond);
     } else {
-	Ns_CondBroadcast(&sPtr->cond);
+        Ns_CondBroadcast(&sPtr->cond);
     }
     Ns_MutexUnlock(&sPtr->lock);
 }

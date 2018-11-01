@@ -60,13 +60,13 @@ static Ns_Mutex lock = NULL;
  *
  * NsInitTclEnv --
  *
- *	Global initialization for tasks.
+ *      Global initialization for tasks.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

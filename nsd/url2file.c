@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * url2file.c --
  *
  *      Routines to register, unregister, and run url2file callbacks.
@@ -246,14 +246,14 @@ Ns_UrlToFile(Ns_DString *dsPtr, const char *server, const char *url)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(url != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         status = NsUrlToFile(dsPtr, servPtr, url);
     } else {
         status = NS_ERROR;
     }
-    
+
     return status;
 }
 
@@ -331,7 +331,7 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
  *      Default old-style url2file proc registered at server startup.
  *
  * Results:
- *      NS_OK or NS_ERROR. 
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
  *      None.
@@ -359,10 +359,10 @@ NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
  *
  * NsTclUrl2FileObjCmd --
  *
- *      Implements ns_url2file as obj command. 
+ *      Implements ns_url2file as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -381,7 +381,7 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     } else {
         Ns_DString      ds;
         const NsInterp *itPtr = clientData;
-        
+
         Ns_DStringInit(&ds);
         if (NsUrlToFile(&ds, itPtr->servPtr, Tcl_GetString(objv[1])) != NS_OK) {
             Ns_TclPrintfResult(interp, "url2file lookup failed for %s", Tcl_GetString(objv[1]));
@@ -400,13 +400,13 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclRegisterUrl2FileObjCmd --
  *
- *      Implements ns_register_url2file as obj command. 
+ *      Implements ns_register_url2file as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See Ns_RegisterUrl2FileProc(). 
+ *      See Ns_RegisterUrl2FileProc().
  *
  *----------------------------------------------------------------------
  */
@@ -435,7 +435,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         unsigned int    flags;
         Ns_TclCallback *cbPtr;
 
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclUrl2FileProc, 
+        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclUrl2FileProc,
                                   scriptObj, remain, objv + (objc - remain));
         flags = (noinherit != 0) ? NS_OP_NOINHERIT : 0u;
         Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
@@ -450,13 +450,13 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
  *
  * NsTclUnRegisterUrl2FileObjCmd --
  *
- *      Implements ns_unregister_url2file as obj command. 
+ *      Implements ns_unregister_url2file as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See Ns_UnRegisterUrlToFileProc(). 
+ *      See Ns_UnRegisterUrlToFileProc().
  *
  *----------------------------------------------------------------------
  */
@@ -505,7 +505,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  *      url2file proc for the given URL.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -519,7 +519,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int o
     char       *url = NULL, *basepath = NULL;
     int         noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
-	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -544,7 +544,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int o
                                     flags);
         } else {
             Mount *mPtr;
-            
+
             mPtr = ns_malloc(sizeof(Mount));
             mPtr->basepath = ns_strdup(basepath);
             mPtr->url = ns_strdup(url);
@@ -565,7 +565,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int o
  *      Callback for Tcl url2file procs.
  *
  * Results:
- *      NS_OK or NS_ERROR. 
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
  *      Depends on Tcl script.
@@ -594,7 +594,7 @@ NsTclUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
  *      Construct new path relative to registered basepath.
  *
  * Results:
- *      NS_OK. 
+ *      NS_OK.
  *
  * Side effects:
  *      None.
@@ -631,7 +631,7 @@ NsMountUrl2FileProc(Ns_DString *dsPtr, const char *url, const void *arg)
  *      Info callback for procs which take Mount arg.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      None.
@@ -670,7 +670,7 @@ NsGetUrl2FileProcs(Ns_DString *dsPtr, const char *server)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
-    
+
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificWalk(uid, server, WalkCallback, dsPtr);
     Ns_MutexUnlock(&ulock);
@@ -696,7 +696,7 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
  *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */

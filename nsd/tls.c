@@ -56,15 +56,15 @@
  *
  * NsOpenSSLInit --
  *
- *	Library entry point for OpenSSL. This routine calls various
- *	initialization functions for OpenSSL. OpenSSL cannot be used
- *	before this function is called.
+ *      Library entry point for OpenSSL. This routine calls various
+ *      initialization functions for OpenSSL. OpenSSL cannot be used
+ *      before this function is called.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Numerous inside OpenSSL.
+ *      Numerous inside OpenSSL.
  *
  *----------------------------------------------------------------------
  */

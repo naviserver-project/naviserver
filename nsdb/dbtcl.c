@@ -31,7 +31,7 @@
 /*
  * dbtcl.c --
  *
- *	Tcl database access routines.
+ *      Tcl database access routines.
  */
 
 #include "db.h"
@@ -808,7 +808,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
  *
  * Results:
  *      Returns TCL_OK and database exception code is set as Tcl result
- *	or TCL_ERROR if failure.
+ *      or TCL_ERROR if failure.
  *
  * Side effects:
  *      None.
@@ -861,7 +861,7 @@ DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
  *
  * Results:
  *      TCL_OK and the database section name is set as the Tcl result
- *	or TCL_ERROR if failure.
+ *      or TCL_ERROR if failure.
  *
  * Side effects:
  *      None.
@@ -895,7 +895,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * Results:
  *      Return TCL_OK and the pool's description string is set as the
- *	Tcl result string or TCL_ERROR if failure.
+ *      Tcl result string or TCL_ERROR if failure.
  *
  * Side effects:
  *      None.
@@ -927,7 +927,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * Results:
  *      TCL_OK and set the stripped string as the Tcl result or TCL_ERROR
- *	if failure.
+ *      if failure.
  *
  * Side effects:
  *      None.
@@ -996,14 +996,14 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * GetCsvCmd --
  *
- *	Implement the ns_getcsv command to read a single line from a CSV file
- *	and parse the results into a Tcl list variable.
+ *      Implement the ns_getcsv command to read a single line from a CSV file
+ *      and parse the results into a Tcl list variable.
  *
  * Results:
- *	A standard Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
- *	One line is read for given open channel.
+ *      One line is read for given open channel.
  *
  *----------------------------------------------------------------------
  */
@@ -1147,7 +1147,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
  *      Return TCL_OK if handle is found or TCL_ERROR otherwise.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

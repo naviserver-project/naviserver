@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -30,7 +30,7 @@
 /*
  * exec.c --
  *
- *	Routines for creating and waiting for child processes.
+ *      Routines for creating and waiting for child processes.
  */
 
 #include "nsd.h"
@@ -46,7 +46,7 @@ static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 # define ERR_CHDIR	(-2)
 # define ERR_EXEC	(-3)
 static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
-		    char **argv, char **envp)
+                    char **argv, char **envp)
     NS_GNUC_NONNULL(1);
 #endif /* _WIN32 */
 
@@ -55,11 +55,11 @@ static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
  *----------------------------------------------------------------------
  * Ns_ExecProcess --
  *
- *	Execute a command in a child process.
+ *      Execute a command in a child process.
  *
  * Results:
  *      Return pid of child process exec'ing the command or
- *	NS_INVALID_PID on failure.
+ *      NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -69,7 +69,7 @@ static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *args,
-	       const Ns_Set *env)
+               const Ns_Set *env)
 {
     NS_NONNULL_ASSERT(exec != NULL);
 
@@ -85,7 +85,7 @@ Ns_ExecProcess(const char *exec, const char *dir, int fdin, int fdout, char *arg
  *
  * Results:
  *      Return pid of child process exec'ing the command or
- *	NS_INVALID_PID on failure.
+ *      NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -97,7 +97,7 @@ pid_t
 Ns_ExecProc(const char *exec, char **argv)
 {
     NS_NONNULL_ASSERT(exec != NULL);
-    
+
     return Ns_ExecArgv(exec, NULL, 0, 1, argv, NULL);
 }
 
@@ -174,11 +174,11 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
             status = NS_ERROR;
         }
     }
-    
+
 #else
     int   waitstatus = 0;
     pid_t p;
-    
+
     do {
         p = waitpid(pid, &waitstatus, 0);
     } while (p != pid && errno == NS_EINTR);
@@ -186,7 +186,7 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
     if (p != pid) {
         Ns_Log(Error, "waitpid(%d) failed: %s", pid, strerror(errno));
         status = NS_ERROR;
-        
+
     } else if (WIFSIGNALED(waitstatus)) {
         const char *coredump = "";
 #ifdef WCOREDUMP
@@ -199,19 +199,19 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
                    WTERMSIG(waitstatus), strsignal(WTERMSIG(waitstatus)), coredump);
         }
     } else if (!WIFEXITED(waitstatus)) {
-    	Ns_Log(Error, "waitpid(%d): invalid status: %d", pid, waitstatus);
+        Ns_Log(Error, "waitpid(%d): invalid status: %d", pid, waitstatus);
     } else {
-    	int exitcode = WEXITSTATUS(waitstatus);
-        
-    	if (exitcode != 0) {
+        int exitcode = WEXITSTATUS(waitstatus);
+
+        if (exitcode != 0) {
             Ns_Log(Warning, "process %d exited with non-zero exit code: %d",
                    pid, exitcode);
-    	}
-    	if (exitcodePtr != NULL) {
-    	    *exitcodePtr = exitcode;
+        }
+        if (exitcodePtr != NULL) {
+            *exitcodePtr = exitcode;
         }
     }
-    
+
     if (waitstatusPtr != NULL) {
         *waitstatusPtr = waitstatus;
     }
@@ -227,11 +227,11 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
  * Ns_ExecArgblk --
  *
  *      Execute a command in a child process using a null
- *  	byte separated list of args.
+ *      byte separated list of args.
  *
  * Results:
  *      Return pid of child process exec'ing the command or
- *	NS_INVALID_PID on failure.
+ *      NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -241,14 +241,14 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
 
 pid_t
 Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
-	      char *args, const Ns_Set *env)
+              char *args, const Ns_Set *env)
 {
 #ifndef _WIN32
     pid_t  pid;
     char **argv, *argList[256]; /* maximum 256 arguments */
 
     NS_NONNULL_ASSERT(exec != NULL);
-    
+
     if (args == NULL) {
         argv = NULL;
     } else {
@@ -345,15 +345,15 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
                 Ns_DStringNAppend(&cds, " ", 1);
             }
         }
-	Ns_NormalizePath(&xds, exec);
-	s = xds.string;
-	while (*s != '\0') {
-	    if (*s == '/') {
-		*s = '\\';
-	    }
-	    ++s;
-	}
-	exec = xds.string;
+        Ns_NormalizePath(&xds, exec);
+        s = xds.string;
+        while (*s != '\0') {
+            if (*s == '/') {
+                *s = '\\';
+            }
+            ++s;
+        }
+        exec = xds.string;
     }
     if (env == NULL) {
         envp = NULL;
@@ -366,7 +366,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         exec != NULL ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
         pid = NS_INVALID_PID;
     } else {
-	CloseHandle(pi.hThread);
+        CloseHandle(pi.hThread);
         pid = pi.hProcess;
     }
     Ns_DStringFree(&cds);
@@ -383,11 +383,11 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
  *----------------------------------------------------------------------
  * Ns_ExecArgv --
  *
- *	Execute a program in a new child process.
+ *      Execute a program in a new child process.
  *
  * Results:
  *      Return pid of child process exec'ing the command or
- *	NS_INVALID_PID on failure.
+ *      NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -397,15 +397,15 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
 
 pid_t
 Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
-	    char **argv, const Ns_Set *env)
+            char **argv, const Ns_Set *env)
 {
 #ifdef _WIN32
     /*
      * Win32 ExecArgv simply calls ExecArgblk.
      */
-    pid_t           pid;     
+    pid_t           pid;
     Ns_DString      ads;
-    char	   *args;
+    char           *args;
 
     Ns_DStringInit(&ads);
     if (argv == NULL) {
@@ -413,7 +413,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
     } else {
         int  i;
         for (i = 0; argv[i] != NULL; ++i) {
-	  Ns_DStringNAppend(&ads, argv[i], (int)strlen(argv[i]) + 1);
+          Ns_DStringNAppend(&ads, argv[i], (int)strlen(argv[i]) + 1);
         }
         args = ads.string;
     }
@@ -438,23 +438,23 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
     }
     Ns_DStringInit(&eds);
     if (env == NULL) {
-	envp = Ns_CopyEnviron(&eds);
+        envp = Ns_CopyEnviron(&eds);
     } else {
-	size_t i;
+        size_t i;
 
-	for (i = 0u; i < Ns_SetSize(env); ++i) {
+        for (i = 0u; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
-				Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
+                                Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
             Ns_DStringNAppend(&eds, "", 1);
-	}
-	Ns_DStringNAppend(&eds, "", 1);
-	envp = Ns_DStringAppendArgv(&eds);
+        }
+        Ns_DStringNAppend(&eds, "", 1);
+        envp = Ns_DStringAppendArgv(&eds);
     }
     if (fdin < 0) {
-	fdin = 0;
+        fdin = 0;
     }
     if (fdout < 0) {
-	fdout = 1;
+        fdout = 1;
     }
     pid = ExecProc(exec, dir, fdin, fdout, argv, envp);
     Ns_DStringFree(&eds);
@@ -467,10 +467,10 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
 
 /*
  *----------------------------------------------------------------------
- * ExecProc -- 
+ * ExecProc --
  *
- *	Execute a new process.  This code is careful to capture the
- *  	full error status from the child on failure.
+ *      Execute a new process.  This code is careful to capture the
+ *      full error status from the child on failure.
  *
  * Results:
  *      Valid new child pid or NS_INVALID_PID on error.
@@ -483,7 +483,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
 
 static pid_t
 ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
-    	 char **envp)
+         char **envp)
 {
     struct iovec iov[2];
     int    errpipe[2], errnum, result;
@@ -492,10 +492,10 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
     /*
      * Create a pipe for child error message.
      */
-     
+
     if (ns_pipe(errpipe) < 0) {
         Ns_Log(Error, "exec: ns_pipe() failed: %s", strerror(errno));
-	return NS_INVALID_PID;
+        return NS_INVALID_PID;
     }
 
     /*
@@ -507,90 +507,90 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
         ns_close(errpipe[0]);
         ns_close(errpipe[1]);
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
-	return NS_INVALID_PID;
+        return NS_INVALID_PID;
     }
     iov[0].iov_base = (void*) &result;
     iov[1].iov_base = (void*) &errnum;
     iov[0].iov_len = iov[1].iov_len = sizeof(int);
     if (pid == 0) {
 
-	/*
-	 * Setup child and exec the program, writing any error back
-	 * to the parent if necessary.
-	 */
+        /*
+         * Setup child and exec the program, writing any error back
+         * to the parent if necessary.
+         */
 
         ns_close(errpipe[0]);
         if (dir != NULL && chdir(dir) != 0) {
-	    result = ERR_CHDIR;
+            result = ERR_CHDIR;
         } else if ((fdin == 1 && (fdin = ns_dup(1)) < 0) ||
-    	    	    (fdout == 0 && (fdout = ns_dup(0)) < 0) ||
-	    	    (fdin != 0 && ns_dup2(fdin, 0) < 0) ||
-    	    	    (fdout != 1 && ns_dup2(fdout, 1) < 0)) {
-	    result = ERR_DUP;
-	} else {
-	    if (fdin > 2) {
-		ns_close(fdin);
-	    }
-	    if (fdout > 2) {
-            	ns_close(fdout);
-	    }
+                    (fdout == 0 && (fdout = ns_dup(0)) < 0) ||
+                    (fdin != 0 && ns_dup2(fdin, 0) < 0) ||
+                    (fdout != 1 && ns_dup2(fdout, 1) < 0)) {
+            result = ERR_DUP;
+        } else {
+            if (fdin > 2) {
+                ns_close(fdin);
+            }
+            if (fdout > 2) {
+                ns_close(fdout);
+            }
             NsRestoreSignals();
-	    (void)Ns_NoCloseOnExec(0);
-	    (void)Ns_NoCloseOnExec(1);
-	    (void)Ns_NoCloseOnExec(2);
+            (void)Ns_NoCloseOnExec(0);
+            (void)Ns_NoCloseOnExec(1);
+            (void)Ns_NoCloseOnExec(2);
             execve(exec, argv, envp);
-	    /* NB: Not reached on successful execve(). */
-	    result = ERR_EXEC;
-	}
-	//errnum = errno;
-	{ 
-	    ssize_t written = writev(errpipe[1], iov, 2);
-	    if (written != 2) {
-		/* just ignore the attempt to write */
-		;
-	    }
-	}
+            /* NB: Not reached on successful execve(). */
+            result = ERR_EXEC;
+        }
+        //errnum = errno;
+        {
+            ssize_t written = writev(errpipe[1], iov, 2);
+            if (written != 2) {
+                /* just ignore the attempt to write */
+                ;
+            }
+        }
 
-	_exit(1);
-	
+        _exit(1);
+
     } else {
         ssize_t nread;
-	/*
-	 * Read result and errno from the child if any.
-	 */
+        /*
+         * Read result and errno from the child if any.
+         */
 
         ns_close(errpipe[1]);
-	do {
+        do {
             nread = readv(errpipe[0], iov, 2);
-	} while (nread < 0 && errno == NS_EINTR);
+        } while (nread < 0 && errno == NS_EINTR);
         ns_close(errpipe[0]);
         if (nread == 0) {
-	    //errnum = 0;
-	    result = pid;
-	} else {
+            //errnum = 0;
+            result = pid;
+        } else {
             if (nread != (sizeof(int) * 2)) {
-	    	Ns_Log(Error, "exec: %s: error reading status from child: %s",
-			   exec, strerror(errno));
+                Ns_Log(Error, "exec: %s: error reading status from child: %s",
+                           exec, strerror(errno));
             } else {
-		switch (result) {
-		    case ERR_CHDIR:
-            		Ns_Log(Error, "exec %s: chdir(%s) failed: %s",
-				exec, dir, strerror(errnum));
-	    		break;
-		    case ERR_DUP:
-	    		Ns_Log(Error, "exec %s: ns_dup() failed: %s",
-				exec, strerror(errnum));
-	    		break;
-		    case ERR_EXEC:
-	    		Ns_Log(Error, "exec %s: execve() failed: %s",
-				exec, strerror(errnum));
-	    		break;
-		    default:
-	    		Ns_Log(Error, "exec %s: unknown result from child: %d",
-				exec, result);
-	    		break;
-		}
-	    }
+                switch (result) {
+                    case ERR_CHDIR:
+                        Ns_Log(Error, "exec %s: chdir(%s) failed: %s",
+                                exec, dir, strerror(errnum));
+                        break;
+                    case ERR_DUP:
+                        Ns_Log(Error, "exec %s: ns_dup() failed: %s",
+                                exec, strerror(errnum));
+                        break;
+                    case ERR_EXEC:
+                        Ns_Log(Error, "exec %s: execve() failed: %s",
+                                exec, strerror(errnum));
+                        break;
+                    default:
+                        Ns_Log(Error, "exec %s: unknown result from child: %d",
+                                exec, result);
+                        break;
+                }
+            }
             (void) waitpid(pid, NULL, 0);
         }
     }
@@ -606,12 +606,12 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
  * Set2Argv --
  *
  *      Convert an Ns_Set containing key-value pairs into a character
- *	array containing a sequence of name-value pairs with their 
- *	terminating null bytes.
+ *      array containing a sequence of name-value pairs with their
+ *      terminating null bytes.
  *
  * Results:
  *      Returns pointer to a character array containing a sequence of
- *	name-value pairs with their terminating null bytes.
+ *      name-value pairs with their terminating null bytes.
  *
  * Side effects:
  *      None.

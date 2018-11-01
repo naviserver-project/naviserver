@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,11 +28,11 @@
  */
 
 
-/* 
+/*
  * dbinit.c --
  *
- *	This file contains routines for creating and accessing
- *	pools of database handles.
+ *      This file contains routines for creating and accessing
+ *      pools of database handles.
  */
 
 #include "db.h"
@@ -51,12 +51,12 @@ typedef struct Pool {
     const char     *source;
     const char     *user;
     const char     *pass;
-    Ns_Mutex	    lock;
-    Ns_Cond	    waitCond;
-    Ns_Cond	    getCond;
-    const char	   *driver;
+    Ns_Mutex        lock;
+    Ns_Cond         waitCond;
+    Ns_Cond         getCond;
+    const char     *driver;
     struct DbDriver  *driverPtr;
-    int		    waiting;
+    int             waiting;
     int             nhandles;
     struct Handle  *firstPtr;
     struct Handle  *lastPtr;
@@ -93,7 +93,7 @@ typedef struct Handle {
     bool            fetchingRows;
     /* Members above must match Ns_DbHandle */
     struct Handle  *nextPtr;
-    struct Pool	   *poolPtr;
+    struct Pool    *poolPtr;
     time_t          otime;           /* open time */
     time_t          atime;           /* last access time */
     bool            stale;
@@ -121,7 +121,7 @@ static bool      IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1)
 static Ns_ReturnCode Connect(Handle *handlePtr)               NS_GNUC_NONNULL(1);
 static Pool     *CreatePool(const char *pool, const char *path, const char *driver)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int	 IncrCount(const Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
+static int       IncrCount(const Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
 static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1);
 
 /*
@@ -142,13 +142,13 @@ static Ns_Mutex sessionMutex = NULL;
  *
  * Ns_DbPoolDescription --
  *
- *	Return the pool's description string.
+ *      Return the pool's description string.
  *
  * Results:
- *	Configured description string or NULL.
+ *      Configured description string or NULL.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -177,13 +177,13 @@ Ns_DbPoolDescription(const char *pool)
  *
  * Ns_DbPoolDefault --
  *
- *	Return the default pool.
+ *      Return the default pool.
  *
  * Results:
- *	String name of default pool or NULL if no default is defined.
+ *      String name of default pool or NULL if no default is defined.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -205,13 +205,13 @@ Ns_DbPoolDefault(const char *server)
  *
  * Ns_DbPoolList --
  *
- *	Return the list of all pools.
+ *      Return the list of all pools.
  *
  * Results:
- *	Double-null terminated list of pool names.
+ *      Double-null terminated list of pool names.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -222,7 +222,7 @@ Ns_DbPoolList(const char *server)
     const ServData *sdataPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
-    
+
     sdataPtr = GetServer(server);
     return ((sdataPtr != NULL) ? sdataPtr->allowed : NULL);
 }
@@ -233,13 +233,13 @@ Ns_DbPoolList(const char *server)
  *
  * Ns_DbPoolAllowable --
  *
- *	Check that access is allowed to a pool.
+ *      Check that access is allowed to a pool.
  *
  * Results:
- *	NS_TRUE if allowed, NS_FALSE otherwise.
+ *      NS_TRUE if allowed, NS_FALSE otherwise.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -272,13 +272,13 @@ Ns_DbPoolAllowable(const char *server, const char *pool)
  *
  * Ns_DbPoolPutHandle --
  *
- *	Cleanup and then return a handle to its pool.
+ *      Cleanup and then return a handle to its pool.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Handle is flushed, reset, and possibly closed as required.
+ *      Handle is flushed, reset, and possibly closed as required.
  *
  *----------------------------------------------------------------------
  */
@@ -288,7 +288,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
 {
     Handle	*handlePtr;
     Pool	*poolPtr;
-    time_t	 now;
+    time_t       now;
 
     NS_NONNULL_ASSERT(handle != NULL);
 
@@ -320,7 +320,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     Ns_MutexLock(&poolPtr->lock);
     ReturnHandle(handlePtr);
     if (poolPtr->waiting != 0) {
-	Ns_CondSignal(&poolPtr->getCond);
+        Ns_CondSignal(&poolPtr->getCond);
     }
     Ns_MutexUnlock(&poolPtr->lock);
 }
@@ -331,14 +331,14 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
  *
  * Ns_DbPoolTimedGetHandle --
  *
- *	Return a single handle from a pool within the given number of
- *	seconds.
+ *      Return a single handle from a pool within the given number of
+ *      seconds.
  *
  * Results:
- *	Pointer to Ns_DbHandle or NULL on error or timeout.
+ *      Pointer to Ns_DbHandle or NULL on error or timeout.
  *
  * Side effects:
- *	Database may be opened if needed.
+ *      Database may be opened if needed.
  *
  *----------------------------------------------------------------------
  */
@@ -362,13 +362,13 @@ Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)
  *
  * Ns_DbPoolGetHandle --
  *
- *	Return a single handle from a pool.
+ *      Return a single handle from a pool.
  *
  * Results:
- *	Pointer to Ns_DbHandle or NULL on error.
+ *      Pointer to Ns_DbHandle or NULL on error.
  *
  * Side effects:
- *	Database may be opened if needed.
+ *      Database may be opened if needed.
  *
  *----------------------------------------------------------------------
  */
@@ -377,7 +377,7 @@ Ns_DbHandle *
 Ns_DbPoolGetHandle(const char *pool)
 {
     NS_NONNULL_ASSERT(pool != NULL);
-    
+
     return Ns_DbPoolTimedGetHandle(pool, NULL);
 }
 
@@ -387,15 +387,15 @@ Ns_DbPoolGetHandle(const char *pool)
  *
  * Ns_DbPoolGetMultipleHandles --
  *
- *	Return 1 or more handles from a pool.
+ *      Return 1 or more handles from a pool.
  *
  * Results:
- *	NS_OK if the handlers where allocated, NS_ERROR
- *	otherwise.
+ *      NS_OK if the handlers where allocated, NS_ERROR
+ *      otherwise.
  *
  * Side effects:
- *	Given array of handles is updated with pointers to allocated
- *	handles.  Also, database may be opened if needed.
+ *      Given array of handles is updated with pointers to allocated
+ *      handles.  Also, database may be opened if needed.
  *
  *----------------------------------------------------------------------
  */
@@ -415,24 +415,24 @@ Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
  *
  * Ns_DbPoolTimedGetMultipleHandles --
  *
- *	Return 1 or more handles from a pool within the given number
- *	of seconds.
+ *      Return 1 or more handles from a pool within the given number
+ *      of seconds.
  *
  * Results:
- *	NS_OK if the handlers where allocated, NS_TIMEOUT if the
- *	thread could not wait long enough for the handles, NS_ERROR
- *	otherwise.
+ *      NS_OK if the handlers where allocated, NS_TIMEOUT if the
+ *      thread could not wait long enough for the handles, NS_ERROR
+ *      otherwise.
  *
  * Side effects:
- *	Given array of handles is updated with pointers to allocated
- *	handles.  Also, database may be opened if needed.
+ *      Given array of handles is updated with pointers to allocated
+ *      handles.  Also, database may be opened if needed.
  *
  *----------------------------------------------------------------------
  */
 
 Ns_ReturnCode
-Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool, 
-    				 int nwant, const Ns_Time *wait)
+Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
+                                 int nwant, const Ns_Time *wait)
 {
     Handle         *handlePtr;
     Handle        **handlesPtrPtr = (Handle **) handles;
@@ -450,65 +450,65 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
      * and that the calling thread does not already own handles from
      * this pool.
      */
-     
+
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
-	Ns_Log(Error, "dbinit: no such pool '%s'", pool);
-	return NS_ERROR;
+        Ns_Log(Error, "dbinit: no such pool '%s'", pool);
+        return NS_ERROR;
     }
     if (poolPtr->nhandles < nwant) {
-	Ns_Log(Error, "dbinit: "
-	       "failed to get %d handles from a db pool of only %d handles: '%s'",
-	       nwant, poolPtr->nhandles, pool);
-	return NS_ERROR;
+        Ns_Log(Error, "dbinit: "
+               "failed to get %d handles from a db pool of only %d handles: '%s'",
+               nwant, poolPtr->nhandles, pool);
+        return NS_ERROR;
     }
     ngot = IncrCount(poolPtr, nwant);
     if (ngot > 0) {
-	Ns_Log(Error, "dbinit: db handle limit exceeded: "
-	       "thread already owns %d handle%s from pool '%s'",
-	       ngot, ngot == 1 ? "" : "s", pool);
-	(void) IncrCount(poolPtr, -nwant);
-	return NS_ERROR;
+        Ns_Log(Error, "dbinit: db handle limit exceeded: "
+               "thread already owns %d handle%s from pool '%s'",
+               ngot, ngot == 1 ? "" : "s", pool);
+        (void) IncrCount(poolPtr, -nwant);
+        return NS_ERROR;
     }
-    
+
     /*
      * Wait until this thread can be the exclusive thread acquiring
      * handles and then wait until all requested handles are available,
      * watching for timeout in either of these waits.
      */
-    Ns_GetTime(&startTime);     
+    Ns_GetTime(&startTime);
     if (wait == NULL) {
-	timePtr = NULL;
+        timePtr = NULL;
     } else {
-    	Ns_GetTime(&timeout);
-    	Ns_IncrTime(&timeout, wait->sec, wait->usec);
-	timePtr = &timeout;
+        Ns_GetTime(&timeout);
+        Ns_IncrTime(&timeout, wait->sec, wait->usec);
+        timePtr = &timeout;
     }
     status = NS_OK;
     Ns_MutexLock(&poolPtr->lock);
     while (status == NS_OK && poolPtr->waiting != 0) {
-	status = Ns_CondTimedWait(&poolPtr->waitCond, &poolPtr->lock, timePtr);
+        status = Ns_CondTimedWait(&poolPtr->waitCond, &poolPtr->lock, timePtr);
     }
     if (status == NS_OK) {
-    	poolPtr->waiting = 1;
-    	while (status == NS_OK && ngot < nwant) {
-	    while (status == NS_OK && poolPtr->firstPtr == NULL) {
-	    	status = Ns_CondTimedWait(&poolPtr->getCond, &poolPtr->lock,
-					  timePtr);
-	    }
-	    if (poolPtr->firstPtr != NULL) {
-		handlePtr = poolPtr->firstPtr;
-		poolPtr->firstPtr = handlePtr->nextPtr;
-		handlePtr->nextPtr = NULL;
-		if (poolPtr->lastPtr == handlePtr) {
-		    poolPtr->lastPtr = NULL;
-		}
+        poolPtr->waiting = 1;
+        while (status == NS_OK && ngot < nwant) {
+            while (status == NS_OK && poolPtr->firstPtr == NULL) {
+                status = Ns_CondTimedWait(&poolPtr->getCond, &poolPtr->lock,
+                                          timePtr);
+            }
+            if (poolPtr->firstPtr != NULL) {
+                handlePtr = poolPtr->firstPtr;
+                poolPtr->firstPtr = handlePtr->nextPtr;
+                handlePtr->nextPtr = NULL;
+                if (poolPtr->lastPtr == handlePtr) {
+                    poolPtr->lastPtr = NULL;
+                }
                 handlePtr->used = NS_TRUE;
-		handlesPtrPtr[ngot++] = handlePtr;
-	    }
-	}
-	poolPtr->waiting = 0;
-    	Ns_CondSignal(&poolPtr->waitCond);
+                handlesPtrPtr[ngot++] = handlePtr;
+            }
+        }
+        poolPtr->waiting = 0;
+        Ns_CondSignal(&poolPtr->waitCond);
     }
     Ns_MutexUnlock(&poolPtr->lock);
 
@@ -518,7 +518,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
      */
 
     if (status == NS_TIMEOUT && ngot == nwant) {
-	status = NS_OK;
+        status = NS_OK;
     }
 
     /*
@@ -528,28 +528,28 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
      */
 
     for (i = 0; status == NS_OK && i < ngot; ++i) {
-	handlePtr = handlesPtrPtr[i];
-	if (!handlePtr->connected) {
-	    status = Connect(handlePtr);
-	}
+        handlePtr = handlesPtrPtr[i];
+        if (!handlePtr->connected) {
+            status = Connect(handlePtr);
+        }
     }
     if (status != NS_OK) {
-	Ns_MutexLock(&poolPtr->lock);
-	while (ngot > 0) {
-	    ReturnHandle(handlesPtrPtr[--ngot]);
-	}
-	if (poolPtr->waiting != 0) {
-	    Ns_CondSignal(&poolPtr->getCond);
-	}
-	Ns_MutexUnlock(&poolPtr->lock);
-	(void) IncrCount(poolPtr, -nwant);
+        Ns_MutexLock(&poolPtr->lock);
+        while (ngot > 0) {
+            ReturnHandle(handlesPtrPtr[--ngot]);
+        }
+        if (poolPtr->waiting != 0) {
+            Ns_CondSignal(&poolPtr->getCond);
+        }
+        Ns_MutexUnlock(&poolPtr->lock);
+        (void) IncrCount(poolPtr, -nwant);
     }
-    
-    Ns_GetTime(&endTime);     
+
+    Ns_GetTime(&endTime);
     (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
     Ns_IncrTime(&poolPtr->waitTime, diffTime.sec, diffTime.usec);
     poolPtr->getHandleCount++;
-    
+
     return status;
 }
 
@@ -559,13 +559,13 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
  *
  * Ns_DbBouncePool --
  *
- *	Close all handles in the pool.
+ *      Close all handles in the pool.
  *
  * Results:
- *	NS_OK if pool was bounce, NS_ERROR otherwise.
+ *      NS_OK if pool was bounce, NS_ERROR otherwise.
  *
  * Side effects:
- *	Handles are all marked stale and then closed by CheckPool.
+ *      Handles are all marked stale and then closed by CheckPool.
  *
  *----------------------------------------------------------------------
  */
@@ -573,16 +573,16 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
 Ns_ReturnCode
 Ns_DbBouncePool(const char *pool)
 {
-    Pool	 *poolPtr;
-    Handle	 *handlePtr;
+    Pool         *poolPtr;
+    Handle       *handlePtr;
     Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(pool != NULL);
 
     poolPtr = GetPool(pool);
     if (poolPtr == NULL) {
-	status = NS_ERROR;
-        
+        status = NS_ERROR;
+
     } else {
         Ns_MutexLock(&poolPtr->lock);
         poolPtr->stale_on_close++;
@@ -606,13 +606,13 @@ Ns_DbBouncePool(const char *pool)
  *
  * NsDbInitPools --
  *
- *	Initialize the database pools at startup.
+ *      Initialize the database pools at startup.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Pools may be created as configured.
+ *      Pools may be created as configured.
  *
  *----------------------------------------------------------------------
  */
@@ -623,7 +623,7 @@ NsDbInitPools(void)
     const Pool   *poolPtr;
     const Ns_Set *pools;
     const char   *path, *driver;
-    int	          isNew;
+    int           isNew;
     size_t        i;
 
     Ns_TlsAlloc(&tls, FreeTable);
@@ -645,21 +645,21 @@ NsDbInitPools(void)
     pools = Ns_ConfigGetSection("ns/db/pools");
 
     for (i = 0u; (pools != NULL) && (i < Ns_SetSize(pools)); ++i) {
-	const char    *pool = Ns_SetKey(pools, i);
+        const char    *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
-	if (isNew == 0) {
-	    Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
-	    continue;	
-	}
-	path = Ns_ConfigGetPath(NULL, NULL, "db", "pool", pool, (char *)0L);
-	driver = Ns_ConfigGetValue(path, "driver");
-	poolPtr = CreatePool(pool, path, driver);
-	if (poolPtr == NULL) {
-	    Tcl_DeleteHashEntry(hPtr);
-	} else {
-	    Tcl_SetHashValue(hPtr, poolPtr);
-	}
+        if (isNew == 0) {
+            Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
+            continue;
+        }
+        path = Ns_ConfigGetPath(NULL, NULL, "db", "pool", pool, (char *)0L);
+        driver = Ns_ConfigGetValue(path, "driver");
+        poolPtr = CreatePool(pool, path, driver);
+        if (poolPtr == NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        } else {
+            Tcl_SetHashValue(hPtr, poolPtr);
+        }
     }
     Ns_RegisterProcInfo(CheckPool, "nsdb:check", CheckArgProc);
 }
@@ -670,13 +670,13 @@ NsDbInitPools(void)
  *
  * Ns_DbPoolStats --
  *
- *	return usage statistics from pools
+ *      return usage statistics from pools
  *
  * Results:
- *	Tcl result code.
+ *      Tcl result code.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -695,8 +695,8 @@ Ns_DbPoolStats(Tcl_Interp *interp)
 
     for (i = 0u; (pools != NULL) && (i < Ns_SetSize(pools)); ++i) {
         const char    *pool = Ns_SetKey(pools, i);
-        Pool	      *poolPtr;
-        
+        Pool          *poolPtr;
+
         poolPtr = GetPool(pool);
         if (poolPtr == NULL) {
             Ns_Log(Warning, "Ignore invalid pool: %s", pool);
@@ -728,7 +728,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("gethandles", 10));
             }
-            if (likely(result == TCL_OK)) {            
+            if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->getHandleCount));
             }
             if (likely(result == TCL_OK)) {
@@ -746,8 +746,8 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("waittime", 8));
             }
-            /* 
-             * We could use Ns_TclNewTimeObj here (2x), when the default representation 
+            /*
+             * We could use Ns_TclNewTimeObj here (2x), when the default representation
              * of the obj would be floating point format
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
             */
@@ -776,7 +776,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
     if (likely(result == TCL_OK)) {
         Tcl_SetObjResult(interp, resultObj);
     }
-    
+
     return result;
 }
 
@@ -787,13 +787,13 @@ Ns_DbPoolStats(Tcl_Interp *interp)
  *
  * NsDbInitServer --
  *
- *	Initialize a virtual server allowed and default options.
+ *      Initialize a virtual server allowed and default options.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -801,12 +801,12 @@ Ns_DbPoolStats(Tcl_Interp *interp)
 void
 NsDbInitServer(const char *server)
 {
-    ServData	   *sdataPtr;
+    ServData       *sdataPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     const char     *path, *pool;
-    Ns_DString	    ds;
-    int		    isNew;
+    Ns_DString      ds;
+    int             isNew;
 
     path = Ns_ConfigGetPath(server, NULL, "db", (char *)0L);
 
@@ -819,9 +819,9 @@ NsDbInitServer(const char *server)
     Tcl_SetHashValue(hPtr, sdataPtr);
     sdataPtr->defpool = Ns_ConfigGetValue(path, "defaultpool");
     if (sdataPtr->defpool != NULL &&
-	(Tcl_FindHashEntry(&poolsTable, sdataPtr->defpool) == NULL)) {
-	Ns_Log(Error, "dbinit: no such default pool '%s'", sdataPtr->defpool);
-	sdataPtr->defpool = NULL;
+        (Tcl_FindHashEntry(&poolsTable, sdataPtr->defpool) == NULL)) {
+        Ns_Log(Error, "dbinit: no such default pool '%s'", sdataPtr->defpool);
+        sdataPtr->defpool = NULL;
     }
 
     /*
@@ -834,41 +834,41 @@ NsDbInitServer(const char *server)
         const Pool *poolPtr;
         char       *allowed;
 
-	Ns_DStringInit(&ds);
-    	if (STREQ(pool, "*")) {
-	    hPtr = Tcl_FirstHashEntry(&poolsTable, &search);
-	    while (hPtr != NULL) {
-	    	poolPtr = Tcl_GetHashValue(hPtr);
-	    	NsDbDriverInit(server, poolPtr->driverPtr);
-	    	Ns_DStringAppendArg(&ds, poolPtr->name);
-		hPtr = Tcl_NextHashEntry(&search);
-	    }
-	} else {
-	    char *p, *toDelete, *pool2;
+        Ns_DStringInit(&ds);
+        if (STREQ(pool, "*")) {
+            hPtr = Tcl_FirstHashEntry(&poolsTable, &search);
+            while (hPtr != NULL) {
+                poolPtr = Tcl_GetHashValue(hPtr);
+                NsDbDriverInit(server, poolPtr->driverPtr);
+                Ns_DStringAppendArg(&ds, poolPtr->name);
+                hPtr = Tcl_NextHashEntry(&search);
+            }
+        } else {
+            char *p, *toDelete, *pool2;
 
-	    toDelete = p = pool2 = ns_strdup(pool);
-	    while (p != NULL && *p != '\0') {
-		p = strchr(pool2, INTCHAR(','));
-		if (p != NULL) {
-		    *p = '\0';
-		}
-		hPtr = Tcl_FindHashEntry(&poolsTable, pool2);
-		if (hPtr != NULL) {
-		    poolPtr = Tcl_GetHashValue(hPtr);
-	    	    NsDbDriverInit(server, poolPtr->driverPtr);
-	    	    Ns_DStringAppendArg(&ds, poolPtr->name);
-		}
-		if (p != NULL) {
-		    *p++ = ',';
-		}
-		pool2 = p;
-	    }
-	    ns_free(toDelete);
-	}
-    	allowed = ns_malloc((size_t)ds.length + 1u);
-    	memcpy(allowed, ds.string, (size_t)ds.length + 1u);
+            toDelete = p = pool2 = ns_strdup(pool);
+            while (p != NULL && *p != '\0') {
+                p = strchr(pool2, INTCHAR(','));
+                if (p != NULL) {
+                    *p = '\0';
+                }
+                hPtr = Tcl_FindHashEntry(&poolsTable, pool2);
+                if (hPtr != NULL) {
+                    poolPtr = Tcl_GetHashValue(hPtr);
+                    NsDbDriverInit(server, poolPtr->driverPtr);
+                    Ns_DStringAppendArg(&ds, poolPtr->name);
+                }
+                if (p != NULL) {
+                    *p++ = ',';
+                }
+                pool2 = p;
+            }
+            ns_free(toDelete);
+        }
+        allowed = ns_malloc((size_t)ds.length + 1u);
+        memcpy(allowed, ds.string, (size_t)ds.length + 1u);
         sdataPtr->allowed = allowed;
-    	Ns_DStringFree(&ds);
+        Ns_DStringFree(&ds);
     }
 }
 
@@ -878,13 +878,13 @@ NsDbInitServer(const char *server)
  *
  * NsDbDisconnect --
  *
- *	Disconnect a handle by closing the database if needed.
+ *      Disconnect a handle by closing the database if needed.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -895,7 +895,7 @@ NsDbDisconnect(Ns_DbHandle *handle)
     Handle *handlePtr = (Handle *) handle;
 
     (void)NsDbClose(handle);
-    
+
     handlePtr->connected = NS_FALSE;
     handlePtr->atime = handlePtr->otime = 0;
     handlePtr->stale = NS_FALSE;
@@ -907,14 +907,14 @@ NsDbDisconnect(Ns_DbHandle *handle)
  *
  * NsDbLogSql --
  *
- *	Log a SQL statement depending on the verbose state of the
- *	handle.
+ *      Log a SQL statement depending on the verbose state of the
+ *      handle.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -937,7 +937,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
          */
         if (poolPtr->fVerboseError) {
             Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
-		   handle->datasource, handle->dsExceptionMsg.string, sql);
+                   handle->datasource, handle->dsExceptionMsg.string, sql);
         }
     } else {
         /*
@@ -945,7 +945,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
          * is above threshold.
          */
         Ns_Time endTime, diffTime;
-        
+
         Ns_GetTime(&endTime);
         (void)Ns_DiffTime(&endTime, startTime, &diffTime);
         Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
@@ -967,13 +967,13 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
  *
  * NsDbGetDriver --
  *
- *	Return a pointer to the driver structure for a handle.
+ *      Return a pointer to the driver structure for a handle.
  *
  * Results:
- *	Pointer to driver or NULL on error.
+ *      Pointer to driver or NULL on error.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -985,7 +985,7 @@ NsDbGetDriver(const Ns_DbHandle *handle)
     const Handle    *handlePtr = (const Handle *) handle;
 
     if (handlePtr != NULL && handlePtr->poolPtr != NULL) {
-	result = handlePtr->poolPtr->driverPtr;
+        result = handlePtr->poolPtr->driverPtr;
     } else {
         result = NULL;
     }
@@ -999,13 +999,13 @@ NsDbGetDriver(const Ns_DbHandle *handle)
  *
  * GetPool --
  *
- *	Return the Pool structure for the given pool name.
+ *      Return the Pool structure for the given pool name.
  *
  * Results:
- *	Pointer to Pool structure or NULL if pool does not exist.
+ *      Pointer to Pool structure or NULL if pool does not exist.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1020,11 +1020,11 @@ GetPool(const char *pool)
 
     hPtr = Tcl_FindHashEntry(&poolsTable, pool);
     if (hPtr == NULL) {
-	result = NULL;
+        result = NULL;
     } else {
-	result = (Pool *) Tcl_GetHashValue(hPtr);
+        result = (Pool *) Tcl_GetHashValue(hPtr);
     }
-    
+
     return result;
 }
 
@@ -1034,17 +1034,17 @@ GetPool(const char *pool)
  *
  * ReturnHandle --
  *
- *	Return a handle to its pool.  Connected handles are pushed on
- *	the front of the list, disconnected handles are appened to the
- *	end.
+ *      Return a handle to its pool.  Connected handles are pushed on
+ *      the front of the list, disconnected handles are appened to the
+ *      end.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Handle is returned to the pool.  Note:  The pool lock must be
- *	held by the caller and this function does not signal a thread
- *	waiting for handles.
+ *      Handle is returned to the pool.  Note:  The pool lock must be
+ *      held by the caller and this function does not signal a thread
+ *      waiting for handles.
  *
  *----------------------------------------------------------------------
  */
@@ -1058,15 +1058,15 @@ ReturnHandle(Handle *handlePtr)
 
     poolPtr = handlePtr->poolPtr;
     if (poolPtr->firstPtr == NULL) {
-	poolPtr->firstPtr = poolPtr->lastPtr = handlePtr;
-    	handlePtr->nextPtr = NULL;
+        poolPtr->firstPtr = poolPtr->lastPtr = handlePtr;
+        handlePtr->nextPtr = NULL;
     } else if (handlePtr->connected) {
-	handlePtr->nextPtr = poolPtr->firstPtr;
-	poolPtr->firstPtr = handlePtr;
+        handlePtr->nextPtr = poolPtr->firstPtr;
+        poolPtr->firstPtr = handlePtr;
     } else {
-	poolPtr->lastPtr->nextPtr = handlePtr;
-	poolPtr->lastPtr = handlePtr;
-    	handlePtr->nextPtr = NULL;
+        poolPtr->lastPtr->nextPtr = handlePtr;
+        poolPtr->lastPtr = handlePtr;
+        handlePtr->nextPtr = NULL;
     }
 }
 
@@ -1076,13 +1076,13 @@ ReturnHandle(Handle *handlePtr)
  *
  * IsStale --
  *
- *	Check to see if a handle is stale.
+ *      Check to see if a handle is stale.
  *
  * Results:
- *	NS_TRUE if handle stale, NS_FALSE otherwise.
+ *      NS_TRUE if handle stale, NS_FALSE otherwise.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1091,18 +1091,18 @@ static bool
 IsStale(const Handle *handlePtr, time_t now)
 {
     bool result = NS_FALSE;
-    
+
     NS_NONNULL_ASSERT(handlePtr != NULL);
 
     if (handlePtr->connected) {
         time_t    minAccess, minOpen;
 
-	minAccess = now - handlePtr->poolPtr->maxidle;
-	minOpen   = now - handlePtr->poolPtr->maxopen;
-	if ((handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) || 
-	    (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen)) ||
-	    (handlePtr->stale) ||
-	    (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
+        minAccess = now - handlePtr->poolPtr->maxidle;
+        minOpen   = now - handlePtr->poolPtr->maxopen;
+        if ((handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) ||
+            (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen)) ||
+            (handlePtr->stale) ||
+            (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
             Ns_Log(Notice, "nsdb: closing %s handle in pool '%s'",
                    (handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) ? "idle"
@@ -1110,8 +1110,8 @@ IsStale(const Handle *handlePtr, time_t now)
                       : "stale"),
                    handlePtr->poolname);
 
-	    result = NS_TRUE;
-	}
+            result = NS_TRUE;
+        }
     }
 
     return result;
@@ -1123,13 +1123,13 @@ IsStale(const Handle *handlePtr, time_t now)
  *
  * CheckArgProc --
  *
- *	Ns_ArgProc callback for the pool checker.
+ *      Ns_ArgProc callback for the pool checker.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Copies name of pool to given dstring.
+ *      Copies name of pool to given dstring.
  *
  *----------------------------------------------------------------------
  */
@@ -1148,13 +1148,13 @@ CheckArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  * CheckPool --
  *
- *	Verify all handles in a pool are not stale.
+ *      Verify all handles in a pool are not stale.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Stale handles, if any, are closed.
+ *      Stale handles, if any, are closed.
  *
  *----------------------------------------------------------------------
  */
@@ -1162,10 +1162,10 @@ CheckArgProc(Tcl_DString *dsPtr, const void *arg)
 static void
 CheckPool(void *arg)
 {
-    Pool 	 *poolPtr = arg;
+    Pool         *poolPtr = arg;
     Handle       *handlePtr, *nextPtr;
     Handle       *checkedPtr;
-    time_t	  now;
+    time_t        now;
 
     time(&now);
     checkedPtr = NULL;
@@ -1186,27 +1186,27 @@ CheckPool(void *arg)
      */
 
     if (handlePtr != NULL) {
-    	while (handlePtr != NULL) {
-	    nextPtr = handlePtr->nextPtr;
-	    if (IsStale(handlePtr, now) == NS_TRUE) {
+        while (handlePtr != NULL) {
+            nextPtr = handlePtr->nextPtr;
+            if (IsStale(handlePtr, now) == NS_TRUE) {
                 NsDbDisconnect((Ns_DbHandle *) handlePtr);
-	    }
-	    handlePtr->nextPtr = checkedPtr;
-	    checkedPtr = handlePtr;
-	    handlePtr = nextPtr;
-    	}
+            }
+            handlePtr->nextPtr = checkedPtr;
+            checkedPtr = handlePtr;
+            handlePtr = nextPtr;
+        }
 
-	Ns_MutexLock(&poolPtr->lock);
-	handlePtr = checkedPtr;
-	while (handlePtr != NULL) {
-	    nextPtr = handlePtr->nextPtr;
-	    ReturnHandle(handlePtr);
-	    handlePtr = nextPtr;
-	}
-	if (poolPtr->waiting != 0) {
-	    Ns_CondSignal(&poolPtr->getCond);
-	}
-	Ns_MutexUnlock(&poolPtr->lock);
+        Ns_MutexLock(&poolPtr->lock);
+        handlePtr = checkedPtr;
+        while (handlePtr != NULL) {
+            nextPtr = handlePtr->nextPtr;
+            ReturnHandle(handlePtr);
+            handlePtr = nextPtr;
+        }
+        if (poolPtr->waiting != 0) {
+            Ns_CondSignal(&poolPtr->getCond);
+        }
+        Ns_MutexUnlock(&poolPtr->lock);
     }
 }
 
@@ -1216,13 +1216,13 @@ CheckPool(void *arg)
  *
  * CreatePool --
  *
- *	Create a new pool using the given driver.
+ *      Create a new pool using the given driver.
  *
  * Results:
- *	Pointer to newly allocated Pool structure.
+ *      Pointer to newly allocated Pool structure.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1237,7 +1237,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
     NS_NONNULL_ASSERT(path != NULL);
 
     if (driver == NULL) {
-	Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);
+        Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);
         driverPtr = NULL;
     } else {
         driverPtr = NsDbLoadDriver(driver);
@@ -1245,7 +1245,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
 
     if (driverPtr == NULL) {
         poolPtr = NULL;
-        
+
     } else {
         int          i;
         const char  *source, *minDurationString;
@@ -1296,7 +1296,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
         poolPtr->firstPtr = poolPtr->lastPtr = NULL;
         for (i = 0; i < poolPtr->nhandles; ++i) {
             Handle *handlePtr = ns_malloc(sizeof(Handle));
-            
+
             Ns_DStringInit(&handlePtr->dsExceptionMsg);
             handlePtr->poolPtr = poolPtr;
             handlePtr->connection = NULL;
@@ -1336,13 +1336,13 @@ CreatePool(const char *pool, const char *path, const char *driver)
  *
  * Connect --
  *
- *	Connect a handle by opening the database.
+ *      Connect a handle by opening the database.
  *
  * Results:
- *	NS_OK if connect ok, NS_ERROR otherwise.
+ *      NS_OK if connect ok, NS_ERROR otherwise.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1356,18 +1356,18 @@ Connect(Handle *handlePtr)
 
     status = NsDbOpen((Ns_DbHandle *) handlePtr);
     if (status != NS_OK) {
-    	handlePtr->connected = NS_FALSE;
-    	handlePtr->atime = handlePtr->otime = 0;
-	handlePtr->stale = NS_FALSE;
+        handlePtr->connected = NS_FALSE;
+        handlePtr->atime = handlePtr->otime = 0;
+        handlePtr->stale = NS_FALSE;
     } else {
         static uintptr_t sessionId = 0u;
-        
+
         Ns_MutexLock(&sessionMutex);
         sessionId++;
         Ns_MutexUnlock(&sessionMutex);
-        
-    	handlePtr->connected = NS_TRUE;
-    	handlePtr->atime = handlePtr->otime = time(NULL);
+
+        handlePtr->connected = NS_TRUE;
+        handlePtr->atime = handlePtr->otime = time(NULL);
         handlePtr->sessionId = sessionId;
     }
 
@@ -1380,13 +1380,13 @@ Connect(Handle *handlePtr)
  *
  * IncrCount --
  *
- *	Update per-thread count of allocated handles.
+ *      Update per-thread count of allocated handles.
  *
  * Results:
- *	Previous count of allocated handles.
+ *      Previous count of allocated handles.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1402,19 +1402,19 @@ IncrCount(const Pool *poolPtr, int incr)
 
     tablePtr = Ns_TlsGet(&tls);
     if (tablePtr == NULL) {
-	tablePtr = ns_malloc(sizeof(Tcl_HashTable));
-	Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
-	Ns_TlsSet(&tls, tablePtr);
+        tablePtr = ns_malloc(sizeof(Tcl_HashTable));
+        Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
+        Ns_TlsSet(&tls, tablePtr);
     }
     hPtr = Tcl_CreateHashEntry(tablePtr, (const char *) poolPtr, &isNew);
     if (isNew != 0) {
-	prev = 0;
+        prev = 0;
     } else {
-	prev = PTR2INT(Tcl_GetHashValue(hPtr));
+        prev = PTR2INT(Tcl_GetHashValue(hPtr));
     }
     count = prev + incr;
     if (count == 0) {
-	Tcl_DeleteHashEntry(hPtr);
+        Tcl_DeleteHashEntry(hPtr);
     } else {
         Tcl_SetHashValue(hPtr, INT2PTR(count));
     }
@@ -1427,13 +1427,13 @@ IncrCount(const Pool *poolPtr, int incr)
  *
  * GetServer --
  *
- *	Get per-server data.
+ *      Get per-server data.
  *
  * Results:
- *	Pointer to per-server data.
+ *      Pointer to per-server data.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1448,7 +1448,7 @@ GetServer(const char *server)
 
     hPtr = Tcl_FindHashEntry(&serversTable, server);
     if (hPtr != NULL) {
-	result = Tcl_GetHashValue(hPtr);
+        result = Tcl_GetHashValue(hPtr);
     }
     return result;
 }
@@ -1459,13 +1459,13 @@ GetServer(const char *server)
  *
  * FreeTable --
  *
- *	Free the per-thread count of allocated handles table.
+ *      Free the per-thread count of allocated handles table.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1485,13 +1485,13 @@ FreeTable(void *arg)
  *
  * NsDbGetSessionId --
  *
- *	Return the current sessionId
+ *      Return the current sessionId
  *
  * Results:
- *	sessionId
+ *      sessionId
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1509,14 +1509,14 @@ NsDbGetSessionId(const Ns_DbHandle *handle)
  *
  * Ns_DbListMinDurations --
  *
- *	Introspection function to list min duration for every available
- *	pool.
+ *      Introspection function to list min duration for every available
+ *      pool.
  *
  * Results:
- *	Tcl_ListObj containing pairs of pool names and minDurations.
+ *      Tcl_ListObj containing pairs of pool names and minDurations.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1537,7 +1537,7 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
             char          buffer[100];
             const Pool   *poolPtr;
             int           len;
-            
+
             poolPtr = GetPool(pool);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
             len = snprintf(buffer, sizeof(buffer), "%" PRId64 ".%06ld",
@@ -1554,19 +1554,19 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
  *
  * Ns_DbGetMinDuration --
  *
- *	Return the minDuration of the specified pool in the third
- *	argument.
+ *      Return the minDuration of the specified pool in the third
+ *      argument.
  *
  * Results:
- *	Tcl result code
+ *      Tcl result code
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-int 
+int
 Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
 {
     Pool *poolPtr;
@@ -1599,18 +1599,18 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
  *
  * Ns_DbSetMinDuration --
  *
- *	Set the minDuration of the specified pool
+ *      Set the minDuration of the specified pool
  *
  * Results:
- *	Tcl result code
+ *      Tcl result code
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-int 
+int
 Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDuration)
 {
     Pool *poolPtr;

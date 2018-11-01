@@ -31,7 +31,7 @@
 /*
  * pidfile.c --
  *
- *	    Implement the PID file routines.
+ *          Implement the PID file routines.
  */
 
 #include "nsd.h"
@@ -51,10 +51,10 @@ static Tcl_Obj *GetFile(void);
  *      Create file with current pid.
  *
  * Results:
- *	    None.
+ *          None.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -68,11 +68,11 @@ NsCreatePidFile(void)
     path = GetFile();
     chan = Tcl_OpenFileChannel(NULL, Tcl_GetString(path), "w", 0644);
     if (chan == NULL) {
-    	Ns_Log(Error, "pidfile: failed to open pid file '%s': '%s'",
+        Ns_Log(Error, "pidfile: failed to open pid file '%s': '%s'",
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else if (Tcl_SetChannelOption(NULL, chan, "-translation", "binary")
                != TCL_OK) {
-    	Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
+        Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else {
         size_t toWrite;
@@ -97,10 +97,10 @@ NsCreatePidFile(void)
  *      Remove file with current pid.
  *
  * Results:
- *	    None.
+ *          None.
  *
  * Side effects:
- *	    None.
+ *          None.
  *
  *----------------------------------------------------------------------
  */
@@ -113,7 +113,7 @@ NsRemovePidFile(void)
     path = GetFile();
     Tcl_IncrRefCount(path);
     if (Tcl_FSDeleteFile(path) != 0) {
-    	Ns_Log(Error, "pidfile: failed to remove '%s': '%s'",
+        Ns_Log(Error, "pidfile: failed to remove '%s': '%s'",
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     }
     Tcl_DecrRefCount(path);
@@ -128,18 +128,18 @@ GetFile(void)
     file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");
     if (file == NULL) {
         Ns_DString ds;
-	Ns_Set *set;
+        Ns_Set *set;
 
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0L)) {
-	    (void) Ns_HomePath(&ds, "logs/nsd.pid", (char *)0L);
+            (void) Ns_HomePath(&ds, "logs/nsd.pid", (char *)0L);
         } else {
             (void) Ns_HomePath(&ds, "nsd.pid", (char *)0L);
         }
         path = Tcl_NewStringObj(ds.string, ds.length);
 
-	set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
-	Ns_SetUpdate(set, "pidfile", ds.string);
+        set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+        Ns_SetUpdate(set, "pidfile", ds.string);
 
         Ns_DStringFree(&ds);
     } else {

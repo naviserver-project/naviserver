@@ -1167,7 +1167,7 @@ TrieDestroy(Trie *triePtr)
          */
 
         for (i = 0u; i < n; i++) {
-	    Branch *branchPtr = Ns_IndexEl(&triePtr->branches, i);
+            Branch *branchPtr = Ns_IndexEl(&triePtr->branches, i);
             BranchDestroy(branchPtr);
         }
         Ns_IndexDestroy(&triePtr->branches);
@@ -1302,7 +1302,7 @@ TrieFindExact(const Trie *triePtr, char *seq, unsigned int flags)
          * non-inheriting data, otherwise return the inheriting data.
          */
 
-	if ((flags & NS_OP_NOINHERIT) != 0u) {
+        if ((flags & NS_OP_NOINHERIT) != 0u) {
             data = nodePtr->dataNoInherit;
         } else {
             data = nodePtr->dataInherit;
@@ -1433,7 +1433,7 @@ CmpChannels(const Channel *const*leftPtrPtr, const Channel *const*rightPtrPtr)
     } else if (rcontainsl != 0) {
         result = -1;
     } else {
-	result = 0;
+        result = 0;
     }
 
     return result;
@@ -1478,7 +1478,7 @@ CmpKeyWithChannel(const char *key, const Channel *const*channelPtrPtr)
     } else if (rcontainsl != 0) {
         result = -1;
     } else {
-	result = 0;
+        result = 0;
     }
     return result;
 }
@@ -1782,7 +1782,7 @@ JunctionFind(const Junction *juncPtr, char *seq)
      */
 
     for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
-	;
+        ;
     }
 
     /*
@@ -1918,7 +1918,7 @@ JunctionFindExact(const Junction *juncPtr, char *seq, unsigned int flags)
      */
 
     for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
-	;
+        ;
     }
 
     /*
@@ -2099,7 +2099,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
         if (*url != '/') {
             p = strchr(url, INTCHAR('/'));
             if (p != NULL) {
-		l = (size_t)(p - url);
+                l = (size_t)(p - url);
             } else {
                 l = NS_strlen(url);
                 done = 1;

@@ -31,8 +31,8 @@
 /*
  * listen.c --
  *
- *	Listen on sockets and register callbacks for incoming
- *	connections.
+ *      Listen on sockets and register callbacks for incoming
+ *      connections.
  */
 
 #include "nsd.h"
@@ -65,13 +65,13 @@ static Ns_Mutex      lock;            /* Lock around portsTable. */
  *
  * NsInitListen --
  *
- *	Initialize listen callback API.
+ *      Initialize listen callback API.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -90,14 +90,14 @@ NsInitListen(void)
  *
  * Ns_SockListenCallback --
  *
- *	Listen on an address/port and register a callback to be run
- *	when connections come in on it.
+ *      Listen on an address/port and register a callback to be run
+ *      when connections come in on it.
  *
  * Results:
- *	A valid NS_SOCK or  NS_INVALID_SOCKET
+ *      A valid NS_SOCK or  NS_INVALID_SOCKET
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -225,14 +225,14 @@ Ns_SockListenCallback(const char *addr, unsigned short port, Ns_SockProc *proc, 
  *
  * Ns_SockPortBound --
  *
- *	Determine if we're already listening on a given port on any
- *	address.
+ *      Determine if we're already listening on a given port on any
+ *      address.
  *
  * Results:
- *	Boolean
+ *      Boolean
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -254,14 +254,14 @@ Ns_SockPortBound(unsigned short port)
  *
  * ListenCallback --
  *
- *	This is a wrapper callback that runs the user's callback iff
- *	a valid socket exists.
+ *      This is a wrapper callback that runs the user's callback iff
+ *      a valid socket exists.
  *
  * Results:
- *	NS_TRUE or NS_FALSE
+ *      NS_TRUE or NS_FALSE
  *
  * Side effects:
- *	May close the socket if no user context can be found.
+ *      May close the socket if no user context can be found.
  *
  *----------------------------------------------------------------------
  */

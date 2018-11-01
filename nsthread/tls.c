@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,11 +28,11 @@
  */
 
 
-/* 
+/*
  * tls.c --
  *
- *	Thread local storage support for nsthreads.  Note that the nsthread
- *	library handles thread local storage directly.
+ *      Thread local storage support for nsthreads.  Note that the nsthread
+ *      library handles thread local storage directly.
  */
 
 #include "thread.h"
@@ -44,7 +44,7 @@
 
 uintptr_t nsThreadMaxTls = NS_THREAD_MAXTLS;
 
-/* 
+/*
  * Static functions defined in this file.
  */
 
@@ -56,13 +56,13 @@ static Ns_TlsCleanup *cleanupProcs[NS_THREAD_MAXTLS];
  *
  * Ns_TlsAlloc --
  *
- *	Allocate the next tls id.
+ *      Allocate the next tls id.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Id is set in given tlsPtr.
+ *      Id is set in given tlsPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -74,7 +74,7 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
     uintptr_t        key;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
-    
+
     Ns_MasterLock();
     if (nextkey == nsThreadMaxTls) {
         Tcl_Panic("Ns_TlsAlloc: exceeded max tls: %" PRIuPTR, nsThreadMaxTls);
@@ -92,13 +92,13 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
  *
  * Ns_TlsSet --
  *
- *	Set the value for a threads tls slot.
+ *      Set the value for a threads tls slot.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -117,7 +117,7 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
                   key, nsThreadMaxTls);
     } else {
         void **slots = NsGetTls();
-        
+
         slots[key] = value;
     }
 }
@@ -128,13 +128,13 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
  *
  * Ns_TlsGet --
  *
- *	Get this thread's value in a tls slot.
+ *      Get this thread's value in a tls slot.
  *
  * Results:
- *	Pointer in slot.
+ *      Pointer in slot.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -146,7 +146,7 @@ Ns_TlsGet(Ns_Tls *keyPtr)
     void      *result;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
-    
+
     key = (uintptr_t) *keyPtr;
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
         result = NULL;
@@ -167,17 +167,17 @@ Ns_TlsGet(Ns_Tls *keyPtr)
  *
  * NsCleanupTls --
  *
- *	Cleanup thread local storage in LIFO order for an exiting thread.
- *	Note the careful use of the counters to keep iterating over the
- *	list, up to 5 times, until all TLS values are NULL.  This emulates
- *	the Pthread TLS behavior which catches a destructor inadvertently
- *	calling a library which resets a TLS value after it's been destroyed.
+ *      Cleanup thread local storage in LIFO order for an exiting thread.
+ *      Note the careful use of the counters to keep iterating over the
+ *      list, up to 5 times, until all TLS values are NULL.  This emulates
+ *      the Pthread TLS behavior which catches a destructor inadvertently
+ *      calling a library which resets a TLS value after it's been destroyed.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Cleanup procs are invoked for non-null values.
+ *      Cleanup procs are invoked for non-null values.
  *
  *----------------------------------------------------------------------
  */
@@ -205,7 +205,7 @@ NsCleanupTls(void **slots)
             while (i-- > 0) {
                 if (cleanupProcs[i] != NULL && slots[i] != NULL) {
                     void *arg;
-                        
+
                     arg = slots[i];
                     slots[i] = NULL;
                     (*cleanupProcs[i])(arg);

@@ -31,7 +31,7 @@
 /*
  * sockcallback.c --
  *
- *	Support for the socket callback thread.
+ *      Support for the socket callback thread.
  */
 
 #include "nsd.h"
@@ -79,14 +79,14 @@ static Tcl_HashTable activeCallbacks;
  *
  * Ns_SockCallback --
  *
- *	Register a callback to be run when a socket reaches a certain
- *	state.
+ *      Register a callback to be run when a socket reaches a certain
+ *      state.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	Will wake up the callback thread.
+ *      Will wake up the callback thread.
  *
  *----------------------------------------------------------------------
  */
@@ -110,14 +110,14 @@ Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int whe
  *
  * Ns_SockCancelCallback, Ns_SockCancelCallbackEx --
  *
- *	Remove a callback registered on a socket.  Optionally execute
- *	a callback from the SockCallbackThread.
+ *      Remove a callback registered on a socket.  Optionally execute
+ *      a callback from the SockCallbackThread.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	Will wake up the callback thread.
+ *      Will wake up the callback thread.
  *
  *----------------------------------------------------------------------
  */
@@ -140,13 +140,13 @@ Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, const char
  *
  * NsInitSockCallback --
  *
- *	Global initialization routine for sockcallbacks.
+ *      Global initialization routine for sockcallbacks.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -170,13 +170,13 @@ NsInitSockCallback(void)
  *
  * NsStartSockShutdown, NsWaitSockShutdown --
  *
- *	Initiate and then wait for socket callbacks shutdown.
+ *      Initiate and then wait for socket callbacks shutdown.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May timeout waiting for shutdown.
+ *      May timeout waiting for shutdown.
  *
  *----------------------------------------------------------------------
  */
@@ -217,13 +217,13 @@ NsWaitSockShutdown(const Ns_Time *toPtr)
  *
  * CallbackTrigger --
  *
- *	Wakeup the callback thread if it's in poll().
+ *      Wakeup the callback thread if it's in poll().
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -242,13 +242,13 @@ CallbackTrigger(void)
  *
  * Queue --
  *
- *	Queue a callback for socket.
+ *      Queue a callback for socket.
  *
  * Results:
- *	NS_OK or NS_ERROR on shutdown pending.
+ *      NS_OK or NS_ERROR on shutdown pending.
  *
  * Side effects:
- *	Socket thread may be created or signalled.
+ *      Socket thread may be created or signalled.
  *
  *----------------------------------------------------------------------
  */
@@ -326,13 +326,13 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
  *
  * SockCallbackThread --
  *
- *	Run callbacks registered with Ns_SockCallback.
+ *      Run callbacks registered with Ns_SockCallback.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Depends on callbacks.
+ *      Depends on callbacks.
  *
  *----------------------------------------------------------------------
  */
@@ -568,15 +568,15 @@ SockCallbackThread(void *UNUSED(arg))
  *
  * NsGetSockCallbacks --
  *
- *	Return all defined socket callbacks in form of a valid Tcl list
- *	in the provided Tcl_DString. The passed Tcl_DString has to be
- *	initialized by the caller.
+ *      Return all defined socket callbacks in form of a valid Tcl list
+ *      in the provided Tcl_DString. The passed Tcl_DString has to be
+ *      initialized by the caller.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	DString is updated
+ *      DString is updated
  *
  *----------------------------------------------------------------------
  */

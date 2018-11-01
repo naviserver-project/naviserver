@@ -153,10 +153,10 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
  *      Helper function result encodings.
  *
  * Results:
- *	Tcl result code
+ *      Tcl result code
  *
  * Side effects:
- *	Interp result Obj is updated in case of error.
+ *      Interp result Obj is updated in case of error.
  *
  *----------------------------------------------------------------------
  */
@@ -259,7 +259,7 @@ static void HMAC_CTX_free(HMAC_CTX *ctx) NS_GNUC_NONNULL(1);
  *
  * HMAC_CTX_new, HMAC_CTX_free --
  *
- *	The NEW/FREE interface for HMAC_CTX is new in OpenSSL 1.1.0.
+ *      The NEW/FREE interface for HMAC_CTX is new in OpenSSL 1.1.0.
  *      Before, HMAC_CTX_init and HMAC_CTX_cleanup were used. We
  *      provide here a forward compatible version.
  *
@@ -317,10 +317,10 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
  *      functions to provide nicer error messages.
  *
  * Results:
- *	Tcl result code, value in third argument.
+ *      Tcl result code, value in third argument.
  *
  * Side effects:
- *	Interp result Obj is updated.
+ *      Interp result Obj is updated.
  *
  *----------------------------------------------------------------------
  */
@@ -388,10 +388,10 @@ GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
  *      Helper function to lookup cipher from a string.
  *
  * Results:
- *	Tcl result code, value in third argument.
+ *      Tcl result code, value in third argument.
  *
  * Side effects:
- *	Interp result Obj is updated.
+ *      Interp result Obj is updated.
  *
  *----------------------------------------------------------------------
  */
@@ -429,10 +429,10 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const
  *      The logic is from apps/ecparam.c
  *
  * Results:
- *	Tcl result code, value in third argument.
+ *      Tcl result code, value in third argument.
  *
  * Side effects:
- *	Interp result Obj is updated in case of error.
+ *      Interp result Obj is updated in case of error.
  *
  *----------------------------------------------------------------------
  */
@@ -481,10 +481,10 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
  *      Helper function for reading .pem-files
  *
  * Results:
- *	Tcl result code
+ *      Tcl result code
  *
  * Side effects:
- *	Interp result Obj is updated in case of error.
+ *      Interp result Obj is updated in case of error.
  *
  *----------------------------------------------------------------------
  */
@@ -582,10 +582,10 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
  *        subcommand an then freed.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Creating HMAC context
+ *      Creating HMAC context
  *
  *----------------------------------------------------------------------
  */
@@ -639,10 +639,10 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *        subcommand.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Updating HMAC context
+ *      Updating HMAC context
  *
  *----------------------------------------------------------------------
  */
@@ -689,10 +689,10 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *        in form of a hex string.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -757,10 +757,10 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *        Free a previously allocated HMAC context.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Freeing memory
+ *      Freeing memory
  *
  *----------------------------------------------------------------------
  */
@@ -803,10 +803,10 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *        returns the HMAC in form of a hex string.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -897,10 +897,10 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *      (HMAC)
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Tcl result is set to a string value.
+ *      Tcl result is set to a string value.
  *
  *----------------------------------------------------------------------
  */
@@ -938,10 +938,10 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *        subcommand an then freed.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Creating MD context
+ *      Creating MD context
  *
  *----------------------------------------------------------------------
  */
@@ -987,10 +987,10 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *        subcommand.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Updating MD context.
+ *      Updating MD context.
  *
  *----------------------------------------------------------------------
  */
@@ -1038,10 +1038,10 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *        form of a hex string.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1106,10 +1106,10 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *        Free a previously allocated MD context.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Freeing memory
+ *      Freeing memory
  *
  *----------------------------------------------------------------------
  */
@@ -1151,10 +1151,10 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *        memory. The command returns the MD in form of a hex string.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	Creating HMAC context
+ *      Creating HMAC context
  *
  *----------------------------------------------------------------------
  */
@@ -1297,10 +1297,10 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *        digest based on elliptic curve cryptography.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1451,10 +1451,10 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *        https://tools.ietf.org/html/rfc5869
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1625,10 +1625,10 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *      Returns a Hash-based message authentication code of the provided message
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Tcl result is set to a string value.
+ *      Tcl result is set to a string value.
  *
  *----------------------------------------------------------------------
  */
@@ -1669,10 +1669,10 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *        various encodings from an elliptic curves PEM file.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1778,10 +1778,10 @@ SetResultFromEC_POINT(
  *        various encodings from an elliptic curves PEM file.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1866,10 +1866,10 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *        conversions of it. Can be most likely dropped.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1965,10 +1965,10 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *        without the need of an external command.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -2042,10 +2042,10 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  *        public key.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -2273,10 +2273,10 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *      related commands.w
  *
  * Results:
- *	Tcl Return code.
+ *      Tcl Return code.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -2317,10 +2317,10 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *        "ns_md" and "ns_hmac".
  *
  * Results:
- *	Tcl Result Code (and many output arguments)
+ *      Tcl Result Code (and many output arguments)
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -2438,10 +2438,10 @@ CryptoAeadStringGetArguments(
  *        "tag" necessary for decoding.
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -2662,10 +2662,10 @@ CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  *      returns encrypted/decrypted data
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Tcl result is set to a string value.
+ *      Tcl result is set to a string value.
  *
  *----------------------------------------------------------------------
  */
@@ -2700,10 +2700,10 @@ NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
  *        Example: ns_crypto::randombytes 20
  *
  * Results:
- *	Tcl Result Code.
+ *      Tcl Result Code.
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */

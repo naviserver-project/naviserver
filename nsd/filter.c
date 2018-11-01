@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -37,7 +37,7 @@
 
 /*
  * The following structures maintain connection filters
- * and traces.       
+ * and traces.
  */
 
 typedef struct Filter {
@@ -73,7 +73,7 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
  *
  * Results:
  *      Returns a pointer to an opaque object that contains the filter
- *	information.
+ *      information.
  *
  * Side effects:
  *      None.
@@ -131,7 +131,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
  *      Returns the status returned from the registered filter function.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -149,34 +149,34 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
     status = NS_OK;
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
         Ns_ReturnCode filter_status = NS_OK;
-        
+
         Ns_MutexLock(&servPtr->filter.lock);
-	fPtr = servPtr->filter.firstFilterPtr;
-	while (fPtr != NULL && filter_status == NS_OK) {
-	    if (unlikely(fPtr->when == why)
-		&& (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
-		&& (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)) {
-	        Ns_MutexUnlock(&servPtr->filter.lock);
-		filter_status = (*fPtr->proc)(fPtr->arg, conn, why);
-		Ns_MutexLock(&servPtr->filter.lock);
-	    }
-	    fPtr = fPtr->nextPtr;
-	}
-	Ns_MutexUnlock(&servPtr->filter.lock);
-	if (filter_status == NS_FILTER_BREAK ||
-	    (why == NS_FILTER_TRACE && filter_status == NS_FILTER_RETURN)) {
-	    status = NS_OK;
-	} else {
+        fPtr = servPtr->filter.firstFilterPtr;
+        while (fPtr != NULL && filter_status == NS_OK) {
+            if (unlikely(fPtr->when == why)
+                && (Tcl_StringMatch(conn->request.method, fPtr->method) != 0)
+                && (Tcl_StringMatch(conn->request.url, fPtr->url) != 0)) {
+                Ns_MutexUnlock(&servPtr->filter.lock);
+                filter_status = (*fPtr->proc)(fPtr->arg, conn, why);
+                Ns_MutexLock(&servPtr->filter.lock);
+            }
+            fPtr = fPtr->nextPtr;
+        }
+        Ns_MutexUnlock(&servPtr->filter.lock);
+        if (filter_status == NS_FILTER_BREAK ||
+            (why == NS_FILTER_TRACE && filter_status == NS_FILTER_RETURN)) {
+            status = NS_OK;
+        } else {
             status = filter_status;
         }
     }
 
     /*
-     * We can get 
+     * We can get
      *
-     *    status == NS_FILTER_RETURN 
+     *    status == NS_FILTER_RETURN
      *
-     * for e.g.    why == NS_FILTER_PRE_AUTH 
+     * for e.g.    why == NS_FILTER_PRE_AUTH
      * but not for why == NS_FILTER_TRACE
      */
 
@@ -191,16 +191,16 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
  * Ns_RegisterServerTrace --
  *
  *      Register a connection trace procedure.  Traces registered
- *  	with this procedure are only called in FIFO order if the
- *  	connection request procedure successfully responds to the
- *  	clients request.
+ *      with this procedure are only called in FIFO order if the
+ *      connection request procedure successfully responds to the
+ *      clients request.
  *
  * Results:
- *	Pointer to trace.
+ *      Pointer to trace.
  *
  * Side effects:
  *      Proc will be called in FIFO order at end of successful
- *  	connections.
+ *      connections.
  *
  *----------------------------------------------------------------------
  */
@@ -220,7 +220,7 @@ Ns_RegisterServerTrace(const char *server, Ns_TraceProc *proc, void *arg)
     tracePtr = NewTrace(proc, arg);
     tPtrPtr = &servPtr->filter.firstTracePtr;
     while (*tPtrPtr != NULL) {
-    	tPtrPtr = &((*tPtrPtr)->nextPtr);
+        tPtrPtr = &((*tPtrPtr)->nextPtr);
     }
     *tPtrPtr = tracePtr;
     tracePtr->nextPtr = NULL;
@@ -234,13 +234,13 @@ Ns_RegisterServerTrace(const char *server, Ns_TraceProc *proc, void *arg)
  * Ns_RegisterCleanup, Ns_RegisterConnCleanup --
  *
  *      Register a connection cleanup trace procedure.  Traces
- *  	registered with this procedure are always called in LIFO
- *  	order at the end of connection no matter the result code
- *  	from the connection's request procedure (i.e., the procs
- *  	are called even if the client drops connection).
+ *      registered with this procedure are always called in LIFO
+ *      order at the end of connection no matter the result code
+ *      from the connection's request procedure (i.e., the procs
+ *      are called even if the client drops connection).
  *
  * Results:
- *	Pointer to trace.
+ *      Pointer to trace.
  *
  * Side effects:
  *      Proc will be called in LIFO order at end of all connections.
@@ -296,7 +296,7 @@ RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
  *      None.
  *
  * Side effects:
- *	Depends on registered traces, if any.
+ *      Depends on registered traces, if any.
  *
  *----------------------------------------------------------------------
  */
@@ -323,8 +323,8 @@ RunTraces(Ns_Conn *conn, const Trace *tracePtr)
     NS_NONNULL_ASSERT(conn != NULL);
 
     while (tracePtr != NULL) {
-    	(*tracePtr->proc)(tracePtr->arg, conn);
-	tracePtr = tracePtr->nextPtr;
+        (*tracePtr->proc)(tracePtr->arg, conn);
+        tracePtr = tracePtr->nextPtr;
     }
 }
 
@@ -334,13 +334,13 @@ RunTraces(Ns_Conn *conn, const Trace *tracePtr)
  * NewTrace --
  *
  *      Create a new trace object to be added to the cleanup or
- *	trace list.
+ *      trace list.
  *
  * Results:
  *      ns_malloc'ed trace structure.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -369,7 +369,7 @@ NewTrace(Ns_TraceProc *proc, void *arg)
  *      DString with info as Tcl list
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -386,12 +386,12 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
 
     if (servPtr != NULL) {
         const Filter *fPtr;
-        
+
         for (fPtr = servPtr->filter.firstFilterPtr; fPtr != NULL; fPtr = fPtr->nextPtr) {
             Tcl_DStringStartSublist(dsPtr);
             Tcl_DStringAppendElement(dsPtr, fPtr->method);
             Tcl_DStringAppendElement(dsPtr, fPtr->url);
-            
+
             switch (fPtr->when) {
             case NS_FILTER_PRE_AUTH:
                 Tcl_DStringAppendElement(dsPtr, "preauth");
@@ -399,7 +399,7 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
             case NS_FILTER_POST_AUTH:
                 Tcl_DStringAppendElement(dsPtr, "postauth");
                 break;
-            case NS_FILTER_VOID_TRACE: 
+            case NS_FILTER_VOID_TRACE:
             case NS_FILTER_TRACE:
                 Tcl_DStringAppendElement(dsPtr, "trace");
                 break;
@@ -408,7 +408,7 @@ NsGetFilters(Tcl_DString *dsPtr, const char *server)
             Tcl_DStringEndSublist(dsPtr);
         }
     }
-}   
+}
 
 void
 NsGetTraces(Tcl_DString *dsPtr, const char *server)
@@ -417,7 +417,7 @@ NsGetTraces(Tcl_DString *dsPtr, const char *server)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(server != NULL);
-    
+
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         const Trace *tracePtr;
@@ -440,7 +440,7 @@ NsGetTraces(Tcl_DString *dsPtr, const char *server)
             tracePtr = tracePtr->nextPtr;
         }
     }
-}   
+}
 
 /*
  * Local Variables:

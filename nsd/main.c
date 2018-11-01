@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,10 +28,10 @@
  */
 
 
-/* 
+/*
  * main.c --
  *
- *	Example AOLserver main() startup routine.
+ *      Example AOLserver main() startup routine.
  */
 
 #include "nsd.h"
@@ -44,14 +44,14 @@ static Ns_ServerInitProc ServerInit;
  *
  * main --
  *
- *	AOLserver startup routine which simply calls Ns_Main().  
- *	Ns_Main() will later call ServerInit() if not NULL.
+ *      AOLserver startup routine which simply calls Ns_Main().
+ *      Ns_Main() will later call ServerInit() if not NULL.
  *
  * Results:
- *	Result of Ns_Main.
+ *      Result of Ns_Main.
  *
  * Side effects:
- *	Server runs.
+ *      Server runs.
  *
  *----------------------------------------------------------------------
  */
@@ -68,15 +68,15 @@ main(int argc, char *const* argv)
  *
  * ServerInit --
  *
- *	Example ServerInit() which does nothing by default.  This
- *	routine is called by Ns_Main() just before loading dynamic
- *	modules.
+ *      Example ServerInit() which does nothing by default.  This
+ *      routine is called by Ns_Main() just before loading dynamic
+ *      modules.
  *
  * Results:
- *	NS_OK.
+ *      NS_OK.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

@@ -30,7 +30,7 @@
 /*
  * nsconf.c --
  *
- *	Various core configuration.
+ *      Various core configuration.
  */
 
 #include "nsd.h"
@@ -44,13 +44,13 @@ struct nsconf nsconf;
  *
  * NsInitConf --
  *
- *	Initialize core elements of the nsconf structure at startup.
+ *      Initialize core elements of the nsconf structure at startup.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -98,14 +98,14 @@ NsInitConf(void)
  *
  * NsInitInfo --
  *
- *	Initialize the elements of the nsconf structure which may
- *	require Ns_Log to be initialized first.
+ *      Initialize the elements of the nsconf structure which may
+ *      require Ns_Log to be initialized first.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -134,14 +134,14 @@ NsInitInfo(void)
  *
  * NsConfUpdate --
  *
- *	Update various elements of the nsconf structure now that
- *	the config script has been evaluated.
+ *      Update various elements of the nsconf structure now that
+ *      the config script has been evaluated.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Various, depending on config.
+ *      Various, depending on config.
  *
  *----------------------------------------------------------------------
  */
@@ -173,7 +173,7 @@ NsConfUpdate(void)
         i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX);
     }
     if (i > 0) {
-	(void) Ns_ThreadStackSize((ssize_t)i);
+        (void) Ns_ThreadStackSize((ssize_t)i);
     }
 
     /*
@@ -210,12 +210,12 @@ NsConfUpdate(void)
     Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = Ns_ConfigString(path, "tcllibrary", "tcl");
     if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
-	Ns_Set *set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+        Ns_Set *set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
 
         Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
 
-	Ns_SetUpdate(set, "tcllibrary", nsconf.tcl.sharedlibrary);
+        Ns_SetUpdate(set, "tcllibrary", nsconf.tcl.sharedlibrary);
     }
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
     Ns_DStringFree(&ds);

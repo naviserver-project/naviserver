@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,10 +28,10 @@
  */
 
 
-/* 
+/*
  * dbutil.c --
  *
- *	Utility db routines.
+ *      Utility db routines.
  */
 
 #include "db.h"
@@ -48,14 +48,14 @@
  *
  * Ns_DbQuoteValue --
  *
- *	Add single quotes around an SQL string value if necessary.
+ *      Add single quotes around an SQL string value if necessary.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Copy of the string, modified if needed, is placed in the 
- *	given Ns_DString.
+ *      Copy of the string, modified if needed, is placed in the
+ *      given Ns_DString.
  *
  *----------------------------------------------------------------------
  */
@@ -81,17 +81,17 @@ Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
  *
  * Ns_Db0or1Row --
  *
- *	Send an SQL statement which should return either no rows or
- *	exactly one row.
+ *      Send an SQL statement which should return either no rows or
+ *      exactly one row.
  *
  * Results:
- *	Pointer to new Ns_Set which must be eventually freed.  The
- *	set includes the names of the columns and, if a row was
- *	fetched, the values for the row.  On error, returns NULL.
+ *      Pointer to new Ns_Set which must be eventually freed.  The
+ *      set includes the names of the columns and, if a row was
+ *      fetched, the values for the row.  On error, returns NULL.
  *
  * Side effects:
- *	Given nrows pointer is set to 0 or 1 to indicate if a row
- *	was actually returned.
+ *      Given nrows pointer is set to 0 or 1 to indicate if a row
+ *      was actually returned.
  *
  *----------------------------------------------------------------------
  */
@@ -108,29 +108,29 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
     row = Ns_DbSelect(handle, sql);
     if (row != NULL) {
         bool success = NS_TRUE;
-            
+
         if (Ns_DbGetRow(handle, row) == NS_END_DATA) {
             *nrows = 0;
         } else {
-	    switch (Ns_DbGetRow(handle, row)) {
-		case NS_END_DATA:
-		    *nrows = 1;
-		    break;
+            switch (Ns_DbGetRow(handle, row)) {
+                case NS_END_DATA:
+                    *nrows = 1;
+                    break;
 
-		case NS_OK:
-		    Ns_DbSetException(handle, NS_SQLERRORCODE,
-			"Query returned more than one row.");
-		    (void) Ns_DbFlush(handle);
+                case NS_OK:
+                    Ns_DbSetException(handle, NS_SQLERRORCODE,
+                        "Query returned more than one row.");
+                    (void) Ns_DbFlush(handle);
 
-		    /* fall through */
-		case NS_ERROR:
+                    /* fall through */
+                case NS_ERROR:
 
-		    /* fall through */
-		default:
-		    success = NS_FALSE;
+                    /* fall through */
+                default:
+                    success = NS_FALSE;
                     row = NULL;
                     break;
-	    }
+            }
         }
         if (success) {
             row = Ns_SetCopy(row);
@@ -146,14 +146,14 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
  *
  * Ns_Db1Row --
  *
- *	Send a SQL statement which is expected to return exactly 1 row.
+ *      Send a SQL statement which is expected to return exactly 1 row.
  *
  * Results:
- *	Pointer to Ns_Set with row data or NULL on error.  Set must
- *	eventually be freed.
+ *      Pointer to Ns_Set with row data or NULL on error.  Set must
+ *      eventually be freed.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -185,15 +185,15 @@ Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
  *
  * Ns_DbInterpretSqlFile --
  *
- *	Parse DML statements from an SQL file and send them to the
- *	database for execution.
+ *      Parse DML statements from an SQL file and send them to the
+ *      database for execution.
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	Stops on first error.  Transaction protection is provided for
- *	Illustra and "\n-- comments are handled correctly.
+ *      Stops on first error.  Transaction protection is provided for
+ *      Illustra and "\n-- comments are handled correctly.
  *
  *----------------------------------------------------------------------
  */
@@ -229,7 +229,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
             if (c != '\'') {
                 Ns_DStringNAppend(&dsSql, &c, 1);
             } else {
-	      i = getc(fp);
+              i = getc(fp);
                 if (i == EOF) {
                     break;
                 }
@@ -258,7 +258,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
                     goto loopstart;
                 }
                 while ((i = getc(fp)) != EOF) {
-		    /*lastc = c; never used */
+                    /*lastc = c; never used */
                     c = (char) i;
                     if (c == '\n') {
                         break;
@@ -305,13 +305,13 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
  *
  * Ns_DbSetException --
  *
- *	Set the stored SQL exception code and message in the handle.
+ *      Set the stored SQL exception code and message in the handle.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Code and message are updated.
+ *      Code and message are updated.
  *
  *----------------------------------------------------------------------
  */

@@ -89,7 +89,7 @@ Ns_RollFile(const char *fileName, int max)
     Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(fileName != NULL);
-    
+
     if (max <= 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
                "must be > 0 and < 999", max);
@@ -185,7 +185,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
     NS_NONNULL_ASSERT(fileObj != NULL);
 
     file = Tcl_GetString(fileObj);
-            
+
     if (rollfmt == NULL || *rollfmt == '\0') {
         status = Ns_RollFile(file, maxbackup);
 
@@ -203,7 +203,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
         Ns_DStringVarAppend(&ds, file, ".", timeBuf, (char *)0L);
         newPath = Tcl_NewStringObj(ds.string, -1);
         Tcl_IncrRefCount(newPath);
-        
+
         if (Tcl_FSAccess(newPath, F_OK) == 0) {
             status = Ns_RollFile(ds.string, maxbackup);
         } else if (Tcl_GetErrno() != ENOENT) {
@@ -218,15 +218,15 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
                    file, ds.string, strerror(Tcl_GetErrno()));
             status = NS_ERROR;
         }
-        
+
         Tcl_DecrRefCount(newPath);
         Ns_DStringFree(&ds);
-        
+
         if (status == NS_OK) {
             status = Ns_PurgeFiles(file, maxbackup);
         }
     }
-    
+
     return status;
 }
 
@@ -306,7 +306,7 @@ Ns_PurgeFiles(const char *fileName, int max)
                     }
                 }
             }
- 
+
             if (nfiles > 0) {
                 for (ii = 0, fiPtr = files; ii < nfiles; ii++, fiPtr++) {
                     Tcl_DecrRefCount(fiPtr->path);
@@ -350,7 +350,7 @@ MatchFiles(Tcl_Obj *pathObj, File **files)
 
     NS_NONNULL_ASSERT(pathObj != NULL);
     NS_NONNULL_ASSERT(files != NULL);
-    
+
     /*
      * Get the parent directory of the passed filename
      */
@@ -392,13 +392,13 @@ MatchFiles(Tcl_Obj *pathObj, File **files)
         int result = Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
 
         if (result == TCL_OK && numElems > 0) {
-	    File *fiPtr;
-	    int   ii;
+            File *fiPtr;
+            int   ii;
 
             *files = ns_malloc(sizeof(File) * (size_t)numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
                 if (Tcl_FSStat(matchElems[ii], &st) != 0) {
-		    int jj;
+                    int jj;
 
                     for (jj = 0, fiPtr = *files; jj < ii; jj++, fiPtr++) {
                         Tcl_DecrRefCount(fiPtr->path);
@@ -480,7 +480,7 @@ Unlink(const char *file)
     Tcl_Obj *fileObj;
 
     NS_NONNULL_ASSERT(file != NULL);
-    
+
     fileObj = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(fileObj);
     err = Tcl_FSDeleteFile(fileObj);
@@ -501,7 +501,7 @@ Rename(const char *from, const char *to)
 
     NS_NONNULL_ASSERT(from != NULL);
     NS_NONNULL_ASSERT(to != NULL);
-    
+
     fromObj = Tcl_NewStringObj(from, -1);
     Tcl_IncrRefCount(fromObj);
 
@@ -526,7 +526,7 @@ Exists(const char *file)
     int exists;
 
     NS_NONNULL_ASSERT(file != NULL);
-    
+
     if (Tcl_Access(file, F_OK) == 0) {
         exists = 1;
     } else if (Tcl_GetErrno() == ENOENT) {

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,15 +28,15 @@
  */
 
 
-/* 
+/*
  * cls.c --
  *
- *	Connection local storage.
+ *      Connection local storage.
  */
 
 #include "nsd.h"
 
-/* 
+/*
  * Static functions defined in this file.
  */
 
@@ -49,13 +49,13 @@ static void **GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn) NS_GNUC_PURE;
  *
  * Ns_ClsAlloc --
  *
- *	Allocate the next cls id.
+ *      Allocate the next cls id.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Id is set in given clsPtr.
+ *      Id is set in given clsPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -68,7 +68,7 @@ Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc)
 
     Ns_MasterLock();
     if (nextId == NS_CONN_MAXCLS) {
-	Ns_Fatal("Ns_ClsAlloc: exceeded max cls: %d", NS_CONN_MAXCLS);
+        Ns_Fatal("Ns_ClsAlloc: exceeded max cls: %d", NS_CONN_MAXCLS);
     }
     id = nextId++;
     cleanupProcs[id] = cleanupProc;
@@ -82,13 +82,13 @@ Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc)
  *
  * Ns_ClsSet --
  *
- *	Set the value for a threads cls slot.
+ *      Set the value for a threads cls slot.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -108,13 +108,13 @@ Ns_ClsSet(const Ns_Cls *clsPtr, Ns_Conn *conn, void *value)
  *
  * Ns_ClsGet --
  *
- *	Get this thread's value in a cls slot.
+ *      Get this thread's value in a cls slot.
  *
  * Results:
- *	Pointer in slot.
+ *      Pointer in slot.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -134,14 +134,14 @@ Ns_ClsGet(const Ns_Cls *clsPtr, Ns_Conn *conn)
  *
  * NsClsCleanup --
  *
- *	Cleanup connection local storage in a manner similar to 
- *	thread local storage.
+ *      Cleanup connection local storage in a manner similar to
+ *      thread local storage.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Depends on callbacks.
+ *      Depends on callbacks.
  *
  *----------------------------------------------------------------------
  */
@@ -153,21 +153,21 @@ NsClsCleanup(Conn *connPtr)
     void *arg;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
-    
+
     trys = 0;
     do {
       unsigned int i;
 
-	retry = 0;
-    	i = NS_CONN_MAXCLS;
-    	while (i-- > 0u) {
-	    if (cleanupProcs[i] != NULL && connPtr->cls[i] != NULL) {
-	    	arg = connPtr->cls[i];
-	    	connPtr->cls[i] = NULL;
-	    	(*cleanupProcs[i])(arg);
-		retry = 1;
-	    }
-	}
+        retry = 0;
+        i = NS_CONN_MAXCLS;
+        while (i-- > 0u) {
+            if (cleanupProcs[i] != NULL && connPtr->cls[i] != NULL) {
+                arg = connPtr->cls[i];
+                connPtr->cls[i] = NULL;
+                (*cleanupProcs[i])(arg);
+                retry = 1;
+            }
+        }
     } while ((retry != 0) && (trys++ < 5));
 }
 
@@ -177,13 +177,13 @@ NsClsCleanup(Conn *connPtr)
  *
  * GetSlot --
  *
- *	Return the cls slot for the given key.
+ *      Return the cls slot for the given key.
  *
  * Results:
- *	Pointer to slot.
+ *      Pointer to slot.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

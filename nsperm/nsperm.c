@@ -30,7 +30,7 @@
 /*
  * nsperm --
  *
- *	Permissions
+ *      Permissions
  */
 
 #include "ns.h"
@@ -149,13 +149,13 @@ static Tcl_HashTable serversTable;
  *
  * Ns_ModuleInit --
  *
- *	Initialize the perms module
+ *      Initialize the perms module
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	Init hash table, add Tcl commands.
+ *      Init hash table, add Tcl commands.
  *
  *----------------------------------------------------------------------
  */
@@ -197,11 +197,11 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
     Ns_SetRequestAuthorizeProc(server, AuthProc);
-    
+
     result = Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
     hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
     Tcl_SetHashValue(hPtr, servPtr);
-    
+
     return result;
 }
 
@@ -211,13 +211,13 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * AddCmds --
  *
- *	Add Tcl commands for perms
+ *      Add Tcl commands for perms
  *
  * Results:
- *	NS_OK
+ *      NS_OK
  *
  * Side effects:
- *	Adds Tcl commands
+ *      Adds Tcl commands
  *
  *----------------------------------------------------------------------
  */
@@ -234,13 +234,13 @@ static int AddCmds(Tcl_Interp *interp, const void *arg)
  *
  * PermCmd --
  *
- *	The ns_perm Tcl command
+ *      The ns_perm Tcl command
  *
  * Results:
- *	Std Tcl ret val
+ *      Std Tcl ret val
  *
  * Side effects:
- *	Yes.
+ *      Yes.
  *
  *----------------------------------------------------------------------
  */
@@ -342,27 +342,27 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *c
  *
  * AuthProc --
  *
- *	Authorize a URL--this callback is called when a new
- *	connection is received.
+ *      Authorize a URL--this callback is called when a new
+ *      connection is received.
 
- *	Digest authentication per RFC 2617 but currently
- * 	supports qop="auth" and MD5 hashing only.
+ *      Digest authentication per RFC 2617 but currently
+ *      supports qop="auth" and MD5 hashing only.
  *
- *	The logic goes like this:
- *	 - fetch the Authorization header
- *	   if it exists, continue
- *	   if it doesn't exist, return an Unauthorized header and
- *	   WWW-Authenticate header.
- *	 - Parse the Authorization header and perform digest authentication
- *	   against it.
+ *      The logic goes like this:
+ *       - fetch the Authorization header
+ *         if it exists, continue
+ *         if it doesn't exist, return an Unauthorized header and
+ *         WWW-Authenticate header.
+ *       - Parse the Authorization header and perform digest authentication
+ *         against it.
 
  * Results:
- *	NS_OK: accept;
- *	NS_FORBIDDEN or NS_UNAUTHORIZED: go away;
- *	NS_ERROR: oops
+ *      NS_OK: accept;
+ *      NS_FORBIDDEN or NS_UNAUTHORIZED: go away;
+ *      NS_ERROR: oops
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -459,9 +459,9 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
          * Digest Authentication
          */
 
-	if (STREQ(auth, "Digest")) {
+        if (STREQ(auth, "Digest")) {
 
-	}
+        }
     }
 
     /*
@@ -560,13 +560,13 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
  *
  * ValidateUserAddr --
  *
- *	Validate that the peer address is valid for this user
+ *      Validate that the peer address is valid for this user
  *
  * Results:
- *	NS_TRUE if allowed, NS_FALSE if not
+ *      NS_TRUE if allowed, NS_FALSE if not
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -600,7 +600,7 @@ ValidateUserAddr(User *userPtr, const char *peer)
     hPtr = Tcl_FirstHashEntry(&userPtr->masks, &search);
     while (hPtr != NULL) {
         struct sockaddr *maskPtr;
-	Tcl_HashEntry *entryPtr;
+        Tcl_HashEntry *entryPtr;
 
         maskPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->masks, hPtr);
 
@@ -700,13 +700,13 @@ ValidateUserAddr(User *userPtr, const char *peer)
  *
  * FreeUserInfo --
  *
- *	Free the user information.
+ *      Free the user information.
  *
  * Results:
- *	none.
+ *      none.
  *
  * Side effects:
- *	free memory.
+ *      free memory.
  *
  *----------------------------------------------------------------------
  */
@@ -719,11 +719,11 @@ FreeUserInfo(User *userPtr, char *name)
 
     NS_NONNULL_ASSERT(userPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
-    
+
     hPtr = Tcl_FirstHashEntry(&userPtr->groups, &search);
     while (hPtr != NULL) {
         Group *groupPtr = Tcl_GetHashValue(hPtr);
-        
+
         hPtr = Tcl_FindHashEntry(&groupPtr->users, name);
         if (hPtr != NULL) {
             Tcl_DeleteHashEntry(hPtr);
@@ -733,7 +733,7 @@ FreeUserInfo(User *userPtr, char *name)
     hPtr = Tcl_FirstHashEntry(&userPtr->nets, &search);
     while (hPtr != NULL) {
         char *maskString = Tcl_GetHashValue(hPtr);
-        
+
         if (maskString != NULL) {
             ns_free(maskString);
         }
@@ -753,13 +753,13 @@ FreeUserInfo(User *userPtr, char *name)
  *
  * AddUserCmd --
  *
- *	Implements the Tcl command ns_perm adduser
+ *      Implements the Tcl command ns_perm adduser
  *
  * Results:
- *	Tcl resut
+ *      Tcl resut
  *
  * Side effects:
- *	A user may be added to the global user hash table
+ *      A user may be added to the global user hash table
  *
  *----------------------------------------------------------------------
  */
@@ -866,7 +866,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
                 validMask = ns_inet_pton(maskPtr, slash);
             }
 
-	    if (validIp <= 0 || validMask <= 0) {
+            if (validIp <= 0 || validMask <= 0) {
                 Ns_TclPrintfResult(interp, "invalid address or hostname \"%s\". "
                                    "Should be ipaddr/netmask or hostname", net);
                 goto fail;
@@ -937,13 +937,13 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * DelUserCmd --
  *
- *	Implements the Tcl command ns_perm deluser
+ *      Implements the Tcl command ns_perm deluser
  *
  * Results:
- *	Tcl resut
+ *      Tcl resut
  *
  * Side effects:
- *	A user may be deleted from the global user hash table
+ *      A user may be deleted from the global user hash table
  *
  *----------------------------------------------------------------------
  */
@@ -981,13 +981,13 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * ListUsersCmd --
  *
- *	Implements the Tcl command ns_perm listusers
+ *      Implements the Tcl command ns_perm listusers
  *
  * Results:
- *	Tcl resut
+ *      Tcl resut
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1005,7 +1005,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc
 
     while (hPtr != NULL) {
         char              ipString[NS_IPADDR_SIZE];
-	User             *userPtr = Tcl_GetHashValue(hPtr);
+        User             *userPtr = Tcl_GetHashValue(hPtr);
         Tcl_HashEntry    *mPtr;
         struct sockaddr  *netPtr;
 
@@ -1050,7 +1050,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc
     }
     Ns_RWLockUnlock(&servPtr->lock);
     Tcl_DStringResult(interp, &ds);
-    
+
     return TCL_OK;
 }
 
@@ -1060,13 +1060,13 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc
  *
  * AddGroupCmd --
  *
- *	Add a group to the global groups list
+ *      Add a group to the global groups list
  *
  * Results:
- *	Standard Tcl
+ *      Standard Tcl
  *
  * Side effects:
- *	A group will be created
+ *      A group will be created
  *
  *----------------------------------------------------------------------
  */
@@ -1169,13 +1169,13 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *
  * DelGroupCmd --
  *
- *	Implements the Tcl command ns_perm delgroup
+ *      Implements the Tcl command ns_perm delgroup
  *
  * Results:
- *	Tcl resut
+ *      Tcl resut
  *
  * Side effects:
- *	A group may be deleted from the global user hash table
+ *      A group may be deleted from the global user hash table
  *
  *----------------------------------------------------------------------
  */
@@ -1226,13 +1226,13 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *
  * ListGroupsCmd --
  *
- *	Implements the Tcl command ns_perm listgroups
+ *      Implements the Tcl command ns_perm listgroups
  *
  * Results:
- *	Tcl resut
+ *      Tcl resut
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1243,14 +1243,14 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(obj
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
     Tcl_DString     ds;
- 
+
     Tcl_DStringInit(&ds);
     Ns_RWLockRdLock(&servPtr->lock);
     hPtr = Tcl_FirstHashEntry(&servPtr->groups, &search);
     while (hPtr != NULL) {
-	Tcl_HashSearch usearch;
-	Tcl_HashEntry *uhPtr;
-	Group         *groupPtr = Tcl_GetHashValue(hPtr);
+        Tcl_HashSearch usearch;
+        Tcl_HashEntry *uhPtr;
+        Group         *groupPtr = Tcl_GetHashValue(hPtr);
 
         Ns_DStringPrintf(&ds, "%s { ",
                          (const char *)Tcl_GetHashKey(&servPtr->groups, hPtr));
@@ -1281,13 +1281,13 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(obj
  *
  * AllowDenyObjCmd --
  *
- *	Add a record that will allow or deny access to the specified url
+ *      Add a record that will allow or deny access to the specified url
  *
  * Results:
- *	Std Tcl
+ *      Std Tcl
  *
  * Side effects:
- *	A perm record may be created
+ *      A perm record may be created
  *
  *----------------------------------------------------------------------
  */
@@ -1382,13 +1382,13 @@ static int AllowDenyObjCmd(
  *
  * DelPermObjCmd --
  *
- *	Remove permission record
+ *      Remove permission record
  *
  * Results:
- *	Std Tcl
+ *      Std Tcl
  *
  * Side effects:
- *	A perm record may be deleted
+ *      A perm record may be deleted
  *
  *----------------------------------------------------------------------
  */
@@ -1450,13 +1450,13 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * ListPermsCmd --
  *
- *	Implements the Tcl command ns_perm listperms
+ *      Implements the Tcl command ns_perm listperms
  *
  * Results:
- *	Tcl resut
+ *      Tcl resut
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1515,13 +1515,13 @@ static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
  *
  * CheckPassCmd --
  *
- *	Checks supplied user password against internak database
+ *      Checks supplied user password against internak database
  *
  * Results:
- *	1 if verified, 0 if not valid
+ *      1 if verified, 0 if not valid
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1573,13 +1573,13 @@ static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
  *
  * SetPassCmd --
  *
- *	Assigns new password to the user
+ *      Assigns new password to the user
  *
  * Results:
- *	1 if assigned, 0 if not found
+ *      1 if assigned, 0 if not found
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1625,18 +1625,18 @@ static int SetPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * CreateNonce --
  *
- *	Create the nonce to be used by the client to hash against.
- *	The hash is a uuencoded string that consists of:
+ *      Create the nonce to be used by the client to hash against.
+ *      The hash is a uuencoded string that consists of:
  *
- *	time-stamp H(time-stamp ":" uri ":" private-key)
+ *      time-stamp H(time-stamp ":" uri ":" private-key)
  *
- *	Note that this function is called here with uri = ""
+ *      Note that this function is called here with uri = ""
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
 */
@@ -1684,17 +1684,17 @@ static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
  *
  * CheckNonce --
  *
- *	Given a nonce value ensure that it hasn't been tampered with
- *	and that it isn't stale. The hash is a uuencoded string that
- *	consists of:
+ *      Given a nonce value ensure that it hasn't been tampered with
+ *      and that it isn't stale. The hash is a uuencoded string that
+ *      consists of:
  *
- *	time-stamp H(time-stamp ":" uri ":" private-key)
+ *      time-stamp H(time-stamp ":" uri ":" private-key)
  *
  * Results:
- *	NS_OK or NS_ERROR if the nonce is stale.
+ *      NS_OK or NS_ERROR if the nonce is stale.
  *
  * Side effects:
- *	None.
+ *      None.
  */
 
 static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout)
@@ -1759,14 +1759,14 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
  *
  * CreateHeader --
  *
- *	Assigns WWW-Authenticate headers according to Digest
- *	authentication rules.
+ *      Assigns WWW-Authenticate headers according to Digest
+ *      authentication rules.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	Appends HTTP headers to output headers
+ *      Appends HTTP headers to output headers
  *
  *----------------------------------------------------------------------
 */

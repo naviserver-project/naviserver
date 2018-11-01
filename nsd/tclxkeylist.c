@@ -154,28 +154,28 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key,
  * Tcl_GetKeyedListKeys -- Retrieve a list of keys from a keyed list.  The list
  * is walked rather than converted to an argv for increased performance.
  *
- * Parameters: 
+ * Parameters:
 
  *  - interp (I/O) - Error message will be return in result if there
- *    is an error. 
+ *    is an error.
  *  - subFieldName (I) - If "" or NULL, then the keys are
  *    retreved for the top level of the list.  If specified, it is name of the
- *    field who's subfield keys are to be retrieve. 
- *  - keyedList (I) - The list to search for the field. 
- *  - keysArgcPtr (O) - The number of keys in the keyed list is returned here. 
- *  - keysArgvPtr (O) - An argv containing the key names.  It is dynamically 
- *    allocated, containing both the array and the strings. A single call 
- *    to ckfree will release it. 
- *  Returns: 
- *    TCL_OK - If the field was found. 
- *    TCL_BREAK - If the field was not found. 
+ *    field who's subfield keys are to be retrieve.
+ *  - keyedList (I) - The list to search for the field.
+ *  - keysArgcPtr (O) - The number of keys in the keyed list is returned here.
+ *  - keysArgvPtr (O) - An argv containing the key names.  It is dynamically
+ *    allocated, containing both the array and the strings. A single call
+ *    to ckfree will release it.
+ *  Returns:
+ *    TCL_OK - If the field was found.
+ *    TCL_BREAK - If the field was not found.
  *    TCL_ERROR - If an error occurred.
  * ---------------------------------------------------------------------------
  */
 
 int
 Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *keyedList,
-		     int *keysArgcPtr, char ***keysArgvPtr)
+                     int *keysArgcPtr, char ***keysArgvPtr)
 {
     Tcl_Obj    *keylistPtr = Tcl_NewStringObj(keyedList, -1);
     const char *keylistKey = subFieldName;
@@ -208,14 +208,14 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
             for (ii = 0; ii < keyCount; ii++) {
                 sumKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
             }
-	    keySize = (keyCount + 1) * (int)sizeof(char *);
+            keySize = (keyCount + 1) * (int)sizeof(char *);
             keyArgv = (char **)ckalloc((unsigned int)keySize + (unsigned int)sumKeySize);
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + keySize;
 
             for (ii = 0; ii < keyCount; ii++) {
-		const char *keyPtr;
-		int keyLen = 0;
+                const char *keyPtr;
+                int keyLen = 0;
 
                 keyArgv[ii] = nextByte;
                 keyPtr = Tcl_GetStringFromObj(objValues[ii], &keyLen);
@@ -242,26 +242,26 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
  * is walked rather than converted to an argv for increased performance.  This
  * if the name contains sub-fields, this function recursive.
  *
- * Parameters: 
+ * Parameters:
  *  - interp (I/O) - Error message will be return in result if there
- *    is an error. 
- *  - fieldName (I) - The name of the field to extract.  Will recusively 
- *    process sub-field names separated by `.'. 
- *  - keyedList (I) - The list to search for the field. 
- *  - fieldValuePtr (O) - If the field is found, a pointer to a dynamically 
- *    allocated string containing the value is returned here.  
+ *    is an error.
+ *  - fieldName (I) - The name of the field to extract.  Will recusively
+ *    process sub-field names separated by `.'.
+ *  - keyedList (I) - The list to search for the field.
+ *  - fieldValuePtr (O) - If the field is found, a pointer to a dynamically
+ *    allocated string containing the value is returned here.
  *    If NULL is specified, then only the presence of the field is
- *    validated, the value is not returned. 
- * Returns: 
- *    TCL_OK - If the field was found. 
- *    TCL_BREAK - If the field was not found. 
+ *    validated, the value is not returned.
+ * Returns:
+ *    TCL_OK - If the field was found.
+ *    TCL_BREAK - If the field was not found.
  *    TCL_ERROR - If an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
 int
 Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
-		      const char *keyedList, char **fieldValuePtr)
+                      const char *keyedList, char **fieldValuePtr)
 {
     Tcl_Obj *keylistPtr = Tcl_NewStringObj(keyedList, -1);
     const char *keylistKey = fieldName;
@@ -279,7 +279,7 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
         }
     } else if (status == TCL_OK) {
         if (fieldValuePtr != NULL) {
-	    int         valueLen;
+            int         valueLen;
             const char *keyValue = Tcl_GetStringFromObj(objValPtr, &valueLen);
             char       *newValue = ns_strncopy(keyValue, (ssize_t)valueLen);
 
@@ -298,23 +298,23 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *
  * Tcl_SetKeyedListField -- Set a field value in keyed list.
  *
- * Parameters: 
+ * Parameters:
  *  - interp (I/O) - Error message will be return in result if there
- *    is an error. 
+ *    is an error.
  *  - fieldName (I) - The name of the field to extract.  Will
- *    recusively process sub-field names separated by `.'. 
- *  - fieldValue (I) - The value to set for the field. 
- *  - keyedList (I) - The keyed list to set a field value in, may be 
- *    an NULL or an empty list to create a new keyed list. 
- * Returns: 
- *   A pointer to a dynamically allocated string, or 
+ *    recusively process sub-field names separated by `.'.
+ *  - fieldValue (I) - The value to set for the field.
+ *  - keyedList (I) - The keyed list to set a field value in, may be
+ *    an NULL or an empty list to create a new keyed list.
+ * Returns:
+ *   A pointer to a dynamically allocated string, or
  *   NULL if an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
 
 char *
 Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
-		      const char *fieldValue, const char *keyedList)
+                      const char *fieldValue, const char *keyedList)
 {
     Tcl_Obj     *keylistPtr = Tcl_NewStringObj(keyedList,  -1);
     Tcl_Obj     *valuePtr   = Tcl_NewStringObj(fieldValue, -1);
@@ -346,15 +346,15 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *
  * Tcl_DeleteKeyedListField -- Delete a field value in keyed list.
  *
- * Parameters: 
+ * Parameters:
  *   - interp (I/O) - Error message will be return in result if there
- *     is an error. 
- *   - fieldName (I) - The name of the field to extract.  Will recusively 
- *     process sub-field names separated by `.'. 
- *   - fieldValue (I) - The value to set for the field. 
- *   - keyedList (I) - The keyed list to delete the field from. 
- * Returns: 
- *   A pointer to a dynamically allocated string containing the new list, or 
+ *     is an error.
+ *   - fieldName (I) - The name of the field to extract.  Will recusively
+ *     process sub-field names separated by `.'.
+ *   - fieldValue (I) - The value to set for the field.
+ *   - keyedList (I) - The keyed list to delete the field from.
+ * Returns:
+ *   A pointer to a dynamically allocated string containing the new list, or
  *   NULL if an error occurred.
  * ---------------------------------------------------------------------------
  * -- */
@@ -504,8 +504,8 @@ DupSharedKeyListChild(const keylIntObj_t *keylIntPtr, int idx)
     NS_NONNULL_ASSERT(keylIntPtr != NULL);
 
     if (Tcl_IsShared(keylIntPtr->entries[idx].valuePtr)) {
-	keylIntPtr->entries[idx].valuePtr =
-	    Tcl_DuplicateObj(keylIntPtr->entries[idx].valuePtr);
+        keylIntPtr->entries[idx].valuePtr =
+            Tcl_DuplicateObj(keylIntPtr->entries[idx].valuePtr);
         Tcl_IncrRefCount(keylIntPtr->entries[idx].valuePtr);
     }
 }
@@ -658,7 +658,7 @@ EnsureKeyedListSpace(keylIntObj_t * keylIntPtr, int newNumEntries)
         } else {
             keylIntPtr->entries = (keylEntry_t *)
                 ns_realloc((char *) keylIntPtr->entries,
-			  (unsigned)newSize * sizeof(keylEntry_t));
+                          (unsigned)newSize * sizeof(keylEntry_t));
         }
         keylIntPtr->arraySize = newSize;
     }
@@ -722,9 +722,9 @@ FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyL
 
     for (findIdx = 0; findIdx < keylIntPtr->numEntries; findIdx++) {
         if ((strncmp(keylIntPtr->entries[findIdx].key, key, keyLen) == 0)
-	    && keylIntPtr->entries[findIdx].key[keyLen] == '\0') {
-	    break;
-	}
+            && keylIntPtr->entries[findIdx].key[keyLen] == '\0') {
+            break;
+        }
     }
 
     if (nextSubKeyPtr != NULL) {
@@ -934,7 +934,7 @@ UpdateStringOfKeyedList(Tcl_Obj *keylPtr)
     for (idx = 0; idx < keylIntPtr->numEntries; idx++) {
         entryObjv[0] =
             Tcl_NewStringObj(keylIntPtr->entries[idx].key,
-			     (int)strlen(keylIntPtr->entries[idx].key));
+                             (int)strlen(keylIntPtr->entries[idx].key));
         entryObjv[1] = keylIntPtr->entries[idx].valuePtr;
         listObjv[idx] = Tcl_NewListObj(2, entryObjv);
     }
@@ -1539,5 +1539,3 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  * indent-tabs-mode: nil
  * End:
  */
-
-

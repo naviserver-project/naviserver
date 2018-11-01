@@ -902,13 +902,13 @@ NsTclReturnRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  *
  * NsTclInternalRedirectObjCmd --
  *
- *	Implements ns_internalredirect as obj command.
+ *      Implements ns_internalredirect as obj command.
  *
  * Results:
- *	Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *	See docs.
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
