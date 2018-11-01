@@ -409,7 +409,7 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
     if (err != 0) {
         NsThreadFatal(func, "pthread_create", err);
     } else if (resultPtr != NULL) {
-        *resultPtr = (Ns_Thread) thr;
+        *resultPtr = (Ns_Thread)(uintptr_t) thr;
     }
 
     /*
@@ -473,7 +473,7 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
 
     NS_NONNULL_ASSERT(thread != NULL);
 
-    err = pthread_join((pthread_t)*thread, argPtr);
+    err = pthread_join((pthread_t)(uintptr_t)*thread, argPtr);
     if (err != 0) {
         NsThreadFatal("Ns_ThreadJoin", "pthread_join", err);
     }
@@ -547,7 +547,7 @@ Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
     NS_NONNULL_ASSERT(threadPtr != NULL);
 
-    *threadPtr = (Ns_Thread) pthread_self();
+    *threadPtr = (Ns_Thread) (uintptr_t)pthread_self();
 }
 
 
