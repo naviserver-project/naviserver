@@ -688,13 +688,13 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
  */
 
 void
-NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
+NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr)
 {
     ThreadArg *argPtr;
     unsigned   tid, flags;
     uintptr_t  hdl;
 
-    flags = ((resultPtr != NULL) ? CREATE_SUSPENDED : 0u);
+    flags = ((threadPtr != NULL) ? CREATE_SUSPENDED : 0u);
     argPtr = ns_malloc(sizeof(ThreadArg));
     argPtr->arg = arg;
     argPtr->self = NULL;
@@ -702,12 +702,12 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
     if (hdl == 0u) {
         NsThreadFatal("NsCreateThread", "_beginthreadex", errno);
     }
-    if (resultPtr == NULL) {
+    if (threadPtr == NULL) {
         CloseHandle((HANDLE) hdl);
     } else {
         argPtr->self = (HANDLE) hdl;
         ResumeThread(argPtr->self);
-        *resultPtr = (Ns_Thread) hdl;
+        *threadPtr = (Ns_Thread) hdl;
     }
 }
 

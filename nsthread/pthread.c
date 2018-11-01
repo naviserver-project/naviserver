@@ -345,7 +345,7 @@ NsLockUnset(void *lock)
  */
 
 void
-NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
+NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr)
 {
     static const char *func = "NsCreateThread";
     pthread_attr_t     attr;
@@ -393,9 +393,9 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
     }
 
     /*
-     * In case, there is no resultPtr given, create a detached thread.
+     * In case, there is no threadPtr given, create a detached thread.
      */
-    if (resultPtr == NULL) {
+    if (threadPtr == NULL) {
         err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         if (err != 0 && err != ENOTSUP) {
             NsThreadFatal(func, "pthread_setdetachstate", err);
@@ -408,8 +408,8 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *resultPtr)
     err = pthread_create(&thr, &attr, ThreadMain, arg);
     if (err != 0) {
         NsThreadFatal(func, "pthread_create", err);
-    } else if (resultPtr != NULL) {
-        *resultPtr = (Ns_Thread)(uintptr_t) thr;
+    } else if (threadPtr != NULL) {
+        *threadPtr = (Ns_Thread)(uintptr_t) thr;
     }
 
     /*
