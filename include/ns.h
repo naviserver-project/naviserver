@@ -981,33 +981,33 @@ typedef struct {
  */
 
 NS_EXTERN const char *
-Ns_ConfigString(const char *section, const char *key, const char *def)
+Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
-Ns_ConfigBool(const char *section, const char *key, bool def)
+Ns_ConfigBool(const char *section, const char *key, bool defaultValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
-Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int def,
+Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int defaultValue,
               unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int
-Ns_ConfigInt(const char *section, const char *key, int def)
+Ns_ConfigInt(const char *section, const char *key, int defaultValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigIntRange(const char *section, const char *key, int def,
-                  int min, int max)
+Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
+                  int minValue, int maxValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt def)
+Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt defaultValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt def,
+Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
                   Tcl_WideInt min, Tcl_WideInt max)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
