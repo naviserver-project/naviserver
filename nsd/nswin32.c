@@ -1112,7 +1112,7 @@ static VOID WINAPI
 ServiceMain(DWORD argc, LPTSTR *argv)
 {
     hStatus = RegisterServiceCtrlHandler(argv[0], ServiceHandler);
-    if (hStatus == 0) {
+    if (hStatus == NULL) {
         Ns_Fatal("nswin32: RegisterServiceCtrlHandler() failed: '%s'",
                  SysErrMsg());
     }
@@ -1200,7 +1200,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
         static DWORD check = 1u;
         curStatus.dwCheckPoint = check++;
     }
-    if (hStatus != 0 && SetServiceStatus(hStatus, &curStatus) != TRUE) {
+    if (hStatus != NULL && SetServiceStatus(hStatus, &curStatus) != TRUE) {
         Ns_Fatal("nswin32: SetServiceStatus(%ld) failed: '%s'", state,
                  SysErrMsg());
     }
