@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -40,7 +40,7 @@
 #include "ns.h"
 
 /*
- * Nsdb return codes, extending NaviServer return codes. 
+ * Nsdb return codes, extending NaviServer return codes.
  */
 typedef enum {
     NS_DML =              ( 1),
@@ -51,7 +51,7 @@ typedef enum {
     NSDB_ERROR =          (NS_ERROR) /* error */
 } NsDb_ReturnCode;
 
-/* 
+/*
  * The following enum defines known nsdb driver function ids.
  */
 
@@ -83,7 +83,7 @@ typedef enum {
 
 /*
  * Database procedure structure used when registering
- * a driver. 
+ * a driver.
  */
 
 typedef struct Ns_DbProc {
@@ -148,7 +148,7 @@ NS_EXTERN Ns_ReturnCode Ns_DbCancel(Ns_DbHandle *handle);
 NS_EXTERN Ns_ReturnCode Ns_DbResetHandle(Ns_DbHandle *handle);
 NS_EXTERN Ns_ReturnCode Ns_DbSpStart(Ns_DbHandle *handle, const char *procname);
 NS_EXTERN Ns_ReturnCode Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname,
-					const char *paramtype, const char *inout, const char *value);
+                                        const char *paramtype, const char *inout, const char *value);
 NS_EXTERN int           Ns_DbSpExec(Ns_DbHandle *handle);
 NS_EXTERN Ns_ReturnCode Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize);
 NS_EXTERN Ns_Set       *Ns_DbSpGetParams(Ns_DbHandle *handle);
@@ -164,13 +164,13 @@ NS_EXTERN bool          Ns_DbPoolAllowable(const char *server, const char *pool)
 NS_EXTERN void          Ns_DbPoolPutHandle(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_DbHandle  *Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_DbHandle  *Ns_DbPoolGetHandle(const char *pool) NS_GNUC_NONNULL(1);
-NS_EXTERN Ns_ReturnCode Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, 
-						    const char *pool,
-						    int nwant)
+NS_EXTERN Ns_ReturnCode Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles,
+                                                    const char *pool,
+                                                    int nwant)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN Ns_ReturnCode Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, 
-							 const char *pool,
-							 int nwant, const Ns_Time *wait)
+NS_EXTERN Ns_ReturnCode Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles,
+                                                         const char *pool,
+                                                         int nwant, const Ns_Time *wait)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN Ns_ReturnCode Ns_DbBouncePool(const char *pool) NS_GNUC_NONNULL(1);
 NS_EXTERN int Ns_DbPoolStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
@@ -187,13 +187,13 @@ NS_EXTERN int Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns
  */
 
 NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, const char *handleId,
-				Ns_DbHandle **handlePtr);
+                                Ns_DbHandle **handlePtr);
 
 /*
  * dbutil.c:
  */
-    
-NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars) 
+
+NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, const char *chars)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
@@ -205,7 +205,7 @@ NS_EXTERN Ns_Set *Ns_Db1Row(Ns_DbHandle *handle, const char *sql)
 NS_EXTERN Ns_ReturnCode Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg) 
+NS_EXTERN void Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #endif /* NSDB_H */
