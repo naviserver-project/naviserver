@@ -171,7 +171,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 static int
 FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
 {
-    int           max, result;
+    int           maxFiles, result;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cmd != NULL);
@@ -180,11 +180,11 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
         Tcl_WrongNumArgs(interp, 1, objv, "file backupMax");
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIntFromObj(interp, objv[2], &max) != TCL_OK) {
+    } else if (Tcl_GetIntFromObj(interp, objv[2], &maxFiles) != TCL_OK) {
         result = TCL_ERROR;
 
-    } else if (max <= 0 || max > 1000) {
-        Ns_TclPrintfResult(interp, "invalid max %d: should be > 0 and <= 1000.", max);
+    } else if (maxFiles <= 0 || maxFiles > 1000) {
+        Ns_TclPrintfResult(interp, "invalid max %d: should be > 0 and <= 1000.", maxFiles);
         result = TCL_ERROR;
 
     } else {
@@ -194,9 +194,9 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
         Ns_ReturnCode status;
 
         if (*cmd == 'p' /* "purge" */ ) {
-            status = Ns_PurgeFiles(Tcl_GetString(objv[1]), max);
+            status = Ns_PurgeFiles(Tcl_GetString(objv[1]), maxFiles);
         } else /* must be "roll" */ {
-            status = Ns_RollFile(Tcl_GetString(objv[1]), max);
+            status = Ns_RollFile(Tcl_GetString(objv[1]), maxFiles);
         }
         if (status != NS_OK) {
             Ns_TclPrintfResult(interp, "could not %s \"%s\": %s",

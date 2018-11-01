@@ -168,7 +168,7 @@ Ns_TaskQueue *
 Ns_CreateTaskQueue(const char *name)
 {
     TaskQueue *queuePtr;
-    size_t nameLength;
+    size_t     nameLength;
 
     NS_NONNULL_ASSERT(name != NULL);
 
@@ -933,15 +933,14 @@ TaskThread(void *arg)
 {
     TaskQueue     *queuePtr = arg;
     char           c;
-    size_t         max;
+    size_t         maxFds = 100u;
     Task          *taskPtr, *nextPtr, *firstWaitPtr;
     struct pollfd *pfds;
 
     Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Ns_LogTaskDebug, "starting");
 
-    max = 100u;
-    pfds = ns_malloc(sizeof(struct pollfd) * max);
+    pfds = ns_malloc(sizeof(struct pollfd) * maxFds);
     firstWaitPtr = NULL;
 
     for (;;) {
@@ -1038,9 +1037,9 @@ TaskThread(void *arg)
 
             if ((taskPtr->flags & TASK_WAIT) != 0u) {
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_WAIT task %p flags %.6x", (void*)taskPtr, taskPtr->flags);
-                if (max <= (size_t)nfds) {
-                    max  = (size_t)nfds + 100u;
-                    pfds = ns_realloc(pfds, max);
+                if (maxFds <= (size_t)nfds) {
+                    maxFds  = (size_t)nfds + 100u;
+                    pfds = ns_realloc(pfds, maxFds);
                 }
                 taskPtr->idx = nfds;
                 pfds[nfds].fd = taskPtr->sock;

@@ -440,7 +440,7 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 static int
 JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK, max = NS_JOB_DEFAULT_MAXTHREADS;
+    int          result = TCL_OK, maxThreads = NS_JOB_DEFAULT_MAXTHREADS;
     Tcl_Obj     *queueIdObj;
     char        *descString  = (char *)"";
     Ns_ObjvSpec  lopts[] = {
@@ -449,7 +449,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     };
     Ns_ObjvSpec args[] = {
         {"queueId",     Ns_ObjvObj,  &queueIdObj,  NULL},
-        {"?maxThreads", Ns_ObjvInt,  &max,         NULL},
+        {"?maxThreads", Ns_ObjvInt,  &maxThreads,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -463,7 +463,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         Ns_MutexLock(&tp.queuelock);
         hPtr = Tcl_CreateHashEntry(&tp.queues, queueIdString, &isNew);
         if (isNew != 0) {
-            Queue *queue = NewQueue(Tcl_GetHashKey(&tp.queues, hPtr), descString, max);
+            Queue *queue = NewQueue(Tcl_GetHashKey(&tp.queues, hPtr), descString, maxThreads);
 
             Tcl_SetHashValue(hPtr, queue);
         }

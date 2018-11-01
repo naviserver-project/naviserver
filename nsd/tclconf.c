@@ -59,16 +59,16 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     char       *section, *key;
     Tcl_Obj    *defObj = NULL;
     int         status, isBool = 0, isInt = 0, exact = 0, doSet = 0;
-    Tcl_WideInt min = LLONG_MIN, max = LLONG_MAX;
+    Tcl_WideInt minValue = LLONG_MIN, maxValue = LLONG_MAX;
 
     Ns_ObjvSpec opts[] = {
-        {"-bool",  Ns_ObjvBool,      &isBool, INT2PTR(NS_TRUE)},
-        {"-int",   Ns_ObjvBool,      &isInt,  INT2PTR(NS_TRUE)},
-        {"-min",   Ns_ObjvWideInt,   &min,    NULL},
-        {"-max",   Ns_ObjvWideInt,   &max,    NULL},
-        {"-exact", Ns_ObjvBool,      &exact,  INT2PTR(NS_TRUE)},
-        {"-set",   Ns_ObjvBool,      &doSet,  INT2PTR(NS_TRUE)},
-        {"--",     Ns_ObjvBreak,     NULL,    NULL},
+        {"-bool",  Ns_ObjvBool,      &isBool,   INT2PTR(NS_TRUE)},
+        {"-int",   Ns_ObjvBool,      &isInt,    INT2PTR(NS_TRUE)},
+        {"-min",   Ns_ObjvWideInt,   &minValue, NULL},
+        {"-max",   Ns_ObjvWideInt,   &maxValue, NULL},
+        {"-exact", Ns_ObjvBool,      &exact,    INT2PTR(NS_TRUE)},
+        {"-set",   Ns_ObjvBool,      &doSet,    INT2PTR(NS_TRUE)},
+        {"--",     Ns_ObjvBreak,     NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -84,7 +84,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         const char *value;
         bool        done = NS_FALSE;
 
-        if (min > LLONG_MIN || max < LLONG_MAX) {
+        if (minValue > LLONG_MIN || maxValue < LLONG_MAX) {
             isInt = 1;
         }
 
@@ -120,7 +120,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                     Ns_TclPrintfResult(interp, "expected integer but got \"%s\"", value);
                     done = NS_TRUE;
                     status = TCL_ERROR;
-                }  else if (v >= min && v <= max) {
+                }  else if (v >= minValue && v <= maxValue) {
                     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(v));
                     done = NS_TRUE;
                 } else {
@@ -152,7 +152,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
                 if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
                     status = TCL_ERROR;
-                } else if (v < min || v > max) {
+                } else if (v < minValue || v > maxValue) {
                     Ns_TclPrintfResult(interp, "value '%s' out of range", Tcl_GetString(defObj));
                     status = TCL_ERROR;
                 }

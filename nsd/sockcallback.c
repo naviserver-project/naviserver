@@ -344,7 +344,7 @@ SockCallbackThread(void *UNUSED(arg))
     unsigned int   when[3];
     short          events[3];
     int            n, i, isNew;
-    size_t         max;
+    size_t         maxPollfds = 100u;
     Callback      *cbPtr, *nextPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -360,8 +360,7 @@ SockCallbackThread(void *UNUSED(arg))
     when[0] = (unsigned int)NS_SOCK_READ;
     when[1] = (unsigned int)NS_SOCK_WRITE;
     when[2] = (unsigned int)NS_SOCK_EXCEPTION | (unsigned int)NS_SOCK_DONE;
-    max = 100u;
-    pfds = ns_malloc(sizeof(struct pollfd) * max);
+    pfds = ns_malloc(sizeof(struct pollfd) * maxPollfds);
     pfds[0].fd = trigPipe[0];
     pfds[0].events = (short)POLLIN;
 
@@ -419,12 +418,12 @@ SockCallbackThread(void *UNUSED(arg))
         }
 
         /*
-         * Verify and set the poll bits for all active callbacks.
+         * Check, if we have to extend maxPollfds and realloc memory if
+         * necessary.
          */
-
-        if (max <= (size_t)activeCallbacks.numEntries) {
-            max  = (size_t)activeCallbacks.numEntries + 100u;
-            pfds = ns_realloc(pfds, sizeof(struct pollfd) * max);
+        if (maxPollfds <= (size_t)activeCallbacks.numEntries) {
+            maxPollfds  = (size_t)activeCallbacks.numEntries + 100u;
+            pfds = ns_realloc(pfds, sizeof(struct pollfd) * maxPollfds);
         }
 
         /*
@@ -433,6 +432,10 @@ SockCallbackThread(void *UNUSED(arg))
 
         pollto = 30000;
         Ns_GetTime(&now);
+
+        /*
+         * Verify and set the poll bits for all active callbacks.
+         */
 
         nfds = 1;
         for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
