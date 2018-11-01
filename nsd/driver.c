@@ -440,7 +440,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         if (nrDrivers > 1) {
 #if !defined(SO_REUSEPORT)
             Ns_Log(Warning,
-                   "server %s module %d requests %d driverthreads, but is not supported by the operating system",
+                   "server %s module %s requests %d driverthreads, but is not supported by the operating system",
                    server, module, nrDrivers);
             Ns_SetUpdate(set, "driverthreads", "1");
             nrDrivers = 1;
