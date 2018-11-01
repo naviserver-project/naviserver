@@ -220,7 +220,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
 {
     const NsInterp *itPtr = clientData;
     Ns_Conn        *conn  = NULL;
-    int             length, i, n, result;
+    int             length = 0, i, n, result;
     Ns_ReturnCode   status;
     bool            binary;
     unsigned int    flags;
