@@ -79,6 +79,16 @@ static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **
 # ifndef OPENSSL_NO_EC
 static int GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void
+SetResultFromEC_POINT(
+    Tcl_Interp       *interp,
+    Tcl_DString      *dsPtr,
+    EC_KEY           *eckey,
+    const EC_POINT   *ecpoint,
+    BN_CTX           *bn_ctx,
+    Ns_ResultEncoding encoding)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 #endif
 
 static int GetCipher(
@@ -449,11 +459,9 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     } else {
         nid = OBJ_sn2nid(curveName);
     }
-# ifndef OPENSSL_NO_EC
     if (nid == 0) {
         nid = EC_curve_nist2nid(curveName);
     }
-# endif
     if (nid == 0) {
         Ns_TclPrintfResult(interp, "Unknown curve name \"%s\"", curveName);
         result = TCL_ERROR;
@@ -1740,6 +1748,26 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 }
 #  endif
 
+static void
+SetResultFromEC_POINT(
+    Tcl_Interp       *interp,
+    Tcl_DString      *dsPtr,
+    EC_KEY           *eckey,
+    const EC_POINT   *ecpoint,
+    BN_CTX           *bn_ctx,
+    Ns_ResultEncoding encoding)
+{
+    size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
+                                            POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
+
+    Ns_Log(Notice, "import: octet length %lu", octLength);
+
+    Tcl_DStringSetLength(dsPtr, (int)octLength);
+    octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
+                                   (unsigned char *)dsPtr->string, octLength, bn_ctx);
+    Tcl_SetObjResult(interp, EncodedObj((unsigned char *)dsPtr->string, octLength, NULL, encoding));
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1812,17 +1840,9 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         if (result != TCL_ERROR) {
             Tcl_DString  ds;
             BN_CTX      *bn_ctx = BN_CTX_new();
-            size_t       octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey),
-                                                        ecpoint, POINT_CONVERSION_UNCOMPRESSED,
-                                                        NULL, 0, NULL);
+
             Tcl_DStringInit(&ds);
-            Tcl_DStringSetLength(&ds, (int)octLength);
-            octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
-                                           (unsigned char *)ds.string, octLength, bn_ctx);
-            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
-            /*
-             * Clean up.
-             */
+            SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
             BN_CTX_free(bn_ctx);
             Tcl_DStringFree(&ds);
         }
@@ -1913,18 +1933,10 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
                 result = TCL_ERROR;
             } else {
                 BN_CTX  *bn_ctx = BN_CTX_new();
-                size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
-                                                        POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
-                Ns_Log(Notice, "import: octet length %lu", octLength);
 
-                Tcl_DStringSetLength(&ds, (int)octLength);
-                octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
-                                           (unsigned char *)ds.string, octLength, bn_ctx);
-                Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
-                /*
-                 * Clean up.
-                 */
+                SetResultFromEC_POINT(interp, &ds, eckey, ecpoint, bn_ctx, encoding);
                 BN_CTX_free(bn_ctx);
+
                 result = TCL_OK;
             }
             Tcl_DStringFree(&ds);
