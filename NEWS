@@ -21,22 +21,23 @@ New Features:
     * "brotli_cmd": OS-level command with options used for brotli compression
 
   - "ns_conn" additions:
-    * new subcommand "ns_conn acceptedcompression" to return accepted
+    * New subcommand "ns_conn acceptedcompression" to return accepted
       compressions for the current connection (gzip or brotli)
 
-    * new subcommands "ns_conn currentaddr" and "ns_conn currentport"
+    * New subcommands "ns_conn currentaddr" and "ns_conn currentport"
       to refer to the address and port of the currently open server side
       of the socket.
 
 
   - New feature for GDPR: add mask IP addresses optionally in access log
     --------------------------------------------------------------------
-    This function is similar to "anonip" IP anonymizer of the Swiss
-    privacy foundation).  When this parameter is set, all IP addresses
-    are masked in the log file, such that the host-specific (= person-
-    specific) information is masked out and the IP-address does not
-    match a particular individual anymore. Still, with the masking
-    turned on, reverse DNS lookup and/or geolocation is possible.
+    This feature is similar to "anonip" IP anonymizer of the Swiss
+    privacy foundation): When this feature is activated, all IP
+    addresses are masked in the log file, such that the host-specific
+    (= person- specific) information is masked out and the IP-address
+    does not match a particular individual anymore. Still, with the
+    masking turned on, reverse DNS lookup and/or geolocation is
+    possible.
 
     The option can be configured via the following parameters in the
     ".../module/nslog" section of the config file of NaviServer:
@@ -451,7 +452,7 @@ Configuration Changes:
        . Added subsite based error pages
        . Added section indicating how to configure for nsstats module
        . Added comments how to configure EmailDeliveryMode via config file
-       . Use PostgreSQL's conninfo notation in the datasource to hint, that
+       . Use PostgreSQL's conninfo notation in the datasource to hint that
 	 more parameters are possible as well (e.g. connections via SSL)
 
     * sample-config.tcl:
@@ -545,6 +546,67 @@ Code Changes:
 Modules:
 --------
 
+ - nsdbbdb (many thanks to Brendan Graves):
+   * Changed to work with FreeTDS 1.00.86
+   * Updated outdated paths.
+   
+ - nsdbpg:
+   * Added sample configuration to include hints how to use SSL
+     connections to the database
+   * Provided compatibility with Tcl 8.7.2
+   * Minor code cleanups
+
+ - nssmtpd, nsdns, nstftpd, nsradiusd, nsdbi, nsdbipg:
+   * Brought code in sync with the current code base (including IPv6, 8.7.2 compat)
+   * Improved spelling
+
+ - nsphp (many thanks to Anthony Bennett):
+   * Recatored for newer versions of NaviServer
+   * Improved README and spelling
+
+ - nsstats:
+   * Added results to "ns_connchan list" to per-server info
+   * Added optional query parameter "raw=0|1" to switch between 
+     raw and prettified numbers
+   * Improved number prettification
+   * Added optional query parameter "max=..." for controlling the number of
+     per-cache entries shown (default 50)
+   * Improved cache statistics: added hits/req, saved/req, saved/hit; dropped saved/KB
+   * Improved mutex statistics: added locks/req, potential locks/req, potential locks per second
+   * Added summative statistics to mutex locks page
+   * Made background locks (locks, not included in per-request statistics) 
+     configurable via NaviServer config file
+   * Various other small changes and beautifications (use more CSS)
+   * Bumped version to 1.8
+
+ - nsoracle:
+   * Fixed potential crash when oci_error_p is called with dbh == NULL
+     (many thanks to Oleg Oleinik)
+   * Some more code cleanup and improved spellings.
+   
+ - websocket:
+   * Fixed potential bug: make sure that upgrade header is sent as a single block.
+   * More minor code cleanup.
+
+ - revproxy:
+   * Fixed potential blocking conditions when send buffer of OS overflows.
+     With "-sendtimeout 0" a call to "ns_connchan write" might write less 
+     bytes than desired; In this case, callbacks are suspended and continue
+     when the situation improves.
+   * Added new switches "-sendtimeout" and "-receivetimeout" to revproxy::upstream
+   * Added "-backend_reply_callback" to ::revproxy::upstream to allow proxy the
+     modification of backend header fields per request.
+   * Bumped version number to 0.11
+
+ - letsencrypt:
+   * Modernized code: use built-in ns_base64urlencode (requires 4.99.17)
+   * Changed order of certificates in pem file (private key first)
+   * Don't hard-code OpenSSL dir on OS (many thanks to Stefan Sobernig)
+
+ - nswebpush:
+   * New module for implementing Web Push via NaviServer
+     (Many thanks to Georg Prohaska)
+   * For details, see: https://bitbucket.org/naviserver/nswebpush/src/default/
 
 =======================================
 NaviServer 4.99.16, released 2017-12-29
@@ -554,7 +616,6 @@ NaviServer 4.99.16, released 2017-12-29
 
 New Features:
 -------------
-
   - ns_cache improvements:
 
     * Allow runtime reaction and re-configuration of caches
@@ -563,7 +624,7 @@ New Features:
     * Added cache transaction semantics
 
       Background: When ns_cache_* commands are used within a database
-      transaction (e.g. in OpenACS), it might occur, that partial
+      transaction (e.g. in OpenACS), it might occur that partial
       results of the transaction are cached before the transaction is
       committed.  When the transaction is rolled back, invalid values
       might be kept in the stack leading to erroneous and hard to
@@ -723,7 +784,7 @@ Performance Improvements:
 
   * Avoid strlen() operations on several occasions
   * Improved speed of line-counting in .adp files by a factor of 2
-  * Reduced scope of mutex lock when registering filters
+  * Reduced scope of mutex lock when registering filters.
 
 
 Bug Fixes:
@@ -751,7 +812,7 @@ Bug Fixes:
      browsers might reject those redirects. Only characters, which
      have to be always coded, are flagged.
 
-   * ns_urldecode: Make sure, that only valid percent codes are
+   * ns_urldecode: Make sure that only valid percent codes are
      converted back.
 
    * ns_urledecode: Use URL encoding charset, when no charset is
@@ -1196,7 +1257,7 @@ Bug Fixes:
  - Fixed underspecified config file (simple-config does not set
    address, fallback to NS_IP_UNSPECIFIED.
 
- - Make sure, that URLs produced by urlspace's walk callbacks are
+ - Make sure that URLs produced by urlspace's walk callbacks are
    proper list elements.
 
  - Make startup more robust, when called with invalid arguments.
@@ -1399,7 +1460,7 @@ Bug Fixes:
   * In HTTP client requests, don't start URLs with "//" under certain
     conditions
 
-  * Keep internally convention, that stored request lines do not end
+  * Keep internally convention that stored request lines do not end
     with crlf to avoid unneeded tests
 
   * Don't "roll away" log file from stderr, when nsd was started with
@@ -1774,7 +1835,7 @@ New Features:
     addresses.  It is e.g. possible to use "::" as address (to denote
     the unspecified address, roughly similar to 0.0.0.0 in IPv4) to
     accept any IPv6 or IPv4 address, when the OS supports IPv4-mapped
-    addresses, or one can use arbitrary addresses. Note, that one can
+    addresses, or one can use arbitrary addresses. Note that one can
     as well load the driver for a server multiple times, once with an
     IPv6 and once with an IPv4 address.  Adding this feature required
     changes in the drivers, since earlier versions had IPv4 structures
