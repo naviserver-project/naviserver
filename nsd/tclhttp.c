@@ -1123,9 +1123,7 @@ Ns_HttpMessageParse(
         if (payloadPtr != NULL && (size - parsed) >= 2u) {
             p += 2;
             /* Ns_Log(Notice, "Ns_ParseHeader returns payload <%s>", p);*/
-            if (payloadPtr != NULL) {
-                *payloadPtr = p;
-            }
+            *payloadPtr = p;
         }
     }
 
