@@ -360,7 +360,7 @@ SockCallbackThread(void *UNUSED(arg))
     when[0] = (unsigned int)NS_SOCK_READ;
     when[1] = (unsigned int)NS_SOCK_WRITE;
     when[2] = (unsigned int)NS_SOCK_EXCEPTION | (unsigned int)NS_SOCK_DONE;
-    pfds = ns_malloc(sizeof(struct pollfd) * maxPollfds);
+    pfds = (struct pollfd *)ns_malloc(sizeof(struct pollfd) * maxPollfds);
     pfds[0].fd = trigPipe[0];
     pfds[0].events = (short)POLLIN;
 
@@ -423,7 +423,7 @@ SockCallbackThread(void *UNUSED(arg))
          */
         if (maxPollfds <= (size_t)activeCallbacks.numEntries) {
             maxPollfds  = (size_t)activeCallbacks.numEntries + 100u;
-            pfds = ns_realloc(pfds, sizeof(struct pollfd) * maxPollfds);
+            pfds = (struct pollfd *)ns_realloc(pfds, sizeof(struct pollfd) * maxPollfds);
         }
 
         /*

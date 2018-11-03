@@ -755,8 +755,8 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
                 Call(taskPtr, map[i].when);
             }
         }
-    } else if ((taskPtr->flags & TASK_TIMEOUT) != 0u
-               && Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0
+    } else if (((taskPtr->flags & TASK_TIMEOUT) != 0u)
+               && (Ns_DiffTime(&taskPtr->timeout, nowPtr, NULL) < 0)
                ) {
         taskPtr->flags &= ~ TASK_WAIT;
         Ns_Log(Ns_LogTaskDebug, "RunTask: Call NS_SOCK_TIMEOUT for task flags %.4x", taskPtr->flags);
@@ -940,7 +940,7 @@ TaskThread(void *arg)
     Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Ns_LogTaskDebug, "starting");
 
-    pfds = ns_malloc(sizeof(struct pollfd) * maxFds);
+    pfds = (struct pollfd *)ns_malloc(sizeof(struct pollfd) * maxFds);
     firstWaitPtr = NULL;
 
     for (;;) {
@@ -1039,7 +1039,7 @@ TaskThread(void *arg)
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_WAIT task %p flags %.6x", (void*)taskPtr, taskPtr->flags);
                 if (maxFds <= (size_t)nfds) {
                     maxFds  = (size_t)nfds + 100u;
-                    pfds = ns_realloc(pfds, maxFds);
+                    pfds = (struct pollfd *)ns_realloc(pfds, maxFds);
                 }
                 taskPtr->idx = nfds;
                 pfds[nfds].fd = taskPtr->sock;
