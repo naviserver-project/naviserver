@@ -1760,7 +1760,7 @@ SetResultFromEC_POINT(
     size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
                                             POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
 
-    Ns_Log(Notice, "import: octet length %lu", octLength);
+    Ns_Log(Notice, "import: octet length %" PRIuz, octLength);
 
     Tcl_DStringSetLength(dsPtr, (int)octLength);
     octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,

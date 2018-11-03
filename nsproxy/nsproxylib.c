@@ -1672,7 +1672,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
         Ns_MutexLock(&poolPtr->lock);
 
         Tcl_DStringAppendElement(dsPtr, "proxies");
-        snprintf(buf, sizeof(buf), "%lu", poolPtr->nextid);
+        snprintf(buf, sizeof(buf), "%" PRIuPTR, poolPtr->nextid);
         Tcl_DStringAppendElement(dsPtr, buf);
 
         Tcl_DStringAppendElement(dsPtr, "waiting");
@@ -1692,7 +1692,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
         Tcl_DStringAppendElement(dsPtr, buf);
 
         Tcl_DStringAppendElement(dsPtr, "requests");
-        snprintf(buf, sizeof(buf), "%lu", poolPtr->nruns);
+        snprintf(buf, sizeof(buf), "%" PRIuPTR, poolPtr->nruns);
         Tcl_DStringAppendElement(dsPtr, buf);
 
         Tcl_DStringAppend(dsPtr, " runtime ", 9);

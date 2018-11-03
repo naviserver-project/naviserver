@@ -1117,7 +1117,8 @@ Ns_HttpMessageParse(
             p = eol;
         }
         parsed = (size_t)(p - message);
-        Ns_Log(Ns_LogRequestDebug, "Ns_ParseHeader <%s> len %lu parsed %lu", p, size, parsed);
+        Ns_Log(Ns_LogRequestDebug, "Ns_ParseHeader <%s> len %" PRIuz " parsed %" PRIuz,
+               p, size, parsed);
 
         if (payloadPtr != NULL && (size - parsed) >= 2u) {
             p += 2;
@@ -1352,7 +1353,8 @@ Ns_HttpCheckSpool(
                              httpPtr->spoolFileName, strerror(errno));
 
                     } else {
-                        Ns_Log(Ns_LogTaskDebug, "ns_http: we spool %lu bytes to fd %d", contentSize, fd);
+                        Ns_Log(Ns_LogTaskDebug, "ns_http: we spool %" PRIuz " bytes to fd %d",
+                               contentSize, fd);
                         httpPtr->spoolFd = fd;
                         Ns_HttpAppendBuffer(httpPtr,
                                             httpPtr->ds.string + httpPtr->replyHeaderSize,
@@ -2349,7 +2351,7 @@ HttpTaskSend(
 #endif
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %ld bytes (from %lu)", sent, length);
+    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %" PRIuz " bytes (from %" PRIdz ")", sent, length);
     return sent;
 }
 
@@ -2444,7 +2446,8 @@ HttpTaskRecv(
 #endif
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv received %ld bytes (buffer size %lu)", received, length);
+    Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv received %" PRIdz " bytes (buffer size %" PRIuz ")",
+           received, length);
     return received;
 }
 
@@ -2660,7 +2663,7 @@ HttpProc(
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
                 } else {
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc sent %ld bytes from memory, remaining %ld",
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc sent %" PRIdz " bytes from memory, remaining %" PRIdz,
                            n, remaining);
                 }
                 taskDone = NS_FALSE;

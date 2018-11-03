@@ -1034,7 +1034,8 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
          */
         newSet = ns_malloc(sizeof(Ns_Set));
         newSet->name = ns_strcopy(from->name);
-        Ns_Log(Debug, "Ns_SetRecreate2: create a new set, new %lu/%lu", from->size, from->maxSize);
+        Ns_Log(Debug, "Ns_SetRecreate2: create a new set, new %" PRIuz "/%" PRIuz,
+               from->size, from->maxSize);
         *toPtr = newSet;
         newSet->size = from->size;
         newSet->maxSize = from->maxSize;
@@ -1060,7 +1061,8 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
              * We have to grow the old Ns_Set, since it does not fit all the
              * entries that have to be stored.
              */
-            Ns_Log(Debug, "Ns_SetRecreate2: keep the old set, make new fields old %lu/%lu from %lu/%lu",
+            Ns_Log(Debug, "Ns_SetRecreate2: keep the old set, make new fields old %"
+                   PRIuz "/%" PRIuz " from %" PRIuz "/%" PRIuz,
                    newSet->size, newSet->maxSize, from->size, from->maxSize);
             newSet->maxSize = from->maxSize;
             ns_free(newSet->fields);

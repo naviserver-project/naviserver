@@ -2400,7 +2400,7 @@ RequestFree(Sock *sockPtr)
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
 
-    Ns_Log(DriverDebug, "=== RequestFree cleans %p (avail %lu keep %d length %lu contentLength %lu)",
+    Ns_Log(DriverDebug, "=== RequestFree cleans %p (avail %" PRIuz " keep %d length %" PRIuz " contentLength %" PRIuz ")",
            (void *)reqPtr, reqPtr->avail, sockPtr->keep, reqPtr->length, reqPtr->contentLength);
 
     keep = (sockPtr->keep) && (reqPtr->avail > reqPtr->contentLength);
@@ -2408,7 +2408,7 @@ RequestFree(Sock *sockPtr)
         size_t      leftover = reqPtr->avail - reqPtr->contentLength;
         const char *offset   = reqPtr->buffer.string + ((size_t)reqPtr->buffer.length - leftover);
 
-        Ns_Log(DriverDebug, "setting leftover to %lu bytes", leftover);
+        Ns_Log(DriverDebug, "setting leftover to %" PRIuz " bytes", leftover);
         /*
          * Here it is save to move the data in the buffer, although the
          * reqPtr->content might point to it, since we reinit the content. In
@@ -2949,7 +2949,8 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
             Tcl_DString  dsReqLine;
 
             Tcl_DStringInit(&dsReqLine);
-            Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %lu write %lu content %lu, avail %lu",
+            Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %" PRIuz
+                   " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
                    code, errMsg,
                    reqPtr->peer,
                    Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
@@ -3238,7 +3239,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         ) {
         const DrvSpooler *spPtr = &drvPtr->spooler;
 
-        Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %lu > readahead "
+        Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %" PRIuz" > readahead "
                "%" TCL_LL_MODIFIER "d)",
                reqPtr->length, drvPtr->readahead);
 
@@ -3301,10 +3302,10 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         n = (ssize_t)reqPtr->leftover;
         reqPtr->leftover = 0u;
         buflen = 0u;
-        Ns_Log(DriverDebug, "SockRead receive from leftover %ld bytes", n);
+        Ns_Log(DriverDebug, "SockRead receive from leftover %" PRIdz " bytes", n);
     } else {
         n = DriverRecv(sockPtr, &buf, 1);
-        Ns_Log(DriverDebug, "SockRead receive from network %ld bytes", n);
+        Ns_Log(DriverDebug, "SockRead receive from network %" PRIdz " bytes", n);
     }
 
     if (n < 0) {
@@ -3613,10 +3614,10 @@ SockParse(Sock *sockPtr)
                 Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
                        drvPtr->maxline);
                 sockPtr->flags = NS_CONN_REQUESTURITOOLONG;
-                Ns_Log(Warning, "request line is too long (%lu bytes)", (e - s));
+                Ns_Log(Warning, "request line is too long (%d bytes)", (int)(e - s));
             } else {
                 sockPtr->flags = NS_CONN_LINETOOLONG;
-                Ns_Log(Warning, "request header line is too long (%lu bytes)", (e - s));
+                Ns_Log(Warning, "request header line is too long (%d bytes)", (int)(e - s));
             }
         }
 
@@ -3715,7 +3716,8 @@ SockParse(Sock *sockPtr)
     /*
      * Check if all content has arrived.
      */
-    Ns_Log(Dev, "=== length < avail (length %lu, avail %lu) tfd %d tfile %p chunkStartOff %lu",
+    Ns_Log(Dev, "=== length < avail (length %" PRIuz
+           ", avail %" PRIuz ") tfd %d tfile %p chunkStartOff %" PRIuz,
            reqPtr->length, reqPtr->avail, sockPtr->tfd, (void *)sockPtr->tfile, reqPtr->chunkStartOff);
 
     if (reqPtr->chunkStartOff != 0u) {
@@ -3756,7 +3758,7 @@ SockParse(Sock *sockPtr)
         return SOCK_MORE;
     }
 
-    Ns_Log(Dev, "=== all required data is available (avail %lu, length %lu, "
+    Ns_Log(Dev, "=== all required data is available (avail %" PRIuz", length %" PRIuz ", "
            "readahead %" TCL_LL_MODIFIER "d maxupload %" TCL_LL_MODIFIER "d) tfd %d",
            reqPtr->avail, reqPtr->length, drvPtr->readahead, drvPtr->maxupload,
            sockPtr->tfd);
@@ -3830,7 +3832,7 @@ SockParse(Sock *sockPtr)
      */
     if (reqPtr->length > 0u) {
         assert(sockPtr->tfile == NULL);
-        Ns_Log(DriverDebug, "SockRead adds null terminating character at content[%lu]", reqPtr->length);
+        Ns_Log(DriverDebug, "SockRead adds null terminating character at content[%" PRIuz "]", reqPtr->length);
 
         reqPtr->savedChar = reqPtr->content[reqPtr->length];
         reqPtr->content[reqPtr->length] = '\0';

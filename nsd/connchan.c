@@ -1012,7 +1012,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                 buf[3].iov_len  = 2u;
 
                 nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
-                Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %ld bytes <%s>", nSent, strerror(errno));
+                Ns_Log(Ns_LogConnchanDebug, "DriverSend sent %" PRIdz " bytes <%s>", nSent, strerror(errno));
 
                 if (nSent > -1) {
                     connChanPtr->wBytes += (size_t)nSent;

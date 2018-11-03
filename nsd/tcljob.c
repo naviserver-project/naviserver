@@ -1441,7 +1441,7 @@ JobThread(void *UNUSED(arg))
     Ns_MutexLock(&tp.queuelock);
     tid = tp.nextThreadId++;
     Ns_ThreadSetName("-ns_job_%lx-", tid);
-    Ns_Log(Notice, "Starting thread: -ns_job_%lx-", tid);
+    Ns_Log(Notice, "Starting thread: -ns_job_%" PRIxPTR "-", tid);
 
     async = Tcl_AsyncCreate(JobAbort, NULL);
 

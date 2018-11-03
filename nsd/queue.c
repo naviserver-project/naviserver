@@ -111,7 +111,7 @@ static int    poolid = 0;
 /*
  * Debugging stuff
  */
-#define ThreadNr(poolPtr, argPtr) (((argPtr) - (poolPtr)->tqueue.args))
+#define ThreadNr(poolPtr, argPtr) (int)(((argPtr) - (poolPtr)->tqueue.args))
 
 #if 0
 static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
@@ -512,7 +512,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
             idle = poolPtr->threads.idle;
             Ns_MutexUnlock(&poolPtr->threads.lock);
 
-            Ns_Log(Debug, "[%ld] dequeue thread connPtr %p idle %d state %d create %d",
+            Ns_Log(Debug, "[%d] dequeue thread connPtr %p idle %d state %d create %d",
                    ThreadNr(poolPtr, argPtr), (void *)connPtr, idle, argPtr->state, (int)create);
         }
 
@@ -1998,7 +1998,7 @@ NsConnThread(void *arg)
                 Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
                 Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
 
-                Ns_Log(Debug, "[%ld] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+                Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
                        " start %" PRId64 ".%06ld"
                        " %" PRId64 ".%06ld"
                        " accept %" PRId64 ".%06ld"

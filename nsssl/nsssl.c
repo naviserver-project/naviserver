@@ -600,7 +600,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
             }
             size += rc;
             if (rc < (int)bufs->iov_len) {
-                Ns_Log(Debug, "SSL: partial write, wanted %ld wrote %d", bufs->iov_len, rc);
+                Ns_Log(Debug, "SSL: partial write, wanted %" PRIuz " wrote %d", bufs->iov_len, rc);
                 break;
             }
         }
