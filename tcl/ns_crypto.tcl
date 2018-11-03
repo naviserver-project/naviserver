@@ -100,7 +100,7 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
         if {![file readable $filename]} {
             return -code error "file $filename is not readable"
         }
-        set m [:new -digest $digest -key $key]r
+        set m [:new -digest $digest -key $key]
         set r [$m readfile $filename]
         $m destroy
         return $r
