@@ -895,7 +895,7 @@ Ns_SetGroup(const char *group)
                 Ns_Log(Error, "Ns_SetGroup: setgroups(0, NULL) failed: %s",
                        strerror(errno));
                 status = NS_ERROR;
-            } else if (gidResult != getgid() && setgid((gid_t)gidResult) != 0) {
+            } else if ((gidResult != (long)getgid()) && (setgid((gid_t)gidResult) != 0)) {
                 Ns_Log(Error, "Ns_SetGroup: setgid(%ld) failed: %s", (long)gidResult, strerror(errno));
                 status = NS_ERROR;
             } else {
