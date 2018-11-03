@@ -338,7 +338,7 @@ constant, per default: 16)
 Introspection: the statistics about cache commits and rollbacks are
 included in the cache statistics.
 [list_end]
-Note, that the cache transactions span over all defined caches.
+Note that the cache transactions span over all defined caches.
 
 [section EXAMPLES]
 

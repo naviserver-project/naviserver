@@ -242,7 +242,7 @@ source file, use the gzip-ed file for delivery.
 [def gzip_refresh]
 Refresh gzip file (i.e. re-gzip source) when the modification time of
 the compressed file is older than the modification time of the source.
-Note, that the command is just used for re-gzip-ing outdated .gz-files; it
+Note that the command is just used for re-gzip-ing outdated .gz-files; it
 does not actively compress files, which were previously not compressed
 (this would be wasteful for e.g. large tmp files, there is not
 cleanup, etc.).  For refreshing gzip files, the Tcl command
@@ -271,7 +271,7 @@ source file, use the brotli compressed file for delivery.
 [def  brotli_refresh]
 Refresh the brotli compressed file (i.e. re compress source) when the modification time of
 the compressed file is older than the modification time of the source.
-Note, that the command is just used for recompressing outdated .br-files; it
+Note that the command is just used for recompressing outdated .br-files; it
 does not actively compress files, which were previously not compressed
 (this would be wasteful for e.g. large tmp files, there is not
 cleanup, etc.).  For refreshing gzip files, the Tcl command

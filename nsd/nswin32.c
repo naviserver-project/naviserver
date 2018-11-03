@@ -784,7 +784,7 @@ ns_mkstemp(char *charTemplate)
          * file, when he file when the last file descriptor is
          * closed. It is removed here for compatibility reasons.
          *
-         * note, that O_TMPFILE (since Linux 3.11) has different semantics.
+         * Note that O_TMPFILE (since Linux 3.11) has different semantics.
          */
         err = _sopen_s(&fd, charTemplate,
                        O_RDWR | O_CREAT | O_EXCL,

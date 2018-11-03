@@ -221,7 +221,7 @@ requests.
 [para]
 
 In the section [term ns/module/nssock/servers] we define the
-mapping between the host names and the defined servers. Note, that one
+mapping between the host names and the defined servers. Note that one
 can define multiple DNS names also for a single server.
 
 [example_begin]

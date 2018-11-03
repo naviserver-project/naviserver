@@ -691,7 +691,7 @@ ServerMinThreadsObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, 
  * MapspecParse --
  *
  *      Check, if the mapspec Tcl_Obj in the first argument is of the right
- *      syntax and return its components as strings. Note, that the lifetime of
+ *      syntax and return its components as strings. Note that the lifetime of
  *      the returned strings depends on the lifetime of the first argument.
  *
  * Results:

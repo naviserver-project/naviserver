@@ -686,7 +686,7 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 
         /*
          * In case, the freeProc() wants to allocate itself
-         * (indirectly) a cache entry, we have to make sure, that
+         * (indirectly) a cache entry, we have to make sure that
          * ePtr->value is not freed twice. Therefore, we keep the
          * affected member "value" in a local variable and set
          * ePtr->value to NULL before it is actually deallocated and
