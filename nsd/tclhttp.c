@@ -157,6 +157,11 @@ GetResultObj(
     Tcl_Obj     *fileVarPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
 
+static void
+CallDoneCallback(
+    Ns_HttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
+
 static Ns_TaskProc HttpProc;
 
 static Tcl_ObjCmdProc HttpCancelObjCmd;
@@ -2483,13 +2488,25 @@ HttpTaskShutdown(
 #endif
 
 
-void
-CallDoneCallback(
-    Ns_HttpTask *httpPtr
-) NS_GNUC_NONNULL(1);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CallDoneCallback --
+ *
+ *        Call the done callback and set result in the Tcl interp.
+ *
+ * Results:
+ *        None
+ *
+ * Side effects:
+ *        Setting result in Tcl interp.
+ *
+ *----------------------------------------------------------------------
+ */
 
 
-void
+static void
 CallDoneCallback(
     Ns_HttpTask *httpPtr
 ) {
