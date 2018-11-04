@@ -189,6 +189,7 @@ build-doc:
 	           find $$srcdir -name '*.man' -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
 		fi; \
 	done
+	$(CP) doc/images/manual/*.png doc/tmp/manual/
 	@cd doc/tmp; \
 	for srcdir in `ls`; do \
 	    echo $$srcdir; \
