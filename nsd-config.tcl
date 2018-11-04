@@ -132,6 +132,12 @@ ns_section "ns/server/default/adp" {
 ns_section "ns/server/default/tcl" {
     ns_param    nsvbuckets          16       ;# default: 8
     ns_param    library             modules/tcl
+    #
+    # Example for initcmds (to be executed, when this server is fully initialized).
+    #
+    #ns_param    initcmds {
+    #    ns_log notice "=== Hello World === server: [ns_info server] running"
+    #}
 }
 
 ns_section "ns/server/default/module/nscgi" {
