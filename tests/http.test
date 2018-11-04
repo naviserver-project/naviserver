@@ -30,6 +30,12 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
+if {$::tcl_version eq "8.5"} {
+    #
+    # In Tcl 8.5, "::try" was not yet a built-in of Tcl
+    #
+    package require try
+}
 
 ::tcltest::configure {*}$argv
 #ns_logctl severity Debug(task) on
