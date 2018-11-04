@@ -1008,7 +1008,7 @@ Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt defaultValue)
 
 NS_EXTERN Tcl_WideInt
 Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
-                  Tcl_WideInt min, Tcl_WideInt max)
+                  Tcl_WideInt minValue, Tcl_WideInt maxValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
