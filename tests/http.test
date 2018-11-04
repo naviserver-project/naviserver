@@ -932,7 +932,7 @@ test http-8.4.0r {ns_http run with timeout} -constraints {serverListen} -setup {
     }
     return $r
 } -cleanup {
-    # make sure, that the slow request is finished on the connection queue.
+    # make sure that the slow request is finished on the connection queue.
     ns_http run [ns_config test listenurl]/get
     ns_unregister_op GET /slow
     ns_unregister_op GET /get
