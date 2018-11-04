@@ -272,7 +272,7 @@ Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt defaultValue)
 
 Tcl_WideInt
 Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
-                  Tcl_WideInt minValue, Tcl_WideInt maxValue)
+                      Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
     const char *s;
     char defstr[TCL_INTEGER_SPACE];
