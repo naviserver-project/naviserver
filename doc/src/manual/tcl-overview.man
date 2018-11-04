@@ -218,20 +218,26 @@ better-suited to different situations:
    procedures to the interpreter. When initialization is complete (all
    modules are loaded and all Tcl libraries have been executed),
    NaviServer creates from this a blueprint consisting of the
-   sources. This blueprint is provided to every thread at
-   initialization.
+   preloaded modules (mostly Tcl files).
+   This blueprint is provided later to every thread (e.g. connection
+   threads, or background threads) upon initialization.
+
+
+[para][image blueprint3 "NaviServer Blueprint"][para]
+Figure: NaviServer Blueprint (per server)
 
 [para]
 
-   When e.g. a connection thread processes a request, all the Tcl code
-   of the blueprint is immediately available (without any latency for
-   loading).
+   Blueprints are used to reduce latency. When e.g. a connection
+   thread processes an incoming request, all the basic Tcl code is
+   already available and can be used by the interpreter without
+   further loading operations.
 
 [para]
 
-   NaviServer provides built-in support for updating a blueprint,
-   e.g. via [cmd ns_eval] or via the lower level [cmd ns_ictl]
-   commands.
+   In order to update the blueprints, NaviServer provides built-in
+   support for updating via the command [cmd ns_eval] or via the lower
+   level command [cmd ns_ictl].
 
 [section {Global Variables}]
 
