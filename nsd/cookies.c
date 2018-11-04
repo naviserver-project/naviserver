@@ -286,7 +286,7 @@ static int
 GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
                     const char *name)
 {
-    int      index = -1;
+    int      idx = -1;
     size_t   nameLen, i;
     CookieParser *cookieParser;
 
@@ -310,13 +310,13 @@ GetFirstNamedCookie(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
                 /*
                  * We found the result.
                  */
-                index = (int) i;
+                idx = (int) i;
                 break;
             }
         }
     }
 
-    return index;
+    return idx;
 }
 
 /*

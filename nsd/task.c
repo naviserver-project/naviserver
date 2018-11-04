@@ -785,7 +785,7 @@ static bool
 SignalQueue(Task *taskPtr, unsigned int bit)
 {
     TaskQueue *queuePtr;
-    bool       pending = NS_FALSE, shutdown, result = NS_TRUE;
+    bool       pending = NS_FALSE, duringShutdown, result = NS_TRUE;
 
     NS_NONNULL_ASSERT(taskPtr != NULL);
 
@@ -794,8 +794,8 @@ SignalQueue(Task *taskPtr, unsigned int bit)
     queuePtr = taskPtr->queuePtr;
 
     Ns_MutexLock(&queuePtr->lock);
-    shutdown = queuePtr->shutdown;
-    if (!shutdown) {
+    duringShutdown = queuePtr->shutdown;
+    if (!duringShutdown) {
 
         /*
          * Mark the signal and add event to signal list if not
@@ -811,7 +811,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
         }
     }
     Ns_MutexUnlock(&queuePtr->lock);
-    if (shutdown) {
+    if (duringShutdown) {
         result = NS_FALSE;
     } else if (!pending) {
         TriggerQueue(queuePtr);
@@ -946,7 +946,7 @@ TaskThread(void *arg)
     for (;;) {
         int               n, broadcast;
         NS_POLL_NFDS_TYPE nfds;
-        bool              shutdown;
+        bool              duringShutdown;
         Ns_Time           now;
         const Ns_Time    *timeoutPtr;
 
@@ -955,7 +955,7 @@ TaskThread(void *arg)
          */
 
         Ns_MutexLock(&queuePtr->lock);
-        shutdown = queuePtr->shutdown;
+        duringShutdown = queuePtr->shutdown;
         while ((taskPtr = queuePtr->firstSignalPtr) != NULL) {
             queuePtr->firstSignalPtr = taskPtr->nextSignalPtr;
             taskPtr->nextSignalPtr = NULL;
@@ -1070,7 +1070,7 @@ TaskThread(void *arg)
          * Break now if shutting down now that all signals have been processed.
          */
 
-        if (shutdown) {
+        if (duringShutdown) {
             break;
         }
 

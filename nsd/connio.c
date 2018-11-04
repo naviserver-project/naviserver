@@ -186,7 +186,7 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
 {
     const Ns_Conn  *conn = (Ns_Conn *) connPtr;
     const NsServer *servPtr;
-    int             level, compress = 0;
+    int             configuredCompressionLevel, compressionLevel = 0;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 
@@ -195,9 +195,9 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
     /*
      * Check the default setting and explicit override.
      */
-    level = Ns_ConnGetCompression(conn);
+    configuredCompressionLevel = Ns_ConnGetCompression(conn);
 
-    if (level > 0) {
+    if (configuredCompressionLevel > 0) {
         /*
          * Make sure the length is above the minimum threshold, or
          * we're streaming (assume length is long enough for streams).
@@ -214,12 +214,12 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
 
                 if ((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
                     Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");
-                    compress = level;
+                    compressionLevel = configuredCompressionLevel;
                 }
             }
         }
     }
-    return compress;
+    return compressionLevel;
 }
 
 

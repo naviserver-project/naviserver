@@ -590,17 +590,17 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
             status = NS_ERROR;
 
         } else {
-            size_t index = Ns_SetLast(set);
+            size_t idx = Ns_SetLast(set);
             while (CHARTYPE(space, *line) != 0) {
                 ++line;
             }
             if (*line != '\0') {
                 Ns_DString ds;
-                char      *value = Ns_SetValue(set, index);
+                char      *value = Ns_SetValue(set, idx);
 
                 Ns_DStringInit(&ds);
                 Ns_DStringVarAppend(&ds, value, " ", line, (char *)0L);
-                Ns_SetPutValue(set, index, ds.string);
+                Ns_SetPutValue(set, idx, ds.string);
                 Ns_DStringFree(&ds);
             }
         }
@@ -617,14 +617,14 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
         } else {
             const char *value;
             char       *key;
-            size_t      index;
+            size_t      idx;
 
             *sep = '\0';
             for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
                 ;
             }
-            index = Ns_SetPut(set, line, value);
-            key = Ns_SetKey(set, index);
+            idx = Ns_SetPut(set, line, value);
+            key = Ns_SetKey(set, idx);
             if (disp == ToLower) {
                 while (*key != '\0') {
                     if (CHARTYPE(upper, *key) != 0) {

@@ -1684,7 +1684,7 @@ NsConnThread(void *arg)
     Conn          *connPtr = NULL;
     Ns_Time        wait, *timePtr = &wait;
     uintptr_t      threadId;
-    bool           shutdown, fromQueue;
+    bool           duringShutdown, fromQueue;
     int            cpt, ncons, current;
     Ns_ReturnCode  status = NS_OK;
     long           timeout;
@@ -2045,7 +2045,7 @@ NsConnThread(void *arg)
     argPtr->state = connThread_dead;
 
     Ns_MutexLock(&servPtr->pools.lock);
-    shutdown = servPtr->pools.shutdown;
+    duringShutdown = servPtr->pools.shutdown;
     Ns_MutexUnlock(&servPtr->pools.lock);
 
 
@@ -2066,7 +2066,7 @@ NsConnThread(void *arg)
          * During shutdown, we do not want to restart connection
          * threads. The driver pointer might be already invalid.
          */
-        if (wakeup && connPtr != NULL && !shutdown) {
+        if (wakeup && connPtr != NULL && !duringShutdown) {
             assert(connPtr->drvPtr != NULL);
             NsWakeupDriver(connPtr->drvPtr);
         }
@@ -2077,7 +2077,7 @@ NsConnThread(void *arg)
      * condition variable to check whether all threads have terminated
      * already.
      */
-    if (shutdown) {
+    if (duringShutdown) {
         Ns_CondSignal(&poolPtr->wqueue.cond);
     }
 
@@ -2167,6 +2167,7 @@ ConnRun(Conn *connPtr)
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
+
     /*
      * keep == -1 means: Undecided, the default keep-alive rules are applied.
      */
