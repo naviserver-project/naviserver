@@ -1394,8 +1394,9 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
  *
  * Ns_ConnGetCompression, Ns_ConnSetCompression
  *
- *      Enable/disable compression with the specified level.
- *      Output will be compressed if client advertises support.
+ *      Get configured compression level (*Get*) or enable/disable compression
+ *      with the specified level (*Set*).  Output will only be compressed if
+ *      client advertises support.
  *
  *      Level 1 is 'on' i.e. default compression from config.
  *
