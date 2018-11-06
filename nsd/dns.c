@@ -45,10 +45,6 @@
 /*#  include <Wspiapi.h>*/
 #endif
 
-#ifndef INADDR_NONE
-#define INADDR_NONE (-1)
-#endif
-
 #ifndef NETDB_INTERNAL
 #  ifdef h_NETDB_INTERNAL
 #  define NETDB_INTERNAL h_NETDB_INTERNAL
@@ -454,6 +450,10 @@ GetHost(Ns_DString *dsPtr, const char *addr)
  * as well, so it's still possible for two threads to call it at
  * the same time.
  */
+
+#ifndef INADDR_NONE
+#define INADDR_NONE (-1)
+#endif
 
 static bool
 GetHost(Ns_DString *dsPtr, const char *addr)
