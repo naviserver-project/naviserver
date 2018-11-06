@@ -36,10 +36,6 @@
 
 #include "nsd.h"
 
-#ifndef INADDR_NONE
-#define INADDR_NONE -1
-#endif
-
 /*
  * TCP_FASTOPEN was introduced in Linux 3.7.0. At the time of this
  * writing, TCP_FASTOPEN is just defined in linux/tcp.h, which we
