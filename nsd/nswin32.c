@@ -577,7 +577,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 
     mobj = CreateFileMapping(hndl,
                              NULL,
-                             mode == NS_MMAP_WRITE ? (DWORD)PAGE_READWRITE : (DWORD)PAGE_READONLY,
+                             (mode == NS_MMAP_WRITE) ? (DWORD)(PAGE_READWRITE) : (DWORD)(PAGE_READONLY),
                              0u,
                              0u,
                              name);
@@ -591,7 +591,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
         LPCVOID       addr;
 
         addr = MapViewOfFile(mobj,
-                             mode == NS_MMAP_WRITE ? (DWORD)FILE_MAP_WRITE : (DWORD)FILE_MAP_READ,
+                             (mode == NS_MMAP_WRITE) ? (DWORD)(FILE_MAP_WRITE) : (DWORD)(FILE_MAP_READ),
                              0u,
                              0u,
                              size);
