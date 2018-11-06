@@ -183,7 +183,7 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
  *----------------------------------------------------------------------
  */
 void
-Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
+Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
 {
     NS_NONNULL_ASSERT(mask != NULL);
 

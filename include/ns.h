@@ -2794,7 +2794,7 @@ ns_socknbclose(NS_SOCKET sock);
  */
 
 NS_EXTERN void
-Ns_SockaddrMaskBits(struct sockaddr *mask, unsigned int nrBits)
+Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
