@@ -2281,6 +2281,23 @@ HttpTaskAddInfo(
     Tcl_ListObjAppendElement(NULL, httpPtr->infoObj, Tcl_NewStringObj(value, -1));
 }
 
+#if 0
+static void hexPrint(const char *msg, unsigned char *octects, size_t octectLength)
+{
+    size_t i;
+    fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
+    for (i=0; i<octectLength; i++) {
+        fprintf(stderr, "%.2x ",octects[i] & 0xff);
+        if (CHARTYPE(print, octects[i])) {
+            fprintf(stderr, "%c ",octects[i]);
+        } else {
+            fprintf(stderr, ". ");
+        }
+    }
+    fprintf(stderr, "\n");
+}
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -2315,7 +2332,7 @@ HttpTaskSend(
     NS_NONNULL_ASSERT(buffer != NULL);
 
     if (httpPtr->ssl == NULL) {
-        sent = ns_send(httpPtr->sock, httpPtr->ds.string, length, 0);
+        sent = ns_send(httpPtr->sock, buffer, length, 0);
     } else {
 #ifdef HAVE_OPENSSL_EVP_H
         struct iovec  iov;
@@ -2354,7 +2371,11 @@ HttpTaskSend(
 #endif
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %" PRIuz " bytes (from %" PRIdz ")", sent, length);
+    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %" PRIuz " bytes (of %" PRIdz ")",
+           sent, length);
+#if 0
+    hexPrint("send", buffer, MIN(length,500));
+#endif
     return sent;
 }
 
@@ -2622,34 +2643,95 @@ HttpProc(
         break;
 
     case NS_SOCK_WRITE:
-        Ns_Log(Ns_LogTaskDebug, "NS_SOCK_WRITE");
+        Ns_Log(Ns_LogTaskDebug, "NS_SOCK_WRITE sendSpoolMode %d fd %d",
+               httpPtr->sendSpoolMode, httpPtr->bodyFileFd);
 
         /*
          * Send the request data either from the Tcl_DString, or from a file. The
          * latter case is flagged via member "sendSpoolMode".
          */
         if (httpPtr->sendSpoolMode) {
-            Ns_Log(Ns_LogTaskDebug, "HttpProc read data from file, buffer size %d",
-                   Tcl_DStringLength(&httpPtr->ds));
-            n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, CHUNK_SIZE);
+            bool    endOfFile = NS_FALSE;
+
+            Ns_Log(Ns_LogTaskDebug, "HttpProc read data from file, buffer size %d dsPtr %p next %p"
+                   " (sent %" PRIuz " requestLength %" PRIuz ")",
+                   Tcl_DStringLength(&httpPtr->ds),
+                   (void*)httpPtr->ds.string, (void*)httpPtr->next,
+                   httpPtr->sent, httpPtr->requestLength
+                  );
+
+            if (httpPtr->next == NULL) {
+                /*
+                 * First read on a disk chunk.
+                 */
+                Tcl_DStringSetLength(&httpPtr->ds, CHUNK_SIZE);
+                httpPtr->next = httpPtr->ds.string;
+                n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, CHUNK_SIZE);
+                Ns_Log(Ns_LogTaskDebug, "HttpProc got %" PRIdz " bytes from file (wanted = %d)",
+                       n, CHUNK_SIZE);
+
+                if (n > -1 && n < CHUNK_SIZE) {
+                    /*
+                     * We have either a partial read from disk or end of file.
+                     * For the time being, we can't distinguish (should
+                     * probably add total file size to httpPtr) and we assume
+                     * that we have end of file (partial reads on disk reads
+                     * with relatively small chunk sizes are unlikely).
+                     */
+                    endOfFile = NS_TRUE;
+                    Tcl_DStringSetLength(&httpPtr->ds, n);
+                }
+            } else {
+                /*
+                 * The buffer has still some content, no new read necessary.
+                 */
+                n = httpPtr->ds.length - (httpPtr->next - httpPtr->ds.string);
+                Ns_Log(Ns_LogTaskDebug, "HttpProc remaining buffer content %" PRIdz " bytes", n);
+            }
+
             if (n < 0) {
                 httpPtr->error = "read failed";
+                Ns_Log(Ns_LogTaskDebug, "HttpProc send read failed");
             } else {
-                Ns_Log(Ns_LogTaskDebug, "HttpProc send read data from file");
-                n = HttpTaskSend(httpPtr, httpPtr->ds.string, (size_t)n);
-                if (n < 0) {
+                ssize_t toSend = n, sent;
+
+                sent = HttpTaskSend(httpPtr, httpPtr->next, (size_t)toSend);
+                Ns_Log(Ns_LogTaskDebug, "HttpProc task sent %" PRIuz
+                       " of %" PRIuz "bytes from file", sent, toSend);
+
+                if (sent < 0) {
                     httpPtr->error = "send failed";
                 } else {
-                    if (n < CHUNK_SIZE) {
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data spooled, switch to read reply");
-                        //HttpTaskShutdown(httpPtr, SSL_SENT_SHUTDOWN);  /* should actually work */
-                        Tcl_DStringSetLength(&httpPtr->ds, 0);
-                        Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
+                    httpPtr->sent += (size_t)sent;
+                    if (sent == toSend) {
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc chunk from spool was fully written");
+
+                        if (httpPtr->ds.length < CHUNK_SIZE) {
+                            /*
+                             * This condition is only true on the last
+                             * chunk. Therefore, we assume end of spoolfile.
+                             */
+                            //HttpTaskShutdown(httpPtr, SSL_SENT_SHUTDOWN);  /* should actually work */
+
+                            Tcl_DStringSetLength(&httpPtr->ds, 0);
+                            Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
+                        } else {
+                            httpPtr->next = NULL;
+                        }
+                    } else if (sent < toSend) {
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc partial write on chunk (remaining %ld)",
+                               (long)(toSend-sent));
+                        httpPtr->next += sent;
+                    } else {
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc file spool in unexpected state");
                     }
                     taskDone = NS_FALSE;
                 }
             }
         } else {
+            Ns_Log(Ns_LogTaskDebug, "HttpProc will send dsptr %p next %p len %" PRIuz,
+                   (void*)httpPtr->ds.string, (void*)httpPtr->next,
+                   httpPtr->requestLength - httpPtr->sent);
             n = HttpTaskSend(httpPtr, httpPtr->next, httpPtr->requestLength - httpPtr->sent);
             if (n < 0) {
                 httpPtr->error = "send failed";
@@ -2668,9 +2750,9 @@ HttpProc(
                      */
                     if (httpPtr->bodyFileFd > 0) {
                         httpPtr->sendSpoolMode = NS_TRUE;
+                        httpPtr->next = NULL;
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d",
                                httpPtr->bodyFileFd);
-                        Tcl_DStringSetLength(&httpPtr->ds, CHUNK_SIZE);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
                         //HttpTaskShutdown(httpPtr, SSL_SENT_SHUTDOWN);  /* should actually work */
