@@ -2651,7 +2651,6 @@ HttpProc(
          * latter case is flagged via member "sendSpoolMode".
          */
         if (httpPtr->sendSpoolMode) {
-            bool    endOfFile = NS_FALSE;
 
             Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
                    "read data from file, buffer size %d dsPtr %p next %p"
@@ -2677,13 +2676,13 @@ HttpProc(
                      * We have either a partial read from disk or end of file.
                      * For the time being, we can't distinguish (should
                      * probably add total file size to httpPtr) and we assume
-                     * that we have end of file (partial reads on disk reads
-                     * with relatively small chunk sizes are unlikely). Note
-                     * that this works as well, when the last buffer is equals
-                     * to CHUNK_SIZE, since the following read will be with 0
-                     * bytes, causing proper termination.
+                     * that we have END OF FILE (partial reads on disk reads
+                     * with relatively small chunk sizes are unlikely).
+                     *
+                     * Note that this works as well, when the last buffer is
+                     * equals to CHUNK_SIZE, since the following read will be
+                     * with 0 bytes, causing proper termination.
                      */
-                    endOfFile = NS_TRUE;
                     Tcl_DStringSetLength(&httpPtr->ds, n);
                 }
             } else {
