@@ -2653,7 +2653,8 @@ HttpProc(
         if (httpPtr->sendSpoolMode) {
             bool    endOfFile = NS_FALSE;
 
-            Ns_Log(Ns_LogTaskDebug, "HttpProc read data from file, buffer size %d dsPtr %p next %p"
+            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
+                   "read data from file, buffer size %d dsPtr %p next %p"
                    " (sent %" PRIuz " requestLength %" PRIuz ")",
                    Tcl_DStringLength(&httpPtr->ds),
                    (void*)httpPtr->ds.string, (void*)httpPtr->next,
@@ -2667,7 +2668,8 @@ HttpProc(
                 Tcl_DStringSetLength(&httpPtr->ds, CHUNK_SIZE);
                 httpPtr->next = httpPtr->ds.string;
                 n = ns_read(httpPtr->bodyFileFd, httpPtr->ds.string, CHUNK_SIZE);
-                Ns_Log(Ns_LogTaskDebug, "HttpProc got %" PRIdz " bytes from file (wanted = %d)",
+                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
+                       "got %" PRIdz " bytes from file (wanted = %d)",
                        n, CHUNK_SIZE);
 
                 if (n > -1 && n < CHUNK_SIZE) {
@@ -2676,7 +2678,10 @@ HttpProc(
                      * For the time being, we can't distinguish (should
                      * probably add total file size to httpPtr) and we assume
                      * that we have end of file (partial reads on disk reads
-                     * with relatively small chunk sizes are unlikely).
+                     * with relatively small chunk sizes are unlikely). Note
+                     * that this works as well, when the last buffer is equals
+                     * to CHUNK_SIZE, since the following read will be with 0
+                     * bytes, causing proper termination.
                      */
                     endOfFile = NS_TRUE;
                     Tcl_DStringSetLength(&httpPtr->ds, n);
@@ -2686,25 +2691,27 @@ HttpProc(
                  * The buffer has still some content, no new read necessary.
                  */
                 n = httpPtr->ds.length - (httpPtr->next - httpPtr->ds.string);
-                Ns_Log(Ns_LogTaskDebug, "HttpProc remaining buffer content %" PRIdz " bytes", n);
+                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
+                       "remaining buffer content %" PRIdz " bytes", n);
             }
 
             if (n < 0) {
                 httpPtr->error = "read failed";
-                Ns_Log(Ns_LogTaskDebug, "HttpProc send read failed");
+                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode send read failed");
             } else {
                 ssize_t toSend = n, sent;
 
                 sent = HttpTaskSend(httpPtr, httpPtr->next, (size_t)toSend);
-                Ns_Log(Ns_LogTaskDebug, "HttpProc task sent %" PRIuz
-                       " of %" PRIuz "bytes from file", sent, toSend);
+                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode task sent %" PRIuz
+                       " of %" PRIuz " bytes from file", sent, toSend);
 
                 if (sent < 0) {
                     httpPtr->error = "send failed";
                 } else {
                     httpPtr->sent += (size_t)sent;
                     if (sent == toSend) {
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc chunk from spool was fully written");
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
+                               "chunk from spool was fully written");
 
                         if (httpPtr->ds.length < CHUNK_SIZE) {
                             /*
@@ -2719,17 +2726,19 @@ HttpProc(
                             httpPtr->next = NULL;
                         }
                     } else if (sent < toSend) {
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc partial write on chunk (remaining %ld)",
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
+                               "partial write on chunk (remaining %ld)",
                                (long)(toSend-sent));
                         httpPtr->next += sent;
                     } else {
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc file spool in unexpected state");
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
+                               "file spool in unexpected state");
                     }
                     taskDone = NS_FALSE;
                 }
             }
         } else {
-            Ns_Log(Ns_LogTaskDebug, "HttpProc will send dsptr %p next %p len %" PRIuz,
+            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE will send dsptr %p next %p len %" PRIuz,
                    (void*)httpPtr->ds.string, (void*)httpPtr->next,
                    httpPtr->requestLength - httpPtr->sent);
             n = HttpTaskSend(httpPtr, httpPtr->next, httpPtr->requestLength - httpPtr->sent);
@@ -2751,7 +2760,7 @@ HttpProc(
                     if (httpPtr->bodyFileFd > 0) {
                         httpPtr->sendSpoolMode = NS_TRUE;
                         httpPtr->next = NULL;
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to spool mode using fd %d",
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE all data sent, switch to spool mode using fd %d",
                                httpPtr->bodyFileFd);
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc all data sent, switch to read reply");
@@ -2760,7 +2769,8 @@ HttpProc(
                         Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
                     }
                 } else {
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc sent %" PRIdz " bytes from memory, remaining %" PRIdz,
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sent %" PRIdz
+                           " bytes from memory, remaining %" PRIdz,
                            n, remaining);
                 }
                 taskDone = NS_FALSE;
