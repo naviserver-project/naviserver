@@ -1231,9 +1231,10 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* o
         static const char  *const cacheType = "ns:cache";
         const NsInterp     *itPtr = spec->arg;
         Tcl_Obj            *cacheNameObj = objv[0];
-        const char         *cacheName    = Tcl_GetString(cacheNameObj);
 
         if (unlikely(Ns_TclGetOpaqueFromObj(cacheNameObj, cacheType, (void **)cPtrPtr) != TCL_OK)) {
+            const char  *cacheName = Tcl_GetString(cacheNameObj);
+
             /*
              * Ns_TclGetOpaqueFromObj failed, try to add the cached named by
              * Tcl_Obj to tcl.caches, when we have an interpreter with an
