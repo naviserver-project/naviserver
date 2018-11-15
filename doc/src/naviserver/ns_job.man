@@ -81,33 +81,39 @@ without conflicting with any other queue ID.
 
 [call [cmd  "ns_job joblist"] [arg queueId]]
 
-Returns a list the jobs in the specified queue. Every returen job entry
+Returns a list the jobs in the specified queue. Every returned job entry
 has the following fields:
 
-[para] id - Job's ID
+[list_begin itemized]
 
-[para] state - The state of the job.  The return values are as
-follows:
+   [item] [term id] - Job's ID
 
-[para] scheduled - The job is scheduled to run.
+   [item] [term state] - The job's state; either [term scheduled],
+	[term running], [term done], or [term unknown].
 
-[para] running - The job is currently running.
+   [item] [term script] - The Tcl commands executed be the job.
 
-[para] done - The job has completed.
+   [item] [term results] - If the job has completed, then this field will
+	contain the results. If the job is running or scheduled to run, then
+	this will contain the script.
 
-[para] results - If the job has completed, then this field will
-contain the results. If the job is running or scheduled to run, then
-this will contain the script.
+   [item] [term code] - When the job is done, this will contain the return
+	code. Return codes are TCL_OK, TCL_ERROR, TCL_RETURN, TCL_BREAK,
+	TCL_CONTINUE.
 
-[para] code - When the job is done, this will contain the return
-code. Return codes are TCL_OK, TCL_ERROR, TCL_RETURN, TCL_BREAK,
-TCL_CONTINUE.
+   [item] [term type] - The type of job.  A job's return value
+	is [term nondetached] or [term detached].
 
-[para] type - The type of job.  A job's return value is nondetached or
-detached.
+   [item] [term req] - The job is required.  Return values are
+	[term none], [term wait],or [term cancel].
 
-[para] req - The job is required.  Return values are none, wait,
-cancel.
+   [item] [term thread] - The thread id of the job.
+
+   [item] [term starttime] - The start time of the job.
+
+   [item] [term endtime] - The end time of the job.
+[list_end]
+
 
 
 [call [cmd  "ns_job jobs"] [arg queueId]]
@@ -130,8 +136,8 @@ maxthreads currently running then this new job will be queued.
 no wait will be necessary.
 
 [para] if [option -jobid] is specified, it will be used as new job id instead
-of auto-generated one. If such job already exists, erro will be
-fired.
+of auto-generated one. If such job already exists, an error will be
+thrown.
 
 [para] if [option -head] is specified, then new job will be inserted in the
 beginning of the joblist, otherwise and by default every new job is
@@ -144,16 +150,19 @@ added to the end of the job list.
 
 Returns a list of the queues. A queue has the following fields:
 
-[para] name - Name of the queue.
+[list_begin itemized]
 
-[para] desc - Description of the queue.
+   [item] [term name] - Name of the queue.
 
-[para] maxthreads - Max number of threads to run for this queue.
+   [item] [term desc] - Description of the queue.
 
-[para] numrunning - Number of currently running jobs in this queue.
+   [item] [term maxthreads] - Max number of threads to run for this queue.
 
-[para] REQ delete - Someone requested this queue be deleted. Queue
-will not be deleted until all the jobs on the queue are removed.
+   [item] [term numrunning] - Number of currently running jobs in this queue.
+
+   [item] [term req] - Some request fired; e.g someone requested this
+   queue be deleted. Queue will not be deleted until all the jobs on the queue are removed.
+[list_end]
 
 
 [call [cmd  "ns_job queues"]]
@@ -165,15 +174,19 @@ Returns a list of the queue IDs.
 
 Returns a list of the thread pool's fields.
 
-[para] maxthreads - Max number of threads for all the queues in the
-thread pool.
 
-[para] numthreads - Number of allocated threads.
+[list_begin itemized]
 
-[para] numidle - Number of currently idle threads.
+   [item] [term maxthreads] - Max number of threads for all the queues in the
+	thread pool.
 
-[para] req stop - The thread pools is being stopped. This probably
-means that the server is shutting down.
+   [item] [term numthreads] - Number of allocated threads.
+
+   [item] [term numidle] - Number of currently idle threads.
+
+   [item] [term req] - E.g. [term stop]: The thread pools is being
+       stopped. This probably means that the server is shutting down.
+[list_end]
 
 
 [call [cmd  "ns_job wait"] \
