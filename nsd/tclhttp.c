@@ -525,7 +525,7 @@ HttpWaitObjCmd(
         /*
          * Do the task wait operation
          */
-        status = Ns_TaskWait(httpPtr->task, timeoutPtr);
+        status = Ns_TaskWait(httpPtr->task, ((timeoutPtr == NULL) ? &httpPtr->timeout : timeoutPtr));
 
         if (status != NS_OK) {
             /*
@@ -1738,7 +1738,6 @@ HttpConnect(
     char            *url2, *protocol, *host, *portString, *path, *tail;
     const char      *contentType = NULL;
     Tcl_DString     *dsPtr;
-    Ns_Time          timeoutConnect, *timeoutConnectPtr;
     static uint64_t  httpClientRequestCount = 0u;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1807,6 +1806,7 @@ HttpConnect(
 
     {
         Ns_ReturnCode status;
+        Ns_Time       timeoutConnect, *timeoutConnectPtr;
 
         if (timeoutPtr != NULL) {
             timeoutConnectPtr = (Ns_Time *)timeoutPtr;
@@ -2683,7 +2683,7 @@ HttpProc(
                      * equals to CHUNK_SIZE, since the following read will be
                      * with 0 bytes, causing proper termination.
                      */
-                    Tcl_DStringSetLength(&httpPtr->ds, n);
+                    Tcl_DStringSetLength(&httpPtr->ds, (int)n);
                 }
             } else {
                 /*
