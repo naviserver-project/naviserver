@@ -61,6 +61,10 @@
 #  define HAVE_OPENSSL_PRE_1_1
 # endif
 
+# if OPENSSL_VERSION_NUMBER < 0x10002000L
+#  define HAVE_OPENSSL_PRE_1_0_2
+# endif
+
 # if OPENSSL_VERSION_NUMBER < 0x10000000L
 #  define HAVE_OPENSSL_PRE_1_0
 # endif

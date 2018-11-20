@@ -461,9 +461,11 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     } else {
         nid = OBJ_sn2nid(curveName);
     }
+#  ifndef HAVE_OPENSSL_PRE_1_0_2
     if (nid == 0) {
         nid = EC_curve_nist2nid(curveName);
     }
+#  endif
     if (nid == 0) {
         Ns_TclPrintfResult(interp, "Unknown curve name \"%s\"", curveName);
         result = TCL_ERROR;
