@@ -89,7 +89,7 @@ SetResultFromEC_POINT(
     BN_CTX           *bn_ctx,
     Ns_ResultEncoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
-#endif
+# endif /* OPENSSL_NO_EC */
 
 static int GetCipher(
   Tcl_Interp *interp, const char *cipherName, unsigned long flags,
@@ -117,7 +117,7 @@ static Tcl_ObjCmdProc CryptoMdStringObjCmd;
 static Tcl_ObjCmdProc CryptoEckeyPrivObjCmd;
 static Tcl_ObjCmdProc CryptoEckeyImportObjCmd;
 #  endif
-#endif
+# endif
 
 /*
  * Local variables defined in this file.
@@ -283,6 +283,7 @@ static void HMAC_CTX_free(HMAC_CTX *ctx)
 
 
 # ifdef HAVE_OPENSSL_PRE_1_1
+#  ifndef OPENSSL_NO_EC
 /*
  *----------------------------------------------------------------------
  *
@@ -303,6 +304,7 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
         *ps = sig->s;
     }
 }
+#  endif
 # endif
 
 
@@ -446,9 +448,9 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     NS_NONNULL_ASSERT(nidPtr != NULL);
 
     /*
-     * workaround for the SECG curve names secp192r1 and secp256r1 (which
+     * Workaround for the SECG curve names secp192r1 and secp256r1 (which
      * are the same as the curves prime192v1 and prime256v1 defined in
-     * X9.62)
+     * X9.62).
      */
     if (strcmp(curveName, "secp192r1") == 0) {
         Ns_Log(Warning, "using curve name prime192v1 instead of secp192r1");
@@ -471,7 +473,7 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
     }
     return result;
 }
-#endif
+# endif /* OPENSSL_NO_EC */
 
 /*
  *----------------------------------------------------------------------
@@ -565,7 +567,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
     }
     return result;
 }
-# endif
+# endif /* OPENSSL_NO_EC */
 
 
 
@@ -1437,7 +1439,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     return result;
 }
-# endif
+# endif /* OPENSSL_NO_EC */
 
 # ifndef HAVE_OPENSSL_PRE_1_1
 /*
@@ -2285,18 +2287,18 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"generate",     CryptoEckeyGenerateObjCmd},
-#ifndef HAVE_OPENSSL_PRE_1_1
+#  ifndef HAVE_OPENSSL_PRE_1_1
         {"import",       CryptoEckeyImportObjCmd},
         {"priv",         CryptoEckeyPrivObjCmd},
         {"sharedsecret", CryptoEckeySharedsecretObjCmd},
-#endif
+#  endif
         {"pub",          CryptoEckeyPubObjCmd},
         {NULL, NULL}
     };
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
-#endif /* OPENSSL_NO_EC */
+# endif /* OPENSSL_NO_EC */
 
 
 
