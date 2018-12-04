@@ -39,9 +39,9 @@
 
 
 #ifdef _WIN32
-#include <io.h>
+# include <io.h>
 ssize_t pread(int fd, char *buf, size_t count, off_t offset);
-#endif
+# endif
 
 /*
  * Local functions defined in this file
