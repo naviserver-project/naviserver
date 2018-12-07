@@ -2420,7 +2420,7 @@ RequestFree(Sock *sockPtr)
             reqPtr->buffer.string[0] = reqPtr->savedChar;
         }
         Tcl_DStringSetLength(&reqPtr->buffer, (int)leftover);
-        LogBuffer(DriverDebug, "KEEP BUFFER", reqPtr->buffer.string, leftover); /* TODO: change to DriverDebug */
+        LogBuffer(DriverDebug, "KEEP BUFFER", reqPtr->buffer.string, leftover);
         reqPtr->leftover = leftover;
     } else {
         /*
