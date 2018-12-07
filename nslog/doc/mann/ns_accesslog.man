@@ -15,8 +15,7 @@ settings at run-time.
 [list_begin definitions]
 
 
-[call [cmd ns_accesslog] \
-	[arg file] \
+[call [cmd "ns_accesslog file"] \
 	[opt [arg new-path]] ]
 
 Returns the path of the access log for the current virtual server.
@@ -28,8 +27,7 @@ exist. If an error occurs logging will be disabled.
 
 
 
-[call [cmd ns_accesslog] \
-	[arg roll] \
+[call [cmd "ns_accesslog roll"] \
 	[opt [arg new-path]]]
 
 Roll the access log (see [cmd ns_rollfile] for details). Keep [term maxbackup]
@@ -38,8 +36,7 @@ configuration parameter 'file' as the new log file.
 
 
 
-[call [cmd ns_accesslog] \
-	[arg rollfmt] \
+[call [cmd "ns_accesslog rollfmt"] \
 	[opt [arg time-format]] ]
 
 Get the [opt [arg time-format]] which is appended to the log file name when
@@ -48,8 +45,7 @@ If [opt [arg time-format]] is given then it replaces any existing value.
 
 
 
-[call [cmd ns_accesslog] \
-	[arg maxbackup] \
+[call [cmd "ns_accesslog maxbackup"] \
 	[opt [arg keep]] ]
 
 Get the number of backup files which will be kept when log rolling is
@@ -57,8 +53,7 @@ enabled. If [opt [arg keep]] is given it replaces any existing value.
 
 
 
-[call [cmd ns_accesslog] \
-	[arg flags] \
+[call [cmd "ns_accesslog flags"] \
 	[opt [arg flags]]]
 
 Return a list of the enabled logging options, or reset the list if a
@@ -69,8 +64,7 @@ configuration parameters.
 
 
 
-[call [cmd ns_accesslog] \
-	[arg extendedheaders] \
+[call [cmd "ns_accesslog extendedheaders"] \
 	[opt [arg new-headers]]]
 
 Return a list of the HTTP headers which will be appended to each entry in the
@@ -79,8 +73,7 @@ setting.
 
 
 
-[call [cmd ns_accesslog] \
-	[arg maxbuffer] \
+[call [cmd "ns_accesslog maxbuffer"] \
 	[opt [arg lines]] ]
 
 Set or get the maximum number of lines to buffer before being flushed to the

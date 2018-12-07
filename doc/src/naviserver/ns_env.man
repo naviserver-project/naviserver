@@ -14,15 +14,15 @@ variables of the currently running nsd process.
 
 [list_begin definitions]
 
-[call [cmd ns_env] [arg names]]
+[call [cmd "ns_env names"]]
 
-[call [cmd ns_env] [arg exists] [arg name]]
+[call [cmd "ns_env exists"] [arg name]]
 
-[call [cmd ns_env] [arg get] [opt [option -nocomplain]] [arg name]]
+[call [cmd "ns_env get"] [opt [option -nocomplain]] [arg name]]
 
-[call [cmd ns_env] [arg set] [arg name] [arg value]]
+[call [cmd "ns_env set"] [arg name] [arg value]]
 
-[call [cmd ns_env] [arg unset] [opt [option -nocomplain]] [arg name]]
+[call [cmd "ns_env unset"] [opt [option -nocomplain]] [arg name]]
 
 [list_end]
 

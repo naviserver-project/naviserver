@@ -32,17 +32,17 @@ ns_rwlock writeunlock releases a write lock
 
 [list_begin definitions]
 
-[call [cmd ns_rwlock] [arg create]]
+[call [cmd "ns_rwlock create"]]
 
-[call [cmd ns_rwlock] [arg destroy] [arg rwlockid]]
+[call [cmd "ns_rwlock destroy"] [arg rwlockid]]
 
-[call [cmd ns_rwlock] [arg readlock] [arg rwlockid]]
+[call [cmd "ns_rwlock readlock"] [arg rwlockid]]
 
-[call [cmd ns_rwlock] [arg readunlock] [arg rwlockid]]
+[call [cmd "ns_rwlock readunlock"] [arg rwlockid]]
 
-[call [cmd ns_rwlock] [arg writelock] [arg rwlockid]]
+[call [cmd "ns_rwlock writelock"] [arg rwlockid]]
 
-[call [cmd ns_rwlock] [arg writeunlock] [arg rwlockid]] 
+[call [cmd "ns_rwlock writeunlock"] [arg rwlockid]] 
 
 [list_end]
 

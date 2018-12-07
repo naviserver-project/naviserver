@@ -13,8 +13,7 @@ operations which consumes less resources than returning multiple files to the sl
 
 [list_begin definitions]
 
-[call [cmd ns_writer] \
-	[arg list] \
+[call [cmd "ns_writer list"] \
 	[opt [option {-server s}] ]]
 
 [para] 
@@ -33,8 +32,7 @@ Submit arbitrary data to be returned via writer thread, data can be
 binary. On success the function returns 1, otherwise 0.
 
 
-[call [cmd ns_writer] \
-	[arg submitfile] \
+[call [cmd "ns_writer submitfile"] \
 	[opt [option -headers]] \
 	[opt [option {-offset offset}]] \
 	[opt [option {-size size}]] \
@@ -87,35 +85,37 @@ the specified driver.
 [para]
 [emph {Basic configuration options:}]
         
-[list_begin definitions]
-[def {ns_section "ns/server/default/module/nssock"}]
-[def {ns_param writerthreads 1}]
-[def {ns_param writersize 4096}] 
-[def {ns_param writerstreaming true}] 
-[list_end]
+[example_begin]
+ns_section "ns/server/default/module/nssock" {
+    ns_param writerthreads 1
+    ns_param writersize 4096
+    ns_param writerstreaming true
+}
+[example_end]
 
 [para]
-[term writerthreads] parameter specified how many writer threads will be used, multiple threads
-will be rotated to spread the load across all threads
+[term writerthreads] parameter specified how many writer
+threads will be used, multiple threads will be rotated to spread the
+load across all threads
 
 [para]
-[term writersize] specifies the minimal size of the file to be considered for writer thread, this parameter
-is used by connection thread when returning file and if size exceeds configured value, file will be 
-returned via writer thread and connection thread will be released to handle other requests.
+[term writersize] specifies the minimal size of the file to be
+considered for writer thread, this parameter is used by connection
+thread when returning file and if size exceeds configured value, file
+will be returned via writer thread and connection thread will be
+released to handle other requests.
 
 [para]
-[term writerstreaming] specifies whether or not streaming HTML output (e.g. sent
-via [cmd ns_write]) should be sent via the writer. 
-When sending server responses over slow connections, this
-option reduces the blocking time of the connection threads and can
-therefore reduce the damage of slow-read attacks.
+[term writerstreaming] specifies whether or not streaming HTML
+output (e.g. sent via [cmd ns_write]) should be sent via the writer.
+When sending server responses over slow connections, this option
+reduces the blocking time of the connection threads and can therefore
+reduce the damage of slow-read attacks.
 
 [section EXAMPLES]
 
 [example_begin]
-
 ns_writer submitfile /tmp/biglist.txt
-
 [example_end]
 
 [see_also ns_returnfile ns_conn ns_write ns_headers]
