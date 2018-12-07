@@ -137,31 +137,31 @@ might be saved under [term /etc/systemd/system/nsd.service] or
 [term /usr/lib/systemd/system/nsd.service].
 
 [example_begin]
-   [lb]Unit[rb]
-   Description=NaviServer
-   After=network.target
-   # After=network.target postgresql.service
-   # Wants=postgresql.service
-
-   [lb]Service[rb]
-   Type=forking
-   PIDFile=/usr/local/ns/logs/nsd.pid
-   Environment="LANG=en_US.UTF-8"
-   # In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
-   # Environment="LD_PRELOAD=/usr/lib64/libtcmalloc.so"
-   ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
-
-   # Standard startup with a non-privileged port (like 8e000)
-   ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl
-
-   # Startup for privileged port, like 80; the IPv6 address is bound to 2 sockets.
-   # ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl -b YOUR-IPv4-ADDRESS:80,YOUR-IPv6-ADDRESS:80#2
-
-   Restart=on-abnormal
-   KillMode=process
-
-   [lb]Install[rb]
-   #WantedBy=multi-user.target
+[lb]Unit[rb]
+Description=NaviServer
+After=network.target
+# After=network.target postgresql.service
+# Wants=postgresql.service
+ 
+[lb]Service[rb]
+Type=forking
+PIDFile=/usr/local/ns/logs/nsd.pid
+Environment="LANG=en_US.UTF-8"
+# In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
+# Environment="LD_PRELOAD=/usr/lib64/libtcmalloc.so"
+ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
+ 
+# Standard startup with a non-privileged port (like 8000)
+ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl
+ 
+# Startup for privileged port, like 80; the IPv6 address is bound to 2 sockets.
+# ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl -b YOUR-IPv4-ADDRESS:80,YOUR-IPv6-ADDRESS:80#2
+ 
+Restart=on-abnormal
+KillMode=process
+ 
+[lb]Install[rb]
+#WantedBy=multi-user.target
 [example_end]
 
 
