@@ -430,7 +430,7 @@ foreach address $addresses suffix $suffixes {
     # ns_param	sendwait	30	;# 30, timeout in seconds for send operations
     # ns_param	closewait	2	;# 2, timeout in seconds for close on socket
     # ns_param	keepwait	2	;# 5, timeout in seconds for keep-alive
-    # ns_param	nodelay		true	;# false; activate TCP_NODELAY if not activated per default on your OS
+    # ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted 
     # ns_param	keepalivemaxuploadsize	  500000  ;# 0, don't allow keep-alive for upload content larger than this
     # ns_param	keepalivemaxdownloadsize  1000000 ;# 0, don't allow keep-alive for download content larger than this
     # ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
@@ -538,6 +538,7 @@ if {[info exists httpsport]} {
 	    ns_param		writerthreads	2
 	    ns_param		writersize	1024
 	    ns_param		writerbufsize	16384	;# 8192, buffer size for writer threads
+	    #ns_param   nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted 
 	    #ns_param	writerstreaming	true	;# false
 	    #ns_param	deferaccept	true    ;# false, Performance optimization
 	    ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes

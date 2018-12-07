@@ -182,6 +182,10 @@ ns_section "ns/server/default/module/nssock" {
     ns_param    keepalivemaxuploadsize	 500000	 ;# 0, don't allow keep-alive for upload content larger than this
     ns_param    keepalivemaxdownloadsize 1000000 ;# 0, don't allow keep-alive for download content larger than this
     #
+    # TCP tuning
+    #
+    #ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted 
+    #
     # Spooling Threads
     #
     #ns_param   spoolerthreads	        1	;# default: 0; number of upload spooler threads
