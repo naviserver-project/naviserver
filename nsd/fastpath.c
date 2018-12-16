@@ -667,7 +667,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
     int            isNew, fd;
     Ns_ReturnCode  status = NS_OK;
     Tcl_DString    ds, *dsPtr = &ds;
-    bool           done = NS_FALSE;
+    bool           done;
     const char    *compressedFileName = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -696,6 +696,9 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
         } else if (Ns_ConnUnmodifiedSince(conn, connPtr->fileInfo.st_mtime) == NS_FALSE) {
             status = Ns_ConnReturnStatus(conn, 412); /* Precondition Failed. */
             done = NS_TRUE;
+
+        } else {
+            done = NS_FALSE;
         }
     }
     if (done) {

@@ -2080,7 +2080,7 @@ static void
 MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
 {
     const char *p;
-    int         done;
+    bool        done;
     size_t      l;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -2094,15 +2094,15 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
      * into nulls.
      */
 
-    done = 0;
-    while (done == 0 && *url != '\0') {
+    done = NS_FALSE;
+    while (!done && *url != '\0') {
         if (*url != '/') {
             p = strchr(url, INTCHAR('/'));
             if (p != NULL) {
                 l = (size_t)(p - url);
             } else {
                 l = NS_strlen(url);
-                done = 1;
+                done = NS_TRUE;
             }
 
             Ns_DStringNAppend(dsPtr, url, (int)l++);

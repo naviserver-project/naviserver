@@ -478,14 +478,12 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 void
 Ns_IndexDel(Ns_Index *indexPtr, const void *el)
 {
-    bool   done;
     size_t i, j;
 
     NS_NONNULL_ASSERT(indexPtr != NULL);
     NS_NONNULL_ASSERT(el != NULL);
 
-    done = NS_FALSE;
-    for (i = 0u; i < indexPtr->n && !done; i++) {
+    for (i = 0u; i < indexPtr->n; i++) {
         if (indexPtr->el[i] == el) {
             indexPtr->n--;
             if (i < indexPtr->n) {
@@ -493,7 +491,7 @@ Ns_IndexDel(Ns_Index *indexPtr, const void *el)
                     indexPtr->el[j] = indexPtr->el[j + 1u];
                 }
             }
-            done = NS_TRUE;
+            break;
         }
     }
 }
