@@ -55,6 +55,12 @@ static void EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, const char *handleId,
                        Ns_DbHandle **handle, Tcl_HashEntry **hPtrPtr);
+
+#if !defined(NS_TCL_PRE85)
+static Ns_ReturnCode CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+#endif
+
 static Tcl_InterpDeleteProc FreeData;
 static Tcl_ObjCmdProc
     DbConfigPathObjCmd,
@@ -187,6 +193,50 @@ NsDbReleaseHandles(Tcl_Interp *interp, const void *UNUSED(arg))
     return TCL_OK;
 }
 
+#if !defined(NS_TCL_PRE85)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CurrentHandles --
+ *
+ *      Return a Tcl dict with information about the current allocated
+ *      handles in the current interp/thread.
+ *
+ * Results:
+ *      NS_OK if everything went well, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ReturnCode
+CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
+{
+    Tcl_HashSearch       search;
+    const Tcl_HashEntry *hPtr;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(tablePtr != NULL);
+    NS_NONNULL_ASSERT(dictObj != NULL);
+
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    while (hPtr != NULL) {
+        Ns_DbHandle *handlePtr = Tcl_GetHashValue(hPtr);
+        Tcl_Obj     *keyv[2];
+
+        keyv[0] = Tcl_NewStringObj(handlePtr->poolname, -1);
+        keyv[1] = Tcl_NewStringObj(Tcl_GetHashKey(tablePtr, hPtr), -1);
+        Tcl_DictObjPutKeyList(interp, dictObj, 2, keyv, Tcl_NewIntObj(NsDbGetActive(handlePtr)));
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    return NS_OK;
+}
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -217,20 +267,85 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
     int             result = TCL_OK;
 
     enum {
-        POOLS, BOUNCEPOOL, GETHANDLE, EXCEPTION, POOLNAME,
-        PASSWORD, USER, DATASOURCE, DISCONNECT, DBTYPE, DRIVER, CANCEL, ROWCOUNT,
-        BINDROW, FLUSH, RELEASEHANDLE, RESETHANDLE, CONNECTED, SP_EXEC,
-        SP_GETPARAMS, SP_RETURNCODE, GETROW, DML, ONE_ROW, ZERO_OR_ONE_ROW, EXEC,
-        SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM,
-        STATS, LOGMINDURATION, SESSIONID
+        ZERO_OR_ONE_ROW,
+        ONE_ROW,
+        BINDROW,
+        BOUNCEPOOL,
+        CANCEL,
+        CONNECTED,
+#if !defined(NS_TCL_PRE85)
+        CURRENTHANDLES,
+#endif
+        DATASOURCE,
+        DBTYPE,
+        DISCONNECT,
+        DML,
+        DRIVER,
+        EXCEPTION,
+        EXEC,
+        FLUSH,
+        GETHANDLE,
+        GETROW,
+        INTERPRETSQLFILE,
+        LOGMINDURATION,
+        PASSWORD,
+        POOLNAME,
+        POOLS,
+        RELEASEHANDLE,
+        RESETHANDLE,
+        ROWCOUNT,
+        SELECT,
+        SESSIONID,
+        SETEXCEPTION,
+        SP_EXEC,
+        SP_GETPARAMS,
+        SP_RETURNCODE,
+        SP_SETPARAM,
+        SP_START,
+        STATS,
+        USER,
+        VERBOSE
     };
+
     static const char *const subcmd[] = {
-        "pools", "bouncepool", "gethandle", "exception", "poolname",
-        "password", "user", "datasource", "disconnect", "dbtype", "driver", "cancel", "rowcount",
-        "bindrow", "flush", "releasehandle", "resethandle", "connected", "sp_exec",
-        "sp_getparams", "sp_returncode", "getrow", "dml", "1row", "0or1row", "exec",
-        "select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam",
-        "stats", "logminduration", "session_id",
+        "0or1row",
+        "1row",
+        "bindrow",
+        "bouncepool",
+        "cancel",
+        "connected",
+#if !defined(NS_TCL_PRE85)
+        "currenthandles",
+#endif
+        "datasource",
+        "dbtype",
+        "disconnect",
+        "dml",
+        "driver",
+        "exception",
+        "exec",
+        "flush",
+        "gethandle",
+        "getrow",
+        "interpretsqlfile",
+        "logminduration",
+        "password",
+        "poolname",
+        "pools",
+        "releasehandle",
+        "resethandle",
+        "rowcount",
+        "select",
+        "session_id",
+        "setexception",
+        "sp_exec",
+        "sp_getparams",
+        "sp_returncode",
+        "sp_setparam",
+        "sp_start",
+        "stats",
+        "user",
+        "verbose",
         NULL
     };
 
@@ -358,6 +473,29 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         }
         break;
     }
+
+    case CURRENTHANDLES: {
+        if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+
+        } else {
+            Ns_ReturnCode  status;
+            Tcl_Obj       *dictObj = Tcl_NewDictObj();
+
+            assert(idataPtr != NULL);
+
+            status = CurrentHandles(interp, &idataPtr->dbs, dictObj);
+            if (status != NS_OK) {
+                Tcl_DecrRefCount(dictObj);
+                result = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, dictObj);
+                /* result = TCL_OK; */
+            }
+        }
+        break;
+    }
+
 
     case LOGMINDURATION: {
         Ns_Time     *minDurationPtr = NULL;
@@ -1243,6 +1381,8 @@ DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd)
         Ns_DStringPrintf(&ds, ")");
     }
     Tcl_DStringResult(interp, &ds);
+    NsDbSetActive("dbfail", handle, NS_FALSE);
+
     return TCL_ERROR;
 }
 

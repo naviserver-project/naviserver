@@ -46,29 +46,29 @@ Ns_LogSeverity Ns_LogSqlDebug;
 struct Handle;
 
 typedef struct Pool {
-    const char     *name;
-    const char     *desc;
-    const char     *source;
-    const char     *user;
-    const char     *pass;
-    Ns_Mutex        lock;
-    Ns_Cond         waitCond;
-    Ns_Cond         getCond;
-    const char     *driver;
-    struct DbDriver  *driverPtr;
-    int             waiting;
-    int             nhandles;
-    struct Handle  *firstPtr;
-    struct Handle  *lastPtr;
-    bool            fVerboseError;
-    time_t          maxidle;
-    time_t          maxopen;
-    int             stale_on_close;
-    Tcl_WideInt     statementCount;
-    Tcl_WideInt     getHandleCount;
-    Ns_Time         waitTime;
-    Ns_Time         sqlTime;
-    Ns_Time         minDuration;
+    const char      *name;
+    const char      *desc;
+    const char      *source;
+    const char      *user;
+    const char      *pass;
+    Ns_Mutex         lock;
+    Ns_Cond          waitCond;
+    Ns_Cond          getCond;
+    const char      *driver;
+    struct DbDriver *driverPtr;
+    int              waiting;
+    int              nhandles;
+    struct Handle   *firstPtr;
+    struct Handle   *lastPtr;
+    bool             fVerboseError;
+    time_t           maxidle;
+    time_t           maxopen;
+    int              stale_on_close;
+    Tcl_WideInt      statementCount;
+    Tcl_WideInt      getHandleCount;
+    Ns_Time          waitTime;
+    Ns_Time          sqlTime;
+    Ns_Time          minDuration;
 }  Pool;
 
 /*
@@ -100,6 +100,7 @@ typedef struct Handle {
     int             stale_on_close;
     bool            used;
     uintptr_t       sessionId;
+    bool            active;
 } Handle;
 
 /*
@@ -121,7 +122,8 @@ static bool      IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1)
 static Ns_ReturnCode Connect(Handle *handlePtr)               NS_GNUC_NONNULL(1);
 static Pool     *CreatePool(const char *pool, const char *path, const char *driver)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int       IncrCount(const Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
+static int       IncrCount(const char *context, const Pool *poolPtr, int incr)
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
 static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1);
 
 /*
@@ -304,6 +306,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
 
     Ns_DStringFree(&handle->dsExceptionMsg);
     handle->cExceptionCode[0] = '\0';
+    handlePtr->active = NS_FALSE;
 
     /*
      * Close the handle if it's stale, otherwise update
@@ -316,7 +319,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     } else {
         handlePtr->atime = now;
     }
-    (void) IncrCount(poolPtr, -1);
+    (void) IncrCount("Ns_DbPoolPutHandle", poolPtr, -1);
     Ns_MutexLock(&poolPtr->lock);
     ReturnHandle(handlePtr);
     if (poolPtr->waiting != 0) {
@@ -462,12 +465,12 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
                nwant, poolPtr->nhandles, pool);
         return NS_ERROR;
     }
-    ngot = IncrCount(poolPtr, nwant);
+    ngot = IncrCount("Ns_DbPoolTimedGetMultipleHandles try", poolPtr, nwant);
     if (ngot > 0) {
         Ns_Log(Error, "dbinit: db handle limit exceeded: "
                "thread already owns %d handle%s from pool '%s'",
                ngot, ngot == 1 ? "" : "s", pool);
-        (void) IncrCount(poolPtr, -nwant);
+        (void) IncrCount("Ns_DbPoolTimedGetMultipleHandles fail", poolPtr, -nwant);
         return NS_ERROR;
     }
 
@@ -542,7 +545,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
             Ns_CondSignal(&poolPtr->getCond);
         }
         Ns_MutexUnlock(&poolPtr->lock);
-        (void) IncrCount(poolPtr, -nwant);
+        (void) IncrCount("Ns_DbPoolTimedGetMultipleHandles fail2", poolPtr, -nwant);
     }
 
     Ns_GetTime(&endTime);
@@ -898,8 +901,50 @@ NsDbDisconnect(Ns_DbHandle *handle)
 
     handlePtr->connected = NS_FALSE;
     handlePtr->atime = handlePtr->otime = 0;
+    handlePtr->active = NS_FALSE;
     handlePtr->stale = NS_FALSE;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDbGetActive, NsDbSetActive --
+ *
+ *      Query or modify the "active" state of a handle.  A handle is
+ *      active between a "ns_db select" and the last "ns_db getrow"
+ *      statement.
+ *
+ * Results:
+ *      activity state or none.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+NsDbGetActive(Ns_DbHandle *handle)
+{
+    Handle *handlePtr = (Handle *) handle;
+
+    NS_NONNULL_ASSERT(handle != NULL);
+
+    return handlePtr->active;
+}
+void
+NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
+{
+    Handle *handlePtr = (Handle *) handle;
+
+    NS_NONNULL_ASSERT(context != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+
+    /*fprintf(stderr, "----------------------- %s: NsDbSetActive %p %d\n",
+      context, (void*)handlePtr, active);*/
+    handlePtr->active = active;
+}
+
 
 
 /*
@@ -1380,7 +1425,8 @@ Connect(Handle *handlePtr)
  *
  * IncrCount --
  *
- *      Update per-thread count of allocated handles.
+ *      Update per-thread count of allocated handles.  If count == 0,
+ *      return the current number of allocated handles for this pool.
  *
  * Results:
  *      Previous count of allocated handles.
@@ -1392,12 +1438,13 @@ Connect(Handle *handlePtr)
  */
 
 static int
-IncrCount(const Pool *poolPtr, int incr)
+IncrCount(const char *context, const Pool *poolPtr, int incr)
 {
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
     int prev, count, isNew;
 
+    NS_NONNULL_ASSERT(context != NULL);
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
     tablePtr = Ns_TlsGet(&tls);
@@ -1415,11 +1462,13 @@ IncrCount(const Pool *poolPtr, int incr)
     count = prev + incr;
     if (count == 0) {
         Tcl_DeleteHashEntry(hPtr);
-    } else {
+    } else if (count != prev) {
         Tcl_SetHashValue(hPtr, INT2PTR(count));
     }
+    /*fprintf(stderr, "---------- IncrCount %d %s: on tls hash tables returns %d \n", incr, context, prev);*/
     return prev;
 }
+
 
 
 /*

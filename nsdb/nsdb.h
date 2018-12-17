@@ -165,22 +165,28 @@ NS_EXTERN void          Ns_DbPoolPutHandle(Ns_DbHandle *handle) NS_GNUC_NONNULL(
 NS_EXTERN Ns_DbHandle  *Ns_DbPoolTimedGetHandle(const char *pool, const Ns_Time *wait)  NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_DbHandle  *Ns_DbPoolGetHandle(const char *pool) NS_GNUC_NONNULL(1);
 NS_EXTERN Ns_ReturnCode Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles,
-                                                    const char *pool,
-                                                    int nwant)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+                                                    const char *pool, int nwant)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN Ns_ReturnCode Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles,
                                                          const char *pool,
                                                          int nwant, const Ns_Time *wait)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+Ns_ReturnCode Ns_DbPoolCurrentHandles(int *countPtr, const char *pool)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+bool NsDbGetActive(Ns_DbHandle *handle)
+    NS_GNUC_NONNULL(1);
+void NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN Ns_ReturnCode Ns_DbBouncePool(const char *pool) NS_GNUC_NONNULL(1);
 NS_EXTERN int Ns_DbPoolStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Obj *Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 NS_EXTERN int Ns_DbSetMinDuration(Tcl_Interp *interp, const char *pool, const Ns_Time *minDuration)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * dbtcl.c:

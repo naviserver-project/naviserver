@@ -29,7 +29,7 @@ is returned.
 
 [call [cmd "ns_db bindrow"] [arg handle]]
 
-ns_db bindrow returns an ns_set structure whose key names are the column names
+ns_db bindrow returns a ns_set structure whose key names are the column names
 of the rows returned by the SQL command previously-executed with ns_db exec.
 If the database is not currently returning rows (i.e., a status other than
 NS_ROWS was returned by ns_db exec), an error is thrown. The handle argument is
@@ -57,7 +57,21 @@ operation is complete, so you don't normally have to call this function.
 
 [call [cmd "ns_db connected"] [arg handle]]
 
-ns_db connected returns a boolean value indicating whether the connection to the database pool is made.
+Returns a boolean value indicating whether the connection to the database pool is made.
+
+[call [cmd "ns_db currenthandles"]]
+
+Return information about handles currently allocated to the thread
+performing this call. The result contains a dict with the pools,
+from which handles were allocated, the names of the handles and their
+"active" state (a handle is active between a "ns_db select" and the
+last "ns_db getrow" statement). If no handles are allocated by this
+thread, empty is returned.
+
+For example, a possible result is "main {nsdb0 1} subquery {nsdb1 0}"
+indicating that the current thread has allocated handles from pool
+"main" and "subquery", but the handle from pool "main" (i.e. "nsdb0")
+is currently active (during a select).
 
 
 [call [cmd "ns_db datasource"] [arg handle]]

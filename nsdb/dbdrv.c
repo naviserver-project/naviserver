@@ -410,6 +410,9 @@ Ns_DbSelect(Ns_DbHandle *handle, const char *sql)
         }
     }
 
+    if (setPtr != NULL) {
+        NsDbSetActive("drive select", handle, NS_TRUE);
+    }
     return setPtr;
 }
 
@@ -516,6 +519,10 @@ Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row)
         driverPtr->getProc != NULL) {
 
         status = (*driverPtr->getProc)(handle, row);
+    }
+
+    if (status == NS_END_DATA) {
+        NsDbSetActive("driver getrow", handle, NS_FALSE);
     }
 
     return status;
