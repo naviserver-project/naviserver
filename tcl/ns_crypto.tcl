@@ -50,11 +50,11 @@ nx::Class create ::ns_crypto::HashFunctions {
 #
 nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
 
-    :public object method string {-digest message} {
+    :public object method string {{-digest sha256} message} {
         ::ns_crypto::md string -digest $digest $message
     }
 
-    :public object method file {-digest filename} {
+    :public object method file {{-digest sha256} filename} {
         if {![file readable $filename]} {
             return -code error "file $filename is not readable"
         }
@@ -92,11 +92,11 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
 nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
     :property key:required
 
-    :public object method string {-digest key message} {
+    :public object method string {{-digest sha256} key message} {
         ::ns_crypto::hmac string -digest $digest $key $message
     }
 
-    :public object method file {-digest key filename} {
+    :public object method file {{-digest sha256} key filename} {
         if {![file readable $filename]} {
             return -code error "file $filename is not readable"
         }
