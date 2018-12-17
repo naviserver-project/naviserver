@@ -525,6 +525,12 @@ typedef int ns_sockerrno_t;
 #include <assert.h>
 #include <sys/stat.h>
 
+
+#if TCL_MAJOR_VERSION<8 && TCL_MINOR_VERSION<5
+# define NS_TCL_PRE85
+#endif
+
+
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int
 #endif
