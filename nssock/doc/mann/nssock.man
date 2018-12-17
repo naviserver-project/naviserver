@@ -132,7 +132,7 @@ activated, the minimal size is the size of [term readahead]
 (see as well [term spoolerthreads]).
 
 [def nodelay]
-TCP Performance option; use TCP_NODELAY to diable Nagle algorithm (boolean, default: true)
+TCP Performance option; use TCP_NODELAY to disable Nagle algorithm (boolean, default: true)
 
 [def port]
 Port, on which the server listens. When the port is specified as 0,
