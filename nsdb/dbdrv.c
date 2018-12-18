@@ -411,7 +411,7 @@ Ns_DbSelect(Ns_DbHandle *handle, const char *sql)
     }
 
     if (setPtr != NULL) {
-        NsDbSetActive("drive select", handle, NS_TRUE);
+        NsDbSetActive("driver select", handle, NS_TRUE);
     }
     return setPtr;
 }
@@ -590,6 +590,7 @@ Ns_DbFlush(Ns_DbHandle *handle)
 
         status = (*driverPtr->flushProc)(handle);
     }
+    NsDbSetActive("driver flush ", handle, NS_FALSE);
 
     return status;
 }
