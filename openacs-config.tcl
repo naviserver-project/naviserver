@@ -9,8 +9,14 @@
 ns_log notice "nsd.tcl: starting to read config file..."
 
 #---------------------------------------------------------------------
-# change to 80 and 443 for production use
+# Change the HTTP and HTTPS port to e.g. 80 and 443 for production use.
 set httpport		8000
+
+#
+# Setting the HTTPS port to 0 means to active the https driver for
+# ns_http, but do not listen on this port.
+#
+#set httpsport		0
 #set httpsport		8443
 
 # The hostname and address should be set to actual values.
