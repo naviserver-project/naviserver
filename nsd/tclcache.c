@@ -885,9 +885,33 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 
         Ns_CacheLock(cache);
         if (npatterns == 0) {
-            nflushed = Ns_CacheFlush(cache);
+            /*
+             * Flush all cache entries.
+             */
+            if (transactionStackPtr == NULL || (transactionStackPtr->depth == 0u)) {
+                /*
+                 * No transaction is active.
+                 */
+                nflushed = Ns_CacheFlush(cache);
+            } else {
+                Ns_CacheSearch  search;
 
-        } else if (glob == 0) {
+                /*
+                 * flush all in transaction.
+                 */
+                entry = Ns_CacheFirstEntryT(cache, &search, transactionStackPtr);
+                while (entry != NULL) {
+                    Ns_CacheFlushEntry(entry);
+                    nflushed++;
+                    entry = Ns_CacheNextEntryT(&search, transactionStackPtr);
+                }
+            }
+
+        } else if (glob == (int)NS_FALSE) {
+            /*
+             * Flush the provided entries without glob matching.
+             */
+
             for (i = npatterns; i > 0; i--) {
                 entry = Ns_CacheFindEntryT(cache, Tcl_GetString(objv[objc-i]), transactionStackPtr);
                 if (entry != NULL && Ns_CacheGetValueT(entry, transactionStackPtr) != NULL) {
@@ -899,6 +923,9 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         } else {
             Ns_CacheSearch  search;
 
+            /*
+             * Flush the provided entries with glob matching.
+             */
             entry = Ns_CacheFirstEntryT(cache, &search, transactionStackPtr);
             while (entry != NULL) {
                 const char *key = Ns_CacheKey(entry);
@@ -909,7 +936,6 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
                     if (Tcl_StringMatch(key, pattern) == 1) {
                         Ns_CacheFlushEntry(entry);
                         nflushed++;
-                        break;
                     }
                 }
                 entry = Ns_CacheNextEntryT(&search, transactionStackPtr);

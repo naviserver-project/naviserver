@@ -663,6 +663,145 @@ test ns_cache-12.2 {transaction commit} -body {
 } -result {a: 1 b: 1 c: 2 d: 2 e: 3 f: k2 g: {k1 k2 k3 k4} h: 1 i: 2 j: 2 y: {k1 k2 k4} z: 0}
 
 
+test ns_cache-12.3 {flush rollback cache flush} -body {
+    set cache trans_c2
+    ns_cache_create $cache 1024
+
+    #
+    # set some value in the cache before the transactions
+    #
+    ns_cache_eval $cache k1 {return 1}
+    ns_cache_eval $cache k2 {return 2}
+
+    ns_cache_transaction_begin
+
+        #
+        # add two values in the transaction (k3 and k4)
+        #
+        ns_cache_eval $cache k3 {return 3}
+        ns_cache_incr $cache k4
+
+        # ... get the keys of the cache inside the transaction
+        lappend result keys-inside: [ns_cache_keys $cache]
+
+        # ... flush k1 (value from outside)
+        ns_cache_flush $cache k1
+        lappend result keys-inside-after-flush-k1: [ns_cache_keys $cache]
+
+        # ... flush k4 (value from inside)
+        ns_cache_flush $cache k4
+        lappend result keys-inside-after-flush-k4: [ns_cache_keys $cache]
+
+        # ... flush all
+        ns_cache_flush $cache
+        lappend result keys-inside-after-glob-flush: [ns_cache_keys $cache]
+
+    ns_cache_transaction_rollback
+
+    #
+    # get the all the entries from the cache
+    #
+    lappend result keys-after-rollback: [ns_cache_keys $cache]
+
+} -cleanup {
+    unset -nocomplain result
+    ns_cache_flush $cache
+    unset -nocomplain cache
+} -result {keys-inside: {k1 k2 k3 k4} keys-inside-after-flush-k1: {k2 k3 k4} keys-inside-after-flush-k4: {k2 k3} keys-inside-after-glob-flush: {} keys-after-rollback: {}}
+
+
+test ns_cache-12.4 {flush rollback glob flushes} -body {
+    set cache trans_c3
+    ns_cache_create $cache 1024
+
+    #
+    # set some value in the cache before the transactions
+    #
+    ns_cache_eval $cache k1 {return 1}
+    ns_cache_eval $cache k2 {return 2}
+
+    ns_cache_transaction_begin
+
+        #
+        # add two values in the transaction (k3 and k4)
+        ns_cache_eval $cache k3 {return 3}
+        ns_cache_incr $cache k4
+
+        # ... get the keys of the cache inside the transaction
+        lappend result keys-inside: [ns_cache_keys $cache]
+
+        # ... flush k1 (value from outside)
+        ns_cache_flush $cache k1
+        lappend result keys-inside-after-flush-k1: [ns_cache_keys $cache]
+
+        # ... flush k4 (value from inside)
+        ns_cache_flush $cache k4
+        lappend result keys-inside-after-flush-k4: [ns_cache_keys $cache]
+
+        # ... flush all
+        ns_cache_flush -glob $cache *
+        lappend result keys-inside-after-glob-flush: [ns_cache_keys $cache]
+
+    ns_cache_transaction_rollback
+
+    #
+    # get the all the entries from the cache
+    #
+    lappend result keys-after-rollback: [ns_cache_keys $cache]
+
+} -cleanup {
+    unset -nocomplain result
+    ns_cache_flush $cache
+    unset -nocomplain cache
+} -result {keys-inside: {k1 k2 k3 k4} keys-inside-after-flush-k1: {k2 k3 k4} keys-inside-after-flush-k4: {k2 k3} keys-inside-after-glob-flush: {} keys-after-rollback: {}}
+
+
+test ns_cache-12.5 {flush rollback explicit flushes} -body {
+    set cache trans_c4
+    ns_cache_create $cache 1024
+
+    #
+    # set some value in the cache before the transactions
+    #
+    ns_cache_eval $cache k1 {return 1}
+    ns_cache_eval $cache k2 {return 2}
+
+    ns_cache_transaction_begin
+
+        #
+        # add two values in the transaction (k3 and k4)
+        ns_cache_eval $cache k3 {return 3}
+        ns_cache_incr $cache k4
+
+        # ... get the keys of the cache inside the transaction
+        lappend result keys-inside: [ns_cache_keys $cache]
+
+        # ... flush k1 (value from outside)
+        ns_cache_flush $cache k1
+        lappend result keys-inside-after-flush-k1: [ns_cache_keys $cache]
+
+        # ... flush k4 (value from inside)
+        ns_cache_flush $cache k4
+        lappend result keys-inside-after-flush-k4: [ns_cache_keys $cache]
+
+        # ... flush all keys explicitly
+        ns_cache_flush $cache {*}[ns_cache_keys $cache]
+
+        lappend result keys-inside-after-glob-flush: [ns_cache_keys $cache]
+
+    ns_cache_transaction_rollback
+
+    #
+    # get the all the entries from the cache
+    #
+    lappend result keys-after-rollback: [ns_cache_keys $cache]
+
+} -cleanup {
+    unset -nocomplain result
+    ns_cache_flush $cache
+    unset -nocomplain cache
+} -result {keys-inside: {k1 k2 k3 k4} keys-inside-after-flush-k1: {k2 k3 k4} keys-inside-after-flush-k4: {k2 k3} keys-inside-after-glob-flush: {} keys-after-rollback: {}}
+
 
 cleanupTests
 
