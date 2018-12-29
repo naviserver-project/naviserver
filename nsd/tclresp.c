@@ -73,7 +73,6 @@ static int ReturnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 int
 NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp   *itPtr = clientData;
     Ns_Conn    *conn = NULL;
     int         httpStatus, length = -1, binary = (int)NS_FALSE, result;
     char       *mimeType = NULL;
@@ -95,6 +94,7 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         ) {
         result = TCL_ERROR;
     } else {
+        NsInterp   *itPtr = clientData;
 
         Ns_ConnSetResponseStatus(conn, httpStatus);
 
@@ -146,7 +146,6 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsInterp     *itPtr = clientData;
     Ns_Conn      *conn = NULL;
     Tcl_Encoding  encoding = NULL;
     int           result = TCL_OK;
@@ -154,8 +153,8 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 
     Ns_ObjvSpec opts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
-        {"-type",    Ns_ObjvString, &type, NULL},
-        {"--",       Ns_ObjvBreak,  NULL,    NULL},
+        {"-type",    Ns_ObjvString, &type,    NULL},
+        {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -169,6 +168,7 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
 
     } else {
+        NsInterp *itPtr = clientData;
 
         Ns_LogDeprecated(objv, 1, "ns_headers ...", NULL);
 
