@@ -356,8 +356,9 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 
     nwrote = ns_send(sock, buffer, length, 0);
     if (nwrote == -1
-        && ns_sockerrno == NS_EWOULDBLOCK
-        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+        && (ns_sockerrno == NS_EWOULDBLOCK)
+        && (Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK)
+        ) {
         nwrote = ns_send(sock, buffer, length, 0);
     }
 
@@ -1295,12 +1296,12 @@ SockConnect(const char *host, unsigned short port, const char *lhost, unsigned s
                 if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                     ns_sockerrno_t err = ns_sockerrno;
 
-                    if (err != NS_EINPROGRESS && err != NS_EWOULDBLOCK) {
+                    if ((err != NS_EINPROGRESS) && (err != NS_EWOULDBLOCK)) {
                         Ns_Log(Notice, "connect on sock %d async %d err %d <%s>",
                                sock, async, err, ns_sockstrerror(err));
                     }
 
-                    if (async && (err == NS_EINPROGRESS || err == NS_EWOULDBLOCK)) {
+                    if (async && ((err == NS_EINPROGRESS) || (err == NS_EWOULDBLOCK))) {
                         /*
                          * The code below is implemented also in later
                          * calls. However in the async case, it is hard to
