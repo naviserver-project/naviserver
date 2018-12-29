@@ -766,7 +766,6 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      * Setup and merge the environment set.
      */
 
-    cgiPtr->env = Ns_SetCreate(NULL);
     if (cgiPtr->interpEnv != NULL) {
         cgiPtr->env = Ns_SetCopy(cgiPtr->interpEnv);
     } else {
