@@ -932,6 +932,7 @@ NsDbGetActive(Ns_DbHandle *handle)
 
     return handlePtr->active;
 }
+
 void
 NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
 {
