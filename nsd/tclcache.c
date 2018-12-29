@@ -936,6 +936,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
                     if (Tcl_StringMatch(key, pattern) == 1) {
                         Ns_CacheFlushEntry(entry);
                         nflushed++;
+                        break;
                     }
                 }
                 entry = Ns_CacheNextEntryT(&search, transactionStackPtr);
