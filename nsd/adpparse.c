@@ -953,6 +953,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
          * Append enclosing text as argument to eval or proc.
          */
         char save = *se;
+
         *se = '\0';
         Tcl_DStringAppendElement(&script, ae + 1);
         *se = save;
