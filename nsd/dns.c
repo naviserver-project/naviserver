@@ -410,6 +410,10 @@ GetHost(Ns_DString *dsPtr, const char *addr)
         status = NS_TRUE;
     } else if (result != EAI_NONAME) {
         Ns_Log(Warning, "dns: getnameinfo failed: %s (%s)", gai_strerror(result), addr);
+    } else {
+        /*
+         * EAI_NONAME: The name does not resolve for the supplied arguments
+         */
     }
 #ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);
@@ -486,12 +490,13 @@ GetHost(Ns_DString *dsPtr, const char *addr)
 static bool
 GetAddr(Ns_DString *dsPtr, const char *host)
 {
-    struct addrinfo hints;
+    struct addrinfo  hints;
     struct addrinfo *res, *ptr;
-    int result;
-    bool status = NS_FALSE;
+    int              result;
+    bool             status = NS_FALSE;
 #ifndef HAVE_MTSAFE_DNS
-    static Ns_Cs cs;
+    static Ns_Cs     cs;
+
     Ns_CsEnter(&cs);
 #endif
 
@@ -514,6 +519,10 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     } else if (result != EAI_NONAME) {
         Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
                gai_strerror(result));
+    } else {
+        /*
+         * EAI_NONAME: The name does not resolve for the supplied arguments
+         */
     }
 #ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);
