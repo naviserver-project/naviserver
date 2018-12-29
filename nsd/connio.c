@@ -255,14 +255,13 @@ Ns_ConnWriteData(Ns_Conn *conn, const void *buf, size_t toWrite, unsigned int fl
 Ns_ReturnCode
 Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    Conn         *connPtr = (Conn *) conn;
     Ns_DString    ds;
     int           nsbufs, sbufIdx;
     size_t        bodyLength, toWrite, neededBufs;
     ssize_t       nwrote;
     struct iovec  sbufs[32], *sbufPtr;
 
-    NS_NONNULL_ASSERT(connPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
     assert(nbufs < 1 || bufs != NULL);
 
     Ns_DStringInit(&ds);
@@ -290,7 +289,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     toWrite = 0u;
 
     if ((flags & NS_CONN_STREAM) != 0u) {
-        connPtr->flags |= NS_CONN_STREAM;
+        conn->flags |= NS_CONN_STREAM;
     }
 
     /*
@@ -361,8 +360,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
                 toWrite += Ns_SetVec(sbufPtr, sbufIdx, "0\r\n\r\n", (size_t)5);
 
                 nsbufs += 1;
-                connPtr->flags &= ~NS_CONN_STREAM;
-                connPtr->flags |= NS_CONN_SENT_LAST_CHUNK;
+                conn->flags &= ~NS_CONN_STREAM;
+                conn->flags |= NS_CONN_SENT_LAST_CHUNK;
             }
         }
     }
