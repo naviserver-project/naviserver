@@ -452,9 +452,6 @@ typedef int ns_sockerrno_t;
 #  endif
 # endif
 
-# define O_TEXT                     (0)
-# define O_BINARY                   (0)
-
 # define SOCKET_ERROR               (-1)
 
 # define NS_SIGHUP                  (SIGHUP)
@@ -525,6 +522,18 @@ typedef int ns_sockerrno_t;
 #include <assert.h>
 #include <sys/stat.h>
 
+#ifndef O_TEXT
+# define O_TEXT    (0)
+#endif
+#ifndef O_BINARY
+# define O_BINARY  (0)
+#endif
+#ifndef O_CLOEXEC
+# define O_CLOEXEC (0)
+#endif
+#ifndef SOCK_CLOEXEC
+# define SOCK_CLOEXEC (0)
+#endif
 
 #if TCL_MAJOR_VERSION<8 && TCL_MINOR_VERSION<5
 # define NS_TCL_PRE85

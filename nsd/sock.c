@@ -561,7 +561,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
     NS_NONNULL_ASSERT(saPtr != NULL);
     Ns_LogSockaddr(Debug, "Ns_SockBind called with", (const struct sockaddr *) saPtr);
 
-    sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_STREAM, 0);
+    sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
     if (sock != NS_INVALID_SOCKET) {
 

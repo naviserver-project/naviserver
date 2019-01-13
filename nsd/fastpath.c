@@ -771,7 +771,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
             connPtr->fmap.addr = NULL;
 
         } else {
-            fd = ns_open(fileName, O_RDONLY | O_BINARY, 0);
+            fd = ns_open(fileName, O_RDONLY | O_BINARY | O_CLOEXEC, 0);
             if (fd < 0) {
                 Ns_Log(Warning, "fastpath: ns_open(%s) failed: '%s'",
                        fileName, strerror(errno));
@@ -818,7 +818,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
              */
 
             Ns_CacheUnlock(cache);
-            fd = ns_open(fileName, O_RDONLY | O_BINARY, 0);
+            fd = ns_open(fileName, O_RDONLY | O_BINARY | O_CLOEXEC, 0);
             if (fd < 0) {
                 filePtr = NULL;
                 Ns_Log(Warning, "fastpath: ns_open(%s') failed '%s'",
