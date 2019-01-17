@@ -621,7 +621,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                 size_t outputLength;
                             } entity;
 
-                            entity entities[] = {
+                            const static entity entities[] = {
                                 {"AElig",   5, "Æ", 2},
                                 {"Aacute",  6, "Á", 2},
                                 {"Acirc",   5, "Â", 2},
