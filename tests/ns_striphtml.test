@@ -12,10 +12,10 @@ test ns_striphtml-1.0 {basic test} -body {
 test ns_striphtml-2.0.1 {nbsp entity} -body {
     ns_striphtml {hello&nbsp;world}
 } -result "hello world"
-test ns_striphtml-2.0.2 {nbsp entity} -body {
+test ns_striphtml-2.0.2 {bare less sign} -body {
     ns_striphtml {hello&lt;world}
 } -result "hello<world"
-test ns_striphtml-2.0.3 {nbsp entity} -body {
+test ns_striphtml-2.0.3 {bare greater sign} -body {
     ns_striphtml {hello&gt;world}
 } -result "hello>world"
 
@@ -271,7 +271,7 @@ test ns_striphtml-3.0 {table} -body {
                                 {"yen",     3, "¥", 2},
                                 {"yuml",    4, "ÿ", 2},
                                 {"zeta",    4, "ζ", 2},
-                                {NULL,      0, "", 0}
+                                {NULL,      4, "", 0}
     }
     regsub -all {{NULL,    0, "", 0}} $t "" t
     regsub -all {,} $t " " t
