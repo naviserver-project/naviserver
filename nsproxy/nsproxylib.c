@@ -3221,7 +3221,16 @@ ReaperThread(void *UNUSED(arg))
                  * zombie or the process has exited ok so splice it out the
                  * list.
                  */
-                if (slavePtr->signal >= 0) {
+
+                if (prevSlavePtr != NULL) {
+                    prevSlavePtr->nextPtr = slavePtr->nextPtr;
+                } else {
+                    firstClosePtr = slavePtr->nextPtr;
+                }
+
+                if (slavePtr->signal == -1) {
+                    Ns_Log(Warning, "nsproxy: zombie: %ld", (long)slavePtr->pid);
+                } else {
                     int waitStatus = 0;
 
                     /*
@@ -3229,9 +3238,13 @@ ReaperThread(void *UNUSED(arg))
                      * indicate that we want to handle the signal here and to
                      * suppress warning entries in the error.log.
                      *
-                     * The following wait operation should not really wait.
+                     * The following wait operation should not really wait
+                     * but it is better to play safe.
                      */
+
+                    Ns_MutexUnlock(&plock);
                     (void) Ns_WaitForProcessStatus(slavePtr->pid, NULL, &waitStatus);
+                    Ns_MutexLock(&plock);
 #ifdef WTERMSIG
                     if (slavePtr->signal != 0 && WTERMSIG(waitStatus) != 0) {
                         Ns_LogSeverity severity;
@@ -3246,13 +3259,6 @@ ReaperThread(void *UNUSED(arg))
                                WTERMSIG(waitStatus), strsignal(WTERMSIG(waitStatus)));
                     }
 #endif
-                } else {
-                    Ns_Log(Warning, "nsproxy: zombie: %ld", (long)slavePtr->pid);
-                }
-                if (prevSlavePtr != NULL) {
-                    prevSlavePtr->nextPtr = slavePtr->nextPtr;
-                } else {
-                    firstClosePtr = slavePtr->nextPtr;
                 }
 
                 tmpSlavePtr = slavePtr->nextPtr;
