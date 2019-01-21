@@ -53,26 +53,26 @@ MSDK    = C:\Program Files\Microsoft SDKs\Windows\v7.1
 # with Visual Studio while SetEnv.Cmd ships with the Microsoft SDK.
 
 smash_lib_include = 0
-!if (1 != $(smash_lib_include))
-!message Appending to LIB and INCLUDE.
-# If your call to SetEnv.Cmd is working correctly, you should only
-# need to append to LIB and INCLUDE like this:
-LIB     = $(LIB);$(TCLPATH)\lib
-INCLUDE = $(INCLUDE);$(TCLPATH)\include
-
-# But for reference and to help debugging, these are the full LIB and
+# For reference and to help debugging, these are the full LIB and
 # INCLUDE environment variable settings I need when set from scratch,
 # smashing over any values set by SetEnv.Cmd:
-!elseif "x86" == "$(TARGET_CPU)"
+!if (1 == $(smash_lib_include))
+!if "x86" == "$(TARGET_CPU)"
 !message Smashing over LIB and INCLUDE, for x86 cpu.
-LIB     = $(MSDK)\Lib;$(VC)\Lib;$(TCLPATH)\lib
-INCLUDE = $(MSDK)\Include;$(VC)\include;$(TCLPATH)\include
-
+LIB     = $(MSDK)\Lib;$(VC)\Lib
+INCLUDE = $(MSDK)\Include;$(VC)\include
 !else
 !message Smashing over LIB and INCLUDE, for x64 cpu.
-LIB     = $(MSDK)\Lib\X64;$(VC)\Lib\amd64;$(TCLPATH)\lib
-INCLUDE = $(MSDK)\Include;$(VC)\include;$(TCLPATH)\include
+LIB     = $(MSDK)\Lib\X64;$(VC)\Lib\amd64
+INCLUDE = $(MSDK)\Include;$(VC)\include
 !endif
+!endif
+
+# If your call to SetEnv.Cmd is working correctly, you should only
+# need to append to LIB and INCLUDE like this:
+!message Appending to LIB and INCLUDE.
+LIB     = $(LIB);$(TCLPATH)\lib
+INCLUDE = $(INCLUDE);$(TCLPATH)\include
 
 
 # include/Makefile.win32 uses this DEBUG flag.  For now default it to
