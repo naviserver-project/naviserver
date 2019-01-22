@@ -94,24 +94,25 @@ proc ns_sourceproc {args} {
 
     set code [catch {
 
-      # Tcl file signature
-      set cookie0 $stat(mtime):$stat(ino):$stat(dev)
-      set proc0 [info procs ns:tclcache.$path]
+        # Tcl file signature
+        set cookie0 $stat(mtime):$stat(ino):$stat(dev)
+        set proc0 [info commands ns:tclcache.$path]
 
-      # Verify file modification time
-      if {$proc0 eq "" || [$proc0] ne $cookie0} {
-          set code [ns_fileread $path]
-          proc ns:tclcache_$path {} "$code"
-          proc ns:tclcache.$path {} "return $cookie0"
-      }
-      # Run the proc
-      ns:tclcache_$path
+        # Verify file modification time
+        if {$proc0 eq "" || [$proc0] ne $cookie0} {
+            proc ns:tclcache_$path {} [ns_fileread $path]
+            proc ns:tclcache.$path {} "return $cookie0"
+        }
+        # Run the proc
+        ns:tclcache_$path
 
     } errmsg]
 
     if {$code == 1 && $::errorCode ne "NS_TCL_ABORT"} {
+
         # Invalidate proc
-        proc ns:tclcache_$path {} {}
+        rename ns:tclcache_$path ""
+        rename ns:tclcache.$path ""
 
         # Show custom errropage if defined
         set errp [nsv_get ns:tclfile errorpage]
