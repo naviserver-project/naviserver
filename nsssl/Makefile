@@ -8,7 +8,7 @@ MOD      =  nsssl.so
 # Objects to build.
 #
 MODOBJS   = nsssl.o
-CLEAN    = $(CLEAN) clean-cert
+CLEAN     += clean-cert
 
 include  ../include/Makefile.build
 
