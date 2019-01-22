@@ -85,9 +85,55 @@ DLL = $(MOD:.so=)
 !endif
 
 
+# TODO: My attempt to add the necessary OpenSSL stuff below has NOT
+# been successful.  Although nsssl.dll builds, nsd.dll and nsd.exe do
+# NOT!  There are some suspicious warnings, and then the link fails
+# with:  --atp@piskorski.com, 2019/01/22 01:00 EST
+#   tclhttp.o : error LNK2019: unresolved external symbol _SSL_get_cipher referenced in function _HttpConnect
+# See also more info here:
+#   https://sourceforge.net/p/naviserver/mailman/message/36519758/
+#   [naviserver-devel] Windows nsd build breaks on tclhttp.c SSL_get_cipher
+
+# Several places to get pre-compiled Windows OpenSSL libraries:
+# http://www.slproweb.com/products/Win32OpenSSL.html
+# - Win32OpenSSL-1_0_1i.exe and Win64OpenSSL-1_0_1i.exe, c. 2014-08-06.
+#   Use:  openssl_libs = ssleay32MDd.lib libeay32MDd.lib
+# - Win32OpenSSL-1_1_1a.exe and Win64OpenSSL-1_1_1a.exe, c. 2018-11-21.
+#   Use:  openssl_libs = libssl32MTd.lib libcrypto32MTd.lib
+# https://indy.fulgan.com/SSL/
+# - openssl-1.0.2q-i386-win32.zip  , openssl-1.0.2q-i386-win32_LinkLibs.zip
+# - openssl-1.0.2q-x64_86-win64.zip, openssl-1.0.2q-x64_86-win64_LinkLibs.zip
+#   Use:  openssl_libs = ssleay32.lib libeay32.lib
+
+openssl_64 = C:\P\OpenSSL-Win64
+openssl_32 = C:\P\OpenSSL-Win32
+#openssl_64 = C:\P\openssl-indy_1.0.2q\64
+#openssl_32 = C:\P\openssl-indy_1.0.2q\32
+
+# We have lots of flavors of the OpenSSL libraries.  I normally build
+# NaviServer with /MDd, so presumably we need the corresponding
+# *MDd.lib libraries here.  (TODO: How to autodetect this correctly?)
+
+#openssl_libs = ssleay32.lib libeay32.lib
+#openssl_libs = ssleay32MDd.lib libeay32MDd.lib
+openssl_libs = libssl32MDd.lib libcrypto32MDd.lib
+
+# Same sort of code as for TCLPATH in naviserver/Makefile.win32:
+!if "x86" == "$(TARGET_CPU)"
+openssl_dir = $(openssl_32)
+!elseif "x64" == "$(TARGET_CPU)"
+openssl_dir = $(openssl_64)
+!else
+!message Warning: Unexpected TARGET_CPU:  $(TARGET_CPU)
+openssl_dir = $(openssl_64)
+!endif
+!message openssl_dir is set to:  $(openssl_dir)
+
+
 #
 # Update options when building from sources or installed location.
 #
+#!message PGM:  $(PGM)   DLL:  $(DLL)
 
 !ifndef NSBUILD
 # We are linking a module against an already-installed NaviServer:
@@ -103,6 +149,10 @@ LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
 # Same sort of thing for nsd:
 !if ("$(PGM)" != "nsd" && "$(DLL)" != "nsd" && "$(DLL)" != "libnsd")
 LIBS = $(LIBS) /LIBPATH:"..\nsd" libnsd.lib
+!else
+# Since c. 2016, nsd.exe needs to link against OpenSSL, otherwise you get
+# "unresolved external symbol" for _SSL_get_version and _SSL_get_cipher:
+LIBS = $(LIBS) "/LIBPATH:$(openssl_dir)\lib\VC" $(openssl_libs)
 !endif
 
 # nsdbtest needs nsdb.lib
@@ -225,7 +275,7 @@ DEFS	= $(DEFS) /D "NDEBUG"
 # Final flags for compiler and linker
 #
 
-CFLAGS  = $(COPTS) /I "$(INCDIR)" $(DEFS)
+CFLAGS  = $(COPTS) /I "$(INCDIR)" /I "$(openssl_dir)\include" $(DEFS)
 LIBS	= $(LIBS) $(TCLLIB) kernel32.lib advapi32.lib ws2_32.lib user32.lib
 
 
