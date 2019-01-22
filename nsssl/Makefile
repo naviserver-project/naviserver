@@ -1,12 +1,3 @@
-ifndef NAVISERVER
-    NAVISERVER  = /usr/local/ns
-endif
-
-# ability to pass path to openssl include library
-ifdef SSLINCLUDE
-#    CFLAGS     = -I$(SSLINCLUDE)
-endif
-
 
 #
 # Filename of loadable binary of the module
@@ -17,7 +8,7 @@ MOD      =  nsssl.so
 # Objects to build.
 #
 MODOBJS   = nsssl.o
-CLEAN	 += clean-cert
+CLEAN    = $(CLEAN) clean-cert
 
 include  ../include/Makefile.build
 
