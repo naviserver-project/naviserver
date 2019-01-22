@@ -7,7 +7,7 @@
 [description]
 
 The driver module [term nsssl] is used for the socket communication
-over https. The module shares the configuration parameters of
+over HTTPS. The module shares the configuration parameters of
 [term nssock] and adds additional parameters. This driver requires a
 NaviServer installation with the configuration option --with-openssl
 enabled.
@@ -61,10 +61,10 @@ The module is typically loaded per server (specified
 below in the variable "server"):
 
 [example_begin]
-   ns_section    ns/server/${server}/modules
+   ns_section    ns/server/${server}/modules {
       ns_param      nsssl            nsssl.so
- 
-   ns_section    ns/server/${server}/module/nsssl
+   }
+   ns_section    ns/server/${server}/module/nsssl {
       ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
       ns_param   address       0.0.0.0
       ns_param   port          443
@@ -77,6 +77,7 @@ below in the variable "server"):
          X-Frame-Options SAMEORIGIN
          X-Content-Type-Options nosniff
       }
+   }
 [example_end]
 
 This amount of configuration is sufficient for many installations, but
