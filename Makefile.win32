@@ -127,15 +127,15 @@ NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # module/Makefile.win32 files.
 # --atp@piskorski.com, 2014/10/10 17:25 EDT
 
-core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm
-module_targets = _nsssl
+core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm _nsssl
+module_targets = _NONE-YET
 
 tgts_core_clean = $(core_targets:_=C)
 tgts_modl_clean = $(module_targets:_=C)
 tgts_core_inst  = $(core_targets:_=I)
 tgts_modl_inst  = $(module_targets:_=I)
 
-all: all-core all-mod
+all: all-core
 clean: clean-core clean-mod
 install: install-core install-mod
 
