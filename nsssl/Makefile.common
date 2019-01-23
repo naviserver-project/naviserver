@@ -1,21 +1,15 @@
+# Emacs mode:  -*-Makefile-*-
 
 #
 # Filename of loadable binary of the module
 #
 MOD      =  nsssl.so
+DLL      =  nsssl
 
 #
 # Objects to build.
 #
 MODOBJS   = nsssl.o
-
-# Late evaluation with Gnu make "=" gives a "Recursive variable references
-# itself" error here.  So Don't Do That, instead use ":=" or "+=".  But
-# Windows nmake ONLY supports "=", it does not have ":=" or "+="!
-## TODO: Works only on Linux (Gnu make):
-CLEAN     += clean-cert
-## TODO: Works only on Windows (Microsoft nmake):
-#CLEAN    = $(CLEAN) clean-cert
 
 
 include  ../include/Makefile.build
