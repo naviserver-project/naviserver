@@ -8,13 +8,15 @@
 # [::1]:2080 (IPv6) or 127.0.0.1:2080 (IPv4)
 #
 
+set dot_so [info sharedlibextension]
+
 ns_section      "ns/servers"
 ns_param         default         NaviServer
 
 ns_section      "ns/server/default/modules"
-ns_param         nscp            nscp.so
-ns_param         nssock          nssock.so
-ns_param         nslog           nslog.so
+ns_param         nscp            nscp${dot_so}
+ns_param         nssock          nssock${dot_so}
+ns_param         nslog           nslog${dot_so}
 
 ns_section     "ns/server/default/adp"
 ns_param        map              /*.adp
