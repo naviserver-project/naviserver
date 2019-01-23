@@ -96,10 +96,10 @@ ns_section "ns/server/default" {
 }
 
 ns_section "ns/server/default/modules" {
-    ns_param    nscp                nscp.so
-    ns_param    nssock              nssock.so
-    ns_param    nslog               nslog.so
-    ns_param    nscgi               nscgi.so
+    ns_param    nscp                nscp
+    ns_param    nssock              nssock
+    ns_param    nslog               nslog
+    ns_param    nscgi               nscgi
 }
 
 ns_section "ns/server/default/fastpath" {
