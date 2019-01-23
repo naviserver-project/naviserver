@@ -76,6 +76,10 @@ proc ns_tcl_abort {} {
 #   and source it. Uses tricks to cache Tcl bytecodes
 #   and hope to gain some percent of speed that way.
 #
+#   After 4.99.17, "ns_sourceproc" is deprecated. One should use
+#      ns_register_tcl $method /*.tcl
+#   instead of
+#      ns_register_proc $method /*.tcl ns_sourceproc"
 #
 # Results:
 #   None.
@@ -85,6 +89,8 @@ proc ns_tcl_abort {} {
 #
 
 proc ns_sourceproc {args} {
+
+    #ns_deprecated "ns_register_tcl" "Use ns_register_tcl ... instead of ns_register_proc ... ns_sourceproc"
 
     set path [ns_url2file [ns_conn url]]
     if {![ns_filestat $path stat]} {

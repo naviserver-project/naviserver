@@ -7,71 +7,27 @@
 [description]
 When a client requests a page, the page can be a static or dynamic,
 where the latter means that the content is computed at the time it is served. 
-The dynamic content can be provided as .adp files or via .tcl files.
+Dynamic content can be provided as .adp files or via .tcl files.
+We cover here just the .tcl files.
 
-[para]
-By default Tcl pages are not enabled, but can be enabled over the
-configuration file of NaviServer.
-Notice the entries in your sample-config.tcl configuration file:
-
-[example_begin]
- 
- ns_section "ns/server/${servername}"
- ns_param   enabletclpages  false         ;# Parse *.tcl files in pageroot.
-
-[example_end]
-
-
-[para]
-
-If you set first option to true this is what happens at server startup when file.tcl is sourced:
-
-[list_begin enum]
-
-[enum] The procedure ns_sourceproc is registered for the HTTP methods GET, POST and HEAD via ns_register_proc.
-
-[enum] The procedure ns_sourceproc works as follows:
-
-  [list_begin enum]
-
-  [enum] If a requested file does not exist on the filesystem it returns via ns_returnnotfound
-
-  [enum] An existing Tcl file is sourced via ns_sourcefile (see above)
-
-  [enum] If a custom error page exists it is sourced. That error page is responsible for 
-         handling the error, e.g. communication with a user. 
-
-  [list_end]
-
-[list_end]
-
-[section {Setting up a Tcl error page}]
-
-Similar to the ADP error page example in your sample-config.tcl file you could setup a Tcl error page:
+[para] By default requests to files with the extension .tcl are served
+as plain files (i.e. showing the source code of the .tcl files). By
+setting the flag [term enabletclpages] in the configuration file,
+NaviServer can be instructed to interprete such files when these are
+requested (Tcl pages).  Notice the entries in your sample-config.tcl
+configuration file:
 
 [example_begin]
-
-ns_section "ns/server/${servername}/tcl"
-ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.tcl  ;# Tcl error page
-
+ ns_section "ns/server/${servername}/adp"
+ ns_param   enabletclpages  false         ;# Parse *.tcl files in pagedir.
 [example_end]
 
-[section {Support for .tcl-style dynamic pages via ADP engine}]
-
-Another way to support .tcl pages to use ADP engine to process .tcl file as
-ADP pages. The engine will source Tcl file and wrap it as <% ns_adp_include filename %>,
-then compiled it as regular ADP page. If caching enabled, the Tcl file will be compiled as
-Tcl proc into bytecode. Using ADP engine is faster than using file.tcl based approach.
-
-[example_begin]
-
-ns_section "ns/server/${servername}/adp"
-ns_param   enabletclpages  false                               ;# Parse *.tcl files in pageroot.
-ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.adp  ;# ADP error page
-
-[example_end]
-
+[para] When [term enabletclpages] is activated, NaviServer registers
+upon startup for all files with the extension .tcl in the directory
+[term pagedir] a handler to deliver these files as Tcl pages
+(using [cmd ns_register_tcl]). The handler is registered for the HTTP
+methods GET, POST and HEAD.
 
 [see_also nsd adp-overview]
-[keywords NaviServer configuration]
+[keywords NaviServer configuration fastpath]
 [manpage_end]
