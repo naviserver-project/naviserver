@@ -1,0 +1,7 @@
+# Emacs mode:  -*-Makefile-*-
+
+# This is the Microsoft Windows specific file, for use with nmake.  Do
+# NOT put Linux stuff here.
+
+include Makefile.common
+CLEAN = $(CLEAN) clean-cert
