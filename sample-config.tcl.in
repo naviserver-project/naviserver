@@ -87,12 +87,12 @@ set	pagedir			$serverdir/$pageroot
 ########################################################################
 
 ns_section	"ns/server/${servername}/modules"
-   ns_param	nssock			${homedir}/bin/nssock.so
-   ns_param	nslog 			${homedir}/bin/nslog.so
-   ns_param	nscgi 			${homedir}/bin/nscgi.so
-   ns_param	nsperm 			${homedir}/bin/nsperm.so
-   #ns_param 	nscp 			${homedir}/bin/nscp.so
-   ns_param	nsproxy			${homedir}/bin/nsproxy.so
+   ns_param	nssock			${homedir}/bin/nssock
+   ns_param	nslog 			${homedir}/bin/nslog
+   ns_param	nscgi 			${homedir}/bin/nscgi
+   ns_param	nsperm 			${homedir}/bin/nsperm
+   #ns_param 	nscp 			${homedir}/bin/nscp
+   ns_param	nsproxy			${homedir}/bin/nsproxy
 
    # Tcl modules are loaded here as well, they should be put
    # under tcl/ in separate directory each
