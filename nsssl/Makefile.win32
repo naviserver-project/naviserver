@@ -5,3 +5,4 @@
 
 include Makefile.common
 CLEAN = $(CLEAN) clean-cert
+!message Debug: nsssl: HAVE_OPENSSL_EVP_H:  $(HAVE_OPENSSL_EVP_H)
