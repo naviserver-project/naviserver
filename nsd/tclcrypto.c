@@ -867,7 +867,8 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             Tcl_DStringInit(&messageDs);
             keyString = Ns_GetBinaryString(keyObj, &keyLength, &keyDs);
             messageString = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
-            //hexPrint("hmac message", messageString, messageLength);
+            // hexPrint("hmac key", keyString, keyLength);
+            // hexPrint("hmac message", messageString, messageLength);
 
             /*
              * Call the HMAC computation.

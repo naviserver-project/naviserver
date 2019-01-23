@@ -15,10 +15,6 @@ set address "0.0.0.0"  ;# one might use as well for IPv6: set address ::
 #
 set home [file dirname [file dirname [info nameofexecutable]]]
 
-set dot_so [info sharedlibextension]
-#set ini_file [ns_info config]  ;# Full path to this config file.
-#set platform $::tcl_platform(platform)  ;# "windows" or "unix"
-
 
 ########################################################################
 # Global settings (for all servers)
@@ -100,10 +96,10 @@ ns_section "ns/server/default" {
 }
 
 ns_section "ns/server/default/modules" {
-    ns_param    nscp                nscp${dot_so}
-    ns_param    nssock              nssock${dot_so}
-    ns_param    nslog               nslog${dot_so}
-    ns_param    nscgi               nscgi${dot_so}
+    ns_param    nscp                nscp
+    ns_param    nssock              nssock
+    ns_param    nslog               nslog
+    ns_param    nscgi               nscgi
 }
 
 ns_section "ns/server/default/fastpath" {
