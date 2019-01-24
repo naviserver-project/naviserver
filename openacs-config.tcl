@@ -8,8 +8,6 @@
 ######################################################################
 ns_log notice "nsd.tcl: starting to read config file..."
 
-set dot_so [info sharedlibextension]
-
 #---------------------------------------------------------------------
 # Change the HTTP and HTTPS port to e.g. 80 and 443 for production use.
 set httpport		8000
@@ -565,9 +563,9 @@ if {[info exists httpsport]} {
 ns_section "ns/db/drivers" {
 
     if { $database eq "oracle" } {
-	ns_param	ora8           ${bindir}/ora8${dot_so}
+	ns_param	ora8           ${bindir}/ora8
     } else {
-	ns_param	postgres       ${bindir}/nsdbpg${dot_so}
+	ns_param	postgres       ${bindir}/nsdbpg
 	#
 	ns_logctl severity "Debug(sql)" -color blue $verboseSQL
     }
@@ -675,18 +673,18 @@ ns_section ns/db/pool/pool3 {
 # don't uncomment modules unless they have been installed.
 
 ns_section ns/server/${server}/modules {
-    ns_param	nslog		${bindir}/nslog${dot_so}
-    ns_param	nsdb		${bindir}/nsdb${dot_so}
-    ns_param	nsproxy		${bindir}/nsproxy${dot_so}
+    ns_param	nslog		${bindir}/nslog
+    ns_param	nsdb		${bindir}/nsdb
+    ns_param	nsproxy		${bindir}/nsproxy
 
     #
     # Load networking modules depending on existence of Tcl variables
     # address_v* and httpsport
     #
-    if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock${dot_so} }
-    if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock${dot_so} }
-    if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl${dot_so} }
-    if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl${dot_so} }
+    if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock }
+    if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock }
+    if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl }
+    if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl }
 
     #
     # Determine, if libthread is installed
@@ -700,17 +698,17 @@ ns_section ns/server/${server}/modules {
     }
 
     # authorize-gateway package requires dqd_utils
-    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]${dot_so}
+    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]}
 
     # PAM authentication
-    # ns_param	nspam              ${bindir}/nspam${dot_so}
+    # ns_param	nspam              ${bindir}/nspam
 
     # LDAP authentication
-    # ns_param	nsldap             ${bindir}/nsldap${dot_so}
+    # ns_param	nsldap             ${bindir}/nsldap
 
     # These modules aren't used in standard OpenACS installs
-    # ns_param	nsperm             ${bindir}/nsperm${dot_so}
-    # ns_param	nscgi              ${bindir}/nscgi${dot_so}
+    # ns_param	nsperm             ${bindir}/nsperm
+    # ns_param	nscgi              ${bindir}/nscgi
 }
 
 
