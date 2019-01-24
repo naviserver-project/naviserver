@@ -8,6 +8,8 @@
 ######################################################################
 ns_log notice "nsd.tcl: starting to read config file..."
 
+set dot_so [info sharedlibextension]
+
 #---------------------------------------------------------------------
 # Change the HTTP and HTTPS port to e.g. 80 and 443 for production use.
 set httpport		8000
@@ -563,9 +565,9 @@ if {[info exists httpsport]} {
 ns_section "ns/db/drivers" {
 
     if { $database eq "oracle" } {
-	ns_param	ora8           ${bindir}/ora8.so
+	ns_param	ora8           ${bindir}/ora8${dot_so}
     } else {
-	ns_param	postgres       ${bindir}/nsdbpg.so
+	ns_param	postgres       ${bindir}/nsdbpg${dot_so}
 	#
 	ns_logctl severity "Debug(sql)" -color blue $verboseSQL
     }
@@ -673,18 +675,18 @@ ns_section ns/db/pool/pool3 {
 # don't uncomment modules unless they have been installed.
 
 ns_section ns/server/${server}/modules {
-    ns_param	nslog		${bindir}/nslog.so
-    ns_param	nsdb		${bindir}/nsdb.so
-    ns_param	nsproxy		${bindir}/nsproxy.so
+    ns_param	nslog		${bindir}/nslog${dot_so}
+    ns_param	nsdb		${bindir}/nsdb${dot_so}
+    ns_param	nsproxy		${bindir}/nsproxy${dot_so}
 
     #
     # Load networking modules depending on existence of Tcl variables
     # address_v* and httpsport
     #
-    if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock.so }
-    if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock.so }
-    if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl.so }
-    if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl.so }
+    if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock${dot_so} }
+    if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock${dot_so} }
+    if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl${dot_so} }
+    if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl${dot_so} }
 
     #
     # Determine, if libthread is installed
@@ -698,17 +700,17 @@ ns_section ns/server/${server}/modules {
     }
 
     # authorize-gateway package requires dqd_utils
-    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}].so
+    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]${dot_so}
 
     # PAM authentication
-    # ns_param	nspam              ${bindir}/nspam.so
+    # ns_param	nspam              ${bindir}/nspam${dot_so}
 
     # LDAP authentication
-    # ns_param	nsldap             ${bindir}/nsldap.so
+    # ns_param	nsldap             ${bindir}/nsldap${dot_so}
 
     # These modules aren't used in standard OpenACS installs
-    # ns_param	nsperm             ${bindir}/nsperm.so
-    # ns_param	nscgi              ${bindir}/nscgi.so
+    # ns_param	nsperm             ${bindir}/nsperm${dot_so}
+    # ns_param	nscgi              ${bindir}/nscgi${dot_so}
 }
 
 

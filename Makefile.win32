@@ -136,7 +136,7 @@ tgts_core_inst  = $(core_targets:_=I)
 tgts_modl_inst  = $(module_targets:_=I)
 
 all: all-core
-clean: clean-core clean-mod
+clean: clean-core
 install: install-core install-mod
 
 all-core: $(core_targets)
@@ -152,12 +152,16 @@ install-mod:  $(tgts_modl_inst)
 # Why, I have no idea.  --atp@piskorski.com, 2014/10/11 05:54 EDT
 
 $(core_targets):
-	pushd $(@:_=) & $(NMAKE) & popd
+	if exist "$(@:_=)\Makefile.win32" ( \
+	pushd $(@:_=) & $(NMAKE) -f Makefile.win32 & popd ) else ( \
+	pushd $(@:_=) & $(NMAKE) & popd )
 $(module_targets):
 	if not exist "..\$(@:_=)" (echo No such directory:  ..\$(@:_=)) else ( \
 	pushd "..\$(@:_=)" & $(NMAKE) -f Makefile.win32 & popd )
 $(tgts_core_clean):
-	pushd $(@:C=) & $(NMAKE) clean & popd
+	if exist "$(@:C=)\Makefile.win32" ( \
+	pushd $(@:C=) & $(NMAKE) -f Makefile.win32 clean & popd ) else ( \
+	pushd $(@:C=) & $(NMAKE) clean & popd )
 $(tgts_modl_clean):
 	@if not exist "..\$(@:C=)" (echo No such directory:  ..\$(@:C=)) else ( \
 	pushd "..\$(@:C=)" & $(NMAKE) -f Makefile.win32 clean & popd )

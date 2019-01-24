@@ -85,12 +85,10 @@ DLL = $(MOD:.so=)
 !endif
 
 
-# TODO: My attempt to add the necessary OpenSSL stuff below has NOT
-# been successful.  Although nsssl.dll builds, nsd.dll and nsd.exe do
-# NOT!  There are some suspicious warnings, and then the link fails
-# with:  --atp@piskorski.com, 2019/01/22 01:00 EST
-#   tclhttp.o : error LNK2019: unresolved external symbol _SSL_get_cipher referenced in function _HttpConnect
-# See also more info here:
+## To (I think) enable OpenSSL support, turn this on:
+#HAVE_OPENSSL_EVP_H=1
+
+# For past OpenSSL-related link problems, see:
 #   https://sourceforge.net/p/naviserver/mailman/message/36519758/
 #   [naviserver-devel] Windows nsd build breaks on tclhttp.c SSL_get_cipher
 

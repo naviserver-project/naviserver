@@ -1947,8 +1947,10 @@ HttpConnect(
             result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx, sni_hostname, &ssl);
             httpPtr->ssl = ssl;
             /*fprintf(stderr, "### Ns_TLS_CtxClientCreate connection established => %s\n",  result == TCL_OK ? "OK" : "ERROR");*/
+#ifdef HAVE_OPENSSL_EVP_H
             HttpTaskAddInfo(httpPtr, "sslversion", SSL_get_version(ssl));
             HttpTaskAddInfo(httpPtr, "cipher", SSL_get_cipher(ssl));
+#endif
         }
     } else {
         /*
