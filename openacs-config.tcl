@@ -698,7 +698,7 @@ ns_section ns/server/${server}/modules {
     }
 
     # authorize-gateway package requires dqd_utils
-    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]
+    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]}
 
     # PAM authentication
     # ns_param	nspam              ${bindir}/nspam
