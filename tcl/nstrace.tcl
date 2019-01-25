@@ -733,7 +733,10 @@ ns_runonce {
             #
             foreach pn [info procs ${nsp}::*] {
                 set orig [namespace origin $pn]
-                if {$orig ne [namespace which -command $pn]} {
+                if {
+                    $orig ne [namespace which -command $pn]
+                    && ![string match "::tcl::*" $orig]
+                } {
                     append import "namespace import -force [list $orig]" \n
                 } else {
                     append script [_procscript $pn]
