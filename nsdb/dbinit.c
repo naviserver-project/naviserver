@@ -941,8 +941,6 @@ NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
     NS_NONNULL_ASSERT(context != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
 
-    /*fprintf(stderr, "----------------------- %s: NsDbSetActive %p %d\n",
-      context, (void*)handlePtr, active);*/
     handlePtr->active = active;
 }
 
@@ -1466,7 +1464,7 @@ IncrCount(const char *context, const Pool *poolPtr, int incr)
     } else if (count != prev) {
         Tcl_SetHashValue(hPtr, INT2PTR(count));
     }
-    /*fprintf(stderr, "---------- IncrCount %d %s: on tls hash tables returns %d \n", incr, context, prev);*/
+
     return prev;
 }
 
