@@ -460,6 +460,7 @@ NewThread(void)
 
     thrPtr = ns_calloc(1u, sizeof(Thread));
     thrPtr->ctime = time(NULL);
+    memcpy(thrPtr->name, "-NONE-", 7);
     Ns_MasterLock();
     thrPtr->nextPtr = firstThreadPtr;
     firstThreadPtr = thrPtr;
