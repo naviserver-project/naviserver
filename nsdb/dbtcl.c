@@ -490,7 +490,6 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
                 result = TCL_ERROR;
             } else {
                 Tcl_SetObjResult(interp, dictObj);
-                /* result = TCL_OK; */
             }
         }
         break;

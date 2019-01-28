@@ -1637,7 +1637,7 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
         /*
          * Return the duration.
          */
-        *minDuration = &poolPtr->minDuration;
+        *minDuration = &(poolPtr->minDuration);
         result = TCL_OK;
     }
     return result;
