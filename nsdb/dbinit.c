@@ -916,7 +916,7 @@ NsDbDisconnect(Ns_DbHandle *handle)
  *      statement.
  *
  * Results:
- *      activity state or none.
+ *      Boolean activity state
  *
  * Side effects:
  *      None.
