@@ -645,7 +645,7 @@ ns_runonce {
             variable nsplist
             lappend nsplist $top
             foreach nsp [namespace children $top] {
-                if {$nsp in {"::tcl" "::msgcat"}} {continue}
+                #if {$nsp in {"::tcl" "::msgcat"}} {continue}
                 _namespaces $nsp
             }
         }
@@ -735,7 +735,6 @@ ns_runonce {
                 set orig [namespace origin $pn]
                 if {
                     $orig ne [namespace which -command $pn]
-                    && ![string match "::tcl::*" $orig]
                 } {
                     append import "namespace import -force [list $orig]" \n
                 } else {
