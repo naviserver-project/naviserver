@@ -755,11 +755,15 @@ typedef int bool;
 /* We assume, HAVE_64BIT implies __WORDSIZE == 64 */
 #if !defined(SCNxPTR)
 # if !defined __PRIPTR_PREFIX
-#  if defined(HAVE_64BIT)
-#   define __PRIPTR_PREFIX  "l"
-#  else
-#   define __PRIPTR_PREFIX  "ll"
-#  endif
+#   if defined(_WIN64)
+#     define __PRIPTR_PREFIX  "I64"
+#   elif defined(_WIN32)
+#     define __PRIPTR_PREFIX  "I32"
+#   elif defined(HAVE_64BIT)
+#     define __PRIPTR_PREFIX  "l"
+#   else
+#     define __PRIPTR_PREFIX  "ll"
+#   endif
 # endif
 # define SCNxPTR      __PRIPTR_PREFIX "x"
 #endif
