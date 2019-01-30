@@ -1717,13 +1717,13 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
     if ((flags & LOG_COLORIZE) != 0u) {
-        Ns_DStringPrintf(dsPtr, "[%d.%" PRIuPTR "][%s] %s%s%s: ",
+        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s%s%s: ",
                          (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
                          (const char *)LOG_COLOREND,
                          LogSeverityColor(buffer, severity),
                          Ns_LogSeverityName(severity));
     } else {
-        Ns_DStringPrintf(dsPtr, "[%d.%" PRIuPTR "][%s] %s: ",
+        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
                          (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
                          Ns_LogSeverityName(severity));
     }
