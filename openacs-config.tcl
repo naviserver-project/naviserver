@@ -689,7 +689,7 @@ ns_section ns/server/${server}/modules {
     #
     # Determine, if libthread is installed
     #
-    set libthread [lindex [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]] end]
+    set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]]] end]
     if {$libthread eq ""} {
 	ns_log notice "No Tcl thread library installed in $homedir/lib/"
     } else {
