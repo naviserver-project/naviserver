@@ -43,10 +43,11 @@
  * The following define available flags bits.
  */
 
-#define LOG_ROLL     0x01u
-#define LOG_EXPAND   0x02u
-#define LOG_USEC     0x04u
-#define LOG_COLORIZE 0x08u
+#define LOG_ROLL      0x01u
+#define LOG_EXPAND    0x02u
+#define LOG_USEC      0x04u
+#define LOG_COLORIZE  0x08u
+#define LOG_USEC_DIFF 0x10u
 
 /*
  * The following struct represents a log entry header as stored in the
@@ -388,6 +389,9 @@ NsConfigLog(void)
     }
     if (Ns_ConfigBool(path, "logusec", NS_FALSE) == NS_TRUE) {
         flags |= LOG_USEC;
+    }
+    if (Ns_ConfigBool(path, "logusecdiff", NS_FALSE) == NS_TRUE) {
+        flags |= LOG_USEC_DIFF;
     }
     if (Ns_ConfigBool(path, "logexpanded", NS_FALSE) == NS_TRUE) {
         flags |= LOG_EXPAND;
@@ -1715,6 +1719,33 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     if ((flags & LOG_USEC) != 0u) {
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
+    }
+    if ((flags & LOG_USEC_DIFF) != 0u) {
+        Ns_Time        now;
+        static Ns_Time last = {0, 0};
+
+        Ns_GetTime(&now);
+        /*
+         * Initialize if needed.
+         */
+        if (last.sec == 0) {
+            last.sec = now.sec;
+            last.usec = now.usec;
+        }
+        /*
+         * Skip last char.
+         */
+        Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
+        /*
+         * Handle change in seconds.
+         */
+        if (last.sec < now.sec) {
+            last.sec = now.sec;
+            Ns_DStringPrintf(dsPtr, "-%.6ld]", now.usec + (1000000 - last.usec));
+        } else {
+            Ns_DStringPrintf(dsPtr, "-%.6ld]", now.usec-last.usec);
+        }
+        last.usec = now.usec;
     }
     if ((flags & LOG_COLORIZE) != 0u) {
         Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s%s%s: ",

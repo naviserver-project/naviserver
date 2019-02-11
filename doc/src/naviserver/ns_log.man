@@ -256,6 +256,11 @@ Default: logs/nsd.log
 If true, log entries will have timestamps with microsecond resolution.
 Default: false.
 
+[def logusecdiff]
+If true, show time difference since last log entry with microsecond
+resolution. This option is useful for determine latencies with minimal effort.
+Default: false.
+
 [list_end]
 
 
