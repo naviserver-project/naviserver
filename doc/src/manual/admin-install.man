@@ -165,29 +165,38 @@ file for any additional information.
 
 [section {Configuring}]
 
-The installation directory contains several config files under /usr/local/ns/conf installation directory.
-This configuration will:
+The installation directory contains several configuration files under
+/usr/local/ns/conf installation directory.
+A simple configuration to start with is nsd-config.tcl, which is used
+below. A more complete reference of the available parameter is
+sample-config, a very short configuration file is simple-config.tcl.
 
+The most basic configuration parameters are the port and listening
+addresses, which are set in nsd-config.tcl as follows:
 
 [list_begin enum]
 
-  [enum]Listen for HTTP connections on your computer's  primary interface at port 8080.  To use another port  and/or
-        select interfaces, you can set the "post" and "address" parameters.
+  [enum] Listen for HTTP connections on your computer's primary
+        interface at port 8080.  To use another port and/or select
+        interfaces, you can set the [term port] and [port address]
+        parameters.
 
-  [enum]Check security settings for [term nscp] (Control Port module) and listen on localhost:2080 if they are set.
-
+  [enum] Check security settings for [term nscp] (Control Port module)
+  and listen on localhost:4080 if they are set.
 
 [list_end]
 
 [para]
 
 
-Note: Some modules have been disabled in the sample nsd.tcl  for security
-reasons. They are [emph {nscp}] and [emph {nsperm}].  They aren't required  to run a
-server unless you want to use  the Control Port and/or the Permissions
-module, respectively.  Before using  them, change the passwords and
-default permissions  by following the instructions  in the NaviServer
-documentation.
+Note: Some modules can be disabled in the sample nsd.tcl for security
+reasons. They are [emph {nscp}] and [emph {nsperm}]. These modules can
+be disables by e.g. commenting out the respective lines in the
+"ns/server/default/modules" section.  These modules are not required
+to run a server unless you want to use the Control Port and/or the
+Permissions module, respectively.  Before using them in a production
+environment, change the passwords and default permissions by following
+the instructions in the NaviServer documentation.
 
 
 [para]
@@ -288,12 +297,13 @@ NaviServer is started via launchd (controlled via launchctl).
 
 [list_end]
 
-[emph Note]:  While running NaviServer on some Unix platforms (e.g., Linux,  SGI),
-you'll notice multiple nsd  processes.  This is normal and represents the
-individual threads.  The main  process id can be determined  by checking
-the log/nsd.pid file or looking  at the last few entries  of the server
-log, each of which will include the process  id and thread  id in the form
-[lb]pid.tid[rb].  You can also telnet to the control port and type "ns_info pid".
+[emph Note]: While running NaviServer on some Unix platforms (e.g.,
+Linux, SGI), you'll notice multiple nsd processes.  This is normal and
+represents the individual threads.  The main process id can be
+determined by checking the log/nsd.pid file or looking at the last few
+entries of the server log (per default "logs/error.log", each of which
+will include the process id and thread id in the form [lb]pid.tid[rb].
+You can also telnet to the control port and type "ns_info pid".
 
 [see_also admin-maintenance]
 
