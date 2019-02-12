@@ -178,6 +178,14 @@ ns_section ns/parameters {
     ns_param	OutputCharset	utf-8
     # ns_param	URLCharset	utf-8
 
+    #
+    # DNS configuration parameters
+    #
+    ns_param dnscache true          ;# default: true
+    ns_param dnswaittimeout 5       ;# time for waiting for a DNS reply in seconds; default: 5
+    ns_param keepwaittimeout 60     ;# time to keep entries in cache in minutes; default: 60
+    ns_param dnscachemaxsize 500kB  ;# max size of DNS cache in memory units; default: 500kB
+
     # Running behind proxy? Used by OpenACS...
     ns_param	ReverseProxyMode	$proxy_mode
 }
