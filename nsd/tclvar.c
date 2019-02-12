@@ -1094,13 +1094,21 @@ Ns_VarUnset(const char *server, const char *array, const char *key)
     Ns_ReturnCode   status = NS_ERROR;
 
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         Array  *arrayPtr = LockArray(servPtr, array, NS_FALSE);
-        if (likely(arrayPtr != NULL)) {
+        if (unlikely(arrayPtr == NULL)) {
+            /* Error */
+        } else {
             status = Unset(arrayPtr, key);
+            if (status != NS_OK && key != NULL) {
+                /* Error, no such key. */
+            } else if (status == NS_OK && key == NULL) {
+                /* Finish deleting the entire array, same as in NsTclNsvUnsetObjCmd(). */
+                Tcl_DeleteHashTable(&arrayPtr->vars);
+                Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+            }
             UnlockArray(arrayPtr);
         }
     }
