@@ -194,7 +194,7 @@ ns_section ns/parameters {
 # Thread library (nsthread) parameters
 #---------------------------------------------------------------------
 ns_section ns/threads {
-    ns_param	stacksize	[expr {128 * 8192}]
+    ns_param	stacksize	1MB
 }
 #---------------------------------------------------------------------
 # Extra mime types
@@ -215,8 +215,8 @@ ns_section ns/mimetypes {
 #---------------------------------------------------------------------
 ns_section      "ns/fastpath" {
     #ns_param        cache               true       ;# default: false
-    #ns_param        cachemaxsize        10240000   ;# default: 1024*10000
-    #ns_param        cachemaxentry       100000     ;# default: 8192
+    #ns_param        cachemaxsize        10MB       ;# default: 10MB
+    #ns_param        cachemaxentry       100kB      ;# default: 8kB
     #ns_param        mmap                true       ;# default: false
     #ns_param        gzip_static         true       ;# check for static gzip; default: false
     #ns_param        gzip_refresh        true       ;# refresh stale .gz files on the fly using ::ns_gzipfile
@@ -304,12 +304,11 @@ ns_section ns/server/${server}/adp {
     # ns_param	map		"/*.html"	;# Any extension can be mapped
     #
     # ns_param	cache		true		;# false, enable ADP caching
-    # ns_param	cachesize	10000*1025	;# 5000*1024, size of cache
+    # ns_param	cachesize	10MB		;# 5MB, size of ADP cache
+    # ns_param	bufsize		5MB		;# 1MB, size of ADP buffer
     #
     # ns_param	trace		true		;# false, trace execution of adp scripts
     # ns_param	tracesize	100		;# 40, max number of entries in trace
-    #
-    # ns_param	bufsize		5*1024*1000	;# 1*1024*1000, size of ADP buffer
     #
     # ns_param	stream		true		;# false, enable ADP streaming
     # ns_param	enableexpire	true		;# false, set "Expires: now" on all ADP's
@@ -400,9 +399,9 @@ ns_section ns/server/${server}/acs/acs-api-browser {
 # WebDAV Support (optional, requires oacs-dav package to be installed
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/tdav {
-    ns_param	propdir		${serverroot}/data/dav/properties
-    ns_param	lockdir		${serverroot}/data/dav/locks
-    ns_param	defaultlocktimeout	300
+    ns_param	propdir		   ${serverroot}/data/dav/properties
+    ns_param	lockdir		   ${serverroot}/data/dav/locks
+    ns_param	defaultlocktimeout 300
 }
 
 ns_section ns/server/${server}/tdav/shares {
@@ -430,7 +429,7 @@ foreach address $addresses suffix $suffixes {
     ns_param	address		$address
     ns_param	hostname	$hostname
     ns_param	port		$httpport	;# 80 or 443
-    ns_param	maxinput	[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
+    ns_param	maxinput	"$max_file_upload_mb MB";   # 1MB, maximum size for inputs (uploads)
     ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
     # ns_param	maxline		8192	;# 8192, max size of a header line
     # ns_param	maxheaders	128	;# 128, max number of header lines
@@ -439,19 +438,19 @@ foreach address $addresses suffix $suffixes {
     # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
     # ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
     # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
-    # ns_param	bufsize		16384	;# 16384, buffersize
-    # ns_param	readahead	16384	;# value of bufsize, size of readahead for requests
+    # ns_param	bufsize		16kB	;# 16kB, buffersize
+    # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
     # ns_param	sendwait	30	;# 30, timeout in seconds for send operations
     # ns_param	closewait	2	;# 2, timeout in seconds for close on socket
     # ns_param	keepwait	2	;# 5, timeout in seconds for keep-alive
-    # ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted 
-    # ns_param	keepalivemaxuploadsize	  500000  ;# 0, don't allow keep-alive for upload content larger than this
-    # ns_param	keepalivemaxdownloadsize  1000000 ;# 0, don't allow keep-alive for download content larger than this
+    # ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+    # ns_param	keepalivemaxuploadsize	  500kB  ;# 0, don't allow keep-alive for upload content larger than this
+    # ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
     # ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
-    ns_param	maxupload	100000	;# 0, when specified, spool uploads larger than this value to a temp file
+    ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
     ns_param	writerthreads	2	;# 0, number of writer threads
-    ns_param	writersize	1024	;# 1024*1024, use writer threads for files larger than this value
-    # ns_param	writerbufsize	8192	;# 8192, buffer size for writer threads
+    ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
+    # ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
     # ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
 
     #
@@ -550,12 +549,12 @@ if {[info exists httpsport]} {
 	    ns_param		certificate	$serverroot/etc/certfile.pem
 	    ns_param		verify		0
 	    ns_param		writerthreads	2
-	    ns_param		writersize	1024
-	    ns_param		writerbufsize	16384	;# 8192, buffer size for writer threads
-	    #ns_param   nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted 
+	    ns_param		writersize	1kB
+	    ns_param		writerbufsize	16kB	;# 8kB, buffer size for writer threads
+	    #ns_param   nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
 	    #ns_param	writerstreaming	true	;# false
 	    #ns_param	deferaccept	true    ;# false, Performance optimization
-	    ns_param		maxinput	[expr {$max_file_upload_mb * 1024*1024}] ;# Maximum File Size for uploads in bytes
+	    ns_param		maxinput	"$max_file_upload_mb MB" ;# Maximum file size for uploads in bytes
 	    ns_param         extraheaders    $nsssl_extraheaders
 	}
     }

@@ -8,7 +8,7 @@
 
 NaviServer is immensely scalable because it has to be. It is based on the web server
 for the most heavily-used production environment in the world --
-AOL. The sections below refer to various configration paramters.
+AOL. The sections below refer to various configration parameters.
 For a complete reference, see the sample config files sample-config.tcl.
 
 

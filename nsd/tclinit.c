@@ -2108,6 +2108,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
             NsTclInitQueueType();
             NsTclInitAddrType();
             NsTclInitTimeType();
+            NsTclInitMemUnitType();
             NsTclInitKeylistType();
             initialized = NS_TRUE;
         }

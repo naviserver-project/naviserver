@@ -284,6 +284,103 @@ Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
     return status;
 }
 
+Ns_ReturnCode
+Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
+{
+    Tcl_WideInt   lval;
+    Ns_ReturnCode status = NS_OK;
+
+
+    fprintf(stderr, "real parsing of memUnit <%s>\n", chars);
+    if (chars[0] == '\0') {
+        lval = 0;
+        *intPtr = (Tcl_WideInt) 0;
+
+    } else {
+        char  *endPtr;
+
+        errno = 0;
+        lval = strtoll(chars, &endPtr, 10);
+        fprintf(stderr, "real parsing of <%s> number %lld reminder <%s>\n", chars, lval, endPtr);
+
+        if (unlikely(errno == ERANGE && (lval == LLONG_MAX || lval == LLONG_MIN))) {
+            status = NS_ERROR;
+        } else {
+            int basis = 1;
+            double fraction = 0.0;
+
+            if (*endPtr != '\0') {
+                /*
+                 * Check for decimal digits
+                 */
+                if (*endPtr == '.') {
+                    long   decimal, i, digits;
+                    int    divisor = 1;
+                    char  *ep;
+
+                    endPtr++;
+                    decimal = strtoll(endPtr, &ep, 10);
+                    digits = ep-endPtr;
+                    for (i = 0; i < digits; i++) {
+                        divisor *= 10;
+                    }
+                    fraction = (double)decimal / (double)divisor;
+                    fprintf(stderr, "real parsing of <%s> decimal %ld divisor %d fraction %lf\n",
+                            chars, decimal, divisor, fraction);
+                    endPtr = ep;
+                }
+                /*
+                 * Skip whitespace
+                 */
+                while (CHARTYPE(space, *endPtr) != 0) {
+                    endPtr++;
+                }
+                /*
+                 * Parse units.
+                 *
+                 * The International System of Units (SI) defines
+                 *    kB, MB, GB as 1000, 1000^2, 1000^3 bytes,
+                 * and IEC defines
+                 *    KiB, MiB and GiB as 1024, 1024^2, 1024^3 bytes.
+                 *
+                 * For effective memory usage, multiple of 1024 are
+                 * better. Therefore we follow the PostgreSQL conventions and
+                 * use 1024 as basis, but we allow as well the IEC abbreviations.
+                 */
+                if (*endPtr == 'M' && *(endPtr+1) == 'B') {
+                    basis = 1024 * 1024;
+                } else if ((*endPtr == 'K' || *endPtr == 'k') && *(endPtr+1) == 'B') {
+                    basis = 1024;
+                } else if (*endPtr == 'G' && *(endPtr+1) == 'B') {
+                    basis = 1024 * 1024 * 1024;
+
+                } else if (*endPtr == 'M' && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
+                    basis = 1024 * 1024;
+                } else if ((*endPtr == 'K') && *(endPtr+1) == 'i' && *(endPtr+1) == 'B') {
+                    basis = 1024;
+                } else if (*endPtr == 'G' && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
+                    basis = 1024 * 1024 * 1024;
+                } else {
+                    status = NS_ERROR;
+                }
+            }
+            if (status == NS_OK) {
+                if (fraction > 0.0) {
+                    double r = (double)(lval * basis) + fraction * basis;
+                    *intPtr = (Tcl_WideInt)r;
+                    fprintf(stderr, "real parsing of <%s> r %lf faction %lf\n", chars, r, fraction);
+                } else {
+                    *intPtr = (Tcl_WideInt) lval * basis;
+                }
+                fprintf(stderr, "real parsing of <%s> final number %lld\n", chars, *intPtr);
+
+            }
+        }
+    }
+
+    return status;
+}
+
 
 /*
  *----------------------------------------------------------------------

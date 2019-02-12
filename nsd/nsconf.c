@@ -149,8 +149,8 @@ NsInitInfo(void)
 void
 NsConfUpdate(void)
 {
-    int i;
-    Ns_DString ds;
+    size_t      size;
+    Ns_DString  ds;
     const char *path = NS_CONFIG_PARAMETERS;
 
     NsConfigTcl();
@@ -168,12 +168,12 @@ NsConfUpdate(void)
      * Set a default stacksize, if specified. Use OS default otherwise.
      */
 
-    i = Ns_ConfigIntRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX);
-    if (i == 0) {
-        i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX);
+    size = (size_t)Ns_ConfigMemUnitRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX);
+    if (size == 0u) {
+        size = (size_t)Ns_ConfigMemUnitRange(path, "stacksize", 0, 0, INT_MAX);
     }
-    if (i > 0) {
-        (void) Ns_ThreadStackSize((ssize_t)i);
+    if (size > 0u) {
+        (void) Ns_ThreadStackSize((ssize_t)size);
     }
 
     /*

@@ -221,11 +221,11 @@ Use the NaviServer file cache for file deliveries
 
 [def cachemaxentry]
 Maximum size of a single entry, when parameter [const cache] is true
-(integer, defaults to 8192)
+(integer, defaults to 8kB)
 
 [def cachemaxsize]
-Size of the cache, when parameter [const cache] is true
-(integer, defaults to 10240000)
+Size of the cache, when parameter [const cache] is true;
+(integer, defaults to 10MB)
 
 [def mmap]
 Use mmap for file deliveries (and cache is false)

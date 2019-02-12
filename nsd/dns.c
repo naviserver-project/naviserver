@@ -81,7 +81,7 @@ static void LogError(char *func, int h_errnop);
 
 static Ns_Cache *hostCache;
 static Ns_Cache *addrCache;
-static int       ttl;       /* Time in senconds each entry can live in the cache. */
+static int       ttl;       /* Time in seconds each entry can live in the cache. */
 static int       timeout;   /* Time in seconds to wait for concurrent update.  */
 
 
@@ -108,17 +108,17 @@ NsConfigDNS(void)
     const char *path = NS_CONFIG_PARAMETERS;
 
     if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE) {
-        int maxValue = Ns_ConfigIntRange(path, "dnscachemaxsize", 1024*500, 0, INT_MAX);
-
-        if (maxValue > 0) {
+        size_t maxSize = (size_t)Ns_ConfigMemUnitRange(path, "dnscachemaxsize", 1024 * 500,
+                                                       0, INT_MAX);
+        if (maxSize > 0u) {
             timeout = Ns_ConfigIntRange(path, "dnswaittimeout",  5, 0, INT_MAX);
             ttl = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
             ttl *= 60; /* NB: Config specifies minutes, seconds used internally. */
 
             hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-                                         (size_t) maxValue, ns_free);
+                                         maxSize, ns_free);
             addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-                                         (size_t) maxValue, ns_free);
+                                         maxSize, ns_free);
         }
     }
 }

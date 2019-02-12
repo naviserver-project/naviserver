@@ -1620,6 +1620,7 @@ NS_EXTERN void NsTclInitAddrType(void);
 NS_EXTERN void NsTclInitTimeType(void);
 NS_EXTERN void NsTclInitKeylistType(void);
 NS_EXTERN void NsTclInitSpecType(void);
+NS_EXTERN void NsTclInitMemUnitType(void);
 
 /*
  * Callback routines.

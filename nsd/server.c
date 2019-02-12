@@ -260,7 +260,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.realm = Ns_ConfigString(path, "realm", server);
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
-    servPtr->opts.errorminsize = Ns_ConfigInt(path, "errorminsize", 514);
+    servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", 514, 0, INT_MAX);
 
     servPtr->opts.hdrcase = Preserve;
     p = Ns_ConfigString(path, "headercase", "preserve");
@@ -276,7 +276,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
     servPtr->compress.enable = Ns_ConfigBool(path, "compressenable", NS_FALSE);
     servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
-    servPtr->compress.minsize = Ns_ConfigIntRange(path, "compressminsize", 512, 0, INT_MAX);
+    servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(path, "compressminsize", 512, 0, INT_MAX);
     servPtr->compress.preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
 
     /*

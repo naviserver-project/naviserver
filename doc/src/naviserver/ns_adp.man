@@ -212,8 +212,8 @@ enabled to support compression of ADP output.
 [example_begin]
 
    ns_section ns/server/server1/adp
-   ns_param gzip true ;# Enable ADP output compression.
-   ns_param bufsize 102400; # Buffer size, 1meg default.
+   ns_param gzip true     ;# Enable ADP output compression.
+   ns_param bufsize 1MB   ;# Buffer size, 1MB default.
 
 [example_end]
 
@@ -270,11 +270,15 @@ The following parameters control memory usage.
 The size in bytes of the per-virtual-server page cache. This is the cache of ADP
 pages as read from disk and converted to an efficient form for evaluation. In
 addition, a separate cache of script blocks is kept per-thread, which is not
-controlled by this parameter. Default: 5MB.
+controlled by this parameter.
+The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
+Default: 5MB.
 
 [def bufsize]
 The size in bytes of the ADP output buffer. The buffer is flushed to the client
-when full, or each time a new chunk is appended when streaming is enabled.
+when full, or each time a new chunk is appended when streaming is
+enabled.
+The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 Default: 1MB.
 
 [def tracesize]

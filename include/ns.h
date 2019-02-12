@@ -1011,6 +1011,11 @@ Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultV
                   Tcl_WideInt minValue, Tcl_WideInt maxValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN Tcl_WideInt
+Ns_ConfigMemUnitRange(const char *section, const char *key, Tcl_WideInt defaultValue,
+                  Tcl_WideInt minValue, Tcl_WideInt maxValue)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN const char *
 Ns_ConfigGetValue(const char *section, const char *key)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -2882,6 +2887,10 @@ Ns_StrToInt(const char *chars, int *intPtr)
 
 NS_EXTERN Ns_ReturnCode
 Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_ReturnCode
+Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *

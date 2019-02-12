@@ -88,7 +88,7 @@ the specified driver.
 [example_begin]
 ns_section "ns/server/default/module/nssock" {
     ns_param writerthreads 1
-    ns_param writersize 4096
+    ns_param writersize 4kB
     ns_param writerstreaming true
 }
 [example_end]

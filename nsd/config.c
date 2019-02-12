@@ -53,7 +53,12 @@ static const char* ConfigGet(const char *section, const char *key, bool exact, c
 static bool ToBool(const char *value, bool *valuePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-
+static Tcl_WideInt
+ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
+                   Tcl_WideInt minValue, Tcl_WideInt maxValue,
+                   Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
+                   const char *kind)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
 
 
 /*
@@ -274,6 +279,23 @@ Tcl_WideInt
 Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
                       Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
+    return ConfigWideIntRange(section, key, defaultValue, minValue, maxValue, Ns_StrToWideInt, "integer");
+}
+
+Tcl_WideInt
+Ns_ConfigMemUnitRange(const char *section, const char *key, Tcl_WideInt defaultValue,
+                      Tcl_WideInt minValue, Tcl_WideInt maxValue)
+{
+    fprintf(stderr, "Ns_ConfigMemUnitRange %s.%s\n", section, key);
+    return ConfigWideIntRange(section, key, defaultValue, minValue, maxValue, Ns_StrToMemUnit, "memory unit");
+}
+
+static Tcl_WideInt
+ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
+                   Tcl_WideInt minValue, Tcl_WideInt maxValue,
+                   Ns_ReturnCode (converter)(const char *chars, Tcl_WideInt *intPtr),
+                   const char *kind)
+{
     const char *s;
     char defstr[TCL_INTEGER_SPACE];
     Tcl_WideInt value;
@@ -283,11 +305,25 @@ Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultV
 
     snprintf(defstr, sizeof(defstr), "%" TCL_LL_MODIFIER "d", defaultValue);
     s = ConfigGet(section, key, NS_FALSE, defstr);
-    if (s != NULL && Ns_StrToWideInt(s, &value) == NS_OK) {
+    if (s != NULL && converter(s, &value) == NS_OK) {
+        /*
+         * Found and parsed parameter.
+         */
         Ns_Log(Dev, "config: %s:%s value=%" TCL_LL_MODIFIER "d min=%" TCL_LL_MODIFIER
                "d max=%" TCL_LL_MODIFIER "d default=%" TCL_LL_MODIFIER "d (wide int)",
                section, key, value, minValue, maxValue, defaultValue);
+    } else if (s != NULL) {
+        /*
+         * Parse of parameter failed.
+         */
+        Ns_Log(Warning,
+               "config parameter %s:%s: cannot parse '%s' as %s; fall back to default %" TCL_LL_MODIFIER "d",
+               section, key, s, kind, defaultValue);
+        value = defaultValue;
     } else {
+        /*
+         * No such parameter.
+         */
         Ns_Log(Dev, "config: %s:%s value=(null) min=%" TCL_LL_MODIFIER "d max=%" TCL_LL_MODIFIER
                "d default=%" TCL_LL_MODIFIER "d (wide int)",
                section, key, minValue, maxValue, defaultValue);

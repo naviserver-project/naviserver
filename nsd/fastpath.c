@@ -131,10 +131,10 @@ NsConfigFastpath(void)
     useBrotliRefresh = Ns_ConfigBool(path, "brotli_refresh", NS_FALSE);
 
     if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
-        size_t size = (size_t) Ns_ConfigIntRange(path, "cachemaxsize",
-                                                 1024*10000, 1024, INT_MAX);
+        size_t size = (size_t)Ns_ConfigMemUnitRange(path, "cachemaxsize",
+                                                    1024*10000, 1024, INT_MAX);
         cache = Ns_CacheCreateSz("ns:fastpath", TCL_STRING_KEYS, size, FreeEntry);
-        maxentry = Ns_ConfigIntRange(path, "cachemaxentry", 8192, 8, INT_MAX);
+        maxentry = (int)Ns_ConfigMemUnitRange(path, "cachemaxentry", 8192, 8, INT_MAX);
     }
     /*
      * Register the fastpath initialization for every server.
