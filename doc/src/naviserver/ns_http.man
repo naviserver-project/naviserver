@@ -115,6 +115,7 @@ use the specified HTTP method such as GET or POST or HEAD.
 [opt_def -spoolsize [arg int]]
 In case the result is larger than spoolsize, it will be spooled to a
 temporary file returned in the variable denoted by [option -file].
+The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [opt_def -timeout [arg T]]
 Timeout for how long to wait for finishing the whole request. The
@@ -216,6 +217,7 @@ varName is the name of a variable that should be used to store the HTTP response
 [opt_def -spoolsize [arg int]]
 In case the result is larger than spoolsize, it will be spooled to a
 temporary file returned in the variable denoted by [option -file].
+The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [opt_def -status [arg varName]]
 varName is the name of a variable that should be used to store the HTTP response status
@@ -264,7 +266,7 @@ quantity, use the option [option -spoolsize]. The spooled file
 is contained in the resulting dict under the key [term file].
 
 [example_begin]
-   % set result [lb]ns_http run -spoolsize 1000 https://www.google.com[rb]
+   % set result [lb]ns_http run -spoolsize 1kB https://www.google.com[rb]
    % dict get $result file
    /tmp/http.83Rfc5
 [example_end]
@@ -323,7 +325,7 @@ results to a file, when the result is larger than 1000 bytes.
  ns_set update $requestHeaders Host localhost
  
  set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
- ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1000 -file F $h
+ ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1Kb -file F $h
  
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"

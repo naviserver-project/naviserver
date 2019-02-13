@@ -450,18 +450,19 @@ HttpWaitObjCmd(
     char        *id = NULL,
                 *outputFileName = NULL;
     Ns_HttpTask *httpPtr = NULL;
-    int          result, spoolLimit = -1, decompress = 0;
+    int          result, decompress = 0;
+    Tcl_WideInt  spoolLimit = -1;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout",    Ns_ObjvTime,   &timeoutPtr,      NULL},
-        {"-headers",    Ns_ObjvObj,    &replyHeadersObj, NULL},
-        {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr,   NULL},
-        {"-result",     Ns_ObjvObj,    &resultVarPtr,    NULL},
-        {"-status",     Ns_ObjvObj,    &statusVarPtr,    NULL},
-        {"-file",       Ns_ObjvObj,    &fileVarPtr,      NULL},
-        {"-outputfile", Ns_ObjvString, &outputFileName,  NULL},
-        {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,      NULL},
-        {"-decompress", Ns_ObjvBool,   &decompress,      INT2PTR(NS_TRUE)},
+        {"-timeout",    Ns_ObjvTime,    &timeoutPtr,      NULL},
+        {"-headers",    Ns_ObjvObj,     &replyHeadersObj, NULL},
+        {"-elapsed",    Ns_ObjvObj,     &elapsedVarPtr,   NULL},
+        {"-result",     Ns_ObjvObj,     &resultVarPtr,    NULL},
+        {"-status",     Ns_ObjvObj,     &statusVarPtr,    NULL},
+        {"-file",       Ns_ObjvObj,     &fileVarPtr,      NULL},
+        {"-outputfile", Ns_ObjvString,  &outputFileName,  NULL},
+        {"-spoolsize",  Ns_ObjvMemUnit, &spoolLimit,      NULL},
+        {"-decompress", Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -507,7 +508,7 @@ HttpWaitObjCmd(
 
         assert(httpPtr->replyHeaders != NULL);
 
-        httpPtr->spoolLimit = spoolLimit;
+        httpPtr->spoolLimit = (int)spoolLimit;
 
         /*
          * When the outputFileName is given store it in the task structure. It
@@ -870,24 +871,25 @@ HttpQueueCmd(
     Ns_Set        *requestHdrPtr = NULL;
     Tcl_Obj       *bodyPtr = NULL;
     Ns_Time       *timeoutPtr = NULL;
-    int            keepInt = 0, decompress = 0, spoolLimit = -1;
+    int            keepInt = 0, decompress = 0;
+    Tcl_WideInt    spoolLimit = -1;
 
     Ns_ObjvSpec opts[] = {
-        {"-body",             Ns_ObjvObj,    &bodyPtr,        NULL},
-        {"-body_file",        Ns_ObjvString, &bodyFileName,   NULL},
-        {"-cafile",           Ns_ObjvString, &caFile,         NULL},
-        {"-capath",           Ns_ObjvString, &caPath,         NULL},
-        {"-cert",             Ns_ObjvString, &cert,           NULL},
-        {"-decompress",       Ns_ObjvBool,   &decompress,     INT2PTR(NS_TRUE)},
-        {"-donecallback",     Ns_ObjvString, &doneCallback,   NULL},
-        {"-headers",          Ns_ObjvSet,    &requestHdrPtr,  NULL},
-        {"-hostname",         Ns_ObjvString, &sni_hostname,   NULL},
-        {"-keep_host_header", Ns_ObjvBool,   &keepInt,        INT2PTR(NS_TRUE)},
-        {"-method",           Ns_ObjvString, &method,         NULL},
-        {"-outputfile",       Ns_ObjvString, &outputFileName, NULL},
-        {"-spoolsize",        Ns_ObjvInt,    &spoolLimit,      NULL},
-        {"-timeout",          Ns_ObjvTime,   &timeoutPtr,     NULL},
-        {"-verify",           Ns_ObjvBool,   &verifyInt,      NULL},
+        {"-body",             Ns_ObjvObj,     &bodyPtr,        NULL},
+        {"-body_file",        Ns_ObjvString,  &bodyFileName,   NULL},
+        {"-cafile",           Ns_ObjvString,  &caFile,         NULL},
+        {"-capath",           Ns_ObjvString,  &caPath,         NULL},
+        {"-cert",             Ns_ObjvString,  &cert,           NULL},
+        {"-decompress",       Ns_ObjvBool,    &decompress,     INT2PTR(NS_TRUE)},
+        {"-donecallback",     Ns_ObjvString,  &doneCallback,   NULL},
+        {"-headers",          Ns_ObjvSet,     &requestHdrPtr,  NULL},
+        {"-hostname",         Ns_ObjvString,  &sni_hostname,   NULL},
+        {"-keep_host_header", Ns_ObjvBool,    &keepInt,        INT2PTR(NS_TRUE)},
+        {"-method",           Ns_ObjvString,  &method,         NULL},
+        {"-outputfile",       Ns_ObjvString,  &outputFileName, NULL},
+        {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,      NULL},
+        {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
+        {"-verify",           Ns_ObjvBool,    &verifyInt,      NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -930,7 +932,7 @@ HttpQueueCmd(
         if (decompress != 0) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
         }
-        httpPtr->spoolLimit = spoolLimit;
+        httpPtr->spoolLimit = (int)spoolLimit;
 
         if ((run || httpPtr->doneCallback != NULL)
             && CheckReplyHeaders(interp, httpPtr) != NS_OK) {
